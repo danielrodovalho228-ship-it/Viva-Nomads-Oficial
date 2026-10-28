@@ -142,6 +142,10 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.ass.${sufixo}@lab.vivanomads.test`, nome: "Dora Assina", role: "owner" as const };
 const inq = { email: `inq.ass.${sufixo}@lab.vivanomads.test`, nome: "Ivo Assina", role: "tenant" as const };
+// E210: o período do contrato (o bloco): entrada em 10 dias, saída 60 dias depois.
+const diaISO = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+const PERIODO = { inicio: diaISO(10), fim: diaISO(69) };
+const br = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
 
 test.describe("T57 — Contrato semeado: as duas partes têm o código de assinatura recusado", () => {
@@ -257,6 +261,12 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    // E210: como todo contrato real (registrarContrato), este tem o bloco com a entrada e a saída: o e-mail de
+    // assinatura mostra o período dele ("Período: a " vazio era o contrato de teste sem blocos).
+    const { error: errBloco } = await adm()
+      .from("contrato_blocos")
+      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: PERIODO.inicio, fim: PERIODO.fim, meses: 2, valor: 6400, caucao: 3200, status: "ativo" });
+    if (errBloco) throw errBloco;
     const { error: errCheckin } = await adm()
       .from("contratos_checkin")
       .insert({ contrato_id: ids.contrato, horario: "14:00", instrucoes: "Chave na portaria, apto 12.", plantao: "34999990000" });
@@ -339,6 +349,9 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     const doDono = await corpo(ids.dono!, /Falta a sua assinatura/);
     expect(doDono).toContain(titulo);
     expect(doDono).toMatch(/Período: \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}/);
+    // E210: as datas reais do contrato (o bloco), nunca "Período: a ".
+    expect(doDono).toContain(`Período: ${br(PERIODO.inicio)} a ${br(PERIODO.fim)}`);
+    expect(doDono).not.toMatch(/Período: a /);
     expect(doDono).toMatch(/Valor mensal: R\$ /);
     expect(doDono).toContain("Próximo passo: assine pela plataforma");
     // O morador recebeu "assinado pelas duas partes" com o próximo passo dele (Caução e 1º pagamento).
@@ -346,5 +359,6 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     expect(doMorador).toContain(titulo);
     expect(doMorador).toContain("pague a Caução e o 1º pagamento direto ao proprietário");
     expect(doMorador).not.toContain("Há uma atualização no seu contrato");
+    expect(doMorador).toContain(`Período: ${br(PERIODO.inicio)} a ${br(PERIODO.fim)}`);
   });
 });

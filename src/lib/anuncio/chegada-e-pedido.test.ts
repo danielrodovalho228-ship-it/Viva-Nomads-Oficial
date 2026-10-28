@@ -133,6 +133,8 @@ test("GUARDA: tipo_entrada é público; como_entrar só nos leitores da estadia 
     "src/lib/data/estadia.ts",
     "src/lib/data/estadia-actions.ts",
     "src/app/api/cron/automacoes/route.ts",
+    // E209: o lembrete D-2/D-1 leva as instruções no corpo — só ao morador, com contrato assinado + 1º pagamento.
+    "src/app/api/cron/checkin-lembretes/route.ts",
     "src/config/retencao.ts",
     "src/lib/anuncio/chegada-e-pedido.ts",
   ]);
