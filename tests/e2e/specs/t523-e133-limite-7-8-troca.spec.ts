@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { FOTOS_TESTE_MINIMO, noPasso } from "../fixtures/cadastro";
+import { FOTOS_TESTE_MINIMO, abrirCadastroNovo, noPasso } from "../fixtures/cadastro";
 
 /*
   T523 — E133 (#1373), guarda permanente da Pista C: o limite exato e a TROCA, que a t468 não cobre (ela vai de 2 para 9
@@ -21,11 +21,8 @@ const continuar = (p: Page) => p.getByTestId("cadastro-continuar");
 const enviar = (p: Page, arquivos: string | string[]) => p.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(arquivos);
 
 async function abrirPassoFotos(p: Page) {
-  await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
-  const aviso = p.getByTestId("rascunho-aviso");
-  await expect(p.getByTestId("passo-titulo").or(aviso).first()).toBeVisible({ timeout: 30_000 });
-  if (await aviso.isVisible()) await aviso.getByRole("button", { name: "Começar outro" }).click();
-  await noPasso(p, "tipo");
+  // E132-A (#1396): o cadastro novo abre a Qualificação antes do Passo 1 — "Responder depois" leva ao Tipo.
+  await abrirCadastroNovo(p);
   await continuar(p).click();
   await noPasso(p, "fotos");
 }

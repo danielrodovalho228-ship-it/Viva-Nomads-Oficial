@@ -252,8 +252,20 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
 
-  return ((data ?? []) as Record<string, unknown>[]).map((c) => {
-    const prop = (c.properties as { title?: string; owner_id?: string } | null) ?? {};
+  // E182 (QA 25/10): o RLS de properties só mostra ao morador os imóveis ATIVOS — de um imóvel pausado ou encerrado o
+  // join volta vazio e o cartão virava "Imóvel". Para os contratos DELE (tenant_id = eu, já filtrados acima), o
+  // servidor lê só o título e o dono desses imóveis.
+  const linhas = (data ?? []) as Record<string, unknown>[];
+  const semTitulo = [...new Set(linhas.filter((c) => !(c.properties as { title?: string } | null)?.title).map((c) => String(c.property_id)))];
+  const doServidor = new Map<string, { title?: string; owner_id?: string }>();
+  if (semTitulo.length) {
+    const admin = createAdminClient();
+    const { data: props } = admin ? await admin.from("properties").select("id, title, owner_id").in("id", semTitulo) : { data: null };
+    for (const pr of (props ?? []) as { id: string; title: string | null; owner_id: string | null }[]) doServidor.set(pr.id, { title: pr.title ?? undefined, owner_id: pr.owner_id ?? undefined });
+  }
+
+  return linhas.map((c) => {
+    const prop = (c.properties as { title?: string; owner_id?: string } | null)?.title ? (c.properties as { title?: string; owner_id?: string }) : (doServidor.get(String(c.property_id)) ?? {});
     const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "inquilino");
     return {

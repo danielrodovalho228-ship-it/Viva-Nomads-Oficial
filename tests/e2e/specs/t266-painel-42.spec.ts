@@ -6,7 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *  1. Visão geral do proprietário abre com "Hoje você tem N decisões" — sem "Bem-vindo" nem funil de passos; cada linha
  *     é um link para a tela da decisão (contraproposta → /dashboard/propostas/<id>, contrato → /dashboard/contratos/<id>,
  *     candidatura nova → /dashboard/leads);
- *  2. proprietário novo (sem imóvel): "Nada pede sua decisão hoje" e um único primário, "Cadastrar meu imóvel";
+ *  2. proprietário novo (sem imóvel): Início "Anuncie seu primeiro imóvel" e um único primário, "Anunciar meu imóvel";
  *  3. Conta sem capa de foto (título em texto);
  *  4. Ferramentas tem o simulador PF × PJ (/dashboard/tributacao);
  *  5. navegar por 5 telas do painel NÃO dispara nenhuma server action (POST com next-action) — os números do menu vêm
@@ -146,15 +146,16 @@ test.describe("T266 — Painel do Prompt 42", () => {
       await page.context().close();
     });
 
-    test(`${largura}px — proprietário novo: "Nada pede sua decisão hoje" e um único primário "Cadastrar meu imóvel"`, async ({ browser }) => {
+    test(`${largura}px — proprietário novo: Início com "Anuncie seu primeiro imóvel" e um único primário "Anunciar meu imóvel"`, async ({ browser }) => {
       test.setTimeout(90_000);
       const page = await abrir(browser, novo.email, largura);
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nada pede sua decisão hoje", { timeout: 25_000 });
+      // PROP-6: o h1 do Início é sr-only ("Início"); o título visível é o do bloco principal.
+      await expect(page.getByRole("heading", { level: 2, name: "Anuncie seu primeiro imóvel" })).toBeVisible({ timeout: 25_000 });
       await expect(page.getByTestId("decisao")).toHaveCount(0);
       await expect(page.locator("main")).not.toContainText("Bem-vindo");
-      await expect.poll(() => primarios(page)).toEqual([expect.stringMatching(/^Cadastrar meu imóvel/)]);
-      await expect(page.getByRole("link", { name: /Cadastrar meu imóvel/ })).toHaveAttribute("href", "/dashboard/imoveis/novo");
+      await expect.poll(() => primarios(page)).toEqual([expect.stringMatching(/^Anunciar meu imóvel/)]);
+      await expect(page.getByRole("link", { name: /Anunciar meu imóvel/ }).first()).toHaveAttribute("href", "/dashboard/imoveis/novo");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t266-dono-novo-${largura}.png`, fullPage: true });
       await page.context().close();

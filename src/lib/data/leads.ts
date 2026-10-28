@@ -5,6 +5,7 @@ import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
+import { sinaisPorQueParaDono, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { signAvatarPath } from "@/lib/data/avatar-url";
@@ -176,6 +177,15 @@ export async function listLeads(): Promise<Lead[]> {
       .map(async (r) => fotos.set(r.id, await signAvatarPath(perfis.get(r.tenant_id)?.avatar_url ?? null, r.tenant_id))),
   );
 
+  // 9950ef15: "Por que estou na cidade" lido só dos inquilinos de candidaturas ACEITAS (antes, nada sai do servidor).
+  const porQue = new Map<string, PorQueNaCidade>();
+  const aceitos = [...new Set(rows.filter((r) => r.status === "accepted").map((r) => r.tenant_id))];
+  if (admin && aceitos.length > 0) {
+    const { data: cs } = await admin.from("profiles").select("id, cidade_periodo_inicio, cidade_periodo_fim, cidade_empresa, cidade_frase").in("id", aceitos);
+    for (const c of (cs ?? []) as { id: string; cidade_periodo_inicio: string | null; cidade_periodo_fim: string | null; cidade_empresa: string | null; cidade_frase: string | null }[])
+      porQue.set(c.id, { inicio: c.cidade_periodo_inicio, fim: c.cidade_periodo_fim, empresa: c.cidade_empresa, frase: c.cidade_frase });
+  }
+
   return rows.map((r) => {
     const v = verificacoes.get(r.tenant_id);
     const fichaPet = donoVeFichaPet({ leadStatus: r.status, contratoStatus: contratoDaCandidatura.get(`${r.property_id}:${r.tenant_id}`) ?? null })
@@ -206,7 +216,11 @@ export async function listLeads(): Promise<Lead[]> {
       status: r.status,
       name: cartao.titulo,
       fotoUrl: cartao.fotoUrl,
-      sinais: cartao.sinais,
+      // 9950ef15: "Por que estou na cidade" só depois do aceite (antes, o dono vê categoria, selos e avaliações).
+      sinais: [
+        ...cartao.sinais,
+        ...sinaisPorQueParaDono(porQue.get(r.tenant_id), r.status === "accepted"),
+      ],
       selos: cartao.selos,
       reputacao: cartao.reputacao,
       property: r.property?.title ?? "Imóvel",
