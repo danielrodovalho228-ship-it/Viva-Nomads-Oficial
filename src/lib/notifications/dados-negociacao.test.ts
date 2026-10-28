@@ -79,7 +79,7 @@ test("catálogo: os e-mails de proposta e contrato saem com imóvel, valores e p
     assert.doesNotMatch(t, /Há uma atualização no seu contrato/, k);
   }
   assert.match(por.get("proposta:recebida")!, /Responder até 30\/10\/2026/);
-  assert.match(por.get("proposta:recusada")!, /foi recusada\. Motivo/);
+  assert.match(por.get("proposta:recusada")!, /Ana recusou a proposta\. Motivo: Datas\. Preciso entrar só em dezembro\./);
 });
 
 test("GUARDA: os chamadores passam os dados (proposta: 4 desfechos; contrato pronto; assinaturas)", () => {

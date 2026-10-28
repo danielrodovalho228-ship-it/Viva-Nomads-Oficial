@@ -20,6 +20,7 @@ import {
 } from "@/lib/visitas-video";
 import { cn } from "@/lib/utils";
 import { ROTULO_EXPIRADA, horariosAindaValidos, visitaExpirada, visitaJaPassou } from "@/lib/visitas/endereco-visita";
+import { MOTIVO_EXPIROU } from "@/lib/notifications/emails-e205b";
 
 const TOM: Record<StatusVisita, string> = {
   pedido: "bg-blue-50 text-blue-700",
@@ -73,8 +74,10 @@ export function CartaoVisita({
   // E184: confirmada com o horário já passado — não é mais "Confirmada" e não se cancela o que já passou.
   const [agora] = useState(() => new Date());
   const passou = status === "confirmado" && visitaJaPassou(v, agora);
-  // Pedida com todos os horários já passados: "Expirada" (não se cancela sozinha).
-  const expirada = status === "pedido" && visitaExpirada(v, agora);
+  // Pedida com todos os horários já passados: "Expirada". E205-B: o cron (ou a abertura da lista) grava "cancelado" com
+  // o motivo "expirou" — o cartão continua dizendo "Expirada", sem a linha "Motivo".
+  const expiradaGravada = status === "cancelado" && v.motivoRecusa === MOTIVO_EXPIROU;
+  const expirada = (status === "pedido" && visitaExpirada(v, agora)) || expiradaGravada;
   return (
     <div id={`visita-${v.id}`} data-testid="cartao-visita" data-status={v.status} data-modalidade={v.modalidade} className={cn(compacto && "text-sm")}>
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -120,13 +123,19 @@ export function CartaoVisita({
           <p className="mt-1 text-xs text-muted">Horários em {ROTULO_FUSO}.</p>
           {expirada && (
             <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="visita-expirada-aviso">
-              {papel === "dono" ? "Os horários pedidos já passaram. Proponha outro horário ou recuse." : "Os horários pedidos já passaram. Espere o proprietário propor outro ou cancele o pedido."}
+              {expiradaGravada
+                ? papel === "dono"
+                  ? "O pedido expirou sem resposta."
+                  : "O pedido expirou sem resposta. Peça outros horários."
+                : papel === "dono"
+                  ? "Os horários pedidos já passaram. Proponha outro horário ou recuse."
+                  : "Os horários pedidos já passaram. Espere o proprietário propor outro ou cancele o pedido."}
             </p>
           )}
         </>
       )}
 
-      {v.status === "cancelado" && v.motivoRecusa && (
+      {v.status === "cancelado" && v.motivoRecusa && !expiradaGravada && (
         <p className="mt-2 text-sm text-muted" data-testid="visita-motivo-recusa-texto">
           Motivo: {v.motivoRecusa}
         </p>
