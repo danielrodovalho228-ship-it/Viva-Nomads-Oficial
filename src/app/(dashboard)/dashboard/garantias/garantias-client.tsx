@@ -10,7 +10,7 @@ import type { ContratoView } from "@/lib/data/contratos-actions";
 import { formatBRL } from "@/lib/utils";
 import { estadoCaucao } from "@/lib/caucao-estado";
 import { PERC_CAUCAO_BLOCO } from "@/lib/contrato-blocos";
-import { ROTULO_VER_CONTRATO, linhasCaucaoPorBloco, type ContratoParaCaucao, type LinhaCaucaoBloco } from "@/lib/contratos/area-dono";
+import { AVISO_CAUCAO_DE_MORADOR, ROTULO_VER_CONTRATO, linhasCaucaoPorBloco, type ContratoParaCaucao, type LinhaCaucaoBloco } from "@/lib/contratos/area-dono";
 
 /** Cauções de DEMONSTRAÇÃO: um bloco por contrato do seed (a segunda ainda a receber). */
 function demoContratos(): ContratoParaCaucao[] {
@@ -24,7 +24,7 @@ function demoContratos(): ContratoParaCaucao[] {
  * PROP-5 — Caução: só a caução por bloco (valor, forma, status e devolução), cada linha com "Ver contrato". O cartão do
  * contrato mora só em Contratos. O status vem da função única estadoCaucao (a mesma dos Contratos e do morador).
  */
-export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
+export function GarantiasClient({ contratos, temContratoDeMorador = false }: { contratos: ContratoView[]; temContratoDeMorador?: boolean }) {
   const { on: demoOn } = useDemoMode();
   const linhas = useMemo(() => linhasCaucaoPorBloco(demoOn ? demoContratos() : contratos), [demoOn, contratos]);
 
@@ -36,7 +36,11 @@ export function GarantiasClient({ contratos }: { contratos: ContratoView[] }) {
         <EmptyState
           icon={ShieldCheck}
           title="Nenhuma caução ainda"
-          text="Quando você fechar um contrato com caução, cada bloco aparece aqui com o status."
+          text={
+            temContratoDeMorador && !demoOn
+              ? `Quando você fechar um contrato com caução nos seus imóveis, cada bloco aparece aqui. ${AVISO_CAUCAO_DE_MORADOR}`
+              : "Quando você fechar um contrato com caução, cada bloco aparece aqui com o status."
+          }
           action={
             <Link href="/dashboard/contratos" className="text-sm font-medium text-forest underline">
               Ver contratos

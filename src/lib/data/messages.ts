@@ -8,6 +8,7 @@ import { contratoAssinadoEntrePartes, type ContratoParaAlerta } from "@/lib/segu
 import { papelDaConversa, formatarPeriodo, type PapelConversa } from "@/lib/mensagens-filtros";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
+import type { ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
 
 export interface ChatMessage {
   id: string;
@@ -221,4 +222,33 @@ async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string)
   } catch {
     /* sem foto/período: a conversa continua utilizável */
   }
+}
+
+/**
+ * E200: os contratos em que a pessoa é parte (morador ou dono do imóvel), para abrir a conversa de um contrato que
+ * ainda não tem mensagem. A leitura vai pela sessão (RLS); nada de cliente de serviço.
+ */
+export async function contratosParaConversa(): Promise<{ userId: string; contratos: ContratoParaConversa[] } | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const colunas = "id, tenant_id, property_id, properties ( title, owner_id )";
+  const { data: meus } = await supabase.from("properties").select("id").eq("owner_id", user.id);
+  const idsImoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);
+  const [{ data: comoMorador }, { data: comoDono }] = await Promise.all([
+    supabase.from("contratos").select(colunas).eq("tenant_id", user.id),
+    idsImoveis.length ? supabase.from("contratos").select(colunas).in("property_id", idsImoveis) : Promise.resolve({ data: [] }),
+  ]);
+  type Linha = { id: string; tenant_id: string; property_id: string; properties: { title: string | null; owner_id: string } | null };
+  const vistos = new Set<string>();
+  const contratos: ContratoParaConversa[] = [];
+  for (const c of [...((comoMorador ?? []) as unknown as Linha[]), ...((comoDono ?? []) as unknown as Linha[])]) {
+    if (vistos.has(c.id) || !c.properties?.owner_id) continue;
+    vistos.add(c.id);
+    contratos.push({ id: c.id, tenantId: c.tenant_id, ownerId: c.properties.owner_id, propertyId: c.property_id, titulo: c.properties.title ?? "Imóvel" });
+  }
+  return { userId: user.id, contratos };
 }

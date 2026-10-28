@@ -6,7 +6,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { filtroQaDaUrl, linhaParaTela, mascararEmailsNoTexto, opcoesFiltroQa, podeLerCaixasQa, rotaLeitorQa } from "./caixa-teste.ts";
+import { destinoLeitorQa, filtroQaDaUrl, linhaParaTela, mascararEmailsNoTexto, opcoesFiltroQa, podeLerCaixasQa, rotaLeitorQa } from "./caixa-teste.ts";
 import { REMETENTE } from "./remetente.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
@@ -69,22 +69,34 @@ test("filtro da URL: só conta e evento conhecidos; o resto é ignorado", () => 
   assert.deepEqual(filtroQaDaUrl({}, o), { conta: null, evento: null });
 });
 
-test("proxy: /dashboard/qa sem a marca = 404 DE VERDADE (rewrite com status), depois do login", () => {
+test("E199 (opção b): leitor de QA abre; admin vai para a aba E-mails do admin; os demais, 404", () => {
+  assert.deepEqual(destinoLeitorQa({ qa_leitor: true, is_teste: true, role: "tenant" }), { tipo: "abre" });
+  // Leitor de QA que também fosse admin continua abrindo a área de QA (a regra de leitura não muda).
+  assert.deepEqual(destinoLeitorQa({ qa_leitor: true, is_teste: true, role: "admin" }), { tipo: "abre" });
+  assert.deepEqual(destinoLeitorQa({ qa_leitor: false, is_teste: false, role: "admin" }), { tipo: "admin", href: "/admin/dados-de-teste?aba=emails" });
+  for (const p of [null, undefined, {}, { qa_leitor: false, is_teste: false, role: "owner" }, { qa_leitor: true, is_teste: false, role: "tenant" }, { qa_leitor: false, is_teste: true, role: null }]) {
+    assert.deepEqual(destinoLeitorQa(p), { tipo: "nao_encontrado" }, JSON.stringify(p));
+  }
+});
+
+test("proxy: /dashboard/qa — admin é redirecionado; sem a marca = 404 DE VERDADE (rewrite com status), depois do login", () => {
   const proxy = ler("src/proxy.ts");
   const i = proxy.indexOf("if (user && rotaLeitorQa(pathname))");
   assert.ok(i > 0);
-  const bloco = proxy.slice(i, i + 600);
-  assert.match(bloco, /\.from\("profiles"\)\.select\("qa_leitor, is_teste"\)\.eq\("id", user\.id\)/);
-  assert.match(bloco, /if \(!podeLerCaixasQa\(perfilQa\)\)/);
+  const bloco = proxy.slice(i, i + 1400);
+  assert.match(bloco, /\.from\("profiles"\)\.select\("qa_leitor, is_teste, role"\)\.eq\("id", user\.id\)/);
+  assert.match(bloco, /const destino = destinoLeitorQa\(perfilQa\);/);
+  assert.match(bloco, /destino\.tipo === "admin"[\s\S]*NextResponse\.redirect\(alvo\)/);
   assert.match(bloco, /NextResponse\.rewrite\(naoEncontrado, \{ status: 404 \}\)/);
   assert.ok(proxy.indexOf("if (isProtected && !user)") < i, "sem sessão vai para o login antes");
 });
 
 test("página: fora de /admin, 404 para quem não pode, leitura pela sessão (RLS), sem chave de serviço", () => {
   const pagina = ler("src/app/(dashboard)/dashboard/qa/emails/page.tsx");
-  assert.match(pagina, /if \(!podeLerCaixasQa\(perfil\)\) notFound\(\);/);
+  assert.match(pagina, /if \(destino\.tipo === "admin"\) redirect\(destino\.href\);/);
+  assert.match(pagina, /if \(destino\.tipo !== "abre"\) notFound\(\);/);
   assert.match(pagina, /if \(!user\) notFound\(\);/);
-  assert.match(pagina, /\.from\("profiles"\)\.select\("qa_leitor, is_teste"\)/);
+  assert.match(pagina, /\.from\("profiles"\)\.select\("qa_leitor, is_teste, role"\)/);
   assert.doesNotMatch(pagina, /createAdminClient|SERVICE_ROLE|is_admin|mfa/i);
   assert.doesNotMatch(pagina, /usuario_id, destinatario_mascarado, evento"\)[^;]*\.from\("profiles"/, "opções sem ler perfis alheios");
   assert.deepEqual([...pagina.matchAll(/\.from\("(\w+)"\)/g)].map((m) => m[1]).sort(), ["emails_teste", "emails_teste", "profiles"]);
