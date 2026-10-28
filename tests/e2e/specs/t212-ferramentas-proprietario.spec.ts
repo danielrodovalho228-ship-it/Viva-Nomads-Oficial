@@ -199,8 +199,15 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       await t.screenshot({ path: `${SAIDA}/t212-lista-propostas-${largura}.png`, fullPage: true });
       await abrir(t, "/dashboard/notificacoes");
       await expect(t.getByTestId("aviso-proposta").first()).toContainText("Você recebeu uma proposta");
-      // MENUS-5 (25/10) tirou a barra lateral "Minha moradia": o aviso acima (Notificações) e a lista de Propostas são o
-      // caminho do morador até a proposta.
+      // MENUS-5 (#1392): sem menu lateral; a proposta se acha pelas abas, Pedidos › Propostas (subaba sem contador:
+      // no modelo de abas só Mensagens e Interessados têm número).
+      if (largura === 1280) {
+        await t.getByTestId("aba-morador-pedidos").click();
+        await t.getByTestId("subaba-morador-propostas").click();
+        await expect(t).toHaveURL(/\/dashboard\/propostas$/, { timeout: 20_000 });
+        // E189: a mesma conta aberta da tabela e do detalhe.
+        await expect(t.getByTestId("proposta-inquilino-conta").first()).toHaveText(/^4 × R\$\s?[\d.]+(,\d{2})?( \+ .+)? = R\$\s?[\d.]+(,\d{2})?$/, { timeout: 25_000 });
+      }
       // O cartão da proposta na conversa.
       await abrir(t, "/dashboard/mensagens");
       // No celular a tela abre na lista: tocar na conversa do anúncio.

@@ -19,7 +19,8 @@ test.describe("T2 — Conta única, sem seletor de modo @criticos", () => {
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
     // PROP-1 (#1337): no computador o dono não tem barra lateral — a casca é o topo com abas (topo-dono).
     await expect(page.locator('aside nav:visible, [data-testid="topo-dono"]:visible').first()).toBeVisible();
-    await expect(page.locator("aside")).not.toContainText(/Modo:/);
+    // MENUS-5 (#1392): a casca pode não ter <aside> nenhum; o que vale é nenhum menu lateral com "Modo:".
+    await expect(page.locator("aside", { hasText: /Modo:/ })).toHaveCount(0);
     await expect(page.getByTestId("topo-dono")).not.toContainText(/Modo:/);
     await expect(page.getByRole("button", { name: /^Trocar para /i })).toHaveCount(0);
   });
