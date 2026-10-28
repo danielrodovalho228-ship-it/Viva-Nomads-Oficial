@@ -24,6 +24,7 @@ import {
 } from "@/lib/automacoes/regras";
 import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { corpoDaChegada } from "@/lib/estadia/emails-chegada";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
 import { DIAS_APAGAR_CONVIDADO, convidadoVence } from "@/lib/anuncio/chegada-e-pedido";
@@ -52,7 +53,21 @@ import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
  * Trava: sem `AUTOMACOES_ATIVO=1` no ambiente o cron SEMPRE simula, mesmo agendado no vercel.json.
  * Candidatura iniciada e não enviada fica de fora: a candidatura não guarda rascunho no banco.
  */
-type Alvo = { tipo: TipoAutomacao; usuarioId: string; refId: string; variante?: string; url: string; detalhe: string; subject?: string; ctaLabel?: string; decisao?: DadosDaDecisao; depois?: () => Promise<unknown> };
+type Alvo = {
+  tipo: TipoAutomacao;
+  usuarioId: string;
+  refId: string;
+  variante?: string;
+  url: string;
+  detalhe: string;
+  subject?: string;
+  ctaLabel?: string;
+  decisao?: DadosDaDecisao;
+  depois?: () => Promise<unknown>;
+  /** E209: corpo próprio (abertura) e detalhes em HTML (imóvel, datas, instruções). */
+  body?: (nome?: string) => string;
+  detailsHtml?: string;
+};
 
 export async function GET(request: Request) {
   const segredo = process.env.CRON_SECRET;
@@ -208,14 +223,14 @@ export async function GET(request: Request) {
   // partes e 1º pagamento registrado) e lembrete ao dono no D-10 se ainda não preencheu.
   const { data: estadias } = await admin
     .from("contratos")
-    .select(`id, property_id, tenant_id, ${COLUNAS_ESTADO_CONTRATO}, properties(title, owner_id, checkin_after), contrato_blocos(inicio, fim, status)`)
+    .select(`id, property_id, tenant_id, ${COLUNAS_ESTADO_CONTRATO}, properties(title, address, city, owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim, status)`)
     .eq("status", "ativo")
     .limit(1000);
   for (const c of estadias ?? []) {
     const blocos = ((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string }[]).filter((b) => b.status !== "nao_aceito");
     const inicio = blocos.map((b) => b.inicio).sort()[0];
     if (!inicio || inicio < hoje || inicio > dia(LEMBRETE_DONO_DIAS)) continue;
-    const prop = c.properties as unknown as { title?: string; owner_id?: string } | null;
+    const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
     const imovel = prop?.title || undefined;
     const url = HREF_ESTADIA(c.id as string);
     const condicao = {
@@ -224,12 +239,28 @@ export async function GET(request: Request) {
       primeiroPagamento: primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]),
     };
     if (liberaHoje(condicao, agora)) {
+      // E209: o e-mail leva o imóvel, as datas da estadia e as instruções de chegada no corpo (não só atrás do link).
+      const [{ data: im }, { data: ck }] = await Promise.all([
+        admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle(),
+        admin.from("contratos_checkin").select("instrucoes, horario").eq("contrato_id", c.id as string).maybeSingle(),
+      ]);
+      const ckl = ck as { instrucoes?: string | null; horario?: string | null } | null;
+      const instrucoes = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, ckl?.instrucoes);
+      const estadia = {
+        imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
+        entrada: inicio,
+        saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
+        horarioEntrada: ckl?.horario || prop?.checkin_after,
+        horarioSaida: prop?.checkout_before,
+      };
+      const corpo = corpoDaChegada(estadia, instrucoes, true, detalheAutomacao("estadia_instrucoes_liberadas", { imovel, fim: inicio }));
       alvos.push({
         tipo: "estadia_instrucoes_liberadas",
         usuarioId: c.tenant_id as string,
         refId: c.id as string,
         url: `${url}#instrucoes`,
-        detalhe: detalheAutomacao("estadia_instrucoes_liberadas", { imovel, fim: inicio }),
+        detalhe: corpo.texto,
+        detailsHtml: corpo.html,
         depois: async () => admin.from("contrato_eventos").insert({ contrato_id: c.id, tipo: "instrucoes_liberadas", dados: { inicio } }),
       });
     }
@@ -263,6 +294,8 @@ export async function GET(request: Request) {
       userId: a.usuarioId,
       pushUrl: a.url,
       detailsText: a.detalhe,
+      ...(a.detailsHtml ? { detailsHtml: a.detailsHtml } : {}),
+      ...(a.body ? { body: a.body } : {}),
       ...(a.subject ? { subject: a.subject } : {}),
       ...(a.ctaLabel ? { ctaLabel: a.ctaLabel } : {}),
       ...(a.decisao ? { decisao: a.decisao } : {}),

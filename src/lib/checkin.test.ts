@@ -125,7 +125,9 @@ test("cron de lembretes: exige segredo, marca antes de enviar e está agendado; 
   assert.match(rota, /CRON_SECRET/);
   assert.match(rota, /status: 401/);
   assert.ok(rota.indexOf(".upsert(") < rota.indexOf("notify("), "marca o lembrete antes de enviar");
-  assert.doesNotMatch(rota, /plantao|instrucoes/);
+  // E209 (Muse, 28/10): as instruções de chegada vão no corpo — só ao morador; o telefone de plantão nunca.
+  assert.doesNotMatch(rota, /plantao/);
+  assert.match(rota, /corpoDaChegada\(estadia, instrucoes, uid === c\.tenant_id, texto\)/);
   assert.match(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8"), /\/api\/cron\/checkin-lembretes/);
   const mig = readFileSync(new URL("../../supabase/migrations/0127_contrato_checkin_tabela.sql", import.meta.url), "utf8");
   assert.match(mig, /enable row level security/);
