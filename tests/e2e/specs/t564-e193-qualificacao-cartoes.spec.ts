@@ -12,6 +12,8 @@ const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t564.${sufixo}@lab.vivanomads.test`, nome: "Cris Cartões", role: "owner" as const };
+// O Passo 5 usa outra conta: o rascunho dele faria a qualificação abrir com "Começar outro / Continuar".
+const dono5 = { email: `dono5.t564.${sufixo}@lab.vivanomads.test`, nome: "Cris Passo Cinco", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 async function semInterruptor(p: Page) {
@@ -31,10 +33,11 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    ids.rascunho = await criarImovelPronto(ids.dono, `Imóvel cartões ${sufixo}`);
+    ids.dono5 = await criarConta(dono5, senha);
+    ids.rascunho = await criarImovelPronto(ids.dono5, `Imóvel cartões ${sufixo}`);
   });
   test.afterAll(async () => {
-    await apagarContas([ids.dono]);
+    await apagarContas([ids.dono, ids.dono5]);
   });
 
   for (const largura of [1280, 390] as const) {
@@ -66,7 +69,7 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
 
   for (const largura of [1280, 390] as const) {
     test(`${largura} px — Passo 5: comodidades no mesmo cartão, sem chips`, async ({ browser }) => {
-      const p = await entrar(browser, dono.email, senha);
+      const p = await entrar(browser, dono5.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
       await noPasso(p, "comodidades", 30_000);
