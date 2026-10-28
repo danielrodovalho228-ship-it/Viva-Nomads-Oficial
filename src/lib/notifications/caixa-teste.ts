@@ -6,6 +6,7 @@
  */
 
 import { REMETENTE_EMAIL, REMETENTE_INTERNO_PADRAO } from "./remetente.ts";
+import { HREF_EMAILS_TESTE } from "../admin/dados-teste-abas.ts";
 
 export const CORPO_MAX = 6000;
 export const ASSUNTO_MAX = 200;
@@ -158,6 +159,19 @@ export function podeLerCaixasQa(perfil: { qa_leitor?: boolean | null; is_teste?:
 /** A área do leitor de QA (/dashboard/qa/…): o proxy devolve 404 DE VERDADE a quem não pode (a página sozinha sairia 200). */
 export function rotaLeitorQa(pathname: string): boolean {
   return pathname === "/dashboard/qa" || pathname.startsWith("/dashboard/qa/");
+}
+
+/**
+ * E199 (opção b do coordenador): o que /dashboard/qa faz com cada conta. Leitor de QA (teste + qa_leitor) abre; o
+ * ADMIN vai para a lista dele, a aba "E-mails" de /admin/dados-de-teste (lá valem o papel e o 2FA do admin); os demais
+ * recebem 404. A regra de quem LÊ a área de QA não muda (a RLS segue a trava real).
+ */
+export type DestinoLeitorQa = { tipo: "abre" } | { tipo: "admin"; href: string } | { tipo: "nao_encontrado" };
+
+export function destinoLeitorQa(perfil: { qa_leitor?: boolean | null; is_teste?: boolean | null; role?: string | null } | null | undefined): DestinoLeitorQa {
+  if (podeLerCaixasQa(perfil)) return { tipo: "abre" };
+  if (perfil?.role === "admin") return { tipo: "admin", href: HREF_EMAILS_TESTE };
+  return { tipo: "nao_encontrado" };
 }
 
 export interface LinhaEmailTeste {

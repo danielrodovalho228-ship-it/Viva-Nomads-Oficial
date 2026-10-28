@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { rotaDetalheContrato } from "@/lib/contrato-rota";
-import { podeLerCaixasQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
+import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import {
   isInternalPath,
@@ -232,11 +232,22 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Leitor de QA (QA-CAIXA-B): /dashboard/qa só para conta de teste com qa_leitor; as demais recebem 404 DE VERDADE.
-  // Fora de /admin: sem papel admin e sem 2FA. A página confere de novo e a RLS é a trava real da leitura.
+  // Leitor de QA (QA-CAIXA-B): /dashboard/qa só para conta de teste com qa_leitor. E199 (opção b): o admin vai para a
+  // aba "E-mails" de /admin/dados-de-teste (lá valem o papel e o 2FA dele); as demais contas recebem 404 DE VERDADE.
+  // A página confere de novo e a RLS é a trava real da leitura.
   if (user && rotaLeitorQa(pathname)) {
-    const { data: perfilQa } = await supabase.from("profiles").select("qa_leitor, is_teste").eq("id", user.id).maybeSingle();
-    if (!podeLerCaixasQa(perfilQa)) {
+    const { data: perfilQa } = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
+    const destino = destinoLeitorQa(perfilQa);
+    if (destino.tipo === "admin") {
+      const [caminho, consulta] = destino.href.split("?");
+      const alvo = request.nextUrl.clone();
+      alvo.pathname = caminho;
+      alvo.search = consulta ? `?${consulta}` : "";
+      const resposta = NextResponse.redirect(alvo);
+      response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
+      return resposta;
+    }
+    if (destino.tipo === "nao_encontrado") {
       const naoEncontrado = request.nextUrl.clone();
       naoEncontrado.pathname = "/nao-encontrado-admin";
       naoEncontrado.search = "";
