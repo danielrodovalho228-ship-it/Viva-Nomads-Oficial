@@ -63,7 +63,9 @@ test("item 2: assuntos da tabela da ordem", () => {
   assert.equal(por.get("fiscal:comprovante"), "Seu comprovante de Caução · Viva Nomads");
   assert.equal(por.get("fiscal:termo"), "Termo de devolução da Caução · Viva Nomads");
   assert.equal(por.get("proposta:recebida"), "Você recebeu uma proposta · Viva Nomads");
-  assert.equal(por.get("proposta:aceita"), "Sua proposta foi aceita · Viva Nomads");
+  assert.equal(por.get("proposta:aceita"), "Proposta aceita: Ana quer morar no seu imóvel · Viva Nomads");
+  assert.equal(por.get("proposta:aceita:morador"), "Você garantiu o seu próximo lar · Viva Nomads");
+  assert.equal(por.get("proposta:recusada"), "Ana recusou a proposta · Viva Nomads");
   assert.equal(por.get("contrato:falta-voce"), "Falta a sua assinatura no contrato · Viva Nomads");
   assert.equal(por.get("contrato:assinado"), "Contrato assinado pelas duas partes · Viva Nomads");
   assert.equal(por.get("manutencao:urgente"), "Manutenção urgente no seu imóvel · Viva Nomads");

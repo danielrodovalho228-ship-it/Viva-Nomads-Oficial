@@ -4,7 +4,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /*
   T571 — E180 (decisão do Daniel: qualificação primeiro). Dono com um anúncio em andamento toca em "Novo anúncio": a
   tela abre na Qualificação (1 de 5), não no Passo 1; o aviso "Você tem um anúncio em andamento" fica dentro dela, com
-  "Continuar o outro" (que abre o rascunho). A 390 e 1280 px.
+  "Continuar o outro" (que abre o rascunho). E208: saindo da Qualificação, o Passo 1 do anúncio novo não traz mais a
+  faixa do rascunho antigo — só o estado do novo ("Anúncio novo"). A 390 e 1280 px.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -42,6 +43,23 @@ test.describe("T571 — E180: 'Novo anúncio' abre na Qualificação mesmo com r
       await p.screenshot({ path: `${SAIDA}/t571-qualificacao-com-aviso-${largura}.png`, fullPage: true });
       await aviso.getByTestId("rascunho-continuar").click();
       await expect(p).toHaveURL(new RegExp(`draft=${ids.rascunho}`), { timeout: 30_000 });
+      await p.context().close();
+    });
+  }
+
+  for (const largura of [1280, 390] as const) {
+    test(`${largura} px — E208: no Passo 1 do anúncio novo, só o estado dele (sem a faixa do rascunho antigo)`, async ({ browser }) => {
+      const p = await entrar(browser, dono.email, senha);
+      await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+      const qual = p.getByTestId("qualificacao");
+      await expect(qual.getByTestId("rascunho-aviso")).toBeVisible({ timeout: 30_000 });
+      await p.getByTestId("qualificacao-depois").click();
+      await expect(p.getByTestId("passo-titulo")).toBeVisible({ timeout: 30_000 });
+      await expect(p.getByTestId("rascunho-aviso")).toHaveCount(0);
+      await expect(p.getByText("Retome de onde parou")).toHaveCount(0);
+      await expect(p.getByTestId("estado-salvamento")).toHaveText(/Anúncio novo|Salv/);
+      await p.screenshot({ path: `${SAIDA}/t571-passo1-sem-faixa-${largura}.png`, fullPage: true });
       await p.context().close();
     });
   }

@@ -318,7 +318,13 @@ test("33. toda taxa aplicada guarda a origem e a faixa no momento (proposta e ca
 test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca recebe a taxa", () => {
   const acoes = ler("./data/propostas-actions.ts");
   assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, Number\(v\.meses\), tx\.taxa_no_envio\);/);
-  assert.match(acoes, /if \(papel === "owner"\) \{[\s\S]{0,900}userId: p\.owner_id,/);
+  // E205-B: o aceite manda os dois e-mails (emailsDoAceite) — a taxa vai SÓ no do dono.
+  assert.match(acoes, /await emailsDoAceite\(admin, p, termosDaLinha\(v\), linhaTaxa\);/);
+  const ini = acoes.indexOf("async function emailsDoAceite(");
+  const bloco = acoes.slice(ini, acoes.indexOf("\n}\n", ini));
+  const [paraDono, paraMorador] = bloco.split("userId: p.tenant_id");
+  assert.match(paraDono, /userId: p\.owner_id,[\s\S]*escaparHtml\(linhaTaxa\)/);
+  assert.doesNotMatch(paraMorador, /linhaTaxa/);
   // A mensagem da conversa (que o morador lê) não leva a taxa.
   const mensagem = /`Proposta \$\{p\.numero\} aceita\.[^`]*`/.exec(acoes)![0];
   assert.doesNotMatch(mensagem, /taxa|comiss/i);

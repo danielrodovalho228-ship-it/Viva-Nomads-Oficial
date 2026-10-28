@@ -5,6 +5,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { AvisoAtendimentoAdmin } from "@/components/admin/aviso-atendimento";
 import { adminDaPagina, idsContasTeste } from "@/lib/data/admin-indicadores";
 import { atividadeRecente, numerosDaInicial } from "@/lib/data/admin-contagens";
+import { interesseEspacoTrabalho } from "@/lib/data/admin-espaco-trabalho";
 import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 import { ROTULOS_NUMEROS, RODAPE_CONTAGENS, primeirosSemDuplicata, textoRealTeste } from "@/lib/admin/contagens";
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
@@ -32,10 +33,11 @@ export default async function AdminPage() {
   const admin = (await adminDaPagina()) ? createAdminClient() : null;
   const agora = new Date();
   const teste = admin ? await idsContasTeste(admin).catch(() => new Set<string>()) : new Set<string>();
-  const [numeros, decisoes, atividade] = await Promise.all([
+  const [numeros, decisoes, atividade, espaco] = await Promise.all([
     admin ? numerosDaInicial(admin, teste).catch(() => null) : null,
     admin ? decisoesDoAdmin(agora).catch(() => null) : null,
     admin ? atividadeRecente(admin, teste).catch(() => []) : [],
+    admin ? interesseEspacoTrabalho(admin).catch(() => null) : null,
   ]);
   // As filas de Pendências (a mesma leitura do topo de /admin/pendencias), as 5 primeiras; duas filas que levam ao mesmo
   // lugar contam uma vez só.
@@ -107,6 +109,20 @@ export default async function AdminPage() {
           )}
         </Panel>
       </div>
+
+      {espaco && (
+        <Panel title="Interesse em espaço de trabalho" className="mt-6" data-testid="admin-espaco-trabalho">
+          <ul className="grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
+            {([["oferecem", "Têm sala ou consultório"], ["procuram", "Procuram espaço fora de casa"], ["coworking", "Querem coworking"], ["responderam", "Responderam"]] as const).map(([k, rotulo]) => (
+              <li key={k} data-testid={`admin-espaco-${k}`} data-reais={espaco[k].reais} data-teste={espaco[k].teste}>
+                <span className="block text-muted">{rotulo}</span>
+                <span className="mt-1 block font-title text-2xl font-semibold text-ink tabular-nums">{espaco[k].reais}</span>
+                {espaco[k].teste > 0 && <span className="block text-xs text-muted">+ {espaco[k].teste} de teste</span>}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
 
       <p className="mt-6 text-sm" data-testid="admin-saude" data-alertas={alertas}>
         {/* E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção"; aqui só o estado geral. */}

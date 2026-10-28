@@ -12,6 +12,18 @@ import { emailCodigo2fa, emailCodigoVinculo, emailCodigoAssinatura, emailDocumen
 import { REMETENTE } from "./remetente.ts";
 import { templatesSupabase } from "./templates-supabase.ts";
 import { emailDecisaoDocumento, linhasDoAviso } from "../documento/aviso-decisao.ts";
+import {
+  TEXTO_EXPIRADA_DONO,
+  TEXTO_EXPIRADA_MORADOR,
+  boasVindas,
+  detalhes,
+  propostaAceitaDono,
+  propostaAceitaMorador,
+  propostaRecusada,
+  vesperaTexto,
+  visitaCancelada,
+  type EmailPassos,
+} from "./emails-e205b.ts";
 import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
 import { textoResposta } from "../automacao/textos-vinculo.ts";
 import { escaparHtml } from "../escapar-html.ts";
@@ -110,8 +122,40 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
     );
   prop("proposta:recebida", "proposta_recebida", ASSUNTOS.propostaRecebida, "nova", "tenant");
   prop("proposta:contraproposta", "proposta_recebida", ASSUNTOS.propostaRecebida, "contraproposta", "owner");
-  prop("proposta:aceita", "proposta_respondida", ASSUNTOS.propostaAceita, "aceita", "owner");
-  prop("proposta:recusada", "proposta_respondida", ASSUNTOS.propostaRespondida, "recusada", "tenant");
+  // E205-B (b)(c): aceite = dois e-mails (dono e morador); recusa = "{Primeiro nome} recusou a proposta", por lado.
+  const comPassos = (chave: string, ev: NotificationEvent, e: EmailPassos, antes = "") => {
+    const d = detalhes({ titulo: e.titulo, passos: e.passos, rodape: e.rodape });
+    lista.push(doApp(chave, montarNotificacao({ siteUrl, event: ev, ...nome, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, pushUrl: e.url, detailsHtml: antes + d.html, detailsText: d.texto })));
+  };
+  const quadroDe = (d: Desfecho, papel: "owner" | "tenant") => quadro(lp(null), proximoPassoProposta(d, papel));
+  comPassos("proposta:aceita", "proposta_aceita", propostaAceitaDono({ nomeMorador: "Ana Souza", leadId: PROP }), quadroDe("aceita", "owner"));
+  comPassos("proposta:aceita:morador", "proposta_aceita", propostaAceitaMorador({ dataEntrada: "2026-11-01", propostaId: PROP }), quadroDe("aceita", "tenant"));
+  const recusa = (chave: string, quem: "owner" | "tenant", nomeQuem: string) => {
+    const e = propostaRecusada({ quemRecusou: quem, nomeDeQuemRecusou: nomeQuem, motivo: "Datas", texto: "Preciso entrar só em dezembro", propostaId: PROP, cidade: "Uberlândia" });
+    comPassos(chave, "proposta_recusada", e, quadroDe("recusada", quem === "tenant" ? "owner" : "tenant"));
+  };
+  recusa("proposta:recusada", "tenant", "Ana Souza");
+  recusa("proposta:recusada:morador", "owner", "Carlos Lima");
+  // E205-B (a): boas-vindas, uma por perfil.
+  comPassos("boas_vindas:morador", "boas_vindas", boasVindas("morador"));
+  comPassos("boas_vindas:proprietario", "boas_vindas", boasVindas("proprietario"));
+  // E205-B (d): visitas — cancelada (por lado), expirada (por lado) e véspera (presencial morador/dono, vídeo).
+  const HORA = "qui., 05/11 às 10:00 (horário de Brasília)";
+  const comLinhas = (chave: string, ev: NotificationEvent, t: { abertura: (n?: string) => string; linhas: { rotulo: string; valor: string }[]; cta: string; url: string }) => {
+    const externo = /^https:\/\//.test(t.url) ? { label: t.cta, url: t.url } : null;
+    const d = detalhes({ linhas: t.linhas, externo });
+    lista.push(doApp(chave, montarNotificacao({ siteUrl, event: ev, ...nome, body: t.abertura, ctaLabel: externo ? undefined : t.cta, pushUrl: externo ? "/dashboard/visitas" : t.url, detailsHtml: d.html, detailsText: d.texto })));
+  };
+  comLinhas("visita:cancelada:morador", "visita_cancelada", visitaCancelada({ quemCancelou: "dono", nomeDeQuemCancelou: "Carlos Lima", motivo: "O imóvel foi alugado", horario: HORA, tipo: "presencial", imovel: IM.titulo, propertyId: PROP, paraMorador: true }));
+  comLinhas("visita:cancelada:dono", "visita_cancelada", visitaCancelada({ quemCancelou: "morador", nomeDeQuemCancelou: "Ana Souza", motivo: null, horario: HORA, tipo: "por vídeo", imovel: IM.titulo, propertyId: PROP, paraMorador: false }));
+  const expirada = (chave: string, texto: string, cta: string, url: string) =>
+    comLinhas(chave, "visita_expirada", { abertura: (n) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, linhas: [{ rotulo: "Imóvel", valor: IM.titulo }, { rotulo: "Horários propostos", valor: HORA }], cta, url });
+  expirada("visita:expirada:morador", TEXTO_EXPIRADA_MORADOR, "Pedir outros horários", `/imoveis/${PROP}`);
+  expirada("visita:expirada:dono", TEXTO_EXPIRADA_DONO, "Ver as visitas", "/dashboard/visitas?de=dono");
+  const END = { texto: "Rua Modesta Maria, 120, apto 302 · Santa Mônica · Uberlândia", mapa: "https://www.google.com/maps/search/?api=1&query=Rua%20Modesta%20Maria%2C%20120" };
+  comLinhas("visita:vespera:presencial-morador", "visita_vespera", vesperaTexto({ modalidade: "presencial", paraMorador: true, horario: HORA, imovel: IM.titulo, endereco: END }));
+  comLinhas("visita:vespera:presencial-dono", "visita_vespera", vesperaTexto({ modalidade: "presencial", paraMorador: false, horario: HORA, imovel: IM.titulo, nomeMorador: "Ana Souza" }));
+  comLinhas("visita:vespera:video", "visita_vespera", vesperaTexto({ modalidade: "video", paraMorador: true, horario: HORA, imovel: IM.titulo, linkChamada: "https://meet.google.com/abc-defg-hij" }));
   const lc = linhasContrato({ imovel: IM, inicio: "2026-11-01", fim: "2027-02-28", meses: 4, valorMensal: 2700 });
   lista.push(doApp("contrato:pronto", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoPronto, body: (n) => aberturaContratoPronto({ nome: n, imovel: IM }), detailsHtml: quadro(lc, PROXIMO_PASSO_CONTRATO_PRONTO), ctaLabel: "Ler e assinar o contrato" })));
   lista.push(doApp("contrato:falta-voce", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoFaltaVoce, body: (n) => aberturaAssinatura({ nome: n, imovel: IM, asDuas: false, quemAssinou: "tenant" }), detailsHtml: quadro(lc, proximoPassoAssinatura(false, "owner")) })));
