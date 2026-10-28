@@ -187,6 +187,12 @@ for (const largura of LARGURAS) {
 
 // ─────────────────────────── 2. Barra inferior por papel ───────────────────────────
 
+// MENUS-5 (#1392): as abas saem de src/config/abas-painel.ts (fonte única; o teste tests/laboratorio/t262-abas-fonte-unica
+// confere estas listas com ela). O Perfil saiu da barra: a Conta abre no avatar do topo (conta-<papel>-celular).
+const NOMES_MORADOR = ["Início", "Buscar", "Pedidos", "Mensagens"]; // sem contrato; com contrato entra "Estadia" no fim
+const NOMES_PROPRIETARIO = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
+const NOMES_PARCEIRO = ["Início", "Pedidos", "Agenda", "Ganhos", "Mensagens"];
+
 async function abas(page: Page): Promise<{ nome: string; href: string | null }[]> {
   const barra = page.locator('nav[aria-label="Navegação principal"]');
   await expect(barra).toBeVisible();
@@ -199,21 +205,21 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
   test.describe("morador", () => {
     test.skip(!hasAccount("inquilino"), "sem a conta do inquilino");
     test.use({ storageState: authFile("inquilino") });
-    test("Início · Buscar · Mensagens · Estadias · Perfil; cabeçalho com foto e 'Morador'", async ({ page }) => {
+    test("Início · Buscar · Pedidos · Mensagens (+ Estadia com contrato); a Conta no avatar do topo", async ({ page }) => {
       // Rota só do morador: a casca acerta o modo (outra spec pode ter trocado o modo da conta).
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
       await expect(async () => {
-        expect(await abas(page)).toEqual([
+        const lista = await abas(page);
+        // "Estadia" só aparece com contrato (a conta de teste pode ou não ter um): as 4 primeiras são fixas.
+        expect(lista.slice(0, 4)).toEqual([
           { nome: "Início", href: "/dashboard" },
           { nome: "Buscar", href: "/buscar" },
+          { nome: "Pedidos", href: "/dashboard/pedidos" },
           { nome: "Mensagens", href: "/dashboard/mensagens" },
-          { nome: "Estadias", href: "/dashboard/locacoes" },
-          { nome: "Perfil", href: "/dashboard/conta" },
         ]);
+        expect(lista.slice(4)).toEqual(lista.length === 5 ? [{ nome: "Estadia", href: "/dashboard/locacoes" }] : []);
       }).toPass({ timeout: 20_000 });
-      const papel = page.locator('[data-testid="papel-ativo"]').locator("visible=true").first();
-      await expect(papel).toHaveAttribute("data-papel", "morador");
-      await expect(papel).toContainText("Morador");
+      await expect(page.getByTestId("conta-morador-celular")).toBeVisible();
       const sombra = await page.locator('nav[aria-label="Navegação principal"]').evaluate((el) => getComputedStyle(el).boxShadow);
       expect(sombraVisivel(sombra)).toBe(SOMBRA_FLUTUANTE);
       expect(await semRolagem(page)).toBeLessThanOrEqual(0);
@@ -223,14 +229,14 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
   test.describe("proprietário", () => {
     test.skip(!hasAccount("proprietario"), "sem a conta do proprietário");
     test.use({ storageState: authFile("proprietario") });
-    test("Início · Anúncios · Mensagens · Ganhos ('pago direto na sua conta') · Perfil", async ({ page }) => {
+    test("Início · Anúncios · Interessados · Contratos · Mensagens; a Conta no avatar do topo", async ({ page }) => {
       await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
       await expect(async () => {
-        expect((await abas(page)).map((a) => a.nome)).toEqual(["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"]);
+        expect((await abas(page)).map((a) => a.nome)).toEqual(NOMES_PROPRIETARIO);
       }).toPass({ timeout: 20_000 });
-      const ganhos = page.locator('nav[aria-label="Navegação principal"]').getByRole("link", { name: "Ganhos: pago direto na sua conta" });
-      await expect(ganhos).toHaveAttribute("href", "/dashboard/contratos");
-      await expect(page.locator('[data-testid="papel-ativo"]').locator("visible=true").first()).toHaveAttribute("data-papel", "proprietario");
+      const contratos = page.locator('nav[aria-label="Navegação principal"]').getByRole("link", { name: "Contratos" });
+      await expect(contratos).toHaveAttribute("href", "/dashboard/contratos");
+      await expect(page.getByTestId("conta-dono-celular")).toBeVisible();
     });
   });
 
@@ -247,7 +253,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       const barra = page.locator('nav[aria-label="Navegação principal"]');
       await expect(barra).toBeVisible({ timeout: 20_000 });
       await expect(barra.getByRole("link")).toHaveCount(5);
-      await expect(page.locator('[data-testid="papel-ativo"]').locator("visible=true").first()).toHaveAttribute("data-papel", /^(proprietario|morador)$/);
+      await expect(page.locator('[data-testid="conta-dono-celular"], [data-testid="conta-morador-celular"]').locator("visible=true").first()).toBeVisible();
     });
   });
 
@@ -283,14 +289,14 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
           { nome: "Pedidos", href: "/dashboard/parceiro#pedidos" },
           { nome: "Agenda", href: "/dashboard/parceiro#agenda" },
           { nome: "Ganhos", href: "/dashboard/parceiro#ganhos" },
-          { nome: "Perfil", href: "/dashboard/conta" },
+          { nome: "Mensagens", href: "/dashboard/mensagens" },
         ]);
       }).toPass({ timeout: 25_000 });
       for (const id of ["pedidos", "agenda", "ganhos"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
-      await expect(page.locator('[data-testid="papel-ativo"]').locator("visible=true").first()).toHaveAttribute("data-papel", "parceiro");
+      await expect(page.getByTestId("conta-parceiro-celular")).toBeVisible();
       // Fora do painel do parceiro (sem a preferência ligada no Perfil), a barra volta ao modo da conta.
-      await page.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
-      await expect(async () => expect((await abas(page)).map((a) => a.nome)).toContain("Estadias")).toPass({ timeout: 20_000 });
+      await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
+      await expect(async () => expect((await abas(page)).map((a) => a.nome).slice(0, 4)).toEqual(NOMES_MORADOR)).toPass({ timeout: 20_000 });
       await page.context().close();
     });
 
@@ -299,7 +305,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       await adm().from("parceiro_solicitacoes").insert({ user_id: ids.pedido, email: pedido.email, nome: pedido.nome }).then(() => undefined, () => undefined);
       const page = await entrar(browser, pedido.email, senha);
       await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
-      await expect(async () => expect((await abas(page)).map((a) => a.nome)).toEqual(["Início", "Buscar", "Mensagens", "Estadias", "Perfil"])).toPass({ timeout: 20_000 });
+      await expect(async () => expect((await abas(page)).map((a) => a.nome)).toEqual(NOMES_MORADOR)).toPass({ timeout: 20_000 });
       await page.context().close();
     });
 
@@ -316,11 +322,11 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       await expect(page.getByTestId("usar-como-parceiro")).toHaveCount(0);
       await expect(page.getByRole("radio", { name: /Propriet|Inquilino/ })).toHaveCount(0);
       await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
-      await expect.poll(nomes, { timeout: 20_000 }).toEqual(["Início", "Pedidos", "Agenda", "Ganhos", "Perfil"]);
+      await expect.poll(nomes, { timeout: 20_000 }).toEqual(NOMES_PARCEIRO);
       await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-      await expect.poll(nomes, { timeout: 20_000 }).toEqual(["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"]);
-      await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
-      await expect.poll(nomes, { timeout: 20_000 }).toEqual(["Início", "Buscar", "Mensagens", "Estadias", "Perfil"]);
+      await expect.poll(nomes, { timeout: 20_000 }).toEqual(NOMES_PROPRIETARIO);
+      await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
+      await expect.poll(nomes, { timeout: 20_000 }).toEqual(NOMES_MORADOR);
       await page.context().close();
     });
   });
