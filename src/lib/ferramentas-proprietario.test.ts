@@ -191,3 +191,13 @@ test("p27 item 8 — carteira de teste: 3 imóveis [TESTE QA] (fora da busca), 2
   assert.match(acoes, /exigirAdminAal2/);
   assert.match(acoes, /like\("title", `\$\{PREFIXO_CARTEIRA_TESTE\}%`\)/, "limpar só mexe no que tem o prefixo");
 });
+
+test("E183 — 'vence hoje' só no próprio dia de Brasília da validade (a data que a tela mostra)", () => {
+  // Válida até 26/10 às 10h (BRT). Em 25/10 às 11h (BRT), faltam menos de 24 h, mas a data é amanhã.
+  assert.equal(textoVencimento("2026-10-26T13:00:00Z", new Date("2026-10-25T14:00:00Z")), "vence amanhã");
+  // Em 25/10 às 23h30 (BRT) ainda é amanhã; em 26/10 às 0h30 (BRT) já é hoje.
+  assert.equal(textoVencimento("2026-10-26T13:00:00Z", new Date("2026-10-26T02:30:00Z")), "vence amanhã");
+  assert.equal(textoVencimento("2026-10-26T13:00:00Z", new Date("2026-10-26T03:30:00Z")), "vence hoje");
+  // Depois da hora: venceu.
+  assert.equal(textoVencimento("2026-10-26T13:00:00Z", new Date("2026-10-26T13:00:01Z")), "venceu");
+});
