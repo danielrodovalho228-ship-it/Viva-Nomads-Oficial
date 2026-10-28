@@ -41,6 +41,8 @@ async function abrirPerfil(page: Page, w: number) {
 async function abrirPerfilModoDono(page: Page, w: number) {
   await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
   await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+  // A troca de modo acontece no cliente: espera as abas do dono antes de sair da tela.
+  await expect(page.getByTestId("abas-dono")).toBeVisible({ timeout: 30_000 });
   await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
 }
 
@@ -121,7 +123,7 @@ test.describe("T552 — Por que estou na cidade: o cartão na Conta e o sigilo a
       await page.screenshot({ path: `tests/laboratorio/saida/t552-leads-aceito-${w}.png` });
       await page.context().close();
     });
-    test(`5. a ${w} px: controle — a mesma moradora em modo dono abre a Perfil no modo dono`, async ({ browser }) => {
+    test(`5. a ${w} px: controle — uma moradora em modo dono abre a Perfil no modo dono`, async ({ browser }) => {
       const page = await entrar(browser, anaDono.email, senha);
       await abrirPerfilModoDono(page, w);
       // Modo dono: o bloco "Perfil profissional" (só morador) some; a tela carregou (Idiomas é dos dois modos).
