@@ -26,8 +26,16 @@ export interface PrimarioRodape {
  * "Publicar anúncio"). Fica preso no fim da tela na largura toda (fixed); um espaçador da mesma altura no fim da página
  * reserva o lugar dele, então nunca cobre o conteúdo.
  */
-export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() => void) | null; primario: PrimarioRodape }) {
-  const pct = progressoPasso(p.pos, p.total);
+export function RodapeAssistente(p: {
+  pos: number;
+  total: number;
+  onVoltar: (() => void) | null;
+  primario: PrimarioRodape;
+  /** E194: a Qualificação usa o mesmo rodapé com o seu texto ("Antes do Passo 1 · …") e a barra contínua. */
+  texto?: string;
+  pct?: number;
+}) {
+  const pct = p.pct ?? progressoPasso(p.pos, p.total);
   return (
     <>
       <div aria-hidden className="h-32" data-testid="assistente-rodape-espaco" />
@@ -45,7 +53,7 @@ export function RodapeAssistente(p: { pos: number; total: number; onVoltar: (() 
             )}
             {/* No celular, ao lado do "Publicar anúncio", o passo cabe inteiro em texto menor (nunca cortado). */}
             <p className="whitespace-nowrap text-xs text-muted sm:text-sm" aria-live="polite" data-testid="passo-texto">
-              {textoPasso(p.pos, p.total)}
+              {p.texto ?? textoPasso(p.pos, p.total)}
             </p>
           </div>
           <Button

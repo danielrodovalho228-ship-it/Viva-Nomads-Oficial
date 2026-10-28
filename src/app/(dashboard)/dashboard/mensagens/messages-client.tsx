@@ -27,6 +27,7 @@ import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
 import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapidas-conversa";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
+import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -51,7 +52,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // cartão de outra (QA 21/10, "cartão residual nas Conversas").
   const pedida = (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("conversa") : null) ?? abrir;
   const existe = !!pedida && initial.some((c) => c.id === pedida);
-  const [activeId, setActiveId] = useState<string>((existe ? pedida : initial[0]?.id) ?? "");
+  // E200: conversa pedida que não está na lista não abre nenhuma — nunca a primeira da lista (de outra pessoa).
+  const [activeId, setActiveId] = useState<string>(conversaInicial(pedida, initial.map((c) => c.id)) ?? "");
+  const [naoEncontrada, setNaoEncontrada] = useState(!demo && !!pedida && !existe);
   const [draft, setDraft] = useState("");
   // Prompt 55-E2: o texto do campo veio de uma resposta rápida? Então contato direto BLOQUEIA (não mascara).
   const [deRapida, setDeRapida] = useState(false);
@@ -92,7 +95,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const visiveis = filtrarConversas(conversations, filtro);
   // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou. E168: filtro sem conversa =
   // painel da direita vazio (nunca a conversa de outro filtro).
-  const active = visiveis.find((c) => c.id === activeId) ?? visiveis[0];
+  const active = naoEncontrada ? undefined : (visiveis.find((c) => c.id === activeId) ?? visiveis[0]);
 
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
@@ -112,6 +115,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   }, [demo, conversaAbertaId]);
 
   function openConversation(id: string) {
+    setNaoEncontrada(false);
     setActiveId(id);
     setMobileView("chat");
     if (!demo) {
@@ -208,6 +212,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           </button>
         ))}
       </div>
+      {naoEncontrada && (
+        <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="mensagens-conversa-nao-encontrada">
+          {TEXTO_CONVERSA_NAO_ENCONTRADA}
+        </p>
+      )}
       <div className="grid h-[75vh] overflow-hidden rounded-xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
         {/* Lista — no mobile some quando uma conversa está aberta */}
         <aside
@@ -254,7 +263,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         {!active ? (
           <section className="hidden flex-col items-center justify-center gap-2 p-8 text-center md:col-span-2 md:flex" data-testid="mensagens-detalhe-vazio">
             <p className="font-semibold text-ink">Nenhuma conversa aberta</p>
-            <p className="max-w-sm text-sm text-muted">Não há conversa neste filtro. Escolha outro filtro para ver as suas conversas.</p>
+            <p className="max-w-sm text-sm text-muted">
+              {naoEncontrada ? "Escolha uma conversa da lista." : "Não há conversa neste filtro. Escolha outro filtro para ver as suas conversas."}
+            </p>
           </section>
         ) : (
         <section
@@ -330,6 +341,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             />
           )}
           <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-4">
+            {active.messages.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted" data-testid="conversa-nova-vazia">
+                {TEXTO_CONVERSA_NOVA}
+              </p>
+            )}
             {active.messages.map((m) => (
               <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
                 <span

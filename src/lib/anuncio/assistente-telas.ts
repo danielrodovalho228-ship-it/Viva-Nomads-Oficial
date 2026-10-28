@@ -32,6 +32,13 @@ export const TELAS_ASSISTENTE: readonly TelaAssistente[] = [
 export const textoPasso = (pos: number, total = TELAS_ASSISTENTE.length) => `Passo ${pos + 1} de ${total}`;
 /** Largura da barra de progresso (0–100). */
 export const progressoPasso = (pos: number, total = TELAS_ASSISTENTE.length) => Math.round(((pos + 1) / total) * 100);
+/**
+ * E194: a Qualificação mora na MESMA moldura do assistente, antes do Passo 1. O rodapé diz onde a pessoa está e a barra
+ * é contínua: sobe durante as 5 telas até chegar exatamente onde o Passo 1 começa (sem recomeçar do zero).
+ */
+export const textoQualificacao = (tela: number, telas = 5) => `Antes do Passo 1 · Qualificação ${Math.min(tela, telas)} de ${telas}`;
+export const progressoQualificacao = (tela: number, telas = 5, total = TELAS_ASSISTENTE.length) =>
+  Math.round((Math.min(Math.max(tela, 0), telas) / telas) * progressoPasso(0, total));
 
 /**
  * Passo 1 (Cadastro 01-b / E87, mockup cadastro-imovel-01): os NOVE tipos, todos em cartões-foto numa linha única
