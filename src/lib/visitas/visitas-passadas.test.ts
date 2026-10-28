@@ -27,3 +27,8 @@ test("cartão: sem cancelar o que já passou; confirmada sem endereço não prom
   assert.match(tela, /passou \? null : <AcoesMorador/);
   assert.match(tela, /data-testid="visita-endereco-pendente"/);
 });
+
+test("E184: visita por vídeo que já passou não mostra mais 'Entrar na chamada'", () => {
+  const cartao = readFileSync("src/components/visitas/cartao-visita.tsx", "utf8");
+  assert.match(cartao, /v\.modalidade === "video" && v\.linkChamada && !passou && \(/);
+});
