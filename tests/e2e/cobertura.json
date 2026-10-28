@@ -1140,7 +1140,8 @@
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t589-varredura-bloco47"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1335,7 +1336,8 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t489-e176-menus",
-        "t566-e184-visitas-passadas"
+        "t566-e184-visitas-passadas",
+        "t589-varredura-bloco47"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1344,7 +1346,8 @@
         "proprietario"
       ],
       "specs": [
-        "t593-e211-visita-do-dono"
+        "t593-e211-visita-do-dono",
+        "t589-varredura-bloco47"
       ]
     },
     "/decisao": {
@@ -1819,7 +1822,8 @@
         "t271-admin-visual",
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
-        "t537-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas",
+        "t589-varredura-bloco47"
       ]
     },
     "/admin/solicitacoes": {
