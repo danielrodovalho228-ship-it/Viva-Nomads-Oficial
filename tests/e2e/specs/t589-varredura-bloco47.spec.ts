@@ -57,8 +57,23 @@ const CLIQUE = "clique no botão primário sem resposta visível em 3 s";
 
 test.describe("T589 — varredura da página inteira, bloco 47 (E197 e E211) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
+  let criada = false;
   test.beforeAll(async () => {
     if (!MASSA) return;
+    // Uma visita aberta por (morador, imóvel, modalidade): reaproveita a que já existir (outro worker ou o retry).
+    const { data: aberta } = await adm()
+      .from("visitas_video")
+      .select("id")
+      .eq("tenant_id", MASSA.ids.INQUILINA)
+      .eq("property_id", MASSA.imovel17)
+      .eq("modalidade", "presencial")
+      .in("status", ["pedido", "remarcar", "confirmado"])
+      .limit(1)
+      .maybeSingle();
+    if (aberta) {
+      visitaId = (aberta as { id: string }).id;
+      return;
+    }
     const amanha = new Date(Date.now() + 24 * 3600_000);
     amanha.setUTCHours(18, 0, 0, 0);
     const { data, error } = await adm()
@@ -68,9 +83,10 @@ test.describe("T589 — varredura da página inteira, bloco 47 (E197 e E211) (39
       .single();
     if (error) throw error;
     visitaId = (data as { id: string }).id;
+    criada = true;
   });
   test.afterAll(async () => {
-    if (visitaId) await adm().from("visitas_video").delete().eq("id", visitaId);
+    if (visitaId && criada) await adm().from("visitas_video").delete().eq("id", visitaId);
   });
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
