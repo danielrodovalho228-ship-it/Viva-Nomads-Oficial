@@ -621,7 +621,8 @@
         "t542-menus5-e85-estrutura",
         "t549-varredura-bloco39",
         "t559-varredura-bloco43",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t562-e190-modo-um-toque"
       ]
     },
     "/dashboard/assinatura": {
@@ -744,7 +745,8 @@
         "t403-nav-a",
         "t402-conta-leva2",
         "t482-e170-caixas-vazias",
-        "t542-menus5-e85-estrutura"
+        "t542-menus5-e85-estrutura",
+        "t561-e192-por-que-na-cidade"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1475,7 +1477,8 @@
         "t439-e101-deteccao-espelho",
         "t440-e98-imovel",
         "t408-varredura-bloco27",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t563-e191-tem-completo"
       ]
     },
     "/modelodenegocio": {
