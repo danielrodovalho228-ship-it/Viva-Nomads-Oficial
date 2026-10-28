@@ -63,7 +63,7 @@ test("a inicial: rodapé, saúde e no máximo ~6 leituras em paralelo", () => {
   // E176 (D3): a saúde não repete o alerta do backup (ele mora em "Precisa da sua atenção").
   assert.match(pagina, /Há alertas em “Precisa da sua atenção”\./);
   const bloco = pagina.slice(pagina.indexOf("await Promise.all(["), pagina.indexOf("]);", pagina.indexOf("await Promise.all([")));
-  assert.equal(bloco.split("\n").filter((l) => /^\s+\S.*,$/.test(l)).length, 3, "3 leituras na inicial");
+  assert.equal(bloco.split("\n").filter((l) => /^\s+\S.*,$/.test(l)).length, 4, "4 leituras na inicial (a 4ª é a contagem de espaço de trabalho, ordem 286312f8)");
   assert.match(pagina, /l\.chave === "backup"/, "a saúde usa a mesma leitura das filas");
   assert.match(pagina, /numerosDaInicial\(admin, teste\)/, "as contas de teste são lidas uma vez só");
 });

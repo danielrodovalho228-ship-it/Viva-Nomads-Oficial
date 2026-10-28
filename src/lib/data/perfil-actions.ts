@@ -10,6 +10,7 @@ import { DOCUMENTO_VAZIO_PF, documentoCompleto, mascararCnpj, mascararCpf, msgDo
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin, validarMotivoEstadia } from "@/lib/conta-validacao";
 import { validarPorQueNaCidade, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
+import { validarEspacoTrabalho, type EspacoTrabalho } from "@/lib/perfil/espaco-trabalho";
 import { validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
 import {
   isCategoriaKey,
@@ -120,6 +121,42 @@ export async function setMeuPorQueNaCidade(entrada: {
       cidade_empresa: v.valor.empresa,
       cidade_frase: v.valor.frase,
     })
+    .eq("id", user.id);
+  if (error) return { ok: false, error: "Não foi possível salvar agora." };
+  revalidatePath("/dashboard/conta");
+  return { ok: true };
+}
+
+/** Lê as MINHAS respostas sobre espaço de trabalho (ordem 286312f8). */
+export async function getMeuEspacoTrabalho(): Promise<EspacoTrabalho | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase
+    .from("profiles")
+    .select("espaco_trabalho_oferta, espaco_trabalho_procura")
+    .eq("id", user.id)
+    .maybeSingle();
+  const v = validarEspacoTrabalho({ oferta: data?.espaco_trabalho_oferta, procura: data?.espaco_trabalho_procura });
+  return v.ok ? v.valor : { oferta: null, procura: null };
+}
+
+/** Grava as MINHAS respostas sobre espaço de trabalho (validado aqui; RLS: só o próprio perfil). */
+export async function setMeuEspacoTrabalho(entrada: { oferta?: string; procura?: string }): Promise<Result> {
+  const v = validarEspacoTrabalho(entrada ?? {});
+  if (!v.ok) return { ok: false, error: v.erro };
+  const supabase = await createClient();
+  if (!supabase) return { ok: true }; // demo/preview: sem servidor
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessão expirada." };
+  const { error } = await supabase
+    .from("profiles")
+    .update({ espaco_trabalho_oferta: v.valor.oferta, espaco_trabalho_procura: v.valor.procura })
     .eq("id", user.id);
   if (error) return { ok: false, error: "Não foi possível salvar agora." };
   revalidatePath("/dashboard/conta");

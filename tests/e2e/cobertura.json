@@ -6718,6 +6718,24 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/perfil-actions.ts#getMeuEspacoTrabalho": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t590-espaco-trabalho-interesse"
+      ]
+    },
+    "src/lib/data/perfil-actions.ts#setMeuEspacoTrabalho": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t590-espaco-trabalho-interesse"
+      ]
     }
   }
 }
