@@ -175,7 +175,7 @@ export function DadosPessoais() {
             <Check className="h-4 w-4" /> Dados salvos.
           </p>
         )}
-        <Button type="submit" size="lg" className="w-full" disabled={salvando} data-testid="dados-salvar">
+        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando} data-testid="dados-salvar">
           {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Salvar
         </Button>

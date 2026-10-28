@@ -14,7 +14,7 @@ import { NO_LABORATORIO, TELEFONE_LAB, adm, apagarContas, criarConta, criarImove
    4. excluir: some para o dono e quem respondeu recebe aviso;
    5. chave ligada pela equipe: pedido novo sem telefone não aparece; o que já estava publicado continua (7 dias) e o
       inquilino recebe o aviso; desligar volta na hora;
-   6. portas: "Publicar pedido" na busca (inclusive barra condensada), cartão com menos de 3 reais, home e menu.
+   6. portas: "Publicar pedido" na busca (inclusive barra condensada), cartão com menos de 3 reais, home e a aba Pedidos.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -288,9 +288,9 @@ test.describe("T232 — pedido de moradia completo", () => {
     await ctx.close();
     await inquilino.setViewportSize({ width: 1280, height: 900 });
     await inquilino.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    // O item fica dentro de "Minha moradia": o grupo começa fechado (os links só existem com ele aberto).
-    const item = inquilino.locator('a[href="/pedidos/novo"]', { hasText: "Publicar pedido de moradia" });
-    if ((await item.count()) === 0) await inquilino.getByRole("button", { name: "Minha moradia" }).first().click();
-    await expect(item.first()).toBeVisible();
+    // MENUS-5 (#1392): sem menu lateral; a porta no painel é a aba Pedidos, com "Novo pedido" (→ /pedidos/novo).
+    await inquilino.getByTestId("aba-morador-pedidos").click();
+    await expect(inquilino).toHaveURL(/\/dashboard\/pedidos$/, { timeout: 20_000 });
+    await expect(inquilino.locator('main a[href="/pedidos/novo"]', { hasText: "Novo pedido" }).first()).toBeVisible({ timeout: 20_000 });
   });
 });

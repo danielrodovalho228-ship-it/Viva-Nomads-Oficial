@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    1. O Resumo do Fechamento mostra o estado REAL do contrato: com contrato já assinado pelas duas partes →
       "Aguardando 1º pagamento" (selo da fonte única, complemento de 19/10) + "Este contrato foi gerado em …" + "Ver contrato"; com
       contrato novo → "Aguardando assinatura · falta você e o inquilino".
-   2. "Contratos" no painel do inquilino (com o número do que falta assinar no menu); Locações só com as assinadas.
+   2. "Contratos" no painel do inquilino (achado pelas abas, Estadia › Contrato); Locações só com as assinadas.
    3. 1º pagamento → "Em vigência" nos dois lados.
    4. /admin › Dados de teste › "Nova jornada de teste": cria candidatura nova pronta para o Fechamento; de novo →
       devolve a mesma (idempotente); a candidatura e o contrato antigos ficam.
@@ -112,7 +112,7 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
     await page.context().close();
   });
 
-  test("2. inquilino: 'Contratos' com 'Assinar agora' e o número no menu; Locações só com o assinado", async ({ browser }) => {
+  test("2. inquilino: 'Contratos' com 'Assinar agora' e pelas abas; Locações só com o assinado", async ({ browser }) => {
     test.setTimeout(120_000);
     const page = await entrar(browser, inq.email, senha);
     for (const largura of [390, 1280]) {
@@ -128,12 +128,14 @@ test.describe("T210 — estado real do contrato, Contratos do inquilino e jornad
       await abrir(page, "/dashboard/locacoes");
       await expect(page.getByTestId("locacao-titulo")).toHaveCount(1, { timeout: 20_000 });
     }
-    // O número no menu "Contratos" (falta a assinatura dele em 1 contrato).
+    // MENUS-5 (#1392): sem menu lateral nem contador em "Contratos"; o caminho pelas abas é Estadia › Contrato,
+    // e ali está o "Assinar" do contrato que falta.
     await page.setViewportSize({ width: 1280, height: 900 });
     await abrir(page, "/dashboard");
-    const menu = page.getByTestId("menu-cascata").first();
-    await menu.getByRole("button", { name: "Minha moradia" }).click().catch(() => {});
-    await expect(menu.getByRole("link", { name: /^Contratos/ })).toContainText("1", { timeout: 20_000 });
+    await page.getByTestId("aba-morador-estadia").click();
+    await page.getByTestId("subaba-morador-contrato").click();
+    await expect(page).toHaveURL(/\/dashboard\/contratos$/, { timeout: 20_000 });
+    await expect(page.locator('[data-testid="contrato-inquilino"][data-chave="aguardando_assinatura"]').getByTestId("contrato-inquilino-assinar")).toBeVisible({ timeout: 20_000 });
     await page.context().close();
   });
 
