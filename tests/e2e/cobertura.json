@@ -913,7 +913,8 @@
         "t400-chacara-sem-internet",
         "t450-cadastro-moldura",
         "t411-varredura-bloco28",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t572-e196-uma-qualificacao"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {

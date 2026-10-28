@@ -65,7 +65,7 @@ test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () 
     const page = await entrar(browser, email, senha);
     await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
     await page.goto(`/qualificar?imovel=${imovelId}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Qualificação do imóvel" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "Requisitos e selo" })).toBeVisible({ timeout: 20_000 });
     return page;
   }
 
