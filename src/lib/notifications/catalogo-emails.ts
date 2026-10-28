@@ -6,6 +6,7 @@
 */
 import { assuntoChamado, assuntoManutencao, ASSUNTOS } from "./assuntos.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
+import { aberturaAssinatura, aberturaContratoPronto, aberturaProposta, linhasContrato, linhasProposta, proximoPassoAssinatura, proximoPassoProposta, PROXIMO_PASSO_CONTRATO_PRONTO, type Desfecho } from "./dados-negociacao.ts";
 import { blocoDados } from "./modelo-email.ts";
 import { emailCodigo2fa, emailCodigoVinculo, emailCodigoAssinatura, emailDocumentoFiscal, emailExclusaoConta, emailParceriaAprovada, montarNotificacao, type EmailMontado } from "./montar-email.ts";
 import { REMETENTE } from "./remetente.ts";
@@ -87,12 +88,34 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   }
   lista.push(doApp("manutencao:urgente", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: true, lembrete: false }), pushUrl: "/dashboard/solicitacoes" })));
   lista.push(doApp("manutencao:lembrete", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: false, lembrete: true }), pushUrl: "/dashboard/solicitacoes" })));
-  const proposta = blocoDados([{ rotulo: "Proposta", valor: "ORC-2026-0001" }]);
-  lista.push(doApp("proposta:recebida", montarNotificacao({ siteUrl, event: "proposta_recebida", ...nome, subject: ASSUNTOS.propostaRecebida, detailsHtml: proposta, pushUrl: `/dashboard/propostas/${PROP}` })));
-  lista.push(doApp("proposta:aceita", montarNotificacao({ siteUrl, event: "proposta_respondida", ...nome, subject: ASSUNTOS.propostaAceita, detailsHtml: proposta, pushUrl: `/dashboard/propostas/${PROP}` })));
-  lista.push(doApp("contrato:pronto", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoPronto })));
-  lista.push(doApp("contrato:falta-voce", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoFaltaVoce })));
-  lista.push(doApp("contrato:assinado", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoAssinado })));
+  // E202: proposta e contrato com os dados da negociação (imóvel, período, valores, prazo) e o próximo passo.
+  const IM = { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" };
+  const quadro = (l: { rotulo: string; valor: string }[], passo: string) => blocoDados(l) + `<p>${passo}</p>`;
+  const lp = (prazo: string | null) =>
+    linhasProposta({ numero: "ORC-2026-0001", imovel: IM, entrada: "2026-11-01", saida: "2027-02-28", meses: 4, valorMensal: 2700, contaTotal: "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250", responderAte: prazo });
+  const prop = (chave: string, ev: "proposta_recebida" | "proposta_respondida", assunto: string, d: Desfecho, papel: "owner" | "tenant") =>
+    lista.push(
+      doApp(
+        chave,
+        montarNotificacao({
+          siteUrl,
+          event: ev,
+          ...nome,
+          subject: assunto,
+          body: (n) => aberturaProposta(d, { nome: n, imovel: IM, novoValorMensal: 2700, motivo: d === "recusada" ? "Datas não servem" : null }),
+          detailsHtml: quadro(lp(d === "nova" || d === "contraproposta" ? "2026-10-30T18:00:00Z" : null), proximoPassoProposta(d, papel)),
+          pushUrl: `/dashboard/propostas/${PROP}`,
+        }),
+      ),
+    );
+  prop("proposta:recebida", "proposta_recebida", ASSUNTOS.propostaRecebida, "nova", "tenant");
+  prop("proposta:contraproposta", "proposta_recebida", ASSUNTOS.propostaRecebida, "contraproposta", "owner");
+  prop("proposta:aceita", "proposta_respondida", ASSUNTOS.propostaAceita, "aceita", "owner");
+  prop("proposta:recusada", "proposta_respondida", ASSUNTOS.propostaRespondida, "recusada", "tenant");
+  const lc = linhasContrato({ imovel: IM, inicio: "2026-11-01", fim: "2027-02-28", meses: 4, valorMensal: 2700 });
+  lista.push(doApp("contrato:pronto", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoPronto, body: (n) => aberturaContratoPronto({ nome: n, imovel: IM }), detailsHtml: quadro(lc, PROXIMO_PASSO_CONTRATO_PRONTO), ctaLabel: "Ler e assinar o contrato" })));
+  lista.push(doApp("contrato:falta-voce", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoFaltaVoce, body: (n) => aberturaAssinatura({ nome: n, imovel: IM, asDuas: false, quemAssinou: "tenant" }), detailsHtml: quadro(lc, proximoPassoAssinatura(false, "owner")) })));
+  lista.push(doApp("contrato:assinado", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoAssinado, body: (n) => aberturaAssinatura({ nome: n, imovel: IM, asDuas: true, quemAssinou: "owner" }), detailsHtml: quadro(lc, proximoPassoAssinatura(true, "tenant")) })));
 
   // 3. Decisão de documento (item 3b): um documento só e o resultado agrupado.
   const decisao = (chave: string, linhas: ReturnType<typeof linhasDoAviso>, pronto: boolean) => {
