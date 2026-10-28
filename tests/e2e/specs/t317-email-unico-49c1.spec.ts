@@ -6,7 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, lerSaida, liberarLimiteCodigo, novoS
  * T317 — 49-C1: cadastro com UM e-mail só (código), sem tela órfã e validade igual na tela e no e-mail.
  * No laboratório a rota /api/auth/codigo grava no LAB_OUTBOX o MESMO e-mail que o Supabase mandaria (modelo "Confirm
  * signup" para conta nova, "Magic link" para a existente), com o código no lugar de {{ .Token }}.
- *   1. conta nova pede o código → exatamente 1 e-mail, com código e sem link → "10 minutos" igual na tela e no e-mail →
+ *   1. conta nova pede o código → exatamente 1 e-mail de código, sem link (depois de entrar, só as boas-vindas do E205-B) →
  *      digita o código do e-mail → entra → intenção;
  *   2. conta existente → 1 e-mail com código → entra direto;
  *   3. outra aba entra por um link antigo (/auth/confirm) → a 1ª aba sai sozinha da tela do código; o link antigo cai
@@ -79,9 +79,13 @@ test.describe("T317 — e-mail único com código (49-C1)", () => {
     await page.getByTestId("tela-intencao").getByTestId("intencao-morar").click();
     await page.getByTestId("tela-intencao").getByTestId("intencao-continuar").click();
     await page.waitForURL((u) => u.pathname === "/dashboard", { timeout: 30_000 });
-    // Nenhum e-mail a mais depois de entrar.
+    // Nenhum código a mais depois de entrar. O único e-mail extra é o de boas-vindas (E205-B), uma vez, na 1ª entrada.
+    const codigo1 = (e: { assunto?: string }) => (e.assunto ?? "").includes("Seu código de acesso");
+    await expect.poll(async () => (await emailsPara(email)).filter((e) => !codigo1(e)).length, { timeout: 20_000, message: "boas-vindas" }).toBe(1);
     await page.waitForTimeout(3_000);
-    expect((await emailsPara(email)).length).toBe(1);
+    const todos = await emailsPara(email);
+    expect(todos.filter(codigo1), "um código só").toHaveLength(1);
+    expect(todos.filter((e) => !codigo1(e)).map((e) => e.assunto), "além do código, só as boas-vindas").toEqual([expect.stringContaining("Boas-vindas")]);
   });
 
   test("2. conta existente: 1 e-mail com código, entra direto (1280)", async ({ page }) => {
