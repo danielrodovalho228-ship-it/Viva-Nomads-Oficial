@@ -7,6 +7,13 @@
 import { numeroPublicoContrato } from "../contrato-ref.ts";
 import { ROTULO_TIPO, type TipoDocumento } from "./documento.ts";
 
+/** Motivos de emissão de um registro ANULADO (0182): não é falha, é o fim da história — não entra na fila nem volta a ela. */
+export const MOTIVOS_REGISTRO_ANULADO = ["pagamento anulado", "documento anulado"] as const;
+
+export function motivoDeRegistroAnulado(motivo: string | null | undefined): boolean {
+  return (MOTIVOS_REGISTRO_ANULADO as readonly string[]).includes(String(motivo ?? ""));
+}
+
 /** Mesmo formato da lista de contratos: "VN-CT-11281A61". */
 export function refContratoVN(contratoId: string | null | undefined): string {
   return numeroPublicoContrato(contratoId);
