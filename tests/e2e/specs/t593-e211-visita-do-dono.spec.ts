@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   T593 — E211: o proprietário abre o detalhe da visita (/dashboard/visitas/<id>) pela Agenda, pela lista "Visitas"
   de Interessados e pelo cartão. O detalhe mostra status, horário, imóvel, quem vem (1º nome após o aceite) e tipo;
   a presencial confirmada traz o endereço exato + "Abrir no mapa"; a pedida, só a região; a por vídeo que já passou
-  não oferece "Entrar na chamada" e segue com "Marcar como feita". Outra conta não abre o detalhe (404).
+  não oferece "Entrar na chamada" e segue com "Marcar como feita". Outra conta não abre o detalhe ("Página não encontrada").
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -121,7 +121,7 @@ test.describe("T593 — E211: detalhe da visita para o proprietário", () => {
     });
   }
 
-  test("390 px — o morador abre o mesmo detalhe; outra conta recebe 404", async ({ browser }) => {
+  test("390 px — o morador abre o mesmo detalhe; outra conta vê 'Página não encontrada'", async ({ browser }) => {
     const m = await entrar(browser, mor.email, senha);
     await m.setViewportSize({ width: 390, height: 844 });
     await m.goto(`/dashboard/visitas/${ids.presencial}`, { waitUntil: "domcontentloaded" });
@@ -130,8 +130,10 @@ test.describe("T593 — E211: detalhe da visita para o proprietário", () => {
     await m.context().close();
 
     const o = await entrar(browser, outro.email, senha);
-    const r = await o.goto(`/dashboard/visitas/${ids.presencial}`, { waitUntil: "domcontentloaded" });
-    expect(r?.status()).toBe(404);
+    // O painel faz streaming (loading.tsx), então o notFound() chega como a tela "Página não encontrada" com status 200.
+    await o.goto(`/dashboard/visitas/${ids.presencial}`, { waitUntil: "domcontentloaded" });
+    await expect(o.getByRole("heading", { name: "Página não encontrada" })).toBeVisible({ timeout: 30_000 });
+    await expect(o.getByTestId("visita-detalhe")).toHaveCount(0);
     expect(await o.content()).not.toContain("Rua das Visitas");
     await o.context().close();
   });
