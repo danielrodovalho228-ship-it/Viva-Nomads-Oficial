@@ -64,7 +64,7 @@ test.describe("T42 — Contato e telefone", () => {
 
   test("atendimento: o contato com a Viva é o e-mail do suporte e o chat responde", async ({ page }) => {
     test.setTimeout(90_000);
-    await page.goto("/ajuda", { waitUntil: "networkidle" });
+    await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
     await expect(page.locator('a[href^="mailto:"]').first()).toBeVisible();
     const bloco = page.getByTestId("viva-chat-bloco");
     await expect(bloco).toBeVisible();
