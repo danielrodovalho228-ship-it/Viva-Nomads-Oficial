@@ -1331,6 +1331,15 @@
         "t566-e184-visitas-passadas"
       ]
     },
+    "/dashboard/visitas/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t593-e211-visita-do-dono"
+      ]
+    },
     "/decisao": {
       "personas": [
         "socio"
@@ -2530,7 +2539,7 @@
       ],
       "specs": [
         "t128-cron-automacoes",
-        "t586-e205-emails-chegada-d7"
+        "t592-e205b2-lembrete-bloco"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -2543,9 +2552,7 @@
       "personas": [
         "sistema"
       ],
-      "specs": [
-        "t586-e205-emails-chegada-d7"
-      ]
+      "specs": []
     },
     "/api/cron/linkedin": {
       "personas": [
@@ -4909,6 +4916,15 @@
       ],
       "specs": [
         "t209-jornada-dois-lados"
+      ]
+    },
+    "src/lib/data/visitas-video-actions.ts#visitaDetalhe": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t593-e211-visita-do-dono"
       ]
     },
     "src/lib/data/propostas-actions.ts#contarPropostasAguardando": {

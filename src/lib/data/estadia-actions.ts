@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { lembreteDeBlocoNoAceite } from "@/lib/estadia/lembrete-bloco-servidor";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
@@ -464,6 +465,9 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
   // Prompt 55-E2: as mensagens programadas que ainda não saíram ganham o horário das datas novas.
   await reagendarProgramadas(ctx.admin, a.contrato_id);
   for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id);
+  // E205-B2: o aditivo assinado aceita os blocos novos pelas duas partes — se um deles começa em até 3 dias sem
+  // pagamento, o lembrete sai agora (a chave segura o cron).
+  after(() => lembreteDeBlocoNoAceite(ctx.admin, a.contrato_id).catch(() => 0));
   return { ok: true, valor: { completo: true } };
 }
 

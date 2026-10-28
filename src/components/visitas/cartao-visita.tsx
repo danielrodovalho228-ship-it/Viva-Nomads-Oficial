@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapPin, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,9 +45,13 @@ export interface VisitaNaTela {
   horarioProposto: string | null;
   motivoRecusa: string | null;
   linkChamada: string | null;
-  /** Só para o morador, na presencial confirmada. */
+  /** Presencial confirmada e ainda não passada (endereco-visita.ts): para o morador e, E211, para o dono. */
   endereco?: string | null;
   enderecoMapa?: string | null;
+  /** E211: bairro · cidade (o que se mostra fora da janela do endereço exato). */
+  regiao?: string | null;
+  /** E211: para o dono, o 1º nome de quem vem (só depois do aceite). */
+  pessoa?: string | null;
 }
 
 /**
@@ -58,11 +63,14 @@ export function CartaoVisita({
   v,
   papel,
   compacto = false,
+  hrefDetalhe,
   onMudou,
 }: {
   v: VisitaNaTela;
   papel: "dono" | "morador";
   compacto?: boolean;
+  /** E211: "Ver detalhes da visita" (lista e conversa abrem o detalhe /dashboard/visitas/<id>). */
+  hrefDetalhe?: string;
   /** Na conversa, o cartão é buscado no cliente: avisa para buscar de novo depois de uma resposta. */
   onMudou?: () => void;
 }) {
@@ -87,6 +95,11 @@ export function CartaoVisita({
           </p>
           {!compacto && <h3 className="line-clamp-2 font-title text-base font-semibold text-ink">{v.imovel}</h3>}
           {v.motivo && <p className="text-xs text-muted">Motivo da estadia: {v.motivo}</p>}
+          {papel === "dono" && v.pessoa !== undefined && (
+            <p className="text-xs text-muted" data-testid="visita-pessoa">
+              Quem vem: {v.pessoa ?? "Interessado(a)"}
+            </p>
+          )}
         </div>
         <span data-testid="visita-status" data-passou={passou ? "1" : undefined} data-expirada={expirada ? "1" : undefined} className={`rounded-full px-3 py-1 text-xs font-semibold ${passou || expirada ? TOM.feito : TOM[status]}`}>
           {passou ? HORARIO_PASSOU : expirada ? ROTULO_EXPIRADA : STATUS_VISITA_ROTULO[status]}
@@ -141,7 +154,8 @@ export function CartaoVisita({
         </p>
       )}
 
-      {papel === "morador" && v.modalidade === "presencial" && !passou && !expirada && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
+      {/* E211: o endereço da presencial nas duas pontas (o dono vê o do próprio imóvel), pela mesma regra. */}
+      {v.modalidade === "presencial" && !passou && !expirada && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
         v.status === "confirmado" && v.endereco ? (
           <div className="mt-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
             <p className="flex items-start gap-2">
@@ -156,13 +170,28 @@ export function CartaoVisita({
         ) : v.status === "confirmado" ? (
           // E184: confirmada, mas o anúncio ainda não tem a rua e o número gravados — nada de prometer o que não vem.
           <p className="mt-2 text-xs text-muted" data-testid="visita-endereco-pendente">
-            O proprietário ainda não informou o endereço exato. Peça pelas mensagens antes de sair.
+            {papel === "dono"
+              ? "Seu anúncio ainda não tem rua e número. Complete o endereço no anúncio para o morador ver onde ir."
+              : "O proprietário ainda não informou o endereço exato. Peça pelas mensagens antes de sair."}
           </p>
         ) : (
           <p className="mt-2 text-xs text-muted" data-testid="visita-endereco-oculto">
-            O endereço exato aparece aqui quando a visita for confirmada.
+            {v.regiao ? `${v.regiao}. ` : ""}
+            {papel === "dono" ? "O endereço exato aparece para o morador quando a visita for confirmada." : "O endereço exato aparece aqui quando a visita for confirmada."}
           </p>
         )
+      )}
+      {/* Fora da janela do endereço exato (a visita passou), só a região. */}
+      {v.modalidade === "presencial" && passou && v.regiao && (
+        <p className="mt-2 flex items-start gap-2 text-xs text-muted" data-testid="visita-regiao">
+          <MapPin className="mt-1 h-3.5 w-3.5 shrink-0" aria-hidden /> {v.regiao}
+        </p>
+      )}
+
+      {hrefDetalhe && (
+        <Link href={hrefDetalhe} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-forest underline" data-testid="visita-ver-detalhes">
+          Ver detalhes da visita
+        </Link>
       )}
 
       {papel === "dono" ? <AcoesDono v={v} passou={passou} onMudou={onMudou} onStatus={onStatus} /> : passou ? null : <AcoesMorador v={v} onMudou={onMudou} onStatus={onStatus} />}

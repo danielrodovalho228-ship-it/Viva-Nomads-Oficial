@@ -51,6 +51,6 @@ test("todas as chamadas de senha do navegador mandam o token (senão quebram com
 
 test("CSP libera o Turnstile (script e iframe)", () => {
   const cfg = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
-  assert.match(cfg, /script-src [^"]*https:\/\/challenges\.cloudflare\.com/);
+  assert.match(cfg, /script-src [^\n]*https:\/\/challenges\.cloudflare\.com/);
   assert.match(cfg, /frame-src [^"]*https:\/\/challenges\.cloudflare\.com/);
 });

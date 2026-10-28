@@ -118,6 +118,8 @@ export const MATRIZ_NOTIFICACOES = {
   avaliacao_pedido: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   anuncio_incompleto: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   verificacao_parada: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
+  // E205-B2: só o morador, sem push.
+  bloco_inicio_lembrete: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
   pedido_expirando: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
   visita_vespera: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   parceiro_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },

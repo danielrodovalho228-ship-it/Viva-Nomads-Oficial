@@ -322,8 +322,15 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
     await expect(linhaLista.getByTestId("contrato-conferencia-entrada")).toHaveText("Confirmada pelas duas partes", { timeout: 20_000 });
     const href = await linhaLista.getByTestId("abrir-contrato-admin").getAttribute("href");
     expect(href).toBe(`/admin/contratos/${ids.contrato}`);
+    // E197: o mesmo contrato tem o MESMO selo na lista e no detalhe (fonte única), e a assinatura não se contradiz.
+    const seloLista = (await linhaLista.getByTestId("contrato-selo").textContent())?.trim();
+    const assinaturaLista = (await linhaLista.getByTestId("contrato-assinatura").textContent())?.trim();
     const aberto = await page.goto(href!, { waitUntil: "domcontentloaded" });
     expect(aberto?.status()).toBe(200);
+    await expect(page.getByTestId("admin-contrato-selo")).toHaveText(seloLista!, { timeout: 20_000 });
+    if (assinaturaLista === "Assinado pelas duas partes") {
+      await expect(page.getByTestId("admin-contrato-assinaturas")).not.toContainText("Nenhuma assinatura ainda.");
+    }
     await page.context().close();
   });
 

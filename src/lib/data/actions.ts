@@ -13,6 +13,7 @@ import { colunaVideoArquivo } from "@/lib/video-anuncio";
 import { caminhoDoDono, colunasDeOperacao, tipoDocParaGravar } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { lembreteDeBlocoNoAceite } from "@/lib/estadia/lembrete-bloco-servidor";
 import { cookies } from "next/headers";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
@@ -1686,6 +1687,8 @@ export async function renovarBloco(
     /* notificação é best-effort */
   }
 
+  // E205-B2: renovação aceita pelas duas partes a menos de 3 dias do início → o lembrete do bloco sai no aceite.
+  if (!aguardando) after(() => lembreteDeBlocoNoAceite(admin, contratoId).catch(() => 0));
   return { ok: true, numeroBloco: numero, aguardandoOutraParte: aguardando };
 }
 

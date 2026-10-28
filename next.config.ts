@@ -115,9 +115,10 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
               "style-src 'self' 'unsafe-inline'",
-              // 'unsafe-inline'/'unsafe-eval' cobrem o bootstrap do Next e o
-              // mapbox-gl; endurecer com nonce é um próximo passo.
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+              // 'unsafe-inline' cobre o bootstrap do Next; endurecer com nonce é um próximo
+              // passo. 'unsafe-eval' só no desenvolvimento (hot reload): em produção o Next
+              // não usa eval e o mapbox-gl roda em worker blob:.
+              `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === "production" ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com`,
               "worker-src 'self' blob:",
               "connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br",
               "frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com",

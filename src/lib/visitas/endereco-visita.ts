@@ -52,6 +52,12 @@ export function enderecoDaVisita(p: {
   return { texto, mapa: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(busca)}` };
 }
 
+/** E211: a região aproximada (bairro · cidade) — o que se mostra antes da confirmação e depois que a visita passou. */
+export function regiaoDaVisita(p: { address?: string | null; city?: string | null }): string | null {
+  const partes = [(p.address ?? "").trim(), (p.city ?? "").trim()].filter(Boolean);
+  return partes.length ? partes.join(" · ") : null;
+}
+
 /** Rua, número e complemento do cadastro numa linha só (o que vai para exact_address). */
 export function linhaEnderecoExato(rua: string, numero: string, complemento: string): string {
   return [rua.trim(), numero.trim(), complemento.trim()].filter(Boolean).join(", ").slice(0, 300);
