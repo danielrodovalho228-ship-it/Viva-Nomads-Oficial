@@ -79,9 +79,16 @@ test.describe("T317 — e-mail único com código (49-C1)", () => {
     await page.getByTestId("tela-intencao").getByTestId("intencao-morar").click();
     await page.getByTestId("tela-intencao").getByTestId("intencao-continuar").click();
     await page.waitForURL((u) => u.pathname === "/dashboard", { timeout: 30_000 });
-    // Nenhum e-mail a mais depois de entrar.
+    // Depois de entrar, só as boas-vindas (E205-B: uma vez, na 1ª entrada, pela intenção) — nenhum outro e-mail,
+    // nenhum link de confirmação e um só código.
+    await expect.poll(async () => (await emailsPara(email)).length, { timeout: 20_000 }).toBe(2);
     await page.waitForTimeout(3_000);
-    expect((await emailsPara(email)).length).toBe(1);
+    const todos = await emailsPara(email);
+    expect(todos).toHaveLength(2);
+    expect(todos.filter((e) => /Seu código de acesso/.test(e.assunto ?? "")), "um só código").toHaveLength(1);
+    const boasVindas = todos.find((e) => /Boas-vindas/.test(e.assunto ?? ""));
+    expect(boasVindas?.assunto, "o 2º e-mail é o de boas-vindas").toContain("Boas-vindas: como achar e garantir o seu imóvel");
+    expect(boasVindas?.corpo ?? "").not.toMatch(/\/auth\/(confirm|callback)|token_hash/);
   });
 
   test("2. conta existente: 1 e-mail com código, entra direto (1280)", async ({ page }) => {
