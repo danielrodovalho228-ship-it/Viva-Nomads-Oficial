@@ -14,3 +14,13 @@ test("t160: o topo público não tem Favoritos, então a spec não cobra o link"
   assert.doesNotMatch(t160, /const link = page\.getByRole\("link", \{ name: \/Favoritos\/ \}\)/);
   assert.match(t160, /getByRole\("link", \{ name: \/Favoritos\/ \}\)\)\.toHaveCount\(0\)/);
 });
+
+test("t266: o dono vai às Ferramentas pelo link do Início e a Contratos pela aba — não há gaveta nem Ferramentas na Conta", () => {
+  assert.match(ler("src/components/painel/inicio-dono.tsx"), /data-testid="inicio-dono-todas-ferramentas"/);
+  assert.match(ler("src/components/layout/topo-dono.tsx"), /data-testid=\{`aba-\$\{px\}-\$\{a\.id\}`\}/);
+  assert.match(ler("src/components/layout/mobile-tab-bar.tsx"), /"Navegação principal"/);
+  const t266 = spec("t266-painel-42.spec.ts");
+  assert.doesNotMatch(t266, /name: "Abrir menu"|conta-dono-ferramentas|vn-menu-aberto|Menu do painel/);
+  assert.ok(t266.includes('getByTestId("inicio-dono-todas-ferramentas")'));
+  assert.ok(t266.includes('nav[aria-label="Navegação principal"] a[href="/dashboard/contratos"]'));
+});
