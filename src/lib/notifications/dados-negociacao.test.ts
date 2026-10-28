@@ -94,3 +94,14 @@ test("GUARDA: os chamadores passam os dados (proposta: 4 desfechos; contrato pro
   assert.match(ass, /\.\.\.corpo\(outroId\)/);
   assert.match(ass, /proximoPassoAssinatura\(outraJaAssinou, papelDe\(para\)\)/);
 });
+
+test("E210: o período traz as datas reais; sem datas, nunca 'Período: a ' vazio", async () => {
+  const { textoPeriodo, linhasContrato } = await import("./dados-negociacao.ts");
+  assert.equal(textoPeriodo("2026-11-01", "2026-12-30", 2), "01/11/2026 a 30/12/2026 (2 meses)");
+  assert.equal(textoPeriodo(null, null, 2), "2 meses");
+  assert.equal(textoPeriodo("", "2026-12-30", 2), "2 meses");
+  const l = linhasContrato({ imovel: { titulo: "Apto", bairro: null, cidade: null }, inicio: "", fim: "", meses: 2, valorMensal: 3200 });
+  const periodo = l.find((x) => x.rotulo === "Período")!.valor;
+  assert.doesNotMatch(periodo, /^ ?a |(^|\s)a $/);
+  assert.equal(periodo, "2 meses");
+});
