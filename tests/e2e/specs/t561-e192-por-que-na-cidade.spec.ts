@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /*
   T561 — E192 (reteste 26/10): a conta como a inquilino1 de produção — cadastro de MORADOR, com um imóvel anunciado e
-  o MODO PROPRIETÁRIO salvo — vê o cartão "Por que estou na cidade" na Conta → Perfil. Antes, o painel do morador só
+  o MODO PROPRIETÁRIO salvo — vê o cartão (E192-B: com o "Salvar" secundário, um primário por tela) "Por que estou na cidade" na Conta → Perfil. Antes, o painel do morador só
   existia no modo morador e a tela não mostrava nada. Dono puro (cadastro de proprietário) no modo proprietário segue
   sem o cartão.
 */
@@ -37,6 +37,9 @@ test.describe("T561 — E192: 'Por que estou na cidade' no Perfil", () => {
       const cartao = p.getByTestId("por-que-na-cidade");
       await expect(cartao).toBeVisible({ timeout: 30_000 });
       await expect(p.getByText("Por que estou na cidade").first()).toBeVisible();
+      // E192-B: um primário por tela — o "Salvar" do cartão é secundário; o primário é o "Salvar alterações".
+      await expect(p.getByTestId("cidade-salvar")).toHaveAttribute("data-cta", "");
+      expect(await p.locator('[data-cta="primary"]:visible').count()).toBeLessThanOrEqual(1);
       await cartao.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t561-perfil-${largura}.png`, fullPage: true });
       await p.context().close();
