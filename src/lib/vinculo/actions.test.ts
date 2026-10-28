@@ -36,7 +36,7 @@ test("palpite errado conta tentativa e a confirmação é de uso único", () => 
   assert.match(c, /\.eq\("codigo_hash"/);
 });
 
-test("o e-mail do código existe, diz 15 minutos e não fala de duas etapas", async () => {
+test("o e-mail do código existe, diz a validade real (15 minutos) e não fala de duas etapas", async () => {
   const { emailCodigoVinculo } = await import("../notifications/montar-email.ts");
   const m = emailCodigoVinculo("https://vivanomads.com.br", { codigo: "042917" });
   assert.match(m.text, /042917/);

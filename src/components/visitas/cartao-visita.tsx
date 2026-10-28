@@ -98,7 +98,8 @@ export function CartaoVisita({
           <p data-testid="visita-horario-confirmado">
             <strong>{formatarHorarioBrasilia(v.horarioConfirmado)}</strong>
           </p>
-          {v.modalidade === "video" && v.linkChamada && (
+          {/* E184: visita que já passou não tem mais chamada para entrar. */}
+          {v.modalidade === "video" && v.linkChamada && !passou && (
             <a href={v.linkChamada} target="_blank" rel="noopener noreferrer" data-testid="visita-link-chamada" className="mt-1 inline-block break-all font-medium text-forest underline">
               Entrar na chamada
             </a>

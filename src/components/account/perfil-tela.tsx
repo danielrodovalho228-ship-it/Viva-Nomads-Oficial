@@ -13,6 +13,7 @@ import { EspelhoPorPapel } from "@/components/account/espelho-papel";
 import { PetsFicha } from "@/components/account/pets-ficha";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { PorQueNaCidade } from "@/components/account/por-que-na-cidade";
+import { EspacoTrabalho } from "@/components/account/espaco-trabalho";
 import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
 import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
@@ -285,6 +286,7 @@ export function PerfilTela() {
             </div>
             <p className="mt-2 text-xs text-muted">Os idiomas entram no perfil quando você toca em &quot;Salvar alterações&quot;.</p>
           </BlocoOpcional>
+          <EspacoTrabalho />
         </Panel>
 
         <MedidorPerfil pct={prog.pct} falta={prog.falta} itens={prog.itens} cadastroCompleto={p.cadastro.completo} />
