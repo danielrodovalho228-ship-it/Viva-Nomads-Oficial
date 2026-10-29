@@ -50,14 +50,18 @@ test.describe("T655 — observador da QA: filas sem botões no dado real, com bo
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({}, info) => {
+    if (info.project.name !== "chromium") return;
+    test.setTimeout(300_000);
     ids.obs = await criarConta({ email: emailObs, nome: "Olga Observadora", role: "tenant" }, senha);
     ids.real = await criarConta({ email: emailReal, nome: "Rita Real", role: "tenant" }, senha);
     ids.teste = await criarConta({ email: emailTeste, nome: "Tito Teste", role: "tenant" }, senha);
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.obs, ids.teste]);
     await adm().from("profiles").update({ is_teste: false }).eq("id", ids.real);
-    const { error } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
-    if (error) throw error;
+    // Só cabe um observador por vez (promover_qa_admin): espera outra spec (t596, t604, t650) soltar o dela.
+    await expect
+      .poll(async () => (await adm().rpc("promover_qa_admin", { p_id: ids.obs })).error?.message ?? "ok", { timeout: 180_000, intervals: [5_000] })
+      .toBe("ok");
     const c = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
     const { error: eLogin } = await c.auth.signInWithPassword({ email: emailObs, password: senha });
     if (eLogin) throw eLogin;
@@ -87,6 +91,9 @@ test.describe("T655 — observador da QA: filas sem botões no dado real, com bo
       });
       if (ePedido) throw ePedido;
     }
+  });
+  test.beforeEach(({}, info) => {
+    test.skip(info.project.name !== "chromium", "roda só no projeto chromium (uma conta observadora por vez)");
   });
   test.afterAll(async () => {
     if (ids.obs) await adm().rpc("revogar_qa_admin", { p_id: ids.obs });

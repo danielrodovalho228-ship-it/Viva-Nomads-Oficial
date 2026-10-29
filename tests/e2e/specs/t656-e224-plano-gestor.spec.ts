@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T656 — E224: os dois lados do Plano Gestor.
@@ -8,7 +8,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
       (conta administradora), "Liberado. Fale com a Viva para ativar." — sem botão de assinar.
    2. admin, /admin/usuarios: "Tipo da conta" individual → administradora com motivo obrigatório (sem motivo, Salvar
       fica desligado); o banco muda e a trilha account_type_audit grava o motivo.
-   3. quem não é admin: a mesma chamada de definirAccountType, com a sessão de um proprietário, é recusada e nada muda.
+   3. quem não é admin: a mesma chamada de definirAccountType, com a sessão de um proprietário, é recusada (pela rota
+      /admin ou pela própria ação) e nada muda.
    (O admin observador da QA é recusado no servidor: guarda em observador-regras.test.ts e plano-gestor-e224.test.ts.)
 */
 const sufixo = novoSufixo();
@@ -37,6 +38,9 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true, account_type: "individual" }).eq("id", ids.dono);
+    // O papel de proprietário (e a Conta › Plano) aparece com 1 imóvel na conta; o documento fica NA FILA, então
+    // nenhum imóvel conta como validado (Você tem 0).
+    await criarImovelPronto(ids.dono, `Studio T656 ${sufixo}`, { ativo: false, documentoPendente: dono.nome });
   });
   test.afterAll(async () => {
     if (ids.dono) await adm().from("account_type_audit").delete().eq("profile_id", ids.dono);
@@ -99,7 +103,10 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
     const r = await chamarAMao(page, "individual", "Tentando trocar o próprio tipo");
-    expect(r.texto).toContain("Apenas administradores.");
+    // Recusado de um jeito ou de outro: a rota /admin já barra quem não é admin antes da ação ("Server Action
+    // unavailable"); se a chamada chegar à ação, ela recusa ("Apenas administradores." — ordem conferida no unit).
+    expect(r.texto).toMatch(/Apenas administradores\.|Server Action unavailable/);
+    expect(r.texto).not.toContain('"ok":true');
     expect(await tipoNoBanco()).toBe("gestor");
     const { count } = await adm().from("account_type_audit").select("id", { count: "exact", head: true }).eq("profile_id", ids.dono);
     expect(count).toBe(1);
