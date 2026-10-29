@@ -1,5 +1,6 @@
+// Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TITULO_PASSO, type PassoCadastro } from "../fixtures/cadastro";
 
 /*
@@ -20,8 +21,15 @@ const PASSOS = Object.keys(TITULO_PASSO) as PassoCadastro[];
 const PROIBIDO = /\bPrompt \d+|\binquilin[oa]s?\b|\bem breve\b/i;
 
 async function irPara(page: Page, passo: PassoCadastro) {
-  await page.goto(`/dashboard/imoveis/novo?etapa=${passo}`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("passo-titulo")).toHaveText(TITULO_PASSO[passo], { timeout: 30_000 });
+  // Com rascunho no servidor (o autosave cria no meio da volta), o "Novo anúncio" ignora o ?etapa= e oferece retomar:
+  // abre o próprio rascunho no passo (?draft=<id>&etapa=). O autosave pode criar o rascunho entre a consulta e a carga
+  // da página, então consulta e carrega de novo até o passo pedido aparecer.
+  await expect(async () => {
+    const { data } = await adm().from("properties").select("id").eq("owner_id", ids.dono!).eq("status", "draft").limit(1);
+    const draft = data?.[0]?.id as string | undefined;
+    await page.goto(`/dashboard/imoveis/novo?${draft ? `draft=${draft}&` : ""}etapa=${passo}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("passo-titulo")).toHaveText(TITULO_PASSO[passo], { timeout: 10_000 });
+  }).toPass({ timeout: 45_000 });
 }
 
 test.describe("T455 — E108–E110: textos do assistente de cadastro", () => {

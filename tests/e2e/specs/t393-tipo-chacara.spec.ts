@@ -1,3 +1,4 @@
+// Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
@@ -29,7 +30,8 @@ test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
       .update({ property_type: "chacara", city: CIDADE, detalhes_anuncio: { chacara: { acesso: "terra", internet: "radio", pontoMarcado: true } } })
       .eq("id", ids.ativa);
     expect(error).toBeNull();
-    const { error: e2 } = await adm().from("properties").update({ property_type: "chacara", city: "Uberlândia" }).eq("id", ids.rascunho);
+    // O assistente lê o tipo do rascunho (draft_data), não da coluna: sem ele o passo Detalhes não mostra os campos.
+    const { error: e2 } = await adm().from("properties").update({ property_type: "chacara", city: "Uberlândia", draft_data: { propertyType: "chacara" } }).eq("id", ids.rascunho);
     expect(e2).toBeNull();
   });
 
@@ -63,14 +65,14 @@ test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
       { timeout: 30_000 },
     );
     await expect(campos).toHaveAttribute("data-falta", "acesso,tipo de internet,ponto no mapa");
-    await expect(page.getByTestId("checklist-item-chacara")).toHaveAttribute("data-ok", "0");
+    // O cartão "Pronto para publicar" (checklist-item-*) saiu no cadastro em 10 passos (24/10); o portão do publicar continua
+    // em prontidao.ts (chacara.test.ts). Aqui vale o data-falta dos campos.
     await campos.getByTestId("chacara-acesso-terra").check();
     await campos.getByTestId("chacara-internet-radio").check();
     await expect(campos).toHaveAttribute("data-falta", "ponto no mapa");
     await campos.getByTestId("chacara-coordenadas").fill(`${PONTO.lat}, ${PONTO.lng}`);
     await expect(campos.getByTestId("chacara-ponto")).toHaveAttribute("data-marcado", "1");
     await expect(campos).toHaveAttribute("data-falta", "");
-    await expect(page.getByTestId("checklist-item-chacara")).toHaveCount(0);
     await page.screenshot({ path: "tests/laboratorio/saida/t393-2-cadastro.png", fullPage: true });
     await page.context().close();
   });

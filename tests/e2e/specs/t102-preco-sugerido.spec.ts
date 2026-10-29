@@ -33,7 +33,8 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 3, ordemEtapas: 3, monthlyPrice: "" })), id);
     await page.reload({ waitUntil: "networkidle" });
     // E180: "Novo anúncio" abre na Qualificação e o aviso do rascunho mora dentro dela (data-testid, não classe de estilo).
-    const retomar = page.getByTestId("rascunho-continuar");
+    // Só o "Continuar de onde parei" de dentro do aviso (guarda t102-seletor-rascunho), não o "Continuar" do rodapé.
+    const retomar = page.getByTestId("rascunho-aviso").filter({ hasText: "Você tem um anúncio em andamento" }).getByTestId("rascunho-continuar");
     const bloco = page.getByTestId("preco-sugerido");
     // O aviso de rascunho chega depois do networkidle (consulta assíncrona): espera o aviso OU o bloco do preço
     // (conta sem rascunho no servidor abre direto pelo rascunho local) em vez de decidir na hora.

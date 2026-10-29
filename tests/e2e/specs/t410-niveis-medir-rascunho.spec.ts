@@ -100,7 +100,8 @@ async function medirItem(page: Page, item: string, ponto: string) {
   await botao.click();
   const bloco = page.getByTestId(`nivel-cadastro-medir-${item}-medir`).getByTestId("medir-internet");
   await expect(bloco).toBeVisible({ timeout: 20_000 });
-  await expect(bloco.getByTestId("medir-internet-ponto")).toHaveValue(ponto);
+  // E193 (#1496): o ponto da medição virou pílulas de escolha única (antes, lista suspensa).
+  await expect(bloco.getByTestId(`medir-internet-ponto-${ponto}`)).toHaveAttribute("aria-checked", "true");
   await bloco.getByTestId("medir-internet-wifi").check();
   await bloco.getByTestId("medir-internet-botao").click();
   await expect(bloco.getByTestId("medir-internet-resultado")).toHaveAttribute("data-validada", "1", { timeout: 30_000 });
@@ -177,7 +178,7 @@ test.describe("T410 — NIVEIS-MEDIR-B: medir a internet antes de publicar", () 
     try {
       await cel.page.goto(link!, { waitUntil: "domcontentloaded" });
       await expect(cel.page).toHaveURL(new RegExp(`/dashboard/imoveis/${ids.s}/nivel\\?medir=quarto_principal`), { timeout: 30_000 });
-      await expect(cel.page.getByTestId("nivel-medir").getByTestId("medir-internet-ponto")).toHaveValue("quarto_principal", { timeout: 20_000 });
+      await expect(cel.page.getByTestId("nivel-medir").getByTestId("medir-internet-ponto-quarto_principal")).toHaveAttribute("aria-checked", "true", { timeout: 20_000 });
     } finally {
       await cel.fechar();
     }

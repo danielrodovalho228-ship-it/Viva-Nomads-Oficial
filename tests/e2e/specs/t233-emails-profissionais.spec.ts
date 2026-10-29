@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, lerSaida, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 import { catalogoEmails } from "../../../src/lib/notifications/catalogo-emails";
 import { problemasDoAssunto, tituloNoAssunto } from "../../../src/lib/notifications/assuntos";
 
@@ -24,7 +24,8 @@ const dono = { email: `dono.t233.${sufixo}@lab.vivanomads.test`, nome: "Paulo Do
 const titulos = { a: `Studio Centro T233 ${sufixo}`, b: `Loft Savassi T233 ${sufixo}` };
 const ids: Record<string, string | undefined> = {};
 
-const png = () => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), randomBytes(11 * 1024)]);
+// PNG legível (a miniatura da fila do admin decodifica) + bytes depois do IEND para passar dos 10 KB do upload.
+const png = () => Buffer.concat([pngDeTeste(randomBytes(1)[0]), randomBytes(11 * 1024)]);
 
 async function imovel(titulo: string, bairro: string): Promise<string> {
   const { data, error } = await adm()

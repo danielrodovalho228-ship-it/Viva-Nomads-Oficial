@@ -1,3 +1,4 @@
+// Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TITULO_PASSO } from "../fixtures/cadastro";
@@ -21,7 +22,7 @@ async function abrirPrecoPreenchido(page: Page) {
   await expect(page.getByTestId("passo-titulo")).toHaveText(TITULO_PASSO.preco, { timeout: 30_000 });
   await page.getByTestId("cadastro-preco").fill("3600");
   await page.getByTestId("cadastro-condominio").fill("350");
-  await page.getByRole("button", { name: "Valor fixo estimado" }).click();
+  await page.getByTestId("consumo-fixed").click(); // E193: cartão de escolha única (role=radio), não botão
   await page.getByTestId("cadastro-consumo").fill("150");
   await expect(page.getByTestId("cadastro-tudo-incluido")).toHaveText(/R\$\s?4\.100\/mês tudo incluído/);
 }

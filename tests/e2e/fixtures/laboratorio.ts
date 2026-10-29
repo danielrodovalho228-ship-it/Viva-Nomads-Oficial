@@ -193,7 +193,9 @@ export async function criarImovelPronto(
   if (opts.documentoPendente) {
     // Arquivo no bucket privado + linha "em análise" (como o envio da tela deixa).
     const caminhoDoc = `${ownerId}/${randomBytes(6).toString("hex")}.png`;
-    const arquivo = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), randomBytes(11 * 1024)]);
+    // PNG real e legível: a fila do admin mostra a miniatura, e um PNG de bytes aleatórios aparecia como imagem quebrada
+    // na varredura do /admin/documentos (t615) quando uma spec com documento pendente rodava no mesmo lab.
+    const arquivo = pngDeTeste(randomBytes(1)[0]);
     const { error: eUpDoc } = await adm().storage.from("property-docs").upload(caminhoDoc, arquivo, { contentType: "image/png" });
     if (eUpDoc) throw eUpDoc;
     const { error: ePend } = await adm().from("qualification_checklists").insert({

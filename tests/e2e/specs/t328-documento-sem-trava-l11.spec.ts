@@ -1,3 +1,4 @@
+// Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
@@ -85,12 +86,17 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
     const numero = p.getByTestId("cadastro-numero");
     await expect(numero).toBeFocused();
     await expect(numero).toHaveAttribute("aria-invalid", "true");
-    await expect(p.getByText("Informe o número (ou s/n) para enviar o documento.")).toBeVisible();
+    // O aviso sai no quadro de erros do passo e junto do campo: confere o do campo.
+    await expect(p.getByTestId("etapa-onde-fica").getByText("Informe o número (ou s/n) para enviar o documento.")).toBeVisible();
     await expect(p.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório");
     // O campo fica na tela (acima de onde o teclado abre), não escondido.
-    const caixa = (await numero.boundingBox())!;
-    expect(caixa.y).toBeGreaterThanOrEqual(0);
-    expect(caixa.y + caixa.height).toBeLessThanOrEqual(844 * 0.6);
+    // A rolagem até o quadro de erros é suave: espera ela assentar antes de medir.
+    await expect
+      .poll(async () => {
+        const caixa = (await numero.boundingBox())!;
+        return caixa.y >= 0 && caixa.y + caixa.height <= 844 * 0.6;
+      }, { timeout: 5_000 })
+      .toBe(true);
     expect(abriu).toBe(false);
     await p.screenshot({ path: `${SAIDA}/t328-falta-numero-390.png`, fullPage: false });
 

@@ -1,7 +1,9 @@
+// Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { authFile } from "../fixtures/auth";
+import { pngDeTeste } from "../fixtures/laboratorio";
 import { doTipoAoEndereco, irParaAntesDePublicar, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
@@ -38,7 +40,8 @@ function cpfAleatorio(): string {
 
 /** PDF mínimo válido (assinatura %PDF) acima do tamanho mínimo aceito (10 KB). */
 const pdf = () => Buffer.concat([Buffer.from("%PDF-1.4\n% laboratório\n"), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
-const png = () => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), randomBytes(11 * 1024)]);
+// PNG legível (a miniatura da fila do admin decodifica) + bytes depois do IEND para passar dos 10 KB do upload.
+const png = () => Buffer.concat([pngDeTeste(randomBytes(1)[0]), randomBytes(11 * 1024)]);
 
 async function imovel(titulo: string, extra: Record<string, unknown>): Promise<string> {
   const { data, error } = await adm()
@@ -123,7 +126,8 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     await expect(secao).toContainText("Marque a declaração para publicar.");
     await secao.getByText("Administro este imóvel em nome do proprietário (gestor ou procurador)").click();
     await expect(secao).toContainText("Escolha o que você está anexando: contrato de administração ou procuração.");
-    await secao.getByTestId("documento-operacao-tipo").getByLabel("Procuração").check();
+    // E193 (#1496): o tipo do documento virou cartão de escolha única (role=radio), sem o rádio com rótulo.
+    await secao.getByTestId("documento-operacao-tipo").getByRole("radio", { name: /Procuração/ }).click();
     await expect(secao).toContainText("Anexe: contrato de administração ou procuração.");
 
     await secao.locator('input[type="file"]').setInputFiles({ name: "procuracao.pdf", mimeType: "application/pdf", buffer: pdf() });

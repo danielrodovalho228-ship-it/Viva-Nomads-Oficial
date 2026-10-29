@@ -1,3 +1,4 @@
+// Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { noPasso, abrirCadastroNovo } from "../fixtures/cadastro";

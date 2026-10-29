@@ -1,3 +1,4 @@
+// Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TITULO_PASSO } from "../fixtures/cadastro";
@@ -45,7 +46,7 @@ test.describe("T472 — E139/E140/E151: o Passo 8 fecha a conta", () => {
       await abrirPreco(page);
 
       // 0. Sem valor mensal, a Revisão não chama as contas de "total".
-      await page.getByRole("button", { name: "Valor fixo estimado" }).click();
+      await page.getByTestId("consumo-fixed").click(); // E193: cartão de escolha única (role=radio), não botão
       await page.getByTestId("cadastro-consumo").fill("150");
       await page.goto("/dashboard/imoveis/novo?etapa=revisao", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("revisao-sem-valor").first()).toHaveText("Valor mensal ainda não definido.", { timeout: 30_000 });
@@ -54,7 +55,7 @@ test.describe("T472 — E139/E140/E151: o Passo 8 fecha a conta", () => {
 
       await page.getByTestId("cadastro-preco").fill("3600");
       await page.getByTestId("cadastro-condominio").fill("350");
-      await page.getByRole("button", { name: "Valor fixo estimado" }).click();
+      await page.getByTestId("consumo-fixed").click(); // E193: cartão de escolha única (role=radio), não botão
       await page.getByTestId("cadastro-consumo").fill("150");
 
       // 1. Prévia com a conta aberta.
