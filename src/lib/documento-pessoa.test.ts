@@ -52,15 +52,12 @@ test("0090: dígitos no banco, NOT VALID, um CPF por conta, campos protegidos, m
   for (const c of ["cpf", "cnpj", "company_name", "cpf_representante", "role", "is_verified", "person_type"]) assert.match(codigo, new RegExp(`(if|or) new\\.${c}\\s+is distinct from old\\.${c}`));
 });
 
-test("travas: aceitar candidatura, assinar plano e fechar contrato exigem o documento", () => {
+test("travas: aceitar candidatura e fechar contrato exigem o documento (a rota de assinar plano saiu no E237)", () => {
   const leads = ler("lib/data/leads-actions.ts");
   const i = leads.indexOf("export async function aceitarCandidatura");
   const trava = leads.indexOf("if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };", i);
   const grava = leads.indexOf('status: "accepted"', i);
   assert.ok(trava > i && trava < grava, "a trava vem ANTES de gravar o aceite");
-  const ass = ler("app/api/assinatura/route.ts");
-  assert.match(ass, /if \(!documento\) return NextResponse\.json\(\{ error: MSG_DOCUMENTO\.assinar \}, \{ status: 400 \}\);/);
-  assert.match(ass, /cpfCnpj: documento,/);
   const fech = ler("lib/data/fechamento-servidor.ts");
   // F32: as duas conferências vivem em motivoBloqueioContrato (src/lib/contrato-trava.ts, testada à parte).
   assert.match(fech, /motivoBloqueioContrato\(\{/);

@@ -155,7 +155,6 @@ export const INVENTARIO: ItemInventario[] = [
   i("chamados", "public.chamados", "nome e e-mail do visitante", "atendimento", CONTA),
   i("chamado_mensagens", "public.chamado_mensagens", "mensagens e anexos do atendimento", "atendimento", CONTA),
   i("chamados-bucket", "bucket:chamados", "anexos do atendimento (sem uso no código)", "atendimento", CONTA),
-  i("central-anexos", "bucket:central-anexos", "anexos do chat do admin", "operação", CONTA),
   i("caixa_socios", "public.caixa_socios", "texto, arquivo e texto extraído", "caixa dos sócios", CONTA),
   i("caixa-socios", "bucket:caixa-socios", "áudio, PDF e DOCX dos sócios", "caixa dos sócios", CONTA),
   i("agentes_conversas", "public.agentes_conversas", "texto do chat de IA do admin", "operação", CONTA),

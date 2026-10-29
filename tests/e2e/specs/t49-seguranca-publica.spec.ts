@@ -82,7 +82,6 @@ test.describe("T49 APIs privadas sem login @seguranca", () => {
     { rota: "/api/upload/inquilino-doc", aceitos: [401, 403] },
     { rota: "/api/ai/anuncio", aceitos: [401, 403, 503] },
     { rota: "/api/caf/verify", aceitos: [401, 403] },
-    { rota: "/api/assinatura", aceitos: [401, 403] },
     { rota: "/api/contrato", corpo: { leadId: LEAD_FALSO }, aceitos: [401, 403] },
     { rota: "/api/comissao", corpo: { leadId: LEAD_FALSO }, aceitos: [401, 403] },
   ];

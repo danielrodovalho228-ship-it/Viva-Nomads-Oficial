@@ -93,7 +93,7 @@ test.describe("T31 — Cadastro confiável: documento da pessoa", () => {
     for (const id of [ids.dono, ids.inquilina]) if (id) await adm().auth.admin.deleteUser(id);
   });
 
-  test("dono sem CPF: aceite e assinatura recusados; Conta → Documento valida, salva e mascara; depois o aceite passa", async ({ browser }) => {
+  test("dono sem CPF: aceite recusado; Conta → Documento valida, salva e mascara; depois o aceite passa", async ({ browser }) => {
     test.setTimeout(120_000);
     const page = await entrar(browser, dono.email);
 
@@ -106,12 +106,7 @@ test.describe("T31 — Cadastro confiável: documento da pessoa", () => {
     expect(await statusLead()).toBe("new");
     await page.screenshot({ path: "tests/laboratorio/saida/t31-1-aceite-sem-documento.png", fullPage: true });
 
-    // 2) Assinar plano sem documento → 400 com a mensagem.
-    const res = await page.request.post("/api/assinatura", { data: { planId: "essential", billingType: "PIX" } });
-    expect(res.status()).toBe(400);
-    expect((await res.json()).error).toContain("Antes de assinar o plano, informe seu CPF");
-
-    // 3) Conta → Documento.
+    // 2) (E237: a rota de assinar plano saiu.) Conta → Documento.
     await aviso.getByRole("link", { name: "Informar meu documento" }).click();
     await page.waitForURL(/\/dashboard\/conta\/dados#documento/);
     const secao = page.locator("#documento");

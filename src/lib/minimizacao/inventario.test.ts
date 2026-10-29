@@ -36,6 +36,8 @@ function bucketsDasMigracoes(): Set<string> {
     for (const m of s.matchAll(/insert into storage\.buckets\s*\(([^)]*)\)\s*values\s*([\s\S]*?)(?:on conflict|;)/gi)) {
       for (const v of m[2].matchAll(/\(\s*'([a-z0-9-]+)'/g)) b.add(v[1]);
     }
+    // E237 (0255): bucket apagado por migração posterior sai da conta.
+    for (const m of s.matchAll(/delete from storage\.buckets where id = '([a-z0-9-]+)'/gi)) b.delete(m[1]);
   }
   return b;
 }
