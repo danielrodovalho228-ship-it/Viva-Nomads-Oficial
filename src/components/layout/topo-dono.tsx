@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, ChevronDown } from "lucide-react";
+import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -168,7 +169,8 @@ export function SubabasPainel({ papel, abas, pathname }: { papel: PapelAbas; aba
   const ativa = subabaAtivaPainel(abas, pathname);
   const px = prefixoPapel(papel);
   return (
-    <nav aria-label={`Seções de ${aba.rotulo}`} className="-mx-4 mb-6 flex gap-2 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0" data-testid={`subabas-${px}`} data-aba={aba.id}>
+    // E248: no celular a fileira mostra que há mais abas ("›" na borda) em vez de cortar "Recibos e nota…" em silêncio.
+    <FileiraRolavel as="nav" aria-label={`Seções de ${aba.rotulo}`} classeExterna="-mx-4 mb-6 sm:mx-0" className="flex gap-2 border-b border-line px-4 sm:px-0" data-testid={`subabas-${px}`} data-aba={aba.id}>
       {aba.subabas.map((s) => {
         const on = ativa?.id === s.id;
         return (
@@ -186,6 +188,6 @@ export function SubabasPainel({ papel, abas, pathname }: { papel: PapelAbas; aba
           </Link>
         );
       })}
-    </nav>
+    </FileiraRolavel>
   );
 }

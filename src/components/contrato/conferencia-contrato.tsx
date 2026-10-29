@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileCheck2, Loader2 } from "lucide-react";
+import { Camera, FileCheck2, FileUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   anexarLaudoConferencia,
@@ -44,6 +44,10 @@ const fmt = (iso: string) => dataHoraBRT(iso, { semEtiqueta: true });
  * Fotos e itens por cômodo; cada parte confirma ou contesta uma vez; depois disso nada muda.
  * O laudo independente (PDF) prevalece sobre as fotos quando existe.
  */
+/** E247: o seletor de arquivo do site — botão de contorno em português; o input nativo fica escondido (sr-only). */
+const SELETOR_ARQUIVO =
+  "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:bg-sage-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-forest";
+
 export function ConferenciaContrato({ contratoId, statusContrato, dados }: { contratoId: string; statusContrato: string; dados: ConferenciasContrato }) {
   const tipos: TipoConferencia[] = statusContrato === "ativo" ? ["entrada", "saida"] : ["saida"];
   return (
@@ -222,12 +226,20 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         <form onSubmit={adicionar} className="mt-4 grid grid-cols-1 gap-2" data-testid={`conferencia-${tipo}-form`}>
           <input value={comodo} onChange={(e) => setComodo(e.target.value)} maxLength={60} placeholder="Cômodo (ex.: Sala)" aria-label="Cômodo" className="h-11 rounded-lg border border-line px-3 text-sm" />
           <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={300} rows={2} placeholder="Itens e estado do cômodo" aria-label="Itens e estado do cômodo" className="rounded-lg border border-line p-3 text-sm" />
-          <input type="file" key={chaveFoto} accept="image/jpeg,image/png,image/webp" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} aria-label="Foto do cômodo" className="block w-full min-w-0 max-w-full text-sm" data-testid={`conferencia-${tipo}-foto`} />
-          {foto && (
-            <p className="break-all text-xs text-muted" data-testid={`conferencia-${tipo}-foto-escolhida`}>
-              Foto escolhida: {foto.name}
-            </p>
-          )}
+          {/* E247: o seletor do site (botão em português), não o nativo cru do navegador ("Choose File / No file chosen"). */}
+          <div className="flex flex-wrap items-center gap-3">
+            <label className={SELETOR_ARQUIVO} data-testid={`conferencia-${tipo}-foto-botao`}>
+              <Camera className="h-4 w-4" aria-hidden /> {foto ? "Trocar foto" : "Escolher foto do cômodo"}
+              <input type="file" key={chaveFoto} accept="image/jpeg,image/png,image/webp" onChange={(e) => setFoto(e.target.files?.[0] ?? null)} aria-label="Foto do cômodo" className="sr-only" data-testid={`conferencia-${tipo}-foto`} />
+            </label>
+            {foto ? (
+              <p className="min-w-0 break-all text-xs text-muted" data-testid={`conferencia-${tipo}-foto-escolhida`}>
+                Foto escolhida: {foto.name}
+              </p>
+            ) : (
+              <p className="text-xs text-muted">Nenhuma foto escolhida (opcional)</p>
+            )}
+          </div>
           {podeReparo && (
             <label className="flex items-start gap-2 text-sm text-ink">
               <input type="checkbox" checked={reparo} onChange={(e) => setReparo(e.target.checked)} className="mt-1" data-testid="conferencia-saida-reparo" />
@@ -241,10 +253,13 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       )}
 
       {parte && !laudo && (
-        <label className="mt-3 block text-sm text-muted">
-          Anexar laudo independente (PDF, até 15 MB)
-          <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} className="mt-1 block w-full min-w-0 max-w-full text-sm" data-testid={`conferencia-${tipo}-laudo-input`} />
-        </label>
+        <div className="mt-3">
+          <label className={SELETOR_ARQUIVO} data-testid={`conferencia-${tipo}-laudo-botao`}>
+            <FileUp className="h-4 w-4" aria-hidden /> Anexar laudo independente
+            <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} aria-label="Anexar laudo independente (PDF, até 15 MB)" className="sr-only" data-testid={`conferencia-${tipo}-laudo-input`} />
+          </label>
+          <p className="mt-1 text-xs text-muted">PDF, até 15 MB.</p>
+        </div>
       )}
 
       {parte && !respondeu && !travada && !liberado && (

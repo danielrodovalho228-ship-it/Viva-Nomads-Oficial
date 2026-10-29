@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { AVISO_ANTIGOLPE_ALERTA, pareceDadoBancario } from "@/lib/seguranca/antigolpe";
+import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
 import { DenunciarConversa } from "@/components/mensagens/denunciar-conversa";
 import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
@@ -191,7 +192,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     <>
       <PageTitle title="Mensagens" action={demo ? <DemoBadge /> : undefined} />
       <AvisoAntigolpe className="mb-3" />
-      <div role="group" aria-label="Filtrar conversas" className="mb-3 flex gap-2 overflow-x-auto pb-1">
+      {/* E248: os filtros que não cabem no celular ("Como mor…") ganham o "›" na borda — dá para ver que há mais. */}
+      <FileiraRolavel role="group" aria-label="Filtrar conversas" classeExterna="mb-3" className="flex gap-2 pb-1">
         {FILTROS.map((f) => (
           <button
             key={f.id}
@@ -211,7 +213,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <span className={cn("text-xs", filtro === f.id ? "text-white/80" : "text-muted")}>{contagem[f.id]}</span>
           </button>
         ))}
-      </div>
+      </FileiraRolavel>
       {naoEncontrada && (
         <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="mensagens-conversa-nao-encontrada">
           {TEXTO_CONVERSA_NAO_ENCONTRADA}

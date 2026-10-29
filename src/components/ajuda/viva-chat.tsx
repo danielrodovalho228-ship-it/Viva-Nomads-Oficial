@@ -147,7 +147,16 @@ export function VivaChatFlutuante() {
   return (
     <div
       ref={raiz}
-      className={cn("vn-viva-flut web-only fixed z-40 flex flex-col gap-3 print:hidden", pos?.lado === "esq" ? "items-start" : "items-end", !visivel && "max-md:hidden")}
+      className={cn(
+        "vn-viva-flut web-only fixed z-40 flex flex-col gap-3 print:hidden",
+        pos?.lado === "esq" ? "items-start" : "items-end",
+        !visivel && "max-md:hidden",
+        // E246 (varredura do dono, 29/10): no painel do CELULAR não há faixa livre para o botão (no computador a coluna
+        // reserva a da direita — CONTA-A C4), e ele sentava sobre a caixa "Taxa de serviço" (Contratos) e a foto do
+        // "Continue seu anúncio" (Início). Como no E95 (/buscar) e no E60 (Perfil), ali ele some; o "Fale com a Viva"
+        // continua em Conta › Ajuda.
+        painel && "max-md:hidden"
+      )}
       style={estilo}
       data-posicao={arrastando ? "arrastando" : pos ? pos.lado : "padrao"}
       data-testid="fale-com-a-viva-raiz"
