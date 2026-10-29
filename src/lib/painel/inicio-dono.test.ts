@@ -5,7 +5,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, alertaDoTopo, blocoPrincipalDono, lugarDoChecklistDono } from "./inicio-dono.ts";
+import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, alertaDoTopo, blocoPrincipalDono } from "./inicio-dono.ts";
+import { checklistProprietario, type FatosConta } from "../onboarding/ativacao.ts";
 import type { Decisao } from "./decisoes.ts";
 
 const dec = (id: string, extra: Partial<Decisao> = {}): Decisao => ({ id, tipo: "proposta", texto: `Decisão ${id}`, href: `/x/${id}`, prazo: null, prazoTexto: null, atrasada: false, ...extra });
@@ -54,18 +55,64 @@ test("Peça na Viva (um botão cheio) e os três atalhos do mockup", () => {
   assert.match(v, /if \(mode === "owner" && !demo && inicioDono\)/);
 });
 
-test("E218 (L-71): o checklist de ativação do dono volta ao Início — dentro de 'Anuncie seu primeiro imóvel', abaixo nos outros", () => {
-  assert.equal(lugarDoChecklistDono("primeiro_anuncio"), "dentro");
-  assert.equal(lugarDoChecklistDono("rascunho"), "abaixo");
-  assert.equal(lugarDoChecklistDono("decisao"), "abaixo");
-  assert.equal(lugarDoChecklistDono("em_dia"), "abaixo");
+const fatosDono = (extra: Partial<FatosConta> = {}): FatosConta =>
+  ({ imoveis: 0, imoveisAtivos: 0, rascunhoComDados: false, rascunhoComFotos: false, rascunhoComValor: false, entrouComoDono: true, ...extra }) as FatosConta;
+
+test("E218-A: dono novo sem rascunho — o guia de ativação (4 passos) dentro do bloco principal", () => {
+  const b = blocoPrincipalDono({ rascunho: null, decisoes: [], temAnuncio: false, fotoAnuncio: null, checklist: checklistProprietario(fatosDono()) });
+  assert.equal(b.tipo, "primeiro_anuncio");
+  assert.deepEqual(
+    b.passos.map((p) => p.rotulo),
+    ["Endereço e dados do imóvel", "Fotos do imóvel", "Valor mensal", "Publicar"]
+  );
+  assert.ok(b.passos.every((p) => !p.feito));
+  assert.equal(b.passos[1].detalhe, "Mínimo de 8, de dia e na horizontal.");
+  // Sem guia (ativado ou ausente), sem passos.
+  assert.deepEqual(blocoPrincipalDono({ rascunho: null, decisoes: [], temAnuncio: false, fotoAnuncio: null }).passos, []);
+});
+
+test("E218-A: com rascunho, os passos são os do rascunho (o guia não repete o que já está lá)", () => {
+  const b = blocoPrincipalDono({
+    rascunho: { id: "r1", pct: 40, pronto: false, itens, foto: null },
+    decisoes: [],
+    temAnuncio: false,
+    fotoAnuncio: null,
+    checklist: checklistProprietario(fatosDono({ imoveis: 1, rascunhoComDados: true })),
+  });
+  assert.equal(b.tipo, "rascunho");
+  assert.deepEqual(b.passos.map((p) => p.rotulo), ["Fotos e título", "Detalhes básicos (banheiros e área)", "Preço e regras"]);
+});
+
+test("E218-A, caso obrigatório: rascunho PRONTO e não publicado leva a revisar ESSE rascunho, nunca a um anúncio novo", () => {
+  const b = blocoPrincipalDono({
+    rascunho: { id: "r9", pct: 100, pronto: true, itens: itens.map((i) => ({ ...i, ok: true })), foto: "https://x/capa.webp" },
+    decisoes: [],
+    temAnuncio: false,
+    fotoAnuncio: null,
+    checklist: checklistProprietario(fatosDono({ imoveis: 1, rascunhoComDados: true, rascunhoComFotos: true, rascunhoComValor: true })),
+  });
+  assert.equal(b.titulo, "Publique seu anúncio");
+  assert.equal(b.botao.href, "/dashboard/imoveis/novo?draft=r9&etapa=revisao");
+  assert.notEqual(b.botao.href, "/dashboard/imoveis/novo");
+  assert.notEqual(b.tipo, "primeiro_anuncio");
+});
+
+test("E218-A: com anúncio publicado o guia some (decisão ou em dia), e o modo dono nunca tem dois guias", () => {
+  const ativado = checklistProprietario(fatosDono({ imoveis: 1, imoveisAtivos: 1 }));
+  assert.equal(ativado.ativado, true);
+  assert.equal(blocoPrincipalDono({ rascunho: null, decisoes: [], temAnuncio: true, fotoAnuncio: null, checklist: ativado }).tipo, "em_dia");
+  assert.equal(blocoPrincipalDono({ rascunho: null, decisoes: [dec("a")], temAnuncio: true, fotoAnuncio: null, checklist: ativado }).tipo, "decisao");
   const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
   const visao = ler("../../app/(dashboard)/dashboard/visao-geral-client.tsx");
-  // O modo dono passa o checklist do proprietário ao InicioDono...
-  assert.match(visao, /<InicioDono [^>]*checklist=\{checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null\}/);
-  // ...e o modo morador continua sem ele (E167, #1392).
+  // O modo dono só renderiza o InicioDono (sem ChecklistAtivacaoBloco do proprietário ao lado)...
+  const inicioRamo = visao.indexOf('if (mode === "owner" && !demo && inicioDono)');
+  const ramoDono = visao.slice(inicioRamo, visao.indexOf("\n  }", inicioRamo)).replace(/\/\/.*$/gm, "");
+  assert.doesNotMatch(ramoDono, /ChecklistAtivacaoBloco|checklist=/);
+  // ...e o morador/parceiro seguem com o deles (E167, #1392).
   assert.match(visao, /const blocosMorador = checklists\.filter\(\(c\) => c\.papel !== "proprietario"\)/);
   const inicio = ler("../../components/painel/inicio-dono.tsx");
-  assert.match(inicio, /lugar === "dentro" && <ChecklistAtivacaoBloco checklist=\{checklist\} embutido \/>/);
-  assert.match(inicio, /lugar === "abaixo" && <ChecklistAtivacaoBloco checklist=\{checklist\} \/>/);
+  assert.doesNotMatch(inicio.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ""), /ChecklistAtivacaoBloco/);
+  // O servidor monta os passos do bloco a partir do guia do dono (fonte única).
+  const pagina = ler("../../app/(dashboard)/dashboard/page.tsx");
+  assert.match(pagina, /checklist: checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null/);
 });

@@ -165,6 +165,8 @@ export default async function DashboardPage() {
       decisoes: decisoesDono,
       temAnuncio: imoveisDono.length > 0,
       fotoAnuncio: capaAnuncio,
+      // E218-A: o guia de ativação do dono (some na ativação, como sempre) — fonte única dos passos do bloco.
+      checklist: checklists.find((c) => c.papel === "proprietario") ?? null,
     }),
     hoje,
   };
