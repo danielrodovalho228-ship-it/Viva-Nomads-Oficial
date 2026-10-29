@@ -192,6 +192,14 @@ export function textosTotalMensal(property: Property): { destaque: string; detal
 export const ROTULO_MENSAL = "Mensal";
 export const ROTULO_TOTAL_MES = "Total por mês (com contas)";
 export const ROTULO_TOTAL_CONTRATO = "Total do contrato";
+/**
+  E251 (d): o anúncio ainda não tem contrato. Na prévia do Passo 10 e no cartão de Meus anúncios, o total do período
+  se chama "Estadia mínima (N meses)", com a mesma conta; "Total do contrato" fica só onde há contrato de verdade.
+*/
+export function rotuloEstadiaMinima(meses: number): string {
+  const n = Math.max(1, Math.round(meses));
+  return `Estadia mínima (${n} ${n === 1 ? "mês" : "meses"})`;
+}
 /** Pagamento único da entrada (vai no 1º pagamento); a limpeza de saída fica para o fim. */
 export const ROTULO_PREPARACAO = "Limpeza de preparação";
 

@@ -496,7 +496,10 @@ export function AntesDePublicar(p: {
   );
 }
 
-/** ✓ (feito), "falta" (segura a publicação) ou um aviso neutro (em andamento ou opcional). */
+/**
+ * ✓ (feito), "falta" (segura a publicação) ou "a confirmar" em tom NEUTRO (em andamento ou opcional, como a identidade):
+ * nada de vermelho nem âmbar, para não parecer erro (parecer do coordenador ao E251, item b).
+ */
 function SinalSecao({ estado }: { estado: EstadoSecao }) {
   if (estado === "ok") return <CheckCircle2 className="h-6 w-6 shrink-0 fill-forest text-white" aria-label="feito" />;
   if (estado === "falta")
@@ -505,7 +508,11 @@ function SinalSecao({ estado }: { estado: EstadoSecao }) {
         falta
       </span>
     );
-  return <span className="h-6 w-6 shrink-0 rounded-full border-2 border-sage-200" aria-label="em andamento" />;
+  return (
+    <span className="shrink-0 rounded-full bg-surface-2 px-2 py-1 text-xs font-medium text-muted" data-testid="sinal-a-confirmar">
+      a confirmar
+    </span>
+  );
 }
 
 /**

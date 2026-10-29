@@ -11,7 +11,7 @@ import { prontidaoAnuncio, type FatosAnuncio } from "./prontidao.ts";
 import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
 import { isEligible } from "../qualification.ts";
 import { elegibilidadeDoCadastro } from "./requisitos-passo10.ts";
-import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "../precos.ts";
+import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, rotuloEstadiaMinima } from "../precos.ts";
 import type { Property } from "../types.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
@@ -50,8 +50,29 @@ test("declarações: 'Não sei' fica ✓ (publica com pendência); 'Não' é fal
 
 test("quem opera: falta com o motivo; identidade nunca segura a publicação", () => {
   assert.equal(estado({ faltaOperacao: "Anexe a autorização" }).operacao, "falta");
-  assert.equal(estado({ identidade: "pendente" }).identidade, "aviso");
-  assert.equal(estado({ identidade: "em_breve" }).identidade, "aviso");
+  for (const identidade of ["pendente", "em_breve", "sem_cpf", "carregando"] as const) assert.equal(estado({ identidade }).identidade, "aviso");
+});
+
+test("E251 (b): a identidade 'a confirmar' tem tom neutro — sem a cor de 'falta' nem âmbar", () => {
+  const antes = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-onde-fica.tsx");
+  const classe = antes.match(/className="([^"]+)" data-testid="sinal-a-confirmar"/)?.[1] ?? "";
+  assert.match(classe, /text-muted/);
+  assert.doesNotMatch(classe, /red-|amber-/);
+  // O resumo só fica vermelho quando a seção segura a publicação.
+  assert.match(antes, /s\.estado === "falta" \? "text-red-700" : "text-muted"/);
+  const resumo = secoesAntesDePublicar({ ...BASE, identidade: "pendente" }).find((x) => x.id === "identidade")!.resumo;
+  assert.doesNotMatch(resumo, /^Falta|falta/);
+});
+
+test("E251 (d): 'Estadia mínima (N meses)' na prévia e no cartão de Meus anúncios; 'Total do contrato' fora do anúncio", () => {
+  assert.equal(rotuloEstadiaMinima(1), "Estadia mínima (1 mês)");
+  assert.equal(rotuloEstadiaMinima(4), "Estadia mínima (4 meses)");
+  const cartao = ler("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
+  assert.match(cartao, /rotuloEstadiaMinima\(r\.meses\)/);
+  assert.doesNotMatch(cartao, /ROTULO_TOTAL_CONTRATO/);
+  const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
+  assert.doesNotMatch(revisar, /total-contrato|Total do contrato"/);
+  assert.doesNotMatch(ler("src/lib/anuncio/passo10-colunas.ts"), /ROTULO_TOTAL_CONTRATO/);
 });
 
 test("botão travado: o motivo cabe em UMA linha (o primeiro que falta e quantos mais)", () => {
@@ -80,10 +101,11 @@ test("as regras de publicar não mudam: sem os 12 itens trava; convenção 'Não
   assert.deepEqual(oQueFaltaParaPublicar({ completude: prontidaoAnuncio(FATOS).obrigatorios, declaracoesOk: eleg("unknown"), aceitouIa: true }), []);
 });
 
-test("prévia: os três preços com os nomes fixos (Mensal · Total por mês (com contas) · Total do contrato)", () => {
+test("prévia: os três preços (Mensal · Total por mês (com contas) · Estadia mínima (N meses)), sem 'Total do contrato'", () => {
   const imovel = { monthlyPrice: 3200, condoFee: 400, utilitiesMode: "fixed", utilitiesEstimate: 150, minPeriodDays: 60 } as unknown as Property;
   const linhas = precosDaPrevia(imovel);
-  assert.deepEqual(linhas.map((l) => l.rotulo), [ROTULO_MENSAL, ROTULO_TOTAL_MES, ROTULO_TOTAL_CONTRATO]);
+  assert.deepEqual(linhas.map((l) => l.rotulo), [ROTULO_MENSAL, ROTULO_TOTAL_MES, "Estadia mínima (2 meses)"]);
+  assert.ok(!linhas.some((l) => l.rotulo === ROTULO_TOTAL_CONTRATO), "anúncio não tem contrato: nada de 'Total do contrato'");
   assert.equal(linhas[0].valor, 3200);
   assert.ok((linhas[1].valor ?? 0) >= 3200);
   assert.equal(linhas[2].valor, (linhas[1].valor ?? 0) * 2);
