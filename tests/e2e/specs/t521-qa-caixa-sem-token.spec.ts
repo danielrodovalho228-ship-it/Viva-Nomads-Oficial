@@ -1,3 +1,4 @@
+// Portão pós-#1509/#1512 (Pista C, 29/10): E228 (links da auditoria) e botões do observador da QA; roda no lab-crítico deste PR.
 import { test, expect, type Browser } from "@playwright/test";
 import { adm, apagarContas, criarConta, entrar, NO_LABORATORIO, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 

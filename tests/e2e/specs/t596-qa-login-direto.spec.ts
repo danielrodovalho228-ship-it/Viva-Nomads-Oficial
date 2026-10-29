@@ -1,3 +1,4 @@
+// Portão pós-#1509/#1512 (Pista C, 29/10): E228 (links da auditoria) e botões do observador da QA; roda no lab-crítico deste PR.
 import { test, expect, type Browser } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync, readFileSync } from "node:fs";
