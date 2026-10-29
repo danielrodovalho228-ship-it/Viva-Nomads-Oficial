@@ -15,6 +15,7 @@ import {
 } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T280 — Prompt 43 (perfil, calendários, fluxos, conta única, onboarding e Anunciar em 6 passos), a 390 e 1280 px:
   1. Conta com os 3 papéis: "Seus papéis" com os 3 ativos, Conta em 4 grupos, nenhum seletor de modo; a barra do

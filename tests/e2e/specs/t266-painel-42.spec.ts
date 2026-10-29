@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page, type Request } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /**
  * T266 — Prompt 42 (painel), a 390 e 1280 px, no laboratório:
  *  1. Início do proprietário (PROP-6): sem "Bem-vindo" nem funil de passos; a pendência mais urgente (contraproposta,

@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { adm, NO_LABORATORIO } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T605 — E217 (L-70, Pista C): no chamado do admin, a resposta manual nunca depende da sugestão automática da Viva.
   Com a sugestão forçada a falhar (as ações do servidor recusadas enquanto a tela abre), aparece o aviso curto

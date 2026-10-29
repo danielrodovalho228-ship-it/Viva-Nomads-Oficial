@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T459 — PROP-1 (substitui o NAV-A2): navegação do dono, como no mockup painel-proprietario-desktop. Só no laboratório.
    1. Computador (1280): sem barra lateral; abas Início · Anúncios · Interessados · Contratos · Mensagens; sino;

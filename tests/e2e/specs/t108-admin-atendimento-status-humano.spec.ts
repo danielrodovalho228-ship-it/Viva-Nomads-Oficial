@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { adm, liberarLimiteChamados, NO_LABORATORIO } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /**
  * T108 — Admin: a tela do chamado (/admin/atendimento/[id]) nunca mostra código de status
  * (ex.: pendente_aceite) — só texto humano (ordem 0569d129 item 2, achado do Moacir no #595).
