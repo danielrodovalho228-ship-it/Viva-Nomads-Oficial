@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { FAIXAS_COMISSAO_PADRAO, rotuloFaixaTaxa } from "../../../src/lib/cobranca/regra";
 
 /*
   T659 — E236 (#1524): o Plano Gestor começa em GESTOR_PRECO.minimoImoveis (20) em todo texto público — antes, várias
@@ -85,8 +86,10 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await textoDe(page, "/precos");
       const faixas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa");
       await expect(faixas).toBeVisible();
-      await expect(faixas).toContainText(/\b31\+/);
-      await expect(faixas).toContainText("taxa negociável");
+      // O rótulo da faixa sem teto, exato (o innerText junta "R$ 540" ao "31+", então nada de \b antes do 31).
+      const ultima = FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1];
+      await expect(faixas).toContainText(rotuloFaixaTaxa(ultima, largura === 390));
+      await expect(faixas).toContainText("31+");
       const texto = (await faixas.innerText()).replace(/\s+/g, " ");
       expect(texto).not.toMatch(GESTOR_COM_31);
     });
