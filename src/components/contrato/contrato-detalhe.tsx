@@ -20,6 +20,9 @@ import { pendenciasDoContrato } from "@/lib/data/conforto-actions";
 import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
 import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { VoltarLista } from "@/components/ui/voltar-lista";
+import { ButtonLink } from "@/components/ui/button";
+import { situacaoDaRenovacao } from "@/lib/data/renovacao-contrato";
+import { HREF_RENOVAR, ROTULO_RENOVAR, TEXTO_NO_MAXIMO } from "@/lib/estadia/renovacao";
 
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
@@ -56,6 +59,8 @@ export async function ContratoDetalhe({
   const checkin = c.status === "ativo" ? await instrucoesDoContrato(c.id) : null;
   // Cartão-postal pós-estadia (cartões compartilháveis, T1): só para o morador, depois da saída.
   const postal = c.papel === "inquilino" ? await meuCartaoPostal(c.id) : null;
+  // E222-B: renovar = aditivo de prorrogação já preenchido (um caminho só). Contrato ativo e assinado pelas duas partes.
+  const renovacao = await situacaoDaRenovacao(c.id);
   return (
     <>
       <VoltarLista href={voltarHref} rotulo={voltarRotulo} />
@@ -97,6 +102,25 @@ export async function ContratoDetalhe({
         )}
         <AvisoAssinatura contratoId={c.id} aviso={c.aviso} />
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
+        {renovacao && (
+          <div id="renovar" className="mt-4 scroll-mt-24 border-t border-line pt-4" data-testid="contrato-renovacao" data-cabe={renovacao.cabe ? "1" : "0"}>
+            {renovacao.cabe ? (
+              <>
+                <p className="text-sm text-muted">
+                  Quer ficar mais tempo? A renovação é um aditivo de prorrogação, assinado pelas duas partes. Cabem mais {renovacao.renovacao.mesesQueCabem}{" "}
+                  {renovacao.renovacao.mesesQueCabem === 1 ? "mês" : "meses"} até o máximo da estadia.
+                </p>
+                <ButtonLink href={HREF_RENOVAR(c.id)} variant="secondary" size="sm" className="mt-2" data-testid="contrato-renovar">
+                  {ROTULO_RENOVAR}
+                </ButtonLink>
+              </>
+            ) : (
+              <p className="text-sm font-medium text-ink" data-testid="contrato-renovacao-maximo">
+                {TEXTO_NO_MAXIMO}
+              </p>
+            )}
+          </div>
+        )}
       </Panel>
       {lembreteSenha && (
         <Panel className="mt-4 p-4" data-testid="lembrete-senha-entrada">

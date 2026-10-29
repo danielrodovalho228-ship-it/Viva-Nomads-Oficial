@@ -11,9 +11,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
        o dono, nunca;
     B. aditivo +1 mês assinado, o bloco 2 novo começa em 9 dias → nada na hora; quando o bloco chega a 3 dias do
        início, a rotina diária (cron) manda — uma vez, e de novo não repete.
-  O renovarBloco (a outra porta) não tem botão em nenhuma tela: o Next não publica uma Server Action que nenhum
-  componente do cliente importa, então o laboratório não alcança essa porta. As duas portas chamam a MESMA função
-  (lembreteDeBlocoNoAceite); a guarda em src/lib/estadia/lembrete-bloco.test.ts confere as duas chamadas.
+  E222-B: o aditivo assinado é a ÚNICA porta da renovação aceita (o renovarBloco saiu; "Renovar a estadia" abre este
+  mesmo aditivo já preenchido, ver t631). A guarda em src/lib/estadia/lembrete-bloco.test.ts confere a chamada.
   A parte do cron sobe um 2º servidor do mesmo build (porta 3126) com um CRON_SECRET só dele, como a t592.
 */
 const SAIDA = "tests/laboratorio/saida";

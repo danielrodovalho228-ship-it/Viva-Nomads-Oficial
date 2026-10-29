@@ -165,6 +165,8 @@ export interface EstadiaView {
   primeiroPagamento: boolean;
   meses: number;
   valorMensal: number;
+  /** Tamanho padrão do bloco do contrato (meses) — base da renovação (E222-B). */
+  tamanhoBlocoMeses: number;
   blocos: { numero: number; inicio: string; fim: string; meses: number; iniciado: boolean }[];
 }
 
@@ -312,6 +314,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     primeiroPagamento: primeiro,
     meses,
     valorMensal,
+    tamanhoBlocoMeses: Number(c.tamanho_bloco_meses) || 2,
     blocos: blocos
       .filter((b) => b.status !== "nao_aceito")
       .map((b) => ({ numero: b.numero_bloco, inicio: b.inicio, fim: b.fim, meses: Number(b.meses), iniciado: blocoIniciado(b, hojeEmBrasilia(agora)) })),

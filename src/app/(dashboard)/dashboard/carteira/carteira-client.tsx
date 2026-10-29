@@ -10,6 +10,7 @@ import { useDashDemo, useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PORTFOLIO } from "@/lib/demo/seed";
 import { dataBR, formatBRL } from "@/lib/utils";
 import { ROTULO_MENSAL } from "@/lib/precos";
+import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
 
 /**
  * Análise da carteira (complemento do prompt 27, item 8). A fonte é o BANCO (getCarteiraDoDono, lida no servidor e
@@ -219,7 +220,7 @@ function ColunaVencimento({ titulo, tom, itens, faixa }: { titulo: string; tom: 
                 <p className="mt-1 text-xs text-muted">Sem renovação, o imóvel fica livre a partir de {dataBR(addDiasISO(i.fim, 1))}: anuncie a disponibilidade.</p>
               )}
               {i.contratoId && (
-                <Link href={`/dashboard/contratos/${i.contratoId}`} className="mt-1 inline-block text-xs font-medium text-forest underline" data-testid="carteira-preparar-renovacao">
+                <Link href={HREF_RENOVAR(i.contratoId)} className="mt-1 inline-block text-xs font-medium text-forest underline" data-testid="carteira-preparar-renovacao">
                   Preparar renovação
                 </Link>
               )}
