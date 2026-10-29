@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão/catraca dos merges da noite (#1483–#1489) (Pista C, 29/10): roda no lab-crítico deste PR (o completo não chega aqui).
 /*
   T610 — E190 (parte 2): "Hoje" no Início do proprietário. Quem entra e quem sai HOJE nos imóveis do dono, cada um num
   cartão com foto (ou iniciais) + nome do morador, o imóvel e o horário; o cartão leva à estadia. Sem nada hoje, a seção
