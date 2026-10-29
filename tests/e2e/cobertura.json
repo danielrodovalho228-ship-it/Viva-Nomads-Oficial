@@ -75,7 +75,8 @@
         "t465-admin4-inicial",
         "t419-varredura-bloco36",
         "t546-e175-parcerias-uma-linha",
-        "t549-varredura-bloco39"
+        "t549-varredura-bloco39",
+        "t615-varredura-bloco54"
       ]
     },
     "/admin/2fa/refazer": {
@@ -107,7 +108,8 @@
         "t387-varredura-bloco22",
         "t419-varredura-bloco36",
         "t466-admin5-agentes",
-        "t420-varredura-bloco37"
+        "t420-varredura-bloco37",
+        "t615-varredura-bloco54"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -132,7 +134,8 @@
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t615-varredura-bloco54"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -188,7 +191,8 @@
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
         "t336-varredura-bloco14",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t615-varredura-bloco54"
       ]
     },
     "/admin/emails-teste": {
@@ -2114,7 +2118,8 @@
       "specs": [
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
-        "t596-qa-login-direto"
+        "t596-qa-login-direto",
+        "t615-varredura-bloco54"
       ]
     },
     "/admin/retencao": {
