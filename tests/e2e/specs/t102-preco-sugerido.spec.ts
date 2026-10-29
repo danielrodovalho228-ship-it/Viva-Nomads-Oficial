@@ -35,8 +35,8 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     // E180 (#1507): a cópia local nunca se aplica sozinha no "Novo anúncio" (abre na Qualificação); o link que diz o
     // passo (?etapa=preco) é a retomada explícita e aplica a cópia local.
     await page.goto("/dashboard/imoveis/novo?etapa=preco", { waitUntil: "networkidle" });
-    // Só o "Continuar de onde parei" do AVISO de rascunho (testid próprio), não o "Continuar" do rodapé do cadastro.
-    const retomar = page.getByTestId("rascunho-continuar");
+    // Só o "Continuar de onde parei" de dentro do AVISO de rascunho, não o "Continuar" do rodapé do cadastro.
+    const retomar = page.getByTestId("rascunho-aviso").filter({ hasText: "Você tem um anúncio em andamento" }).getByTestId("rascunho-continuar");
     const bloco = page.getByTestId("preco-sugerido");
     // O aviso de rascunho chega depois do networkidle (consulta assíncrona): espera o aviso OU o bloco do preço
     // (conta sem rascunho no servidor abre direto pelo rascunho local) em vez de decidir na hora.
