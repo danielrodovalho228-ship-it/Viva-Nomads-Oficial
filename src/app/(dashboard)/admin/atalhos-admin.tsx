@@ -7,7 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
 import { ROTULO_CONTADOR_FOTOS } from "@/lib/perfil/foto-revisao";
-import { ehObservadorQa } from "@/lib/qa/observador";
 
 /**
  * Áreas novas do admin na Visão geral (Caixa dos Sócios, Parceiros, Fotógrafos, Equipe), com números ao vivo.
@@ -56,8 +55,6 @@ export async function AtalhosAdmin() {
   };
   const admin = createAdminClient();
   const meuUid = (await supabase.auth.getUser()).data.user?.id ?? null;
-  // E216: para o admin observador da QA a Caixa dos Sócios não existe — nem as linhas com o número dela.
-  const observador = await ehObservadorQa(meuUid).catch(() => false);
   const [caixa, aceite, aceiteOrdens, interessados, fotografos, agentes, visitas, fotosPerfil] = await Promise.all([
     contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).in("status", ["novo", "precisa_daniel"])),
     // Ordem 3c3d8a9e: pedidos que o MEU pedido espera aceitar (a RLS é só de admin; filtra pelo autor logado).
@@ -76,12 +73,8 @@ export async function AtalhosAdmin() {
     <Panel title="Áreas do admin" className="mt-6">
       <ListaNumeros
         itens={[
-          ...(observador
-            ? []
-            : [
-                { rotulo: "Caixa dos Sócios — a tratar", valor: caixa, href: "/admin/socios" },
-                { rotulo: "Caixa dos Sócios — aguardando seu aceite", valor: aceite, href: "/admin/socios" },
-              ]),
+          { rotulo: "Caixa dos Sócios — a tratar", valor: caixa, href: "/admin/socios" },
+          { rotulo: "Caixa dos Sócios — aguardando seu aceite", valor: aceite, href: "/admin/socios" },
           { rotulo: "Ordens dos agentes — aguardando seu aceite", valor: aceiteOrdens, href: "/admin/agentes" },
           { rotulo: "Parceiros — novos interessados", valor: interessados, href: "/admin/parceiros" },
           { rotulo: "Fotógrafos em análise", valor: fotografos, href: "/admin/parceiros?tipo=fotografo" },

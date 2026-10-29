@@ -6,7 +6,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
 
 /*
   T604 — E216: o admin observador da QA (profiles.qa_admin) não vê o link "Caixa dos Sócios" na barra do admin (a página
-  já é 404 para ele) nem as linhas da Caixa na Visão geral. O admin comum continua vendo os dois. 1280 e 390.
+  já é 404 para ele), nem na Visão geral. O admin comum continua vendo o link. 1280 e 390.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -77,27 +77,25 @@ test.describe("T604 — E216: admin observador sem 'Caixa dos Sócios' na barra 
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — observador: Equipe só com a Central de Agentes; Visão geral sem as linhas da Caixa`, async ({ browser }) => {
+    test(`${largura} px — observador: Equipe só com a Central de Agentes; nada da Caixa na Visão geral`, async ({ browser }) => {
       const page = await entrarObservador(browser, largura);
       const menu = await menuDoAdmin(page, largura);
       await expect(menu.locator('a[href="/admin/socios"]')).toHaveCount(0);
       await expect(menu.getByText("Caixa dos Sócios", { exact: true })).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t604-observador-menu-${largura}.png` });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("admin-outras-areas")).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator("main h1").first()).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(/Caixa dos Sócios/)).toHaveCount(0);
       await page.context().close();
     });
   }
 
-  test("1280 px — admin comum: a Caixa dos Sócios continua na barra e na Visão geral", async ({ browser }) => {
+  test("1280 px — admin comum: a Caixa dos Sócios continua na barra", async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
     const page = await ctx.newPage();
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     const menu = await menuDoAdmin(page, 1280);
     await expect(menu.locator('a[href="/admin/socios"]')).toHaveText("Caixa dos Sócios");
-    await page.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText("Caixa dos Sócios — a tratar")).toBeVisible({ timeout: 30_000 });
     await ctx.close();
   });
 });

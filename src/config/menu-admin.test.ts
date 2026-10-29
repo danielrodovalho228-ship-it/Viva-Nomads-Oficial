@@ -104,6 +104,4 @@ test("E216: a casca monta a barra do admin com a marca do observador (vinda do s
   assert.doesNotMatch(casca, /\[\.\.\.BARRA_ADMIN\]/);
   const servidor = readFileSync(new URL("../lib/painel/contadores-servidor.ts", import.meta.url), "utf8");
   assert.match(servidor, /admin \? ehObservadorQa\(user\.id\)/);
-  const visao = readFileSync(new URL("../app/(dashboard)/admin/atalhos-admin.tsx", import.meta.url), "utf8");
-  assert.match(visao, /\.\.\.\(observador\s*\?\s*\[\]/);
 });
