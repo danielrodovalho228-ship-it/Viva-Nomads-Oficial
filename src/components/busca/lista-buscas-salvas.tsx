@@ -33,7 +33,7 @@ export function ListaBuscasSalvas({ inicial }: { inicial: BuscaSalva[] }) {
         </p>
       )}
       {buscas.map((b) => (
-        <Panel key={b.id} className="flex flex-wrap items-center justify-between gap-3">
+        <Panel key={b.id} className="flex flex-wrap items-center justify-between gap-3" data-testid="busca-salva-item">
           <Link href={`/buscar${b.parametros ? `?${b.parametros}` : ""}`} className="flex min-w-0 items-center gap-2 font-medium text-ink underline-offset-4 hover:underline">
             <Heart className="h-4 w-4 shrink-0 fill-forest text-forest" aria-hidden />
             <span className="break-words">{b.resumo}</span>
