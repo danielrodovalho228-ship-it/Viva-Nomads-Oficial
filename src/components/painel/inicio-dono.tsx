@@ -142,25 +142,29 @@ function HojeNoInicio({ cartoes }: { cartoes: CartaoHoje[] }) {
       <h2 id="inicio-dono-hoje" className="mb-3 font-title text-lg font-semibold text-ink">
         Hoje
       </h2>
-      <ul className="grid gap-3 lg:grid-cols-2 lg:gap-6">
+      {/* E219: no celular, uma coluna que não passa da tela (minmax(0,1fr)) — sem ela, um nome de imóvel longo esticava
+          a coluna automática do grid e o cartão estourava a largura. No computador, as 2 colunas de sempre. */}
+      <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
         {cartoes.map((c) => (
-          <li key={c.id}>
+          <li key={c.id} className="min-w-0">
             <Link
               href={c.href}
-              className="flex min-h-11 items-center gap-4 rounded-lg border border-line bg-white p-4"
+              className="flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg border border-line bg-white p-4 sm:gap-4"
               data-testid="inicio-dono-hoje-cartao"
               data-tipo={c.tipo}
             >
-              <Avatar name={c.nome} photoUrl={c.fotoUrl ?? undefined} size={48} />
+              <Avatar name={c.nome} photoUrl={c.fotoUrl ?? undefined} size={48} className="shrink-0" />
               <span className="min-w-0 flex-1">
-                <span className={cn("block text-sm font-semibold", c.tipo === "entrada" ? "text-forest" : "text-ink")}>
+                <span className={cn("block text-sm font-semibold", c.tipo === "entrada" ? "text-forest" : "text-ink")} data-testid="inicio-dono-hoje-rotulo">
                   {c.rotulo}
                   {c.horario ? <span className="font-normal text-muted"> · {c.horario}</span> : null}
                 </span>
                 <span className="block truncate font-title text-base font-semibold text-ink" data-testid="inicio-dono-hoje-nome">
                   {c.nome}
                 </span>
-                <span className="block truncate text-sm text-muted">{c.imovel}</span>
+                <span className="block truncate text-sm text-muted" data-testid="inicio-dono-hoje-imovel">
+                  {c.imovel}
+                </span>
               </span>
               <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
             </Link>
