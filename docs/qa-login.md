@@ -65,6 +65,8 @@ a) **Gerar a chave no seu ambiente** e gravar direto no seu cofre de credenciais
 
 b) **Calcular o sha256 da chave** (no mesmo ambiente, a partir do cofre) e gravar **só o hash** na Vercel, em Settings → Environment Variables, como `QA_LOGIN_KEY_HASH` (Production e Preview). Grave também `QA_EMAIL_PADRAO`: a expressão regular dos e-mails que podem ser criados como conta de teste, para o e-mail inteiro. Formato de exemplo (não é o valor real): `qa\+[a-z0-9.-]+@seu-dominio\.com`. Depois, faça um novo deploy.
 
+   > **Atenção (29/10/2026):** o `QA_LOGIN_KEY_HASH` precisa ter **exatamente 64 caracteres hexadecimais** (o sha256 em hex, sem espaço nem quebra de linha a mais). Com tamanho errado (63 ou 65, por exemplo), a porta **desliga em silêncio**: `/api/qa/entrar` e `/qa/entrar` respondem 404, como se não existissem, sem nenhum erro no log. Confira o tamanho antes de gravar e faça um novo deploy depois de corrigir.
+
 c) **Criar a conta de QA pela porta** com um e-mail dentro do padrão. Ela nasce como conta de teste. Para virar o admin observador, rode a Action **"Admin observador da QA"** (Actions → Run workflow) com o **id** da conta e `promover`. A Action:
 - aceita só uuid;
 - aceita só conta de teste;
