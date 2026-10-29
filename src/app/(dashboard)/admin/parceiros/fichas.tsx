@@ -30,7 +30,6 @@ import {
   suspenderParceiro,
 } from "@/lib/parceiros/admin-actions";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
-import { textoHaDias } from "@/lib/parceiros/fila-pendentes";
 
 export interface Ficha {
   id: string;
@@ -57,6 +56,8 @@ export interface Ficha {
   teste: boolean;
   /** E227-B: dias desde o pedido (a aba Pendentes mostra "há N dias"). */
   diasNaFila: number;
+  /** E234: "hoje" / "há N dias", de idadePedidoParceria (a mesma conta da Visão geral). */
+  idade: string;
 }
 
 const ORIGEM: Record<string, string> = { site: "Site", conta: "Conta", suporte: "Suporte" };
@@ -121,7 +122,7 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
           <p className="text-sm text-muted break-all">
             {f.email ?? "sem e-mail"} · origem {ORIGEM[f.origem] ?? f.origem} · {dataHora(f.criadoEm)} ·{" "}
             <span className="font-semibold text-ink" data-testid="ficha-dias" data-dias={f.diasNaFila}>
-              {textoHaDias(f.diasNaFila)}
+              {f.idade}
             </span>
           </p>
         </div>
