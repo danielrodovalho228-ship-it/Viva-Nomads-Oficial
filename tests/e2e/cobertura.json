@@ -142,7 +142,8 @@
       "specs": [
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
-        "t25-chamado-resumo"
+        "t25-chamado-resumo",
+        "t605-e217-resposta-sem-sugestao"
       ]
     },
     "/admin/avaliacoes": {
