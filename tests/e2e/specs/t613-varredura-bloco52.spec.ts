@@ -5,13 +5,14 @@ import { TAMANHOS, cliqueResponde } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T610 — VARREDURA DA PÁGINA INTEIRA, BLOCO 52 (Pista C, 29/10). O protocolo do bloco 21 (t385): seis classes (imagem
+  T613 — VARREDURA DA PÁGINA INTEIRA, BLOCO 52 (Pista C, 29/10). O protocolo do bloco 21 (t385): seis classes (imagem
   vazia/quebrada, sobreposição de elemento fixo, texto cortado, grade desalinhada…), página toda rolada, carregamento
   real de cada imagem, 390 e 1280 px, HTTP abaixo de 400 e o clique no primário com resposta visível em até 3 s.
   Com os blocos 48–51 toda página do produto tem varredura; o bloco 52 varre os ESTADOS novos que os merges trouxeram:
   o Início do dono com a seção "Hoje" cheia (E190 parte 2, #1484: quem entra e quem sai hoje, em cartões com foto ou
   iniciais), a Agenda do mesmo dono (agenda-servidor, mesma fonte) e o Início do dono sem nada hoje (a seção some).
-  Semeado como no t609 e apagado no fim: dono com dois imóveis (um morador entra hoje, outro sai hoje, leads aceitos) e
+  O L-72 (cartões "Hoje" vazando a 390) foi corrigido pelo E219 (#1489): a varredura volta a exigir zero estouro.
+  Semeado como no t610-e190p2 e apagado no fim: dono com dois imóveis (um morador entra hoje, outro sai hoje, leads aceitos) e
   um dono com contrato só no futuro. Só no laboratório.
 */
 type Conta = "DONO" | "VAZIO";
@@ -28,10 +29,10 @@ interface Tela {
 
 const sufixo = novoSufixo();
 const senha = novaSenha();
-const dono = { email: `dono.t610.${sufixo}@lab.vivanomads.test`, nome: "Olga Hoje", role: "owner" as const };
-const vazio = { email: `vazio.t610.${sufixo}@lab.vivanomads.test`, nome: "Valter Semnada", role: "owner" as const };
-const entra = { email: `entra.t610.${sufixo}@lab.vivanomads.test`, nome: "Ivo Chegada", role: "tenant" as const };
-const sai = { email: `sai.t610.${sufixo}@lab.vivanomads.test`, nome: "Bia Partida", role: "tenant" as const };
+const dono = { email: `dono.t613.${sufixo}@lab.vivanomads.test`, nome: "Olga Hoje", role: "owner" as const };
+const vazio = { email: `vazio.t613.${sufixo}@lab.vivanomads.test`, nome: "Valter Semnada", role: "owner" as const };
+const entra = { email: `entra.t613.${sufixo}@lab.vivanomads.test`, nome: "Ivo Chegada", role: "tenant" as const };
+const sai = { email: `sai.t613.${sufixo}@lab.vivanomads.test`, nome: "Bia Partida", role: "tenant" as const };
 const CONTAS: Record<Conta, { email: string }> = { DONO: dono, VAZIO: vazio };
 const ids: Record<string, string> = {};
 /** Dia em Brasília (UTC−3), deslocado em `d` dias — o mesmo "hoje" da tela (como no t609). */
@@ -67,8 +68,6 @@ const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[]
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "imagem", achado: /\/images\/imoveis\/(tipo-(casa|studio|loft|cobertura|casa-condominio|flat)|placeholder-imovel-chacara)\.webp/, l: "L-63" },
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "foto", achado: /área de foto vazia \(aspect-ratio 4 \/ 3\).*"Imagem ilustrativa"/, l: "L-63" },
   { rota: /^\/admin\/documentos\?aba=emitidos$/, classe: "estouro", achado: /além da direita: <label[^>]*> "Tipo/, l: "L-62" },
-  // L-72 (bloco 52): os cartões "Hoje" do Início do dono (E190 p2, #1484) passam da direita a 390 px com nome longo.
-  { rota: /^\/dashboard$/, classe: "estouro", achado: /além da direita: <li> "\w?(Entra|Sai) hoje/, l: "L-72" },
   // L-70 (bloco 49): o "Enviar resposta" do chamado fica desabilitado até escrever, sem texto que diga isso.
   { rota: /^\/admin\/atendimento\/:id$/, achado: /"Enviar resposta \(e-mail à pessoa\)" desabilitado sem explicar o motivo/, l: "L-70" },
 ];
@@ -78,7 +77,7 @@ const SAIDA = "tests/laboratorio/saida/varredura-bloco52";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 const CLIQUE = "clique no botão primário sem resposta visível em 3 s";
 
-test.describe("T610 — varredura da página inteira, bloco 52 (Início do dono com Hoje, Agenda e Início vazio) (390 e 1280 px)", () => {
+test.describe("T613 — varredura da página inteira, bloco 52 (Início do dono com Hoje, Agenda e Início vazio) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   // Um worker só: os contratos semeados valem para as três telas; sem o modo serial, uma falha não pula as outras.
   test.describe.configure({ mode: "default" });
@@ -90,9 +89,9 @@ test.describe("T610 — varredura da página inteira, bloco 52 (Início do dono 
     ids.sai = await criarConta(sai, senha);
     await adm().from("profiles").update({ is_teste: true, intencao: ["anunciar"] }).in("id", [ids.dono, ids.vazio]);
     await adm().from("profiles").update({ is_teste: true, intencao: ["morar"] }).in("id", [ids.entra, ids.sai]);
-    ids.imA = await criarImovelPronto(ids.dono, `[Varredura] Studio Aurora t610 ${sufixo}`, { ativo: true });
-    ids.imB = await criarImovelPronto(ids.dono, `[Varredura] Loft Bela t610 ${sufixo}`, { ativo: true });
-    ids.imVazio = await criarImovelPronto(ids.vazio, `[Varredura] Studio Calmo t610 ${sufixo}`, { ativo: true });
+    ids.imA = await criarImovelPronto(ids.dono, `[Varredura] Studio Aurora t613 ${sufixo}`, { ativo: true });
+    ids.imB = await criarImovelPronto(ids.dono, `[Varredura] Loft Bela t613 ${sufixo}`, { ativo: true });
+    ids.imVazio = await criarImovelPronto(ids.vazio, `[Varredura] Studio Calmo t613 ${sufixo}`, { ativo: true });
     await adm().from("properties").update({ checkin_after: "14:00", checkout_before: "11:00" }).in("id", [ids.imA, ids.imB]);
     // O nome do morador aparece depois do aceite (a mesma regra da Agenda).
     await criarLead(ids.dono, ids.entra, ids.imA, true);
@@ -102,7 +101,7 @@ test.describe("T610 — varredura da página inteira, bloco 52 (Início do dono 
       ids.cSai = await contrato(ids.imB, ids.sai, dia(-59), dia(0));
       ids.cFuturo = await contrato(ids.imVazio, ids.entra, dia(70), dia(129));
     } catch (e) {
-      console.log(`T610|semear contratos: ${String(e).slice(0, 200)}`);
+      console.log(`T613|semear contratos: ${String(e).slice(0, 200)}`);
     }
   });
   test.afterAll(async ({}, info) => {

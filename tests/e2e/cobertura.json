@@ -642,8 +642,9 @@
         "t489-e176-menus",
         "t562-e190-modo-um-toque",
         "t602-e181-familia-contadores",
-        "t609-e190p2-hoje-no-inicio",
-        "t610-varredura-bloco52"
+        "t610-e190p2-hoje-no-inicio",
+        "t612-e219-hoje-sem-estouro",
+        "t613-varredura-bloco52"
       ]
     },
     "/dashboard/assinatura": {
@@ -1065,7 +1066,8 @@
         "t565-e194-qualificacao-moldura",
         "t564-e193-qualificacao-cartoes",
         "t571-e180-qualificacao-primeiro",
-        "t573-e195-cadastro-clean"
+        "t573-e195-cadastro-clean",
+        "t611-e195-cadastro-sem-bege"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1787,7 +1789,7 @@
         "t209-jornada-dois-lados",
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
-        "t610-varredura-bloco52"
+        "t613-varredura-bloco52"
       ]
     },
     "/dashboard/propostas": {
