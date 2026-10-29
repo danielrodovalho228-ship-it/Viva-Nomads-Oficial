@@ -37,6 +37,7 @@
         "admin"
       ],
       "specs": [
+        "t658-e234-idade-pedido",
         "t12-planos",
         "t14-app-mode",
         "t15-admin-real",
@@ -254,6 +255,7 @@
         "admin"
       ],
       "specs": [
+        "t658-e234-idade-pedido",
         "t651-varredura-bloco61",
         "t183-telas-logadas-390",
         "t201-qa-muse",

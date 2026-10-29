@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
@@ -12,7 +12,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
     · E222-B (#1506), renovar = aditivo: a página do contrato com "Renovar a estadia" (dono e morador), o contrato no teto
       de 180 dias (a frase no lugar do botão), o aditivo como renovação (?renovar=1, com a prévia) e no teto, e a Carteira;
     · E180 (#1507), o anúncio novo sempre pela Qualificação com o aviso "anúncio em andamento" (dono com rascunho);
-    · E223 (#1505), os interesses de parceria em /admin/parceiros (um interesse de teste com nome longo).
+    · parceria em /admin/parceiros: o E223 (#1505) mostrava os interesses; o E227-B (#1513) deixou uma fila só
+      (parceiro_solicitacoes), então a tela varrida é a aba Pendentes com um pedido de teste de nome longo.
   Sem clique no primário: aqui ele propõe aditivo, começa rascunho ou muda a situação do interesse (efeito fora da tela).
   Semeado como na t631/t630 e apagado no fim. Só no laboratório.
 */
@@ -34,6 +35,7 @@ const contratos: string[] = [];
 const hojeBRT = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
 const emDias = (n: number) => new Date(Date.parse(hojeBRT()) + n * 86_400_000).toISOString().slice(0, 10);
 const NOME_INTERESSE = `Maximiliano Bartolomeu de Albuquerque Fotografias Panorâmicas t651 ${sufixo}`;
+const EMAIL_PEDIDO = `pedido.t651.${sufixo}@lab.vivanomads.test`;
 
 async function conta(quem: Conta, nome: string, role: "owner" | "tenant") {
   emails[quem] = `${quem.toLowerCase()}.t651.${sufixo}@lab.vivanomads.test`;
@@ -73,7 +75,7 @@ const TELAS: Tela[] = [
   { conta: "ANA", papel: "morador", nome: "Aditivo como renovação, com a prévia (E222-B)", rota: () => `/dashboard/estadia/${ids.A}/alteracao?renovar=1`, marca: "renovacao-previa" },
   { conta: "BETO", papel: "morador", nome: "Renovação no teto: só a frase, sem formulário (E222-B)", rota: () => `/dashboard/estadia/${ids.B}/alteracao?renovar=1`, marca: "renovacao-no-maximo" },
   { conta: "RASCUNHO", papel: "proprietário", nome: "Anúncio novo pela Qualificação com o aviso do anúncio em andamento (E180)", rota: () => "/dashboard/imoveis/novo", marca: "rascunho-aviso" },
-  { conta: "ADMIN", papel: "admin", nome: "Parceiros com os interesses de parceria (E223)", rota: () => "/admin/parceiros", marca: "interesses-parceria" },
+  { conta: "ADMIN", papel: "admin", nome: "Parceiros, aba Pendentes com o pedido de nome longo (E227-B)", rota: () => "/admin/parceiros?aba=pendentes", marca: "ficha-parceria" },
 ];
 
 /** Achados já registrados como defeito de produto (L-*): ficam anotados e não derrubam o teste. */
@@ -102,13 +104,17 @@ test.describe("T651 — varredura da página inteira, bloco 61 (renovar = aditiv
     ids.B = await contrato("B", ids.beto, [3, 3], 40); // 180 dias: no teto
     // O dono com um rascunho no servidor: "Novo anúncio" abre na Qualificação com o aviso (E180).
     ids.imRascunho = await criarImovelPronto(ids.rascunho, `[Varredura] Rascunho em andamento t651 ${sufixo}`);
-    const { data, error } = await adm()
-      .from("parceiros_interesse")
-      .insert({ tipo: "fotografo", nome: NOME_INTERESSE, cidade: "São José dos Campos", uf: "SP", email: `interesse.t651.${sufixo}@lab.vivanomads.test`, aceite_contato: true })
-      .select("id")
-      .single();
+    const { error } = await adm().from("parceiro_solicitacoes").insert({
+      email: EMAIL_PEDIDO,
+      nome: NOME_INTERESSE,
+      tipo_pessoa: "pf",
+      documento: cpfAleatorio(),
+      categorias: ["fotografia"],
+      cidades: ["São José dos Campos"],
+      status: "pendente",
+      origem: "site",
+    });
     if (error) throw error;
-    ids.interesse = data.id as string;
   });
   test.afterAll(async ({}, info) => {
     if (info.project.name !== "chromium") return;
@@ -119,7 +125,7 @@ test.describe("T651 — varredura da página inteira, bloco 61 (renovar = aditiv
       await adm().from("contrato_blocos").delete().in("contrato_id", contratos);
       await adm().from("contratos").delete().in("id", contratos);
     }
-    if (ids.interesse) await adm().from("parceiros_interesse").delete().eq("id", ids.interesse);
+    await adm().from("parceiro_solicitacoes").delete().eq("email", EMAIL_PEDIDO);
     await adm().from("leads").delete().in("owner_id", [ids.dono].filter(Boolean));
     await apagarContas([ids.dono, ids.ana, ids.beto, ids.rascunho].filter(Boolean));
   });
@@ -149,7 +155,7 @@ test.describe("T651 — varredura da página inteira, bloco 61 (renovar = aditiv
             await expect.soft(page.getByTestId(t.marca).filter({ visible: true }).first(), `${t.nome} @${tam.nome}: a tela do merge aparece (${t.marca})`).toBeVisible({ timeout: 20_000 });
           }
           if (t.conta === "ADMIN") {
-            await expect.soft(page.getByTestId("interesse-parceria").filter({ hasText: NOME_INTERESSE }).first(), `${t.nome} @${tam.nome}: o interesse de teste na lista`).toBeVisible({ timeout: 20_000 });
+            await expect.soft(page.locator(`[data-testid="ficha-parceria"][data-email="${EMAIL_PEDIDO}"]`), `${t.nome} @${tam.nome}: o pedido de teste na fila`).toBeVisible({ timeout: 20_000 });
           }
           await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
           const achados = await varrerPagina(page, respostas);
