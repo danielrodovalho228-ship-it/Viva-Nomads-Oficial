@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
 import { EXTRAS, PERGUNTAS_RUIDO } from "@/config/niveis";
 import { salvarExtras, salvarRuido, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
 
@@ -25,15 +26,10 @@ export function Ruido({ propertyId, inicial, onSalvo }: { propertyId: string; in
         {PERGUNTAS_RUIDO.map((p) => (
           <li key={p.chave} className="text-sm text-ink" role="radiogroup" aria-label={p.texto}>
             <p>{p.texto}</p>
-            <div className="mt-1 flex gap-4">
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="radio" name={`ruido-${p.chave}`} checked={r[p.chave] === true} onChange={() => setR((a) => ({ ...a, [p.chave]: true }))} data-testid={`ruido-${p.chave}-sim`} />
-                Sim
-              </label>
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="radio" name={`ruido-${p.chave}`} checked={r[p.chave] === false} onChange={() => setR((a) => ({ ...a, [p.chave]: false }))} data-testid={`ruido-${p.chave}-nao`} />
-                Não
-              </label>
+            {/* E193: sim/não no cartão da Qualificação (antes, botões redondos de rádio). */}
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <CartaoEscolha on={r[p.chave] === true} onClick={() => setR((a) => ({ ...a, [p.chave]: true }))} rotulo="Sim" testid={`ruido-${p.chave}-sim`} />
+              <CartaoEscolha on={r[p.chave] === false} onClick={() => setR((a) => ({ ...a, [p.chave]: false }))} rotulo="Não" testid={`ruido-${p.chave}-nao`} />
             </div>
           </li>
         ))}
@@ -75,18 +71,17 @@ export function Extras({ propertyId, inicial, onSalvo }: { propertyId: string; i
     <section className="rounded-xl border border-line bg-white p-4" data-testid="extras-form">
       <h2 className="text-base font-semibold text-ink">Extras</h2>
       <p className="mt-1 text-xs text-muted">Aparecem na ficha como fato. Não mudam o nível.</p>
-      <ul className="mt-3 grid gap-1 sm:grid-cols-2">
+      {/* E193: várias escolhas = pílulas (antes, caixas quadradas). */}
+      <ul className="mt-3 flex flex-wrap gap-2">
         {EXTRAS.map((e) => (
           <li key={e.chave}>
-            <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
-              <input
-                type="checkbox"
-                checked={sel.has(e.chave)}
-                onChange={() => setSel((s) => (s.has(e.chave) ? new Set([...s].filter((k) => k !== e.chave)) : new Set([...s, e.chave])))}
-                data-testid={`extra-${e.chave}`}
-              />
+            <Pilula
+              on={sel.has(e.chave)}
+              onClick={() => setSel((s) => (s.has(e.chave) ? new Set([...s].filter((k) => k !== e.chave)) : new Set([...s, e.chave])))}
+              testid={`extra-${e.chave}`}
+            >
               {e.rotulo}
-            </label>
+            </Pilula>
           </li>
         ))}
       </ul>

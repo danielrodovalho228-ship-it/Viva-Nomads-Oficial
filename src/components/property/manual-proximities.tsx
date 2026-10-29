@@ -1,5 +1,6 @@
 "use client";
 
+import { Pilula } from "@/components/anuncio/escolha-assistente";
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import type { Proximity, ProximityCategory } from "@/lib/types";
@@ -64,13 +65,14 @@ export function ManualProximities({
   return (
     <div className="space-y-3" data-testid="proximidade-manual">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <select value={categoria} onChange={(e) => setCategoria(e.target.value as ProximityCategory)} aria-label="Categoria" className={`${campo} sm:w-40`}>
+        {/* E193: escolha única em pílulas (antes, lista suspensa). */}
+        <div className="flex w-full flex-wrap gap-2" role="radiogroup" aria-label="Categoria" data-testid="proximidade-manual-categoria">
           {CATS.map((c) => (
-            <option key={c.value} value={c.value}>
+            <Pilula key={c.value} papel="radio" on={categoria === c.value} onClick={() => setCategoria(c.value as ProximityCategory)}>
               {c.label}
-            </option>
+            </Pilula>
           ))}
-        </select>
+        </div>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do lugar (ex.: Hospital Santa Mônica)" aria-label="Nome do lugar" className={`min-w-0 flex-1 ${campo} sm:min-w-[14rem]`} data-testid="proximidade-manual-nome" />
         <input
           value={endereco}

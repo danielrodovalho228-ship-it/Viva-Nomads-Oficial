@@ -1,12 +1,13 @@
 "use client";
 
 import { Children, cloneElement, isValidElement } from "react";
-import { AlertTriangle, Check, Minus, Plus, Sparkles } from "lucide-react";
+import { AlertTriangle, Minus, Plus, Sparkles } from "lucide-react";
 import { isoParaBr } from "@/lib/data-digitada";
 import { CampoDataTexto } from "@/components/ui/campo-data";
 import { useToque } from "@/components/ui/use-toque";
 import { MARCA_SUGERIDO } from "@/lib/anuncio/sugestoes-cadastro";
 import { cn } from "@/lib/utils";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 
 /** Mensagem de erro de validação sob um campo (item QA — validação por etapa). */
 export function Erro({ msg }: { msg?: string }) {
@@ -180,33 +181,21 @@ export function Toggle({
   sugerido?: boolean;
   testid?: string;
 }) {
+  // E193: sim/não é o cartão grande da Qualificação (✓ redondo), não mais o cartão com caixinha quadrada.
   return (
-    <button
-      type="button"
+    <CartaoEscolha
+      papel="pressed"
+      on={checked}
       onClick={onChange}
-      aria-pressed={checked}
-      data-testid={testid}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
-        checked ? "border-forest bg-sage-100" : "border-sage-200 hover:border-sage"
-      )}
-    >
-      <span
-        className={cn(
-          "mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-lg border",
-          checked ? "border-forest bg-forest text-white" : "border-sage-200 bg-white"
-        )}
-      >
-        {checked && <Check className="h-4 w-4" />}
-      </span>
-      <span>
-        <span className="block text-sm font-medium text-ink">
+      testid={testid}
+      rotulo={
+        <>
           {label}
           <MarcaSugerido ativo={sugerido} />
-        </span>
-        {hint && <span className="block text-xs text-muted">{hint}</span>}
-      </span>
-    </button>
+        </>
+      }
+      dica={hint}
+    />
   );
 }
 

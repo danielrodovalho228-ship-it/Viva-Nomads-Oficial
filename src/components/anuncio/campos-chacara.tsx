@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -57,12 +58,10 @@ export function CamposChacara({
 
       <fieldset className="mt-4">
         <legend className="text-sm font-semibold text-ink">Acesso até a casa</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
+        {/* E193: escolha única no cartão da Qualificação (antes, botões redondos de rádio). */}
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Acesso até a casa">
           {ACESSOS_CHACARA.map((a) => (
-            <label key={a.valor} className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-white px-3 text-sm text-ink has-[:checked]:border-forest">
-              <input type="radio" name="chacara-acesso" value={a.valor} checked={valor.acesso === a.valor} onChange={() => onChange({ ...valor, acesso: a.valor })} data-testid={`chacara-acesso-${a.valor}`} />
-              {a.rotulo}
-            </label>
+            <CartaoEscolha key={a.valor} on={valor.acesso === a.valor} onClick={() => onChange({ ...valor, acesso: a.valor })} rotulo={a.rotulo} testid={`chacara-acesso-${a.valor}`} />
           ))}
         </div>
       </fieldset>
@@ -70,12 +69,9 @@ export function CamposChacara({
       <fieldset className="mt-4">
         <legend className="text-sm font-semibold text-ink">Tipo de internet</legend>
         <p className="text-xs text-muted">A velocidade (Mbps) vai no bloco de internet, como em todo anúncio.</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de internet">
           {INTERNETS_CHACARA.map((a) => (
-            <label key={a.valor} className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-line bg-white px-3 text-sm text-ink has-[:checked]:border-forest">
-              <input type="radio" name="chacara-internet" value={a.valor} checked={valor.internet === a.valor} onChange={() => onChange({ ...valor, internet: a.valor })} data-testid={`chacara-internet-${a.valor}`} />
-              {a.rotulo}
-            </label>
+            <CartaoEscolha key={a.valor} on={valor.internet === a.valor} onClick={() => onChange({ ...valor, internet: a.valor })} rotulo={a.rotulo} testid={`chacara-internet-${a.valor}`} />
           ))}
         </div>
       </fieldset>

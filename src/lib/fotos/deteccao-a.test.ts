@@ -34,6 +34,6 @@ test("E141/E142: sem o 'Falta foto de' do topo (uma cobrança só, no nível); a
 test("comodidade achada e ainda não marcada: tracejada, com 'Confirme'; tocar marca", () => {
   const grade = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx");
   assert.match(grade, /const detectada = !on && !!p\.detectadas\?\.includes\(it\.key\);/);
-  assert.match(grade, /detectada \? "border-dashed border-forest bg-white text-forest"/);
+  assert.match(grade, /detectada && "border-dashed border-forest text-forest"/);
   assert.match(grade, /Confirme/);
 });

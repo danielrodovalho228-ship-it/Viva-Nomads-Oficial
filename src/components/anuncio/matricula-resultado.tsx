@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useState } from "react";
 import { AlertTriangle, Clock, Loader2, ShieldCheck, Upload } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button";
@@ -114,18 +115,9 @@ export function MatriculaResultado({
         <fieldset className="rounded-lg border border-sage-200 p-3" data-testid="matricula-casos">
           <legend className="px-1 text-sm font-semibold text-ink">Qual é o seu caso?</legend>
           <div className="grid grid-cols-1 gap-2">
+            {/* E193: escolha única no cartão da Qualificação (antes, botão redondo de rádio). */}
             {CASOS_DONO.filter((c) => info.opcoes.includes(c.valor)).map((c) => (
-              <label
-                key={c.valor}
-                className={cn("flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm", caso === c.valor ? "border-forest bg-sage-50" : "border-sage-200")}
-                data-testid={`matricula-caso-${c.valor}`}
-              >
-                <input type="radio" name="matricula-caso" className="mt-1" checked={caso === c.valor} onChange={() => setCaso(c.valor)} />
-                <span className="min-w-0">
-                  <span className="block font-medium text-ink">{c.rotulo}</span>
-                  <span className="block text-xs text-muted">Envie: {c.documentos}</span>
-                </span>
-              </label>
+              <CartaoEscolha key={c.valor} on={caso === c.valor} onClick={() => setCaso(c.valor)} rotulo={c.rotulo} dica={`Envie: ${c.documentos}`} testid={`matricula-caso-${c.valor}`} />
             ))}
           </div>
           <label
