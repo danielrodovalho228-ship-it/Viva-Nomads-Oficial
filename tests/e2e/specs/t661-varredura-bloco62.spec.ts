@@ -21,8 +21,8 @@ interface Tela {
   papel: string;
   nome: string;
   rota: () => string;
-  /** testid que a tela tem de mostrar (a prova de que é a tela do merge, não um estado vazio). */
-  marca?: string;
+  /** testid que a tela tem de mostrar (a prova de que é a tela do merge, não um estado vazio); por largura quando muda. */
+  marca?: string | ((largura: number) => string);
 }
 
 const sufixo = novoSufixo();
@@ -32,7 +32,7 @@ const EMAIL_DONO = `dono.t661.${sufixo}@lab.vivanomads.test`;
 const CODIGO_SOCIOS = process.env.SOCIOS_ACCESS_CODE;
 
 const TELAS: Tela[] = [
-  { conta: "DONO", papel: "proprietário", nome: "Conta, 'Conta' uma vez (E238)", rota: () => "/dashboard/conta", marca: "conta-menu" },
+  { conta: "DONO", papel: "proprietário", nome: "Conta, 'Conta' uma vez (E238)", rota: () => "/dashboard/conta", marca: (l) => (l < 1024 ? "conta-menu" : "conta-menu-lateral") }, // no computador, a casca com o menu lateral
   { conta: "DONO", papel: "proprietário", nome: "Início com os próximos passos do rascunho (E239)", rota: () => "/dashboard", marca: "inicio-dono-passos" },
   { conta: "DONO", papel: "proprietário", nome: "Cadastro, passo 1 com o estado na linha do selo (#1532)", rota: () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=tipo`, marca: "passo-titulo" },
   { conta: "DONO", papel: "proprietário", nome: "Cadastro, passo da descrição (#1532)", rota: () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=descricao`, marca: "cadastro-descricao" },
@@ -100,8 +100,9 @@ test.describe("T661 — varredura da página inteira, bloco 62 (Conta e próximo
           expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
           expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
-          if (t.marca) {
-            await expect.soft(page.getByTestId(t.marca).filter({ visible: true }).first(), `${t.nome} @${tam.nome}: a tela do merge aparece (${t.marca})`).toBeVisible({ timeout: 20_000 });
+          const marca = typeof t.marca === "function" ? t.marca(tam.width) : t.marca;
+          if (marca) {
+            await expect.soft(page.getByTestId(marca).filter({ visible: true }).first(), `${t.nome} @${tam.nome}: a tela do merge aparece (${marca})`).toBeVisible({ timeout: 20_000 });
           }
           await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
           const achados = await varrerPagina(page, respostas);
