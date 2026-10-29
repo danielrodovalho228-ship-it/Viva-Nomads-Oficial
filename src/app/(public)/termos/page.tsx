@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { PlatformLegalNotice } from "@/components/legal-notice";
+import { PaginaLegal } from "@/components/legal/pagina-legal";
+import { ancoraDaSecao } from "@/lib/ajuda/indice-legal";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/termos" },
@@ -10,11 +12,9 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="container-page max-w-3xl py-12 md:py-16">
-      <h1 className="font-title text-[28px] font-semibold text-ink">Termos de Uso</h1>
-      <p className="mt-3 text-muted">Última atualização: outubro de 2026</p>
-
-      <PlatformLegalNotice className="mt-8" />
+    // E84: página própria na moldura dos mockups (índice + "Ficou alguma dúvida?"); o texto é o mesmo de antes.
+    <PaginaLegal titulo="Termos de Uso" linhaData="Última atualização: outubro de 2026">
+      <PlatformLegalNotice />
 
       <div className="mt-8 space-y-8">
         <Section title="1. O que é o Viva Nomads">
@@ -65,14 +65,14 @@ export default function TermsPage() {
           liberadas apenas após o evento qualificador real (primeira reserva ou locação).
         </Section>
       </div>
-    </div>
+    </PaginaLegal>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="font-title text-xl font-semibold text-ink">{title}</h2>
+      <h2 id={ancoraDaSecao(title)} className="scroll-mt-24 font-title text-xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 leading-relaxed text-muted">{children}</p>
     </section>
   );

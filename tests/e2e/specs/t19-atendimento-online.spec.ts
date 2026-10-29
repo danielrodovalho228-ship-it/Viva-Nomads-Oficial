@@ -50,7 +50,7 @@ test.describe("T19 — Visitante @criticos", () => {
   });
 
   test("resposta real da Viva: Caução até 3 vezes o valor mensal e 30 a 180 dias, sem blocos (ordem f581c899)", async ({ page }) => {
-    await page.goto("/ajuda", { waitUntil: "networkidle" });
+    await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
     const bloco = page.getByTestId("viva-chat-bloco");
     const perguntar = async (texto: string, n: number) => {
       await bloco.getByLabel("Sua mensagem para a Viva").fill(texto);
@@ -73,7 +73,7 @@ test.describe("T19 — Visitante @criticos", () => {
     // L-43 (vigia, 24/10): instável por tempo em 4 laboratórios completos de 24/10 (45 s estourados esperando a rede
     // assentar na /ajuda e no atendimento do admin). Espera curta pela rede e o resto pelos elementos; teto de 90 s.
     test.setTimeout(90_000);
-    await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = page.getByTestId("viva-chat-bloco");
     await bloco.getByLabel("Sua mensagem para a Viva").fill("O dono pediu pra eu pagar o Pix por fora, direto pra ele");
@@ -98,7 +98,7 @@ test.describe("T19 — Logado @criticos", () => {
   test.skip(!noLaboratorio, "Abre chamados de verdade: só no laboratório (banco local).");
 
   test("abre chamado pelo bloco da /ajuda e acompanha pelo link", async ({ page }) => {
-    await page.goto("/ajuda", { waitUntil: "networkidle" });
+    await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
     await expect(page.locator("body")).toContainText("Assistente Viva 24 h · resposta de uma pessoa em até 24 h");
     await expect(page.locator("body")).not.toContainText(/7h às 22h|Atendimento humano/);
     await expect(page.getByRole("link", { name: /^(contato|suporte)@vivanomads\.com\.br$/ }).first()).toBeVisible();
@@ -109,7 +109,7 @@ test.describe("T19 — Logado @criticos", () => {
     const ok = page.getByTestId("chamado-aberto-chat");
     await expect(ok).toBeVisible({ timeout: 20_000 });
     await ok.getByRole("link", { name: "Abrir o chamado" }).click();
-    await expect(page).toHaveURL(/\/ajuda\?chamado=VN-/);
+    await expect(page).toHaveURL(/\/ajuda\/fale-com-a-viva\?chamado=VN-/); // E84: o atendimento tem página própria
     await expect(page.locator("body")).toContainText("Quero ajuda para entender a devolução da caução.");
   });
 });

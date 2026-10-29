@@ -11,6 +11,7 @@ import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
+import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
 import { ehArraste, gravarPosicao, grudarNaBorda, lerPosicao, limitarBaixo, posicaoDuranteArraste, type Posicao, type Tamanho, type Tela } from "@/lib/atendimento/flutuante-arrastavel";
@@ -183,16 +184,16 @@ export function VivaChatFlutuante() {
   );
 }
 
-/** Bloco no topo da /ajuda (mesma conversa do botão). */
+/** Bloco da página Fale com a Viva (mesma conversa do botão). E84: sem repetir a promessa — a página já a diz uma vez. */
 export function VivaChatBloco() {
   return (
     <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" aria-label="Chat com a Viva" data-testid="viva-chat-bloco">
-      <PainelChat altura="h-[420px]" />
+      <PainelChat altura="h-[420px]" semPromessa />
     </section>
   );
 }
 
-function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: string }) {
+function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; altura: string; semPromessa?: boolean }) {
   const user = useAuthStore((s) => s.user);
   const [msgs, setMsgs] = useState<MsgChat[]>([]);
   const [texto, setTexto] = useState("");
@@ -241,7 +242,7 @@ function PainelChat({ onFechar, altura }: { onFechar?: () => void; altura: strin
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">Viva</p>
-          <p className="text-xs text-white/80">Assistente virtual da Viva Nomads · {PROMESSA_ATENDIMENTO.split(" · ")[1]}</p>
+          <p className="text-xs text-white/80">Assistente virtual da Viva Nomads{semPromessa ? "" : ` · ${PROMESSA_ATENDIMENTO.split(" · ")[1]}`}</p>
         </div>
         {onFechar && (
           <button type="button" onClick={onFechar} aria-label="Fechar o chat" className="rounded-full p-1 text-white/80 hover:bg-white/10">
@@ -368,12 +369,12 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
       <div className="rounded-xl border border-sage-200 bg-white p-3 text-ink" data-testid="chamado-aberto-chat">
         <p className="font-semibold">Chamado {ok.numero} aberto.</p>
         <p className="mt-1 text-xs text-muted">
-          A conversa foi anexada. {logado ? "Você acompanha em Ajuda → Meus chamados." : "Enviamos a confirmação para o seu e-mail; a resposta chega por lá."} Uma pessoa responde em até 24 h. Dúvidas: {SUPORTE_EMAIL}.
+          A conversa foi anexada. {logado ? "Você acompanha em Fale com a Viva → Meus chamados." : "Enviamos a confirmação para o seu e-mail; a resposta chega por lá."} Uma pessoa responde em até 24 h. Dúvidas: {SUPORTE_EMAIL}.
         </p>
         {logado && (
-          // <a> de propósito: na própria /ajuda, um Link só trocaria a URL e a
+          // <a> de propósito: na própria página do atendimento, um Link só trocaria a URL e a
           // Central (que lê o ?chamado= ao abrir) não mostraria o chamado.
-          <a href={`/ajuda?chamado=${ok.numero}`} className="mt-2 inline-block text-xs font-semibold text-forest underline">
+          <a href={`${HREF_FALE_COM_A_VIVA}?chamado=${ok.numero}`} className="mt-2 inline-block text-xs font-semibold text-forest underline">
             Abrir o chamado
           </a>
         )}

@@ -11,7 +11,7 @@ import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
-import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
+import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
@@ -31,9 +31,9 @@ import {
 } from "@/lib/data/atendimento-actions";
 
 /**
- * CENTRAL DE AJUDA — uma porta só. No SITE em /ajuda; no APP dentro de Perfil →
- * "Ajuda e contato" (mesma tela, sem tela nova). Perguntas frequentes com busca,
- * "Abrir chamado" (com contexto vindo do "Problema com isto?") e "Meus chamados".
+ * ATENDIMENTO — E84: mora na página própria /ajuda/fale-com-a-viva (antes ficava tudo despejado na /ajuda). Aqui:
+ * "Abrir chamado" (com contexto vindo do "Problema com isto?"), "Meus chamados" e o detalhe do chamado. As perguntas
+ * frequentes ficam no hub (/ajuda), com os cartões de tema — `PerguntasDaCentral`, abaixo.
  */
 const STATUS: Record<string, string> = {
   aberto: "Aberto",
@@ -61,7 +61,6 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [pessoaLink, setPessoaLink] = useState<{ c: string; s: string } | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
   const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
-  const perfil: PerfilAjuda = !user ? "visitante" : contratos.length > 0 ? "com_contrato" : "sem_contrato";
 
   useEffect(() => {
     if (user) meusContratosAtivos().then(setContratos).catch(() => setContratos([]));
@@ -116,7 +115,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="w-full min-w-0">
       {aviso && <p className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink">{aviso}</p>}
       {pessoaLink && (
         <ConfirmarPessoa
@@ -155,12 +154,10 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
         />
       ) : (
         <>
-          <Perguntas perfil={perfil} />
-          <section className="mt-6 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
-            <h2 className="font-title text-lg font-semibold text-ink">Não achou a resposta?</h2>
-            <p className="mt-1 text-sm text-muted">
-              Abra um chamado: você recebe um número e acompanha tudo por aqui. {PROMESSA_ATENDIMENTO}.
-            </p>
+          {/* E84: a promessa de atendimento aparece uma vez só, no topo da página — não aqui de novo. */}
+          <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6" data-testid="atendimento-abrir">
+            <h2 className="font-title text-lg font-semibold text-ink">Prefere escrever para a equipe?</h2>
+            <p className="mt-1 text-sm text-muted">Abra um chamado: você recebe um número e acompanha tudo por aqui.</p>
             {/* Link de verdade: funciona mesmo se clicado antes do JavaScript carregar. */}
             <ButtonLink
               href="?novo=1"
@@ -216,13 +213,31 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   );
 }
 
-function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
+/**
+ * E84 — as perguntas frequentes do hub (/ajuda): todas, ou só as do tema escolhido no cartão (lib/ajuda/temas.ts). A
+ * resposta muda conforme quem lê (visitante, com ou sem contrato), como antes.
+ */
+export function PerguntasDaCentral({ ids, titulo }: { ids?: readonly string[]; titulo: string }) {
+  const user = useAuthStore((s) => s.user);
+  const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
+  useEffect(() => {
+    if (user) meusContratosAtivos().then(setContratos).catch(() => setContratos([]));
+  }, [user]);
+  const perfil: PerfilAjuda = !user ? "visitante" : contratos.length > 0 ? "com_contrato" : "sem_contrato";
+  return <Perguntas perfil={perfil} ids={ids} titulo={titulo} />;
+}
+
+function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonly string[]; titulo: string }) {
   const [q, setQ] = useState("");
   const [aberta, setAberta] = useState<string | null>(null);
-  const resultado = useMemo(() => buscarFaq(q), [q]);
+  const resultado = useMemo(() => {
+    const achadas = buscarFaq(q);
+    if (!ids) return achadas;
+    return achadas.filter((p) => ids.includes(p.id)).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
+  }, [q, ids]);
   return (
-    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
-      <h2 className="font-title text-lg font-semibold text-ink">Perguntas frequentes</h2>
+    <section className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6" data-testid="ajuda-perguntas">
+      <h2 className="font-title text-lg font-semibold text-ink">{titulo}</h2>
       <label className="relative mt-3 block">
         <span className="sr-only">Buscar nas perguntas frequentes</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
@@ -236,7 +251,13 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
         />
       </label>
       {resultado.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">Nenhuma pergunta encontrada. Abra um chamado logo abaixo.</p>
+        <p className="mt-3 text-sm text-muted">
+          Nenhuma pergunta encontrada.{" "}
+          <Link href={HREF_FALE_COM_A_VIVA} className="font-semibold text-forest underline">
+            Fale com a Viva
+          </Link>
+          .
+        </p>
       ) : (
         <ul className="mt-3 divide-y divide-line">
           {resultado.map((p) => (
@@ -264,7 +285,7 @@ function Perguntas({ perfil }: { perfil: PerfilAjuda }) {
           ))}
         </ul>
       )}
-      <p className="mt-2 text-xs text-muted">{FAQ.length} perguntas · respostas a partir das regras oficiais da plataforma.</p>
+      <p className="mt-2 text-xs text-muted">{ids ? ids.length : FAQ.length} perguntas · respostas a partir das regras oficiais da plataforma.</p>
     </section>
   );
 }
@@ -435,7 +456,7 @@ function NovoChamado({
             </label>
             {captcha.widget && <div className="sm:col-span-2">{captcha.widget}</div>}
             <p data-testid="chamado-aviso-dados" className="text-xs text-muted sm:col-span-2">
-              Usamos esses dados só para responder este chamado. Tem conta? <Link href="/auth?redirect=/ajuda" className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
+              Usamos esses dados só para responder este chamado. Tem conta? <Link href={`/auth?redirect=${HREF_FALE_COM_A_VIVA}`} className="font-medium text-forest underline">Entre</Link> para acompanhar o chamado aqui.
             </p>
           </div>
         )}

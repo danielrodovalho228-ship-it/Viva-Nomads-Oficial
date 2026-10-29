@@ -43,7 +43,7 @@ test("parceiro: análise com o prazo e o Falar com a Viva; página e primeiro pe
   const c = checklistParceiro({ ...nova, parceria: "aguardando" });
   assert.deepEqual(c.itens.map((i) => [i.id, i.feito]), [["solicitacao", true], ["analise", false], ["pagina", false], ["pedido", false]]);
   assert.equal(c.itens[1].detalhe, "Em análise. Resposta em até 1 dia útil.");
-  assert.deepEqual(c.itens[1].acao, { rotulo: "Falar com a Viva", href: "/ajuda" });
+  assert.deepEqual(c.itens[1].acao, { rotulo: "Falar com a Viva", href: "/ajuda/fale-com-a-viva" });
   assert.equal(checklistParceiro({ ...nova, parceria: "publicada", pedidosParceiroAceitos: 1 }).ativado, true);
 });
 

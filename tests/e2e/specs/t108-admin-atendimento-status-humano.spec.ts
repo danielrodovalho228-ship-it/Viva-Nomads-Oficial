@@ -16,7 +16,7 @@ test.describe("T108 — Admin: chamado sem código de status", () => {
     await liberarLimiteChamados();
     const dono = await browser.newContext({ storageState: authFile("proprietario") });
     const p = await dono.newPage();
-    await p.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await p.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
     await bloco.getByLabel("Pedido para a equipe").fill(`Preciso de ajuda com a minha locação (${Date.now()})`);

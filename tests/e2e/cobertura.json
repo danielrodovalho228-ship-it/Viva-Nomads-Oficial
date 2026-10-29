@@ -317,7 +317,23 @@
         "t310-vao-fim-de-pagina",
         "t438-vocab-a",
         "t408-varredura-bloco27",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t598-e84-central-de-ajuda"
+      ]
+    },
+    "/ajuda/fale-com-a-viva": {
+      "personas": [
+        "publico",
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t598-e84-central-de-ajuda",
+        "t19-atendimento-online",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo",
+        "t63-chamado-identificacao",
+        "t80-camera-chamado"
       ]
     },
     "/alerta-busca/desligar": {
@@ -1635,7 +1651,8 @@
         "t18-seo-a11y",
         "t311-marco-principal-unico",
         "t543-e166-fundo-clean-publico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t598-e84-central-de-ajuda"
       ]
     },
     "/proprietario/[id]": {
@@ -1730,7 +1747,8 @@
         "t68-comissao-valor-total",
         "t311-marco-principal-unico",
         "t421-varredura-bloco38",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t598-e84-central-de-ajuda"
       ]
     },
     "/tributario": {
