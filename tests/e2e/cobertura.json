@@ -1,5 +1,5 @@
 {
-  "_doc": "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura). Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
+  "_doc": "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura); 'semTela' = Server Action que nenhuma tela importa (o laboratório não a alcança), com o motivo e a guarda que a cobre. Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
   "paginas": {
     "/": {
       "personas": [
@@ -3304,7 +3304,8 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [],
+      "semTela": "Porta sem tela (E205-B2, decisão de 29/10): nenhum componente do cliente importa o renovarBloco, então o Next não publica a ação e o laboratório não a alcança. Coberta pela guarda src/lib/estadia/lembrete-bloco.test.ts (as duas portas do aceite chamam lembreteDeBlocoNoAceite); a porta do aditivo tem a t595 e o cron tem a t592."
     },
     "src/lib/data/actions.ts#requestLead": {
       "personas": [
