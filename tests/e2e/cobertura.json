@@ -669,7 +669,8 @@
         "t622-varredura-bloco56",
         "t626-varredura-bloco60",
         "t643-e229-barra-360",
-        "t645-e238-e239-conta-passos"
+        "t645-e238-e239-conta-passos",
+        "t649-e246-e249-contratos-inicio"
       ]
     },
     "/dashboard/assinatura": {
@@ -885,7 +886,8 @@
         "t416-varredura-bloco33",
         "t418-varredura-bloco35",
         "t560-varredura-bloco44",
-        "t567-e188-contratos-do-papel"
+        "t567-e188-contratos-do-papel",
+        "t649-e246-e249-contratos-inicio"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -902,7 +904,8 @@
         "t304-airbnb-exibicao-61a",
         "t307-varredura-bloco8",
         "t624-varredura-bloco58",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t649-e246-e249-contratos-inicio"
       ]
     },
     "/dashboard/favoritos": {

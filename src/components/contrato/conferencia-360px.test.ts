@@ -9,7 +9,8 @@ const fonte = readFileSync("src/components/contrato/conferencia-contrato.tsx", "
 test("campos de arquivo da conferência não passam da largura do cartão (360 px)", () => {
   const campos = fonte.match(/<input type="file".*?\/>/g) ?? [];
   assert.equal(campos.length, 2);
-  for (const campo of campos) assert.match(campo, /className="[^"]*\bw-full\b[^"]*\bmax-w-full\b/);
+  // E247: o input nativo fica escondido (sr-only) dentro do botão do site — não ocupa largura; visível, ele não passa do cartão.
+  for (const campo of campos) assert.match(campo, /className="(?:[^"]*\bw-full\b[^"]*\bmax-w-full\b[^"]*|sr-only)"/);
 });
 
 test("formulário de item da conferência tem uma única coluna que pode encolher", () => {

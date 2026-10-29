@@ -71,3 +71,8 @@ test("t182: o botão flutuante some em Mensagens (tampava o 'Enviar' da conversa
   // caso negativo: o painel em geral continua com o botão
   assert.doesNotMatch(linha, /"\/dashboard"[,\]]/);
 });
+
+test("E246: no painel do celular (< 768 px) o botão flutuante some (sentava sobre a 'Taxa de serviço' e a capa do Início); no computador fica na faixa reservada", () => {
+  const fonte = readFileSync(new URL("./viva-chat.tsx", import.meta.url), "utf8");
+  assert.match(fonte, /painel && "max-md:hidden"/);
+});

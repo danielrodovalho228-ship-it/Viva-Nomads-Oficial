@@ -24,6 +24,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { situacaoDaRenovacao } from "@/lib/data/renovacao-contrato";
 import { HREF_RENOVAR, ROTULO_RENOVAR, TEXTO_NO_MAXIMO } from "@/lib/estadia/renovacao";
 
+const PREFIXO_INICIO = "Início da estadia:";
+
 /**
  * Detalhe do contrato para as DUAS partes (ordens 0fd301f0 e f375fdc1): o inquilino chega por
  * /dashboard/locacoes/[id] e o proprietário por /dashboard/contratos/[id]. A leitura passa pelo RLS;
@@ -90,12 +92,14 @@ export async function ContratoDetalhe({
         <ul className="mt-3 space-y-2 text-sm text-ink" data-testid="contrato-resumo">
           {c.resumo.map((linha) => (
             // O número do contrato (UUID) e a data não têm espaço: sem isto estouram a tela a 360 px.
-            <li key={linha} className="[overflow-wrap:anywhere]">
+            <li key={linha} className="[overflow-wrap:anywhere]" data-testid={linha.startsWith(PREFIXO_INICIO) ? "contrato-inicio-estadia" : undefined}>
               {linha}
             </li>
           ))}
         </ul>
-        {c.inicioEstadia && (
+        {/* E249: o resumo assinado já traz "Início da estadia" (F37); a linha avulsa fica só para o contrato assinado
+            antes dela entrar no resumo — antes a data aparecia duas vezes no mesmo cartão. */}
+        {c.inicioEstadia && !c.resumo.some((l) => l.startsWith(PREFIXO_INICIO)) && (
           <p className="mt-3 text-sm font-medium text-ink" data-testid="contrato-inicio-estadia">
             Início da estadia: {dataBR(c.inicioEstadia)}
           </p>
