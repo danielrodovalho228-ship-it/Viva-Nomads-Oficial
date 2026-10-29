@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 /*
   T644 — conformidade da Conta com os mockups perfil-01..08 (29/10): no computador o menu lateral "Conta" começa na
   linha do título da tela e fica na MESMA altura em todas as seções (antes, nas telas longas, o sticky top-24 o
-  empurrava 64 px para baixo; só Avaliações, curta, ficava no lugar). Ao rolar, o menu continua à vista.
+  empurrava 96 px para baixo; só Avaliações, curta, ficava no lugar). Ao rolar, o menu continua à vista.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
