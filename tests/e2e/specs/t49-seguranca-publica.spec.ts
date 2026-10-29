@@ -51,9 +51,17 @@ test.describe("T49 portões sem login @seguranca", () => {
   ];
   for (const rota of PRIVADAS) {
     test(`${rota} sem login manda para /auth`, async ({ request }) => {
-      const r = await request.get(rota, { maxRedirects: 0 });
-      expect([301, 302, 303, 307, 308], `${rota} → ${r.status()}`).toContain(r.status());
-      expect(r.headers()["location"] ?? "").toContain("/auth");
+      // Segue a cadeia salto a salto (sem nunca receber a página): /qualificar sem ?imovel passa antes pelo cadastro novo
+      // (next.config, E132-A), que também exige login. No máximo 3 saltos, e todos são redirecionamento.
+      let atual = rota;
+      let destino = "";
+      for (let salto = 0; salto < 3 && !destino.includes("/auth"); salto++) {
+        const r = await request.get(atual, { maxRedirects: 0 });
+        expect([301, 302, 303, 307, 308], `${atual} → ${r.status()}`).toContain(r.status());
+        destino = r.headers()["location"] ?? "";
+        atual = new URL(destino, "http://x").pathname + new URL(destino, "http://x").search;
+      }
+      expect(destino, `${rota} termina em /auth`).toContain("/auth");
     });
   }
 
