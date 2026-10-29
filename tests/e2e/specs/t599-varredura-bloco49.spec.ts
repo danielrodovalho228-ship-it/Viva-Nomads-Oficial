@@ -60,6 +60,9 @@ const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[]
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "imagem", achado: /\/images\/imoveis\/(tipo-(casa|studio|loft|cobertura|casa-condominio|flat)|placeholder-imovel-chacara)\.webp/, l: "L-63" },
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "foto", achado: /área de foto vazia \(aspect-ratio 4 \/ 3\).*"Imagem ilustrativa"/, l: "L-63" },
   { rota: /^\/admin\/documentos\?aba=emitidos$/, classe: "estouro", achado: /além da direita: <label[^>]*> "Tipo/, l: "L-62" },
+  // L-70 (resto): o E217 (#1483) pôs a dica visível "Escreva a resposta na caixa acima para enviar." embaixo do botão, mas
+  // ela não está ligada ao botão (sem aria-describedby nem role=status), e a regra da varredura pede o motivo acessível.
+  { rota: /^\/admin\/atendimento\/:id$/, achado: /"Enviar resposta \(e-mail à pessoa\)" desabilitado sem explicar o motivo/, l: "L-70" },
 ];
 const conhecido = (rotulo: string, a: string, classe?: Classe) => CONHECIDOS.find((c) => c.classe === classe && c.rota.test(rotulo) && c.achado.test(a));
 
