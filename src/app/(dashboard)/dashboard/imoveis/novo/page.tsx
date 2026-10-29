@@ -369,7 +369,6 @@ export default function NewPropertyPage() {
     privacidadeOk: privacidade.semCamerasInterior,
     operacao: ownershipType,
     documento: docStatus,
-    limitePlanoOk: null,
     descricao: description,
     selo: qual.baseBadge,
     // 65-B: uma fonte só (arquivo, ou link permitido do YouTube/Vimeo).

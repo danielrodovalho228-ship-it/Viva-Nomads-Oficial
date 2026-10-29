@@ -43,7 +43,7 @@ test("o checklist fica no passo Comodidades, e o 'Resolver' do portão leva até
   assert.match(comodidades, /<ChecklistConforto\s+marcados=\{conforto\}/);
   const p = prontidaoAnuncio({
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio", descricao: "x".repeat(80), comodidades: 5, preco: 3000,
-    garantiaOk: true, operacao: "proprio", documento: "approved", limitePlanoOk: null, selo: false, video: false, confortoFaltam: 2, sublocacaoOk: true, privacidadeOk: true,
+    garantiaOk: true, operacao: "proprio", documento: "approved", selo: false, video: false, confortoFaltam: 2, sublocacaoOk: true, privacidadeOk: true,
   } as unknown as Parameters<typeof prontidaoAnuncio>[0]);
   const item = p.obrigatorios.find((i) => i.key === "conforto");
   assert.equal(item?.etapa, ETAPA.comodidades);

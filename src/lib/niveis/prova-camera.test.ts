@@ -118,7 +118,7 @@ test("celular x computador: toque + câmera = celular; sem câmera ou mouse = QR
 });
 
 test("prontidão: item pendente 'Refaça a foto … até …' (não barra), com o link para a câmera do item", () => {
-  const base = { enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Apto", preco: 1, garantiaOk: true, sublocacaoOk: true, privacidadeOk: true, documento: "approved", limitePlanoOk: true, descricao: "x".repeat(60), selo: true, video: true } as FatosAnuncio;
+  const base = { enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Apto", preco: 1, garantiaOk: true, sublocacaoOk: true, privacidadeOk: true, documento: "approved", descricao: "x".repeat(60), selo: true, video: true } as FatosAnuncio;
   const p = prontidaoAnuncio({ ...base, provasParaRefazer: [{ chave: "cozinha_microondas", rotulo: "Micro-ondas", ate: "2026-11-23T15:00:00Z" }] });
   assert.equal(p.podePublicar, true);
   assert.deepEqual(p.melhorar, ["Refaça a foto de Micro-ondas pela câmera até 23/11/2026"]);

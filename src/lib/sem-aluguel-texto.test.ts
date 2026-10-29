@@ -16,7 +16,6 @@ const GRUPOS: Record<string, string[]> = {
     "src/app/(public)/como-funciona/page.tsx",
     "src/app/(public)/cidades/[cidade]/page.tsx",
     "src/components/property/stay-rules.tsx",
-    "src/components/precos/grafico-custo-por-imovel.tsx",
   ],
   "ferramentas do painel": [
     "src/components/simulador/ui.tsx",

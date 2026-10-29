@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { COMISSAO_POR_PLANO, LIMITE_ANUNCIOS, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../../src/config/planos";
+import { COMISSAO_POR_PLANO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../../src/config/planos";
 import { resumoContrato } from "../../../src/lib/contrato-blocos";
 import { simularRentabilidade } from "../../../src/lib/simulador";
 import { formatBRL } from "../../../src/lib/utils";
@@ -10,7 +10,7 @@ import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from 
  * T37 — SIMULADORES E NÚMEROS (laboratório e preview). Tudo o que a tela mostra
  * de dinheiro tem de bater com a fonte única `config/planos.ts`:
  *  1. Comissão 12 / 8 / 4 / 0 % por plano (Gratuito, Essencial, Profissional, Gestor).
- *  2. Limite de anúncios 1 / 5 / 20 / ilimitado e preços R$ 0 / 49 / 129.
+ *  2. Preços históricos R$ 0 / 49 / 129 (o limite de anúncios saiu no E233-A: não é mais lido por ninguém).
  *  3. Caução: 50% de cada bloco, soma limitada a 3 aluguéis (cálculo puro).
  *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, Plano Gestor 31+),
  *     sem mensalidade; a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
@@ -19,12 +19,8 @@ import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from 
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ");
 
 test.describe("T37 — Números do código (fonte única)", () => {
-  test("comissão 12 / 8 / 4 / 0 % e limite de anúncios 1 / 5 / 20 / ilimitado", () => {
+  test("comissão 12 / 8 / 4 / 0 % e preços históricos", () => {
     expect(COMISSAO_POR_PLANO).toEqual({ free: 0.12, essential: 0.08, pro: 0.04, gestor: 0 });
-    expect(LIMITE_ANUNCIOS.free).toBe(1);
-    expect(LIMITE_ANUNCIOS.essential).toBe(5);
-    expect(LIMITE_ANUNCIOS.pro).toBe(20);
-    expect(LIMITE_ANUNCIOS.gestor).toBeGreaterThanOrEqual(999);
     expect(PLANOS.map((p) => p.precoMensal)).toEqual([0, 49, 129, null]);
     expect(PLANOS.map((p) => p.assinaturaAnual)).toEqual([0, 588, 1548, null]);
   });

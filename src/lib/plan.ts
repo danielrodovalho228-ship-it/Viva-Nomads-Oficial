@@ -1,5 +1,4 @@
 import type { SubscriptionPlan } from "@/lib/store";
-import { LIMITE_ANUNCIOS } from "@/config/planos";
 
 /**
  * Regras de plano — puras e SEM dependência de cliente (zustand/React), para
@@ -15,9 +14,6 @@ export const PLAN_RANK: Record<SubscriptionPlan, number> = {
   gestor: 3,
 };
 
-/** Limite de anúncios ATIVOS por plano — lido da fonte única (config/planos). */
-export const LISTING_LIMIT: Record<SubscriptionPlan, number> = LIMITE_ANUNCIOS;
-
 /** Rótulo amigável do plano. */
 export const PLAN_LABEL: Record<SubscriptionPlan, string> = {
   free: "Gratuito",
@@ -29,9 +25,4 @@ export const PLAN_LABEL: Record<SubscriptionPlan, string> = {
 /** O plano `plan` atende ao mínimo exigido `min`? */
 export function planAllows(plan: SubscriptionPlan | undefined, min: SubscriptionPlan): boolean {
   return PLAN_RANK[plan ?? "free"] >= PLAN_RANK[min];
-}
-
-/** Quantos anúncios ativos o plano permite. */
-export function listingLimit(plan: SubscriptionPlan | undefined): number {
-  return LISTING_LIMIT[plan ?? "free"];
 }

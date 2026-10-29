@@ -20,7 +20,6 @@ test("rascunho com endereço e detalhes salvos: checklist marca endereço e deta
     { title: "Rascunho de anúncio", city: "Uberlândia", min_period_days: 30, monthly_price: 0, ...col } as Parameters<typeof fatosDaLinha>[0],
     1,
     "none",
-    null,
   );
   const faltam = prontidaoAnuncio(fatos).faltam.join("|");
   assert.ok(!faltam.includes("Endereço preenchido"), faltam);

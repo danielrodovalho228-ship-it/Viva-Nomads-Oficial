@@ -27,7 +27,7 @@ const TESTE_DDF86C66: LinhaAnuncio = {
   video_url: null,
 };
 
-const completo = (): FatosAnuncio => fatosDaLinha(TESTE_DDF86C66, 8, "approved", true);
+const completo = (): FatosAnuncio => fatosDaLinha(TESTE_DDF86C66, 8, "approved");
 
 test("ddf86c66: 8 fotos + documento aprovado → pode publicar; selo e vídeo só como opcionais", () => {
   const p = prontidaoAnuncio(completo());
@@ -54,7 +54,7 @@ test("descrição é obrigatória (mín. 60 caracteres) e endereço está na lis
   assert.deepEqual(curta.faltam, ["Descrição com 60+ caracteres (tem 59)"]);
   assert.ok(prontidaoAnuncio({ ...completo(), descricao: "x".repeat(60) }).podePublicar);
   assert.ok(OBRIGATORIOS_ROTULOS.includes("Endereço preenchido"));
-  const semEndereco = fatosDaLinha({ ...TESTE_DDF86C66, address: "" }, 8, "approved", true);
+  const semEndereco = fatosDaLinha({ ...TESTE_DDF86C66, address: "" }, 8, "approved");
   assert.deepEqual(prontidaoAnuncio(semEndereco).faltam, ["Endereço preenchido"]);
 });
 
@@ -71,21 +71,19 @@ test("documento: cada estado tem a sua explicação", () => {
   assert.match(prontidaoAnuncio({ ...completo(), documento: "rejected" }).faltam[0], /reprovado/);
 });
 
-test("sublocação sem autorização e plano sem vaga bloqueiam; limite null (editor) não", () => {
-  const sub = fatosDaLinha({ ...TESTE_DDF86C66, ownership_type: "subleased", sublease_authorized: false }, 8, "approved", true);
+test("sublocação sem autorização bloqueia; E233-A: não existe item de vaga no plano", () => {
+  const sub = fatosDaLinha({ ...TESTE_DDF86C66, ownership_type: "subleased", sublease_authorized: false }, 8, "approved");
   assert.deepEqual(prontidaoAnuncio(sub).faltam, ["Autorização de sublocação"]);
-  const semVaga = prontidaoAnuncio({ ...completo(), limitePlanoOk: false });
-  assert.equal(semVaga.podePublicar, false);
-  assert.match(semVaga.faltam[0], /^Vaga no seu plano/);
-  assert.equal(prontidaoAnuncio({ ...completo(), limitePlanoOk: null }).podePublicar, true);
+  const ok = prontidaoAnuncio(completo());
+  assert.equal(ok.podePublicar, true);
+  assert.equal(ok.obrigatorios.some((i) => i.key === "limite" || /Vaga no seu plano/.test(i.label)), false);
 });
 
 test("anúncio vazio: nada cumprido, 0%", () => {
   const vazio = fatosDaLinha(
     { ...TESTE_DDF86C66, title: "", address: "", city: "", bathrooms: 0, area_m2: 0, min_period_days: 0, monthly_price: 0, garantias_aceitas: [], description: "" },
     0,
-    "none",
-    true
+    "none"
   );
   const p = prontidaoAnuncio(vazio);
   assert.equal(p.podePublicar, false);
@@ -150,22 +148,10 @@ test("checklist do anúncio em andamento: ✓/○, cada pendência leva à etapa
   assert.equal(c.itens.find((i) => i.key === "endereco")?.ok, true);
 });
 
-test("checklist: tudo feito → sem próximo passo; vaga no plano leva à página do plano", () => {
+test("checklist: tudo feito → sem próximo passo; cada item leva à etapa do rascunho", () => {
   assert.equal(checklistAnuncio(prontidaoAnuncio(completo()), "x").proximo, null);
-  const lim = checklistAnuncio(prontidaoAnuncio({ ...completo(), limitePlanoOk: false }), "x");
-  assert.equal(lim.proximo?.href, "/precos");
-});
-
-test("vaga no plano: texto curto com o número, 2 botões, e só aparece se for o único bloqueio", () => {
-  const um = prontidaoAnuncio({ ...completo(), limitePlanoOk: false, limiteAnuncios: 1 });
-  assert.equal(um.obrigatorios.find((i) => i.key === "limite")?.detalhe, "Seu plano permite 1 anúncio no ar. Para publicar este, pause outro ou mude de plano");
-  assert.match(prontidaoAnuncio({ ...completo(), limitePlanoOk: false, limiteAnuncios: 3 }).faltam[0], /permite 3 anúncios no ar/);
-  const acoes = checklistAnuncio(um, "x").proximo?.acoes;
-  assert.deepEqual(acoes?.map((a) => a.href), ["/dashboard/imoveis", "/precos"]);
-  // Com outra pendência (fotos), a vaga ainda não é mostrada.
-  const outro = prontidaoAnuncio({ ...completo(), fotos: 0, limitePlanoOk: false, limiteAnuncios: 1 });
-  assert.equal(outro.obrigatorios.some((i) => i.key === "limite"), false);
-  assert.equal(outro.faltam.length, 1);
+  const semFotos = checklistAnuncio(prontidaoAnuncio({ ...completo(), fotos: 0 }), "x");
+  assert.match(semFotos.proximo?.href ?? "", /^\/dashboard\/imoveis\/novo\?draft=x&etapa=/);
 });
 
 test("checklist: o id do rascunho vai codificado na URL", () => {
@@ -178,7 +164,7 @@ import { ROTULO_QUALIFICACAO } from "./prontidao.ts";
 test("p22 — portão único: no cadastro, 'Antes de anunciar' é item da mesma lista desde o início; fora dele não aparece", () => {
   const fatos = {
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio mobiliado", preco: 3000, garantiaOk: true,
-    sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, limitePlanoOk: null, descricao: "x".repeat(200), selo: false, video: false,
+    sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, descricao: "x".repeat(200), selo: false, video: false,
   };
   const sem = prontidaoAnuncio({ ...fatos, qualificacaoOk: false });
   const item = sem.obrigatorios.find((i) => i.key === "qualificacao");
@@ -194,9 +180,9 @@ test("p22 — portão único: no cadastro, 'Antes de anunciar' é item da mesma 
 test("65-B: o fato Vídeo vale para arquivo enviado OU link; 'Para melhorar: Vídeo do imóvel' aponta para o campo", async () => {
   const { hrefParaMelhorar, ANCORA_VIDEO_EDITOR, ANCORA_VIDEO_ASSISTENTE } = await import("./prontidao.ts");
   const dono = "11111111-1111-4111-8111-111111111111";
-  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_arquivo: `${dono}/v-10s.mp4` }, 8, "approved", true).video, true);
-  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://youtu.be/dQw4w9WgXcQ" }, 8, "approved", true).video, true);
-  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://evil.com/v" }, 8, "approved", true).video, false);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_arquivo: `${dono}/v-10s.mp4` }, 8, "approved").video, true);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://youtu.be/dQw4w9WgXcQ" }, 8, "approved").video, true);
+  assert.equal(fatosDaLinha({ ...TESTE_DDF86C66, video_url: "https://evil.com/v" }, 8, "approved").video, false);
   assert.equal(completo().video, false);
 
   // Anúncio existente → seção Vídeo do editor por seções; rascunho no assistente → bloco de vídeo do passo Fotos.

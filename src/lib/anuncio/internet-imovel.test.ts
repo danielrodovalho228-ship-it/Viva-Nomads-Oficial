@@ -15,7 +15,7 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 
 const BASE: FatosAnuncio = {
   enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Chácara do Lab", preco: 3000, garantiaOk: true,
-  sublocacaoOk: true, privacidadeOk: true, documento: "approved", limitePlanoOk: true, descricao: "x".repeat(80), selo: false, video: false,
+  sublocacaoOk: true, privacidadeOk: true, documento: "approved", descricao: "x".repeat(80), selo: false, video: false,
 };
 
 test("a opção 'Não tem internet' existe e é resposta válida (o rascunho guarda; o tipo de internet conta como respondido)", () => {
