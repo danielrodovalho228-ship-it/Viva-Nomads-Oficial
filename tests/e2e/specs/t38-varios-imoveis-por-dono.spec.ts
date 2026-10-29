@@ -1,8 +1,6 @@
-import { test, expect } from "@playwright/test";
-import { LIMITE_ANUNCIOS } from "../../../src/config/planos";
+import { test, expect, type Page } from "@playwright/test";
 import {
   NO_LABORATORIO,
-  adm,
   apagarContas,
   contarAtivos,
   criarConta,
@@ -13,118 +11,89 @@ import {
   novoSufixo,
   publicarPeloEditor,
   statusDoImovel,
-  aceitarTermoIaSePreciso,
 } from "../fixtures/laboratorio";
 
 /**
- * T38 — VÁRIOS IMÓVEIS POR DONO (laboratório). Conta NOVA de proprietário (CPF,
- * 4 imóveis prontos: 8 fotos geradas aqui, descrição, Caução, documento aprovado).
- *  1. Plano Gratuito (limite 1): o 1º imóvel publica; o 2º mostra "Vaga no seu
- *     plano" e o botão Publicar fica travado; um editor aberto ANTES (tela velha)
- *     também é barrado pelo servidor, com a mensagem do plano.
- *  2. Caminho para assinar: Assinatura mostra Essencial (5) e Profissional (20)
- *     com o botão de assinar; assinar o Essencial cria o pedido de cobrança.
- *  3. Plano Essencial valendo (o que o webhook do pagamento faria): o 2º, 3º e
- *     4º imóveis publicam pelo editor — 4 ativos.
- *  4. A tela Assinatura mostra o Essencial como plano atual (corrigido no #321;
- *     antes era "Gratuito" fixo).
+ * T38 — VÁRIOS IMÓVEIS POR DONO, modelo vigente (E233-A). A cobrança é só a taxa de serviço por faixas; o limite de
+ * anúncios dos planos antigos saiu. Conta NOVA de proprietário SEM assinatura (Gratuito), imóveis prontos (8 fotos,
+ * descrição, Caução, documento aprovado):
+ *  1. o 2º anúncio publica pelo editor — sem "Vaga no seu plano", sem "seu plano permite";
+ *  2. o 5º publica;
+ *  3. o 21º publica; Meus imóveis e o painel não mostram faixa de limite nem "mude de plano" (390 e 1280 px).
  */
+const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.varios.${sufixo}@lab.vivanomads.test`, nome: "Vera Varios Imoveis", role: "owner" as const };
-const ids: { dono?: string; imoveis: string[] } = { imoveis: [] };
+const titulo = (n: number) => `Studio ${n} do teste de vários imóveis ${sufixo}`;
+const ids: { dono?: string; rascunho: Record<number, string> } = { rascunho: {} };
+const PLANO_ANTIGO = /Vaga no seu plano|seu plano permite|mude de plano|mudar de plano/i;
 
-test.describe("T38 — Vários imóveis por dono", () => {
+/** Publicados direto pelo laboratório (como se o dono já os tivesse no ar), em lotes. */
+async function noAr(de: number, ate: number) {
+  for (let n = de; n <= ate; n += 5) {
+    await Promise.all(Array.from({ length: Math.min(5, ate - n + 1) }, (_, i) => criarImovelPronto(ids.dono!, titulo(n + i), { ativo: true })));
+  }
+}
+
+async function publicaSemLimite(page: Page, n: number) {
+  const id = ids.rascunho[n];
+  await page.goto(`/dashboard/imoveis/${id}/editar`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 20_000 });
+  await expect(page.getByText(PLANO_ANTIGO)).toHaveCount(0);
+  await publicarPeloEditor(page, id);
+  await expect.poll(() => statusDoImovel(id), { timeout: 30_000 }).toBe("active");
+  expect(await contarAtivos(ids.dono!)).toBe(n);
+}
+
+test.describe("T38 — Vários imóveis por dono, sem limite de plano (E233-A)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial" });
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.describe.configure({ mode: "serial", timeout: 240_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    for (let i = 1; i <= 4; i++) ids.imoveis.push(await criarImovelPronto(ids.dono, `Studio ${i} do teste de vários imóveis ${sufixo}`));
+    await definirPlano(ids.dono, null); // sem assinatura: o antigo "Gratuito, limite 1"
+    await criarImovelPronto(ids.dono, titulo(1), { ativo: true });
+    for (const n of [2, 5, 21]) ids.rascunho[n] = await criarImovelPronto(ids.dono, titulo(n));
   });
 
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
   });
 
-  test("a tabela de planos do código é 1 / 5 / 20 anúncios", () => {
-    expect(LIMITE_ANUNCIOS.free).toBe(1);
-    expect(LIMITE_ANUNCIOS.essential).toBe(5);
-    expect(LIMITE_ANUNCIOS.pro).toBe(20);
-  });
-
-  test("Gratuito: o 1º publica; o 2º fica sem vaga, com a mensagem do plano", async ({ browser }) => {
-    test.setTimeout(120_000);
+  test("sem assinatura, o 2º anúncio publica (sem vaga no plano)", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
-
-    // O 1º publica pelo editor (vaga do plano Gratuito).
-    await publicarPeloEditor(page, ids.imoveis[0]);
-    await expect(page.getByTestId("prontidao")).toHaveText("Anúncio publicado", { timeout: 20_000 });
-    expect(await statusDoImovel(ids.imoveis[0])).toBe("active");
-
-    // Editor do 2º: a prontidão já sabe que não há vaga e trava o botão.
-    await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
-    await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible();
-    // 64-B: com os publicados conhecidos, o texto diz quantos pausar ("1 anúncio publicado e você tem 1 … pause 1 anúncio").
-    await expect(page.getByText(/Seu plano permite 1 anúncio (no ar|publicado e você tem 1)\. Para publicar este, pause (outro|1 anúncio) ou mude de plano/).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
-    await page.screenshot({ path: "tests/laboratorio/saida/t38-1-gratuito-sem-vaga.png", fullPage: true });
-    expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
-    expect(await contarAtivos(ids.dono!)).toBe(1);
-
-    // Painel (390 px): o aviso "Vaga no seu plano" vem com os 2 botões.
-    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    const vaga = page.getByTestId("check-vaga").first();
-    await expect(vaga).toContainText(/Seu plano permite 1 anúncio (no ar|publicado)/, { timeout: 20_000 });
-    await expect(vaga.getByRole("link", { name: "Pausar outro anúncio" })).toHaveAttribute("href", "/dashboard/imoveis");
-    await expect(vaga.getByRole("link", { name: "Mudar de plano" })).toHaveAttribute("href", "/precos");
-    await page.screenshot({ path: "tests/laboratorio/saida/t38-1b-painel-vaga-390.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await publicaSemLimite(page, 2);
+    await page.screenshot({ path: `${SAIDA}/t38-segundo-publicado-390.png`, fullPage: true });
     await page.context().close();
   });
 
-  test("o servidor recusa o 2º publicado mesmo com a tela desatualizada (mensagem do plano)", async ({ browser }) => {
-    test.setTimeout(120_000);
-    // Põe o 1º de volta em rascunho para abrir o editor do 2º "com vaga"; depois
-    // publica o 1º por baixo dos panos (como outra aba faria) e tenta publicar o 2º.
-    await adm().from("properties").update({ status: "draft" }).eq("id", ids.imoveis[0]);
+  test("o 5º publica", async ({ browser }) => {
+    await noAr(3, 4);
     const page = await entrar(browser, dono.email, senha);
-    await page.goto(`/dashboard/imoveis/${ids.imoveis[1]}/editar`, { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    // O Publicar só habilita depois do aceite do termo de IA (como em publicarPeloEditor).
-    await aceitarTermoIaSePreciso(page);
-    const publicar = page.getByRole("button", { name: "Publicar", exact: true });
-    await expect(publicar).toBeEnabled();
-
-    await adm().from("properties").update({ status: "active" }).eq("id", ids.imoveis[0]);
-    await publicar.click();
-    // 64-B: o servidor recusa com a mesma conta do limite (mensagemLimitePublicar), dizendo quantos pausar.
-    await expect(page.getByText(/Seu plano permite 1 anúncio publicado e você tem 1\. Para publicar este, pause 1 anúncio ou mude de plano/).first()).toBeVisible({ timeout: 15_000 });
-    expect(await statusDoImovel(ids.imoveis[1])).toBe("draft");
-    expect(await contarAtivos(ids.dono!)).toBe(1);
-    await page.screenshot({ path: "tests/laboratorio/saida/t38-2-servidor-barra-segundo.png", fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await publicaSemLimite(page, 5);
     await page.context().close();
   });
 
-  test("Essencial valendo: o 2º, 3º e 4º imóveis publicam (4 ativos, dentro do limite de 5)", async ({ browser }) => {
-    test.setTimeout(180_000);
-    // O pagamento confirmado (webhook) ativa o plano; aqui o laboratório faz o mesmo.
-    await definirPlano(ids.dono!, "essential");
+  test("o 21º publica; Meus imóveis e o painel sem faixa de limite nem 'mude de plano'", async ({ browser }) => {
+    await noAr(6, 20);
     const page = await entrar(browser, dono.email, senha);
-    for (const id of ids.imoveis.slice(1)) {
-      await publicarPeloEditor(page, id);
-      await expect(page.getByTestId("prontidao")).toHaveText("Anúncio publicado", { timeout: 20_000 });
-      expect(await statusDoImovel(id)).toBe("active");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await publicaSemLimite(page, 21);
+    for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
+      await page.setViewportSize({ width: largura, height: altura });
+      for (const rota of ["/dashboard/imoveis", "/dashboard"]) {
+        await page.goto(rota, { waitUntil: "domcontentloaded" });
+        await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+        await expect(page.getByTestId("bloco-limite")).toHaveCount(0);
+        await expect(page.getByText(PLANO_ANTIGO)).toHaveCount(0);
+      }
+      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+      await expect(page.getByText(titulo(21)).first()).toBeVisible({ timeout: 20_000 });
+      await page.screenshot({ path: `${SAIDA}/t38-vinte-e-um-${largura}.png` });
     }
-    expect(await contarAtivos(ids.dono!)).toBe(4);
-
-    await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    for (let i = 1; i <= 4; i++) await expect(page.getByText(`Studio ${i} do teste de vários imóveis ${sufixo}`).first()).toBeVisible();
-    await page.screenshot({ path: "tests/laboratorio/saida/t38-4-quatro-ativos.png", fullPage: true });
     await page.context().close();
   });
 });

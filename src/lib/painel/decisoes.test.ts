@@ -22,7 +22,7 @@ const fatos = (documento: FatosAnuncio["documento"]): FatosAnuncio => ({
   sublocacaoOk: true,
   privacidadeOk: true,
   documento,
-  limitePlanoOk: true,
+ 
   descricao: "x".repeat(80),
   selo: false,
   video: false,

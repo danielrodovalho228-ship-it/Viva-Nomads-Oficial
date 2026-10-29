@@ -11,7 +11,6 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
-import { mensagemLimitePublicar, situacaoComLimite } from "./pausa.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -44,12 +43,6 @@ export interface FatosAnuncio {
   /** "own" | "subleased" | "managed" — só muda o rótulo do item que falta. */
   operacao?: string | null;
   documento: StatusDocumento;
-  /** null = não se aplica/não verificado aqui (ex.: editor sem consulta do plano). */
-  limitePlanoOk: boolean | null;
-  /** Quantos anúncios o plano permite no ar (para o texto da vaga); ausente = texto genérico. */
-  limiteAnuncios?: number | null;
-  /** 64-B: quantos o dono tem publicados (para dizer quantos pausar); ausente = texto sem o número. */
-  ativosAnuncios?: number | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
   /**
@@ -160,14 +153,6 @@ export const ROTULO_FALTA_CONFORTO = "Padrão mínimo da Viva confirmado";
 /** E132-A: os requisitos legais viraram declarações do cartão "Antes de publicar" (Passo 10). */
 export const ROTULO_QUALIFICACAO = "Declarações do imóvel (IPTU, água, luz e gás)";
 
-export function textoVagaNoPlano(limite?: number | null, ativos?: number | null): string {
-  const n = typeof limite === "number" && limite > 0 && Number.isFinite(limite) ? limite : null;
-  // 64-B: com os publicados conhecidos, a mesma conta do servidor (situacaoLimite) diz quantos pausar.
-  if (n !== null && typeof ativos === "number" && Number.isFinite(ativos)) return mensagemLimitePublicar(situacaoComLimite(n, ativos));
-  const quanto = n === null ? "O seu plano já tem o máximo de anúncios no ar" : `Seu plano permite ${n} ${n === 1 ? "anúncio" : "anúncios"} no ar`;
-  return `${quanto}. Para publicar este, pause outro ou mude de plano`;
-}
-
 /** PERTO-B: a pendência dos lugares por perto sem o endereço do lugar. */
 export const ROTULO_PROXIMIDADES_SEM_ENDERECO = "Endereço dos lugares por perto";
 
@@ -214,10 +199,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     const n = f.confortoFaltam;
     obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
   }
-  // A vaga só aparece quando é o único bloqueio que resta (ordem de8761b0, item 2).
-  if (f.limitePlanoOk === false && obrigatorios.every((i) => i.ok)) {
-    obrigatorios.push({ key: "limite", label: "Vaga no seu plano", ok: false, etapa: ETAPA.revisao, detalhe: textoVagaNoPlano(f.limiteAnuncios, f.ativosAnuncios) });
-  }
+  // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.endereco },
     { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
@@ -245,10 +227,8 @@ export interface ItemChecklist {
   label: string;
   ok: boolean;
   detalhe?: string;
-  /** Leva ao campo certo (etapa do editor do rascunho, ou à página do plano). */
+  /** Leva ao campo certo (etapa do editor do rascunho). */
   href: string;
-  /** Botões extras do item (vaga no plano: pausar outro anúncio ou mudar de plano). */
-  acoes?: { label: string; href: string }[];
 }
 
 export interface ChecklistAnuncio {
@@ -262,7 +242,6 @@ export interface ChecklistAnuncio {
  * obrigatório vira ✓ feito / ○ falta com link direto para a etapa do editor.
  * Etapas do cadastro em 5 (prompt 10): 0 Onde fica (endereço e DOCUMENTO), 1 Fotos, 2 O que encontramos,
  * 3 Preço e disponibilidade, 4 Revisar. O documento fica na etapa 1 (conferência automática na hora).
- * A vaga no plano leva à página do plano.
  */
 export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
   const id = encodeURIComponent(draftId);
@@ -273,8 +252,7 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
       label: i.label,
       ok: i.ok,
       detalhe: i.detalhe,
-      href: i.key === "limite" ? "/precos" : `/dashboard/imoveis/novo?draft=${id}&etapa=${etapa}`,
-      acoes: i.key === "limite" ? [{ label: "Pausar outro anúncio", href: "/dashboard/imoveis" }, { label: "Mudar de plano", href: "/precos" }] : undefined,
+      href: `/dashboard/imoveis/novo?draft=${id}&etapa=${etapa}`,
     };
   });
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
@@ -321,7 +299,7 @@ export interface LinhaAnuncio {
   video_arquivo?: string | null;
 }
 
-export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento, limitePlanoOk: boolean | null, limiteAnuncios?: number | null, ativosAnuncios?: number | null): FatosAnuncio {
+export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDocumento): FatosAnuncio {
   return {
     enderecoOk: !!(p.address?.trim() && p.city?.trim()),
     detalhesOk: (Number(p.bathrooms) || 0) >= 1 && (Number(p.area_m2) || 0) > 0,
@@ -335,9 +313,6 @@ export function fatosDaLinha(p: LinhaAnuncio, fotos: number, documento: StatusDo
     privacidadeOk: p.sem_cameras_interior === undefined ? true : declaracaoCamerasFeita(p.sem_cameras_interior),
     operacao: p.ownership_type,
     documento,
-    limitePlanoOk,
-    limiteAnuncios,
-    ativosAnuncios,
     descricao: p.description ?? "",
     selo: !!p.ready_to_live_badge,
     video: videoDoAnuncio({ videoArquivo: p.video_arquivo, videoUrl: p.video_url }).tipo !== null,

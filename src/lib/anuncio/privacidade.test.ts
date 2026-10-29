@@ -30,7 +30,7 @@ const LINHA: LinhaAnuncio = {
   ready_to_live_badge: false,
   video_url: null,
 };
-const fatos = (extra: Partial<LinhaAnuncio> = {}): FatosAnuncio => fatosDaLinha({ ...LINHA, ...extra }, 8, "approved", true);
+const fatos = (extra: Partial<LinhaAnuncio> = {}): FatosAnuncio => fatosDaLinha({ ...LINHA, ...extra }, 8, "approved");
 
 test("publicar sem a declaração de câmeras = bloqueado, com o item na lista do que falta", () => {
   const p = prontidaoAnuncio(fatos({ sem_cameras_interior: false }));

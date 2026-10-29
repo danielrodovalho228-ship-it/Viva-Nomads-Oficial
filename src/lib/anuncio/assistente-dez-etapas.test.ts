@@ -26,7 +26,7 @@ const FATOS_OK: FatosAnuncio = {
   sublocacaoOk: true,
   privacidadeOk: true,
   documento: "approved",
-  limitePlanoOk: true,
+ 
   descricao: "x".repeat(80),
   selo: false,
   video: false,
@@ -89,12 +89,11 @@ test("conferência: o que falta aparece na etapa certa, com o texto da prontidã
   assert.equal(c.itens[0].id, "tipo");
 });
 
-test("conferência: vaga no plano (único bloqueio) vai para a revisão, não para uma etapa", () => {
-  const c = conferenciaAssistente(prontidaoAnuncio({ ...FATOS_OK, limitePlanoOk: false, limiteAnuncios: 1, ativosAnuncios: 1 }));
-  assert.equal(c.podePublicar, false);
+test("E233-A: tudo em ordem publica — sem 'Vaga no seu plano' na revisão", () => {
+  const c = conferenciaAssistente(prontidaoAnuncio(FATOS_OK));
+  assert.equal(c.podePublicar, true);
   assert.ok(c.itens.every((i) => i.ok));
-  assert.equal(c.pendentesNaRevisao.length, 1);
-  assert.match(c.pendentesNaRevisao[0], /Vaga no seu plano/);
+  assert.deepEqual(c.pendentesNaRevisao, []);
 });
 
 test("outras regras: limpa, corta no máximo e vazio não existe", () => {
