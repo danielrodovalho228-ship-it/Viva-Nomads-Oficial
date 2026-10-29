@@ -1123,7 +1123,8 @@
         "t622-varredura-bloco56",
         "t625-varredura-bloco59",
         "t641-e180-entrada-sempre-qualificacao",
-        "t646-cadastro-titulo-nao-pula"
+        "t646-cadastro-titulo-nao-pula",
+        "t647-e241-contador-com-numero"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1223,7 +1224,8 @@
         "t589-varredura-bloco47",
         "t600-e200-conversa-da-estadia",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t648-e243-e245-mensagens"
       ]
     },
     "/dashboard/notificacoes": {
