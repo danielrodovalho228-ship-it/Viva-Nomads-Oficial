@@ -97,13 +97,13 @@ export function SimuladorBolso(p: {
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {b.estado === "gestor" ? (
+            {b.estado === "negociavel" ? (
               <>
                 <Fato rotulo="Você recebe do morador" detalhe="integral e direto a você" testid="bolso-recebe" valor={formatBRL(b.recebe)} />
                 <dl className="rounded-xl border border-line p-4 text-sm">
                   <dt className="text-ink">Taxa de serviço da Viva</dt>
-                  <dd className="mt-1 font-semibold text-ink" data-testid="bolso-gestor">
-                    Plano Gestor:{" "}
+                  <dd className="mt-1 font-semibold text-ink" data-testid="bolso-negociavel">
+                    Taxa negociável:{" "}
                     <Link href={`mailto:${SUPORTE_EMAIL}`} className="underline">
                       fale com a Viva
                     </Link>

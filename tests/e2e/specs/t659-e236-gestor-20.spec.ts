@@ -24,7 +24,7 @@ async function textoDe(page: Page, rota: string): Promise<string> {
 
 /**
  * Texto da página sem as tabelas de faixa da taxa (a <table> e, em /precos, os cartões do celular `faixas-taxa-cartoes`):
- * a faixa sem teto "31+" é outra regra (src/lib/planos/gestor-minimo-textos.test.ts); o rótulo dela é o caso L-76 abaixo.
+ * a faixa sem teto "31+" é outra regra (src/lib/planos/gestor-minimo-textos.test.ts); o rótulo dela ("31+ · taxa negociável", E252-B) é o caso L-76 abaixo.
  */
 async function textoSemFaixas(page: Page): Promise<string> {
   return (
@@ -79,14 +79,14 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await page.screenshot({ path: `tests/laboratorio/saida/t659-termos-${largura}.png` });
     });
 
-    // L-76: a tabela de faixas de /precos rotula a faixa 31+ como "Plano Gestor", e a mesma página diz que o Gestor começa em 20.
+    // L-76, corrigido no E252-B: a faixa 31+ da tabela de /precos é "31+ · taxa negociável", sem "Plano Gestor".
     test(`${largura} px — /precos: a faixa 31+ da tabela não se chama Plano Gestor (L-76)`, async ({ page }) => {
-      test.fail(true, "L-76: src/app/(public)/precos/page.tsx rotula a faixa 31+ como \"31+ · Plano Gestor\"; quem corrigir tira");
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await textoDe(page, "/precos");
       const faixas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa");
       await expect(faixas).toBeVisible();
       await expect(faixas).toContainText(/\b31\+/);
+      await expect(faixas).toContainText("taxa negociável");
       const texto = (await faixas.innerText()).replace(/\s+/g, " ");
       expect(texto).not.toMatch(GESTOR_COM_31);
     });

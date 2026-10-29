@@ -12,7 +12,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
     · #1532: o assistente de cadastro com o estado do rascunho na linha do selo (passo 1 e passo da descrição);
     · E236 (#1524): /precos (com a janela do Plano Gestor fechada), /parceiros, /termos e a página dos sócios
       /modelodenegocio (pela porta /acesso-socios com o código do laboratório; sem ele, pula só essa tela).
-  O L-76 (rótulo "31+ · Plano Gestor" na tabela de /precos) é de texto, não de layout: fica na t659.
+  O L-76 (rótulo "31+ · Plano Gestor" na tabela de /precos, corrigido no E252-B para "31+ · taxa negociável") é de texto, não de layout: fica na t659.
   Sem clique no primário. Semeado aqui e apagado no fim. Só no laboratório.
 */
 type Conta = "DONO" | "PUBLICO" | "SOCIO";

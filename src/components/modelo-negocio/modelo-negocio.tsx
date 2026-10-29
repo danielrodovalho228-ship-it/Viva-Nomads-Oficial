@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./modelo-negocio.module.css";
-import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, ehFaixaNegociavel, faixaPorImoveisAtivos, ROTULO_FAIXA_NEGOCIAVEL, pctTexto, comissaoSobreContrato as taxaSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { GESTOR_MIN_IMOVEIS_VALIDADOS } from "@/lib/planos/gestor";
@@ -53,7 +53,7 @@ export function ModeloNegocio() {
   const [cenarioAtivo, setCenarioAtivo] = useState<string | null>(CENARIOS[0].nome);
 
   const faixa = faixaPorImoveisAtivos(imoveis);
-  const gestor = ehPlanoGestor(imoveis);
+  const negociavel = ehFaixaNegociavel(imoveis);
 
   const calc = useMemo(() => {
     const taxa = faixa.taxa;
@@ -149,7 +149,7 @@ export function ModeloNegocio() {
             <div className={styles.headline}>{brl(calc.donoViva)}</div>
             <div className={styles.cap} data-testid="faixa-atual">
               fica no bolso com o Viva Nomads · taxa de {pctTexto(calc.taxa)}
-              {gestor ? " (Plano Gestor: fale com a gente)" : ""}
+              {negociavel ? " (taxa negociável: fale com a gente)" : ""}
             </div>
             <div className={styles.compare}>
               <span>No Airbnb ficaria</span>
@@ -201,8 +201,8 @@ export function ModeloNegocio() {
               <tbody>
                 {FAIXAS_COMISSAO_PADRAO.map((f) => (
                   <tr key={f.minImoveis} className={f.minImoveis === faixa.minImoveis ? styles.total : undefined}>
-                    <td>{rotuloFaixa(f.minImoveis, f.maxImoveis)}</td>
-                    <td>{f.gestor ? "Negociado · Plano Gestor, entre em contato" : pctTexto(f.taxa)}</td>
+                    <td>{rotuloFaixa(f.minImoveis, f.maxImoveis)}{f.negociavel ? ` · ${ROTULO_FAIXA_NEGOCIAVEL}` : ""}</td>
+                    <td>{f.negociavel ? "Negociável, entre em contato" : pctTexto(f.taxa)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -234,7 +234,7 @@ export function ModeloNegocio() {
           <h2>Premissas</h2>
           <ul>
             <li>Taxa de serviço <strong>uma vez por contrato fechado</strong>, sobre o valor total do contrato (valor mensal × meses); cada renovação é cobrada à parte, sobre o valor do período renovado, com a taxa da faixa do dono.</li>
-            <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor a partir de {GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis.</li>
+            <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor a partir de {GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis.</li>
             <li>O inquilino não paga taxa da Viva. A Viva não emite nota fiscal ao inquilino.</li>
             <li>
               Percentual médio dos canais (valores de referência {COMPARE_REFERENCIA}): {CANAIS.map((c) => `${c.nome} ${pct1(c.pct)}`).join("; ")}; fontes e datas na página de preços.

@@ -15,7 +15,7 @@ import { CITIES } from "@/lib/constants";
 import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
-const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
+const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
 const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
 const TAXA_MENOR = pctTexto(Math.min(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
 const LIMITE_FAIXAS = Math.max(...FAIXAS_PUBLICAS.map((f) => f.maxImoveis ?? 0));

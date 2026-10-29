@@ -77,3 +77,29 @@ test("a faixa sem teto da taxa de serviço continua '31+' (outra regra)", () => 
   assert.match(ler("src/components/modelo-negocio/modelo-negocio.tsx"), /label: f\.maxImoveis === null \? "31\+"/);
   assert.match(ler("src/app/(public)/termos/page.tsx"), /16 a 30, 6%; 31 ou mais, condição negociada\./);
 });
+
+test("E252-B: a faixa 31+ da tabela é 'taxa negociável', sem 'Plano Gestor'; o rótulo 31+ continua", async () => {
+  const { FAIXAS_COMISSAO_PADRAO: faixas, rotuloFaixaTaxa, ROTULO_FAIXA_NEGOCIAVEL } = await import("../cobranca/regra.ts");
+  const rotulos = faixas.map((f) => rotuloFaixaTaxa(f, true));
+  assert.deepEqual(rotulos, ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16–30 imóveis", "31+ imóveis · taxa negociável"]);
+  assert.equal(ROTULO_FAIXA_NEGOCIAVEL, "taxa negociável");
+  for (const r of [...rotulos, ...faixas.map((f) => rotuloFaixaTaxa(f))]) assert.doesNotMatch(r, /Gestor/);
+  // As telas que montam a tabela de faixas usam o rótulo da faixa, nunca "Plano Gestor" na linha da faixa 31+.
+  const precos = ler("src/app/(public)/precos/page.tsx");
+  assert.match(precos, /\{rotuloFaixaTaxa\(f\)\}/);
+  assert.match(precos, /\{rotuloFaixaTaxa\(f, true\)\}/);
+  for (const f of [
+    "src/app/(public)/precos/page.tsx",
+    "src/components/modelo-negocio/modelo-negocio.tsx",
+    "src/app/(dashboard)/dashboard/simulador/page.tsx",
+    "src/components/precos/simulador-bolso.tsx",
+  ]) {
+    const t = ler(f);
+    // O ramo "faixa negociável" de cada ternário (f.negociavel ? … :, negociavel ? … :, estado === "negociavel" ? ( … ) : ()
+    // não escreve "Gestor". (A frase "Plano Gestor a partir de {constante}" fora desses ramos é permitida.)
+    for (const m of t.matchAll(/negociavel"?\s*\?\s*(\([\s\S]*?\n\s*\) : \(|[^:\n]*:)/g)) assert.doesNotMatch(m[1], /Gestor/, `${f}: ${m[0].trim().slice(0, 160)}`);
+    assert.doesNotMatch(t, /\bgestor\s*\?|\.gestor\b|ehPlanoGestor|estado === "gestor"/, f);
+  }
+  // O Plano Gestor aparece só pelo formulário (e pelo simulador do plano), com o número da constante.
+  assert.match(ler("src/components/precos/plano-gestor-form.tsx"), /\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais\? Plano Gestor/);
+});
