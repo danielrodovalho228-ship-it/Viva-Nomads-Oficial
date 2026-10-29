@@ -300,6 +300,7 @@
         "admin"
       ],
       "specs": [
+        "t650-observador-nao-marca-conta-teste",
         "t101-admin-usuarios",
         "t178-telefone-sms",
         "t48-varredura",
