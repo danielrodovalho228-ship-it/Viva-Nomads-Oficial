@@ -153,14 +153,16 @@ function HojeNoInicio({ cartoes }: { cartoes: CartaoHoje[] }) {
             >
               <Avatar name={c.nome} photoUrl={c.fotoUrl ?? undefined} size={48} />
               <span className="min-w-0 flex-1">
-                <span className={cn("block text-sm font-semibold", c.tipo === "entrada" ? "text-forest" : "text-ink")}>
+                <span className={cn("block text-sm font-semibold", c.tipo === "entrada" ? "text-forest" : "text-ink")} data-testid="inicio-dono-hoje-rotulo">
                   {c.rotulo}
                   {c.horario ? <span className="font-normal text-muted"> · {c.horario}</span> : null}
                 </span>
                 <span className="block truncate font-title text-base font-semibold text-ink" data-testid="inicio-dono-hoje-nome">
                   {c.nome}
                 </span>
-                <span className="block truncate text-sm text-muted">{c.imovel}</span>
+                <span className="block truncate text-sm text-muted" data-testid="inicio-dono-hoje-imovel">
+                  {c.imovel}
+                </span>
               </span>
               <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
             </Link>
