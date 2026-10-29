@@ -93,7 +93,10 @@ export function MobileTabBar({
                       </span>
                     )}
                   </span>
-                  <span className="block w-full truncate px-1 text-center">{tab.label}</span>
+                  {/* E229 (L-74): abaixo de 375 px (ex.: 360) a coluna tem 72 px e "Interessados" a 11 px não cabia —
+                      só ali o rótulo vai a 10 px, sem a folga lateral e com o espaçamento um pouco mais justo. O nome
+                      aprovado fica (um destino, um nome — E85); a 375 px ou mais, nada muda. */}
+                  <span className="block w-full truncate px-1 text-center max-[374px]:px-0 max-[374px]:text-[10px] max-[374px]:tracking-tight">{tab.label}</span>
                 </Link>
               </li>
             );
