@@ -639,7 +639,8 @@
         "t549-varredura-bloco39",
         "t559-varredura-bloco43",
         "t489-e176-menus",
-        "t562-e190-modo-um-toque"
+        "t562-e190-modo-um-toque",
+        "t602-e181-familia-contadores"
       ]
     },
     "/dashboard/assinatura": {
@@ -679,7 +680,8 @@
         "t125-alerta-busca-salva",
         "t71-busca-topo",
         "t183-telas-logadas-390",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t602-e181-familia-contadores"
       ]
     },
     "/dashboard/candidaturas": {
@@ -694,7 +696,8 @@
         "t205-fechamento-sem-beco",
         "t213-jornada-teste-confirmacao",
         "t297-varredura-logada-bloco3",
-        "t336-varredura-bloco14"
+        "t336-varredura-bloco14",
+        "t602-e181-familia-contadores"
       ]
     },
     "/dashboard/ganhos": {
@@ -864,7 +867,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t602-e181-familia-contadores"
       ]
     },
     "/dashboard/fechamento": {
@@ -1152,7 +1156,8 @@
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t600-e200-conversa-da-estadia"
+        "t600-e200-conversa-da-estadia",
+        "t602-e181-familia-contadores"
       ]
     },
     "/dashboard/notificacoes": {
