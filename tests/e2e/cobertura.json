@@ -6011,11 +6011,21 @@
         "t397-foto-na-hora"
       ]
     },
+    "src/lib/data/estrutura-actions.ts#lerChecklistEstrutura": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t668-e225-estrutura-acessibilidade"
+      ]
+    },
     "src/lib/data/estrutura-actions.ts#salvarChecklistEstrutura": {
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t668-e225-estrutura-acessibilidade"
+      ]
     },
     "src/lib/data/nivel-actions.ts#salvarRuido": {
       "personas": [
