@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useRef, useState } from "react";
 import { PONTOS_MEDICAO, ROTULO_PONTO, type PontoMedicao } from "@/config/niveis";
 import { Wifi } from "lucide-react";
@@ -139,20 +140,18 @@ export function MedirInternet({
           {atualTexto.texto}
         </p>
       )}
-      <label className="mt-3 flex flex-wrap items-center gap-2 text-sm text-ink">
-        Onde você está medindo
-        <select value={ponto} onChange={(e) => setPonto(e.target.value as PontoMedicao)} disabled={ocupado} className="h-10 rounded-lg border border-sage-200 px-2 text-sm" data-testid="medir-internet-ponto">
+      {/* E193: escolha única em pílulas (antes, lista suspensa) e o sim/não do Wi-Fi no cartão (antes, caixa quadrada). */}
+      <fieldset className="mt-3 text-sm text-ink" data-testid="medir-internet-ponto">
+        <legend>Onde você está medindo</legend>
+        <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label="Onde você está medindo">
           {PONTOS_MEDICAO.map((p) => (
-            <option key={p} value={p}>
+            <Pilula key={p} papel="radio" on={ponto === p} onClick={() => setPonto(p)} disabled={ocupado} testid={`medir-internet-ponto-${p}`}>
               {ROTULO_PONTO[p]}
-            </option>
+            </Pilula>
           ))}
-        </select>
-      </label>
-      <label className="mt-3 flex items-center gap-2 text-sm text-ink">
-        <input type="checkbox" checked={wifi} onChange={(e) => setWifi(e.target.checked)} disabled={ocupado} data-testid="medir-internet-wifi" />
-        Estou conectado ao Wi-Fi do imóvel
-      </label>
+        </div>
+      </fieldset>
+      <CartaoEscolha papel="checkbox" on={wifi} onClick={() => setWifi(!wifi)} disabled={ocupado} rotulo="Estou conectado ao Wi-Fi do imóvel" testid="medir-internet-wifi" className="mt-3" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button type="button" variant="primary" size="sm" disabled={ocupado || estado.restantesHoje <= 0} onClick={medir} data-testid="medir-internet-botao">
           {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : "Medir a internet agora"}

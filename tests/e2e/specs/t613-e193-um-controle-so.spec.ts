@@ -5,7 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T613 — E193 (auditoria de 28/10): um só estilo de controle no assistente de cadastro. Em cada etapa, inventaria os
   controles de escolha à vista e classifica: "pilula" (botão/rótulo arredondado de chip), "cartao" (botão-cartão de
   escolha), "caixa" (checkbox quadrado à vista), "lista" (select nativo), "chave" (switch). Dentro do assistente não
-  pode haver "caixa" nem "lista". A 1280 e 390 px.
+  pode haver "caixa" nem "lista" (exceção anotada: o Estado/UF da busca de CEP, que nem aparece sem abrir a busca).
+  A 1280 e 390 px.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -44,7 +45,8 @@ const inventario = (p: Page) =>
 
 test.describe("T613 — E193: um só estilo de controle no cadastro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial", timeout: 240_000 });
+  // Sem "serial": a 390 roda mesmo se a 1280 falhar (a rodada "antes" mostra as duas larguras).
+  test.describe.configure({ timeout: 240_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
@@ -68,7 +70,7 @@ test.describe("T613 — E193: um só estilo de controle no cadastro", () => {
         console.log(`t613 ${largura} ${etapa}`, JSON.stringify(inv));
         if (inv.caixa.length) falhas.push(`${etapa}: caixas ${inv.caixa.join(" | ")}`);
         if (inv.lista.length) falhas.push(`${etapa}: listas ${inv.lista.join(" | ")}`);
-        if (etapa === "comodidades" || etapa === "regras") await p.screenshot({ path: `${SAIDA}/t613-${etapa}-${largura}.png`, fullPage: true });
+        if (["comodidades", "regras", "preco", "disponibilidade", "revisao"].includes(etapa)) await p.screenshot({ path: `${SAIDA}/t613-${etapa}-${largura}.png`, fullPage: true });
       }
       expect(falhas, falhas.join("\n")).toEqual([]);
       await p.context().close();

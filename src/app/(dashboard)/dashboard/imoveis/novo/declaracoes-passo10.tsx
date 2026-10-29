@@ -1,8 +1,7 @@
 "use client";
 
 import { AlertTriangle, Info } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import {
   COMO_DESCOBRIR_CONVENCAO,
   OPCOES_CONVENCAO,
@@ -13,8 +12,8 @@ import {
 } from "@/lib/anuncio/requisitos-passo10";
 
 /**
- * E132-A, Parte C, item 8: as declarações de um toque do cartão "Antes de publicar" (Passo 10). Sim/não no padrão
- * toggle do E56; a convenção (três respostas) em pílulas, só nos tipos em condomínio — casa e chácara contam como "Sim".
+ * E132-A, Parte C, item 8: as declarações de um toque do cartão "Antes de publicar" (Passo 10). Sim/não e a convenção
+ * (três respostas) no cartão da Qualificação (E193), só nos tipos em condomínio — casa e chácara contam como "Sim".
  */
 export function DeclaracoesDoImovel({
   valor,
@@ -25,11 +24,9 @@ export function DeclaracoesDoImovel({
   onChange: (d: DeclaracoesPasso10) => void;
   emCondominio: boolean;
 }) {
+  // E193: sim/não no cartão da Qualificação (antes, chave deslizante); continua um interruptor para o leitor de tela.
   const linha = (rotulo: string, ligado: boolean, mudar: (v: boolean) => void, testId: string) => (
-    <div className="flex min-h-11 items-center justify-between gap-3">
-      <span className="text-sm font-medium text-ink">{rotulo}</span>
-      <Switch checked={ligado} onChange={mudar} label={rotulo} testId={testId} />
-    </div>
+    <CartaoEscolha papel="switch" on={ligado} onClick={() => mudar(!ligado)} rotulo={rotulo} testid={testId} aria-label={rotulo} />
   );
   return (
     <div className="space-y-2 rounded-xl border border-sage-200 p-4" data-testid="declaracoes-passo10">
@@ -45,22 +42,10 @@ export function DeclaracoesDoImovel({
             </summary>
             <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">{COMO_DESCOBRIR_CONVENCAO}</p>
           </details>
-          <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={PERGUNTA_CONVENCAO}>
+          {/* E193: escolha única no cartão da Qualificação (antes, pílulas). */}
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label={PERGUNTA_CONVENCAO}>
             {OPCOES_CONVENCAO.map((o) => (
-              <button
-                key={o.valor}
-                type="button"
-                role="radio"
-                aria-checked={valor.convencao === o.valor}
-                onClick={() => onChange({ ...valor, convencao: o.valor })}
-                data-testid={`convencao-${o.valor}`}
-                className={cn(
-                  "min-h-11 rounded-full border px-4 text-sm font-medium transition-colors",
-                  valor.convencao === o.valor ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:border-sage"
-                )}
-              >
-                {o.rotulo}
-              </button>
+              <CartaoEscolha key={o.valor} on={valor.convencao === o.valor} onClick={() => onChange({ ...valor, convencao: o.valor })} rotulo={o.rotulo} testid={`convencao-${o.valor}`} />
             ))}
           </div>
           {valor.convencao === "unknown" && (

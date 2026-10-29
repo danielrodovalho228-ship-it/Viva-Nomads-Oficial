@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { ROTULO_FALTA_CHACARA, linhasChacaraRevisao, type DadosChacara } from "@/lib/anuncio/chacara";
 import Link from "next/link";
 import { Check, CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
@@ -200,10 +201,10 @@ export function EtapaRevisar(p: {
               {textoTermoJaAceito(p.termoJaAceito.aceitoEm)}
             </p>
           ) : (
-            <label className="flex items-start gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-ink" data-testid="aceite-ia">
-              <input type="checkbox" checked={p.aceitouIa} onChange={(e) => p.setAceitouIa(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-forest" />
-              <span>{TERMO_IA_TEXTO}</span>
-            </label>
+            // E193: o aceite no cartão da Qualificação (antes, caixa quadrada); continua uma caixa de marcar para o leitor de tela.
+            <div data-testid="aceite-ia">
+              <CartaoEscolha papel="checkbox" on={p.aceitouIa} onClick={() => p.setAceitouIa(!p.aceitouIa)} rotulo={<span className="font-normal">{TERMO_IA_TEXTO}</span>} />
+            </div>
           )}
           {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
           {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}

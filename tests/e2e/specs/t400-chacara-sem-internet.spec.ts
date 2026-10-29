@@ -96,7 +96,7 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await abrirCadastro(page, "detalhes");
     const campos = page.getByTestId("campos-chacara");
     await expect(campos.getByTestId("chacara-internet-nao_tem")).toBeVisible({ timeout: 20_000 });
-    await expect(campos.locator('label:has([data-testid="chacara-internet-nao_tem"])')).toHaveText("Não tem internet");
+    await expect(campos.getByTestId("chacara-internet-nao_tem")).toHaveText("Não tem internet");
     await campos.getByTestId("chacara-internet-nao_tem").check();
     // Resposta válida: o tipo de internet conta como respondido.
     await expect(campos).toHaveAttribute("data-falta", "");
