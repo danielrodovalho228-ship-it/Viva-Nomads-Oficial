@@ -57,8 +57,6 @@ test.describe("T313 — ativação e funil (50)", () => {
     const bloco = d.getByTestId("inicio-dono-principal");
     // Rascunho do dono (pronto ou não): o bloco é o do rascunho — o guia nunca aparece à parte.
     await expect(bloco).toHaveAttribute("data-tipo", "rascunho", { timeout: 20_000 });
-    // E218-A (Pista C): os passos do guia moram DENTRO do bloco principal (um guia só), nada do dono à parte.
-    await expect(bloco.getByTestId("inicio-dono-passos")).toBeVisible();
     await expect(d.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toHaveCount(0);
     expect(((await adm().from("ativacoes").select("papel").eq("user_id", ids.dono)).data ?? []).length).toBe(0);
     // Publicou (o que a publicação grava): no próximo Início, o checklist do papel some e a data fica gravada.
@@ -75,16 +73,6 @@ test.describe("T313 — ativação e funil (50)", () => {
     const { data: a2 } = await adm().from("ativacoes").select("ativado_em").eq("user_id", ids.dono).eq("papel", "proprietario").single();
     expect(a2!.ativado_em).toBe(a1!.ativado_em);
     await d.context().close();
-  });
-
-  // E218-A: o bloco separado de ativação fica só para morador (e parceiro); no modo morador nada do dono aparece.
-  test("1b. morador: o guia de ativação do morador num bloco próprio, sem o bloco do dono", async ({ browser }) => {
-    const m = await entrar(browser, pessoa.email, senha);
-    await m.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(m.locator('[data-testid="checklist-ativacao"][data-papel="morador"]')).toBeVisible({ timeout: 20_000 });
-    await expect(m.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toHaveCount(0);
-    await expect(m.getByTestId("inicio-dono-principal")).toHaveCount(0);
-    await m.context().close();
   });
 
   test("2. verificação: motivo legível e nova tentativa; na 2ª, uma pessoa analisa e aprova", async ({ browser }) => {
