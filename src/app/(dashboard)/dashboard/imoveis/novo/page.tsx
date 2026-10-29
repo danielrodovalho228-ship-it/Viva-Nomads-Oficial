@@ -110,6 +110,8 @@ import { EtapaTipo } from "./etapa-tipo";
 import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
+import { useTelaLarga } from "@/components/ui/use-tela-larga";
+import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, oQueFaltaParaPublicar, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
@@ -394,11 +396,23 @@ export default function NewPropertyPage() {
     if (item.key === "conforto") setTimeout(() => document.querySelector('[data-testid="conforto-checklist"]')?.scrollIntoView({ block: "center" }), 50);
     // 65-B: "Para melhorar: Vídeo do imóvel" leva ao bloco de vídeo do passo Fotos.
     if (item.key === "video") setTimeout(() => document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" }), 400);
-    // E112: documento e quem opera moram no "Antes de publicar" desta mesma Revisão — "Resolver" desce até lá.
-    if (item.key === "qualificacao")
-      setTimeout(() => document.querySelector('[data-testid="declaracoes-passo10"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
-    if (item.key === "documento" || item.key === "sublocacao")
-      setTimeout(() => document.querySelector(item.key === "documento" ? '[data-testid="documento-vinculo"]' : '[data-testid="antes-de-publicar"]')?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    // E112 → E251: documento, quem opera e declarações moram no "Antes de publicar" desta mesma Revisão — "Resolver"
+    // abre a seção no lugar (acordeão) e desce até ela.
+    const secao = secaoDoItem(item.key);
+    if (secao) abrirSecaoPasso10(secao);
+  }
+  function abrirSecaoPasso10(secao: SecaoAntesDePublicar) {
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent(EVENTO_ABRIR_SECAO, { detail: secao }));
+      setTimeout(() => document.querySelector(`[data-testid="antes-secao-${secao}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }, 50);
+  }
+  /** E251: o motivo do botão travado leva ao primeiro item que falta. */
+  function irAoQueFalta() {
+    const item = prontidao.obrigatorios.find((i) => !i.ok);
+    if (item) return resolverItem(item);
+    if (!qualificado) return abrirSecaoPasso10("declaracoes");
+    if (!aceiteValido) document.querySelector('[data-testid="aceite-ia"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   // "Importar anúncio" (t115): preenche o que veio do texto colado e leva direto à etapa 3, com tudo preenchido.
   function aplicarImportado(a: AnuncioOrganizado) {
@@ -417,6 +431,9 @@ export default function NewPropertyPage() {
 
   const completude = prontidao.obrigatorios;
   const podePublicar = prontidao.podePublicar && qualificado && aceiteValido;
+  // E251: o motivo do "Publicar anúncio" travado, em uma linha (as mesmas regras de sempre: prontidão, isEligible, aceite).
+  const motivoTravado = podePublicar ? null : motivoPublicarTravado(oQueFaltaParaPublicar({ completude, declaracoesOk: qualificado, aceitouIa: aceiteValido }));
+  const telaLarga = useTelaLarga();
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
   function validarEtapa(s: number): Record<string, string> {
@@ -1923,63 +1940,64 @@ export default function NewPropertyPage() {
               />
             )}
 
-            {/* E104: quem opera, identidade e documento do imóvel saem do Passo 3 (só endereço) e ficam aqui, antes de
-                publicar — a prontidão continua barrando a publicação sem eles. */}
-            {step === ETAPA.revisao && (
-              <div className="mb-6">
-                <AntesDePublicar
-                  ownershipType={ownershipType}
-                  setOwnershipType={setOwnershipType}
-                  subleaseAuthorized={subleaseAuthorized}
-                  setSubleaseAuthorized={setSubleaseAuthorized}
-                  subleaseDoc={subleaseDoc}
-                  setSubleaseDoc={(d) => {
-                    setSubleaseDoc(d);
-                    if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
-                  }}
-                  docOperacaoAnexado={docOperacaoAnexado}
-                  subleaseDocTipo={subleaseDocTipo}
-                  setSubleaseDocTipo={(t) => {
-                    setSubleaseDocTipo(t);
-                    setErros(({ sublocacao: _resolvido, ...resto }) => resto);
-                  }}
-                  imovelId={imovelId}
-                  docEstado={docEstado}
-                  docMotivos={docMotivos}
-                  onDocumento={(e, m) => {
-                    setDocEstado(e);
-                    setDocMotivos(m);
-                    setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
-                  }}
-                  onMatricula={aplicarMatricula}
-                  enderecoSalvo={enderecoSalvo}
-                  linhaDocumentoInicio={documentoNoInicio ? linhaDocumentoDoInicio(docEstado) : null}
-                  declaracoes={declaracoes}
-                  setDeclaracoes={setDeclaracoes}
-                  emCondominio={tipoEmCondominio(propertyType)}
-                  onFaltaDocumento={(campos) => {
-                    setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }));
-                    // E104: os campos do endereço moram no Passo 3 — leva até lá e põe o foco no primeiro que falta.
-                    if (!campos.length) return;
-                    irPara(ETAPA.endereco);
-                    setTimeout(() => {
-                      const campo = document.querySelector<HTMLInputElement>(`[data-testid="${TESTID_CAMPO_ENDERECO[campos[0]]}"]`);
-                      campo?.scrollIntoView({ block: "center" });
-                      campo?.focus({ preventScroll: true });
-                    }, 400);
-                  }}
-                  cep={cep}
-                  street={street}
-                  numero={numero}
-                  neighborhood={neighborhood}
-                  city={city}
-                  faltaOperacao={faltaOperacao}
-                />
-              </div>
-            )}
             {step === ETAPA.revisao && (
               <EtapaRevisar
                 previewProperty={previewProperty}
+                // E104 → E251: quem opera, identidade, documento e declarações, em acordeão na coluna "Antes de publicar".
+                antesDePublicar={
+                  <AntesDePublicar
+                    ownershipType={ownershipType}
+                    setOwnershipType={setOwnershipType}
+                    subleaseAuthorized={subleaseAuthorized}
+                    setSubleaseAuthorized={setSubleaseAuthorized}
+                    subleaseDoc={subleaseDoc}
+                    setSubleaseDoc={(d) => {
+                      setSubleaseDoc(d);
+                      if (d.length) setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                    }}
+                    docOperacaoAnexado={docOperacaoAnexado}
+                    subleaseDocTipo={subleaseDocTipo}
+                    setSubleaseDocTipo={(t) => {
+                      setSubleaseDocTipo(t);
+                      setErros(({ sublocacao: _resolvido, ...resto }) => resto);
+                    }}
+                    imovelId={imovelId}
+                    docEstado={docEstado}
+                    docMotivos={docMotivos}
+                    onDocumento={(e, m) => {
+                      setDocEstado(e);
+                      setDocMotivos(m);
+                      setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                    }}
+                    onMatricula={aplicarMatricula}
+                    enderecoSalvo={enderecoSalvo}
+                    linhaDocumentoInicio={documentoNoInicio ? linhaDocumentoDoInicio(docEstado) : null}
+                    declaracoes={declaracoes}
+                    setDeclaracoes={setDeclaracoes}
+                    emCondominio={tipoEmCondominio(propertyType)}
+                    onFaltaDocumento={(campos) => {
+                      setErros((e) => ({ ...e, ...Object.fromEntries(campos.map((c) => [c, ERRO_CAMPO_ENDERECO[c]])) }));
+                      // E104: os campos do endereço moram no Passo 3 — leva até lá e põe o foco no primeiro que falta.
+                      if (!campos.length) return;
+                      irPara(ETAPA.endereco);
+                      setTimeout(() => {
+                        const campo = document.querySelector<HTMLInputElement>(`[data-testid="${TESTID_CAMPO_ENDERECO[campos[0]]}"]`);
+                        campo?.scrollIntoView({ block: "center" });
+                        campo?.focus({ preventScroll: true });
+                      }, 400);
+                    }}
+                    cep={cep}
+                    street={street}
+                    numero={numero}
+                    neighborhood={neighborhood}
+                    city={city}
+                    faltaOperacao={faltaOperacao}
+                  />
+                }
+                telaLarga={telaLarga}
+                rotuloPublicar={publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio"}
+                motivoTravado={motivoTravado}
+                onMotivo={irAoQueFalta}
                 tamanhoReal={<BotaoTamanhoReal imovel={previewProperty} className="mt-2 hidden lg:inline-flex" />}
                 titulo={title}
                 tipo={propertyType}
@@ -2061,13 +2079,16 @@ export default function NewPropertyPage() {
                 // E133: no Passo 2, desabilitado de verdade (visual e clique) até o mínimo de fotos e sem aviso pendente.
                 ...(step === ETAPA.fotos && !passoFotos.podeContinuar ? { disabled: true, title: passoFotos.mensagem ?? undefined } : {}),
               }
-            : {
-                rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
-                onClick: () => publish(false),
-                disabled: publishing || !podePublicar,
-                title: podePublicar ? undefined : "Resolva os itens pendentes da lista",
-                testid: "publicar-anuncio",
-              }
+            : telaLarga
+              ? // E251: no computador o "Publicar anúncio" é o da coluna da prévia (um botão cheio por tela).
+                null
+              : {
+                  rotulo: publishing ? "Salvando..." : editingId ? "Salvar alterações" : "Publicar anúncio",
+                  onClick: () => publish(false),
+                  disabled: publishing || !podePublicar,
+                  title: motivoTravado ?? undefined,
+                  testid: "publicar-anuncio",
+                }
         }
       />
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>

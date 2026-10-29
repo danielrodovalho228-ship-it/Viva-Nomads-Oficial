@@ -77,6 +77,8 @@ test("E140: o comparador usa os meses recebidos (sem período fixo), conta abert
 
 test("E139: a Revisão não mostra 'R$ X/mês no total' sem valor mensal (contas sozinhas não são o total)", () => {
   const rev = semComentarios(ler("../app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"));
-  assert.match(rev, /\{temValorMensal && total > 0 && \(/);
+  // E251: com valor mensal, os três nomes fixos do preço; sem ele, nenhum total.
+  assert.match(rev, /\{!temValorMensal \? \(/);
+  assert.match(rev, /data-testid="previa-precos"/);
   assert.match(rev, /Valor mensal ainda não definido\./);
 });

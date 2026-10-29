@@ -29,7 +29,8 @@ export function RodapeAssistente(p: {
   pos: number;
   total: number;
   onVoltar: (() => void) | null;
-  primario: PrimarioRodape;
+  /** E251: no Passo 10 do computador o "Publicar anúncio" mora na coluna da prévia — o rodapé fica sem primário. */
+  primario: PrimarioRodape | null;
   /** E194: a Qualificação usa o mesmo rodapé com o seu texto ("Antes do Passo 1 · …") e a barra contínua. */
   texto?: string;
   pct?: number;
@@ -55,6 +56,7 @@ export function RodapeAssistente(p: {
               {p.texto ?? textoPasso(p.pos, p.total)}
             </p>
           </div>
+          {p.primario && (
           <Button
             size="lg"
             // E135: com o teclado aberto (celular), o 1º toque só tirava o foco do campo, a tela pulava e o clique se
@@ -73,6 +75,7 @@ export function RodapeAssistente(p: {
           >
             {p.primario.rotulo} {p.primario.seta && <ArrowRight className="h-4 w-4" />}
           </Button>
+          )}
         </div>
       </div>
     </>

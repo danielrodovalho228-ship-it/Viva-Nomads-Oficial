@@ -2,9 +2,9 @@
 
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { ROTULO_FALTA_CHACARA, linhasChacaraRevisao, type DadosChacara } from "@/lib/anuncio/chacara";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Check, CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, Circle, ImageIcon } from "lucide-react";
 import type { ItemProntidao, Prontidao } from "@/lib/anuncio/prontidao";
 import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloPrevia } from "@/lib/anuncio/assistente-telas";
-import { calcularTotalMensal } from "@/lib/precos";
+import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn, formatBRL } from "@/lib/utils";
@@ -21,16 +21,25 @@ import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candid
 import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
 
 /**
- * Passo 10 — Revise e publique (mockup cadastro-imovel-10). No computador, duas colunas: à esquerda a "Lista de
- * conferência" (uma linha por passo, com o que falta e "Resolver"); à direita o cartão do anúncio (foto, título,
- * quartos · banheiros · área, "R$ X/mês no total" pelo total mensal do anúncio). No celular, o cartão vem primeiro,
- * depois a lista ("Tudo certo para publicar" quando nada falta). CADASTRO-MOLDURA: o "Publicar anúncio" é o primário
- * do rodapé do fluxo, e o rascunho salva sozinho (sem botão de salvar no cadastro novo).
- * Ficam as travas que já existiam e o desenho não mostra: estado do documento (quando não está conferido), aceite do
- * termo da IA, o convite opcional da foto do anfitrião e o que falta para publicar.
+ * Passo 10 — Revise e publique. E251 (desenho aprovado pelo coordenador em 29/10), duas colunas no computador:
+ *  • à esquerda, "Antes de publicar": a lista de conferência (uma linha por passo, "Resolver") e as seções legais
+ *    (quem opera, identidade, documento, declarações), cada uma com estado (✓ ou "falta") que abre no lugar;
+ *  • à direita, fixa: a prévia do anúncio com os preços nos três nomes fixos (Mensal · Total por mês (com contas) ·
+ *    Total do contrato) e UM "Publicar anúncio", travado com o motivo em uma linha enquanto faltar algo.
+ * No celular, coluna única: a lista primeiro, a prévia recolhida ("Ver como fica o anúncio") e o "Publicar anúncio" no
+ * rodapé fixo, no lugar do "Continuar". As regras de publicar não mudam (12 itens do essencial + isEligible + aceite).
  */
 export function EtapaRevisar(p: {
   previewProperty: Property;
+  /** E251: as seções legais em acordeão (AntesDePublicar), na coluna da lista. */
+  antesDePublicar?: ReactNode;
+  /** E251: no computador o "Publicar anúncio" mora na coluna da prévia; no celular, no rodapé do fluxo. */
+  telaLarga: boolean;
+  rotuloPublicar: string;
+  /** O motivo em uma linha ("Falta: documento do imóvel"); null quando nada falta. */
+  motivoTravado: string | null;
+  /** Tocar no motivo leva ao primeiro item que falta. */
+  onMotivo: () => void;
   /** E242: o "Ver no tamanho real" (computador), embaixo da foto do cartão; no celular ele fica no fim do passo. */
   tamanhoReal?: ReactNode;
   titulo: string;
@@ -63,13 +72,15 @@ export function EtapaRevisar(p: {
   chacara?: DadosChacara | null;
 }) {
   const conf = conferenciaAssistente(p.prontidao);
-  const total = calcularTotalMensal(p.previewProperty).total;
-  // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram "R$ X/mês no total".
+  const precos = precosDaPrevia(p.previewProperty);
+  // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram preço.
   const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
   const linha = linhaRevisao(p.previewProperty.bedrooms, p.previewProperty.bathrooms, p.previewProperty.areaM2);
   const desconto = fraseDescontoCard(p.negociacao.descontos);
   const tudoCerto = conf.itens.every((i) => i.ok);
   const primeiroPendente = (id: IdEtapaAssistente) => p.completude.find((i) => !i.ok && etapaDoItemProntidao(i.key).id === id);
+  const [previaAberta, setPreviaAberta] = useState(false);
+  const travado = !p.podePublicar || p.publishing;
 
   const cartao = (
     <section className={cn("min-w-0 rounded-xl bg-white p-4 sm:p-6", SOMBRA_CARTAO_CADASTRO)} aria-label="Seu anúncio" data-testid="revisao-cartao">
@@ -92,32 +103,41 @@ export function EtapaRevisar(p: {
           {linha}
         </p>
       )}
-      {!temValorMensal && (
+      {!temValorMensal ? (
         <p className="mt-3 text-sm text-muted" data-testid="revisao-sem-valor">
           Valor mensal ainda não definido.
         </p>
+      ) : (
+        // PROP-2: os três nomes fixos do preço; o total do contrato com a conta aberta.
+        <dl className="mt-3 space-y-1 text-sm" data-testid="previa-precos">
+          {precos.map((l, n) => (
+            <div key={l.rotulo} className="flex items-baseline justify-between gap-3" data-testid={`previa-preco-${["mensal", "total-mes", "total-contrato"][n]}`}>
+              <dt className="text-muted">{l.rotulo}</dt>
+              <dd className={cn("text-right font-semibold", n === 1 ? "font-title text-lg text-forest" : "text-ink")}>{l.valor == null ? "—" : formatBRL(l.valor)}</dd>
+            </div>
+          ))}
+          {precos[2].conta && <p className="text-right text-xs text-muted" data-testid="previa-conta-contrato">{precos[2].conta}</p>}
+          {desconto && <p className="text-xs text-muted">{desconto}</p>}
+        </dl>
       )}
-      {temValorMensal && total > 0 && (
-        <>
-          <p className="mt-3 font-title text-2xl font-semibold text-forest" data-testid="revisao-total">
-            {formatBRL(total)}/mês no total
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            {TEXTOS_REVISAO.linhaTotal}
-            {desconto ? ` · ${desconto}` : ""}
-          </p>
-        </>
+      {/* Computador: o único "Publicar anúncio" da tela, com o motivo em uma linha enquanto faltar algo. */}
+      {p.telaLarga && (
+        <div className="mt-6 space-y-2">
+          <Button className="w-full" size="lg" onClick={() => p.publish(false)} disabled={travado} data-testid="publicar-anuncio">
+            {p.rotuloPublicar}
+          </Button>
+          <MotivoTravado motivo={p.publishing ? null : p.motivoTravado} onMotivo={p.onMotivo} />
+        </div>
       )}
     </section>
   );
 
   const lista = (
-    <section className={cn("min-w-0 rounded-xl bg-white p-4 sm:p-6", SOMBRA_CARTAO_CADASTRO)} aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={conf.itens.filter((i) => !i.ok).length}>
-      <h2 id="lista-conferencia-titulo" className="font-title text-2xl font-semibold text-ink">
-        <span className="lg:hidden">{tudoCerto ? TEXTOS_REVISAO.listaTudoCerto : TEXTOS_REVISAO.lista}</span>
-        <span className="hidden lg:inline">{TEXTOS_REVISAO.lista}</span>
-      </h2>
-      <ul className="mt-3 divide-y divide-line">
+    <section className="min-w-0" aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={conf.itens.filter((i) => !i.ok).length}>
+      <h3 id="lista-conferencia-titulo" className="text-base font-semibold text-ink">
+        {tudoCerto ? TEXTOS_REVISAO.listaTudoCerto : TEXTOS_REVISAO.lista}
+      </h3>
+      <ul className="mt-1 divide-y divide-line">
         {conf.itens.map((i) => {
           const pendente = i.ok ? undefined : primeiroPendente(i.id);
           // Os itens da prontidão que seguram este passo (ex.: "privacidade", "conforto" em Comodidades).
@@ -126,7 +146,7 @@ export function EtapaRevisar(p: {
             <li key={i.id} className="flex items-start gap-3 py-3" data-testid={`conferencia-${i.id}`} data-ok={i.ok ? "1" : "0"} data-itens={itens || undefined}>
               {i.ok ? <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 fill-forest text-white" aria-hidden /> : <Circle className="mt-1 h-6 w-6 shrink-0 text-muted" aria-hidden />}
               <span className="min-w-0 flex-1">
-                <span className="block text-lg text-ink">
+                <span className="block text-base text-ink">
                   {i.rotulo}
                   <span className="sr-only">{i.ok ? " — feito" : " — falta"}</span>
                 </span>
@@ -185,120 +205,86 @@ export function EtapaRevisar(p: {
   );
 
   return (
-    <div className="space-y-6" data-testid="etapa-revisar">
-      {/* Estado do documento (prompt 11): aparece quando ainda segura a publicação; conferido, some (a lista já diz). */}
-      {!p.editingId && <DocumentoEstado estado={p.docEstado} motivos={p.docMotivos} onEnviar={abrirEnvioDoDocumento} />}
-
-      {/* Um "Publicar anúncio" só. Celular: cartão, lista, aceite e botão. Computador: lista à esquerda; cartão e botão à
-          direita; o aceite embaixo, na largura toda. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 lg:items-start">
-        <div className="min-w-0 lg:col-start-2 lg:row-start-1">{cartao}</div>
-        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1">{lista}</div>
-        <div className="min-w-0 space-y-6 lg:col-span-2 lg:row-start-3">
-          {p.avisoAceite && (
-            <p role="status" className="text-sm font-medium text-ink" data-testid="aceite-ia-aviso">
-              {p.avisoAceite}
-            </p>
-          )}
-          {p.termoJaAceito ? (
-            <p className="text-sm text-muted" data-testid="aceite-ia-ja-aceito">
-              {textoTermoJaAceito(p.termoJaAceito.aceitoEm)}
-            </p>
-          ) : (
-            // E193: o aceite no cartão da Qualificação (antes, caixa quadrada); continua uma caixa de marcar para o leitor de tela.
-            <div data-testid="aceite-ia">
-              <CartaoEscolha papel="checkbox" on={p.aceitouIa} onClick={() => p.setAceitouIa(!p.aceitouIa)} rotulo={<span className="font-normal">{TERMO_IA_TEXTO}</span>} />
-            </div>
-          )}
-          {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
-          {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
-          {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
-        </div>
-        {/* CADASTRO-MOLDURA: o "Publicar anúncio" é o primário do rodapé do fluxo (um só por tela). */}
-        <div className="min-w-0 lg:col-start-2 lg:row-start-2">
-          <p className="text-center text-sm text-muted lg:hidden">{TEXTOS_REVISAO.editarDepois}</p>
-        </div>
-      </div>
-      {/* Prompt 59-A (critério f da varredura): o botão nunca fica desabilitado em silêncio — diz o que falta. */}
-      {!p.podePublicar && !p.publishing && <FaltaParaPublicar {...p} />}
-
-      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-        {/* O rascunho salva sozinho ("Salvo às HH:MM"): sem "Salvar como rascunho". Na edição de um anúncio, salvar sem
-            publicar continua possível. */}
-        {p.editingId ? (
-          <Button variant="outline" onClick={() => p.publish(true)} disabled={p.publishing}>
-            Salvar sem publicar
-          </Button>
-        ) : (
-          <span aria-hidden />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start xl:gap-12" data-testid="etapa-revisar">
+      {/* Coluna da esquerda: "Antes de publicar" — a lista de conferência, as seções legais em acordeão e o aceite. */}
+      <div className={cn("min-w-0 space-y-6 rounded-xl bg-white p-4 sm:p-6", SOMBRA_CARTAO_CADASTRO)} data-testid="passo10-coluna-lista">
+        <h2 className="font-title text-2xl font-semibold text-ink">Antes de publicar</h2>
+        {lista}
+        {p.antesDePublicar}
+        {p.avisoAceite && (
+          <p role="status" className="text-sm font-medium text-ink" data-testid="aceite-ia-aviso">
+            {p.avisoAceite}
+          </p>
         )}
-        <p className="text-center text-sm text-muted" data-testid="revisao-termos">
-          Ao publicar, você concorda com os{" "}
-          <Link href="/termos" className="underline underline-offset-2">
-            Termos de Uso
-          </Link>{" "}
-          e a{" "}
-          <Link href="/privacidade" className="underline underline-offset-2">
-            Política de Privacidade
-          </Link>{" "}
-          da Viva Nomads.
-        </p>
+        {p.termoJaAceito ? (
+          <p className="text-sm text-muted" data-testid="aceite-ia-ja-aceito">
+            {textoTermoJaAceito(p.termoJaAceito.aceitoEm)}
+          </p>
+        ) : (
+          // E193: o aceite no cartão da Qualificação (antes, caixa quadrada); continua uma caixa de marcar para o leitor de tela.
+          <div data-testid="aceite-ia">
+            <CartaoEscolha papel="checkbox" on={p.aceitouIa} onClick={() => p.setAceitouIa(!p.aceitouIa)} rotulo={<span className="font-normal">{TERMO_IA_TEXTO}</span>} />
+          </div>
+        )}
+        {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
+        {/* Prompt 59-A (critério f da varredura): o que falta, por extenso, logo abaixo da lista. */}
+        {!p.podePublicar && !p.publishing && <FaltaParaPublicar {...p} />}
+        {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
+        {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
+        {/* Celular: o motivo do "Publicar anúncio" do rodapé, em uma linha, logo acima dele. */}
+        {!p.telaLarga && <MotivoTravado motivo={p.publishing ? null : p.motivoTravado} onMotivo={p.onMotivo} />}
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+          {/* O rascunho salva sozinho ("Salvo às HH:MM"): sem "Salvar como rascunho". Na edição de um anúncio, salvar sem
+              publicar continua possível. */}
+          {p.editingId ? (
+            <Button variant="outline" onClick={() => p.publish(true)} disabled={p.publishing}>
+              Salvar sem publicar
+            </Button>
+          ) : (
+            <span aria-hidden />
+          )}
+          <p className="text-center text-sm text-muted" data-testid="revisao-termos">
+            Ao publicar, você concorda com os{" "}
+            <Link href="/termos" className="underline underline-offset-2">
+              Termos de Uso
+            </Link>{" "}
+            e a{" "}
+            <Link href="/privacidade" className="underline underline-offset-2">
+              Política de Privacidade
+            </Link>{" "}
+            da Viva Nomads.
+          </p>
+        </div>
       </div>
+
+      {/* Coluna da direita, fixa no computador: a prévia e o "Publicar anúncio". No celular, a prévia vem recolhida. */}
+      <aside className="min-w-0 lg:sticky lg:top-4" aria-label="Prévia do anúncio" data-testid="passo10-coluna-previa">
+        <button
+          type="button"
+          aria-expanded={previaAberta}
+          onClick={() => setPreviaAberta((v) => !v)}
+          className={cn("flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-line bg-white px-4 text-left font-semibold text-forest lg:hidden", SOMBRA_CARTAO_CADASTRO)}
+          data-testid="previa-recolhida"
+        >
+          Ver como fica o anúncio
+          <ChevronDown className={cn("h-5 w-5 shrink-0 transition-transform", previaAberta && "rotate-180")} aria-hidden />
+        </button>
+        <div className={cn("mt-3 lg:mt-0 lg:block", !previaAberta && "hidden")} data-testid="previa-conteudo">
+          {cartao}
+        </div>
+        <p className="mt-3 hidden text-center text-sm text-muted lg:block">{TEXTOS_REVISAO.editarDepois}</p>
+      </aside>
     </div>
   );
 }
 
-/** E112: o envio do documento mora no cartão "Antes de publicar", nesta mesma Revisão (desde o E104 o Passo 3 é só
- *  endereço). O botão diz isso e abre o envio ali: desce até o cartão e toca no "Enviar documento" dele, que abre a
- *  escolha do arquivo (ou, se faltar CEP, rua ou número, leva ao Passo 3 com o foco no campo). */
-export const ROTULO_ENVIAR_DOCUMENTO = "Enviar o documento agora";
-export const ROTULO_REENVIAR_DOCUMENTO = "Enviar outro documento agora";
-function abrirEnvioDoDocumento() {
-  const caixa = document.querySelector<HTMLElement>('[data-testid="documento-vinculo"]');
-  caixa?.scrollIntoView({ behavior: "smooth", block: "center" });
-  document.querySelector<HTMLButtonElement>('[data-testid="documento-enviar"]')?.click();
-}
-
-function DocumentoEstado({ estado, motivos, onEnviar }: { estado: EstadoDocumentoTela; motivos: string[]; onEnviar: () => void }) {
+/** O motivo do "Publicar anúncio" travado, em UMA linha; tocar leva ao primeiro item que falta. */
+function MotivoTravado({ motivo, onMotivo }: { motivo: string | null; onMotivo: () => void }) {
+  if (!motivo) return null;
   return (
-    <div
-      className={cn(
-        "flex items-start gap-2 rounded-xl border px-4 py-3 text-sm",
-        estado === "aprovado" && "sr-only",
-        estado === "corrija" && "border-red-200 bg-red-50 text-red-800",
-        estado === "revisao" && "border-amber-200 bg-amber-50 text-amber-900",
-        estado === "nenhum" && "border-sage-200 bg-white text-ink",
-      )}
-      data-testid="revisar-documento"
-      data-estado={estado}
-    >
-      {estado === "revisao" ? <Clock className="mt-1 h-4 w-4 shrink-0" aria-hidden /> : estado === "aprovado" ? null : <XCircle className="mt-1 h-4 w-4 shrink-0" aria-hidden />}
-      <span>
-        {estado === "aprovado" && "Documentação conferida"}
-        {estado === "revisao" && (
-          <>
-            <strong>Em revisão.</strong> A equipe confere em até 48 horas. Você pode salvar como rascunho; a publicação libera
-            depois da conferência.
-          </>
-        )}
-        {estado === "corrija" && (
-          <>
-            <strong>Corrija o documento.</strong> {motivos.join(" ")}{" "}
-            <button type="button" className="inline-flex min-h-11 items-center font-medium underline" onClick={onEnviar} data-testid="revisar-documento-enviar">
-              {ROTULO_REENVIAR_DOCUMENTO}
-            </button>
-          </>
-        )}
-        {estado === "nenhum" && (
-          <>
-            <strong>Documento do imóvel ainda não enviado.</strong>{" "}
-            <button type="button" className="inline-flex min-h-11 items-center font-medium underline" onClick={onEnviar} data-testid="revisar-documento-enviar">
-              {ROTULO_ENVIAR_DOCUMENTO}
-            </button>
-          </>
-        )}
-      </span>
-    </div>
+    <button type="button" onClick={onMotivo} className="block w-full truncate text-center text-sm font-medium text-red-700 underline-offset-2 hover:underline" title={motivo} data-testid="publicar-motivo">
+      {motivo}
+    </button>
   );
 }
 
