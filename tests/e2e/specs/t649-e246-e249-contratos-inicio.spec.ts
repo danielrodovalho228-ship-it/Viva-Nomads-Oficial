@@ -10,6 +10,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    E248 — fileiras que rolam (subabas de Contratos, filtros de Mensagens) mostram "›" quando há item fora da tela.
    E249 — "Início da estadia" aparece UMA vez no cartão Contrato.
   Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, junto com o bloco 63 (t662).
+  Prova a 390 px pedida pelo coordenador (29/10, E243/E244/E248 já no ar): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
