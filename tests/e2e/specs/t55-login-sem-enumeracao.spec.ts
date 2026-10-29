@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, liberarLimiteLoginIp } from "../fixtures/laboratorio";
 
 /**
@@ -6,6 +6,22 @@ import { NO_LABORATORIO, liberarLimiteLoginIp } from "../fixtures/laboratorio";
  * A rota de login do servidor é simulada (401 credenciais) para qualquer e-mail:
  * a tela tem que reagir IGUAL com conta ou sem conta.
  */
+/**
+ * 1ª falha de login pela tela. Um clique antes da hidratação vira envio nativo e recarrega /auth vazio (o mesmo da
+ * entrar() em fixtures/laboratorio.ts; t55 flaky no lab de 28/10): enquanto a mensagem não aparece, preenche o que
+ * voltou vazio e clica de novo. O envio nativo não chama /api/auth/entrar, então não conta como tentativa.
+ */
+async function primeiraFalha(page: Page, email: string): Promise<void> {
+  const campoEmail = page.locator('input[type="email"]').first();
+  const campoSenha = page.locator('input[type="password"]').first();
+  await expect(async () => {
+    if ((await campoEmail.inputValue({ timeout: 5_000 })) !== email) await campoEmail.fill(email, { timeout: 5_000 });
+    if ((await campoSenha.inputValue({ timeout: 5_000 })) !== "senha-errada-123") await campoSenha.fill("senha-errada-123", { timeout: 5_000 });
+    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click({ timeout: 5_000 });
+    await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible({ timeout: 8_000 });
+  }).toPass({ timeout: 45_000 });
+}
+
 test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -18,10 +34,7 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
       r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false, codigo: "credenciais" }) })
     );
     await page.goto("/auth?senha=1");
-    await page.locator('input[type="email"]').first().fill("ninguem@exemplo.com.br");
-    await page.locator('input[type="password"]').first().fill("senha-errada-123");
-    await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-    await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
+    await primeiraFalha(page, "ninguem@exemplo.com.br");
     await expect(page.getByText(/Ainda não há conta/i)).toHaveCount(0);
     const links = page.getByTestId("login-links-fixos");
     await expect(links.getByRole("button", { name: "Entrar com código" })).toBeVisible();
@@ -34,10 +47,9 @@ test.describe("Login — sem enumeração e com atraso (F43/F44)", () => {
       r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false, codigo: "credenciais" }) })
     );
     await page.goto("/auth?senha=1");
-    await page.locator('input[type="email"]').first().fill("outro@exemplo.com.br");
-    await page.locator('input[type="password"]').first().fill("senha-errada-123");
+    await primeiraFalha(page, "outro@exemplo.com.br");
     const entrar = page.locator("form").getByRole("button", { name: /^entrar$/i });
-    for (let i = 0; i < 3; i++) {
+    for (let i = 1; i < 3; i++) {
       await entrar.click();
       await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
     }
