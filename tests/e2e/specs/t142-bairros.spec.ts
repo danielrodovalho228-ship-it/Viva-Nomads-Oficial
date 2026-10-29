@@ -43,7 +43,12 @@ test.describe("T142 — Bairros", () => {
       await expect(page.getByRole("heading", { level: 1 })).toContainText("Imóveis mobiliados em Centro", { timeout: 30_000 });
       await expect(page.getByTestId("bairro-resumo")).toContainText(/imóve(l|is) mobiliados? publicados?/);
       await expect(page.getByTestId("bairro-mapa")).toBeVisible();
-      await expect(page.getByTestId("bairro-anuncios")).toContainText("Studio do bairro de teste");
+      // A página do bairro é ISR (revalidate 60): outro spec pode ter gerado a versão em cache antes do imóvel deste existir.
+      // Recarrega até a regeneração incluir o anúncio, em vez de falhar na versão velha.
+      await expect(async () => {
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("bairro-anuncios")).toContainText("Studio do bairro de teste", { timeout: 3_000 });
+      }).toPass({ timeout: 75_000, intervals: [2_000, 5_000, 10_000] });
       await expect(page.getByTestId("bairro-faq")).toBeVisible();
       await expect(page.getByTestId("bairro-faq")).toContainText("Sim.");
       await expect(page.getByTestId("bairro-ver-cidade")).toBeVisible();
