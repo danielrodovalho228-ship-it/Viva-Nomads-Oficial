@@ -9,6 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    E247 — anexos da conferência (check-in/check-out) com o seletor do site em português, sem o nativo cru em inglês.
    E248 — fileiras que rolam (subabas de Contratos, filtros de Mensagens) mostram "›" quando há item fora da tela.
    E249 — "Início da estadia" aparece UMA vez no cartão Contrato.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, junto com o bloco 63 (t662).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
