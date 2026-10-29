@@ -280,7 +280,8 @@
       "specs": [
         "t51-admin-padrao-caixa-socios",
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t596-qa-login-direto"
       ]
     },
     "/admin/usuarios": {
@@ -2056,7 +2057,8 @@
       ],
       "specs": [
         "t463-admin3-sistema",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t596-qa-login-direto"
       ]
     },
     "/admin/retencao": {

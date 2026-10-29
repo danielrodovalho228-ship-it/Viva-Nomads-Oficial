@@ -14,6 +14,7 @@ import { SITE_URL } from "@/lib/site";
 import { checklistCompleto, expiraToken, ITENS_CHECKLIST, lerParceiroGeral } from "./regras";
 import { gerarToken, hashToken } from "./token";
 import { MOTIVO_NOTA_NAO_EMITIDA } from "./fiscal";
+import { recusaObservador } from "@/lib/qa/observador";
 
 export type StatusInteresse = "novo" | "contatado" | "arquivado";
 const STATUS_VALIDOS: readonly StatusInteresse[] = ["novo", "contatado", "arquivado"];
@@ -30,6 +31,8 @@ export async function atualizarStatusInteresse(id: string, status: string): Prom
   if (!user) return { ok: false, erro: "Sem permissão." };
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (perfil?.role !== "admin" || !(await sessaoAal2(supabase))) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id, { semPerfil: 1 });
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { error } = await supabase.from("parceiros_interesse").update({ status }).eq("id", id);
   if (error) return { ok: false, erro: "Não foi possível atualizar." };
   revalidatePath("/admin/parceiros");
@@ -55,6 +58,13 @@ async function exigirAdminParceria() {
   return admin ? { supabase, admin, user } : null;
 }
 
+/** Alvo da decisão sobre um pedido de parceria: a conta de quem pediu (sem conta = real, para o observador da QA). */
+async function alvoDaSolicitacao(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string) {
+  const { data } = await admin.from("parceiro_solicitacoes").select("user_id").eq("id", id).maybeSingle();
+  const uid = (data?.user_id as string | null) ?? null;
+  return { perfis: [uid], semPerfil: uid ? 0 : 1 };
+}
+
 function revalidar() {
   revalidatePath("/admin/parceiros");
 }
@@ -64,6 +74,8 @@ export async function salvarChecklistParceria(id: string, entrada: Record<string
   if (!ehUuid(id)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("checklist, status").eq("id", id).maybeSingle();
   if (!sol) return { ok: false, erro: "Pedido não encontrado." };
   if (sol.status !== "pendente") return { ok: false, erro: "Só pedidos pendentes podem ser conferidos." };
@@ -98,6 +110,8 @@ export async function aprovarSolicitacao(id: string): Promise<Res> {
   if (!ehUuid(id)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status, checklist, documento").eq("id", id).maybeSingle();
   if (!sol) return { ok: false, erro: "Pedido não encontrado." };
   if (sol.status !== "pendente") return { ok: false, erro: "Este pedido não está pendente." };
@@ -126,6 +140,8 @@ export async function recusarSolicitacao(id: string, motivo: string): Promise<Re
   if (texto.length < 10) return { ok: false, erro: "Escreva o motivo (ou escolha um modelo)." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status").eq("id", id).maybeSingle();
   if (!sol) return { ok: false, erro: "Pedido não encontrado." };
   if (!["pendente", "aguardando_email", "aprovada"].includes(sol.status as string)) return { ok: false, erro: "Este pedido já foi decidido." };
@@ -147,6 +163,8 @@ export async function reenviarAtivacao(id: string): Promise<Res> {
   if (!ehUuid(id)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status").eq("id", id).maybeSingle();
   if (!sol || sol.status !== "aprovada" || !sol.email) return { ok: false, erro: "Só pedidos aprovados (ainda não ativados) recebem um novo link." };
   if (!(await enviarAtivacao(a.admin, { id, email: sol.email as string, nome: sol.nome as string, user_id: (sol.user_id as string | null) ?? null }))) return { ok: false, erro: "Não foi possível reenviar agora." };
@@ -162,6 +180,9 @@ export async function suspenderParceiro(parceiroId: string, motivo: string): Pro
   if (texto.length < 5) return { ok: false, erro: "Escreva o motivo da suspensão." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const { data: parc } = await a.admin.from("parceiros").select("user_id").eq("id", parceiroId).maybeSingle();
+  const recusaQa = await recusaObservador(a.user.id, { perfis: [(parc?.user_id as string | null) ?? null], semPerfil: parc?.user_id ? 0 : 1 });
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { error } = await a.admin.from("parceiros").update({ status: "suspenso", suspenso_motivo: texto, atualizado_em: new Date().toISOString() }).eq("id", parceiroId);
   if (error) return { ok: false, erro: "Não foi possível suspender agora." };
   await logModeracao(a.supabase, a.user.id, "parceiro_suspenso", "parceiro", parceiroId, texto);
@@ -178,6 +199,8 @@ export async function denunciaNotaProcedente(chamadoId: string): Promise<Res> {
   if (!ehUuid(chamadoId)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data: ch } = await a.admin.from("chamados").select("id, categoria, contexto_tipo, contexto_id").eq("id", chamadoId).maybeSingle();
   if (!ch || ch.categoria !== "nota_parceiro" || ch.contexto_tipo !== "parceiro" || !ch.contexto_id) return { ok: false, erro: "Este chamado não é uma denúncia de nota fiscal de parceiro." };
   const { data: p } = await a.admin.from("parceiros").select("id, user_id, tipo_pessoa, emite_nota, nota_selo_removido_em").eq("id", ch.contexto_id).maybeSingle();
@@ -215,6 +238,8 @@ export async function criarSolicitacaoSuporte(entrada: { email: string; nome: st
   if (nome.length < 3) return { ok: false, erro: "Informe o nome." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data, error } = await a.admin.from("parceiro_solicitacoes").insert({ email, nome, status: "aguardando_email", origem: "suporte" }).select("id").single();
   if (error) return { ok: false, erro: error.code === "23505" ? "Já existe um pedido aberto para este e-mail." : "Não foi possível criar agora." };
   await notify({ event: "parceria_convite", email, name: nome, pushUrl: "/parceiros?seja=1#quero-ser-parceiro" });
@@ -227,6 +252,8 @@ export async function criarSolicitacaoSuporte(entrada: { email: string; nome: st
 export async function definirParceiroGeral(entrada: { ligada: boolean; nome: string; cidade: string; descricao: string }): Promise<Res> {
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const recusaQa = await recusaObservador(a.user.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const g = lerParceiroGeral(entrada, entrada?.ligada === true);
   if (g.ligado && !g.nome) return { ok: false, erro: "Informe o nome antes de ligar o cartão." };
   const agora = new Date().toISOString();

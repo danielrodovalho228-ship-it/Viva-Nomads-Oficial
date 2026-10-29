@@ -19,6 +19,7 @@ import { erroConflitoInteresse } from "@/lib/moderacao/conflito-interesse";
 import { motivoBloqueioAprovacao } from "@/lib/documento-pessoa";
 import { situacaoCnpj, titularPorOcr } from "@/lib/integrations/conferencia-doc";
 import { mascararCpfParcial, REVISAO_PRAZO_HORAS } from "@/lib/documento/conferencia";
+import { recusaObservador } from "@/lib/qa/observador";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -274,6 +275,8 @@ export async function moderarDocumento(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id, { documentos: [qualId] });
+  if (recusaQa) return { ok: false, error: recusaQa };
   // E28: já confirmado admin (papel + 2FA): lê e grava pelo serviço, a mesma fonte da fila. As travas de conflito de
   // interesse e "ninguém modera o próprio documento" continuam aqui.
   const adm = createAdminClient();
@@ -424,6 +427,8 @@ export async function reabrirConferencia(qualId: string): Promise<ActionResult> 
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id, { documentos: [qualId] });
+  if (recusaQa) return { ok: false, error: recusaQa };
   const adm = createAdminClient();
   if (!adm) return { ok: false, error: "Sem permissão." };
   const { data: alvo } = await adm
