@@ -32,7 +32,7 @@ test.describe("T12 — Escada de planos @criticos", () => {
       await expect(taxa).toBeVisible({ timeout: 10_000 });
       const slider = page.locator("#imoveis-ativos");
 
-      // Faixas vigentes (ordem 75553f0a): 1–2 → 12%, 3–5 → 10%, 6–15 → 8%, 16–30 → 6%, 31+ → Plano Gestor (negociado).
+      // Faixas vigentes (ordem 75553f0a): 1–2 → 12%, 3–5 → 10%, 6–15 → 8%, 16–30 → 6%, 31+ → taxa negociável (E252-B: não é o Plano Gestor).
       const casos: Array<[string, RegExp]> = [
         ["1", /12%/],
         ["3", /10%/],

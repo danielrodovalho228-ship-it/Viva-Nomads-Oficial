@@ -16,7 +16,7 @@ export const NOTA_BOLSO = "A taxa só é cobrada com contrato fechado. Anúncio 
 
 export type Bolso =
   | { estado: "invalido" }
-  | { estado: "gestor"; recebe: number }
+  | { estado: "negociavel"; recebe: number }
   | { estado: "ok"; recebe: number; taxa: number; taxaTexto: string; valorTaxa: number };
 
 export function calcularBolso(valorMensal: number, meses: number, imoveis: number): Bolso {
@@ -25,7 +25,7 @@ export function calcularBolso(valorMensal: number, meses: number, imoveis: numbe
   if (!Number.isFinite(imoveis) || imoveis < 1) return { estado: "invalido" };
   const recebe = Math.round(valorMensal * Math.floor(meses) * 100) / 100;
   const faixa = faixaPorImoveisAtivos(imoveis);
-  if (faixa.gestor) return { estado: "gestor", recebe };
+  if (faixa.negociavel) return { estado: "negociavel", recebe };
   const valorTaxa = comissaoSobreContrato(valorMensal, meses, faixa.taxa);
   return {
     estado: "ok",

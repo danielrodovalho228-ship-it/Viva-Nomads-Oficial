@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -81,30 +81,30 @@ export default function PricingPage() {
               {FAIXAS_COMISSAO_PADRAO.map((f) => (
                 <tr
                   key={f.minImoveis}
-                  data-gestor={f.gestor ? "1" : undefined}
-                  className={cn("border-b border-line text-ink even:bg-surface-2", f.gestor && "bg-sage-100 font-semibold even:bg-sage-100")}
+                  data-negociavel={f.negociavel ? "1" : undefined}
+                  className={cn("border-b border-line text-ink even:bg-surface-2", f.negociavel && "bg-sage-100 font-semibold even:bg-sage-100")}
                 >
                   <th scope="row" className="py-3 pl-3 pr-3 font-medium">
-                    {f.gestor ? `${f.minImoveis}+ · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+` : `${f.minImoveis}–${f.maxImoveis}`}
+                    {rotuloFaixaTaxa(f)}
                   </th>
                   <td className="py-3 pr-3 text-right tabular-nums">{taxaPublicaTexto(f)}</td>
-                  <td className="py-3 pr-3 text-right tabular-nums">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
+                  <td className="py-3 pr-3 text-right tabular-nums">{f.negociavel ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <ul className="mt-6 grid gap-3 sm:hidden" data-testid="faixas-taxa-cartoes">
             {FAIXAS_COMISSAO_PADRAO.map((f) => (
-              <li key={f.minImoveis} className={cn("rounded-xl border border-line p-4", f.gestor && "border-forest bg-sage-100")}>
+              <li key={f.minImoveis} className={cn("rounded-xl border border-line p-4", f.negociavel && "border-forest bg-sage-100")}>
                 <p className="font-semibold text-ink">
-                  {f.gestor ? `${f.minImoveis}+ imóveis · Plano Gestor` : f.maxImoveis === null ? `${f.minImoveis}+ imóveis` : `${f.minImoveis}–${f.maxImoveis} imóveis`}
+                  {rotuloFaixaTaxa(f, true)}
                 </p>
                 <p className="mt-1 flex justify-between text-sm text-ink">
                   <span>Taxa sobre o total</span> <span className="font-semibold tabular-nums">{taxaPublicaTexto(f)}</span>
                 </p>
                 <p className="flex justify-between text-sm text-muted">
                   <span>3 meses a R$ 3.000</span>
-                  <span className="tabular-nums">{f.gestor ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</span>
+                  <span className="tabular-nums">{f.negociavel ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</span>
                 </p>
               </li>
             ))}
