@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { test, expect, type Browser, type Page } from "@playwright/test";
+import { test, expect, type Browser, type BrowserContextOptions } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { gerarCodigoTotp } from "../fixtures/totp";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo } from "../fixtures/laboratorio";
@@ -37,12 +37,16 @@ const sufixo = novoSufixo();
 const emailObs = `qa+t615${sufixo}-observador@lab.vivanomads.test`;
 const ids: Record<string, string> = {};
 let segredo = "";
+let sessao: BrowserContextOptions["storageState"];
 
-/** Login por senha (aal1) e o código do autenticador no admin (aal2), como a QA entra (o mesmo da t604). */
-async function entrarObservador(browser: Browser, width: number, height: number): Promise<Page> {
+/**
+ * Login por senha (aal1) e o código do autenticador no admin (aal2), como a QA entra (o mesmo da t604). Devolve a
+ * sessão (cookies) para as telas reaproveitarem: dois logins com 2FA por tela estouravam o teto de 180 s.
+ */
+async function entrarObservador(browser: Browser): Promise<BrowserContextOptions["storageState"]> {
   await liberarLimiteLogin(emailObs);
   await liberarLimiteLoginIp();
-  const ctx = await browser.newContext({ viewport: { width, height } });
+  const ctx = await browser.newContext();
   const page = await ctx.newPage();
   await page.goto("/auth?senha=1", { waitUntil: "domcontentloaded" });
   const campoEmail = page.locator('input[name="email"], input[type="email"]').first();
@@ -60,7 +64,9 @@ async function entrarObservador(browser: Browser, width: number, height: number)
     await page.getByRole("button", { name: /confirmar e entrar/i }).click();
     await page.waitForURL(/\/admin\/agentes/, { timeout: 30_000 });
   }
-  return page;
+  const estado = await ctx.storageState();
+  await ctx.close();
+  return estado;
 }
 
 test.describe("T615 — varredura da página inteira, bloco 54 (admin do observador da QA depois do E216) (390 e 1280 px)", () => {
@@ -68,12 +74,15 @@ test.describe("T615 — varredura da página inteira, bloco 54 (admin do observa
   // As telas usam a mesma conta (o autenticador é dela): um trabalhador só, em ordem.
   test.describe.configure({ mode: "default" });
 
-  test.beforeAll(async ({}, info) => {
+  test.beforeAll(async ({ browser }, info) => {
     if (info.project.name !== "chromium") return;
+    test.setTimeout(300_000);
     ids.obs = await criarConta({ email: emailObs, nome: "Olívia Observadora", role: "tenant" }, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.obs);
-    const { error } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
-    if (error) throw error;
+    // Só cabe um observador por vez (promover_qa_admin): espera a t596/t601/t604 soltarem o dela se rodarem juntas.
+    await expect
+      .poll(async () => (await adm().rpc("promover_qa_admin", { p_id: ids.obs })).error?.message ?? "ok", { timeout: 180_000, intervals: [5_000] })
+      .toBe("ok");
     const c = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
     const { error: eLogin } = await c.auth.signInWithPassword({ email: emailObs, password: senha });
     if (eLogin) throw eLogin;
@@ -83,6 +92,7 @@ test.describe("T615 — varredura da página inteira, bloco 54 (admin do observa
     const { data: desafio } = await c.auth.mfa.challenge({ factorId: fator!.id });
     const { error: eVer } = await c.auth.mfa.verify({ factorId: fator!.id, challengeId: desafio!.id, code: gerarCodigoTotp(segredo) });
     if (eVer) throw eVer;
+    sessao = await entrarObservador(browser);
   });
   test.afterAll(async () => {
     if (!ids.obs) return;
@@ -98,7 +108,7 @@ test.describe("T615 — varredura da página inteira, bloco 54 (admin do observa
       test.setTimeout(180_000);
       const relatorio: Record<string, Record<string, string[]>> = {};
       for (const tam of TAMANHOS) {
-        const page = await entrarObservador(browser, tam.width, tam.height);
+        const page = await (await browser.newContext({ storageState: sessao, viewport: { width: tam.width, height: tam.height } })).newPage();
         try {
           const respostas = escutarImagens(page);
           const resposta = await page.goto(t.rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
@@ -119,11 +129,11 @@ test.describe("T615 — varredura da página inteira, bloco 54 (admin do observa
           }
           const barra: string[] = [];
           await test.step(`barra do admin @${tam.nome}`, async () => {
-            if (tam.width < 768) await page.getByTestId("admin-abrir-menu").click();
+            if (tam.width < 768) await page.getByTestId("admin-abrir-menu").click({ timeout: 10_000 });
             const menu = page.getByTestId("menu-cascata").filter({ visible: true });
             await expect(menu).toHaveCount(1, { timeout: 30_000 });
-            // Abre todos os grupos para medir cada rótulo.
-            for (const g of await menu.locator("li[data-menu-grupo] > button[aria-expanded='false']").all()) await g.click().catch(() => {});
+            // Abre os grupos recolhidos para medir cada rótulo (com teto: um grupo que some no meio não trava o teste).
+            for (const g of await menu.locator("li[data-menu-grupo] > button[aria-expanded='false']").all()) await g.click({ timeout: 3_000 }).catch(() => {});
             const medida = await menu.evaluate((el) => {
               const r = el.getBoundingClientRect();
               const cortados = [...el.querySelectorAll<HTMLElement>("a, button")]
