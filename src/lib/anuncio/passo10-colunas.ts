@@ -2,15 +2,15 @@
   E251 — PASSO 10 (REVISÃO) EM DUAS COLUNAS (PURO; desenho aprovado pelo coordenador em 29/10).
    • À esquerda, "Antes de publicar": a lista de prontidão e as seções legais (quem opera, identidade, documento,
      declarações), cada uma um item com estado que abre no lugar (acordeão).
-   • À direita, fixa: a prévia com os preços nos três nomes fixos (PROP-2) e UM "Publicar anúncio", travado com o
-     motivo em UMA linha enquanto faltar algo.
+   • À direita, fixa: a prévia com os três preços (Mensal · Total por mês (com contas) · Estadia mínima (N meses)) e
+     UM "Publicar anúncio", travado com o motivo em UMA linha enquanto faltar algo.
   As regras de publicar não mudam: os 12 itens do essencial (prontidão) + isEligible (convenção "Não sei" publica com
   pendência; "Não" bloqueia) + o aceite do termo da IA. Aqui só se decide o que a tela diz.
 */
 import type { ItemProntidao } from "./prontidao.ts";
 import type { DeclaracoesPasso10 } from "./requisitos-passo10.ts";
 import { TEXTO_HABITAVEL, TEXTO_IPTU } from "./requisitos-passo10.ts";
-import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, precoDoImovel } from "../precos.ts";
+import { ROTULO_MENSAL, ROTULO_TOTAL_MES, precoDoImovel, rotuloEstadiaMinima } from "../precos.ts";
 import { mesesDoCartao } from "../cartao-preco.ts";
 import type { Property } from "../types.ts";
 
@@ -67,7 +67,7 @@ export function secoesAntesDePublicar(e: EntradaSecoes): ItemSecao[] {
           ? "Confirmação ainda não disponível"
           : e.identidade === "carregando"
             ? "Conferindo…"
-            : "A confirmar (opcional: a equipe confere o documento)",
+            : "Opcional: a equipe confere o documento",
   };
 
   const docInicio = e.linhaDocumentoInicio?.trim() || null;
@@ -134,18 +134,21 @@ export function motivoPublicarTravado(faltam: string[]): string | null {
 export interface LinhaPrecoPrevia {
   rotulo: string;
   valor: number | null;
-  /** Só no total do contrato: a conta aberta ("2 × R$ 3.400 = R$ 6.800"). */
+  /** Só na estadia mínima: a conta aberta ("2 × R$ 3.400 = R$ 6.800"). */
   conta?: string | null;
 }
 
-/** Os três nomes fixos do preço (PROP-2) na prévia: Mensal · Total por mês (com contas) · Total do contrato. */
+/**
+  Os três preços da prévia: Mensal · Total por mês (com contas) · Estadia mínima (N meses). O anúncio ainda não tem
+  contrato (E251 d): o total do período é o da estadia mínima, com a mesma conta do "Total do contrato" (PROP-2).
+*/
 export function precosDaPrevia(property: Property): LinhaPrecoPrevia[] {
   const meses = mesesDoCartao(undefined, property.minPeriodDays);
   const p = precoDoImovel(property, meses);
   return [
     { rotulo: ROTULO_MENSAL, valor: p.mensal },
     { rotulo: ROTULO_TOTAL_MES, valor: p.totalPorMes },
-    { rotulo: ROTULO_TOTAL_CONTRATO, valor: p.totalContrato, conta: p.conta },
+    { rotulo: rotuloEstadiaMinima(meses), valor: p.totalContrato, conta: p.conta },
   ];
 }
 

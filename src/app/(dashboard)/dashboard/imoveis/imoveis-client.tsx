@@ -19,7 +19,7 @@ import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES, rotuloEstadiaMinima } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -210,10 +210,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                       <p className="text-xs text-muted" data-testid="anuncio-preco-rotulo">
                         {ROTULO_TOTAL_MES} · {ROTULO_MENSAL} {formatBRL(precoDoImovel(p).mensal)}
                       </p>
-                      <PrecoComContexto
-                        rotulo={rotuloPreco({ mensal: precoDoImovel(p).totalPorMes, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
-                        destaque="lg"
-                      />
+                      <PrecoComContexto rotulo={rotuloDoCartaoDoDono(p)} destaque="lg" />
                     </div>
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (
@@ -291,4 +288,13 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
       )}
     </>
   );
+}
+
+/**
+ * E251 (d): o anúncio ainda não tem contrato — no cartão de Meus anúncios, o total do período é a "Estadia mínima
+ * (N meses): R$ X", com a mesma conta do cartão (total por mês × meses). "Total do contrato" só onde há contrato.
+ */
+function rotuloDoCartaoDoDono(p: Property) {
+  const r = rotuloPreco({ mensal: precoDoImovel(p).totalPorMes, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom });
+  return { ...r, estadia: r.meses > 1 ? `${rotuloEstadiaMinima(r.meses)}: ${formatBRL(r.total)}` : null };
 }

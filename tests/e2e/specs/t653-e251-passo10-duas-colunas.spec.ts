@@ -5,12 +5,14 @@ import { abrirSecoesPasso10 } from "../fixtures/cadastro";
 /*
   T653 — E251: Passo 10 (Revisão) em duas colunas (desenho aprovado pelo coordenador em 29/10). 1280 e 390, com prints.
    1. 1280: à esquerda "Antes de publicar" (lista + seções em acordeão, fechadas); à direita a prévia FIXA (sticky) com
-      Mensal · Total por mês (com contas) · Total do contrato e UM "Publicar anúncio" (o rodapé fica sem primário),
+      Mensal · Total por mês (com contas) · Estadia mínima (N meses) e UM "Publicar anúncio" (o rodapé fica sem primário),
       travado com o motivo em UMA linha. A seção que falta abre no lugar; tocar no motivo abre o que falta.
    2. 390: coluna única — a lista primeiro, a prévia recolhida ("Ver como fica o anúncio") e "Publicar anúncio" no
       rodapé fixo, com o motivo em uma linha logo acima.
    3. As regras não mudam: sem os 12 itens do essencial o Publicar trava ("padrão mínimo de conforto"); convenção "Não"
       trava ("declarações do imóvel"); "Não sei" publica com pendência (libera com o aceite).
+   4. Parecer do coordenador: (b) a identidade "a confirmar" tem tom neutro (nunca a cor de "falta"); (d) o anúncio não
+      tem contrato — na prévia e no cartão de Meus anúncios o total do período é "Estadia mínima (N meses): R$ X".
 */
 const SAIDA = "tests/laboratorio/saida";
 const FOTOS_LOCAIS = ["sala", "quarto", "cozinha", "banheiro", "fachada", "sala", "quarto", "cozinha"];
@@ -30,7 +32,7 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
   const senha = novaSenha();
   const sufixo = novoSufixo();
   const dono = { email: `dono.t653.${sufixo}@lab.vivanomads.test`, nome: "Rui Colunas", role: "owner" as const };
-  const ids: { dono?: string; imovel?: string } = {};
+  const ids: { dono?: string; imovel?: string; ativo?: string } = {};
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
@@ -77,6 +79,10 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
       .update({ document_path: `${ids.dono}/${ids.imovel}-documento.png`, formulario: { versao: 1, elig: { furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } } })
       .eq("property_id", ids.imovel!);
     if (eQual) throw eQual;
+    // (d) Um anúncio ativo de estadia mínima de 60 dias (2 meses) para o cartão de Meus anúncios.
+    ids.ativo = await criarImovelPronto(ids.dono, `Apartamento Estadia ${sufixo}`, { ativo: true, preco: 3000 });
+    const { error: eMin } = await adm().from("properties").update({ min_period_days: 60 }).eq("id", ids.ativo);
+    if (eMin) throw eMin;
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono!]);
@@ -102,7 +108,7 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     // Os três nomes fixos do preço.
     await expect(p.getByTestId("previa-preco-mensal")).toContainText(/Mensal\s*R\$\s?3\.200/);
     await expect(p.getByTestId("previa-preco-total-mes")).toContainText("Total por mês (com contas)");
-    await expect(p.getByTestId("previa-preco-total-contrato")).toContainText("Total do contrato");
+    await expect(p.getByTestId("previa-preco-estadia-minima")).toContainText(/Estadia mínima \(\d+ m(ês|eses)\)/);
     // Um Publicar só, na coluna da prévia; o rodapé fica sem primário.
     await expect(p.getByTestId("publicar-anuncio")).toHaveCount(1);
     await expect(previa.getByTestId("publicar-anuncio")).toBeDisabled();
@@ -114,6 +120,15 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     await p.screenshot({ path: `${SAIDA}/t653-revisao-topo-1280.png` });
     // Acordeão: as seções chegam fechadas, com estado; a que falta abre no lugar.
     for (const s of ["operacao", "identidade", "documento", "declaracoes"]) await expect(p.getByTestId(`antes-secao-${s}`)).toHaveAttribute("data-aberta", "0");
+    // (b) A identidade nunca aparece como "falta": ✓ ou "a confirmar" em tom neutro (sem vermelho).
+    const identidade = p.getByTestId("antes-secao-identidade");
+    await expect(identidade).not.toHaveAttribute("data-estado", "falta");
+    await expect(identidade.getByTestId("sinal-falta")).toHaveCount(0);
+    if ((await identidade.getAttribute("data-estado")) === "aviso") {
+      const cor = await identidade.getByTestId("sinal-a-confirmar").evaluate((el) => getComputedStyle(el).color);
+      const [r, g, b] = cor.match(/\d+/g)!.map(Number);
+      expect(r - Math.min(g, b), `"a confirmar" sem tom de erro (${cor})`).toBeLessThan(40);
+    }
     await expect(p.getByTestId("antes-secao-documento")).toHaveAttribute("data-estado", "ok");
     await expect(p.getByTestId("antes-conteudo-declaracoes")).toBeHidden();
     await p.getByTestId("antes-secao-declaracoes-abrir").click();
@@ -148,7 +163,7 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     // A prévia abre com os três preços.
     await recolhida.click();
     await expect(p.getByTestId("revisao-cartao")).toBeVisible();
-    await expect(p.getByTestId("previa-preco-total-contrato")).toContainText("Total do contrato");
+    await expect(p.getByTestId("previa-preco-estadia-minima")).toContainText(/Estadia mínima \(\d+ m(ês|eses)\)/);
     await p.getByTestId("revisao-cartao").screenshot({ path: `${SAIDA}/t653-previa-aberta-390.png` });
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await p.context().close();
@@ -178,5 +193,20 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     await expect(p.getByTestId("publicar-motivo")).toHaveText(/^Falta: padrão mínimo de conforto/);
     await p.screenshot({ path: `${SAIDA}/t653-sem-essencial-1280.png` });
     await p.context().close();
+  });
+
+  test("4. (d) Meus anúncios: 'Estadia mínima (2 meses): R$ X' no cartão, sem 'Total do contrato' (1280 e 390)", async ({ browser }) => {
+    for (const w of [1280, 390]) {
+      const p = await entrar(browser, dono.email, senha);
+      await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
+      await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+      const preco = p.getByTestId("preco-contexto").filter({ hasText: /Estadia mínima \(2 meses\)/ });
+      await expect(preco).toHaveCount(1, { timeout: 30_000 });
+      await expect(preco).toContainText(/Estadia mínima \(2 meses\): R\$\s?[\d.]+/);
+      await expect(p.getByText("Total do contrato")).toHaveCount(0);
+      await preco.scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t653-meus-anuncios-${w}.png` });
+      await p.context().close();
+    }
   });
 });
