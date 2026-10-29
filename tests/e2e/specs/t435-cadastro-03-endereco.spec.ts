@@ -1,5 +1,6 @@
 // Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
+import { abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -161,6 +162,7 @@ test.describe("T435 — Cadastro 03: Endereço (cadastro-imovel-03)", () => {
       url.searchParams.set("etapa", "revisao");
       await p.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
       const antes = p.getByTestId("antes-de-publicar");
+      await abrirSecoesPasso10(p); // E251: as seções são um acordeão
       await expect(antes).toBeVisible({ timeout: 30_000 });
       await expect(antes).toContainText("Quem opera este imóvel?");
       await expect(antes.getByTestId("etapa-identidade")).toBeVisible();

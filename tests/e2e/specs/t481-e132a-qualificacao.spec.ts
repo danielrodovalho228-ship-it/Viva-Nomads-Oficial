@@ -1,7 +1,7 @@
 // Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { noPasso } from "../fixtures/cadastro";
+import { noPasso, abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
@@ -115,6 +115,7 @@ test.describe("T481 — E132-A: Qualificação antes do Passo 1; declarações n
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto(`/dashboard/imoveis/novo?draft=${apto}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await noPasso(p, "revisao", 30_000);
+      await abrirSecoesPasso10(p, ["declaracoes"]); // E251: as seções são um acordeão
       const bloco = p.getByTestId("declaracoes-passo10");
       await expect(bloco).toBeVisible({ timeout: 20_000 });
       await expect(p.getByTestId("declaracao-iptu")).toHaveAttribute("role", "switch");
@@ -130,6 +131,7 @@ test.describe("T481 — E132-A: Qualificação antes do Passo 1; declarações n
       await p.screenshot({ path: `${SAIDA}/t481-passo10-condominio-${largura}.png`, fullPage: false });
       await p.goto(`/dashboard/imoveis/novo?draft=${casa}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await noPasso(p, "revisao", 30_000);
+      await abrirSecoesPasso10(p, ["declaracoes"]);
       await expect(p.getByTestId("declaracoes-passo10")).toBeVisible({ timeout: 20_000 });
       await expect(p.getByTestId("declaracao-convencao")).toHaveCount(0);
       await p.context().close();

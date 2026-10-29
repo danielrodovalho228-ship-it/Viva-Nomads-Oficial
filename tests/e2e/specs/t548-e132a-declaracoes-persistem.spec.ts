@@ -1,7 +1,7 @@
 // Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { noPasso } from "../fixtures/cadastro";
+import { noPasso, abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
@@ -23,6 +23,7 @@ const EM_BRANCO = { iptuOk: false, habitavel: false, convencao: "" };
 async function abrirRevisao(page: import("@playwright/test").Page, id: string) {
   await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
   await noPasso(page, "revisao", 30_000);
+  await abrirSecoesPasso10(page, ["declaracoes"]); // E251: as seções são um acordeão
   await expect(page.getByTestId("declaracoes-passo10")).toBeVisible({ timeout: 20_000 });
 }
 
@@ -76,6 +77,7 @@ test.describe("T548 — E132-A: as declarações do Passo 10 não se perdem", ()
         .toMatchObject({ iptuOk: true, habitavel: true });
       await page.reload({ waitUntil: "domcontentloaded" });
       await noPasso(page, "revisao", 30_000);
+      await abrirSecoesPasso10(page, ["declaracoes"]);
       await expect(page.getByTestId("declaracao-iptu")).toHaveAttribute("aria-checked", "true", { timeout: 15_000 });
       await expect(page.getByTestId("declaracao-habitavel")).toHaveAttribute("aria-checked", "true");
       await page.context().close();

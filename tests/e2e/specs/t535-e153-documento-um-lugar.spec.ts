@@ -1,7 +1,7 @@
 // Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { noPasso, type PassoCadastro } from "../fixtures/cadastro";
+import { noPasso, type PassoCadastro, abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
@@ -60,6 +60,8 @@ test.describe("T535 — E153: pedido do documento em um lugar só", () => {
     for (const passo of ["endereco", "revisao"] as PassoCadastro[]) {
       await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=${passo}`, { waitUntil: "domcontentloaded" });
       await noPasso(page, passo, 30_000);
+      // E251: na Revisão o envio mora na seção "Documento do imóvel" do acordeão — conta com ela aberta.
+      if (passo === "revisao") await abrirSecoesPasso10(page, ["documento"]);
       contagem[passo] = await contar(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t535-${passo}-1280.png`, fullPage: true });
     }
