@@ -49,16 +49,20 @@ test.describe("T313 — ativação e funil (50)", () => {
     await apagarContas([ids.dono, ids.pessoa]);
   });
 
-  // E218 (L-71): o Início do PROP-6 (#1349) tinha deixado o checklist do dono de fora; ele voltou ao InicioDono.
+  // E218-A: no modo dono o guia de ativação mora no bloco principal do Início (um guia só); some na publicação.
   test("1. proprietário: o checklist some na publicação e a ativação fica gravada uma vez", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(d.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toBeVisible({ timeout: 20_000 });
+    const bloco = d.getByTestId("inicio-dono-principal");
+    // Rascunho do dono (pronto ou não): o bloco é o do rascunho — o guia nunca aparece à parte.
+    await expect(bloco).toHaveAttribute("data-tipo", "rascunho", { timeout: 20_000 });
+    await expect(d.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toHaveCount(0);
     expect(((await adm().from("ativacoes").select("papel").eq("user_id", ids.dono)).data ?? []).length).toBe(0);
     // Publicou (o que a publicação grava): no próximo Início, o checklist do papel some e a data fica gravada.
     await adm().from("properties").update({ status: "active" }).eq("id", ids.imovel);
     await d.reload({ waitUntil: "domcontentloaded" });
+    await expect(bloco).toHaveAttribute("data-tipo", /^(decisao|em_dia)$/, { timeout: 20_000 });
     await expect(d.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toHaveCount(0, { timeout: 20_000 });
     await expect.poll(async () => ((await adm().from("ativacoes").select("papel, ativado_em").eq("user_id", ids.dono)).data ?? []).map((a) => a.papel), { timeout: 15_000 }).toContain("proprietario");
     const { data: a1 } = await adm().from("ativacoes").select("ativado_em").eq("user_id", ids.dono).eq("papel", "proprietario").single();

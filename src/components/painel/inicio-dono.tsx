@@ -4,9 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Decisao } from "@/lib/painel/decisoes";
-import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, lugarDoChecklistDono, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
-import type { ChecklistAtivacao } from "@/lib/onboarding/ativacao";
-import { ChecklistAtivacaoBloco } from "@/components/onboarding/checklist-ativacao";
+import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 
 const ICONE = { agenda: CalendarDays, simulador: ChartNoAxesColumnIncreasing, recibos: ReceiptText } as const;
@@ -19,15 +17,12 @@ export function InicioDono({
   alerta,
   bloco,
   hoje = [],
-  checklist = null,
 }: {
   alerta: Decisao | null;
   bloco: BlocoPrincipalDono;
   hoje?: CartaoHoje[];
-  /** E218: checklist de ativação do dono (Prompt 50) enquanto o papel não ativou. */
-  checklist?: ChecklistAtivacao | null;
 }) {
-  const lugar = checklist ? lugarDoChecklistDono(bloco.tipo) : null;
+  // E218-A: o guia de ativação do dono mora nos "Próximos passos" do bloco principal (um guia só na tela).
   return (
     <div className="space-y-6" data-testid="inicio-dono">
       <h1 className="sr-only">Início</h1>
@@ -80,8 +75,9 @@ export function InicioDono({
                     <li key={p.rotulo}>
                       <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
                         {p.feito ? <CheckCircle2 className="h-5 w-5 shrink-0 text-forest" aria-hidden /> : <Circle className="h-5 w-5 shrink-0 text-muted" aria-hidden />}
-                        <span className="min-w-0 flex-1">
+                        <span className="min-w-0 flex-1 py-2">
                           <strong className="font-semibold">{p.rotulo}</strong> — {p.feito ? "Concluído" : "Pendente"}
+                          {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
                         </span>
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
                       </Link>
@@ -90,11 +86,9 @@ export function InicioDono({
                 </ul>
               </div>
             )}
-            {checklist && lugar === "dentro" && <ChecklistAtivacaoBloco checklist={checklist} embutido />}
           </div>
         </div>
       </section>
-      {checklist && lugar === "abaixo" && <ChecklistAtivacaoBloco checklist={checklist} />}
 
       <section className="flex flex-col gap-4 rounded-lg border border-line bg-white p-4 sm:p-6 lg:flex-row lg:items-center" data-testid="inicio-dono-peca">
         <div className="min-w-0 lg:flex-1">

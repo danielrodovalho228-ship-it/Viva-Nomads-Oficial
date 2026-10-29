@@ -9,11 +9,14 @@
   aprovada ainda não foi identificada, e nenhuma foto é inventada.
 */
 import type { Decisao } from "./decisoes.ts";
+import type { ChecklistAtivacao } from "../onboarding/ativacao.ts";
 
 export interface ItemPassoDono {
   rotulo: string;
   feito: boolean;
   href: string;
+  /** Linha curta de "para que serve" (o guia de ativação do dono traz; o rascunho, não). */
+  detalhe?: string | null;
 }
 
 export interface BlocoPrincipalDono {
@@ -41,6 +44,11 @@ export function blocoPrincipalDono(p: {
   decisoes: readonly Decisao[];
   temAnuncio: boolean;
   fotoAnuncio: string | null;
+  /**
+   * E218-A: o guia de ativação do dono (checklistProprietario — dados, fotos ≥ 8, valor mensal, publicar), fonte única.
+   * Mora DENTRO do bloco principal, na lista "Próximos passos" do mockup; nunca num bloco à parte (um guia só).
+   */
+  checklist?: ChecklistAtivacao | null;
 }): BlocoPrincipalDono {
   const r = p.rascunho;
   if (r && !r.pronto) {
@@ -57,6 +65,19 @@ export function blocoPrincipalDono(p: {
       foto: r.foto,
     };
   }
+  // E218-A, caso obrigatório: rascunho PRONTO e ainda não publicado → revisar e publicar ESSE rascunho (antes caía em
+  // "Anuncie seu primeiro imóvel", que abria um anúncio novo).
+  if (r && r.pronto) {
+    return {
+      tipo: "rascunho",
+      titulo: "Publique seu anúncio",
+      pct: 100,
+      linha: "Tudo pronto: falta revisar e publicar.",
+      botao: { rotulo: "Revisar e publicar", href: `/dashboard/imoveis/novo?draft=${r.id}&etapa=revisao` },
+      passos: [],
+      foto: r.foto,
+    };
+  }
   const urgente = alertaDoTopo(p.decisoes);
   if (urgente) {
     return { tipo: "decisao", titulo: "Próximo passo", pct: null, linha: urgente.texto, botao: { rotulo: "Resolver agora", href: urgente.href }, passos: [], foto: p.fotoAnuncio };
@@ -68,7 +89,11 @@ export function blocoPrincipalDono(p: {
       pct: null,
       linha: "Imóveis mobiliados de 30 a 180 dias, com o morador falando direto com você.",
       botao: { rotulo: "Anunciar meu imóvel", href: "/dashboard/imoveis/novo" },
-      passos: [],
+      // E218-A: o que o dono vai precisar, antes de começar — o guia de ativação, item a item.
+      passos:
+        p.checklist && !p.checklist.ativado
+          ? p.checklist.itens.map((i) => ({ rotulo: i.texto, feito: i.feito, href: i.acao?.href ?? "/dashboard/imoveis/novo", detalhe: i.detalhe }))
+          : [],
       foto: null,
     };
   }
@@ -87,12 +112,3 @@ export const ATALHOS_INICIO_DONO = [
   { id: "simulador", rotulo: "Simulador de rentabilidade", texto: "Estime receita mensal e despesas", href: "/dashboard/simulador" },
   { id: "recibos", rotulo: "Recibos e notas", texto: "Emissão e histórico de comprovantes", href: "/dashboard/recibos" },
 ] as const;
-
-/**
- * E218 (L-71) — o checklist de ativação do dono ("Para publicar seu anúncio", Prompt 50) volta ao Início do PROP-6:
- * dentro do bloco "Anuncie seu primeiro imóvel"; nos outros casos (rascunho, decisão), logo abaixo do bloco principal.
- * Some na ativação, como antes (quem decide é checklistsDoInicio).
- */
-export function lugarDoChecklistDono(tipo: BlocoPrincipalDono["tipo"]): "dentro" | "abaixo" {
-  return tipo === "primeiro_anuncio" ? "dentro" : "abaixo";
-}
