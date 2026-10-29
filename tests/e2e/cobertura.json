@@ -280,7 +280,8 @@
       "specs": [
         "t51-admin-padrao-caixa-socios",
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t596-qa-login-direto"
       ]
     },
     "/admin/usuarios": {
@@ -1943,7 +1944,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -1985,7 +1987,9 @@
         "t262-detalhe-imovel-41",
         "t263-visual-41",
         "t304-airbnb-exibicao-61a",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1994,7 +1998,9 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2069,7 +2075,8 @@
       ],
       "specs": [
         "t463-admin3-sistema",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t596-qa-login-direto"
       ]
     },
     "/admin/retencao": {
@@ -2316,6 +2323,14 @@
         "t470-qa-leitor-caixas",
         "t521-qa-caixa-sem-token"
       ]
+    },
+    "/qa/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t596-qa-login-direto"
+      ]
     }
   },
   "rotas": {
@@ -2557,7 +2572,9 @@
       ],
       "specs": [
         "t128-cron-automacoes",
-        "t592-e205b2-lembrete-bloco"
+        "t592-e205b2-lembrete-bloco",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -2924,7 +2941,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/api/cron/prazos-conforto": {
@@ -3035,6 +3053,14 @@
       "specs": [
         "t397-foto-na-hora",
         "t410-niveis-medir-rascunho"
+      ]
+    },
+    "/api/qa/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t596-qa-login-direto"
       ]
     }
   },
@@ -5462,7 +5488,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#proporOutroHorario": {
@@ -5562,7 +5589,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#meusPedidosDeServico": {
@@ -5638,7 +5666,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
@@ -5661,7 +5691,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirEncerramento": {
@@ -5677,7 +5709,9 @@
         "inquilino"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#removerOcupante": {
@@ -5691,7 +5725,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarInstrucoes": {

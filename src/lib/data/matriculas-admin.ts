@@ -15,6 +15,7 @@ import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
 import { CASOS_DONO } from "@/lib/documento/conferencia-matricula";
 import { contarMatriculas, proprietariosParaAdmin, ROTULO_MOTIVO, ROTULO_ONUS, ROTULO_RESULTADO, type ContadoresMatricula } from "@/lib/documento/fila-matricula";
+import { recusaObservador } from "@/lib/qa/observador";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 const BUCKET = "property-docs";
@@ -148,6 +149,8 @@ export async function decidirMatriculaAdmin(id: string, acao: "aprovar" | "pedir
     .eq("id", id)
     .maybeSingle();
   if (!alvo) return { ok: false, error: "Matrícula não encontrada." };
+  const recusaQa = await recusaObservador(user.id, { perfis: [alvo.user_id as string | null], imoveis: [alvo.property_id as string | null] });
+  if (recusaQa) return { ok: false, error: recusaQa };
   const conflito = erroConflitoInteresse(alvo.user_id as string, user.id);
   if (conflito) return { ok: false, error: conflito };
   if (acao === "aprovar") {

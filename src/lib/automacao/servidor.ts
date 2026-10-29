@@ -19,6 +19,7 @@ import {
   type Janela,
   type Vinculo,
 } from "./pedidos-do-evento";
+import { chaveRemarcada, chaveSaidaSemParceiro, chaveSugestaoMorador, decidirRemarcacao, MSG_SAIDA_MUDOU, textoReagendamento } from "./remarcacao";
 
 /*
   "Viva rodando automático" (Prompt 38) — o lado do servidor: lê o contrato e os vínculos, pede à regra pura o que o
@@ -190,26 +191,61 @@ export async function criarPedidoAutomatico(admin: Admin, { ctx, acao, agora }: 
 
 const COLS_AUTO = "id, cliente_id, parceiro_id, status, aguardando_dono, descricao, servico_id, chave_automacao, gatilho, parceiros(user_id)";
 
-/** Remarcação: o pedido da mesma chave ganha a janela e o texto novos. Já aceito: só a mensagem com as datas novas. */
-async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atualizar" }>, agora: Date): Promise<boolean> {
+type PedidoComChave = PedidoAuto & { servico_id: string | null; chave_automacao: string };
+
+/**
+ * E213-B: a saída ficou a mais de 5 dias e o pedido ainda não tem aceite (ou o parceiro recusou a nova data): cancela,
+ * e a chave ganha o sufixo ":remarcado:<ts>" (o padrão da troca de parceiro). O cron refaz no D-5 com a chave original.
+ */
+export async function cancelarPorRemarcacao(admin: Admin, p: PedidoComChave, agora: Date, motivo = "saida_remarcada"): Promise<boolean> {
+  const { data: ok } = await admin
+    .from("parceiro_pedidos")
+    .update({ status: "cancelado", chave_automacao: chaveRemarcada(p.chave_automacao, agora.getTime()), atualizado_em: agora.toISOString() })
+    .eq("id", p.id)
+    .eq("status", p.status)
+    .select("id");
+  if (!ok?.length) return false;
+  await evento(admin, p.id, null, "cancelar", { motivo });
+  if (!p.aguardando_dono && p.parceiros) {
+    await mensagem(admin, p, p.cliente_id, MSG_SAIDA_MUDOU);
+    await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id, { texto: "a saída do morador mudou e este pedido foi cancelado. O pedido volta a ser feito perto da nova data." });
+  }
+  return true;
+}
+
+/**
+ * Remarcação (aditivo assinado), pela regra pura decidirRemarcacao: sem aceite e a nova saída a até 5 dias → a janela
+ * e o texto novos na mesma chave; sem aceite e longe → cancela com o sufixo (o cron refaz no D-5); já aceito →
+ * reagendamento: volta a "aceito" com os horários da janela nova e o parceiro confirma ou recusa a nova data.
+ */
+async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atualizar" }>, saida: string, agora: Date): Promise<boolean> {
   const { data } = await admin.from("parceiro_pedidos").select(COLS_AUTO).eq("chave_automacao", acao.chave).maybeSingle();
-  const p = data as unknown as (PedidoAuto & { servico_id: string | null }) | null;
-  if (!p || ["cancelado", "recusado", "concluido"].includes(p.status)) return false;
-  const nova = `A estadia foi remarcada. Nova janela: entre ${quandoBrasilia(acao.janela.inicio)} e ${quandoBrasilia(acao.janela.fim)}.`;
-  if ((STATUS_NAO_ACEITOS as readonly string[]).includes(p.status)) {
-    const { horarios, aviso: fora } = await horariosDoPedido(admin, p.parceiro_id, acao.janela, agora);
-    const descricao = (await textoComServico(admin, p.servico_id, acao.descricao)) + fora;
-    const { data: ok } = await admin
-      .from("parceiro_pedidos")
-      .update({ descricao, horarios_propostos: horarios, janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim, atualizado_em: agora.toISOString() })
-      .eq("id", p.id)
-      .eq("status", p.status)
-      .select("id");
-    if (!ok?.length) return false;
+  const p = data as unknown as PedidoComChave | null;
+  if (!p) return false;
+  const decisao = decidirRemarcacao(p.status, saida, hojeEmBrasilia(agora));
+  if (decisao === "nada") return false;
+  if (decisao === "cancelar_remarcado") return cancelarPorRemarcacao(admin, p, agora);
+  const { horarios, aviso: fora } = await horariosDoPedido(admin, p.parceiro_id, acao.janela, agora);
+  const descricao = (await textoComServico(admin, p.servico_id, acao.descricao)) + fora;
+  const comum = { descricao, horarios_propostos: horarios, janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim, atualizado_em: agora.toISOString() };
+  // Reagendamento: o horário confirmado antes deixa de valer; o valor combinado fica como está.
+  const mudanca = decisao === "reagendar" ? { ...comum, status: "aceito", horario_confirmado: null } : comum;
+  const { data: ok } = await admin.from("parceiro_pedidos").update(mudanca).eq("id", p.id).eq("status", p.status).select("id");
+  if (!ok?.length) return false;
+  const janela = { inicio: quandoBrasilia(acao.janela.inicio), fim: quandoBrasilia(acao.janela.fim) };
+  if (decisao === "reagendar") {
+    await evento(admin, p.id, null, "reagendamento", { janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim, de: p.status });
+    if (p.parceiros) {
+      await mensagem(admin, p, p.cliente_id, textoReagendamento(janela));
+      await avisar(admin, p.parceiros.user_id, "pedido_auto_atualizado", p.id, {
+        texto: "a estadia foi renovada e a data do serviço mudou. Confirme um dos novos horários ou recuse a nova data pelo pedido. O valor combinado continua o mesmo.",
+      });
+    }
+    return true;
   }
   await evento(admin, p.id, null, "remarcado", { janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim });
   if (!p.aguardando_dono && p.parceiros) {
-    await mensagem(admin, p, p.cliente_id, nova);
+    await mensagem(admin, p, p.cliente_id, `A estadia foi remarcada. Nova janela: entre ${janela.inicio} e ${janela.fim}.`);
     await avisar(admin, p.parceiros.user_id, "pedido_auto_atualizado", p.id);
   }
   return true;
@@ -258,16 +294,16 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
           if (await criarPedidoAutomatico(admin, { ctx, acao: a, agora })) r.criados += 1;
           break;
         case "atualizar":
-          if (await atualizarPedido(admin, a, agora)) r.atualizados += 1;
+          if (await atualizarPedido(admin, a, ctx.saida, agora)) r.atualizados += 1;
           break;
         case "cancelar_automaticos":
           r.cancelados += await cancelarAutomaticos(admin, a.contratoId, agora);
           break;
         case "avisar_dono_sem_vinculo":
-          if (await avisoUmaVez(admin, `saida_sem_parceiro:${ctx.id}:${ctx.ownerId}`, "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza")) r.avisos += 1;
+          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.saida), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza")) r.avisos += 1;
           break;
         case "sugerir_morador":
-          if (await avisoUmaVez(admin, `sugestao_parceiros_morador:${ctx.id}:${ctx.tenantId}:${a.momento}`, "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`))
+          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.saida : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`))
             r.avisos += 1;
           break;
       }

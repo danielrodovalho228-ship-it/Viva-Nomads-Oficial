@@ -15,6 +15,7 @@ import {
   usarFotosNoAnuncio,
 } from "@/lib/parceiros/pedido-actions";
 import { confirmarPedidoAutomatico, trocarParceiro } from "@/lib/automacao/acoes";
+import { recusarNovaData } from "@/lib/automacao/reagendamento-servidor";
 
 type Res = { ok: true } | { ok: false; erro: string };
 const texto = (x: unknown) => (typeof x === "string" ? x : "");
@@ -36,6 +37,8 @@ const ACOES: Record<string, (id: string, a: Record<string, unknown>) => Promise<
   avaliar: (id, a) => avaliarPedido(id, Number(a.nota), texto(a.texto)),
   "confirmar-automatico": (id) => confirmarPedidoAutomatico(id),
   "trocar-parceiro": (id) => trocarParceiro(id),
+  // E213-B: reagendamento depois do aditivo — o parceiro recusa a nova data (confirmar é o "confirmar-horario").
+  "recusar-nova-data": (id) => recusarNovaData(id),
 };
 
 /**

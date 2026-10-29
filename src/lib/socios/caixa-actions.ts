@@ -1,6 +1,7 @@
 "use server";
 
 import { sessaoAal2 } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -40,7 +41,10 @@ async function sessaoAdmin() {
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return perfil?.role === "admin" && (await sessaoAal2(supabase)) ? { supabase, uid: user.id } : null;
+  if (!(perfil?.role === "admin" && (await sessaoAal2(supabase)))) return null;
+  // QA-LOGIN-B v2: o admin observador da QA nunca usa a Caixa dos Sócios (a RLS da 0252 também fecha).
+  if (await recusaObservador(user.id)) return null;
+  return { supabase, uid: user.id };
 }
 
 /** Transcreve áudio (OpenAI) ou lê imagem/documento (Anthropic / zip do Office). Nunca lança: devolve status. */

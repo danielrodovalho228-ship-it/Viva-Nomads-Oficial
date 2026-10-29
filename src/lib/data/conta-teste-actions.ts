@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
+import { recusaObservador } from "@/lib/qa/observador";
 import { mudarContaTeste, type ResContaTeste } from "@/lib/admin/conta-teste";
 
 /**
@@ -15,6 +16,9 @@ import { mudarContaTeste, type ResContaTeste } from "@/lib/admin/conta-teste";
 export async function marcarContaTeste(perfilId: string, marcar: boolean): Promise<ResContaTeste> {
   const supabase = await createClient();
   if (!supabase) return { ok: false, erro: "Indisponível no modo demonstração." };
+  // QA-LOGIN-B v2: o admin observador da QA não marca nem desmarca conta de teste (seria transformar conta real em alvo).
+  const recusaQa = await recusaObservador((await supabase.auth.getUser()).data.user?.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const admin = createAdminClient();
   return mudarContaTeste(
     {
