@@ -14,15 +14,11 @@ import {
 } from "../fixtures/laboratorio";
 
 /**
- * T35 — TROCA DE PLANO COM IMÓVEL JÁ CADASTRADO (laboratório). Conta NOVA de dono
- * com 6 imóveis prontos: 5 publicados (o limite do Essencial) e 1 rascunho.
- *  1. Subir (Essencial → Profissional): o 6º, que estava sem vaga, passa a publicar;
- *     os 5 que já estavam no ar continuam no ar.
- *  2. Descer (Profissional → Gratuito, limite 1, com 6 no ar): NADA some e nada
- *     quebra — os 6 continuam publicados, a lista e o editor abrem, e um 7º não
- *     publica (a tela diz que não há vaga).
- * 3. Depois de descer, a tela Assinatura explica que os anúncios acima do limite
- *    continuam no ar mas que novos não publicam até ficar dentro do limite.
+ * T35 — TROCA DE PLANO COM IMÓVEL JÁ CADASTRADO (laboratório). Conta NOVA de dono com 7 imóveis prontos: 5
+ * publicados e 2 rascunhos. E233-A: o plano (histórico) não limita mais quantos anúncios ficam no ar.
+ *  1. Essencial com 5 no ar (o antigo "lotado"): o 6º publica, sem "Vaga no seu plano".
+ *  2. Descer para Gratuito (sem assinatura) com 6 no ar: NADA some e nada quebra — a lista e o editor abrem — e o
+ *     7º também publica.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -47,54 +43,38 @@ test.describe("T35 — Troca de plano com imóvel cadastrado", () => {
     await apagarContas([ids.dono]);
   });
 
-  test("Essencial lotado (5 de 5): o 6º não tem vaga e a tela diz por quê", async ({ browser }) => {
-    test.setTimeout(90_000);
+  test("Essencial com 5 no ar: o 6º publica, sem vaga no plano", async ({ browser }) => {
+    test.setTimeout(120_000);
     expect(await contarAtivos(ids.dono!)).toBe(5);
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/imoveis/${ids.sexto}/editar`, { waitUntil: "networkidle" });
-    await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
-    await page.screenshot({ path: "tests/laboratorio/saida/t35-1-essencial-lotado.png", fullPage: true });
-    await page.context().close();
-  });
-
-  test("SUBIR para Profissional: o 6º publica e os 5 que estavam no ar continuam", async ({ browser }) => {
-    test.setTimeout(120_000);
-    await definirPlano(ids.dono!, "pro");
-    const page = await entrar(browser, dono.email, senha);
+    await expect(page.getByTestId("prontidao")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/Vaga no seu plano|seu plano permite|mude de plano/i)).toHaveCount(0);
     await publicarPeloEditor(page, ids.sexto!);
-    await expect(page.getByTestId("prontidao")).toHaveText("Anúncio publicado", { timeout: 20_000 });
-    expect(await statusDoImovel(ids.sexto!)).toBe("active");
+    await expect.poll(() => statusDoImovel(ids.sexto!), { timeout: 30_000 }).toBe("active");
     for (const id of ids.no_ar) expect(await statusDoImovel(id)).toBe("active");
     expect(await contarAtivos(ids.dono!)).toBe(6);
-    await page.screenshot({ path: "tests/laboratorio/saida/t35-2-subiu-para-pro.png", fullPage: true });
+    await page.screenshot({ path: "tests/laboratorio/saida/t35-1-sexto-publicado.png", fullPage: true });
     await page.context().close();
   });
 
-  test("DESCER para Gratuito com 6 no ar: nada some, nada quebra; um 7º não publica", async ({ browser }) => {
+  test("DESCER para Gratuito com 6 no ar: nada some, nada quebra; o 7º também publica", async ({ browser }) => {
     test.setTimeout(120_000);
-    await definirPlano(ids.dono!, null); // assinatura encerrada → plano Gratuito (limite 1)
+    await definirPlano(ids.dono!, null); // assinatura encerrada → sem plano pago
     expect(await contarAtivos(ids.dono!)).toBe(6);
 
     const page = await entrar(browser, dono.email, senha);
-    // A lista abre e mostra os 6 anúncios.
     const resposta = await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
     expect(resposta?.status()).toBe(200);
     for (let i = 1; i <= 7; i++) await expect(page.getByText(titulo(i)).first()).toBeVisible();
 
-    // O editor de um anúncio que já está no ar (acima do limite) abre e continua "publicado".
     await page.goto(`/dashboard/imoveis/${ids.no_ar[2]}/editar`, { waitUntil: "networkidle" });
     await expect(page.getByTestId("prontidao")).toHaveText("Anúncio publicado");
 
-    // Um novo (o 7º) não publica: sem vaga, botão travado, com a explicação.
-    await page.goto(`/dashboard/imoveis/${ids.setimo}/editar`, { waitUntil: "networkidle" });
-    await expect(page.getByText(/Vaga no seu plano/).first()).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: "Publicar", exact: true })).toBeDisabled();
-    expect(await statusDoImovel(ids.setimo!)).toBe("draft");
-
-    // Nada foi despublicado pela troca.
-    expect(await contarAtivos(ids.dono!)).toBe(6);
-    await page.screenshot({ path: "tests/laboratorio/saida/t35-3-desceu-para-gratuito.png", fullPage: true });
+    await publicarPeloEditor(page, ids.setimo!);
+    await expect.poll(() => statusDoImovel(ids.setimo!), { timeout: 30_000 }).toBe("active");
+    expect(await contarAtivos(ids.dono!)).toBe(7);
+    await page.screenshot({ path: "tests/laboratorio/saida/t35-2-desceu-e-publicou.png", fullPage: true });
     await page.context().close();
   });
 });

@@ -671,6 +671,7 @@
         "t643-e229-barra-360",
         "t645-e238-e239-conta-passos",
         "t649-e246-e249-contratos-inicio",
+        "t661-varredura-bloco62",
         "t662-varredura-bloco63"
       ]
     },
@@ -805,7 +806,8 @@
         "t542-menus5-e85-estrutura",
         "t561-e192-por-que-na-cidade",
         "t607-varredura-bloco51",
-        "t645-e238-e239-conta-passos"
+        "t645-e238-e239-conta-passos",
+        "t661-varredura-bloco62"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1128,6 +1130,7 @@
         "t641-e180-entrada-sempre-qualificacao",
         "t646-cadastro-titulo-nao-pula",
         "t647-e241-contador-com-numero",
+        "t661-varredura-bloco62",
         "t662-varredura-bloco63"
       ]
     },
@@ -1609,7 +1612,8 @@
       "specs": [
         "t659-e236-gestor-20",
         "t3-isolamento-papeis",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t661-varredura-bloco62"
       ]
     },
     "/para-proprietarios": {
@@ -1646,7 +1650,8 @@
         "t311-marco-principal-unico",
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t661-varredura-bloco62"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1732,7 +1737,8 @@
         "t368-varredura-bloco20",
         "t414-varredura-bloco31",
         "t543-e166-fundo-clean-publico",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t661-varredura-bloco62"
       ]
     },
     "/privacidade": {
@@ -1844,7 +1850,8 @@
         "t421-varredura-bloco38",
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t661-varredura-bloco62"
       ]
     },
     "/tributario": {
@@ -3301,14 +3308,6 @@
         "proprietario"
       ],
       "specs": []
-    },
-    "src/lib/data/actions.ts#minhaSituacaoLimite": {
-      "personas": [
-        "proprietario"
-      ],
-      "specs": [
-        "t320-pausar-anuncio-64b"
-      ]
     },
     "src/lib/data/actions.ts#pausarAnuncio": {
       "personas": [

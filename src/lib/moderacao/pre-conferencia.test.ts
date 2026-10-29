@@ -36,14 +36,14 @@ test("prontidão: sublocado/administrado sem documento não publica (com a 0091)
     monthly_price: 2000, garantias_aceitas: ["caucao"], ownership_type: "managed", sublease_authorized: true,
     autorizacao_anexada: false, description: "x".repeat(200), ready_to_live_badge: false, video_url: null,
   };
-  const p = prontidaoAnuncio(fatosDaLinha(linha, 8, "approved", true));
+  const p = prontidaoAnuncio(fatosDaLinha(linha, 8, "approved"));
   const item = p.obrigatorios.find((i) => i.key === "sublocacao");
   assert.ok(item && !item.ok);
   assert.equal(item.label, "Contrato de administração ou procuração");
-  assert.ok(fatosDaLinha({ ...linha, autorizacao_anexada: true }, 8, "approved", true).sublocacaoOk);
+  assert.ok(fatosDaLinha({ ...linha, autorizacao_anexada: true }, 8, "approved").sublocacaoOk);
   // Banco sem a 0091 (coluna ausente): vale a regra antiga, só a declaração.
-  assert.ok(fatosDaLinha({ ...linha, autorizacao_anexada: undefined }, 8, "approved", true).sublocacaoOk);
-  assert.equal(prontidaoAnuncio(fatosDaLinha({ ...linha, ownership_type: "subleased" }, 8, "approved", true)).obrigatorios.find((i) => i.key === "sublocacao")!.label, "Autorização de sublocação");
+  assert.ok(fatosDaLinha({ ...linha, autorizacao_anexada: undefined }, 8, "approved").sublocacaoOk);
+  assert.equal(prontidaoAnuncio(fatosDaLinha({ ...linha, ownership_type: "subleased" }, 8, "approved")).obrigatorios.find((i) => i.key === "sublocacao")!.label, "Autorização de sublocação");
 });
 
 test("nomes: primeiro e último iguais, ou um contido no outro; acento e caixa não importam", () => {

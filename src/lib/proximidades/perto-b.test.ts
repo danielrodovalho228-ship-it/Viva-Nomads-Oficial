@@ -52,7 +52,7 @@ test("oculto ('não mostrar') e manual antigo sem endereço não aparecem; o man
   ];
   assert.deepEqual(proximidadesVisiveis(lista).map((x) => x.nome), ["Clínica nova"]);
   assert.equal(lista.filter(manualSemEndereco).length, 1);
-  const base = { enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 10, titulo: "Apto", preco: 1, garantiaOk: true, sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, limitePlanoOk: null, descricao: "x".repeat(200), selo: true, video: true };
+  const base = { enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 10, titulo: "Apto", preco: 1, garantiaOk: true, sublocacaoOk: true, privacidadeOk: true, documento: "approved" as const, descricao: "x".repeat(200), selo: true, video: true };
   const p = prontidaoAnuncio({ ...base, proximidadesSemEndereco: 1 });
   assert.ok(p.melhorar.includes(ROTULO_PROXIMIDADES_SEM_ENDERECO));
   assert.equal(p.podePublicar, true, "pendência não trava a publicação: o lugar só fica fora da página");

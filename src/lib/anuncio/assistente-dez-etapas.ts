@@ -77,7 +77,7 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     prontidao: ["periodo"],
   },
   // E104: quem opera, o documento da operação e o documento do imóvel ficam no cartão "Antes de publicar" da Revisão.
-  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["limite", "documento", "sublocacao"] },
+  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao"] },
 ];
 
 /** Etapa onde um item da prontidão se resolve; item desconhecido cai na revisão (nunca some da lista). */
@@ -100,7 +100,7 @@ export interface ItemConferencia {
  * Fotos, Endereço, Detalhes, Comodidades, Regras, Preço, Disponibilidade; "Tipo" e "Título e descrição" entram quando
  * têm obrigatório — a descrição é obrigatória para publicar, mesmo fora da lista do mockup). As etapas sem obrigatório
  * (ex.: Regras sem o tipo de entrada pendente) aparecem como feitas: o que nelas é opcional não segura a publicação.
- * `podePublicar` é o da prontidão; o item "Vaga no seu plano" (etapa 10) vai em `pendentesNaRevisao`.
+ * `podePublicar` é o da prontidão; os itens da etapa 10 (documento, autorização) vão em `pendentesNaRevisao`.
  */
 export function conferenciaAssistente(p: Prontidao): {
   itens: ItemConferencia[];

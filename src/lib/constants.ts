@@ -67,7 +67,6 @@ export const PLANS = PLANOS.map((p) => ({
   commission: p.comissao,
   tagline: p.publico,
   featured: p.destaque,
-  listingLimit: p.limiteAnuncios,
   features: p.beneficios,
   cost: p.custoLabel,
   cta: p.cta,
