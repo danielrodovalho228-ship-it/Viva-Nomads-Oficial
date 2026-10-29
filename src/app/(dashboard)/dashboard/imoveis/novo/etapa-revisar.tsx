@@ -25,7 +25,7 @@ import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
  *  • à esquerda, "Antes de publicar": a lista de conferência (uma linha por passo, "Resolver") e as seções legais
  *    (quem opera, identidade, documento, declarações), cada uma com estado (✓ ou "falta") que abre no lugar;
  *  • à direita, fixa: a prévia do anúncio com os preços nos três nomes fixos (Mensal · Total por mês (com contas) ·
- *    Total do contrato) e UM "Publicar anúncio", travado com o motivo em uma linha enquanto faltar algo.
+ *    Estadia mínima (N meses)) e UM "Publicar anúncio", travado com o motivo em uma linha enquanto faltar algo.
  * No celular, coluna única: a lista primeiro, a prévia recolhida ("Ver como fica o anúncio") e o "Publicar anúncio" no
  * rodapé fixo, no lugar do "Continuar". As regras de publicar não mudam (12 itens do essencial + isEligible + aceite).
  */
@@ -108,15 +108,15 @@ export function EtapaRevisar(p: {
           Valor mensal ainda não definido.
         </p>
       ) : (
-        // PROP-2: os três nomes fixos do preço; o total do contrato com a conta aberta.
+        // PROP-2: os três preços com nome; a estadia mínima com a conta aberta (E251 d: ainda não há contrato).
         <dl className="mt-3 space-y-1 text-sm" data-testid="previa-precos">
           {precos.map((l, n) => (
-            <div key={l.rotulo} className="flex items-baseline justify-between gap-3" data-testid={`previa-preco-${["mensal", "total-mes", "total-contrato"][n]}`}>
+            <div key={l.rotulo} className="flex items-baseline justify-between gap-3" data-testid={`previa-preco-${["mensal", "total-mes", "estadia-minima"][n]}`}>
               <dt className="text-muted">{l.rotulo}</dt>
               <dd className={cn("text-right font-semibold", n === 1 ? "font-title text-lg text-forest" : "text-ink")}>{l.valor == null ? "—" : formatBRL(l.valor)}</dd>
             </div>
           ))}
-          {precos[2].conta && <p className="text-right text-xs text-muted" data-testid="previa-conta-contrato">{precos[2].conta}</p>}
+          {precos[2].conta && <p className="text-right text-xs text-muted" data-testid="previa-conta-estadia">{precos[2].conta}</p>}
           {desconto && <p className="text-xs text-muted">{desconto}</p>}
         </dl>
       )}

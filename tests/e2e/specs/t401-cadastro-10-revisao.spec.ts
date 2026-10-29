@@ -103,7 +103,7 @@ test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
       // E251: os três nomes fixos do preço (PROP-2).
       await expect(p.getByTestId("previa-preco-mensal")).toContainText(/Mensal\s*R\$\s?3\.200/);
       await expect(p.getByTestId("previa-preco-total-mes")).toContainText("Total por mês (com contas)");
-      await expect(p.getByTestId("previa-preco-total-contrato")).toContainText("Total do contrato");
+      await expect(p.getByTestId("previa-preco-estadia-minima")).toContainText(/Estadia mínima \(\d+ m(ês|eses)\)/);
       const foto = p.getByTestId("revisao-foto");
       await expect.poll(() => foto.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 }).toBe(true);
       await expect(p.getByTestId("novo-resumo")).toHaveCount(0);
