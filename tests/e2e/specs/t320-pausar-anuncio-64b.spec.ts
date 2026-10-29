@@ -94,8 +94,8 @@ test.describe("T320 — pausar e reativar anúncio sem limite de plano e aceite 
     await expect(doDono).toHaveCount(3, { timeout: 20_000 });
     await doDono.first().click();
     await p.getByTestId("reativar-anuncio").click();
-    // 1 já no ar + o reativado = 2 publicados numa conta sem assinatura: volta ao ar, sem "pause N" nem "mude de plano".
-    await expect.poll(async () => (await pausados()).length, { timeout: 30_000 }).toBe(2);
+    // 4 pausados → 3 (o reativado volta): 2 publicados numa conta sem assinatura, sem "pause N" nem "mude de plano".
+    await expect.poll(async () => (await pausados()).length, { timeout: 30_000 }).toBe(3);
     await expect(p.getByTestId("reativar-faltas")).toHaveCount(0);
     await expect(p.getByText(/seu plano permite|mude de plano/i)).toHaveCount(0);
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });

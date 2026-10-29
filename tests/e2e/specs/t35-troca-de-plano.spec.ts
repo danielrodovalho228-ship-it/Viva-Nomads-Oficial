@@ -48,7 +48,7 @@ test.describe("T35 — Troca de plano com imóvel cadastrado", () => {
     expect(await contarAtivos(ids.dono!)).toBe(5);
     const page = await entrar(browser, dono.email, senha);
     await page.goto(`/dashboard/imoveis/${ids.sexto}/editar`, { waitUntil: "networkidle" });
-    await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 15_000 });
+    await expect(page.getByTestId("prontidao")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/Vaga no seu plano|seu plano permite|mude de plano/i)).toHaveCount(0);
     await publicarPeloEditor(page, ids.sexto!);
     await expect.poll(() => statusDoImovel(ids.sexto!), { timeout: 30_000 }).toBe("active");

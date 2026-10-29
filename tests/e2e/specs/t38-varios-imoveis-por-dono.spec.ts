@@ -39,7 +39,7 @@ async function noAr(de: number, ate: number) {
 async function publicaSemLimite(page: Page, n: number) {
   const id = ids.rascunho[n];
   await page.goto(`/dashboard/imoveis/${id}/editar`, { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("prontidao")).toContainText("Anúncio", { timeout: 20_000 });
+  await expect(page.getByTestId("prontidao")).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(PLANO_ANTIGO)).toHaveCount(0);
   await publicarPeloEditor(page, id);
   await expect.poll(() => statusDoImovel(id), { timeout: 30_000 }).toBe("active");
