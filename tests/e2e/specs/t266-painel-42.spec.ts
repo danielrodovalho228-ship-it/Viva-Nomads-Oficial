@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page, type Request } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /**
  * T266 — Prompt 42 (painel), a 390 e 1280 px, no laboratório:
  *  1. Início do proprietário (PROP-6): sem "Bem-vindo" nem funil de passos; a pendência mais urgente (contraproposta,
@@ -180,10 +181,6 @@ test.describe("T266 — Painel do Prompt 42", () => {
     test(`${largura}px — 5 telas do painel sem nenhuma server action da casca; contadores por GET`, async ({ browser }) => {
       test.setTimeout(150_000);
       const page = await abrir(browser, dono.email, largura);
-      // Todos os grupos do menu abertos (preferência lembrada no aparelho), para clicar nos itens.
-      await page.evaluate(() =>
-        localStorage.setItem("vn-menu-aberto", JSON.stringify({ moradia: true, comunicacao: true, imoveis: true, contratos: true, ferramentas: true, conta: true })),
-      );
       const contadores: Request[] = [];
       page.on("request", (r) => {
         if (new URL(r.url()).pathname === "/api/painel/contadores") contadores.push(r);
@@ -193,7 +190,7 @@ test.describe("T266 — Painel do Prompt 42", () => {
       await expect.poll(() => contadores.length, { timeout: 15_000 }).toBeGreaterThan(0);
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
 
-      // A partir daqui, só navegação pelo menu (no celular, pela gaveta).
+      // A partir daqui, só navegação pelo painel (links do Início, abas e cartões).
       const acoes: string[] = [];
       page.on("request", (r) => {
         if (r.method() === "POST" && r.headers()["next-action"]) acoes.push(`${r.url()} ${r.headers()["next-action"]}`);
@@ -205,27 +202,28 @@ test.describe("T266 — Painel do Prompt 42", () => {
         ["tributacao", "/dashboard/tributacao"],
         ["contratos-lista", "/dashboard/contratos"],
       ];
-      // PROP-1 (#1337): no computador o dono navega pelo topo — "Conta ▾" › Ferramentas, os cartões da tela de
-      // ferramentas e a aba Contratos; no celular, pela gaveta de sempre.
+      // MENUS-5: o dono não tem mais gaveta nem "Ferramentas" no menu da Conta. Ferramentas se abre pelo link "Todas as
+      // ferramentas" do Início; os cartões levam a cada simulador (e o voltar do navegador devolve à lista); Contratos é
+      // a aba do topo (computador) ou da barra de baixo (celular). Sempre navegação do cliente, sem recarregar.
       const topoDono = page.getByTestId("topo-dono");
+      const aba = async () => {
+        if (largura !== 390 && (await topoDono.isVisible())) await page.getByTestId("aba-dono-contratos").click();
+        else await page.locator('nav[aria-label="Navegação principal"] a[href="/dashboard/contratos"]:visible').first().click();
+      };
       for (const [id, rota] of rotas) {
-        if (largura !== 390 && (await topoDono.isVisible())) {
-          if (id === "contratos-lista") {
-            await page.getByTestId("aba-dono-contratos").click();
-          } else {
-            await page.getByTestId("conta-dono").click();
-            await page.getByTestId("conta-dono-ferramentas").click();
-            if (id !== "ferramentas-todas") {
-              await expect(page).toHaveURL(/\/dashboard\/ferramentas$/, { timeout: 20_000 });
-              await page.locator(`main a[href="${rota}"]`).first().click();
-            }
-          }
+        if (id === "ferramentas-todas") {
+          await page.getByTestId("inicio-dono-todas-ferramentas").click();
+        } else if (id === "contratos-lista") {
+          await aba();
         } else {
-          if (largura === 390) await page.getByRole("button", { name: "Abrir menu" }).click();
-          await page.locator(`nav[aria-label="Menu do painel"] a[data-menu-id="${id}"]:visible`).first().click();
+          await page.locator(`main a[href="${rota}"]`).first().click();
         }
         await expect(page).toHaveURL(new RegExp(`${rota.replace(/\//g, "\\/")}$`), { timeout: 20_000 });
         await expect(page.locator("main h1:visible").first()).toBeVisible({ timeout: 20_000 });
+        if (id !== "ferramentas-todas" && id !== "contratos-lista") {
+          await page.goBack();
+          await expect(page).toHaveURL(/\/dashboard\/ferramentas$/, { timeout: 20_000 });
+        }
       }
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       expect(acoes, "nenhuma server action ao navegar pelo painel").toEqual([]);

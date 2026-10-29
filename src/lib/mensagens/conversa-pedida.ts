@@ -3,8 +3,8 @@
   (conversationId das duas pessoas + imóvel), mas a conversa só existe na lista quando já há mensagem gravada. Contrato
   sem nenhuma mensagem entre as partes (ex.: VN-CT-D5D50247, montado direto no banco) gerava um link para uma conversa
   que não estava na lista, e a tela abria a PRIMEIRA conversa da lista — de outro morador.
-  Regra: a conversa pedida só abre se está na lista da pessoa OU se é a conversa de um contrato em que ela é parte
-  (aí abre vazia, pronta para a primeira mensagem). Fora disso: "não encontrada". Nunca a conversa de outra pessoa.
+  Regra: a lista da pessoa já traz a conversa de cada contrato em que ela é parte (vazia, pronta para a primeira
+  mensagem); a conversa pedida só abre se está na lista. Fora disso: "não encontrada". Nunca a conversa de outra pessoa.
   PURO. Roda: node --test src/lib/mensagens/conversa-pedida.test.ts
 */
 
@@ -16,28 +16,35 @@ export interface ContratoParaConversa {
   titulo: string;
 }
 
-export type ConversaPedida =
-  | { tipo: "nenhuma" }
-  | { tipo: "existe" }
-  | { tipo: "nova"; contrato: ContratoParaConversa; outroId: string; papel: "proprietario" | "inquilino" }
-  | { tipo: "nao_encontrada" };
+export interface ConversaDeContrato {
+  id: string;
+  contrato: ContratoParaConversa;
+  outroId: string;
+  papel: "proprietario" | "inquilino";
+}
 
-export function resolverConversaPedida(
-  pedida: string | undefined,
+/**
+  E200 (QA 28/10): toda conversa de estadia entra na lista desde a criação do contrato, mesmo sem mensagem — antes ela
+  só aparecia quando o link da estadia a injetava, e com o nome fixo "Morador". Devolve as conversas dos contratos em
+  que a pessoa é parte e que ainda não estão na lista (uma por id: renovação no mesmo imóvel é a mesma conversa).
+*/
+export function conversasDeContratos(
   idsDaLista: readonly string[],
   contratos: readonly ContratoParaConversa[],
   userId: string,
   idDe: (a: string, b: string, propertyId: string) => string,
-): ConversaPedida {
-  if (!pedida) return { tipo: "nenhuma" };
-  if (idsDaLista.includes(pedida)) return { tipo: "existe" };
+): ConversaDeContrato[] {
+  const vistos = new Set(idsDaLista);
+  const novas: ConversaDeContrato[] = [];
   for (const c of contratos) {
     const souDono = c.ownerId === userId;
-    if (!souDono && c.tenantId !== userId) continue;
-    if (idDe(c.tenantId, c.ownerId, c.propertyId) !== pedida) continue;
-    return { tipo: "nova", contrato: c, outroId: souDono ? c.tenantId : c.ownerId, papel: souDono ? "proprietario" : "inquilino" };
+    if ((!souDono && c.tenantId !== userId) || c.tenantId === c.ownerId) continue;
+    const id = idDe(c.tenantId, c.ownerId, c.propertyId);
+    if (vistos.has(id)) continue;
+    vistos.add(id);
+    novas.push({ id, contrato: c, outroId: souDono ? c.tenantId : c.ownerId, papel: souDono ? "proprietario" : "inquilino" });
   }
-  return { tipo: "nao_encontrada" };
+  return novas;
 }
 
 /** Qual conversa a tela abre ao carregar: a pedida (se está na lista), nenhuma (se foi pedida e não existe) ou a 1ª. */

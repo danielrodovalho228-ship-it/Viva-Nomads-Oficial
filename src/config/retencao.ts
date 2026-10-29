@@ -170,6 +170,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("exclusao_conta_pedidos", "public.exclusao_conta_pedidos", "hash do e-mail e do IP", "prova do pedido de exclusão", { prazoDias: null, gatilho: "exclusao_conta", modo: "apagar", base: "pendente", fase: 2 }),
   i("eventos", "public.eventos", "sessão e utm (analytics)", "métricas", { prazoDias: 548, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "nada (já apagado aos 18 meses pelo pg_cron da 0067)"),
   i("push_tokens", "public.push_tokens", "token do aparelho", "aviso no app", CONTA),
+  i("qa_entradas", "public.qa_entradas", "conta de teste e hash do IP (QA-LOGIN-B)", "auditoria da entrada da QA", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("limites_uso", "public.limites_uso", "chave com uid ou hash do IP", "limite de uso", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("emails_teste", "public.emails_teste", "e-mails das contas de teste", "o QA ler os e-mails enviados", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("pedidos_ajuda_publicacao", "public.pedidos_ajuda_publicacao", "observação do dono", "ajuda para publicar", CONTA),

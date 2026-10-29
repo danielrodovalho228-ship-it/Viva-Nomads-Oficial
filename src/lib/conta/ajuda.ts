@@ -15,9 +15,9 @@ export interface LinkAjuda {
 
 export const LINKS_AJUDA_CONTA: readonly LinkAjuda[] = [
   { id: "central", rotulo: "Central de ajuda", href: "/ajuda", icone: "BookOpenText", descricao: "Guias e respostas rápidas" },
-  // O atendimento da Viva (assistente + chamado com uma pessoa da equipe) abre pela Central, como o "Falar com a Viva".
+  // O atendimento da Viva (assistente + chamado com uma pessoa da equipe) tem página própria (E84).
   // E71: na tela ele é o cartão em destaque (CONTATO_AJUDA), não uma linha da lista.
-  { id: "fale", rotulo: "Fale com a Viva", href: "/ajuda?novo=1", icone: "MessageSquareText", descricao: CONTATO_LINHA },
+  { id: "fale", rotulo: "Fale com a Viva", href: "/ajuda/fale-com-a-viva", icone: "MessageSquareText", descricao: CONTATO_LINHA },
   { id: "termos", rotulo: "Termos de uso", href: "/termos", icone: "FileText", descricao: "As regras da plataforma" },
   { id: "privacidade", rotulo: "Política de privacidade", href: "/privacidade", icone: "ShieldCheck", descricao: "Seus dados, suas regras" },
 ] as const;

@@ -8,7 +8,8 @@ import { contratoAssinadoEntrePartes, type ContratoParaAlerta } from "@/lib/segu
 import { papelDaConversa, formatarPeriodo, type PapelConversa } from "@/lib/mensagens-filtros";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
-import type { ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
+import { conversasDeContratos, type ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
+import { conversationId } from "@/lib/messages/conversation-id";
 
 export interface ChatMessage {
   id: string;
@@ -101,10 +102,9 @@ export async function listConversations(): Promise<Conversation[]> {
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order("created_at", { ascending: true });
 
-  if (error || !data) return [];
-
   const byConv = new Map<string, Conversation>();
-  for (const m of data as unknown as MsgRow[]) {
+  // Erro na leitura das mensagens: a lista segue só com as conversas de contrato (nunca inventa conversa).
+  for (const m of (error || !data ? [] : data) as unknown as MsgRow[]) {
     const mine = m.sender_id === user.id;
     const otherId = mine ? m.receiver_id : m.sender_id;
     if (!byConv.has(m.conversation_id)) {
@@ -130,11 +130,26 @@ export async function listConversations(): Promise<Conversation[]> {
     conv.preview = texto;
   }
 
+  // E200: a conversa de cada contrato em que sou parte entra na lista desde a criação, mesmo sem mensagem (antes só
+  // aparecia pelo link da estadia, com "Morador" no lugar do nome). Vem antes dos nomes: recebe o nome como as outras.
+  const semMensagem = conversasDeContratos([...byConv.keys()], await contratosDaPessoa(supabase, user.id), user.id, conversationId);
+  const doContrato: Conversation[] = semMensagem.map((n) => ({
+    id: n.id,
+    name: "Conversa",
+    property: n.contrato.titulo,
+    preview: "",
+    otherId: n.outroId,
+    propertyId: n.contrato.propertyId,
+    papel: n.papel,
+    contratoId: n.contrato.id,
+    messages: [],
+  }));
+
   // Nome do outro lado (prompt 6, mesma regra do cartão do candidato): o proprietário vê
   // "Candidato(a)" até aceitar e o nome curto depois; o inquilino vê o nome curto do
   // proprietário. Nome completo e aceite vêm do servidor (service role); sem ele, o
   // proprietário continua vendo "Candidato(a)". Suporte segue com o primeiro nome (RPC 0057).
-  const conversas = [...byConv.values()];
+  const conversas = [...doContrato, ...byConv.values()];
   const outros = [...new Set(conversas.map((c) => c.otherId).filter(Boolean))] as string[];
   if (outros.length > 0) {
     const { data: nomes } = await supabase.rpc("primeiros_nomes", { ids: outros });
@@ -165,8 +180,8 @@ export async function listConversations(): Promise<Conversation[]> {
       });
     }
   }
-  await enriquecer(supabase, [...byConv.values()], user.id);
-  return [...byConv.values()];
+  await enriquecer(supabase, conversas, user.id);
+  return conversas;
 }
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;
@@ -225,30 +240,30 @@ async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string)
 }
 
 /**
- * E200: os contratos em que a pessoa é parte (morador ou dono do imóvel), para abrir a conversa de um contrato que
- * ainda não tem mensagem. A leitura vai pela sessão (RLS); nada de cliente de serviço.
+ * E200: os contratos em que a pessoa é parte (morador ou dono do imóvel), para a conversa de cada um estar na lista
+ * mesmo sem mensagem. A leitura vai pela sessão (RLS); nada de cliente de serviço. Best-effort: falhou, lista sem elas.
  */
-export async function contratosParaConversa(): Promise<{ userId: string; contratos: ContratoParaConversa[] } | null> {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const colunas = "id, tenant_id, property_id, properties ( title, owner_id )";
-  const { data: meus } = await supabase.from("properties").select("id").eq("owner_id", user.id);
-  const idsImoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);
-  const [{ data: comoMorador }, { data: comoDono }] = await Promise.all([
-    supabase.from("contratos").select(colunas).eq("tenant_id", user.id),
-    idsImoveis.length ? supabase.from("contratos").select(colunas).in("property_id", idsImoveis) : Promise.resolve({ data: [] }),
-  ]);
-  type Linha = { id: string; tenant_id: string; property_id: string; properties: { title: string | null; owner_id: string } | null };
-  const vistos = new Set<string>();
-  const contratos: ContratoParaConversa[] = [];
-  for (const c of [...((comoMorador ?? []) as unknown as Linha[]), ...((comoDono ?? []) as unknown as Linha[])]) {
-    if (vistos.has(c.id) || !c.properties?.owner_id) continue;
-    vistos.add(c.id);
-    contratos.push({ id: c.id, tenantId: c.tenant_id, ownerId: c.properties.owner_id, propertyId: c.property_id, titulo: c.properties.title ?? "Imóvel" });
+async function contratosDaPessoa(supabase: Supa, userId: string): Promise<ContratoParaConversa[]> {
+  try {
+    const colunas = "id, tenant_id, property_id, properties ( title, owner_id )";
+    const { data: meus } = await supabase.from("properties").select("id").eq("owner_id", userId);
+    const idsImoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);
+    const [{ data: comoMorador }, { data: comoDono }] = await Promise.all([
+      supabase.from("contratos").select(colunas).eq("tenant_id", userId).order("created_at", { ascending: false }),
+      idsImoveis.length
+        ? supabase.from("contratos").select(colunas).in("property_id", idsImoveis).order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+    ]);
+    type Linha = { id: string; tenant_id: string; property_id: string; properties: { title: string | null; owner_id: string } | null };
+    const vistos = new Set<string>();
+    const contratos: ContratoParaConversa[] = [];
+    for (const c of [...((comoMorador ?? []) as unknown as Linha[]), ...((comoDono ?? []) as unknown as Linha[])]) {
+      if (vistos.has(c.id) || !c.properties?.owner_id) continue;
+      vistos.add(c.id);
+      contratos.push({ id: c.id, tenantId: c.tenant_id, ownerId: c.properties.owner_id, propertyId: c.property_id, titulo: c.properties.title ?? "Imóvel" });
+    }
+    return contratos;
+  } catch {
+    return [];
   }
-  return { userId: user.id, contratos };
 }

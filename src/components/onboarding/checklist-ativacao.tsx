@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { Check, Circle } from "lucide-react";
 import { ROTULO_PAPEL, type ChecklistAtivacao } from "@/lib/onboarding/ativacao";
+import { cn } from "@/lib/utils";
 
 /**
  * Checklist de ativação de um papel (Prompt 43, adendo de onboarding): lista com check e a ação dentro do item, sem
  * barra nem porcentagem. Fica no topo do Início até a ativação e some sozinho (quem decide é checklistsDoInicio).
  */
-export function ChecklistAtivacaoBloco({ checklist }: { checklist: ChecklistAtivacao }) {
+export function ChecklistAtivacaoBloco({ checklist, embutido = false }: { checklist: ChecklistAtivacao; embutido?: boolean }) {
+  // E218: "embutido" = dentro do bloco principal do Início do dono (sem a moldura própria).
   return (
-    <section className="mb-6 rounded-xl border border-line bg-white p-4 sm:p-6" data-testid="checklist-ativacao" data-papel={checklist.papel}>
+    <section
+      className={cn(embutido ? "mt-6 border-t border-line pt-4" : "mb-6 rounded-xl border border-line bg-white p-4 sm:p-6")}
+      data-testid="checklist-ativacao"
+      data-papel={checklist.papel}
+      data-lugar={embutido ? "dentro" : undefined}
+    >
       <p className="text-xs font-semibold text-muted">{ROTULO_PAPEL[checklist.papel]}</p>
       <h2 className="font-title text-lg font-semibold text-ink">{checklist.titulo}</h2>
       <ul className="mt-3 divide-y divide-line">

@@ -45,7 +45,8 @@ export const PUBLIC_NAV = [
 ] as { href: string; label: string }[];
 
 /** "Fale com a Viva" em texto no topo público (a mesma página de ajuda do link da /buscar). */
-export const FALE_COM_A_VIVA = { href: "/ajuda", label: "Fale com a Viva" } as const;
+// E84: "Fale com a Viva" tem página própria (a Central de ajuda é o /ajuda).
+export const FALE_COM_A_VIVA = { href: "/ajuda/fale-com-a-viva", label: "Fale com a Viva" } as const;
 
 /**
  * Cidades atendidas (com inventário) — usadas no footer e no sitemap.

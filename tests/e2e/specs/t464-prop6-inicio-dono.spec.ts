@@ -1,11 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T464 — PROP-6: Início do dono como no mockup painel-proprietario. Só no laboratório (contas novas).
    1. Dono com rascunho incompleto (390 e 1280): "Continue seu anúncio", % pronto, "Continuar de onde parou", próximos
       passos, a capa do rascunho, "Peça na Viva" (um botão cheio) e os três atalhos. Nada do lado morador.
    2. Dono sem anúncio: "Anuncie seu primeiro imóvel" SEM foto (a imagem padrão aprovada ainda não foi definida).
+  E218 (L-71): o checklist de ativação do dono ("Para publicar seu anúncio", Prompt 50) volta ao Início — DENTRO do
+  bloco "Anuncie seu primeiro imóvel" (2) e logo ABAIXO do bloco "Continue seu anúncio" (1).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -45,6 +48,11 @@ test.describe("T464 — PROP-6: Início do dono", () => {
       await expect(page.getByTestId("inicio-dono-servico")).toHaveText("Pedir um serviço");
       await expect(page.getByTestId("inicio-dono-atalhos").locator("li")).toHaveCount(3);
       await expect(page.getByText("Para encontrar seu imóvel")).toHaveCount(0);
+      // E218: com rascunho, o checklist do dono vem logo abaixo do bloco principal (fora dele).
+      const checklist = page.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]');
+      await expect(checklist).toBeVisible();
+      await expect(checklist).toContainText("Para publicar seu anúncio");
+      await expect(bloco.locator('[data-testid="checklist-ativacao"]')).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t464-inicio-rascunho-${w}.png`, fullPage: true });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.context().close();
@@ -58,6 +66,11 @@ test.describe("T464 — PROP-6: Início do dono", () => {
     const bloco = page.getByTestId("inicio-dono-principal");
     await expect(bloco).toHaveAttribute("data-tipo", "primeiro_anuncio", { timeout: 30_000 });
     await expect(page.getByTestId("inicio-dono-foto")).toHaveCount(0);
+    // E218: sem anúncio, o checklist do dono vem DENTRO do bloco "Anuncie seu primeiro imóvel".
+    const checklist = bloco.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]');
+    await expect(checklist).toHaveAttribute("data-lugar", "dentro");
+    await expect(checklist).toContainText("Para publicar seu anúncio");
+    await expect(checklist.locator("li")).toHaveCount(4);
     await page.screenshot({ path: `${SAIDA}/t464-inicio-sem-anuncio-1280.png`, fullPage: true });
     await page.context().close();
   });

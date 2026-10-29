@@ -81,7 +81,9 @@ export function StatCard({
         </span>
         <Icon className="h-4 w-4 shrink-0 text-sage sm:h-5 sm:w-5" />
       </div>
-      <p className="mt-1 font-title text-xl font-semibold text-forest sm:mt-2 sm:text-2xl">{value}</p>
+      <p className="mt-1 font-title text-xl font-semibold text-forest sm:mt-2 sm:text-2xl" data-testid="stat-valor">
+        {value}
+      </p>
       {hint && (
         <p data-testid="stat-hint" className="mt-1 text-[11px] leading-snug text-muted sm:text-xs">
           {hint}

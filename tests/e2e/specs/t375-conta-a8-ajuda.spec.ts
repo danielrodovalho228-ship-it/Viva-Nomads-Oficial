@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): mexido pelos merges e pulado pelo teto da suíte completa; roda no portão do PR.
 /**
  * T375 — CONTA-A A8 (mockup perfil-08): Conta › Ajuda.
  *   1. Um cartão com Central de ajuda, Fale com a Viva, Termos de uso e Política de privacidade, nessa ordem, cada um
@@ -11,7 +12,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 const SAIDA = "tests/laboratorio/saida";
 const LINKS = [
   ["central", "Central de ajuda", "/ajuda"],
-  ["fale", "Fale com a Viva", "/ajuda?novo=1"],
+  ["fale", "Fale com a Viva", "/ajuda/fale-com-a-viva"], // E84: página própria
   ["termos", "Termos de uso", "/termos"],
   ["privacidade", "Política de privacidade", "/privacidade"],
 ] as const;

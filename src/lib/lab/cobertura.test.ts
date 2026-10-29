@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-type Entrada = { personas: string[]; specs: string[] };
+type Entrada = { personas: string[]; specs: string[]; semTela?: string };
 type Mapa = { paginas: Record<string, Entrada>; rotas: Record<string, Entrada>; actions: Record<string, Entrada> };
 type Gerador = {
   listarPaginas(): string[];
@@ -104,3 +104,19 @@ test("migração 0173 cria lab_execucoes.por_categoria de forma idempotente, com
   assert.match(aplicar, /20261019000173/);
   assert.match(rollback, /drop column if exists por_categoria/);
 });
+
+test("porta sem tela: a lacuna fica anotada com o motivo e a guarda que a cobre (E205-B2: renovarBloco)", () => {
+  const portas = Object.entries(mapa.actions).filter(([, e]) => e.semTela !== undefined);
+  for (const [chave, e] of portas) {
+    assert.ok((e.semTela ?? "").length > 40, `${chave}: o motivo da porta sem tela precisa estar escrito`);
+    assert.match(e.semTela ?? "", /\.test\.ts/, `${chave}: diga qual guarda cobre a porta sem tela`);
+  }
+  const renovar = mapa.actions["src/lib/data/actions.ts#renovarBloco"];
+  assert.ok(renovar?.semTela, "renovarBloco está anotado como porta sem tela");
+  assert.deepEqual(renovar.specs, [], "sem spec de verdade: continua contada como lacuna no %");
+  const guarda = readFileSync(join(RAIZ, "src/lib/estadia/lembrete-bloco.test.ts"), "utf8");
+  assert.match(guarda, /ler\("\.\.\/data\/actions\.ts"\)/, "a guarda que a anotação cita lê o actions.ts do renovarBloco");
+  const acoes = readFileSync(join(RAIZ, "src/lib/data/actions.ts"), "utf8");
+  assert.match(acoes.slice(acoes.indexOf("export async function renovarBloco")), /lembreteDeBlocoNoAceite\(admin, contratoId\)/, "o renovarBloco chama o lembrete do aceite");
+});
+

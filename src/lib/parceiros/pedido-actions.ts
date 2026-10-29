@@ -19,6 +19,7 @@ import { categoriaValida, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { imoveisParaServico } from "./imoveis-servico";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
+import { EVENTOS_DE_HORARIO, reagendamentoPendente } from "@/lib/automacao/remarcacao";
 import { hashPerceptual, reconverterFotoParaWebp, semMetadados } from "@/lib/foto-reconversao";
 import {
   CHAVE_CONVERSA_PEDIDO,
@@ -608,6 +609,8 @@ export interface DetalhePedido {
   automatico: boolean;
   aguardandoDono: boolean;
   semResposta: boolean;
+  /** E213-B: a estadia foi renovada e o pedido aceito espera o parceiro confirmar ou recusar a nova data. */
+  reagendamento: boolean;
 }
 
 export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido | null> {
@@ -615,7 +618,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
   if ("erro" in c) return null;
   const { admin, p, papel, userId } = c;
   const parceiroUser = p.parceiros!.user_id;
-  const [cli, imo, ent, msgs, avs, propostaParceiro] = await Promise.all([
+  const [cli, imo, ent, msgs, avs, propostaParceiro, horarioEv] = await Promise.all([
     admin.from("profiles").select("full_name").eq("id", p.cliente_id).maybeSingle(),
     p.property_id ? admin.from("properties").select("title, address, city, area_m2, bedrooms, owner_id").eq("id", p.property_id).maybeSingle() : Promise.resolve({ data: null }),
     admin.from("parceiro_entregas").select("id, legenda").eq("pedido_id", p.id).order("criado_em"),
@@ -629,6 +632,9 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
       .limit(300),
     admin.from("parceiro_avaliacoes").select("autor_id, nota, texto, status").eq("pedido_id", p.id),
     admin.from("parceiro_pedido_eventos").select("dados").eq("pedido_id", p.id).eq("tipo", "propor_horario").order("criado_em", { ascending: false }).limit(1).maybeSingle(),
+    p.origem === "automatico" && p.status === "aceito"
+      ? admin.from("parceiro_pedido_eventos").select("tipo").eq("pedido_id", p.id).in("tipo", EVENTOS_DE_HORARIO as unknown as string[]).order("criado_em", { ascending: false }).limit(1)
+      : Promise.resolve({ data: [] }),
   ]);
   const { count: versoesOrcamento } = await admin.from("parceiro_pedido_eventos").select("id", { count: "exact", head: true }).eq("pedido_id", p.id).eq("tipo", "orcar");
   const im = imo.data as { title: string | null; address: string | null; city: string | null; area_m2: number | null; bedrooms: number | null; owner_id: string } | null;
@@ -678,6 +684,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     automatico: p.origem === "automatico",
     aguardandoDono: p.aguardando_dono,
     semResposta: !!p.sem_resposta_avisado_em && p.status === "solicitado",
+    reagendamento: reagendamentoPendente(p.status, ((horarioEv.data ?? []) as { tipo: string }[]).map((e) => e.tipo)),
   };
 }
 

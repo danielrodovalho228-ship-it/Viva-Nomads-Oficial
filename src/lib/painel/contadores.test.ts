@@ -34,6 +34,7 @@ test("resposta completa vira os contadores; o formato é fechado (sem campo a ma
     imoveisAtivos: 3,
     parceiro: true,
     estadiaAtiva: true,
+    observadorQa: true,
     extra: "não passa",
   });
   assert.deepEqual(c, {
@@ -45,6 +46,7 @@ test("resposta completa vira os contadores; o formato é fechado (sem campo a ma
     imoveisAtivos: 3,
     parceiro: true,
     estadiaAtiva: true,
+    observadorQa: true,
   });
 });
 
@@ -149,4 +151,13 @@ test("PROP-0 (casca): o estado do menu nasce do valor do servidor e o efeito de 
   assert.match(s, /import \{ useContadoresIniciais \} from "@\/components\/painel\/contadores-iniciais";/);
   assert.match(s, /const contadoresIniciais = useContadoresIniciais\(\);\n\s+const \[contadores, setContadores\] = useState<ContadoresPainel>\(contadoresIniciais \?\? CONTADORES_VAZIOS\);/);
   assert.doesNotMatch(s, /useState<ContadoresPainel>\(CONTADORES_VAZIOS\)/);
+});
+
+test("E216: observadorQa chega só como true explícito e nunca sai para quem não é admin", async () => {
+  const { normalizarContadores, contadoresVisiveis, CONTADORES_VAZIOS } = await import("./contadores.ts");
+  assert.equal(normalizarContadores({ observadorQa: true }).observadorQa, true);
+  assert.equal(normalizarContadores({ observadorQa: "true" }).observadorQa, false);
+  assert.equal(CONTADORES_VAZIOS.observadorQa, false);
+  assert.equal(contadoresVisiveis({ ...CONTADORES_VAZIOS, observadorQa: true }, false).observadorQa, false);
+  assert.equal(contadoresVisiveis({ ...CONTADORES_VAZIOS, observadorQa: true }, true).observadorQa, true);
 });

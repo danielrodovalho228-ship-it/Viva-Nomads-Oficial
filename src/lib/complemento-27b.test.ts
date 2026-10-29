@@ -89,8 +89,9 @@ test("3. limpezas: vazio = sem limite (null); 0 só se o dono escolher 'Nenhuma'
   assert.deepEqual(normalizarLimites({ valorMinimo: null, limpezasMax: 0 }), { valorMinimo: null, limpezasMax: 0 });
   assert.deepEqual(normalizarLimites({ valorMinimo: null, limpezasMax: "2" }), { valorMinimo: null, limpezasMax: 2 });
   const tela = ler("../components/anuncio/blocos-cadastro.tsx");
-  assert.match(tela, /<option value="">Sem limite<\/option>/);
-  assert.match(tela, /<option value="0">Nenhuma<\/option>/);
+  // E193: pílulas de escolha única (antes, <select>): "Sem limite" grava null e "Nenhuma" grava 0.
+  assert.match(tela, /\{ v: null, r: "Sem limite" \}/);
+  assert.match(tela, /\{ v: 0, r: "Nenhuma" \}/);
   // Registros: a 0170 troca os 0 gravados pelo defeito por null, guardando as linhas para o rollback.
   const sql = ler("../../supabase/producao/aplicar-0170.sql");
   assert.match(sql, /update public\.property_negociacao_limites set limpezas_max = null where limpezas_max = 0;/);

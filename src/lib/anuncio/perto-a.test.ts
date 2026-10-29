@@ -23,9 +23,9 @@ test("cadastro: três estados (carregando / achou / não achou) e o aviso sem en
   assert.match(b, /Adicionar um lugar/);
 });
 
-test("cadastro: cada lugar com o interruptor 'Mostrar' (padrão do toggle) e 'Está errado'", () => {
+test("cadastro: cada lugar com a pílula 'Mostrar' (E193: escolha múltipla) e 'Está errado'", () => {
   const b = ler("components/anuncio/blocos-cadastro.tsx");
-  assert.match(b, /<Switch checked=\{marcado\} onChange=\{onAlternar\} label=\{`Mostrar \$\{l\.nome\} no anúncio`\} testId="proximidade-mostrar" \/>/);
+  assert.match(b, /<Pilula papel="switch" on=\{marcado\} onClick=\{onAlternar\} aria-label=\{`Mostrar \$\{l\.nome\} no anúncio`\} testid="proximidade-mostrar"/);
   assert.match(b, /data-testid="proximidade-errado"[\s\S]{0,40}Está errado/);
   assert.doesNotMatch(b, /aria-pressed=\{marcado\}/);
 });
