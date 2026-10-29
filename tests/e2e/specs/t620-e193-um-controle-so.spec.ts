@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T613 — E193 (auditoria de 28/10): um só estilo de controle no assistente de cadastro. Em cada etapa, inventaria os
+  T620 — E193 (auditoria de 28/10): um só estilo de controle no assistente de cadastro. Em cada etapa, inventaria os
   controles de escolha à vista e classifica: "pilula" (botão/rótulo arredondado de chip), "cartao" (botão-cartão de
   escolha), "caixa" (checkbox quadrado à vista), "lista" (select nativo), "chave" (switch). Dentro do assistente não
   pode haver "caixa" nem "lista" (exceção anotada: o Estado/UF da busca de CEP, que nem aparece sem abrir a busca).
@@ -11,7 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t613.${sufixo}@lab.vivanomads.test`, nome: "Cora Controle", role: "owner" as const };
+const dono = { email: `dono.t620.${sufixo}@lab.vivanomads.test`, nome: "Cora Controle", role: "owner" as const };
 const ids: Record<string, string> = {};
 const ETAPAS = ["tipo", "fotos", "endereco", "detalhes", "comodidades", "regras", "descricao", "preco", "disponibilidade", "revisao"] as const;
 
@@ -43,7 +43,7 @@ const inventario = (p: Page) =>
     return Object.fromEntries(Object.entries(achados).map(([k, v]) => [k, [...new Set(v)]]));
   });
 
-test.describe("T613 — E193: um só estilo de controle no cadastro", () => {
+test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   // Sem "serial": a 390 roda mesmo se a 1280 falhar (a rodada "antes" mostra as duas larguras).
   test.describe.configure({ timeout: 240_000 });
@@ -51,7 +51,7 @@ test.describe("T613 — E193: um só estilo de controle no cadastro", () => {
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t613 ${sufixo}`);
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t620 ${sufixo}`);
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -67,10 +67,10 @@ test.describe("T613 — E193: um só estilo de controle no cadastro", () => {
         await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
         await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const inv = await inventario(p);
-        console.log(`t613 ${largura} ${etapa}`, JSON.stringify(inv));
+        console.log(`t620 ${largura} ${etapa}`, JSON.stringify(inv));
         if (inv.caixa.length) falhas.push(`${etapa}: caixas ${inv.caixa.join(" | ")}`);
         if (inv.lista.length) falhas.push(`${etapa}: listas ${inv.lista.join(" | ")}`);
-        if (["comodidades", "regras", "preco", "disponibilidade", "revisao"].includes(etapa)) await p.screenshot({ path: `${SAIDA}/t613-${etapa}-${largura}.png`, fullPage: true });
+        if (["comodidades", "regras", "preco", "disponibilidade", "revisao"].includes(etapa)) await p.screenshot({ path: `${SAIDA}/t620-${etapa}-${largura}.png`, fullPage: true });
       }
       expect(falhas, falhas.join("\n")).toEqual([]);
       await p.context().close();
