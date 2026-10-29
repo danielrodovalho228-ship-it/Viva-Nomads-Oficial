@@ -29,6 +29,7 @@ import {
   salvarChecklistParceria,
   suspenderParceiro,
 } from "@/lib/parceiros/admin-actions";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { textoHaDias } from "@/lib/parceiros/fila-pendentes";
 
 export interface Ficha {
@@ -88,7 +89,7 @@ function useAcao() {
   return { rodar, pendente, aviso };
 }
 
-export function FichaSolicitacao({ f }: { f: Ficha }) {
+export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura?: boolean }) {
   const { rodar, pendente, aviso } = useAcao();
   const [check, setCheck] = useState<Record<string, unknown>>(f.checklist);
   const [motivo, setMotivo] = useState("");
@@ -213,6 +214,7 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
         </fieldset>
       )}
 
+      {soLeitura ? <SoLeituraQa className="mt-4" /> : (
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start">
         {!aguardando && (
           <ConfirmarNaPagina
@@ -249,13 +251,14 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
           </ConfirmarNaPagina>
         </div>
       </div>
-      {!completo && !aguardando && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
+      )}
+      {!completo && !aguardando && !soLeitura && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
       {aviso}
     </Panel>
   );
 }
 
-export function LinhaAprovada({ f }: { f: Ficha }) {
+export function LinhaAprovada({ f, soLeitura = false }: { f: Ficha; soLeitura?: boolean }) {
   const { rodar, pendente, aviso } = useAcao();
   const vencido = f.linkVencido;
   return (
@@ -270,9 +273,11 @@ export function LinhaAprovada({ f }: { f: Ficha }) {
             {f.novoLinkPedidoEm && <span className="font-semibold text-amber-800"> · pediu novo link em {dataHora(f.novoLinkPedidoEm)}</span>}
           </p>
         </div>
+        {soLeitura ? <SoLeituraQa /> : (
         <ConfirmarNaPagina aviso="Mandar um novo link? O link anterior deixa de valer." confirmar="Reenviar" onConfirmar={() => rodar(() => reenviarAtivacao(f.id), "Novo link enviado.")} disabled={pendente} size="sm" testid="reenviar-ativacao">
           Reenviar ativação
         </ConfirmarNaPagina>
+        )}
       </div>
       {aviso}
     </li>
@@ -281,7 +286,9 @@ export function LinhaAprovada({ f }: { f: Ficha }) {
 
 export function LinhaAtiva({
   p,
+  soLeitura = false,
 }: {
+  soLeitura?: boolean;
   p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null; cartao: { gerados: number; pedidos: number } };
 }) {
   const { rodar, pendente, aviso } = useAcao();
@@ -305,7 +312,8 @@ export function LinhaAtiva({
             {p.teste && " (conta de teste: fora dos totais)"}
           </p>
         </div>
-        {p.status !== "suspenso" && (
+        {p.status !== "suspenso" && soLeitura && <SoLeituraQa />}
+        {p.status !== "suspenso" && !soLeitura && (
           <div className="flex flex-wrap items-center gap-2">
             <input aria-label="Motivo da suspensão" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Motivo" className="h-10 rounded-lg border border-sage-200 px-3 text-sm" />
             <ConfirmarNaPagina aviso="Suspender o parceiro? A página sai do ar e da busca." confirmar="Suspender" onConfirmar={() => rodar(() => suspenderParceiro(p.id, motivo), "Parceiro suspenso.")} disabled={pendente || motivo.trim().length < 5} size="sm" variant="secondary">
@@ -319,10 +327,12 @@ export function LinhaAtiva({
   );
 }
 
-export function SuporteForm() {
+export function SuporteForm({ soLeitura = false }: { soLeitura?: boolean }) {
   const { rodar, pendente, aviso } = useAcao();
   const [email, setEmail] = useState("");
   const [nome, setNome] = useState("");
+  // Pendência 3 do QA-LOGIN-B v2: abrir pedido por alguém cria dado real — fechado para o admin observador da QA.
+  if (soLeitura) return <SoLeituraQa />;
   return (
     <div className="space-y-2">
       <p className="text-sm text-muted">A pessoa recebe um convite por e-mail, entra com esta conta, completa os dados e confirma o envio.</p>

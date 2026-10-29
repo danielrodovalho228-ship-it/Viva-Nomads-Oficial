@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { formatBRL, cn } from "@/lib/utils";
 import { motivoLabel, PEDIDO_STATUS_LABEL } from "@/lib/pedidos/pedidos";
 import { moderarPedido, reativarPedido } from "@/lib/data/pedidos-admin";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { MotivoDialog } from "@/components/admin/motivo-dialog";
 import { dataPedidoBR, textoBairros, textoFaixaValor } from "@/lib/pedidos/campos";
 import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
@@ -54,6 +55,7 @@ export function AdminPedidosClient({
   rotuloFiltro,
   recorte,
   filtroUrl,
+  soLeitura = [],
 }: {
   pedidos: Record<string, unknown>[];
   metricas: MetricasPedidos | null;
@@ -61,6 +63,8 @@ export function AdminPedidosClient({
   rotuloFiltro: string | null;
   recorte: Recorte;
   filtroUrl: { de: string; ate: string; cidade: string | null; status: string | null; expirando: boolean };
+  /** Pendência 3 do QA-LOGIN-B v2: pedidos que o admin observador da QA só lê (sem Ocultar/Reativar). */
+  soLeitura?: string[];
 }) {
   const router = useRouter();
   const todos = pedidos as unknown as Pedido[];
@@ -212,7 +216,9 @@ export function AdminPedidosClient({
                     </td>
                     <td className="py-3">
                       <div className="flex justify-end">
-                        {p.status === "removido_admin" ? (
+                        {soLeitura.includes(p.id) ? (
+                          <SoLeituraQa className="text-right" />
+                        ) : p.status === "removido_admin" ? (
                           <Button
                             variant="ghost"
                             onClick={() => reativar(p.id)}

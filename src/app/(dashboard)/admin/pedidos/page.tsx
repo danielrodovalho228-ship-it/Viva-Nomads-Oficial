@@ -10,6 +10,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { hojeBR } from "@/lib/utils";
 import { AdminPedidosClient } from "./admin-pedidos-client";
 import { tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 /**
  * Admin → Pedidos. Cartões e lista com o MESMO recorte (complemento do P29, item 5b): período (padrão: 30 dias) e
@@ -64,6 +65,8 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
     ? await colunasPedidosAdmin(admin, lista.map((x) => ({ id: String(x.id), inquilino_id: String(x.inquilino_id) }))).catch(() => new Map())
     : new Map();
   const listaComColunas = lista.map((x) => ({ ...x, colunas: colunas.get(String(x.id)) ?? null }));
+  // Pendência 3 do QA-LOGIN-B v2: pedido de conta real → o admin observador da QA só lê.
+  const soLeitura = await soLeituraNaTela(lista.map((x) => ({ id: String(x.id), alvo: { pedidosMoradia: [String(x.id)] } })));
   return (
     <>
       <NumeroDaFonte chave="pedidos" />
@@ -83,6 +86,7 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
       rotuloFiltro={rotuloFiltro}
       recorte={recorte}
       filtroUrl={{ de: p.inicio, ate: p.fim, cidade, status: status || null, expirando }}
+      soLeitura={soLeitura}
     />
     </>
   );

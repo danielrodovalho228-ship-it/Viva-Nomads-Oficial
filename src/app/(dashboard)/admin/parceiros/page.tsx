@@ -17,6 +17,7 @@ import { HREF_SISTEMA } from "@/config/chaves-ambiente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { TIPOS_PARCEIRO, contarPorTipo, doTipo, hrefParceiros, tipoDoParam } from "@/lib/admin/parceiros-tipo";
 import { diasNaFila, ordenarPendentes } from "@/lib/parceiros/fila-pendentes";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/parceiros") };
 
@@ -128,6 +129,21 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     };
   });
   const geral = lerParceiroGeral(geralLinha.data?.valor, geralLinha.data?.ligada === true);
+  // Pendência 3 do QA-LOGIN-B v2: o admin observador da QA vê sem os botões o que o servidor recusaria — pedido e
+  // parceiro de conta real (ou sem conta) e o pedido aberto pelo suporte (dado novo, real). E227-B: o painel de
+  // interesses do formulário antigo saiu — a parceria tem uma fila só.
+  const SUPORTE = "suporte";
+  const soLeitura = new Set(
+    await soLeituraNaTela([
+      ...lista.map((s) => {
+        const uid = (s.user_id as string | null) ?? null;
+        return { id: s.id as string, alvo: { perfis: [uid], semPerfil: uid ? 0 : 1 } };
+      }),
+      ...ativosDoTipo.map((p) => ({ id: p.id as string, alvo: { perfis: [(p.user_id as string | null) ?? null], semPerfil: p.user_id ? 0 : 1 } })),
+      { id: SUPORTE },
+    ])
+  );
+  const observador = soLeitura.has(SUPORTE);
 
   const avisosPorCidade = Object.values(
     avisosLinhas.reduce<Record<string, { cidade: string; uf: string; categoria: string; total: number }>>((acc, a) => {
@@ -222,6 +238,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
                 {ativosDoTipo.map((p) => (
                   <LinhaAtiva
                     key={p.id as string}
+                    soLeitura={soLeitura.has(p.id as string)}
                     p={{
                       id: p.id as string,
                       slug: p.slug as string,
@@ -246,17 +263,17 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
           <Panel>
             <ul className="divide-y divide-line">
               {fichas.map((f) => (
-                <LinhaAprovada key={f.id} f={f} />
+                <LinhaAprovada key={f.id} f={f} soLeitura={soLeitura.has(f.id)} />
               ))}
             </ul>
           </Panel>
         ) : (
-          fichas.map((f) => <FichaSolicitacao key={f.id} f={f} />)
+          fichas.map((f) => <FichaSolicitacao key={f.id} f={f} soLeitura={soLeitura.has(f.id)} />)
         )}
       </div>
 
       <Panel title="Abrir pedido por alguém (suporte)" className="mt-6">
-        <SuporteForm />
+        <SuporteForm soLeitura={observador} />
       </Panel>
 
       <Panel title="Taxa de serviço dos parceiros" className="mt-4">

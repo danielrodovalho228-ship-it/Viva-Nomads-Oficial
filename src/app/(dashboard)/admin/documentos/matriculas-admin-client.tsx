@@ -8,6 +8,7 @@ import { Check, ExternalLink, FileText, X } from "lucide-react";
 import { Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { decidirMatriculaAdmin, type MatriculaNaFila } from "@/lib/data/matriculas-admin";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import type { ContadoresMatricula } from "@/lib/documento/fila-matricula";
 import { MOTIVOS_RECUSA, comporMotivoRecusa } from "@/lib/moderacao-doc";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,18 @@ import { cn } from "@/lib/utils";
  * Matrículas (prompt 19): a matrícula ao lado do resumo lido e do laudo CAF (só os booleanos). Em revisão e as
  * "prováveis" (amostra) ficam aqui até a equipe decidir: Aprovar / Pedir documento (motivo da tabela) / Recusar.
  */
-export function MatriculasAdmin({ itens, contadores, ultimaDecisao = null }: { itens: MatriculaNaFila[]; contadores: ContadoresMatricula; ultimaDecisao?: string | null }) {
+export function MatriculasAdmin({
+  itens,
+  contadores,
+  ultimaDecisao = null,
+  soLeitura = [],
+}: {
+  itens: MatriculaNaFila[];
+  contadores: ContadoresMatricula;
+  ultimaDecisao?: string | null;
+  /** Pendência 3 do QA-LOGIN-B v2: linhas que o admin observador da QA só lê (sem os botões). */
+  soLeitura?: string[];
+}) {
   const [fila, setFila] = useState(itens);
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -53,7 +65,7 @@ export function MatriculasAdmin({ itens, contadores, ultimaDecisao = null }: { i
         {fila.length === 0 ? (
           <FilaVazia ultimaDecisao={ultimaDecisao} />
         ) : (
-          fila.map((m) => <MatriculaCard key={m.id} m={m} onDecidido={() => decidida(m.id)} />)
+          fila.map((m) => <MatriculaCard key={m.id} m={m} onDecidido={() => decidida(m.id)} soLeitura={soLeitura.includes(m.id)} />)
         )}
       </div>
     </section>
@@ -68,7 +80,7 @@ function Sim({ ok, rotulo }: { ok: boolean; rotulo: string }) {
   );
 }
 
-function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () => void }) {
+function MatriculaCard({ m, onDecidido, soLeitura = false }: { m: MatriculaNaFila; onDecidido: () => void; soLeitura?: boolean }) {
   const [modo, setModo] = useState<"pedir" | "recusar" | null>(null);
   const [motivo, setMotivo] = useState<string>("");
   const [detalhe, setDetalhe] = useState("");
@@ -177,6 +189,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
           </div>
         )}
         {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
+        {soLeitura ? <SoLeituraQa className="mt-3" /> : (
         <div className="mt-3 flex flex-wrap gap-2">
           {modo ? (
             <>
@@ -201,6 +214,7 @@ function MatriculaCard({ m, onDecidido }: { m: MatriculaNaFila; onDecidido: () =
             </>
           )}
         </div>
+        )}
       </Panel>
     </div>
   );
