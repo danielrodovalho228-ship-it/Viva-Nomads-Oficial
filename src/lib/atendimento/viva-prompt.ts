@@ -6,7 +6,7 @@
 */
 import { blocoParceirosPrompt } from "./parceiros-texto.ts";
 import { FAQ } from "./faq.ts";
-import { REGRAS_CONTRATO } from "../../config/planos.ts";
+import { GESTOR_PRECO, REGRAS_CONTRATO } from "../../config/planos.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import { PROMESSA_ATENDIMENTO, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
@@ -24,7 +24,7 @@ export function fontes(): string {
     "",
     "## Preço para proprietários (fonte oficial, regra única)",
     REGRA_PRECO_TEXTO,
-    "A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais é o Plano Gestor (condições negociadas, sem percentual fixo público; convide a falar com a equipe). Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (12% de 3 meses a R$ 3.000 por mês = R$ 1.080)\". Comparação em /precos.",
+    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos: 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–30 = 6%; com 31 ou mais, condições negociadas (sem percentual fixo público; convide a falar com a equipe). O Plano Gestor vale a partir de ${GESTOR_PRECO.minimoImoveis} imóveis. Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (12% de 3 meses a R$ 3.000 por mês = R$ 1.080)\". Comparação em /precos.`,
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",

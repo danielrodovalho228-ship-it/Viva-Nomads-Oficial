@@ -3,7 +3,7 @@ import { parcelasDoMes, type ContaPeriodo } from "../precos.ts";
 
 /*
   "O que vai para o seu bolso" (ordem 6696611c, tela 10). Só monta a conta; a fórmula é a ÚNICA de regra.ts
-  (comissaoSobreContrato) e as faixas vêm de FAIXAS_COMISSAO_PADRAO. 31+ imóveis = Plano Gestor: sem valor
+  (comissaoSobreContrato) e as faixas vêm de FAIXAS_COMISSAO_PADRAO. Faixa sem teto (condição negociada): sem valor
   calculado, "fale com a Viva".
 
   Adendo do #851 e E51 (a Viva só intermedia, não segura pagamentos): a tela mostra DOIS FATOS SEPARADOS — o que o

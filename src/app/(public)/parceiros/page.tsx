@@ -13,6 +13,7 @@ import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
+import { GESTOR_PRECO } from "@/config/planos";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
@@ -24,7 +25,7 @@ const CARDS = [
   { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Página com portfólio, galeria, serviços e prazos. A conversa é pelas mensagens da Viva.",
     links: [{ href: "/parceiros?categoria=fotografia#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: "Taxa menor por volume e Plano Gestor para quem tem 31 ou mais imóveis.",
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor para quem tem ${GESTOR_PRECO.minimoImoveis} ou mais imóveis.`,
     links: [{ href: "/precos", rotulo: "Ver o Plano Gestor" }] },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
     links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },

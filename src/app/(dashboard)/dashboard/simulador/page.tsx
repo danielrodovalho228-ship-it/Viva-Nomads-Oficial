@@ -56,7 +56,7 @@ export default function SimuladorPage() {
     reposicaoAnualPct: reposicaoPct / 100,
   };
   // Regra única: taxa de serviço por contrato fechado, pela faixa do nº de imóveis ativos. Sem assinatura.
-  // No Plano Gestor (31+) a taxa é negociada: o cálculo usa a da faixa anterior só como referência.
+  // Na faixa sem teto a taxa é negociada: o cálculo usa a da faixa anterior só como referência.
   const faixa = faixaPorImoveisAtivos(imoveisAtivos);
   const taxaTexto = taxaPublicaTexto(faixa);
   const res = useMemo(

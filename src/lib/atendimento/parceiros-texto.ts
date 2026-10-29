@@ -5,6 +5,7 @@
   sobre o valor do serviço, para todas as categorias (texto único em config/taxa-servico-parceiros.ts).
 */
 import { TEXTO_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
+import { GESTOR_PRECO } from "../../config/planos.ts";
 
 export const TIPOS_PARCEIRO =
   "Categorias abertas: Fotografia, mudança, limpeza, lavanderia, montagem de móveis, manutenção e outros serviços para imóveis mobiliados. Empresas que hospedam equipes seguem por /empresas e gestores de imóveis pelo Plano Gestor.";
@@ -30,7 +31,7 @@ export const CONTRATAR_FOTOGRAFO =
   "No passo Fotos do cadastro do imóvel, toque em \"Quer um fotógrafo profissional?\" para ver os fotógrafos parceiros da cidade do imóvel e a página de cada um. Você combina tudo pelas mensagens da Viva; contato e endereço só depois do aceite.";
 
 export const EMPRESAS_E_GESTORES =
-  "Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor para quem tem 31 imóveis ativos ou mais).";
+  `Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor para quem tem ${GESTOR_PRECO.minimoImoveis} imóveis ou mais).`;
 
 /** Bloco para o prompt da Viva. */
 export function blocoParceirosPrompt(): string {
