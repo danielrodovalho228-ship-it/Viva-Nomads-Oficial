@@ -104,7 +104,7 @@ test("E39: Wi-Fi fora das comodidades, do painel, da URL e do alerta (?comod=wif
 test("E39 (2): o portão de publicar exige o campo estruturado de internet (Mbps; 'Não tem internet' barra), nunca texto livre", () => {
   const fatos: FatosAnuncio = {
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio", preco: 2000, garantiaOk: true, sublocacaoOk: true,
-    privacidadeOk: true, documento: "approved", limitePlanoOk: true, descricao: "Internet fibra de 500 Mbps no imóvel. ".repeat(3), selo: false, video: false,
+    privacidadeOk: true, documento: "approved", descricao: "Internet fibra de 500 Mbps no imóvel. ".repeat(3), selo: false, video: false,
   };
   // A descrição fala de internet, mas sem o campo estruturado o rascunho não publica.
   assert.equal(prontidaoAnuncio({ ...fatos, internetOk: false }).podePublicar, false);

@@ -34,7 +34,7 @@ import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
-import { donoPodeReativar, mensagemLimitePublicar, mensagemLimiteReativar, situacaoLimite, textoDaPausa, type EmAndamento, type SituacaoLimite } from "@/lib/anuncio/pausa";
+import { donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { amenityRows } from "@/lib/amenities";
@@ -47,7 +47,6 @@ import { TERMO_IA_VERSAO, validarAceiteIa } from "@/lib/anuncio/termo-ia";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { salvarDeclaracoesConforto } from "@/lib/conforto/servidor";
 import { confortoParaGravar } from "@/lib/conforto/gravacao";
-import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { avisarPedidosDoImovel } from "@/lib/data/pedidos-compat";
 import { avisarBuscasDoImovel } from "@/lib/data/alerta-busca-servidor";
 import { INTERNET_META } from "@/lib/internet";
@@ -767,12 +766,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
     };
   }
 
-  // Limite de anúncios ATIVOS do plano (rascunho e pausado não contam). Só
-  // pesa quando o anúncio vai ser publicado agora.
-  if (!input.asDraft) {
-    const limite = await limiteDePublicacao(supabase, user.id, null);
-    if (limite) return { ok: false, error: limite };
-  }
+  // E233-A: sem limite de anúncios por plano — publicar depende só dos requisitos reais (portões acima e o banco).
 
   // E133 (d): link de vídeo só da plataforma, existente e incorporável (oEmbed). Fica pendente da equipe para aparecer.
   const linkVideo = input.videoUrl?.trim() || null;
@@ -1026,13 +1020,6 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
         error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
       };
     }
-  }
-
-  // Publicar conta no limite de anúncios ATIVOS do plano (antes a edição
-  // publicava sem checar).
-  if (input.asDraft === false) {
-    const limite = await limiteDePublicacao(supabase, user.id, id);
-    if (limite) return { ok: false, error: limite };
   }
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
@@ -1911,36 +1898,6 @@ export async function saveDraftData(snap: {
 }
 
 /**
- * 64-B: a situação do limite do plano (a MESMA conta da prontidão e do painel — situacaoLimite). `exceto` = o anúncio
- * que se quer (re)publicar: os publicados contam sem ele.
- */
-async function situacaoDoLimite(
-  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
-  ownerId: string,
-  exceto: string | null,
-): Promise<SituacaoLimite> {
-  const plan = await planoDoProprietario(supabase, ownerId);
-  let q = supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active");
-  if (exceto) q = q.neq("id", exceto);
-  const { count } = await q;
-  return situacaoLimite(plan as string, count ?? 0);
-}
-
-/**
- * Mensagem de bloqueio se publicar mais um anúncio estoura o limite de anúncios
- * ATIVOS do plano efetivo (assinatura ou Fundador); null se pode. `exceto` = o
- * próprio imóvel sendo (re)publicado (já ativo não conta duas vezes).
- */
-async function limiteDePublicacao(
-  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
-  ownerId: string,
-  exceto: string | null
-): Promise<string | null> {
-  const s = await situacaoDoLimite(supabase, ownerId, exceto);
-  return s.podePublicarNovo ? null : `${mensagemLimitePublicar(s)}.`;
-}
-
-/**
  * Grava as fotos do anúncio em `property_photos` (a 1ª é a capa) — é daí que
  * saem a contagem do "Meus imóveis", o photo_count e a trava de 8 fotos para
  * publicar. Só regrava quando a lista mudou (o autosave roda a cada edição).
@@ -2138,8 +2095,7 @@ export async function pausarAnuncio(id: string): Promise<ResultadoPausa> {
 
 /**
  * Reativar (dono): só o que ELE pausou, e pela MESMA porta da publicação — cidade aberta, prontidão (documento, fotos,
- * padrão mínimo…), aceite do termo de IA quando a descrição veio da IA, e a vaga no plano contando os publicados SEM
- * este. Faltando algo: a lista do que falta, cada item com o link para resolver. Os gatilhos do banco conferem de novo.
+ * padrão mínimo…) e aceite do termo de IA quando a descrição veio da IA (E233-A: sem vaga no plano). Faltando algo: a lista do que falta, cada item com o link para resolver. Os gatilhos do banco conferem de novo.
  */
 export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
   const a = await anuncioDoDono(id);
@@ -2155,13 +2111,11 @@ export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
   const cidade = p.city ? await cidadeFechada(supabase, userId, p.city) : null;
   if (cidade) faltas.push({ rotulo: cidade, href: editar });
   const pr = await prontidaoDoImovel(supabase, userId, id);
-  for (const i of pr?.obrigatorios ?? []) if (!i.ok && i.key !== "limite") faltas.push({ rotulo: i.detalhe ? `${i.label}: ${i.detalhe}` : i.label, href: editar });
+  for (const i of pr?.obrigatorios ?? []) if (!i.ok) faltas.push({ rotulo: i.detalhe ? `${i.label}: ${i.detalhe}` : i.label, href: editar });
   if (p.descricao_gerada_por_ia) {
     const { count } = await supabase.from("anuncio_aceites_ia").select("id", { count: "exact", head: true }).eq("property_id", id).eq("versao_termo", TERMO_IA_VERSAO);
     if (!count) faltas.push({ rotulo: "Aceite do termo da IA (confira o texto e aceite na etapa Revisar)", href: editar });
   }
-  const lim = await situacaoDoLimite(supabase, userId, id);
-  if (!lim.podePublicarNovo) faltas.push({ rotulo: `${mensagemLimiteReativar(lim)}.`, href: "/dashboard/imoveis" });
   if (faltas.length) return { ok: false, erro: "Para reativar, falta:", faltas };
   // Pela sessão do dono: os gatilhos de publicação do banco (documento, fotos, padrão mínimo, laudo, IA) valem aqui.
   const { data, error } = await supabase.from("properties").update({ status: "active" }).eq("id", id).eq("owner_id", userId).eq("status", "paused").select("id");
@@ -2169,15 +2123,4 @@ export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
   await avisarBuscasDoImovel(id).catch(() => null);
   revalidarPausa(id);
   return { ok: true, mensagem: "Anúncio reativado: ele voltou para a busca." };
-}
-
-/** 64-B: o limite do plano do dono logado (painel e Meus imóveis) — a mesma conta da publicação. */
-export async function minhaSituacaoLimite(): Promise<SituacaoLimite | null> {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  return situacaoDoLimite(supabase, user.id, null);
 }

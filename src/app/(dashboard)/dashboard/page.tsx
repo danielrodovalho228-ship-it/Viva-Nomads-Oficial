@@ -1,5 +1,3 @@
-import { BlocoLimite } from "@/components/anuncio/bloco-limite";
-import { minhaSituacaoLimite } from "@/lib/data/actions";
 import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
@@ -119,8 +117,6 @@ export default async function DashboardPage() {
     listarBuscasSalvas().catch(() => []),
   ]);
   const [pausadaEm, capaRascunho] = await Promise.all([contaPausadaEm(), capaDoRascunho(draft?.id ?? null)]);
-  // 64-B: o limite do plano (mesma conta da publicação), para quem já tem anúncio publicado.
-  const limite = imoveisDono.length ? await minhaSituacaoLimite().catch(() => null) : null;
   const rascunho = rascunhoDoDraft(draft);
   // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
   const fatos = await fatosDaConta(draft).catch(() => null);
@@ -180,11 +176,6 @@ export default async function DashboardPage() {
       )}
       {/* Prompt 62-A, Parte 2: 3º passo da escada → os anúncios fora da busca, no topo do painel. */}
       {imoveisDono.length > 0 && <AvisoStrikePainel />}
-      {limite && limite.ativos > 0 && (
-        <div className="mb-4">
-          <BlocoLimite situacao={limite} link />
-        </div>
-      )}
       <VisaoGeral
       imoveisDono={imoveisDono}
       interessados={interessados}

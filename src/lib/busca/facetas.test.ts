@@ -71,7 +71,7 @@ test("E42/E6: a contagem do chip é a do aplicar; opção em 0 desabilita (menos
 test("E39 (b): anúncio novo só publica com a velocidade da internet; o publicado não muda", () => {
   const fatos: FatosAnuncio = {
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio", preco: 2000, garantiaOk: true, sublocacaoOk: true,
-    privacidadeOk: true, documento: "approved", limitePlanoOk: true, descricao: "x".repeat(80), selo: false, video: false,
+    privacidadeOk: true, documento: "approved", descricao: "x".repeat(80), selo: false, video: false,
   };
   const falta = (f: FatosAnuncio) => prontidaoAnuncio(f).obrigatorios.filter((i) => !i.ok).map((i) => i.label);
   assert.deepEqual(falta({ ...fatos, internetOk: false }), [ROTULO_FALTA_INTERNET]);
