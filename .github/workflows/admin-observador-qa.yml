@@ -1,0 +1,57 @@
+# QA-LOGIN-B v2 — "Admin observador da QA": dá (ou tira) o papel de admin observador a UMA conta de teste, pelo id.
+# Roda só à mão (Actions → Admin observador da QA → Run). Chama public.promover_qa_admin(id) / revogar_qa_admin(id)
+# (migração 0251): a conta precisa ser de teste (is_teste) e só pode haver um observador. Nenhum e-mail no código nem
+# no log; o id é validado como uuid antes de chegar ao banco. Segredo: SUPABASE_DB_URL (o mesmo das migrações).
+name: Admin observador da QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      conta_id:
+        description: "Id (uuid) da conta de teste criada pela porta de QA"
+        required: true
+        type: string
+      acao:
+        description: "promover (vira admin observador) ou revogar (volta a conta comum)"
+        required: true
+        type: choice
+        options: [promover, revogar]
+        default: promover
+
+permissions:
+  contents: read
+
+concurrency:
+  group: admin-observador-qa
+  cancel-in-progress: false
+
+jobs:
+  aplicar:
+    if: github.repository == 'danielrodovalho228-ship-it/Viva-Nomads-Oficial'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cliente do Postgres
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+
+      - name: Promover ou revogar
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          CONTA_ID: ${{ inputs.conta_id }}
+          ACAO: ${{ inputs.acao }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Falta o secret SUPABASE_DB_URL."
+            exit 1
+          fi
+          if ! printf '%s' "$CONTA_ID" | grep -Eqi '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; then
+            echo "::error::conta_id não é um uuid."
+            exit 1
+          fi
+          if [ "$ACAO" = "promover" ]; then FUNCAO=promover_qa_admin; else FUNCAO=revogar_qa_admin; fi
+          # psql só troca :'conta' em SQL lido da entrada (não no -c): o id vai como variável, nunca colado no SQL.
+          echo "select public.${FUNCAO}(:'conta'::uuid);" | psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -q -v conta="$CONTA_ID" >/dev/null
+          echo "select 'role=' || role || ' qa_admin=' || qa_admin || ' is_teste=' || is_teste from public.profiles where id = :'conta'::uuid;" \
+            | psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -At -v conta="$CONTA_ID"
