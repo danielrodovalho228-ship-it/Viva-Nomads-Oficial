@@ -99,7 +99,21 @@ export async function irParaAntesDePublicar(page: Page, timeout = 30_000) {
   await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
   await noPasso(page, "revisao", timeout);
   await expect(page.getByTestId("antes-de-publicar")).toBeVisible({ timeout });
+  // E251: as seções do "Antes de publicar" são um acordeão (fechadas ao chegar) — abre todas para quem vai mexer nelas.
+  await abrirSecoesPasso10(page);
   return page.getByTestId("antes-de-publicar");
+}
+
+export type SecaoPasso10 = "operacao" | "identidade" | "documento" | "declaracoes";
+
+/** E251: abre (no lugar) as seções do "Antes de publicar" do Passo 10 que ainda estão fechadas. */
+export async function abrirSecoesPasso10(page: Page, secoes: SecaoPasso10[] = ["operacao", "identidade", "documento", "declaracoes"]) {
+  for (const s of secoes) {
+    const item = page.getByTestId(`antes-secao-${s}`);
+    await expect(item).toBeVisible({ timeout: 20_000 });
+    if ((await item.getAttribute("data-aberta")) !== "1") await page.getByTestId(`antes-secao-${s}-abrir`).click();
+    await expect(item).toHaveAttribute("data-aberta", "1");
+  }
 }
 
 /** Volta passo a passo pelo "Voltar" do rodapé (sem recarregar: o que a tela guardou na memória continua). */

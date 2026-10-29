@@ -61,8 +61,11 @@ test("rodapé do fluxo: 'Passo N de 10' + barra, Voltar (passos 2–10) e um só
   assert.doesNotMatch(pagina, /data-testid="cadastro-(continuar|voltar)"|Cancelar e voltar|<CabecalhoPassos/, "Continuar, Voltar e o passo só no rodapé");
 });
 
-test("sem botão 'Salvar' no cadastro novo: o rascunho salva sozinho ('Salvo às HH:MM'); o Publicar saiu da revisão", () => {
+test("sem botão 'Salvar' no cadastro novo: o rascunho salva sozinho ('Salvo às HH:MM'); um Publicar só por tela (E251)", () => {
   assert.match(pagina, /Salvo\{savedAt \? ` às \$\{savedAt\}` : ""\}/);
-  assert.doesNotMatch(revisar, /Salvar como rascunho|function BotaoPublicar|data-testid="publicar-anuncio"/);
+  assert.doesNotMatch(revisar, /Salvar como rascunho|function BotaoPublicar/);
+  // E251: no computador o "Publicar anúncio" mora na coluna da prévia e o rodapé fica sem primário; no celular, no rodapé.
+  assert.match(revisar, /\{p\.telaLarga && \([\s\S]*?data-testid="publicar-anuncio"/);
+  assert.match(pagina, /: telaLarga\s*\?[^\n]*\n\s*null/);
   assert.match(revisar, /\{p\.editingId \? \(\s*<Button variant="outline" onClick=\{\(\) => p\.publish\(true\)\}/);
 });

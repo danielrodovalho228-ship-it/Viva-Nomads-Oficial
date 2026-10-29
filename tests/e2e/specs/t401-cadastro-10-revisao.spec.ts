@@ -94,8 +94,16 @@ test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
       }
       await expect(lista).toHaveAttribute("data-faltam", "0");
       const cartao = p.getByTestId("revisao-cartao");
+      // E251: no celular a prévia vem recolhida ("Ver como fica o anúncio"), depois da lista.
+      if (w === 390) {
+        await expect(cartao).toBeHidden();
+        await p.getByTestId("previa-recolhida").click();
+      }
       await expect(p.getByTestId("revisao-linha")).toHaveText("1 quarto · 1 banheiro · 40 m²");
-      await expect(p.getByTestId("revisao-total")).toHaveText(/R\$\s?3\.200\/mês no total/);
+      // E251: os três nomes fixos do preço (PROP-2).
+      await expect(p.getByTestId("previa-preco-mensal")).toContainText(/Mensal\s*R\$\s?3\.200/);
+      await expect(p.getByTestId("previa-preco-total-mes")).toContainText("Total por mês (com contas)");
+      await expect(p.getByTestId("previa-preco-total-contrato")).toContainText("Total do contrato");
       const foto = p.getByTestId("revisao-foto");
       await expect.poll(() => foto.evaluate((el) => (el as HTMLImageElement).complete && (el as HTMLImageElement).naturalWidth > 0), { timeout: 15_000 }).toBe(true);
       await expect(p.getByTestId("novo-resumo")).toHaveCount(0);
@@ -103,11 +111,10 @@ test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
       const c = (await cartao.boundingBox())!;
       if (w === 1280) {
         expect(l.x, "lista à esquerda do cartão").toBeLessThan(c.x);
-        await expect.poll(() => lista.locator("h2").evaluate((h) => (h as HTMLElement).innerText.trim())).toBe("Lista de conferência");
       } else {
-        expect(c.y, "no celular o cartão vem antes da lista").toBeLessThan(l.y);
-        await expect.poll(() => lista.locator("h2").evaluate((h) => (h as HTMLElement).innerText.trim())).toBe("Tudo certo para publicar");
+        expect(l.y, "no celular a lista vem antes da prévia (E251)").toBeLessThan(c.y);
       }
+      await expect.poll(() => lista.locator("h3").evaluate((h) => (h as HTMLElement).innerText.trim())).toBe("Tudo certo para publicar");
       await expect(p.locator("main")).not.toContainText(/h[oó]spede|comiss|reserva/i);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       // O "Publicar anúncio" visível não fica sob nenhum elemento fixo (barra de fotos, "Fale com a Viva").

@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
-import { continuarAte, noPasso, abrirCadastroNovo } from "../fixtures/cadastro";
+import { continuarAte, noPasso, abrirCadastroNovo, abrirSecoesPasso10 } from "../fixtures/cadastro";
 
 /*
   T186 — Assistente de cadastro em 10 passos (mockups cadastro-imovel-01..10; antes, os 6 passos do Prompt 43) +
@@ -286,6 +286,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // Endereço (Passo 3) → identidade → matrícula (decisão do Daniel, 18/10), no cartão "Antes de publicar" (E104).
       const antes = page.getByTestId("antes-de-publicar");
       await expect(antes).toBeVisible();
+      await abrirSecoesPasso10(page); // E251: as seções são um acordeão
       const identidade = antes.getByTestId("etapa-identidade");
       await expect(identidade).toHaveAttribute("data-estado", "pendente", { timeout: 15_000 });
       await identidade.getByTestId("identidade-confirmar").click();
@@ -293,10 +294,12 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await antes.getByTestId("documento-vinculo").locator('input[type="file"]').first().setInputFiles({ name: "matricula-ficticia.pdf", mimeType: "application/pdf", buffer: matriculaLab() });
       await expect(page.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 30_000 });
       await expect(page.getByTestId("documento-estado")).toContainText("Documentação conferida");
-      await expect(page.getByTestId("revisar-documento")).toHaveAttribute("data-estado", "aprovado");
-      // Mockup cadastro-imovel-10: o cartão do anúncio (com o total do mês e o desconto) e a lista de conferência.
+      // E251: o estado do documento é a linha da própria seção do acordeão (✓ quando conferido).
+      await expect(page.getByTestId("antes-secao-documento")).toHaveAttribute("data-estado", "ok");
+      // A prévia (recolhida no celular) com os três nomes fixos do preço e o desconto; e a lista de conferência.
+      if (largura < 1024) await page.getByTestId("previa-recolhida").click();
       await expect(page.getByTestId("revisao-cartao")).toContainText("6% de desconto a partir de 6 meses");
-      await expect(page.getByTestId("revisao-total")).toContainText("/mês no total");
+      await expect(page.getByTestId("previa-preco-total-mes")).toContainText("Total por mês (com contas)");
       await expect(page.getByTestId("lista-conferencia")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t186-10-revisao-${largura}.png`, fullPage: true });
       // CADASTRO-MOLDURA: sem botão de salvar — o rascunho salva sozinho e o "Sair" do topo volta a Meus imóveis.

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { abrirNoEndereco, noPasso } from "../fixtures/cadastro";
+import { abrirNoEndereco, noPasso, abrirSecoesPasso10 } from "../fixtures/cadastro";
 
 /*
   T207 — Prompt 25 (reteste do Muse do #838). 390 e 1280 px.
@@ -101,6 +101,7 @@ test.describe("T207 — CEP fantasma, matrícula 400 e validade da identidade (p
       const url = new URL(page.url());
       url.searchParams.set("etapa", "revisao");
       await page.goto(url.pathname + url.search, { waitUntil: "domcontentloaded" });
+      await abrirSecoesPasso10(page, ["identidade"]); // E251: as seções são um acordeão
       await expect(page.getByTestId("identidade-refazer")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("identidade-confirmar")).toHaveText(/Confirmar de novo/);
       await page.getByTestId("etapa-identidade").scrollIntoViewIfNeeded();

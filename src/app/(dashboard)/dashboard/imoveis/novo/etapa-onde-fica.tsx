@@ -1,8 +1,8 @@
 "use client";
 
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
-import { useState } from "react";
-import { MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { MapPin, AlertTriangle, CheckCircle2, ChevronDown } from "lucide-react";
 import { ImportarAnuncio } from "@/components/property/importar-anuncio";
 import { AjudaPublicar } from "@/components/property/ajuda-publicar";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
@@ -21,6 +21,8 @@ import { Erro, Labeled, Toggle } from "./campos";
 import { BuscaEndereco } from "./busca-endereco";
 import { DeclaracoesDoImovel } from "./declaracoes-passo10";
 import type { DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
+import { EVENTO_ABRIR_SECAO, secoesAntesDePublicar, type EstadoSecao, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import { ResumoEndereco, enderecoCompletoParaResumo } from "./resumo-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
@@ -343,15 +345,45 @@ export function AntesDePublicar(p: {
   emCondominio: boolean;
 }) {
   const doc = exigeAutorizacao(p.ownershipType) ? DOC_AUTORIZACAO[p.ownershipType as "subleased" | "managed"] : null;
-  return (
-    <section className="space-y-4 rounded-xl border border-line bg-white p-4 sm:p-6" data-testid="antes-de-publicar" aria-labelledby="antes-de-publicar-titulo">
-      <h2 id="antes-de-publicar-titulo" className="text-lg font-semibold text-ink">
-        Antes de publicar
-      </h2>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+  // E251: cada seção legal é um item com estado (✓ ou "falta") que abre no lugar. O conteúdo fica montado (só escondido)
+  // para não perder um envio de documento ou de autorização no meio.
+  const { situacao: identidade, recarregar: recarregarIdentidade } = useEstadoIdentidade();
+  const estadoIdentidade = !identidade
+    ? "carregando"
+    : identidade.identidade.estado === "confirmada"
+      ? "ok"
+      : identidade.identidade.estado === "em_breve"
+        ? "em_breve"
+        : identidade.temCpf
+          ? "pendente"
+          : "sem_cpf";
+  const secoes = secoesAntesDePublicar({
+    faltaOperacao: p.faltaOperacao,
+    rotuloOperacao: OPERACOES.find((o) => o.valor === p.ownershipType)?.rotulo ?? "",
+    identidade: estadoIdentidade,
+    documento: p.docEstado,
+    linhaDocumentoInicio: p.linhaDocumentoInicio,
+    declaracoes: p.declaracoes,
+    emCondominio: p.emCondominio,
+  });
+  const [abertas, setAbertas] = useState<Set<SecaoAntesDePublicar>>(() => new Set());
+  const alternar = (id: SecaoAntesDePublicar) => setAbertas((a) => (a.has(id) ? new Set([...a].filter((x) => x !== id)) : new Set([...a, id])));
+  // "Resolver" (lista de conferência) e o motivo do botão travado abrem a seção certa.
+  useEffect(() => {
+    const abrir = (e: Event) => {
+      const id = (e as CustomEvent<SecaoAntesDePublicar>).detail;
+      setAbertas((a) => new Set([...a, id]));
+    };
+    window.addEventListener(EVENTO_ABRIR_SECAO, abrir);
+    return () => window.removeEventListener(EVENTO_ABRIR_SECAO, abrir);
+  }, []);
+
+  const conteudo: Record<SecaoAntesDePublicar, ReactNode> = {
+    operacao: (
+      <div className="space-y-4">
         <div className="min-w-0">
           <span className="mb-2 block text-sm font-medium text-ink">Quem opera este imóvel?</span>
-          <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="Quem opera este imóvel?">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Quem opera este imóvel?">
             {OPERACOES.map(({ valor, rotulo }) => (
               <button
                 key={valor}
@@ -369,66 +401,111 @@ export function AntesDePublicar(p: {
             ))}
           </div>
         </div>
-      </div>
 
-      {doc && (
-        <div className="space-y-3 rounded-xl border border-sage-200 p-4" data-testid="documento-operacao">
-          <div className="rounded-lg bg-champagne/10 px-3 py-2 text-xs text-ink">{doc.aviso}</div>
-          <Toggle
-            checked={p.subleaseAuthorized}
-            onChange={() => p.setSubleaseAuthorized((v) => !v)}
-            label={doc.declaracao}
-            hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
-          />
-          {p.ownershipType === "managed" && (
-            <fieldset className="space-y-2" data-testid="documento-operacao-tipo">
-              <legend className="mb-1 text-sm font-medium text-ink">O que você vai anexar?</legend>
-              {/* E193: escolha única no cartão da Qualificação (antes, botões redondos de rádio). */}
-              <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="O que você vai anexar?">
-                {TIPOS_DOC_GESTAO.map((t) => (
-                  <CartaoEscolha key={t.valor} on={p.subleaseDocTipo === t.valor} onClick={() => p.setSubleaseDocTipo(t.valor)} rotulo={t.rotulo} testid={`tipo-doc-operacao-${t.valor}`} />
-                ))}
-              </div>
-            </fieldset>
-          )}
-          <div>
-            <span className="mb-2 block text-sm font-medium text-ink">
-              {doc.titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
-            </span>
-            {p.docOperacaoAnexado && p.subleaseDoc.length === 0 && (
-              <p className="mb-2 text-xs text-forest" data-testid="documento-operacao-anexado">
-                Documento já anexado. Envie outro só se quiser substituir.
-              </p>
+        {doc && (
+          <div className="space-y-3 rounded-xl border border-sage-200 p-4" data-testid="documento-operacao">
+            <div className="rounded-lg bg-champagne/10 px-3 py-2 text-xs text-ink">{doc.aviso}</div>
+            <Toggle
+              checked={p.subleaseAuthorized}
+              onChange={() => p.setSubleaseAuthorized((v) => !v)}
+              label={doc.declaracao}
+              hint="Declaração obrigatória. A equipe confere o documento antes de publicar."
+            />
+            {p.ownershipType === "managed" && (
+              <fieldset className="space-y-2" data-testid="documento-operacao-tipo">
+                <legend className="mb-1 text-sm font-medium text-ink">O que você vai anexar?</legend>
+                {/* E193: escolha única no cartão da Qualificação (antes, botões redondos de rádio). */}
+                <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="O que você vai anexar?">
+                  {TIPOS_DOC_GESTAO.map((t) => (
+                    <CartaoEscolha key={t.valor} on={p.subleaseDocTipo === t.valor} onClick={() => p.setSubleaseDocTipo(t.valor)} rotulo={t.rotulo} testid={`tipo-doc-operacao-${t.valor}`} />
+                  ))}
+                </div>
+              </fieldset>
             )}
-            <DocumentoUploader docs={p.subleaseDoc} onChange={p.setSubleaseDoc} rotulo="Anexar documento" />
+            <div>
+              <span className="mb-2 block text-sm font-medium text-ink">
+                {doc.titulo} <span className="font-normal text-muted">(obrigatório para publicar)</span>
+              </span>
+              {p.docOperacaoAnexado && p.subleaseDoc.length === 0 && (
+                <p className="mb-2 text-xs text-forest" data-testid="documento-operacao-anexado">
+                  Documento já anexado. Envie outro só se quiser substituir.
+                </p>
+              )}
+              <DocumentoUploader docs={p.subleaseDoc} onChange={p.setSubleaseDoc} rotulo="Anexar documento" />
+            </div>
+            <Erro msg={p.faltaOperacao || undefined} />
           </div>
-          <Erro msg={p.faltaOperacao || undefined} />
-        </div>
-      )}
+        )}
+      </div>
+    ),
+    // Ordem (decisão do Daniel, 18/10): endereço → identidade (CAF) → matrícula. Com laudo válido a etapa já vem feita.
+    identidade: <EtapaIdentidade onConfirmada={() => void recarregarIdentidade()} />,
+    documento: (
+      <div className="space-y-3">
+        {p.linhaDocumentoInicio && (
+          <p className="text-sm font-medium text-ink" data-testid="documento-do-inicio">
+            {p.linhaDocumentoInicio}
+          </p>
+        )}
+        <DocumentoVinculo
+          imovelId={p.imovelId}
+          endereco={{ cep: p.cep, rua: p.street, numero: p.numero, bairro: p.neighborhood, cidade: p.city }}
+          operacao={p.ownershipType}
+          estado={p.docEstado}
+          motivos={p.docMotivos}
+          onResultado={p.onDocumento}
+          onMatricula={p.onMatricula}
+          enderecoSalvo={p.enderecoSalvo}
+          onFalta={p.onFaltaDocumento}
+        />
+      </div>
+    ),
+    declaracoes: <DeclaracoesDoImovel valor={p.declaracoes} onChange={p.setDeclaracoes} emCondominio={p.emCondominio} />,
+  };
 
-      {/* Ordem (decisão do Daniel, 18/10): endereço → identidade (CAF) → matrícula. Com laudo válido a etapa já vem feita. */}
-      <EtapaIdentidade />
-
-      {p.linhaDocumentoInicio && (
-        <p className="text-sm font-medium text-ink" data-testid="documento-do-inicio">
-          {p.linhaDocumentoInicio}
-        </p>
-      )}
-      <DocumentoVinculo
-        imovelId={p.imovelId}
-        endereco={{ cep: p.cep, rua: p.street, numero: p.numero, bairro: p.neighborhood, cidade: p.city }}
-        operacao={p.ownershipType}
-        estado={p.docEstado}
-        motivos={p.docMotivos}
-        onResultado={p.onDocumento}
-        onMatricula={p.onMatricula}
-        enderecoSalvo={p.enderecoSalvo}
-        onFalta={p.onFaltaDocumento}
-      />
-
-      <DeclaracoesDoImovel valor={p.declaracoes} onChange={p.setDeclaracoes} emCondominio={p.emCondominio} />
+  return (
+    <section className="space-y-2" data-testid="antes-de-publicar" aria-label="Seções antes de publicar">
+      <ul className="divide-y divide-line rounded-xl border border-line">
+        {secoes.map((s) => {
+          const aberta = abertas.has(s.id);
+          return (
+            <li key={s.id} data-testid={`antes-secao-${s.id}`} data-estado={s.estado} data-aberta={aberta ? "1" : "0"}>
+              <button
+                type="button"
+                aria-expanded={aberta}
+                aria-controls={`antes-conteudo-${s.id}`}
+                onClick={() => alternar(s.id)}
+                className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left hover:bg-surface-2"
+                data-testid={`antes-secao-${s.id}-abrir`}
+              >
+                <SinalSecao estado={s.estado} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-ink">{s.titulo}</span>
+                  <span className={cn("block truncate text-sm", s.estado === "falta" ? "text-red-700" : "text-muted")}>{s.resumo}</span>
+                </span>
+                <ChevronDown className={cn("h-5 w-5 shrink-0 text-muted transition-transform", aberta && "rotate-180")} aria-hidden />
+              </button>
+              <div id={`antes-conteudo-${s.id}`} hidden={!aberta} className="px-4 pb-4" data-testid={`antes-conteudo-${s.id}`}>
+                {conteudo[s.id]}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
+}
+
+/** ✓ (feito), "falta" (segura a publicação) ou um aviso neutro (em andamento ou opcional). */
+function SinalSecao({ estado }: { estado: EstadoSecao }) {
+  if (estado === "ok") return <CheckCircle2 className="h-6 w-6 shrink-0 fill-forest text-white" aria-label="feito" />;
+  if (estado === "falta")
+    return (
+      <span className="shrink-0 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700" data-testid="sinal-falta">
+        falta
+      </span>
+    );
+  return <span className="h-6 w-6 shrink-0 rounded-full border-2 border-sage-200" aria-label="em andamento" />;
 }
 
 /**

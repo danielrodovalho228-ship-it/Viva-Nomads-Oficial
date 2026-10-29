@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
+import { abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import {
   TAMANHOS, abrirComoConta, abrirRota, cliqueResponde, controlesCobertos, escutarErros, imagensAcimaDaDobra, lerMassa, medirTela, temContaVarredura,
@@ -194,6 +195,7 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     // o bairro, então o toque leva ao Passo 3 (endereço) com o foco e a marca no 1º campo que falta.
     const { context, page } = await abrirComoConta(browser, "DONO17", "390");
     await abrirRota(page, `/dashboard/imoveis/novo?draft=${MASSA!.rascunho1}&etapa=revisao`);
+    await abrirSecoesPasso10(page, ["documento"]); // E251: as seções são um acordeão
     const botao = page.getByTestId("documento-enviar");
     await expect(botao).toBeVisible({ timeout: 20_000 });
     // O toque troca de passo: a resposta é a ida ao Passo 3 (o cliqueResponde lia a tela no meio da troca e travava).

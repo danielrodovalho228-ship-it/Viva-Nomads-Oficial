@@ -13,20 +13,19 @@ const ondeFica = ler(`${NOVO}/etapa-onde-fica.tsx`);
 
 test("E112: nenhum botão manda o documento para o passo Endereço", () => {
   assert.doesNotMatch(revisar + pagina, /no passo Endereço/);
-  assert.match(revisar, /ROTULO_ENVIAR_DOCUMENTO = "Enviar o documento agora"/);
-  assert.match(revisar, /ROTULO_REENVIAR_DOCUMENTO = "Enviar outro documento agora"/);
 });
 
-test("E112: o botão abre o envio no 'Antes de publicar' da Revisão (o mesmo 'Enviar documento' do cartão)", () => {
-  assert.match(revisar, /onEnviar=\{abrirEnvioDoDocumento\}/);
-  assert.match(revisar, /querySelector<HTMLButtonElement>\('\[data-testid="documento-enviar"\]'\)\?\.click\(\)/);
-  // O envio existe mesmo lá: o cartão da Revisão desenha o DocumentoVinculo, e o Passo 3 não.
-  assert.match(ondeFica, /export function AntesDePublicar[\s\S]*<DocumentoVinculo/);
+test("E112 → E251: o envio do documento mora no 'Antes de publicar' da Revisão, numa seção que abre no lugar", () => {
+  // O envio existe mesmo lá: a seção "Documento do imóvel" do acordeão desenha o DocumentoVinculo, e o Passo 3 não.
+  assert.match(ondeFica, /export function AntesDePublicar[\s\S]*documento: \([\s\S]*<DocumentoVinculo/);
   assert.doesNotMatch(ondeFica.slice(ondeFica.indexOf("export function EtapaOndeFica"), ondeFica.indexOf("export function AntesDePublicar")), /<DocumentoVinculo/);
-  assert.match(pagina, /step === ETAPA\.revisao && \(\s*<div className="mb-6">\s*<AntesDePublicar/);
+  assert.match(pagina, /antesDePublicar=\{\s*<AntesDePublicar/);
+  // O aviso solto do documento no topo da Revisão saiu: o estado do documento é a linha da própria seção (sem duplicar).
+  assert.doesNotMatch(revisar, /data-testid="revisar-documento"/);
 });
 
-test("E112: 'Resolver' do documento e de quem opera desce até o cartão da Revisão", () => {
-  assert.match(pagina, /item\.key === "documento" \|\| item\.key === "sublocacao"/);
-  assert.match(pagina, /'\[data-testid="documento-vinculo"\]' : '\[data-testid="antes-de-publicar"\]'/);
+test("E112 → E251: 'Resolver' do documento, de quem opera e das declarações abre a seção certa e desce até ela", () => {
+  assert.match(pagina, /const secao = secaoDoItem\(item\.key\);\s*if \(secao\) abrirSecaoPasso10\(secao\);/);
+  assert.match(pagina, /new CustomEvent\(EVENTO_ABRIR_SECAO, \{ detail: secao \}\)/);
+  assert.match(ondeFica, /window\.addEventListener\(EVENTO_ABRIR_SECAO, abrir\)/);
 });
