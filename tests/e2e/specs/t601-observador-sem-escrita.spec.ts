@@ -39,7 +39,7 @@ test.describe("T601 — 0253: o admin observador lê, mas não escreve direto na
     ids.imovelObs = await criarImovelPronto(ids.obs, `Studio do observador t601 ${sufixo}`, { ativo: true });
     const { error: eCid } = await adm().from("cidades_liberadas").insert({ uf: "ZZ", chave: chaveCidade, cidade: "Cidade t601", liberada: false });
     if (eCid) throw eCid;
-    const { data: g, error: eG } = await adm().from("gastos_marketing").insert({ mes: "2026-10-01", canal: `t601 ${sufixo}`, valor: 10, criado_por: ids.adm }).select("id").single();
+    const { data: g, error: eG } = await adm().from("gastos_marketing").insert({ mes: "2026-10-01", canal: "outro", observacao: `t601 ${sufixo}`, valor: 10, criado_por: ids.adm }).select("id").single();
     if (eG) throw eG;
     ids.gasto = g.id as string;
     const { data: f, error: eF } = await adm().from("fotos_perfil_revisao").insert({ user_id: ids.dono, caminho: `${ids.dono}/avatar.webp` }).select("id").single();
@@ -55,7 +55,7 @@ test.describe("T601 — 0253: o admin observador lê, mas não escreve direto na
 
   test.afterAll(async () => {
     await adm().from("cidades_liberadas").delete().eq("uf", "ZZ").eq("chave", chaveCidade);
-    await adm().from("gastos_marketing").delete().like("canal", `t601 ${sufixo}%`);
+    await adm().from("gastos_marketing").delete().like("observacao", `t601 ${sufixo}%`);
     await adm().from("fotos_perfil_revisao").delete().eq("id", ids.foto ?? "00000000-0000-0000-0000-000000000000");
     await adm().storage.from("avatars").remove([`${ids.dono}/t601.webp`, `${ids.obs}/t601.webp`]);
     await apagarContas([ids.obs, ids.adm, ids.dono]);
@@ -77,12 +77,12 @@ test.describe("T601 — 0253: o admin observador lê, mas não escreve direto na
       (await obs.from(tabela).update(valores).eq(coluna, valor).select()).data ?? [];
     expect(await up("cidades_liberadas", { liberada: true }, "chave", chaveCidade)).toHaveLength(0);
     expect(await up("qualification_checklists", { document_status: "rejected" }, "property_id", ids.imovel)).toHaveLength(0);
-    expect(await up("fotos_perfil_revisao", { status: "removida" }, "id", ids.foto)).toHaveLength(0);
+    expect(await up("fotos_perfil_revisao", { status: "removida", motivo: "Imagem imprópria", revisado_em: new Date().toISOString() }, "id", ids.foto)).toHaveLength(0);
     expect(await up("gastos_marketing", { valor: 999 }, "id", ids.gasto)).toHaveLength(0);
     expect(await up("properties", { title: "mexido pelo observador" }, "id", ids.imovel)).toHaveLength(0);
     const ins = await obs.from("cidades_liberadas").insert({ uf: "ZZ", chave: `${chaveCidade}-obs`, cidade: "Cidade obs" });
     expect(ins.error?.code).toBe("42501");
-    const insG = await obs.from("gastos_marketing").insert({ mes: "2026-10-01", canal: `t601 ${sufixo} obs`, valor: 1 });
+    const insG = await obs.from("gastos_marketing").insert({ mes: "2026-10-01", canal: "outro", observacao: `t601 ${sufixo} obs`, valor: 1 });
     expect(insG.error?.code).toBe("42501");
     expect((await obs.from("gastos_marketing").delete().eq("id", ids.gasto).select()).data ?? []).toHaveLength(0);
     const rm = await obs.storage.from("avatars").remove([`${ids.dono}/t601.webp`]);
@@ -105,9 +105,9 @@ test.describe("T601 — 0253: o admin observador lê, mas não escreve direto na
   test("o admin comum continua escrevendo as mesmas linhas", async () => {
     expect((await admin.rpc("is_admin")).data).toBe(true);
     expect((await admin.from("cidades_liberadas").update({ liberada: true }).eq("chave", chaveCidade).select()).data ?? []).toHaveLength(1);
-    expect((await admin.from("fotos_perfil_revisao").update({ status: "aprovada" }).eq("id", ids.foto).select()).data ?? []).toHaveLength(1);
+    expect((await admin.from("fotos_perfil_revisao").update({ status: "aprovada", revisado_em: new Date().toISOString(), revisado_por: ids.adm }).eq("id", ids.foto).select()).data ?? []).toHaveLength(1);
     expect((await admin.from("gastos_marketing").update({ valor: 11 }).eq("id", ids.gasto).select()).data ?? []).toHaveLength(1);
-    const insG = await admin.from("gastos_marketing").insert({ mes: "2026-10-01", canal: `t601 ${sufixo} adm`, valor: 1 });
+    const insG = await admin.from("gastos_marketing").insert({ mes: "2026-10-01", canal: "outro", observacao: `t601 ${sufixo} adm`, valor: 1 });
     expect(insG.error).toBeNull();
   });
 });
