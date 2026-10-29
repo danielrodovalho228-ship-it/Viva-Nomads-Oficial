@@ -140,7 +140,9 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
     await bloco.getByTestId("negociavel-valor_mensal").click();
     await bloco.getByTestId("negociavel-meses").click();
     await bloco.getByLabel("Menor valor mensal que aceito (R$)").fill("2950");
-    await bloco.getByLabel("Limpezas por mês que posso incluir").selectOption("2");
+    // E193 (#1496): a lista suspensa virou pílulas de escolha única.
+    await bloco.getByTestId("limite-limpezas-2").click();
+    await expect(bloco.getByTestId("limite-limpezas-2")).toHaveAttribute("aria-checked", "true");
     await bloco.getByRole("button", { name: /^Salvar seção/ }).click();
     await expect
       .poll(async () => (await adm().from("properties").select("negociacao").eq("id", ids.imovel!).single()).data?.negociacao, { timeout: 20_000 })
