@@ -99,10 +99,12 @@ export function LinhaNumero({
               inputMode="numeric"
               min={min}
               value={valor}
-              placeholder={placeholder}
+              // E241 (mockup cadastro-imovel-04: o contador sempre mostra um número): vazio, o miolo mostra o mínimo
+              // ("0") em cinza — o campo continua "não preenchido" para a validação, só não fica em branco.
+              placeholder={placeholder ?? String(min)}
               onChange={(e) => onChange(e.target.value)}
               aria-label={label}
-              className="h-9 w-full min-w-0 bg-transparent text-center text-base font-semibold tabular-nums text-ink outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="h-9 w-full min-w-0 bg-transparent text-center text-base font-semibold tabular-nums text-ink outline-none placeholder:text-muted [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               data-testid={testid}
             />
             {sufixo && <span className="shrink-0 text-xs text-muted">{sufixo}</span>}
