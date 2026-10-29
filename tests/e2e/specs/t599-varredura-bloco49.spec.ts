@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, cliqueResponde, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
@@ -13,7 +13,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   a escolha de intenção (/auth/intencao, conta nova sem intenção), a proposta (/dashboard/propostas/<id>, pelo morador
   e pelo dono), o detalhe da visita do dono (/dashboard/visitas/<id>), o chamado no admin (/admin/atendimento/<id>) e a
   estadia vista pelo convidado (/dashboard/estadia/<contrato>/convidado). Os dados saem da massa da varredura (DONO17,
-  INQUILINA, imovel17 e o contrato dela); o que falta é semeado aqui e apagado no fim. As duas telas da avaliação
+  INQUILINA e o imovel17); o que falta é semeado aqui e apagado no fim. A estadia do convidado usa um contrato próprio
+  para 2 ocupantes (o da massa é para 1, e o gatilho estadia_convidados_teto recusa convidado acima do contrato). As duas telas da avaliação
   (/dashboard/avaliacao-imovel/<id> e /dashboard/parceiro/avaliacao/<pedido>) pedem avaliador credenciado e pedido de
   vistoria: ficam para o bloco 50. Só no laboratório.
 */
@@ -34,7 +35,9 @@ const senha = novaSenha();
 /** Conta nova sem intenção (a /auth/intencao só aparece para ela) e o convidado da estadia da INQUILINA. */
 const nova = { email: `nova.t599.${sufixo}@lab.vivanomads.test`, nome: "Nina Nova", role: "tenant" as const };
 const convidado = { email: `conv.t599.${sufixo}@lab.vivanomads.test`, nome: "Caio Convidado", role: "tenant" as const };
-const ids: { nova?: string; convidado?: string; lead?: string; proposta?: string; visita?: string; visitaCriada?: boolean; chamado?: string; convite?: string } = {};
+const donaEstadia = { email: `dona.t599.${sufixo}@lab.vivanomads.test`, nome: "Dalva Dona", role: "owner" as const };
+const moradorEstadia = { email: `mor.t599.${sufixo}@lab.vivanomads.test`, nome: "Mauro Morador", role: "tenant" as const };
+const ids: { nova?: string; convidado?: string; dona?: string; morador?: string; imovelEstadia?: string; leadEstadia?: string; contrato?: string; lead?: string; proposta?: string; visita?: string; visitaCriada?: boolean; chamado?: string; convite?: string } = {};
 const emDias = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
 const TELAS: Tela[] = [
@@ -43,7 +46,7 @@ const TELAS: Tela[] = [
   { conta: "DONO17", papel: "proprietário", nome: "Proposta enviada", rota: () => `/dashboard/propostas/${ids.proposta}`, pular: () => (ids.proposta ? null : "não deu para semear a proposta") },
   { conta: "DONO17", papel: "proprietário", nome: "Detalhe da visita", rota: () => `/dashboard/visitas/${ids.visita}`, pular: () => (ids.visita ? null : "não deu para semear a visita") },
   { conta: "ADMIN", papel: "admin", nome: "Chamado no atendimento", rota: () => `/admin/atendimento/${ids.chamado}`, pular: () => (ids.chamado ? null : "não deu para semear o chamado") },
-  { conta: "CONVIDADO", papel: "convidado", nome: "Estadia vista pelo convidado", rota: (m) => `/dashboard/estadia/${m.contrato}/convidado`, pular: () => (ids.convite ? null : "não deu para semear o convite") },
+  { conta: "CONVIDADO", papel: "convidado", nome: "Estadia vista pelo convidado", rota: () => `/dashboard/estadia/${ids.contrato}/convidado`, pular: () => (ids.convite ? null : "não deu para semear o convite") },
 ];
 
 /**
@@ -57,6 +60,8 @@ const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[]
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "imagem", achado: /\/images\/imoveis\/(tipo-(casa|studio|loft|cobertura|casa-condominio|flat)|placeholder-imovel-chacara)\.webp/, l: "L-63" },
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "foto", achado: /área de foto vazia \(aspect-ratio 4 \/ 3\).*"Imagem ilustrativa"/, l: "L-63" },
   { rota: /^\/admin\/documentos\?aba=emitidos$/, classe: "estouro", achado: /além da direita: <label[^>]*> "Tipo/, l: "L-62" },
+  // L-70 (bloco 49): o "Enviar resposta" do chamado fica desabilitado até escrever, sem texto que diga isso.
+  { rota: /^\/admin\/atendimento\/:id$/, achado: /"Enviar resposta \(e-mail à pessoa\)" desabilitado sem explicar o motivo/, l: "L-70" },
 ];
 const conhecido = (rotulo: string, a: string, classe?: Classe) => CONHECIDOS.find((c) => c.classe === classe && c.rota.test(rotulo) && c.achado.test(a));
 
@@ -77,15 +82,35 @@ test.describe("T599 — varredura da página inteira, bloco 49 (páginas de deta
     // Conta nova: entra com uma intenção gravada (o login cai no painel) e a intenção é apagada antes de abrir a tela.
     ids.nova = await criarConta(nova, senha);
     await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", ids.nova);
-    // Convidado ativo da estadia da INQUILINA (o contrato completo da massa).
+    // Estadia própria para 2 ocupantes (assinada pelas duas partes, entrada em 5 dias) e o convidado ativo nela.
     ids.convidado = await criarConta(convidado, senha);
-    await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", ids.convidado);
-    const { data: cv } = await adm()
-      .from("estadia_convidados")
-      .insert({ contrato_id: MASSA.contrato, email: convidado.email, convidado_user_id: ids.convidado, convidado_por: morador })
+    ids.dona = await criarConta(donaEstadia, senha);
+    ids.morador = await criarConta(moradorEstadia, senha);
+    for (const id of [ids.convidado, ids.dona, ids.morador]) await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", id);
+    ids.imovelEstadia = await criarImovelPronto(ids.dona, `[Varredura] Estadia do convidado t599 ${sufixo}`, { ativo: true, preco: 3000 });
+    ids.leadEstadia = await criarLead(ids.dona, ids.morador, ids.imovelEstadia, true);
+    const assinado = new Date().toISOString();
+    const { data: ct, error: eCt } = await adm()
+      .from("contratos")
+      .insert({
+        lead_id: ids.leadEstadia, property_id: ids.imovelEstadia, tenant_id: ids.morador, owner_plan: "essential", faixa: "media_estadia",
+        prazo_total_dias: 60, aluguel_mensal: 3000, tamanho_bloco_meses: 2, comissao_percent: 0.1, comissao_valor: 600,
+        qtd_ocupantes: 2, capacidade_snapshot: 3, assinado_proprietario_em: assinado, assinado_inquilino_em: assinado,
+      })
       .select("id")
       .single();
-    ids.convite = (cv as { id?: string } | null)?.id;
+    if (eCt) console.log(`T599|semear contrato: ${eCt.message}`);
+    ids.contrato = (ct as { id?: string } | null)?.id;
+    if (ids.contrato) {
+      await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: emDias(5), fim: emDias(64), meses: 2, valor: 6000, caucao: 3000, status: "ativo" });
+      const { data: cv, error: eCv } = await adm()
+        .from("estadia_convidados")
+        .insert({ contrato_id: ids.contrato, email: convidado.email, convidado_user_id: ids.convidado, convidado_por: ids.morador })
+        .select("id")
+        .single();
+      if (eCv) console.log(`T599|semear convite: ${eCv.message}`);
+      ids.convite = (cv as { id?: string } | null)?.id;
+    }
     // Proposta do DONO17 para a INQUILINA no imovel17, com uma versão.
     ids.lead = await criarLead(dono, morador, MASSA.imovel17, true).catch(() => undefined);
     const { data: numero } = await adm().rpc("next_document_number", { p_type: "orcamento", p_year: new Date().getFullYear() });
@@ -138,7 +163,9 @@ test.describe("T599 — varredura da página inteira, bloco 49 (páginas de deta
     }
     if (ids.lead) await adm().from("leads").delete().eq("id", ids.lead);
     if (ids.convite) await adm().from("estadia_convidados").delete().eq("id", ids.convite);
-    await apagarContas([ids.nova, ids.convidado]);
+    if (ids.contrato) await adm().from("contratos").delete().eq("id", ids.contrato);
+    if (ids.leadEstadia) await adm().from("leads").delete().eq("id", ids.leadEstadia);
+    await apagarContas([ids.nova, ids.convidado, ids.dona, ids.morador]);
   });
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
