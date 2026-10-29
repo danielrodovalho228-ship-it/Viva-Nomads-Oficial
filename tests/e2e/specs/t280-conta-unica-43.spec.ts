@@ -105,7 +105,8 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
         const grupoConta = page.locator('[data-testid="conta-grupo"][data-grupo="Conta"]');
         await expect(grupoConta).toBeVisible({ timeout: 25_000 });
-        for (const s of ["notificacoes", "privacidade", "pagamentos"]) await expect(grupoConta.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
+        // E176 parte 2 (#1437): Notificações virou a tela /dashboard/notificacoes (lib/conta/secoes).
+        for (const href of ["/dashboard/notificacoes", "/dashboard/conta/privacidade", "/dashboard/conta/pagamentos"]) await expect(grupoConta.locator(`a[href="${href}"]`)).toHaveCount(1);
         // A barra segue o contexto da tela, sem troca manual nem segundo login.
         await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
         await expect(async () => expect(await abas(page)).toContain("Agenda")).toPass({ timeout: 25_000 });

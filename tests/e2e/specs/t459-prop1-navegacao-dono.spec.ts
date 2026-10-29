@@ -55,7 +55,8 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
     await page.goto("/dashboard/orcamentos", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("aba-dono-interessados")).toHaveAttribute("aria-current", "page", { timeout: 30_000 });
     const subInteressados = page.getByTestId("subabas-dono");
-    await expect(subInteressados.locator("a")).toHaveText(["Interessados", "Propostas", "Fechamento", "Pedidos na cidade"]);
+    // E211 (#1460) pôs "Visitas" nas subabas de Interessados (src/config/nav-dono.test.ts já pede as cinco).
+    await expect(subInteressados.locator("a")).toHaveText(["Interessados", "Propostas", "Fechamento", "Pedidos na cidade", "Visitas"]);
     await expect(page.getByTestId("subaba-dono-propostas")).toHaveAttribute("aria-current", "page");
     await page.screenshot({ path: `${SAIDA}/t459-interessados-1280.png` });
 
