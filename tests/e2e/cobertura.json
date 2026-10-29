@@ -1595,6 +1595,7 @@
         "socio"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t3-isolamento-papeis",
         "t307-varredura-bloco8"
       ]
@@ -1624,6 +1625,7 @@
         "publico"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t171-faixas-taxa-cors",
@@ -1701,6 +1703,7 @@
         "publico"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t14-app-mode",
         "t18-seo-a11y",
         "t20-p1-agentes",
@@ -1822,6 +1825,7 @@
         "publico"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t18-seo-a11y",
         "t68-comissao-valor-total",
         "t311-marco-principal-unico",
