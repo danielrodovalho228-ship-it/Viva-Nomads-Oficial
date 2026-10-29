@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Eye, ImageIcon, MapPin } from "lucide-react";
 import { propertyTypeLabel } from "@/lib/amenities";
 import { linhaPrevia, localPrevia, tituloPrevia } from "@/lib/anuncio/assistente-telas";
@@ -23,6 +24,8 @@ export function PreviaAnuncio(p: {
   cidade: string;
   uf: string;
   publicado: boolean;
+  /** E242: o "Ver no tamanho real", embaixo da foto. */
+  tamanhoReal?: ReactNode;
 }) {
   const linha = linhaPrevia(p.quartos, p.areaM2);
   const local = localPrevia(p.bairro, p.cidade, p.uf);
@@ -45,6 +48,7 @@ export function PreviaAnuncio(p: {
           </span>
         )}
       </div>
+      {p.tamanhoReal}
       <p className="mt-4 font-title text-xl font-semibold text-ink" data-testid="previa-titulo">
         {tituloPrevia(p.titulo, p.tipo, p.bairro)}
       </p>

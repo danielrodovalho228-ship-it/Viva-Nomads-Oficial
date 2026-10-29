@@ -2,6 +2,7 @@
 
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { ROTULO_FALTA_CHACARA, linhasChacaraRevisao, type DadosChacara } from "@/lib/anuncio/chacara";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Check, CheckCircle2, Circle, Clock, ImageIcon, XCircle } from "lucide-react";
 import type { ItemProntidao, Prontidao } from "@/lib/anuncio/prontidao";
@@ -30,6 +31,8 @@ import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
  */
 export function EtapaRevisar(p: {
   previewProperty: Property;
+  /** E242: o "Ver no tamanho real" (computador), embaixo da foto do cartão; no celular ele fica no fim do passo. */
+  tamanhoReal?: ReactNode;
   titulo: string;
   tipo: string;
   bairro: string;
@@ -80,6 +83,7 @@ export function EtapaRevisar(p: {
           </span>
         )}
       </div>
+      {p.tamanhoReal}
       <p className="mt-4 font-title text-xl font-semibold text-ink" data-testid="revisao-titulo">
         {tituloPrevia(p.titulo, p.tipo, p.bairro)}
       </p>

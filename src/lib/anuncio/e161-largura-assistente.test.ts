@@ -34,9 +34,10 @@ test("E161: 'Ver no tamanho real' usa a galeria e o cartão de preço da página
   assert.match(REAL, /<PropertyGallery photos=\{imovel\.photos\}/);
   assert.match(REAL, /<PriceCard\b/);
   assert.match(REAL, /className="mx-auto w-full max-w-\[1536px\] px-4 py-8 sm:px-8" data-testid="previa-real-largura"/);
-  // Ao lado da prévia (computador) e no passo (celular e Revisão).
-  assert.match(NOVO, /<BotaoTamanhoReal imovel=\{previewProperty\} className="mt-2" \/>/);
-  assert.match(NOVO, /step !== ETAPA\.revisao && "lg:hidden"\)\} data-testid="previa-tamanho-real-passo"/);
+  // E242: no cartão da prévia, embaixo da foto (computador; na Revisão, no cartão do anúncio) e no fim do passo (celular).
+  assert.match(NOVO, /tamanhoReal=\{<BotaoTamanhoReal imovel=\{previewProperty\} className="mt-2" \/>\}/);
+  assert.match(NOVO, /tamanhoReal=\{<BotaoTamanhoReal imovel=\{previewProperty\} className="mt-2 hidden lg:inline-flex" \/>\}/);
+  assert.match(NOVO, /<div className="mt-6 lg:hidden" data-testid="previa-tamanho-real-passo">/);
 });
 
 test("E161: o rodapé do fluxo alinha com a régua de 1536 px (96rem), não com a moldura antiga (72rem)", () => {
