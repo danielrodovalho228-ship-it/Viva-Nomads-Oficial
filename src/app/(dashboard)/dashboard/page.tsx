@@ -85,7 +85,6 @@ function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): Rascunh
     pronto: !!d.prontidao?.podePublicar,
     faltam: d.prontidao?.faltam ?? [],
     checklist: d.prontidao ? checklistAnuncio(d.prontidao, d.id) : null,
-    score: d.score,
   };
 }
 

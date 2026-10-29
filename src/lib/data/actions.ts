@@ -59,7 +59,6 @@ import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { chegadaDoRascunho, colunasChegadaEPedido, type EntradaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
 import { REF_COOKIE } from "@/lib/cartoes/compartilhar";
-import { scoreAnuncio, type ScoreAnuncio } from "@/lib/anuncio/score";
 import type { Prontidao } from "@/lib/anuncio/prontidao";
 import { guardContactInfo, DOCUMENTO_BLOQUEADO } from "@/lib/messages/contact-guard";
 import { isExemplo, EXEMPLO_SEM_CONTATO } from "@/lib/demo-listing";
@@ -1981,8 +1980,6 @@ export async function getLatestDraft(): Promise<{
   data: unknown;
   /** Prontidão real (fonte única) — o "% completo" e o "falta" de todas as telas. */
   prontidao: Prontidao | null;
-  /** Score de qualidade 0–100 com dicas clicáveis (ordem 0f9b9d58), calculado aqui no servidor. */
-  score: ScoreAnuncio | null;
 } | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -2004,26 +2001,11 @@ export async function getLatestDraft(): Promise<{
   const row = Array.isArray(priv) ? priv[0] : priv;
   const fatos = (await fatosDosImoveis(supabase, user.id, [data.id as string])).get(data.id as string) ?? null;
   const prontidao = fatos ? prontidaoAnuncio(fatos) : null;
-  let score: ScoreAnuncio | null = null;
-  if (fatos && prontidao) {
-    const [{ count: comodidades }, { data: pets }] = await Promise.all([
-      supabase.from("property_amenities").select("id", { count: "exact", head: true }).eq("property_id", data.id),
-      supabase.from("properties").select("pets_allowed, pets_regras").eq("id", data.id).eq("owner_id", user.id).maybeSingle(),
-    ]);
-    score = scoreAnuncio(prontidao, fatos, {
-      comodidades: comodidades ?? 0,
-      // Só cobra regras de pet de quem aceita pet.
-      petsDefinido:
-        (pets as { pets_allowed?: boolean | null } | null)?.pets_allowed !== true ||
-        normalizarRegrasPets((pets as { pets_regras?: unknown } | null)?.pets_regras) !== null,
-    });
-  }
   return {
     id: data.id as string,
     title: (data.title as string) || "Rascunho de anúncio",
     data: (row as { draft_data?: unknown } | null)?.draft_data ?? null,
     prontidao,
-    score,
   };
 }
 
