@@ -656,7 +656,8 @@
         "t607-varredura-bloco51",
         "t610-e190p2-hoje-no-inicio",
         "t612-e219-hoje-sem-estouro",
-        "t613-varredura-bloco52"
+        "t613-varredura-bloco52",
+        "t622-varredura-bloco56"
       ]
     },
     "/dashboard/assinatura": {
@@ -972,7 +973,8 @@
         "t450-cadastro-moldura",
         "t411-varredura-bloco28",
         "t418-varredura-bloco35",
-        "t572-e196-uma-qualificacao"
+        "t572-e196-uma-qualificacao",
+        "t622-varredura-bloco56"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1090,7 +1092,8 @@
         "t588-varredura-bloco46",
         "t611-e195-cadastro-sem-bege",
         "t614-varredura-bloco53",
-        "t620-e193-um-controle-so"
+        "t620-e193-um-controle-so",
+        "t622-varredura-bloco56"
       ]
     },
     "/dashboard/indicacoes": {
