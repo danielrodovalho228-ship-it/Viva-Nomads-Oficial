@@ -1570,7 +1570,8 @@ export default function NewPropertyPage() {
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
+        {/* E180: no celular os dois botões quebram a linha em vez de passar da borda do cartão. */}
+        <div className="flex min-w-0 flex-wrap gap-2 sm:shrink-0">
           <Button variant="outline" size="sm" onClick={comecarOutro}>
             Começar outro
           </Button>

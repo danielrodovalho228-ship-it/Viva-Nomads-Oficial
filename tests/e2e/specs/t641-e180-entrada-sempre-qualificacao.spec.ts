@@ -57,6 +57,9 @@ test.describe("T641 — E180: entrada nova sempre na Qualificação; Sair único
       await expect(aviso).toBeVisible({ timeout: 30_000 });
       await expect(aviso).toContainText("Você tem um anúncio em andamento");
       await expect(aviso.getByTestId("rascunho-continuar")).toHaveText(/Continuar de onde parei/);
+      // O aviso cabe na tela (os botões quebram a linha no celular).
+      const passa = await aviso.evaluate((el) => Math.max(...Array.from(el.querySelectorAll("button")).map((b) => b.getBoundingClientRect().right)) - el.getBoundingClientRect().right);
+      expect(passa).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t641-entrada-${largura}.png`, fullPage: true });
 
       // A cópia local continua guardada enquanto a retomada está oferecida (o anúncio novo vazio não a apaga).
