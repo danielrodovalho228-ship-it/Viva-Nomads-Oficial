@@ -236,7 +236,8 @@
       ],
       "specs": [
         "t442-foto-perfil-revisao",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t655-observador-botoes-filas"
       ]
     },
     "/admin/marketing": {
@@ -253,6 +254,7 @@
         "admin"
       ],
       "specs": [
+        "t651-varredura-bloco61",
         "t183-telas-logadas-390",
         "t201-qa-muse",
         "t236-parceiros-ciclo",
@@ -264,7 +266,8 @@
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
         "t551-varredura-bloco40",
-        "t630-e223-interesses-parceria"
+        "t630-e223-interesses-parceria",
+        "t655-observador-botoes-filas"
       ]
     },
     "/admin/pedidos": {
@@ -297,6 +300,7 @@
         "admin"
       ],
       "specs": [
+        "t650-observador-nao-marca-conta-teste",
         "t101-admin-usuarios",
         "t178-telefone-sms",
         "t48-varredura",
@@ -741,6 +745,7 @@
         "admin"
       ],
       "specs": [
+        "t651-varredura-bloco61",
         "t97-plangate-precos",
         "t183-telas-logadas-390",
         "t214-carteira-banco",
@@ -881,6 +886,7 @@
         "proprietario"
       ],
       "specs": [
+        "t651-varredura-bloco61",
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
         "t220-recibo-assinatura",
@@ -1013,6 +1019,7 @@
         "proprietario"
       ],
       "specs": [
+        "t651-varredura-bloco61",
         "t30-atendimento-autonomo",
         "t364-e50-entrada-anuncio",
         "t32-autorizacao-preconferencia",
@@ -1168,6 +1175,7 @@
         "proprietario"
       ],
       "specs": [
+        "t651-varredura-bloco61",
         "t48-varredura",
         "t57-contrato-assinar",
         "t205-fechamento-sem-beco",
@@ -2068,6 +2076,7 @@
         "inquilino"
       ],
       "specs": [
+        "t651-varredura-bloco61",
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
         "t595-e205b2-lembrete-no-aceite",

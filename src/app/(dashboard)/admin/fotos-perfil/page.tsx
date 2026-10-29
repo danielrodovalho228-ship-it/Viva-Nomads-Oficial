@@ -5,6 +5,7 @@ import { filaFotosPerfil } from "@/lib/data/fotos-perfil-actions";
 import { REGRA_FOTO_PERFIL } from "@/lib/perfil/foto-revisao";
 import { FilaFotosCliente } from "./fila-fotos-cliente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/fotos-perfil") };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function AdminFotosPerfilPage() {
   const fila = await filaFotosPerfil();
+  const soLeitura = fila?.length ? await soLeituraNaTela(fila.map((f) => ({ id: f.id, alvo: { perfis: [f.userId] } }))) : [];
   return (
     <>
       <PageTitle title={rotuloDoAdmin("/admin/fotos-perfil")} subtitle={REGRA_FOTO_PERFIL} />
@@ -24,7 +26,7 @@ export default async function AdminFotosPerfilPage() {
       ) : fila.length === 0 ? (
         <EmptyState icon={UserRound} title="Nenhuma foto em revisão" text="Fotos novas e denunciadas aparecem aqui." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />
       ) : (
-        <FilaFotosCliente fila={fila} />
+        <FilaFotosCliente fila={fila} soLeitura={soLeitura} />
       )}
     </>
   );

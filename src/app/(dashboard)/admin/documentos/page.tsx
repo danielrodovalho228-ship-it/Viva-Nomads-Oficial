@@ -16,6 +16,7 @@ import { PREFIXOS, type Prefixo } from "@/lib/fiscal/prefixos";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 type ClienteAdmin = NonNullable<Awaited<ReturnType<typeof adminDaPagina>>>;
 
@@ -77,11 +78,16 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
     ultimaDecisao(admin, "properties", "document_reviewed_at").catch(() => null),
     ultimaDecisao(admin, "property_ownership_checks", "revisado_em").catch(() => null),
   ]);
+  // Pendência 3 do QA-LOGIN-B v2: o admin observador da QA vê as linhas de dado real sem os botões (o servidor recusa).
+  const soLeitura = await soLeituraNaTela([
+    ...[...docs, ...auto].map((d) => ({ id: d.id, alvo: { documentos: [d.id] } })),
+    ...matriculas.map((m) => ({ id: m.id, alvo: { perfis: [m.userId], imoveis: [m.propertyId] } })),
+  ]);
   return (
     <>
       <Abas atual="fila" />
-      <AdminDocumentosClient docs={docs} auto={auto} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} />
-      <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} />
+      <AdminDocumentosClient docs={docs} auto={auto} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} soLeitura={soLeitura} />
+      <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} soLeitura={soLeitura} />
       <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} />
       <VerificacoesRevisao />
       {triagemLigada ? <VinculosAdmin itens={vinculos?.itens ?? []} metricas={vinculos?.metricas ?? { pendentes: 0, aprovados: 0, recusados: 0 }} /> : null}

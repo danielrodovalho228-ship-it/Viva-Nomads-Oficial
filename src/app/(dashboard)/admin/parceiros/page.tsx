@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/server";
 import { lerInteressesParceria } from "@/lib/admin/interesses-parceria";
 import { diasDesde, resumoInteresses } from "@/lib/admin/interesse-parceria";
 import { ListaInteresses, type InteresseNaTela } from "./interesses";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/parceiros") };
 
@@ -128,6 +129,20 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     };
   });
   const geral = lerParceiroGeral(geralLinha.data?.valor, geralLinha.data?.ligada === true);
+  // Pendência 3 do QA-LOGIN-B v2: o admin observador da QA vê sem os botões o que o servidor recusaria — pedido e
+  // parceiro de conta real (ou sem conta), interesse (não tem conta) e o pedido aberto pelo suporte (dado novo, real).
+  const SUPORTE = "suporte";
+  const soLeitura = new Set(
+    await soLeituraNaTela([
+      ...lista.map((s) => {
+        const uid = (s.user_id as string | null) ?? null;
+        return { id: s.id as string, alvo: { perfis: [uid], semPerfil: uid ? 0 : 1 } };
+      }),
+      ...ativosDoTipo.map((p) => ({ id: p.id as string, alvo: { perfis: [(p.user_id as string | null) ?? null], semPerfil: p.user_id ? 0 : 1 } })),
+      { id: SUPORTE },
+    ])
+  );
+  const observador = soLeitura.has(SUPORTE);
 
   // E223: interesses de parceria (formulário antigo, 0104). A lista e o contador saem da MESMA leitura
   // (lerInteressesParceria, a fonte do atalho do admin também); a situação muda pela ação atualizarStatusInteresse.
@@ -206,7 +221,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
           ) : interesses.length === 0 ? (
             <p className="text-sm text-muted">Ninguém pediu contato pelo formulário antigo.</p>
           ) : (
-            <ListaInteresses itens={interesses} />
+            <ListaInteresses itens={interesses} soLeitura={observador} />
           )}
         </Panel>
       </section>
@@ -257,6 +272,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
                 {ativosDoTipo.map((p) => (
                   <LinhaAtiva
                     key={p.id as string}
+                    soLeitura={soLeitura.has(p.id as string)}
                     p={{
                       id: p.id as string,
                       slug: p.slug as string,
@@ -281,17 +297,17 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
           <Panel>
             <ul className="divide-y divide-line">
               {fichas.map((f) => (
-                <LinhaAprovada key={f.id} f={f} />
+                <LinhaAprovada key={f.id} f={f} soLeitura={soLeitura.has(f.id)} />
               ))}
             </ul>
           </Panel>
         ) : (
-          fichas.map((f) => <FichaSolicitacao key={f.id} f={f} />)
+          fichas.map((f) => <FichaSolicitacao key={f.id} f={f} soLeitura={soLeitura.has(f.id)} />)
         )}
       </div>
 
       <Panel title="Abrir pedido por alguém (suporte)" className="mt-6">
-        <SuporteForm />
+        <SuporteForm soLeitura={observador} />
       </Panel>
 
       <Panel title="Taxa de serviço dos parceiros" className="mt-4">

@@ -8,6 +8,7 @@ import { SeloEstado } from "@/components/admin/numeros";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { atualizarStatusInteresse } from "@/lib/parceiros/admin-actions";
 import { ROTULO_SITUACAO, ROTULO_TIPO_INTERESSE, botoesDoInteresse, type InteresseParceria, type SituacaoInteresse } from "@/lib/admin/interesse-parceria";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 export interface InteresseNaTela extends InteresseParceria {
   /** O mesmo interesse já copiado para Pedidos de parceria (0190), com a situação de lá. */
@@ -19,7 +20,7 @@ const TOM: Record<SituacaoInteresse, "atencao" | "ok" | "neutro"> = { novo: "ate
 const ROTULO_PEDIDO: Record<string, string> = { pendente: "pendente", aguardando_email: "aguardando o e-mail", aprovada: "aprovado", ativada: "ativo", recusada: "recusado" };
 
 /** E223 — uma linha por interesse: situação visível e os botões da situação, pela ação que já existe. */
-function LinhaInteresse({ i }: { i: InteresseNaTela }) {
+function LinhaInteresse({ i, soLeitura }: { i: InteresseNaTela; soLeitura: boolean }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, iniciar] = useTransition();
@@ -64,6 +65,7 @@ function LinhaInteresse({ i }: { i: InteresseNaTela }) {
             </p>
           )}
         </div>
+        {soLeitura ? <SoLeituraQa /> : (
         <div className="flex flex-wrap gap-2">
           {botoesDoInteresse(i.status).map((b) => (
             <Button key={b.para} variant={b.para === "contatado" ? "primary" : "secondary"} size="sm" disabled={pendente} onClick={() => mudar(b.para)} data-testid={`interesse-para-${b.para}`}>
@@ -71,6 +73,7 @@ function LinhaInteresse({ i }: { i: InteresseNaTela }) {
             </Button>
           ))}
         </div>
+        )}
       </div>
       {erro && (
         <p className="mt-2 text-sm text-red-700" role="alert" data-testid="interesse-erro">
@@ -81,11 +84,12 @@ function LinhaInteresse({ i }: { i: InteresseNaTela }) {
   );
 }
 
-export function ListaInteresses({ itens }: { itens: InteresseNaTela[] }) {
+/** `soLeitura` (pendência 3 do QA-LOGIN-B v2): interesse não tem conta, então o admin observador da QA só lê. */
+export function ListaInteresses({ itens, soLeitura = false }: { itens: InteresseNaTela[]; soLeitura?: boolean }) {
   return (
     <ul className="divide-y divide-line" data-testid="interesses-parceria">
       {itens.map((i) => (
-        <LinhaInteresse key={i.id} i={i} />
+        <LinhaInteresse key={i.id} i={i} soLeitura={soLeitura} />
       ))}
     </ul>
   );
