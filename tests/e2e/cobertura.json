@@ -2506,7 +2506,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t660-e237-rotas-aposentadas"
+      ]
     },
     "/api/atendimento/avaliar": {
       "personas": [
@@ -2829,7 +2831,9 @@
       "personas": [
         "sistema"
       ],
-      "specs": []
+      "specs": [
+        "t660-e237-rotas-aposentadas"
+      ]
     },
     "/api/well-known/android": {
       "personas": [
