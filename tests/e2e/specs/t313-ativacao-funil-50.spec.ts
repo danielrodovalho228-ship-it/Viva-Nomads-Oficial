@@ -47,6 +47,7 @@ test.describe("T313 — ativação e funil (50)", () => {
     await apagarContas([ids.dono, ids.pessoa]);
   });
 
+  // E218 (L-71): o Início do PROP-6 (#1349) tinha deixado o checklist do dono de fora; ele voltou ao InicioDono.
   test("1. proprietário: o checklist some na publicação e a ativação fica gravada uma vez", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
