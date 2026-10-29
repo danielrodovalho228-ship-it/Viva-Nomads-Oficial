@@ -67,6 +67,8 @@ const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[]
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "imagem", achado: /\/images\/imoveis\/(tipo-(casa|studio|loft|cobertura|casa-condominio|flat)|placeholder-imovel-chacara)\.webp/, l: "L-63" },
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "foto", achado: /área de foto vazia \(aspect-ratio 4 \/ 3\).*"Imagem ilustrativa"/, l: "L-63" },
   { rota: /^\/admin\/documentos\?aba=emitidos$/, classe: "estouro", achado: /além da direita: <label[^>]*> "Tipo/, l: "L-62" },
+  // L-72 (bloco 52): os cartões "Hoje" do Início do dono (E190 p2, #1484) passam da direita a 390 px com nome longo.
+  { rota: /^\/dashboard$/, classe: "estouro", achado: /além da direita: <li> "\w?(Entra|Sai) hoje/, l: "L-72" },
   // L-70 (bloco 49): o "Enviar resposta" do chamado fica desabilitado até escrever, sem texto que diga isso.
   { rota: /^\/admin\/atendimento\/:id$/, achado: /"Enviar resposta \(e-mail à pessoa\)" desabilitado sem explicar o motivo/, l: "L-70" },
 ];
