@@ -263,7 +263,8 @@
         "t339-varredura-bloco16",
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t630-e223-interesses-parceria"
       ]
     },
     "/admin/pedidos": {
@@ -658,7 +659,8 @@
         "t612-e219-hoje-sem-estouro",
         "t613-varredura-bloco52",
         "t621-varredura-bloco55",
-        "t622-varredura-bloco56"
+        "t622-varredura-bloco56",
+        "t626-varredura-bloco60"
       ]
     },
     "/dashboard/assinatura": {
@@ -1098,7 +1100,8 @@
         "t620-e193-um-controle-so",
         "t621-varredura-bloco55",
         "t623-varredura-bloco57",
-        "t622-varredura-bloco56"
+        "t622-varredura-bloco56",
+        "t625-varredura-bloco59"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1836,7 +1839,8 @@
         "t209-jornada-dois-lados",
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
-        "t613-varredura-bloco52"
+        "t613-varredura-bloco52",
+        "t626-varredura-bloco60"
       ]
     },
     "/dashboard/propostas": {
@@ -2645,6 +2649,7 @@
       "specs": [
         "t128-cron-automacoes",
         "t592-e205b2-lembrete-bloco",
+        "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao"
       ]
@@ -2659,7 +2664,9 @@
       "personas": [
         "sistema"
       ],
-      "specs": []
+      "specs": [
+        "t586-e205-emails-chegada-d7"
+      ]
     },
     "/api/cron/linkedin": {
       "personas": [
@@ -4786,7 +4793,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t630-e223-interesses-parceria"
+      ]
     },
     "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
       "personas": [
