@@ -42,12 +42,15 @@ test("caução continua 50% de cada bloco com a soma limitada a 3 aluguéis", ()
   assert.doesNotMatch(ler("lib/caucao.ts"), /export function calcularCaucao50/);
 });
 
-test("registrarContrato grava a garantia e zera a caução dos blocos com seguro-fiança (também na renovação)", () => {
+test("registrarContrato grava a garantia e zera a caução dos blocos com seguro-fiança (também na renovação, pelo aditivo)", () => {
   const a = ler("lib/data/actions.ts");
   assert.match(a, /validarGarantia\(garantia, resumo\.prazoTotalMeses \* DIAS_POR_MES\)/);
   assert.match(a, /capacidade_snapshot: input\.capacidadeSnapshot \?\? null,\s*garantia,/);
   assert.match(a, /caucao: garantia === "seguro_fianca" \? 0 : b\.caucao/);
-  assert.match(a, /caucao: contrato\.garantia === "seguro_fianca" \? 0 : caucaoDoBloco/);
+  // E222-B: a renovação é o aditivo de prorrogação; os blocos novos seguem a mesma regra.
+  const e = ler("lib/data/estadia-actions.ts");
+  assert.match(e, /tamanho_bloco_meses, garantia, properties\(max_guests\)/);
+  assert.match(e, /const novos = atual\.garantia === "seguro_fianca" \? depois\.novos\.map\(\(b\) => \(\{ \.\.\.b, caucao: 0 \}\)\) : depois\.novos;/);
 });
 
 test("fechamento: 'Sua proteção' com as duas frases e 'Li e entendi' obrigatório; garantia enviada ao servidor", () => {
