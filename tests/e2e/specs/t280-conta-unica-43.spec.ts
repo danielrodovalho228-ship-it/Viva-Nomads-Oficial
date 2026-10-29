@@ -120,7 +120,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         // A1: no computador a Conta é uma casca com o menu lateral das oito telas; Pagamentos tem a sua tela.
         await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
         const menu = page.getByTestId("conta-menu-lateral");
-        for (const s of ["perfil", "papeis", "dados", "privacidade", "notificacoes", "pagamentos"]) await expect(menu.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
+        for (const href of ["/dashboard/conta/perfil", "/dashboard/conta/papeis", "/dashboard/conta/dados", "/dashboard/conta/privacidade", "/dashboard/notificacoes", "/dashboard/conta/pagamentos"]) await expect(menu.locator(`a[href="${href}"]`)).toHaveCount(1);
         await page.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor", { timeout: 25_000 });
       }
