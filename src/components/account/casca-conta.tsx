@@ -75,7 +75,11 @@ export function CascaConta({
   );
   return (
     <div className={cn("grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start", CASCA_SOMBRA_CARTOES)} data-conta-casca data-secao={ativo}>
-      <nav aria-label="Conta" className={cn("hidden rounded-xl bg-white p-3 lg:sticky lg:top-24 lg:block", SOMBRA_CARTAO_CONTA)} data-testid="conta-menu-lateral">
+      {/* Conformidade (29/10): no computador quem rola é o <main> do painel, e o sticky já conta a partir do respiro
+          dele (p-8) — então top-0: o menu nasce na linha do título, como nos mockups, e ao rolar para a 32 px do topo.
+          Com top-24 ele nascia 96 px abaixo do título em toda tela longa e "pulava" de altura entre as seções (só
+          Avaliações, curta, ficava no lugar). */}
+      <nav aria-label="Conta" className={cn("hidden rounded-xl bg-white p-3 lg:sticky lg:top-0 lg:block", SOMBRA_CARTAO_CONTA)} data-testid="conta-menu-lateral">
         <p className={cn("px-3 pb-2 pt-1", ROTULO_MENU_CONTA)}>Conta</p>
         <ul className="grid gap-1">
           {SECOES_CONTA.map((s) => {
