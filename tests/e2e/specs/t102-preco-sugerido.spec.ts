@@ -32,10 +32,11 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     expect(id, "id do usuário no cookie de sessão").toBeTruthy();
     // Rascunho da ordem de 5 etapas (versão 3), passo 3 = Preço: nos 10 passos ele reabre no Preço (DE_5_PARA_10).
     await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 3, ordemEtapas: 3, monthlyPrice: "" })), id);
-    await page.reload({ waitUntil: "networkidle" });
-    // Só o "Continuar" do AVISO de rascunho: o "Continuar" do rodapé do cadastro também casaria com a regex
-    // e avançaria de etapa em vez de abrir ?draft=<id> (o waitForURL abaixo esperava até o teste estourar 45 s).
-    const retomar = page.getByText("Você tem um anúncio em andamento").locator("xpath=ancestor::div[contains(@class,'rounded-2xl')][1]").getByRole("button", { name: "Continuar" });
+    // E180 (#1507): a cópia local nunca se aplica sozinha no "Novo anúncio" (abre na Qualificação); o link que diz o
+    // passo (?etapa=preco) é a retomada explícita e aplica a cópia local.
+    await page.goto("/dashboard/imoveis/novo?etapa=preco", { waitUntil: "networkidle" });
+    // Só o "Continuar de onde parei" do AVISO de rascunho (testid próprio), não o "Continuar" do rodapé do cadastro.
+    const retomar = page.getByTestId("rascunho-continuar");
     const bloco = page.getByTestId("preco-sugerido");
     // O aviso de rascunho chega depois do networkidle (consulta assíncrona): espera o aviso OU o bloco do preço
     // (conta sem rascunho no servidor abre direto pelo rascunho local) em vez de decidir na hora.

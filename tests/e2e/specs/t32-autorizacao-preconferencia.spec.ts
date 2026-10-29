@@ -124,7 +124,8 @@ test.describe("T32 — Autorização obrigatória e pré-conferência", () => {
     await expect(secao).toContainText("Marque a declaração para publicar.");
     await secao.getByText("Administro este imóvel em nome do proprietário (gestor ou procurador)").click();
     await expect(secao).toContainText("Escolha o que você está anexando: contrato de administração ou procuração.");
-    await secao.getByTestId("documento-operacao-tipo").getByLabel("Procuração").check();
+    // E193 (#1496): o tipo do documento virou cartão de escolha única (role=radio), sem o rádio com rótulo.
+    await secao.getByTestId("documento-operacao-tipo").getByRole("radio", { name: /Procuração/ }).click();
     await expect(secao).toContainText("Anexe: contrato de administração ou procuração.");
 
     await secao.locator('input[type="file"]').setInputFiles({ name: "procuracao.pdf", mimeType: "application/pdf", buffer: pdf() });
