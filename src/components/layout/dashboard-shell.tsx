@@ -30,7 +30,7 @@ import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
-import { BARRA_ADMIN, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
+import { barraAdminPara, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
 import { PapelAtivo } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
@@ -321,7 +321,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             {ANUNCIAR.rotulo}
           </Link>
         )}
-        <MenuCascata itens={naAreaAdmin ? [...BARRA_ADMIN] : menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
+        <MenuCascata itens={naAreaAdmin ? [...barraAdminPara({ observadorQa: contadores.observadorQa })] : menu} pathname={pathname} badges={badges} aoNavegar={aoNavegar} />
         {naAreaAdmin && (
           // Troca de documento (não pelo roteador): uma Server Action pendente do /admin devolvia a URL para a tela
           // anterior depois de abrir a Conta (mesma causa descrita em dashboard/conta/page.tsx).

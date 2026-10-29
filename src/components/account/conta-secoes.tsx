@@ -354,7 +354,7 @@ export function AjudaContato() {
           Central de Ajuda
         </a>
         <a
-          href="/ajuda?novo=1"
+          href="/ajuda/fale-com-a-viva?novo=1"
           className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
         >
           Abrir chamado

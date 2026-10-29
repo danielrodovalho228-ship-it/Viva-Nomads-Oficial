@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { conversaInicial, resolverConversaPedida, type ContratoParaConversa } from "./conversa-pedida.ts";
+import { conversaInicial, conversasDeContratos, type ContratoParaConversa } from "./conversa-pedida.ts";
 import { conversationId } from "../messages/conversation-id.ts";
 
 const DONO = "7216d0e9-6246-482a-a1de-524fd5231dc2";
@@ -20,22 +20,22 @@ test("o id do botão é o mesmo do QA (cc657f1c…) e é a conversa do contrato"
   assert.equal(pedida, "cc657f1c-49ad-5b98-8d5c-fd35f33f04f3");
 });
 
-test("contrato sem mensagens: abre a conversa do contrato vazia, com a outra parte certa", () => {
-  const r = resolverConversaPedida(pedida, ["conversa-de-outro-morador"], [contrato], DONO, conversationId);
-  assert.equal(r.tipo, "nova");
-  if (r.tipo === "nova") {
-    assert.equal(r.outroId, INQ);
-    assert.equal(r.papel, "proprietario");
-  }
-  const m = resolverConversaPedida(pedida, [], [contrato], INQ, conversationId);
-  assert.ok(m.tipo === "nova" && m.outroId === DONO && m.papel === "inquilino");
+test("contrato sem mensagens: a conversa dele entra na lista, com a outra parte certa (dono e morador)", () => {
+  const doDono = conversasDeContratos(["conversa-de-outro-morador"], [contrato], DONO, conversationId);
+  assert.deepEqual(doDono.map((c) => [c.id, c.outroId, c.papel, c.contrato.id]), [[pedida, INQ, "proprietario", contrato.id]]);
+  const doMorador = conversasDeContratos([], [contrato], INQ, conversationId);
+  assert.deepEqual(doMorador.map((c) => [c.id, c.outroId, c.papel]), [[pedida, DONO, "inquilino"]]);
 });
 
-test("conversa que a pessoa não tem e não é de contrato dela: não encontrada", () => {
-  assert.equal(resolverConversaPedida(pedida, ["x"], [contrato], OUTRO, conversationId).tipo, "nao_encontrada");
-  assert.equal(resolverConversaPedida("ffffffff-ffff-4fff-8fff-ffffffffffff", ["x"], [contrato], DONO, conversationId).tipo, "nao_encontrada");
-  assert.equal(resolverConversaPedida(pedida, [pedida], [], DONO, conversationId).tipo, "existe");
-  assert.equal(resolverConversaPedida(undefined, ["x"], [], DONO, conversationId).tipo, "nenhuma");
+test("conversa do contrato que já tem mensagem não se repete; renovação no mesmo imóvel é a mesma conversa", () => {
+  assert.deepEqual(conversasDeContratos([pedida], [contrato], DONO, conversationId), []);
+  const renovacao = { ...contrato, id: "d5d50247-0000-4000-8000-00000000c002" };
+  assert.equal(conversasDeContratos([], [renovacao, contrato], DONO, conversationId).length, 1);
+});
+
+test("contrato de que a pessoa não é parte nunca vira conversa dela", () => {
+  assert.deepEqual(conversasDeContratos([], [contrato], OUTRO, conversationId), []);
+  assert.deepEqual(conversasDeContratos([], [{ ...contrato, tenantId: DONO }], DONO, conversationId), []);
 });
 
 test("ao carregar: conversa pedida e fora da lista não abre nenhuma (nunca a 1ª da lista)", () => {
@@ -51,5 +51,9 @@ test("tela e página usam a regra (sem cair em initial[0] quando a conversa pedi
   assert.match(cliente, /conversaInicial\(/);
   assert.match(cliente, /data-testid="mensagens-conversa-nao-encontrada"/);
   const pagina = ler("src/app/(dashboard)/dashboard/mensagens/page.tsx");
-  assert.match(pagina, /resolverConversaPedida\(/);
+  // E200 (QA 28/10): nada de injetar a conversa só pelo link, com "Morador" fixo — a lista já traz todas.
+  assert.doesNotMatch(pagina, /"Morador"/);
+  const dados = ler("src/lib/data/messages.ts");
+  assert.match(dados, /conversasDeContratos\(/);
+  assert.match(dados, /const conversas = \[\.\.\.doContrato, \.\.\.byConv\.values\(\)\]/);
 });

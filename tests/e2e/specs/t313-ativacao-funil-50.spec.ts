@@ -138,7 +138,7 @@ test.describe("T313 — ativação e funil (50)", () => {
     if (error) throw error;
     chamados.push(data.id as string);
     const d = await entrar(browser, dono.email, senha);
-    await d.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await d.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("chamado-estado").first()).toHaveAttribute("data-estado", "aberto", { timeout: 20_000 });
     await d.context().close();
     const a = await admin(browser, "/admin");

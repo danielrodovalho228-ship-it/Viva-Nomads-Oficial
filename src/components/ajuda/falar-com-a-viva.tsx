@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function FalarComAViva({ className }: { className?: string }) {
   return (
     <p className={cn("mt-8 text-sm text-muted", className)} data-testid="falar-com-a-viva">
-      <Link href="/ajuda" className="font-semibold text-ink underline underline-offset-4 hover:text-forest">
+      <Link href="/ajuda/fale-com-a-viva" className="font-semibold text-ink underline underline-offset-4 hover:text-forest">
         Falar com a Viva
       </Link>{" "}
       · {PROMESSA_ATENDIMENTO}

@@ -22,7 +22,7 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     // Proprietário logado abre pelo "Falar com uma pessoa" do chat da /ajuda (como o VN-000101).
     const dono = await browser.newContext({ storageState: authFile("proprietario") });
     const p = await dono.newPage();
-    await p.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await p.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();

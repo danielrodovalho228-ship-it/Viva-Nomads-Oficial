@@ -25,7 +25,7 @@ for (const largura of [390, 1280]) {
     });
 
     test("chat da Viva: 'Falar com uma pessoa' tem nome e e-mail com autocomplete", async ({ page }) => {
-      await page.goto("/ajuda", { waitUntil: "networkidle" });
+      await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
       const bloco = page.getByTestId("viva-chat-bloco");
       await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
       const form = page.getByTestId("form-pessoa");

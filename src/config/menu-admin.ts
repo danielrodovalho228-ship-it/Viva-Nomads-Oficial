@@ -55,6 +55,22 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
   ]),
 ];
 
+/**
+ * E216 — o admin observador da QA (profiles.qa_admin) não vê na barra o que não pode abrir: a Caixa dos Sócios é 404 para
+ * ele (página, ações e RLS já fecham). Grupo que ficar vazio sai junto.
+ */
+export const FORA_DA_BARRA_OBSERVADOR: readonly string[] = ["/admin/socios"];
+
+export function barraAdminPara(o: { observadorQa: boolean }): readonly ItemMenu[] {
+  if (!o.observadorQa) return BARRA_ADMIN;
+  const fora = (i: ItemMenu) => !!i.href && FORA_DA_BARRA_OBSERVADOR.includes(i.href);
+  return BARRA_ADMIN.flatMap((i) => {
+    if (!i.filhos) return fora(i) ? [] : [i];
+    const filhos = i.filhos.filter((f) => !fora(f));
+    return filhos.length ? [{ ...i, filhos }] : [];
+  });
+}
+
 /** O rodapé da barra do admin leva de volta às áreas de usuário. */
 // E176 (D3): "Minha conta" do admin leva à Conta (não ao Início do painel).
 export const MINHA_CONTA_ADMIN = { rotulo: "Minha conta →", href: "/dashboard/conta" } as const;

@@ -121,7 +121,7 @@ export function checklistParceiro(f: FatosConta): ChecklistAtivacao {
       "analise",
       "Análise da Viva",
       aprovada,
-      enviada ? { rotulo: "Falar com a Viva", href: "/ajuda" } : null,
+      enviada ? { rotulo: "Falar com a Viva", href: "/ajuda/fale-com-a-viva" } : null,
       f.parceria === "aguardando" ? "Em análise. Resposta em até 1 dia útil." : f.parceria === "recusada" ? "Não aprovada. Fale com a Viva para entender o motivo." : null,
     ),
     item("pagina", "Página publicada", f.parceria === "publicada", aprovada ? { rotulo: "Publicar a página", href: "/dashboard/parceiro" } : null),
