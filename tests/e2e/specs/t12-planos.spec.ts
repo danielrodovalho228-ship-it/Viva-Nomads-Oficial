@@ -14,12 +14,11 @@ test.describe("T12 — Escada de planos @criticos", () => {
   test.describe("Regra 1 — Gestor por elegibilidade", () => {
     test.use({ storageState: authFile("proprietario") });
 
-    test("a guarda do servidor recusa cobrança do Gestor (403)", async ({ request }) => {
+    test("não há cobrança de plano por auto-serviço: a rota de assinatura saiu (E237)", async ({ request }) => {
       const res = await request.post("/api/assinatura", {
         data: { planId: "gestor", billingType: "PIX" },
       });
-      // Nunca cobra o Gestor por auto-serviço (403), independente de elegibilidade.
-      expect(res.status()).toBe(403);
+      expect(res.status()).toBe(404);
     });
   });
 

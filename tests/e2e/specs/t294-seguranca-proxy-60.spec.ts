@@ -27,7 +27,6 @@ const DESVIOS: Record<string, string>[] = [
 const API_ADMIN: { metodo: "get" | "post"; rota: string }[] = [
   { metodo: "get", rota: "/api/admin/aprovacoes" },
   { metodo: "get", rota: "/api/admin/agentes/memoria" },
-  { metodo: "get", rota: "/api/admin/agentes/anexos" },
   { metodo: "post", rota: "/api/admin/agentes/executar" },
   { metodo: "post", rota: "/api/admin/agentes/chat" },
   { metodo: "post", rota: "/api/admin/ia-diagnostico" },

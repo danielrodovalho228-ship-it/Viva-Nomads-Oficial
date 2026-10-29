@@ -2430,12 +2430,6 @@
     }
   },
   "rotas": {
-    "/api/admin/agentes/anexos": {
-      "personas": [
-        "admin"
-      ],
-      "specs": []
-    },
     "/api/admin/agentes/chat": {
       "personas": [
         "admin"
@@ -2511,33 +2505,6 @@
         "publico"
       ],
       "specs": []
-    },
-    "/api/app/ponte": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t39-app-ida-e-volta"
-      ]
-    },
-    "/api/app/ponte/entrar": {
-      "personas": [
-        "publico"
-      ],
-      "specs": [
-        "t39-app-ida-e-volta"
-      ]
-    },
-    "/api/assinatura": {
-      "personas": [
-        "inquilino",
-        "proprietario",
-        "admin"
-      ],
-      "specs": [
-        "t12-planos",
-        "t31-cadastro-documento"
-      ]
     },
     "/api/atendimento/avaliar": {
       "personas": [
