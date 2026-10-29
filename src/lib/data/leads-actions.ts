@@ -23,6 +23,7 @@ import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import { conversationId } from "@/lib/messages/conversation-id";
 import type { EstadoIdentidade } from "@/lib/identidade/estado";
 
 interface ActionResult {
@@ -53,7 +54,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   // Carrega o lead e confirma que o solicitante é o DONO (autoridade no servidor).
   const { data: lead, error: lErr } = await supabase
     .from("leads")
-    .select("id, owner_id, tenant_id, status")
+    .select("id, owner_id, tenant_id, status, property_id")
     .eq("id", leadId)
     .maybeSingle();
   if (lErr) return { ok: false, error: erroBancoPT(lErr) };
@@ -116,7 +117,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
           email: t.email,
           name: t.full_name ?? undefined,
           userId: lead.tenant_id,
-          pushUrl: "/dashboard/candidaturas",
+          // E228: "Abrir a conversa" abre a conversa desta candidatura em Mensagens (o mesmo id que o pedido gravou).
+          pushUrl: `/dashboard/mensagens?conversa=${conversationId(lead.tenant_id, user.id, lead.property_id)}`,
         });
       }
     }
