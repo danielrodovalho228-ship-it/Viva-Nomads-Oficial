@@ -29,6 +29,8 @@ export function Footer() {
 
         <FooterCol title="Plataforma">
           <FooterLink href="/buscar">Buscar imóveis</FooterLink>
+          {/* MS-1/PUBLICO-A: o que saiu do topo público (Publicar pedido, Como funciona, Preços, Parceiros) mora aqui. */}
+          <FooterLink href="/pedidos/novo">Publicar pedido</FooterLink>
           <FooterLink href="/como-funciona">Como funciona</FooterLink>
           <FooterLink href="/para-proprietarios">Para proprietários</FooterLink>
           <FooterLink href="/empresas">Para empresas</FooterLink>
