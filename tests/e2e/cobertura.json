@@ -3296,14 +3296,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/actions.ts#minhaSituacaoLimite": {
-      "personas": [
-        "proprietario"
-      ],
-      "specs": [
-        "t320-pausar-anuncio-64b"
-      ]
-    },
     "src/lib/data/actions.ts#pausarAnuncio": {
       "personas": [
         "proprietario"
