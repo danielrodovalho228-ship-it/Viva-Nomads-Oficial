@@ -2,42 +2,54 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { HORA, situacaoLimite } from "@/lib/limites";
+import { safeInternalPath } from "@/lib/safe-redirect";
 import {
   LIMITE_QA_POR_HORA,
   chaveConfere,
   chaveLimiteConta,
   chaveLimiteIp,
-  contaPermitida,
+  destinoParaRegistro,
   emailNoPadrao,
   emailNormalizado,
+  hashValido,
   papelDaContaNova,
+  portaAdminQaAberta,
+  tipoDeEntrada,
   type PerfilQa,
+  type TipoEntradaQa,
 } from "./entrar";
 
 /*
-  QA-LOGIN-B — a QA entra direto numa conta de TESTE, sem código por e-mail. Ordem das travas:
-    1. sem QA_LOGIN_KEY → 404 (a rota "não existe");
+  QA-LOGIN-B — porta de QA. Ordem das travas:
+    1. sem QA_LOGIN_KEY_HASH (sha256 em hex) → 404 (a rota "não existe");
     2. o IP gasta uma tentativa (30/h) antes da chave ser conferida; chave errada → 404;
-    3. conta existente: só de teste, morador/proprietário, sem 2FA → senão 404 (administrador nunca);
-       conta inexistente: só cria se o e-mail casar com QA_EMAIL_PADRAO (is_teste = true na mesma operação) → senão 404;
+    3. conta existente: conta de teste (morador/proprietário, sem 2FA) ou o admin observador (qa_admin) com a porta do
+       admin aberta (PRE_LANCAMENTO ligado e até QA_ADMIN_VALIDO_ATE) → senão 404 (cliente real, admin comum, Daniel);
+       conta inexistente: só cria se o e-mail casar com QA_EMAIL_PADRAO (is_teste = true na mesma operação) → senão 404.
+       Nunca cria admin;
     4. 30 entradas/h por conta;
-    5. sessão: generateLink(magiclink) + verifyOtp no servidor com o token_hash → cookies. Nenhum e-mail sai.
-  O registro (qa_entradas) guarda horário, conta e o hash do IP — nunca a chave nem o e-mail.
+    5. sessão: generateLink(magiclink) + verifyOtp no servidor com o token_hash → cookies. Nenhum e-mail sai. O admin
+       observador sai daqui em aal1: o /admin pede o código do app autenticador dele, como de qualquer admin;
+    6. registro em qa_entradas: horário, conta, tipo, hash do IP e o caminho de destino — nunca a chave nem o e-mail.
 */
 
-export type ResultadoQa = { status: 200; userId: string } | { status: 404 | 429 | 503 };
+export type ResultadoQa = { status: 200; userId: string; tipo: TipoEntradaQa } | { status: 404 | 429 | 503 };
 
 const NAO_EXISTE = { status: 404 } as const;
 
+/** PRE_LANCAMENTO lido na hora (não no build): o desligamento vale assim que a variável muda na Vercel. */
+const NOME_PRE_LANCAMENTO = ["NEXT_PUBLIC", "PRE_LANCAMENTO"].join("_");
+export const preLancamentoAgora = () => process.env[NOME_PRE_LANCAMENTO];
+
 export function qaLoginLigado(): boolean {
-  return !!process.env.QA_LOGIN_KEY;
+  return hashValido(process.env.QA_LOGIN_KEY_HASH);
 }
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
 async function temFator2fa(admin: Admin, userId: string): Promise<boolean> {
   const { data, error } = await admin.auth.admin.mfa.listFactors({ userId });
-  // Na dúvida, trata como conta com 2FA (fecha).
+  // Na dúvida, trata como conta com 2FA (fecha a entrada de conta de teste).
   if (error) return true;
   return (data?.factors ?? []).length > 0;
 }
@@ -59,10 +71,14 @@ async function criarContaDeTeste(admin: Admin, email: string, papel: "owner" | "
   return id;
 }
 
-export async function entrarComoQa(entrada: { email: unknown; chave: unknown; papel?: unknown }, ipHash: string): Promise<ResultadoQa> {
-  const esperada = process.env.QA_LOGIN_KEY;
-  if (!esperada) return NAO_EXISTE;
-  const chaveOk = chaveConfere(entrada.chave, esperada);
+export async function entrarComoQa(
+  entrada: { email: unknown; chave: unknown; papel?: unknown; destino?: unknown },
+  ipHash: string,
+  agora: Date = new Date(),
+): Promise<ResultadoQa> {
+  const hash = process.env.QA_LOGIN_KEY_HASH;
+  if (!hashValido(hash)) return NAO_EXISTE;
+  const chaveOk = chaveConfere(entrada.chave, hash);
   const limiteIp = await situacaoLimite(chaveLimiteIp(ipHash), LIMITE_QA_POR_HORA, HORA);
   if (!chaveOk) return NAO_EXISTE;
   if (limiteIp === "estourou") return { status: 429 };
@@ -73,19 +89,23 @@ export async function entrarComoQa(entrada: { email: unknown; chave: unknown; pa
   const admin = createAdminClient();
   if (!admin) return { status: 503 };
 
-  const { data: p } = await admin.from("profiles").select("id, role, is_teste").eq("email", email).maybeSingle();
+  const { data: p } = await admin.from("profiles").select("id, role, is_teste, qa_admin").eq("email", email).maybeSingle();
   const perfil = p as (PerfilQa & { id: string }) | null;
   let userId: string;
+  let tipo: TipoEntradaQa;
   let criada = false;
   if (perfil) {
-    if (!contaPermitida(perfil, false)) return NAO_EXISTE;
-    if (await temFator2fa(admin, perfil.id)) return NAO_EXISTE;
+    const fator = perfil.qa_admin === true ? false : await temFator2fa(admin, perfil.id);
+    const t = tipoDeEntrada(perfil, fator, portaAdminQaAberta(agora, preLancamentoAgora()));
+    if (!t) return NAO_EXISTE;
     userId = perfil.id;
+    tipo = t;
   } else {
     if (!emailNoPadrao(email, process.env.QA_EMAIL_PADRAO)) return NAO_EXISTE;
     const novo = await criarContaDeTeste(admin, email, papelDaContaNova(entrada.papel));
     if (!novo) return NAO_EXISTE;
     userId = novo;
+    tipo = "teste";
     criada = true;
   }
 
@@ -102,6 +122,7 @@ export async function entrarComoQa(entrada: { email: unknown; chave: unknown; pa
   const { error: eOtp } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash });
   if (eOtp) return { status: 503 };
 
-  await admin.from("qa_entradas").insert({ usuario_id: userId, ip_hash: ipHash, conta_criada: criada });
-  return { status: 200, userId };
+  const destino = destinoParaRegistro(safeInternalPath(typeof entrada.destino === "string" ? entrada.destino : null));
+  await admin.from("qa_entradas").insert({ usuario_id: userId, tipo, ip_hash: ipHash, destino, conta_criada: criada });
+  return { status: 200, userId, tipo };
 }

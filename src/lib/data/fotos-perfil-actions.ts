@@ -8,6 +8,7 @@ import { logModeracao } from "@/lib/data/moderacao-log";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { notify } from "@/lib/notifications";
 import { avisoRemocao, motivoRemocaoValido, ordenarFila, textoRemocao, type StatusFoto } from "@/lib/perfil/foto-revisao";
+import { recusaObservador } from "@/lib/qa/observador";
 
 /**
  * FOTO-PERFIL-B (E13) — fila de revisão das fotos de perfil (/admin/fotos-perfil). Os dados reais da fila são vistos
@@ -59,6 +60,9 @@ export async function aprovarFotoPerfil(id: string): Promise<Res> {
   if (!UUID.test(id)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const { data: fotoQa } = await a.admin.from("fotos_perfil_revisao").select("user_id").eq("id", id).maybeSingle();
+  const recusaQa = await recusaObservador(a.user.id, { perfis: [(fotoQa?.user_id as string | null) ?? null], semPerfil: fotoQa?.user_id ? 0 : 1 });
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data, error } = await a.admin
     .from("fotos_perfil_revisao")
     .update({ status: "aprovada", revisado_por: a.user.id, revisado_em: new Date().toISOString(), denunciada_em: null })
@@ -80,6 +84,9 @@ export async function removerFotoPerfil(id: string, motivo: string): Promise<Res
   if (!motivoRemocaoValido(motivo)) return { ok: false, erro: "Escolha o motivo da remoção." };
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  const { data: fotoQa } = await a.admin.from("fotos_perfil_revisao").select("user_id").eq("id", id).maybeSingle();
+  const recusaQa = await recusaObservador(a.user.id, { perfis: [(fotoQa?.user_id as string | null) ?? null], semPerfil: fotoQa?.user_id ? 0 : 1 });
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data, error } = await a.admin
     .from("fotos_perfil_revisao")
     .update({ status: "removida", motivo, revisado_por: a.user.id, revisado_em: new Date().toISOString() })
