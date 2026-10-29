@@ -8,7 +8,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { diasNaFila, ordenarPendentes, textoHaDias } from "./fila-pendentes.ts";
+import { diasNaFila, idadePedidoParceria, maisAntigoParceria, ordenarPendentes, textoHaDias } from "./fila-pendentes.ts";
+import { haQuantoTempo } from "../admin/decisoes-admin.ts";
 
 const RAIZ = new URL("../../../", import.meta.url);
 const ler = (p: string) => readFileSync(new URL(p, RAIZ), "utf8");
@@ -42,7 +43,7 @@ test("a tela: Pendentes ordenada e com 'há N dias' em cada pedido; sem situaç�
   assert.match(pagina, /const lista = aba === "pendentes" \? ordenarPendentes\(/);
   assert.match(pagina, /diasNaFila: diasNaFila\(s\.criado_em as string, new Date\(agora\)\)/);
   const fichas = ler("src/app/(dashboard)/admin/parceiros/fichas.tsx");
-  assert.match(fichas, /data-testid="ficha-dias" data-dias=\{f\.diasNaFila\}>\s*\{textoHaDias\(f\.diasNaFila\)\}/);
+  assert.match(fichas, /data-testid="ficha-dias" data-dias=\{f\.diasNaFila\}>\s*\{f\.idade\}/);
   for (const t of [pagina, fichas]) assert.doesNotMatch(t, /contatado|arquivado/);
 });
 
@@ -110,4 +111,45 @@ test("a Central de Pendências segue contando os pedidos de parceria pendentes (
   assert.match(corpo, /from\("parceiro_solicitacoes"\)/);
   assert.match(corpo, /pendente/);
   assert.match(decisoes, /parceiros_para_aprovar: parcerias/);
+});
+
+test("E234: a idade do pedido de parceria é UMA conta — o caso 16 × 17 (pedido de 12/10 12:52) dá o mesmo número nas duas telas", () => {
+  const criado = "2026-10-12T15:52:00Z"; // 12/10 12:52 em Brasília
+  const agora = new Date("2026-10-29T06:00:00Z"); // 16 dias e ~14 h depois: 16,59 dias
+  const horas = (agora.getTime() - Date.parse(criado)) / 3_600_000;
+  // O que acontecia: a Visão geral arredondava as horas para o dia mais próximo (17); a Pendentes contava dias inteiros (16).
+  assert.equal(haQuantoTempo(horas), "há 17 dias");
+  assert.equal(textoHaDias(diasNaFila(criado, agora)), "há 16 dias");
+  // Agora as duas telas saem da mesma função.
+  assert.equal(idadePedidoParceria(criado, agora), "há 16 dias");
+  assert.equal(maisAntigoParceria(criado, agora), "mais antigo há 16 dias");
+  // Bordas: logo antes e logo depois de completar 17 dias; e o mesmo dia.
+  assert.equal(idadePedidoParceria(criado, new Date(Date.parse(criado) + 17 * 86_400_000 - 60_000)), "há 16 dias");
+  assert.equal(idadePedidoParceria(criado, new Date(Date.parse(criado) + 17 * 86_400_000)), "há 17 dias");
+  assert.equal(idadePedidoParceria(criado, new Date(Date.parse(criado) + 3 * 3_600_000)), "hoje");
+  assert.equal(maisAntigoParceria(criado, new Date(Date.parse(criado) + 3 * 3_600_000)), "mais antigo de hoje");
+  assert.equal(maisAntigoParceria(null, agora), null);
+  assert.equal(maisAntigoParceria("lixo", agora), null);
+  // O texto da Visão geral é o da Pendentes com "mais antigo" na frente, para qualquer idade.
+  for (const h of [0, 5, 23.9, 24, 47, 48, 60, 397.4, 398.2, 407.9, 408]) {
+    const t = new Date(Date.parse(criado) + h * 3_600_000);
+    const idade = idadePedidoParceria(criado, t);
+    assert.equal(maisAntigoParceria(criado, t), idade === "hoje" ? "mais antigo de hoje" : `mais antigo ${idade}`, `${h} h`);
+  }
+});
+
+test("E234: as duas telas usam a MESMA função (Pendentes e as duas linhas de parceria da Visão geral)", () => {
+  const pagina = ler("src/app/(dashboard)/admin/parceiros/page.tsx");
+  assert.match(pagina, /idade: idadePedidoParceria\(s\.criado_em as string, new Date\(agora\)\)/);
+  assert.doesNotMatch(ler("src/app/(dashboard)/admin/parceiros/fichas.tsx"), /textoHaDias\(/);
+  const decisoes = ler("src/lib/data/admin-decisoes.ts");
+  for (const fn of ["parceriasSemResposta1Dia", "parceriasPendentes"]) {
+    const ini = decisoes.indexOf(`async function ${fn}(`);
+    const corpo = decisoes.slice(ini, decisoes.indexOf("\n}\n", ini));
+    assert.match(corpo, /detalhe: maisAntigoParceria\(linhas\[0\]\?\.criado_em, agora\)/, fn);
+    assert.doesNotMatch(corpo, /maisAntigo\(/, fn);
+  }
+  assert.match(decisoes, /ler\(parceriasPendentes\(admin, agora\)\)/);
+  // A idade sai SÓ de fila-pendentes.ts: nenhuma outra conta de dias para pedido de parceria.
+  assert.equal((ler("src/lib/parceiros/fila-pendentes.ts").match(/86_400_000/g) ?? []).length, 1);
 });
