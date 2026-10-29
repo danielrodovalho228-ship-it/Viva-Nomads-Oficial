@@ -56,7 +56,14 @@ export default function FaleComAVivaPage() {
               <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
                 <Mail className="h-5 w-5 text-forest" aria-hidden /> Outros assuntos
               </h2>
-              <p className="mt-2 text-sm text-muted">Parcerias, imprensa ou outro assunto:</p>
+              {/* MS-1/PUBLICO-A: Parceiros saiu do topo e aparece aqui. */}
+              <p className="mt-2 text-sm text-muted">
+                Quer oferecer um serviço aos moradores e proprietários?{" "}
+                <Link href="/parceiros" className="font-semibold text-forest underline" data-testid="fale-parceiros">
+                  Conheça Parceiros
+                </Link>
+              </p>
+              <p className="mt-3 text-sm text-muted">Imprensa ou outro assunto:</p>
               <a href={`mailto:${SUPORTE_EMAIL}`} className="mt-2 inline-flex min-h-11 items-center break-all text-sm font-semibold text-forest underline">
                 {SUPORTE_EMAIL}
               </a>

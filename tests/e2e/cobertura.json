@@ -20,7 +20,8 @@
         "t343-nivel-busca-sem-beco",
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t669-ms1-topo-publico"
       ]
     },
     "/acesso-socios": {
@@ -350,7 +351,8 @@
         "t25-chamado-resumo",
         "t63-chamado-identificacao",
         "t80-camera-chamado",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t669-ms1-topo-publico"
       ]
     },
     "/alerta-busca/desligar": {
