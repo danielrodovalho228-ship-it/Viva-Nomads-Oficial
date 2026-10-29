@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { consumirLimite, ipHash, HORA } from "@/lib/limites";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { GESTOR_PRECO } from "@/config/planos";
 import { escaparHtml, validarLeadGestor } from "@/lib/cobranca/plano-gestor-lead";
 
 export const dynamic = "force-dynamic";
 
-/** Lead do Plano Gestor (31+ imóveis, ordem f768b951) → e-mail ao admin. Rota pública: valida e limita por IP. */
+/** Lead do Plano Gestor (a partir de GESTOR_PRECO.minimoImoveis imóveis, ordem f768b951) → e-mail ao admin. Rota pública: valida e limita por IP. */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const v = validarLeadGestor(body);
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   const r = await sendEmail({
     interno: true,
     to: process.env.EMPRESAS_LEAD_EMAIL ?? SUPORTE_EMAIL,
-    subject: "Lead — Plano Gestor (31+ imóveis)",
+    subject: `Lead — Plano Gestor (${GESTOR_PRECO.minimoImoveis}+ imóveis)`,
     html: `<h2>Novo contato sobre o Plano Gestor</h2><p>${campos.map(([k, x]) => `${escaparHtml(k)}: ${escaparHtml(x)}`).join("<br>")}</p>`,
     text: campos.map(([k, x]) => `${k}: ${x}`).join("\n"),
   });

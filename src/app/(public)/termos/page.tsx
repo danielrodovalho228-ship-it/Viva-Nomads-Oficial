@@ -61,7 +61,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="8. Comissão e indicações">
-          A plataforma cobra do proprietário uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma (valor mensal × número de meses contratados). Cada renovação ou prorrogação é um novo fechamento e também gera comissão sobre o valor total do período renovado. A comissão é cobrada na assinatura do contrato ou do aditivo. O percentual segue a faixa do proprietário, pelo número de imóveis ativos na data do fechamento: 1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada (Plano Gestor). Não há mensalidade, e o inquilino não paga taxa da plataforma. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000; comissão R$ 1.080. As recompensas do programa de indicação são
+          A plataforma cobra do proprietário uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma (valor mensal × número de meses contratados). Cada renovação ou prorrogação é um novo fechamento e também gera comissão sobre o valor total do período renovado. A comissão é cobrada na assinatura do contrato ou do aditivo. O percentual segue a faixa do proprietário, pelo número de imóveis ativos na data do fechamento: 1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada. Não há mensalidade, e o inquilino não paga taxa da plataforma. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000; comissão R$ 1.080. As recompensas do programa de indicação são
           liberadas apenas após o evento qualificador real (primeira reserva ou locação).
         </Section>
       </div>

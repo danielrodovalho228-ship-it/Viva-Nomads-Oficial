@@ -1,5 +1,5 @@
 /*
-  Lead do "Plano Gestor" (31+ imóveis) — ordem f768b951. Validação PURA do formulário de /precos:
+  Lead do "Plano Gestor" (a partir de GESTOR_PRECO.minimoImoveis imóveis) — ordem f768b951. Validação PURA do formulário de /precos:
   o servidor nunca confia no que o cliente manda (formato, tamanho). Sem CPF; telefone é opcional.
 */
 

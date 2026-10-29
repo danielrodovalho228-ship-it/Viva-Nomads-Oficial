@@ -6,6 +6,7 @@ import styles from "./modelo-negocio.module.css";
 import { FAIXAS_COMISSAO_PADRAO, ehPlanoGestor, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
+import { GESTOR_MIN_IMOVEIS_VALIDADOS } from "@/lib/planos/gestor";
 
 // ── REGRA ÚNICA (ordens bd296d53 e 2f80c58a; fonte: src/lib/cobranca/regra.ts) ──────────────
 // Taxa de serviço por contrato fechado, sobre o valor TOTAL do contrato (valor mensal × meses). Cada renovação é cobrada à parte.
@@ -233,7 +234,7 @@ export function ModeloNegocio() {
           <h2>Premissas</h2>
           <ul>
             <li>Taxa de serviço <strong>uma vez por contrato fechado</strong>, sobre o valor total do contrato (valor mensal × meses); cada renovação é cobrada à parte, sobre o valor do período renovado, com a taxa da faixa do dono.</li>
-            <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor a partir de 31 imóveis.</li>
+            <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor a partir de {GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis.</li>
             <li>O inquilino não paga taxa da Viva. A Viva não emite nota fiscal ao inquilino.</li>
             <li>
               Percentual médio dos canais (valores de referência {COMPARE_REFERENCIA}): {CANAIS.map((c) => `${c.nome} ${pct1(c.pct)}`).join("; ")}; fontes e datas na página de preços.

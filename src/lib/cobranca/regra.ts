@@ -4,7 +4,7 @@
   A taxa vale sobre o VALOR TOTAL de cada contrato fechado (aluguel mensal × meses contratados — ordem do
   Daniel, 14/10). Cada renovação/prorrogação é cobrada à parte, sobre o valor total do período renovado, com a
   taxa da faixa do dono no momento do fechamento. Sem mensalidade. O inquilino não paga taxa da Viva.
-    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–30 = 6% · 31+ = "Plano Gestor — fale com a gente":
+    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–30 = 6% · 31+ = condição negociada ("fale com a gente"):
   continua em 6% até o admin fixar uma condição negociada (override com motivo e validade).
   Lógica PURA, sem banco. As faixas vêm da tabela de config (faixas_comissao); na falta dela vale o padrão
   abaixo, que espelha a migração 0100. A plataforma não toca no aluguel nem na caução: a taxa é cobrada
@@ -68,7 +68,7 @@ export function proximaFaixa(
   return { faltam: prox.minImoveis - atuais, taxa: prox.taxa };
 }
 
-/** 31+ imóveis: o painel e a página de preços mostram "Falar sobre o Plano Gestor" em vez de taxa menor. */
+/** Faixa sem teto: o painel e a página de preços mostram "Falar sobre o Plano Gestor" em vez de taxa menor. */
 export function ehPlanoGestor(n: number, faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): boolean {
   return faixaPorImoveisAtivos(n, faixas).gestor === true;
 }
@@ -165,7 +165,7 @@ export function pctTexto(taxa: number): string {
   return `${`${Math.round(taxa * 1000) / 10}`.replace(".", ",")}%`;
 }
 
-/** Texto público da taxa: Plano Gestor (31+) é "Negociado" — nunca um percentual fixo (decisão do Daniel, 10/10). */
+/** Texto público da taxa: a faixa sem teto é "Negociado" — nunca um percentual fixo (decisão do Daniel, 10/10). */
 export const TAXA_NEGOCIADA_TEXTO = "Negociado";
 export function taxaPublicaTexto(f: FaixaComissao): string {
   return f.gestor ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);

@@ -275,7 +275,9 @@ test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../atendimento/viva-prompt.ts", import.meta.url), "utf8");
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
-  assert.match(t, /Plano Gestor \(condições negociadas/);
+  // E236: a faixa sem teto (31+) é negociada; o Plano Gestor vale a partir de GESTOR_PRECO.minimoImoveis.
+  assert.match(t, /com 31 ou mais, condições negociadas \(sem percentual fixo público/);
+  assert.match(t, /O Plano Gestor vale a partir de \$\{GESTOR_PRECO\.minimoImoveis\} imóveis\./);
 });
 
 test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {
@@ -309,7 +311,8 @@ test("b3c9d76e: Termos e Privacidade trazem o texto exato aprovado (cláusula 8,
   const termos = ler("src/app/(public)/termos/page.tsx");
   assert.match(termos, /As cobranças da plataforma referem-se à comissão sobre o valor total de cada contrato e de cada renovação, e a serviços opcionais\./);
   assert.match(termos, /uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma \(valor mensal × número de meses contratados\)/);
-  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada \(Plano Gestor\)/);
+  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada\./);
+  assert.doesNotMatch(termos, /31 ou mais, condição negociada \(Plano Gestor\)/);
   assert.match(termos, /valor total R\$ 9\.000; comissão R\$ 1\.080\./);
   assert.doesNotMatch(termos, /a taxa é a mesma para todos/i);
   assert.match(ler("src/app/(public)/privacidade/page.tsx"), /Cobrança da comissão sobre o valor total de cada contrato e de cada renovação, do proprietário \(cobrança à parte\); os valores mensais são pagos pelo inquilino direto ao proprietário, fora da plataforma/);
