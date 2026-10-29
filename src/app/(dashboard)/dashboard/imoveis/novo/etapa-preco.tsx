@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useState } from "react";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
@@ -116,19 +117,9 @@ export function EtapaPreco(p: {
               Despesas de consumo (água, luz, gás)
               <MarcaSugerido ativo={p.sugerido("consumo") && p.utilitiesMode === "fixed"} />
             </p>
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Despesas de consumo">
               {(["fixed", "real"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => p.setUtilitiesMode(m)}
-                  className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                    p.utilitiesMode === m ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
-                  )}
-                >
-                  {m === "fixed" ? "Valor fixo estimado" : "Consumo real"}
-                </button>
+                <CartaoEscolha key={m} on={p.utilitiesMode === m} onClick={() => p.setUtilitiesMode(m)} rotulo={m === "fixed" ? "Valor fixo estimado" : "Consumo real"} testid={`consumo-${m}`} />
               ))}
             </div>
             {p.utilitiesMode === "fixed" ? (
@@ -196,22 +187,23 @@ export function EtapaPreco(p: {
                 <CampoDataUnico value={p.availableUntil} onChange={p.setAvailableUntil} ariaLabel="Disponível até" min={p.availableFrom || hojeBR()} testid="disponivel-ate" />
               </Labeled>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Labeled label="Duração mínima">
-                <select value={p.minPeriod} onChange={(e) => p.setMinPeriod(e.target.value)} className="input">
-                  <option value="30">30 dias</option>
-                  <option value="60">60 dias</option>
-                  <option value="90">90 dias</option>
-                  <option value="180">180 dias</option>
-                </select>
-              </Labeled>
-              <Labeled label="Duração máxima">
-                <select value={p.maxPeriod} onChange={(e) => p.setMaxPeriod(e.target.value)} className="input">
-                  <option value="90">90 dias</option>
-                  <option value="180">180 dias</option>
-                </select>
-              </Labeled>
-            </div>
+            {/* E193: escolha única em cartões (antes, listas suspensas). */}
+            <fieldset className="mt-3">
+              <legend className="text-sm font-medium text-ink">Duração mínima</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Duração mínima">
+                {["30", "60", "90", "180"].map((d) => (
+                  <CartaoEscolha key={d} on={p.minPeriod === d} onClick={() => p.setMinPeriod(d)} rotulo={`${d} dias`} testid={`duracao-minima-${d}`} />
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="mt-3">
+              <legend className="text-sm font-medium text-ink">Duração máxima</legend>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Duração máxima">
+                {["90", "180"].map((d) => (
+                  <CartaoEscolha key={d} on={p.maxPeriod === d} onClick={() => p.setMaxPeriod(d)} rotulo={`${d} dias`} testid={`duracao-maxima-${d}`} />
+                ))}
+              </div>
+            </fieldset>
             <span className="mt-2 block text-xs text-muted">Estadias de 30 a 180 dias são o usual.</span>
             {/* E137: a janela de datas precisa caber a duração mínima (aviso já ao escolher, e o Continuar recusa). */}
             {(() => {
@@ -244,7 +236,9 @@ export function EtapaPreco(p: {
             <div className="space-y-2">
               {FAIXAS.map((f) => (
                 <div key={f.key}>
-                  <Toggle checked={!!p.faixas[f.key]} onChange={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))} label={`${f.label} · ${f.resumo}`} />
+                  <Pilula papel="pressed" on={!!p.faixas[f.key]} onClick={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))}>
+                    {`${f.label} · ${f.resumo}`}
+                  </Pilula>
                   {p.faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
                 </div>
               ))}
@@ -280,13 +274,15 @@ export function EtapaPreco(p: {
             <div className="space-y-3">
               {GARANTIAS_CADASTRO.map((g) =>
                 g.disabled ? (
-                  <div key={g.key} className="flex items-center justify-between gap-3 rounded-xl border border-sage-200 bg-surface-2 px-4 py-3 opacity-70">
+                  <div key={g.key} className="inline-flex min-h-11 items-center gap-3 rounded-full border border-sage-200 bg-surface-2 px-4 py-2 opacity-70">
                     <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
                     {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
                   </div>
                 ) : (
                   <div key={g.key}>
-                    <Toggle checked={!!p.garantias[g.key]} onChange={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))} label={`Aceito ${g.label}`} />
+                    <Pilula papel="pressed" on={!!p.garantias[g.key]} onClick={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}>
+                      {`Aceito ${g.label}`}
+                    </Pilula>
                     {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
                   </div>
                 )

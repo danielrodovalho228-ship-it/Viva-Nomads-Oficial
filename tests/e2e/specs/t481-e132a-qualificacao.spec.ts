@@ -85,7 +85,7 @@ test.describe("T481 — E132-A: Qualificação antes do Passo 1; declarações n
       await p.goto(`/dashboard/imoveis/novo?draft=${draft}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
       await noPasso(p, "comodidades", 30_000);
       for (const c of ["cama_colchao", "cozinha_basica", "agua_quente", "mobilia_das_fotos"])
-        await expect(p.getByTestId(`conforto-item-${c}`).locator("input")).toBeChecked({ timeout: 20_000 });
+        await expect(p.getByTestId(`conforto-item-${c}`).getByRole("checkbox")).toBeChecked({ timeout: 20_000 });
       await adm().from("properties").delete().eq("id", draft);
       await p.context().close();
     });

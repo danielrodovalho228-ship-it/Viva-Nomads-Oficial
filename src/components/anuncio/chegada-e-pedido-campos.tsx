@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
 import {
   AJUDA_TIPO_ENTRADA,
   CONSIDERAR_OPCOES,
@@ -61,19 +62,16 @@ export function ChegadaEPedidoCampos({
       <fieldset id="campo-tipo-entrada" aria-invalid={erroTipoEntrada ? true : undefined}>
         <legend className="text-sm font-semibold text-ink">Como se entra no imóvel?</legend>
         <p className="mt-1 text-xs text-ink-soft">{AJUDA_TIPO_ENTRADA}</p>
-        <div className="mt-2 flex flex-wrap gap-2">
+        {/* E193: escolha única em cartões, o padrão da Qualificação (antes, botões redondos de rádio). */}
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Como se entra no imóvel?">
           {TIPOS_ENTRADA.map((t) => (
-            <label key={t.chave} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm">
-              <input
-                type="radio"
-                name="tipo-entrada"
-                value={t.chave}
-                checked={value.tipoEntrada === t.chave}
-                onChange={() => onChange({ ...value, tipoEntrada: t.chave })}
-                data-testid={`tipo-entrada-${t.chave}`}
-              />
-              {t.rotulo}
-            </label>
+            <CartaoEscolha
+              key={t.chave}
+              on={value.tipoEntrada === t.chave}
+              onClick={() => onChange({ ...value, tipoEntrada: t.chave })}
+              rotulo={t.rotulo}
+              testid={`tipo-entrada-${t.chave}`}
+            />
           ))}
         </div>
         {erroTipoEntrada && (
@@ -104,11 +102,11 @@ export function ChegadaEPedidoCampos({
         <legend className="text-sm font-semibold text-ink">O que considerar antes de pedir (opcional)</legend>
         <p className="mt-1 text-xs text-ink-soft">Dizer antes evita surpresa e conta a favor do anúncio na busca.</p>
         <div className="mt-2 flex flex-wrap gap-2">
+          {/* E193: várias escolhas = pílulas, sem a caixa quadrada dentro. */}
           {CONSIDERAR_OPCOES.map((o) => (
-            <label key={o.chave} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm">
-              <input type="checkbox" checked={value.considerarAntes.includes(o.chave)} onChange={() => alternar(o.chave)} data-testid={`considerar-${o.chave}`} />
+            <Pilula key={o.chave} on={value.considerarAntes.includes(o.chave)} onClick={() => alternar(o.chave)} testid={`considerar-${o.chave}`}>
               {o.rotulo}
-            </label>
+            </Pilula>
           ))}
         </div>
         {mostraClasseDeRuido(value.considerarAntes) && (

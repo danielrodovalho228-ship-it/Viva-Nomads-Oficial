@@ -3,6 +3,7 @@
 import { ITENS_CONFORTO } from "@/config/conforto-minimo";
 import { TITULO_PADRAO_MINIMO } from "@/lib/conforto/exibicao";
 import { Button } from "@/components/ui/button";
+import { Pilula } from "@/components/anuncio/escolha-assistente";
 import type { SalvamentoConforto } from "./use-conforto-salvo";
 
 /**
@@ -46,22 +47,14 @@ export function ChecklistConforto({
           Confirmo todos
         </Button>
       </div>
-      <ul className="mt-3 space-y-2">
+      {/* E193: várias escolhas = pílulas (antes, caixas quadradas). O critério de cada item continua à vista. */}
+      <ul className="mt-3 space-y-3">
         {ITENS_CONFORTO.map((i) => (
-          <li key={i.chave}>
-            <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm text-ink" data-testid={`conforto-item-${i.chave}`}>
-              <input
-                type="checkbox"
-                className="mt-1 h-5 w-5 shrink-0 accent-forest"
-                checked={sel.has(i.chave)}
-                disabled={desabilitado}
-                onChange={() => alterna(i.chave)}
-              />
-              <span className="min-w-0">
-                <span className="font-semibold">{i.rotulo}</span>
-                <span className="block text-xs text-muted">{i.criterio}</span>
-              </span>
-            </label>
+          <li key={i.chave} data-testid={`conforto-item-${i.chave}`}>
+            <Pilula on={sel.has(i.chave)} onClick={() => alterna(i.chave)} disabled={desabilitado}>
+              {i.rotulo}
+            </Pilula>
+            <span className="mt-1 block pl-4 text-xs text-muted">{i.criterio}</span>
           </li>
         ))}
       </ul>

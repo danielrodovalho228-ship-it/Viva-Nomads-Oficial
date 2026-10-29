@@ -1,5 +1,6 @@
 "use client";
 
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useState } from "react";
 import { MapPin, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ImportarAnuncio } from "@/components/property/importar-anuncio";
@@ -382,18 +383,12 @@ export function AntesDePublicar(p: {
           {p.ownershipType === "managed" && (
             <fieldset className="space-y-2" data-testid="documento-operacao-tipo">
               <legend className="mb-1 text-sm font-medium text-ink">O que você vai anexar?</legend>
-              {TIPOS_DOC_GESTAO.map((t) => (
-                <label key={t.valor} className="flex min-h-11 items-center gap-2 text-sm text-ink">
-                  <input
-                    type="radio"
-                    name="tipo-doc-operacao"
-                    value={t.valor}
-                    checked={p.subleaseDocTipo === t.valor}
-                    onChange={() => p.setSubleaseDocTipo(t.valor)}
-                  />
-                  {t.rotulo}
-                </label>
-              ))}
+              {/* E193: escolha única no cartão da Qualificação (antes, botões redondos de rádio). */}
+              <div className="grid grid-cols-1 gap-2" role="radiogroup" aria-label="O que você vai anexar?">
+                {TIPOS_DOC_GESTAO.map((t) => (
+                  <CartaoEscolha key={t.valor} on={p.subleaseDocTipo === t.valor} onClick={() => p.setSubleaseDocTipo(t.valor)} rotulo={t.rotulo} testid={`tipo-doc-operacao-${t.valor}`} />
+                ))}
+              </div>
             </fieldset>
           )}
           <div>

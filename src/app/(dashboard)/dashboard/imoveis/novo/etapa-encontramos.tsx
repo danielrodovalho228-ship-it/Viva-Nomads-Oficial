@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Sparkles } from "lucide-react";
+import { Pilula } from "@/components/anuncio/escolha-assistente";
+import { Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { comodidadeValeParaTipo, comodidadesDoTipo, type GrupoDoTipo } from "@/lib/amenities";
@@ -278,8 +279,8 @@ function GrupoComodidades(p: {
   return (
     <div data-grupo={p.grupo.category}>
       <p className="text-sm font-semibold text-forest">{p.titulo}</p>
-      {/* E193: o mesmo cartão grande tocável da qualificação (antes, chips) — celular 2 por linha, computador 3. */}
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {/* E193 (auditoria de 28/10): várias escolhas = pílulas, o padrão único das seleções múltiplas do assistente. */}
+      <div className="mt-2 flex flex-wrap gap-2">
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);
@@ -287,35 +288,30 @@ function GrupoComodidades(p: {
           const detectada = !on && !!p.detectadas?.includes(it.key);
           const Icone = iconeDaComodidade(it.key);
           return (
-            <button
+            <Pilula
               key={it.key}
-              type="button"
-              aria-pressed={on}
+              papel="pressed"
+              on={on}
               onClick={() => p.onAlternar(it.key)}
               data-sugerido={sug ? "1" : undefined}
               data-detectada={detectada ? "1" : undefined}
               data-comodidade={it.key}
-              data-cartao-assistente
-              className={cn(
-                "flex min-h-14 w-full items-center gap-3 rounded-xl border-2 p-3 text-left text-sm text-ink transition-colors",
-                on ? "border-forest bg-sage-100" : detectada ? "border-dashed border-forest bg-white text-forest" : "border-line bg-white hover:border-sage"
-              )}
+              className={cn(detectada && "border-dashed border-forest text-forest")}
             >
               {sug ? (
-                <Sparkles className="h-6 w-6 shrink-0 text-forest" aria-label="Sugerido · confira" />
+                <Sparkles className="h-4 w-4 shrink-0" aria-label="Sugerido · confira" />
               ) : (
-                <Icone className={cn("h-6 w-6 shrink-0", on || detectada ? "text-forest" : "text-muted")} aria-hidden />
+                !on && <Icone className={cn("h-4 w-4 shrink-0", detectada ? "text-forest" : "text-muted")} aria-hidden />
               )}
-              <span className="min-w-0 flex-1">
+              <span>
                 {it.label}
                 {detectada && (
-                  <span className="block font-medium underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
+                  <span className="ml-1 font-semibold underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
                     Confirme
                   </span>
                 )}
               </span>
-              {on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white" aria-hidden />}
-            </button>
+            </Pilula>
           );
         })}
       </div>

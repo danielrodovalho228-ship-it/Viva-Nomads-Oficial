@@ -1,7 +1,7 @@
 "use client";
 
 import { CampoReais } from "@/components/ui/campo-reais";
-import { Briefcase, Check, MapPin, Percent, Plus, Trash2 } from "lucide-react";
+import { Briefcase, MapPin, Percent, Plus, Trash2 } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { ManualProximities } from "@/components/property/manual-proximities";
@@ -18,8 +18,8 @@ import { cn, formatBRL } from "@/lib/utils";
 import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, buscaNaoRespondeu, textoDistancia } from "@/lib/anuncio/proximidades";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { MedirInternet } from "./medir-internet";
 import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
 
@@ -175,10 +175,10 @@ function ItemProximidade({
             {marcado ? "" : " · não aparece no anúncio"}
           </span>
         </span>
-        <span className="flex shrink-0 items-center gap-2 text-xs text-muted">
+        {/* E193: mostrar/esconder cada lugar é uma escolha múltipla → pílula (antes, chave deslizante). */}
+        <Pilula papel="switch" on={marcado} onClick={onAlternar} aria-label={`Mostrar ${l.nome} no anúncio`} testid="proximidade-mostrar" className="shrink-0">
           Mostrar
-          <Switch checked={marcado} onChange={onAlternar} label={`Mostrar ${l.nome} no anúncio`} testId="proximidade-mostrar" />
-        </span>
+        </Pilula>
       </div>
       {reportar && (
         <div className="mt-1">
@@ -239,22 +239,13 @@ export function ProntoParaTrabalhar({
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
     const on = !!marcadas[it.chave];
     return (
-      <button
-        key={it.chave}
-        type="button"
-        aria-pressed={on}
-        onClick={() => onAlternar(it.chave)}
-        data-testid={`trabalho-${it.chave}`}
-        className={cn(
-          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium",
-          on ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:border-sage",
-        )}
-      >
-        {on && <Check className="h-3.5 w-3.5" aria-hidden />}
-        {it.rotulo}
-        {essencial && <span className={on ? "text-white/80" : "text-muted"}> · essencial</span>}
-        {sugeridas.includes(it.chave) && on && <span className="sr-only"> ({MARCA_SUGERIDO})</span>}
-      </button>
+      <Pilula key={it.chave} papel="pressed" on={on} onClick={() => onAlternar(it.chave)} testid={`trabalho-${it.chave}`}>
+        <span>
+          {it.rotulo}
+          {essencial && <span className={on ? "text-white/80" : "text-muted"}> · essencial</span>}
+          {sugeridas.includes(it.chave) && on && <span className="sr-only"> ({MARCA_SUGERIDO})</span>}
+        </span>
+      </Pilula>
     );
   };
   return (
@@ -329,25 +320,18 @@ export function BlocoNegociacao({
         {TEXTO_TETO_RODADAS}
       </p>
 
-      <div className="mt-3 flex gap-2" role="radiogroup" aria-label="Aceito negociar?">
+      <div className="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Aceito negociar?">
         {[
           { v: true, r: "Aceito negociar" },
           { v: false, r: "Valor fixo" },
         ].map((o) => (
-          <button
+          <CartaoEscolha
             key={o.r}
-            type="button"
-            role="radio"
-            aria-checked={valor.aceita === o.v}
+            on={valor.aceita === o.v}
             onClick={() => onValor({ ...valor, aceita: o.v, itens: o.v ? valor.itens : [] })}
-            className={cn(
-              "flex-1 rounded-lg border px-3 py-2 text-sm font-medium",
-              valor.aceita === o.v ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage",
-            )}
-            data-testid={o.v ? "negociar-sim" : "negociar-nao"}
-          >
-            {o.r}
-          </button>
+            rotulo={o.r}
+            testid={o.v ? "negociar-sim" : "negociar-nao"}
+          />
         ))}
       </div>
       {!valor.aceita && <p className="mt-2 text-xs text-muted">Quem se interessar só pode aceitar ou recusar. O anúncio mostra “Valor fixo”.</p>}
@@ -359,16 +343,15 @@ export function BlocoNegociacao({
             {itens.map((i) => {
               const on = valor.itens.includes(i.chave);
               return (
-                <button
+                <Pilula
                   key={i.chave}
-                  type="button"
-                  aria-pressed={on}
+                  papel="pressed"
+                  on={on}
                   onClick={() => onValor({ ...valor, itens: on ? valor.itens.filter((x) => x !== i.chave) : [...valor.itens, i.chave] })}
-                  className={cn("rounded-full border px-3 py-2 text-xs font-medium", on ? "border-forest bg-forest text-white" : "border-sage-200 text-ink")}
-                  data-testid={`negociavel-${i.chave}`}
+                  testid={`negociavel-${i.chave}`}
                 >
                   {i.rotulo}
-                </button>
+                </Pilula>
               );
             })}
           </div>
@@ -422,23 +405,21 @@ export function BlocoNegociacao({
                 testid="limite-valor-minimo"
               />
             </label>
-            <label className="block text-sm text-ink">
-              Limpezas por mês que posso incluir
-              <select
-                value={limites.limpezasMax == null ? "" : String(limites.limpezasMax)}
-                onChange={(e) => onLimites({ ...limites, limpezasMax: e.target.value === "" ? null : Number(e.target.value) })}
-                className="input mt-1"
-                data-testid="limite-limpezas"
-              >
-                <option value="">Sem limite</option>
-                <option value="0">Nenhuma</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <option key={n} value={n}>
-                    Até {n}
-                  </option>
+            {/* E193: escolha única numa escala curta → pílulas (antes, lista suspensa). */}
+            <fieldset className="text-sm text-ink" data-testid="limite-limpezas">
+              <legend>Limpezas por mês que posso incluir</legend>
+              <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label="Limpezas por mês que posso incluir">
+                {[
+                  { v: null, r: "Sem limite" },
+                  { v: 0, r: "Nenhuma" },
+                  ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ v: n, r: `Até ${n}` })),
+                ].map((o) => (
+                  <Pilula key={o.r} papel="radio" on={(limites.limpezasMax ?? null) === o.v} onClick={() => onLimites({ ...limites, limpezasMax: o.v })} testid={`limite-limpezas-${o.v ?? "sem"}`}>
+                    {o.r}
+                  </Pilula>
                 ))}
-              </select>
-            </label>
+              </div>
+            </fieldset>
           </div>
           <p className="mt-2 text-xs text-muted">
             Abaixo do mínimo, avisamos o interessado sem mostrar o seu número. Você ainda pode aceitar manualmente.
