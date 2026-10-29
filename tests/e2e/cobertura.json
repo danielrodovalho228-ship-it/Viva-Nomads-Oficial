@@ -668,7 +668,8 @@
         "t621-varredura-bloco55",
         "t622-varredura-bloco56",
         "t626-varredura-bloco60",
-        "t643-e229-barra-360"
+        "t643-e229-barra-360",
+        "t645-e238-e239-conta-passos"
       ]
     },
     "/dashboard/assinatura": {
@@ -801,7 +802,8 @@
         "t482-e170-caixas-vazias",
         "t542-menus5-e85-estrutura",
         "t561-e192-por-que-na-cidade",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t645-e238-e239-conta-passos"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1594,6 +1596,7 @@
         "socio"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t3-isolamento-papeis",
         "t307-varredura-bloco8"
       ]
@@ -1623,6 +1626,7 @@
         "publico"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t69-botoes-header",
         "t72-paginas-institucionais",
         "t171-faixas-taxa-cors",
@@ -1700,6 +1704,7 @@
         "publico"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t14-app-mode",
         "t18-seo-a11y",
         "t20-p1-agentes",
@@ -1821,6 +1826,7 @@
         "publico"
       ],
       "specs": [
+        "t659-e236-gestor-20",
         "t18-seo-a11y",
         "t68-comissao-valor-total",
         "t311-marco-principal-unico",
@@ -2507,7 +2513,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t660-e237-rotas-aposentadas"
+      ]
     },
     "/api/atendimento/avaliar": {
       "personas": [
@@ -2830,7 +2838,9 @@
       "personas": [
         "sistema"
       ],
-      "specs": []
+      "specs": [
+        "t660-e237-rotas-aposentadas"
+      ]
     },
     "/api/well-known/android": {
       "personas": [
