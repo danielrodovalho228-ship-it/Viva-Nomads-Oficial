@@ -6,6 +6,7 @@ import { contarPropostasAguardando } from "@/lib/data/propostas-actions";
 import { contarAprovacoesPendentes } from "@/lib/data/agentes-actions";
 import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
 import { temPapelParceiro } from "@/lib/parceiros/painel-actions";
+import { ehObservadorQa } from "@/lib/qa/observador";
 import { CONTADORES_VAZIOS, contadoresVisiveis, type ContadoresPainel } from "@/lib/painel/contadores";
 
 /**
@@ -24,7 +25,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
 
   const admin = await ehAdmin(supabase, user.id).catch(() => false);
   const zero = () => Promise.resolve(0);
-  const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes] =
+  const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes, observadorQa] =
     await Promise.all([
       contarContratosParaAssinar().catch(() => 0),
       contarPropostasAguardando().catch(() => 0),
@@ -34,6 +35,8 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
       imoveisAtivosDoDono().catch(() => 0),
       temPapelParceiro().catch(() => false),
       getMinhasLocacoes().catch(() => []),
+      // E216: só faz sentido para admin (o observador da QA é admin).
+      admin ? ehObservadorQa(user.id).catch(() => false) : Promise.resolve(false),
     ]);
   const c: ContadoresPainel = {
     contratosParaAssinar,
@@ -44,6 +47,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
     imoveisAtivos,
     parceiro,
     estadiaAtiva: locacoes.some((l) => l.status === "ativo"),
+    observadorQa,
   };
   return contadoresVisiveis(c, admin);
 }
