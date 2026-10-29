@@ -672,7 +672,8 @@
         "t649-e246-e249-contratos-inicio",
         "t661-varredura-bloco62",
         "t662-varredura-bloco63",
-        "t663-varredura-bloco64"
+        "t663-varredura-bloco64",
+        "t664-e230-sem-score"
       ]
     },
     "/dashboard/assinatura": {
@@ -1003,7 +1004,8 @@
         "t418-varredura-bloco35",
         "t572-e196-uma-qualificacao",
         "t622-varredura-bloco56",
-        "t663-varredura-bloco64"
+        "t663-varredura-bloco64",
+        "t664-e230-sem-score"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
