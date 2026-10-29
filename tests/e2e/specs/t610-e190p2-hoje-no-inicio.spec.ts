@@ -2,28 +2,17 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-  T609 — E190 (parte 2): "Hoje" no Início do proprietário. Quem entra e quem sai HOJE nos imóveis do dono, cada um num
-========
   T610 — E190 (parte 2): "Hoje" no Início do proprietário. Quem entra e quem sai HOJE nos imóveis do dono, cada um num
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
   cartão com foto (ou iniciais) + nome do morador, o imóvel e o horário; o cartão leva à estadia. Sem nada hoje, a seção
   não aparece. Mesma fonte da Agenda. 1280 e 390.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-const dono = { email: `dono.t609.${sufixo}@lab.vivanomads.test`, nome: "Otília Hoje", role: "owner" as const };
-const vazio = { email: `vazio.t609.${sufixo}@lab.vivanomads.test`, nome: "Vera Semnada", role: "owner" as const };
-const entra = { email: `entra.t609.${sufixo}@lab.vivanomads.test`, nome: "Iara Chegada", role: "tenant" as const };
-const sai = { email: `sai.t609.${sufixo}@lab.vivanomads.test`, nome: "Bruno Partida", role: "tenant" as const };
-========
 const dono = { email: `dono.t610.${sufixo}@lab.vivanomads.test`, nome: "Otília Hoje", role: "owner" as const };
 const vazio = { email: `vazio.t610.${sufixo}@lab.vivanomads.test`, nome: "Vera Semnada", role: "owner" as const };
 const entra = { email: `entra.t610.${sufixo}@lab.vivanomads.test`, nome: "Iara Chegada", role: "tenant" as const };
 const sai = { email: `sai.t610.${sufixo}@lab.vivanomads.test`, nome: "Bruno Partida", role: "tenant" as const };
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
 const ids: Record<string, string> = {};
 /** Dia em Brasília (UTC−3), deslocado em `d` dias — o mesmo "hoje" da tela. */
 const dia = (d: number) => new Date(Date.now() - 3 * 3_600_000 + d * 86_400_000).toISOString().slice(0, 10);
@@ -56,11 +45,7 @@ async function contrato(imovel: string, tenant: string, inicio: string, fim: str
   return c!.id as string;
 }
 
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-test.describe("T609 — E190 parte 2: 'Hoje' no Início do proprietário", () => {
-========
 test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () => {
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
@@ -70,15 +55,9 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
     ids.entra = await criarConta(entra, senha);
     ids.sai = await criarConta(sai, senha);
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.vazio, ids.entra, ids.sai]);
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-    ids.imA = await criarImovelPronto(ids.dono, `Studio Aurora t609 ${sufixo}`, { ativo: true });
-    ids.imB = await criarImovelPronto(ids.dono, `Loft Bela t609 ${sufixo}`, { ativo: true });
-    ids.imVazio = await criarImovelPronto(ids.vazio, `Studio Calmo t609 ${sufixo}`, { ativo: true });
-========
     ids.imA = await criarImovelPronto(ids.dono, `Studio Aurora t610 ${sufixo}`, { ativo: true });
     ids.imB = await criarImovelPronto(ids.dono, `Loft Bela t610 ${sufixo}`, { ativo: true });
     ids.imVazio = await criarImovelPronto(ids.vazio, `Studio Calmo t610 ${sufixo}`, { ativo: true });
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
     const { error } = await adm().from("properties").update({ checkin_after: "14:00", checkout_before: "11:00" }).in("id", [ids.imA, ids.imB]);
     if (error) throw error;
     // O nome do morador aparece depois do aceite (a mesma regra da Agenda).
@@ -113,33 +92,20 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
       await expect(e).toHaveAttribute("data-tipo", "entrada");
       await expect(e).toContainText("Entra hoje · a partir das 14:00");
       await expect(e.getByTestId("inicio-dono-hoje-nome")).toHaveText("Iara");
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-      await expect(e).toContainText(`Studio Aurora t609 ${sufixo}`);
-========
       await expect(e).toContainText(`Studio Aurora t610 ${sufixo}`);
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
       await expect(e).toHaveAttribute("href", `/dashboard/estadia/${ids.cEntra}`);
 
       const s = cartoes.nth(1);
       await expect(s).toHaveAttribute("data-tipo", "saida");
       await expect(s).toContainText("Sai hoje · até as 11:00");
       await expect(s.getByTestId("inicio-dono-hoje-nome")).toHaveText("Bruno");
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-      await expect(s).toContainText(`Loft Bela t609 ${sufixo}`);
-========
       await expect(s).toContainText(`Loft Bela t610 ${sufixo}`);
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
       await expect(s).toHaveAttribute("href", `/dashboard/estadia/${ids.cSai}`);
 
       await expect(secao).not.toContainText(/check-?in|check-?out/i);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
-<<<<<<<< HEAD:tests/e2e/specs/t609-e190p2-hoje-no-inicio.spec.ts
-      await secao.screenshot({ path: `${SAIDA}/t609-hoje-${largura}.png` });
-      await page.screenshot({ path: `${SAIDA}/t609-inicio-${largura}.png`, fullPage: true });
-========
       await secao.screenshot({ path: `${SAIDA}/t610-hoje-${largura}.png` });
       await page.screenshot({ path: `${SAIDA}/t610-inicio-${largura}.png`, fullPage: true });
->>>>>>>> origin/main:tests/e2e/specs/t610-e190p2-hoje-no-inicio.spec.ts
 
       await e.click();
       await page.waitForURL(new RegExp(`/dashboard/estadia/${ids.cEntra}`), { timeout: 30_000 });
