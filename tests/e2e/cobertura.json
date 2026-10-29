@@ -1119,7 +1119,8 @@
         "t623-varredura-bloco57",
         "t622-varredura-bloco56",
         "t625-varredura-bloco59",
-        "t641-e180-entrada-sempre-qualificacao"
+        "t641-e180-entrada-sempre-qualificacao",
+        "t647-e241-contador-com-numero"
       ]
     },
     "/dashboard/indicacoes": {
