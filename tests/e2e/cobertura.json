@@ -995,7 +995,8 @@
         "t415-varredura-bloco32",
         "t418-varredura-bloco35",
         "t427-e141-essencial-sem-prova",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t623-varredura-bloco57"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1090,7 +1091,8 @@
         "t588-varredura-bloco46",
         "t611-e195-cadastro-sem-bege",
         "t614-varredura-bloco53",
-        "t620-e193-um-controle-so"
+        "t620-e193-um-controle-so",
+        "t623-varredura-bloco57"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2169,7 +2171,8 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t406-varredura-bloco25",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t623-varredura-bloco57"
       ]
     },
     "/admin/pendencias": {
@@ -2202,7 +2205,8 @@
         "t439-e101-deteccao-espelho",
         "t410-niveis-medir-rascunho",
         "t408-varredura-bloco27",
-        "t415-varredura-bloco32"
+        "t415-varredura-bloco32",
+        "t623-varredura-bloco57"
       ]
     },
     "/dashboard/recibos": {
