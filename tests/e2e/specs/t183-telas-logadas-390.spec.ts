@@ -16,6 +16,7 @@ import { telasDaPersona, telasForaDaLista } from "../fixtures/telas-logadas";
    • a tela tem um h1 visível; captura da página inteira.
   A 1280x900: só rolagem lateral e h1.
   Os problemas de todas as telas saem juntos (expect.soft por tela, como no t48).
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, diagnóstico do E253 (/dashboard/viabilidade).
 */
 type Persona = "inquilino" | "proprietario" | "admin";
 const PERSONAS: Persona[] = ["inquilino", "proprietario", "admin"];
