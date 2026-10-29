@@ -1925,7 +1925,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -1968,7 +1969,8 @@
         "t263-visual-41",
         "t304-airbnb-exibicao-61a",
         "t418-varredura-bloco35",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1978,7 +1980,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2542,7 +2545,8 @@
       "specs": [
         "t128-cron-automacoes",
         "t592-e205b2-lembrete-bloco",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -2909,7 +2913,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/api/cron/prazos-conforto": {
@@ -5447,7 +5452,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#proporOutroHorario": {
@@ -5547,7 +5553,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#meusPedidosDeServico": {
@@ -5624,7 +5631,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
@@ -5648,7 +5656,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirEncerramento": {
@@ -5665,7 +5674,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#removerOcupante": {
@@ -5680,7 +5690,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t595-e205b2-lembrete-no-aceite"
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarInstrucoes": {

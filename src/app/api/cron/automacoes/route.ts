@@ -150,7 +150,8 @@ export async function GET(request: Request) {
     const imovel = prop?.title || undefined;
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
     if (lembreteDeSaida(fimFinal, hoje)) {
-      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }) });
+      // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
+      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }) });
     }
     if (pedirAvaliacao(fimFinal, hoje)) {
       for (const u of partes) {
