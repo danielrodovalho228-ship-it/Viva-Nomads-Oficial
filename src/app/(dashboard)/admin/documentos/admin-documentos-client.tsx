@@ -32,6 +32,7 @@ import {
 } from "@/lib/moderacao-doc";
 import { cn } from "@/lib/utils";
 import { rotuloDoAdmin } from "@/config/menu-admin";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 /**
  * Fila de CONFERÊNCIA dos documentos de imóvel (matrícula / contrato de gestão).
@@ -48,6 +49,7 @@ export function AdminDocumentosClient({
   contadores = { automaticos: 0, corrija: 0, revisao: 0 },
   filaAgora = null,
   ultimaDecisao = null,
+  soLeitura = [],
 }: {
   docs: DocumentoPendente[];
   auto?: ConferidoAutomatico[];
@@ -56,6 +58,8 @@ export function AdminDocumentosClient({
   filaAgora?: { documentos: number; matriculas: number; total: number; maisAntigoEm: string | null } | null;
   /** Quando a equipe decidiu o último documento — aparece na fila vazia. */
   ultimaDecisao?: string | null;
+  /** Pendência 3 do QA-LOGIN-B v2: documentos que o admin observador da QA só lê (sem os botões). */
+  soLeitura?: string[];
 }) {
   const [fila, setFila] = useState(docs);
   const [aba, setAba] = useState<"revisao" | "automaticos">("revisao");
@@ -136,7 +140,7 @@ export function AdminDocumentosClient({
         ) : (
           <div className="space-y-4" data-testid="conferidos-automaticamente">
             {autos.map((a) => (
-              <AutoCard key={a.id} doc={a} onReaberto={() => {
+              <AutoCard key={a.id} doc={a} soLeitura={soLeitura.includes(a.id)} onReaberto={() => {
                   setAutos((l) => l.filter((x) => x.id !== a.id));
                   avisarFilaDocumentosMudou();
                 }} />
@@ -148,7 +152,7 @@ export function AdminDocumentosClient({
       ) : (
         <div className="space-y-4">
           {fila.map((d) => (
-            <DocCard key={d.id} doc={d} onDone={() => sair(d.id)} />
+            <DocCard key={d.id} doc={d} soLeitura={soLeitura.includes(d.id)} onDone={() => sair(d.id)} />
           ))}
         </div>
       )}
@@ -188,7 +192,7 @@ function ConferenciaIaBox({ c, revisaoAte }: { c: ConferenciaResumo; revisaoAte?
   );
 }
 
-function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: () => void }) {
+function AutoCard({ doc, onReaberto, soLeitura = false }: { doc: ConferidoAutomatico; onReaberto: () => void; soLeitura?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   return (
@@ -219,6 +223,7 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
               <ExternalLink className="h-4 w-4" /> Abrir documento
             </a>
           )}
+          {soLeitura ? <SoLeituraQa /> : (
           <Button
             size="sm"
             variant="outline"
@@ -234,6 +239,7 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
           >
             Reabrir para revisão
           </Button>
+          )}
         </div>
         {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
       </Panel>
@@ -241,7 +247,7 @@ function AutoCard({ doc, onReaberto }: { doc: ConferidoAutomatico; onReaberto: (
   );
 }
 
-function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }) {
+function DocCard({ doc, onDone, soLeitura = false }: { doc: DocumentoPendente; onDone: () => void; soLeitura?: boolean }) {
   // Checklist PRÉ-MARCADO pela conferência automática (o admin confere e ajusta).
   const [marks, setMarks] = useState<Record<string, boolean>>(() => ({ ...(doc.conferenciaIa?.checklist ?? {}) }));
   const [rejeitando, setRejeitando] = useState(false);
@@ -430,7 +436,9 @@ function DocCard({ doc, onDone }: { doc: DocumentoPendente; onDone: () => void }
 
       {erro && <p className="mt-3 text-sm text-red-600">{erro}</p>}
 
-      {rejeitando ? (
+      {soLeitura ? (
+        <SoLeituraQa className="mt-4 border-t border-sage-200 pt-4" />
+      ) : rejeitando ? (
         <div className="mt-4 border-t border-sage-200 pt-4">
           <label className="text-sm font-semibold text-ink">Motivo da recusa</label>
           <select value={motivo} onChange={(e) => setMotivo(e.target.value)} className="input mt-2">

@@ -23,6 +23,9 @@ const SIGNED_TTL = 60 * 10;
 
 export interface MatriculaNaFila {
   id: string;
+  /** Quem enviou e o imóvel — o alvo da decisão (o observador da QA só decide os de teste). */
+  userId: string | null;
+  propertyId: string | null;
   ownerNome: string;
   tituloImovel: string | null;
   criadaEm: string;
@@ -101,6 +104,8 @@ export async function listMatriculasFila(limite = 40): Promise<MatriculaNaFila[]
     const cr = ((laudo as { data: { caf_result?: Record<string, unknown> } | null }).data?.caf_result ?? null) as Record<string, unknown> | null;
     out.push({
       id: r.id as string,
+      userId: (r.user_id as string | null) ?? null,
+      propertyId: (r.property_id as string | null) ?? null,
       ownerNome: primeiroNome(perfil?.full_name as string | undefined) || "Proprietário",
       tituloImovel: ((prop as { data: { title?: string } | null }).data?.title as string | undefined) ?? null,
       criadaEm: r.criada_em as string,

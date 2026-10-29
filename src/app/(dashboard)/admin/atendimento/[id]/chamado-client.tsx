@@ -59,7 +59,7 @@ function respostaDaNota(corpo: string): string {
 
 const fmt = (iso: string) => dataHoraBRT(iso, { tabela: true });
 
-export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; macros: Macro[]; agoraISO: string }) {
+export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = false }: { dados: Dados; macros: Macro[]; agoraISO: string; observadorQa?: boolean }) {
   const router = useRouter();
   const { chamado: c, eventos, pessoa, contextoLink, iaAtiva, sugestaoAuto, historico } = dados;
   // O resumo vai no cartão do topo; na conversa ficam só as mensagens e notas.
@@ -357,7 +357,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                 ) : null}
               </p>
             )}
-            {c.categoria === "nota_parceiro" && c.contexto_tipo === "parceiro" && <DenunciaNota chamadoId={c.id} jaProcedente={eventos.some((e) => e.acao === "denuncia_procedente")} />}
+            {c.categoria === "nota_parceiro" && c.contexto_tipo === "parceiro" && <DenunciaNota chamadoId={c.id} jaProcedente={eventos.some((e) => e.acao === "denuncia_procedente")} soLeitura={observadorQa} />}
           </Panel>
           <Panel title="Quem é a pessoa">
             <QuemEAPessoa chamadoId={c.id} />

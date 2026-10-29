@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { denunciaNotaProcedente } from "@/lib/parceiros/admin-actions";
 import { MOTIVO_NOTA_NAO_EMITIDA } from "@/lib/parceiros/fiscal";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 /**
  * FISCAL-PARCEIRO-B: denúncia "Não emitiu a nota fiscal declarada" vinda da página do parceiro. Procedente = o selo
  * sai (emite_nota = false), o motivo fica registrado e o parceiro é avisado uma vez. Improcedente: só resolver o chamado.
  */
-export function DenunciaNota({ chamadoId, jaProcedente }: { chamadoId: string; jaProcedente: boolean }) {
+export function DenunciaNota({ chamadoId, jaProcedente, soLeitura = false }: { chamadoId: string; jaProcedente: boolean; soLeitura?: boolean }) {
   const router = useRouter();
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
@@ -21,6 +22,8 @@ export function DenunciaNota({ chamadoId, jaProcedente }: { chamadoId: string; j
       </p>
     );
   }
+  // Pendência 3 do QA-LOGIN-B v2: tirar o selo de um parceiro é fechado para o admin observador da QA.
+  if (soLeitura) return <SoLeituraQa className="mt-3" />;
   return (
     <div className="mt-3" data-testid="denuncia-nota">
       <ConfirmarNaPagina
