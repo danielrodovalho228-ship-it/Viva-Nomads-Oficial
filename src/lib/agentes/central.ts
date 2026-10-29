@@ -147,14 +147,6 @@ export function prioridadesDe(r: Pick<Ronda, "achados">): string[] {
     .filter((p) => /^P[0-3]$/.test(p));
 }
 
-/** Achados P1 nas rondas das últimas 24h (badge do menu). */
-export function contarP1(rondas: Pick<Ronda, "achados" | "iniciada_em">[], agora: Date): number {
-  const desde = agora.getTime() - 24 * 3600_000;
-  return rondas
-    .filter((r) => new Date(r.iniciada_em).getTime() >= desde)
-    .reduce((n, r) => n + prioridadesDe(r).filter((p) => p === "P1").length, 0);
-}
-
 // ── Tempo ──────────────────────────────────────────────────────────────────
 export function tempoRelativo(iso: string, agora: Date): string {
   const s = Math.max(0, Math.round((agora.getTime() - new Date(iso).getTime()) / 1000));

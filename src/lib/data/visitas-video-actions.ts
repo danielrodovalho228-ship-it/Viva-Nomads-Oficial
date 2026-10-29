@@ -68,11 +68,6 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
   });
 }
 
-/** Morador pede a visita por vídeo (atalho do pedido com modalidade). */
-export async function pedirVisitaVideo(propertyId: string, horarios: unknown, motivo?: string): Promise<Resultado> {
-  return pedirVisita(propertyId, horarios, motivo, "video");
-}
-
 /**
  * Morador pede a visita — por vídeo ou PRESENCIAL (prompt 23). Autoridade no servidor: horários (já em instante
  * UTC; a tela converte a hora de Brasília), dono do imóvel e anúncio de exemplo. Avisa o dono por e-mail.
@@ -273,14 +268,6 @@ export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
 }
 
 export type AcaoVisita = AcaoVisitaDono & { id: string };
-
-/**
- * Responder um pedido: o dono confirma, propõe outro horário (Remarcar), recusa com motivo ou conclui; o morador
- * aceita a remarcação ou cancela. Quem age é decidido pela sessão, nunca pelo navegador. Avisa a outra parte.
- */
-export async function responderVisitaVideo(entrada: AcaoVisita): Promise<Resultado> {
-  return responderVisita(entrada);
-}
 
 export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   if (!entrada || typeof entrada.id !== "string") return { ok: false, error: "Pedido não encontrado." };

@@ -76,35 +76,3 @@ export async function getReputacao(userId: string): Promise<Reputacao> {
   const soma = notas.reduce((s, n) => s + n, 0);
   return { media: Math.round((soma / notas.length) * 10) / 10, n: notas.length };
 }
-
-/**
- * Reputação do PROPRIETÁRIO de um imóvel — resolve o dono no servidor (sem
- * expor o owner_id ao cliente). {0,0} em demo/sem backend.
- */
-export async function getReputacaoDoImovel(propertyId: string): Promise<Reputacao> {
-  const supabase = await createClient();
-  if (!supabase || !UUID_RE.test(propertyId)) return { media: 0, n: 0 };
-  const { data: prop } = await supabase
-    .from("properties")
-    .select("owner_id")
-    .eq("id", propertyId)
-    .maybeSingle();
-  const ownerId = prop?.owner_id as string | undefined;
-  if (!ownerId) return { media: 0, n: 0 };
-  return getReputacao(ownerId);
-}
-
-/** IDs de contratos que EU já avaliei (para esconder o formulário). */
-export async function meusContratosAvaliados(): Promise<string[]> {
-  const supabase = await createClient();
-  if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data } = await supabase
-    .from("avaliacoes")
-    .select("contrato_id")
-    .eq("autor_id", user.id);
-  return (data ?? []).map((r) => String(r.contrato_id)).filter(Boolean);
-}

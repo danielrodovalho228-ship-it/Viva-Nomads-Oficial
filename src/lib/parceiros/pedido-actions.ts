@@ -17,7 +17,6 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { categoriaValida, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
-import { imoveisParaServico } from "./imoveis-servico";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import { EVENTOS_DE_HORARIO, reagendamentoPendente } from "@/lib/automacao/remarcacao";
 import { hashPerceptual, reconverterFotoParaWebp, semMetadados } from "@/lib/foto-reconversao";
@@ -782,11 +781,4 @@ export async function cidadeDosMeusServicos(): Promise<string | null> {
   if (doContrato) return doContrato;
   const { data: p } = await s.admin.from("properties").select("city").eq("owner_id", s.userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
   return (p as { city?: string | null } | null)?.city ?? null;
-}
-
-/** Imóveis que a pessoa pode ligar a um pedido: os dela (dona) e o da estadia ativa (morador). */
-export async function meusImoveisParaServico(): Promise<{ id: string; titulo: string }[]> {
-  const s = await sessao();
-  if ("erro" in s) return [];
-  return imoveisParaServico(s.userId);
 }
