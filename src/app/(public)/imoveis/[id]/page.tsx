@@ -12,6 +12,7 @@ import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { quantosDestaques } from "@/lib/home-imagens";
 import { exibicao59DoImovel } from "@/lib/data/exibicao-59";
+import { estruturaPublicaDoImovel } from "@/lib/data/estrutura-publica";
 import { autoresDasAvaliacoes } from "@/lib/data/avaliacoes-autores";
 import { linkDeVideoAprovado } from "@/lib/data/video-link";
 
@@ -70,7 +71,7 @@ export default async function PropertyDetailPage({ params }: Params) {
     notFound();
   }
 
-  const [similares, proprietario, exibicao59, autores, linkAprovado] = await Promise.all([
+  const [similares, proprietario, exibicao59, autores, linkAprovado, estrutura] = await Promise.all([
     listProperties(),
     // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
     isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
@@ -80,6 +81,8 @@ export default async function PropertyDetailPage({ params }: Params) {
     isExemplo(property) || !property.reviews?.length ? Promise.resolve(new Map()) : autoresDasAvaliacoes(property.id),
     // E133 (d): link do YouTube/Vimeo só aparece como tour depois que a equipe aprovou ESTE link.
     isExemplo(property) || !property.videoUrl ? Promise.resolve(true) : linkDeVideoAprovado(property.id, property.videoUrl),
+    // E225-A: a estrutura informada pelo proprietário (leitura pública só de anúncio ativo).
+    isExemplo(property) ? Promise.resolve(null) : estruturaPublicaDoImovel(property.id),
   ]);
   if (!linkAprovado) property.videoUrl = undefined;
   if (autores.size && property.reviews) property.reviews = property.reviews.map((r) => (r.id && autores.has(r.id) ? { ...r, ...autores.get(r.id) } : r));
@@ -89,7 +92,7 @@ export default async function PropertyDetailPage({ params }: Params) {
   return (
     <>
       <PropertyJsonLd property={property} />
-      <PropertyDetail property={property} similar={similar} proprietario={proprietario} exibicao59={exibicao59} />
+      <PropertyDetail property={property} similar={similar} proprietario={proprietario} exibicao59={exibicao59} estrutura={estrutura} />
       {/* Cartões compartilháveis: visita por QR/link assinado (ref + UTM) é conferida no servidor. */}
       <RefDaVisita imovelId={property.id} />
     </>
