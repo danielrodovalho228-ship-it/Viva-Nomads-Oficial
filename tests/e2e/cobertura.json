@@ -666,7 +666,8 @@
         "t621-varredura-bloco55",
         "t622-varredura-bloco56",
         "t626-varredura-bloco60",
-        "t643-e229-barra-360"
+        "t643-e229-barra-360",
+        "t645-e238-e239-conta-passos"
       ]
     },
     "/dashboard/assinatura": {
@@ -799,7 +800,8 @@
         "t482-e170-caixas-vazias",
         "t542-menus5-e85-estrutura",
         "t561-e192-por-que-na-cidade",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t645-e238-e239-conta-passos"
       ]
     },
     "/dashboard/conta/[secao]": {

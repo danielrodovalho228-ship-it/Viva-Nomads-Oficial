@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, CheckCircle2, ChevronRight, Circle, ReceiptText } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Check, ChevronRight, ClipboardList, Lock, ReceiptText } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -71,10 +71,10 @@ export function InicioDono({
               <div className="mt-6">
                 <p className="text-sm text-muted">Próximos passos</p>
                 <ul className="mt-2 space-y-2" data-testid="inicio-dono-passos">
-                  {bloco.passos.map((p) => (
+                  {bloco.passos.map((p, i) => (
                     <li key={p.rotulo}>
                       <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
-                        {p.feito ? <CheckCircle2 className="h-5 w-5 shrink-0 text-forest" aria-hidden /> : <Circle className="h-5 w-5 shrink-0 text-muted" aria-hidden />}
+                        <IconePasso estado={p.feito ? "feito" : i === bloco.passos.findIndex((x) => !x.feito) ? "agora" : "depois"} />
                         <span className="min-w-0 flex-1 py-2">
                           <strong className="font-semibold">{p.rotulo}</strong> — {p.feito ? "Concluído" : "Pendente"}
                           {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
@@ -146,6 +146,26 @@ export function InicioDono({
  * cartões são os da própria tela (borda, fundo branco, seta), com a foto do morador ou as iniciais; cada um leva à
  * estadia. Sem nada hoje, a seção não existe.
  */
+/**
+ * E239 (mockup painel-proprietario): o ícone de cada passo — feito: ✓ branco num círculo verde cheio; o passo da vez:
+ * prancheta; os que vêm depois: cadeado.
+ */
+function IconePasso({ estado }: { estado: "feito" | "agora" | "depois" }) {
+  if (estado === "feito") {
+    return (
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-forest" data-passo-icone="feito" aria-hidden>
+        <Check className="h-4 w-4 text-white" strokeWidth={3} />
+      </span>
+    );
+  }
+  const Icone = estado === "agora" ? ClipboardList : Lock;
+  return (
+    <span className="grid h-6 w-6 shrink-0 place-items-center" data-passo-icone={estado} aria-hidden>
+      <Icone className="h-5 w-5 text-ink/70" />
+    </span>
+  );
+}
+
 function HojeNoInicio({ cartoes }: { cartoes: CartaoHoje[] }) {
   return (
     <section aria-labelledby="inicio-dono-hoje" data-testid="inicio-dono-hoje">
