@@ -85,7 +85,7 @@ function montar(chaves, personas, grupo) {
   return o;
 }
 const mapa = {
-  _doc: "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura). Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
+  _doc: "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura); 'semTela' = Server Action que nenhuma tela importa (o laboratório não a alcança), com o motivo e a guarda que a cobre. Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
   paginas: montar(listarPaginas(), personaPagina, "paginas"),
   rotas: montar(listarRotas(), personaRota, "rotas"),
   actions: montar(listarActions(), personaAction, "actions"),
