@@ -1298,53 +1298,6 @@ export async function toggleFavorite(
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export interface LocacaoInput {
-  propertyId: string;
-  faixa: string; // temporada | media_estadia | longa
-  modeloContratoId?: string | null;
-  periodoDias: number;
-  valorTotal: number; // aluguel × meses (base da caução)
-  caucaoValor: number; // 50% do valor total (Onda 1)
-  garantia: string; // caucao_avista | caucao_parcelada | seguro_fianca
-  qtdOcupantes: number;
-  capacidadeSnapshot?: number | null;
-}
-
-/**
- * Registra a locação (Onda 1) na tabela `locacoes` ao fechar o contrato: nº de
- * ocupantes (cláusula de ocupação), caução (50% do total), garantia, faixa e o
- * modelo de contrato selecionado. Best-effort: em modo demo (sem Supabase),
- * imóvel não-UUID (exemplos) ou visitante sem sessão, é no-op — não grava nada.
- */
-export async function registrarLocacao(input: LocacaoInput): Promise<ActionResult> {
-  const supabase = await createClient();
-  if (!supabase) return { ok: true, demo: true };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Faça login para registrar a locação." };
-  // Imóvel de exemplo (id textual) ou fluxo mock → não persiste.
-  if (!UUID_RE.test(input.propertyId)) return { ok: true, demo: true };
-  const { data, error } = await supabase
-    .from("locacoes")
-    .insert({
-      property_id: input.propertyId,
-      tenant_id: user.id,
-      faixa: input.faixa,
-      modelo_contrato_id: input.modeloContratoId ?? null,
-      periodo_dias: Math.round(input.periodoDias),
-      valor_total: input.valorTotal,
-      caucao_valor: input.caucaoValor,
-      garantia: input.garantia,
-      qtd_ocupantes: Math.round(input.qtdOcupantes),
-      capacidade_snapshot: input.capacidadeSnapshot ?? null,
-    })
-    .select("id")
-    .single();
-  if (error) return { ok: false, error: erroBancoPT(error) };
-  return { ok: true, id: data?.id };
-}
-
 // ── Contrato fracionado em blocos (v2) ───────────────────────────────────────
 
 export interface ContratoInput {
@@ -1528,27 +1481,6 @@ export async function registrarContrato(
   revalidatePath("/dashboard/candidaturas");
   if (bErr) return { ok: true, id: contrato!.id, blocos: 0, error: erroBancoPT(bErr) };
   return { ok: true, id: contrato!.id, blocos: rows.length };
-}
-
-/**
- * Checagem LAZY do ciclo de blocos (roda ao abrir o painel; o pg_cron cobre
- * quando ninguém abre). Executa as transições de estado (encerramento por
- * NÃO-renovação, ativação de blocos vigentes) via a função SQL idempotente
- * `avancar_ciclo_blocos`. Best-effort e no-op em demo.
- */
-export async function varrerCicloBlocos(): Promise<ActionResult> {
-  const supabase = await createClient();
-  if (!supabase) return { ok: true, demo: true };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Não autenticado." };
-  // A rotina saiu da API (0070): roda pelo servidor.
-  const admin = createAdminClient();
-  if (!admin) return { ok: true };
-  const { error } = await admin.rpc("avancar_ciclo_blocos");
-  if (error) return { ok: false, error: erroBancoPT(error) };
-  return { ok: true };
 }
 
 /**
@@ -1900,22 +1832,6 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (fotos?.length) await apagarFotosDoAnuncio(createAdminClient(), (fotos as { url: string }[]).map((f) => f.url));
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
-}
-
-/** Quantos RASCUNHOS o proprietário logado tem (para o "Novo anúncio" oferecer retomar). */
-export async function countMyDrafts(): Promise<number> {
-  const supabase = await createClient();
-  if (!supabase) return 0;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return 0;
-  const { count } = await supabase
-    .from("properties")
-    .select("id", { count: "exact", head: true })
-    .eq("owner_id", user.id)
-    .eq("status", "draft");
-  return count ?? 0;
 }
 
 /** Operação guardada no estado do editor (draft_data). */

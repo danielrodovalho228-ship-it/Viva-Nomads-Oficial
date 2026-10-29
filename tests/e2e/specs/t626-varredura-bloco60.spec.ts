@@ -269,9 +269,8 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
       test(`adendo — barra de baixo do MENUS-5 do ${quem.nome} a ${largura} px: rótulos inteiros e colunas iguais`, async ({ browser }) => {
         test.setTimeout(120_000);
         test.skip(!(ids.cEntra && ids.cSai), "não deu para semear os contratos de hoje");
-        // L-74 (bloco 60, 29/10): a 360 px a coluna tem 72 px e "Interessados" (11 px, semibold) não cabe — o truncate
-        // corta com reticências. A 390 cabe; a barra do morador cabe nos dois tamanhos.
-        if (quem.papel === "proprietario" && largura === 360) test.fail(true, 'L-74: "Interessados" cortado na barra de baixo do dono a 360 px (MENUS-5)');
+        // L-74 (bloco 60, 29/10) corrigido pelo E229 (#1515): abaixo de 375 px o rótulo da barra desce para 10 px e
+        // "Interessados" cabe inteiro na coluna de 72 px. Os quatro casos (dono e morador, 360 e 390) são teste normal.
         const page = await entrar(browser, quem.email(), senha);
         await page.setViewportSize({ width: largura, height: 780 });
         try {

@@ -309,7 +309,8 @@
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
         "t352-varredura-bloco17",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t656-e224-plano-gestor"
       ]
     },
     "/ajuda": {
@@ -664,7 +665,8 @@
         "t613-varredura-bloco52",
         "t621-varredura-bloco55",
         "t622-varredura-bloco56",
-        "t626-varredura-bloco60"
+        "t626-varredura-bloco60",
+        "t643-e229-barra-360"
       ]
     },
     "/dashboard/assinatura": {
@@ -836,7 +838,8 @@
         "t549-varredura-bloco39",
         "t553-varredura-bloco41",
         "t560-varredura-bloco44",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t656-e224-plano-gestor"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -3230,13 +3233,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/actions.ts#countMyDrafts": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/actions.ts#createProperty": {
       "personas": [
         "inquilino",
@@ -3343,13 +3339,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/actions.ts#registrarLocacao": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/actions.ts#requestLead": {
       "personas": [
         "inquilino",
@@ -3428,13 +3417,6 @@
         "t321-video-alcancavel-65b"
       ]
     },
-    "src/lib/data/actions.ts#varrerCicloBlocos": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/agentes-actions.ts#carregarCentral": {
       "personas": [
         "admin"
@@ -3442,12 +3424,6 @@
       "specs": []
     },
     "src/lib/data/agentes-actions.ts#chamadosEmVermelho": {
-      "personas": [
-        "admin"
-      ],
-      "specs": []
-    },
-    "src/lib/data/agentes-actions.ts#contarAchadosP1": {
       "personas": [
         "admin"
       ],
@@ -3709,20 +3685,6 @@
       ]
     },
     "src/lib/data/avaliacoes-actions.ts#getReputacao": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
-    "src/lib/data/avaliacoes-actions.ts#getReputacaoDoImovel": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
-    "src/lib/data/avaliacoes-actions.ts#meusContratosAvaliados": {
       "personas": [
         "inquilino",
         "proprietario"
@@ -4283,13 +4245,6 @@
         "t81-menu-cascata"
       ]
     },
-    "src/lib/data/mode-actions.ts#getPreferredMode": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/mode-actions.ts#resolveInitialMode": {
       "personas": [
         "inquilino",
@@ -4361,13 +4316,6 @@
       "specs": [
         "t232-pedido-moradia-completo"
       ]
-    },
-    "src/lib/data/pedidos-actions.ts#getMinhasRespostas": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
     },
     "src/lib/data/pedidos-actions.ts#getNotifPrefs": {
       "personas": [
@@ -4584,23 +4532,21 @@
     "src/lib/data/planos-actions.ts#definirAccountType": {
       "personas": [
         "proprietario",
-        "inquilino"
+        "inquilino",
+        "admin"
       ],
-      "specs": []
+      "specs": [
+        "t656-e224-plano-gestor"
+      ]
     },
     "src/lib/data/planos-actions.ts#getGestorElegibilidade": {
       "personas": [
         "proprietario",
         "inquilino"
       ],
-      "specs": []
-    },
-    "src/lib/data/planos-actions.ts#getMinhaAssinatura": {
-      "personas": [
-        "proprietario",
-        "inquilino"
-      ],
-      "specs": []
+      "specs": [
+        "t656-e224-plano-gestor"
+      ]
     },
     "src/lib/data/propostas-actions.ts#dadosNovaProposta": {
       "personas": [
@@ -4721,24 +4667,6 @@
       ]
     },
     "src/lib/data/visitas-video-actions.ts#listVisitasDono": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t168-visita-video"
-      ]
-    },
-    "src/lib/data/visitas-video-actions.ts#pedirVisitaVideo": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t168-visita-video"
-      ]
-    },
-    "src/lib/data/visitas-video-actions.ts#responderVisitaVideo": {
       "personas": [
         "inquilino",
         "proprietario"
@@ -5708,15 +5636,6 @@
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#cidadeDosMeusServicos": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [
-        "t250-parceiros-contratacao"
-      ]
-    },
-    "src/lib/parceiros/pedido-actions.ts#meusImoveisParaServico": {
       "personas": [
         "inquilino",
         "proprietario"

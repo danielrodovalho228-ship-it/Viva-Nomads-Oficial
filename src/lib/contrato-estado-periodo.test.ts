@@ -119,7 +119,7 @@ test("2. app: aceite da candidatura, aceite da proposta, 'Gerar contrato', renov
   assert.match(leads, /admin\.from\("leads"\)\.select\("property_id, inicio_desejado"\)/);
   assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoDaEstadia\(String\(v\.data_entrada\)\.slice\(0, 10\), Number\(v\.meses\)\)\)/);
   const acts = ler("./data/actions.ts");
-  const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("export async function varrerCicloBlocos"));
+  const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("const LEAD_LIMITE_HORA"));
   assert.ok(reg.indexOf("conflitoNoImovel(") < reg.indexOf('.from("contratos")\n    .insert('), "confere antes de gravar");
   assert.match(reg, /periodo: `\[\$\{periodo\.inicio\},\$\{periodo\.fim\}\]`/);
   assert.match(reg, /cErr\.code === ERRO_SOBREPOSICAO_PG/);

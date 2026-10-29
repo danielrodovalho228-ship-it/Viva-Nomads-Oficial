@@ -878,22 +878,6 @@ export async function oferecerImovel(pedidoId: string, imovelId: string, mensage
   return responderPedido(pedidoId, imovelId, texto);
 }
 
-/** Respostas que EU (proprietário) enviei, com o imóvel e o status. */
-export async function getMinhasRespostas(): Promise<Record<string, unknown>[]> {
-  const supabase = await createClient();
-  if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data } = await supabase
-    .from("respostas_pedido")
-    .select("*, properties(id, title, city, monthly_price, condo_fee, utilities_mode, utilities_estimate, available_from)")
-    .eq("proprietario_id", user.id)
-    .order("criado_em", { ascending: false });
-  return data ?? [];
-}
-
 /**
  * Proprietário RESPONDE um pedido com um imóvel seu. Validação no SERVIDOR:
  * o imóvel é dele e está publicado (também exigido pela RLS), e a capacidade do

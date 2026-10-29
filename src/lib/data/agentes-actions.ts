@@ -8,7 +8,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { contarAguardandoOk } from "@/lib/data/admin-indicadores";
 import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { revalidatePath } from "next/cache";
-import { avisoOrdem, contarP1, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { avisoOrdem, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
 import { JANELA_EVENTOS_H, montarEventos, type ChamadoEvento, type EventoRede, type FontesRede } from "@/lib/agentes/eventos";
 import { eventosGithub } from "@/lib/agentes/github";
 import { textoReaberto, validarReabertura } from "@/lib/agentes/aceite-ordem";
@@ -190,15 +190,6 @@ export async function contarAprovacoesPendentes(): Promise<number> {
   // Prompt 29, item 10: a MESMA função de "Aguardando o seu OK" da página de Agentes e da home.
   const admin = createAdminClient();
   return admin ? contarAguardandoOk(admin) : 0;
-}
-
-/** Achados P1 nas rondas das últimas 24h (número informativo; NÃO é o badge do menu). */
-export async function contarAchadosP1(): Promise<number> {
-  const supabase = await createClient();
-  if (!supabase) return 0;
-  const desde = new Date(Date.now() - 24 * 3600_000).toISOString();
-  const { data } = await supabase.from("agentes_rondas").select("iniciada_em, achados").gte("iniciada_em", desde).limit(500);
-  return contarP1((data ?? []) as Pick<Ronda, "achados" | "iniciada_em">[], new Date());
 }
 
 /**
