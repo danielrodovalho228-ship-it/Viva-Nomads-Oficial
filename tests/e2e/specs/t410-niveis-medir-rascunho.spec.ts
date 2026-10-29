@@ -103,8 +103,12 @@ async function medirItem(page: Page, item: string, ponto: string) {
   // E193 (#1496): o ponto da medição virou pílulas de escolha única (antes, lista suspensa).
   await expect(bloco.getByTestId(`medir-internet-ponto-${ponto}`)).toHaveAttribute("aria-checked", "true");
   await bloco.getByTestId("medir-internet-wifi").check();
-  await bloco.getByTestId("medir-internet-botao").click();
-  await expect(bloco.getByTestId("medir-internet-resultado")).toHaveAttribute("data-validada", "1", { timeout: 30_000 });
+  // O clique pode chegar antes da hidratação do bloco recém-aberto (lab-crítico de 29/10: sem resultado em 30 s na 1ª
+  // tentativa, verde na repetição): mede de novo até o resultado validado aparecer.
+  await expect(async () => {
+    if ((await bloco.getByTestId("medir-internet-resultado").count()) === 0) await bloco.getByTestId("medir-internet-botao").click({ timeout: 5_000 });
+    await expect(bloco.getByTestId("medir-internet-resultado")).toHaveAttribute("data-validada", "1", { timeout: 20_000 });
+  }).toPass({ timeout: 60_000 });
 }
 
 test.describe("T410 — NIVEIS-MEDIR-B: medir a internet antes de publicar", () => {

@@ -31,8 +31,10 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     expect(id, "id do usuário no cookie de sessão").toBeTruthy();
     // Rascunho da ordem de 5 etapas (versão 3), passo 3 = Preço: nos 10 passos ele reabre no Preço (DE_5_PARA_10).
     await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 3, ordemEtapas: 3, monthlyPrice: "" })), id);
-    await page.reload({ waitUntil: "networkidle" });
-    // E180: "Novo anúncio" abre na Qualificação e o aviso do rascunho mora dentro dela (data-testid, não classe de estilo).
+    // E180 (#1507): a cópia local nunca se aplica sozinha no "Novo anúncio" (abre na Qualificação), e uma cópia sem conteúdo
+    // (só o passo) nem é oferecida no aviso. O link que diz o passo (?etapa=preco) é a retomada explícita: aplica a cópia
+    // local e abre o Preço. Com rascunho no servidor, o aviso aparece (data-testid, não classe de estilo).
+    await page.goto("/dashboard/imoveis/novo?etapa=preco", { waitUntil: "networkidle" });
     // Só o "Continuar de onde parei" de dentro do aviso (guarda t102-seletor-rascunho), não o "Continuar" do rodapé.
     const retomar = page.getByTestId("rascunho-aviso").filter({ hasText: "Você tem um anúncio em andamento" }).getByTestId("rascunho-continuar");
     const bloco = page.getByTestId("preco-sugerido");
