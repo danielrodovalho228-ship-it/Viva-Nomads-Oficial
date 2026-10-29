@@ -7,8 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
 import { ROTULO_CONTADOR_FOTOS } from "@/lib/perfil/foto-revisao";
-import { lerInteressesParceria } from "@/lib/admin/interesses-parceria";
-import { resumoInteresses } from "@/lib/admin/interesse-parceria";
 
 /**
  * Áreas novas do admin na Visão geral (Caixa dos Sócios, Parceiros, Fotógrafos, Equipe), com números ao vivo.
@@ -57,14 +55,14 @@ export async function AtalhosAdmin() {
   };
   const admin = createAdminClient();
   const meuUid = (await supabase.auth.getUser()).data.user?.id ?? null;
-  const [caixa, aceite, aceiteOrdens, interessados, fotografos, agentes, visitas, fotosPerfil] = await Promise.all([
+  const [caixa, aceite, aceiteOrdens, parceriasPendentes, fotografos, agentes, visitas, fotosPerfil] = await Promise.all([
     contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).in("status", ["novo", "precisa_daniel"])),
     // Ordem 3c3d8a9e: pedidos que o MEU pedido espera aceitar (a RLS é só de admin; filtra pelo autor logado).
     meuUid ? contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).eq("status", "aguardando_aceite").eq("autor", meuUid)) : Promise.resolve("—"),
     // Ordem 3c3d8a9e, parte 2: ordens dos agentes que EU criei e o agente já entregou.
     meuUid ? contar(supabase.from("agentes_ordens").select("id", { count: "exact", head: true }).eq("status", "concluida").eq("criado_por", meuUid).is("aceito_em", null)) : Promise.resolve("—"),
-    // E223: a mesma leitura e a mesma conta da lista de /admin/parceiros (#interessados).
-    lerInteressesParceria(supabase).then((l) => (l ? resumoInteresses(l).novo : "—")).catch(() => "—" as const),
+    // E227-B: parceria tem uma fila só (parceiro_solicitacoes) — a mesma conta da aba "Pendentes" de /admin/parceiros.
+    contar(supabase.from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).in("status", ["pendente", "aguardando_email"]).not("categorias", "cs", "{vistoria}")),
     contar(supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false)),
     // Prompt 29, item 10: os números com nome, da mesma função da página de Agentes (o 263 somava pendentes + lidas).
     admin ? contadoresAgentes(admin).catch(() => null) : Promise.resolve(null),
@@ -79,7 +77,7 @@ export async function AtalhosAdmin() {
           { rotulo: "Caixa dos Sócios — a tratar", valor: caixa, href: "/admin/socios" },
           { rotulo: "Caixa dos Sócios — aguardando seu aceite", valor: aceite, href: "/admin/socios" },
           { rotulo: "Ordens dos agentes — aguardando seu aceite", valor: aceiteOrdens, href: "/admin/agentes" },
-          { rotulo: "Parceiros — novos interessados", valor: interessados, href: "/admin/parceiros" },
+          { rotulo: "Parceiros — pedidos pendentes", valor: parceriasPendentes, href: "/admin/parceiros" },
           { rotulo: "Fotógrafos em análise", valor: fotografos, href: "/admin/parceiros?tipo=fotografo" },
           { rotulo: `Equipe — ${AGENTES_DEFINICOES.aguardandoOk.rotulo.toLowerCase()}`, valor: agentes?.aguardandoOk ?? "—", href: "/admin/agentes" },
           { rotulo: `Equipe — ${AGENTES_DEFINICOES.ordensPendentes.rotulo.toLowerCase()}`, valor: agentes?.ordensPendentes ?? "—", href: "/admin/agentes" },
