@@ -42,7 +42,7 @@ async function sessaoAdmin() {
   if (!user) return null;
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (!(perfil?.role === "admin" && (await sessaoAal2(supabase)))) return null;
-  // QA-LOGIN-B v2: o admin observador da QA nunca usa a Caixa dos Sócios (a RLS da 0251 também fecha).
+  // QA-LOGIN-B v2: o admin observador da QA nunca usa a Caixa dos Sócios (a RLS da 0252 também fecha).
   if (await recusaObservador(user.id)) return null;
   return { supabase, uid: user.id };
 }

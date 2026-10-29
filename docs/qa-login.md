@@ -46,7 +46,7 @@ Ele é um admin de verdade (papel `admin` e 2FA próprio) que **só observa** o 
 
 ## Registro e aviso
 
-Cada entrada fica em `public.qa_entradas` (migração 0251), que só o servidor lê: horário, id da conta, tipo (`teste` ou `admin_qa`), hash do IP e o caminho de destino (sem query). **Nunca** a chave, o e-mail nem o IP. Em Admin → Sistema, a seção **Porta de QA** mostra:
+Cada entrada fica em `public.qa_entradas` (migrações 0251 e 0252), que só o servidor lê: horário, id da conta, tipo (`teste` ou `admin_qa`), hash do IP e o caminho de destino (sem query). **Nunca** a chave, o e-mail nem o IP. Em Admin → Sistema, a seção **Porta de QA** mostra:
 - se a porta está ligada;
 - até quando o admin observador entra;
 - as entradas dele nos últimos 7 dias.

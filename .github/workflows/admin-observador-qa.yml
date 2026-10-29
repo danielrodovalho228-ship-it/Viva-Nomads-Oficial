@@ -1,6 +1,6 @@
 # QA-LOGIN-B v2 — "Admin observador da QA": dá (ou tira) o papel de admin observador a UMA conta de teste, pelo id.
 # Roda só à mão (Actions → Admin observador da QA → Run). Chama public.promover_qa_admin(id) / revogar_qa_admin(id)
-# (migração 0251): a conta precisa ser de teste (is_teste) e só pode haver um observador. Nenhum e-mail no código nem
+# (migração 0252): a conta precisa ser de teste (is_teste) e só pode haver um observador. Nenhum e-mail no código nem
 # no log; o id é validado como uuid antes de chegar ao banco. Segredo: SUPABASE_DB_URL (o mesmo das migrações).
 name: Admin observador da QA
 

@@ -88,14 +88,14 @@ test("GUARDA: cada ação da lista confere o observador ANTES de gravar", () => 
   }
 });
 
-test("GUARDA: telas — Caixa dos Sócios 404 e Sistema sem os botões de chave/backup para o observador; RLS na 0251", () => {
+test("GUARDA: telas — Caixa dos Sócios 404 e Sistema sem os botões de chave/backup para o observador; RLS na 0252", () => {
   assert.match(ler("../../app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) notFound\(\)/);
   const sistema = ler("../../app/(dashboard)/admin/sistema/page.tsx");
   assert.match(sistema, /observador \? \(/);
   assert.match(sistema, /\{observador \? null : <ParceiroGeralForm/);
   assert.match(sistema, /\{observador \? null : <CartaoBackup \/>\}/);
   assert.match(sistema, /<PortaQaPainel \/>/);
-  const mig = ler("../../../supabase/migrations/0251_qa_entradas.sql");
+  const mig = ler("../../../supabase/migrations/0252_qa_admin_observador.sql");
   for (const pol of ["caixa_socios: admin le", "caixa_socios: admin envia", "caixa_socios: admin atualiza", "caixa-socios: admin le", "caixa-socios: admin envia"]) {
     assert.match(mig, new RegExp(`create policy "${pol}"[\\s\\S]*?not public\\.is_qa_admin\\(auth\\.uid\\(\\)\\)`), pol);
   }

@@ -198,7 +198,7 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     const conta = await contaPorEmail(emailObs);
     ids.obs = conta!.id;
     expect(conta).toMatchObject({ is_teste: true, role: "tenant", qa_admin: false });
-    // Ninguém se promove sozinho: a sessão da própria conta não muda qa_admin (gatilho da 0251).
+    // Ninguém se promove sozinho: a sessão da própria conta não muda qa_admin (gatilho da 0252).
     const { error: ePromo } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
     expect(ePromo).toBeNull();
     expect(await contaPorEmail(emailObs)).toMatchObject({ role: "admin", qa_admin: true, is_teste: true });
