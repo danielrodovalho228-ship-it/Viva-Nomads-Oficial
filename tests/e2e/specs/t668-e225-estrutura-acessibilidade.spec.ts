@@ -14,6 +14,8 @@ import { NO_LABORATORIO, URL_SUPABASE, CHAVE_ANON, adm, apagarContas, criarConta
 */
 const SAIDA = "tests/laboratorio/saida";
 const ACESSIVEL = ["entradaSemDegrauOuRampa", "elevadorOuTerreo", "portas80cm", "banheiroAdaptado"];
+/** Os 4 itens do Acessível + box sem degrau marcados (sem prova nenhuma); piso antiderrapante marcado como "não". */
+const CHECKLIST_ATIVO = { ...Object.fromEntries(ACESSIVEL.map((k) => [k, true])), boxSemDegrau: true, pisoAntiderrapante: false };
 const FOTOS_LOCAIS = ["sala", "quarto", "cozinha", "banheiro", "fachada", "sala", "quarto", "cozinha"];
 
 test.describe("T668 — E225-A: estrutura de acessibilidade, sem selo que minta", () => {
@@ -62,6 +64,11 @@ test.describe("T668 — E225-A: estrutura de acessibilidade, sem selo que minta"
     if (error) throw error;
     ids.ativo = await criarImovelPronto(ids.dono, `Apartamento Rampa ${sufixo}`, { ativo: true });
     ids.vazio = await criarImovelPronto(ids.dono, `Apartamento Sem Estrutura ${sufixo}`, { ativo: true });
+    // Gravado ANTES de qualquer visita: a página pública guarda cache (revalidate de 60 s; na tela, salvar revalida).
+    const { error: eAtivo } = await adm().from("imovel_estrutura").upsert({ property_id: ids.ativo, checklist: CHECKLIST_ATIVO }, { onConflict: "property_id" });
+    if (eAtivo) throw eAtivo;
+    const { error: eVazio } = await adm().from("imovel_estrutura").upsert({ property_id: ids.vazio, checklist: { portas80cm: false } }, { onConflict: "property_id" });
+    if (eVazio) throw eVazio;
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono!]);
@@ -108,8 +115,6 @@ test.describe("T668 — E225-A: estrutura de acessibilidade, sem selo que minta"
   });
 
   test("1b. editar: a mesma estrutura, com o que já foi marcado (nasce ligada)", async ({ browser }) => {
-    const { error } = await adm().from("imovel_estrutura").upsert({ property_id: ids.ativo, checklist: { portas80cm: true } }, { onConflict: "property_id" });
-    expect(error).toBeNull();
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto(`/dashboard/imoveis/${ids.ativo}/editar`, { waitUntil: "domcontentloaded" });
@@ -122,9 +127,6 @@ test.describe("T668 — E225-A: estrutura de acessibilidade, sem selo que minta"
   });
 
   test("2. anúncio (1280 e 390): só os itens 'sim', com a nota; os 4 do Acessível SEM prova → nenhum selo", async ({ browser }) => {
-    const checklist = { ...Object.fromEntries(ACESSIVEL.map((k) => [k, true])), boxSemDegrau: true, pisoAntiderrapante: false };
-    const { error } = await adm().from("imovel_estrutura").upsert({ property_id: ids.ativo, checklist }, { onConflict: "property_id" });
-    expect(error).toBeNull();
     for (const w of [1280, 390]) {
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 1280 ? 900 : 844 } });
       const p = await ctx.newPage();
@@ -148,8 +150,6 @@ test.describe("T668 — E225-A: estrutura de acessibilidade, sem selo que minta"
   });
 
   test("3. nada marcado: a seção não aparece no anúncio", async ({ browser }) => {
-    const { error } = await adm().from("imovel_estrutura").upsert({ property_id: ids.vazio, checklist: { portas80cm: false } }, { onConflict: "property_id" });
-    expect(error).toBeNull();
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const p = await ctx.newPage();
     await p.goto(`/imoveis/${ids.vazio}`, { waitUntil: "domcontentloaded" });
