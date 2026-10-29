@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 // Regressão dos merges #1472–#1479 (Pista C, 29/10): mexido pelos merges e pulado pelo teto da suíte completa; roda no portão do PR.
 /**
  * T313 — Prompt 50: ativação por papel, funil e lembretes honestos (laboratório).

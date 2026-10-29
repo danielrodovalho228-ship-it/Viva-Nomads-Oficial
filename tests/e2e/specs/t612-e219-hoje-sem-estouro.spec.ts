@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão/catraca dos merges da noite (#1483–#1489) (Pista C, 29/10): roda no lab-crítico deste PR (o completo não chega aqui).
 /*
   T612 — E219 (L-72 do laboratório): a seção "Hoje" do Início do proprietário não estoura a largura no celular. Nome
   de imóvel e de morador longos, sem espaço para quebrar: a 360 e 390 px cada cartão cabe na tela, com foto (ou

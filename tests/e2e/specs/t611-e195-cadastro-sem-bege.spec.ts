@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão/catraca dos merges da noite (#1483–#1489) (Pista C, 29/10): roda no lab-crítico deste PR (o completo não chega aqui).
 /*
   T611 — E195 (auditoria do Muse, 28/10): o assistente de CADASTRO no MESMO padrão clean da Qualificação, etapa por
   etapa — fundo da página, moldura, cartões, rodapé e o botão travado. Varre as cores de fundo de tudo o que está à

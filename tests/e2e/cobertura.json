@@ -143,7 +143,8 @@
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
-        "t605-e217-resposta-sem-sugestao"
+        "t605-e217-resposta-sem-sugestao",
+        "t599-varredura-bloco49"
       ]
     },
     "/admin/avaliacoes": {
@@ -319,7 +320,8 @@
         "t438-vocab-a",
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
-        "t598-e84-central-de-ajuda"
+        "t598-e84-central-de-ajuda",
+        "t607-varredura-bloco51"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -334,7 +336,8 @@
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t63-chamado-identificacao",
-        "t80-camera-chamado"
+        "t80-camera-chamado",
+        "t607-varredura-bloco51"
       ]
     },
     "/alerta-busca/desligar": {
@@ -644,6 +647,7 @@
         "t489-e176-menus",
         "t562-e190-modo-um-toque",
         "t602-e181-familia-contadores",
+        "t607-varredura-bloco51",
         "t610-e190p2-hoje-no-inicio",
         "t612-e219-hoje-sem-estouro",
         "t613-varredura-bloco52"
@@ -688,7 +692,8 @@
         "t71-busca-topo",
         "t183-telas-logadas-390",
         "t339-varredura-bloco16",
-        "t602-e181-familia-contadores"
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/candidaturas": {
@@ -704,7 +709,8 @@
         "t213-jornada-teste-confirmacao",
         "t297-varredura-logada-bloco3",
         "t336-varredura-bloco14",
-        "t602-e181-familia-contadores"
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/ganhos": {
@@ -774,7 +780,8 @@
         "t402-conta-leva2",
         "t482-e170-caixas-vazias",
         "t542-menus5-e85-estrutura",
-        "t561-e192-por-que-na-cidade"
+        "t561-e192-por-que-na-cidade",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1168,7 +1175,8 @@
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
         "t600-e200-conversa-da-estadia",
-        "t602-e181-familia-contadores"
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1254,7 +1262,8 @@
         "t193-propostas",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t487-e178-primeiro-pagamento"
+        "t487-e178-primeiro-pagamento",
+        "t599-varredura-bloco49"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1372,7 +1381,8 @@
         "proprietario"
       ],
       "specs": [
-        "t593-e211-visita-do-dono"
+        "t593-e211-visita-do-dono",
+        "t599-varredura-bloco49"
       ]
     },
     "/decisao": {
@@ -1672,7 +1682,8 @@
         "t311-marco-principal-unico",
         "t543-e166-fundo-clean-publico",
         "t557-varredura-bloco42",
-        "t598-e84-central-de-ajuda"
+        "t598-e84-central-de-ajuda",
+        "t607-varredura-bloco51"
       ]
     },
     "/proprietario/[id]": {
@@ -1769,7 +1780,8 @@
         "t311-marco-principal-unico",
         "t421-varredura-bloco38",
         "t543-e166-fundo-clean-publico",
-        "t598-e84-central-de-ajuda"
+        "t598-e84-central-de-ajuda",
+        "t607-varredura-bloco51"
       ]
     },
     "/tributario": {
@@ -2051,7 +2063,8 @@
         "inquilino"
       ],
       "specs": [
-        "t327-convidar-ocupante-61b"
+        "t327-convidar-ocupante-61b",
+        "t599-varredura-bloco49"
       ]
     },
     "/dashboard/estadia/[contratoId]/ocupantes": {
@@ -2190,7 +2203,8 @@
       ],
       "specs": [
         "t300-entrada-sem-senha-49",
-        "t317-email-unico-49c1"
+        "t317-email-unico-49c1",
+        "t599-varredura-bloco49"
       ]
     },
     "/admin/avaliadores": {
