@@ -2206,7 +2206,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t606-varredura-bloco50"
       ]
     },
     "/avaliadores": {
@@ -2232,7 +2233,8 @@
       ],
       "specs": [
         "t305-laudo-avaliacao-62b2",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t606-varredura-bloco50"
       ]
     },
     "/admin/funil": {
