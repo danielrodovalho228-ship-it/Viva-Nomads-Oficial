@@ -4,7 +4,8 @@ import { COMISSAO_POR_PLANO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../.
 import { resumoContrato } from "../../../src/lib/contrato-blocos";
 import { simularRentabilidade } from "../../../src/lib/simulador";
 import { formatBRL } from "../../../src/lib/utils";
-import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from "../../../src/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, comissaoSobreContrato, taxaPublicaTexto } from "../../../src/lib/cobranca/regra";
+import { GESTOR_PRECO } from "../../../src/config/planos";
 
 /**
  * T37 — SIMULADORES E NÚMEROS (laboratório e preview). Tudo o que a tela mostra
@@ -12,7 +13,8 @@ import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from 
  *  1. Comissão 12 / 8 / 4 / 0 % por plano (Gratuito, Essencial, Profissional, Gestor).
  *  2. Preços históricos R$ 0 / 49 / 129 (o limite de anúncios saiu no E233-A: não é mais lido por ninguém).
  *  3. Caução: 50% de cada bloco, soma limitada a 3 aluguéis (cálculo puro).
- *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, Plano Gestor 31+),
+ *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, 31+ com taxa negociável) e o
+ *     Plano Gestor a partir de GESTOR_PRECO.minimoImoveis (20) no formulário,
  *     sem mensalidade; a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
  *  5. Simulador do painel: a taxa de serviço de cada faixa é a da regra única (sem planos).
  */
@@ -58,7 +60,8 @@ test.describe("T37 — /precos (visitante)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
   // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
-  // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato e o Plano Gestor a partir de 31 imóveis.
+  // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato, 31+ com taxa negociável (sem "Plano Gestor", E252-B) e o
+  // Plano Gestor a partir de GESTOR_PRECO.minimoImoveis (20), só no formulário.
   // A 390 px a tabela some (hidden sm:table) e as mesmas faixas aparecem em cartões (t185).
   test("390 px: os cartões de faixa mostram a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
@@ -70,7 +73,10 @@ test.describe("T37 — /precos (visitante)", () => {
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
       expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      if (f.gestor) expect(texto).toContain("Plano Gestor");
+      if (f.negociavel) {
+        expect(texto).toContain(ROTULO_FAIXA_NEGOCIAVEL);
+        expect(texto).not.toContain("Gestor");
+      }
       else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
     // O Plano Gestor é um botão que abre a janela de contato (t185); não há mais bloco fixo na página.
@@ -79,7 +85,7 @@ test.describe("T37 — /precos (visitante)", () => {
       await page.getByTestId("plano-gestor-botao").click();
       await expect(page.getByTestId("plano-gestor-form")).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
-    await expect(page.getByTestId("plano-gestor-form")).toContainText("31 imóveis ou mais");
+    await expect(page.getByTestId("plano-gestor-form")).toContainText(`${GESTOR_PRECO.minimoImoveis} imóveis ou mais`);
     await page.keyboard.press("Escape");
     const corpo = limpo(await page.locator("body").innerText());
     expect(corpo).toContain("Sem mensalidade");
@@ -104,7 +110,10 @@ test.describe("T37 — /precos (visitante, 1280 px)", () => {
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
       expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      if (f.gestor) expect(texto).toContain("Plano Gestor");
+      if (f.negociavel) {
+        expect(texto).toContain(ROTULO_FAIXA_NEGOCIAVEL);
+        expect(texto).not.toContain("Gestor");
+      }
       else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
   });

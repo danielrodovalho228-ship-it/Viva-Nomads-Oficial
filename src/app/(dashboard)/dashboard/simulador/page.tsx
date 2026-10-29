@@ -191,8 +191,8 @@ export default function SimuladorPage() {
             <p className="text-sm text-white/80">Receita líquida estimada / ano</p>
             <p className="font-title text-2xl font-semibold">{formatBRL(res.receitaLiquidaAnual)}</p>
             <p className="mt-1 text-sm text-white/85">
-              {faixa.gestor ? (
-                <>Taxa do Plano Gestor é negociada: este valor usa {pctTexto(faixa.taxa)} só como referência.</>
+              {faixa.negociavel ? (
+                <>Com {faixa.minImoveis}+ imóveis a taxa é negociável: este valor usa {pctTexto(faixa.taxa)} só como referência.</>
               ) : (
                 <>Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.</>
               )}

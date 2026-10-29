@@ -103,7 +103,7 @@ test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte únic
   assert.match(p, /A taxa de serviço da Viva é de \{TAXA_MAIOR\}/);
   assert.doesNotMatch(p, /\d+ ?%/, "nenhum percentual escrito à mão");
   // Os números que a página mostra são os da regra.
-  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
+  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
   assert.equal(pctTexto(Math.max(...publicas.map((f) => f.taxa))), "12%");
   assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
 });

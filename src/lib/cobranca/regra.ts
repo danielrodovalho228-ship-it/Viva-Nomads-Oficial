@@ -17,8 +17,9 @@ export interface FaixaComissao {
   minImoveis: number;
   maxImoveis: number | null; // null = sem teto
   taxa: number; // 0..1, sobre o valor total do contrato (aluguel × meses)
-  /** Faixa "Plano Gestor": taxa automática é a da faixa; condição melhor só por fixação do admin. */
-  gestor?: boolean;
+  /** Faixa sem teto (31+): taxa negociável. A automática é a da faixa; condição melhor só por fixação do admin.
+   *  Não é o Plano Gestor (E252-B): o Gestor começa em GESTOR_PRECO.minimoImoveis e só aparece no formulário/simulador. */
+  negociavel?: boolean;
 }
 
 export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
@@ -26,7 +27,7 @@ export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
   { minImoveis: 3, maxImoveis: 5, taxa: 0.1 },
   { minImoveis: 6, maxImoveis: 15, taxa: 0.08 },
   { minImoveis: 16, maxImoveis: 30, taxa: 0.06 },
-  { minImoveis: 31, maxImoveis: null, taxa: 0.06, gestor: true },
+  { minImoveis: 31, maxImoveis: null, taxa: 0.06, negociavel: true },
 ];
 
 export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
@@ -68,9 +69,9 @@ export function proximaFaixa(
   return { faltam: prox.minImoveis - atuais, taxa: prox.taxa };
 }
 
-/** Faixa sem teto: o painel e a página de preços mostram "Falar sobre o Plano Gestor" em vez de taxa menor. */
-export function ehPlanoGestor(n: number, faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): boolean {
-  return faixaPorImoveisAtivos(n, faixas).gestor === true;
+/** Faixa sem teto (31+): a taxa é negociável; as telas mostram "taxa negociável" em vez de um percentual menor. */
+export function ehFaixaNegociavel(n: number, faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): boolean {
+  return faixaPorImoveisAtivos(n, faixas).negociavel === true;
 }
 
 /**
@@ -168,7 +169,16 @@ export function pctTexto(taxa: number): string {
 /** Texto público da taxa: a faixa sem teto é "Negociado" — nunca um percentual fixo (decisão do Daniel, 10/10). */
 export const TAXA_NEGOCIADA_TEXTO = "Negociado";
 export function taxaPublicaTexto(f: FaixaComissao): string {
-  return f.gestor ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
+  return f.negociavel ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
+}
+
+/** E252-B: a faixa sem teto se chama "taxa negociável", nunca "Plano Gestor" (o Gestor começa em 20, outra regra). */
+export const ROTULO_FAIXA_NEGOCIAVEL = "taxa negociável";
+/** Rótulo da faixa nas tabelas: "1–2", "31+ · taxa negociável"; com `imoveis`, "1–2 imóveis", "31+ imóveis · taxa negociável". */
+export function rotuloFaixaTaxa(f: FaixaComissao, imoveis = false): string {
+  const base = f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`;
+  const comImoveis = imoveis ? `${base} imóveis` : base;
+  return f.negociavel ? `${comImoveis} · ${ROTULO_FAIXA_NEGOCIAVEL}` : comImoveis;
 }
 
 /** "R$ 3.200" (inteiro) / "R$ 259,20" (com centavos). */

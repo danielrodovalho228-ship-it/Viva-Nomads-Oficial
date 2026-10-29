@@ -5,7 +5,7 @@ import {
   TEXTO_REGRA_UNICA,
   TEXTO_REGRA_CURTO,
   cobrancaParaAceite,
-  ehPlanoGestor,
+  ehFaixaNegociavel,
   faixaPorImoveisAtivos,
   fixacaoAdminValida,
   pctTexto,
@@ -74,10 +74,10 @@ test("renovação conta como novo contrato: mesma taxa da faixa do dono", () => 
   assert.equal(valor(4, "renovacao"), 432);
 });
 
-test("31+ imóveis (Plano Gestor): dono com 40 imóveis sem override paga 6%; com override 4% paga 4%", () => {
+test("31+ imóveis (taxa negociável): dono com 40 imóveis sem override paga 6%; com override 4% paga 4%", () => {
   assert.equal(valor(40), 259.2);
-  assert.equal(ehPlanoGestor(40), true);
-  assert.equal(ehPlanoGestor(30), false);
+  assert.equal(ehFaixaNegociavel(40), true);
+  assert.equal(ehFaixaNegociavel(30), false);
   const ate = new Date("2026-12-31T00:00:00Z");
   const t = cobrancaParaAceite({
     tipo: "novo",
@@ -188,13 +188,14 @@ test("Compare: só aparece linha com fonte e data; rodapé obrigatório; sem log
   assert.doesNotMatch(ler("src/components/precos/comparativo-precos.tsx"), /<(img|Image)\b/);
 });
 
-test("/precos: tabela das faixas (12/10/8/6%), Plano Gestor no 31+; sem planos antigos nem 'renovação grátis'", () => {
+test("/precos: tabela das faixas (12/10/8/6%), 31+ com taxa negociável e o formulário do Plano Gestor; sem planos antigos nem 'renovação grátis'", () => {
   const page = ler("src/app/(public)/precos/page.tsx");
   assert.match(page, /TEXTO_REGRA_UNICA/);
   assert.match(page, /ComparativoPrecos/);
   assert.match(page, /FAIXAS_COMISSAO_PADRAO/);
   assert.match(page, /data-testid="faixas-taxa"/);
-  assert.match(page, /Plano Gestor/);
+  assert.match(page, /<PlanoGestorForm \/>/);
+  assert.match(page, /rotuloFaixaTaxa\(f\)/);
   assert.doesNotMatch(page, /PLANS|Essencial|plano Profissional|renovação grátis|vistoria/i);
   const linhas = ler("src/components/precos/comparativo-precos.tsx");
   assert.doesNotMatch(linhas, /Essencial|Profissional|Gestor/);
@@ -254,7 +255,7 @@ test("painel do dono: valor mensal ou prazo inválido não inventa valor", () =>
   assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% sobre o valor mensal × meses");
 });
 
-test("F6: tabela pública — 31+ (Plano Gestor) é 'Negociado'; as demais faixas mostram o percentual", async () => {
+test("F6: tabela pública — 31+ (taxa negociável) é 'Negociado'; as demais faixas mostram o percentual", async () => {
   const { taxaPublicaTexto } = await import("./regra.ts");
   assert.deepEqual(
     FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto),
@@ -266,7 +267,7 @@ test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor",
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../../app/(public)/precos/page.tsx", import.meta.url), "utf8");
   assert.match(t, /taxaPublicaTexto\(f\)/);
-  assert.match(t, /f\.gestor \? TAXA_NEGOCIADA_TEXTO/);
+  assert.match(t, /f\.negociavel \? TAXA_NEGOCIADA_TEXTO/);
   assert.doesNotMatch(t, /pctTexto\(f\.taxa\)/);
   assert.match(t, /Falar sobre o Plano Gestor|PlanoGestorForm/);
 });

@@ -123,7 +123,7 @@ test("17/R9. arredondamento em centavos, uma vez, no fim: telas diferentes batem
 test("19. faixas 12/10/8/6 nos limites exatos 2→3, 5→6, 15→16, 30→31; 31+ público 'Negociado', interno 6%", () => {
   const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [30, 0.06], [31, 0.06], [80, 0.06]];
   for (const [n, taxa] of casos) assert.equal(faixaPorImoveisAtivos(n).taxa, taxa, `${n} imóveis`);
-  assert.equal(faixaPorImoveisAtivos(31).gestor, true);
+  assert.equal(faixaPorImoveisAtivos(31).negociavel, true);
   assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "Negociado");
   assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(30)), "6%");
   // A migração 0171 preenche as propostas antigas com as MESMAS faixas.

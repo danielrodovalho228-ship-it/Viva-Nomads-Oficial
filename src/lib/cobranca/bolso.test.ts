@@ -29,10 +29,10 @@ for (const [imoveis, taxa, texto] of FAIXAS) {
   });
 }
 
-test("31+ imóveis é Plano Gestor: sem valor de taxa", () => {
+test("31+ imóveis: taxa negociável, sem valor de taxa (E252-B: não é o Plano Gestor)", () => {
   for (const n of [31, 80]) {
     const b = calcularBolso(3000, 6, n);
-    assert.deepEqual(b, { estado: "gestor", recebe: 18000 });
+    assert.deepEqual(b, { estado: "negociavel", recebe: 18000 });
   }
 });
 
