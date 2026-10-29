@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { buscarParceiros } from "@/lib/data/parceiros-publico";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { momentoDaSugestao, type CategoriaVinculo, type Gatilho } from "./pedidos-do-evento";
+import { chaveAntiga } from "./remarcacao";
 
 /*
   Os dois cartões do Prompt 38 na página da estadia. Quem chama já conferiu que a pessoa é parte do contrato
@@ -39,9 +40,9 @@ export async function depoisDaSaida(contratoId: string, propertyId: string): Pro
     admin.from("imovel_parceiros").select("categoria, status, modo, parceiros(nome_publico)").eq("property_id", propertyId).in("status", ["pendente", "ativo"]),
   ]);
   type LP = { id: string; categoria: string; gatilho: Gatilho; status: string; aguardando_dono: boolean; sem_resposta_avisado_em: string | null; chave_automacao: string; parceiros: { nome_publico: string } | null };
-  // Troca de parceiro: o pedido antigo ganhou o sufixo ":troca:" na chave; vale o mais novo.
+  // Troca de parceiro (":troca:") e remarcação para longe (":remarcado:", E213-B): o pedido que saiu da frente some.
   const pedidos = ((ps ?? []) as unknown as LP[])
-    .filter((p) => !p.chave_automacao.includes(":troca:"))
+    .filter((p) => !chaveAntiga(p.chave_automacao))
     .map((p) => ({
       id: p.id,
       categoria: p.categoria,

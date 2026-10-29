@@ -14,7 +14,8 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
  *    parceiro, com a janela e a etiqueta "Automático"; a 2ª rodada não duplica;
  * 6) o morador vê "Precisa de ajuda com a mudança?" (7 dias antes da saída) e recebe o e-mail de sugestão;
  * 7) o parceiro não responde em 24 h → o dono é avisado e troca de parceiro com 1 toque;
- * 4) aditivo +1 mês muda a saída → o pedido da mesma chave ganha a janela nova (não duplica);
+ * 4) aditivo +1 mês muda a saída para longe (> 5 dias) → o pedido sem aceite é cancelado com o sufixo ":remarcado:" e
+ *    o cron do D-5 da nova saída refaz o pedido com a chave original (E213-B; a prova completa é a t597);
  * 3) conferência de saída com "precisa de reparo" → fecha → o dono confirma → a manutenção chega ao parceiro com o
  *    item e a foto;
  * 5) contrato encerrado → a limpeza automática ainda não aceita é cancelada (a manutenção fica).
@@ -318,7 +319,7 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     await d.context().close();
   });
 
-  test("4. aditivo +1 mês muda a saída → o pedido da mesma chave ganha a janela nova, sem duplicar", async ({ browser }) => {
+  test("4. aditivo +1 mês leva a saída para longe → cancelado com o sufixo; o cron do D-5 refaz com a chave original", async ({ browser }) => {
     test.setTimeout(240_000);
     const [antes] = (await pedidosDaChave()).filter((p) => p.chave_automacao === BASE_LIMPEZA());
     const m = await abrir(browser, morador.email, 390);
@@ -343,14 +344,26 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
       await pagina.getByTestId("aditivo-assinar").click();
       await expect(pagina.getByTestId("estadia-ok").or(pagina.getByTestId("estadia-erro"))).toHaveText("Assinatura registrada.", { timeout: 30_000 });
     }
-    const depois = (await pedidosDaChave()).filter((p) => p.chave_automacao === BASE_LIMPEZA());
-    expect(depois, "remarcação atualiza, não cria outro").toHaveLength(1);
-    expect(depois[0].id).toBe(antes.id);
-    expect(Date.parse(depois[0].janela_inicio)).toBeGreaterThan(Date.parse(antes.janela_inicio) + 20 * 86_400_000);
-    const { data: ev } = await adm().from("parceiro_pedido_eventos").select("tipo").eq("pedido_id", antes.id).eq("tipo", "remarcado");
-    expect(ev).toHaveLength(1);
+    // E213-B: sem aceite e a nova saída a mais de 5 dias → cancelado; a chave dele ganha o sufixo e fica livre.
+    const depois = await pedidosDaChave();
+    const velho = depois.find((p) => p.id === antes.id)!;
+    expect(velho.status).toBe("cancelado");
+    expect(velho.chave_automacao).toMatch(/:remarcado:\d+$/);
+    expect(depois.filter((p) => p.chave_automacao === BASE_LIMPEZA()), "nenhum pedido na chave original até o D-5").toHaveLength(0);
     await d.context().close();
     await m.context().close();
+    // A data simulada: a nova saída chega a 4 dias → o cron do D-5 refaz o pedido com a chave original. Depois, as
+    // datas voltam (a conferência e o encerramento seguem com a estadia renovada).
+    const { data: blocos } = await adm().from("contrato_blocos").select("id, numero_bloco, inicio, fim").eq("contrato_id", ids.contrato!).order("numero_bloco");
+    const [b1, b2] = blocos as { id: string; numero_bloco: number; inicio: string; fim: string }[];
+    await adm().from("contrato_blocos").update({ fim: dia(-27) }).eq("id", b1.id);
+    await adm().from("contrato_blocos").update({ inicio: dia(-26), fim: dia(4) }).eq("id", b2.id);
+    await rodarAutomacao(browser);
+    await adm().from("contrato_blocos").update({ inicio: b2.inicio, fim: b2.fim }).eq("id", b2.id);
+    await adm().from("contrato_blocos").update({ fim: b1.fim }).eq("id", b1.id);
+    const refeito = (await pedidosDaChave()).filter((p) => p.chave_automacao === BASE_LIMPEZA());
+    expect(refeito, "o cron refaz um pedido, com a chave original").toHaveLength(1);
+    expect(refeito[0].status).toBe("solicitado");
   });
 
   test("3. conferência de saída com 'precisa de reparo' → dono confirma → a manutenção chega ao parceiro com o item e a foto", async ({ browser }) => {

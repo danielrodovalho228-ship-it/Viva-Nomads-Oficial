@@ -178,6 +178,21 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
         )}
 
         <Panel title="Horário">
+          {/* E213-B: a estadia foi renovada depois do aceite — o parceiro confirma um horário novo ou recusa a nova data. */}
+          {d.reagendamento && (
+            <div className="mb-3 space-y-2" data-testid="pedido-reagendamento">
+              <p className="text-sm text-ink">
+                {parceiro
+                  ? "A estadia foi renovada e a data mudou. Confirme um dos novos horários ou recuse a nova data. O valor combinado continua o mesmo."
+                  : "A estadia foi renovada: o parceiro confirma a nova data. O valor combinado continua o mesmo."}
+              </p>
+              {parceiro && (
+                <Button size="sm" variant="secondary" disabled={pendente} onClick={() => rodar("recusar-nova-data", {}, "Nova data recusada.")} data-testid="pedido-recusar-nova-data">
+                  Recusar a nova data
+                </Button>
+              )}
+            </div>
+          )}
           {d.horarioConfirmado ? (
             <p className="text-sm font-semibold text-ink" data-testid="pedido-horario-confirmado">
               {dataHoraBRT(d.horarioConfirmado)}
