@@ -670,7 +670,9 @@
         "t626-varredura-bloco60",
         "t643-e229-barra-360",
         "t645-e238-e239-conta-passos",
-        "t649-e246-e249-contratos-inicio"
+        "t649-e246-e249-contratos-inicio",
+        "t661-varredura-bloco62",
+        "t662-varredura-bloco63"
       ]
     },
     "/dashboard/assinatura": {
@@ -804,7 +806,8 @@
         "t542-menus5-e85-estrutura",
         "t561-e192-por-que-na-cidade",
         "t607-varredura-bloco51",
-        "t645-e238-e239-conta-passos"
+        "t645-e238-e239-conta-passos",
+        "t661-varredura-bloco62"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -887,7 +890,8 @@
         "t418-varredura-bloco35",
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
-        "t649-e246-e249-contratos-inicio"
+        "t649-e246-e249-contratos-inicio",
+        "t662-varredura-bloco63"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -905,7 +909,8 @@
         "t307-varredura-bloco8",
         "t624-varredura-bloco58",
         "t631-e222b-renovar-aditivo",
-        "t649-e246-e249-contratos-inicio"
+        "t649-e246-e249-contratos-inicio",
+        "t662-varredura-bloco63"
       ]
     },
     "/dashboard/favoritos": {
@@ -1125,6 +1130,8 @@
         "t641-e180-entrada-sempre-qualificacao",
         "t646-cadastro-titulo-nao-pula",
         "t647-e241-contador-com-numero",
+        "t661-varredura-bloco62",
+        "t662-varredura-bloco63",
         "t652-e242-ver-tamanho-real"
       ]
     },
@@ -1197,7 +1204,8 @@
         "t288-padrao-minimo-59a",
         "t388-varredura-bloco23",
         "t418-varredura-bloco35",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t662-varredura-bloco63"
       ]
     },
     "/dashboard/mensagens": {
@@ -1226,7 +1234,8 @@
         "t600-e200-conversa-da-estadia",
         "t602-e181-familia-contadores",
         "t607-varredura-bloco51",
-        "t648-e243-e245-mensagens"
+        "t648-e243-e245-mensagens",
+        "t662-varredura-bloco63"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1604,7 +1613,8 @@
       "specs": [
         "t659-e236-gestor-20",
         "t3-isolamento-papeis",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t661-varredura-bloco62"
       ]
     },
     "/para-proprietarios": {
@@ -1641,7 +1651,8 @@
         "t311-marco-principal-unico",
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t661-varredura-bloco62"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1727,7 +1738,8 @@
         "t368-varredura-bloco20",
         "t414-varredura-bloco31",
         "t543-e166-fundo-clean-publico",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t661-varredura-bloco62"
       ]
     },
     "/privacidade": {
@@ -1839,7 +1851,8 @@
         "t421-varredura-bloco38",
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t661-varredura-bloco62"
       ]
     },
     "/tributario": {
@@ -3296,14 +3309,6 @@
         "proprietario"
       ],
       "specs": []
-    },
-    "src/lib/data/actions.ts#minhaSituacaoLimite": {
-      "personas": [
-        "proprietario"
-      ],
-      "specs": [
-        "t320-pausar-anuncio-64b"
-      ]
     },
     "src/lib/data/actions.ts#pausarAnuncio": {
       "personas": [

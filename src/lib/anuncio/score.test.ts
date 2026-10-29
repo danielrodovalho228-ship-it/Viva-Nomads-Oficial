@@ -5,7 +5,7 @@ import { scoreAnuncio, contarPalavras } from "./score.ts";
 
 const vazio: FatosAnuncio = {
   enderecoOk: false, detalhesOk: false, periodoOk: false, fotos: 0, titulo: "", preco: 0, garantiaOk: false,
-  sublocacaoOk: true, privacidadeOk: true, documento: "none", limitePlanoOk: null, descricao: "", selo: false, video: false,
+  sublocacaoOk: true, privacidadeOk: true, documento: "none", descricao: "", selo: false, video: false,
 };
 const palavras = (n: number) => Array.from({ length: n }, (_, i) => `palavra${i}`).join(" ");
 const completo: FatosAnuncio = {

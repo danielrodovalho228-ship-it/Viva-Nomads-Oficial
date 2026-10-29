@@ -184,10 +184,6 @@ export function EditarImovelClient({
         // Sem a coluna (property.privacidade indefinida) a declaração não barra.
         privacidadeOk: property.privacidade === undefined ? true : privacidade.semCamerasInterior,
         documento: fatos?.documento ?? "approved",
-        limitePlanoOk: fatos?.limitePlanoOk ?? null,
-        limiteAnuncios: fatos?.limiteAnuncios,
-        // 64-B: com os publicados, o texto diz quantos pausar (a mesma conta do servidor).
-        ativosAnuncios: fatos?.ativosAnuncios,
         descricao: description,
         selo: fatos?.selo ?? !!property.readyToLiveBadge,
         // 65-B: o que está na seção Vídeo agora (arquivo ou link permitido), não o que estava no banco.

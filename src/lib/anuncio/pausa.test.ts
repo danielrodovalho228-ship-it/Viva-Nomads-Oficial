@@ -1,5 +1,5 @@
 /*
-  64-B — pausar e reativar anúncio, limite do plano numa conta só, aceite de IA que não some.
+  64-B — pausar e reativar anúncio e aceite de IA que não some. E233-A: sem limite de anúncios por plano.
   Roda: node --test src/lib/anuncio/pausa.test.ts
 */
 import { test } from "node:test";
@@ -8,63 +8,31 @@ import { readFileSync } from "node:fs";
 import {
   MOTIVOS_PAUSA,
   donoPodeReativar,
-  linhasDoLimite,
-  mensagemLimitePublicar,
-  mensagemLimiteReativar,
-  situacaoComLimite,
-  situacaoLimite,
   textoDaPausa,
   textoEmAndamento,
 } from "./pausa.ts";
-import { prontidaoAnuncio, textoVagaNoPlano } from "./prontidao.ts";
+import { prontidaoAnuncio } from "./prontidao.ts";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "./aceite-ia-rascunho.ts";
 import { TERMO_IA_VERSAO } from "./termo-ia.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("situacaoLimite: abaixo, igual e acima do limite; X a pausar exato", () => {
-  assert.deepEqual(situacaoLimite("free", 0), { limite: 1, ativos: 0, excedente: 0, podePublicarNovo: true, precisaPausar: 0 });
-  assert.deepEqual(situacaoLimite("free", 1), { limite: 1, ativos: 1, excedente: 0, podePublicarNovo: false, precisaPausar: 1 });
-  // proprietario1: 4 publicados no Gratuito → para publicar mais um, pausar 4.
-  assert.deepEqual(situacaoLimite("free", 4), { limite: 1, ativos: 4, excedente: 3, podePublicarNovo: false, precisaPausar: 4 });
-  assert.equal(situacaoLimite("essential", 3).podePublicarNovo, true);
-  assert.equal(situacaoLimite("essential", 5).precisaPausar, 1);
-  assert.equal(situacaoLimite("nao-existe", 1).limite, 1); // plano desconhecido = Gratuito
-  assert.deepEqual(situacaoComLimite(1, 4), situacaoLimite("free", 4));
-});
-
-test("mensagens do limite: publicar e reativar dizem o número exato; o painel tem as duas linhas", () => {
-  assert.equal(mensagemLimitePublicar(situacaoLimite("free", 4)), "Seu plano permite 1 anúncio publicado e você tem 4. Para publicar este, pause 4 anúncios ou mude de plano");
-  // Reativar: os publicados contam SEM o pausado. 1 publicado no Gratuito → pause 1.
-  assert.equal(mensagemLimiteReativar(situacaoLimite("free", 1)), "Seu plano permite 1 publicado e você tem 1. Para reativar, pause 1 anúncio ou mude de plano");
-  assert.deepEqual(linhasDoLimite(situacaoLimite("free", 1)), ["1 publicado — seu plano permite 1"]);
-  assert.deepEqual(linhasDoLimite(situacaoLimite("free", 4)), [
-    "4 publicados — seu plano permite 1",
-    "Os que já estavam publicados continuam. Para ficar dentro do plano, pause 3 anúncios ou mude de plano.",
-  ]);
-});
-
-test("PROP-3 (E114): proprietario1 — 3 publicados no Gratuito (limite 1) → pause 2, não 3", () => {
-  const s = situacaoLimite("free", 3);
-  assert.equal(s.excedente, 2);
-  assert.match(linhasDoLimite(s)[1], /pause 2 anúncios/);
-});
-
-test("uma conta só: prontidão (telas) e servidor (limiteDePublicacao) dão o mesmo número", () => {
-  // Prontidão com os publicados conhecidos usa a mesma mensagem do servidor.
+test("E233-A: sem limite de anúncios — publicar e reativar não contam quantos o dono tem no ar", () => {
+  const acoes = ler("src/lib/data/actions.ts");
+  assert.doesNotMatch(acoes, /situacaoDoLimite|limiteDePublicacao|minhaSituacaoLimite|planoDoProprietario/);
+  const pausa = ler("src/lib/anuncio/pausa.ts");
+  assert.doesNotMatch(pausa, /limiteDoPlano|situacaoLimite|situacaoComLimite|linhasDoLimite|mensagemLimite/);
+  const servidor = ler("src/lib/anuncio/prontidao-servidor.ts");
+  assert.doesNotMatch(servidor, /situacaoLimite|planoDoProprietario/);
+  assert.match(servidor, /fatosDaLinha\(p, fotosPor\.get\(p\.id\) \?\? 0, docPor\.get\(p\.id\) \?\? "none"\)/);
+  // Um anúncio com tudo em ordem publica, sem item de vaga.
   const pr = prontidaoAnuncio({
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio no Centro com varanda", preco: 3000, garantiaOk: true,
-    sublocacaoOk: true, privacidadeOk: true, operacao: "own", documento: "approved", limitePlanoOk: false, limiteAnuncios: 1, ativosAnuncios: 4,
+    sublocacaoOk: true, privacidadeOk: true, operacao: "own", documento: "approved",
     descricao: "x".repeat(200), selo: false, video: false,
   });
-  assert.equal(pr.obrigatorios.find((i) => i.key === "limite")?.detalhe, mensagemLimitePublicar(situacaoLimite("free", 4)));
-  assert.equal(textoVagaNoPlano(1, 4), mensagemLimitePublicar(situacaoLimite("free", 4)));
-  const acoes = ler("src/lib/data/actions.ts");
-  assert.match(acoes, /return s\.podePublicarNovo \? null : `\$\{mensagemLimitePublicar\(s\)\}\.`;/);
-  assert.match(acoes, /return situacaoLimite\(plan as string, count \?\? 0\);/);
-  const servidor = ler("src/lib/anuncio/prontidao-servidor.ts");
-  assert.match(servidor, /const sit = situacaoLimite\(plano as string, ativos \?\? 0\);/);
-  assert.match(servidor, /fatosDaLinha\(p, fotosPor\.get\(p\.id\) \?\? 0, docPor\.get\(p\.id\) \?\? "none", limiteOk, sit\.limite, sit\.ativos\)/);
+  assert.equal(pr.podePublicar, true);
+  assert.equal(pr.obrigatorios.some((i) => i.key === "limite"), false);
 });
 
 test("motivo da pausa: só o dono reativa o que ele pausou; pausa da Viva mostra motivo e caminho, nunca Reativar", () => {
@@ -97,15 +65,14 @@ test("pausar: sempre permitido e só pelo dono; grava motivo dono pelo servidor;
   assert.deepEqual(textoEmAndamento({ candidaturasAbertas: 0, propostasAceitas: 0, visitasMarcadas: 0, contratosVigentes: 0 }), []);
 });
 
-test("reativar: só motivo dono e pela MESMA porta da publicação (cidade, prontidão, aceite de IA, limite sem ele)", () => {
+test("reativar: só motivo dono e pela MESMA porta da publicação (cidade, prontidão, aceite de IA), sem limite", () => {
   const acoes = ler("src/lib/data/actions.ts");
-  const reativar = acoes.slice(acoes.indexOf("export async function reativarAnuncio"), acoes.indexOf("/** 64-B: o limite do plano do dono logado"));
+  const reativar = acoes.slice(acoes.indexOf("export async function reativarAnuncio"));
   assert.match(reativar, /if \(!donoPodeReativar\(p\.pausa_motivo\)\)/);
   assert.match(reativar, /cidadeFechada\(supabase, userId, p\.city\)/);
   assert.match(reativar, /prontidaoDoImovel\(supabase, userId, id\)/);
   assert.match(reativar, /versao_termo", TERMO_IA_VERSAO/);
-  assert.match(reativar, /situacaoDoLimite\(supabase, userId, id\)/); // conta os publicados SEM este
-  assert.match(reativar, /mensagemLimiteReativar\(lim\)/);
+  assert.doesNotMatch(reativar, /situacaoDoLimite|mensagemLimiteReativar|plano/i);
   // A volta passa pela sessão do dono: os gatilhos de publicação do banco conferem de novo.
   assert.match(reativar, /supabase\.from\("properties"\)\.update\(\{ status: "active" \}\)/);
   // E o banco nunca deixa o dono reativar pausa da Viva por outro caminho.

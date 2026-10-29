@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
  * T34 — JORNADA DO DONO: vários imóveis e troca de plano (laboratório). Conta NOVA.
  * O caminho que o Daniel relatou ("coloco um imóvel e tento um plano mais avançado,
  * não dá certo"):
- *  1. Gratuito com 1 anúncio ativo + 3 rascunhos: os rascunhos mostram o que falta (a "Vaga no seu plano" só aparece quando é o único bloqueio).
+ *  1. Gratuito com 1 anúncio ativo + 3 rascunhos: os rascunhos mostram o que falta (E233-A: não existe mais "Vaga no seu plano").
  *  2. Assinatura mostra o plano REAL e "1 de 1 anúncio ativo"; sem o seletor de demonstração.
  *  3. Sem CPF: aviso + botão de assinar travado; com CPF: assina o Essencial (simulado).
  *  4. Fundador: a tela mostra Profissional sem custo (e não "Gratuito").
@@ -65,8 +65,8 @@ test.describe("T34 — Jornada do dono: vários imóveis e troca de plano", () =
     const page = await entrar(browser);
     await page.goto("/dashboard/imoveis", { waitUntil: "networkidle" });
     await expect(page.getByText(`Imóvel 4 da Paula T34 ${sufixo}`)).toBeVisible({ timeout: 15_000 });
-    // Regra vigente (ordem de8761b0, item 2): "Vaga no seu plano" só aparece quando é o ÚNICO bloqueio.
-    // Estes rascunhos não têm fotos nem documento aprovado, então a lista mostra o que falta (e não a vaga).
+    // E233-A: sem limite de anúncios, "Vaga no seu plano" não existe. Estes rascunhos não têm fotos nem documento
+    // aprovado, então a lista mostra o que falta.
     const cartoes = page.getByTestId("prontidao");
     await expect(cartoes.filter({ hasText: "Falta para publicar" })).toHaveCount(3);
     await expect(cartoes.filter({ hasText: "Vaga no seu plano" })).toHaveCount(0);

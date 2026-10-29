@@ -6,8 +6,6 @@ import { meusPedidosDeAjuda } from "@/lib/data/ajuda-publicacao-actions";
 import { donoPodeDecidir, ROTULO_STATUS } from "@/lib/ajuda-publicacao/ajuda";
 import { DecisaoRascunho } from "@/components/property/decisao-rascunho";
 import { MyPropertiesClient } from "./imoveis-client";
-import { minhaSituacaoLimite } from "@/lib/data/actions";
-import { BlocoLimite } from "@/components/anuncio/bloco-limite";
 import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_SALVO } from "@/components/layout/moldura-assistente";
@@ -23,11 +21,10 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
   // A lista e o usuário não dependem um do outro: busca os dois juntos (ordem 0f66a754, item 4).
   const [properties, supabase, ajudas] = await Promise.all([listMyProperties(), createClient(), meusPedidosDeAjuda()]);
   const prontidao: Record<string, Prontidao> = {};
-  // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva) e o limite do plano.
+  // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva).
   const pausas: Record<string, string | null> = {};
   // 61-B: anúncio já publicado sem o tipo de entrada segue no ar, com o aviso aqui (sem bloqueio retroativo).
   const semTipoEntrada: { id: string; title: string }[] = [];
-  const limite = properties.length ? await minhaSituacaoLimite().catch(() => null) : null;
   if (supabase && properties.length) {
     const {
       data: { user },
@@ -66,11 +63,6 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
           </ul>
           <p className="mt-1 text-xs text-muted">Nada vai ao ar sem a sua aprovação.</p>
         </section>
-      )}
-      {limite && (limite.ativos > 0 || limite.excedente > 0) && (
-        <div className="mb-4">
-          <BlocoLimite situacao={limite} />
-        </div>
       )}
       {semTipoEntrada.length > 0 && (
         <section className="mb-4 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="aviso-tipo-entrada">

@@ -38,7 +38,7 @@ test("o tipo aparece no cadastro, no tipoCanonico da busca, no filtro e na URL; 
 
 const BASE: FatosAnuncio = {
   enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Chácara do Lab", preco: 3000, garantiaOk: true,
-  sublocacaoOk: true, privacidadeOk: true, documento: "approved", limitePlanoOk: true, descricao: "x".repeat(80), selo: false, video: false,
+  sublocacaoOk: true, privacidadeOk: true, documento: "approved", descricao: "x".repeat(80), selo: false, video: false,
 };
 
 test("publicar sem os 3 campos é recusado; com os 3, passa", () => {
