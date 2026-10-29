@@ -43,6 +43,10 @@ Ele é um admin de verdade (papel `admin` e 2FA próprio) que **só observa** o 
   - o cartão de backup do Sistema. Backup, restauração e drills são Actions do GitHub; não há botão no site.
 - **Dados reais** (conta, imóvel, documento, pedido ou parceiro de quem não é conta de teste): **só leitura**. Aprovar ou recusar documento e matrícula, pausar anúncio, moderar pedido, aprovar ou suspender parceiro, aprovar foto de perfil e decidir verificação de identidade são recusados.
 - **Dados de teste**: filas e ações liberadas. É para isso que a conta existe.
+- **Direto pela API, fora do site** (migração 0253): ele **lê** o que o admin lê, mas não escreve nas tabelas de admin
+  (agentes, cidades liberadas, destinos, parceria/fotógrafos, foto de perfil, gastos de marketing, moderação, pedidos e
+  respostas de moradia, imóveis, qualificação, ajuda de publicação), nem apaga avatar ou documento de outra pessoa.
+  São políticas restritivas só de escrita: o admin comum não muda, e as linhas do próprio observador seguem dele.
 
 ## Registro e aviso
 
