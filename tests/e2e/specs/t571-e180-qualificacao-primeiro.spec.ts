@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /*
   T571 — E180 (decisão do Daniel: qualificação primeiro). Dono com um anúncio em andamento toca em "Novo anúncio": a
   tela abre na Qualificação (1 de 5), não no Passo 1; o aviso "Você tem um anúncio em andamento" fica dentro dela, com
-  "Continuar o outro" (que abre o rascunho). E208: saindo da Qualificação, o Passo 1 do anúncio novo não traz mais a
+  "Continuar de onde parei" (que abre o rascunho). E208: saindo da Qualificação, o Passo 1 do anúncio novo não traz mais a
   faixa do rascunho antigo — só o estado do novo ("Anúncio novo"). A 390 e 1280 px.
 */
 const SAIDA = "tests/laboratorio/saida";
