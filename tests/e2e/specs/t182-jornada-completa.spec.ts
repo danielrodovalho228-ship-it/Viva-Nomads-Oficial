@@ -1,3 +1,4 @@
+// Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, lerSaida, novaSenha, novoSufixo, pdf, tornarContratoVigente } from "../fixtures/laboratorio";
 import { MSG_ASSINATURA_INATIVA, ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
