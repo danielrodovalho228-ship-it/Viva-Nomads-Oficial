@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): mexido pelos merges e pulado pelo teto da suíte completa; roda no portão do PR.
 /**
  * T42 — CONTATO E TELEFONE (laboratório, ordem 225d0648).
  * Regra de negócio: a Viva NÃO expõe telefone nem e-mail de ninguém antes do aceite — por isso não existe
