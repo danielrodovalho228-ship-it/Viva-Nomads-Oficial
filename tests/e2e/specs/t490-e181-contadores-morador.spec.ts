@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão das Ondas 1–3 (Pista C, 28/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T490 — E181 (QA ao vivo 25/10): os contadores da home do morador refletem as listas. Com 1 busca salva (alerta
   ligado) e 1 favorito, a home mostra "Buscas salvas 1" e "Favoritos 1" — os mesmos números de /dashboard/buscas e

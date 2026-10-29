@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { AVISO_CAUCAO_DE_MORADOR, AVISO_CONTRATOS_DE_MORADOR } from "../../../src/lib/contratos/area-dono";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão das Ondas 1–3 (Pista C, 28/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T567 — E188: a conta que é dona (sem contrato como dona) e moradora (com contrato em outro imóvel). No modo
   proprietário, "Contratos" mostra só o lado do dono (o vazio do dono sem nenhuma lista de morador embaixo) e o aviso de
