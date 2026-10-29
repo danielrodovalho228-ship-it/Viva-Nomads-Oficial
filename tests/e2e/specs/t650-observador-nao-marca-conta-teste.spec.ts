@@ -108,7 +108,8 @@ test.describe("T650 — o servidor recusa 'Marcar como conta de teste' para o ad
     const page = await (await browser.newContext({ storageState: sessao, viewport: { width: 1280, height: 900 } })).newPage();
     page.on("request", (r) => {
       const h = r.headers();
-      if (r.method() === "POST" && h["next-action"] && !chamada) {
+      // Só a chamada desta ação (o corpo leva o id do alvo); a página dispara outras server actions ao abrir.
+      if (r.method() === "POST" && h["next-action"] && !chamada && (r.postData() ?? "").includes(ids.real)) {
         const headers: Record<string, string> = {};
         for (const k of ["next-action", "next-router-state-tree", "content-type", "accept"]) if (h[k]) headers[k] = h[k];
         chamada = { url: r.url(), headers, corpo: r.postData() };
