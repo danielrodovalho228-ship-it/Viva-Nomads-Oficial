@@ -30,7 +30,8 @@ test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
       .update({ property_type: "chacara", city: CIDADE, detalhes_anuncio: { chacara: { acesso: "terra", internet: "radio", pontoMarcado: true } } })
       .eq("id", ids.ativa);
     expect(error).toBeNull();
-    const { error: e2 } = await adm().from("properties").update({ property_type: "chacara", city: "Uberlândia" }).eq("id", ids.rascunho);
+    // O assistente lê o tipo do rascunho (draft_data), não da coluna: sem ele o passo Detalhes não mostra os campos.
+    const { error: e2 } = await adm().from("properties").update({ property_type: "chacara", city: "Uberlândia", draft_data: { propertyType: "chacara" } }).eq("id", ids.rascunho);
     expect(e2).toBeNull();
   });
 

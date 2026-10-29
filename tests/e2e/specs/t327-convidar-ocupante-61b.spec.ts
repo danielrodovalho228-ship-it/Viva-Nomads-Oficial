@@ -202,9 +202,13 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
     // A página da estadia (das partes) leva à visão de leitura; a conversa do contrato não abre.
     await c.goto(hrefEstadia(), { waitUntil: "domcontentloaded" });
     await c.waitForURL(/\/convidado$/, { timeout: 20_000 });
-    for (const rota of ["/alteracao", "/ocupantes", "/encerrar"]) {
-      const r = await c.goto(`${hrefEstadia()}${rota}`, { waitUntil: "domcontentloaded" });
-      expect(r?.status(), `convidado em ${rota}`).toBe(404);
+    // Com o loading.tsx do painel a resposta já sai em streaming e o notFound() mostra a 404 com status 200: o que vale
+    // é a tela da parte não abrir e a 404 aparecer no lugar.
+    for (const rota of ["alteracao", "ocupantes", "encerrar"]) {
+      const r = await c.goto(`${hrefEstadia()}/${rota}`, { waitUntil: "domcontentloaded" });
+      expect([200, 404], `convidado em /${rota}: HTTP`).toContain(r?.status());
+      await expect(c.getByRole("heading", { name: "Página não encontrada" }), `convidado em /${rota}`).toBeVisible({ timeout: 20_000 });
+      await expect(c.getByTestId(`pagina-${rota}`)).toHaveCount(0);
     }
     await c.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await expect(c.locator("body")).not.toContainText(titulo);

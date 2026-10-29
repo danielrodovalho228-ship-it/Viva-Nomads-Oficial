@@ -22,7 +22,7 @@ async function abrirPrecoPreenchido(page: Page) {
   await expect(page.getByTestId("passo-titulo")).toHaveText(TITULO_PASSO.preco, { timeout: 30_000 });
   await page.getByTestId("cadastro-preco").fill("3600");
   await page.getByTestId("cadastro-condominio").fill("350");
-  await page.getByRole("button", { name: "Valor fixo estimado" }).click();
+  await page.getByTestId("consumo-fixed").click(); // E193: cartão de escolha única (role=radio), não botão
   await page.getByTestId("cadastro-consumo").fill("150");
   await expect(page.getByTestId("cadastro-tudo-incluido")).toHaveText(/R\$\s?4\.100\/mês tudo incluído/);
 }
