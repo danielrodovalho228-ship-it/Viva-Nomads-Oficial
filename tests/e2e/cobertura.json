@@ -1,5 +1,5 @@
 {
-  "_doc": "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura). Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
+  "_doc": "Mapa de cobertura do laboratório. Toda página (src/app/**/page.tsx), rota (route.ts) e Server Action ('use server') precisa de uma entrada; o teste src/lib/lab/cobertura.test.ts falha se surgir uma sem entrada. 'specs' vazio = ainda sem spec (lacuna conhecida, contada no % de cobertura); 'semTela' = Server Action que nenhuma tela importa (o laboratório não a alcança), com o motivo e a guarda que a cobre. Atualize rodando: node scripts/lab/gerar-cobertura.mjs",
   "paginas": {
     "/": {
       "personas": [
@@ -76,6 +76,7 @@
         "t419-varredura-bloco36",
         "t546-e175-parcerias-uma-linha",
         "t549-varredura-bloco39",
+        "t588-varredura-bloco46",
         "t615-varredura-bloco54"
       ]
     },
@@ -490,7 +491,8 @@
         "t475-e131-vitrine-conta-teste",
         "t479-e136b-calendario-pt-br",
         "t543-e166-fundo-clean-publico",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t588-varredura-bloco46"
       ]
     },
     "/cidades": {
@@ -823,7 +825,8 @@
         "t415-varredura-bloco32",
         "t549-varredura-bloco39",
         "t553-varredura-bloco41",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -839,6 +842,7 @@
         "t354-varredura-bloco19",
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
+        "t588-varredura-bloco46",
         "t608-e174-vinculo-pela-tela"
       ]
     },
@@ -1083,6 +1087,7 @@
         "t564-e193-qualificacao-cartoes",
         "t571-e180-qualificacao-primeiro",
         "t573-e195-cadastro-clean",
+        "t588-varredura-bloco46",
         "t611-e195-cadastro-sem-bege",
         "t614-varredura-bloco53"
       ]
@@ -1178,6 +1183,8 @@
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
+        "t588-varredura-bloco46",
+        "t589-varredura-bloco47",
         "t600-e200-conversa-da-estadia",
         "t602-e181-familia-contadores",
         "t607-varredura-bloco51"
@@ -1196,7 +1203,8 @@
         "t212-ferramentas-proprietario",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t568-e176-parte2-conta"
+        "t568-e176-parte2-conta",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1376,7 +1384,8 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t489-e176-menus",
-        "t566-e184-visitas-passadas"
+        "t566-e184-visitas-passadas",
+        "t589-varredura-bloco47"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1386,6 +1395,7 @@
       ],
       "specs": [
         "t593-e211-visita-do-dono",
+        "t589-varredura-bloco47",
         "t599-varredura-bloco49"
       ]
     },
@@ -1544,7 +1554,8 @@
         "t408-varredura-bloco27",
         "t551-varredura-bloco40",
         "t563-e191-tem-completo",
-        "t574-e207-voltar-resultados"
+        "t574-e207-voltar-resultados",
+        "t588-varredura-bloco46"
       ]
     },
     "/modelodenegocio": {
@@ -1869,7 +1880,8 @@
         "t271-admin-visual",
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
-        "t537-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas",
+        "t589-varredura-bloco47"
       ]
     },
     "/admin/solicitacoes": {
@@ -1972,7 +1984,8 @@
         "t240-conferencia-provas-admin",
         "t271-admin-visual",
         "t329-varredura-bloco11",
-        "t537-e165-admin-contrato-assinaturas"
+        "t537-e165-admin-contrato-assinaturas",
+        "t588-varredura-bloco46"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
@@ -3309,7 +3322,8 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [],
+      "semTela": "Porta sem tela (E205-B2, decisão de 29/10): nenhum componente do cliente importa o renovarBloco, então o Next não publica a ação e o laboratório não a alcança. Coberta pela guarda src/lib/estadia/lembrete-bloco.test.ts (as duas portas do aceite chamam lembreteDeBlocoNoAceite); a porta do aditivo tem a t595 e o cron tem a t592."
     },
     "src/lib/data/actions.ts#requestLead": {
       "personas": [

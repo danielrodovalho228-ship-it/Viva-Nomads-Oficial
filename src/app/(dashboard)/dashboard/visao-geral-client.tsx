@@ -111,7 +111,8 @@ export function VisaoGeral({
 
   // PROP-6: no modo dono, o Início é o do mockup painel-proprietario (sem os blocos de morador; PROP-1).
   if (mode === "owner" && !demo && inicioDono) {
-    return <InicioDono alerta={inicioDono.alerta} bloco={inicioDono.bloco} hoje={inicioDono.hoje ?? []} />;
+    // E218 (L-71): o checklist de ativação do dono (Prompt 50) volta aqui; o modo morador segue sem ele (E167).
+    return <InicioDono alerta={inicioDono.alerta} bloco={inicioDono.bloco} hoje={inicioDono.hoje ?? []} checklist={checklists.find((c) => c.papel === "proprietario") ?? null} />;
   }
 
   // E167 / MORADOR-NAV: no modo morador, o Início é SÓ do morador — nada de "Como proprietário", "Novo anúncio",

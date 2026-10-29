@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T603 — E190 (fila da vigia 29/10): a troca de papel acontece num clique só, nos DOIS sentidos, a partir da home
   (/dashboard) — o QA viu o 1º clique só recarregar a home do morador. Dois formatos de conta: dono com anúncio ativo e
