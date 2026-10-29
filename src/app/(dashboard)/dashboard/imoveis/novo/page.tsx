@@ -1721,7 +1721,7 @@ export default function NewPropertyPage() {
           {/* Conformidade (29/10): o estado do rascunho fica NA LINHA do selo, à direita — antes era uma linha própria acima
               da página, que nascia no 1º salvamento e empurrava o passo inteiro ~40 px para baixo no meio da digitação
               (nos mockups não há linha acima do título). E208: "Anúncio novo" até o 1º salvamento; depois "Salvo às …". */}
-          <div className="flex flex-wrap items-center justify-between gap-2" data-testid="cadastro-linha-selo">
+          <div className="flex min-h-8 flex-wrap items-center justify-between gap-2" data-testid="cadastro-linha-selo">
             <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
               {editingId ? "Editar anúncio" : "Anunciar imóvel"} <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
             </span>
@@ -1730,7 +1730,7 @@ export default function NewPropertyPage() {
                 data-testid="estado-salvamento"
                 data-estado={saveStatus}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium",
+                  "inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium",
                   saveStatus === "saved" ? "bg-sage-100 text-forest" : saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-surface-2 text-muted"
                 )}
               >
