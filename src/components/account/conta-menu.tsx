@@ -53,7 +53,9 @@ export function ContaMenu() {
         .filter((g) => g.itens.length > 0)
         .map((g, i) => (
           <section key={i} aria-label={g.titulo ?? "Mais"} data-testid="conta-grupo" data-grupo={g.titulo ?? "mais"}>
-          {g.titulo && <h2 className="mb-2 font-title text-base font-semibold text-ink">{g.titulo}</h2>}
+          {/* E238: o grupo "Conta" não repete o título da tela logo abaixo dele ("Conta" uma vez só); o nome fica no
+              aria-label da seção para o leitor de tela. */}
+          {g.titulo && g.titulo !== "Conta" && <h2 className="mb-2 font-title text-base font-semibold text-ink">{g.titulo}</h2>}
           <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-white">
             {g.itens.map((it) => {
               const Icon = it.icon;
