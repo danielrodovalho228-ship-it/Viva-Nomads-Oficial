@@ -1135,7 +1135,8 @@
         "t379-55e2-filtro-contato-um-toque",
         "t541-e168-painel-acompanha-filtro",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t600-e200-conversa-da-estadia"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1971,7 +1972,8 @@
         "t304-airbnb-exibicao-61a",
         "t418-varredura-bloco35",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t600-e200-conversa-da-estadia"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
