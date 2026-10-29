@@ -1098,7 +1098,8 @@
         "t620-e193-um-controle-so",
         "t621-varredura-bloco55",
         "t623-varredura-bloco57",
-        "t622-varredura-bloco56"
+        "t622-varredura-bloco56",
+        "t625-varredura-bloco59"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2645,6 +2646,7 @@
       "specs": [
         "t128-cron-automacoes",
         "t592-e205b2-lembrete-bloco",
+        "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao"
       ]
@@ -2659,7 +2661,9 @@
       "personas": [
         "sistema"
       ],
-      "specs": []
+      "specs": [
+        "t586-e205-emails-chegada-d7"
+      ]
     },
     "/api/cron/linkedin": {
       "personas": [
