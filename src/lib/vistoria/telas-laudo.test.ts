@@ -18,9 +18,11 @@ import {
   passosDoChecklist,
   pedeFotoDoItem,
   prazoDoLaudo,
+  prefixoAvaliadoEm,
   rotuloPasso,
   textoFaltaFotos,
 } from "./telas-laudo.ts";
+import { hrefAvaliador } from "./telas-exibicao.ts";
 import { itensSintese, textoNivelCartao } from "../cartao-sintese.ts";
 import { GRUPOS_AVALIACAO, ITENS_CHECKLIST } from "../../config/checklist-avaliacao.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
@@ -139,4 +141,15 @@ test("adendo 62-B1: nenhum '50%' nas telas; nenhum texto proibido; um primário 
   assert.match(EXECUCAO, /\{p\.status === "agendado" \? \(/, "Concluir e Enviar ficam em ramos opostos do mesmo ternário");
   assert.equal(primarios(LAUDO_DONO), 0, "o primário do bloco do dono continua sendo o pedido de avaliação");
   assert.equal(primarios(FICHA) + primarios(AVISO_PAINEL), 0);
+});
+
+test("E235: o nº do avaliador é link para /avaliadores/[numero] nos dois pontos do painel do dono, com o mesmo texto", () => {
+  assert.equal(hrefAvaliador("UDI-007"), "/avaliadores/UDI-007");
+  assert.equal(prefixoAvaliadoEm("2026-10-25T13:00:00Z") + "UDI-007", linhaAvaliadoEm("2026-10-25T13:00:00Z", "UDI-007"));
+  const laudo = semComentarios(ler("src/components/vistoria/laudo-dono.tsx"));
+  assert.match(laudo, /\{prefixoAvaliadoEm\(l\.vistoriado_em\)\}\s*<Link href=\{hrefAvaliador\(String\(cred\.numero_credenciado\)\)\}[^>]*>\{String\(cred\.numero_credenciado\)\}<\/Link>/);
+  const bloco = semComentarios(ler("src/components/vistoria/bloco-avaliacao-dono.tsx"));
+  assert.match(bloco, /Avaliador designado pela Viva: nº\{" "\}\s*<Link href=\{hrefAvaliador\(atual\.avaliadores_credenciamento\.numero_credenciado\)\}[^>]*>\s*\{atual\.avaliadores_credenciamento\.numero_credenciado\}\s*<\/Link>/);
+  // A página pública existe e aceita o formato do número.
+  assert.match(ler("src/app/(public)/avaliadores/[numero]/page.tsx"), /\^\[A-Z\]\{3\}-\\d\{3,\}\$/);
 });

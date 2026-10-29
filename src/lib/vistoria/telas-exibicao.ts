@@ -185,3 +185,6 @@ export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "s
   if (estado === "confirmada") return null;
   return estado === "em_breve" ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
 }
+
+/** E235: o número do avaliador designado leva à página pública dele (/avaliadores/[numero]). */
+export const hrefAvaliador = (numero: string) => `/avaliadores/${encodeURIComponent(numero)}`;

@@ -75,7 +75,9 @@ export const ROTULO_ACAO: Record<AcaoResultado, string> = {
 
 // ── Item 11: ficha e cartão ─────────────────────────────────────────────────────────────────────────────────────
 /** "Avaliado em 25/10/2026 por avaliador credenciado nº UDI-007". */
-export const linhaAvaliadoEm = (vistoriadoEm: string, numero: string) => `Avaliado em ${dataBRT(vistoriadoEm)} por avaliador credenciado nº ${numero}`;
+/** A linha sem o número: o laudo do dono põe o número como link para a página pública do avaliador (E235). */
+export const prefixoAvaliadoEm = (vistoriadoEm: string) => `Avaliado em ${dataBRT(vistoriadoEm)} por avaliador credenciado nº `;
+export const linhaAvaliadoEm = (vistoriadoEm: string, numero: string) => `${prefixoAvaliadoEm(vistoriadoEm)}${numero}`;
 // A linha do cartão ("Conforto · vistoriado") fica em cartao-sintese.ts (textoNivelCartao), junto da síntese.
 /** Resumo por grupo em uma linha: "8 de 8 conformes" / "6 conformes · 2 não conformes". */
 export function linhaResumoGrupo(g: { conformes: number; naoConformes: readonly string[] }): string {

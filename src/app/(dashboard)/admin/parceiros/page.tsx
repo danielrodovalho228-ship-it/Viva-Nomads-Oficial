@@ -16,7 +16,7 @@ import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, SuporteForm, type Ficha } 
 import { HREF_SISTEMA } from "@/config/chaves-ambiente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { TIPOS_PARCEIRO, contarPorTipo, doTipo, hrefParceiros, tipoDoParam } from "@/lib/admin/parceiros-tipo";
-import { diasNaFila, ordenarPendentes } from "@/lib/parceiros/fila-pendentes";
+import { diasNaFila, idadePedidoParceria, ordenarPendentes } from "@/lib/parceiros/fila-pendentes";
 import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/parceiros") };
@@ -126,6 +126,8 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
       identidade: id ? { estado: id.estado, texto: id.texto } : null,
       teste: uid ? perfil.get(uid)?.is_teste === true : false,
       diasNaFila: diasNaFila(s.criado_em as string, new Date(agora)),
+      // E234: o texto "há N dias" sai da MESMA função que a Visão geral usa (idadePedidoParceria).
+      idade: idadePedidoParceria(s.criado_em as string, new Date(agora)),
     };
   });
   const geral = lerParceiroGeral(geralLinha.data?.valor, geralLinha.data?.ligada === true);

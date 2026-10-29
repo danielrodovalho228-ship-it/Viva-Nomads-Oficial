@@ -10,7 +10,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { ROTAS_NIVEL, TITULO_BLOCO_DONO, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { ROTAS_NIVEL, TITULO_BLOCO_DONO, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, avaliarConduta, confirmarRecebido, pedirAvaliacao, registrarAusencia } from "@/lib/vistoria/actions";
 import {
   COLUNAS_PRECO,
@@ -112,7 +112,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             )}
             {atual.avaliadores_credenciamento && (
               <p className="text-ink" data-testid="avaliador-designado">
-                Avaliador designado pela Viva: nº {atual.avaliadores_credenciamento.numero_credenciado}
+                Avaliador designado pela Viva: nº{" "}
+                <Link href={hrefAvaliador(atual.avaliadores_credenciamento.numero_credenciado)} className="underline" data-testid="avaliador-designado-link">
+                  {atual.avaliadores_credenciamento.numero_credenciado}
+                </Link>
               </p>
             )}
             <ol className="grid gap-2" data-testid="avaliacao-linha-tempo">

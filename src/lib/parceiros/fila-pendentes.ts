@@ -19,6 +19,22 @@ export function textoHaDias(n: number): string {
   return n === 1 ? "há 1 dia" : `há ${n} dias`;
 }
 
+/**
+ * E234 — a idade de um pedido de parceria, UMA conta só para as duas telas: o cartão da aba Pendentes
+ * (/admin/parceiros) e a linha "pedidos de parceria" da Visão geral. Dias inteiros desde o pedido (sem arredondar
+ * para cima): 16,6 dias = "há 16 dias" nas duas.
+ */
+export function idadePedidoParceria(criadoEm: string, agora: Date): string {
+  return textoHaDias(diasNaFila(criadoEm, agora));
+}
+
+/** Visão geral: "mais antigo há N dias" / "mais antigo de hoje" — pela MESMA idadePedidoParceria. */
+export function maisAntigoParceria(criadoEm: string | null | undefined, agora: Date): string | null {
+  if (!criadoEm || !Number.isFinite(Date.parse(criadoEm))) return null;
+  const idade = idadePedidoParceria(criadoEm, agora);
+  return idade === "hoje" ? "mais antigo de hoje" : `mais antigo ${idade}`;
+}
+
 /** Do mais antigo para o mais novo (empate: id, para a ordem não pular entre recargas). */
 export function ordenarPendentes<T extends { criado_em: string; id: string }>(lista: readonly T[]): T[] {
   return [...lista].sort((a, b) => Date.parse(a.criado_em) - Date.parse(b.criado_em) || a.id.localeCompare(b.id));

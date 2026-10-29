@@ -14,6 +14,7 @@ import {
 } from "@/lib/data/admin-indicadores";
 import { textoFilaDocumentos } from "@/lib/admin/indicadores";
 import { chamadoForaDaPromessa, parceiroSemResposta } from "@/lib/lembretes/regras";
+import { maisAntigoParceria } from "@/lib/parceiros/fila-pendentes";
 import { haQuantoTempo, montarDecisoesAdmin, type ChaveDecisaoAdmin, type ContagemDecisao, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
@@ -61,7 +62,8 @@ async function parceriasSemResposta1Dia(admin: Admin, agora: Date): Promise<Cont
   const { data, error } = await admin.from("parceiro_solicitacoes").select("criado_em, decidido_em").eq("status", "pendente").not("categorias", "cs", "{vistoria}").order("criado_em", { ascending: true }).limit(500);
   if (error) return { n: null };
   const linhas = ((data ?? []) as { criado_em: string; decidido_em: string | null }[]).filter((s) => parceiroSemResposta(s.criado_em, s.decidido_em, agora));
-  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+  // E234: a idade do pedido de parceria é a mesma do cartão da aba Pendentes (idadePedidoParceria).
+  return { n: linhas.length, detalhe: maisAntigoParceria(linhas[0]?.criado_em, agora) };
 }
 
 /** Prompt 50: verificações na análise humana (2ª reprovação automática), a mesma fila de /admin/documentos. */
@@ -94,7 +96,7 @@ async function encerramentosAbertos(admin: Admin): Promise<ContagemDecisao> {
 }
 
 /** Pedidos de parceria na aba "Pendentes" de /admin/parceiros (pendente ou aguardando o e-mail da pessoa). */
-async function parceriasPendentes(admin: Admin): Promise<ContagemDecisao> {
+async function parceriasPendentes(admin: Admin, agora: Date): Promise<ContagemDecisao> {
   const { data, error } = await admin
     .from("parceiro_solicitacoes")
     .select("criado_em")
@@ -104,7 +106,8 @@ async function parceriasPendentes(admin: Admin): Promise<ContagemDecisao> {
     .limit(500);
   if (error) return { n: null };
   const linhas = (data ?? []) as { criado_em: string }[];
-  return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
+  // E234: a idade do pedido de parceria é a mesma do cartão da aba Pendentes (idadePedidoParceria).
+  return { n: linhas.length, detalhe: maisAntigoParceria(linhas[0]?.criado_em, agora) };
 }
 
 /** Pedidos a parceiros ainda "solicitado" (sem orçamento), contas de teste fora — o filtro ?filtro=solicitado da lista. */
@@ -136,7 +139,7 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     ler(listarFalhasDocumentos()),
     ler(filaDocumentos(admin)),
     ler(encerramentosAbertos(admin)),
-    ler(parceriasPendentes(admin)),
+    ler(parceriasPendentes(admin, agora)),
     ler(pedidosParceiroSemOrcamento(admin)),
     ler(urgentesSemResposta4h(admin)),
     ler(candidaturasSemResposta48h(admin)),

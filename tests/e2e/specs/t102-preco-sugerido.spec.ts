@@ -32,9 +32,8 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
     // Rascunho da ordem de 5 etapas (versão 3), passo 3 = Preço: nos 10 passos ele reabre no Preço (DE_5_PARA_10).
     await page.evaluate((uid) => localStorage.setItem(`vivanomads-novo-draft:${uid}`, JSON.stringify({ step: 3, ordemEtapas: 3, monthlyPrice: "" })), id);
     await page.reload({ waitUntil: "networkidle" });
-    // Só o "Continuar" do AVISO de rascunho: o "Continuar" do rodapé do cadastro também casaria com a regex
-    // e avançaria de etapa em vez de abrir ?draft=<id> (o waitForURL abaixo esperava até o teste estourar 45 s).
-    const retomar = page.getByText("Você tem um anúncio em andamento").locator("xpath=ancestor::div[contains(@class,'rounded-2xl')][1]").getByRole("button", { name: "Continuar" });
+    // E180: "Novo anúncio" abre na Qualificação e o aviso do rascunho mora dentro dela (data-testid, não classe de estilo).
+    const retomar = page.getByTestId("rascunho-continuar");
     const bloco = page.getByTestId("preco-sugerido");
     // O aviso de rascunho chega depois do networkidle (consulta assíncrona): espera o aviso OU o bloco do preço
     // (conta sem rascunho no servidor abre direto pelo rascunho local) em vez de decidir na hora.
@@ -44,11 +43,11 @@ test.describe("T102 — Preço sugerido no cadastro", () => {
       throw new Error(`t102: nem o aviso do rascunho nem o preço sugerido apareceram. URL: ${page.url()} · texto: ${texto} · ${String(e).slice(0, 120)}`);
     });
     if (await retomar.isVisible()) {
-      // Conta com rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no passo de preço.
-      // Vai direto ao passo de preço pela URL, pelo NOME (?etapa=preco, passo 8 dos 10), que vale para rascunho do servidor.
+      // Rascunho no servidor: "Continuar" abre ?draft=<id> na etapa gravada lá, não no Preço; vai ao Preço pelo NOME
+      // (?etapa=preco). Só com cópia local, o clique aplica o rascunho na própria tela (sem trocar a URL).
       await retomar.click();
-      await page.waitForURL(/[?&]draft=/);
-      await page.goto(`${page.url()}&etapa=preco`, { waitUntil: "networkidle" });
+      const comServidor = await page.waitForURL(/[?&]draft=/, { timeout: 5000 }).then(() => true, () => false);
+      if (comServidor) await page.goto(`${page.url()}&etapa=preco`, { waitUntil: "networkidle" });
     }
     // Falha alto (nada de skip silencioso): se o passo de preço não abrir, o lab precisa mostrar.
     await expect(bloco).toBeVisible({ timeout: 30000 });
