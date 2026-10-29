@@ -2234,7 +2234,8 @@
         "t410-niveis-medir-rascunho",
         "t408-varredura-bloco27",
         "t415-varredura-bloco32",
-        "t623-varredura-bloco57"
+        "t623-varredura-bloco57",
+        "t657-e235-link-avaliador"
       ]
     },
     "/dashboard/recibos": {
@@ -2309,7 +2310,8 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t341-credenciamento-avaliador-62a",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t657-e235-link-avaliador"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
