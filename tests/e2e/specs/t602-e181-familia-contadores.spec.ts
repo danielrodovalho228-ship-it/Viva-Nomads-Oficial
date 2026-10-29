@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T602 — E181 (família inteira, fila da vigia 29/10): TODOS os contadores da home do morador = o número de itens da
   lista de destino. Um fato, uma fonte (família E16/E113). Morador com 2 favoritos, 1 busca salva com alerta ligado,

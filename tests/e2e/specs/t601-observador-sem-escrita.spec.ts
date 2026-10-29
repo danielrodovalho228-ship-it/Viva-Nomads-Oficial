@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarAdmin, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T601 — 0253 (ponto aberto 1 do QA-LOGIN-B v2): o admin observador da QA continua LENDO o que o admin lê, mas não
   ESCREVE direto pela API (fora do site) nas tabelas de admin — Caixa já fechada na 0252; aqui o resto, incluindo

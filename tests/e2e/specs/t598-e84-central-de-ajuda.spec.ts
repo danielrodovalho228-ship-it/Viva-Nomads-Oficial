@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T598 — E84: a Central de Ajuda nos mockups aprovados (ajuda-central, pagina-fale-com-a-viva, ajuda-termos,
   ajuda-privacidade). Cada destino com página própria; a promessa "em até 24 h" uma vez por página (antes, 4× na /ajuda).

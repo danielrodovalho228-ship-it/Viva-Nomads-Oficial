@@ -4,6 +4,7 @@ import { gerarCodigoTotp } from "../fixtures/totp";
 import { authFile } from "../fixtures/auth";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T604 — E216: o admin observador da QA (profiles.qa_admin) não vê o link "Caixa dos Sócios" na barra do admin (a página
   já é 404 para ele), nem na Visão geral. O admin comum continua vendo o link. 1280 e 390.
