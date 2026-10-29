@@ -240,9 +240,13 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
     const c = await ctx.newPage();
     await c.goto(`/auth/confirm?token_hash=${link!.properties!.hashed_token}&type=magiclink&next=/dashboard`, { waitUntil: "domcontentloaded" });
     await c.waitForURL(/\/dashboard|\/auth\/(intencao|pronto)/, { timeout: 30_000 });
+    // Mesmo caso do teste 2: o notFound() sai em streaming com status 200; vale a 404 na tela e nada da estadia.
     for (const rota of ["/convidado", ""]) {
       const r = await c.goto(`${hrefEstadia()}${rota}`, { waitUntil: "domcontentloaded" });
-      expect(r?.status(), `removido em ${rota || "/"}`).toBe(404);
+      expect([200, 404], `removido em ${rota || "/"}: HTTP`).toContain(r?.status());
+      await expect(c.getByRole("heading", { name: "Página não encontrada" }), `removido em ${rota || "/"}`).toBeVisible({ timeout: 20_000 });
+      await expect(c.getByTestId("pagina-estadia-convidado")).toHaveCount(0);
+      await expect(c.locator("body")).not.toContainText(titulo);
     }
     await ctx.close();
   });

@@ -65,14 +65,14 @@ test.describe("T393 — TIPO-CHACARA-B: Chácara/Sítio", () => {
       { timeout: 30_000 },
     );
     await expect(campos).toHaveAttribute("data-falta", "acesso,tipo de internet,ponto no mapa");
-    await expect(page.getByTestId("checklist-item-chacara")).toHaveAttribute("data-ok", "0");
+    // O cartão "Pronto para publicar" (checklist-item-*) saiu no cadastro em 10 passos (24/10); o portão do publicar continua
+    // em prontidao.ts (chacara.test.ts). Aqui vale o data-falta dos campos.
     await campos.getByTestId("chacara-acesso-terra").check();
     await campos.getByTestId("chacara-internet-radio").check();
     await expect(campos).toHaveAttribute("data-falta", "ponto no mapa");
     await campos.getByTestId("chacara-coordenadas").fill(`${PONTO.lat}, ${PONTO.lng}`);
     await expect(campos.getByTestId("chacara-ponto")).toHaveAttribute("data-marcado", "1");
     await expect(campos).toHaveAttribute("data-falta", "");
-    await expect(page.getByTestId("checklist-item-chacara")).toHaveCount(0);
     await page.screenshot({ path: "tests/laboratorio/saida/t393-2-cadastro.png", fullPage: true });
     await page.context().close();
   });
