@@ -87,3 +87,12 @@ export const ATALHOS_INICIO_DONO = [
   { id: "simulador", rotulo: "Simulador de rentabilidade", texto: "Estime receita mensal e despesas", href: "/dashboard/simulador" },
   { id: "recibos", rotulo: "Recibos e notas", texto: "Emissão e histórico de comprovantes", href: "/dashboard/recibos" },
 ] as const;
+
+/**
+ * E218 (L-71) — o checklist de ativação do dono ("Para publicar seu anúncio", Prompt 50) volta ao Início do PROP-6:
+ * dentro do bloco "Anuncie seu primeiro imóvel"; nos outros casos (rascunho, decisão), logo abaixo do bloco principal.
+ * Some na ativação, como antes (quem decide é checklistsDoInicio).
+ */
+export function lugarDoChecklistDono(tipo: BlocoPrincipalDono["tipo"]): "dentro" | "abaixo" {
+  return tipo === "primeiro_anuncio" ? "dentro" : "abaixo";
+}
