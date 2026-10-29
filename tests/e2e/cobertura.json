@@ -142,7 +142,8 @@
       "specs": [
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
-        "t25-chamado-resumo"
+        "t25-chamado-resumo",
+        "t605-e217-resposta-sem-sugestao"
       ]
     },
     "/admin/avaliacoes": {
@@ -640,7 +641,8 @@
         "t559-varredura-bloco43",
         "t489-e176-menus",
         "t562-e190-modo-um-toque",
-        "t602-e181-familia-contadores"
+        "t602-e181-familia-contadores",
+        "t605-e190p2-hoje-no-inicio"
       ]
     },
     "/dashboard/assinatura": {
