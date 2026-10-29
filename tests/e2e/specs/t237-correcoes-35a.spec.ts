@@ -173,8 +173,8 @@ for (const largura of LARGURAS) {
       await semRolagemLateral(page);
 
       await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
-      const fale = page.getByRole("heading", { name: "Fale com a Viva" }).locator("xpath=..");
-      const naAjuda = fale.locator(`a[href="${INSTAGRAM}"]`);
+      // E84: na Central de ajuda as redes oficiais ficam no fim da página (o atendimento tem página própria).
+      const naAjuda = page.locator(`main a[href="${INSTAGRAM}"]`);
       await expect(naAjuda).toHaveCount(1);
       await expect(naAjuda).toHaveAttribute("rel", /noopener/);
       await expect(naAjuda).toHaveAttribute("aria-label", /Instagram/);

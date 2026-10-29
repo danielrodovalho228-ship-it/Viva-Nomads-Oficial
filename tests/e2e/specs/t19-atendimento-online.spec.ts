@@ -109,7 +109,7 @@ test.describe("T19 — Logado @criticos", () => {
     const ok = page.getByTestId("chamado-aberto-chat");
     await expect(ok).toBeVisible({ timeout: 20_000 });
     await ok.getByRole("link", { name: "Abrir o chamado" }).click();
-    await expect(page).toHaveURL(/\/ajuda\?chamado=VN-/);
+    await expect(page).toHaveURL(/\/ajuda\/fale-com-a-viva\?chamado=VN-/); // E84: o atendimento tem página própria
     await expect(page.locator("body")).toContainText("Quero ajuda para entender a devolução da caução.");
   });
 });

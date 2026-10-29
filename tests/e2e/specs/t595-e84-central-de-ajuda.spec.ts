@@ -13,7 +13,8 @@ const SAIDA = "tests/laboratorio/saida";
 async function semRolagemLateral(p: Page) {
   expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 }
-const vezes = async (p: Page, trecho: string) => ((await p.locator("body").innerText()).split(trecho).length - 1);
+// Conteúdo da página (o rodapé do site traz a frase em todas as páginas, como linha institucional).
+const vezes = async (p: Page, trecho: string) => ((await p.locator("main").innerText()).split(trecho).length - 1);
 
 for (const largura of [390, 1280] as const) {
   test.describe(`T595 — E84 a ${largura} px`, () => {
