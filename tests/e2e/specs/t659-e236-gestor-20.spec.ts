@@ -22,6 +22,20 @@ async function textoDe(page: Page, rota: string): Promise<string> {
   return (await alvo.innerText()).replace(/\s+/g, " ");
 }
 
+/**
+ * Texto da página sem as tabelas de faixa da taxa (a <table> e, em /precos, os cartões do celular `faixas-taxa-cartoes`):
+ * a faixa sem teto "31+" é outra regra (src/lib/planos/gestor-minimo-textos.test.ts); o rótulo dela é o caso L-76 abaixo.
+ */
+async function textoSemFaixas(page: Page): Promise<string> {
+  return (
+    await page.evaluate(() => {
+      const raiz = (document.querySelector("main") ?? document.body).cloneNode(true) as HTMLElement;
+      raiz.querySelectorAll("table, [data-testid='faixas-taxa-cartoes']").forEach((t) => t.remove());
+      return raiz.textContent ?? "";
+    })
+  ).replace(/\s+/g, " ");
+}
+
 test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto público", () => {
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
@@ -44,22 +58,13 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
         await expect(page).toHaveURL(/\/modelodenegocio$/);
         const modelo = await textoDe(page, "/modelodenegocio");
         expect(modelo).toContain("Plano Gestor a partir de 20 imóveis");
-        // A tabela de faixas da taxa tem a linha "31+ imóveis | Negociado · Plano Gestor": é a faixa sem teto da taxa
-        // (outra regra, src/lib/planos/gestor-minimo-textos.test.ts). O "Gestor junto de 31" só vale fora da tabela.
-        const semTabela = (
-          await page.evaluate(() => {
-            const raiz = (document.querySelector("main") ?? document.body).cloneNode(true) as HTMLElement;
-            raiz.querySelectorAll("table").forEach((t) => t.remove());
-            return raiz.textContent ?? "";
-          })
-        ).replace(/\s+/g, " ");
-        expect(semTabela).not.toMatch(GESTOR_COM_31);
+        expect(await textoSemFaixas(page)).not.toMatch(GESTOR_COM_31);
       } else {
         test.info().annotations.push({ type: "pulado", description: "SOCIOS_ACCESS_CODE não definido: /modelodenegocio não conferida" });
       }
 
-      const precos = await textoDe(page, "/precos");
-      expect(precos).not.toMatch(GESTOR_COM_31);
+      await textoDe(page, "/precos");
+      expect(await textoSemFaixas(page)).not.toMatch(GESTOR_COM_31);
       const botao = page.getByTestId("plano-gestor-botao").filter({ visible: true }).first();
       await expect(botao).toBeVisible({ timeout: 15_000 });
       await botao.click();
@@ -72,6 +77,18 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       const termos = await textoDe(page, "/termos");
       expect(termos).not.toMatch(GESTOR_COM_31);
       await page.screenshot({ path: `tests/laboratorio/saida/t659-termos-${largura}.png` });
+    });
+
+    // L-76: a tabela de faixas de /precos rotula a faixa 31+ como "Plano Gestor", e a mesma página diz que o Gestor começa em 20.
+    test(`${largura} px — /precos: a faixa 31+ da tabela não se chama Plano Gestor (L-76)`, async ({ page }) => {
+      test.fail(true, "L-76: src/app/(public)/precos/page.tsx rotula a faixa 31+ como \"31+ · Plano Gestor\"; quem corrigir tira");
+      await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await textoDe(page, "/precos");
+      const faixas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa");
+      await expect(faixas).toBeVisible();
+      await expect(faixas).toContainText(/\b31\+/);
+      const texto = (await faixas.innerText()).replace(/\s+/g, " ");
+      expect(texto).not.toMatch(GESTOR_COM_31);
     });
   }
 });
