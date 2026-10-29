@@ -142,7 +142,8 @@
       "specs": [
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
-        "t25-chamado-resumo"
+        "t25-chamado-resumo",
+        "t599-varredura-bloco49"
       ]
     },
     "/admin/avaliacoes": {
@@ -1219,7 +1220,8 @@
         "t193-propostas",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t487-e178-primeiro-pagamento"
+        "t487-e178-primeiro-pagamento",
+        "t599-varredura-bloco49"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1337,7 +1339,8 @@
         "proprietario"
       ],
       "specs": [
-        "t593-e211-visita-do-dono"
+        "t593-e211-visita-do-dono",
+        "t599-varredura-bloco49"
       ]
     },
     "/decisao": {
@@ -2008,7 +2011,8 @@
         "inquilino"
       ],
       "specs": [
-        "t327-convidar-ocupante-61b"
+        "t327-convidar-ocupante-61b",
+        "t599-varredura-bloco49"
       ]
     },
     "/dashboard/estadia/[contratoId]/ocupantes": {
@@ -2145,7 +2149,8 @@
       ],
       "specs": [
         "t300-entrada-sem-senha-49",
-        "t317-email-unico-49c1"
+        "t317-email-unico-49c1",
+        "t599-varredura-bloco49"
       ]
     },
     "/admin/avaliadores": {
