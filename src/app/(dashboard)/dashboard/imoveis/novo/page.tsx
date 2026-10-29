@@ -32,6 +32,7 @@ import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
+import { EstruturaAcessibilidade } from "@/components/anuncio/estrutura-acessibilidade";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
@@ -1888,6 +1889,8 @@ export default function NewPropertyPage() {
                 />
                 {/* Adendo 59.1: o nível que o imóvel atinge agora e o que falta para o próximo, item a item, com foto. */}
                 <NivelNoCadastro propertyId={imovelId} conforto={conforto} sugeridas={sugeridasFotos} recarregar={nivelVersao} />
+                {/* E225-A: no fim do passo, a estrutura de acessibilidade (opcional; vira lista no anúncio, sem selo). */}
+                {imovelId && <EstruturaAcessibilidade propertyId={imovelId} />}
               </div>
             )}
 

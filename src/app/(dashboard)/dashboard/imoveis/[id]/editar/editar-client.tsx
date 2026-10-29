@@ -36,6 +36,7 @@ import {
   MapPin,
   Video,
   Award,
+  Accessibility,
 } from "lucide-react";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
@@ -62,6 +63,7 @@ import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
+import { EstruturaAcessibilidade } from "@/components/anuncio/estrutura-acessibilidade";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { ANCORA_NIVEL_EDICAO } from "@/lib/niveis/destino-nivel";
 
@@ -707,6 +709,7 @@ export function EditarImovelClient({
         {/* E143: o nível do anúncio publicado fica na própria edição (a página antiga segue só para a captura no celular e a
             avaliação). Cada item grava sozinho: a seção não tem "Salvar seção". */}
         {!demo && <SecaoNivel propertyId={property.id} />}
+        {!demo && <SecaoEstrutura propertyId={property.id} />}
 
         {/* Regras da casa */}
         <Section
@@ -927,6 +930,15 @@ function SecaoNivel({ propertyId }: { propertyId: string }) {
   return (
     <Section icon={Award} title="Nível do anúncio" summary="Essencial, Conforto ou Premium" testid="secao-nivel" ancora={ANCORA_NIVEL_EDICAO} saving={false} saved={false}>
       {conf.carregado ? <NivelNoCadastro propertyId={propertyId} conforto={conf.marcados} /> : <p className="text-sm text-muted">Carregando…</p>}
+    </Section>
+  );
+}
+
+/** E225-A: a mesma estrutura de acessibilidade do Passo 5 (grava sozinha a cada toque; vira lista no anúncio, sem selo). */
+function SecaoEstrutura({ propertyId }: { propertyId: string }) {
+  return (
+    <Section icon={Accessibility} title="Estrutura de acessibilidade" summary="Opcional: aparece como informado por você" testid="secao-estrutura" saving={false} saved={false}>
+      <EstruturaAcessibilidade propertyId={propertyId} />
     </Section>
   );
 }

@@ -63,6 +63,8 @@ import { StayRules } from "@/components/property/stay-rules";
 import { DestaquesImovel } from "@/components/property/destaques-imovel";
 import { SobreImovel } from "@/components/property/sobre-imovel";
 import { BomSaber } from "@/components/property/bom-saber";
+import { EstruturaInformada } from "@/components/property/estrutura-informada";
+import type { ChecklistEstrutura } from "@/lib/selos-estrutura";
 import { PadraoMinimoImovel } from "@/components/conforto/padrao-minimo-imovel";
 import { NivelImovel } from "@/components/niveis/nivel-imovel";
 import { AvaliacaoFicha } from "@/components/niveis/avaliacao-ficha";
@@ -95,12 +97,15 @@ export function PropertyDetail({
   similar,
   proprietario = null,
   exibicao59 = null,
+  estrutura = null,
 }: {
   property: Property;
   similar: Property[];
   proprietario?: PerfilProprietario | null;
   /** Prompt 59-A: padrão mínimo confirmado e taxa de manutenção no prazo (anúncio de exemplo: null). */
   exibicao59?: Exibicao59 | null;
+  /** E225-A: a estrutura informada pelo proprietário (só de anúncio ativo; exemplo: null). */
+  estrutura?: ChecklistEstrutura | null;
 }) {
   // Anúncio de EXEMPLO: sem nota, avaliações, selos do dono, taxa de resposta,
   // "Aceita Seguro-Fiança" (em estruturação) nem dados do Google — nada disso
@@ -859,6 +864,7 @@ export function PropertyDetail({
             <NivelImovel dados={exibicao59?.nivel} />
             <AvaliacaoFicha dados={exibicao59?.avaliacao} />
             <PadraoMinimoImovel confirmado={!!exibicao59?.confortoConfirmado} />
+            <EstruturaInformada property={property} checklist={estrutura} />
             <PrivacidadeAcesso privacidade={property.privacidade} />
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
