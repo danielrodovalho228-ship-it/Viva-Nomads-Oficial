@@ -671,7 +671,8 @@
         "t645-e238-e239-conta-passos",
         "t649-e246-e249-contratos-inicio",
         "t661-varredura-bloco62",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t663-varredura-bloco64"
       ]
     },
     "/dashboard/assinatura": {
@@ -1001,7 +1002,8 @@
         "t411-varredura-bloco28",
         "t418-varredura-bloco35",
         "t572-e196-uma-qualificacao",
-        "t622-varredura-bloco56"
+        "t622-varredura-bloco56",
+        "t663-varredura-bloco64"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1025,7 +1027,8 @@
         "t418-varredura-bloco35",
         "t427-e141-essencial-sem-prova",
         "t551-varredura-bloco40",
-        "t623-varredura-bloco57"
+        "t623-varredura-bloco57",
+        "t663-varredura-bloco64"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1130,7 +1133,8 @@
         "t646-cadastro-titulo-nao-pula",
         "t647-e241-contador-com-numero",
         "t661-varredura-bloco62",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t663-varredura-bloco64"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1773,7 +1777,8 @@
         "t408-varredura-bloco27",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t608-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela",
+        "t663-varredura-bloco64"
       ]
     },
     "/qualificar": {
