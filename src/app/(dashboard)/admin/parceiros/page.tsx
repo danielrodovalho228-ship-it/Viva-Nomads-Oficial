@@ -16,6 +16,10 @@ import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, SuporteForm, type Ficha } 
 import { HREF_SISTEMA } from "@/config/chaves-ambiente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { TIPOS_PARCEIRO, contarPorTipo, doTipo, hrefParceiros, tipoDoParam } from "@/lib/admin/parceiros-tipo";
+import { createClient } from "@/lib/supabase/server";
+import { lerInteressesParceria } from "@/lib/admin/interesses-parceria";
+import { diasDesde, resumoInteresses } from "@/lib/admin/interesse-parceria";
+import { ListaInteresses, type InteresseNaTela } from "./interesses";
 
 export const metadata = { title: tituloDoAdmin("/admin/parceiros") };
 
@@ -125,6 +129,18 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   });
   const geral = lerParceiroGeral(geralLinha.data?.valor, geralLinha.data?.ligada === true);
 
+  // E223: interesses de parceria (formulário antigo, 0104). A lista e o contador saem da MESMA leitura
+  // (lerInteressesParceria, a fonte do atalho do admin também); a situação muda pela ação atualizarStatusInteresse.
+  const sessao = await createClient();
+  const interessesLidos = sessao ? await lerInteressesParceria(sessao) : null;
+  const resumo = resumoInteresses(interessesLidos ?? []);
+  const { data: copias } = interessesLidos?.length
+    ? await admin.from("parceiro_solicitacoes").select("interesse_id, status").in("interesse_id", interessesLidos.map((i) => i.id))
+    : { data: [] };
+  const pedidoDoInteresse = new Map(((copias ?? []) as { interesse_id: string; status: string }[]).map((c) => [c.interesse_id, c.status]));
+  const hoje = new Date();
+  const interesses: InteresseNaTela[] = (interessesLidos ?? []).map((i) => ({ ...i, pedidoStatus: pedidoDoInteresse.get(i.id) ?? null, dias: diasDesde(i.criado_em, hoje) }));
+
   const avisosPorCidade = Object.values(
     avisosLinhas.reduce<Record<string, { cidade: string; uf: string; categoria: string; total: number }>>((acc, a) => {
       const k = `${a.uf}|${a.chave}|${a.categoria}`;
@@ -171,6 +187,29 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
           { rotulo: "Recusadas", valor: conta(["recusada"]), href: hrefParceiros({ aba: "recusadas", tipo }) },
         ]}
       />
+
+      <section id="interessados" className="mb-6 scroll-mt-24" data-testid="admin-interesses">
+        <Panel title="Interessados em parceria">
+          <ListaNumeros
+            className="mb-3"
+            itens={[
+              { rotulo: "Novos (sem contato)", valor: interessesLidos ? resumo.novo : "—", atributos: { "data-testid": "interesses-novos" } },
+              { rotulo: "Contatados", valor: interessesLidos ? resumo.contatado : "—", atributos: { "data-testid": "interesses-contatados" } },
+              { rotulo: "Arquivados", valor: interessesLidos ? resumo.arquivado : "—", atributos: { "data-testid": "interesses-arquivados" } },
+            ]}
+          />
+          <p className="mb-2 text-xs text-muted">Quem pediu contato pelo formulário antigo de parceria. Marque como contatado depois de falar com a pessoa; arquive quando não houver mais o que fazer.</p>
+          {interessesLidos === null ? (
+            <p className="text-sm text-muted" data-testid="interesses-erro-leitura">
+              Não foi possível ler os interessados agora.
+            </p>
+          ) : interesses.length === 0 ? (
+            <p className="text-sm text-muted">Ninguém pediu contato pelo formulário antigo.</p>
+          ) : (
+            <ListaInteresses itens={interesses} />
+          )}
+        </Panel>
+      </section>
 
       <Panel title="Cartão do parceiro" className="mb-6">
         <dl className="grid grid-cols-2 gap-3 text-sm" data-testid="admin-cartao-parceiro">

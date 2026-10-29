@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
 import { ROTULO_CONTADOR_FOTOS } from "@/lib/perfil/foto-revisao";
+import { lerInteressesParceria } from "@/lib/admin/interesses-parceria";
+import { resumoInteresses } from "@/lib/admin/interesse-parceria";
 
 /**
  * Áreas novas do admin na Visão geral (Caixa dos Sócios, Parceiros, Fotógrafos, Equipe), com números ao vivo.
@@ -61,7 +63,8 @@ export async function AtalhosAdmin() {
     meuUid ? contar(supabase.from("caixa_socios").select("id", { count: "exact", head: true }).eq("status", "aguardando_aceite").eq("autor", meuUid)) : Promise.resolve("—"),
     // Ordem 3c3d8a9e, parte 2: ordens dos agentes que EU criei e o agente já entregou.
     meuUid ? contar(supabase.from("agentes_ordens").select("id", { count: "exact", head: true }).eq("status", "concluida").eq("criado_por", meuUid).is("aceito_em", null)) : Promise.resolve("—"),
-    contar(supabase.from("parceiros_interesse").select("id", { count: "exact", head: true }).eq("status", "novo")),
+    // E223: a mesma leitura e a mesma conta da lista de /admin/parceiros (#interessados).
+    lerInteressesParceria(supabase).then((l) => (l ? resumoInteresses(l).novo : "—")).catch(() => "—" as const),
     contar(supabase.from("fotografos").select("id", { count: "exact", head: true }).eq("aprovado", false)),
     // Prompt 29, item 10: os números com nome, da mesma função da página de Agentes (o 263 somava pendentes + lidas).
     admin ? contadoresAgentes(admin).catch(() => null) : Promise.resolve(null),

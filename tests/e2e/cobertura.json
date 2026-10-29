@@ -263,7 +263,8 @@
         "t339-varredura-bloco16",
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t630-e223-interesses-parceria"
       ]
     },
     "/admin/pedidos": {
@@ -4786,7 +4787,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t630-e223-interesses-parceria"
+      ]
     },
     "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
       "personas": [
