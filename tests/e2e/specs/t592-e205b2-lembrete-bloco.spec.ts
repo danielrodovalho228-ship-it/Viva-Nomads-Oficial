@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -12,6 +13,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
     E. rodar de novo não repete.
   O laboratório não tem CRON_SECRET: como a t586, o teste sobe um 2º servidor do MESMO build (porta 3125) com um
   segredo só dele e AUTOMACOES_ATIVO=1 — mesmo banco local, mesmas integrações simuladas.
+  Prova da Pista C (contra a main): o assunto e o corpo do e-mail que saiu vão para o log e para
+  tests/laboratorio/saida/t592-emails.json.
 */
 const SAIDA = "tests/laboratorio/saida";
 const PORTA = 3125;
@@ -132,6 +135,10 @@ test.describe("T592 — E205-B2: lembrete do bloco renovado ainda não pago", ()
     expect(await caixa(ids.caio), "C: sem o aceite do morador").toHaveLength(0);
     expect(await caixa(ids.duda), "D: bloco 1 fica de fora").toHaveLength(0);
     expect(await caixa(ids.dono), "nunca ao dono").toHaveLength(0);
+    // Transcrição do e-mail que saiu (prova registrada).
+    const { data: enviados } = await adm().from("emails_teste").select("evento, assunto, corpo, destinatario_mascarado").in("usuario_id", Object.values(ids)).eq("evento", EVENTO);
+    for (const e of enviados ?? []) console.log(`t592 E-MAIL ${e.evento}\n  para: ${e.destinatario_mascarado}\n  assunto: ${e.assunto}\n  corpo: ${e.corpo}`);
+    await writeFile(`${SAIDA}/t592-emails.json`, JSON.stringify({ hoje: hojeBRT(), contratos: { A: ids.A, B: ids.B, C: ids.C, D: ids.D }, emails: enviados ?? [] }, null, 2));
   });
 
   test("E: rodar de novo não repete", async () => {

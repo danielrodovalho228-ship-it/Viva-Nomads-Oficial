@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão das Ondas 1–3 (Pista C, 28/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T561 — E192 (reteste 26/10): a conta como a inquilino1 de produção — cadastro de MORADOR, com um imóvel anunciado e
   o MODO PROPRIETÁRIO salvo — vê o cartão (E192-B: com o "Salvar" secundário, um primário por tela) "Por que estou na cidade" na Conta → Perfil. Antes, o painel do morador só

@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T594 — E167 (reteste do Muse, 28/10), no formato da conta do QA (inquilino1): cadastro de MORADOR com UM RASCUNHO de
   anúncio e nenhum imóvel ativo, papel morador gravado (preferred_mode = tenant, papel_ativo = morador). O T540 cobre a

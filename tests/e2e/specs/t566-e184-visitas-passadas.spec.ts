@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão das Ondas 1–3 (Pista C, 28/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T566 — E184: visita confirmada cujo horário já passou não segue "Confirmada" nem oferece "Cancelar" (morador e dono);
   a presencial confirmada mostra o endereço — sem a linha exata gravada, vale a rua/número do cadastro; sem nenhum dos

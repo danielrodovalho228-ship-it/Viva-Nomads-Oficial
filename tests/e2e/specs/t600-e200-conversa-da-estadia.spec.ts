@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T600 — E200 (QA do Muse, 28/10, VN-CT-D5D50247): a conversa da estadia está na lista de Mensagens desde a criação do
   contrato, mesmo sem nenhuma mensagem, com o nome do outro lado (morador para o dono; dono para o morador) na lista e

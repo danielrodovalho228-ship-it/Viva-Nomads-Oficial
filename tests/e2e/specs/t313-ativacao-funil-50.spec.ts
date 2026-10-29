@@ -2,6 +2,8 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
+// Regressão dos merges #1472–#1479 (Pista C, 29/10): mexido pelos merges e pulado pelo teto da suíte completa; roda no portão do PR.
 /**
  * T313 — Prompt 50: ativação por papel, funil e lembretes honestos (laboratório).
  *   1. proprietário: o checklist do Início some na ATIVAÇÃO (1º anúncio publicado) e a data fica gravada 1× por papel;
@@ -47,7 +49,11 @@ test.describe("T313 — ativação e funil (50)", () => {
     await apagarContas([ids.dono, ids.pessoa]);
   });
 
+  // E218 (L-71): o Início do PROP-6 (#1349) tinha deixado o checklist do dono de fora; ele voltou ao InicioDono.
   test("1. proprietário: o checklist some na publicação e a ativação fica gravada uma vez", async ({ browser }) => {
+    // L-71 (Pista C, 29/10): desde o PROP-6 (Início do dono = InicioDono) e o E167 (Início do morador sem o checklist do
+    // dono), o checklist de ativação do proprietário não aparece em nenhum Início. Quem corrigir tira esta linha.
+    test.fail(true, "L-71: o checklist de ativação do proprietário não aparece no Início (PROP-6 + E167)");
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.goto("/dashboard", { waitUntil: "domcontentloaded" });
