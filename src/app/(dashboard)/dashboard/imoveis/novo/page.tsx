@@ -1749,10 +1749,8 @@ export default function NewPropertyPage() {
               </span>
             )}
           </div>
-          {/* E161: no celular (sem a prévia lateral) e na Revisão (sem coluna lateral), o anúncio no tamanho real fica aqui. */}
-          <div className={cn("mt-2", step !== ETAPA.revisao && "lg:hidden")} data-testid="previa-tamanho-real-passo">
-            <BotaoTamanhoReal imovel={previewProperty} />
-          </div>
+          {/* E242: entre o selo e o título, só o título — o "Ver no tamanho real" mora no cartão da prévia (computador) e
+              no fim do passo (celular). */}
           <h1 className={cn(TITULO_PASSO_CADASTRO, "mt-3")} data-testid="passo-titulo">
             {meta.title}
           </h1>
@@ -1982,6 +1980,7 @@ export default function NewPropertyPage() {
             {step === ETAPA.revisao && (
               <EtapaRevisar
                 previewProperty={previewProperty}
+                tamanhoReal={<BotaoTamanhoReal imovel={previewProperty} className="mt-2 hidden lg:inline-flex" />}
                 titulo={title}
                 tipo={propertyType}
                 bairro={neighborhood}
@@ -2014,6 +2013,10 @@ export default function NewPropertyPage() {
               </p>
             )}
           </div>
+          {/* E242 (E161): no celular, sem a prévia lateral, o anúncio no tamanho real fica no fim do passo, acima do rodapé. */}
+          <div className="mt-6 lg:hidden" data-testid="previa-tamanho-real-passo">
+            <BotaoTamanhoReal imovel={previewProperty} />
+          </div>
         </div>
 
         {/* Passo 10 (mockup cadastro-imovel-10): o cartão do anúncio fica dentro da revisão; a prévia lateral sai. */}
@@ -2031,8 +2034,8 @@ export default function NewPropertyPage() {
             cidade={city}
             uf={uf}
             publicado={!!editingId}
+            tamanhoReal={<BotaoTamanhoReal imovel={previewProperty} className="mt-2" />}
           />
-          <BotaoTamanhoReal imovel={previewProperty} className="mt-2" />
         </aside>
         )}
       </div>
