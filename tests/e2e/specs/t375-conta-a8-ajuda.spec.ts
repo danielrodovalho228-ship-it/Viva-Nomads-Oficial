@@ -11,7 +11,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 const SAIDA = "tests/laboratorio/saida";
 const LINKS = [
   ["central", "Central de ajuda", "/ajuda"],
-  ["fale", "Fale com a Viva", "/ajuda?novo=1"],
+  ["fale", "Fale com a Viva", "/ajuda/fale-com-a-viva"], // E84: página própria
   ["termos", "Termos de uso", "/termos"],
   ["privacidade", "Política de privacidade", "/privacidade"],
 ] as const;

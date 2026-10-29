@@ -143,7 +143,9 @@
       "specs": [
         "t19-atendimento-online",
         "t24-atendimento-acolhimento",
-        "t25-chamado-resumo"
+        "t25-chamado-resumo",
+        "t605-e217-resposta-sem-sugestao",
+        "t599-varredura-bloco49"
       ]
     },
     "/admin/avaliacoes": {
@@ -281,7 +283,8 @@
       "specs": [
         "t51-admin-padrao-caixa-socios",
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t596-qa-login-direto"
       ]
     },
     "/admin/usuarios": {
@@ -317,7 +320,25 @@
         "t310-vao-fim-de-pagina",
         "t438-vocab-a",
         "t408-varredura-bloco27",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t598-e84-central-de-ajuda",
+        "t607-varredura-bloco51"
+      ]
+    },
+    "/ajuda/fale-com-a-viva": {
+      "personas": [
+        "publico",
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t598-e84-central-de-ajuda",
+        "t19-atendimento-online",
+        "t24-atendimento-acolhimento",
+        "t25-chamado-resumo",
+        "t63-chamado-identificacao",
+        "t80-camera-chamado",
+        "t607-varredura-bloco51"
       ]
     },
     "/alerta-busca/desligar": {
@@ -478,7 +499,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t311-marco-principal-unico",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t591-varredura-bloco48"
       ]
     },
     "/cidades/[cidade]": {
@@ -492,7 +514,8 @@
         "t176-exemplo-proprietario-avaliacoes",
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t591-varredura-bloco48"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -624,7 +647,12 @@
         "t549-varredura-bloco39",
         "t559-varredura-bloco43",
         "t489-e176-menus",
-        "t562-e190-modo-um-toque"
+        "t562-e190-modo-um-toque",
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51",
+        "t610-e190p2-hoje-no-inicio",
+        "t612-e219-hoje-sem-estouro",
+        "t613-varredura-bloco52"
       ]
     },
     "/dashboard/assinatura": {
@@ -637,7 +665,8 @@
         "t35-troca-de-plano",
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta",
-        "t183-telas-logadas-390"
+        "t183-telas-logadas-390",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/avaliacoes": {
@@ -664,7 +693,9 @@
         "t125-alerta-busca-salva",
         "t71-busca-topo",
         "t183-telas-logadas-390",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/candidaturas": {
@@ -679,7 +710,9 @@
         "t205-fechamento-sem-beco",
         "t213-jornada-teste-confirmacao",
         "t297-varredura-logada-bloco3",
-        "t336-varredura-bloco14"
+        "t336-varredura-bloco14",
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/ganhos": {
@@ -688,7 +721,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/carteira": {
@@ -748,7 +782,8 @@
         "t402-conta-leva2",
         "t482-e170-caixas-vazias",
         "t542-menus5-e85-estrutura",
-        "t561-e192-por-que-na-cidade"
+        "t561-e192-por-que-na-cidade",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -803,7 +838,8 @@
         "t354-varredura-bloco19",
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t608-e174-vinculo-pela-tela"
       ]
     },
     "/dashboard/contratos": {
@@ -851,7 +887,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t602-e181-familia-contadores"
       ]
     },
     "/dashboard/fechamento": {
@@ -1046,7 +1083,9 @@
         "t564-e193-qualificacao-cartoes",
         "t571-e180-qualificacao-primeiro",
         "t573-e195-cadastro-clean",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t611-e195-cadastro-sem-bege",
+        "t614-varredura-bloco53"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1141,7 +1180,10 @@
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
         "t588-varredura-bloco46",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t600-e200-conversa-da-estadia",
+        "t602-e181-familia-contadores",
+        "t607-varredura-bloco51"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1214,7 +1256,8 @@
         "t183-telas-logadas-390",
         "t232-pedido-moradia-completo",
         "t298-varredura-logada-bloco4",
-        "t416-varredura-bloco33"
+        "t416-varredura-bloco33",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -1227,7 +1270,8 @@
         "t193-propostas",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t487-e178-primeiro-pagamento"
+        "t487-e178-primeiro-pagamento",
+        "t599-varredura-bloco49"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1347,7 +1391,8 @@
       ],
       "specs": [
         "t593-e211-visita-do-dono",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t599-varredura-bloco49"
       ]
     },
     "/decisao": {
@@ -1560,7 +1605,8 @@
       ],
       "specs": [
         "t314-entrada-avaliador-62b3",
-        "t319-varredura-bloco10"
+        "t319-varredura-bloco10",
+        "t591-varredura-bloco48"
       ]
     },
     "/parceiros/fotografos": {
@@ -1590,7 +1636,8 @@
         "t15-admin-real",
         "t18-seo-a11y",
         "t5-pedido-moradia",
-        "t310-vao-fim-de-pagina"
+        "t310-vao-fim-de-pagina",
+        "t591-varredura-bloco48"
       ]
     },
     "/pedidos/novo": {
@@ -1633,7 +1680,8 @@
         "t338-varredura-bloco15",
         "t368-varredura-bloco20",
         "t414-varredura-bloco31",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t591-varredura-bloco48"
       ]
     },
     "/privacidade": {
@@ -1644,7 +1692,9 @@
         "t18-seo-a11y",
         "t311-marco-principal-unico",
         "t543-e166-fundo-clean-publico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t598-e84-central-de-ajuda",
+        "t607-varredura-bloco51"
       ]
     },
     "/proprietario/[id]": {
@@ -1666,7 +1716,8 @@
         "t442-foto-perfil-revisao",
         "t408-varredura-bloco27",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t608-e174-vinculo-pela-tela"
       ]
     },
     "/qualificar": {
@@ -1739,7 +1790,9 @@
         "t68-comissao-valor-total",
         "t311-marco-principal-unico",
         "t421-varredura-bloco38",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t598-e84-central-de-ajuda",
+        "t607-varredura-bloco51"
       ]
     },
     "/tributario": {
@@ -1769,7 +1822,8 @@
       "specs": [
         "t209-jornada-dois-lados",
         "t298-varredura-logada-bloco4",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t613-varredura-bloco52"
       ]
     },
     "/dashboard/propostas": {
@@ -1938,7 +1992,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -1980,7 +2035,10 @@
         "t262-detalhe-imovel-41",
         "t263-visual-41",
         "t304-airbnb-exibicao-61a",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao",
+        "t600-e200-conversa-da-estadia"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -1989,7 +2047,9 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2016,7 +2076,8 @@
         "inquilino"
       ],
       "specs": [
-        "t327-convidar-ocupante-61b"
+        "t327-convidar-ocupante-61b",
+        "t599-varredura-bloco49"
       ]
     },
     "/dashboard/estadia/[contratoId]/ocupantes": {
@@ -2045,7 +2106,8 @@
       ],
       "specs": [
         "t261-tempo-ate-o-trabalho",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
@@ -2064,7 +2126,8 @@
       ],
       "specs": [
         "t463-admin3-sistema",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t596-qa-login-direto"
       ]
     },
     "/admin/retencao": {
@@ -2153,7 +2216,8 @@
       ],
       "specs": [
         "t300-entrada-sem-senha-49",
-        "t317-email-unico-49c1"
+        "t317-email-unico-49c1",
+        "t599-varredura-bloco49"
       ]
     },
     "/admin/avaliadores": {
@@ -2187,7 +2251,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t606-varredura-bloco50"
       ]
     },
     "/avaliadores": {
@@ -2195,7 +2260,8 @@
         "publico"
       ],
       "specs": [
-        "t314-entrada-avaliador-62b3"
+        "t314-entrada-avaliador-62b3",
+        "t591-varredura-bloco48"
       ]
     },
     "/avaliadores/[numero]": {
@@ -2204,7 +2270,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t341-credenciamento-avaliador-62a"
+        "t341-credenciamento-avaliador-62a",
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
@@ -2213,7 +2280,8 @@
       ],
       "specs": [
         "t305-laudo-avaliacao-62b2",
-        "t344-avaliacao-telas-62a-parte2"
+        "t344-avaliacao-telas-62a-parte2",
+        "t606-varredura-bloco50"
       ]
     },
     "/admin/funil": {
@@ -2310,6 +2378,14 @@
       "specs": [
         "t470-qa-leitor-caixas",
         "t521-qa-caixa-sem-token"
+      ]
+    },
+    "/qa/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t596-qa-login-direto"
       ]
     }
   },
@@ -2552,7 +2628,9 @@
       ],
       "specs": [
         "t128-cron-automacoes",
-        "t592-e205b2-lembrete-bloco"
+        "t592-e205b2-lembrete-bloco",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -2919,7 +2997,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "/api/cron/prazos-conforto": {
@@ -3030,6 +3109,14 @@
       "specs": [
         "t397-foto-na-hora",
         "t410-niveis-medir-rascunho"
+      ]
+    },
+    "/api/qa/entrar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t596-qa-login-direto"
       ]
     }
   },
@@ -5457,7 +5544,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#proporOutroHorario": {
@@ -5557,7 +5645,8 @@
         "parceiro"
       ],
       "specs": [
-        "t250-parceiros-contratacao"
+        "t250-parceiros-contratacao",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/parceiros/pedido-actions.ts#meusPedidosDeServico": {
@@ -5633,7 +5722,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
@@ -5656,7 +5747,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirEncerramento": {
@@ -5672,7 +5765,9 @@
         "inquilino"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#removerOcupante": {
@@ -5686,7 +5781,9 @@
         "proprietario"
       ],
       "specs": [
-        "t256-pagina-da-estadia"
+        "t256-pagina-da-estadia",
+        "t595-e205b2-lembrete-no-aceite",
+        "t597-e213b-limpeza-renovacao"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarInstrucoes": {
@@ -6227,14 +6324,18 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t608-e174-vinculo-pela-tela"
+      ]
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t608-e174-vinculo-pela-tela"
+      ]
     },
     "src/lib/vinculo/actions.ts#meuVinculo": {
       "personas": [

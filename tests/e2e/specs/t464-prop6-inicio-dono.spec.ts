@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T464 — PROP-6: Início do dono como no mockup painel-proprietario. Só no laboratório (contas novas).
    1. Dono com rascunho incompleto (390 e 1280): "Continue seu anúncio", % pronto, "Continuar de onde parou", próximos

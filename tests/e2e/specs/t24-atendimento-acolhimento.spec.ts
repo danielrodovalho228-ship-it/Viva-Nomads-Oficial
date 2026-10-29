@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 import { liberarLimiteChamados } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /**
  * T24 — PRIMEIRA RESPOSTA NA HORA (laboratório).
  * Visitante abre chamado (Caução e anúncio): entra o acolhimento da Viva com o
@@ -20,7 +21,7 @@ const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 async function abrirComoVisitante(page: Page, pedido: string, email: string): Promise<string> {
-  await page.goto("/ajuda", { waitUntil: "networkidle" });
+  await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
   const bloco = page.getByTestId("viva-chat-bloco");
   await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
   const form = page.getByTestId("form-pessoa");

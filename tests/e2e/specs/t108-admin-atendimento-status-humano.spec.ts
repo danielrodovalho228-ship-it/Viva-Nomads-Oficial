@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { adm, liberarLimiteChamados, NO_LABORATORIO } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /**
  * T108 — Admin: a tela do chamado (/admin/atendimento/[id]) nunca mostra código de status
  * (ex.: pendente_aceite) — só texto humano (ordem 0569d129 item 2, achado do Moacir no #595).
@@ -16,7 +17,7 @@ test.describe("T108 — Admin: chamado sem código de status", () => {
     await liberarLimiteChamados();
     const dono = await browser.newContext({ storageState: authFile("proprietario") });
     const p = await dono.newPage();
-    await p.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await p.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
     await bloco.getByLabel("Pedido para a equipe").fill(`Preciso de ajuda com a minha locação (${Date.now()})`);

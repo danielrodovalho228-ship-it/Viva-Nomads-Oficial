@@ -15,6 +15,8 @@ import type { ItemAgenda } from "@/lib/agenda";
 export interface AgendaDoDono {
   itens: ItemAgenda[];
   imoveis: { id: string; titulo: string }[];
+  /** E190 (parte 2): horário de entrada/saída de cada imóvel, para o "Hoje" do Início do dono. */
+  horarios: Record<string, { entrada: string | null; saida: string | null }>;
 }
 
 type LinhaVisita = {
@@ -29,7 +31,7 @@ type LinhaVisita = {
 };
 
 export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
-  const vazio: AgendaDoDono = { itens: [], imoveis: [] };
+  const vazio: AgendaDoDono = { itens: [], imoveis: [], horarios: {} };
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return vazio;
@@ -38,8 +40,14 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
   } = await supabase.auth.getUser();
   if (!user) return vazio;
 
-  const { data: props } = await admin.from("properties").select("id, title").eq("owner_id", user.id).order("created_at", { ascending: false });
-  const imoveis = ((props ?? []) as { id: string; title: string | null }[]).map((p) => ({ id: p.id, titulo: p.title || "Imóvel" }));
+  const { data: props } = await admin
+    .from("properties")
+    .select("id, title, checkin_after, checkout_before")
+    .eq("owner_id", user.id)
+    .order("created_at", { ascending: false });
+  const linhasImoveis = (props ?? []) as { id: string; title: string | null; checkin_after: string | null; checkout_before: string | null }[];
+  const imoveis = linhasImoveis.map((p) => ({ id: p.id, titulo: p.title || "Imóvel" }));
+  const horarios = Object.fromEntries(linhasImoveis.map((p) => [p.id, { entrada: p.checkin_after, saida: p.checkout_before }]));
   if (imoveis.length === 0) return vazio;
   const ids = imoveis.map((p) => p.id);
   const titulo = new Map(imoveis.map((p) => [p.id, p.titulo]));
@@ -118,5 +126,5 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
       href: null,
     });
   }
-  return { itens, imoveis };
+  return { itens, imoveis, horarios };
 }

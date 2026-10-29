@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
+// Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
   T540 — E167, guarda permanente da Pista C, no desenho aprovado (menus-simples, Daniel 24/10; MENUS-5 #1392): ABAS no
   topo para os dois papéis e barra de baixo no celular, de uma fonte única por papel; o morador não tem barra lateral.

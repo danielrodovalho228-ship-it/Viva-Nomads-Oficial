@@ -35,6 +35,8 @@ export interface ContadoresPainel {
   parceiro: boolean;
   /** Locação ativa como inquilino (revela "Solicitações" e "Serviços"). */
   estadiaAtiva: boolean;
+  /** E216: admin observador da QA (profiles.qa_admin) — a barra do admin não mostra o que ele não pode abrir. */
+  observadorQa: boolean;
 }
 
 export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
@@ -46,6 +48,7 @@ export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
   imoveisAtivos: 0,
   parceiro: false,
   estadiaAtiva: false,
+  observadorQa: false,
 });
 
 function contagem(v: unknown): number {
@@ -65,12 +68,13 @@ export function normalizarContadores(json: unknown): ContadoresPainel {
     imoveisAtivos: contagem(o.imoveisAtivos),
     parceiro: o.parceiro === true,
     estadiaAtiva: o.estadiaAtiva === true,
+    observadorQa: o.observadorQa === true,
   };
 }
 
 /** O que a rota devolve para quem não é admin: os números da equipe nunca saem (sempre 0). */
 export function contadoresVisiveis(c: ContadoresPainel, admin: boolean): ContadoresPainel {
-  return admin ? c : { ...c, documentosPendentes: 0, aprovacoesPendentes: 0 };
+  return admin ? c : { ...c, documentosPendentes: 0, aprovacoesPendentes: 0, observadorQa: false };
 }
 
 /** Selo da aba "Equipe" da barra inferior: documentos na fila + aprovações. */
