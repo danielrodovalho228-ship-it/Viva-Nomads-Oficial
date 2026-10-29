@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T656 — E224: os dois lados do Plano Gestor.
@@ -37,6 +37,9 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true, account_type: "individual" }).eq("id", ids.dono);
+    // O papel de proprietário (e a Conta › Plano) aparece com 1 imóvel na conta; o documento fica NA FILA, então
+    // nenhum imóvel conta como validado (Você tem 0).
+    await criarImovelPronto(ids.dono, `Studio T656 ${sufixo}`, { ativo: false, documentoPendente: dono.nome });
   });
   test.afterAll(async () => {
     if (ids.dono) await adm().from("account_type_audit").delete().eq("profile_id", ids.dono);
