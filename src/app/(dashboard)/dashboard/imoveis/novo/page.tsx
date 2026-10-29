@@ -135,6 +135,18 @@ function semErro(e: Record<string, string>, campo: string): Record<string, strin
   return resto;
 }
 
+/** E180: espera máxima por "guardar as respostas" antes de sair (a saída nunca fica presa numa gravação lenta). */
+const LIMITE_SALVAR_AO_SAIR_MS = 4000;
+
+/** A cópia local tem algo do dono (não é só o estado vazio de um anúncio novo)? */
+function rascunhoLocalTemConteudo(d: Record<string, unknown>): boolean {
+  const txt = (k: string) => typeof d[k] === "string" && (d[k] as string).trim() !== "";
+  const fotos = Array.isArray(d.photos) && d.photos.length > 0;
+  const q = d.qualificacaoConforto as { respostas?: Record<string, unknown> } | undefined;
+  const respostas = !!q?.respostas && Object.keys(q.respostas).length > 0;
+  return txt("title") || txt("description") || txt("street") || txt("neighborhood") || txt("cep") || txt("monthlyPrice") || fotos || respostas;
+}
+
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
@@ -292,6 +304,11 @@ export default function NewPropertyPage() {
   const [savedAt, setSavedAt] = useState<string>("");
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
+  // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
+  // entrava por cima, pulava a Qualificação e abria no passo onde o outro parou. Fica oferecida no aviso, para retomar.
+  const [rascunhoLocal, setRascunhoLocal] = useState<Record<string, unknown> | null>(null);
+  // Até saber se há rascunho a oferecer (servidor ou cópia local), o anúncio novo não grava a cópia local por cima.
+  const [entradaVerificada, setEntradaVerificada] = useState(false);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [errosGravados, setErros] = useState<Record<string, string>>({});
@@ -886,20 +903,30 @@ export default function NewPropertyPage() {
       }
     })();
     const aplicarLocal = () => {
-      try {
-        if (alive && local) aplicarDraft(JSON.parse(local));
-      } catch {}
-      // `?etapa=` na URL de um anúncio novo vence a etapa guardada no rascunho local.
-      if (alive && etapaParam !== null) {
+      if (!alive) return;
+      setEntradaVerificada(true);
+      // Um link que já diz o passo (`?etapa=`) é retomada explícita: aplica a cópia local e vai ao passo pedido.
+      if (etapaParam !== null) {
+        try {
+          if (local) aplicarDraft(JSON.parse(local));
+        } catch {}
         setStep(etapaParam);
         setEtapaMax((m) => Math.max(m, etapaParam));
+        return;
       }
+      // "Anunciar imóvel" / "Novo anúncio": sempre a Qualificação; a cópia local vira a oferta "Continuar de onde parei".
+      try {
+        const d = local ? (JSON.parse(local) as Record<string, unknown>) : null;
+        if (d && rascunhoLocalTemConteudo(d)) setRascunhoLocal(d);
+      } catch {}
     };
     getLatestDraft()
       .then((d) => {
         if (!alive) return;
-        if (d) setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
-        else aplicarLocal();
+        if (d) {
+          setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
+          setEntradaVerificada(true);
+        } else aplicarLocal();
       })
       .catch(aplicarLocal);
     return () => {
@@ -1014,6 +1041,10 @@ export default function NewPropertyPage() {
   });
   useEffect(() => {
     if (approved !== true || editId) return;
+    // E180: o anúncio novo (vazio) não apaga a cópia local antes de a entrada ser verificada, nem enquanto a retomada
+    // dela está oferecida.
+    if (!draftParam && !entradaVerificada) return;
+    if (rascunhoLocal && !draftBannerDismissed && !draftServerId) return;
     try {
       if (userId) localStorage.setItem(draftKey(userId), draftJson);
     } catch {
@@ -1070,7 +1101,7 @@ export default function NewPropertyPage() {
       clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approved, draftJson, editId, userId]);
+  }, [approved, draftJson, editId, userId, entradaVerificada, rascunhoLocal, draftBannerDismissed]);
 
   // Limites privados do rascunho: gravados à parte (tabela só do dono), nunca no JSON do rascunho.
   const limitesJson = JSON.stringify(limites);
@@ -1508,8 +1539,21 @@ export default function NewPropertyPage() {
   }
 
   // Bug 12 (L2) + E180: o aviso "anúncio em andamento" — dentro da Qualificação de um anúncio novo e no Passo 1.
+  const retomavel = existingDraft ?? (rascunhoLocal ? { id: null, pct: 0 } : null);
+  /** "Continuar de onde parei": o rascunho do servidor pela URL; a cópia local, aplicada aqui (retomada explícita). */
+  function continuarDeOndeParei() {
+    setDraftBannerDismissed(true);
+    if (existingDraft) {
+      router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
+      return;
+    }
+    if (rascunhoLocal) {
+      aplicarDraft(rascunhoLocal);
+      setRascunhoLocal(null);
+    }
+  }
   const avisoRascunho =
-    !editingId && !draftParam && existingDraft && !draftServerId && !draftBannerDismissed ? (
+    !editingId && !draftParam && retomavel && !draftServerId && !draftBannerDismissed ? (
       // E195/E166: cartão clean (branco, borda fina), como os do assistente — sem o fundo tingido.
       <div data-testid="rascunho-aviso" className="mb-4 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
@@ -1519,27 +1563,20 @@ export default function NewPropertyPage() {
           <div>
             <p className="font-title text-sm font-semibold text-ink">
               Você tem um anúncio em andamento
-              {existingDraft.pct > 0 ? ` (${existingDraft.pct}% completo)` : ""}
+              {retomavel.pct > 0 ? ` (${retomavel.pct}% completo)` : ""}
             </p>
             <p className="text-xs text-muted">
               {mostrarQualificacao ? "Este é um anúncio novo e começa pela qualificação." : "Retome de onde parou — seus dados foram salvos automaticamente."}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
+        {/* E180: no celular os dois botões quebram a linha em vez de passar da borda do cartão. */}
+        <div className="flex min-w-0 flex-wrap gap-2 sm:shrink-0">
           <Button variant="outline" size="sm" onClick={comecarOutro}>
             Começar outro
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            data-testid="rascunho-continuar"
-            onClick={() => {
-              setDraftBannerDismissed(true);
-              router.push(`/dashboard/imoveis/novo?draft=${existingDraft.id}`);
-            }}
-          >
-            {mostrarQualificacao ? "Continuar o outro" : "Continuar"} <ArrowRight className="h-4 w-4" />
+          <Button variant="secondary" size="sm" data-testid="rascunho-continuar" onClick={continuarDeOndeParei}>
+            Continuar de onde parei <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -1560,7 +1597,7 @@ export default function NewPropertyPage() {
         }}
         onResponderDepois={() => {
           // "Responder depois" leva direto ao Passo 1; as respostas dadas ficam (e vão com o rascunho).
-          // E208: a escolha "Começar outro × Continuar o outro" mora só na entrada; dentro do anúncio novo, só o estado dele.
+          // E208: a escolha "Começar outro × Continuar de onde parei" mora só na entrada; dentro do anúncio novo, só o estado dele.
           setDraftBannerDismissed(true);
           setQualDoRascunho(false);
           setQualConf((q) => ({ ...q, status: "pulada" }));
@@ -1578,8 +1615,16 @@ export default function NewPropertyPage() {
           void comecarCadastro(ETAPA.comodidades);
         }}
         onSalvarESair={async () => {
-          if (Object.keys(qualConf.respostas).length) await rascunhoDaQualificacao("pendente");
-          router.push(HREF_SAIR_ASSISTENTE);
+          // E180: UMA saída só — sempre para Meus imóveis. Guardar as respostas é tentado, mas nunca segura a pessoa na
+          // tela (antes, uma gravação lenta ou recusada deixava só o ?draft= na barra e a tela parada).
+          try {
+            if (Object.keys(qualConf.respostas).length)
+              await Promise.race([rascunhoDaQualificacao("pendente"), new Promise((r) => setTimeout(r, LIMITE_SALVAR_AO_SAIR_MS))]);
+          } catch {
+            /* a saída acontece de qualquer jeito */
+          } finally {
+            router.push(HREF_SAIR_ASSISTENTE);
+          }
         }}
         ocupado={abrindoCadastro}
       />

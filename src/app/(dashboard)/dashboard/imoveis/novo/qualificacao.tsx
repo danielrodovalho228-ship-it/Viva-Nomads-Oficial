@@ -50,7 +50,7 @@ export function Qualificacao(p: {
   /** "Sair" do topo do assistente durante a Qualificação = salvar e sair (o rascunho nasce na hora). */
   onSalvarESair: () => Promise<void>;
   ocupado?: boolean;
-  /** E180: o aviso "Você tem um anúncio em andamento" (Continuar o outro), logo abaixo do progresso. */
+  /** E180: o aviso "Você tem um anúncio em andamento" (Continuar de onde parei), logo abaixo do progresso. */
   aviso?: React.ReactNode;
 }) {
   const resultado = p.tela >= TOTAL_TELAS;
