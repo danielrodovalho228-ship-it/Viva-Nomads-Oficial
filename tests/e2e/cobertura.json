@@ -670,6 +670,7 @@
         "t626-varredura-bloco60",
         "t643-e229-barra-360",
         "t645-e238-e239-conta-passos",
+        "t649-e246-e249-contratos-inicio",
         "t661-varredura-bloco62"
       ]
     },
@@ -887,7 +888,8 @@
         "t416-varredura-bloco33",
         "t418-varredura-bloco35",
         "t560-varredura-bloco44",
-        "t567-e188-contratos-do-papel"
+        "t567-e188-contratos-do-papel",
+        "t649-e246-e249-contratos-inicio"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -904,7 +906,8 @@
         "t304-airbnb-exibicao-61a",
         "t307-varredura-bloco8",
         "t624-varredura-bloco58",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t649-e246-e249-contratos-inicio"
       ]
     },
     "/dashboard/favoritos": {
@@ -1123,6 +1126,7 @@
         "t625-varredura-bloco59",
         "t641-e180-entrada-sempre-qualificacao",
         "t646-cadastro-titulo-nao-pula",
+        "t647-e241-contador-com-numero",
         "t661-varredura-bloco62"
       ]
     },
@@ -1223,7 +1227,8 @@
         "t589-varredura-bloco47",
         "t600-e200-conversa-da-estadia",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t648-e243-e245-mensagens"
       ]
     },
     "/dashboard/notificacoes": {

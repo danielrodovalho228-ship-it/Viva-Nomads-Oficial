@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { AVISO_ANTIGOLPE_ALERTA, pareceDadoBancario } from "@/lib/seguranca/antigolpe";
+import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
 import { DenunciarConversa } from "@/components/mensagens/denunciar-conversa";
 import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
@@ -191,7 +192,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     <>
       <PageTitle title="Mensagens" action={demo ? <DemoBadge /> : undefined} />
       <AvisoAntigolpe className="mb-3" />
-      <div role="group" aria-label="Filtrar conversas" className="mb-3 flex gap-2 overflow-x-auto pb-1">
+      {/* E248: os filtros que não cabem no celular ("Como mor…") ganham o "›" na borda — dá para ver que há mais. */}
+      <FileiraRolavel role="group" aria-label="Filtrar conversas" classeExterna="mb-3" className="flex gap-2 pb-1">
         {FILTROS.map((f) => (
           <button
             key={f.id}
@@ -211,17 +213,19 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <span className={cn("text-xs", filtro === f.id ? "text-white/80" : "text-muted")}>{contagem[f.id]}</span>
           </button>
         ))}
-      </div>
+      </FileiraRolavel>
       {naoEncontrada && (
         <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="mensagens-conversa-nao-encontrada">
           {TEXTO_CONVERSA_NAO_ENCONTRADA}
         </p>
       )}
-      <div className="grid h-[75vh] overflow-hidden rounded-xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
+      {/* E243/E244: no celular a grade tem UMA coluna do tamanho da tela (minmax(0,1fr)); sem ela, a coluna implícita
+          crescia até o texto mais longo (nome do imóvel em uma linha) — o cartão ia a ~534 px e a conversa saía da tela. */}
+      <div className="grid h-[75vh] grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl border border-sage-200 bg-white md:h-[70vh] md:grid-cols-3">
         {/* Lista — no mobile some quando uma conversa está aberta */}
         <aside
           className={cn(
-            "border-r border-sage-200 md:col-span-1 md:block",
+            "min-w-0 border-r border-sage-200 md:col-span-1 md:block",
             mobileView === "chat" && "hidden"
           )}
         >
@@ -270,7 +274,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         ) : (
         <section
           className={cn(
-            "flex flex-col md:col-span-2 md:flex",
+            "flex min-w-0 flex-col md:col-span-2 md:flex",
             mobileView === "list" && "hidden"
           )}
         >
@@ -397,7 +401,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             </p>
           )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
-          {active.papel !== "suporte" && <DenunciarConversa key={active.id} conversationId={active.id} demo={demo} />}
+          {/* E245: chave PRÓPRIA (antes key={active.id}, a mesma das Respostas rápidas logo abaixo — irmãos com a mesma
+              chave fazem o React duplicar nós a cada nova renderização: "Denunciar" aparecia 2, 3, 4 vezes). */}
+          {active.papel !== "suporte" && <DenunciarConversa key={`denuncia-${active.id}`} conversationId={active.id} demo={demo} />}
           {/* Prompt 58: aviso fixo — documento não circula pelo chat. */}
           <p className="border-t border-sage-200 px-4 pt-2 text-xs text-ink/60" data-testid="mensagens-aviso-documentos">
             {AVISO_DOCUMENTOS}
@@ -409,7 +415,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           )}
           {!demo && active.papel === "proprietario" && active.propertyId && (
             <RespostasRapidasConversa
-              key={active.id}
+              key={`rapidas-${active.id}`}
               propertyId={active.propertyId}
               onEscolher={(r) => {
                 setDraft(r.texto);
