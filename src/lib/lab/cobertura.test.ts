@@ -105,18 +105,14 @@ test("migração 0173 cria lab_execucoes.por_categoria de forma idempotente, com
   assert.match(rollback, /drop column if exists por_categoria/);
 });
 
-test("porta sem tela: a lacuna fica anotada com o motivo e a guarda que a cobre (E205-B2: renovarBloco)", () => {
+test("porta sem tela: a lacuna fica anotada com o motivo e a guarda que a cobre", () => {
   const portas = Object.entries(mapa.actions).filter(([, e]) => e.semTela !== undefined);
   for (const [chave, e] of portas) {
     assert.ok((e.semTela ?? "").length > 40, `${chave}: o motivo da porta sem tela precisa estar escrito`);
     assert.match(e.semTela ?? "", /\.test\.ts/, `${chave}: diga qual guarda cobre a porta sem tela`);
   }
-  const renovar = mapa.actions["src/lib/data/actions.ts#renovarBloco"];
-  assert.ok(renovar?.semTela, "renovarBloco está anotado como porta sem tela");
-  assert.deepEqual(renovar.specs, [], "sem spec de verdade: continua contada como lacuna no %");
-  const guarda = readFileSync(join(RAIZ, "src/lib/estadia/lembrete-bloco.test.ts"), "utf8");
-  assert.match(guarda, /ler\("\.\.\/data\/actions\.ts"\)/, "a guarda que a anotação cita lê o actions.ts do renovarBloco");
-  const acoes = readFileSync(join(RAIZ, "src/lib/data/actions.ts"), "utf8");
-  assert.match(acoes.slice(acoes.indexOf("export async function renovarBloco")), /lembreteDeBlocoNoAceite\(admin, contratoId\)/, "o renovarBloco chama o lembrete do aceite");
+  // E222-B: o renovarBloco (a porta sem tela do E205-B2) saiu; renovar é o aditivo de prorrogação, com tela.
+  assert.equal(mapa.actions["src/lib/data/actions.ts#renovarBloco"], undefined);
+  assert.doesNotMatch(readFileSync(join(RAIZ, "src/lib/data/actions.ts"), "utf8"), /renovarBloco/);
 });
 
