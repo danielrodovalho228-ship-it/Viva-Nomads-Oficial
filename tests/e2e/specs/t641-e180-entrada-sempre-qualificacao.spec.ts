@@ -4,7 +4,7 @@ import { VERSAO_ORDEM_ETAPAS } from "../../../src/lib/etapas-anuncio";
 import { draftKey } from "../../../src/lib/local-keys";
 
 /*
-  T621 — E180 (defeito do Daniel em uso real, 28/10). "Anunciar imóvel" / "Novo anúncio" SEMPRE começa na
+  T641 — E180 (defeito do Daniel em uso real, 28/10). "Anunciar imóvel" / "Novo anúncio" SEMPRE começa na
   Qualificação. O rascunho guardado neste aparelho (de outro anúncio, já com a Qualificação respondida e parado num
   passo) não entra sozinho: é oferecido no aviso "Continuar de onde parei", e só o clique retoma. E o "Sair" do
   assistente é um só: da Qualificação ou de um passo, sempre para Meus imóveis (?saiu=assistente). A 390 e 1280 px.
@@ -12,13 +12,13 @@ import { draftKey } from "../../../src/lib/local-keys";
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t621.${sufixo}@lab.vivanomads.test`, nome: "Nina Novo", role: "owner" as const };
+const dono = { email: `dono.t641.${sufixo}@lab.vivanomads.test`, nome: "Nina Novo", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 /** A cópia local que o assistente guarda: outro anúncio, Qualificação respondida, parado no Passo 4. */
 async function deixarRascunhoLocal(p: Page) {
   const snapshot = {
-    title: `Studio do outro anúncio t621 ${sufixo}`,
+    title: `Studio do outro anúncio t641 ${sufixo}`,
     propertyType: "studio",
     neighborhood: "Centro",
     step: 3,
@@ -29,7 +29,7 @@ async function deixarRascunhoLocal(p: Page) {
   await p.evaluate(([k, v]) => localStorage.setItem(k, v), [draftKey(ids.dono), JSON.stringify(snapshot)] as const);
 }
 
-test.describe("T621 — E180: entrada nova sempre na Qualificação; Sair único", () => {
+test.describe("T641 — E180: entrada nova sempre na Qualificação; Sair único", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
@@ -57,16 +57,16 @@ test.describe("T621 — E180: entrada nova sempre na Qualificação; Sair único
       await expect(aviso).toBeVisible({ timeout: 30_000 });
       await expect(aviso).toContainText("Você tem um anúncio em andamento");
       await expect(aviso.getByTestId("rascunho-continuar")).toHaveText(/Continuar de onde parei/);
-      await p.screenshot({ path: `${SAIDA}/t621-entrada-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t641-entrada-${largura}.png`, fullPage: true });
 
       // A cópia local continua guardada enquanto a retomada está oferecida (o anúncio novo vazio não a apaga).
       const guardada = await p.evaluate((k) => localStorage.getItem(k), draftKey(ids.dono));
-      expect(guardada).toContain(`Studio do outro anúncio t621 ${sufixo}`);
+      expect(guardada).toContain(`Studio do outro anúncio t641 ${sufixo}`);
 
       await aviso.getByTestId("rascunho-continuar").click();
       await expect(p.getByTestId("passo-titulo")).toBeVisible({ timeout: 30_000 });
       await expect(qual).toHaveCount(0);
-      await p.screenshot({ path: `${SAIDA}/t621-retomado-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t641-retomado-${largura}.png` });
       await p.evaluate((k) => localStorage.removeItem(k), draftKey(ids.dono));
       await p.context().close();
     });
@@ -91,7 +91,7 @@ test.describe("T621 — E180: entrada nova sempre na Qualificação; Sair único
       await expect(p.getByTestId("passo-titulo")).toBeVisible({ timeout: 30_000 });
       await p.getByTestId("assistente-sair").click();
       await p.waitForURL(/\/dashboard\/imoveis\?saiu=assistente$/, { timeout: 30_000 });
-      await p.screenshot({ path: `${SAIDA}/t621-sair-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t641-sair-${largura}.png` });
       await p.context().close();
     });
   }

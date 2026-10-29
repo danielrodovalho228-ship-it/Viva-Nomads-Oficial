@@ -307,6 +307,8 @@ export default function NewPropertyPage() {
   // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
   // entrava por cima, pulava a Qualificação e abria no passo onde o outro parou. Fica oferecida no aviso, para retomar.
   const [rascunhoLocal, setRascunhoLocal] = useState<Record<string, unknown> | null>(null);
+  // Até saber se há rascunho a oferecer (servidor ou cópia local), o anúncio novo não grava a cópia local por cima.
+  const [entradaVerificada, setEntradaVerificada] = useState(false);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [errosGravados, setErros] = useState<Record<string, string>>({});
@@ -902,6 +904,7 @@ export default function NewPropertyPage() {
     })();
     const aplicarLocal = () => {
       if (!alive) return;
+      setEntradaVerificada(true);
       // Um link que já diz o passo (`?etapa=`) é retomada explícita: aplica a cópia local e vai ao passo pedido.
       if (etapaParam !== null) {
         try {
@@ -920,8 +923,10 @@ export default function NewPropertyPage() {
     getLatestDraft()
       .then((d) => {
         if (!alive) return;
-        if (d) setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
-        else aplicarLocal();
+        if (d) {
+          setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
+          setEntradaVerificada(true);
+        } else aplicarLocal();
       })
       .catch(aplicarLocal);
     return () => {
@@ -1036,7 +1041,9 @@ export default function NewPropertyPage() {
   });
   useEffect(() => {
     if (approved !== true || editId) return;
-    // E180: enquanto a retomada do rascunho local está oferecida, o anúncio novo (vazio) não apaga a cópia por cima.
+    // E180: o anúncio novo (vazio) não apaga a cópia local antes de a entrada ser verificada, nem enquanto a retomada
+    // dela está oferecida.
+    if (!draftParam && !entradaVerificada) return;
     if (rascunhoLocal && !draftBannerDismissed && !draftServerId) return;
     try {
       if (userId) localStorage.setItem(draftKey(userId), draftJson);
@@ -1094,7 +1101,7 @@ export default function NewPropertyPage() {
       clearTimeout(t);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [approved, draftJson, editId, userId]);
+  }, [approved, draftJson, editId, userId, entradaVerificada, rascunhoLocal, draftBannerDismissed]);
 
   // Limites privados do rascunho: gravados à parte (tabela só do dono), nunca no JSON do rascunho.
   const limitesJson = JSON.stringify(limites);
