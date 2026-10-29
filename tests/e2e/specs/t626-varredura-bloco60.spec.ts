@@ -14,6 +14,11 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
       cartões e nenhum checklist (o dono já ativou: tem anúncio publicado); e a Agenda do mesmo dono;
     · dono novo, sem anúncio: só o checklist do dono, dentro do bloco "Anuncie seu primeiro imóvel";
     · morador novo: só o checklist do morador ("Para encontrar seu imóvel").
+  Adendo do coordenador (29/10), também no bloco 60:
+    · os cartões do "Hoje" também a 360 px (não só 390): cabem na largura e a página não rola de lado;
+    · a barra de baixo do MENUS-5 (as 5 abas do celular, uma coluna por destino) a 360 e 390 px, no dono e no morador
+      com contrato (aba Estadia): nenhum rótulo cortado, nenhum rótulo saindo da própria coluna e as colunas com a mesma
+      largura (nenhuma aperta a vizinha). As medidas vão para o log (VARREDURA|menus5).
   Semeado como no t613 e apagado no fim. Só no laboratório.
 */
 type Conta = "DONO" | "NOVO" | "MORADOR";
@@ -227,6 +232,77 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
       }
       mkdirSync(SAIDA, { recursive: true });
       writeFileSync(`${SAIDA}/${slug(`${t.papel}-${t.nome}`)}.json`, JSON.stringify({ papel: t.papel, tela: t.nome, achados: relatorio }, null, 2));
+    });
+  }
+  test("adendo — cartões do Hoje a 360 px: cabem na largura e a página não rola de lado", async ({ browser }) => {
+    test.setTimeout(120_000);
+    test.skip(!(ids.cEntra && ids.cSai), "não deu para semear os contratos de hoje");
+    const page = await entrar(browser, dono.email, senha);
+    await page.setViewportSize({ width: 360, height: 780 });
+    try {
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded", timeout: 40_000 });
+      const cartoes = page.getByTestId("inicio-dono-hoje-cartao");
+      await expect(cartoes).toHaveCount(2, { timeout: 20_000 });
+      const medidas = await cartoes.evaluateAll((els) =>
+        els.map((e) => {
+          const r = e.getBoundingClientRect();
+          const nome = e.querySelector("[data-testid=inicio-dono-hoje-nome]") as HTMLElement | null;
+          return { esquerda: Math.round(r.left), direita: Math.round(r.right), corta: e.scrollWidth > e.clientWidth + 1, nomeTruncado: !!nome && nome.scrollWidth > nome.clientWidth };
+        })
+      );
+      const rolagem = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      console.log(`VARREDURA|hoje|360|DONO|/dashboard|${JSON.stringify({ medidas, rolagem })}`);
+      mkdirSync(SAIDA, { recursive: true });
+      await page.screenshot({ path: `${SAIDA}/hoje-360.png`, fullPage: true });
+      expect.soft(medidas.filter((m) => m.direita > 361 || m.esquerda < -1 || m.corta), "cartões do Hoje além da largura a 360 px (E219)").toEqual([]);
+      expect.soft(rolagem, "rolagem lateral da página a 360 px").toBeLessThanOrEqual(1);
+    } finally {
+      await page.context().close();
+    }
+  });
+
+  for (const quem of [
+    { nome: "dono", email: () => dono.email, papel: "proprietario" },
+    { nome: "morador com contrato (aba Estadia)", email: () => entra.email, papel: "inquilino" },
+  ] as const) {
+    test(`adendo — barra de baixo do MENUS-5 do ${quem.nome} a 360 e 390 px: rótulos inteiros e colunas iguais`, async ({ browser }) => {
+      test.setTimeout(120_000);
+      test.skip(!(ids.cEntra && ids.cSai), "não deu para semear os contratos de hoje");
+      for (const largura of [360, 390] as const) {
+        const page = await entrar(browser, quem.email(), senha);
+        await page.setViewportSize({ width: largura, height: 780 });
+        try {
+          await page.goto("/dashboard", { waitUntil: "domcontentloaded", timeout: 40_000 });
+          const barra = page.locator("nav[data-papel]:visible").filter({ has: page.locator("ul.grid") }).last();
+          await expect(barra).toBeVisible({ timeout: 20_000 });
+          const m = await barra.evaluate((nav) =>
+            Array.from(nav.querySelectorAll(":scope > ul > li")).map((li) => {
+              const r = li.getBoundingClientRect();
+              const span = li.querySelector("a > span:last-child") as HTMLElement | null;
+              const s = span?.getBoundingClientRect();
+              return {
+                rotulo: (span?.textContent ?? "").trim(),
+                largura: Math.round(r.width * 10) / 10,
+                cortado: !!span && span.scrollWidth > span.clientWidth,
+                foraDaColuna: !!s && (s.left < r.left - 0.5 || s.right > r.right + 0.5),
+              };
+            })
+          );
+          console.log(`VARREDURA|menus5|${largura}|${quem.papel}|/dashboard|${JSON.stringify(m)}`);
+          mkdirSync(SAIDA, { recursive: true });
+          await barra.screenshot({ path: `${SAIDA}/menus5-${quem.papel}-${largura}.png` });
+          await test.step(`MENUS-5 @${largura}`, async () => {
+            expect.soft(m.length, `${quem.nome} @${largura}: abas na barra`).toBeGreaterThanOrEqual(4);
+            expect.soft(m.length, `${quem.nome} @${largura}: no máximo 5 abas (MENUS-5)`).toBeLessThanOrEqual(5);
+            expect.soft(m.filter((i) => i.cortado).map((i) => i.rotulo), `${quem.nome} @${largura}: rótulos cortados (reticências)`).toEqual([]);
+            expect.soft(m.filter((i) => i.foraDaColuna).map((i) => i.rotulo), `${quem.nome} @${largura}: rótulos fora da própria coluna`).toEqual([]);
+            const larguras = m.map((i) => i.largura);
+            expect.soft(Math.max(...larguras) - Math.min(...larguras), `${quem.nome} @${largura}: colunas de larguras diferentes (uma aperta a vizinha)`).toBeLessThanOrEqual(1);
+          });
+        } finally {
+          await page.context().close();
+        }
+      }
     });
   }
 });
