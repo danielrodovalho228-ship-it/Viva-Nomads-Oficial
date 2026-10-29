@@ -246,7 +246,7 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
       expect([200, 404], `removido em ${rota || "/"}: HTTP`).toContain(r?.status());
       await expect(c.getByRole("heading", { name: "Página não encontrada" }), `removido em ${rota || "/"}`).toBeVisible({ timeout: 20_000 });
       await expect(c.getByTestId("pagina-estadia-convidado")).toHaveCount(0);
-      await expect(c.locator("body")).not.toContainText(titulo);
+      // (O título do imóvel pode aparecer em "Imóveis em destaque" da 404: o anúncio é público.)
     }
     await ctx.close();
   });

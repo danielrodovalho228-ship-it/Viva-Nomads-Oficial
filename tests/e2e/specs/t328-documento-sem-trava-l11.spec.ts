@@ -90,9 +90,13 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
     await expect(p.getByTestId("etapa-onde-fica").getByText("Informe o número (ou s/n) para enviar o documento.")).toBeVisible();
     await expect(p.getByTestId("cadastro-rua")).toHaveValue("Rua do Laboratório");
     // O campo fica na tela (acima de onde o teclado abre), não escondido.
-    const caixa = (await numero.boundingBox())!;
-    expect(caixa.y).toBeGreaterThanOrEqual(0);
-    expect(caixa.y + caixa.height).toBeLessThanOrEqual(844 * 0.6);
+    // A rolagem até o quadro de erros é suave: espera ela assentar antes de medir.
+    await expect
+      .poll(async () => {
+        const caixa = (await numero.boundingBox())!;
+        return caixa.y >= 0 && caixa.y + caixa.height <= 844 * 0.6;
+      }, { timeout: 5_000 })
+      .toBe(true);
     expect(abriu).toBe(false);
     await p.screenshot({ path: `${SAIDA}/t328-falta-numero-390.png`, fullPage: false });
 
