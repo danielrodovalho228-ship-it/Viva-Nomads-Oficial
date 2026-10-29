@@ -46,11 +46,15 @@ const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Início com o rascunho, sem o flutuante sobre a capa (E246)", rota: () => "/dashboard", marca: "inicio-dono-principal" },
 ];
 
-/** Achados já registrados como defeito de produto (L-*): ficam anotados e não derrubam o teste. */
+/** Achados já registrados como defeito de produto (L-*) ou que são o desenho pedido: ficam anotados e não derrubam o teste. */
 const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[] = [
   // L-63 (Pista A + Daniel): as 7 fotos dos cartões de tipo do #1312 ainda não estão em public/images/imoveis/.
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "imagem", achado: /\/images\/imoveis\/(tipo-(casa|studio|loft|cobertura|casa-condominio|flat)|placeholder-imovel-chacara)\.webp/, l: "L-63" },
   { rota: /^\/dashboard\/imoveis\/novo(\?|$)/, classe: "foto", achado: /área de foto vazia \(aspect-ratio 4 \/ 3\).*"Imagem ilustrativa"/, l: "L-63" },
+  // Desenho do E248 (#1536), não defeito: na fileira que rola na horizontal (subabas de Contratos, filtros de Mensagens),
+  // o botão "›" sólido senta na borda, sobre o item que continua fora da tela; esse item aparece rolando a FILEIRA (a
+  // t649 prova que, ao tocar, o último fica inteiro). O detector só conhece a rolagem da página, por isso acusa.
+  { rota: /^\/dashboard\/(mensagens|contratos)(\?|$)/, classe: "fixo", achado: /coberto por button "Ver mais itens"$/, l: "E248-desenho" },
 ];
 const conhecido = (rotulo: string, a: string, classe?: Classe) => CONHECIDOS.find((c) => c.classe === classe && c.rota.test(rotulo) && c.achado.test(a));
 
