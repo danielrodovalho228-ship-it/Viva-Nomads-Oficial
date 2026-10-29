@@ -13,6 +13,9 @@ import { lerParceiroGeral } from "@/lib/parceiros/regras";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { CHAVES_AMBIENTE, ONDE_MUDA_AMBIENTE } from "@/config/chaves-ambiente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { PortaQaPainel } from "@/components/admin/porta-qa";
+import { createClient } from "@/lib/supabase/server";
+import { ehObservadorQa, MSG_OBSERVADOR } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/sistema"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -40,6 +43,9 @@ export default async function AdminSistemaPage() {
   const geral = linha("PARCEIRO_GERAL_FALLBACK");
   const quem = (l: LinhaChave | null) => (l?.alterada_por ? (nome.get(l.alterada_por) ?? "alguém da equipe") : null);
   const valores = flags as unknown as Record<string, boolean>;
+  // QA-LOGIN-B v2: o admin observador da QA vê o estado das chaves, mas sem os botões, e não vê o cartão de backup.
+  const supabase = await createClient();
+  const observador = await ehObservadorQa(supabase ? (await supabase.auth.getUser()).data.user?.id : null);
 
   return (
     <div data-testid="admin-sistema">
@@ -49,15 +55,23 @@ export default async function AdminSistemaPage() {
         <h2 id="sistema-chaves-titulo" className="mb-3 font-title text-lg font-semibold text-ink">
           Chaves da plataforma
         </h2>
-        <ChaveSmsPainel ligada={sms?.ligada === true} ligadaEm={sms?.ligada_em ?? null} quem={quem(sms)} />
+        {observador ? (
+          <p className="mb-3 text-sm text-muted" data-testid="chaves-observador">
+            SMS: {sms?.ligada ? "ligada" : "desligada"}. {MSG_OBSERVADOR}
+          </p>
+        ) : (
+          <ChaveSmsPainel ligada={sms?.ligada === true} ligadaEm={sms?.ligada_em ?? null} quem={quem(sms)} />
+        )}
         <Panel title="Cartão do parceiro geral na busca vazia (chave PARCEIRO_GERAL_FALLBACK)" className="mb-6" data-testid="chave-parceiro-geral">
           <p className="mb-3 text-sm text-ink" data-testid="chave-parceiro-geral-estado">
             {geral?.ligada ? `Ligada${geral.ligada_em ? ` desde ${dataHoraBRT(geral.ligada_em)}` : ""}` : "Desligada"}
             {quem(geral) ? ` · mudada por ${quem(geral)}` : ""}
           </p>
-          <ParceiroGeralForm inicial={lerParceiroGeral(geral?.valor, geral?.ligada === true)} />
+          {observador ? null : <ParceiroGeralForm inicial={lerParceiroGeral(geral?.valor, geral?.ligada === true)} />}
         </Panel>
       </section>
+
+      <PortaQaPainel />
 
       <Panel title="Chaves de ambiente" className="mb-6" data-testid="chaves-ambiente">
         <p className="mb-3 text-sm text-muted">Só leitura. Cada uma liga ou desliga na Vercel; esta tela não muda nenhuma.</p>
@@ -89,7 +103,7 @@ export default async function AdminSistemaPage() {
           <ContadorDeteccao />
         </div>
         <div id="backup" className="mt-6 scroll-mt-24">
-          <CartaoBackup />
+          {observador ? null : <CartaoBackup />}
         </div>
         <div id="entrada-email" className="mt-6 scroll-mt-24">
           <CartaoEntradaEmail />

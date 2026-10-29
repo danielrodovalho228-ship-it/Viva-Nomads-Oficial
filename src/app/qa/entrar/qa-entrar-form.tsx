@@ -20,7 +20,7 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
     const r = await fetch("/api/qa/entrar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, chave, papel }),
+      body: JSON.stringify({ email, chave, papel, destino }),
       cache: "no-store",
     }).catch(() => null);
     setChave("");

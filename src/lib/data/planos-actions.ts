@@ -14,6 +14,7 @@ import { fimGratisFundador } from "@/lib/fundador";
 import { isAsaasConfigured } from "@/lib/payments/asaas";
 import { emProducao } from "@/lib/integracoes";
 import { temDocumento } from "@/lib/data/documento-servidor";
+import { recusaObservador } from "@/lib/qa/observador";
 
 export interface GestorElegibilidade {
   elegivel: boolean;
@@ -85,6 +86,8 @@ export async function definirAccountType(
 
   const { data: adm } = await supabase.rpc("is_admin");
   if (adm !== true) return { ok: false, error: "Apenas administradores." };
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, error: recusaQa };
   if (novoTipo !== "individual" && novoTipo !== "gestor")
     return { ok: false, error: "Tipo inválido." };
 

@@ -80,3 +80,28 @@ test("no /dashboard o admin vê as áreas de usuário e UM item 'Painel admin'",
   const admin = fs.filter((i) => i.href === "/admin" || i.href?.startsWith("/admin/"));
   assert.deepEqual(admin.map((i) => i.rotulo), ["Painel admin"]);
 });
+
+test("E216: o admin observador da QA não vê 'Caixa dos Sócios' na barra; o admin comum vê", async () => {
+  const { barraAdminPara, BARRA_ADMIN, FORA_DA_BARRA_OBSERVADOR } = await import("./menu-admin.ts");
+  const folhas = (itens: readonly { href?: string; filhos?: readonly { href?: string }[] }[]) =>
+    itens.flatMap((i) => (i.filhos ? i.filhos.map((f) => f.href) : [i.href]));
+  assert.equal(barraAdminPara({ observadorQa: false }), BARRA_ADMIN);
+  const obs = folhas(barraAdminPara({ observadorQa: true }));
+  assert.ok(!obs.includes("/admin/socios"));
+  assert.deepEqual(FORA_DA_BARRA_OBSERVADOR, ["/admin/socios"]);
+  // Só a Caixa sai: o resto da barra é igual (o grupo Equipe continua, com a Central de Agentes).
+  assert.deepEqual(obs, folhas(BARRA_ADMIN).filter((h) => h !== "/admin/socios"));
+  const equipe = barraAdminPara({ observadorQa: true }).find((g) => g.id === "admin-equipe");
+  assert.deepEqual(equipe?.filhos?.map((f) => f.href), ["/admin/agentes"]);
+  // A barra original não é alterada.
+  assert.ok(folhas(BARRA_ADMIN).includes("/admin/socios"));
+});
+
+test("E216: a casca monta a barra do admin com a marca do observador (vinda do servidor, com os números do menu)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const casca = readFileSync(new URL("../components/layout/dashboard-shell.tsx", import.meta.url), "utf8");
+  assert.match(casca, /barraAdminPara\(\{ observadorQa: contadores\.observadorQa \}\)/);
+  assert.doesNotMatch(casca, /\[\.\.\.BARRA_ADMIN\]/);
+  const servidor = readFileSync(new URL("../lib/painel/contadores-servidor.ts", import.meta.url), "utf8");
+  assert.match(servidor, /admin \? ehObservadorQa\(user\.id\)/);
+});

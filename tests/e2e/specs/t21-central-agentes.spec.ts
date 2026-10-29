@@ -176,7 +176,7 @@ test.describe("T21 — Central de Agentes v2", () => {
     // Um chamado novo de visitante (como chega de verdade, pelo chat da /ajuda).
     const vis = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const p = await vis.newPage();
-    await p.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    await p.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();

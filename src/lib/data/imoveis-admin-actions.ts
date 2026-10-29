@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
+import { recusaObservador } from "@/lib/qa/observador";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,6 +20,8 @@ export async function pausarImovelAdmin(id: string): Promise<{ ok: boolean; erro
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id, { imoveis: [id] });
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data, error } = await supabase.from("properties").update({ status: "paused" }).eq("id", id).eq("status", "active").select("id").maybeSingle();
   if (error) {
     console.error("[pausarImovelAdmin]", error.code, error.message);

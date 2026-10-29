@@ -11,6 +11,7 @@ import { erroBancoPT } from "@/lib/erros-banco";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { lerChaveSms } from "@/lib/data/chave-sms";
 import { PRAZO_CONFIRMAR_TELEFONE_DIAS, telefoneConfirmado, textoAvisoTelefone } from "@/lib/pedidos/confirmacao";
+import { recusaObservador } from "@/lib/qa/observador";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
@@ -53,6 +54,8 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id, { pedidosMoradia: [pedidoId] });
+  if (recusaQa) return { ok: false, error: recusaQa };
   const motivoLimpo = (motivo ?? "").trim();
   if (!motivoLimpo) return { ok: false, error: "Informe o motivo da moderação." };
 
@@ -101,6 +104,8 @@ export async function reativarPedido(pedidoId: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
   // Antes não conferia admin (o banco também passa a barrar — 0062).
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id, { pedidosMoradia: [pedidoId] });
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { error } = await supabase
     .from("pedidos_moradia")
     .update({ status: "ativo", removido_motivo: null })
@@ -124,6 +129,8 @@ export async function definirChaveSms(ligar: boolean): Promise<ActionResult & { 
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
   const atual = await lerChaveSms();

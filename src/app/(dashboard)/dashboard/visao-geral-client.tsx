@@ -51,6 +51,7 @@ import type { EstadiaNaHome } from "@/lib/data/estadia";
 import { useViewMode } from "@/lib/roles";
 import { InicioDono } from "@/components/painel/inicio-dono";
 import type { BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 import { useFavoritos } from "@/lib/use-favoritos";
 
 /** Card de pendência "Anúncio em andamento" — o rascunho mais recente, lido no servidor (page.tsx). */
@@ -92,7 +93,7 @@ export function VisaoGeral({
   /** E181: o número de /dashboard/buscas (a mesma lista). */
   totalBuscasSalvas?: number;
   /** PROP-6: o Início do dono (faixa + bloco principal), montado no servidor; aparece no modo dono. */
-  inicioDono?: { alerta: Decisao | null; bloco: BlocoPrincipalDono } | null;
+  inicioDono?: { alerta: Decisao | null; bloco: BlocoPrincipalDono; hoje?: CartaoHoje[] } | null;
 }) {
   // Identidade de EXIBIÇÃO: nunca cai na persona demo ("Marcos") para conta real
   // com demo desligado (fronteira demo/real). Sem nome → "Olá!".
@@ -110,7 +111,7 @@ export function VisaoGeral({
 
   // PROP-6: no modo dono, o Início é o do mockup painel-proprietario (sem os blocos de morador; PROP-1).
   if (mode === "owner" && !demo && inicioDono) {
-    return <InicioDono alerta={inicioDono.alerta} bloco={inicioDono.bloco} />;
+    return <InicioDono alerta={inicioDono.alerta} bloco={inicioDono.bloco} hoje={inicioDono.hoje ?? []} />;
   }
 
   // E167 / MORADOR-NAV: no modo morador, o Início é SÓ do morador — nada de "Como proprietário", "Novo anúncio",

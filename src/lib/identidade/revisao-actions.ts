@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { validadeDoLaudo } from "@/lib/caf/validade";
 import { notify } from "@/lib/notifications";
+import { recusaObservador } from "@/lib/qa/observador";
 
 /*
   Prompt 50 (item 4) — a análise de uma pessoa da equipe depois da 2ª reprovação automática da verificação. Só admin
@@ -25,6 +26,9 @@ export async function adminDecidirVerificacao(form: FormData): Promise<Res> {
   if (!user) return { ok: false, erro: "Esta ação não está disponível." };
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (!(perfil?.role === "admin" && (await sessaoAal2(supabase)))) return { ok: false, erro: "Esta ação não está disponível." };
+  const { data: revQa } = await admin.from("verificacao_revisoes").select("user_id").eq("id", String(form.get("id") ?? "")).maybeSingle();
+  const recusaQa = await recusaObservador(user.id, { perfis: [(revQa?.user_id as string | null) ?? null], semPerfil: revQa?.user_id ? 0 : 1 });
+  if (recusaQa) return { ok: false, erro: recusaQa };
 
   const resultado = String(form.get("resultado") ?? "");
   const observacao = String(form.get("observacao") ?? "").replace(/\s+/g, " ").trim().slice(0, 500) || null;

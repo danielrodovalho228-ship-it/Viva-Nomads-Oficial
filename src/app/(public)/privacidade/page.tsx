@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PaginaLegal } from "@/components/legal/pagina-legal";
+import { ancoraDaSecao } from "@/lib/ajuda/indice-legal";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/privacidade" },
@@ -50,11 +52,9 @@ const SUBPROCESSORS = [
 
 export default function PrivacyPage() {
   return (
-    <div className="container-page max-w-3xl py-12 md:py-16">
-      <h1 className="font-title text-[28px] font-semibold text-ink">Política de Privacidade</h1>
-      <p className="mt-3 text-muted">Última atualização: outubro de 2026 · LGPD (Lei 13.709/2018)</p>
-
-      <div className="mt-8 space-y-8">
+    // E84: página própria na moldura dos mockups (índice + "Ficou alguma dúvida?"); o texto é o mesmo de antes.
+    <PaginaLegal titulo="Política de Privacidade" linhaData="Última atualização: outubro de 2026 · LGPD (Lei 13.709/2018)">
+      <div className="space-y-8">
         <Section title="1. Quem somos">
           O Viva Nomads é uma plataforma que conecta proprietários e inquilinos para locação
           de média duração (30 a 180 dias). Esta política explica como tratamos os dados
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
 
         {/* 5. Suboperadores — tabela única (com quem compartilhamos) */}
         <section>
-          <h2 className="font-title text-xl font-semibold text-ink">
+          <h2 id={ancoraDaSecao("5.")} className="scroll-mt-24 font-title text-xl font-semibold text-ink">
             5. Suboperadores (com quem compartilhamos seus dados)
           </h2>
           <p className="mt-2 leading-relaxed text-muted">
@@ -166,14 +166,14 @@ export default function PrivacyPage() {
           meses.
         </Section>
       </div>
-    </div>
+    </PaginaLegal>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="font-title text-xl font-semibold text-ink">{title}</h2>
+      <h2 id={ancoraDaSecao(title)} className="scroll-mt-24 font-title text-xl font-semibold text-ink">{title}</h2>
       <p className="mt-2 leading-relaxed text-muted">{children}</p>
     </section>
   );

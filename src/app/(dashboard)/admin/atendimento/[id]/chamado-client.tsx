@@ -21,6 +21,7 @@ import { QuemEAPessoa } from "./copiloto";
 import { DenunciaNota } from "./denuncia-nota";
 import { relogio } from "../atendimento-client";
 import { EXPLICA_AGUARDANDO_APROVACAO } from "@/lib/atendimento/dono";
+import { AVISO_SUGESTAO_INDISPONIVEL, DICA_CAIXA_VAZIA, podeEnviarResposta, sugestaoComPrazo, sugestaoVaiParaACaixa } from "@/lib/atendimento/sugestao-resposta";
 
 type Dados = NonNullable<Awaited<ReturnType<typeof chamadoAdmin>>>;
 const AUTOR: Record<string, string> = { usuario: "Pessoa", admin: "Equipe", ia: "Viva (IA)", sistema: "Sistema" };
@@ -74,6 +75,12 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
   });
   const [texto, setTexto] = useState(() => base?.texto ?? "");
   const [gerando, setGerando] = useState(false);
+  // E217 (L-70): a sugestão falhou ou não chegou no prazo — aviso discreto, nada bloqueado.
+  const [sugestaoFalhou, setSugestaoFalhou] = useState(false);
+  const textoAtual = useRef(texto);
+  useEffect(() => {
+    textoAtual.current = texto;
+  }, [texto]);
   const caixa = useRef<HTMLTextAreaElement>(null);
   const devolver = podeDevolverParaViva(c.prioridade, c.status);
   const [interno, setInterno] = useState(false);
@@ -95,19 +102,23 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
     if (fechado || base || texto || !sugestaoAuto || pediu.current) return;
     if (mensagens.some((m) => m.autor === "admin" && !m.interno)) return; // já respondido: "Gerar outra" sob demanda
     pediu.current = true;
-    void gerarOutra();
+    void gerarOutra(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dados]);
 
-  async function gerarOutra() {
+  /** Pede uma sugestão à Viva. Nunca trava a resposta manual: falhou ou demorou, só o aviso aparece. */
+  async function gerarOutra(pedidaPeloAtendente = true) {
     setGerando(true);
-    setErro(null);
-    const r = await sugerirResposta(c.id).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+    setSugestaoFalhou(false);
+    const r = await sugestaoComPrazo(() => sugerirResposta(c.id));
     setGerando(false);
-    if (!r.ok) return setErro(r.error);
-    if (r.mensagemId) setBase({ mensagemId: r.mensagemId, texto: r.texto });
-    setTexto(r.texto);
-    setInterno(false);
+    if (!r.ok) return setSugestaoFalhou(true);
+    // Escreveu enquanto a sugestão vinha: ela fica só como nota na conversa, o texto dele não é apagado.
+    if (sugestaoVaiParaACaixa(textoAtual.current, pedidaPeloAtendente)) {
+      if (r.valor.mensagemId) setBase({ mensagemId: r.valor.mensagemId, texto: r.valor.texto });
+      setTexto(r.valor.texto);
+      setInterno(false);
+    }
     router.refresh();
   }
 
@@ -263,7 +274,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
                     <Button size="sm" variant="outline" disabled={!base} onClick={() => caixa.current?.focus()}>
                       <Pencil className="h-3.5 w-3.5" /> Editar
                     </Button>
-                    <Button size="sm" variant="outline" disabled={ocupado || gerando || !sugestaoAuto} onClick={gerarOutra} data-testid="gerar-outra">
+                    <Button size="sm" variant="outline" disabled={ocupado || gerando || !sugestaoAuto} onClick={() => gerarOutra(true)} data-testid="gerar-outra">
                       <Bot className="h-3.5 w-3.5" /> Gerar outra
                     </Button>
                   </div>
@@ -281,10 +292,16 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
               <label className="mt-2 flex items-center gap-2 text-sm text-ink">
                 <input type="checkbox" checked={interno} onChange={(e) => setInterno(e.target.checked)} /> Nota interna (a pessoa não vê)
               </label>
+              {sugestaoFalhou && (
+                <p role="status" className="mt-2 text-xs text-muted" data-testid="sugestao-indisponivel">
+                  {AVISO_SUGESTAO_INDISPONIVEL}
+                </p>
+              )}
               {erro && <p className="mt-2 text-sm text-red-700">{erro}</p>}
               <Button
                 className="mt-3"
-                disabled={ocupado || !texto.trim()}
+                disabled={!podeEnviarResposta(texto, ocupado)}
+                data-testid="enviar-resposta"
                 onClick={async () => {
                   const envio = base && editada && !interno ? () => enviarSugestaoEditada(c.id, texto, base.mensagemId) : () => responderComoAdmin(c.id, texto, interno);
                   if (await agir(envio)) {
@@ -295,6 +312,11 @@ export function ChamadoAdminClient({ dados, macros, agoraISO }: { dados: Dados; 
               >
                 <Send className="h-4 w-4" /> {interno ? "Salvar nota" : base && editada ? "Enviar resposta editada" : "Enviar resposta (e-mail à pessoa)"}
               </Button>
+              {!texto.trim() && (
+                <p className="mt-2 text-xs text-muted" data-testid="dica-caixa-vazia">
+                  {DICA_CAIXA_VAZIA}
+                </p>
+              )}
             </Panel>
           )}
         </div>
