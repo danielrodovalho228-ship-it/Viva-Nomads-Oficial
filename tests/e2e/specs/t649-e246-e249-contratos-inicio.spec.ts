@@ -110,7 +110,8 @@ test.describe("T649 — E246 + E247 + E248 + E249", () => {
     await expect(conjunto.getByTestId("fileira-seta-dir")).toBeVisible();
     await p.screenshot({ path: `${SAIDA}/t649-subabas-390.png` });
     await conjunto.getByTestId("fileira-seta-dir").click();
-    await conjunto.getByTestId("fileira-seta-dir").click().catch(() => {});
+    // O 2º toque é opcional: se o 1º já levou a fileira ao fim, o "›" some e o clique não pode esperar até o fim do teste.
+    await conjunto.getByTestId("fileira-seta-dir").click({ timeout: 3_000 }).catch(() => {});
     await p.waitForTimeout(700);
     const ultimo = await sub.locator("a").last().evaluate((a) => { const r = a.getBoundingClientRect(); return { left: r.left, right: r.right, vw: document.documentElement.clientWidth }; });
     expect(ultimo.right, "último item inteiro na tela").toBeLessThanOrEqual(ultimo.vw);
