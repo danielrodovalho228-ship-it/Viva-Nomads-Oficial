@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { CITIES } from "@/lib/constants";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
 
 export function Footer() {
@@ -20,8 +19,6 @@ export function Footer() {
             <a href={`mailto:${SUPORTE_EMAIL}`} className="font-semibold text-white/80 hover:text-white">
               {SUPORTE_EMAIL}
             </a>
-            <br />
-            <span className="text-xs text-white/50">{PROMESSA_ATENDIMENTO}</span>
           </p>
           {/* Redes oficiais (src/config/redes.ts — Prompt 35A, item 4). */}
           <RedesOficiais className="mt-4" linkClassName="text-white/70 transition-colors hover:text-white" />

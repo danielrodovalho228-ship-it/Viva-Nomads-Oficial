@@ -46,6 +46,8 @@ test("E84: a promessa de atendimento aparece UMA vez por página (antes, 4× na 
   const fale = ler("app/(public)/ajuda/fale-com-a-viva/page.tsx");
   assert.equal(conta(hub, "{PROMESSA_ATENDIMENTO}"), 1);
   assert.equal(conta(fale, "{PROMESSA_ATENDIMENTO}"), 1);
+  // O rodapé do site não repete a frase (estaria 2× na /ajuda e na Fale com a Viva).
+  assert.equal(conta(ler("components/layout/footer.tsx"), "PROMESSA_ATENDIMENTO"), 0);
   // O atendimento e o bloco do chat não repetem a frase na mesma página.
   assert.equal(conta(ler("components/ajuda/central-ajuda.tsx"), "PROMESSA_ATENDIMENTO"), 0);
   assert.match(ler("components/ajuda/viva-chat.tsx"), /<PainelChat altura="h-\[420px\]" semPromessa \/>/);
