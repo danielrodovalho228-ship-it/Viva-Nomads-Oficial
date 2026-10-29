@@ -103,7 +103,7 @@ test.describe("T649 — E246 + E247 + E248 + E249", () => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
     await p.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    const sub = p.getByTestId("subabas-proprietario");
+    const sub = p.getByTestId("subabas-dono");
     await expect(sub).toBeVisible({ timeout: 30_000 });
     const conjunto = p.locator("[data-fileira-rolavel]").filter({ has: sub });
     await expect(conjunto.getByTestId("fileira-seta-dir")).toBeVisible();
@@ -120,7 +120,7 @@ test.describe("T649 — E246 + E247 + E248 + E249", () => {
     // No computador cabe tudo: nenhuma seta.
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("subabas-proprietario")).toBeVisible({ timeout: 30_000 });
+    await expect(p.getByTestId("subabas-dono")).toBeVisible({ timeout: 30_000 });
     await expect(p.getByTestId("fileira-seta-dir")).toHaveCount(0);
     await p.context().close();
   });
