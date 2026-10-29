@@ -266,8 +266,8 @@
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
         "t551-varredura-bloco40",
-        "t630-e223-interesses-parceria",
-        "t655-observador-botoes-filas"
+        "t655-observador-botoes-filas",
+        "t630-e227b-pendentes-fila-unica"
       ]
     },
     "/admin/pedidos": {
@@ -839,7 +839,8 @@
         "t553-varredura-bloco41",
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
-        "t656-e224-plano-gestor"
+        "t656-e224-plano-gestor",
+        "t644-conta-menu-alinhado"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -2233,7 +2234,8 @@
         "t410-niveis-medir-rascunho",
         "t408-varredura-bloco27",
         "t415-varredura-bloco32",
-        "t623-varredura-bloco57"
+        "t623-varredura-bloco57",
+        "t657-e235-link-avaliador"
       ]
     },
     "/dashboard/recibos": {
@@ -2308,7 +2310,8 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t341-credenciamento-avaliador-62a",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t657-e235-link-avaliador"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
@@ -4722,14 +4725,6 @@
       ],
       "specs": [
         "t114-marcas-visto-contatado"
-      ]
-    },
-    "src/lib/parceiros/admin-actions.ts#atualizarStatusInteresse": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t630-e223-interesses-parceria"
       ]
     },
     "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {

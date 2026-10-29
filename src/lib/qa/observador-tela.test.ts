@@ -68,9 +68,8 @@ test("GUARDA: cada fila com ação recusada pelo servidor tira os botões do obs
     ["../../app/(dashboard)/admin/imoveis/page.tsx", [/alvo: \{ imoveis: \[i\.id\] \}/, /soLeitura\.has\(i\.id\) \? <SoLeituraQa \/> : <PausarImovel/]],
     ["../../app/(dashboard)/admin/fotos-perfil/page.tsx", [/alvo: \{ perfis: \[f\.userId\] \}/, /<FilaFotosCliente fila=\{fila\} soLeitura=\{soLeitura\} \/>/]],
     ["../../app/(dashboard)/admin/fotos-perfil/fila-fotos-cliente.tsx", [/\{soLeitura \? \(\s*<SoLeituraQa/]],
-    ["../../app/(dashboard)/admin/parceiros/page.tsx", [/semPerfil: uid \? 0 : 1/, /\{ id: SUPORTE \}/, /<ListaInteresses itens=\{interesses\} soLeitura=\{observador\} \/>/, /<SuporteForm soLeitura=\{observador\} \/>/]],
+    ["../../app/(dashboard)/admin/parceiros/page.tsx", [/semPerfil: uid \? 0 : 1/, /\{ id: SUPORTE \}/, /<SuporteForm soLeitura=\{observador\} \/>/]],
     ["../../app/(dashboard)/admin/parceiros/fichas.tsx", [/\{soLeitura \? <SoLeituraQa className="mt-4" \/> : \(/, /\{soLeitura \? <SoLeituraQa \/> : \(\s*<ConfirmarNaPagina aviso="Mandar um novo link/, /!soLeitura && \(\s*<div className="flex flex-wrap items-center gap-2">/, /if \(soLeitura\) return <SoLeituraQa \/>;/]],
-    ["../../app/(dashboard)/admin/parceiros/interesses.tsx", [/\{soLeitura \? <SoLeituraQa \/> : \(/]],
     ["../../app/(dashboard)/admin/atendimento/[id]/page.tsx", [/soLeituraNaTela\(\[\{ id \}\]\)/, /observadorQa=\{observadorQa\}/]],
     ["../../app/(dashboard)/admin/atendimento/[id]/denuncia-nota.tsx", [/if \(soLeitura\) return <SoLeituraQa className="mt-3" \/>;/]],
   ];
