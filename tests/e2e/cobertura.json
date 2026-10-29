@@ -659,7 +659,8 @@
         "t612-e219-hoje-sem-estouro",
         "t613-varredura-bloco52",
         "t621-varredura-bloco55",
-        "t622-varredura-bloco56"
+        "t622-varredura-bloco56",
+        "t626-varredura-bloco60"
       ]
     },
     "/dashboard/assinatura": {
@@ -1838,7 +1839,8 @@
         "t209-jornada-dois-lados",
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
-        "t613-varredura-bloco52"
+        "t613-varredura-bloco52",
+        "t626-varredura-bloco60"
       ]
     },
     "/dashboard/propostas": {
