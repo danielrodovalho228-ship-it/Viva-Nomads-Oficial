@@ -4,7 +4,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Decisao } from "@/lib/painel/decisoes";
-import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, lugarDoChecklistDono, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import type { ChecklistAtivacao } from "@/lib/onboarding/ativacao";
+import { ChecklistAtivacaoBloco } from "@/components/onboarding/checklist-ativacao";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 
 const ICONE = { agenda: CalendarDays, simulador: ChartNoAxesColumnIncreasing, recibos: ReceiptText } as const;
@@ -13,7 +15,19 @@ const ICONE = { agenda: CalendarDays, simulador: ChartNoAxesColumnIncreasing, re
  * PROP-6 — Início do dono (mockup painel-proprietario): faixa de alerta · bloco principal · "Peça na Viva" · três
  * atalhos. As regras estão em lib/painel/inicio-dono.ts. Sem foto do anúncio, o bloco principal fica sem foto.
  */
-export function InicioDono({ alerta, bloco, hoje = [] }: { alerta: Decisao | null; bloco: BlocoPrincipalDono; hoje?: CartaoHoje[] }) {
+export function InicioDono({
+  alerta,
+  bloco,
+  hoje = [],
+  checklist = null,
+}: {
+  alerta: Decisao | null;
+  bloco: BlocoPrincipalDono;
+  hoje?: CartaoHoje[];
+  /** E218: checklist de ativação do dono (Prompt 50) enquanto o papel não ativou. */
+  checklist?: ChecklistAtivacao | null;
+}) {
+  const lugar = checklist ? lugarDoChecklistDono(bloco.tipo) : null;
   return (
     <div className="space-y-6" data-testid="inicio-dono">
       <h1 className="sr-only">Início</h1>
@@ -76,9 +90,11 @@ export function InicioDono({ alerta, bloco, hoje = [] }: { alerta: Decisao | nul
                 </ul>
               </div>
             )}
+            {checklist && lugar === "dentro" && <ChecklistAtivacaoBloco checklist={checklist} embutido />}
           </div>
         </div>
       </section>
+      {checklist && lugar === "abaixo" && <ChecklistAtivacaoBloco checklist={checklist} />}
 
       <section className="flex flex-col gap-4 rounded-lg border border-line bg-white p-4 sm:p-6 lg:flex-row lg:items-center" data-testid="inicio-dono-peca">
         <div className="min-w-0 lg:flex-1">

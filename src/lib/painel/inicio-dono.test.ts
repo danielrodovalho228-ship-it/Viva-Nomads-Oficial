@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, alertaDoTopo, blocoPrincipalDono } from "./inicio-dono.ts";
+import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, alertaDoTopo, blocoPrincipalDono, lugarDoChecklistDono } from "./inicio-dono.ts";
 import type { Decisao } from "./decisoes.ts";
 
 const dec = (id: string, extra: Partial<Decisao> = {}): Decisao => ({ id, tipo: "proposta", texto: `Decisão ${id}`, href: `/x/${id}`, prazo: null, prazoTexto: null, atrasada: false, ...extra });
@@ -52,4 +52,20 @@ test("Peça na Viva (um botão cheio) e os três atalhos do mockup", () => {
   assert.match(c, /\{bloco\.foto && \(/);
   const v = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
   assert.match(v, /if \(mode === "owner" && !demo && inicioDono\)/);
+});
+
+test("E218 (L-71): o checklist de ativação do dono volta ao Início — dentro de 'Anuncie seu primeiro imóvel', abaixo nos outros", () => {
+  assert.equal(lugarDoChecklistDono("primeiro_anuncio"), "dentro");
+  assert.equal(lugarDoChecklistDono("rascunho"), "abaixo");
+  assert.equal(lugarDoChecklistDono("decisao"), "abaixo");
+  assert.equal(lugarDoChecklistDono("em_dia"), "abaixo");
+  const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
+  const visao = ler("../../app/(dashboard)/dashboard/visao-geral-client.tsx");
+  // O modo dono passa o checklist do proprietário ao InicioDono...
+  assert.match(visao, /<InicioDono [^>]*checklist=\{checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null\}/);
+  // ...e o modo morador continua sem ele (E167, #1392).
+  assert.match(visao, /const blocosMorador = checklists\.filter\(\(c\) => c\.papel !== "proprietario"\)/);
+  const inicio = ler("../../components/painel/inicio-dono.tsx");
+  assert.match(inicio, /lugar === "dentro" && <ChecklistAtivacaoBloco checklist=\{checklist\} embutido \/>/);
+  assert.match(inicio, /lugar === "abaixo" && <ChecklistAtivacaoBloco checklist=\{checklist\} \/>/);
 });
