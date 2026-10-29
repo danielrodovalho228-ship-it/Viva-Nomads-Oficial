@@ -6,7 +6,8 @@ import { readFileSync } from "node:fs";
 test("t102: o botão de retomar rascunho é buscado dentro do aviso, não por regex solta", () => {
   const spec = readFileSync("tests/e2e/specs/t102-preco-sugerido.spec.ts", "utf8");
   assert.ok(!/name:\s*\/Continuar\|Retomar\//.test(spec));
-  assert.match(spec, /Você tem um anúncio em andamento/);
+  // E180 (7c90ddbd): o aviso do rascunho é achado pelo data-testid, não pelo texto.
+  assert.match(spec, /getByTestId\("rascunho-continuar"\)/);
 });
 
 // Lab 8b32a4e: o id do usuário não está no localStorage (a sessão fica em cookie), então o rascunho nunca era gravado
