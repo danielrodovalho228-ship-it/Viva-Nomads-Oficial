@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
@@ -5,12 +6,13 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ROTULO_NIVEL } from "@/config/niveis";
 import { itemChecklist } from "@/config/checklist-avaliacao";
+import { hrefAvaliador } from "@/lib/vistoria/telas-exibicao";
 import { ROTULO_RESULTADO, podeContestar, type Resultado } from "@/lib/vistoria/laudo";
 import { proximoPasso } from "@/lib/vistoria/laudo-documento";
 import { degrauDoProprietario } from "@/lib/vistoria/strikes";
 import { strikesDoDono } from "@/lib/vistoria/laudo-servidor";
 import { confirmarDevolucao, contestarLaudo, enviarFotoCorrecao } from "@/lib/vistoria/laudo-actions";
-import { ROTULO_ACAO, acoesDoResultado, avisoStrike, linhaAvaliadoEm, linhaResumoGrupo } from "@/lib/vistoria/telas-laudo";
+import { ROTULO_ACAO, acoesDoResultado, avisoStrike, linhaResumoGrupo, prefixoAvaliadoEm } from "@/lib/vistoria/telas-laudo";
 
 const BUCKET_FOTOS = "avaliacao-imovel";
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -81,7 +83,10 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
             Laudo {l.numero}{l.versao > 1 ? ` v${l.versao}` : ""} · {ROTULO_RESULTADO[l.resultado]} · nível sustentado: {l.nivel_sustentado === "em_adequacao" ? "em adequação" : ROTULO_NIVEL[l.nivel_sustentado]}
           </p>
           {l.vistoriado_em && cred?.numero_credenciado && (
-            <p className="text-muted" data-testid="laudo-avaliado-em">{linhaAvaliadoEm(l.vistoriado_em, String(cred.numero_credenciado))}</p>
+            <p className="text-muted" data-testid="laudo-avaliado-em">
+              {prefixoAvaliadoEm(l.vistoriado_em)}
+              <Link href={hrefAvaliador(String(cred.numero_credenciado))} className="underline" data-testid="laudo-avaliador-link">{String(cred.numero_credenciado)}</Link>
+            </p>
           )}
           <p className="mt-1 text-ink">{proximoPasso(l.resultado, l.prazo_ressalva_ate)}</p>
           {acoes.length > 0 && (
