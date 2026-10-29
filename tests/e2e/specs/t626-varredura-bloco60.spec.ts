@@ -265,10 +265,13 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
     { nome: "dono", email: () => dono.email, papel: "proprietario" },
     { nome: "morador com contrato (aba Estadia)", email: () => entra.email, papel: "inquilino" },
   ] as const) {
-    test(`adendo — barra de baixo do MENUS-5 do ${quem.nome} a 360 e 390 px: rótulos inteiros e colunas iguais`, async ({ browser }) => {
-      test.setTimeout(120_000);
-      test.skip(!(ids.cEntra && ids.cSai), "não deu para semear os contratos de hoje");
-      for (const largura of [360, 390] as const) {
+    for (const largura of [360, 390] as const) {
+      test(`adendo — barra de baixo do MENUS-5 do ${quem.nome} a ${largura} px: rótulos inteiros e colunas iguais`, async ({ browser }) => {
+        test.setTimeout(120_000);
+        test.skip(!(ids.cEntra && ids.cSai), "não deu para semear os contratos de hoje");
+        // L-74 (bloco 60, 29/10): a 360 px a coluna tem 72 px e "Interessados" (11 px, semibold) não cabe — o truncate
+        // corta com reticências. A 390 cabe; a barra do morador cabe nos dois tamanhos.
+        if (quem.papel === "proprietario" && largura === 360) test.fail(true, 'L-74: "Interessados" cortado na barra de baixo do dono a 360 px (MENUS-5)');
         const page = await entrar(browser, quem.email(), senha);
         await page.setViewportSize({ width: largura, height: 780 });
         try {
@@ -283,6 +286,8 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
               return {
                 rotulo: (span?.textContent ?? "").trim(),
                 largura: Math.round(r.width * 10) / 10,
+                texto: span ? span.scrollWidth : 0,
+                cabe: span ? span.clientWidth : 0,
                 cortado: !!span && span.scrollWidth > span.clientWidth,
                 foraDaColuna: !!s && (s.left < r.left - 0.5 || s.right > r.right + 0.5),
               };
@@ -291,18 +296,16 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
           console.log(`VARREDURA|menus5|${largura}|${quem.papel}|/dashboard|${JSON.stringify(m)}`);
           mkdirSync(SAIDA, { recursive: true });
           await barra.screenshot({ path: `${SAIDA}/menus5-${quem.papel}-${largura}.png` });
-          await test.step(`MENUS-5 @${largura}`, async () => {
-            expect.soft(m.length, `${quem.nome} @${largura}: abas na barra`).toBeGreaterThanOrEqual(4);
-            expect.soft(m.length, `${quem.nome} @${largura}: no máximo 5 abas (MENUS-5)`).toBeLessThanOrEqual(5);
-            expect.soft(m.filter((i) => i.cortado).map((i) => i.rotulo), `${quem.nome} @${largura}: rótulos cortados (reticências)`).toEqual([]);
-            expect.soft(m.filter((i) => i.foraDaColuna).map((i) => i.rotulo), `${quem.nome} @${largura}: rótulos fora da própria coluna`).toEqual([]);
-            const larguras = m.map((i) => i.largura);
-            expect.soft(Math.max(...larguras) - Math.min(...larguras), `${quem.nome} @${largura}: colunas de larguras diferentes (uma aperta a vizinha)`).toBeLessThanOrEqual(1);
-          });
+          expect.soft(m.length, `${quem.nome} @${largura}: abas na barra`).toBeGreaterThanOrEqual(4);
+          expect.soft(m.length, `${quem.nome} @${largura}: no máximo 5 abas (MENUS-5)`).toBeLessThanOrEqual(5);
+          expect.soft(m.filter((i) => i.foraDaColuna).map((i) => i.rotulo), `${quem.nome} @${largura}: rótulos fora da própria coluna`).toEqual([]);
+          const larguras = m.map((i) => i.largura);
+          expect.soft(Math.max(...larguras) - Math.min(...larguras), `${quem.nome} @${largura}: colunas de larguras diferentes (uma aperta a vizinha)`).toBeLessThanOrEqual(1);
+          expect(m.filter((i) => i.cortado).map((i) => `${i.rotulo} (${i.texto}px de texto em ${i.cabe}px)`), `${quem.nome} @${largura}: rótulos cortados (reticências)`).toEqual([]);
         } finally {
           await page.context().close();
         }
-      }
-    });
+      });
+    }
   }
 });
