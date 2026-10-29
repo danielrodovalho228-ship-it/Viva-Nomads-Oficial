@@ -820,7 +820,7 @@
         "t354-varredura-bloco19",
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
-        "t598-e174-vinculo-pela-tela"
+        "t605-e174-vinculo-pela-tela"
       ]
     },
     "/dashboard/contratos": {
@@ -1681,7 +1681,7 @@
         "t408-varredura-bloco27",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t598-e174-vinculo-pela-tela"
+        "t605-e174-vinculo-pela-tela"
       ]
     },
     "/qualificar": {
@@ -6278,7 +6278,7 @@
         "proprietario"
       ],
       "specs": [
-        "t598-e174-vinculo-pela-tela"
+        "t605-e174-vinculo-pela-tela"
       ]
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
@@ -6287,7 +6287,7 @@
         "proprietario"
       ],
       "specs": [
-        "t598-e174-vinculo-pela-tela"
+        "t605-e174-vinculo-pela-tela"
       ]
     },
     "src/lib/vinculo/actions.ts#meuVinculo": {
