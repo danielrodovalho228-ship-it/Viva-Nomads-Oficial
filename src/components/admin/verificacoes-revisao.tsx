@@ -5,6 +5,8 @@ import { FormAcao } from "@/components/vistoria/form-acao";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { MOTIVOS_VERIFICACAO, type MotivoVerificacao } from "@/config/verificacao-motivos";
 import { adminDecidirVerificacao } from "@/lib/identidade/revisao-actions";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 /**
  * Prompt 50 — verificações de identidade para a análise de uma pessoa (2ª reprovação automática), com o motivo. Fica
@@ -18,6 +20,8 @@ export async function VerificacoesRevisao() {
   const ids = linhas.map((l) => l.user_id);
   const { data: perfis } = ids.length ? await admin.from("profiles").select("id, full_name").in("id", ids) : { data: [] };
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+  // Pendência 3 do QA-LOGIN-B v2: para o admin observador da QA, a pessoa real fica sem o formulário de decisão.
+  const soLeitura = await soLeituraNaTela(linhas.map((l) => ({ id: l.id, alvo: { perfis: [l.user_id] } })));
   return (
     <section id="verificacao" className="mt-8 scroll-mt-24">
       <Panel title="Verificação de identidade — análise de uma pessoa" data-testid="verificacao-revisoes">
@@ -31,6 +35,7 @@ export async function VerificacoesRevisao() {
                 <p className="text-muted">
                   {l.reprovacoes} reprovações automáticas · última: {MOTIVOS_VERIFICACAO[l.motivo]?.titulo ?? l.motivo} · desde {dataBRT(l.criado_em)}
                 </p>
+                {soLeitura.includes(l.id) ? <SoLeituraQa className="mt-2" /> : (
                 <FormAcao acao={adminDecidirVerificacao} className="mt-2 flex flex-wrap items-end gap-2" testid="verificacao-decidir">
                   <input type="hidden" name="id" value={l.id} />
                   <select name="resultado" aria-label="Decisão" className="h-10 rounded-lg border border-line px-2 text-sm" defaultValue="aprovada">
@@ -40,6 +45,7 @@ export async function VerificacoesRevisao() {
                   <input name="observacao" placeholder="Motivo e próximo passo (obrigatório para recusar)" aria-label="Motivo e próximo passo" className="h-10 min-w-0 flex-1 rounded-lg border border-line px-3 text-base" />
                   <Button type="submit" size="sm" variant="secondary">Registrar a decisão</Button>
                 </FormAcao>
+                )}
               </li>
             ))}
           </ul>

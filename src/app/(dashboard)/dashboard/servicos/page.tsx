@@ -30,10 +30,13 @@ export default async function ServicosPage() {
   return (
     <>
       <PageTitle title="Serviços" subtitle={notaPagamentoServicos(PAGAMENTO_PARCEIROS_ATIVO)} />
-      <ServicosPainel cidade={cidade} />
+      {/* E228: o vazio de "Meus pedidos" aponta para este catálogo (#catalogo), na mesma tela. */}
+      <div id="catalogo" className="scroll-mt-24">
+        <ServicosPainel cidade={cidade} />
+      </div>
       <Panel title="Meus pedidos" className="mt-6" data-testid="servicos-pedidos">
         {pedidos.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text={MEUS_PEDIDOS_VAZIO} action={<ButtonLink href="/servicos" variant="secondary" size="sm">Ver serviços</ButtonLink>} />
+          <EmptyState icon={ClipboardList} title="Nenhum pedido ainda" text={MEUS_PEDIDOS_VAZIO} action={<ButtonLink href="#catalogo" variant="secondary" size="sm" data-testid="servicos-ver-catalogo">Ver serviços</ButtonLink>} />
         ) : (
           <ul className="divide-y divide-line" data-testid="servicos-pedidos-lista">
             {pedidos.map((p) => (

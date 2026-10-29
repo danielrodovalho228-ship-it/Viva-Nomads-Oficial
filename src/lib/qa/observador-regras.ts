@@ -56,3 +56,42 @@ export async function recusaComDeps(d: DepsObservador, userId: string | null | u
   const teste = await d.perfisTeste([...perfis]);
   return decidirObservador(true, [...perfis].every((id) => teste.has(id)));
 }
+
+/** Uma linha de fila na tela e o que a ação dela toca (o mesmo alvo que a server action passa a recusaObservador). */
+export interface LinhaDaTela {
+  id: string;
+  /** Sem alvo: a ação é proibida sempre para o observador (ex.: chave, suporte, interesse sem conta). */
+  alvo?: AlvoObservador;
+}
+
+/** Chave do mapa de donos: `tabela:id`. */
+export const chaveDono = (tabela: "properties" | "pedidos_moradia" | "qualification_checklists", id: string) => `${tabela}:${id}`;
+
+/**
+ * Pendência 3 do QA-LOGIN-B v2 — a tela espelha a recusa do servidor: para o admin observador, os ids das linhas em
+ * que a ação seria recusada (dado real, alvo sem dono, ou sem alvo). Quem não é observador: nenhuma linha.
+ * `donoDe`: `chaveDono(tabela, id)` → dono; `teste`: perfis is_teste.
+ */
+export function linhasSoLeitura(ehObservador: boolean, linhas: readonly LinhaDaTela[], donoDe: ReadonlyMap<string, string>, teste: ReadonlySet<string>): string[] {
+  if (!ehObservador) return [];
+  return linhas
+    .filter(({ alvo }) => {
+      if (!alvo) return true;
+      const perfis = new Set(limpos(alvo.perfis));
+      let semDono = (alvo.semPerfil ?? 0) > 0;
+      for (const [tabela, ids] of [
+        ["properties", limpos(alvo.imoveis)],
+        ["pedidos_moradia", limpos(alvo.pedidosMoradia)],
+        ["qualification_checklists", limpos(alvo.documentos)],
+      ] as const) {
+        for (const id of ids) {
+          const dono = donoDe.get(chaveDono(tabela, id));
+          if (dono) perfis.add(dono);
+          else semDono = true;
+        }
+      }
+      if (semDono || perfis.size === 0) return true;
+      return ![...perfis].every((p) => teste.has(p));
+    })
+    .map((l) => l.id);
+}

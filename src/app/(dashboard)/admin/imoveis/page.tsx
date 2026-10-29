@@ -16,6 +16,8 @@ import { PausarImovel } from "./pausar";
 import { LinksDeVideoPendentes } from "./links-de-video";
 import { listarLinksDeVideoPendentes } from "@/lib/data/video-link-actions";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 export const metadata = { title: tituloDoAdmin("/admin/imoveis"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -75,6 +77,9 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   );
   const campo = "rounded-xl border border-line px-3 py-2 text-sm text-ink";
 
+  // Pendência 3 do QA-LOGIN-B v2: anúncio de dono real → o admin observador da QA não vê o "Pausar" (o servidor recusa).
+  const pausaveis = lista.filter((i) => i.tipo !== "demonstracao" && i.status === "active");
+  const soLeitura = new Set(await soLeituraNaTela(pausaveis.map((i) => ({ id: i.id, alvo: { imoveis: [i.id] } }))));
   return (
     <div data-testid="admin-imoveis">
       <PageTitle
@@ -170,7 +175,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
                       Pedidos compatíveis
                     </Link>
                   )}
-                  {i.tipo !== "demonstracao" && i.status === "active" && <PausarImovel id={i.id} />}
+                  {i.tipo !== "demonstracao" && i.status === "active" && (soLeitura.has(i.id) ? <SoLeituraQa /> : <PausarImovel id={i.id} />)}
                 </p>
               </li>
             ))}

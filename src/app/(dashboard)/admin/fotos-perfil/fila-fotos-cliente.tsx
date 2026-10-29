@@ -6,19 +6,21 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { aprovarFotoPerfil, removerFotoPerfil, type FotoNaFila } from "@/lib/data/fotos-perfil-actions";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { MOTIVOS_REMOCAO_FOTO } from "@/lib/perfil/foto-revisao";
 
-export function FilaFotosCliente({ fila }: { fila: FotoNaFila[] }) {
+/** `soLeitura` (pendência 3 do QA-LOGIN-B v2): fotos de conta real, que o admin observador da QA só vê. */
+export function FilaFotosCliente({ fila, soLeitura = [] }: { fila: FotoNaFila[]; soLeitura?: string[] }) {
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="fila-fotos" data-total={fila.length}>
       {fila.map((f) => (
-        <ItemFoto key={f.id} f={f} />
+        <ItemFoto key={f.id} f={f} soLeitura={soLeitura.includes(f.id)} />
       ))}
     </ul>
   );
 }
 
-function ItemFoto({ f }: { f: FotoNaFila }) {
+function ItemFoto({ f, soLeitura }: { f: FotoNaFila; soLeitura: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
   const [removendo, setRemovendo] = useState(false);
@@ -47,7 +49,9 @@ function ItemFoto({ f }: { f: FotoNaFila }) {
             {f.denunciadaEm && <p className="text-sm font-semibold text-red-700">Denunciada em {dataHoraBRT(f.denunciadaEm)}</p>}
           </div>
         </div>
-        {!removendo ? (
+        {soLeitura ? (
+          <SoLeituraQa className="mt-4" />
+        ) : !removendo ? (
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button size="sm" disabled={pendente} onClick={() => rodar(() => aprovarFotoPerfil(f.id))} data-testid="foto-aprovar">
               Aprovar
