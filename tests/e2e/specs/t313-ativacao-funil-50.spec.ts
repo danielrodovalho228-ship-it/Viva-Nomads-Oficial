@@ -54,6 +54,9 @@ test.describe("T313 — ativação e funil (50)", () => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    // PENDENTE E218-A (Pista A, 29/10; sem PR mesclado nem aberto): o guia de ativação passa a morar DENTRO do bloco
+    // principal do Início (inicio-dono-principal), sem bloco separado do dono no modo dono. Quando mesclar, este caso
+    // confere o checklist dentro de inicio-dono-principal e nenhum checklist-ativacao fora dele.
     await expect(d.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toBeVisible({ timeout: 20_000 });
     expect(((await adm().from("ativacoes").select("papel").eq("user_id", ids.dono)).data ?? []).length).toBe(0);
     // Publicou (o que a publicação grava): no próximo Início, o checklist do papel some e a data fica gravada.
