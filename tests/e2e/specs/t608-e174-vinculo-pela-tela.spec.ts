@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T605 — E174: o vínculo profissional PELA TELA, de ponta a ponta (a t486 grava o selo direto no banco). Em Conta ›
+  T608 — E174: o vínculo profissional PELA TELA, de ponta a ponta (a t486 grava o selo direto no banco). Em Conta ›
   Segurança e verificações, o proprietário:
    1. tenta um e-mail de provedor gratuito → recusado com a mensagem da regra, nenhum código sai;
    2. pede o vínculo com o e-mail corporativo → o código de 6 dígitos chega na caixa de teste (emails_teste,
@@ -16,9 +16,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t605.${sufixo}@lab.vivanomads.test`, nome: "Vera Vinculo", role: "owner" as const };
+const dono = { email: `dono.t608.${sufixo}@lab.vivanomads.test`, nome: "Vera Vinculo", role: "owner" as const };
 const DOMINIO = "lab.vivanomads.com.br";
-const CORPORATIVO = `vera.t605.${sufixo}@${DOMINIO}`;
+const CORPORATIVO = `vera.t608.${sufixo}@${DOMINIO}`;
 // Dois textos por desenho (E174-B): na tela da própria pessoa, "confirmado"; nos lugares públicos, o selo curto.
 const DETALHE = `Vínculo profissional confirmado · ${DOMINIO}`;
 const SELO = `Vínculo profissional · ${DOMINIO}`;
@@ -41,7 +41,7 @@ async function abrirFormulario(p: Page) {
   }).toPass({ timeout: 30_000 });
 }
 
-test.describe("T605 — E174: vínculo profissional pela tela (pedir → código → confirmar → selo)", () => {
+test.describe("T608 — E174: vínculo profissional pela tela (pedir → código → confirmar → selo)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
@@ -50,7 +50,7 @@ test.describe("T605 — E174: vínculo profissional pela tela (pedir → código
     // A caixa de teste só guarda e-mail de conta de teste.
     const { error } = await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
     if (error) throw error;
-    ids.imovel = await criarImovelPronto(ids.dono, `Vínculo pela tela t605 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Vínculo pela tela t608 ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     await adm().from("vinculo_profissional").delete().eq("user_id", ids.dono ?? "");
@@ -67,7 +67,7 @@ test.describe("T605 — E174: vínculo profissional pela tela (pedir → código
     const form = p.getByTestId("vinculo-form-email");
 
     // Provedor gratuito: a regra recusa e nenhum código sai.
-    await form.locator("#vinculo-email").fill(`vera.t605.${sufixo}@gmail.com`);
+    await form.locator("#vinculo-email").fill(`vera.t608.${sufixo}@gmail.com`);
     await form.getByRole("button", { name: "Enviar código" }).click();
     await expect(p.getByTestId("vinculo-erro")).toHaveText(RECUSADO, { timeout: 20_000 });
     await expect(p.getByTestId("vinculo-form-codigo")).toHaveCount(0);
@@ -107,7 +107,7 @@ test.describe("T605 — E174: vínculo profissional pela tela (pedir → código
     expect(fim?.dominio).toBe(DOMINIO);
     expect(fim?.confirmado_em, "confirmado_em gravado").toBeTruthy();
     await p.getByTestId("confianca-vinculo").scrollIntoViewIfNeeded();
-    await p.screenshot({ path: `${SAIDA}/t605-confirmado-390.png` });
+    await p.screenshot({ path: `${SAIDA}/t608-confirmado-390.png` });
     await p.context().close();
   });
 
@@ -122,7 +122,7 @@ test.describe("T605 — E174: vínculo profissional pela tela (pedir → código
     await expect(p.locator("body")).not.toContainText(CORPORATIVO);
     await expect(p.locator("body")).not.toContainText(`@${DOMINIO}`);
     await selo.scrollIntoViewIfNeeded();
-    await p.screenshot({ path: `${SAIDA}/t605-perfil-publico-1280.png` });
+    await p.screenshot({ path: `${SAIDA}/t608-perfil-publico-1280.png` });
     await ctx.close();
 
     // E na própria Conta, depois de recarregar, a linha segue confirmada.

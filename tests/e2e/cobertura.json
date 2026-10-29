@@ -642,7 +642,7 @@
         "t489-e176-menus",
         "t562-e190-modo-um-toque",
         "t602-e181-familia-contadores",
-        "t605-e190p2-hoje-no-inicio"
+        "t609-e190p2-hoje-no-inicio"
       ]
     },
     "/dashboard/assinatura": {
@@ -822,7 +822,7 @@
         "t354-varredura-bloco19",
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
-        "t605-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela"
       ]
     },
     "/dashboard/contratos": {
@@ -1683,7 +1683,7 @@
         "t408-varredura-bloco27",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t605-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela"
       ]
     },
     "/qualificar": {
@@ -6280,7 +6280,7 @@
         "proprietario"
       ],
       "specs": [
-        "t605-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela"
       ]
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
@@ -6289,7 +6289,7 @@
         "proprietario"
       ],
       "specs": [
-        "t605-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela"
       ]
     },
     "src/lib/vinculo/actions.ts#meuVinculo": {
