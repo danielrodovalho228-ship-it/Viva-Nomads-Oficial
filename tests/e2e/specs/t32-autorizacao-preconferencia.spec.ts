@@ -3,6 +3,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { authFile } from "../fixtures/auth";
+import { pngDeTeste } from "../fixtures/laboratorio";
 import { doTipoAoEndereco, irParaAntesDePublicar, abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
@@ -39,7 +40,8 @@ function cpfAleatorio(): string {
 
 /** PDF mínimo válido (assinatura %PDF) acima do tamanho mínimo aceito (10 KB). */
 const pdf = () => Buffer.concat([Buffer.from("%PDF-1.4\n% laboratório\n"), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
-const png = () => Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), randomBytes(11 * 1024)]);
+// PNG legível (a miniatura da fila do admin decodifica) + bytes depois do IEND para passar dos 10 KB do upload.
+const png = () => Buffer.concat([pngDeTeste(randomBytes(1)[0]), randomBytes(11 * 1024)]);
 
 async function imovel(titulo: string, extra: Record<string, unknown>): Promise<string> {
   const { data, error } = await adm()
