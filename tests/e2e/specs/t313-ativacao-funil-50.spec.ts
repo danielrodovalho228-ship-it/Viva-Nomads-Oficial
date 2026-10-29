@@ -57,8 +57,9 @@ test.describe("T313 — ativação e funil (50)", () => {
     const bloco = d.getByTestId("inicio-dono-principal");
     // Rascunho do dono (pronto ou não): o bloco é o do rascunho — o guia nunca aparece à parte.
     await expect(bloco).toHaveAttribute("data-tipo", "rascunho", { timeout: 20_000 });
-    // E218-A (Pista C): os passos do guia moram DENTRO do bloco principal (um guia só), nada do dono à parte.
-    await expect(bloco.getByTestId("inicio-dono-passos")).toBeVisible();
+    // E218-A (Pista C): o guia mora no bloco principal (um guia só, nada do dono à parte) e o botão do bloco leva ao
+    // próprio rascunho (pronto → "Revisar e publicar" na revisão), nunca a um anúncio novo.
+    await expect(bloco.getByTestId("inicio-dono-botao")).toHaveAttribute("href", new RegExp(`[?&]draft=${ids.imovel}(&|$)`));
     await expect(d.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')).toHaveCount(0);
     expect(((await adm().from("ativacoes").select("papel").eq("user_id", ids.dono)).data ?? []).length).toBe(0);
     // Publicou (o que a publicação grava): no próximo Início, o checklist do papel some e a data fica gravada.
