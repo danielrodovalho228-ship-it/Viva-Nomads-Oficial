@@ -16,10 +16,7 @@ import { FichaSolicitacao, LinhaAprovada, LinhaAtiva, SuporteForm, type Ficha } 
 import { HREF_SISTEMA } from "@/config/chaves-ambiente";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { TIPOS_PARCEIRO, contarPorTipo, doTipo, hrefParceiros, tipoDoParam } from "@/lib/admin/parceiros-tipo";
-import { createClient } from "@/lib/supabase/server";
-import { lerInteressesParceria } from "@/lib/admin/interesses-parceria";
-import { diasDesde, resumoInteresses } from "@/lib/admin/interesse-parceria";
-import { ListaInteresses, type InteresseNaTela } from "./interesses";
+import { diasNaFila, ordenarPendentes } from "@/lib/parceiros/fila-pendentes";
 
 export const metadata = { title: tituloDoAdmin("/admin/parceiros") };
 
@@ -88,7 +85,9 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   const porTipo = contarPorTipo((todosParceiros ?? []) as { categorias: string[] | null }[]);
   const ativos = porTipo[tipo];
 
-  const lista = ((sols.data ?? []) as Record<string, unknown>[]).filter((s) => doTipo(tipo, s.categorias as string[] | null));
+  const filtrada = ((sols.data ?? []) as Record<string, unknown>[]).filter((s) => doTipo(tipo, s.categorias as string[] | null));
+  // E227-B: "Pendentes" do mais antigo para o mais novo (a fila única de parceria).
+  const lista = aba === "pendentes" ? ordenarPendentes(filtrada as (Record<string, unknown> & { id: string; criado_em: string })[]) : filtrada;
   const ativosDoTipo = ((parceiros.data ?? []) as Record<string, unknown>[]).filter((p) => doTipo(tipo, p.categorias as string[] | null));
   const ids = [...new Set([...lista.map((s) => s.user_id as string | null), ...((parceiros.data ?? []) as Record<string, unknown>[]).map((p) => p.user_id as string)].filter((x): x is string => !!x))];
   const avisosLinhas = (avisos.data ?? []) as { user_id: string; uf: string; chave: string; cidade: string; categoria: string; criado_em: string }[];
@@ -125,21 +124,10 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
       linkVencido: !s.token_expira_em || Date.parse(s.token_expira_em as string) <= agora,
       identidade: id ? { estado: id.estado, texto: id.texto } : null,
       teste: uid ? perfil.get(uid)?.is_teste === true : false,
+      diasNaFila: diasNaFila(s.criado_em as string, new Date(agora)),
     };
   });
   const geral = lerParceiroGeral(geralLinha.data?.valor, geralLinha.data?.ligada === true);
-
-  // E223: interesses de parceria (formulário antigo, 0104). A lista e o contador saem da MESMA leitura
-  // (lerInteressesParceria, a fonte do atalho do admin também); a situação muda pela ação atualizarStatusInteresse.
-  const sessao = await createClient();
-  const interessesLidos = sessao ? await lerInteressesParceria(sessao) : null;
-  const resumo = resumoInteresses(interessesLidos ?? []);
-  const { data: copias } = interessesLidos?.length
-    ? await admin.from("parceiro_solicitacoes").select("interesse_id, status").in("interesse_id", interessesLidos.map((i) => i.id))
-    : { data: [] };
-  const pedidoDoInteresse = new Map(((copias ?? []) as { interesse_id: string; status: string }[]).map((c) => [c.interesse_id, c.status]));
-  const hoje = new Date();
-  const interesses: InteresseNaTela[] = (interessesLidos ?? []).map((i) => ({ ...i, pedidoStatus: pedidoDoInteresse.get(i.id) ?? null, dias: diasDesde(i.criado_em, hoje) }));
 
   const avisosPorCidade = Object.values(
     avisosLinhas.reduce<Record<string, { cidade: string; uf: string; categoria: string; total: number }>>((acc, a) => {
@@ -187,29 +175,6 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
           { rotulo: "Recusadas", valor: conta(["recusada"]), href: hrefParceiros({ aba: "recusadas", tipo }) },
         ]}
       />
-
-      <section id="interessados" className="mb-6 scroll-mt-24" data-testid="admin-interesses">
-        <Panel title="Interessados em parceria">
-          <ListaNumeros
-            className="mb-3"
-            itens={[
-              { rotulo: "Novos (sem contato)", valor: interessesLidos ? resumo.novo : "—", atributos: { "data-testid": "interesses-novos" } },
-              { rotulo: "Contatados", valor: interessesLidos ? resumo.contatado : "—", atributos: { "data-testid": "interesses-contatados" } },
-              { rotulo: "Arquivados", valor: interessesLidos ? resumo.arquivado : "—", atributos: { "data-testid": "interesses-arquivados" } },
-            ]}
-          />
-          <p className="mb-2 text-xs text-muted">Quem pediu contato pelo formulário antigo de parceria. Marque como contatado depois de falar com a pessoa; arquive quando não houver mais o que fazer.</p>
-          {interessesLidos === null ? (
-            <p className="text-sm text-muted" data-testid="interesses-erro-leitura">
-              Não foi possível ler os interessados agora.
-            </p>
-          ) : interesses.length === 0 ? (
-            <p className="text-sm text-muted">Ninguém pediu contato pelo formulário antigo.</p>
-          ) : (
-            <ListaInteresses itens={interesses} />
-          )}
-        </Panel>
-      </section>
 
       <Panel title="Cartão do parceiro" className="mb-6">
         <dl className="grid grid-cols-2 gap-3 text-sm" data-testid="admin-cartao-parceiro">

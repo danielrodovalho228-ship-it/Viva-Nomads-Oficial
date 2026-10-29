@@ -264,7 +264,7 @@
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
         "t551-varredura-bloco40",
-        "t630-e223-interesses-parceria"
+        "t630-e227b-pendentes-fila-unica"
       ]
     },
     "/admin/pedidos": {
@@ -4785,14 +4785,6 @@
       ],
       "specs": [
         "t114-marcas-visto-contatado"
-      ]
-    },
-    "src/lib/parceiros/admin-actions.ts#atualizarStatusInteresse": {
-      "personas": [
-        "admin"
-      ],
-      "specs": [
-        "t630-e223-interesses-parceria"
       ]
     },
     "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {

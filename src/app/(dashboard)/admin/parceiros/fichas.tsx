@@ -29,6 +29,7 @@ import {
   salvarChecklistParceria,
   suspenderParceiro,
 } from "@/lib/parceiros/admin-actions";
+import { textoHaDias } from "@/lib/parceiros/fila-pendentes";
 
 export interface Ficha {
   id: string;
@@ -53,6 +54,8 @@ export interface Ficha {
   linkVencido: boolean;
   identidade: { estado: string; texto: string } | null;
   teste: boolean;
+  /** E227-B: dias desde o pedido (a aba Pendentes mostra "há N dias"). */
+  diasNaFila: number;
 }
 
 const ORIGEM: Record<string, string> = { site: "Site", conta: "Conta", suporte: "Suporte" };
@@ -115,7 +118,10 @@ export function FichaSolicitacao({ f }: { f: Ficha }) {
             {f.nome} {f.teste && <SeloTeste />}
           </h3>
           <p className="text-sm text-muted break-all">
-            {f.email ?? "sem e-mail"} · origem {ORIGEM[f.origem] ?? f.origem} · {dataHora(f.criadoEm)}
+            {f.email ?? "sem e-mail"} · origem {ORIGEM[f.origem] ?? f.origem} · {dataHora(f.criadoEm)} ·{" "}
+            <span className="font-semibold text-ink" data-testid="ficha-dias" data-dias={f.diasNaFila}>
+              {textoHaDias(f.diasNaFila)}
+            </span>
           </p>
         </div>
         {aguardando && <span className="border border-line rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800">Aguardando a pessoa confirmar</span>}

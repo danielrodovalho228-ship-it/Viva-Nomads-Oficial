@@ -66,7 +66,6 @@ test("GUARDA: cada ação da lista confere o observador ANTES de gravar", () => 
     ["../parceiros/admin-actions.ts", "salvarChecklistParceria", /recusaObservador\(a\.user\.id, await alvoDaSolicitacao/],
     ["../parceiros/admin-actions.ts", "reenviarAtivacao", /recusaObservador\(a\.user\.id, await alvoDaSolicitacao/],
     ["../parceiros/admin-actions.ts", "suspenderParceiro", /recusaObservador\(a\.user\.id, \{ perfis:/],
-    ["../parceiros/admin-actions.ts", "atualizarStatusInteresse", /recusaObservador\(user\.id, \{ semPerfil: 1 \}\)/],
     ["../parceiros/admin-actions.ts", "denunciaNotaProcedente", /recusaObservador\(a\.user\.id\);/],
     ["../parceiros/admin-actions.ts", "criarSolicitacaoSuporte", /recusaObservador\(a\.user\.id\);/],
     ["../data/fotos-perfil-actions.ts", "aprovarFotoPerfil", /recusaObservador\(a\.user\.id, \{ perfis:/],
