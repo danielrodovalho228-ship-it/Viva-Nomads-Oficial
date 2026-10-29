@@ -7,6 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    E243 — lista a 390: o cartão da conversa cabe na tela (antes ia a ~534 px) e os textos longos terminam em reticências.
    E244 — conversa aberta a 390: o painel fica dentro da tela (antes saía pela esquerda, com o voltar em −7 px).
    E245 — "Denunciar mensagem suspeita" aparece UMA vez, sem linhas soltas repetidas, a 390 e 1280.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, junto com o bloco 63 (t662).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

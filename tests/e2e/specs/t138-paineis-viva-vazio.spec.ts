@@ -3,30 +3,20 @@ import { authFile } from "../fixtures/auth";
 
 /**
  * T138 — ordem 8f0582d6 (D6 e D8), painéis a 390 px:
- *  - o botão "Fale com a Viva" não cobre o último card (o conteúdo reserva espaço embaixo);
+ *  - o botão "Fale com a Viva" não cobre o último card. Desde o E246 (#1536) ele nem aparece no painel do celular
+ *    (< 768 px, `painel && "max-md:hidden"`; a Viva segue em Conta › Ajuda), então a prova a 390 é que ele some; no
+ *    computador ele fica na faixa reservada (t649, E246 a 1280);
  *  - estado vazio sem ilustração mostra o ícone em círculo de destaque (padrão de Mensagens).
  */
 test.describe("T138 — painéis 390 px", () => {
   test.use({ storageState: authFile("inquilino"), viewport: { width: 390, height: 844 } });
 
   for (const rota of ["/dashboard/ferramentas", "/dashboard/favoritos", "/dashboard/candidaturas"]) {
-    test(`${rota}: o botão da Viva não cobre o fim do conteúdo`, async ({ page }) => {
+    test(`${rota}: o botão da Viva não cobre o fim do conteúdo (E246: no painel do celular ele some)`, async ({ page }) => {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
-      const viva = page.getByTestId("fale-com-a-viva");
-      await expect(viva).toBeVisible({ timeout: 20_000 });
-      // A página pode crescer depois do primeiro scroll (cartões que chegam por fetch): rola de novo
-      // e mede até o fim do conteúdo ficar estável, em vez de medir uma única vez.
-      const medir = async () => {
-        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-        await page.waitForTimeout(300);
-        const botao = await viva.boundingBox();
-        const ultimo = await page.locator("main").first().evaluate((m) => {
-          const filhos = [...m.querySelectorAll<HTMLElement>("*")].filter((e) => e.offsetParent !== null && e.getBoundingClientRect().height > 0);
-          return Math.max(...filhos.map((e) => e.getBoundingClientRect().bottom));
-        });
-        return ultimo - (botao!.y + 1);
-      };
-      await expect.poll(medir, { message: `${rota}: conteúdo termina acima do botão`, timeout: 15_000 }).toBeLessThanOrEqual(0);
+      await page.locator("main").first().waitFor({ timeout: 20_000 });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      await expect(page.getByTestId("fale-com-a-viva")).toBeHidden({ timeout: 20_000 });
     });
   }
 

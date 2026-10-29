@@ -75,6 +75,14 @@ const ESPERADAS: Record<string, string> = {
   "Entrar|1280|c-overflow": "D-V8",
 };
 
+/**
+ * Achados que são o desenho pedido, não defeito: só a linha que casa sai da asserção (anotada); o resto da tela segue.
+ * E248 (#1536): na fileira que rola na horizontal (subabas de Contratos, filtros de Mensagens) o "›" sólido senta na
+ * borda, sobre o item que continua fora da tela; ele aparece rolando a FILEIRA (t649). A medição só conhece a rolagem
+ * da página.
+ */
+const DESENHO: { achado: RegExp; tipo: string }[] = [{ achado: /coberto por button "Ver mais itens"$/, tipo: "E248-desenho" }];
+
 type Linha = { tela: string; tamanho: string; criterio: string; resultado: string };
 const relatorio: Linha[] = [];
 const excecoes = new Set<string>();
@@ -125,7 +133,11 @@ test.describe("T249 — varredura visual (tela × tamanho × critério)", () => 
           if (abertura.length && !abertura.some((p) => p.startsWith("não abriu"))) medidas["c-overflow"].push(...abertura);
           erros.ignorados().forEach((m) => excecoes.add(m));
           for (const crit of Object.keys(medidas) as Exclude<Criterio, "f-resposta">[]) {
-            const problemas = medidas[crit];
+            const problemas = medidas[crit].filter((p) => {
+              const d = DESENHO.find((x) => x.achado.test(p));
+              if (d) test.info().annotations.push({ type: d.tipo, description: `${tela.nome} @${tam.nome} ${crit}: ${p}` });
+              return !d;
+            });
             const dv = ESPERADAS[`${tela.nome}|${tam.nome}|${crit}`];
             if (dv && problemas.length > 0) {
               test.info().annotations.push({ type: dv, description: `${tela.nome} @${tam.nome} ${crit}: ${problemas[0]}` });

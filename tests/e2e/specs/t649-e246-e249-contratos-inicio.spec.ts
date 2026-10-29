@@ -9,6 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    E247 — anexos da conferência (check-in/check-out) com o seletor do site em português, sem o nativo cru em inglês.
    E248 — fileiras que rolam (subabas de Contratos, filtros de Mensagens) mostram "›" quando há item fora da tela.
    E249 — "Início da estadia" aparece UMA vez no cartão Contrato.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, junto com o bloco 63 (t662).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -109,7 +110,8 @@ test.describe("T649 — E246 + E247 + E248 + E249", () => {
     await expect(conjunto.getByTestId("fileira-seta-dir")).toBeVisible();
     await p.screenshot({ path: `${SAIDA}/t649-subabas-390.png` });
     await conjunto.getByTestId("fileira-seta-dir").click();
-    await conjunto.getByTestId("fileira-seta-dir").click().catch(() => {});
+    // O 2º toque é opcional: se o 1º já levou a fileira ao fim, o "›" some e o clique não pode esperar até o fim do teste.
+    await conjunto.getByTestId("fileira-seta-dir").click({ timeout: 3_000 }).catch(() => {});
     await p.waitForTimeout(700);
     const ultimo = await sub.locator("a").last().evaluate((a) => { const r = a.getBoundingClientRect(); return { left: r.left, right: r.right, vw: document.documentElement.clientWidth }; });
     expect(ultimo.right, "último item inteiro na tela").toBeLessThanOrEqual(ultimo.vw);

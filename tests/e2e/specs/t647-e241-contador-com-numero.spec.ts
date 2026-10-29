@@ -5,6 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T647 — E241 (conformidade do cadastro, item 8): no Passo 4 (Detalhes), com o campo vazio, o miolo de cada contador
   (Quartos, Banheiros, Área, Pessoas, Vagas) mostra um número — o mínimo, em cinza — como no mockup cadastro-imovel-04,
   e nunca fica em branco. O campo segue vazio para a validação (o número é só o que aparece). A 390 e 1280 px.
+  Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, junto com o bloco 63 (t662).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
