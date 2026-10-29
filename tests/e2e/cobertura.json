@@ -236,7 +236,8 @@
       ],
       "specs": [
         "t442-foto-perfil-revisao",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t655-observador-botoes-filas"
       ]
     },
     "/admin/marketing": {
@@ -264,7 +265,8 @@
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
         "t551-varredura-bloco40",
-        "t630-e223-interesses-parceria"
+        "t630-e223-interesses-parceria",
+        "t655-observador-botoes-filas"
       ]
     },
     "/admin/pedidos": {

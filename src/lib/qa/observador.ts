@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { MSG_OBSERVADOR, recusaComDeps, type AlvoObservador, type DepsObservador } from "./observador-regras";
+import { createClient } from "@/lib/supabase/server";
+import { chaveDono, linhasSoLeitura, MSG_OBSERVADOR, recusaComDeps, type AlvoObservador, type DepsObservador, type LinhaDaTela } from "./observador-regras";
 
 /*
   QA-LOGIN-B v2 — admin observador da QA (profiles.qa_admin). Ele é admin (role admin + 2FA próprio, aal2), mas:
@@ -49,4 +50,33 @@ export async function recusaObservador(userId: string | null | undefined, alvo?:
   // Sem o cliente de serviço não há como ler qa_admin; as ações do admin também não gravam sem ele.
   if (!admin) return null;
   return recusaComDeps(deps(admin), userId, alvo);
+}
+
+/**
+ * Na tela: os ids das linhas em que a sessão atual (se for o admin observador da QA) só pode ler — o servidor recusaria
+ * a ação. Quem não é observador: [] (uma leitura só, sem tocar nas linhas). Os botões dessas linhas saem da tela.
+ */
+export async function soLeituraNaTela(linhas: readonly LinhaDaTela[]): Promise<string[]> {
+  const admin = createAdminClient();
+  const supabase = await createClient();
+  if (!admin || !supabase || !linhas.length) return [];
+  const uid = (await supabase.auth.getUser()).data.user?.id;
+  if (!uid || !(await deps(admin).qaAdmin(uid))) return [];
+  const donoDe = new Map<string, string>();
+  for (const [tabela, chave] of [
+    ["properties", "imoveis"],
+    ["pedidos_moradia", "pedidosMoradia"],
+    ["qualification_checklists", "documentos"],
+  ] as const) {
+    const ids = [...new Set(linhas.flatMap((l) => l.alvo?.[chave] ?? []).filter((x): x is string => !!x))];
+    if (!ids.length) continue;
+    const col = COLUNA_DONO[tabela];
+    const { data } = await admin.from(tabela).select(`id, ${col}`).in("id", ids);
+    for (const l of (data ?? []) as unknown as Record<string, unknown>[]) {
+      if (typeof l[col] === "string") donoDe.set(chaveDono(tabela, String(l.id)), l[col] as string);
+    }
+  }
+  const perfis = [...new Set([...linhas.flatMap((l) => l.alvo?.perfis ?? []), ...donoDe.values()].filter((x): x is string => !!x))];
+  const teste = perfis.length ? await deps(admin).perfisTeste(perfis) : new Set<string>();
+  return linhasSoLeitura(true, linhas, donoDe, teste);
 }
