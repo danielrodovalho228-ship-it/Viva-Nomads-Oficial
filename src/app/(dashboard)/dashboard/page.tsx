@@ -19,6 +19,9 @@ import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
 import { visualizacoesDoDono } from "@/lib/data/desempenho-anuncio";
 import { listConversations } from "@/lib/data/messages";
 import { alertaDoTopo, blocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import { carregarAgendaDoDono } from "@/lib/data/agenda-servidor";
+import { cartoesDeHoje } from "@/lib/painel/hoje-dono";
+import { hojeEmBrasilia } from "@/lib/checkin";
 import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
 
 /**
@@ -152,6 +155,9 @@ export default async function DashboardPage() {
 
   // PROP-6: o Início do dono (modo dono) — faixa com a pendência mais urgente e o bloco principal, das mesmas regras.
   const capaAnuncio = imoveisDono.find((i) => i.photos?.[0])?.photos[0] ?? null;
+  // E190 (parte 2): quem entra e quem sai HOJE (a mesma leitura da Agenda), só para quem tem imóvel.
+  const agendaHoje = imoveisDono.length ? await carregarAgendaDoDono().catch(() => null) : null;
+  const hoje = agendaHoje ? cartoesDeHoje(agendaHoje.itens, hojeEmBrasilia(agora), agendaHoje.horarios) : [];
   const inicioDono = {
     alerta: alertaDoTopo(decisoesDono),
     bloco: blocoPrincipalDono({
@@ -160,6 +166,7 @@ export default async function DashboardPage() {
       temAnuncio: imoveisDono.length > 0,
       fotoAnuncio: capaAnuncio,
     }),
+    hoje,
   };
 
   return (

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, CheckCircle2, ChevronRight, Circle, ReceiptText } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
+import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Decisao } from "@/lib/painel/decisoes";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 
 const ICONE = { agenda: CalendarDays, simulador: ChartNoAxesColumnIncreasing, recibos: ReceiptText } as const;
 
@@ -11,7 +13,7 @@ const ICONE = { agenda: CalendarDays, simulador: ChartNoAxesColumnIncreasing, re
  * PROP-6 — Início do dono (mockup painel-proprietario): faixa de alerta · bloco principal · "Peça na Viva" · três
  * atalhos. As regras estão em lib/painel/inicio-dono.ts. Sem foto do anúncio, o bloco principal fica sem foto.
  */
-export function InicioDono({ alerta, bloco }: { alerta: Decisao | null; bloco: BlocoPrincipalDono }) {
+export function InicioDono({ alerta, bloco, hoje = [] }: { alerta: Decisao | null; bloco: BlocoPrincipalDono; hoje?: CartaoHoje[] }) {
   return (
     <div className="space-y-6" data-testid="inicio-dono">
       <h1 className="sr-only">Início</h1>
@@ -29,6 +31,8 @@ export function InicioDono({ alerta, bloco }: { alerta: Decisao | null; bloco: B
           <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
         </Link>
       )}
+
+      {hoje.length > 0 && <HojeNoInicio cartoes={hoje} />}
 
       <section className="rounded-lg border border-line bg-white p-4 sm:p-6" data-testid="inicio-dono-principal" data-tipo={bloco.tipo} aria-labelledby="inicio-dono-titulo">
         <div className={cn("grid gap-6", bloco.foto && "lg:grid-cols-2 lg:items-center")}>
@@ -124,5 +128,49 @@ export function InicioDono({ alerta, bloco }: { alerta: Decisao | null; bloco: B
         </Link>
       </section>
     </div>
+  );
+}
+
+/**
+ * E190 (parte 2) — "Hoje": quem entra e quem sai hoje nos imóveis do dono (a mesma informação da Agenda, resumida). Os
+ * cartões são os da própria tela (borda, fundo branco, seta), com a foto do morador ou as iniciais; cada um leva à
+ * estadia. Sem nada hoje, a seção não existe.
+ */
+function HojeNoInicio({ cartoes }: { cartoes: CartaoHoje[] }) {
+  return (
+    <section aria-labelledby="inicio-dono-hoje" data-testid="inicio-dono-hoje">
+      <h2 id="inicio-dono-hoje" className="mb-3 font-title text-lg font-semibold text-ink">
+        Hoje
+      </h2>
+      {/* E219: no celular, uma coluna que não passa da tela (minmax(0,1fr)) — sem ela, um nome de imóvel longo esticava
+          a coluna automática do grid e o cartão estourava a largura. No computador, as 2 colunas de sempre. */}
+      <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-6">
+        {cartoes.map((c) => (
+          <li key={c.id} className="min-w-0">
+            <Link
+              href={c.href}
+              className="flex min-h-11 w-full min-w-0 items-center gap-3 rounded-lg border border-line bg-white p-4 sm:gap-4"
+              data-testid="inicio-dono-hoje-cartao"
+              data-tipo={c.tipo}
+            >
+              <Avatar name={c.nome} photoUrl={c.fotoUrl ?? undefined} size={48} className="shrink-0" />
+              <span className="min-w-0 flex-1">
+                <span className={cn("block text-sm font-semibold", c.tipo === "entrada" ? "text-forest" : "text-ink")} data-testid="inicio-dono-hoje-rotulo">
+                  {c.rotulo}
+                  {c.horario ? <span className="font-normal text-muted"> · {c.horario}</span> : null}
+                </span>
+                <span className="block truncate font-title text-base font-semibold text-ink" data-testid="inicio-dono-hoje-nome">
+                  {c.nome}
+                </span>
+                <span className="block truncate text-sm text-muted" data-testid="inicio-dono-hoje-imovel">
+                  {c.imovel}
+                </span>
+              </span>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
