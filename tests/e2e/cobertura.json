@@ -1066,7 +1066,8 @@
         "t564-e193-qualificacao-cartoes",
         "t571-e180-qualificacao-primeiro",
         "t573-e195-cadastro-clean",
-        "t611-e195-cadastro-sem-bege"
+        "t611-e195-cadastro-sem-bege",
+        "t614-varredura-bloco53"
       ]
     },
     "/dashboard/indicacoes": {
