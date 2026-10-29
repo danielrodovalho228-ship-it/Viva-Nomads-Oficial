@@ -28,6 +28,7 @@ import { corpoDaChegada } from "@/lib/estadia/emails-chegada";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
 import { DIAS_APAGAR_CONVIDADO, convidadoVence } from "@/lib/anuncio/chegada-e-pedido";
+import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
 import { precalcularTempos } from "@/lib/data/tempos";
@@ -166,7 +167,8 @@ export async function GET(request: Request) {
           tipo: "renovacao_aviso",
           usuarioId: u,
           refId: b.id,
-          url: `/dashboard/contratos/${c.id}`,
+          // E222-B: o e-mail abre o fluxo da renovação (o aditivo de prorrogação já preenchido).
+          url: HREF_RENOVAR(c.id as string),
           detalhe: detalheAutomacao("renovacao_aviso", { imovel, fim: b.fim }),
           // Marca o bloco só depois do último destinatário.
           depois: i === partes.length - 1 ? async () => admin.from("contrato_blocos").update({ renovacao_notificada_em: new Date().toISOString() }).eq("id", b.id) : undefined,

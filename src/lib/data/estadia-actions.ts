@@ -432,12 +432,16 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
 async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ completo: boolean }>> {
   const { data } = await ctx.admin
     .from("contratos")
-    .select("id, aluguel_mensal, qtd_ocupantes, capacidade_snapshot, tamanho_bloco_meses, properties(max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status)")
+    .select("id, aluguel_mensal, qtd_ocupantes, capacidade_snapshot, tamanho_bloco_meses, garantia, properties(max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status)")
     .eq("id", a.contrato_id)
     .single();
   const atual = data as unknown as LinhaContratoEstadia;
   const hoje = hojeEmBrasilia();
-  const { manter, refazer, novos } = blocosDepoisDoAditivo(paraAditivo(atual), a.mudancas, hoje);
+  const depois = blocosDepoisDoAditivo(paraAditivo(atual), a.mudancas, hoje);
+  const { manter, refazer } = depois;
+  // E222-B: o aditivo é o único caminho da renovação; com seguro-fiança os blocos novos não têm Caução (a regra que o
+  // renovarBloco aplicava e que o registrarContrato aplica no contrato novo).
+  const novos = atual.garantia === "seguro_fianca" ? depois.novos.map((b) => ({ ...b, caucao: 0 })) : depois.novos;
   const ids = blocosOrdenados(atual).filter((b) => refazer.some((r) => r.numero_bloco === b.numero_bloco)).map((b) => b.id);
   const meses = manter.reduce((s, b) => s + Number(b.meses), 0) + novos.reduce((s, b) => s + b.meses, 0);
   const { data: aplicou, error } = await ctx.admin.rpc("aplicar_aditivo", {

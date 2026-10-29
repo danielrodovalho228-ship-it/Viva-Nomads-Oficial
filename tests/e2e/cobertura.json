@@ -263,7 +263,8 @@
         "t339-varredura-bloco16",
         "t462-admin2-fusoes",
         "t419-varredura-bloco36",
-        "t551-varredura-bloco40"
+        "t551-varredura-bloco40",
+        "t630-e223-interesses-parceria"
       ]
     },
     "/admin/pedidos": {
@@ -658,7 +659,8 @@
         "t612-e219-hoje-sem-estouro",
         "t613-varredura-bloco52",
         "t621-varredura-bloco55",
-        "t622-varredura-bloco56"
+        "t622-varredura-bloco56",
+        "t626-varredura-bloco60"
       ]
     },
     "/dashboard/assinatura": {
@@ -742,7 +744,8 @@
         "t183-telas-logadas-390",
         "t214-carteira-banco",
         "t221-contrato-estado-periodo",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "/dashboard/comparar": {
@@ -884,7 +887,8 @@
         "t240-conferencia-provas-admin",
         "t304-airbnb-exibicao-61a",
         "t307-varredura-bloco8",
-        "t624-varredura-bloco58"
+        "t624-varredura-bloco58",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "/dashboard/favoritos": {
@@ -1099,7 +1103,8 @@
         "t621-varredura-bloco55",
         "t623-varredura-bloco57",
         "t622-varredura-bloco56",
-        "t625-varredura-bloco59"
+        "t625-varredura-bloco59",
+        "t641-e180-entrada-sempre-qualificacao"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1169,7 +1174,8 @@
         "t221-contrato-estado-periodo",
         "t288-padrao-minimo-59a",
         "t388-varredura-bloco23",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "/dashboard/mensagens": {
@@ -1837,7 +1843,8 @@
         "t209-jornada-dois-lados",
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
-        "t613-varredura-bloco52"
+        "t613-varredura-bloco52",
+        "t626-varredura-bloco60"
       ]
     },
     "/dashboard/propostas": {
@@ -2063,7 +2070,8 @@
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2648,7 +2656,8 @@
         "t592-e205b2-lembrete-bloco",
         "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -3331,14 +3340,6 @@
         "proprietario"
       ],
       "specs": []
-    },
-    "src/lib/data/actions.ts#renovarBloco": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": [],
-      "semTela": "Porta sem tela (E205-B2, decisão de 29/10): nenhum componente do cliente importa o renovarBloco, então o Next não publica a ação e o laboratório não a alcança. Coberta pela guarda src/lib/estadia/lembrete-bloco.test.ts (as duas portas do aceite chamam lembreteDeBlocoNoAceite); a porta do aditivo tem a t595 e o cron tem a t592."
     },
     "src/lib/data/actions.ts#requestLead": {
       "personas": [
@@ -4790,7 +4791,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t630-e223-interesses-parceria"
+      ]
     },
     "src/lib/preco-justo-actions.ts#taxaDoMeuNovoAnuncio": {
       "personas": [
@@ -5745,7 +5748,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "src/lib/data/estadia-actions.ts#atualizarPedidoEncerramento": {
@@ -5770,7 +5774,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "src/lib/data/estadia-actions.ts#pedirEncerramento": {
@@ -5788,7 +5793,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "src/lib/data/estadia-actions.ts#removerOcupante": {
@@ -5804,7 +5810,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t595-e205b2-lembrete-no-aceite",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t631-e222b-renovar-aditivo"
       ]
     },
     "src/lib/data/estadia-actions.ts#salvarInstrucoes": {

@@ -41,6 +41,6 @@ test("os DOIS caminhos de geração usam a mesma trava no servidor", () => {
   const serv = readFileSync(new URL("./data/fechamento-servidor.ts", import.meta.url), "utf8");
   const acts = readFileSync(new URL("./data/actions.ts", import.meta.url), "utf8");
   assert.match(serv, /motivoBloqueioContrato\(/);
-  const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("export async function renovarBloco"));
+  const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("export async function varrerCicloBlocos"));
   assert.match(reg, /motivoBloqueioContrato\(/, "registrarContrato precisa da trava (F32)");
 });

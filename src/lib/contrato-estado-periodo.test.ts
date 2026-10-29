@@ -119,11 +119,12 @@ test("2. app: aceite da candidatura, aceite da proposta, 'Gerar contrato', renov
   assert.match(leads, /admin\.from\("leads"\)\.select\("property_id, inicio_desejado"\)/);
   assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoDaEstadia\(String\(v\.data_entrada\)\.slice\(0, 10\), Number\(v\.meses\)\)\)/);
   const acts = ler("./data/actions.ts");
-  const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("export async function renovarBloco"));
+  const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("export async function varrerCicloBlocos"));
   assert.ok(reg.indexOf("conflitoNoImovel(") < reg.indexOf('.from("contratos")\n    .insert('), "confere antes de gravar");
   assert.match(reg, /periodo: `\[\$\{periodo\.inicio\},\$\{periodo\.fim\}\]`/);
   assert.match(reg, /cErr\.code === ERRO_SOBREPOSICAO_PG/);
-  assert.match(acts.slice(acts.indexOf("export async function renovarBloco")), /bErr\.code === ERRO_SOBREPOSICAO_PG/);
+  // E222-B: a renovação não grava bloco por conta própria (o renovarBloco saiu); o aditivo assinado é o caminho.
+  assert.doesNotMatch(acts, /export async function renovarBloco/);
   assert.match(ler("./data/blocks-actions.ts"), /export async function getDatasIndisponiveis/);
   assert.match(ler("../components/property/availability-calendar.tsx"), /getDatasIndisponiveis\(property\.id\)/);
   assert.match(ler("./erros-banco.ts"), /case "23P01":/);

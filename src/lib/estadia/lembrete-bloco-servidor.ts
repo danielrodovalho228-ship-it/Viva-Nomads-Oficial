@@ -10,7 +10,7 @@ import { chaveLembreteBloco, emailLembreteBloco, precisaLembreteDoBloco, type Bl
 /*
   E205-B2 — envio do lembrete do bloco renovado ainda não pago. Duas portas, a mesma regra:
     • o cron de automações (todos os contratos ativos);
-    • o aceite da renovação (renovarBloco e o aditivo assinado), para a renovação aceita a menos de 3 dias do início.
+    • o aceite da renovação (o aditivo de prorrogação assinado, E222-B), para a renovação aceita a menos de 3 dias do início.
   Só ao morador, sem push. Uma vez por (contrato, bloco): grava a chave antes de enviar.
 */
 

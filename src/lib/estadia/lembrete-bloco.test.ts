@@ -58,6 +58,7 @@ test("GUARDA: evento só do morador e sem push; cron e as duas portas do aceite;
   assert.match(srv, /userId: c\.tenant_id/);
   assert.doesNotMatch(srv, /owner_id/, "nunca ao dono");
   assert.match(ler("../../app/api/cron/automacoes/route.ts"), /lembretesDeBloco\(admin, agora, simular\)/);
-  assert.match(ler("../data/actions.ts"), /if \(!aguardando\) after\(\(\) => lembreteDeBlocoNoAceite\(admin, contratoId\)/);
+  // E222-B: uma porta só para a renovação aceita — o aditivo assinado (o renovarBloco saiu).
+  assert.doesNotMatch(ler("../data/actions.ts"), /lembreteDeBlocoNoAceite|renovarBloco/);
   assert.match(ler("../data/estadia-actions.ts"), /after\(\(\) => lembreteDeBlocoNoAceite\(ctx\.admin, a\.contrato_id\)/);
 });

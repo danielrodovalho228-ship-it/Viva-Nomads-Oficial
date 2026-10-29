@@ -13,7 +13,6 @@ import { colunaVideoArquivo } from "@/lib/video-anuncio";
 import { caminhoDoDono, colunasDeOperacao, tipoDocParaGravar } from "@/lib/anuncio/operacao";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
-import { lembreteDeBlocoNoAceite } from "@/lib/estadia/lembrete-bloco-servidor";
 import { cookies } from "next/headers";
 import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
@@ -69,19 +68,13 @@ import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { SITE_URL } from "@/lib/site";
 import type { Property, Proximity } from "@/lib/types";
-import { hojeBR, dataBR } from "@/lib/utils";
+import { hojeBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
   resumoContrato,
   encadearDatas,
-  addDiasISO,
-  fimInclusivoISO,
-  diasInclusivos,
-  caucaoDoBloco,
-  cabeNoPrazoMaximo,
   DIAS_POR_MES,
   MESES_POR_BLOCO_PADRAO,
-  MAX_MESES_BLOCO,
   PRAZO_MIN_MESES,
   PRAZO_MAX_MESES,
   PRAZO_MAX_DIAS,
@@ -1538,161 +1531,6 @@ export async function registrarContrato(
 }
 
 /**
- * Renovação com ACEITE DAS DUAS PARTES (nunca automática — requisito jurídico).
- * Quem chama (proprietário ou inquilino do contrato) dá o SEU aceite ao
- * próximo bloco:
- *  • havendo bloco "pendente_aceite", registra o aceite desta parte; com os
- *    dois aceites o bloco vira "agendado" (e o ciclo diário o ativa na data);
- *  • não havendo, propõe um novo bloco — se couber no teto de 180 dias — já
- *    com o aceite de quem propôs, e avisa a outra parte.
- * Caução do bloco limitada para a soma do contrato não passar de 3 aluguéis
- * (art. 38 §2º). A cobrança da renovação é um fechamento à parte (ordem b3c9d76e). O banco confere tudo de novo (0063).
- */
-export async function renovarBloco(
-  contratoId: string
-): Promise<ActionResult & { numeroBloco?: number; aguardandoOutraParte?: boolean }> {
-  const supabase = await createClient();
-  if (!supabase) return { ok: true, demo: true };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Faça login para renovar." };
-  if (!UUID_RE.test(contratoId)) return { ok: true, demo: true };
-
-  const { data: contrato, error: cErr } = await supabase
-    .from("contratos")
-    .select("id, property_id, tenant_id, aluguel_mensal, tamanho_bloco_meses, status, garantia")
-    .eq("id", contratoId)
-    .maybeSingle();
-  if (cErr) return { ok: false, error: "Não foi possível ler o contrato." };
-  // A leitura acima já passa pela RLS (só as partes do contrato veem).
-  if (!contrato) return { ok: false, error: "Contrato não encontrado." };
-  if (contrato.status !== "ativo") return { ok: false, error: "Só contratos ativos podem ser renovados." };
-  const admin = createAdminClient();
-  if (!admin) return { ok: false, error: "Serviço indisponível." };
-
-  const { data: imovel } = await admin
-    .from("properties")
-    .select("owner_id")
-    .eq("id", contrato.property_id)
-    .maybeSingle();
-  const papel: "proprietario" | "inquilino" | null =
-    imovel?.owner_id === user.id ? "proprietario" : contrato.tenant_id === user.id ? "inquilino" : null;
-  if (!papel) return { ok: false, error: "Só as partes do contrato podem renovar." };
-  const colunaAceite = papel === "proprietario" ? "aceite_proprietario_em" : "aceite_inquilino_em";
-  const colunaOutra = papel === "proprietario" ? "aceite_inquilino_em" : "aceite_proprietario_em";
-
-  if (!(await dentroDoLimite(`renovar:${contratoId}:${user.id}`, 3, DIA_SEGUNDOS))) {
-    return { ok: false, error: "Muitos pedidos de renovação hoje. Tente amanhã." };
-  }
-
-  const { data: blocos } = await admin
-    .from("contrato_blocos")
-    .select("id, numero_bloco, inicio, fim, caucao, status, aceite_proprietario_em, aceite_inquilino_em")
-    .eq("contrato_id", contratoId)
-    .order("numero_bloco", { ascending: true });
-  const lista = (blocos ?? []) as Record<string, unknown>[];
-  const validos = lista.filter((b) => b.status !== "nao_aceito");
-
-  let numero: number;
-  let inicio: string;
-  let fim: string;
-  let aguardando: boolean;
-
-  const pendente = validos.find((b) => b.status === "pendente_aceite");
-  if (pendente) {
-    // Aceite desta parte num bloco já proposto.
-    const outraJaAceitou = !!pendente[colunaOutra];
-    const { error } = await admin
-      .from("contrato_blocos")
-      .update({
-        [colunaAceite]: (pendente[colunaAceite] as string | null) ?? new Date().toISOString(),
-        ...(outraJaAceitou ? { status: "agendado" } : {}),
-      })
-      .eq("id", pendente.id as string)
-      .eq("status", "pendente_aceite");
-    if (error) return { ok: false, error: "Não foi possível registrar o aceite." };
-    numero = pendente.numero_bloco as number;
-    inicio = pendente.inicio as string;
-    fim = pendente.fim as string;
-    aguardando = !outraJaAceitou;
-  } else {
-    // Proposta de um novo bloco (com o aceite de quem propõe).
-    const meses = Math.min(MAX_MESES_BLOCO, Math.max(1, Number(contrato.tamanho_bloco_meses) || MESES_POR_BLOCO_PADRAO));
-    const diasContratados = validos.reduce(
-      (soma, b) => soma + diasInclusivos(b.inicio as string, b.fim as string),
-      0
-    );
-    if (!cabeNoPrazoMaximo(diasContratados, meses)) {
-      return {
-        ok: false,
-        error: `O contrato chegou ao prazo máximo de ${PRAZO_MAX_DIAS} dias. Para continuar, é preciso um novo contrato.`,
-      };
-    }
-    const aluguel = Number(contrato.aluguel_mensal) || 0;
-    const valor = aluguel * meses;
-    const caucaoExigida = validos.reduce((soma, b) => soma + (Number(b.caucao) || 0), 0);
-    const ultimo = validos[validos.length - 1];
-    inicio = ultimo ? addDiasISO(ultimo.fim as string, 1) : hojeISO();
-    fim = fimInclusivoISO(inicio, meses * DIAS_POR_MES);
-    numero = ((lista[lista.length - 1]?.numero_bloco as number | undefined) ?? 0) + 1;
-    const { error: bErr } = await admin.from("contrato_blocos").insert({
-      contrato_id: contratoId,
-      numero_bloco: numero,
-      inicio,
-      fim,
-      meses,
-      valor,
-      caucao: contrato.garantia === "seguro_fianca" ? 0 : caucaoDoBloco(valor, aluguel, caucaoExigida),
-      status: "pendente_aceite",
-      [colunaAceite]: new Date().toISOString(),
-    });
-    if (bErr) {
-      // O novo bloco cruzaria o contrato do próximo morador (0176).
-      if (bErr.code === ERRO_SOBREPOSICAO_PG)
-        return { ok: false, error: (await conflitoNoImovel(admin, contrato.property_id as string, { inicio, fim }, contratoId)) ?? "O imóvel já tem outro contrato nessas datas. Não dá para renovar." };
-      return { ok: false, error: "Não foi possível propor a renovação." };
-    }
-    aguardando = true;
-  }
-
-  // Avisa a OUTRA parte (best-effort): precisa do aceite dela, ou a renovação
-  // foi confirmada pelos dois.
-  try {
-    let destino: { email?: string | null; full_name?: string | null } | null = null;
-    if (papel === "inquilino") {
-      const { data: rpc } = await admin.rpc("owner_notify_contact", { prop_id: contrato.property_id });
-      destino = (Array.isArray(rpc) ? rpc[0] : rpc) ?? null;
-    } else {
-      const { data: inq } = await admin
-        .from("profiles")
-        .select("email, full_name, notif_email")
-        .eq("id", contrato.tenant_id as string)
-        .maybeSingle();
-      destino = inq && inq.notif_email !== false ? inq : null;
-    }
-    if (destino?.email) {
-      const quem = papel === "inquilino" ? "O inquilino" : "O proprietário";
-      await notify({
-        event: "contract_status",
-        email: destino.email,
-        name: destino.full_name ?? undefined,
-        pushUrl: "/dashboard/contratos",
-        detailsText: aguardando
-          ? `${quem} quer renovar a estadia: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}). A renovação só vale com o seu aceite — abra Contratos no painel.`
-          : `Renovação confirmada pelas duas partes: bloco ${numero} (${dataBR(inicio)} a ${dataBR(fim)}).`,
-      });
-    }
-  } catch {
-    /* notificação é best-effort */
-  }
-
-  // E205-B2: renovação aceita pelas duas partes a menos de 3 dias do início → o lembrete do bloco sai no aceite.
-  if (!aguardando) after(() => lembreteDeBlocoNoAceite(admin, contratoId).catch(() => 0));
-  return { ok: true, numeroBloco: numero, aguardandoOutraParte: aguardando };
-}
-
-/**
  * Checagem LAZY do ciclo de blocos (roda ao abrir o painel; o pg_cron cobre
  * quando ninguém abre). Executa as transições de estado (encerramento por
  * NÃO-renovação, ativação de blocos vigentes) via a função SQL idempotente
@@ -1711,11 +1549,6 @@ export async function varrerCicloBlocos(): Promise<ActionResult> {
   const { error } = await admin.rpc("avancar_ciclo_blocos");
   if (error) return { ok: false, error: erroBancoPT(error) };
   return { ok: true };
-}
-
-/** Data de hoje em ISO (yyyy-mm-dd) — isolada para manter as regras testáveis. */
-function hojeISO(): string {
-  return hojeBR();
 }
 
 /**
