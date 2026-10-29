@@ -41,7 +41,7 @@ test("filtro de contato na conversa do pedido: telefone, e-mail e apps de mensag
 });
 
 test("só o servidor grava, e toda ação confere a sessão e a parte antes", () => {
-  const leituras = new Set(["meusPedidosDeServico", "pedidosDoMeuParceiro", "cidadeDosMeusServicos", "meusImoveisParaServico", "registrarVistaDoAdmin"]);
+  const leituras = new Set(["meusPedidosDeServico", "pedidosDoMeuParceiro", "cidadeDosMeusServicos", "registrarVistaDoAdmin"]);
   for (const [nome, corpo] of funcoes(ACOES)) {
     if (leituras.has(nome)) continue;
     assert.match(corpo, /(await|return) (carregar|sessao|mudar)\(/, `${nome}: confere a sessão/parte`);

@@ -72,20 +72,3 @@ export async function resolveInitialMode(): Promise<ViewMode | null> {
   // (c) conta nova sem papel → deixa a pergunta de primeiro acesso decidir.
   return null;
 }
-
-/** Lê o modo preferido do perfil. null = sem escolha (deriva do papel). */
-export async function getPreferredMode(): Promise<ViewMode | null> {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data } = await supabase
-    .from("profiles")
-    .select("preferred_mode")
-    .eq("id", user.id)
-    .maybeSingle();
-  const m = data?.preferred_mode;
-  return m === "owner" || m === "tenant" ? m : null;
-}

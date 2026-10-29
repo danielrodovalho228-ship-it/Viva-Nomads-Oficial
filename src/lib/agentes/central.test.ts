@@ -2,7 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   avisoOrdem,
-  contarP1,
   inicioDoDiaBrasilia,
   iniciais,
   lerReuniao,
@@ -100,13 +99,8 @@ test("próxima ronda a partir da rotina (fusos de Brasília e Texas)", () => {
   assert.equal(avisoOrdem({ nome: "Bruno", rotina_texto: "Todo dia 02:52 Brasília" }, agora), "O Bruno lê na próxima ronda (amanhã 02:52 Brasília).");
 });
 
-test("P1 das últimas 24h e início do dia em Brasília", () => {
+test("início do dia em Brasília", () => {
   const agora = new Date("2026-10-07T12:00:00Z");
-  const r = [
-    { iniciada_em: "2026-10-07T05:00:00Z", achados: [{ prioridade: "P1" }, { prioridade: "p1" }, { prioridade: "P2" }] },
-    { iniciada_em: "2026-10-05T05:00:00Z", achados: [{ prioridade: "P1" }] },
-  ];
-  assert.equal(contarP1(r, agora), 2);
   assert.equal(inicioDoDiaBrasilia(new Date("2026-10-07T02:00:00Z")).toISOString(), "2026-10-06T03:00:00.000Z");
   assert.equal(inicioDoDiaBrasilia(agora).toISOString(), "2026-10-07T03:00:00.000Z");
 });
