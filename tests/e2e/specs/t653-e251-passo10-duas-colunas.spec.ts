@@ -110,6 +110,8 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     // Travado (falta o aceite do termo da IA): o motivo em UMA linha.
     await expect(previa.getByTestId("publicar-motivo")).toHaveText("Falta: aceite do termo da IA");
     expect(await umaLinha(p), "motivo em uma linha").toBe(true);
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.screenshot({ path: `${SAIDA}/t653-revisao-topo-1280.png` });
     // Acordeão: as seções chegam fechadas, com estado; a que falta abre no lugar.
     for (const s of ["operacao", "identidade", "documento", "declaracoes"]) await expect(p.getByTestId(`antes-secao-${s}`)).toHaveAttribute("data-aberta", "0");
     await expect(p.getByTestId("antes-secao-documento")).toHaveAttribute("data-estado", "ok");

@@ -307,7 +307,12 @@ function FaltaParaPublicar(p: { editingId?: string | null; conforto: string[]; c
           )}
         </p>
       )}
-      {outros.length > 0 && <p data-testid="publicar-falta-outros">Falta resolver: {outros.join(", ")}.</p>}
+      {/* E251: no celular o motivo do "Publicar anúncio" (uma linha, logo abaixo) já diz isso — não repete. */}
+      {outros.length > 0 && (
+        <p className="hidden lg:block" data-testid="publicar-falta-outros">
+          Falta resolver: {outros.join(", ")}.
+        </p>
+      )}
     </div>
   );
 }
