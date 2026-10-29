@@ -305,7 +305,8 @@
         "t271-admin-visual",
         "t286-esqueletos-vazios-48",
         "t352-varredura-bloco17",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t656-e224-plano-gestor"
       ]
     },
     "/ajuda": {
@@ -831,7 +832,8 @@
         "t549-varredura-bloco39",
         "t553-varredura-bloco41",
         "t560-varredura-bloco44",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t656-e224-plano-gestor"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -4575,16 +4577,21 @@
     "src/lib/data/planos-actions.ts#definirAccountType": {
       "personas": [
         "proprietario",
-        "inquilino"
+        "inquilino",
+        "admin"
       ],
-      "specs": []
+      "specs": [
+        "t656-e224-plano-gestor"
+      ]
     },
     "src/lib/data/planos-actions.ts#getGestorElegibilidade": {
       "personas": [
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t656-e224-plano-gestor"
+      ]
     },
     "src/lib/data/planos-actions.ts#getMinhaAssinatura": {
       "personas": [

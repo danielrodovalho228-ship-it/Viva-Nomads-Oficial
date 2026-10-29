@@ -42,3 +42,21 @@ export function motivoGestor(s: GestorSinais): string {
   if (faltam === 0) return `Você tem ${GESTOR_MIN_IMOVEIS_VALIDADOS}+ imóveis validados — Gestor liberado.`;
   return `Valide ${faltam} imóvel(is) para desbloquear o Gestor (${s.imoveisValidados ?? 0}/${GESTOR_MIN_IMOVEIS_VALIDADOS}).`;
 }
+
+/**
+ * E224 — a linha do Plano Gestor na Conta (proprietário). Sem botão de assinar: não há cobrança ligada; quem já está
+ * liberado fala com a Viva para ativar.
+ */
+export function textoElegibilidadeGestor(e: { elegivel: boolean; imoveisValidados: number; faltam: number }): string {
+  if (e.elegivel) return "Liberado. Fale com a Viva para ativar.";
+  return `Plano Gestor: liberado com ${GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis com documento aprovado. Você tem ${e.imoveisValidados}; faltam ${e.faltam}.`;
+}
+
+/** E224 — como o admin vê o tipo da conta (os valores são os que definirAccountType aceita). */
+export const ROTULO_TIPO_CONTA: Readonly<Record<AccountType, string>> = { individual: "individual", gestor: "administradora" };
+
+/** Motivo da troca de tipo: obrigatório, com pelo menos 5 caracteres de texto. */
+export const MOTIVO_TIPO_MIN = 5;
+export function motivoTipoValido(m: string | null | undefined): boolean {
+  return (m ?? "").trim().length >= MOTIVO_TIPO_MIN;
+}

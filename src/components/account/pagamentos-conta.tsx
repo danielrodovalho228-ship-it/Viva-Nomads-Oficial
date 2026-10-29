@@ -23,6 +23,7 @@ import {
 } from "@/lib/conta/tela-pagamentos";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CartaoComFoto } from "@/components/account/cartao-com-foto";
+import { PlanoGestorConta } from "@/components/account/plano-gestor-conta";
 import { PHOTOS } from "@/lib/media";
 import { useParceiroAprovado } from "@/lib/use-papel-barra";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
@@ -172,6 +173,8 @@ export function PagamentosConta() {
           </p>
         </CartaoComFoto>
       )}
+      {/* E224: Conta › Plano — a elegibilidade do Plano Gestor, só para o proprietário (/dashboard/conta/plano cai aqui). */}
+      {dono && <PlanoGestorConta />}
 
       <CartaoComFoto foto={PHOTOS.pagamentos.morador} testId="conta-pag-morador" prioridade={!dono}>
         <h2 id="pag-morador-titulo" className="font-title text-2xl font-semibold text-ink">

@@ -1,12 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   gestorElegivel,
   faltamParaGestor,
+  motivoTipoValido,
+  GESTOR_MIN_IMOVEIS_VALIDADOS,
   type AccountType,
 } from "@/lib/planos/gestor";
+import { ehUuid } from "@/lib/fotografos/regras";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { listingLimit } from "@/lib/plan";
@@ -33,7 +37,7 @@ export async function getGestorElegibilidade(): Promise<GestorElegibilidade> {
     elegivel: false,
     accountType: "individual",
     imoveisValidados: 0,
-    faltam: 5,
+    faltam: GESTOR_MIN_IMOVEIS_VALIDADOS,
   };
   const supabase = await createClient();
   if (!supabase) return vazio;
@@ -90,6 +94,9 @@ export async function definirAccountType(
   if (recusaQa) return { ok: false, error: recusaQa };
   if (novoTipo !== "individual" && novoTipo !== "gestor")
     return { ok: false, error: "Tipo inválido." };
+  if (!ehUuid(profileId)) return { ok: false, error: "Conta inválida." };
+  // E224: a troca de tipo exige o motivo (fica na trilha account_type_audit).
+  if (!motivoTipoValido(motivo)) return { ok: false, error: "Escreva o motivo da troca." };
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
@@ -112,9 +119,10 @@ export async function definirAccountType(
     old_type: old,
     new_type: novoTipo,
     changed_by: user.id,
-    reason: motivo?.trim()?.slice(0, 500) || null,
+    reason: (motivo ?? "").trim().slice(0, 500),
   });
 
+  revalidatePath("/admin/usuarios");
   return { ok: true };
 }
 

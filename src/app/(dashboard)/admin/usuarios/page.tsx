@@ -15,6 +15,7 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { PAPEIS_USUARIOS, cadastroCompleto, faltaNoCadastro, filtrosUsuarios, hrefUsuarios, rotuloFiltroUsuarios, type DadosCadastro } from "@/lib/admin/usuarios-lista";
 import { Users } from "lucide-react";
 import { BotaoContaTeste } from "./conta-teste";
+import { TipoConta } from "./tipo-conta";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin/usuarios"), robots: { index: false, follow: false } };
@@ -32,6 +33,7 @@ type Linha = {
   avatar_url: string | null;
   cpf: string | null;
   cnpj: string | null;
+  account_type: string | null;
 };
 
 /**
@@ -72,7 +74,7 @@ export default async function AdminUsuariosPage({
     if (!user || !(await ehAdmin(supabase, user.id))) notFound();
     let q = admin
       .from("profiles")
-      .select("id, full_name, role, created_at, fundador, is_teste, avatar_url, cpf, cnpj")
+      .select("id, full_name, role, created_at, fundador, is_teste, avatar_url, cpf, cnpj, account_type")
       .order("created_at", { ascending: false })
       .limit(2000);
     // Fundadores conta como o cartão: qualquer perfil com fundador, sem filtro de papel.
@@ -193,7 +195,8 @@ export default async function AdminUsuariosPage({
                     telefone verificado: {foneVerificado.get(u.id) ? "sim" : "não"} · desde {dataBRT(u.created_at)}
                   </p>
                   {u.role !== "admin" && (
-                    <div className="mt-2">
+                    <div className="mt-2 grid gap-2">
+                      <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} />
                       <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
                     </div>
                   )}
@@ -211,6 +214,7 @@ export default async function AdminUsuariosPage({
                     <th className="py-2 pr-4 font-semibold">Identidade</th>
                     <th className="py-2 pr-4 font-semibold">Telefone verificado</th>
                     <th className="py-2 pr-4 font-semibold">Cadastro</th>
+                    <th className="py-2 pr-4 font-semibold">Tipo da conta</th>
                     <th className="py-2 font-semibold">Conta de teste</th>
                   </tr>
                 </thead>
@@ -229,6 +233,7 @@ export default async function AdminUsuariosPage({
                       <td className="py-2 pr-4" data-testid="admin-identidade">{idText(u.id)}</td>
                       <td className="py-2 pr-4" data-testid="admin-telefone-verificado">{foneVerificado.get(u.id) ? "Sim" : "Não"}</td>
                       <td className="py-2 pr-4">{dataBRT(u.created_at)}</td>
+                      <td className="py-2 pr-4">{u.role !== "admin" ? <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} /> : "—"}</td>
                       <td className="py-2">{u.role !== "admin" ? <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} /> : "—"}</td>
                     </tr>
                   ))}
