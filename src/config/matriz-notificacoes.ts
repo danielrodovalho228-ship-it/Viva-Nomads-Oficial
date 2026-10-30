@@ -62,7 +62,8 @@ export const MATRIZ_NOTIFICACOES = {
 
   // ── Decisões sem prazo (central + e-mail) ─────────────────────────────────
   new_lead: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
-  application_received: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  // E202 (candidatura): a confirmação de envio vai ao MORADOR (antes o evento não era disparado).
+  application_received: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   candidatura_nova: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   contract_status: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
   estadia_aditivo_respondido: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },

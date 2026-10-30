@@ -56,7 +56,7 @@ export default async function CandidaturasPage() {
       ) : (
         <div className="grid gap-3">
           {candidaturas.map((c) => (
-            <Panel key={c.id} data-testid="candidatura-item">
+            <Panel key={c.id} id={`candidatura-${c.id}`} className="scroll-mt-24" data-testid="candidatura-item">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
