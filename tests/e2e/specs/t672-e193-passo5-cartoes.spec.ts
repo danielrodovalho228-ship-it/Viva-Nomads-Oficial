@@ -65,7 +65,15 @@ test.describe("T672 — E193: Passo 5 em cartões", () => {
       await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // Abre os blocos opcionais (ruído, extras, acessibilidade…) para ver o que há dentro.
-      for (const t of await p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]').all()) await t.click().catch(() => {});
+      // Um de cada vez, relendo a tela: abrir um bloco pode remontar os outros.
+      const desligados = p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]');
+      for (let i = 0; i < 10 && (await desligados.count()) > 0; i++) {
+        const id = await desligados.first().getAttribute("data-testid");
+        // No meio da tela: o rodapé fixo do assistente não fica por cima do interruptor.
+        await p.getByTestId(id!).evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await p.getByTestId(id!).click({ timeout: 10_000 });
+        await expect(p.getByTestId(id!)).toHaveAttribute("aria-checked", "true", { timeout: 10_000 });
+      }
       await p.waitForTimeout(500);
       const inv = await inventario(p);
       console.log(`t672 ${largura}`, JSON.stringify(inv));
