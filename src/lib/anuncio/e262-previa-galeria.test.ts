@@ -23,3 +23,9 @@ test("E262 (a): a galeria aberta pinta na hora com a versão da miniatura (mesmo
   assert.ok((g.match(/sizes=\{SIZES_MINIATURA\}/g) ?? []).length >= 3);
   assert.doesNotMatch(g, /sizes="\(max-width: 768px\) 100vw, 50vw"/);
 });
+
+test("L-77: a prévia do Passo 10 passa a duração mínima ao cartão, como a página pública", () => {
+  const previa = ler("app/(dashboard)/dashboard/imoveis/novo/previa-tamanho-real.tsx");
+  assert.match(previa, /import \{ mesesDoCartao \} from "@\/lib\/cartao-preco";/);
+  assert.match(previa, /meses=\{mesesDoCartao\(undefined, imovel\.minPeriodDays\)\}/);
+});
