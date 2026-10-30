@@ -23,6 +23,10 @@ const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 const BYPASS_HEADERS = BYPASS
   ? { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" }
   : undefined;
+// E288-B: TODA requisição da suíte leva a marca de teste (src/lib/eventos/trafego.ts). A rota de eventos grava
+// trafego='e2e' e o proxy devolve o cookie vn_trafego=e2e (o beacon e o Vercel Analytics da página também ficam de fora).
+// Funil, Eventos e os números do admin contam só 'real'.
+const TRAFEGO_HEADERS = { "x-vn-origem": "e2e" };
 
 export default defineConfig({
   testDir: "./tests/e2e/specs",
@@ -50,7 +54,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    ...(BYPASS_HEADERS ? { extraHTTPHeaders: BYPASS_HEADERS } : {}),
+    extraHTTPHeaders: { ...TRAFEGO_HEADERS, ...(BYPASS_HEADERS ?? {}) },
     ...(CHROMIUM ? { launchOptions: { executablePath: CHROMIUM } } : {}),
   },
   projects: [

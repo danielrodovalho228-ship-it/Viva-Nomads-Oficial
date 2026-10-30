@@ -40,11 +40,11 @@ test("E281: exato múltiplo de 1.000, vazio e erro", async () => {
 
 test("E281: /admin/eventos e /admin/funil contam pela MESMA leitura paginada, em ordem estável", () => {
   const ind = readFileSync("src/lib/data/admin-indicadores.ts", "utf8");
-  const fn = ind.slice(ind.indexOf("export async function eventosDoPeriodo"));
+  const fn = ind.slice(ind.indexOf("export async function eventosDoPeriodoComFora"));
   assert.match(fn, /\.order\("id", \{ ascending: true \}\)\.range\(de, ate\)/);
   assert.match(fn, /todasAsPaginas</);
   assert.doesNotMatch(fn.slice(0, fn.indexOf("\n}\n")), /\.limit\(/);
-  // As duas telas passam por eventosDoPeriodo (a lista por dia e os x_ev_* do funil).
-  assert.match(readFileSync("src/app/(dashboard)/admin/eventos/page.tsx", "utf8"), /eventosDoPeriodo\(admin, intervaloBRT\(p\.inicio, p\.fim\), cidade, \[tipo\]\)/);
+  // As duas telas passam pela mesma leitura (a lista por dia, com os de teste contados à parte — E288-B — e os x_ev_* do funil).
+  assert.match(readFileSync("src/app/(dashboard)/admin/eventos/page.tsx", "utf8"), /eventosDoPeriodoComFora\(admin, intervaloBRT\(p\.inicio, p\.fim\), cidade, \[tipo\]\)/);
   assert.match(ind, /eventosDoPeriodo\(admin, periodo, cidade, Object\.keys\(EVENTOS_HOME\)\)/);
 });

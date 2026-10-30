@@ -9,6 +9,7 @@ import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { baseDoFunil } from "@/lib/admin/contagens";
+import { rotuloForaDaContagem } from "@/lib/eventos/trafego";
 import { VisaoGeralClient } from "../visao-geral-client";
 
 export const metadata = { title: tituloDoAdmin("/admin/funil"), robots: { index: false, follow: false } };
@@ -61,10 +62,16 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
   if (!f) return <EmptyState icon={TrendingDown} title="Sem dados" text="Não foi possível ler o funil agora." action={null} />;
   const topo = f.etapas.find((e) => (e.queda ?? 0) > 0) ?? null;
   const lista = aberta ? f.etapas.find((e) => e.chave === aberta) : null;
+  const foraRotulo = rotuloForaDaContagem(f.eventosFora);
 
   return (
     <div data-testid="admin-funil">
       <PageTitle title={rotuloDoAdmin("/admin/funil")} subtitle={`Últimos 7 dias (até ${dataBRT(f.periodo.ate)}) contra os 7 anteriores · contas de teste fora`} />
+      {foraRotulo && (
+        <p className="-mt-2 mb-4 text-xs text-muted" data-testid="funil-fora-da-contagem" data-fora={f.eventosFora}>
+          {foraRotulo} (suíte automática e contas de teste).
+        </p>
+      )}
       <Panel className="mb-6" data-testid="funil-topo">
         {topo ? (
           <p className="text-sm text-ink">

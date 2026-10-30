@@ -48,7 +48,8 @@ export async function celularComCamera(conta?: { email: string; senha: string })
     viewport: { width: 390, height: 844 },
     hasTouch: true,
     isMobile: true,
-    ...(BYPASS ? { extraHTTPHeaders: { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" } } : {}),
+    // E288-B: a marca de teste (este navegador é aberto à parte e não herda o playwright.config).
+    extraHTTPHeaders: { "x-vn-origem": "e2e", ...(BYPASS ? { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" } : {}) },
   });
   const page = await ctx.newPage();
   if (conta) await entrarNaPagina(page, conta.email, conta.senha);
