@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
 /*
-  T670 — E190, regressão permanente da troca de modo pelo menu do avatar (QA ao vivo do coordenador aprovou em 30/10).
+  T672 — E190, regressão permanente da troca de modo pelo menu do avatar (QA ao vivo do coordenador aprovou em 30/10).
   Conta que é dono (anúncio no ar) E morador (estadia vigente no imóvel de outro dono), a 1280 e 390 px:
    1. O menu do avatar tem exatamente: Minha conta · Modo <outro papel> · Ajuda · Sair.
    2. UM clique em "Modo morador" troca: a barra vira a do morador, com "Estadia" visível e nada do dono.
@@ -14,8 +14,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dupla = { email: `dupla.t670.${sufixo}@lab.vivanomads.test`, nome: "Dora Dois Papéis", role: "owner" as const };
-const outro = { email: `outro.t670.${sufixo}@lab.vivanomads.test`, nome: "Otávio Anfitrião", role: "owner" as const };
+const dupla = { email: `dupla.t672.${sufixo}@lab.vivanomads.test`, nome: "Dora Dois Papéis", role: "owner" as const };
+const outro = { email: `outro.t672.${sufixo}@lab.vivanomads.test`, nome: "Otávio Anfitrião", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 const BARRA_DONO = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
@@ -74,7 +74,7 @@ async function navegarSemMudarPapel(p: Page, largura: number, papel: Papel) {
   expect(await papelNaTela(p, largura), `@${largura}: depois de recarregar o papel continua ${papel}`).toBe(papel);
 }
 
-test.describe("T670 — E190: troca de modo em um clique, barras certas e papel estável", () => {
+test.describe("T672 — E190: troca de modo em um clique, barras certas e papel estável", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.beforeAll(async () => {
@@ -82,9 +82,9 @@ test.describe("T670 — E190: troca de modo em um clique, barras certas e papel 
     ids.outro = await criarConta(outro, senha);
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dupla, ids.outro]);
     // Dono: um anúncio no ar (habilita "Modo proprietário" no menu do morador).
-    await criarImovelPronto(ids.dupla, `Studio da Dora t670 ${sufixo}`, { ativo: true });
+    await criarImovelPronto(ids.dupla, `Studio da Dora t672 ${sufixo}`, { ativo: true });
     // Morador: estadia vigente no imóvel do outro dono (a aba "Estadia" aparece com contrato).
-    const imovel = await criarImovelPronto(ids.outro, `Apartamento do Otávio t670 ${sufixo}`, { ativo: true });
+    const imovel = await criarImovelPronto(ids.outro, `Apartamento do Otávio t672 ${sufixo}`, { ativo: true });
     const t = new Date().toISOString();
     const { data: c, error } = await adm()
       .from("contratos")
@@ -119,12 +119,12 @@ test.describe("T670 — E190: troca de modo em um clique, barras certas e papel 
       expect(await rotulosDaBarra(p, largura, "proprietario"), `@${largura}: barra do proprietário`).toEqual(BARRA_DONO);
       // Menu do avatar do dono.
       expect(await abrirMenu(p, largura, "proprietario"), `@${largura}: menu do avatar (dono)`).toEqual(["Minha conta", "Modo morador", "Ajuda", "Sair"]);
-      await p.screenshot({ path: `${SAIDA}/t670-menu-dono-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t672-menu-dono-${largura}.png` });
 
       // Um clique → morador, com "Estadia" e nada do dono.
       await trocarPara(p, largura, "proprietario", "morador");
       const barraMorador = await rotulosDaBarra(p, largura, "morador");
-      console.log(`t670|${largura}|barra-morador|${JSON.stringify(barraMorador)}`);
+      console.log(`t672|${largura}|barra-morador|${JSON.stringify(barraMorador)}`);
       expect(barraMorador, `@${largura}: barra do morador com Estadia`).toContain("Estadia");
       for (const r of ["Anúncios", "Interessados"]) expect(barraMorador, `@${largura}: nada do dono na barra do morador`).not.toContain(r);
       await navegarSemMudarPapel(p, largura, "morador");
@@ -134,7 +134,7 @@ test.describe("T670 — E190: troca de modo em um clique, barras certas e papel 
       await trocarPara(p, largura, "morador", "proprietario");
       expect(await rotulosDaBarra(p, largura, "proprietario"), `@${largura}: barra do proprietário depois de voltar`).toEqual(BARRA_DONO);
       await navegarSemMudarPapel(p, largura, "proprietario");
-      await p.screenshot({ path: `${SAIDA}/t670-volta-dono-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t672-volta-dono-${largura}.png` });
       await p.context().close();
     });
   }
