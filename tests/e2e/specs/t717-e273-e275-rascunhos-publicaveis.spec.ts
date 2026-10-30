@@ -81,6 +81,9 @@ async function rascunhoDaReceita(id: string, letra: string, numero: string, docu
     furnished: true, petsOk: false, smokingAllowed: false, childrenAllowed: true, issuesInvoice: false,
     ownershipType: "own", subleaseAuthorized: false, subleaseDoc: [], subleaseDocTipo: "",
     privacidade: { tipoAcesso: "porteiro", camerasExternas: "", semCamerasInterior: true, senhaTrocadaEstadia: false },
+    // L-79: a 0264 não grava `tipoEntrada` (a resposta do Passo 6 desde o E259-2); a réplica põe, para provar o resto da
+    // receita. O caso "0b" cobra o campo do próprio arquivo da migração.
+    tipoEntrada: "porteiro",
     declaracoesPasso10: { iptuOk: true, habitavel: true, convencao: "yes" },
     qualificacaoConforto: { status: "pulada", respostas: {} },
     description: descricao,
@@ -181,6 +184,17 @@ test.describe("T717 — E273/E275: rascunho da receita 0264 publica sem nada fal
     for (const r of data ?? []) expect(["draft", "active"]).toContain(r.status);
     // A massa desta spec: dois códigos diferentes.
     expect(codigoDoImovel(ids.imoveis[0])).not.toBe(codigoDoImovel(ids.imoveis[1]));
+  });
+
+  test("0b. a receita da 0264 grava a resposta do Passo 6 (draft_data.tipoEntrada), que o assistente lê", async () => {
+    // L-79 (Pista C, 30/10; fonte: lab-crítico 41111750706 — "Regras — falta: Tipo de entrada" no Passo 10 da receita):
+    // a 0264 grava só privacidade.tipoAcesso e a coluna tipo_entrada (0264_qa_rascunhos_publicaveis.sql:87/95); o
+    // assistente lê draft_data.tipoEntrada (formDeRascunho, chegada-e-pedido-campos.tsx:147). Vira verde quando a
+    // migração (e o docs/qa-receita-rascunho-publicavel.md) passarem a gravar 'tipoEntrada'.
+    test.fail(true, "L-79: rascunhos da 0264 não trazem draft_data.tipoEntrada e o Passo 10 acusa 'Tipo de entrada'");
+    const sql = readFileSync("supabase/migrations/0264_qa_rascunhos_publicaveis.sql", "utf8");
+    const dados = sql.slice(sql.indexOf("v_dados := jsonb_build_object("), sql.indexOf("insert into public.properties"));
+    expect(dados).toMatch(/'tipoEntrada',\s*'[a-z_]+'/);
   });
 
   test("1. 1280 px — a lista de rascunhos mostra os dois 100% prontos para publicar", async ({ browser }) => {
