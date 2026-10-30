@@ -70,6 +70,8 @@ export const ASSUNTOS = {
   manutencaoUrgente: "Manutenção urgente no seu imóvel",
   manutencaoLembrete: "Lembrete: manutenção sem resposta no seu imóvel",
   lembreteInteressado: "Lembrete: um interessado aguarda sua resposta",
+  // E269: a cópia de quem cancelou a visita.
+  visitaCanceladaPorVoce: "Você cancelou a visita",
 } as const;
 
 export function assuntoChamado(evento: "chamado_aberto" | "chamado_respondido" | "chamado_resolvido", numero: string): string {
