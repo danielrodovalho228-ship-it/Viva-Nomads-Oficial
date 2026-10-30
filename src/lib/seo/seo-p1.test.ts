@@ -13,6 +13,11 @@ test("JSON-LD: Organization/WebSite, FAQPage, oferta da regra única e lista só
   const faq = faqPage();
   assert.equal(faq["@type"], "FAQPage");
   assert.ok(faq.mainEntity.length >= 10);
+  // E84: nome em português (sem ele, leitores de dados estruturados mostram "Frequently Asked Questions").
+  assert.equal(faq.name, "Perguntas frequentes");
+  assert.equal(faq.inLanguage, "pt-BR");
+  assert.equal(faqPage(["caucao"], "Segurança e conta · Perguntas frequentes").name, "Segurança e conta · Perguntas frequentes");
+  assert.doesNotMatch(JSON.stringify(faq), /Frequently|Questions/);
   const oferta = ofertaRegraUnica(URL_SITE);
   assert.equal(oferta.price, 0);
   assert.equal(oferta.priceCurrency, "BRL");
