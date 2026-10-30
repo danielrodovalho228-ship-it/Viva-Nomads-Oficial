@@ -9,6 +9,9 @@ import { expirarVencidas } from "@/lib/data/propostas-servidor";
 import { STATUS_ABERTOS, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
 import { limparSombra } from "@/lib/data/ranking";
 import { precisaAvisoConclusao, precisaLembrete24h } from "@/lib/parceiros/pedido";
+import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "@/lib/parceiros/email-pedido";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { escaparHtml } from "@/lib/escapar-html";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   avisoAnuncioIncompleto,
@@ -210,7 +213,7 @@ export async function GET(request: Request) {
   // confirmação do cliente (só aviso: nada conclui sozinho).
   const { data: pedidosParceiro } = await admin
     .from("parceiro_pedidos")
-    .select("id, codigo, categoria, status, cliente_id, horario_confirmado, entregue_em, parceiros(user_id), parceiro_servicos(titulo), properties(title, address, city)")
+    .select("id, codigo, categoria, status, cliente_id, horario_confirmado, entregue_em, valor_combinado, parceiros(user_id, nome_publico), parceiro_servicos(titulo), properties(title, address, city)")
     .in("status", ["agendado", "entregue"])
     .limit(1000);
   for (const p of pedidosParceiro ?? []) {
@@ -220,14 +223,32 @@ export async function GET(request: Request) {
     const pi = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
     const imovelPedido = pi ? linhaImovel({ titulo: pi.title, bairro: pi.address, cidade: pi.city }) || undefined : undefined;
     const servico = (p.parceiro_servicos as unknown as { titulo?: string | null } | null)?.titulo || rotuloCategoria(p.categoria as string);
+    // E267 (vigia 30/10): o lembrete e a conclusão pendente usam o MESMO corpo dos outros e-mails do pedido
+    // (aberturaDoPedido + bloco): serviço, imóvel, horário e, para o cliente, o nome público do parceiro.
+    const pedidoEmail: PedidoParaEmail = {
+      codigo: p.codigo as string,
+      servico,
+      imovel: pi ? { titulo: pi.title, bairro: pi.address, cidade: pi.city } : null,
+      horarioConfirmado: (p.horario_confirmado as string | null) ?? null,
+      valorCombinado: (p.valor_combinado as number | null) ?? null,
+    };
+    const nomeParceiro = (p.parceiros as unknown as { nome_publico?: string | null } | null)?.nome_publico ?? null;
+    const corpoPedido = (ev: EventoPedido, paraCliente: boolean) => {
+      const ped = { ...pedidoEmail, outraParte: paraCliente ? nomeParceiro : null };
+      const linhas = linhasDoPedido(ev, ped);
+      return {
+        body: (nome?: string) => aberturaDoPedido(ev, ped, nome),
+        detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+      };
+    };
     if (precisaLembrete24h(p.status as string, p.horario_confirmado as string | null, agora)) {
       const quando = dataHoraBRT(p.horario_confirmado as string, { semEtiqueta: true });
       for (const quem of [p.cliente_id as string, parceiroUser].filter((x): x is string => !!x)) {
-        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando, imovel: imovelPedido, servico }) });
+        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_lembrete", quem === p.cliente_id) });
       }
     }
     if (precisaAvisoConclusao(p.status as string, p.entregue_em as string | null, agora)) {
-      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string, imovel: imovelPedido, servico }) });
+      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_conclusao_pendente", true) });
     }
   }
 
