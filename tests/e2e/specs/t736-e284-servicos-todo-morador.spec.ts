@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T736 — E284 (conferência do Muse contra a folha aprovada, Tela 1, 30/10), a 1280 e 390: a seção "Serviços" aparece
   na home de TODO morador. Antes, o morador sem cidade no perfil (sem estadia, como a conta da Ana) não via a seção — a
   home terminava em "Imóveis recomendados"/"Salve seus favoritos". Agora ela vem logo depois, com os 6 cartões com foto
-  e a faixa "Como funciona"; sem cidade, cada cartão abre a busca de parceiros só com a categoria. Quem também é dono
-  vê a seção UMA vez (a do bloco de proprietário).
+  e a faixa "Como funciona"; sem cidade, cada cartão abre a busca de parceiros só com a categoria. Quem também é dono,
+  no modo morador, vê a seção UMA vez (no modo proprietário o Início é o do painel do dono, que não muda).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -58,9 +58,11 @@ test.describe("T736 — E284: Serviços na home de todo morador", () => {
     });
   }
 
-  test("quem também é dono vê a seção uma vez só", async ({ browser }) => {
+  test("quem também é dono, no modo morador, vê a seção uma vez só", async ({ browser }) => {
+    await adm().from("profiles").update({ preferred_mode: "tenant", papel_ativo: "morador" }).eq("id", ids.dono!);
     const p = await entrar(browser, dono.email, senha);
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(p.getByTestId("inicio-so-morador")).toBeVisible({ timeout: 30_000 });
     await expect(p.getByTestId("painel-servicos-parceiros")).toHaveCount(1, { timeout: 30_000 });
     await p.context().close();
   });
