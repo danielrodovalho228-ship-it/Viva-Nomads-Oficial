@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+
+/** Nada a assinar: no servidor (e no HTML antes do JavaScript) vale false; no navegador hidratado, true. */
+const semAssinatura = () => () => {};
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -12,11 +15,15 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
   const [papel, setPapel] = useState<"tenant" | "owner">("tenant");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
+  // E256-B: antes de o JavaScript carregar, o botão fica travado. Sem isso, um toque cedo fazia o navegador enviar o
+  // formulário sozinho (sem passar pelo fetch) e a porta respondia 404 sem nunca ter conferido a chave.
+  const pronto = useSyncExternalStore(semAssinatura, () => true, () => false);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setEnviando(true);
     setErro("");
+    // POST relativo: vai ao mesmo host da página, sem redirecionamento no caminho.
     const r = await fetch("/api/qa/entrar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,7 +40,7 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
   }
 
   return (
-    <form method="post" onSubmit={enviar} className="mt-4 grid gap-3" data-testid="qa-entrar-form" autoComplete="off">
+    <form onSubmit={enviar} className="mt-4 grid gap-3" data-testid="qa-entrar-form" autoComplete="off">
       <label className="grid gap-1 text-sm font-semibold text-ink">
         E-mail da conta de teste
         <input className={campo} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} data-testid="qa-email" />
@@ -54,7 +61,7 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
           {erro}
         </p>
       ) : null}
-      <Button type="submit" disabled={enviando} data-testid="qa-entrar">
+      <Button type="submit" disabled={enviando || !pronto} data-testid="qa-entrar" data-pronto={pronto ? "1" : "0"}>
         {enviando ? "Entrando…" : "Entrar"}
       </Button>
     </form>

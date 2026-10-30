@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { emailNormalizado } from "@/lib/qa/entrar";
-import { qaLoginLigado } from "@/lib/qa/entrar-servidor";
+import { qaLoginLigado, registrarRecusaQa } from "@/lib/qa/entrar-servidor";
 import { QaEntrarForm } from "./qa-entrar-form";
 
 export const dynamic = "force-dynamic";
@@ -13,9 +13,15 @@ export const metadata = { title: "Entrada da QA", robots: { index: false, follow
   chave (?chave= ou ?key=) também dá 404: a chave já vazou para o histórico e não é usada.
 */
 export default async function QaEntrarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  if (!qaLoginLigado()) notFound();
+  if (!qaLoginLigado()) {
+    registrarRecusaQa("desligada");
+    notFound();
+  }
   const sp = await searchParams;
-  if ("chave" in sp || "key" in sp) notFound();
+  if ("chave" in sp || "key" in sp) {
+    registrarRecusaQa("chave");
+    notFound();
+  }
   const email = emailNormalizado(typeof sp.email === "string" ? sp.email : "");
   const destino = safeInternalPath(typeof sp.destino === "string" ? sp.destino : null);
   return (
