@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T684 — E259 (5)(6)(7)(8) (prova de publicação do QA, 30/10). 1280 e 390, com prints.
+  T691 — E259 (5)(6)(7)(8) (prova de publicação do QA, 30/10). 1280 e 390, com prints.
    (5) Passo 1: os 9 cartões de tipo com foto carregada, sem rolar a linha.
    (6) Passo 3 → Continuar → Passo 4: "Pessoas" vazio chega com a sugestão (2), marcada "sugerido", e a dica do Continuar
        não lista mais Pessoas.
@@ -13,11 +13,11 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t684.${sufixo}@lab.vivanomads.test`, nome: "Rui Polimento", role: "owner" as const };
+const dono = { email: `dono.t691.${sufixo}@lab.vivanomads.test`, nome: "Rui Polimento", role: "owner" as const };
 const ids: Record<string, string> = {};
 const END = { cep: "38400-060", street: "Rua Santos Dumont", numero: "100", neighborhood: "Centro", city: "Uberlândia", uf: "MG" };
 
-test.describe("T684 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
+test.describe("T691 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -39,7 +39,7 @@ test.describe("T684 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
       await expect
         .poll(() => p1.locator('[data-testid^="tipo-"][data-testid$="-foto"]').evaluateAll((els) => els.filter((e) => (e as HTMLImageElement).complete && (e as HTMLImageElement).naturalWidth > 0).length), { timeout: 20_000 })
         .toBe(9);
-      await p1.screenshot({ path: `${SAIDA}/t684-tipos-${w}.png` });
+      await p1.screenshot({ path: `${SAIDA}/t691-tipos-${w}.png` });
       await p1.context().close();
 
       // (6)
@@ -51,7 +51,7 @@ test.describe("T684 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
       const dica = (await p3.getByTestId("cadastro-continuar").getAttribute("title")) ?? "";
       expect(dica).not.toMatch(/pessoas/i);
       await p3.getByTestId("linha-cadastro-capacidade").scrollIntoViewIfNeeded();
-      await p3.screenshot({ path: `${SAIDA}/t684-pessoas-${w}.png` });
+      await p3.screenshot({ path: `${SAIDA}/t691-pessoas-${w}.png` });
       await p3.context().close();
 
       // (7)
@@ -68,7 +68,7 @@ test.describe("T684 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
       await expect(linha).toContainText("Declarações do imóvel");
       await expect(linha).not.toContainText("Tipo do imóvel");
       await linha.scrollIntoViewIfNeeded();
-      await p10.screenshot({ path: `${SAIDA}/t684-conferencia-${w}.png` });
+      await p10.screenshot({ path: `${SAIDA}/t691-conferencia-${w}.png` });
       await p10.context().close();
     });
   }
