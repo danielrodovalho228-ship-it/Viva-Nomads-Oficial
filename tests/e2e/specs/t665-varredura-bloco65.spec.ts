@@ -125,16 +125,19 @@ test.describe("T665 — bloco 65: Passo 10 em duas colunas (E251) — acordeão,
       await motivo.click();
       await expect.poll(() => naTela(p, "aceite-ia"), { message: `@${largura}: o aceite aparece depois do toque no motivo`, timeout: 5_000 }).toBe(true);
 
-      // Motivo 2: com o aceite e a convenção "Não", falta a declaração → com a seção FECHADA, tocar no motivo a reabre.
+      // Motivo 2: com o aceite e a convenção "Não", falta a declaração → o motivo aponta para a lista (E260: sem repetir
+      // o item) e tocar desce até ela; o "Responder aqui" da linha reabre a seção FECHADA.
       await aceitarTermoIaSePreciso(p);
       await abrirSecoesPasso10(p, ["declaracoes"]);
       await p.getByTestId("convencao-no").click();
-      await expect(motivo).toHaveText(/^Falta: declarações do imóvel/);
+      await expect(motivo).toHaveText("Falta 1 item da lista de conferência");
       await p.getByTestId("antes-secao-declaracoes-abrir").click();
       await expect(decl).toHaveAttribute("data-aberta", "0");
       await p.evaluate(() => window.scrollTo(0, 0));
       await motivo.click();
-      await expect(decl, `@${largura}: o motivo reabre as declarações`).toHaveAttribute("data-aberta", "1", { timeout: 5_000 });
+      await expect.poll(() => naTela(p, "lista-conferencia"), { message: `@${largura}: o motivo desce até a lista`, timeout: 5_000 }).toBe(true);
+      await p.getByTestId("conferencia-resolver-tipo").click();
+      await expect(decl, `@${largura}: a linha reabre as declarações`).toHaveAttribute("data-aberta", "1", { timeout: 5_000 });
       await expect(p.getByTestId("antes-conteudo-declaracoes")).toBeVisible();
       await expect.poll(() => naTela(p, "antes-secao-declaracoes"), { message: `@${largura}: e desce até elas`, timeout: 5_000 }).toBe(true);
       await p.screenshot({ path: `tests/laboratorio/saida/t665-motivo-declaracoes-${largura}.png` });

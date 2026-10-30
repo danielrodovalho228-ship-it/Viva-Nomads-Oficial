@@ -125,10 +125,22 @@ export function oQueFaltaParaPublicar(p: { completude: ItemProntidao[]; declarac
   return [...new Set(nomes)];
 }
 
-/** O motivo em UMA linha ("Falta: documento do imóvel" ou "… e mais 2"); null quando nada falta. */
-export function motivoPublicarTravado(faltam: string[]): string | null {
-  if (faltam.length === 0) return null;
-  return faltam.length === 1 ? `Falta: ${faltam[0]}` : `Falta: ${faltam[0]} e mais ${faltam.length - 1}`;
+/** O que segura o "Publicar anúncio" e NÃO está na lista de conferência (com o artigo, para a frase do motivo). */
+const FORA_DA_LISTA = { aceite: "o aceite do termo da IA", declaracoes: "as declarações do imóvel" } as const;
+
+/**
+ * E260 (b): o motivo do "Publicar anúncio" travado, em UMA linha, sem repetir os itens — a lista de conferência é a
+ * única fonte das pendências e o motivo só aponta para ela ("Faltam 3 itens da lista de conferência"). Só nomeia o que
+ * a lista não mostra: o aceite do termo da IA (e as declarações, quando ficam fora da lista). null quando nada falta.
+ */
+export function motivoPublicarTravado(p: { faltamNaLista: number; aceitouIa: boolean; declaracoesForaDaLista?: boolean }): string | null {
+  const fora: string[] = [];
+  if (p.declaracoesForaDaLista) fora.push(FORA_DA_LISTA.declaracoes);
+  if (!p.aceitouIa) fora.push(FORA_DA_LISTA.aceite);
+  const n = p.faltamNaLista;
+  if (n === 0) return fora.length ? `Falta: ${fora.map((f) => f.replace(/^(o|as) /, "")).join(" e ")}` : null;
+  const lista = n === 1 ? "Falta 1 item da lista de conferência" : `Faltam ${n} itens da lista de conferência`;
+  return fora.length ? `${lista} e ${fora.join(" e ")}` : lista;
 }
 
 export interface LinhaPrecoPrevia {

@@ -189,22 +189,24 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
 
       // 10 passos: das Comodidades à Revisão são 5 "Continuar" (Regras, Descrição, Preço, Disponibilidade, Revisão).
       await continuarAte(page, "comodidades", "revisao");
-      const falta = page.getByTestId("publicar-falta-conforto");
-      await expect(falta).toContainText(`Falta confirmar: ${ITENS_CONFORTO[0].rotulo}, ${ITENS_CONFORTO[4].rotulo}.`, { timeout: 20_000 });
+      // E260: o que falta mora só na lista de conferência (a linha de Comodidades), sem o "Falta confirmar" repetido.
+      const linhaConforto = page.getByTestId("etapa-revisar").locator('[data-itens~="conforto"]');
+      await expect(linhaConforto).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
+      await expect(page.getByTestId("publicar-falta")).toHaveCount(0);
       await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-1-revisao-falta-${w}.png`, fullPage: true });
 
-      // "Confirmar agora" volta ao bloco; completo, a linha some da Revisão.
-      await page.getByTestId("publicar-falta-conforto-resolver").click();
+      // O "Resolver" da linha volta ao bloco; completo, o padrão mínimo sai da lista.
+      await page.getByTestId("conferencia-resolver-comodidades").click();
       await expect(page.getByTestId("conforto-checklist")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("conforto-marcar-todos")).toBeEnabled();
       await page.getByTestId("conforto-marcar-todos").click();
       await expect(page.getByTestId("conforto-checklist")).toHaveAttribute("data-faltam", "0");
       await continuarAte(page, "comodidades", "revisao");
       // Completo: a linha do padrão mínimo some; o que ainda falta no rascunho de teste continua listado ao lado.
-      await expect(page.getByTestId("publicar-falta-outros")).toBeVisible({ timeout: 20_000 });
-      await expect(page.getByTestId("publicar-falta-conforto")).toHaveCount(0);
+      await expect(page.getByTestId("lista-conferencia")).toBeVisible({ timeout: 20_000 });
+      await expect(linhaConforto).toHaveCount(0);
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-1-revisao-completa-${w}.png`, fullPage: true });
     }
