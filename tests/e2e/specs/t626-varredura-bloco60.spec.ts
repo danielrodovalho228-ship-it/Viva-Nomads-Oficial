@@ -20,6 +20,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
       com contrato (aba Estadia): nenhum rótulo cortado, nenhum rótulo saindo da própria coluna e as colunas com a mesma
       largura (nenhuma aperta a vizinha). As medidas vão para o log (VARREDURA|menus5).
   Semeado como no t613 e apagado no fim. Só no laboratório.
+  Reconferência a 390/360 px pedida pelo coordenador (30/10, E195/E238/E219/E229): rodada no lab-crítico sobre a main atual.
 */
 type Conta = "DONO" | "NOVO" | "MORADOR";
 interface Tela {
@@ -31,8 +32,10 @@ interface Tela {
   clicar?: boolean;
   /** Motivo para pular (dado que o laboratório não tem); null = varre. */
   pular?: () => string | null;
-  /** Checklists de ativação que o Início tem de mostrar (E218), na ordem da tela. */
+  /** Checklists de ativação À PARTE que o Início tem de mostrar (E218), na ordem da tela. */
   checklists?: string[];
+  /** E218-A (#1511): o guia do dono mora nos "Próximos passos" do bloco principal; quantos passos ele tem de mostrar. */
+  guiaDono?: number;
   /** O Início tem de mostrar a seção "Hoje" com este número de cartões (E190 parte 2 + E219). */
   hoje?: number;
 }
@@ -67,7 +70,9 @@ const semear = () => (ids.cEntra && ids.cSai ? null : "não deu para semear os c
 const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Início com a seção Hoje, nomes longos (E190 p2 + E219), sem checklist", rota: () => "/dashboard", pular: semear, hoje: 2, checklists: [] },
   { conta: "DONO", papel: "proprietário", nome: "Agenda com quem entra e sai hoje", rota: () => "/dashboard/agenda", pular: semear },
-  { conta: "NOVO", papel: "proprietário", nome: "Início do dono novo, só o checklist do dono (E218)", rota: () => "/dashboard", checklists: ["proprietario"] },
+  // E218-A (#1511, 29/10) tirou o checklist do dono à parte: o guia (dados, fotos ≥ 8, valor mensal, publicar) são os
+  // "Próximos passos" do bloco principal. Nenhum checklist à parte; os 4 passos dentro do bloco.
+  { conta: "NOVO", papel: "proprietário", nome: "Início do dono novo, o guia nos próximos passos do bloco principal (E218-A)", rota: () => "/dashboard", checklists: [], guiaDono: 4 },
   { conta: "MORADOR", papel: "morador", nome: "Início do morador novo, só o checklist do morador (E218)", rota: () => "/dashboard", checklists: ["morador"] },
 ];
 
@@ -170,6 +175,12 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
               await test.step(`checklists de ativação (${t.checklists.join(", ") || "nenhum"}) @${tam.nome}`, async () => {
                 expect.soft(papeis, `${t.nome} @${tam.nome}: checklists de ativação visíveis`).toEqual(t.checklists);
                 if (t.checklists!.includes("proprietario")) expect.soft(dentro, `${t.nome} @${tam.nome}: checklist do dono dentro do bloco principal`).toBe(1);
+              });
+            }
+            if (t.guiaDono !== undefined) {
+              await test.step(`guia do dono com ${t.guiaDono} passos no bloco principal @${tam.nome}`, async () => {
+                const passos = page.getByTestId("inicio-dono-principal").getByTestId("inicio-dono-passos").locator("li");
+                await expect.soft(passos, `${t.nome} @${tam.nome}: passos do guia dentro do bloco principal`).toHaveCount(t.guiaDono!, { timeout: 15_000 });
               });
             }
             const achados = await varrerPagina(page, respostas);

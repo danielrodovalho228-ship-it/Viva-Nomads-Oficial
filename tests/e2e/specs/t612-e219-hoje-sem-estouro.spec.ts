@@ -6,6 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   T612 — E219 (L-72 do laboratório): a seção "Hoje" do Início do proprietário não estoura a largura no celular. Nome
   de imóvel e de morador longos, sem espaço para quebrar: a 360 e 390 px cada cartão cabe na tela, com foto (ou
   iniciais), nome, imóvel e horário à vista; a 1280 px o desenho continua em 2 colunas, do mesmo jeito.
+  Reconferência a 390/360 px pedida pelo coordenador (30/10, E195/E238/E219/E229): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
