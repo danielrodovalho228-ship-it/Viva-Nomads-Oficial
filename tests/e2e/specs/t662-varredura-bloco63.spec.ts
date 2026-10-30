@@ -14,6 +14,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
     · E246–E249 (#1536): Contratos (subabas que rolam, sem o flutuante sobre o conteúdo no celular), o contrato com a
       conferência (anexo em português, "Início da estadia" uma vez), a estadia do morador e o Início do dono com rascunho.
   Sem clique no primário (assina, envia, anexa). Semeado aqui e apagado no fim. Só no laboratório.
+  Prova a 390 px pedida pelo coordenador (29/10, E243/E244/E248 já no ar): rodada no lab-crítico sobre a main atual.
 */
 type Conta = "DONO" | "MOR";
 interface Tela {
