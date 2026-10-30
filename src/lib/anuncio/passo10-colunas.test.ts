@@ -128,3 +128,9 @@ test("tela: duas colunas (lista + prévia fixa), acordeão no lugar, um Publicar
     assert.doesNotMatch(textos, /aluguel|temporada|comiss/i);
   }
 });
+
+test("E251 (b): cada grupo feito da lista de conferência tem 'Editar' que volta ao passo; o pendente segue com 'Resolver'", () => {
+  const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
+  assert.match(revisar, /\{i\.ok && \(\s*<button[\s\S]*?onClick=\{\(\) => p\.irPara\(ETAPA\[i\.id\]\)\}[\s\S]*?data-testid=\{`conferencia-editar-\$\{i\.id\}`\}/);
+  assert.match(revisar, /data-testid=\{`conferencia-resolver-\$\{i\.id\}`\}/);
+});

@@ -107,11 +107,82 @@ test("guardas do servidor: 404 em tudo, sessão por generateLink + verifyOtp, na
   assert.match(srv, /verifyOtp\(\{ type: "magiclink", token_hash/);
   assert.match(srv, /email_confirm: true/);
   assert.match(srv, /insert\(\{ usuario_id: userId, tipo, ip_hash: ipHash, destino, conta_criada: criada \}\)/);
-  assert.doesNotMatch(srv + rota, /console\.(log|error|warn|info)\(/, "a porta não escreve log");
+  // E256-B: a porta escreve UM tipo de linha no log, o código do motivo da recusa (sem e-mail, chave nem IP).
+  assert.deepEqual(srv.match(/console\.(log|error|warn|info)\([^)]*\)/g), ["console.warn(linhaLogRecusaQa(motivo)"]);
+  assert.doesNotMatch(rota, /console\./);
   assert.match(rota, /status: 404/);
-  assert.match(pagina, /"chave" in sp \|\| "key" in sp\) notFound\(\)/);
+  assert.match(pagina, /if \("chave" in sp \|\| "key" in sp\) \{\n\s*registrarRecusaQa\("chave"\);\n\s*notFound\(\);/);
   // PRE_LANCAMENTO lido na hora (não inlinado no build), para o desligamento valer sem novo build.
   assert.match(srv, /\["NEXT_PUBLIC", "PRE_LANCAMENTO"\]\.join\("_"\)/);
   // O login das pessoas reais, is_admin() e o 2FA do admin não mudam por aqui.
   assert.doesNotMatch(srv, /signInWithOtp|is_admin\(|unenroll|mfa\.(enroll|verify)/);
+});
+
+test("E256-B: as 5 contas da equipe marcadas como teste entram (tipo 'teste'); proprietario1 entra sem o fator; com 2FA, não", async () => {
+  const { tipoDeEntrada, motivoRecusaConta } = await import("./entrar.ts");
+  for (const role of ["tenant", "tenant", "tenant", "tenant", "tenant"]) assert.equal(tipoDeEntrada({ role, is_teste: true, qa_admin: false }, false, true), "teste");
+  const proprietario1 = { role: "owner", is_teste: true, qa_admin: false };
+  assert.equal(tipoDeEntrada(proprietario1, false, true), "teste");
+  assert.equal(tipoDeEntrada(proprietario1, true, true), null);
+  assert.equal(motivoRecusaConta(proprietario1, true, true), "2fa");
+  assert.equal(motivoRecusaConta(proprietario1, false, true), null);
+  // Antes da 0257 as 5 contas estavam com is_teste = false: "perfil".
+  assert.equal(motivoRecusaConta({ role: "tenant", is_teste: false }, false, true), "perfil");
+  // Conta real, admin comum e o admin observador com a porta dele fechada.
+  assert.equal(motivoRecusaConta({ role: "owner", is_teste: false }, false, true), "perfil");
+  assert.equal(motivoRecusaConta({ role: "admin", is_teste: false }, false, true), "perfil");
+  assert.equal(motivoRecusaConta({ role: "admin", is_teste: true, qa_admin: true }, true, false), "admin_fechada");
+  assert.equal(motivoRecusaConta({ role: "admin", is_teste: true, qa_admin: true }, true, true), null);
+  assert.equal(motivoRecusaConta(null, false, true), "perfil");
+});
+
+test("E256-B: a linha do log da recusa leva só o evento e o código (sem e-mail, chave nem IP)", async () => {
+  const { linhaLogRecusaQa, MOTIVOS_RECUSA_QA } = await import("./entrar.ts");
+  assert.deepEqual([...MOTIVOS_RECUSA_QA], ["desligada", "metodo", "chave", "perfil", "2fa", "padrao", "admin_fechada"]);
+  for (const m of MOTIVOS_RECUSA_QA) assert.deepEqual(JSON.parse(linhaLogRecusaQa(m)), { evento: "qa_porta_recusa", motivo: m });
+  const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
+  const servidor = ler("src/lib/qa/entrar-servidor.ts");
+  // Toda saída 404 passa por recusa(<motivo>); nenhum NAO_EXISTE mudo sobrou. O log só recebe a linha pronta.
+  assert.doesNotMatch(servidor, /NAO_EXISTE/);
+  for (const m of ["desligada", "chave", "perfil", "padrao"]) assert.match(servidor, new RegExp(`recusa\\("${m}"\\)`));
+  assert.match(servidor, /return recusa\(motivoRecusaConta\(perfil, fator, adminAberta\) \?\? "perfil"\);/);
+  assert.match(servidor, /console\.warn\(linhaLogRecusaQa\(motivo\)\);/);
+  assert.equal((servidor.match(/console\./g) ?? []).length, 1, "um só ponto de log na porta");
+  const rota = ler("src/app/api/qa/entrar/route.ts");
+  assert.match(rota, /export function GET\(\) \{\n  registrarRecusaQa\("metodo"\);\n  return naoEncontrado\(\);/);
+  assert.match(rota, /registrarRecusaQa\("desligada"\)/);
+  assert.doesNotMatch(rota + servidor, /console\.\w+\([^)]*(email|chave|ipHash|ip_hash)/);
+  const pagina = ler("src/app/qa/entrar/page.tsx");
+  assert.match(pagina, /registrarRecusaQa\("desligada"\)/);
+  assert.match(pagina, /registrarRecusaQa\("chave"\)/);
+});
+
+test("E256-B: o formulário só envia pelo fetch relativo, depois de carregado (nada de POST nativo para a página)", () => {
+  const form = readFileSync(new URL("../../app/qa/entrar/qa-entrar-form.tsx", import.meta.url), "utf8");
+  assert.match(form, /await fetch\("\/api\/qa\/entrar", \{\n\s*method: "POST",/);
+  assert.doesNotMatch(form, /method="post"/);
+  assert.match(form, /disabled=\{enviando \|\| !pronto\}/);
+  assert.match(form, /const pronto = useSyncExternalStore\(semAssinatura, \(\) => true, \(\) => false\);/);
+});
+
+test("E256-B (0257): só as 5 contas por e-mail exato, trava contra conta real, 2FA sai só de teste que não é qa_admin", () => {
+  const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
+  const mig = ler("supabase/migrations/0257_qa_contas_teste_sem_2fa.sql");
+  const aplicar = ler("supabase/producao/aplicar-0257.sql");
+  for (const sql of [mig, aplicar]) {
+    for (const e of ["avaliador1", "cadastro1", "cadastro2", "cadastro3", "cadastro-teste-2310"]) assert.ok(sql.includes(`'${e}@vivanomads.com.br'`), e);
+    assert.equal((sql.match(/@vivanomads\.com\.br'/g) ?? []).length, 5, "nenhuma conta além das 5");
+    assert.match(sql, /where lower\(email\) = any \(c_emails\)/);
+    assert.match(sql, /raise exception '0257: uma das contas tem vínculo com conta real; nada foi marcado/);
+    assert.match(sql, /p\.is_teste = true and coalesce\(p\.qa_admin, false\) = false/);
+    const semComentario = sql.replace(/--.*$/gm, "");
+    assert.doesNotMatch(semComentario, /QA_EMAIL_PADRAO|qa_entradas|qa_admin = true|role = 'admin'/);
+    assert.match(sql, /\(teste\|test\|qa\)\\y/, "borda de palavra do Postgres é \\y, não \\b");
+  }
+  assert.match(aplicar, /^begin;$/m);
+  assert.match(aplicar, /^commit;$/m);
+  assert.match(aplicar, /'20261030000257', '0257_qa_contas_teste_sem_2fa'/);
+  const volta = ler("supabase/producao/rollback/0257_rollback.sql");
+  assert.match(volta, /update public\.profiles set is_teste = false/);
+  assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261030000257';/);
 });

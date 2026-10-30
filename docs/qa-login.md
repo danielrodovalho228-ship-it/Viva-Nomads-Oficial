@@ -30,6 +30,24 @@ Pelo terminal ou por um teste automatizado: `POST /api/qa/entrar` com o corpo JS
 | Conta que não existe, e-mail fora do padrão | 404 |
 | Mais de 30 entradas na hora, pelo mesmo IP ou para a mesma conta | 429 |
 
+**Conta de teste usada pela porta não cadastra 2FA** (E256-B). Com um fator no Auth, a porta recusa a conta (motivo `2fa`). A migração 0257 tirou os fatores de todas as contas `is_teste` que não são o admin observador. O fator da `qa-muse-1` (`qa_admin`) fica, porque o `/admin` exige o código dele. Para testar o 2FA, use uma conta dedicada, por exemplo `qa-2fa@…`, criada pela própria porta e que a Muse não usa nos fluxos. Depois do teste, essa conta deixa de entrar pela porta, e isso é o esperado.
+
+## Por que deu 404 (log do servidor)
+
+O cliente recebe sempre o mesmo 404. No log do servidor (Vercel › Logs), cada recusa deixa **uma** linha JSON `{"evento":"qa_porta_recusa","motivo":"…"}`, sem e-mail, sem chave e sem IP:
+
+| Motivo | Quando |
+|---|---|
+| `desligada` | sem `QA_LOGIN_KEY_HASH` válida (página, rota ou servidor) |
+| `metodo` | `GET` em `/api/qa/entrar` (link aberto no navegador ou redirecionamento que virou GET) |
+| `chave` | chave errada, ou chave na URL da página (`?chave=`/`?key=`) |
+| `perfil` | conta que não é de teste, admin comum, e-mail inválido ou conta que não pôde ser criada |
+| `2fa` | conta de teste com fator 2FA cadastrado |
+| `padrao` | conta nova com e-mail fora de `QA_EMAIL_PADRAO` |
+| `admin_fechada` | admin observador com a porta dele fechada (`PRE_LANCAMENTO=off` ou depois de 31/12/2026) |
+
+O botão **Entrar** só fica ativo depois que a página carrega. O envio é sempre o `fetch` relativo para `/api/qa/entrar`, no mesmo host da página, sem redirecionamento no caminho.
+
 O próprio Supabase também limita as confirmações de entrada (30 a cada 5 minutos, contadas a partir do servidor do site). Isso só pesa se a QA trocar de conta dezenas de vezes em poucos minutos.
 
 ## O que o admin observador pode e não pode

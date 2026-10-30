@@ -6,7 +6,12 @@ import { ButtonLink } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/lib/env";
 import { getCarteiraDoDono } from "@/lib/data/carteira";
 import { ganhosDoDono } from "@/lib/ganhos-dono";
-import { dataBR, formatBRL } from "@/lib/utils";
+import { dataBR, formatBRL, hojeBR } from "@/lib/utils";
+import { getMeusContratos } from "@/lib/data/contratos-actions";
+import { listMyProperties } from "@/lib/data/properties";
+import { enquadramentoReformaAtivo } from "@/lib/reforma/chave";
+import { mostrarAvisoReforma, numerosNaViva, type NumerosNaViva } from "@/lib/reforma/enquadramento";
+import { AvisoReforma, EnquadramentoReforma } from "@/components/reforma/enquadramento-reforma";
 
 export const metadata: Metadata = { title: "Ganhos — Viva Nomads" };
 
@@ -17,9 +22,15 @@ export const metadata: Metadata = { title: "Ganhos — Viva Nomads" };
  */
 export default async function GanhosPage() {
   const g = ganhosDoDono(isSupabaseConfigured() ? await getCarteiraDoDono() : []);
+  const reforma = await dadosDaReforma();
   return (
     <div data-testid="ganhos">
       <PageTitle title="Ganhos" subtitle="O valor mensal de cada contrato, em vigência e a começar." />
+      {reforma?.aviso && (
+        <div className="mb-6">
+          <AvisoReforma />
+        </div>
+      )}
       {g.linhas.length === 0 ? (
         <EmptyState
           icon={Wallet}
@@ -65,6 +76,28 @@ export default async function GanhosPage() {
           </p>
         </>
       )}
+      {reforma && <EnquadramentoReforma {...reforma.numeros} />}
     </div>
   );
+}
+
+/**
+ * E255 — "Você entra na regra nova?" (chave ENQUADRAMENTO_REFORMA, desligada até o parecer). Desligada: null, nada
+ * aparece. Ligada: os números da Viva do PRÓPRIO dono (contratos e pagamentos dele, no servidor) e se o aviso aparece
+ * (3 imóveis ou mais na Viva, ou R$ 200 mil ou mais no ano).
+ */
+async function dadosDaReforma(): Promise<{ aviso: boolean; numeros: NumerosNaViva & { imoveisComContrato: number } } | null> {
+  if (!isSupabaseConfigured() || !(await enquadramentoReformaAtivo())) return null;
+  const [contratos, imoveis] = await Promise.all([getMeusContratos().catch(() => []), listMyProperties().catch(() => [])]);
+  const numeros = numerosNaViva(
+    contratos.map((c) => ({
+      propertyId: c.propertyId,
+      status: c.status,
+      blocos: c.blocos.map((b) => ({ id: b.id, inicio: b.inicio, fim: b.fim, valor: b.valor })),
+      pagamentos: c.pagamentos.map((p) => ({ blocoId: p.blocoId, tipo: p.tipo, valor: p.valor, dataPagamento: p.dataPagamento })),
+    })),
+    hojeBR(),
+  );
+  const imoveisNaViva = imoveis.filter((i) => i.status !== "draft").length;
+  return { aviso: mostrarAvisoReforma({ imoveisNaViva, receitaAnoNaViva: numeros.receitaRegistrada + numeros.projecao }), numeros };
 }

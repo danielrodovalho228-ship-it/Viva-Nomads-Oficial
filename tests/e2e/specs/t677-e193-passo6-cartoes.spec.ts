@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T673 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 6 inteiro no padrão único de cartões grandes
+  T677 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 6 inteiro no padrão único de cartões grandes
   tocáveis da Qualificação. Com os blocos opcionais abertos, inventaria os controles de escolha à vista:
    - nenhuma pílula (botão arredondado de chip) e nenhuma caixa quadrada;
    - interruptor só o do bloco opcional (padrão E56: data-testid "bloco-…-toggle");
@@ -40,18 +40,18 @@ const inventario = (p: Page) =>
     return r;
   });
 
-test.describe("T673 — E193: Passo 6 em cartões", () => {
+test.describe("T677 — E193: Passo 6 em cartões", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t673.${sufixo}@lab.vivanomads.test`, nome: "Rui Regras", role: "owner" as const };
+  const dono = { email: `dono.t677.${sufixo}@lab.vivanomads.test`, nome: "Rui Regras", role: "owner" as const };
   const ids: Record<string, string> = {};
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t673 ${sufixo}`);
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t677 ${sufixo}`);
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -68,14 +68,14 @@ test.describe("T673 — E193: Passo 6 em cartões", () => {
       for (const t of await p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]').all()) await t.click().catch(() => {});
       await p.waitForTimeout(500);
       const inv = await inventario(p);
-      console.log(`t673 ${largura}`, JSON.stringify(inv));
+      console.log(`t677 ${largura}`, JSON.stringify(inv));
       expect(inv.pilula, `pílulas: ${inv.pilula.join(" | ")}`).toEqual([]);
       expect(inv.caixa, `caixas: ${inv.caixa.join(" | ")}`).toEqual([]);
       expect(inv.chave, `interruptores fora do bloco opcional: ${inv.chave.join(" | ")}`).toEqual([]);
       expect(inv.cartao.length).toBeGreaterThan(8);
       await expect(p.locator('[data-testid^="considerar-"][role=checkbox]').first()).toBeVisible();
       await expect(p.locator('[data-testid^="tipo-entrada-"][role=radio]').first()).toBeVisible();
-      await p.screenshot({ path: `${SAIDA}/t673-passo6-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t677-passo6-${largura}.png`, fullPage: true });
       await p.context().close();
     });
   }

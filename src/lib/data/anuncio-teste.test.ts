@@ -46,3 +46,19 @@ test("E93: anúncio de teste pelo link — faixa e 'Solicitar' desativado para q
   // Segue fora das listagens e com noindex na página direta.
   assert.match(readFileSync(new URL("../../app/(public)/imoveis/[id]/page.tsx", import.meta.url), "utf8"), /ehAnuncioDeTeste\(property\.title\) \? \{ robots: \{ index: false, follow: true \} \}/);
 });
+
+test("Liberação do QA: conta de teste pode 'Solicitar' no anúncio de teste; conta real segue travada (guarda)", () => {
+  // Conta de teste (is_teste) que não é dona nem admin → "equipe" (Solicitar liberado).
+  assert.equal(modoAnuncioTeste("[TESTE QA] Apto mobiliado 2 quartos", { dono: false, admin: false, teste: true }), "equipe");
+  // Guarda: conta real (is_teste falso ou ausente) e visitante sem login seguem "visitante".
+  assert.equal(modoAnuncioTeste("[TESTE QA] Apto mobiliado 2 quartos", { dono: false, admin: false, teste: false }), "visitante");
+  assert.equal(modoAnuncioTeste("[TESTE QA] Apto mobiliado 2 quartos", { dono: false, admin: false }), "visitante");
+  // Guarda: anúncio de verdade não muda para ninguém (a flag de teste não cria modo nenhum).
+  assert.equal(modoAnuncioTeste("Apto mobiliado 2 quartos", { dono: false, admin: false, teste: true }), null);
+  // A flag vem do perfil (fonte confiável) e só ela libera: a tela passa usuario.isTeste === true.
+  const tela = readFileSync(new URL("../../app/(public)/imoveis/[id]/property-detail.tsx", import.meta.url), "utf8");
+  assert.match(tela, /teste: usuario\?\.isTeste === true/);
+  const provedor = readFileSync(new URL("../../components/auth-provider.tsx", import.meta.url), "utf8");
+  assert.match(provedor, /\.select\("full_name, role, preferred_mode, papel_ativo, is_teste"\)/);
+  assert.match(provedor, /isTeste: \(profile as \{ is_teste\?: boolean \| null \}\)\.is_teste === true/);
+});

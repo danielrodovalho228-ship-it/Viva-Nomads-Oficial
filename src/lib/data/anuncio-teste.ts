@@ -27,15 +27,16 @@ export function semAnunciosDeContaTeste<T extends { ownerId?: string | null }>(l
 /*
   E93 — o anúncio de teste aberto pelo link: segue fora de todas as listagens e com noindex; quem NÃO é o dono nem
   admin vê a faixa e o "Solicitar" desativado com o mesmo texto; o dono e o admin veem a página normal, com uma faixa
-  discreta.
+  discreta. Liberação do QA: a conta de teste (profiles.is_teste) também entra como "equipe" — pode "Solicitar" no
+  anúncio de teste para o roteiro de ponta a ponta. A conta real segue como "visitante".
 */
 export const FAIXA_TESTE_VISITANTE = "Anúncio de teste da equipe Viva — não é um imóvel disponível";
 export const FAIXA_TESTE_EQUIPE = "Anúncio de teste: fora da busca e das listagens";
 
 export type ModoAnuncioTeste = "visitante" | "equipe" | null;
 
-/** null = anúncio de verdade; "equipe" = o dono ou o admin; "visitante" = qualquer outra pessoa (com ou sem login). */
-export function modoAnuncioTeste(titulo: string | null | undefined, quem: { dono: boolean; admin: boolean }): ModoAnuncioTeste {
+/** null = anúncio de verdade; "equipe" = o dono, o admin ou uma conta de teste; "visitante" = qualquer outra pessoa (com ou sem login). */
+export function modoAnuncioTeste(titulo: string | null | undefined, quem: { dono: boolean; admin: boolean; teste?: boolean }): ModoAnuncioTeste {
   if (!ehAnuncioDeTeste(titulo)) return null;
-  return quem.dono || quem.admin ? "equipe" : "visitante";
+  return quem.dono || quem.admin || quem.teste === true ? "equipe" : "visitante";
 }
