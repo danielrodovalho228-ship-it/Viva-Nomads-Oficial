@@ -102,7 +102,7 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
 });
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {
-  assert.match(BLOCO_DONO, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
   assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
   assert.match(CONVERSA_ACAO, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
   assert.match(CONVERSA_ACAO, /\.eq\("morador_id", user\.id\)/);
@@ -204,4 +204,36 @@ test("E77: 'Aprovar para teste' tira o candidato da seção e da contagem 'a dec
   assert.match(ADMIN, /const naRede = lista\.filter\(\(c\) => !credenciamentoADecidir\(c\.status\)\);/);
   assert.doesNotMatch(ADMIN, /c\.status === "solicitado" \|\| c\.status === "em_teste"\)/);
   assert.equal(TITULO_SECAO_NA_REDE, "Em teste e credenciados");
+});
+
+test("QA ao vivo do E235: com a chave desligada, o bloco do dono abre só para conta de teste, só leitura", async () => {
+  const { blocoDoDonoVisivel } = await import("./telas-exibicao.ts");
+  assert.equal(blocoDoDonoVisivel(true, false), "ativa");
+  assert.equal(blocoDoDonoVisivel(true, true), "ativa");
+  assert.equal(blocoDoDonoVisivel(false, true), "so_leitura_teste");
+  assert.equal(blocoDoDonoVisivel(false, false), null);
+  assert.equal(blocoDoDonoVisivel(false, null), null);
+  // Em só leitura o "Pedir avaliação" não abre e o aviso de conta de teste aparece; as ações seguem exigindo a chave.
+  assert.match(BLOCO_DONO, /pedidoPodeAbrir\(\{ chaveAtiva: visivel === "ativa",/);
+  assert.match(BLOCO_DONO, /visivel === "so_leitura_teste" && \(/);
+  assert.match(BLOCO_DONO, /data-testid="avaliacao-modo-teste"/);
+  assert.match(ler("src/lib/vistoria/chave.ts"), /if \(VISTORIA_ATIVA\) return true;\n  if \(!integracoesSimuladas\(\)\) return false;/);
+});
+
+test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem designação pendente; aplicar idempotente e desfazer", () => {
+  const mig = ler("supabase/migrations/0256_qa_laudo_semeado.sql");
+  const aplicar = ler("supabase/producao/aplicar-0256.sql");
+  for (const sql of [mig, aplicar]) {
+    assert.match(sql, /lower\(email\) = 'proprietario1@vivanomads\.com\.br' and is_teste/);
+    assert.match(sql, /title like '\[TESTE QA%'/);
+    assert.match(sql, /numero_credenciado = 'UDI-002' and status in \('ativo', 'em_teste'\)/);
+    assert.doesNotMatch(sql, /insert into public\.vistoria_designacoes|'agendado'|update public\.profiles|VISTORIA_ATIVA = /);
+    assert.equal((sql.match(/, true, now\(\)/g) ?? []).length + (sql.match(/now\(\) - interval '9 days', true\)/g) ?? []).length >= 3, true, "tudo com teste = true");
+  }
+  assert.match(aplicar, /^begin;$/m);
+  assert.match(aplicar, /^commit;$/m);
+  assert.match(aplicar, /'20261030000256', '0256_qa_laudo_semeado'/);
+  const volta = ler("supabase/producao/rollback/0256_rollback.sql");
+  assert.match(volta, /delete from public\.vistoria_pedidos where id in \('a0256000-0000-4000-8000-0000000000a1', 'a0256000-0000-4000-8000-0000000000a2'\);/);
+  assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261030000256';/);
 });

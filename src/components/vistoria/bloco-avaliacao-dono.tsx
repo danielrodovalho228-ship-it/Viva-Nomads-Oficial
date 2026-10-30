@@ -10,7 +10,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { ROTAS_NIVEL, TITULO_BLOCO_DONO, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, avaliarConduta, confirmarRecebido, pedirAvaliacao, registrarAusencia } from "@/lib/vistoria/actions";
 import {
   COLUNAS_PRECO,
@@ -34,10 +34,11 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 /**
  * "Pedir avaliação do imóvel" em Meus imóveis › imóvel › Nível, ruído e extras (62-B1; desenho do 62-A, Parte 1: as duas
  * rotas lado a lado, a linha do tempo do pedido, a agenda pelas mensagens e o pagamento direto registrado). Com VISTORIA_ATIVA desligada, não aparece nada. O dono não escolhe o avaliador: o formulário só leva o
- * imóvel; a Viva designa por rodízio e mostra o número de credenciado.
+ * imóvel; a Viva designa por rodízio e mostra o número de credenciado. Com a chave desligada, só o dono de conta de
+ * teste vê o bloco, só leitura (massa do QA ao vivo, E235).
  */
 export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string }) {
-  if (!(await vistoriaAtiva())) return null;
+  const chaveAtiva = await vistoriaAtiva();
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return null;
@@ -45,6 +46,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
+  const { data: perfil } = chaveAtiva ? { data: null } : await admin.from("profiles").select("is_teste").eq("id", user.id).maybeSingle();
+  const visivel = blocoDoDonoVisivel(chaveAtiva, (perfil as { is_teste?: boolean | null } | null)?.is_teste);
+  if (!visivel) return null;
   const { data: im } = await admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
   if (!im || im.owner_id !== user.id) return null;
   const agora = new Date();
@@ -66,7 +70,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   const cobranca = preco ? valorDoPedido(desdeNova ? "nova_avaliacao" : "inicial", preco, desdeNova, agora) : null;
   const condicao = textoCondicaoRetorno(cobranca?.retorno ?? null);
   const { data: bloq } = await admin.from("vistoria_bloqueios").select("id").eq("property_id", propertyId).is("resolvido_em", null).limit(1);
-  const pode = pedidoPodeAbrir({ chaveAtiva: true, anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
+  const pode = pedidoPodeAbrir({ chaveAtiva: visivel === "ativa", anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   const atual = ((pedidos ?? [])[0] ?? null) as unknown as {
     id: string;
     status: string;
@@ -84,6 +88,11 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   return (
     <section id="avaliacao" className="mt-8 scroll-mt-24">
       <Panel title={TITULO_BLOCO_DONO} data-testid="avaliacao-dono">
+        {visivel === "so_leitura_teste" && (
+          <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted" data-testid="avaliacao-modo-teste">
+            Conta de teste: a avaliação ainda não está aberta ao público. Este bloco é só para conferência (as ações não rodam).
+          </p>
+        )}
         <LaudoDono admin={admin} propertyId={propertyId} ownerId={user.id} />
         {atual?.status === "laudo_emitido" && (
           <div className="mb-4 text-sm" data-testid="avaliacao-dono-pedido" data-status={atual.status}>

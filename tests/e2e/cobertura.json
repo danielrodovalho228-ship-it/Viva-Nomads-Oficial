@@ -338,6 +338,17 @@
         "t607-varredura-bloco51"
       ]
     },
+    "/ajuda/[tema]": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t598-e84-central-de-ajuda",
+        "t158-ajuda-parceiro",
+        "t438-vocab-a",
+        "t20-p1-agentes"
+      ]
+    },
     "/ajuda/fale-com-a-viva": {
       "personas": [
         "publico",

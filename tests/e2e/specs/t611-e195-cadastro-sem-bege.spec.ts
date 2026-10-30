@@ -7,6 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   etapa — fundo da página, moldura, cartões, rodapé e o botão travado. Varre as cores de fundo de tudo o que está à
   vista e não aceita nenhum tom quente claro (bege/creme/areia). Avisos de verdade (âmbar) ficam de fora pela marca
   data-aviso. A 1280 e 390 px.
+  Reconferência a 390/360 px pedida pelo coordenador (30/10, E195/E238/E219/E229): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

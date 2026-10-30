@@ -38,11 +38,13 @@ export function organizacao(siteUrl: string) {
 }
 
 /** FAQPage da Central de Ajuda: as mesmas perguntas e respostas da tela. */
-export function faqPage() {
+/** FAQPage: todas as perguntas, ou só as de um tema da Central (na ordem do tema). */
+export function faqPage(ids?: readonly string[]) {
+  const lista = ids ? ids.map((id) => FAQ.find((p) => p.id === id)).filter((p): p is (typeof FAQ)[number] => !!p) : FAQ;
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: FAQ.map((p) => ({
+    mainEntity: lista.map((p) => ({
       "@type": "Question",
       name: p.pergunta,
       acceptedAnswer: { "@type": "Answer", text: p.resposta },

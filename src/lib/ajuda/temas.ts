@@ -1,7 +1,7 @@
 /*
   E84 — Central de Ajuda (mockups ajuda-central-desktop/mobile, aprovados pelo Daniel em 25/10): os quatro cartões de
-  tema do hub. Cada tema filtra as perguntas frequentes (lib/atendimento/faq.ts, fonte única das respostas) — nenhuma
-  resposta nova aqui. Os textos dos mockups que falam de check-in, reserva ou taxa de limpeza não entram (vocabulário
+  tema do hub, cada um com a SUA página (/ajuda/<tema>) e as suas perguntas (lib/atendimento/faq.ts, fonte única das
+  respostas) — nenhuma resposta nova aqui. Toda pergunta da FAQ mora em pelo menos um tema (o hub não lista perguntas). Os textos dos mockups que falam de check-in, reserva ou taxa de limpeza não entram (vocabulário
   aprovado). Puro.
 */
 import { FAQ } from "../atendimento/faq.ts";
@@ -12,8 +12,8 @@ export interface TemaAjuda {
   id: IdTema;
   titulo: string;
   resumo: string;
-  /** Foto do acervo (public/images); sem foto, o cartão usa o ícone do escudo, como no mockup. */
-  foto: string | null;
+  /** Foto do acervo (public/images): todo cartão de tema tem foto (QA de 29/10). */
+  foto: string;
   alt: string;
   /** Perguntas do tema, na ordem em que aparecem. */
   perguntas: readonly string[];
@@ -31,10 +31,10 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
   {
     id: "proprietarios",
     titulo: "Para proprietários",
-    resumo: "Anunciar, taxa de serviço e publicação",
+    resumo: "Anunciar, taxa de serviço, publicação e parceiros",
     foto: "/images/home/home-proprietarios-chaves.webp",
     alt: "Proprietário segurando as chaves na sala do imóvel",
-    perguntas: ["custo-anunciar", "anuncio-nao-publica", "contratar-fotografo", "limpeza-estadia"],
+    perguntas: ["custo-anunciar", "anuncio-nao-publica", "contratar-fotografo", "limpeza-estadia", "como-virar-parceiro", "como-ser-avaliador", "taxa-parceria"],
   },
   {
     id: "contratos",
@@ -48,8 +48,8 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
     id: "seguranca",
     titulo: "Segurança e conta",
     resumo: "Pagamento por fora, código de acesso e senha",
-    foto: null,
-    alt: "",
+    foto: "/images/painel/painel-verificacao.webp",
+    alt: "Cartão e celular sobre a mesa",
     perguntas: ["golpe", "email-confirmacao", "senha", "contato"],
   },
 ] as const;
@@ -58,7 +58,10 @@ export function temaAjuda(id: string | null | undefined): TemaAjuda | null {
   return TEMAS_AJUDA.find((t) => t.id === id) ?? null;
 }
 
-/** Perguntas que o hub mostra: as do tema escolhido (na ordem do tema) ou todas. */
+/** Endereço da página própria do tema. */
+export const hrefDoTema = (id: IdTema) => `/ajuda/${id}`;
+
+/** Perguntas do tema (na ordem do tema); sem tema, todas. */
 export function perguntasDoTema(id: string | null | undefined): string[] {
   const tema = temaAjuda(id);
   return tema ? [...tema.perguntas] : FAQ.map((p) => p.id);

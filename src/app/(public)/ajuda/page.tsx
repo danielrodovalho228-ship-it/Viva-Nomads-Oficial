@@ -4,21 +4,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookOpenText, ChevronRight, FileText, MessageSquareText, ShieldCheck } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
-import { PerguntasDaCentral } from "@/components/ajuda/central-ajuda";
 import { ButtonLink } from "@/components/ui/button";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { HREF_FALE_COM_A_VIVA, destinoDoAtendimento } from "@/lib/ajuda/rotas";
-import { TEMAS_AJUDA, perguntasDoTema, temaAjuda } from "@/lib/ajuda/temas";
+import { TEMAS_AJUDA, hrefDoTema, temaAjuda } from "@/lib/ajuda/temas";
 import { BRAND_BLUR } from "@/lib/media";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { cn } from "@/lib/utils";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
-import { JsonLd } from "@/components/seo/json-ld";
-import { faqPage } from "@/lib/seo/estruturados";
 
 export const metadata: Metadata = {
   title: "Central de Ajuda",
-  description: "Perguntas frequentes por tema, o atendimento da Viva e os documentos da plataforma — Viva Nomads.",
+  description: "Temas de ajuda, o atendimento da Viva e os documentos da plataforma — Viva Nomads.",
   alternates: { canonical: "/ajuda" },
 };
 
@@ -30,15 +26,17 @@ const DOCUMENTOS = [
 
 /**
  * E84 — Central de ajuda (mockups ajuda-central-desktop/mobile): página inteira com a foto no topo, o cartão "Fale com a
- * Viva" (a promessa de atendimento aparece AQUI, uma vez), os quatro cartões de tema, as perguntas frequentes e os
- * documentos. O atendimento (chat, chamado, meus chamados) tem a sua página: /ajuda/fale-com-a-viva; os links antigos
+ * Viva" (a promessa de atendimento aparece AQUI, uma vez), os quatro cartões de tema (cada um com foto e com a SUA
+ * página, /ajuda/<tema>, onde ficam as perguntas — o hub não lista perguntas, QA de 29/10) e os documentos. O atendimento (chat, chamado, meus chamados) tem a sua página: /ajuda/fale-com-a-viva; os links antigos
  * com ?novo=1, ?chamado=… etc. continuam valendo e seguem para lá.
  */
 export default async function AjudaPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const destino = destinoDoAtendimento(sp);
   if (destino) redirect(destino);
+  // Link antigo (/ajuda?tema=x) segue para a página própria do tema.
   const tema = temaAjuda(typeof sp.tema === "string" ? sp.tema : null);
+  if (tema) redirect(hrefDoTema(tema.id));
 
   return (
     <div data-testid="ajuda-hub">
@@ -72,48 +70,26 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
               Temas
             </h2>
             <ul className="mt-4 grid gap-4 sm:grid-cols-2">
-              {TEMAS_AJUDA.map((t) => {
-                const ativo = tema?.id === t.id;
-                return (
-                  <li key={t.id}>
-                    <Link
-                      href={`/ajuda?tema=${t.id}#perguntas`}
-                      aria-current={ativo ? "true" : undefined}
-                      data-testid={`ajuda-tema-${t.id}`}
-                      className={cn(
-                        "flex h-full items-center gap-4 rounded-xl border bg-white p-4 transition-colors hover:border-forest",
-                        ativo ? "border-forest ring-1 ring-forest" : "border-line"
-                      )}
-                    >
-                      <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-sage-100 text-forest" aria-hidden={!t.foto}>
-                        {t.foto ? (
-                          <Image src={t.foto} alt={t.alt} fill sizes="80px" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" />
-                        ) : (
-                          <ShieldCheck className="absolute inset-0 m-auto h-9 w-9" />
-                        )}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-title text-lg font-semibold text-ink">{t.titulo}</span>
-                        <span className="mt-1 block text-sm text-muted">{t.resumo}</span>
-                      </span>
-                      <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
-                    </Link>
-                  </li>
-                );
-              })}
+              {TEMAS_AJUDA.map((t) => (
+                <li key={t.id}>
+                  <Link
+                    href={hrefDoTema(t.id)}
+                    data-testid={`ajuda-tema-${t.id}`}
+                    className="flex h-full items-center gap-4 rounded-xl border border-line bg-white p-4 transition-colors hover:border-forest"
+                  >
+                    <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-sage-100">
+                      <Image src={t.foto} alt={t.alt} fill sizes="80px" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-title text-lg font-semibold text-ink">{t.titulo}</span>
+                      <span className="mt-1 block text-sm text-muted">{t.resumo}</span>
+                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+                  </Link>
+                </li>
+              ))}
             </ul>
           </section>
-
-          <div id="perguntas" className="scroll-mt-24">
-            {tema && (
-              <p className="mb-3 text-sm">
-                <Link href="/ajuda#perguntas" className="inline-flex min-h-11 items-center font-semibold text-forest underline" data-testid="ajuda-todas">
-                  Ver todas as perguntas
-                </Link>
-              </p>
-            )}
-            <PerguntasDaCentral ids={tema ? perguntasDoTema(tema.id) : undefined} titulo={tema ? tema.titulo : "Perguntas frequentes"} />
-          </div>
 
           <section aria-labelledby="ajuda-docs-titulo">
             <h2 id="ajuda-docs-titulo" className="font-title text-xl font-semibold text-ink">
@@ -160,7 +136,6 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
           </footer>
         </div>
       </div>
-      <JsonLd dados={faqPage()} />
     </div>
   );
 }

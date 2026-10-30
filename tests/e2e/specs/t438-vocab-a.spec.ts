@@ -42,8 +42,9 @@ for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
       });
     }
 
-    test("4. /ajuda: 'Esqueci minha senha' com a resposta nova (fonte única da assistente)", async ({ page }) => {
-      await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
+    test("4. /ajuda/seguranca: 'Esqueci minha senha' com a resposta nova (fonte única da assistente)", async ({ page }) => {
+      // E84: as perguntas moram na página de cada tema ("Segurança e conta").
+      await page.goto("/ajuda/seguranca", { waitUntil: "domcontentloaded" });
       expect(await page.content()).toContain("Você não precisa de senha: em Entrar, digite o seu e-mail e use o código de 6 dígitos que enviamos.");
     });
   });

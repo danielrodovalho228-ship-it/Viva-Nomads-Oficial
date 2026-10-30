@@ -188,3 +188,13 @@ export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "s
 
 /** E235: o número do avaliador designado leva à página pública dele (/avaliadores/[numero]). */
 export const hrefAvaliador = (numero: string) => `/avaliadores/${encodeURIComponent(numero)}`;
+
+/**
+ * Leitura do bloco da avaliação no painel do DONO (massa do QA ao vivo, E235): com a chave desligada, só a conta de
+ * teste (profiles.is_teste) vê o bloco e o laudo — só leitura. As ações continuam exigindo vistoriaAtiva(); a chave
+ * segue desligada para todo o resto.
+ */
+export function blocoDoDonoVisivel(chaveAtiva: boolean, donoEhTeste: boolean | null | undefined): "ativa" | "so_leitura_teste" | null {
+  if (chaveAtiva) return "ativa";
+  return donoEhTeste === true ? "so_leitura_teste" : null;
+}
