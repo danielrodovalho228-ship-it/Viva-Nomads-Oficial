@@ -558,7 +558,10 @@ function TenantDashboard({
           }
         />
       </div>
-      {cidade !== null && <ServicosPainel cidade={cidade} />}
+      {/* E284 (folha aprovada, Tela 1): os Serviços aparecem na home de TODO morador, com ou sem estadia e com ou sem
+          cidade no perfil (sem cidade, a busca de parceiros abre sem ela). Quem é dono já vê a seção no bloco de
+          proprietário — aqui ela não se repete. */}
+      {!ehDono && <ServicosPainel cidade={cidade} />}
     </>
   );
 }
