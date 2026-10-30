@@ -10,7 +10,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
     · E84 (#1555): o hub da Central de Ajuda e a página própria de cada tema (/ajuda/morador, /proprietarios,
       /contratos, /seguranca);
     · E255 (#1556): Ganhos com o "Você entra na regra nova?" (chave ENQUADRAMENTO_REFORMA; no laboratório o cookie
-      vn_lab_reforma liga só neste navegador, como na t670-e255);
+      vn_lab_reforma liga só neste navegador, como na t674-e255);
     · E235 (#1553): a página "Nível, ruído e extras" do imóvel, com o bloco de avaliação do dono (conta de teste).
   Sem clique no primário. Semeado aqui e apagado no fim. Só no laboratório.
 */
