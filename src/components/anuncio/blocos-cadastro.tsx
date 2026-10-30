@@ -86,6 +86,17 @@ export function ProximidadesAutomaticas({
           <p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">
             Achamos pelo endereço, num raio de 2 km. Desligue &quot;Mostrar&quot; no que não quiser no anúncio.
           </p>
+          {/* E259: o mapa não respondeu, mas as referências oficiais da cidade (as do "Tempo até") estão aqui. */}
+          {fonte === "ancoras" && (
+            <div className="mb-3 flex flex-col gap-2 text-xs text-muted sm:flex-row sm:items-center sm:justify-between" data-testid="proximidades-parcial">
+              <p>A busca do mapa não respondeu agora: por enquanto, só as referências da cidade.</p>
+              {onTentarDeNovo && (
+                <Button type="button" variant="secondary" size="sm" onClick={onTentarDeNovo} data-testid="proximidades-tentar">
+                  Tentar de novo
+                </Button>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {ORDEM_CATEGORIAS_PAGINA.map((c) => {
               // O mais perto primeiro; até 3 por categoria.
