@@ -12,6 +12,9 @@ import { ROTULO_FILTRO_NOTA } from "@/lib/parceiros/fiscal";
 import { CATEGORIAS_CATALOGO, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarCep } from "@/lib/fotografos/regras";
 import { MUNICIPIOS } from "@/lib/municipios";
+import { BannerTopo } from "@/components/institucional/banner-topo";
+import { FaixaCategorias } from "@/components/parceiros/faixa-categorias";
+import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros/buscar" },
@@ -40,11 +43,23 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   const consultaDoImovel = qImovel?.toString();
   const qs = new URLSearchParams({ ...(categoria ? { categoria } : {}), ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}) }).toString();
 
+  const titulo = `Encontre um parceiro${categoria ? `: ${rotuloCategoria(categoria).toLowerCase()}` : ""}`;
+  const subtitulo = "Profissionais aprovados pela Viva. Você combina e agenda tudo pelas mensagens da Viva; contato e endereço só depois do aceite.";
+  // E277 (mockup aprovado): com categoria, o topo é a foto dela (o mesmo banner das páginas institucionais).
+  const fotoTopo = categoria ? fotoDaCategoria(categoria) : null;
+  const consultaFaixa = { ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}), ...(imovel ? { imovel } : {}) };
+
   return (
-    <div className="container-page py-8">
+    <>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }, { nome: "Buscar", caminho: "/parceiros/buscar" }])} />
-      <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">Encontre um parceiro{categoria ? `: ${rotuloCategoria(categoria).toLowerCase()}` : ""}</h1>
-      <p className="mt-2 max-w-2xl text-muted">Profissionais aprovados pela Viva. Você combina e agenda tudo pelas mensagens da Viva; contato e endereço só depois do aceite.</p>
+      {fotoTopo && <BannerTopo foto={fotoTopo.src} alt={fotoTopo.alt} titulo={titulo} subtitulo={<p>{subtitulo}</p>} className="[&>div]:min-h-[16rem] md:[&>div]:min-h-[18rem]" />}
+    <div className="container-page py-8">
+      {!fotoTopo && (
+        <>
+          <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">{titulo}</h1>
+          <p className="mt-2 max-w-2xl text-muted">{subtitulo}</p>
+        </>
+      )}
 
       <form method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_0.6fr_1fr_auto] lg:items-end" data-testid="busca-parceiros-filtros">
         {imovel && <input type="hidden" name="imovel" value={imovel} />}
@@ -94,6 +109,8 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
         </p>
       )}
 
+      <FaixaCategorias atual={categoria} consulta={consultaFaixa} />
+
       <section aria-live="polite" className="mt-8" data-testid="busca-parceiros-resultado" data-total={r.lista.length}>
         {r.lista.length > 0 ? (
           <>
@@ -119,7 +136,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
           />
         )}
       </section>
-
     </div>
+    </>
   );
 }
