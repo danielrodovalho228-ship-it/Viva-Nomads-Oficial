@@ -14,7 +14,10 @@ const PAGINA = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
 const NIVEL = ler("components/niveis/nivel-cadastro.tsx");
 
 test("E141 — o Essencial é declarado e publica sem foto; a foto só sobe o nível, numa cobrança só", () => {
-  assert.match(TEXTO_ESSENCIAL_DECLARADO, /publica sem foto/);
+  // E259 (7): sem contradizer o mínimo de 8 fotos do Passo 2.
+  assert.match(TEXTO_ESSENCIAL_DECLARADO, /não pede foto de cada item/);
+  assert.match(TEXTO_ESSENCIAL_DECLARADO, /8 fotos do anúncio/);
+  assert.doesNotMatch(TEXTO_ESSENCIAL_DECLARADO, /sem foto nenhuma/);
   assert.match(NIVEL, /data-testid="nivel-cadastro-declarado"/);
   assert.match(NIVEL, /· opcional/);
   assert.doesNotMatch(PAGINA, /AlertaFaltaFoto|deteccaoLigada/);
