@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Locator, type Page } from "@playwright
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T713 — E277 (mockup aprovado em 30/10), busca de parceiros, a 1280 e 390, como visitante:
+  T735 — E277 (mockup aprovado em 30/10), busca de parceiros, a 1280 e 390, como visitante:
    1. com categoria e parceiro: o topo é a FOTO da categoria (banner, título "Encontre um parceiro: limpeza"); a faixa
       das categorias com foto (6, todas carregadas, mesmo tamanho; a atual marcada); o cartão do parceiro com foto no
       topo (16:10, carregada). Filtros iguais. Tocar noutra categoria da faixa mantém cidade e UF;
@@ -13,7 +13,7 @@ const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const parceiro = { email: `parc.t713.${sufixo}@lab.vivanomads.test`, nome: "Lena Limpeza", role: "owner" as const };
-const slug = `lena-limpeza-t713-${sufixo}`;
+const slug = `lena-limpeza-t735-${sufixo}`;
 const ids: { conta?: string; parceiro?: string } = {};
 const COM = "/parceiros/buscar?categoria=limpeza&cidade=Uberl%C3%A2ndia&uf=MG";
 const VAZIA = "/parceiros/buscar?categoria=montagem&cidade=Uberl%C3%A2ndia&uf=MG";
@@ -24,7 +24,7 @@ async function visitante(browser: Browser, largura: number): Promise<Page> {
   return ctx.newPage();
 }
 
-test.describe("T713 — E277: busca de parceiros com fotos", () => {
+test.describe("T735 — E277: busca de parceiros com fotos", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -52,7 +52,7 @@ test.describe("T713 — E277: busca de parceiros com fotos", () => {
       await expect(banner.locator("h1")).toHaveText("Encontre um parceiro: limpeza");
       await carregada(banner.locator("img").first());
       await expect(p.getByTestId("busca-parceiros-filtros")).toBeVisible();
-      await p.screenshot({ path: `${SAIDA}/t713-topo-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t735-topo-${largura}.png` });
 
       const faixa = p.getByTestId("faixa-categorias");
       const cartoes = faixa.locator("li a");
@@ -75,7 +75,7 @@ test.describe("T713 — E277: busca de parceiros com fotos", () => {
       const c = (await capa.boundingBox())!;
       expect(Math.abs(c.width / c.height - 1.6)).toBeLessThan(0.03);
       await faixa.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t713-resultado-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t735-resultado-${largura}.png` });
 
       // Outra categoria pela faixa: mantém cidade e UF.
       await faixa.getByTestId("faixa-categoria-mudanca").click();
@@ -100,7 +100,7 @@ test.describe("T713 — E277: busca de parceiros com fotos", () => {
       await expect(vazia.getByTestId("aviso-fotografo-entrar")).toHaveAttribute("href", /\/auth/);
       await expect(vazia.getByTestId("indique-profissional").getByRole("link")).toHaveAttribute("href", "/parceiros?categoria=montagem#quero-ser-parceiro");
       await vazia.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t713-vazia-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t735-vazia-${largura}.png` });
       await p.context().close();
     });
   }
