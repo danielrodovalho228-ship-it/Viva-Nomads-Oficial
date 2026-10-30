@@ -100,6 +100,7 @@ function Tile({
   onClick,
   testId,
   capa,
+  prioridade = false,
 }: {
   src: string;
   alt: string;
@@ -108,6 +109,8 @@ function Tile({
   testId?: string;
   /** Capa do vídeo (a 1ª foto), usada só quando src é o vídeo. */
   capa?: string;
+  /** E259 (10): a foto que aparece na primeira pintura (pedida já, com preload) — sem o cinza de segundos. */
+  prioridade?: boolean;
 }) {
   if (src === ITEM_VIDEO) {
     return (
@@ -124,6 +127,7 @@ function Tile({
             src={capa as string}
             alt={alt}
             treat={false}
+            priority={prioridade}
             rounded="rounded-none"
             sizes="(max-width: 768px) 100vw, 50vw"
             className="h-full w-full opacity-80 transition-transform duration-500 group-hover:scale-105"
@@ -148,6 +152,7 @@ function Tile({
           src={src}
           alt={alt}
           treat={false}
+          priority={prioridade}
           rounded="rounded-none"
           sizes="(max-width: 768px) 100vw, 50vw"
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"
@@ -187,7 +192,7 @@ function MobileCarousel({
       >
         {photos.map((p, i) => (
           <div key={i} className="aspect-[4/3] w-full shrink-0 snap-center">
-            <Tile src={p} alt={`${title} — foto ${i + 1}`} className="h-full w-full" onClick={() => onOpen(i)} capa={capa} testId={`galeria-tile-${i}`} />
+            <Tile src={p} alt={`${title} — foto ${i + 1}`} className="h-full w-full" onClick={() => onOpen(i)} capa={capa} testId={`galeria-tile-${i}`} prioridade={i === 0} />
           </div>
         ))}
       </div>
@@ -228,16 +233,16 @@ function DesktopMosaic({
   if (n === 1) {
     content = (
       <div className="h-[480px] overflow-hidden rounded-xl">
-        <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" />
+        <Tile src={photos[0]} alt={title} className="h-full w-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" prioridade />
       </div>
     );
   } else if (n < 5) {
     content = (
       <div className="grid h-[480px] grid-cols-3 gap-2 overflow-hidden rounded-xl">
-        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" />
+        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" prioridade />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
-            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} />
+            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} prioridade />
           ))}
         </div>
       </div>
@@ -245,12 +250,12 @@ function DesktopMosaic({
   } else {
     content = (
       <div className="grid h-[480px] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-xl">
-        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" />
+        <Tile src={photos[0]} alt={title} className="col-span-2 row-span-2 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" prioridade />
         {photos.slice(1, 5).map((p, i) => {
           const isLast = i === 3 && n > 5;
           return (
             <div key={i} className="relative h-full">
-              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} />
+              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} prioridade />
               {isLast && (
                 <button
                   type="button"
