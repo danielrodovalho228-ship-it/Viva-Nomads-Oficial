@@ -337,7 +337,8 @@
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t673-varredura-bloco67"
       ]
     },
     "/ajuda/[tema]": {
@@ -348,7 +349,8 @@
         "t598-e84-central-de-ajuda",
         "t158-ajuda-parceiro",
         "t438-vocab-a",
-        "t20-p1-agentes"
+        "t20-p1-agentes",
+        "t673-varredura-bloco67"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -761,7 +763,8 @@
         "t183-telas-logadas-390",
         "t489-e176-menus",
         "t591-varredura-bloco48",
-        "t674-e255-enquadramento-reforma"
+        "t674-e255-enquadramento-reforma",
+        "t673-varredura-bloco67"
       ]
     },
     "/dashboard/carteira": {
@@ -2305,7 +2308,8 @@
         "t408-varredura-bloco27",
         "t415-varredura-bloco32",
         "t623-varredura-bloco57",
-        "t657-e235-link-avaliador"
+        "t657-e235-link-avaliador",
+        "t673-varredura-bloco67"
       ]
     },
     "/dashboard/recibos": {

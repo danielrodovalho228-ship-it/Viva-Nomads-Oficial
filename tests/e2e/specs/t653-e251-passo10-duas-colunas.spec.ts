@@ -14,6 +14,7 @@ import { abrirSecoesPasso10 } from "../fixtures/cadastro";
    5. E251 (b): o resumo agrupado — cada grupo feito da lista de conferência tem "Editar", que leva ao passo dele.
    4. Parecer do coordenador: (b) a identidade "a confirmar" tem tom neutro (nunca a cor de "falta"); (d) o anúncio não
       tem contrato — na prévia e no cartão de Meus anúncios o total do período é "Estadia mínima (N meses): R$ X".
+  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1560 (E251-B), no lab-crítico do #1558 (bloco 67).
 */
 const SAIDA = "tests/laboratorio/saida";
 const FOTOS_LOCAIS = ["sala", "quarto", "cozinha", "banheiro", "fachada", "sala", "quarto", "cozinha"];

@@ -4,6 +4,7 @@ import { test, expect } from "@playwright/test";
  * T20 — Achados P1 dos agentes: conferência pública, SEO (index, sitemap,
  * JSON-LD, llms.txt), redirecionamento de /anunciar e anúncio sem
  * "Garantia de correspondência".
+ * Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
  */
 test.describe("T20 — P1 dos agentes", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
