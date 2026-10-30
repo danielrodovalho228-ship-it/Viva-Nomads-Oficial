@@ -64,10 +64,8 @@ test.describe("T714 — E268-B: boas-vindas de dono para quem vira dono pelo an�
   });
 
   test("A. morador sem intenção: o 1º rascunho manda UM boas-vindas de dono (corpo com o nome e os passos); o 2º não repete", async ({ browser }) => {
-    // L-78 (Pista C, 30/10; fonte: lab-crítico 41108971666 — intenção gravada, 0 boas-vindas): ao abrir "Anunciar", o
-    // SincronizarPapel (sincronizar-papel.tsx:42 → papel-actions.ts:50) grava papel_ativo antes do 1º rascunho, e o
-    // gravarIntencao (intencao-servidor.ts:22) só trata como 1º acesso com intencao E papel_ativo vazios.
-    test.fail(true, "L-78: conta de morador que vira dono pelo 1º rascunho não recebe o boas-vindas de dono");
+    // L-78 (Pista C, 30/10), corrigida no E283 (#1622): antes, o SincronizarPapel gravava papel_ativo ao abrir o
+    // "Anunciar" e o gravarIntencao não tratava o 1º rascunho como 1º acesso — o boas-vindas de dono não saía.
     const c = await conta("morador", "Tainá Morador Sobrenome", "tenant", {});
     const page = await entrar(browser, c.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
