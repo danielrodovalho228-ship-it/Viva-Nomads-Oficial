@@ -5,8 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
   T711 — E276 (pedido do Daniel, 30/10), na HOME DO MORADOR, a 1280 e 390: a seção "Serviços" deixa de ser seis
   botões só de texto. Cada serviço (Fotografia, Mudança, Limpeza, Lavanderia, Montagem de móveis, Manutenção) é um
   cartão com a foto da categoria — carregada de verdade (complete + naturalWidth), todas do MESMO tamanho e
-  proporção — e o nome embaixo; grade par (2 colunas no celular, 3 no computador). O destino de cada cartão é o mesmo
-  de antes: /parceiros/buscar?categoria=<x>&cidade=<cidade do perfil>.
+  proporção 16:10 — com o nome e uma frase curta; grade par (2 colunas no celular, 3 no computador). O destino de cada cartão é o mesmo
+  de antes: /parceiros/buscar?categoria=<x>&cidade=<cidade do perfil>. Embaixo, a faixa "Como funciona" em 3 passos.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -65,9 +65,12 @@ test.describe("T711 — E276: serviços do painel do morador com foto", () => {
         const b = (await cartao.getByTestId("servicos-foto").boundingBox())!;
         caixas.push({ w: Math.round(b.width), h: Math.round(b.height), x: Math.round(b.x), y: Math.round(b.y) });
       }
-      // Mesmo tamanho e proporção 4:3 em todos.
+      // Mesmo tamanho e proporção 16:10 em todos.
       expect(new Set(caixas.map((c) => `${c.w}x${c.h}`)).size, JSON.stringify(caixas)).toBe(1);
-      expect(Math.abs(caixas[0].w / caixas[0].h - 4 / 3)).toBeLessThan(0.02);
+      expect(Math.abs(caixas[0].w / caixas[0].h - 16 / 10)).toBeLessThan(0.03);
+      // Nome + frase curta em cada cartão; faixa "Como funciona" com 3 passos.
+      await expect(painel.getByTestId("servicos-frase")).toHaveCount(6);
+      await expect(painel.getByTestId("servicos-como-funciona").getByTestId("servicos-passo")).toHaveCount(3);
       // Grade par: 2 colunas no celular, 3 no computador.
       expect(new Set(caixas.map((c) => c.x)).size).toBe(largura === 390 ? 2 : 3);
       // Fotos distintas entre si.
