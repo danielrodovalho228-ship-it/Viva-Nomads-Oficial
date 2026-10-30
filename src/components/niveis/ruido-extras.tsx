@@ -16,6 +16,14 @@ const TEXTO_CARTAO_RUIDO: Record<ChaveRuido, string> = {
 };
 
 /**
+ * E258 (c): Ruído e Extras gravam no botão (o ruído é um questionário: salvar sem marcar nada responde "não" nas quatro,
+ * e só o toque no botão diz que a pessoa respondeu); a estrutura de acessibilidade grava a cada toque. A tela diz qual
+ * é qual, em cada bloco.
+ */
+export const COMO_SALVA_RUIDO = "Vale depois de “Salvar ruído”. Sem nada marcado, salva “não” nas quatro.";
+export const COMO_SALVA_EXTRAS = "Vale depois de “Salvar extras”.";
+
+/**
  * Adendo 59.1 — ruído e extras do imóvel. Usados na página do nível e, desde o E143, dentro do Passo 5 do cadastro
  * (onSalvo recalcula o nível lá; aqui, sem onSalvo, a página do servidor é recarregada).
  */
@@ -63,6 +71,8 @@ export function Ruido({ propertyId, inicial, onSalvo }: { propertyId: string; in
         >
           Salvar ruído
         </Button>
+        {/* E258 (c): a regra de gravar fica dita na tela — aqui vale o botão; sem marcar nada, salva "não" nas quatro. */}
+        {!msg && <p className="text-xs text-muted" data-testid="ruido-como-salva">{COMO_SALVA_RUIDO}</p>}
         {msg && (
           <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-ink" : "text-sm text-red-700"} data-testid="ruido-resultado">
             {msg.t}
@@ -115,6 +125,7 @@ export function Extras({ propertyId, inicial, onSalvo }: { propertyId: string; i
         >
           Salvar extras
         </Button>
+        {!msg && <p className="text-xs text-muted" data-testid="extras-como-salva">{COMO_SALVA_EXTRAS}</p>}
         {msg && (
           <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-ink" : "text-sm text-red-700"} data-testid="extras-resultado">
             {msg.t}

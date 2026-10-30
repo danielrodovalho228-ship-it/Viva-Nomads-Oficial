@@ -93,6 +93,21 @@ export interface ItemConferencia {
   ok: boolean;
   /** O que falta, nas palavras da prontidão (vazio quando ok). */
   faltam: string[];
+  /** E258: o que o "feito" quer dizer quando um campo opcional ficou vazio (ex.: sem CEP; sem data de início). */
+  nota?: string;
+}
+
+/** E258 (a): o CEP não segura a publicação (rua, bairro e cidade bastam), mas sem ele a busca do "por perto" não roda. */
+export const NOTA_ENDERECO_SEM_CEP = "Sem CEP: o “O que tem por perto” fica de fora do anúncio.";
+/** E258 (b): sem data de início, o anúncio mostra "Disponível agora" (o mesmo texto do cartão de preço). */
+export const NOTA_DISPONIVEL_AGORA = "Disponível agora (sem data de início).";
+
+/** Os campos opcionais que a lista de conferência explica (o resto vem da prontidão). */
+export interface ContextoConferencia {
+  /** CEP com 8 dígitos preenchido no Passo 3. */
+  cepOk?: boolean;
+  /** "Disponível a partir de" já no formato da tela (dd/mm/aaaa) — vazio = disponível agora. */
+  disponivelDesde?: string;
 }
 
 /**
@@ -102,7 +117,7 @@ export interface ItemConferencia {
  * (ex.: Regras sem o tipo de entrada pendente) aparecem como feitas: o que nelas é opcional não segura a publicação.
  * `podePublicar` é o da prontidão; os itens da etapa 10 (documento, autorização) vão em `pendentesNaRevisao`.
  */
-export function conferenciaAssistente(p: Prontidao): {
+export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): {
   itens: ItemConferencia[];
   pendentesNaRevisao: string[];
   podePublicar: boolean;
@@ -129,7 +144,11 @@ export function conferenciaAssistente(p: Prontidao): {
     if (e.id === "revisao") continue;
     const estado = porEtapa.get(e.n);
     if (!estado && !SEMPRE.has(e.id)) continue;
-    itens.push({ etapa: e.n, id: e.id, rotulo: e.titulo, ok: estado?.ok ?? true, faltam: estado?.faltam ?? [] });
+    const ok = estado?.ok ?? true;
+    const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo: e.titulo, ok, faltam: estado?.faltam ?? [] };
+    if (ok && ctx && e.id === "endereco" && !ctx.cepOk) item.nota = NOTA_ENDERECO_SEM_CEP;
+    if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_DISPONIVEL_AGORA;
+    itens.push(item);
   }
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };
 }

@@ -11,7 +11,7 @@ import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
-import { conferenciaAssistente, etapaDoItemProntidao, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
+import { conferenciaAssistente, etapaDoItemProntidao, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloPrevia } from "@/lib/anuncio/assistente-telas";
 import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
@@ -71,8 +71,10 @@ export function EtapaRevisar(p: {
   podePublicar: boolean;
   /** E102-A: só no tipo Chácara/Sítio — os dados preenchidos do grupo rural. */
   chacara?: DadosChacara | null;
+  /** E258: o que a lista explica nos itens feitos (CEP do Passo 3; "Disponível a partir de" do Passo 9). */
+  contextoConferencia?: ContextoConferencia;
 }) {
-  const conf = conferenciaAssistente(p.prontidao);
+  const conf = conferenciaAssistente(p.prontidao, p.contextoConferencia);
   const precos = precosDaPrevia(p.previewProperty);
   // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram preço.
   const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
@@ -152,6 +154,11 @@ export function EtapaRevisar(p: {
                   <span className="sr-only">{i.ok ? " — feito" : " — falta"}</span>
                 </span>
                 {!i.ok && i.faltam.length > 0 && <span className="block text-sm text-muted">Falta: {i.faltam.join("; ")}</span>}
+                {i.ok && i.nota && (
+                  <span className="block text-sm text-muted" data-testid={`conferencia-nota-${i.id}`}>
+                    {i.nota}
+                  </span>
+                )}
               </span>
               {pendente && (
                 <button
