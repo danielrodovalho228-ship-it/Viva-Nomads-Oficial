@@ -32,7 +32,8 @@ export interface EtapaAssistente {
 }
 
 export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
-  { n: 1, id: "tipo", titulo: "Tipo do imóvel", mockup: "cadastro-imovel-01-tipo", campos: ["propertyType"], prontidao: ["qualificacao"] },
+  // E271: as declarações (qualificacao) são respondidas na seção "Declarações do imóvel" do Passo 10, não no Passo 1.
+  { n: 1, id: "tipo", titulo: "Tipo do imóvel", mockup: "cadastro-imovel-01-tipo", campos: ["propertyType"], prontidao: [] },
   { n: 2, id: "fotos", titulo: "Fotos", mockup: "cadastro-imovel-02-fotos", campos: ["photos", "videoUrl", "videoArquivo"], prontidao: ["fotos"] },
   {
     n: 3,
@@ -77,7 +78,7 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     prontidao: ["periodo"],
   },
   // E104: quem opera, o documento da operação e o documento do imóvel ficam no cartão "Antes de publicar" da Revisão.
-  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao"] },
+  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao", "qualificacao"] },
 ];
 
 /** Etapa onde um item da prontidão se resolve; item desconhecido cai na revisão (nunca some da lista). */
@@ -97,9 +98,6 @@ export interface ItemConferencia {
   nota?: string;
 }
 
-/** E259 (8): o nome da linha da etapa 1 na Lista de conferência (o que ela confere é a Qualificação). */
-export const ROTULO_CONFERENCIA_DECLARACOES = "Declarações do imóvel";
-
 /** E258 (a): o CEP não segura a publicação (rua, bairro e cidade bastam), mas sem ele a busca do "por perto" não roda. */
 export const NOTA_ENDERECO_SEM_CEP = "Sem CEP: o “O que tem por perto” fica de fora do anúncio.";
 /** E258 (b): sem data de início, o anúncio mostra "Disponível agora" (o mesmo texto do cartão de preço). */
@@ -118,7 +116,8 @@ export interface ContextoConferencia {
  * Fotos, Endereço, Detalhes, Comodidades, Regras, Preço, Disponibilidade; "Tipo" e "Título e descrição" entram quando
  * têm obrigatório — a descrição é obrigatória para publicar, mesmo fora da lista do mockup). As etapas sem obrigatório
  * (ex.: Regras sem o tipo de entrada pendente) aparecem como feitas: o que nelas é opcional não segura a publicação.
- * `podePublicar` é o da prontidão; os itens da etapa 10 (documento, autorização) vão em `pendentesNaRevisao`.
+ * `podePublicar` é o da prontidão; os itens da etapa 10 (documento, autorização, declarações) vão em `pendentesNaRevisao`
+ * — E271: a tela não os repete na lista; cada um aparece uma vez, na sua seção de "Antes de publicar".
  */
 export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): {
   itens: ItemConferencia[];
@@ -148,9 +147,7 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
     const estado = porEtapa.get(e.n);
     if (!estado && !SEMPRE.has(e.id)) continue;
     const ok = estado?.ok ?? true;
-    // E259 (8): na etapa 1 o que a lista confere são as declarações do imóvel (IPTU, água, luz e gás) — o tipo nunca falta.
-    const rotulo = e.id === "tipo" ? ROTULO_CONFERENCIA_DECLARACOES : e.titulo;
-    const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo, ok, faltam: estado?.faltam ?? [] };
+    const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo: e.titulo, ok, faltam: estado?.faltam ?? [] };
     if (ok && ctx && e.id === "endereco" && !ctx.cepOk) item.nota = NOTA_ENDERECO_SEM_CEP;
     if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_DISPONIVEL_AGORA;
     itens.push(item);
@@ -158,7 +155,7 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };
 }
 
-/** E260 (b): quantas pendências a lista de conferência mostra (as linhas por passo + as da própria Revisão). */
+/** E260 (b) + E271: quantas pendências seguram a publicação (as linhas por passo + as seções do Passo 10). */
 export function faltamNaConferencia(c: { itens: ItemConferencia[]; pendentesNaRevisao: string[] }): number {
   return c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length;
 }

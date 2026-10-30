@@ -129,9 +129,10 @@ export function oQueFaltaParaPublicar(p: { completude: ItemProntidao[]; declarac
 const FORA_DA_LISTA = { aceite: "o aceite do termo da IA", declaracoes: "as declarações do imóvel" } as const;
 
 /**
- * E260 (b): o motivo do "Publicar anúncio" travado, em UMA linha, sem repetir os itens — a lista de conferência é a
- * única fonte das pendências e o motivo só aponta para ela ("Faltam 3 itens da lista de conferência"). Só nomeia o que
- * a lista não mostra: o aceite do termo da IA (e as declarações, quando ficam fora da lista). null quando nada falta.
+ * E260 (b) + E271: o motivo do "Publicar anúncio" travado, em UMA linha, sem repetir os itens. Cada pendência aparece
+ * uma vez na tela — as dos Passos 1 a 9 na lista de conferência, as do Passo 10 (documento, quem opera, declarações)
+ * na sua seção — e o motivo só conta ("Faltam 3 itens antes de publicar"). Nomeia só o que nenhuma das duas mostra: o
+ * aceite do termo da IA (e as declarações, quando ficam fora da prontidão). null quando nada falta.
  */
 export function motivoPublicarTravado(p: { faltamNaLista: number; aceitouIa: boolean; declaracoesForaDaLista?: boolean }): string | null {
   const fora: string[] = [];
@@ -139,7 +140,8 @@ export function motivoPublicarTravado(p: { faltamNaLista: number; aceitouIa: boo
   if (!p.aceitouIa) fora.push(FORA_DA_LISTA.aceite);
   const n = p.faltamNaLista;
   if (n === 0) return fora.length ? `Falta: ${fora.map((f) => f.replace(/^(o|as) /, "")).join(" e ")}` : null;
-  const lista = n === 1 ? "Falta 1 item da lista de conferência" : `Faltam ${n} itens da lista de conferência`;
+  // E271: N conta a lista de conferência (Passos 1 a 9) e as seções do Passo 10, cada pendência uma vez.
+  const lista = n === 1 ? "Falta 1 item antes de publicar" : `Faltam ${n} itens antes de publicar`;
   return fora.length ? `${lista} e ${fora.join(" e ")}` : lista;
 }
 

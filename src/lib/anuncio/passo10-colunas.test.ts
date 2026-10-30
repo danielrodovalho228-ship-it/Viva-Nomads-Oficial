@@ -79,11 +79,11 @@ test("E251 (d): 'Estadia mínima (N meses)' na prévia e no cartão de Meus anú
 
 test("E260 (b) botão travado: o motivo aponta para a lista de conferência, sem repetir os itens dela", () => {
   assert.equal(motivoPublicarTravado({ faltamNaLista: 0, aceitouIa: true }), null);
-  assert.equal(motivoPublicarTravado({ faltamNaLista: 1, aceitouIa: true }), "Falta 1 item da lista de conferência");
-  assert.equal(motivoPublicarTravado({ faltamNaLista: 3, aceitouIa: true }), "Faltam 3 itens da lista de conferência");
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 1, aceitouIa: true }), "Falta 1 item antes de publicar");
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 3, aceitouIa: true }), "Faltam 3 itens antes de publicar");
   // O que a lista não mostra (o aceite; as declarações quando ficam fora dela) é dito pelo nome.
   assert.equal(motivoPublicarTravado({ faltamNaLista: 0, aceitouIa: false }), "Falta: aceite do termo da IA");
-  assert.equal(motivoPublicarTravado({ faltamNaLista: 2, aceitouIa: false }), "Faltam 2 itens da lista de conferência e o aceite do termo da IA");
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 2, aceitouIa: false }), "Faltam 2 itens antes de publicar e o aceite do termo da IA");
   assert.equal(motivoPublicarTravado({ faltamNaLista: 0, aceitouIa: false, declaracoesForaDaLista: true }), "Falta: declarações do imóvel e aceite do termo da IA");
   // Nunca o nome de um item da lista (ex.: documento, padrão mínimo).
   const m = motivoPublicarTravado({ faltamNaLista: 4, aceitouIa: true })!;
