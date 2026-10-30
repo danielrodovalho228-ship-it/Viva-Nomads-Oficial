@@ -37,6 +37,8 @@ import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO }
 import { donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
+import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
+import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications/dados-candidatura";
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
@@ -1495,7 +1497,9 @@ export async function requestLead(
   // Motivo da estadia (chave de MOTIVOS). Vazio na candidatura = usa o do perfil. Inválido é ignorado.
   motivoEstadia?: string,
   // Prompt 8: quantas pessoas vão morar (opcional). O servidor confere com a capacidade do imóvel.
-  qtdOcupantes?: number
+  qtdOcupantes?: number,
+  // E202 (candidatura): a saída escolhida (opcional; só com a entrada e depois dela). Vai a leads.fim_desejado (0258).
+  fimDesejado?: string
 ): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
@@ -1587,6 +1591,8 @@ export async function requestLead(
   // registrar o kind no lead (migração) — hoje o lead é único por (imóvel,
   // inquilino) e o status 'new' não codifica o kind.
   let novoContato = true;
+  // E202 (candidatura): o lead deste pedido — os e-mails da candidatura leem as datas dele e apontam para o cartão dele.
+  let leadId: string | null = null;
 
   // Imóvel real: grava lead + abre conversa. Dedup por (imóvel, interessado)
   // para que cliques repetidos não criem leads/mensagens duplicados.
@@ -1598,6 +1604,7 @@ export async function requestLead(
       .eq("tenant_id", user.id)
       .maybeSingle();
     novoContato = !existing;
+    leadId = (existing?.id as string | undefined) ?? null;
     if (!existing) {
       // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
       let motivoLead: string | null = null;
@@ -1610,19 +1617,25 @@ export async function requestLead(
           motivoLead = doPerfil.ok ? doPerfil.valor : null;
         }
       }
-      const { error: leadErr } = await supabase
+      const inicioOk = kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok;
+      // E202: a saída só entra com a entrada válida e depois dela (a mesma regra do resumo do Solicitar e do check da 0258).
+      const fim = (fimDesejado ?? "").trim();
+      const fimOk = inicioOk && /^\d{4}-\d{2}-\d{2}$/.test(fim) && fim > inicioDesejado!.trim();
+      const { data: novo, error: leadErr } = await supabase
         .from("leads")
         .insert({
           property_id: propertyId,
           owner_id: ownerId,
           tenant_id: user.id,
           status: "new",
-          ...(kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok
-            ? { inicio_desejado: inicioDesejado!.trim() }
-            : {}),
+          ...(inicioOk ? { inicio_desejado: inicioDesejado!.trim() } : {}),
+          ...(fimOk ? { fim_desejado: fim } : {}),
           ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
           ...(ocupantes.valor ? { qtd_ocupantes: ocupantes.valor } : {}),
-        });
+        })
+        .select("id")
+        .maybeSingle();
+      leadId = (novo?.id as string | undefined) ?? null;
       // 23505 = duplicado (corrida): não é erro real. Demais erros: registra.
       if (leadErr && leadErr.code !== "23505") {
         console.error("[requestLead] falha ao gravar lead:", leadErr.message);
@@ -1661,7 +1674,10 @@ export async function requestLead(
   // de maior valor; o teto de 20/h barra repetição). É isto que faz os botões
   // funcionarem de verdade: o lead chega ao e-mail/WhatsApp do proprietário.
   if (novoContato || kind === "candidatura") {
-    const { detailsHtml, detailsText } = buildLeadNotification(kind, propertyTitle, {
+    // E202 (candidatura): imóvel, interessado, período e valores no corpo, e o link do cartão desta candidatura.
+    const adm = kind === "candidatura" && leadId ? createAdminClient() : null;
+    const corpo = adm && leadId ? await corpoDoEmailDaCandidatura(adm, leadId, "nova").catch(() => null) : null;
+    const { detailsHtml, detailsText } = corpo ?? buildLeadNotification(kind, propertyTitle, {
       name: tenantName,
     });
     await notify({
@@ -1671,10 +1687,27 @@ export async function requestLead(
       phone: ownerPhone ?? undefined,
       name: ownerName ?? undefined,
       userId: ownerId ?? undefined,
-      pushUrl: "/dashboard/leads",
+      pushUrl: corpo && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
+      ...(corpo ? { body: corpo.body } : {}),
       detailsHtml,
       detailsText,
     });
+    // E202 (candidatura): a confirmação de envio ao morador, com os mesmos dados (antes: nenhum e-mail).
+    if (adm && leadId) {
+      const meu = await corpoDoEmailDaCandidatura(adm, leadId, "enviada").catch(() => null);
+      if (meu && user.email) {
+        await notify({
+          event: "application_received",
+          email: user.email,
+          name: me?.full_name && !String(me.full_name).includes("@") ? String(me.full_name).trim().split(/\s+/)[0] : undefined,
+          userId: user.id,
+          pushUrl: linkCandidaturaMorador(leadId),
+          body: meu.body,
+          detailsHtml: meu.detailsHtml,
+          detailsText: meu.detailsText,
+        });
+      }
+    }
   }
 
   return { ok: true };

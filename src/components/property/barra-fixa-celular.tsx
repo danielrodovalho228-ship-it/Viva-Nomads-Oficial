@@ -21,6 +21,7 @@ export function BarraFixaCelular({
   barra,
   pending,
   bloqueio,
+  aguardando = false,
   onSolicitar,
   onAgendarVisita,
 }: {
@@ -28,6 +29,8 @@ export function BarraFixaCelular({
   pending: boolean;
   /** E93: o "Solicitar" desativado com este texto (anúncio de teste visto por quem não é o dono nem admin). */
   bloqueio?: string;
+  /** Anúncio de teste com a sessão/perfil ainda carregando: "Solicitar" desativado, sem a faixa de visitante. */
+  aguardando?: boolean;
   onSolicitar: () => void;
   onAgendarVisita: () => void;
 }) {
@@ -108,7 +111,7 @@ export function BarraFixaCelular({
             <button
               type="button"
               onClick={onSolicitar}
-              disabled={pending || !!bloqueio}
+              disabled={pending || !!bloqueio || aguardando}
               data-cta={marcaCta("primary")}
               data-testid="barra-solicitar"
               className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 px-3 py-1 text-xs leading-snug" : "h-11 flex-1 px-3" })}

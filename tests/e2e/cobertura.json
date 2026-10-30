@@ -722,7 +722,8 @@
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
         "t362-perfil-avaliacoes-pix",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/buscas": {
@@ -791,7 +792,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/conta": {
@@ -945,7 +947,8 @@
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
-        "t602-e181-familia-contadores"
+        "t602-e181-familia-contadores",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/fechamento": {
@@ -1166,7 +1169,8 @@
         "t665-varredura-bloco65",
         "t668-e225-estrutura-acessibilidade",
         "t671-varredura-bloco66",
-        "t676-e193-passo5-cartoes"
+        "t677-e193-passo6-cartoes",
+        "t680-e193-passo5-cartoes"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1316,7 +1320,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/pedidos": {
@@ -1415,7 +1420,8 @@
         "t55-manutencao-ciclo",
         "t183-telas-logadas-390",
         "t288-padrao-minimo-59a",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/tributacao": {
@@ -1445,7 +1451,8 @@
         "t209-jornada-dois-lados",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t402-conta-leva2"
+        "t402-conta-leva2",
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/viabilidade": {
@@ -2027,7 +2034,8 @@
       "specs": [
         "t235-cartoes-compartilhaveis",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/parceiro": {
@@ -2038,7 +2046,8 @@
       "specs": [
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t679-varredura-bloco70"
       ]
     },
     "/parceiros/[slug]": {
@@ -2158,7 +2167,8 @@
         "t329-varredura-bloco11",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2168,7 +2178,8 @@
       ],
       "specs": [
         "t304-airbnb-exibicao-61a",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/estadia/[contratoId]/encerrar": {
@@ -2177,7 +2188,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -2195,7 +2207,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t676-varredura-bloco69"
       ]
     },
     "/admin/destinos": {
@@ -2226,7 +2239,8 @@
       "specs": [
         "t264-viva-automatico",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t679-varredura-bloco70"
       ]
     },
     "/admin/sistema": {
@@ -2356,7 +2370,8 @@
         "t306-varredura-bloco7",
         "t315-telas-avaliacao-dono-62a",
         "t341-credenciamento-avaliador-62a",
-        "t387-varredura-bloco22"
+        "t387-varredura-bloco22",
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -2438,7 +2453,8 @@
         "t347-respostas-rapidas-55e2",
         "t335-varredura-bloco13",
         "t379-55e2-filtro-contato-um-toque",
-        "t385-varredura-bloco21"
+        "t385-varredura-bloco21",
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
@@ -2448,7 +2464,8 @@
       "specs": [
         "t347-respostas-rapidas-55e2",
         "t335-varredura-bloco13",
-        "t385-varredura-bloco21"
+        "t385-varredura-bloco21",
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/conta/excluir": {
@@ -2475,7 +2492,8 @@
         "t369-conta-a2-avaliacoes",
         "t385-varredura-bloco21",
         "t391-conta-conformidade",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t679-varredura-bloco70"
       ]
     },
     "/prova/celular/aviso": {

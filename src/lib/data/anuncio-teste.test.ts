@@ -40,7 +40,7 @@ test("E93: anúncio de teste pelo link — faixa e 'Solicitar' desativado para q
   assert.equal(modoAnuncioTeste("[QA] Studio", { dono: false, admin: true }), "equipe");
   assert.equal(modoAnuncioTeste("Studio de verdade", { dono: false, admin: false }), null);
   const tela = readFileSync(new URL("../../app/(public)/imoveis/[id]/property-detail.tsx", import.meta.url), "utf8");
-  assert.match(tela, /disabled=\{pending !== null \|\| testeVisitante\}/);
+  assert.match(tela, /disabled=\{pending !== null \|\| testeVisitante \|\| aguardandoPerfil\}/);
   assert.match(tela, /bloqueio=\{testeVisitante \? FAIXA_TESTE_VISITANTE : undefined\}/);
   assert.match(tela, /if \(testeVisitante\) return;/);
   // Segue fora das listagens e com noindex na página direta.

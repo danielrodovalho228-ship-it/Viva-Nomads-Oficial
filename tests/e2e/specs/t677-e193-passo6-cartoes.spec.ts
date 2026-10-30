@@ -2,12 +2,13 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T676 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 5 inteiro no padrão único de cartões grandes
+  T677 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 6 inteiro no padrão único de cartões grandes
   tocáveis da Qualificação. Com os blocos opcionais abertos, inventaria os controles de escolha à vista:
    - nenhuma pílula (botão arredondado de chip) e nenhuma caixa quadrada;
    - interruptor só o do bloco opcional (padrão E56: data-testid "bloco-…-toggle");
-   - o Ruído sem pares Sim/Não (um cartão de marcar por pergunta).
+   - "O que considerar antes de pedir" em cartões de marcar; o acesso segue em cartão de escolha única.
   1280 e 390, com prints.
+  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1566 e o #1568, no lab-crítico do bloco 70 (t679).
 */
 const SAIDA = "tests/laboratorio/saida";
 
@@ -40,54 +41,42 @@ const inventario = (p: Page) =>
     return r;
   });
 
-test.describe("T676 — E193: Passo 5 em cartões", () => {
+test.describe("T677 — E193: Passo 6 em cartões", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t676.${sufixo}@lab.vivanomads.test`, nome: "Tais Cartao", role: "owner" as const };
+  const dono = { email: `dono.t677.${sufixo}@lab.vivanomads.test`, nome: "Rui Regras", role: "owner" as const };
   const ids: Record<string, string> = {};
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t676 ${sufixo}`);
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t677 ${sufixo}`);
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — Passo 5 só com cartões (e o interruptor do bloco opcional)`, async ({ browser }) => {
+    test(`${largura} px — Passo 6 só com cartões (e o interruptor do bloco opcional)`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+      await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=regras`, { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // Abre os blocos opcionais (ruído, extras, acessibilidade…) para ver o que há dentro.
-      // Um de cada vez, relendo a tela: abrir um bloco pode remontar os outros.
-      const desligados = p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]');
-      for (let i = 0; i < 10 && (await desligados.count()) > 0; i++) {
-        const id = await desligados.first().getAttribute("data-testid");
-        // No meio da tela: o rodapé fixo do assistente não fica por cima do interruptor.
-        await p.getByTestId(id!).evaluate((el) => el.scrollIntoView({ block: "center" }));
-        await p.getByTestId(id!).click({ timeout: 10_000 });
-        await expect(p.getByTestId(id!)).toHaveAttribute("aria-checked", "true", { timeout: 10_000 });
-      }
+      for (const t of await p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]').all()) await t.click().catch(() => {});
       await p.waitForTimeout(500);
       const inv = await inventario(p);
-      console.log(`t676 ${largura}`, JSON.stringify(inv));
+      console.log(`t677 ${largura}`, JSON.stringify(inv));
       expect(inv.pilula, `pílulas: ${inv.pilula.join(" | ")}`).toEqual([]);
       expect(inv.caixa, `caixas: ${inv.caixa.join(" | ")}`).toEqual([]);
       expect(inv.chave, `interruptores fora do bloco opcional: ${inv.chave.join(" | ")}`).toEqual([]);
-      expect(inv.cartao.length).toBeGreaterThan(10);
-      // Ruído: um cartão de marcar por pergunta, sem "Sim"/"Não".
-      const ruido = p.getByTestId("ruido-form");
-      if (await ruido.count()) {
-        await expect(ruido.getByRole("checkbox")).toHaveCount(4);
-        await expect(ruido.getByRole("radio")).toHaveCount(0);
-      }
-      await p.screenshot({ path: `${SAIDA}/t676-passo5-${largura}.png`, fullPage: true });
+      expect(inv.cartao.length).toBeGreaterThan(8);
+      await expect(p.locator('[data-testid^="considerar-"][role=checkbox]').first()).toBeVisible();
+      await expect(p.locator('[data-testid^="tipo-entrada-"][role=radio]').first()).toBeVisible();
+      await p.screenshot({ path: `${SAIDA}/t677-passo6-${largura}.png`, fullPage: true });
       await p.context().close();
     });
   }

@@ -115,8 +115,9 @@ export function EtapaEncontramos(p: {
 
   if (p.parte === "regras") {
     return (
-      <div className="space-y-2" data-testid="etapa-regras-casa">
-        {/* E110: "Regras da casa" já é o título do passo (H1); não se repete aqui. */}
+      <div className="grid gap-2 sm:grid-cols-2" data-testid="etapa-regras-casa">
+        {/* E110: "Regras da casa" já é o título do passo (H1); não se repete aqui. E193 (30/10): os sim/não em grade de
+            cartões grandes, como as outras escolhas do assistente. */}
         <Toggle
           checked={p.furnished}
           onChange={() => {

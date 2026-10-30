@@ -1,4 +1,5 @@
 // Portão pós-#1509/#1512 (Pista C, 29/10): E228 (links da auditoria) e botões do observador da QA; roda no lab-crítico deste PR.
+// Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1562 (E256-B, porta de QA, 0257), no lab-crítico do bloco 69 (t676).
 import { test, expect, type Browser } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync, readFileSync } from "node:fs";

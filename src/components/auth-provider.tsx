@@ -76,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .select("full_name, role, preferred_mode, papel_ativo, is_teste")
           .eq("id", u.id)
           .maybeSingle();
-        if (profile && (profile.full_name || profile.role)) {
+        // Com qualquer perfil lido: o isTeste (anúncio de teste) precisa chegar mesmo sem nome/papel no perfil.
+        if (profile) {
           const agora = useAuthStore.getState().user;
           setUser({
             ...(agora && agora.id === u.id ? agora : {}),
