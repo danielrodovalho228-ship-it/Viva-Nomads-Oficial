@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
+import { abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
 
 /*
@@ -164,6 +165,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-revisar")).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("aviso-qualificacao")).toHaveCount(0);
+      await abrirSecoesPasso10(page, ["declaracoes"]); // E251: as seções do "Antes de publicar" são um acordeão
       await expect(page.getByTestId("declaracoes-passo10")).toBeVisible();
       await semRolagemLateral(page);
       await d.fechar();
