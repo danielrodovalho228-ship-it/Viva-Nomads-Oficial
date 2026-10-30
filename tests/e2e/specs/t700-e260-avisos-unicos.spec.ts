@@ -4,7 +4,7 @@ import { noPasso } from "../fixtures/cadastro";
 import { abrirPasso, emDiasBR, isoParaBR, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T693 — E260 (QA, 30/10): cada pendência é dita UMA vez.
+  T700 — E260 (QA, 30/10): cada pendência é dita UMA vez.
    (a) Passo 9: janela de 24 dias com mínimo de 30 e "Continuar" → o aviso aparece só junto das datas (`janela-curta`,
        com a explicação e a saída); o resumo "Para continuar, falta:" do topo não o repete. O Continuar segue recusando.
    (b) Passo 10: a lista de conferência é a única fonte das pendências. Saem o "Falta confirmar: …" e o "Falta resolver:
@@ -15,7 +15,7 @@ import { abrirPasso, emDiasBR, isoParaBR, prepararRascunho } from "../fixtures/r
 const CAPTURAS = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t693.${sufixo}@lab.vivanomads.test`, nome: "Uma Vez", role: "owner" as const };
+const dono = { email: `dono.t700.${sufixo}@lab.vivanomads.test`, nome: "Uma Vez", role: "owner" as const };
 const ids: { dono?: string; janela?: string; revisao?: string } = {};
 const LARGURAS = [1280, 390] as const;
 
@@ -28,15 +28,15 @@ const naTela = (p: Page, testid: string) =>
     return r.bottom > 0 && r.top < window.innerHeight;
   });
 
-test.describe("T693 — E260: avisos únicos nos Passos 9 e 10", () => {
+test.describe("T700 — E260: avisos únicos nos Passos 9 e 10", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.janela = await prepararRascunho(ids.dono, `Studio t693 janela ${sufixo}`, { minPeriod: "30" });
-    ids.revisao = await prepararRascunho(ids.dono, `Studio t693 revisão ${sufixo}`);
+    ids.janela = await prepararRascunho(ids.dono, `Studio t700 janela ${sufixo}`, { minPeriod: "30" });
+    ids.revisao = await prepararRascunho(ids.dono, `Studio t700 revisão ${sufixo}`);
     // Sem o padrão mínimo confirmado: a linha de Comodidades fica pendente na lista.
     const { error } = await adm().from("conforto_declaracoes").delete().eq("property_id", ids.revisao);
     expect(error).toBeNull();
@@ -60,7 +60,7 @@ test.describe("T693 — E260: avisos únicos nos Passos 9 e 10", () => {
       await expect.poll(() => naTela(p, "janela-curta"), { message: `@${largura}: o aviso vem à vista`, timeout: 5_000 }).toBe(true);
       expect(await vezesNaTela(p, "menos que a duração mínima de"), "o aviso aparece UMA vez").toBe(1);
       await aviso.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      await p.screenshot({ path: `${CAPTURAS}/t693-passo9-${largura}.png` });
+      await p.screenshot({ path: `${CAPTURAS}/t700-passo9-${largura}.png` });
       await p.context().close();
     });
   }
@@ -87,12 +87,12 @@ test.describe("T693 — E260: avisos únicos nos Passos 9 e 10", () => {
       for (const nome of ["padrão mínimo", "Padrão mínimo", "documento", "declarações"]) await expect(motivo).not.toContainText(nome);
       // Tocar no motivo desce até a lista.
       await motivo.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      await p.screenshot({ path: `${CAPTURAS}/t693-passo10-motivo-${largura}.png` });
+      await p.screenshot({ path: `${CAPTURAS}/t700-passo10-motivo-${largura}.png` });
       await p.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       await motivo.click();
       await expect.poll(() => naTela(p, "lista-conferencia"), { message: `@${largura}: o motivo desce até a lista`, timeout: 5_000 }).toBe(true);
       await p.waitForTimeout(600);
-      await p.screenshot({ path: `${CAPTURAS}/t693-passo10-lista-${largura}.png` });
+      await p.screenshot({ path: `${CAPTURAS}/t700-passo10-lista-${largura}.png` });
       // O "Resolver" da linha leva ao passo (o caminho para resolver continua na lista).
       await p.getByTestId("conferencia-resolver-comodidades").click();
       await expect(p.getByTestId("conforto-checklist")).toBeVisible({ timeout: 20_000 });
