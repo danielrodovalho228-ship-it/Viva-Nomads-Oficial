@@ -625,6 +625,8 @@ export default function NewPropertyPage() {
     utilitiesEstimate,
     // E254-A: os pagamentos únicos entram no total da estadia mínima da prévia como no cartão e na página pública.
     prepFee,
+    // E254-A: sem a duração mínima, a prévia mostrava sempre "Estadia mínima (1 mês)".
+    minPeriodDays: Number(minPeriod) || 30,
     checkoutCleaningEnabled: limpezaSaida.ativa,
     checkoutCleaningFee: limpezaSaida.valor,
     photos: fotosPrevia,

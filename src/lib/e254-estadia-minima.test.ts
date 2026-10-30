@@ -54,5 +54,5 @@ test("E254-A: prévia, cartão de Meus anúncios e página pública usam a mesma
 test("E254-A: a prévia do Passo 10 recebe os pagamentos únicos (preparação e limpeza de saída) que o cartão e a página somam", () => {
   const pg = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   const bloco = pg.slice(pg.indexOf("const previewProperty = {"), pg.indexOf("} as Property;", pg.indexOf("const previewProperty = {")));
-  for (const campo of ["prepFee,", "checkoutCleaningEnabled: limpezaSaida.ativa", "checkoutCleaningFee: limpezaSaida.valor"]) assert.ok(bloco.includes(campo), campo);
+  for (const campo of ["prepFee,", "minPeriodDays: Number(minPeriod) || 30", "checkoutCleaningEnabled: limpezaSaida.ativa", "checkoutCleaningFee: limpezaSaida.valor"]) assert.ok(bloco.includes(campo), campo);
 });
