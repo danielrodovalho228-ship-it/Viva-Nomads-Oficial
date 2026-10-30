@@ -3,7 +3,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T712 — E279 (Daniel e Muse, 30/10): o assistente de cadastro (entrada por "Anunciar", a qualificação e os 10 passos)
+  T734 — E279 (Daniel e Muse, 30/10): o assistente de cadastro (entrada por "Anunciar", a qualificação e os 10 passos)
   fica no fundo CLEAN do site, a 1280 e 390: nenhuma área grande da tela (fundo da página, moldura, coluna, cartões)
   em tom quente/bege. Regra do "quente": vermelho acima do azul em mais de 6 pontos (o bege/areia antigo; o cinza
   clean #f7f7f7 e o branco têm r = g = b). Os elementos de marca pequenos (selo, botão, chips) ficam fora: só entram
@@ -44,7 +44,7 @@ async function areasQuentes(p: Page): Promise<string[]> {
   });
 }
 
-test.describe("T712 — E279: fundo clean no assistente de cadastro", () => {
+test.describe("T734 — E279: fundo clean no assistente de cadastro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 300_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -69,8 +69,8 @@ test.describe("T712 — E279: fundo clean no assistente de cadastro", () => {
       await novo.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       for (const a of await areasQuentes(novo)) problemas.push(`entrada: ${a}`);
       const fundo = await novo.getByTestId("moldura-assistente").evaluate((el) => getComputedStyle(el).backgroundColor);
-      console.log(`T712|${largura}|entrada|moldura=${fundo}|body=${await novo.evaluate(() => getComputedStyle(document.body).backgroundColor)}`);
-      await novo.screenshot({ path: `${SAIDA}/t712-entrada-${largura}.png` });
+      console.log(`T734|${largura}|entrada|moldura=${fundo}|body=${await novo.evaluate(() => getComputedStyle(document.body).backgroundColor)}`);
+      await novo.screenshot({ path: `${SAIDA}/t734-entrada-${largura}.png` });
       await novo.context().close();
 
       // "Anunciar" do topo sem login (cai no login) e como morador (troca de papel antes do cadastro).
@@ -82,8 +82,8 @@ test.describe("T712 — E279: fundo clean no assistente de cadastro", () => {
         await q.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
         const achados = await areasQuentes(q);
         for (const a of achados) problemas.push(`anunciar-${quem} (${new URL(q.url()).pathname}): ${a}`);
-        console.log(`T712|${largura}|anunciar-${quem}|${new URL(q.url()).pathname}|${achados.length ? achados.join(" ; ") : "limpo"}`);
-        await q.screenshot({ path: `${SAIDA}/t712-anunciar-${quem}-${largura}.png` });
+        console.log(`T734|${largura}|anunciar-${quem}|${new URL(q.url()).pathname}|${achados.length ? achados.join(" ; ") : "limpo"}`);
+        await q.screenshot({ path: `${SAIDA}/t734-anunciar-${quem}-${largura}.png` });
         await ctx.close();
       }
 
@@ -91,8 +91,8 @@ test.describe("T712 — E279: fundo clean no assistente de cadastro", () => {
         const p = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, passo, largura);
         const achados = await areasQuentes(p);
         for (const a of achados) problemas.push(`${passo}: ${a}`);
-        console.log(`T712|${largura}|${passo}|${achados.length ? achados.join(" ; ") : "limpo"}`);
-        await p.screenshot({ path: `${SAIDA}/t712-${passo}-${largura}.png` });
+        console.log(`T734|${largura}|${passo}|${achados.length ? achados.join(" ; ") : "limpo"}`);
+        await p.screenshot({ path: `${SAIDA}/t734-${passo}-${largura}.png` });
         await p.context().close();
       }
       expect(problemas, "áreas grandes com fundo bege/quente").toEqual([]);
