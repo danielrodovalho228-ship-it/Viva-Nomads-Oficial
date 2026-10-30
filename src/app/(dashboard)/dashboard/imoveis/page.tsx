@@ -8,6 +8,8 @@ import { DecisaoRascunho } from "@/components/property/decisao-rascunho";
 import { MyPropertiesClient } from "./imoveis-client";
 import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
 import Link from "next/link";
+import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
+import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { TEXTO_RASCUNHO_SALVO } from "@/components/layout/moldura-assistente";
 
 /**
@@ -24,7 +26,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
   // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva).
   const pausas: Record<string, string | null> = {};
   // 61-B: anúncio já publicado sem o tipo de entrada segue no ar, com o aviso aqui (sem bloqueio retroativo).
-  const semTipoEntrada: { id: string; title: string }[] = [];
+  const semTipoEntrada: { id: string; title: string; status: string }[] = [];
   if (supabase && properties.length) {
     const {
       data: { user },
@@ -37,7 +39,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
         supabase.from("properties").select("id, title, status, tipo_entrada").eq("owner_id", user.id).neq("status", "draft"),
       ]);
       for (const l of (entrada.error ? [] : (entrada.data ?? [])) as { id: string; title: string; status: string; tipo_entrada: string | null }[]) {
-        if (avisoTipoEntradaNoPainel({ tipoEntrada: l.tipo_entrada, status: l.status })) semTipoEntrada.push({ id: l.id, title: l.title });
+        if (avisoTipoEntradaNoPainel({ tipoEntrada: l.tipo_entrada, status: l.status })) semTipoEntrada.push({ id: l.id, title: l.title, status: l.status });
       }
       for (const [id, pr] of mapa) prontidao[id] = pr;
       for (const m of (motivos ?? []) as { id: string; pausa_motivo: string | null }[]) pausas[m.id] = m.pausa_motivo;
@@ -70,7 +72,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
           <ul className="mt-2 space-y-1">
             {semTipoEntrada.map((i) => (
               <li key={i.id}>
-                <Link href={`/dashboard/imoveis/${i.id}/editar`} className="inline-flex min-h-[44px] items-center font-medium text-forest underline">
+                <Link href={destinoPendencia(i, ETAPA.regras)} className="inline-flex min-h-[44px] items-center font-medium text-forest underline">
                   {i.title}: informar o tipo de entrada
                 </Link>
               </li>

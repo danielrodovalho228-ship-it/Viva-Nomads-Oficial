@@ -63,6 +63,8 @@ export const AMENITY_GROUPS: AmenityCatalogGroup[] = [
     items: [
       { key: "mobiliado", label: "Mobiliado completo" },
       { key: "ar_condicionado", label: "Ar-condicionado" },
+      // E280 (Daniel, uso real em 30/10): procurou e não achou — fica ao lado do ar-condicionado.
+      { key: "ventilador_teto", label: "Ventilador de teto" },
       { key: "maquina_lavar", label: "Máquina de lavar" },
       { key: "lava_loucas", label: "Lava-louças" },
       { key: "enxoval", label: "Roupa de cama e banho inclusas" },

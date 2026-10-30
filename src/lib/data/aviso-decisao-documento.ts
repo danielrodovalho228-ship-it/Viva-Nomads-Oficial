@@ -25,17 +25,18 @@ export async function avisarDecisoesDoImovel(admin: SupabaseClient, ownerId: str
     const linhas = linhasDoAviso(decisoes);
     const [{ data: prof }, imovel, prontidao] = await Promise.all([
       admin.from("profiles").select("full_name, email, notif_email").eq("id", ownerId).maybeSingle(),
-      propertyId ? admin.from("properties").select("title, address").eq("id", propertyId).maybeSingle() : Promise.resolve({ data: null }),
+      propertyId ? admin.from("properties").select("title, address, status").eq("id", propertyId).maybeSingle() : Promise.resolve({ data: null }),
       propertyId ? prontidaoDoImovel(admin, ownerId, propertyId).catch(() => null) : Promise.resolve(null),
     ]);
     // `address` é o bairro público do anúncio (o endereço exato fica em exact_address e nunca vai no e-mail).
-    const im = (imovel as { data: { title?: string | null; address?: string | null } | null }).data;
+    const im = (imovel as { data: { title?: string | null; address?: string | null; status?: string | null } | null }).data;
     const email = emailDecisaoDocumento({
       propertyId,
       titulo: im?.title ?? null,
       bairro: im?.address ?? null,
       linhas,
       prontoParaPublicar: !!prontidao && prontidao.faltam.length === 0,
+      status: im?.status ?? null,
     });
     await notify({
       event: email.evento,

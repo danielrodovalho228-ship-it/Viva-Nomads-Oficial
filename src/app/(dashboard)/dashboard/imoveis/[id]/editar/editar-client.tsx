@@ -495,6 +495,7 @@ export function EditarImovelClient({
         <Section
           icon={Camera}
           title="Fotos"
+          ancora="secao-fotos"
           summary={`${photos.length} foto(s) · capa: ${photos[0]?.name || "1ª foto"}`}
           saving={savingSection === "fotos"}
           saved={savedSection === "fotos"}
@@ -714,6 +715,7 @@ export function EditarImovelClient({
           icon={ScrollText}
           title="Regras da casa"
           testid="secao-regras"
+          ancora="secao-regras"
           summary={[
             petsAllowed ? "aceita pets" : "sem pets",
             regrasCasa.ligados.fumo && regrasCasa.fumo

@@ -19,6 +19,7 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   cabine_chamadas: MonitorSmartphone,
   mobiliado: Sofa,
   ar_condicionado: AirVent,
+  ventilador_teto: Fan,
   maquina_lavar: WashingMachine,
   lava_loucas: UtensilsCrossed,
   enxoval: Shirt,
