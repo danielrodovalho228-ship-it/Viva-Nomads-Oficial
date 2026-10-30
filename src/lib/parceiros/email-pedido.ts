@@ -125,6 +125,15 @@ export function linhasDoPedido(ev: EventoPedido, p: PedidoParaEmail, fato: FatoD
   return l;
 }
 
+/**
+ * E270 — o assunto que diz o fato (hoje só o orçamento recebido: o valor e o serviço, antes só no corpo).
+ * null = o assunto do evento (eventos-email.ts).
+ */
+export function assuntoDoPedido(ev: EventoPedido, p: PedidoParaEmail): string | null {
+  if (ev === "parceiro_orcamento_recebido" && p.valorCombinado && p.valorCombinado > 0) return `Orçamento de ${brl(p.valorCombinado)} para ${limpo(p.servico) || "o seu pedido"}`;
+  return null;
+}
+
 export function aberturaDoPedido(ev: EventoPedido, p: PedidoParaEmail, nome?: string, fato: FatoDoPedido = {}): string {
   const ola = `Olá${nome ? " " + nome : ""}`;
   const servico = (limpo(p.servico) || "serviço").toLowerCase();

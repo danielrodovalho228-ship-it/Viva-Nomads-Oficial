@@ -24,7 +24,7 @@ import {
   visitaCancelada,
   type EmailPassos,
 } from "./emails-e205b.ts";
-import { EVENTOS_DO_PEDIDO, aberturaDoPedido, linhasDoPedido, type EventoPedido, type FatoDoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
+import { EVENTOS_DO_PEDIDO, aberturaDoPedido, assuntoDoPedido, linhasDoPedido, type EventoPedido, type FatoDoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
 import { EVENTOS_DA_ESTADIA, aberturaEstadia, linhasEstadia, type DadosEstadiaEmail, type EventoEstadia } from "./transacionais-estadia.ts";
 import { textoResposta } from "../automacao/textos-vinculo.ts";
 import { escaparHtml } from "../escapar-html.ts";
@@ -99,6 +99,7 @@ function comDados(siteUrl: string, ev: NotificationEvent, nome: { nomeHtml: stri
       ...nome,
       pushUrl: "/dashboard/servicos/pedidos/2c3d4e5f-0000-4000-8000-000000000001",
       body: (n) => aberturaDoPedido(ev as EventoPedido, pedido, n, ex.fato),
+      ...(assuntoDoPedido(ev as EventoPedido, pedido) ? { subject: assuntoDoPedido(ev as EventoPedido, pedido)! } : {}),
       detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
       detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
     });
