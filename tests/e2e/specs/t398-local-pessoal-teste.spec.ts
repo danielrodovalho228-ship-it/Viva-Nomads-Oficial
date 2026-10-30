@@ -8,6 +8,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, defin
    2. E94 precisão: o ponto do local vai com 3 casas na URL e é o que o tempo (rotas-falso) recebe.
    3. E93: anúncio de teste aberto pelo link — quem não é o dono vê a faixa e o "Solicitar" desativado com o mesmo texto
       (390 e 1280); o dono vê a página normal, com a faixa discreta.
+   4. E93 com a liberação do QA (#1564): logada e sem ser a dona, a conta real segue como visitante (faixa e botão
+      travados); a mesma conta marcada is_teste entra como "equipe" e o "Solicitar" fica ativo (390 e 1280).
+  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1564, no lab-crítico do bloco 69 (t676).
 */
 const ROTAS = process.env.LAB_ROTAS_URL ?? "http://127.0.0.1:3998";
 const senha = novaSenha();
@@ -109,5 +112,31 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
     await expect(page.getByTestId("cartao-solicitar")).toHaveText("Solicitar");
     await page.screenshot({ path: "tests/laboratorio/saida/t398-3-dono-1280.png", fullPage: false });
     await page.context().close();
+  });
+
+  test("4. E93 (#1564): logada, a conta real segue travada; a conta de teste (is_teste) entra como equipe e pode Solicitar", async ({ browser }) => {
+    for (const teste of [false, true]) {
+      const { error } = await adm().from("profiles").update({ is_teste: teste }).eq("id", ids.pessoa!);
+      if (error) throw error;
+      for (const w of [1280, 390]) {
+        const page = await entrar(browser, pessoa.email, senha);
+        await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+        await page.goto(`/imoveis/${ids.teste}`, { waitUntil: "domcontentloaded" });
+        const faixa = page.getByTestId("faixa-anuncio-teste");
+        const botao = w === 1280 ? page.getByTestId("cartao-solicitar") : page.getByTestId("barra-solicitar");
+        await expect(faixa).toHaveAttribute("data-modo", teste ? "equipe" : "visitante", { timeout: 20_000 });
+        if (teste) {
+          await expect(faixa).toHaveText("Anúncio de teste: fora da busca e das listagens");
+          await expect(botao).toBeEnabled();
+          await expect(botao).toHaveText("Solicitar");
+        } else {
+          await expect(faixa).toHaveText(VISITANTE);
+          await expect(botao).toBeDisabled();
+          await expect(botao).toHaveText(VISITANTE);
+        }
+        await page.screenshot({ path: `tests/laboratorio/saida/t398-4-${teste ? "conta-teste" : "conta-real"}-${w}.png`, fullPage: false });
+        await page.context().close();
+      }
+    }
   });
 });
