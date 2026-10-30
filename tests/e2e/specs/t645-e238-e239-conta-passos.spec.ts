@@ -7,6 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    E239: no Início do dono, os "Próximos passos" com os ícones do mockup painel-proprietario — feito: ✓ num círculo
          verde cheio; o passo da vez: prancheta; os seguintes: cadeado (nada de círculo contornado).
   A 390 e 1280 px.
+  Reconferência a 390/360 px pedida pelo coordenador (30/10, E195/E238/E219/E229): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

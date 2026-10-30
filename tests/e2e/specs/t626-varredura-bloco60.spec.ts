@@ -20,6 +20,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
       com contrato (aba Estadia): nenhum rótulo cortado, nenhum rótulo saindo da própria coluna e as colunas com a mesma
       largura (nenhuma aperta a vizinha). As medidas vão para o log (VARREDURA|menus5).
   Semeado como no t613 e apagado no fim. Só no laboratório.
+  Reconferência a 390/360 px pedida pelo coordenador (30/10, E195/E238/E219/E229): rodada no lab-crítico sobre a main atual.
 */
 type Conta = "DONO" | "NOVO" | "MORADOR";
 interface Tela {
