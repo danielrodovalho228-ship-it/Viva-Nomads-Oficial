@@ -5,7 +5,6 @@ import Image from "next/image";
 import { CheckCircle2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { PHOTOS } from "@/lib/media";
 import { TIPOS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
-import { SELO_ILUSTRATIVA } from "@/components/institucional/foto-cartao";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import { cn } from "@/lib/utils";
 
@@ -94,9 +93,6 @@ export function EtapaTipo({ tipo, onTipo, sugerido }: { tipo: string; onTipo: (v
                 <span className="relative block aspect-[4/3] w-full bg-sage-100">
                   {/* E259 (5): as 9 fotos são pequenas e a linha rola de lado — carregam já, sem esperar entrar na tela. */}
                   <Image src={FOTO_TIPO[t.valor]} alt={t.alt} fill sizes="192px" loading="eager" className="pointer-events-none object-cover" draggable={false} data-testid={`tipo-${t.valor}-foto`} />
-                  <span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-night/70 px-2 py-1 text-xs font-semibold text-white" data-testid="selo-ilustrativa">
-                    {SELO_ILUSTRATIVA}
-                  </span>
                 </span>
                 <span className="block px-3 py-3 text-base font-semibold text-ink">{t.rotulo}</span>
                 {on && <CheckCircle2 className="absolute right-2 top-2 h-7 w-7 fill-forest text-white" aria-hidden data-testid="tipo-marcado" />}

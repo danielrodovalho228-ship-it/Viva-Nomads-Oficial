@@ -4,15 +4,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import {
-  ALERTAS_POR_BUSCA_POR_DIA,
-  MAX_IMOVEIS_NO_EMAIL,
-  assinarDesligarAlerta,
-  conferirDesligarAlerta,
-  imovelBateComBusca,
-  montarAlerta,
-  type ImovelParaAlerta,
-} from "./alerta-busca.ts";
+import { assinarDesligarAlerta, conferirDesligarAlerta, imovelBateComBusca, type ImovelParaAlerta } from "./alerta-busca.ts";
 
 const imovel: ImovelParaAlerta = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -68,40 +60,15 @@ test("link de desligar: assinatura confere só para a mesma busca e o mesmo segr
   assert.equal(conferirDesligarAlerta("../x", t, "segredo"), false);
 });
 
-test("e-mail: 1 imóvel × vários (resumo), link /imoveis/<id>, desligar, sem endereço/coordenada/contato do dono", () => {
-  const um = montarAlerta({ buscaParametros: "local=Uberlândia", imoveis: [imovel], siteUrl: "https://vivanomads.com.br", desligarUrl: "https://vivanomads.com.br/alerta-busca/desligar?b=1&t=2", buscasUrl: "https://vivanomads.com.br/dashboard/buscas" });
-  assert.equal(um.subject, "Novo imóvel para sua busca");
-  assert.ok(um.html.includes(`https://vivanomads.com.br/imoveis/${imovel.id}`));
-  assert.ok(um.text.includes("Desligar o alerta desta busca: https://vivanomads.com.br/alerta-busca/desligar"));
-  assert.match(um.html, /máximo 1 aviso por dia/);
-  const muitos = Array.from({ length: MAX_IMOVEIS_NO_EMAIL + 2 }, (_, i) => ({ ...imovel, id: `aaaaaaaa-aaaa-4aaa-8aaa-00000000000${i}`, title: `Imóvel ${i}` }));
-  const varios = montarAlerta({ buscaParametros: "local=Uberlândia", imoveis: muitos, siteUrl: "https://vivanomads.com.br", desligarUrl: null, buscasUrl: "https://vivanomads.com.br/dashboard/buscas" });
-  assert.equal(varios.subject, `${muitos.length} novos imóveis para sua busca`);
-  assert.match(varios.html, /e mais 2 imóveis/);
-  assert.ok(varios.text.includes("/dashboard/buscas")); // sem token: cai na tela de buscas salvas
-  for (const m of [um, varios]) {
-    assert.doesNotMatch(m.html + m.text, /lat|lng|latitude|telefone|whatsapp|@|vistoria|aluguel|comiss/i);
-  }
-});
-
-test("título com HTML é escapado no e-mail", () => {
-  const m = montarAlerta({ buscaParametros: "", imoveis: [{ ...imovel, title: '<script>alert("x")</script>' }], siteUrl: "https://x.com", desligarUrl: null, buscasUrl: "https://x.com/b" });
-  assert.doesNotMatch(m.html, /<script>/);
-});
-
-test("limite: no máximo 1 e-mail por busca por dia", () => {
-  assert.equal(ALERTAS_POR_BUSCA_POR_DIA, 1);
-});
-
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("servidor: respeita notif_email e alerta_ativo, limite diário, idempotência por (busca, imóvel) e não envia ao próprio dono", () => {
+test("servidor: alerta_ativo, idempotência por (busca, imóvel), fila dos proativos por (pessoa, imóvel) e não envia ao próprio dono", () => {
   const src = ler("src/lib/data/alerta-busca-servidor.ts");
-  assert.match(src, /notificacaoLigada\(perfil\.notif_email/);
-  // Prompt 51 F1: conta pausada não recebe alerta de busca.
-  assert.match(src, /\|\| perfil\.pausada_em\)/);
   assert.match(src, /\.eq\("alerta_ativo", true\)/);
-  assert.match(src, /consumirLimite\(`alerta-busca:\$\{busca\.id\}`, ALERTAS_POR_BUSCA_POR_DIA, DIA\)/);
+  // E264-B: o e-mail (cartão, teto por pessoa, notif_email, conta pausada, categoria) é o da fila dos proativos.
+  assert.match(src, /enfileirarProativo\(admin, \{ usuarioId: busca\.usuario_id, evento: "saved_search_match", refId: imovelId/);
+  assert.match(src, /despacharProativos\(admin, u\)/);
+  assert.doesNotMatch(src, /consumirLimite|notify\(/);
   assert.match(src, /alertas_busca_envios"\)\.insert\(\{ busca_id: busca\.id, imovel_id: imovelId \}/);
   assert.match(src, /usuario_id !== imovel\.ownerId/);
   assert.doesNotMatch(src, /\.select\([^)]*(lat|lng|phone|telefone)/);

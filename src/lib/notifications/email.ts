@@ -40,6 +40,18 @@ async function captureToOutbox(
   await appendFile(outbox, line, "utf8");
 }
 
+/** List-Unsubscribe (e o -Post do one-click, quando há a URL assinada). Sem nenhuma das duas, nada. */
+export function cabecalhosDescadastro(p: { gerenciarAvisosUrl?: string; descadastroUmCliqueUrl?: string }): { headers?: Record<string, string> } {
+  const alvos = [p.descadastroUmCliqueUrl, p.gerenciarAvisosUrl].filter((u): u is string => !!u).map((u) => `<${u}>`);
+  if (!alvos.length) return {};
+  return {
+    headers: {
+      "List-Unsubscribe": alvos.join(", "),
+      ...(p.descadastroUmCliqueUrl ? { "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : {}),
+    },
+  };
+}
+
 export async function sendEmail(params: {
   to: string;
   subject: string;
@@ -59,6 +71,11 @@ export async function sendEmail(params: {
   replyTo?: string;
   /** Aviso (não segurança/documento): cabeçalho List-Unsubscribe com "Gerenciar avisos". */
   gerenciarAvisosUrl?: string;
+  /**
+   * E264-B: descadastro de UM clique (RFC 8058) — URL https assinada que desliga a categoria sem login. Vai no
+   * List-Unsubscribe (antes do "Gerenciar avisos") com List-Unsubscribe-Post: List-Unsubscribe=One-Click.
+   */
+  descadastroUmCliqueUrl?: string;
   /** Arquivo da imagem de cabeçalho (ex.: "documentos.jpg") — só para a caixa de teste conferir. */
   imagem?: string;
   /** Evento para a caixa de e-mails de teste (ex.: "recibo_emitido", "termo_devolucao"). Padrão: "email". */
@@ -93,7 +110,7 @@ export async function sendEmail(params: {
   const corpo = JSON.stringify({
     from: rem.from,
     ...(rem.replyTo ? { reply_to: rem.replyTo } : {}),
-    ...(params.gerenciarAvisosUrl ? { headers: { "List-Unsubscribe": `<${params.gerenciarAvisosUrl}>` } } : {}),
+    ...cabecalhosDescadastro(params),
     to: params.to,
     subject: params.subject,
     html: params.html,

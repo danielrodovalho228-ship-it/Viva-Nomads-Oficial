@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { motivoPublicarTravado, oQueFaltaParaPublicar, precosDaPrevia, secoesAntesDePublicar, type EntradaSecoes } from "./passo10-colunas.ts";
 import { prontidaoAnuncio, type FatosAnuncio } from "./prontidao.ts";
+import { conferenciaAssistente, faltamNaConferencia } from "./assistente-dez-etapas.ts";
 import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
 import { isEligible } from "../qualification.ts";
 import { elegibilidadeDoCadastro } from "./requisitos-passo10.ts";
@@ -68,18 +69,32 @@ test("E251 (d): 'Estadia mínima (N meses)' na prévia e no cartão de Meus anú
   assert.equal(rotuloEstadiaMinima(1), "Estadia mínima (1 mês)");
   assert.equal(rotuloEstadiaMinima(4), "Estadia mínima (4 meses)");
   const cartao = ler("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
-  assert.match(cartao, /rotuloEstadiaMinima\(r\.meses\)/);
+  // E254-A: o cartão monta a linha pela função única (linhaEstadiaMinima usa rotuloEstadiaMinima).
+  assert.match(cartao, /linhaEstadiaMinima\(p, r\.meses\)/);
   assert.doesNotMatch(cartao, /ROTULO_TOTAL_CONTRATO/);
   const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
   assert.doesNotMatch(revisar, /total-contrato|Total do contrato"/);
   assert.doesNotMatch(ler("src/lib/anuncio/passo10-colunas.ts"), /ROTULO_TOTAL_CONTRATO/);
 });
 
-test("botão travado: o motivo cabe em UMA linha (o primeiro que falta e quantos mais)", () => {
-  assert.equal(motivoPublicarTravado([]), null);
-  assert.equal(motivoPublicarTravado(["documento do imóvel"]), "Falta: documento do imóvel");
-  assert.equal(motivoPublicarTravado(["documento do imóvel", "declarações do imóvel", "aceite do termo da IA"]), "Falta: documento do imóvel e mais 2");
-  for (const m of [motivoPublicarTravado(["padrão mínimo de conforto", "documento do imóvel"])!]) assert.doesNotMatch(m, /\n/);
+test("E260 (b) botão travado: o motivo aponta para a lista de conferência, sem repetir os itens dela", () => {
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 0, aceitouIa: true }), null);
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 1, aceitouIa: true }), "Falta 1 item da lista de conferência");
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 3, aceitouIa: true }), "Faltam 3 itens da lista de conferência");
+  // O que a lista não mostra (o aceite; as declarações quando ficam fora dela) é dito pelo nome.
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 0, aceitouIa: false }), "Falta: aceite do termo da IA");
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 2, aceitouIa: false }), "Faltam 2 itens da lista de conferência e o aceite do termo da IA");
+  assert.equal(motivoPublicarTravado({ faltamNaLista: 0, aceitouIa: false, declaracoesForaDaLista: true }), "Falta: declarações do imóvel e aceite do termo da IA");
+  // Nunca o nome de um item da lista (ex.: documento, padrão mínimo).
+  const m = motivoPublicarTravado({ faltamNaLista: 4, aceitouIa: true })!;
+  assert.doesNotMatch(m, /documento|padrão mínimo|\n/);
+});
+
+test("E260: a lista conta as linhas pendentes e as pendências da própria Revisão", () => {
+  const c = conferenciaAssistente(prontidaoAnuncio({ ...FATOS, documento: "none", confortoFaltam: 2 }));
+  assert.equal(faltamNaConferencia(c), c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length);
+  assert.ok(faltamNaConferencia(c) >= 2);
+  assert.equal(faltamNaConferencia(conferenciaAssistente(prontidaoAnuncio(FATOS))), 0);
 });
 
 const FATOS: FatosAnuncio = {

@@ -67,7 +67,8 @@ test("tela Tipo (01-b): rádios acessíveis numa linha rolável; foto em TODO ca
   assert.match(tela, /snap-x snap-mandatory/, "no celular, desliza com encaixe");
   assert.match(tela, /disabled=\{bordas\.inicio\}[\s\S]*?tipos-seta-esquerda/, "seta da esquerda desativada no início");
   assert.match(tela, /disabled=\{bordas\.fim\}[\s\S]*?tipos-seta-direita/, "seta da direita desativada no fim");
-  assert.match(tela, /\{SELO_ILUSTRATIVA\}/);
+  // E265: a foto real do tipo, sem o selo "Imagem ilustrativa" por cima.
+  assert.doesNotMatch(tela, /SELO_ILUSTRATIVA|selo-ilustrativa|Imagem ilustrativa/);
   assert.match(tela, /alt=\{t\.alt\}/);
   assert.doesNotMatch(tela, /Outros tipos|rounded-full border px-4/, "sem a seção 'Outros tipos' e sem chips");
   assert.doesNotMatch(tela, /: null/, "nenhum cartão sem foto");

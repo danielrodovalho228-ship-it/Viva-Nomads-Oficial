@@ -53,11 +53,3 @@ export function detalheAceito(): NotifDetalhe {
   );
 }
 
-/** Pedido expirando → inquilino (leva ao painel para renovar/atender). */
-export function detalheExpirando(): NotifDetalhe {
-  return bloco(
-    "Seu pedido de moradia expira em até 3 dias. Renove publicando de novo ou marque como atendido.",
-    "Ver meus pedidos",
-    "/dashboard/pedidos"
-  );
-}

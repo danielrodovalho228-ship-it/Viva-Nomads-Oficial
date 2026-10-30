@@ -527,7 +527,8 @@ const DICA_CATEGORIA: Record<"decisao" | "seguranca" | CategoriaComInterruptor, 
   seguranca: "Verificação, códigos e acesso à conta.",
   mensagens: "Mensagens novas nas conversas.",
   lembretes: "Entrada, saída, renovação e avaliações.",
-  outros: "Novidades de buscas, pedidos e parceiros.",
+  outros: "Avisos de parceiros e da conta.",
+  sugestoes: "Imóveis novos para o seu pedido ou busca, pedidos que combinam com o seu imóvel.",
 };
 
 /** `titulo`: a Conta e a subtela já têm o título "Notificações" — lá o cartão não repete (CONTA-A, C3a). */

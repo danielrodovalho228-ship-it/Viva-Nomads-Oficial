@@ -24,7 +24,8 @@ import {
   visitaCancelada,
   type EmailPassos,
 } from "./emails-e205b.ts";
-import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
+import { EVENTOS_DO_PEDIDO, aberturaDoPedido, linhasDoPedido, type EventoPedido, type FatoDoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
+import { EVENTOS_DA_ESTADIA, aberturaEstadia, linhasEstadia, type DadosEstadiaEmail, type EventoEstadia } from "./transacionais-estadia.ts";
 import { textoResposta } from "../automacao/textos-vinculo.ts";
 import { escaparHtml } from "../escapar-html.ts";
 
@@ -61,18 +62,55 @@ const PEDIDO_EXEMPLO: PedidoParaEmail = {
   horarios: ["2026-11-04T13:00:00.000Z", "2026-11-05T17:00:00.000Z"],
   valorCombinado: 180,
   valorParceiro: 162,
+  outraParte: "Limpa Já Serviços",
+};
+
+/** E267: o fato de exemplo de cada evento do pedido que precisa de um (o resto sai do próprio pedido). */
+const FATO_EXEMPLO: Partial<Record<EventoPedido, { p?: Partial<PedidoParaEmail>; fato?: FatoDoPedido }>> = {
+  parceiro_horario_confirmado: { p: { horarioConfirmado: "2026-11-04T13:00:00.000Z" } },
+  parceiro_lembrete: { p: { horarioConfirmado: "2026-11-04T13:00:00.000Z" } },
+  pedido_auto_atualizado: { fato: { reagendado: true } },
+  pedido_auto_cancelado: { fato: { cancelamento: { motivo: "saida_remarcada", novaSaida: "2026-12-05" } } },
+};
+
+/** E267: a estadia de exemplo dos e-mails de estadia e aditivo. */
+const ESTADIA_EXEMPLO: DadosEstadiaEmail = {
+  imovel: { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" },
+  quem: "Ana",
+  numeroAditivo: 1,
+  mudancas: "Meses: de 2 para 3",
+  prazo: "2026-11-06T15:00:00.000Z",
+  resposta: "aceita",
+  entrada: "2026-10-01",
+  saida: "2026-12-30",
+  motivo: "Mudança de cidade",
+  momento: "saida",
 };
 
 /** E204: eventos cujo e-mail real sai com dados (o catálogo mostra o que sai, não o texto-base). */
 function comDados(siteUrl: string, ev: NotificationEvent, nome: { nomeHtml: string; nomeTexto: string }): EmailMontado | null {
-  if (ev === "parceiro_pedido_novo" || ev === "parceiro_orcamento_recebido" || ev === "parceiro_orcamento_aceito") {
-    const linhas = linhasDoPedido(ev as EventoPedido, PEDIDO_EXEMPLO);
+  if (EVENTOS_DO_PEDIDO.has(ev)) {
+    const ex = FATO_EXEMPLO[ev as EventoPedido] ?? {};
+    const pedido = { ...PEDIDO_EXEMPLO, ...ex.p };
+    const linhas = linhasDoPedido(ev as EventoPedido, pedido, ex.fato);
     return montarNotificacao({
       siteUrl,
       event: ev,
       ...nome,
       pushUrl: "/dashboard/servicos/pedidos/2c3d4e5f-0000-4000-8000-000000000001",
-      body: (n) => aberturaDoPedido(ev as EventoPedido, PEDIDO_EXEMPLO, n),
+      body: (n) => aberturaDoPedido(ev as EventoPedido, pedido, n, ex.fato),
+      detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+      detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
+    });
+  }
+  if (EVENTOS_DA_ESTADIA.has(ev)) {
+    const linhas = linhasEstadia(ev as EventoEstadia, ESTADIA_EXEMPLO);
+    return montarNotificacao({
+      siteUrl,
+      event: ev,
+      ...nome,
+      pushUrl: "/dashboard/estadia/3d4e5f60-0000-4000-8000-000000000001",
+      body: (n) => aberturaEstadia(ev as EventoEstadia, ESTADIA_EXEMPLO, n),
       detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
       detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
     });

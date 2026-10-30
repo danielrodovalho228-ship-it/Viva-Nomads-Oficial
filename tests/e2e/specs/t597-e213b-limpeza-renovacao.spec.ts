@@ -17,6 +17,10 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
        parceiro confirma o novo horário pelo fluxo de horário que já existe → "agendado".
     D. já aceito, o parceiro RECUSA a nova data e ela está longe → cancelado com o sufixo (o cron refaz no D-5).
     E. já aceito, o parceiro RECUSA a nova data e ela está perto → volta a "solicitado" na janela nova, sem os valores.
+  E267 (a régua dos transacionais): cada e-mail do circuito nomeia no corpo a pessoa ("Olá <primeiro nome>"), o imóvel
+  (título · bairro, cidade) e o fato (quem propôs/aceitou/assinou, o que muda, o horário confirmado, a nova saída). O
+  parceiro fica SEM nome no perfil, como o parceiro do circuito ao vivo de 30/10: a saudação vem do nome público. O
+  endereço exato do imóvel nunca aparece.
 */
 const SAIDA = "tests/laboratorio/saida";
 const PORTA = 3128;
@@ -32,6 +36,21 @@ const emDias = (n: number) => new Date(Date.parse(hojeBRT()) + n * 86_400_000).t
 const somar = (d: string, n: number) => new Date(Date.parse(d) + n * 86_400_000).toISOString().slice(0, 10);
 const inicioDaJanela = (saida: string) => new Date(`${saida}T13:00:00-03:00`).toISOString();
 let servidor: ChildProcess | null = null;
+const RUA = "Rua das Palmeiras, 451";
+const dataBR = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
+const tituloDe = (letra: string) => `Studio renova ${letra} t597 ${sufixo}`;
+
+/** E267: o corpo nomeia a pessoa, o imóvel (título · bairro, cidade) e o fato; nunca o endereço exato. */
+function regua(corpo: string, nome: string, letra: string, fatos: (string | RegExp)[]) {
+  expect(corpo, "saudação com o nome").toContain(`Olá ${nome},`);
+  expect(corpo, "o imóvel por extenso").toContain(`${tituloDe(letra)} · Centro, Uberlândia`);
+  for (const f of fatos) {
+    if (typeof f === "string") expect(corpo).toContain(f);
+    else expect(corpo).toMatch(f);
+  }
+  expect(corpo, "sem o endereço exato").not.toContain(RUA);
+  expect(corpo, "sem \"a outra parte\"").not.toContain("a outra parte");
+}
 
 type Pedido = { id: string; status: string; chave_automacao: string; janela_inicio: string | null; janela_fim: string | null; horario_confirmado: string | null; horarios_propostos: string[]; valor_combinado: number | string | null };
 
@@ -47,9 +66,9 @@ async function conta(quem: string, nome: string, role: "owner" | "tenant") {
  * bloco 2 de 1 mês já aceito pelas duas partes logo depois. Imóvel com a limpeza fixa ATIVA (automático).
  */
 async function contrato(letra: string, inquilino: string, fimEm: number, bloco2 = false) {
-  const imovel = await criarImovelPronto(ids.dono, `Studio renova ${letra} t597 ${sufixo}`, { ativo: true, preco: 3200 });
+  const imovel = await criarImovelPronto(ids.dono, tituloDe(letra), { ativo: true, preco: 3200 });
   imoveis[letra] = imovel;
-  await adm().from("properties").update({ checkout_before: "11:00", checkin_after: "14:00" }).eq("id", imovel);
+  await adm().from("properties").update({ checkout_before: "11:00", checkin_after: "14:00", exact_address: RUA }).eq("id", imovel);
   const { error: ev } = await adm().from("imovel_parceiros").insert({ property_id: imovel, categoria: "limpeza", parceiro_id: ids.parceiro, servico_id: ids.servico, modo: "automatico", status: "ativo", respondido_em: new Date().toISOString() });
   if (ev) throw ev;
   const lead = await criarLead(ids.dono, inquilino, imovel, true);
@@ -211,6 +230,8 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     test.setTimeout(240_000);
     ids.dono = await conta("dono", "Dora Renova", "owner");
     ids.limpa = await conta("limpa", "Lara Renova", "owner");
+    // E267: o parceiro do circuito ao vivo não tinha nome no perfil ("Olá," sem nome).
+    await adm().from("profiles").update({ full_name: null }).eq("id", ids.limpa);
     for (const k of ["ana", "beto", "caio", "duda", "eva"]) ids[k] = await conta(k, `${k[0].toUpperCase()}${k.slice(1)} Renova`, "tenant");
     const { data: parc, error } = await adm()
       .from("parceiros")
@@ -294,6 +315,20 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     const [cancelado] = await caixa(ids.limpa, "pedido_auto_cancelado");
     expect(cancelado.assunto.startsWith("Pedido cancelado"), cancelado.assunto).toBe(true);
     expect(cancelado.corpo).toContain("O pedido volta a ser feito perto da nova data.");
+    regua(cancelado.corpo, `Lara Limpa ${sufixo}`, "B", [`a saída do morador mudou (nova saída: ${dataBR(novaSaida)})`, "limpeza completa", `Nova saída: ${dataBR(novaSaida)}`]);
+
+    // E267: os e-mails do aditivo nomeiam quem agiu, o imóvel e o que muda.
+    const [proposto] = await caixa(ids.dono, "estadia_aditivo_proposto");
+    regua(proposto.corpo, "Dora", "B", ["Beto propôs uma alteração no contrato", "Meses: de 2 para 3", /Aceite ou recuse até \d{2}\/\d{2}\/\d{4}/]);
+    const respondidos = (await caixa(ids.beto, "estadia_aditivo_respondido")).map((m) => m.corpo);
+    expect(respondidos.some((c) => c.includes("Dora aceitou a sua proposta de alteração"))).toBe(true);
+    for (const c of respondidos) regua(c, "Beto", "B", ["Meses: de 2 para 3"]);
+    const assinada = (await caixa(ids.beto, "estadia_aditivo_respondido")).find((m) => m.corpo.includes("Dora assinou o aditivo 1"));
+    expect(assinada, "quem assinou primeiro avisa quem falta").toBeTruthy();
+    for (const [quem, nome] of [[ids.dono, "Dora"], [ids.beto, "Beto"]] as const) {
+      const [rem] = await caixa(quem, "estadia_remarcada");
+      regua(rem.corpo, nome, "B", ["o aditivo 1 do contrato", "Meses: de 2 para 3", `a ${dataBR(novaSaida)}`]);
+    }
 
     // 3) A data simulada: a nova saída chega a 3 dias (os blocos andam 31 dias para trás). O cron do D-5 refaz o
     //    pedido com a chave ORIGINAL; a sugestão sai de novo (a data entrou na chave) e o lembrete de saída leva a data.
@@ -355,6 +390,10 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     await expect.poll(async () => (await caixa(ids.limpa, "pedido_auto_atualizado")).length, { timeout: 30_000 }).toBe(atualizados + 1);
     const aviso = (await caixa(ids.limpa, "pedido_auto_atualizado")).at(-1)!;
     expect(aviso.assunto.startsWith("O pedido mudou de data"), aviso.assunto).toBe(true);
+    // E267: a caixa não tem ordem e o parceiro também recebeu o aviso do contrato A: o de C é o que cita o imóvel C.
+    const avisoC = (await caixa(ids.limpa, "pedido_auto_atualizado")).find((m) => m.corpo.includes(tituloDe("C")));
+    expect(avisoC, "o aviso do imóvel C").toBeTruthy();
+    regua(avisoC!.corpo, `Lara Limpa ${sufixo}`, "C", ["foi renovada e a data do serviço de limpeza completa mudou", "O valor combinado continua o mesmo."]);
 
     // O parceiro confirma pelo fluxo de horário que já existe.
     const pg = await abrirPedidoComoParceiro(browser, ids.pC);
@@ -370,6 +409,13 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     expect(p.horarios_propostos.map((h) => new Date(h).toISOString())).toContain(new Date(p.horario_confirmado!).toISOString());
     expect(Date.parse(p.horario_confirmado!)).toBeGreaterThanOrEqual(Date.parse(p.janela_inicio!));
     expect(Number(p.valor_combinado)).toBe(250);
+    // E267: "Horário do serviço confirmado" diz QUAL horário, para as duas partes.
+    const confirmado = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(p.horario_confirmado!)).replace(", ", " às ");
+    for (const [quem, nome] of [[ids.dono, "Dora"], [ids.limpa, `Lara Limpa ${sufixo}`]] as const) {
+      await expect.poll(async () => (await caixa(quem, "parceiro_horario_confirmado")).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(1);
+      const h = (await caixa(quem, "parceiro_horario_confirmado")).find((m) => m.corpo.includes(tituloDe("C")))!;
+      regua(h.corpo, nome, "C", [`está confirmado: ${confirmado}`, `Data: ${confirmado}`, "Valor: R$ 250"]);
+    }
   });
 
   test("D: já aceito, o parceiro recusa a nova data (longe) → cancelado com o sufixo; o cron refaz no D-5", async ({ browser }) => {
@@ -392,7 +438,12 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     expect(msgs).toContain("O parceiro recusou a nova data.");
     expect(msgs).toContain("A saída mudou; o pedido volta a ser feito perto da nova data.");
     await expect.poll(async () => (await caixa(ids.dono, "parceiro_pedido_recusado")).length, { timeout: 30_000 }).toBe(recusados + 1);
-    expect((await caixa(ids.dono, "parceiro_pedido_recusado")).at(-1)!.corpo).toContain("o parceiro recusou a nova data da limpeza. O pedido foi cancelado e volta a ser feito perto da nova saída.");
+    const recusa = (await caixa(ids.dono, "parceiro_pedido_recusado")).find((m) => m.corpo.includes(tituloDe("D")))!.corpo;
+    regua(recusa, "Dora", "D", [`Lara Limpa ${sufixo} recusou a nova data do serviço de limpeza completa`, "O pedido foi cancelado e volta a ser feito perto da nova saída."]);
+    // E267: o parceiro que recusou também recebe o cancelamento com a nova saída.
+    await expect.poll(async () => (await caixa(ids.limpa, "pedido_auto_cancelado")).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(2);
+    const cancelD = (await caixa(ids.limpa, "pedido_auto_cancelado")).find((m) => m.corpo.includes(tituloDe("D")))!;
+    regua(cancelD.corpo, `Lara Limpa ${sufixo}`, "D", [`você recusou a nova data (nova saída: ${dataBR(await saidaDo(ids.D))})`]);
   });
 
   test("E: já aceito, o parceiro recusa a nova data (perto) → volta a 'solicitado' na janela nova, sem os valores do aceite", async ({ browser }) => {

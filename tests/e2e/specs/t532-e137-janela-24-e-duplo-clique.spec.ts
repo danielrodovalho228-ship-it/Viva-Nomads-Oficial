@@ -37,7 +37,9 @@ test.describe("T532 — E137: 24 dias no computador e bloqueio com clique duplo"
     await expect(page.getByTestId("janela-curta")).toContainText("são 24 dias — menos que a duração mínima de 30 dias", { timeout: 15_000 });
     await page.getByTestId("cadastro-continuar").click();
     await noPasso(page, "disponibilidade");
-    await expect(page.getByTestId("passo-erros")).toContainText("menos que a duração mínima de 30 dias");
+    // E260 (a): o aviso aparece UMA vez — junto das datas; o resumo do topo não o repete.
+    await expect(page.getByTestId("janela-curta")).toBeVisible();
+    await expect(page.getByTestId("passo-erros")).toHaveCount(0);
     await page.screenshot({ path: "tests/laboratorio/saida/t532-janela-24-1280.png" });
     await page.context().close();
   });

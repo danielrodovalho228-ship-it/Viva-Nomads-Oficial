@@ -56,7 +56,7 @@ import { meuAceiteTermoIa } from "@/lib/data/termo-ia-actions";
 import { carregarLimitesNegociacao, gravarVideoArquivo, salvarLimitesNegociacao, updateProperty, type PropertyInput } from "@/lib/data/actions";
 import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
-import { avisoTituloBairro } from "@/lib/anuncio/titulo-bairro";
+import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { formatBRL, cn } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
@@ -604,6 +604,7 @@ export function EditarImovelClient({
         <Section
           icon={FileText}
           title="Título & descrição"
+          testid="secao-titulo-descricao"
           summary={`${description.trim().length} caractere(s)`}
           saving={savingSection === "desc"}
           saved={savedSection === "desc"}
@@ -617,11 +618,8 @@ export function EditarImovelClient({
               placeholder="Ex.: Studio mobiliado com home office no Centro"
               className="w-full rounded-xl border border-sage-200 px-3 py-3 outline-none focus:border-sage"
             />
-            {avisoTituloBairro(title, property.neighborhood ?? "") && (
-              <span role="status" className="mt-1 block text-xs text-amber-700" data-testid="aviso-titulo-bairro">
-                {avisoTituloBairro(title, property.neighborhood ?? "")}
-              </span>
-            )}
+            {/* E261: as mesmas checagens do Passo 7 (bairro, tipo e quartos) — avisos que se pode manter; salvar segue livre. */}
+            <AvisosConsistenciaTitulo titulo={title} bairro={property.neighborhood ?? ""} tipo={property.propertyType} quartos={bedrooms} />
           </label>
           <label className="mt-4 block text-sm">
             <span className="mb-1 block font-medium text-ink">Descrição</span>

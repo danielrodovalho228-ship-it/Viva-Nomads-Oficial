@@ -1,14 +1,14 @@
 /*
   Alerta de busca salva (ordem cb9a09e9) — PURO. Responde "este imóvel recém-
   publicado combina com esta busca salva?" com a MESMA regra da /buscar (os
-  mesmos campos da URL), e monta o texto do e-mail. Sem banco, sem envio.
+  mesmos campos da URL). Sem banco, sem envio. O e-mail (cartão do imóvel, agrupado, com teto por pessoa) é o dos
+  proativos (E264-B: src/lib/notifications/email-proativo.ts).
 
   Regra de ouro: sem a informação no imóvel, o filtro NÃO bate (não alertamos
   por palpite). Endereço/coordenada nunca entram no e-mail: só cidade e bairro
   (região aproximada), como na página pública.
 */
-import { mesesDoCartao, rotuloPreco, textoPreco } from "../cartao-preco.ts";
-import { normalizarBusca, resumoDaBusca } from "./buscas-salvas.ts";
+import { normalizarBusca } from "./buscas-salvas.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
 import { filtroInternetDaUrl } from "./filtro-internet.ts";
@@ -49,11 +49,6 @@ export interface ImovelParaAlerta {
   internetMbps?: number;
   internetMedida?: { downloadMbps: number; validoAte: string };
 }
-
-/** Máximo de e-mails de alerta por busca por dia (o resto vai no resumo). */
-export const ALERTAS_POR_BUSCA_POR_DIA = 1;
-/** Máximo de imóveis listados num mesmo e-mail (o resto vira "e mais N"). */
-export const MAX_IMOVEIS_NO_EMAIL = 5;
 
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
@@ -134,7 +129,6 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minu
 // ── Link de desligar (sem login), assinado por HMAC — só no servidor ──────────
 
 import crypto from "node:crypto";
-import { linhaLocalizacao } from "../localizacao.ts";
 
 /** Assinatura do link "Desligar este alerta" (um por busca; não expira, só desliga). */
 export function assinarDesligarAlerta(buscaId: string, segredo: string): string {
@@ -146,81 +140,4 @@ export function conferirDesligarAlerta(buscaId: string, assinatura: string, segr
   const esperado = Buffer.from(assinarDesligarAlerta(buscaId, segredo));
   const recebido = Buffer.from(assinatura);
   return esperado.length === recebido.length && crypto.timingSafeEqual(esperado, recebido);
-}
-
-// ── Texto do e-mail ───────────────────────────────────────────────────────────
-
-export interface ImovelNoAlerta {
-  id: string;
-  title: string;
-  city: string;
-  neighborhood: string;
-  /** UF (pode faltar: a linha de localização junta só o que existe). */
-  state?: string;
-  monthlyPrice: number;
-  bedrooms: number;
-  /** Total do mês (condomínio e contas fixas incluídos); sem ele, o valor mensal. */
-  totalMes?: number;
-  minPeriodDays?: number;
-  availableFrom?: string | null;
-}
-
-/** Preço com contexto do imóvel no e-mail (Prompt 47): a mesma função do cartão da busca. */
-function precoNoAlerta(i: ImovelNoAlerta): string {
-  const r = rotuloPreco({ mensal: i.totalMes ?? i.monthlyPrice, meses: mesesDoCartao(undefined, i.minPeriodDays), disponivelEm: i.availableFrom });
-  return [textoPreco(r), r.disponivel].filter(Boolean).join(" · ").replace(/\u00a0/g, " ");
-}
-
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-/** Assunto: 1 imóvel → "Novo imóvel para sua busca"; vários → resumo com a contagem. */
-export function assuntoDoAlerta(n: number): string {
-  return n <= 1 ? "Novo imóvel para sua busca" : `${n} novos imóveis para sua busca`;
-}
-
-/** Linha de cada imóvel: "Studio no Centro · Uberlândia · R$ 2.400/mês · 1 quarto" (sem endereço, sem dono). */
-export function linhaDoImovel(i: ImovelNoAlerta): string {
-  const regiao = linhaLocalizacao(i.neighborhood, i.city, i.state);
-  const q = i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : "";
-  return `${i.title}${regiao ? ` — ${regiao}` : ""} · ${precoNoAlerta(i)}${q}`;
-}
-
-export function montarAlerta(o: {
-  buscaParametros: string;
-  imoveis: ImovelNoAlerta[];
-  siteUrl: string;
-  desligarUrl: string | null;
-  buscasUrl: string;
-}): { subject: string; html: string; text: string } {
-  const lista = o.imoveis.slice(0, MAX_IMOVEIS_NO_EMAIL);
-  const resto = o.imoveis.length - lista.length;
-  const resumo = resumoDaBusca(o.buscaParametros);
-  const link = (i: ImovelNoAlerta) => `${o.siteUrl}/imoveis/${encodeURIComponent(i.id)}`;
-  const desligar = o.desligarUrl ?? o.buscasUrl;
-  const html = `
-    <p style="margin:12px 0 4px;color:#334155;">Sua busca: <strong>${esc(resumo)}</strong></p>
-    <ul style="margin:8px 0 0;padding:0;list-style:none;">
-      ${lista
-        .map(
-          (i) => `<li style="margin:0 0 12px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:12px;">
-        <div style="font-weight:700;color:#0f3d2e;">${esc(i.title)}</div>
-        <div style="color:#475569;font-size:14px;margin-top:2px;">${esc(linhaLocalizacao(i.neighborhood, i.city, i.state))} · ${esc(precoNoAlerta(i))}${i.bedrooms > 0 ? ` · ${i.bedrooms} ${i.bedrooms === 1 ? "quarto" : "quartos"}` : ""}</div>
-        <a href="${link(i)}" style="display:inline-block;margin-top:10px;background:#1c6b3a;color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;text-decoration:none;">Ver imóvel</a>
-      </li>`
-        )
-        .join("")}
-    </ul>
-    ${resto > 0 ? `<p style="margin:4px 0 0;color:#475569;">…e mais ${resto} ${resto === 1 ? "imóvel" : "imóveis"} na sua busca: <a href="${o.siteUrl}/buscar${o.buscaParametros ? `?${esc(o.buscaParametros)}` : ""}" style="color:#0f3d2e;font-weight:700;">ver todos</a>.</p>` : ""}
-    <p style="margin:16px 0 0;font-size:13px;color:#64748b;">Você recebe no máximo 1 aviso por dia desta busca. <a href="${desligar}" style="color:#64748b;">Desligar o alerta desta busca</a>.</p>`;
-  const text = [
-    `Sua busca: ${resumo}`,
-    "",
-    ...lista.map((i) => `• ${linhaDoImovel(i)}\n  ${link(i)}`),
-    resto > 0 ? `…e mais ${resto} na sua busca: ${o.siteUrl}/buscar${o.buscaParametros ? `?${o.buscaParametros}` : ""}` : "",
-    "",
-    `Você recebe no máximo 1 aviso por dia desta busca. Desligar o alerta desta busca: ${desligar}`,
-  ]
-    .filter((l, idx, arr) => l !== "" || arr[idx - 1] !== "")
-    .join("\n");
-  return { subject: assuntoDoAlerta(o.imoveis.length), html, text };
 }

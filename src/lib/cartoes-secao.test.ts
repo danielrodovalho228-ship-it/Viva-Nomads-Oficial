@@ -31,13 +31,12 @@ test("b6621ca2: /empresas e /para-proprietarios usam FotoCartao, sem caixa de í
   assert.ok(cartaoSecao("empresas", "recibo"));
 });
 
-test("adendo EMPRESAS-A: as 7 fotos do #1144 ligadas e marcadas como ilustrativas, com o selo no canto", () => {
+test("adendo EMPRESAS-A: as 7 fotos do #1144 ligadas e marcadas como ilustrativas; E265: sem selo sobre a foto", () => {
   assert.equal(CARTOES_SECAO.length, 7);
   for (const c of CARTOES_SECAO) {
     assert.equal(c.fotoPronta, true, c.id);
     assert.equal(c.ilustrativa, true, c.id);
   }
   const foto = readFileSync("src/components/institucional/foto-cartao.tsx", "utf8");
-  assert.match(foto, /export const SELO_ILUSTRATIVA = "Imagem ilustrativa";/);
-  assert.match(foto, /cartao\.ilustrativa && \([\s\S]*absolute bottom-2 left-2[\s\S]*\{SELO_ILUSTRATIVA\}/);
+  assert.doesNotMatch(foto, /SELO_ILUSTRATIVA|selo-ilustrativa/);
 });

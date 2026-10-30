@@ -49,10 +49,11 @@ test.describe("T451 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
       const cartoes = linha.getByRole("radio");
       await expect(cartoes).toHaveCount(9);
       expect((await cartoes.allTextContents()).map((t) => t.replace("Imagem ilustrativa", "").trim())).toEqual(ROTULOS);
-      // Todos com foto (e alt que descreve o tipo) e o selo; nenhum chip nem "Outros tipos".
+      // Todos com foto (e alt que descreve o tipo), sem selo por cima (E265); nenhum chip nem "Outros tipos".
       await expect(linha.locator("img")).toHaveCount(9);
       for (const alt of await linha.locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt") ?? ""))) expect(alt).toMatch(/^Foto ilustrativa de /);
-      await expect(linha.getByTestId("selo-ilustrativa")).toHaveCount(9);
+      await expect(linha.getByTestId("selo-ilustrativa")).toHaveCount(0);
+      await expect(linha.getByText("Imagem ilustrativa")).toHaveCount(0);
       await expect(page.getByText("Outros tipos")).toHaveCount(0);
       // Uma linha só: todos os cartões no mesmo alto.
       const ys = await cartoes.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));

@@ -134,9 +134,9 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await expect(detalhes).toHaveAttribute("data-itens", /\bsem_internet\b/);
     await expect(detalhes).toContainText(MOTIVO);
     await expect(page.getByTestId("lista-conferencia")).not.toContainText("Velocidade da internet");
-    const falta = page.getByTestId("publicar-falta-outros");
-    await expect(falta).toContainText(MOTIVO, { timeout: 20_000 });
-    await expect(falta).not.toContainText("Velocidade da internet");
+    // E260: o motivo do botão aponta para a lista (que já diz o porquê), sem repetir o item.
+    await expect(page.getByTestId("publicar-motivo").first()).toContainText("lista de conferência", { timeout: 20_000 });
+    await expect(page.getByTestId("publicar-falta")).toHaveCount(0);
     await expect(page.locator('[data-testid="publicar-anuncio"]:visible')).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t400-2-revisao-barrado.png", fullPage: true });
 
@@ -158,7 +158,7 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await abrirCadastro(page, "revisao");
     await expect(page.getByTestId("conferencia-comodidades")).toHaveAttribute("data-itens", /\binternet\b/, { timeout: 20_000 });
     await expect(page.getByTestId("lista-conferencia")).not.toContainText(MOTIVO);
-    await expect(page.getByTestId("publicar-falta-outros")).toContainText("Velocidade da internet");
+    await expect(page.getByTestId("lista-conferencia")).toContainText("Velocidade da internet");
 
     await abrirCadastro(page, "comodidades");
     const bloco = page.getByTestId("pronto-trabalhar");
@@ -170,8 +170,7 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await aceitarTermoIaSePreciso(page);
     const publicar = page.locator('[data-testid="publicar-anuncio"]:visible');
     await expect(publicar).toBeEnabled({ timeout: 20_000 });
-    const faltaOutros = page.getByTestId("publicar-falta-outros");
-    expect(await faltaOutros.isVisible() ? await faltaOutros.innerText() : "", "nada mais falta para publicar").toBe("");
+    await expect(page.getByTestId("publicar-motivo"), "nada mais falta para publicar").toHaveCount(0);
     await publicar.click();
     await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
     await expect
