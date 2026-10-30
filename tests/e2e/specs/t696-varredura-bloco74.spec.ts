@@ -13,7 +13,9 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
     · #1586 (E259 3/4): o Passo 2, com a contagem das fotos;
     · #1588 (E259 9/10): a página pública do anúncio (destaques das comodidades, "Aceita crianças", o bloco de
       privacidade com o acesso do Passo 6 e a galeria), para o visitante e para o dono.
-  O #1584 (0260) e o #1585 (t688) só trazem massa de produção e uma spec, sem tela. O #1587 entra quando mergear.
+    · #1587 (E259 5-8): o Passo 1 (os 9 cartões de tipo com foto), o Passo 4 ("Pessoas" sugerido), o texto do Essencial
+      no Passo 5 (já na tela acima) e o Passo 10 ("Declarações do imóvel" na conferência).
+  O #1584 (0260) e o #1585 (t688) só trazem massa de produção e uma spec, sem tela.
   Rascunho e anúncio semeados aqui e apagados no fim. Sem clique no primário. Só no laboratório.
 */
 type Conta = "DONO" | "VISITANTE";
@@ -34,9 +36,12 @@ const BASE = { street: "Rua Santos Dumont", numero: "100", neighborhood: "Centro
 
 const cadastro = (etapa: string) => () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=${etapa}`;
 const TELAS: Tela[] = [
+  { conta: "DONO", papel: "proprietário", nome: "Passo 1, os cartões de tipo com foto (#1587)", rota: cadastro("tipo") },
+  { conta: "DONO", papel: "proprietário", nome: "Passo 4, Pessoas sugerido (#1587)", rota: cadastro("detalhes"), marca: "cadastro-capacidade" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 2, a contagem das fotos (#1586)", rota: cadastro("fotos"), marca: "fotos-contagem" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 5, sem o tipo de acesso (#1583)", rota: cadastro("comodidades"), marca: "privacidade-campos" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 6, como se entra no imóvel (#1583)", rota: cadastro("regras"), marca: "chegada-e-pedido" },
+  { conta: "DONO", papel: "proprietário", nome: "Passo 10, Declarações do imóvel na conferência (#1587)", rota: cadastro("revisao"), marca: "conferencia-tipo" },
   { conta: "DONO", papel: "proprietário", nome: "Editor do anúncio, com a seção Regras da casa (#1583)", rota: () => `/dashboard/imoveis/${ids.anuncio}/editar`, marca: "secao-regras" },
   { conta: "VISITANTE", papel: "visitante", nome: "Anúncio público, destaques e privacidade (#1588)", rota: () => `/imoveis/${ids.anuncio}`, marca: "destaques-imovel" },
   { conta: "DONO", papel: "proprietário", nome: "Anúncio público visto pelo dono (#1588)", rota: () => `/imoveis/${ids.anuncio}`, marca: "destaques-imovel" },
@@ -60,7 +65,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return (await browser.newContext()).newPage();
 }
 
-test.describe("T696 — varredura da página inteira, bloco 74 (E259: Passos 2, 5 e 6, editor e anúncio público) (390 e 1280 px)", () => {
+test.describe("T696 — varredura da página inteira, bloco 74 (E259: Passos 1, 2, 4, 5, 6 e 10, editor e anúncio público) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeAll(async ({}, info) => {
