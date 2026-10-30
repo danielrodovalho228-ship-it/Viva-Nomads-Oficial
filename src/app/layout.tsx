@@ -10,6 +10,7 @@ import { OrigemVisita } from "@/components/app/origem-visita";
 import { VivaChatFlutuante } from "@/components/ajuda/viva-chat";
 import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
 import { descricaoHome } from "@/lib/seo/meta-descricao";
+import { Analytics } from "@vercel/analytics/next";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
 // variando apenas o peso. Desenhada para telas — sem corte de descidas/acentos.
@@ -80,6 +81,10 @@ export default function RootLayout({
           <LinksDoApp />
           {children}
         </AuthProvider>
+        {/* E282: Vercel Web Analytics — só a medição padrão (visitantes, páginas, origens), sem cookies e sem eventos
+            customizados. Passa a contar quando o recurso for habilitado no projeto da Vercel. Só nos builds da Vercel
+            (VERCEL=1): fora dela (laboratório, next start local) o script /_vercel/insights não existe. */}
+        {process.env.VERCEL === "1" && <Analytics />}
       </body>
     </html>
   );
