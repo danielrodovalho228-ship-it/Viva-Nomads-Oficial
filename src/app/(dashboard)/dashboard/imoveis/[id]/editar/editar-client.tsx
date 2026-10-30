@@ -49,7 +49,7 @@ import { payloadDoVideo, resumoDoVideo, videoDoAnuncio } from "@/lib/video-anunc
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { amenityKeysFromLabels, comodidadeValeParaTipo, comodidadesDoTipo } from "@/lib/amenities";
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
-import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
+import { PRIVACIDADE_VAZIA, tipoAcessoDaEntrada, type Privacidade } from "@/lib/anuncio/privacidade";
 import { ANCORA_VIDEO_EDITOR, MIN_FOTOS, hrefParaMelhorar, prontidaoAnuncio, type FatosAnuncio } from "@/lib/anuncio/prontidao";
 import { TERMO_IA_TEXTO, aceiteDoEditor, precisaAceitarTermo, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { meuAceiteTermoIa } from "@/lib/data/termo-ia-actions";
@@ -287,7 +287,7 @@ export function EditarImovelClient({
         ? {
             semCamerasInterior: privacidade.semCamerasInterior,
             camerasExternas: privacidade.camerasExternas,
-            tipoAcesso: privacidade.tipoAcesso,
+            tipoAcesso: chegada.tipoEntrada ? tipoAcessoDaEntrada(chegada.tipoEntrada) : privacidade.tipoAcesso,
             senhaTrocadaEstadia: privacidade.senhaTrocadaEstadia,
           }
         : {}),
@@ -749,6 +749,8 @@ export function EditarImovelClient({
               value={chegada}
               onChange={setChegada}
               erroTipoEntrada={avisoTipoEntradaNoPainel({ tipoEntrada: chegada.tipoEntrada, status: property.status }) ?? undefined}
+              senhaTrocada={privacidade.senhaTrocadaEstadia}
+              onSenhaTrocada={(v) => setPrivacidade((p) => ({ ...p, senhaTrocadaEstadia: v }))}
             />
           )}
           <div className="mt-4">

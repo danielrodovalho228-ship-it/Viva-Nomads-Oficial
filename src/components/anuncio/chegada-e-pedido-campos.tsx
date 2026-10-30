@@ -47,10 +47,15 @@ export function ChegadaEPedidoCampos({
   value,
   onChange,
   erroTipoEntrada,
+  senhaTrocada,
+  onSenhaTrocada,
 }: {
   value: ChegadaEPedidoForm;
   onChange: (v: ChegadaEPedidoForm) => void;
   erroTipoEntrada?: string;
+  /** E259 (2): "A senha é trocada antes de cada nova estadia" (antes no Passo 5), só com a fechadura com código. */
+  senhaTrocada?: boolean;
+  onSenhaTrocada?: (v: boolean) => void;
 }) {
   const alternar = (k: string) =>
     onChange({
@@ -74,6 +79,16 @@ export function ChegadaEPedidoCampos({
             />
           ))}
         </div>
+        {value.tipoEntrada === "fechadura_com_codigo" && onSenhaTrocada && (
+          <CartaoEscolha
+            papel="checkbox"
+            on={!!senhaTrocada}
+            onClick={() => onSenhaTrocada(!senhaTrocada)}
+            testid="senha-trocada"
+            rotulo="A senha é trocada antes de cada nova estadia"
+            className="mt-2"
+          />
+        )}
         {erroTipoEntrada && (
           <p className="mt-1 text-xs font-medium text-red-700" role="alert">
             {erroTipoEntrada}

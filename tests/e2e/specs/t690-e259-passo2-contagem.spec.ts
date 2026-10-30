@@ -3,17 +3,17 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T685 — E259 (3) (prova de publicação do QA, 30/10): no Passo 2, a contagem "N / 8 fotos" anda a cada foto concluída
+  T690 — E259 (3) (prova de publicação do QA, 30/10): no Passo 2, a contagem "N / 8 fotos" anda a cada foto concluída
   durante o envio ("Enviando 3 de 8…") — antes ficava em 0 até a última terminar. 1280 e 390, com prints.
 */
 const SAIDA = "tests/laboratorio/saida";
 const FOTOS = ["sala", "quarto-1", "quarto-2", "cozinha", "banheiro", "home-office", "varanda", "fachada"].map((n) => `public/images/imoveis/ube/ube-001-${n}.webp`);
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t685.${sufixo}@lab.vivanomads.test`, nome: "Lia Contagem", role: "owner" as const };
+const dono = { email: `dono.t690.${sufixo}@lab.vivanomads.test`, nome: "Lia Contagem", role: "owner" as const };
 const ids: Record<string, string> = {};
 
-test.describe("T685 — E259 (3): a contagem do Passo 2 anda a cada foto", () => {
+test.describe("T690 — E259 (3): a contagem do Passo 2 anda a cada foto", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -41,11 +41,11 @@ test.describe("T685 — E259 (3): a contagem do Passo 2 anda a cada foto", () =>
       await p.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(FOTOS);
       await expect(numero).toHaveText("8", { timeout: 90_000 });
       const vistos = await p.evaluate(() => (window as unknown as { __contagens: string[] }).__contagens);
-      console.log(`t685 ${w}`, JSON.stringify(vistos));
+      console.log(`t690 ${w}`, JSON.stringify(vistos));
       const doMeio = vistos.map(Number).filter((n) => n > 0 && n < 8);
       expect(doMeio.length, `contagens vistas: ${vistos.join(",")}`).toBeGreaterThan(0);
       await p.getByTestId("fotos-contagem").scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t685-contagem-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t690-contagem-${w}.png` });
       await p.context().close();
     });
   }
