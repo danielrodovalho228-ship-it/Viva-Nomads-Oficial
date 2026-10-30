@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { todasAsPaginas } from "@/lib/admin/paginas";
 import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import {
   EVENTOS_HOME,
@@ -449,10 +450,16 @@ export async function eventosDoPeriodo(
   tipos: readonly string[]
 ): Promise<{ tipo: string; criadoEm: string }[]> {
   const k = cidade ? chaveCidade(cidade) : null;
-  let q = admin.from("eventos").select("tipo, criado_em, usuario_id, cidade_chave").in("tipo", [...tipos]).gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(50000);
-  if (k) q = q.eq("cidade_chave", k);
-  const [{ data }, teste] = await Promise.all([q, idsContasTeste(admin)]);
-  return ((data ?? []) as { tipo: string; criado_em: string; usuario_id: string | null }[])
+  // E281: o servidor do banco devolve no máximo 1.000 linhas por consulta (max_rows) — o limite de 50.000 pedido antes era
+  // cortado em silêncio (Buscas 987 em /admin/eventos e 909 em /admin/funil, contra 6.529 de verdade em 01–30/10).
+  // Agora lê página a página, em ordem estável (id), até acabar.
+  const pagina = (de: number, ate: number) => {
+    let q = admin.from("eventos").select("id, tipo, criado_em, usuario_id").in("tipo", [...tipos]).gte("criado_em", periodo.ini).lt("criado_em", periodo.fim);
+    if (k) q = q.eq("cidade_chave", k);
+    return q.order("id", { ascending: true }).range(de, ate);
+  };
+  const [linhas, teste] = await Promise.all([todasAsPaginas<{ tipo: string; criado_em: string; usuario_id: string | null }>(pagina), idsContasTeste(admin)]);
+  return linhas
     .filter((e) => !e.usuario_id || !teste.has(e.usuario_id))
     .map((e) => ({ tipo: e.tipo, criadoEm: e.criado_em }));
 }
