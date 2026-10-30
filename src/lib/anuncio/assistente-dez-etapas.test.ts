@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ETAPAS_ASSISTENTE, conferenciaAssistente, etapaDoItemProntidao } from "./assistente-dez-etapas.ts";
+import { ETAPAS_ASSISTENTE, NOTA_DISPONIVEL_AGORA, NOTA_ENDERECO_SEM_CEP, conferenciaAssistente, etapaDoItemProntidao } from "./assistente-dez-etapas.ts";
 import { prontidaoAnuncio, type FatosAnuncio } from "./prontidao.ts";
 import { MAX_OUTRAS_REGRAS, limparOutrasRegras, linhasRegrasCasa, normalizarRegrasCasa } from "./regras-casa.ts";
 import { formDeRegrasCasa, payloadDeRegrasCasa } from "./regras-casa-form.ts";
@@ -140,4 +140,30 @@ test("spec da Pista B aponta cada tela do mockup e lista as divergências", () =
   const spec = ler("docs/specs/assistente-cadastro-dados.md");
   for (const e of ETAPAS_ASSISTENTE) assert.ok(spec.includes(e.mockup), `spec sem ${e.mockup}`);
   for (const t of ["Caução", "Estadia mínima", "Outras regras", "TV"]) assert.ok(spec.includes(t), `spec sem ${t}`);
+});
+
+test("E258 (a)(b): o 'feito' explica o opcional vazio — sem CEP (o por perto fica de fora) e sem data (disponível agora)", () => {
+  const p = prontidaoAnuncio(FATOS_OK);
+  const sem = Object.fromEntries(conferenciaAssistente(p, { cepOk: false, disponivelDesde: "" }).itens.map((i) => [i.id, i]));
+  assert.equal(sem.endereco.ok, true);
+  assert.equal(sem.endereco.nota, NOTA_ENDERECO_SEM_CEP);
+  assert.equal(sem.disponibilidade.ok, true);
+  assert.equal(sem.disponibilidade.nota, NOTA_DISPONIVEL_AGORA);
+  const com = Object.fromEntries(conferenciaAssistente(p, { cepOk: true, disponivelDesde: "15/11/2026" }).itens.map((i) => [i.id, i]));
+  assert.equal(com.endereco.nota, undefined);
+  assert.equal(com.disponibilidade.nota, "Disponível a partir de 15/11/2026.");
+  // Pendente não ganha nota: a linha mostra o que falta.
+  const falta = conferenciaAssistente(prontidaoAnuncio({ ...FATOS_OK, enderecoOk: false }), { cepOk: false });
+  assert.equal(falta.itens.find((i) => i.id === "endereco")!.nota, undefined);
+});
+
+test("E258 (a)(c): o aviso do 'por perto' e a regra de gravar de cada bloco do Passo 5 estão ditos na tela", () => {
+  const blocos = readFileSync("src/components/anuncio/blocos-cadastro.tsx", "utf8");
+  assert.match(blocos, /quando o endereço tiver CEP e rua \(Passo 3\)\. O CEP não segura a publicação/);
+  const re = readFileSync("src/components/niveis/ruido-extras.tsx", "utf8");
+  assert.match(re, /data-testid="ruido-como-salva"/);
+  assert.match(re, /data-testid="extras-como-salva"/);
+  assert.match(readFileSync("src/components/anuncio/estrutura-acessibilidade.tsx", "utf8"), /COMO_SALVA_ESTRUTURA = "Cada toque salva na hora\."/);
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx", "utf8");
+  assert.match(pagina, /contextoConferencia=\{\{ cepOk: !!cepValido\(cep\), disponivelDesde: availableFrom \? dataBR\(availableFrom\) : "" \}\}/);
 });

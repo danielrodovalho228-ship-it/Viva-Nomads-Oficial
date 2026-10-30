@@ -125,7 +125,8 @@ export function ProximidadesAutomaticas({
       )}
       {!carregando && !temItens && !buscou && (
         <p className="text-sm text-muted" data-testid="proximidades-aguardando">
-          Os lugares por perto aparecem aqui quando o endereço estiver completo (CEP e rua).
+          Os lugares por perto aparecem aqui quando o endereço tiver CEP e rua (Passo 3). O CEP não segura a publicação; sem
+          ele, esta parte fica de fora do anúncio.
         </p>
       )}
       {!carregando && (buscou || temItens) && (
