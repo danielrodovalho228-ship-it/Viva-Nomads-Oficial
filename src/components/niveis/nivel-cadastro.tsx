@@ -180,7 +180,7 @@ export function NivelNoCadastro({
             <BlocoOpcional
               id="nivel-ruido"
               titulo="Ruído"
-              descricao="Quatro perguntas de sim ou não sobre o barulho em volta. Contam para o nível."
+              descricao="Quatro itens sobre o barulho em volta: marque os que valem. Contam para o nível."
               ligado={abertos.ruido ?? !!tela.ruido}
               temDados={false}
               onLigar={() => setAbertos((a) => ({ ...a, ruido: true }))}
