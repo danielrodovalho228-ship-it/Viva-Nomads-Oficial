@@ -12,9 +12,12 @@ import {
   emailNoPadrao,
   emailNormalizado,
   hashValido,
+  linhaLogRecusaQa,
+  motivoRecusaConta,
   papelDaContaNova,
   portaAdminQaAberta,
   tipoDeEntrada,
+  type MotivoRecusaQa,
   type PerfilQa,
   type TipoEntradaQa,
 } from "./entrar";
@@ -33,9 +36,17 @@ import {
     6. registro em qa_entradas: horário, conta, tipo, hash do IP e o caminho de destino — nunca a chave nem o e-mail.
 */
 
-export type ResultadoQa = { status: 200; userId: string; tipo: TipoEntradaQa } | { status: 404 | 429 | 503 };
+export type ResultadoQa = { status: 200; userId: string; tipo: TipoEntradaQa } | { status: 404; motivo: MotivoRecusaQa } | { status: 429 | 503 };
 
-const NAO_EXISTE = { status: 404 } as const;
+/** E256-B: todo 404 da porta deixa UM código de motivo no log do servidor (sem e-mail, chave nem IP). */
+export function registrarRecusaQa(motivo: MotivoRecusaQa): void {
+  console.warn(linhaLogRecusaQa(motivo));
+}
+
+function recusa(motivo: MotivoRecusaQa): { status: 404; motivo: MotivoRecusaQa } {
+  registrarRecusaQa(motivo);
+  return { status: 404, motivo };
+}
 
 /** PRE_LANCAMENTO lido na hora (não no build): o desligamento vale assim que a variável muda na Vercel. */
 const NOME_PRE_LANCAMENTO = ["NEXT_PUBLIC", "PRE_LANCAMENTO"].join("_");
@@ -77,15 +88,15 @@ export async function entrarComoQa(
   agora: Date = new Date(),
 ): Promise<ResultadoQa> {
   const hash = process.env.QA_LOGIN_KEY_HASH;
-  if (!hashValido(hash)) return NAO_EXISTE;
+  if (!hashValido(hash)) return recusa("desligada");
   const chaveOk = chaveConfere(entrada.chave, hash);
   const limiteIp = await situacaoLimite(chaveLimiteIp(ipHash), LIMITE_QA_POR_HORA, HORA);
-  if (!chaveOk) return NAO_EXISTE;
+  if (!chaveOk) return recusa("chave");
   if (limiteIp === "estourou") return { status: 429 };
   if (limiteIp === "erro") return { status: 503 };
 
   const email = emailNormalizado(entrada.email);
-  if (!email) return NAO_EXISTE;
+  if (!email) return recusa("perfil");
   const admin = createAdminClient();
   if (!admin) return { status: 503 };
 
@@ -96,14 +107,15 @@ export async function entrarComoQa(
   let criada = false;
   if (perfil) {
     const fator = perfil.qa_admin === true ? false : await temFator2fa(admin, perfil.id);
-    const t = tipoDeEntrada(perfil, fator, portaAdminQaAberta(agora, preLancamentoAgora()));
-    if (!t) return NAO_EXISTE;
+    const adminAberta = portaAdminQaAberta(agora, preLancamentoAgora());
+    const t = tipoDeEntrada(perfil, fator, adminAberta);
+    if (!t) return recusa(motivoRecusaConta(perfil, fator, adminAberta) ?? "perfil");
     userId = perfil.id;
     tipo = t;
   } else {
-    if (!emailNoPadrao(email, process.env.QA_EMAIL_PADRAO)) return NAO_EXISTE;
+    if (!emailNoPadrao(email, process.env.QA_EMAIL_PADRAO)) return recusa("padrao");
     const novo = await criarContaDeTeste(admin, email, papelDaContaNova(entrada.papel));
-    if (!novo) return NAO_EXISTE;
+    if (!novo) return recusa("perfil");
     userId = novo;
     tipo = "teste";
     criada = true;
