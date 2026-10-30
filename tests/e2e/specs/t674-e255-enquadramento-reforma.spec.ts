@@ -2,7 +2,7 @@ import { test, expect, type Page, type Request } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T670 — E255: "Você entra na regra nova?" em Ganhos (chave ENQUADRAMENTO_REFORMA; no laboratório, o cookie
+  T674 — E255: "Você entra na regra nova?" em Ganhos (chave ENQUADRAMENTO_REFORMA; no laboratório, o cookie
   vn_lab_reforma liga só neste navegador). 1280 e 390, com prints.
    1. Chave desligada: nem o aviso nem a ferramenta aparecem.
    2. Ligada: o aviso só nos limiares (3 imóveis ou mais na Viva); quem tem 1 imóvel vê a ferramenta, sem aviso.
@@ -16,14 +16,14 @@ async function ligar(p: Page) {
   await p.context().addCookies([{ name: "vn_lab_reforma", value: "1", url: new URL(p.url()).origin }]);
 }
 
-test.describe("T670 — E255: enquadramento da reforma em Ganhos", () => {
+test.describe("T674 — E255: enquadramento da reforma em Ganhos", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const grande = { email: `dono.t670a.${sufixo}@lab.vivanomads.test`, nome: "Iara Carteira", role: "owner" as const };
-  const pequeno = { email: `dono.t670b.${sufixo}@lab.vivanomads.test`, nome: "Otto Um", role: "owner" as const };
+  const grande = { email: `dono.t674a.${sufixo}@lab.vivanomads.test`, nome: "Iara Carteira", role: "owner" as const };
+  const pequeno = { email: `dono.t674b.${sufixo}@lab.vivanomads.test`, nome: "Otto Um", role: "owner" as const };
   const ids: string[] = [];
 
   test.beforeAll(async () => {
@@ -56,7 +56,7 @@ test.describe("T670 — E255: enquadramento da reforma em Ganhos", () => {
       await expect(aviso).toContainText("A reforma tributária muda as regras para quem tem mais de 3 imóveis alugados. Confira se você entra.", { timeout: 30_000 });
       await expect(aviso).toHaveAttribute("href", "/dashboard/ganhos#enquadramento-reforma");
       await expect(p.getByTestId("enquadramento-reforma")).toBeVisible();
-      await p.screenshot({ path: `${SAIDA}/t670-aviso-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t674-aviso-${w}.png` });
       await p.context().close();
     }
     const p = await entrar(browser, pequeno.email, senha);
@@ -93,7 +93,7 @@ test.describe("T670 — E255: enquadramento da reforma em Ganhos", () => {
       }
       expect(await sec.innerText()).not.toMatch(/%|al[íi]quota|redutor|holding|confisco/i);
       await sec.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t670-ferramenta-${w}.png`, fullPage: w === 390 });
+      await p.screenshot({ path: `${SAIDA}/t674-ferramenta-${w}.png`, fullPage: w === 390 });
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await p.context().close();
     }
