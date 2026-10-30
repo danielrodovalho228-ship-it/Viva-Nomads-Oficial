@@ -35,7 +35,8 @@ test.describe("T701 — E261: avisos de consistência do título no editor do an
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto(`/dashboard/imoveis/${id}/editar`, { waitUntil: "domcontentloaded" });
-      const secao = p.getByTestId("secao-titulo-descricao");
+      // A seção pelo título (o mesmo caminho na main e no branch).
+      const secao = p.locator("section").filter({ has: p.getByRole("button", { name: /Título & descrição/ }) });
       await secao.getByRole("button", { name: /Título & descrição/ }).click();
       const titulo = secao.getByPlaceholder(/Studio mobiliado com home office/);
       await expect(titulo).toHaveValue(`Studio mobiliado ${largura} ${sufixo}`, { timeout: 20_000 });
