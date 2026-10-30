@@ -199,8 +199,11 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     const recebido = await emailDoEvento(ids.dono!, "parceiro_orcamento_recebido");
     expect(recebido).toContain("Valor: R$ 350");
     expect(recebido).toContain(`Imóvel: ${imovel}`);
-    // O dono nunca vê o líquido do parceiro ("Você recebe: R$ …"); o título "Você recebeu um orçamento" (E204) vale.
+    // O dono nunca vê o líquido do parceiro ("Você recebe: R$ …").
     expect(recebido).not.toContain("Você recebe:");
+    // E270: o assunto traz o valor e o serviço (antes "Você recebeu um orçamento").
+    const { data: ass } = await adm().from("emails_teste").select("assunto").eq("usuario_id", ids.dono!).eq("evento", "parceiro_orcamento_recebido").order("criado_em", { ascending: false }).limit(1);
+    expect(String(ass?.[0]?.assunto ?? "")).toMatch(/^Orçamento de R\$ 350 para \S/);
     const aceito = await emailDoEvento(ids.foto!, "parceiro_orcamento_aceito");
     expect(aceito).toContain("Valor: R$ 350");
     expect(aceito).toContain("Você recebe: R$ 315");

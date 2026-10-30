@@ -234,6 +234,33 @@ async function registrarVersaoDaProposta(admin: Admin, p: Pick<LinhaProposta, "i
 }
 
 /** Cartão da proposta na conversa + aviso no site/app/e-mail à outra parte. Best-effort: nunca quebra o fluxo. */
+/** E269: "Você recusou a proposta" a quem recusou (só e-mail; o cartão na conversa já registra a recusa). */
+async function copiaDaRecusa(admin: Admin, p: Pick<LinhaProposta, "id" | "owner_id" | "tenant_id" | "property_id">, papel: Autor, motivo: string, texto: string | null) {
+  try {
+    const quem = papel === "owner" ? p.owner_id : p.tenant_id;
+    const outro = papel === "owner" ? p.tenant_id : p.owner_id;
+    const [{ data: eu }, { data: ele }, { data: im }] = await Promise.all([
+      admin.from("profiles").select("email, full_name, notif_email").eq("id", quem).maybeSingle(),
+      admin.from("profiles").select("full_name").eq("id", outro).maybeSingle(),
+      admin.from("properties").select("city").eq("id", p.property_id).maybeSingle(),
+    ]);
+    const d = eu as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
+    if (!d?.email || d.notif_email === false) return;
+    const e = propostaRecusada({
+      quemRecusou: papel,
+      motivo,
+      texto,
+      propostaId: p.id,
+      cidade: (im as { city?: string | null } | null)?.city ?? null,
+      paraQuemRecusou: true,
+      nomeDaOutraParte: (ele as { full_name?: string | null } | null)?.full_name ?? null,
+    });
+    await notify({ event: "proposta_recusada", email: d.email, name: d.full_name ?? undefined, userId: quem, pushUrl: e.url, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, semPush: true });
+  } catch {
+    /* notificação nunca quebra o fluxo */
+  }
+}
+
 async function avisarOutraParte(
   admin: Admin,
   p: Pick<LinhaProposta, "id" | "numero" | "owner_id" | "tenant_id" | "property_id">,
@@ -855,6 +882,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
         return { event: "proposta_recusada", assunto: e.assunto, abertura: e.abertura, cta: e.cta, url: e.url };
       },
     );
+    // E269: a cópia de quem recusou (os dois lados recebem, 1 cada) — a moradora que recusa vê imóveis parecidos.
+    await copiaDaRecusa(s.admin, p, papel, motivo, texto);
     return { ok: true };
   }
 

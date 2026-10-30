@@ -1069,6 +1069,7 @@
         "t663-varredura-bloco64",
         "t668-e225-estrutura-acessibilidade",
         "t701-e261-avisos-editor",
+        "t696-varredura-bloco74",
         "t706-e261-avisos-titulo",
         "t709-e263-pets-condicoes-ida-e-volta"
       ]
@@ -1196,10 +1197,11 @@
         "t693-prova-de-publicacao",
         "t700-e260-avisos-unicos",
         "t704-e265-tipos-sem-selo",
-        "t707-e262-galeria-destaques-previa",
-        "t708-e254-estadia-minima-uma-fonte",
+        "t696-varredura-bloco74",
         "t699-e260-pendencia-uma-vez",
         "t706-e261-avisos-titulo",
+        "t707-e262-galeria-destaques-previa",
+        "t708-e254-estadia-minima-uma-fonte",
         "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
@@ -1695,10 +1697,11 @@
         "t693-prova-de-publicacao",
         "t705-e263-pets-condicoes",
         "t702-e262-galeria-e-destaques",
-        "t707-e262-galeria-destaques-previa",
-        "t708-e254-estadia-minima-uma-fonte",
+        "t696-varredura-bloco74",
         "t699-e260-pendencia-uma-vez",
         "t706-e261-avisos-titulo",
+        "t707-e262-galeria-destaques-previa",
+        "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
         "t710-e265-sem-selo-em-todo-cartao"
       ]
