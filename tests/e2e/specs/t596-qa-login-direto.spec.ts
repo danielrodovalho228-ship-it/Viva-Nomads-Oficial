@@ -79,7 +79,7 @@ async function contaPorEmail(email: string) {
 
 /** Entra pela porta no navegador (atalho /qa/entrar) e devolve a página. */
 async function entrarPeloAtalho(browser: Browser, email: string, destino: string, base = BASE) {
-  const ctx = await browser.newContext({ baseURL: base, extraHTTPHeaders: { "x-forwarded-for": novoIp() } });
+  const ctx = await browser.newContext({ baseURL: base, extraHTTPHeaders: { "x-vn-origem": "e2e", "x-forwarded-for": novoIp() } });
   const page = await ctx.newPage();
   await page.goto(`/qa/entrar?email=${encodeURIComponent(email)}&destino=${encodeURIComponent(destino)}`);
   await page.getByTestId("qa-chave").fill(CHAVE);

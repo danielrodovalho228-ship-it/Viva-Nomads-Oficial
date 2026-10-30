@@ -13,6 +13,7 @@ import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
 import { precisaVerificarUsuario, requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
+import { CABECALHO_TRAFEGO, COOKIE_TRAFEGO, VALOR_E2E, ehTrafegoE2e } from "@/lib/eventos/trafego";
 import { decidirPortaoMfa, mfaAdminObrigatoria, rotaLivreDeAal2, urlAtivar2fa, urlVerificarCodigo } from "@/lib/admin/mfa";
 
 /**
@@ -44,8 +45,18 @@ async function papelDoApp(request: NextRequest): Promise<"owner" | "tenant" | nu
 /**
  * Proxy (Next.js 16) — substitui a antiga convenção `middleware`.
  * Protege rotas privadas no servidor a cada requisição.
+ * E288-B: requisição da suíte automática (cabeçalho x-vn-origem: e2e) ganha o cookie vn_trafego=e2e, legível no
+ * navegador — os eventos e o Vercel Analytics que a página disparar depois saem marcados como de teste.
  */
 export async function proxy(request: NextRequest) {
+  const resposta = await proteger(request);
+  if (ehTrafegoE2e(request.headers.get(CABECALHO_TRAFEGO), null) && request.cookies.get(COOKIE_TRAFEGO)?.value !== VALOR_E2E) {
+    resposta.cookies.set(COOKIE_TRAFEGO, VALOR_E2E, { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 });
+  }
+  return resposta;
+}
+
+async function proteger(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   // ── MODO APP (Android/iPhone) ─────────────────────────────────────────────

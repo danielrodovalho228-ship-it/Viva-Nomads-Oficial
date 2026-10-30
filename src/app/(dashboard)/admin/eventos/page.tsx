@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { Activity } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { adminDaPagina, eventosDoPeriodo, intervaloBRT } from "@/lib/data/admin-indicadores";
+import { adminDaPagina, eventosDoPeriodoComFora, intervaloBRT } from "@/lib/data/admin-indicadores";
+import { rotuloForaDaContagem } from "@/lib/eventos/trafego";
 import { EVENTOS_HOME, periodoDaLista, type TipoEventoHome } from "@/lib/admin/indicadores";
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
 import { dataBRT } from "@/lib/datas-brasilia";
@@ -15,7 +16,8 @@ export const dynamic = "force-dynamic";
 /**
  * Admin → Relatório de eventos (complemento do P29, item 4): buscas, anúncios vistos, candidaturas começadas e os
  * formulários de cadastro e de anúncio. São eventos ANÔNIMOS (sem pessoa): a lista é o total por dia, no mesmo período
- * e cidade da home, contas de teste fora (mesma regra da 0181).
+ * e cidade da home, contas de teste fora (mesma regra da 0181) e, desde o E288-B, o tráfego da suíte automática também
+ * (só 'real' conta; uma linha discreta diz quantos ficaram de fora).
  */
 export default async function AdminEventosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
@@ -25,7 +27,8 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
   const p = periodoDaLista({ de: um("de"), ate: um("ate") }) ?? { inicio: somarDias(hoje, -29), fim: hoje };
   const cidade = um("cidade") || null;
   const admin = await adminDaPagina();
-  const eventos = admin ? await eventosDoPeriodo(admin, intervaloBRT(p.inicio, p.fim), cidade, [tipo]) : [];
+  const { reais: eventos, fora } = admin ? await eventosDoPeriodoComFora(admin, intervaloBRT(p.inicio, p.fim), cidade, [tipo]) : { reais: [], fora: 0 };
+  const foraRotulo = rotuloForaDaContagem(fora);
   const porDia = new Map<string, number>();
   for (const e of eventos) {
     const d = dataBRT(e.criadoEm);
@@ -59,6 +62,11 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
       </nav>
       <p className="mb-4 text-sm text-ink">
         <strong data-testid="lista-total">{eventos.length}</strong> no período ({dias.length} {dias.length === 1 ? "dia" : "dias"} com registro).
+        {foraRotulo && (
+          <span className="block text-xs text-muted" data-testid="eventos-fora-da-contagem" data-fora={fora}>
+            {foraRotulo}.
+          </span>
+        )}
       </p>
       <Panel title="Por dia (horário de Brasília)">
         {dias.length === 0 ? (

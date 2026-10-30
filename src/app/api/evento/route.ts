@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite, ipHash, HORA } from "@/lib/limites";
 import { validarEvento, origemDoCookie, diaBR, ORIGEM_COOKIE } from "@/lib/eventos/eventos";
+import { CABECALHO_TRAFEGO, COOKIE_TRAFEGO, cookieDoCabecalho, ehTrafegoE2e, trafegoDoEvento } from "@/lib/eventos/trafego";
 
 /**
  * Evento anônimo de uso (0067). O navegador manda por sendBeacon; só o
@@ -13,14 +14,7 @@ import { validarEvento, origemDoCookie, diaBR, ORIGEM_COOKIE } from "@/lib/event
  */
 const vazio = () => new Response(null, { status: 204 });
 
-function cookie(request: Request, nome: string): string | null {
-  const c = request.headers.get("cookie") ?? "";
-  for (const parte of c.split(/;\s*/)) {
-    const i = parte.indexOf("=");
-    if (i > 0 && parte.slice(0, i) === nome) return parte.slice(i + 1);
-  }
-  return null;
-}
+const cookie = (request: Request, nome: string) => cookieDoCabecalho(request.headers.get("cookie"), nome);
 
 export async function POST(request: Request) {
   // Só o próprio site (sendBeacon manda Origin).
@@ -46,6 +40,7 @@ export async function POST(request: Request) {
   if (!admin) return vazio();
 
   let usuarioId: string | null = null;
+  let contaTeste = false;
   try {
     const supabase = await createClient();
     if (supabase) {
@@ -53,6 +48,10 @@ export async function POST(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
       usuarioId = user?.id ?? null;
+    }
+    if (usuarioId) {
+      const { data: perfil } = await admin.from("profiles").select("is_teste").eq("id", usuarioId).maybeSingle();
+      contaTeste = perfil?.is_teste === true;
     }
   } catch {
     usuarioId = null;
@@ -65,8 +64,10 @@ export async function POST(request: Request) {
     .digest("hex")
     .slice(0, 32);
   const origem = origemDoCookie(cookie(request, ORIGEM_COOKIE));
+  // E288-B: suíte automática (cabeçalho/cookie de teste) → 'e2e'; conta is_teste → 'teste'; o resto → 'real'.
+  const trafego = trafegoDoEvento({ e2e: ehTrafegoE2e(request.headers.get(CABECALHO_TRAFEGO), cookie(request, COOKIE_TRAFEGO)), contaTeste });
 
-  const { error } = await admin.from("eventos").insert({
+  const linha = {
     tipo: evento.tipo,
     usuario_id: usuarioId,
     sessao,
@@ -76,19 +77,18 @@ export async function POST(request: Request) {
     origem_medium: origem.medium,
     origem_campaign: origem.campaign,
     plataforma: evento.plataforma,
-  });
+    trafego,
+  };
+  let { error } = await admin.from("eventos").insert(linha);
+  // Deploy antes da migração 0266 (coluna trafego ainda não existe): grava sem ela, como antes.
+  if (error && (error.code === "42703" || error.code === "PGRST204")) {
+    const semTrafego: Partial<typeof linha> = { ...linha };
+    delete semTrafego.trafego;
+    ({ error } = await admin.from("eventos").insert(semTrafego));
+  }
   // Imóvel apagado entre o clique e o beacon (FK) → grava sem o imóvel.
   if (error?.code === "23503" && evento.imovel_id) {
-    await admin.from("eventos").insert({
-      tipo: evento.tipo,
-      usuario_id: usuarioId,
-      sessao,
-      cidade_chave: evento.cidade_chave,
-      origem_source: origem.source,
-      origem_medium: origem.medium,
-      origem_campaign: origem.campaign,
-      plataforma: evento.plataforma,
-    });
+    await admin.from("eventos").insert({ ...linha, imovel_id: null });
   } else if (error && error.code !== "42P01") {
     console.error("[evento] não gravou:", error.message);
   }
