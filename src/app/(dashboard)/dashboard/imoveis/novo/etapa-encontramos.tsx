@@ -9,7 +9,7 @@ import { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } from "@/lib/anuncio/sugestoes
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import type { Privacidade } from "@/lib/anuncio/privacidade";
 import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anuncio/blocos-cadastro";
-import { avisosConsistenciaTitulo } from "@/lib/anuncio/titulo-bairro";
+import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { cn } from "@/lib/utils";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
@@ -157,7 +157,7 @@ export function EtapaEncontramos(p: {
             data-testid="cadastro-titulo"
           />
           <Erro msg={p.erros.titulo} />
-          <AvisoBairro titulo={p.title} bairro={p.neighborhood} tipo={p.propertyType} quartos={p.bedrooms} />
+          <AvisosConsistenciaTitulo titulo={p.title} bairro={p.neighborhood} tipo={p.propertyType} quartos={p.bedrooms} />
         </Labeled>
         <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
           <textarea
@@ -312,18 +312,4 @@ function GrupoComodidades(p: {
       </div>
     </div>
   );
-}
-
-/** F17 + E150: o título confere com o bairro, o tipo e os quartos do anúncio (aviso que pode manter, nunca trava). */
-function AvisoBairro({ titulo, bairro, tipo, quartos }: { titulo: string; bairro: string; tipo?: string; quartos?: string }) {
-  const avisos = avisosConsistenciaTitulo(titulo, { bairro, tipo, quartos });
-  return avisos.length ? (
-    <div role="status" className="mt-1 space-y-1 text-xs text-amber-700" data-testid="aviso-titulo-consistencia">
-      {avisos.map((a) => (
-        <p key={a} data-testid={a.startsWith("O título cita") ? "aviso-titulo-bairro" : undefined}>
-          {a}
-        </p>
-      ))}
-    </div>
-  ) : null;
 }
