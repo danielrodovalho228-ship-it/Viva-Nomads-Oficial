@@ -156,7 +156,7 @@ for (const largura of LARGURAS) {
         const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, ""));
         const conta = await cartao.getByTestId("cartao-lateral-estadia-conta").innerText();
         expect(conta).toMatch(/^3 × R\$/);
-        const unicos = [...conta.matchAll(/\+ [^R]*R\$\s?([\d.]+,\d{2})/g)].reduce((s, m) => s + num(m[1]), 0);
+        const unicos = [...conta.matchAll(/\+ [^R]*R\$\s?([\d.]+(?:,\d{2})?)/g)].reduce((s, m) => s + num(m[1]), 0);
         expect(totalPeriodo).toBeCloseTo(mes * 3 + unicos, 0);
         await expect(cartao.getByTestId("cartao-nao-segura")).toContainText("A Viva não segura dinheiro");
       }

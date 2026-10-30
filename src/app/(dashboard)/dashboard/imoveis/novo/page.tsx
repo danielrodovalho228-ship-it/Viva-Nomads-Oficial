@@ -293,6 +293,8 @@ export default function NewPropertyPage() {
   const [faixas, setFaixas] = useState<Record<string, boolean>>({ temporada: true, media_estadia: true });
   const [garantias, setGarantias] = useState<Record<string, boolean>>({ caucao_avista: true, caucao_parcelada: false, seguro_fianca: false });
   const [prepFee, setPrepFee] = useState(450);
+  // E254-A: a limpeza de saída é configurada no editor; ao editar um anúncio, a prévia soma a que ele já tem.
+  const [limpezaSaida, setLimpezaSaida] = useState<{ ativa: boolean; valor: number }>({ ativa: false, valor: 0 });
   const [negociacao, setNegociacao] = useState<Negociacao>(NEGOCIACAO_PADRAO);
   const [limites, setLimites] = useState<LimitesPrivados>({ valorMinimo: null, limpezasMax: null });
   const [ownershipType, setOwnershipType] = useState<Operacao>("own");
@@ -621,6 +623,10 @@ export default function NewPropertyPage() {
     condoFee: Number(condoFee) || 0,
     utilitiesMode,
     utilitiesEstimate,
+    // E254-A: os pagamentos únicos entram no total da estadia mínima da prévia como no cartão e na página pública.
+    prepFee,
+    checkoutCleaningEnabled: limpezaSaida.ativa,
+    checkoutCleaningFee: limpezaSaida.valor,
     photos: fotosPrevia,
     readyToLiveBadge: qual.baseBadge,
     tagHomeOffice: qual.tHome,
@@ -1001,6 +1007,7 @@ export default function NewPropertyPage() {
       setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
       setIssuesInvoice(!!p.issuesInvoice);
       setPrepFee(p.prepFee ?? 450);
+      setLimpezaSaida({ ativa: !!p.checkoutCleaningEnabled, valor: Number(p.checkoutCleaningFee) || 0 });
       setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
       setSubleaseAuthorized(!!p.subleaseAuthorized);
       setDocOperacaoAnexado(!!p.autorizacaoAnexada);
