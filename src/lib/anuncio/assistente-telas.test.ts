@@ -36,7 +36,10 @@ test("'Passo X de 10' e a barra de progresso", () => {
 test("01-b (E87): os 9 tipos num array só, na ordem pedida — nenhum tipo do catálogo some", () => {
   assert.deepEqual(TIPOS_ASSISTENTE.map((t) => t.rotulo), ["Casa", "Apartamento", "Quarto", "Studio", "Loft", "Cobertura", "Casa de condomínio", "Flat/apart-hotel", "Chácara/Sítio"]);
   assert.deepEqual(TIPOS_ASSISTENTE.map((t) => t.valor).sort(), PROPERTY_TYPES.map((t) => t.value).sort());
-  for (const t of TIPOS_ASSISTENTE) assert.match(t.alt, /^Foto ilustrativa de /, `alt descreve o tipo: ${t.valor}`);
+  for (const t of TIPOS_ASSISTENTE) {
+    assert.match(t.alt, /^Foto de /, `alt descreve o tipo: ${t.valor}`);
+    assert.doesNotMatch(t.alt, /ilustrativ/i, `E271: alt neutro: ${t.valor}`);
+  }
 });
 
 test("E102-A: subtítulo do Passo 9 sem 'aluguel'", () => {

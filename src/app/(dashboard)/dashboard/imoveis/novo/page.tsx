@@ -420,10 +420,12 @@ export default function NewPropertyPage() {
       setTimeout(() => document.querySelector(`[data-testid="antes-secao-${secao}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }, 50);
   }
-  /** E260 (b): o motivo do botão travado aponta para a lista de conferência — tocar desce até ela (o "Resolver" de cada
-   *  linha leva ao passo). Sem nada na lista, leva ao que falta fora dela: as declarações ou o aceite. */
+  /** E260 (b) + E271: tocar no motivo leva à primeira pendência — a lista de conferência (Passos 1 a 9; o "Resolver" de
+   *  cada linha leva ao passo) ou, sem nada nela, a seção do Passo 10 que falta (abre no lugar); depois, o aceite. */
   function irAoQueFalta() {
-    if (faltamNaLista > 0) return document.querySelector('[data-testid="lista-conferencia"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (conferencia.itens.some((i) => !i.ok)) return document.querySelector('[data-testid="lista-conferencia"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const doPasso10 = completude.find((i) => !i.ok && secaoDoItem(i.key));
+    if (doPasso10) return resolverItem(doPasso10);
     if (!qualificado) return abrirSecaoPasso10("declaracoes");
     if (!aceiteValido) document.querySelector('[data-testid="aceite-ia"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -446,7 +448,8 @@ export default function NewPropertyPage() {
   const podePublicar = prontidao.podePublicar && qualificado && aceiteValido;
   // E251: o motivo do "Publicar anúncio" travado, em uma linha (as mesmas regras de sempre: prontidão, isEligible, aceite).
   // E260 (b): sem repetir os itens — conta o que a lista de conferência mostra e só nomeia o que fica fora dela.
-  const faltamNaLista = faltamNaConferencia(conferenciaAssistente(prontidao));
+  const conferencia = conferenciaAssistente(prontidao);
+  const faltamNaLista = faltamNaConferencia(conferencia);
   const motivoTravado = podePublicar
     ? null
     : motivoPublicarTravado({ faltamNaLista, aceitouIa: aceiteValido, declaracoesForaDaLista: !qualificado && !completude.some((i) => i.key === "qualificacao") });

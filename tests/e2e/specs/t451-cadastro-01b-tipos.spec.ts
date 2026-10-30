@@ -51,7 +51,7 @@ test.describe("T451 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
       expect((await cartoes.allTextContents()).map((t) => t.replace("Imagem ilustrativa", "").trim())).toEqual(ROTULOS);
       // Todos com foto (e alt que descreve o tipo), sem selo por cima (E265); nenhum chip nem "Outros tipos".
       await expect(linha.locator("img")).toHaveCount(9);
-      for (const alt of await linha.locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt") ?? ""))) expect(alt).toMatch(/^Foto ilustrativa de /);
+      for (const alt of await linha.locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt") ?? ""))) expect(alt).toMatch(/^Foto de /);
       await expect(linha.getByTestId("selo-ilustrativa")).toHaveCount(0);
       await expect(linha.getByText("Imagem ilustrativa")).toHaveCount(0);
       await expect(page.getByText("Outros tipos")).toHaveCount(0);

@@ -43,18 +43,18 @@ export const progressoQualificacao = (tela: number, telas = 5, total = TELAS_ASS
 /**
  * Passo 1 (Cadastro 01-b / E87, mockup cadastro-imovel-01): os NOVE tipos, todos em cartões-foto numa linha única
  * rolável, nesta ordem — um só array (saíram os três cartões grandes, a seção "Outros tipos" e os chips). `alt` descreve
- * o tipo da foto, que é ilustrativa.
+ * o tipo da foto em descrição neutra (E271: "Foto de uma casa", sem "ilustrativa").
  */
 export const TIPOS_ASSISTENTE: readonly { valor: string; rotulo: string; alt: string }[] = [
-  { valor: "casa", rotulo: "Casa", alt: "Foto ilustrativa de uma casa" },
-  { valor: "apartamento", rotulo: "Apartamento", alt: "Foto ilustrativa de um prédio de apartamentos" },
-  { valor: "quarto", rotulo: "Quarto", alt: "Foto ilustrativa de um quarto mobiliado" },
-  { valor: "studio", rotulo: "Studio", alt: "Foto ilustrativa de um studio" },
-  { valor: "loft", rotulo: "Loft", alt: "Foto ilustrativa de um loft" },
-  { valor: "cobertura", rotulo: "Cobertura", alt: "Foto ilustrativa de uma cobertura" },
-  { valor: "casa_condominio", rotulo: "Casa de condomínio", alt: "Foto ilustrativa de uma casa de condomínio" },
-  { valor: "flat", rotulo: "Flat/apart-hotel", alt: "Foto ilustrativa de um flat em apart-hotel" },
-  { valor: "chacara", rotulo: "Chácara/Sítio", alt: "Foto ilustrativa de uma chácara" },
+  { valor: "casa", rotulo: "Casa", alt: "Foto de uma casa" },
+  { valor: "apartamento", rotulo: "Apartamento", alt: "Foto de um prédio de apartamentos" },
+  { valor: "quarto", rotulo: "Quarto", alt: "Foto de um quarto mobiliado" },
+  { valor: "studio", rotulo: "Studio", alt: "Foto de um studio" },
+  { valor: "loft", rotulo: "Loft", alt: "Foto de um loft" },
+  { valor: "cobertura", rotulo: "Cobertura", alt: "Foto de uma cobertura" },
+  { valor: "casa_condominio", rotulo: "Casa de condomínio", alt: "Foto de uma casa de condomínio" },
+  { valor: "flat", rotulo: "Flat/apart-hotel", alt: "Foto de um flat em apart-hotel" },
+  { valor: "chacara", rotulo: "Chácara/Sítio", alt: "Foto de uma chácara" },
 ];
 
 /** Título da prévia: o do dono; sem título, "Apartamento no Santa Mônica" (tipo + bairro), como no desenho. */

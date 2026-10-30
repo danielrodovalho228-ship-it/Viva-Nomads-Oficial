@@ -83,10 +83,11 @@ test("conferência: o que falta aparece na etapa certa, com o texto da prontidã
   assert.equal(por.preco.ok, false);
   assert.equal(por.comodidades.ok, false);
   assert.equal(por.regras.ok, false);
-  // Qualificação pendente faz a linha "Tipo do imóvel" aparecer (fora da lista do mockup só quando há o que fazer).
-  assert.equal(por.tipo.ok, false);
+  // E271: as declarações (qualificação) não viram linha da lista — ficam só na seção delas, no Passo 10.
+  assert.equal(por.tipo, undefined);
   assert.equal(por.endereco.ok, true);
-  assert.equal(c.itens[0].id, "tipo");
+  assert.equal(c.itens[0].id, "fotos");
+  assert.ok(c.pendentesNaRevisao.some((t) => /Declara|Qualifica/i.test(t)), c.pendentesNaRevisao.join(" | "));
 });
 
 test("E233-A: tudo em ordem publica — sem 'Vaga no seu plano' na revisão", () => {

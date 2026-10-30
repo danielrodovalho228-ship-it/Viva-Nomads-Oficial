@@ -8,7 +8,7 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
    (6) Passo 3 → Continuar → Passo 4: "Pessoas" vazio chega com a sugestão (2), marcada "sugerido", e a dica do Continuar
        não lista mais Pessoas.
    (7) Passo 5: o texto do Essencial não diz mais "sem foto nenhuma" (o mínimo de 8 fotos continua).
-   (8) Passo 10: a linha da etapa 1 na Lista de conferência é "Declarações do imóvel".
+   (8) Passo 10: "Declarações do imóvel" (E271: só na seção dela, sem linha na Lista de conferência).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -63,10 +63,11 @@ test.describe("T691 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
 
       // (8)
       const p10 = await abrirPasso(browser, conta, ids[`r${w}`], "revisao", w);
-      const linha = p10.getByTestId("conferencia-tipo");
+      // E271: as declarações ficam só na seção delas ("Antes de publicar"); a lista não tem mais a linha do Passo 1.
+      const linha = p10.getByTestId("antes-secao-declaracoes");
       await expect(linha).toBeVisible({ timeout: 30_000 });
       await expect(linha).toContainText("Declarações do imóvel");
-      await expect(linha).not.toContainText("Tipo do imóvel");
+      await expect(p10.getByTestId("conferencia-tipo")).toHaveCount(0);
       await linha.scrollIntoViewIfNeeded();
       await p10.screenshot({ path: `${SAIDA}/t691-conferencia-${w}.png` });
       await p10.context().close();
