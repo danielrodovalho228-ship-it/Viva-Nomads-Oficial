@@ -4,6 +4,8 @@
   de acesso. Texto público sempre diz "declarado pelo anunciante".
 */
 
+import { rotuloTipoEntrada, tipoEntradaValido, type TipoEntrada } from "./chegada-e-pedido.ts";
+
 export const TEXTO_DECLARACAO_CAMERAS =
   "Não há câmeras, babás eletrônicas, microfones ou qualquer dispositivo que grave imagem ou som dentro do imóvel.";
 export const MAX_CAMERAS_EXTERNAS = 200;
@@ -17,6 +19,19 @@ export type TipoAcesso = (typeof TIPOS_ACESSO)[number]["valor"];
 
 export function tipoAcessoValido(v: unknown): v is TipoAcesso {
   return TIPOS_ACESSO.some((t) => t.valor === v);
+}
+
+/**
+ * E259 (2): a entrada do imóvel é UMA pergunta só — "Como se entra no imóvel?" (Passo 6, `tipo_entrada`). A coluna
+ * antiga `tipo_acesso` continua gravada, derivada dela, para quem ainda a lê (o lembrete da senha no contrato).
+ */
+const ACESSO_DA_ENTRADA: Partial<Record<TipoEntrada, TipoAcesso>> = {
+  chave_com_proprietario: "chave",
+  cofre_de_chaves: "cofre",
+  fechadura_com_codigo: "fechadura_senha",
+};
+export function tipoAcessoDaEntrada(tipoEntrada: unknown): TipoAcesso | null {
+  return tipoEntradaValido(tipoEntrada) ? (ACESSO_DA_ENTRADA[tipoEntrada] ?? null) : null;
 }
 
 export interface Privacidade {
@@ -58,13 +73,21 @@ export function declaracaoCamerasFeita(v: boolean | null | undefined): boolean {
   return v === true;
 }
 
-/** Linhas do bloco "Privacidade" do anúncio público (vazio = nada declarado). */
-export function linhasPrivacidadePublica(p: Partial<Privacidade> | null | undefined): string[] {
-  if (!p) return [];
+/**
+ * Linhas do bloco "Privacidade" do anúncio público (vazio = nada declarado). E259 (2): o "Acesso" sai da resposta do
+ * Passo 6 (`tipoEntrada`, o vocabulário completo); só o anúncio antigo, sem ela, ainda mostra o `tipo_acesso` gravado.
+ */
+export function linhasPrivacidadePublica(p: Partial<Privacidade> | null | undefined, tipoEntrada?: string | null): string[] {
   const l: string[] = [];
-  if (p.semCamerasInterior) l.push("Sem câmeras no interior (declarado pelo anunciante)");
-  const ext = limparCamerasExternas(p.camerasExternas);
-  if (p.semCamerasInterior) l.push(ext ? `Câmeras externas: ${ext}` : "Sem câmeras externas declaradas");
+  if (p?.semCamerasInterior) l.push("Sem câmeras no interior (declarado pelo anunciante)");
+  const ext = limparCamerasExternas(p?.camerasExternas);
+  if (p?.semCamerasInterior) l.push(ext ? `Câmeras externas: ${ext}` : "Sem câmeras externas declaradas");
+  if (tipoEntradaValido(tipoEntrada)) {
+    l.push(`Acesso: ${rotuloTipoEntrada(tipoEntrada)}`);
+    if (tipoEntrada === "fechadura_com_codigo" && p?.senhaTrocadaEstadia) l.push("A senha é trocada antes de cada nova estadia");
+    return l;
+  }
+  if (!p) return l;
   if (tipoAcessoValido(p.tipoAcesso)) {
     const rot = TIPOS_ACESSO.find((t) => t.valor === p.tipoAcesso)!.rotulo;
     l.push(`Acesso: ${rot}`);

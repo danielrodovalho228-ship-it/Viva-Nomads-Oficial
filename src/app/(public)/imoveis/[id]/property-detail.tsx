@@ -870,7 +870,7 @@ export function PropertyDetail({
             <AvaliacaoFicha dados={exibicao59?.avaliacao} />
             <PadraoMinimoImovel confirmado={!!exibicao59?.confortoConfirmado} />
             <EstruturaInformada property={property} checklist={estrutura} />
-            <PrivacidadeAcesso privacidade={property.privacidade} />
+            <PrivacidadeAcesso privacidade={property.privacidade} tipoEntrada={property.chegadaEPedido?.tipoEntrada} />
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
             <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} />
