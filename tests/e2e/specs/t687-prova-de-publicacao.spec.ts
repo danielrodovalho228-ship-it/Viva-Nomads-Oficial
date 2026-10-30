@@ -177,7 +177,18 @@ test.describe("T687 — prova de publicação: os 10 passos, publicar e a págin
     }
     await expect(publicar).toBeEnabled({ timeout: 20_000 });
     await publicar.click();
-    await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
+    // Publicou → vai para Meus imóveis; recusou → fica no Passo 10 com o motivo em vermelho (publishError) ou no
+    // "publicar-motivo". A espera devolve esse texto, para a falha dizer POR QUE não publicou.
+    await expect
+      .poll(
+        async () => {
+          if (new URL(page.url()).pathname === "/dashboard/imoveis") return "publicou";
+          const motivos = (await page.locator("p.text-red-600, [data-testid=publicar-motivo]").allTextContents()).map((t) => t.trim()).filter(Boolean);
+          return motivos.length ? `recusou: ${motivos.join(" | ")}` : "esperando";
+        },
+        { timeout: 45_000, intervals: [1_000] },
+      )
+      .toBe("publicou");
     const { data: pub } = await adm().from("properties").select("status, title, monthly_price").eq("id", ids.imovel!).single();
     expect(pub).toMatchObject({ status: "active", title: titulo });
     expect(Number(pub!.monthly_price)).toBe(3200);
