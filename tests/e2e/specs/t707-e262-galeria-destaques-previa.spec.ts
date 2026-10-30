@@ -69,7 +69,7 @@ test.describe("T707 — E262: galeria navegando e na prévia, destaques com os n
       ids.previa[l] = await prepararRascunho(ids.dono, `Studio previa galeria ${l} ${sufixo}`);
       await fotosReaisNoRascunho(ids.previa[l]);
       // (c) o mesmo anúncio dos dois lados: no assistente (draft_data) e no banco (o que a página pública lê).
-      ids.numeros[l] = await prepararRascunho(ids.dono, `Studio numeros ${l} ${sufixo}`, { internetMbps: "450", parkingSpots: "2", amenityKeys: {} }, 1);
+      ids.numeros[l] = await prepararRascunho(ids.dono, `Studio numeros ${l} ${sufixo}`, { internetMbps: "450", parkingSpots: "2", amenityKeys: {} });
       await adm().from("property_amenities").delete().eq("property_id", ids.numeros[l]);
       const { error } = await adm().from("properties").update({ internet_mbps: 450, parking_spots: 2, ready_to_live_badge: false, tag_home_office: false }).eq("id", ids.numeros[l]);
       expect(error).toBeNull();

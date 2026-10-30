@@ -119,6 +119,9 @@ test.describe("T710 — E265: nenhum cartão com foto leva o selo 'Imagem ilustr
           window.scrollTo(0, 0);
         });
         await semSelo(p);
+        // O que se prova é que a foto carrega, não quando: as preguiçosas que a descida não chegou a pedir (a 390 a página
+        // é longa e cada passo dura 120 ms) passam a "eager" — a 1ª rodada no lab (#1604) pegou 4 assim em /como-funciona.
+        await p.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => i.setAttribute("loading", "eager")));
         // Toda <img> do próprio site que está na página de fato (com caixa, dentro da largura) carregou.
         if (fotos) {
           await expect
