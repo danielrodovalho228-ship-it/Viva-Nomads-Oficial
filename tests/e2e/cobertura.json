@@ -2142,6 +2142,7 @@
         "publico"
       ],
       "specs": [
+        "t738-e286-categoria-no-seletor",
         "t737-e285-parceiros-todas-aviso",
         "t735-e277-busca-parceiros-fotos",
         "t236-parceiros-ciclo",
