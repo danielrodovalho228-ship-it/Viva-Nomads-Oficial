@@ -1,6 +1,6 @@
 "use client";
 
-import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useRef, useState } from "react";
 import { PONTOS_MEDICAO, ROTULO_PONTO, type PontoMedicao } from "@/config/niveis";
 import { Wifi } from "lucide-react";
@@ -140,14 +140,12 @@ export function MedirInternet({
           {atualTexto.texto}
         </p>
       )}
-      {/* E193: escolha única em pílulas (antes, lista suspensa) e o sim/não do Wi-Fi no cartão (antes, caixa quadrada). */}
+      {/* E193: escolha única e o sim/não do Wi-Fi no cartão grande da Qualificação (antes, lista suspensa e caixa quadrada). */}
       <fieldset className="mt-3 text-sm text-ink" data-testid="medir-internet-ponto">
         <legend>Onde você está medindo</legend>
-        <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label="Onde você está medindo">
+        <div className="mt-1 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Onde você está medindo">
           {PONTOS_MEDICAO.map((p) => (
-            <Pilula key={p} papel="radio" on={ponto === p} onClick={() => setPonto(p)} disabled={ocupado} testid={`medir-internet-ponto-${p}`}>
-              {ROTULO_PONTO[p]}
-            </Pilula>
+            <CartaoEscolha key={p} papel="radio" on={ponto === p} onClick={() => setPonto(p)} disabled={ocupado} testid={`medir-internet-ponto-${p}`} rotulo={ROTULO_PONTO[p]} />
           ))}
         </div>
       </fieldset>

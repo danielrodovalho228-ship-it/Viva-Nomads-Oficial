@@ -166,20 +166,22 @@ function ItemProximidade({
     setEstado(r.ok ? "enviado" : (r.erro ?? "Não foi possível enviar agora."));
   }
   return (
-    <li className="rounded-lg border border-sage-200 px-3 py-2" data-testid="proximidade-item" data-mostrar={marcado ? "1" : "0"}>
-      <div className="flex items-start justify-between gap-3">
-        <span className={cn("min-w-0 text-sm", !marcado && "text-muted")}>
-          <span className={cn("block truncate font-medium", marcado ? "text-ink" : "text-muted")}>{l.nome}</span>
-          <span className="block text-xs text-muted" data-testid="proximidade-distancia">
+    <li data-testid="proximidade-item" data-mostrar={marcado ? "1" : "0"}>
+      {/* E193 (reteste de 30/10): mostrar/esconder cada lugar no cartão grande (✓ = aparece no anúncio). */}
+      <CartaoEscolha
+        papel="switch"
+        on={marcado}
+        onClick={onAlternar}
+        aria-label={`Mostrar ${l.nome} no anúncio`}
+        testid="proximidade-mostrar"
+        rotulo={<span className="block truncate">{l.nome}</span>}
+        dica={
+          <span data-testid="proximidade-distancia">
             {textoDistancia(l.distanciaM)}
             {marcado ? "" : " · não aparece no anúncio"}
           </span>
-        </span>
-        {/* E193: mostrar/esconder cada lugar é uma escolha múltipla → pílula (antes, chave deslizante). */}
-        <Pilula papel="switch" on={marcado} onClick={onAlternar} aria-label={`Mostrar ${l.nome} no anúncio`} testid="proximidade-mostrar" className="shrink-0">
-          Mostrar
-        </Pilula>
-      </div>
+        }
+      />
       {reportar && (
         <div className="mt-1">
           {estado === "enviado" ? (
@@ -238,14 +240,22 @@ export function ProntoParaTrabalhar({
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
     const on = !!marcadas[it.chave];
+    // E193 (reteste de 30/10): o cartão grande da Qualificação, o mesmo de todas as escolhas do assistente.
     return (
-      <Pilula key={it.chave} papel="pressed" on={on} onClick={() => onAlternar(it.chave)} testid={`trabalho-${it.chave}`}>
-        <span>
-          {it.rotulo}
-          {essencial && <span className={on ? "text-white/80" : "text-muted"}> · essencial</span>}
-          {sugeridas.includes(it.chave) && on && <span className="sr-only"> ({MARCA_SUGERIDO})</span>}
-        </span>
-      </Pilula>
+      <CartaoEscolha
+        key={it.chave}
+        papel="pressed"
+        on={on}
+        onClick={() => onAlternar(it.chave)}
+        testid={`trabalho-${it.chave}`}
+        rotulo={
+          <>
+            {it.rotulo}
+            {sugeridas.includes(it.chave) && on && <span className="sr-only"> ({MARCA_SUGERIDO})</span>}
+          </>
+        }
+        dica={essencial ? "Essencial" : undefined}
+      />
     );
   };
   return (
@@ -261,11 +271,11 @@ export function ProntoParaTrabalhar({
       <p className="mt-1 text-xs text-muted">Profissionais procuram isso primeiro.</p>
       {/* E146: essenciais e opcionais em linhas separadas — o contador conta só a primeira, chip a chip. */}
       <p className="mt-3 text-xs font-semibold text-ink">Essenciais · contam para a etiqueta</p>
-      <div className="mt-2 flex flex-wrap gap-2" data-testid="trabalho-essenciais">
+      <div className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="trabalho-essenciais">
         {ESSENCIAIS_TRABALHO.map((it) => item(it, true))}
       </div>
       <p className="mt-3 text-xs font-semibold text-ink">Opcionais · não contam</p>
-      <div className="mt-2 flex flex-wrap gap-2" data-testid="trabalho-opcionais">
+      <div className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="trabalho-opcionais">
         {OPCIONAIS_TRABALHO.map((it) => item(it, false))}
       </div>
       {semInternet ? (

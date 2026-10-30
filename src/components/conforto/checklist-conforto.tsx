@@ -3,7 +3,7 @@
 import { ITENS_CONFORTO } from "@/config/conforto-minimo";
 import { TITULO_PADRAO_MINIMO } from "@/lib/conforto/exibicao";
 import { Button } from "@/components/ui/button";
-import { Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import type { SalvamentoConforto } from "./use-conforto-salvo";
 
 /**
@@ -47,14 +47,11 @@ export function ChecklistConforto({
           Confirmo todos
         </Button>
       </div>
-      {/* E193: várias escolhas = pílulas (antes, caixas quadradas). O critério de cada item continua à vista. */}
-      <ul className="mt-3 space-y-3">
+      {/* E193 (reteste de 30/10): várias escolhas = o cartão grande da Qualificação, com o critério dentro do cartão. */}
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {ITENS_CONFORTO.map((i) => (
           <li key={i.chave} data-testid={`conforto-item-${i.chave}`}>
-            <Pilula on={sel.has(i.chave)} onClick={() => alterna(i.chave)} disabled={desabilitado}>
-              {i.rotulo}
-            </Pilula>
-            <span className="mt-1 block pl-4 text-xs text-muted">{i.criterio}</span>
+            <CartaoEscolha papel="checkbox" on={sel.has(i.chave)} onClick={() => alterna(i.chave)} disabled={desabilitado} rotulo={i.rotulo} dica={i.criterio} className="h-full" />
           </li>
         ))}
       </ul>

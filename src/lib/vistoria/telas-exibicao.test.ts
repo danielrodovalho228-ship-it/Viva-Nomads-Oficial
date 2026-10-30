@@ -73,7 +73,8 @@ test("QA #1111 item 5: 'Avaliador designado pela Viva' aparece uma vez só", () 
 });
 
 test("QA #1111 item 7 e um primário por tela: Nível, morador e conversa", () => {
-  assert.match(NIVEL, /variant="secondary"\s+size="sm"\s+disabled=\{pendente \|\| !completo\}/, "Salvar ruído ficou secundário");
+  // E193 (30/10): o ruído virou cartões de marcar (desmarcado = não), então o salvar não espera "todas respondidas".
+  assert.match(NIVEL, /variant="secondary"\s+size="sm"\s+disabled=\{pendente\}\s+onClick=\{\(\) =>\s+iniciar\(async \(\) => \{\s+const respostas/, "Salvar ruído ficou secundário");
   assert.equal(primarios(BLOCO_DONO), 1, "só 'Pedir avaliação do imóvel'");
   assert.equal(primarios(CARTAO_CONVERSA), 0, "o primário da conversa é o Enviar");
   assert.ok(primarios(MORADOR) <= 1);

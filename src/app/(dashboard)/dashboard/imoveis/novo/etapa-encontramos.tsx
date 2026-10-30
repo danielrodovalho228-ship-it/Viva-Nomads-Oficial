@@ -1,6 +1,6 @@
 "use client";
 
-import { Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
@@ -279,39 +279,37 @@ function GrupoComodidades(p: {
   return (
     <div data-grupo={p.grupo.category}>
       <p className="text-sm font-semibold text-forest">{p.titulo}</p>
-      {/* E193 (auditoria de 28/10): várias escolhas = pílulas, o padrão único das seleções múltiplas do assistente. */}
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* E193 (reteste de 30/10, ordem do Daniel de 25/10): várias escolhas = o cartão grande tocável da Qualificação,
+          em grade (mockup cadastro-imovel-05), o mesmo de todo o assistente. */}
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);
           // Detecção-A: achada numa foto e ainda não marcada — tracejada, com "Confirme"; tocar marca (confirma).
           const detectada = !on && !!p.detectadas?.includes(it.key);
-          const Icone = iconeDaComodidade(it.key);
           return (
-            <Pilula
+            <CartaoEscolha
               key={it.key}
               papel="pressed"
               on={on}
               onClick={() => p.onAlternar(it.key)}
+              icone={sug ? Sparkles : iconeDaComodidade(it.key)}
               data-sugerido={sug ? "1" : undefined}
               data-detectada={detectada ? "1" : undefined}
               data-comodidade={it.key}
-              className={cn(detectada && "border-dashed border-forest text-forest")}
-            >
-              {sug ? (
-                <Sparkles className="h-4 w-4 shrink-0" aria-label="Sugerido · confira" />
-              ) : (
-                !on && <Icone className={cn("h-4 w-4 shrink-0", detectada ? "text-forest" : "text-muted")} aria-hidden />
-              )}
-              <span>
-                {it.label}
-                {detectada && (
-                  <span className="ml-1 font-semibold underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
-                    Confirme
-                  </span>
-                )}
-              </span>
-            </Pilula>
+              className={cn(detectada && "border-dashed border-forest")}
+              rotulo={
+                <>
+                  {it.label}
+                  {sug && <span className="sr-only"> (sugerido · confira)</span>}
+                  {detectada && (
+                    <span className="ml-1 font-semibold text-forest underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
+                      Confirme
+                    </span>
+                  )}
+                </>
+              }
+            />
           );
         })}
       </div>
