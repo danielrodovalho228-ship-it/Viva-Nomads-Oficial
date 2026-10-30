@@ -1,5 +1,6 @@
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 import Link from "next/link";
+import { emCadastro, hrefPassoDoRascunho } from "@/lib/anuncio/destino-pendencia";
 import { loadPropertyForEdit } from "@/lib/data/actions";
 import { createClient } from "@/lib/supabase/server";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
@@ -72,6 +73,15 @@ export default async function EditarImovelPage({
           <span className="text-muted">Estado do anúncio:</span>
           <EstadoDoAnuncio id={id} status={property.status} motivo={pausaMotivo} />
         </div>
+      )}
+      {/* P0 (30/10): rascunho que caiu aqui por um link antigo volta ao passo a passo (fotos no Passo 2). */}
+      {!demo && emCadastro(property.status) && (
+        <p className="mb-3 rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink" role="status" data-testid="editor-rascunho-assistente">
+          Este anúncio ainda está em cadastro.{" "}
+          <Link href={hrefPassoDoRascunho(id)} className="font-medium text-forest underline underline-offset-4">
+            Continuar no passo a passo
+          </Link>
+        </p>
       )}
       {!demo && (
         <p className="mb-3 text-sm">
