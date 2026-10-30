@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { UserPlus } from "lucide-react";
+import { BellRing, UserPlus } from "lucide-react";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { BRAND_BLUR } from "@/lib/media";
 import { ButtonLink } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { mostrarParceiroGeral, rotuloCategoria, type ParceiroGeral } from "@/lib
  * ligar a chave PARCEIRO_GERAL_FALLBACK, o cartão do parceiro geral (sem logo de terceiros).
  * E277 (mockup aprovado): um cartão só, com a foto da categoria ao lado (em cima no celular), reunindo o aviso
  * ("Quero ser avisado") e o "Indique um profissional". Os dois continuam funcionando como antes.
+ * E285 (folha aprovada, Tela 2): os dois lado a lado, e o "Quero ser avisado" aparece SEMPRE — sem cidade na busca,
+ * ele pede a cidade (ou o CEP) no formulário acima, já que o aviso é gravado por cidade.
  */
 export function BuscaVazia({
   categoria,
@@ -44,15 +46,29 @@ export function BuscaVazia({
           <p className="font-title text-lg font-semibold text-ink" data-testid="busca-parceiros-vazia-texto">
             {`Ainda não temos parceiro${categoria ? ` de ${rotuloCategoria(categoria).toLowerCase()}` : ""}${cidade ? ` em ${cidade}` : " nesta busca"}.`}
           </p>
-          {cidade && <AvisoFotografo cidade={cidade} uf={uf} logado={logado} voltarPara={voltarPara} autoAvisar={autoAvisar} categoria={categoria || "outro"} />}
-          <div className="border-t border-line pt-4" data-testid="indique-profissional">
-            <p className="flex items-center gap-2 font-semibold text-ink">
-              <UserPlus className="h-5 w-5 shrink-0 text-forest" aria-hidden /> Indique um profissional
-            </p>
-            <p className="mt-1 text-sm text-muted">Conhece alguém bom que atende aí? Mande o link: o pedido de parceria é feito pela própria pessoa, com a conta dela.</p>
-            <ButtonLink href={`/parceiros${categoria ? `?categoria=${categoria}` : ""}#quero-ser-parceiro`} variant="secondary" size="sm" className="mt-3">
-              Abrir a página de parceiros
-            </ButtonLink>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {cidade ? (
+              <AvisoFotografo cidade={cidade} uf={uf} logado={logado} voltarPara={voltarPara} autoAvisar={autoAvisar} categoria={categoria || "outro"} ladoALado />
+            ) : (
+              <div className="h-full rounded-xl border border-line bg-white p-4" data-testid="aviso-fotografo" data-sem-cidade="1">
+                <p className="flex items-center gap-2 font-semibold text-ink">
+                  <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> Quero ser avisado
+                </p>
+                <p className="mt-1 text-sm text-muted">Diga a cidade (ou o CEP) na busca acima: avisamos você quando houver um parceiro dela.</p>
+                <ButtonLink href="#bp-cidade" variant="secondary" size="sm" className="mt-3" data-testid="aviso-informar-cidade">
+                  Informar a cidade
+                </ButtonLink>
+              </div>
+            )}
+            <div className="h-full rounded-xl border border-line bg-white p-4" data-testid="indique-profissional">
+              <p className="flex items-center gap-2 font-semibold text-ink">
+                <UserPlus className="h-5 w-5 shrink-0 text-forest" aria-hidden /> Indique um profissional
+              </p>
+              <p className="mt-1 text-sm text-muted">Conhece alguém bom que atende aí? Mande o link: o pedido de parceria é feito pela própria pessoa, com a conta dela.</p>
+              <ButtonLink href={`/parceiros${categoria ? `?categoria=${categoria}` : ""}#quero-ser-parceiro`} variant="secondary" size="sm" className="mt-3">
+                Abrir a página de parceiros
+              </ButtonLink>
+            </div>
           </div>
         </div>
       </div>

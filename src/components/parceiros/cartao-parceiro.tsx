@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Star } from "lucide-react";
+import { BadgeCheck, MapPin, ReceiptText, Star } from "lucide-react";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { BRAND_BLUR } from "@/lib/media";
@@ -53,6 +53,18 @@ export function CartaoParceiro({ p, consulta }: { p: ParceiroPublico; consulta?:
               </>
             ) : (
               <span className="rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest">Novo na Viva</span>
+            )}
+          </p>
+          {/* E285 (folha aprovada, Tela 2): os selos de confiança do parceiro — todo parceiro publicado passou pela
+              aprovação da Viva; "Emite nota fiscal" só para quem declarou (o mesmo dado do filtro). */}
+          <p className="mt-2 flex flex-wrap gap-2" data-testid="cartao-parceiro-selos">
+            <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest" data-testid="selo-aprovado">
+              <BadgeCheck className="h-4 w-4" aria-hidden /> Aprovado pela Viva
+            </span>
+            {p.emiteNota === true && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-1 text-xs font-semibold text-ink" data-testid="selo-nota">
+                <ReceiptText className="h-4 w-4" aria-hidden /> Emite nota fiscal
+              </span>
             )}
           </p>
           {p.descricaoCurta && <p className="mt-2 line-clamp-2 text-sm text-muted">{p.descricaoCurta}</p>}
