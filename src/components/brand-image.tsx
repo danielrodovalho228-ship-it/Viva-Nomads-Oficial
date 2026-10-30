@@ -33,7 +33,9 @@ export function BrandImage({
         alt={alt}
         fill
         sizes={sizes}
-        priority={priority}
+        // E259 (10): no Next 16 o `priority` foi descontinuado; a forma indicada para a foto da primeira pintura é
+        // carregar já e com prioridade alta de rede.
+        {...(priority ? { loading: "eager" as const, fetchPriority: "high" as const } : {})}
         placeholder="blur"
         blurDataURL={BRAND_BLUR}
         className={fit}

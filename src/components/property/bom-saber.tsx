@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Baby,
   Ban,
   ChevronRight,
   Cigarette,
@@ -27,6 +28,7 @@ const ICONES: Record<ChaveBomSaber, LucideIcon> = { cancelamento: Ban, regras: H
 const ICONES_REGRA: Record<ChaveItemRegra, LucideIcon> = {
   pessoas: Users,
   pets: PawPrint,
+  criancas: Baby,
   entrada: LogIn,
   saida: LogOut,
   silencio: Moon,
