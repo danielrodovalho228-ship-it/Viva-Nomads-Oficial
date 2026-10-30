@@ -793,7 +793,7 @@
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
         "t408-varredura-bloco27",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/conta": {
@@ -1451,7 +1451,7 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t402-conta-leva2",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/viabilidade": {
@@ -2034,7 +2034,7 @@
         "t235-cartoes-compartilhaveis",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/parceiro": {
@@ -2046,7 +2046,7 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/parceiros/[slug]": {
@@ -2239,7 +2239,7 @@
         "t264-viva-automatico",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/admin/sistema": {
@@ -2370,7 +2370,7 @@
         "t315-telas-avaliacao-dono-62a",
         "t341-credenciamento-avaliador-62a",
         "t387-varredura-bloco22",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -2453,7 +2453,7 @@
         "t335-varredura-bloco13",
         "t379-55e2-filtro-contato-um-toque",
         "t385-varredura-bloco21",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
@@ -2464,7 +2464,7 @@
         "t347-respostas-rapidas-55e2",
         "t335-varredura-bloco13",
         "t385-varredura-bloco21",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/dashboard/conta/excluir": {
@@ -2492,7 +2492,7 @@
         "t385-varredura-bloco21",
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
-        "t677-varredura-bloco70"
+        "t679-varredura-bloco70"
       ]
     },
     "/prova/celular/aviso": {

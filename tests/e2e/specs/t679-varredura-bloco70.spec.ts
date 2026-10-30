@@ -5,7 +5,7 @@ import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta,
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T677 — VARREDURA DA PÁGINA INTEIRA, BLOCO 70 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
+  T679 — VARREDURA DA PÁGINA INTEIRA, BLOCO 70 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
   toda rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400. As próximas telas do painel
   varridas há mais tempo (blocos 21, 22, 23, 24 e 27), revistas sobre o topo, as barras e o rodapé de hoje:
     · proprietário: Respostas rápidas, Mensagens programadas da estadia, Cartão e Parceiros do anúncio;
@@ -45,7 +45,7 @@ const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/
 
 const MASSA = lerMassa();
 
-test.describe("T677 — varredura da página inteira, bloco 70 (respostas rápidas, mensagens da estadia, cartão e parceiros do anúncio, verificação, comparar, avaliações da conta, painel do parceiro) (390 e 1280 px)", () => {
+test.describe("T679 — varredura da página inteira, bloco 70 (respostas rápidas, mensagens da estadia, cartão e parceiros do anúncio, verificação, comparar, avaliações da conta, painel do parceiro) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
