@@ -5,7 +5,7 @@ import { TAMANHOS } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T674 — VARREDURA DA PÁGINA INTEIRA, BLOCO 68 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
+  T675 — VARREDURA DA PÁGINA INTEIRA, BLOCO 68 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
   toda rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400. As telas do painel varridas há mais
   tempo (blocos 4, 6, 12 e 16), revistas sobre o topo, as barras e o rodapé de hoje:
     · proprietário: Tributação, Retorno do imóvel, Indicações, Serviços, Simulador e o Desempenho do anúncio;
@@ -24,8 +24,8 @@ interface Tela {
 const sufixo = novoSufixo();
 const senha = novaSenha();
 const ids: Record<string, string> = {};
-const EMAIL_DONO = `dono.t674.${sufixo}@lab.vivanomads.test`;
-const EMAIL_MOR = `mor.t674.${sufixo}@lab.vivanomads.test`;
+const EMAIL_DONO = `dono.t675.${sufixo}@lab.vivanomads.test`;
+const EMAIL_MOR = `mor.t675.${sufixo}@lab.vivanomads.test`;
 
 const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Tributação", rota: () => "/dashboard/tributacao" },
@@ -53,7 +53,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return entrar(browser, t.conta === "DONO" ? EMAIL_DONO : EMAIL_MOR, senha);
 }
 
-test.describe("T674 — varredura da página inteira, bloco 68 (ferramentas do proprietário, desempenho, serviços, reembolsos e carteira do morador) (390 e 1280 px)", () => {
+test.describe("T675 — varredura da página inteira, bloco 68 (ferramentas do proprietário, desempenho, serviços, reembolsos e carteira do morador) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeAll(async ({}, info) => {
@@ -63,7 +63,7 @@ test.describe("T674 — varredura da página inteira, bloco 68 (ferramentas do p
     ids.mor = await criarConta({ email: EMAIL_MOR, nome: "Rosa Carteira Varredura Sessenta e Oito", role: "tenant" }, senha);
     await adm().from("profiles").update({ is_teste: true, preferred_mode: "tenant", papel_ativo: "morador" }).eq("id", ids.mor);
     await adm().from("profiles").update({ is_teste: true, intencao: ["anunciar"], preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", ids.dono);
-    ids.imovel = await criarImovelPronto(ids.dono, `[Varredura] Apartamento com nome comprido para o desempenho t674 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `[Varredura] Apartamento com nome comprido para o desempenho t675 ${sufixo}`, { ativo: true });
     await fotosReais(ids.imovel, ids.dono);
   });
   test.afterAll(async ({}, info) => {

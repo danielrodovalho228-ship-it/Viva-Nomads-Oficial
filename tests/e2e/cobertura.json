@@ -778,7 +778,7 @@
         "t221-contrato-estado-periodo",
         "t339-varredura-bloco16",
         "t631-e222b-renovar-aditivo",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/comparar": {
@@ -1174,7 +1174,7 @@
       "specs": [
         "t183-telas-logadas-390",
         "t298-varredura-logada-bloco4",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/leads": {
@@ -1368,7 +1368,7 @@
       "specs": [
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/roi-imovel": {
@@ -1381,7 +1381,7 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t298-varredura-logada-bloco4",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/simulador": {
@@ -1398,7 +1398,7 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t302-varredura-logada-bloco6",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -1426,7 +1426,7 @@
         "t183-telas-logadas-390",
         "t266-painel-42",
         "t298-varredura-logada-bloco4",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/verificacao": {
@@ -1946,7 +1946,7 @@
       "specs": [
         "t219-servicos-morador",
         "t298-varredura-logada-bloco4",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/admin/servicos": {
@@ -2422,7 +2422,7 @@
       "specs": [
         "t345-desempenho-anuncio-54",
         "t334-varredura-bloco12",
-        "t674-varredura-bloco68"
+        "t675-varredura-bloco68"
       ]
     },
     "/dashboard/respostas-rapidas": {
