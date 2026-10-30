@@ -1,4 +1,5 @@
 import {
+  Baby,
   CalendarRange,
   PawPrint,
   Cigarette,
@@ -58,6 +59,9 @@ export function StayRules({ property }: { property: Property }) {
             ? "Aceita animais"
             : "Não aceita animais",
     });
+  // E259 (9): o "Aceita crianças" do Passo 6 também aparece nas regras da estadia.
+  if (property.childrenAllowed !== undefined)
+    rows.push({ icon: Baby, label: "Crianças", value: property.childrenAllowed ? "Aceita crianças" : "Não aceita crianças" });
   if (property.limpezaEstadia)
     rows.push({ icon: Sparkles, label: "Limpeza durante a estadia", value: textoLimpezaEstadia(property.limpezaEstadia) });
   // CAMPOS-1: o fumo estruturado (com "só na área externa") tem precedência sobre o sim/não antigo.
