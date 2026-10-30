@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { nasceLigado } from "@/lib/anuncio/bloco-opcional";
 import { lerChecklistEstrutura, salvarChecklistEstrutura } from "@/lib/data/estrutura-actions";
 import { GRUPOS_ESTRUTURA, ITENS_ESTRUTURA, NOTA_ESTRUTURA_INFORMADA, temEstruturaInformada, type ChecklistEstrutura, type ItemChecklist } from "@/lib/selos-estrutura";
-import { cn } from "@/lib/utils";
 
 /**
  * E225-A — "O imóvel tem estrutura de acessibilidade?" (padrão E56), no fim do Passo 5 e no editar. Ligado, abre os
- * 8 itens em dois grupos (Acessibilidade e Mobilidade reduzida), cada um com sim/não e a linha de critério. Cada toque
+ * 8 itens em dois grupos (Acessibilidade e Mobilidade reduzida), cada um num cartão de marcar com a linha de critério. Cada toque
  * grava na hora (salvarChecklistEstrutura). Desligar apaga o que foi marcado. No anúncio, só os itens "sim" aparecem,
  * em texto, como "Estrutura informada pelo proprietário" — sem selo (o selo pede prova de cada item, E225-B).
  */
@@ -70,32 +70,22 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
           {GRUPOS_ESTRUTURA.map((g) => (
             <fieldset key={g.id} data-testid={`estrutura-grupo-${g.id}`}>
               <legend className="text-sm font-semibold text-ink">{g.titulo}</legend>
-              <ul className="mt-2 divide-y divide-line">
-                {g.itens.map((item) => {
-                  const sim = checklist[item] === true;
-                  return (
-                    <li key={item} className="flex items-start justify-between gap-3 py-3">
-                      <div className="min-w-0">
-                        <p id={`estrutura-${item}-rotulo`} className="text-sm text-ink">
-                          {ITENS_ESTRUTURA[item].rotulo}
-                        </p>
-                        <p className="mt-1 text-xs text-muted">{ITENS_ESTRUTURA[item].criterio}</p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={sim}
-                        aria-labelledby={`estrutura-${item}-rotulo`}
-                        onClick={() => marcar(item, !sim)}
-                        disabled={estado === "salvando"}
-                        data-testid={`estrutura-item-${item}`}
-                        className={cn("relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-60", sim ? "bg-forest" : "bg-sage-200")}
-                      >
-                        <span className={cn("inline-block h-5 w-5 rounded-full bg-white transition-transform", sim ? "translate-x-6" : "translate-x-1")} />
-                      </button>
-                    </li>
-                  );
-                })}
+              {/* E193 (reteste de 30/10): cada item no cartão grande da Qualificação (antes, um interruptor por linha). */}
+              <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+                {g.itens.map((item) => (
+                  <li key={item}>
+                    <CartaoEscolha
+                      papel="checkbox"
+                      on={checklist[item] === true}
+                      onClick={() => marcar(item, checklist[item] !== true)}
+                      disabled={estado === "salvando"}
+                      testid={`estrutura-item-${item}`}
+                      rotulo={ITENS_ESTRUTURA[item].rotulo}
+                      dica={ITENS_ESTRUTURA[item].criterio}
+                      className="h-full"
+                    />
+                  </li>
+                ))}
               </ul>
             </fieldset>
           ))}

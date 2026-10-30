@@ -14,10 +14,29 @@ test("sem interruptor nem chip: sim/não, opções e 'Não tem internet' usam o 
   assert.match(TELA, /\{q\.opcoes\.map\(\(o\) => \(\s*<CartaoOpcao/);
 });
 
-test("Passo 5: as comodidades (várias escolhas) são pílulas — E193, lista-master de 29/10", () => {
-  const passo5 = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx", "utf8");
+test("Passo 5 (E193, reteste de 30/10): toda escolha no cartão grande da Qualificação — sem pílula nem interruptor por item", () => {
+  const ler = (p: string) => readFileSync(p, "utf8");
+  const passo5 = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx");
   const grupo = passo5.slice(passo5.indexOf("function GrupoComodidades"), passo5.indexOf("function AvisoBairro"));
-  assert.match(grupo, /<Pilula\s+key=\{it\.key\}\s+papel="pressed"/);
-  assert.match(grupo, /flex flex-wrap gap-2/);
-  assert.doesNotMatch(grupo, /data-cartao-assistente|rounded-xl border-2/);
+  assert.match(grupo, /<CartaoEscolha\s+key=\{it\.key\}\s+papel="pressed"/);
+  assert.match(grupo, /grid gap-2 sm:grid-cols-2/);
+  // Os componentes do Passo 5: nenhuma pílula e nenhum interruptor por item (o interruptor do bloco opcional E56 fica).
+  for (const arq of [
+    "src/app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx",
+    "src/components/conforto/checklist-conforto.tsx",
+    "src/components/niveis/ruido-extras.tsx",
+    "src/components/anuncio/estrutura-acessibilidade.tsx",
+    "src/components/anuncio/medir-internet.tsx",
+  ]) {
+    const src = ler(arq);
+    assert.doesNotMatch(src, /<Pilula\b/, arq);
+    assert.doesNotMatch(src, /role="switch"/, arq);
+  }
+  const blocos = ler("src/components/anuncio/blocos-cadastro.tsx");
+  const passo5Blocos = blocos.slice(0, blocos.indexOf("export function BlocoNegociacao"));
+  assert.doesNotMatch(passo5Blocos, /<Pilula\b/);
+  // Ruído: um cartão de marcar por pergunta (antes, pares Sim/Não).
+  const ruido = ler("src/components/niveis/ruido-extras.tsx");
+  assert.doesNotMatch(ruido, /rotulo="Sim"|rotulo="Não"/);
+  assert.match(ruido, /papel="checkbox"[\s\S]{0,120}on=\{r\[p\.chave\] === true\}/);
 });

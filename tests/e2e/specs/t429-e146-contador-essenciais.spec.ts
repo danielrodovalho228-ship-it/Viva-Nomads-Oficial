@@ -5,7 +5,7 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
   T429 — E146 (levantamento do Daniel, 25/10; correção na Pista A). Passo 5, Comodidades: o contador "N de M itens
-  essenciais" do grupo bate com os chips essenciais marcados — na chegada (2 marcados no rascunho) e a cada toque.
+  essenciais" do grupo bate com os cartões essenciais marcados — na chegada (2 marcados no rascunho) e a cada toque.
   Só no laboratório.
 */
 const senha = novaSenha();
@@ -14,14 +14,15 @@ const dono = { email: `dono.t429.${sufixo}@lab.vivanomads.test`, nome: "Elisa Es
 const ids: { dono?: string; rascunho?: string } = {};
 
 async function conferir(page: Page, rotulo: string) {
-  const grupo = page.getByTestId("pronto-trabalhar");
-  const essenciais = grupo.locator("button", { hasText: "· essencial" });
-  const marcados = await grupo.locator('button[aria-pressed="true"]', { hasText: "· essencial" }).count();
+  // E193 (Passo 5 em cartões): os essenciais são os cartões do grupo "trabalho-essenciais".
+  const grupo = page.getByTestId("trabalho-essenciais");
+  const essenciais = grupo.locator("button[aria-pressed]");
+  const marcados = await grupo.locator('button[aria-pressed="true"]').count();
   const total = await essenciais.count();
   const texto = (await page.getByTestId("trabalho-contador").innerText()).trim();
   const m = texto.match(/^(\d+) de (\d+) itens essenciais$/);
   expect(m, `${rotulo}: contador "${texto}"`).not.toBeNull();
-  expect([Number(m![1]), Number(m![2])], `${rotulo}: contador "${texto}" contra ${marcados} de ${total} chips essenciais marcados`).toEqual([marcados, total]);
+  expect([Number(m![1]), Number(m![2])], `${rotulo}: contador "${texto}" contra ${marcados} de ${total} cartões essenciais marcados`).toEqual([marcados, total]);
 }
 
 test.describe("T429 — E146: o contador de itens essenciais", () => {
@@ -37,7 +38,7 @@ test.describe("T429 — E146: o contador de itens essenciais", () => {
   });
 
   for (const w of [390, 1280] as const) {
-    test(`a ${w} px: o contador bate com os chips essenciais marcados, na chegada e a cada toque`, async ({ browser }) => {
+    test(`a ${w} px: o contador bate com os cartões essenciais marcados, na chegada e a cada toque`, async ({ browser }) => {
       const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "comodidades", w);
       await expect(page.getByTestId("pronto-trabalhar")).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("trabalho-home_office")).toHaveAttribute("aria-pressed", "true", { timeout: 20_000 });
