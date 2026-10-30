@@ -195,7 +195,8 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     // Convenção "Não": trava, com o motivo das declarações.
     await p.getByTestId("convencao-no").click();
     await expect(publicar).toBeDisabled();
-    await expect(p.getByTestId("publicar-motivo")).toHaveText(/^Falta: declarações do imóvel/);
+    // E260 (b): o motivo aponta para a lista (sem repetir o item); a seção diz qual é.
+    await expect(p.getByTestId("publicar-motivo")).toHaveText(/^Faltam? \d+ ite(m|ns) da lista de conferência$/);
     await expect(p.getByTestId("antes-secao-declaracoes")).toHaveAttribute("data-estado", "falta");
     await p.screenshot({ path: `${SAIDA}/t653-convencao-nao-1280.png` });
     // "Não sei": publica com pendência.
@@ -208,7 +209,8 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     await p.reload({ waitUntil: "domcontentloaded" });
     await p.getByTestId("etapa-revisar").waitFor({ timeout: 30_000 });
     await expect(publicar).toBeDisabled({ timeout: 20_000 });
-    await expect(p.getByTestId("publicar-motivo")).toHaveText(/^Falta: padrão mínimo de conforto/);
+    await expect(p.getByTestId("publicar-motivo")).toHaveText(/^Faltam? \d+ ite(m|ns) da lista de conferência$/);
+    await expect(p.getByTestId("etapa-revisar").locator('[data-itens~="conforto"]')).toHaveAttribute("data-ok", "0");
     await p.screenshot({ path: `${SAIDA}/t653-sem-essencial-1280.png` });
     await p.context().close();
   });

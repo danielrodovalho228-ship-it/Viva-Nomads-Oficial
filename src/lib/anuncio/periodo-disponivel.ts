@@ -44,3 +44,13 @@ export function errosComJanelaAtual(erros: Record<string, string>, janelaAgora: 
   else delete resto.janela;
   return resto;
 }
+
+/**
+ * E260 (a): o resumo "Para continuar, falta:" do topo do passo não repete a janela curta — ela já aparece uma vez, junto
+ * das datas (o aviso `janela-curta`), com a explicação inteira e a saída. O Continuar segue recusando do mesmo jeito.
+ */
+export function errosDoResumo(erros: Record<string, string>): string[] {
+  return Object.entries(erros)
+    .filter(([chave]) => chave !== "janela")
+    .map(([, msg]) => msg);
+}

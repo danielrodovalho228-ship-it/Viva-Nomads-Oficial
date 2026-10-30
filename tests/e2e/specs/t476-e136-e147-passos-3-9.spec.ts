@@ -72,7 +72,9 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await expect(p.getByTestId("janela-curta")).toContainText("são 24 dias — menos que a duração mínima de 30 dias");
     await p.getByTestId("cadastro-continuar").tap();
     await noPasso(p, "disponibilidade");
-    await expect(p.getByTestId("passo-erros")).toContainText("menos que a duração mínima de 30 dias");
+    // E260 (a): o aviso aparece UMA vez — junto das datas; o resumo do topo não o repete.
+    await expect(p.getByTestId("janela-curta")).toBeVisible();
+    await expect(p.getByTestId("passo-erros")).toHaveCount(0);
     await p.screenshot({ path: `${SAIDA}/t476-janela-curta-390.png` });
 
     // E138: o calendário (aparece com o rascunho salvo): um bloqueio, e o dia bloqueado não se bloqueia de novo.

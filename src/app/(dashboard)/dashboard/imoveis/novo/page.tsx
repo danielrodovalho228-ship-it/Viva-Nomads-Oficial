@@ -51,7 +51,8 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, tipoAcessoDaEntrada, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
-import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
+import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
+import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
@@ -112,7 +113,7 @@ import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { useTelaLarga } from "@/components/ui/use-tela-larga";
-import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, oQueFaltaParaPublicar, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
+import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
@@ -408,10 +409,10 @@ export default function NewPropertyPage() {
       setTimeout(() => document.querySelector(`[data-testid="antes-secao-${secao}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }, 50);
   }
-  /** E251: o motivo do botão travado leva ao primeiro item que falta. */
+  /** E260 (b): o motivo do botão travado aponta para a lista de conferência — tocar desce até ela (o "Resolver" de cada
+   *  linha leva ao passo). Sem nada na lista, leva ao que falta fora dela: as declarações ou o aceite. */
   function irAoQueFalta() {
-    const item = prontidao.obrigatorios.find((i) => !i.ok);
-    if (item) return resolverItem(item);
+    if (faltamNaLista > 0) return document.querySelector('[data-testid="lista-conferencia"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (!qualificado) return abrirSecaoPasso10("declaracoes");
     if (!aceiteValido) document.querySelector('[data-testid="aceite-ia"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -433,7 +434,11 @@ export default function NewPropertyPage() {
   const completude = prontidao.obrigatorios;
   const podePublicar = prontidao.podePublicar && qualificado && aceiteValido;
   // E251: o motivo do "Publicar anúncio" travado, em uma linha (as mesmas regras de sempre: prontidão, isEligible, aceite).
-  const motivoTravado = podePublicar ? null : motivoPublicarTravado(oQueFaltaParaPublicar({ completude, declaracoesOk: qualificado, aceitouIa: aceiteValido }));
+  // E260 (b): sem repetir os itens — conta o que a lista de conferência mostra e só nomeia o que fica fora dela.
+  const faltamNaLista = faltamNaConferencia(conferenciaAssistente(prontidao));
+  const motivoTravado = podePublicar
+    ? null
+    : motivoPublicarTravado({ faltamNaLista, aceitouIa: aceiteValido, declaracoesForaDaLista: !qualificado && !completude.some((i) => i.key === "qualificacao") });
   const telaLarga = useTelaLarga();
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
@@ -485,8 +490,9 @@ export default function NewPropertyPage() {
       irPara(Math.min(ULTIMA_ETAPA, step + 1));
       return;
     }
-    // E135: recusado → leva o olho até a lista do que falta.
-    setTimeout(() => document.querySelector('[data-testid="passo-erros"]')?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
+    // E135: recusado → leva o olho até a lista do que falta. E260 (a): se só a janela curta segura, até o aviso dela.
+    const alvo = errosDoResumo(e).length > 0 ? "passo-erros" : "janela-curta";
+    setTimeout(() => document.querySelector(`[data-testid="${alvo}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
   }
 
   function voltarEtapa() {
@@ -1778,11 +1784,12 @@ export default function NewPropertyPage() {
             {meta.subtitle}
           </p>
           {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
-          {Object.keys(erros).length > 0 && (
+          {/* E260 (a): a janela curta não entra aqui — o aviso dela, junto das datas, já diz tudo (uma vez só). */}
+          {errosDoResumo(erros).length > 0 && (
             <div role="alert" className="mt-4 rounded-xl border border-red-300 bg-white p-3 text-sm text-red-700" data-testid="passo-erros">
               <p className="font-semibold">Para continuar, falta:</p>
               <ul className="mt-1 list-disc pl-4">
-                {Object.values(erros).map((m) => (
+                {errosDoResumo(erros).map((m) => (
                   <li key={m}>{m}</li>
                 ))}
               </ul>
@@ -2029,7 +2036,6 @@ export default function NewPropertyPage() {
                 setAceitouIa={marcarAceite}
                 avisoAceite={termoJaAceito ? null : textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
                 termoJaAceito={termoJaAceito}
-                conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}
                 chacara={ehChacara(propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado } : null}

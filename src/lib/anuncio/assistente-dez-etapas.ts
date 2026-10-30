@@ -152,3 +152,8 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
   }
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };
 }
+
+/** E260 (b): quantas pendências a lista de conferência mostra (as linhas por passo + as da própria Revisão). */
+export function faltamNaConferencia(c: { itens: ItemConferencia[]; pendentesNaRevisao: string[] }): number {
+  return c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length;
+}
