@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Maximize2, MapPin, X } from "lucide-react";
 import { PropertyGallery } from "@/components/property-gallery";
 import { PriceCard } from "@/components/property/price-card";
+import { DestaquesImovel } from "@/components/property/destaques-imovel";
 import { linhaLocalizacao } from "@/lib/localizacao";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,10 @@ export function BotaoTamanhoReal({ imovel, className }: { imovel: Property; clas
                   <MapPin className="h-4 w-4" /> {linhaLocalizacao(imovel.neighborhood, imovel.city, imovel.state)}
                 </div>
                 <h1 className="mt-2 text-2xl font-semibold text-ink lg:text-[28px]">{imovel.title}</h1>
+                {/* E262 (b): os mesmos destaques da página pública (property-detail), logo abaixo do título. */}
+                <div className="mt-4">
+                  <DestaquesImovel property={imovel} />
+                </div>
               </header>
               <aside data-testid="previa-real-cartao">
                 <PriceCard

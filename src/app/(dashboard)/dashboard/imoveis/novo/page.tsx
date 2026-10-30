@@ -641,6 +641,12 @@ export default function NewPropertyPage() {
     tagHomeOffice: qual.tHome,
     tagWorkLocated: qual.tWork,
     tagCondoApproved: false,
+    // E262 (b): o que os "Destaques do imóvel" leem — os mesmos dados que o anúncio publicado grava (comodidades
+    // marcadas, internet, vaga e o que tem por perto), para a prévia mostrar os mesmos destaques da página pública.
+    amenities: Object.keys(amenityKeys).filter((k) => amenityKeys[k] && AMENITY_LABEL[k]).map((k) => AMENITY_LABEL[k]),
+    internetMbps: mbpsValido(internetMbps),
+    parkingSpots: Number(parkingSpots) || 0,
+    proximities: proximidadesFinais,
   } as Property;
 
   async function publish(asDraft = false, irParaQualificacao = false) {
