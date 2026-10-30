@@ -53,12 +53,12 @@ export function conferenciaPetComRegras(petsAllowed: boolean | null | undefined,
   const r = compatibilidadePets(true, { ...regras, qtdMax: 3 }, [pet]);
   if (r.ok) return { ok: true, texto: `Dentro das regras: aceita ${especie} de porte ${PORTE_CURTO[pet.porte]}` };
   if (!regras.especies.includes(pet.especie)) return { ok: false, texto: `Fora das regras: o anúncio não aceita ${especie}` };
-  return { ok: false, texto: `Fora das regras: o anúncio aceita até porte ${PORTE_CURTO[regras.porteMax]}` };
+  return { ok: false, texto: regras.porteMax ? `Fora das regras: o anúncio aceita até porte ${PORTE_CURTO[regras.porteMax]}` : "Fora das regras" };
 }
 
 /** Mais pets do que o anúncio aceita: "Fora das regras: o anúncio aceita até 1 animal". Dentro: null. */
 export function conferenciaQuantidade(petsAllowed: boolean | null | undefined, regras: RegrasPets | null, qtd: number): string | null {
-  if (petsAllowed === false || !regras || qtd <= regras.qtdMax) return null;
+  if (petsAllowed === false || !regras?.qtdMax || qtd <= regras.qtdMax) return null;
   return `Fora das regras: o anúncio aceita até ${regras.qtdMax} ${regras.qtdMax === 1 ? "animal" : "animais"}`;
 }
 

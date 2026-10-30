@@ -18,7 +18,7 @@ import {
   Clock,
   Car, Trees } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { linhasRegrasPets } from "@/lib/anuncio/pets-regras";
+import { linhaPetsPublica } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { linhasDetalhes, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
@@ -52,12 +52,8 @@ export function StayRules({ property }: { property: Property }) {
     rows.push({
       icon: PawPrint,
       label: "Animais",
-      value:
-        property.petsAllowed && property.petsRegras
-          ? linhasRegrasPets(property.petsRegras).join(" · ")
-          : property.petsAllowed
-            ? "Aceita animais"
-            : "Não aceita animais",
+      // E263-A: "Aceita pets" e as condições do dono numa linha só (sem condições, só "Aceita pets").
+      value: property.petsAllowed ? linhaPetsPublica(true, property.petsRegras) : "Não aceita animais",
     });
   // E259 (9): o "Aceita crianças" do Passo 6 também aparece nas regras da estadia.
   if (property.childrenAllowed !== undefined)

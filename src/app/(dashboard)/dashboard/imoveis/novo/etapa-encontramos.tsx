@@ -1,5 +1,6 @@
 "use client";
 
+import { PetsRegrasCampos, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
@@ -92,6 +93,9 @@ export function EtapaEncontramos(p: {
   setFurnished: (fn: (v: boolean) => boolean) => void;
   petsOk: boolean;
   setPetsOk: (fn: (v: boolean) => boolean) => void;
+  /** E263-A: as condições de pets do dono (abrem com "Aceita pets" ligado). */
+  petsRegras: RegrasPetsForm;
+  setPetsRegras: (v: RegrasPetsForm) => void;
   childrenAllowed: boolean;
   setChildrenAllowed: (fn: (v: boolean) => boolean) => void;
   smokingAllowed: boolean;
@@ -115,6 +119,7 @@ export function EtapaEncontramos(p: {
 
   if (p.parte === "regras") {
     return (
+      <>
       <div className="grid gap-2 sm:grid-cols-2" data-testid="etapa-regras-casa">
         {/* E110: "Regras da casa" já é o título do passo (H1); não se repete aqui. E193 (30/10): os sim/não em grade de
             cartões grandes, como as outras escolhas do assistente. */}
@@ -132,6 +137,9 @@ export function EtapaEncontramos(p: {
         <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." />
         <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." />
       </div>
+      {/* E263-A: ligado, "Aceita pets" abre as condições do dono — tudo opcional; desligado, nenhuma condição vai junto. */}
+      {p.petsOk && <PetsRegrasCampos value={p.petsRegras} onChange={p.setPetsRegras} />}
+      </>
     );
   }
 

@@ -85,7 +85,7 @@ test.describe("T94 — Valor pet no anúncio", () => {
     await page.goto(`/imoveis/${ids.taxa}`, { waitUntil: "networkidle" });
     await expect(page.getByTestId("pet-candidatura-valor").first()).toHaveText("Valor pet: Taxa pet R$ 300,00 — não reembolsável", { timeout: 20_000 });
     await page.goto(`/imoveis/${ids.semValor}`, { waitUntil: "networkidle" });
-    await expect(page.getByTestId("pet-candidatura-ok").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("pet-candidatura").first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("pet-candidatura-valor")).toHaveCount(0);
     await page.context().close();
   });
