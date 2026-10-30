@@ -1171,12 +1171,9 @@
         "t671-varredura-bloco66",
         "t677-e193-passo6-cartoes",
         "t680-e193-passo5-cartoes",
-<<<<<<< HEAD
-        "t683-e193-cartoes-tocaveis"
-=======
         "t681-e257-descricao-cartoes",
-        "t682-e258-conferencia-opcionais"
->>>>>>> origin/main
+        "t682-e258-conferencia-opcionais",
+        "t683-e193-cartoes-tocaveis"
       ]
     },
     "/dashboard/indicacoes": {
