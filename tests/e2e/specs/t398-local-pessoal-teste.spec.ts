@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -10,7 +10,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, defin
       (390 e 1280); o dono vê a página normal, com a faixa discreta.
    4. E93 com a liberação do QA (#1564): logada e sem ser a dona, a conta real segue como visitante (faixa e botão
       travados); a mesma conta marcada is_teste entra como "equipe" e o "Solicitar" fica ativo (390 e 1280).
-  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1564, no lab-crítico do bloco 69 (t676).
+  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1564, no lab-crítico do bloco 69 (t676). Nessa
+  rodada o caso 1 estava velho (o campo do destino passou para o painel da pílula Local no E82-A/E105, e a spec o
+  procurava solto na página): agora abre a pílula, como a t390.
 */
 const ROTAS = process.env.LAB_ROTAS_URL ?? "http://127.0.0.1:3998";
 const senha = novaSenha();
@@ -21,6 +23,13 @@ const ids: { pessoa?: string; dono?: string; teste?: string; perto?: string } = 
 // Destino com 4 casas: na URL e no provedor de rotas, 3 casas.
 const DESTINO = { lat: -18.9437, lng: -48.3521 };
 const VISITANTE = "Anúncio de teste da equipe Viva — não é um imóvel disponível";
+
+/** E82-A/E105: o campo do destino mora no painel da pílula Local da /buscar (como na t390). */
+async function abrirLocal(page: Page) {
+  await page.getByTestId("pilula-local").click();
+  await expect(page.getByTestId("painel-pilula-local")).toBeVisible({ timeout: 20_000 });
+  return page.getByTestId("painel-pilula-local").getByTestId("campo-destino");
+}
 
 test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
@@ -43,7 +52,7 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
   test("1. rótulo sem número nem pontuação pendurada; nome opcional no lugar do rótulo; o lápis troca o nome", async ({ browser }) => {
     const page = await entrar(browser, pessoa.email, senha);
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-    const campo = page.getByTestId("campo-destino");
+    const campo = await abrirLocal(page);
     await expect(campo.getByTestId("outro-local-privacidade")).toHaveText("Guardamos o lugar sem o número da casa, por privacidade.", { timeout: 20_000 });
     // Com nome.
     await campo.getByTestId("outro-local-texto").fill(`Av. João Naves de Ávila, 1331 — Santa Mônica ${sufixo}, Uberlândia`);
@@ -61,6 +70,7 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
 
     // O lápis dá nome ao local guardado.
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
+    await abrirLocal(page);
     const rua = page.getByTestId("destino-pessoal-item").filter({ hasText: "Rua Tito Teixeira" });
     await rua.getByTestId("destino-pessoal-renomear").click({ timeout: 20_000 });
     await page.getByTestId("destino-pessoal-nome").fill("Cargill");
