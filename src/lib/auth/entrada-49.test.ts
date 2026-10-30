@@ -15,7 +15,7 @@ import {
   mensagemEnvioCodigo,
   type Limitar,
 } from "../seguranca/codigo-acesso.ts";
-import { destinoDepoisDaEntrada, motivoDaEntrada, normalizarIntencoes, painelInicial, urlEntrada } from "./entrada.ts";
+import { destinoDepoisDaEntrada, intencaoAoAnunciar, motivoDaEntrada, normalizarIntencoes, painelInicial, urlEntrada } from "./entrada.ts";
 import { alternarNaLista, armazenamentoDisponivel, lerLista, mesclarSemDuplicar } from "../convidado/guardados.ts";
 import { VALIDADE_OTP_S, corpoConfigAuth } from "../notifications/supabase-auth-config.ts";
 
@@ -134,7 +134,9 @@ test("intenção não muda permissão: grava só intencao (e a preferência de m
   assert.deepEqual(painelInicial([], "/dashboard"), { destino: "/dashboard", modo: null });
   // A ação que pediu a conta vence o painel da intenção.
   assert.deepEqual(painelInicial(["servicos"], "/pedidos/novo?cidade=x"), { destino: "/pedidos/novo?cidade=x", modo: null });
-  const acoes = ler("src/lib/data/intencao-actions.ts");
+  // E268-B: a gravação mudou para o caminho único (intencao-servidor.ts), que a ação, a Conta e o 1º rascunho usam.
+  const acoes = ler("src/lib/data/intencao-servidor.ts");
+  assert.match(ler("src/lib/data/intencao-actions.ts"), /gravarIntencao\(supabase, user\.id, intencao, modo\)/);
   // Os únicos updates: intencao e, no 1º acesso (PAPEL-B), o papel inicial — modo e papel ativo; nunca role.
   const updates = [...acoes.matchAll(/\.update\(\{([^}]*)\}\)/g)].map((m) => m[1].trim());
   assert.deepEqual(updates, ["intencao", 'preferred_mode: modo, papel_ativo: modo === "owner" ? "proprietario" : "morador"']);
@@ -187,4 +189,25 @@ test("degraus: e-mail na entrada → telefone no 1º contato → identidade depo
   assert.doesNotMatch(ler("src/lib/data/pedidos-actions.ts"), /documentoCompleto|estadoIdentidade|lerDocumento/);
   assert.doesNotMatch(ler("src/app/auth/page.tsx") + ler("src/components/auth/login-por-codigo.tsx"), /cpf|documento|telefone/i);
   assert.match(ler("src/lib/contrato-trava.ts"), /documentoCompleto\(i\.inquilino\)/);
+});
+
+test("E268-B: quem vira dono pelo anúncio declara a intenção de anunciar (um boas-vindas por conta)", () => {
+  // Conta que nunca respondeu a tela: "anunciar" vira a intenção (e é o 1º acesso: sai o boas-vindas de dono).
+  assert.deepEqual(intencaoAoAnunciar(null), ["anunciar"]);
+  // Já respondeu (morar, ou "Agora não"): ganha o "anunciar"; não é 1º acesso, então nenhum boas-vindas novo.
+  assert.deepEqual(intencaoAoAnunciar(["morar"]), ["morar", "anunciar"]);
+  assert.deepEqual(intencaoAoAnunciar([]), ["anunciar"]);
+  // Já declarada: nada a gravar (o 2º rascunho não repete).
+  assert.equal(intencaoAoAnunciar(["anunciar"]), null);
+  assert.equal(intencaoAoAnunciar(["morar", "anunciar"]), null);
+
+  const srv = ler("src/lib/data/intencao-servidor.ts");
+  assert.match(srv, /^import "server-only";/);
+  assert.doesNotMatch(srv, /^"use server";/m, "fora do use server: não vira ação chamável pelo navegador");
+  assert.match(srv, /if \(nova\) await gravarIntencao\(supabase, userId, nova, "owner"\)/);
+  // O 1º rascunho chama pelo Passo 1 (saveDraftData novo), pela qualificação e pelo anúncio criado direto.
+  const acoes = ler("src/lib/data/actions.ts");
+  assert.equal((acoes.match(/await registrarIntencaoDeAnunciar\(supabase, user\.id\)/g) ?? []).length, 3);
+  // A tela de intenção continua igual (a mesma ação, o mesmo modo do painel inicial).
+  assert.match(ler("src/components/auth/escolha-intencao.tsx"), /salvarMinhaIntencao\(escolha, alvo\.modo\)/);
 });

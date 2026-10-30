@@ -1,10 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { enviarBoasVindas } from "@/lib/notifications/boas-vindas-servidor";
+import { gravarIntencao } from "@/lib/data/intencao-servidor";
 import { normalizarIntencoes, type Intencao } from "@/lib/auth/entrada";
 
 /**
@@ -35,23 +33,8 @@ export async function salvarMinhaIntencao(bruto: unknown, modo: "owner" | "tenan
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
-  const { data: antes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", user.id).maybeSingle();
-  const primeiroAcesso = (antes as { intencao?: unknown } | null)?.intencao == null && (antes as { papel_ativo?: unknown } | null)?.papel_ativo == null;
-  const { error } = await supabase.from("profiles").update({ intencao }).eq("id", user.id);
-  if (error) return { ok: false, error: "Não foi possível salvar agora." };
-  let papelAplicado: "owner" | "tenant" | null = null;
-  if (primeiroAcesso && (modo === "owner" || modo === "tenant")) {
-    await supabase.from("profiles").update({ preferred_mode: modo, papel_ativo: modo === "owner" ? "proprietario" : "morador" }).eq("id", user.id);
-    papelAplicado = modo;
-  }
-  // E205-B (a): a primeira entrada manda as boas-vindas (uma vez por conta; a chave de envio segura repetições).
-  if (primeiroAcesso) {
-    const uid = user.id;
-    after(async () => {
-      const admin = createAdminClient();
-      if (admin) await enviarBoasVindas(admin, uid, intencao, modo);
-    });
-  }
+  const r = await gravarIntencao(supabase, user.id, intencao, modo);
+  if (!r.ok) return { ok: false, error: "Não foi possível salvar agora." };
   revalidatePath("/dashboard/conta");
-  return { ok: true, papelAplicado };
+  return { ok: true, papelAplicado: r.papelAplicado };
 }
