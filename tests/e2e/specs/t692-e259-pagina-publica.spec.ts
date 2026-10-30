@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T686 — E259 (9)(10) (prova de publicação do QA, 30/10): página pública do imóvel. 1280 e 390, com prints.
+  T692 — E259 (9)(10) (prova de publicação do QA, 30/10): página pública do imóvel. 1280 e 390, com prints.
    (9) "Destaques do imóvel" saem das comodidades principais (trabalho, internet, ar-condicionado) — não só
        "1 vaga de garagem"; e "Aceita crianças" ligado vira linha nas regras.
    (10) A galeria pede a(s) foto(s) da primeira pintura já (priority: fetchpriority alta, sem carregamento tardio).
@@ -10,10 +10,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t686.${sufixo}@lab.vivanomads.test`, nome: "Leo Destaques", role: "owner" as const };
+const dono = { email: `dono.t692.${sufixo}@lab.vivanomads.test`, nome: "Leo Destaques", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 
-test.describe("T686 — E259 (9)(10): destaques, crianças e a primeira pintura da galeria", () => {
+test.describe("T692 — E259 (9)(10): destaques, crianças e a primeira pintura da galeria", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -57,7 +57,7 @@ test.describe("T686 — E259 (9)(10): destaques, crianças e a primeira pintura 
       await expect(primeira).toHaveAttribute("fetchpriority", "high");
       expect(await primeira.getAttribute("loading")).not.toBe("lazy");
       await dest.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t686-destaques-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t692-destaques-${w}.png` });
       await ctx.close();
     });
   }

@@ -973,7 +973,8 @@
         "t224-taxa-fora-da-api",
         "t221-contrato-estado-periodo",
         "t416-varredura-bloco33",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t684-varredura-bloco71"
       ]
     },
     "/dashboard/ferramentas": {
@@ -989,7 +990,8 @@
         "t266-painel-42",
         "t339-varredura-bloco16",
         "t482-e170-caixas-vazias",
-        "t549-varredura-bloco39"
+        "t549-varredura-bloco39",
+        "t684-varredura-bloco71"
       ]
     },
     "/dashboard/garantias": {
@@ -1001,7 +1003,8 @@
         "t302-varredura-logada-bloco6",
         "t416-varredura-bloco33",
         "t461-prop5-contratos-sem-repeticao",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t684-varredura-bloco71"
       ]
     },
     "/dashboard/imoveis": {
@@ -1173,7 +1176,10 @@
         "t680-e193-passo5-cartoes",
         "t681-e257-descricao-cartoes",
         "t682-e258-conferencia-opcionais",
-        "t686-e259-pagina-publica"
+        "t687-e259-entrada-unica",
+        "t685-e258-como-cada-bloco-grava",
+        "t689-e193-cartoes-tocaveis",
+        "t692-e259-pagina-publica"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1208,7 +1214,8 @@
         "t338-varredura-bloco15",
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/locacoes": {
@@ -1228,7 +1235,8 @@
         "t221-contrato-estado-periodo",
         "t491-e182-estadias-com-nome",
         "t557-varredura-bloco42",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1296,7 +1304,8 @@
         "t388-varredura-bloco23",
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1309,7 +1318,8 @@
         "t183-telas-logadas-390",
         "t193-propostas",
         "t298-varredura-logada-bloco4",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/orcamentos/nova": {
@@ -1339,7 +1349,8 @@
         "t232-pedido-moradia-completo",
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1484,7 +1495,8 @@
         "t388-varredura-bloco23",
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1950,7 +1962,8 @@
         "t212-ferramentas-proprietario",
         "t298-varredura-logada-bloco4",
         "t553-varredura-bloco41",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/servicos": {
@@ -2157,7 +2170,8 @@
         "t418-varredura-bloco35",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t600-e200-conversa-da-estadia"
+        "t600-e200-conversa-da-estadia",
+        "t684-varredura-bloco71"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -2338,7 +2352,8 @@
         "t299-recibos-notas-39b1",
         "t302-varredura-logada-bloco6",
         "t310-vao-fim-de-pagina",
-        "t418-varredura-bloco35"
+        "t418-varredura-bloco35",
+        "t684-varredura-bloco71"
       ]
     },
     "/auth/intencao": {
@@ -2482,7 +2497,8 @@
         "t332-merges-1170-1172",
         "t365-conta-a1-casca-perfil",
         "t375-conta-a8-ajuda",
-        "t421-varredura-bloco38"
+        "t421-varredura-bloco38",
+        "t684-varredura-bloco71"
       ]
     },
     "/dashboard/conta/avaliacoes": {

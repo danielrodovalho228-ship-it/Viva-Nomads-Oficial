@@ -134,7 +134,7 @@ export function linhasBomSaber(p: Property): LinhaBomSaber[] {
   const curtos = itens.slice(0, MAX_RESUMO_REGRAS).map((x, k) => (k === 0 ? x.texto : x.texto.charAt(0).toLowerCase() + x.texto.slice(1)));
   const regras = curtos.length > 0 ? curtos.join(" · ") : "Veja entrada, saída, pessoas e pets";
 
-  const priv = linhasPrivacidadePublica(p.privacidade);
+  const priv = linhasPrivacidadePublica(p.privacidade, p.chegadaEPedido?.tipoEntrada);
   const declarado = priv.filter((l) => /câmera|^Acesso:/i.test(l));
   const seguranca = declarado.length > 0 ? declarado.join(" · ") : RESUMO_SEGURANCA_SEM_DECLARACAO;
 
