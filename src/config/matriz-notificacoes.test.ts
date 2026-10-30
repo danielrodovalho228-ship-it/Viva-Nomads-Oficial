@@ -86,13 +86,15 @@ test("44-B2: o notify() respeita a categoria desligada pela pessoa", () => {
 });
 
 test("44-B2: decisão e segurança sempre chegam, mesmo com tudo desligado", () => {
-  const tudo = ["mensagens", "lembretes", "outros", "decisao", "seguranca"];
+  const tudo = ["mensagens", "lembretes", "outros", "sugestoes", "decisao", "seguranca"];
   assert.equal(eventoDesligadoPelaPessoa("proposta_recebida", tudo), false);
   assert.equal(eventoDesligadoPelaPessoa("verification_ready", tudo), false);
   assert.equal(eventoDesligadoPelaPessoa("new_message", ["mensagens"]), true);
   assert.equal(eventoDesligadoPelaPessoa("new_message", ["lembretes"]), false);
   assert.equal(eventoDesligadoPelaPessoa("checkin_lembrete", ["lembretes"]), true);
-  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", ["outros"]), true);
+  // E264-B: o alerta de busca é "Sugestões e novidades" (desligar "outros" não o desliga mais; a 0262 migra quem tinha).
+  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", ["outros"]), false);
+  assert.equal(eventoDesligadoPelaPessoa("saved_search_match", ["sugestoes"]), true);
   assert.equal(eventoDesligadoPelaPessoa("saved_search_match", null), false);
   assert.equal(eventoDesligadoPelaPessoa("evento_que_nao_existe", ["outros"]), false);
 });

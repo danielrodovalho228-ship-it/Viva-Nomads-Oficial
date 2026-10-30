@@ -2547,6 +2547,14 @@
       "specs": [
         "t596-qa-login-direto"
       ]
+    },
+    "/avisos/desligar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t695-e264b-proativos"
+      ]
     }
   },
   "rotas": {
@@ -3252,6 +3260,14 @@
       ],
       "specs": [
         "t596-qa-login-direto"
+      ]
+    },
+    "/api/avisos/desligar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t695-e264b-proativos"
       ]
     }
   },
@@ -6914,6 +6930,12 @@
       "specs": [
         "t590-espaco-trabalho-interesse"
       ]
+    },
+    "src/app/(public)/avisos/desligar/acao.ts#desligarSugestoes": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
     }
   }
 }
