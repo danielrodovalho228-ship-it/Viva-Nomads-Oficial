@@ -1184,7 +1184,8 @@
         "t690-e259-passo2-contagem",
         "t692-e259-pagina-publica",
         "t694-varredura-bloco73",
-        "t691-e259-polimento-assistente"
+        "t691-e259-polimento-assistente",
+        "t693-prova-de-publicacao"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1673,7 +1674,8 @@
         "t574-e207-voltar-resultados",
         "t588-varredura-bloco46",
         "t668-e225-estrutura-acessibilidade",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t693-prova-de-publicacao"
       ]
     },
     "/modelodenegocio": {
