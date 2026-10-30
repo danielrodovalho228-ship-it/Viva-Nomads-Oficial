@@ -29,11 +29,10 @@ test.describe("T710 — conformidade da busca", () => {
         expect(texto).toBe("· R$ 0 de taxa para você");
         expect(Math.abs(c.y + c.height / 2 - (h1.y + h1.height / 2)), "na linha da contagem").toBeLessThanOrEqual(12);
       }
+      await p.screenshot({ path: `${SAIDA}/t710-busca-${largura}.png` });
       await p.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
       const achados = await varrerPagina(p, respostas);
       for (const k of Object.keys(CLASSES) as Classe[]) expect.soft(achados[k], `busca ${largura} — ${CLASSES[k]}`).toEqual([]);
-      await p.evaluate(() => window.scrollTo(0, 0));
-      await p.screenshot({ path: `${SAIDA}/t710-busca-${largura}.png` });
       await ctx.close();
     });
   }
