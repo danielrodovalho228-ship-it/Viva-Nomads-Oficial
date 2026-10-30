@@ -7,6 +7,14 @@
 /** Limite diário de gerações por proprietário (anti-abuso/custo). */
 export const IA_LIMITE_DIA = 10;
 
+/**
+ * E259 (4): o limite é do PREENCHIMENTO automático (título, descrição e números a partir das fotos). As sugestões de
+ * comodidades do Passo 5 vêm de outra análise (Detecção, com limite próprio) e continuam — a mensagem diz isso.
+ */
+export function mensagemLimitePreenchimento(limite: number): string {
+  return `Limite de ${limite} preenchimentos automáticos por dia atingido: título, descrição e números ficam para você nas próximas etapas. As comodidades vistas nas fotos continuam aparecendo no Passo 5.`;
+}
+
 /** Campos SEGUROS enviados ao modelo — sem PII, sem endereço exato, sem contato. */
 export interface AnuncioBrief {
   tipo?: string;

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { GERACAO_IA_ATIVA } from "@/lib/flags";
 import { consumirLimite, ipHash, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { IA_LIMITE_DIA } from "@/lib/ai/anuncio-prompt";
+import { IA_LIMITE_DIA, mensagemLimitePreenchimento } from "@/lib/ai/anuncio-prompt";
 import { classificarFalhaIa, textoDaResposta, MENSAGEM_FALHA_IA, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { registrarChamadaIa } from "@/lib/ai/registro-ia";
 import {
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
   const okPessoa = await consumirLimite(`ia:user:${user.id}`, IA_LIMITE_DIA, DIA);
   const okIp = okPessoa && (await consumirLimite(`ia:ip:${ipHash(request)}`, IA_LIMITE_DIA * 3, DIA));
   if (!okPessoa || !okIp) {
-    return falha("limite", 429, `Limite de ${IA_LIMITE_DIA} análises por dia atingido. Tente de novo amanhã ou preencha os campos na próxima etapa.`);
+    return falha("limite", 429, mensagemLimitePreenchimento(IA_LIMITE_DIA));
   }
 
   if (simulado) {
