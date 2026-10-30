@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T683 — E259 (2) (prova de publicação do QA, 30/10): a entrada do imóvel é UMA pergunta só. 1280 e 390, com prints.
+  T687 — E259 (2) (prova de publicação do QA, 30/10): a entrada do imóvel é UMA pergunta só. 1280 e 390, com prints.
    1. Passo 5 não pergunta mais "Tipo de acesso ao imóvel"; o Passo 6 pergunta "Como se entra no imóvel?" e, com a
       fechadura com código, mostra "A senha é trocada antes de cada nova estadia".
    2. A página pública lê a resposta do Passo 6: "Acesso: Porteiro ou recepção" — mesmo com um tipo_acesso antigo
@@ -12,10 +12,10 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t683.${sufixo}@lab.vivanomads.test`, nome: "Ana Entrada", role: "owner" as const };
+const dono = { email: `dono.t687.${sufixo}@lab.vivanomads.test`, nome: "Ana Entrada", role: "owner" as const };
 const ids: { dono?: string; rascunho?: string; ativo?: string } = {};
 
-test.describe("T683 — E259 (2): a entrada do imóvel é uma pergunta só", () => {
+test.describe("T687 — E259 (2): a entrada do imóvel é uma pergunta só", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -50,7 +50,7 @@ test.describe("T683 — E259 (2): a entrada do imóvel é uma pergunta só", () 
       await q.getByTestId("tipo-entrada-porteiro").click();
       await expect(q.getByTestId("senha-trocada")).toHaveCount(0);
       await q.getByTestId("chegada-e-pedido").scrollIntoViewIfNeeded();
-      await q.screenshot({ path: `${SAIDA}/t683-passo6-${w}.png` });
+      await q.screenshot({ path: `${SAIDA}/t687-passo6-${w}.png` });
       await q.context().close();
     });
 
@@ -63,7 +63,7 @@ test.describe("T683 — E259 (2): a entrada do imóvel é uma pergunta só", () 
       await expect(bloco).toContainText("Acesso: Porteiro ou recepção");
       await expect(bloco).not.toContainText("Acesso: Chave");
       await bloco.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t683-publico-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t687-publico-${w}.png` });
       await ctx.close();
     });
   }
