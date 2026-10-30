@@ -27,6 +27,8 @@ export interface SessionUser {
   /** Papéis ativados na conta. Quando ausentes, derivam-se de `role`. */
   isOwner?: boolean;
   isTenant?: boolean;
+  /** Conta de teste (profiles.is_teste). Só serve à interface (ex.: "Solicitar" em anúncio de teste); o servidor confere por conta própria. */
+  isTeste?: boolean;
 }
 
 /** Identidade de demonstração quando não há login (modo demo). */
