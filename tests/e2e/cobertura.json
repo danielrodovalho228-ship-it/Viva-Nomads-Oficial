@@ -7,7 +7,7 @@
       ],
       "specs": [
         "t66-home-busca-principal",
-        "t707-conformidade-home",
+        "t730-conformidade-home",
         "t69-botoes-header",
         "t90-orcamento-velocidade",
         "t96-antigolpe-atalhos",
@@ -325,7 +325,7 @@
       ],
       "specs": [
         "t158-ajuda-parceiro",
-        "t709-conformidade-ajuda",
+        "t731-conformidade-ajuda",
         "t19-atendimento-online",
         "t20-p1-agentes",
         "t21-central-agentes",
@@ -476,7 +476,7 @@
       ],
       "specs": [
         "t277-preco-grade-47",
-        "t710-conformidade-busca",
+        "t732-conformidade-busca",
         "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
