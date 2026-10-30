@@ -632,6 +632,7 @@
         "admin"
       ],
       "specs": [
+        "t733-e276-servicos-com-foto",
         "t138-paineis-viva-vazio",
         "t1-auth-guards",
         "t11-travessias",
