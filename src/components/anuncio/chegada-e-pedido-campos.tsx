@@ -1,6 +1,6 @@
 "use client";
 
-import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import {
   AJUDA_TIPO_ENTRADA,
   CONSIDERAR_OPCOES,
@@ -101,12 +101,10 @@ export function ChegadaEPedidoCampos({
       <fieldset>
         <legend className="text-sm font-semibold text-ink">O que considerar antes de pedir (opcional)</legend>
         <p className="mt-1 text-xs text-ink-soft">Dizer antes evita surpresa e conta a favor do anúncio na busca.</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {/* E193: várias escolhas = pílulas, sem a caixa quadrada dentro. */}
+        {/* E193 (reteste de 30/10): várias escolhas = o cartão grande da Qualificação, em grade (antes, pílulas). */}
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {CONSIDERAR_OPCOES.map((o) => (
-            <Pilula key={o.chave} on={value.considerarAntes.includes(o.chave)} onClick={() => alternar(o.chave)} testid={`considerar-${o.chave}`}>
-              {o.rotulo}
-            </Pilula>
+            <CartaoEscolha key={o.chave} papel="checkbox" on={value.considerarAntes.includes(o.chave)} onClick={() => alternar(o.chave)} testid={`considerar-${o.chave}`} rotulo={o.rotulo} />
           ))}
         </div>
         {mostraClasseDeRuido(value.considerarAntes) && (
