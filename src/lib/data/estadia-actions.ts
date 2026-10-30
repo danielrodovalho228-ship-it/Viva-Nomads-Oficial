@@ -15,6 +15,10 @@ import { notify } from "@/lib/notifications";
 import { lembreteDeBlocoNoAceite } from "@/lib/estadia/lembrete-bloco-servidor";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { sendEmail } from "@/lib/notifications/email";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { aberturaEstadia, linhasEstadia, type DadosEstadiaEmail, type EventoEstadia } from "@/lib/notifications/transacionais-estadia";
+import { escaparHtml } from "@/lib/escapar-html";
+import { primeiroNome } from "@/lib/display-name";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
 import { hashResumo } from "@/lib/contrato-assinar";
@@ -80,16 +84,49 @@ async function evento(admin: SupabaseClient, contratoId: string, autorId: string
   await admin.from("contrato_eventos").insert({ contrato_id: contratoId, autor_id: autorId, tipo, dados }).then(undefined, () => {});
 }
 
-/** Avisa a pessoa (e-mail + central + push), depois da resposta. Best-effort. */
-function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent, contratoId: string) {
+/**
+ * Avisa a pessoa (e-mail + central + push), depois da resposta. Best-effort.
+ * E267: o corpo nomeia a pessoa, o imóvel (título · bairro, cidade) e o fato (quem agiu, o que muda, prazo, datas).
+ */
+function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent, contratoId: string, dados?: DadosEstadiaEmail) {
   after(async () => {
     try {
-      const { data } = await admin.auth.admin.getUserById(userId);
-      await notify({ event, email: data?.user?.email ?? undefined, userId, pushUrl: HREF_ESTADIA(contratoId) });
+      const [{ data }, { data: perfil }] = await Promise.all([admin.auth.admin.getUserById(userId), admin.from("profiles").select("full_name").eq("id", userId).maybeSingle()]);
+      const linhas = dados ? linhasEstadia(event as EventoEstadia, dados) : [];
+      await notify({
+        event,
+        email: data?.user?.email ?? undefined,
+        name: (perfil as { full_name: string | null } | null)?.full_name ?? undefined,
+        userId,
+        pushUrl: HREF_ESTADIA(contratoId),
+        ...(dados
+          ? {
+              body: (nome?: string) => aberturaEstadia(event as EventoEstadia, dados, nome),
+              detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+              detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
+            }
+          : {}),
+      });
     } catch {
       /* aviso é best-effort */
     }
   });
+}
+
+/** E267: o imóvel e o período como o e-mail mostram (o "bairro" é o campo público `address`, nunca o endereço exato). */
+function dadosDaEstadia(c: LinhaContratoEstadia): Pick<DadosEstadiaEmail, "imovel" | "entrada" | "saida"> {
+  const b = blocosOrdenados(c).filter((x) => x.status !== "nao_aceito");
+  return {
+    imovel: { titulo: c.properties?.title, bairro: c.properties?.address, cidade: c.properties?.city },
+    entrada: b.map((x) => x.inicio).sort()[0] ?? null,
+    saida: b.map((x) => x.fim).sort().at(-1) ?? null,
+  };
+}
+
+/** E267: o primeiro nome de quem agiu (a outra parte só vê isso). */
+async function primeiroNomeDe(admin: SupabaseClient, userId: string): Promise<string | null> {
+  const { data } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+  return primeiroNome((data as { full_name: string | null } | null)?.full_name) || null;
 }
 
 function outraParte(ctx: Contexto): string {
@@ -238,6 +275,7 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
   await expirarVencidos(ctx.admin, ctx.c.id);
   const { data: ultimo } = await ctx.admin.from("contrato_aditivos").select("numero").eq("contrato_id", ctx.c.id).order("numero", { ascending: false }).limit(1).maybeSingle();
   const numero = Number((ultimo as { numero?: number } | null)?.numero ?? 0) + 1;
+  const expiraEm = expiraEmDe();
   const { data, error } = await ctx.admin
     .from("contrato_aditivos")
     .insert({
@@ -247,14 +285,20 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
       papel_proponente: ctx.papel,
       mudancas: v.valor,
       resumo: resumoDasMudancas(v.valor),
-      expira_em: expiraEmDe(),
+      expira_em: expiraEm,
     })
     .select("id")
     .single();
   // Índice único da 0198: um aditivo aberto por contrato.
   if (error || !data) return { ok: false, erro: error?.code === "23505" ? "Já existe uma proposta de alteração aberta neste contrato." : "Não foi possível enviar a proposta." };
   await evento(ctx.admin, ctx.c.id, ctx.userId, "aditivo_proposto", { aditivo: data.id, numero });
-  avisar(ctx.admin, outraParte(ctx), "estadia_aditivo_proposto", ctx.c.id);
+  avisar(ctx.admin, outraParte(ctx), "estadia_aditivo_proposto", ctx.c.id, {
+    ...dadosDaEstadia(ctx.c),
+    quem: await primeiroNomeDe(ctx.admin, ctx.userId),
+    numeroAditivo: numero,
+    mudancas: resumoDasMudancas(v.valor),
+    prazo: expiraEm,
+  });
   revalidar(ctx.c.id);
   return { ok: true, valor: { id: data.id as string } };
 }
@@ -334,7 +378,13 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
     await evento(ctx.admin, a.contrato_id, ctx.userId, "aditivo_aceito", { aditivo: a.id });
     if (ctx.papel === "proprietario") taxaBase = t.baseTexto;
   }
-  avisar(ctx.admin, a.proposto_por, "estadia_aditivo_respondido", a.contrato_id);
+  avisar(ctx.admin, a.proposto_por, "estadia_aditivo_respondido", a.contrato_id, {
+    ...dadosDaEstadia(ctx.c),
+    quem: await primeiroNomeDe(ctx.admin, ctx.userId),
+    numeroAditivo: a.numero,
+    mudancas: a.resumo,
+    resposta: resposta === "recusar" ? "recusada" : "aceita",
+  });
   revalidar(a.contrato_id);
   return { ok: true, valor: { taxaBase } };
 }
@@ -419,7 +469,13 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
       conteudo: () => documentoDoAditivo(a).join("\n"),
     }).catch((e: unknown) => console.error("[aditivo] registro:", e instanceof Error ? e.message : e));
   } else {
-    avisar(ctx.admin, outraParte(ctx), "estadia_aditivo_respondido", a.contrato_id);
+    avisar(ctx.admin, outraParte(ctx), "estadia_aditivo_respondido", a.contrato_id, {
+      ...dadosDaEstadia(ctx.c),
+      quem: await primeiroNomeDe(ctx.admin, ctx.userId),
+      numeroAditivo: a.numero,
+      mudancas: a.resumo,
+      resposta: "assinada",
+    });
   }
   revalidar(a.contrato_id);
   return { ok: true, valor: { completo } };
@@ -468,7 +524,15 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
   await aoEventoDaEstadia(ctx.admin, a.contrato_id, { tipo: "estadia_remarcada" });
   // Prompt 55-E2: as mensagens programadas que ainda não saíram ganham o horário das datas novas.
   await reagendarProgramadas(ctx.admin, a.contrato_id);
-  for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id);
+  // E267: o período novo (os blocos mantidos + os novos) e o que mudou.
+  const blocosNovos = [...manter.map((b) => ({ inicio: b.inicio, fim: b.fim })), ...novos.map((b) => ({ inicio: b.inicio, fim: b.fim }))];
+  const remarcada: DadosEstadiaEmail = {
+    ...dadosDaEstadia(ctx.c),
+    numeroAditivo: a.numero,
+    mudancas: a.resumo,
+    ...(blocosNovos.length ? { entrada: blocosNovos.map((b) => b.inicio).sort()[0], saida: blocosNovos.map((b) => b.fim).sort().at(-1) } : {}),
+  };
+  for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id, remarcada);
   // E205-B2: o aditivo assinado aceita os blocos novos pelas duas partes — se um deles começa em até 3 dias sem
   // pagamento, o lembrete sai agora (a chave segura o cron).
   after(() => lembreteDeBlocoNoAceite(ctx.admin, a.contrato_id).catch(() => 0));
@@ -492,7 +556,11 @@ export async function pedirEncerramento(contratoId: string, motivo: string, text
     .single();
   if (error || !data) return { ok: false, erro: error?.code === "23505" ? "Já existe um pedido de encerramento aberto para este contrato." : "Não foi possível registrar o pedido." };
   await evento(ctx.admin, ctx.c.id, ctx.userId, "encerramento_pedido", { pedido: data.id, motivo: v.motivo, consequencias });
-  avisar(ctx.admin, outraParte(ctx), "estadia_encerramento_pedido", ctx.c.id);
+  avisar(ctx.admin, outraParte(ctx), "estadia_encerramento_pedido", ctx.c.id, {
+    ...dadosDaEstadia(ctx.c),
+    quem: await primeiroNomeDe(ctx.admin, ctx.userId),
+    motivo: rotuloMotivo(v.motivo),
+  });
   after(async () => {
     try {
       const { data: admins } = await ctx.admin.from("profiles").select("id").eq("role", "admin");

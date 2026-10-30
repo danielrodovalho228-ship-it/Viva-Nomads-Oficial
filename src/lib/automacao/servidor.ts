@@ -1,9 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { notify, type NotificationEvent } from "@/lib/notifications";
+import { notify } from "@/lib/notifications";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { aberturaEstadia, linhasEstadia, type DadosEstadiaEmail, type EventoEstadia } from "@/lib/notifications/transacionais-estadia";
+import { escaparHtml } from "@/lib/escapar-html";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { MENSAGENS_AUTOMATICAS } from "@/lib/parceiros/pedido";
-import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "@/lib/parceiros/pedido-servidor";
+import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo } from "@/lib/parceiros/pedido-servidor";
 import {
   DIAS_ANTES_LIMPEZA,
   DIAS_ANTES_SUGESTAO,
@@ -93,23 +96,43 @@ export async function vinculosDoImovelAdmin(admin: Admin, propertyId: string): P
   );
 }
 
-/** Aviso ao dono ou ao parceiro. O silêncio (22h–7h) é decidido no notify() pela regra única do Prompt 44. */
-async function aviso(admin: Admin, destino: string, ev: NotificationEvent, url: string) {
+/**
+ * Aviso ao dono ou ao morador. O silêncio (22h–7h) é decidido no notify() pela regra única do Prompt 44.
+ * E267: com `dados`, o corpo nomeia o imóvel e a data (aberturaEstadia + bloco).
+ */
+async function aviso(admin: Admin, destino: string, ev: EventoEstadia, url: string, dados: DadosEstadiaEmail) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url });
+    const linhas = linhasEstadia(ev, dados);
+    await notify({
+      event: ev,
+      email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
+      name: d?.full_name ?? undefined,
+      userId: destino,
+      pushUrl: url,
+      body: (nome?: string) => aberturaEstadia(ev, dados, nome),
+      detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
+      detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
+    });
   } catch {
     /* aviso é complemento */
   }
 }
 
 /** Um aviso por chave (automacoes_envios): o cron pode rodar de novo sem repetir. */
-async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: string, ev: NotificationEvent, url: string): Promise<boolean> {
+async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: string, ev: EventoEstadia, url: string, dados: DadosEstadiaEmail): Promise<boolean> {
   const { error } = await admin.from("automacoes_envios").insert({ chave, tipo, usuario_id: destino });
   if (error) return false;
-  await aviso(admin, destino, ev, url);
+  await aviso(admin, destino, ev, url, dados);
   return true;
+}
+
+/** E267: o imóvel como o e-mail mostra (título · bairro, cidade; nunca o endereço exato). */
+async function imovelParaEmail(admin: Admin, propertyId: string): Promise<DadosEstadiaEmail["imovel"]> {
+  const { data } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
+  const p = data as { title: string | null; address: string | null; city: string | null } | null;
+  return p ? { titulo: p.title, bairro: p.address, cidade: p.city } : null;
 }
 
 type PedidoAuto = { id: string; cliente_id: string; parceiro_id: string; status: string; aguardando_dono: boolean; descricao: string | null; parceiros: { user_id: string } | null };
@@ -184,7 +207,8 @@ export async function criarPedidoAutomatico(admin: Admin, { ctx, acao, agora }: 
   }
   if (!criado) return null;
   await evento(admin, criado.id, null, "solicitado", { automatico: true, gatilho: acao.gatilho, aguardando_dono: acao.aguardandoDono });
-  if (acao.aguardandoDono) await aviso(admin, ctx.ownerId, "pedido_auto_confirmar", rota(criado.id));
+  // E267: com o serviço, o imóvel, o parceiro e a janela (o bloco do pedido).
+  if (acao.aguardandoDono) await avisar(admin, ctx.ownerId, "pedido_auto_confirmar", criado.id);
   else await enviarAoParceiro(admin, { id: criado.id, cliente_id: ctx.ownerId, parceiro_id: parceiro.id, status: "solicitado", aguardando_dono: false, descricao, parceiros: { user_id: parceiro.user_id } });
   return criado;
 }
@@ -197,7 +221,7 @@ type PedidoComChave = PedidoAuto & { servico_id: string | null; chave_automacao:
  * E213-B: a saída ficou a mais de 5 dias e o pedido ainda não tem aceite (ou o parceiro recusou a nova data): cancela,
  * e a chave ganha o sufixo ":remarcado:<ts>" (o padrão da troca de parceiro). O cron refaz no D-5 com a chave original.
  */
-export async function cancelarPorRemarcacao(admin: Admin, p: PedidoComChave, agora: Date, motivo = "saida_remarcada"): Promise<boolean> {
+export async function cancelarPorRemarcacao(admin: Admin, p: PedidoComChave, agora: Date, motivo: "saida_remarcada" | "nova_data_recusada" = "saida_remarcada", novaSaida?: string | null): Promise<boolean> {
   const { data: ok } = await admin
     .from("parceiro_pedidos")
     .update({ status: "cancelado", chave_automacao: chaveRemarcada(p.chave_automacao, agora.getTime()), atualizado_em: agora.toISOString() })
@@ -208,7 +232,8 @@ export async function cancelarPorRemarcacao(admin: Admin, p: PedidoComChave, ago
   await evento(admin, p.id, null, "cancelar", { motivo });
   if (!p.aguardando_dono && p.parceiros) {
     await mensagem(admin, p, p.cliente_id, MSG_SAIDA_MUDOU);
-    await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id, { texto: "a saída do morador mudou e este pedido foi cancelado. O pedido volta a ser feito perto da nova data." });
+    // E267: o e-mail diz o imóvel, o serviço, o motivo e a nova data da saída.
+    await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id, { fato: { cancelamento: { motivo, novaSaida } } });
   }
   return true;
 }
@@ -224,7 +249,7 @@ async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atuali
   if (!p) return false;
   const decisao = decidirRemarcacao(p.status, saida, hojeEmBrasilia(agora));
   if (decisao === "nada") return false;
-  if (decisao === "cancelar_remarcado") return cancelarPorRemarcacao(admin, p, agora);
+  if (decisao === "cancelar_remarcado") return cancelarPorRemarcacao(admin, p, agora, "saida_remarcada", saida);
   const { horarios, aviso: fora } = await horariosDoPedido(admin, p.parceiro_id, acao.janela, agora);
   const descricao = (await textoComServico(admin, p.servico_id, acao.descricao)) + fora;
   const comum = { descricao, horarios_propostos: horarios, janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim, atualizado_em: agora.toISOString() };
@@ -237,9 +262,7 @@ async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atuali
     await evento(admin, p.id, null, "reagendamento", { janela_inicio: acao.janela.inicio, janela_fim: acao.janela.fim, de: p.status });
     if (p.parceiros) {
       await mensagem(admin, p, p.cliente_id, textoReagendamento(janela));
-      await avisar(admin, p.parceiros.user_id, "pedido_auto_atualizado", p.id, {
-        texto: "a estadia foi renovada e a data do serviço mudou. Confirme um dos novos horários ou recuse a nova data pelo pedido. O valor combinado continua o mesmo.",
-      });
+      await avisar(admin, p.parceiros.user_id, "pedido_auto_atualizado", p.id, { fato: { reagendado: true } });
     }
     return true;
   }
@@ -271,7 +294,7 @@ async function cancelarAutomaticos(admin: Admin, contratoId: string, agora: Date
     await evento(admin, p.id, null, "cancelar", { motivo: "contrato_encerrado" });
     if (!p.aguardando_dono && p.parceiros) {
       await mensagem(admin, p, p.cliente_id, "O contrato do imóvel foi encerrado e este pedido foi cancelado.");
-      await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id);
+      await avisar(admin, p.parceiros.user_id, "pedido_auto_cancelado", p.id, { fato: { cancelamento: { motivo: "contrato_encerrado" } } });
     }
   }
   return n;
@@ -299,13 +322,17 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
         case "cancelar_automaticos":
           r.cancelados += await cancelarAutomaticos(admin, a.contratoId, agora);
           break;
-        case "avisar_dono_sem_vinculo":
-          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.saida), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza")) r.avisos += 1;
+        case "avisar_dono_sem_vinculo": {
+          const dados = { imovel: await imovelParaEmail(admin, ctx.propertyId), saida: ctx.saida };
+          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.saida), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza", dados)) r.avisos += 1;
           break;
-        case "sugerir_morador":
-          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.saida : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`))
+        }
+        case "sugerir_morador": {
+          const dados = { imovel: await imovelParaEmail(admin, ctx.propertyId), entrada: ctx.inicio, saida: ctx.saida, momento: a.momento };
+          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.saida : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`, dados))
             r.avisos += 1;
           break;
+        }
       }
     } catch (e) {
       console.error("[automação]", a.tipo, e instanceof Error ? e.message : e);
@@ -409,7 +436,7 @@ export async function automacaoDaEstadia(admin: Admin, agora: Date, simular: boo
     const { data: marcou } = await admin.from("parceiro_pedidos").update({ sem_resposta_avisado_em: agora.toISOString() }).eq("id", p.id).is("sem_resposta_avisado_em", null).select("id");
     if (!marcou?.length) continue;
     await evento(admin, p.id, null, "sem_resposta", {});
-    await aviso(admin, p.cliente_id, "pedido_auto_sem_resposta", rota(p.id));
+    await avisar(admin, p.cliente_id, "pedido_auto_sem_resposta", p.id);
     out.semResposta += 1;
   }
   return out;

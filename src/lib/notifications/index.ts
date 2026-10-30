@@ -38,6 +38,20 @@ async function desligadoPelaPessoa(userId: string, event: NotificationEvent): Pr
   return eventoDesligadoPelaPessoa(event, (data as { notif_categorias_desligadas?: string[] | null } | null)?.notif_categorias_desligadas);
 }
 
+/**
+ * E267: quem chamou sem o nome (ou com um nome vazio) ainda recebe "Olá <primeiro nome>": o nome vem do perfil e, para o
+ * parceiro sem nome no perfil, do nome público dele (a página pública já mostra esse nome). Sem banco, sem nome.
+ */
+async function nomeDoDestinatario(userId: string): Promise<string> {
+  const admin = createAdminClient();
+  if (!admin) return "";
+  const { data } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+  const doPerfil = primeiroNome((data as { full_name?: string | null } | null)?.full_name);
+  if (doPerfil) return doPerfil;
+  const { data: p } = await admin.from("parceiros").select("nome_publico").eq("user_id", userId).limit(1).maybeSingle();
+  return ((p as { nome_publico?: string | null } | null)?.nome_publico ?? "").replace(/\s+/g, " ").trim();
+}
+
 /** E-mails de documento, verificação e segurança: sem List-Unsubscribe (a pessoa precisa receber). */
 const SEM_GERENCIAR_AVISOS = new Set<NotificationEvent>(["documento_aprovado", "documento_recusado", "checklist_aprovado", "checklist_recusado", "verification_ready"]);
 
@@ -101,7 +115,8 @@ export async function notify(params: {
   }
   // Saudação SEMPRE pela fonte única (item 3): primeiro nome, e nunca o e-mail
   // cru — se `name` vier como e-mail (fallback comum), vira saudação neutra.
-  const nome = primeiroNome(params.name);
+  let nome = primeiroNome(params.name);
+  if (!nome && params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)) nome = await nomeDoDestinatario(params.userId).catch(() => "");
   // O nome é texto do usuário: no HTML vai escapado e sem links; no texto puro
   // (e-mail multipart, WhatsApp), só sem links.
   const nomeHtml = textoEmail(nome, 40);
