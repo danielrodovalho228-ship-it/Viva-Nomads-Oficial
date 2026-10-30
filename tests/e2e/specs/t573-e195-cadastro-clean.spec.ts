@@ -6,6 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T573 — E195/E166: o cadastro inteiro no mesmo fundo clean (#f7f7f7) — Qualificação, passos do anúncio e /qualificar
   ("Requisitos e selo") — e o primário do rodapé no mesmo verde cheio da Qualificação também quando o passo ainda não
   está pronto (antes, verde-claro). O aviso de anúncio em andamento é um cartão branco. A 390 e 1280 px.
+  Reconferência a 390/360 px pedida pelo coordenador (30/10, E195/E238/E219/E229): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
