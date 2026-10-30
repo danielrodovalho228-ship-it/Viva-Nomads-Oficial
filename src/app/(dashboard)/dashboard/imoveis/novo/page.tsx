@@ -1272,7 +1272,8 @@ export default function NewPropertyPage() {
     if (!c || !street.trim() || proxBuscadoRef.current === chave) return;
     const t = setTimeout(() => {
       proxBuscadoRef.current = chave;
-      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf });
+      // E259: o anúncio já salvo leva o id — o servidor mede tudo do ponto público dele, o mesmo da página.
+      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf, imovelId: editingId ?? draftServerId ?? draftParam ?? undefined });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
