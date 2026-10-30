@@ -141,15 +141,15 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     await expect(previa.getByTestId("publicar-anuncio")).toBeEnabled({ timeout: 10_000 });
     await expect(p.getByTestId("publicar-motivo")).toHaveCount(0);
     // E251 (b): resumo agrupado — cada grupo feito ganha "Editar", que leva ao passo dele; o que falta segue com "Resolver".
-    const lista = p.getByTestId("lista-conferencia");
+    const listaConf = p.getByTestId("lista-conferencia");
     for (const id of ["fotos", "endereco", "detalhes", "comodidades", "regras", "preco", "disponibilidade"]) {
-      const linha = lista.getByTestId(`conferencia-${id}`);
+      const linha = listaConf.getByTestId(`conferencia-${id}`);
       if ((await linha.getAttribute("data-ok")) === "1") await expect(linha.getByTestId(`conferencia-editar-${id}`)).toHaveText("Editar");
       else await expect(linha.getByTestId(`conferencia-editar-${id}`)).toHaveCount(0);
     }
-    await lista.scrollIntoViewIfNeeded();
+    await listaConf.scrollIntoViewIfNeeded();
     await p.screenshot({ path: `${SAIDA}/t653-editar-grupos-1280.png` });
-    await lista.getByTestId("conferencia-editar-preco").click();
+    await listaConf.getByTestId("conferencia-editar-preco").click();
     await expect(p.getByText("Passo 8 de 10")).toBeVisible({ timeout: 15_000 });
     await p.context().close();
   });
