@@ -1186,8 +1186,8 @@
         "t692-e259-pagina-publica",
         "t694-varredura-bloco73",
         "t691-e259-polimento-assistente",
-        "t695-e259-entrada-grava-e-limite",
-        "t697-e259-pessoas-sugerido-grava"
+        "t693-prova-de-publicacao",
+        "t695-e259-entrada-grava-e-limite"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1677,6 +1677,7 @@
         "t588-varredura-bloco46",
         "t668-e225-estrutura-acessibilidade",
         "t671-varredura-bloco66",
+        "t693-prova-de-publicacao",
         "t695-e259-entrada-grava-e-limite"
       ]
     },
