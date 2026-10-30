@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T695 — E259, o que as specs da Pista A (t687, t690, t692) não gravam nem leem de volta. Pista C, 30/10.
+  T698 — E259, o que as specs da Pista A (t687, t690, t692) não gravam nem leem de volta. Pista C, 30/10.
    1. #1583 (2): a entrada respondida no editor GRAVA e a página pública lê dela. "Fechadura com código" + "A senha é
       trocada antes de cada nova estadia" → tipo_entrada, tipo_acesso derivado ("fechadura_senha") e a senha no banco;
       no anúncio, "Acesso: Fechadura com código" e a linha da senha (390 e 1280). Trocar para "Porteiro ou recepção"
@@ -17,7 +17,7 @@ const FOTOS = ["sala", "quarto-1", "quarto-2", "cozinha", "banheiro", "home-offi
 const IA_LIMITE_DIA = 10;
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t695.${sufixo}@lab.vivanomads.test`, nome: "Rui Fechadura", role: "owner" as const };
+const dono = { email: `dono.t698.${sufixo}@lab.vivanomads.test`, nome: "Rui Fechadura", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 async function lerEntrada() {
@@ -26,7 +26,7 @@ async function lerEntrada() {
   return data as { tipo_entrada: string | null; tipo_acesso: string | null; senha_trocada_estadia: boolean | null };
 }
 
-test.describe("T695 — E259: a entrada grava e o anúncio lê; o limite do preenchimento diz o que continua", () => {
+test.describe("T698 — E259: a entrada grava e o anúncio lê; o limite do preenchimento diz o que continua", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
@@ -83,7 +83,7 @@ test.describe("T695 — E259: a entrada grava e o anúncio lê; o limite do pree
       await expect(bloco).toContainText("Acesso: Fechadura com código");
       await expect(bloco).toContainText("A senha é trocada antes de cada nova estadia");
       await bloco.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t695-1-fechadura-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t698-1-fechadura-${w}.png` });
       await ctx.close();
     });
   }
@@ -97,7 +97,7 @@ test.describe("T695 — E259: a entrada grava e o anúncio lê; o limite do pree
       await expect(bloco).not.toContainText("Fechadura com código");
       await expect(bloco).not.toContainText("A senha é trocada");
       await bloco.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t695-1-porteiro-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t698-1-porteiro-${w}.png` });
       await ctx.close();
     }
   });
@@ -122,7 +122,7 @@ test.describe("T695 — E259: a entrada grava e o anúncio lê; o limite do pree
       await expect(falha).toContainText("As comodidades vistas nas fotos continuam aparecendo no Passo 5.");
       await expect(p.getByTestId("ia-fotos-tentar-de-novo")).toHaveCount(0);
       await falha.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t695-2-limite-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t698-2-limite-${w}.png` });
       await p.context().close();
     });
   }
