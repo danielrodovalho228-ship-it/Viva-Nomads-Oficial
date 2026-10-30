@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import {
   PAPEIS,
   contaNoPrimeiroAcesso,
+  registraIntencaoNova,
   estadoDoPapelGravado,
   modoDoPapel,
   opcoesDeTroca,
@@ -139,5 +140,29 @@ test("E283/L-78: abrir uma página de outra área no 1º acesso não gasta o 1º
   // O 1º rascunho decide pelo MESMO caminho: gravarIntencao com "owner" grava o papel e manda as boas-vindas.
   const intencao = ler("src/lib/data/intencao-servidor.ts");
   assert.match(intencao, /if \(nova\) await gravarIntencao\(supabase, userId, nova, "owner"\)/);
-  assert.match(intencao, /if \(primeiroAcesso\) \{[\s\S]{0,300}enviarBoasVindas\(admin, userId, intencao, modo\)/);
+  assert.match(intencao, /if \(registraIntencaoNova\(a\?\.intencao, intencao\)\) \{[\s\S]{0,300}enviarBoasVindas\(admin, userId, intencao, modo\)/);
+});
+
+test("E283-B (relay nº 20): o boas-vindas sai ao registrar uma intenção que estava vazia; o papel gravado pelo uso não decide", () => {
+  // Conta zerada (caso A) e conta com papel 'morador' só pelo uso (caso C, a Ana): a intenção estava vazia → envia.
+  assert.equal(registraIntencaoNova(null, ["anunciar"]), true);
+  assert.equal(registraIntencaoNova(undefined, ["anunciar"]), true);
+  // 1ª resposta da tela, mesmo "Agora não" ([]), manda o de morador (E205-B).
+  assert.equal(registraIntencaoNova(null, []), true);
+  // "Agora não" antes e agora "anunciar" pelo rascunho: a intenção estava vazia → envia (a chave segura se já recebeu).
+  assert.equal(registraIntencaoNova([], ["anunciar"]), true);
+  assert.equal(registraIntencaoNova([], []), false);
+  // Quem já tinha intenção ("Quero morar") só ganha "anunciar": nada de boas-vindas novo.
+  assert.equal(registraIntencaoNova(["morar"], ["morar", "anunciar"]), false);
+  // 2º rascunho: a intenção já tem "anunciar" (registrarIntencaoDeAnunciar nem chama) — e se chamasse, não envia.
+  assert.equal(registraIntencaoNova(["anunciar"], ["anunciar"]), false);
+  // A decisão do envio não lê papel_ativo; o papel inicial continua só no 1º acesso.
+  const intencao = ler("src/lib/data/intencao-servidor.ts");
+  const bloco = intencao.slice(intencao.indexOf("if (registraIntencaoNova("), intencao.indexOf("return { ok: true, papelAplicado }"));
+  assert.doesNotMatch(bloco, /papel_ativo|primeiroAcesso/);
+  // Uma vez por conta: a chave boas_vindas:<conta> é gravada ANTES de enviar e, se já existe, não envia.
+  const bv = ler("src/lib/notifications/boas-vindas-servidor.ts");
+  assert.match(bv, /from\("automacoes_envios"\)\.insert\(\{ chave: CHAVE_BOAS_VINDAS\(usuarioId\)[\s\S]{0,120}if \(error\) return false;/);
+  // Nada por varredura e nunca pela navegação/modo: só gravarIntencao chama o envio.
+  for (const f of ["src/lib/data/mode-actions.ts", "src/lib/data/papel-actions.ts", "src/components/papel/sincronizar-papel.tsx"]) assert.doesNotMatch(ler(f), /enviarBoasVindas|gravarIntencao/, f);
 });
