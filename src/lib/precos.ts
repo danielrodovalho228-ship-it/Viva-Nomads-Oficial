@@ -267,6 +267,30 @@ export function precoDoImovel(
   });
 }
 
+/** E254-A: o total do período de um ANÚNCIO, com a conta aberta — a mesma função na prévia do Passo 10, no cartão de
+ *  Meus anúncios e no cartão da página pública. A limpeza de saída (e a preparação) entram no total do período,
+ *  discriminadas na conta, e nunca no "Total por mês". Ex.: "3 × R$ 3.450,00 + limpeza de saída R$ 450,00". */
+export interface EstadiaDoImovel {
+  meses: number;
+  total: number;
+  /** A conta por extenso, sem o "= total" (o total vem ao lado). */
+  conta: string;
+}
+
+export function estadiaDoImovel(p: Parameters<typeof precoDoImovel>[0], meses: number): EstadiaDoImovel | null {
+  const r = precoDoImovel(p, meses);
+  if (r.totalContrato == null || r.meses == null) return null;
+  const conta = [`${r.meses} × ${formatBRL(r.totalPorMes)}`, ...r.unicos.map((u) => `${u.rotulo.toLowerCase()} ${formatBRL(u.valor)}`)].join(" + ");
+  return { meses: r.meses, total: r.totalContrato, conta };
+}
+
+/** "Estadia mínima (3 meses): R$ 10.800,00 · 3 × R$ 3.450,00 + limpeza de saída R$ 450,00" (null com 1 mês). */
+export function linhaEstadiaMinima(p: Parameters<typeof precoDoImovel>[0], meses: number): string | null {
+  if (meses <= 1) return null;
+  const e = estadiaDoImovel(p, meses);
+  return e ? `${rotuloEstadiaMinima(e.meses)}: ${formatBRL(e.total)} · ${e.conta}` : null;
+}
+
 /** Termos de uma versão de proposta (os mesmos campos de TermosProposta; os totais batem com calcularTotais). */
 export interface TermosPreco {
   valorMensal: number;

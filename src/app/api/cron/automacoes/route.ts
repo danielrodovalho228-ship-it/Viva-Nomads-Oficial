@@ -29,6 +29,8 @@ import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarD
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
 import { DIAS_APAGAR_CONVIDADO, convidadoVence } from "@/lib/anuncio/chegada-e-pedido";
 import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
+import { linhaImovel } from "@/lib/notifications/transacionais-estadia";
+import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
 import { precalcularTempos } from "@/lib/data/tempos";
@@ -134,7 +136,7 @@ export async function GET(request: Request) {
   // 2-4) Contratos ativos assinados pelas duas partes: saída, avaliação e renovação.
   const { data: contratos } = await admin
     .from("contratos")
-    .select("id, tenant_id, properties(owner_id, title), contrato_blocos(id, fim, status, renovacao_notificada_em)")
+    .select("id, tenant_id, properties(owner_id, title, address, city), contrato_blocos(id, fim, status, renovacao_notificada_em)")
     .in("status", ["ativo", "encerrado"])
     .not("assinado_proprietario_em", "is", null)
     .not("assinado_inquilino_em", "is", null)
@@ -146,9 +148,10 @@ export async function GET(request: Request) {
   for (const c of contratos ?? []) {
     const blocos = ((c.contrato_blocos as Bloco[] | null) ?? []).filter((b) => b.fim);
     if (!blocos.length) continue;
-    const prop = c.properties as unknown as { owner_id?: string; title?: string } | null;
+    const prop = c.properties as unknown as { owner_id?: string; title?: string; address?: string | null; city?: string | null } | null;
     const partes = [prop?.owner_id, c.tenant_id as string].filter((u): u is string => !!u);
-    const imovel = prop?.title || undefined;
+    // E267: título · bairro, cidade (o "bairro" é o campo público; nunca o endereço exato).
+    const imovel = linhaImovel({ titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
     if (lembreteDeSaida(fimFinal, hoje)) {
       // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
@@ -207,20 +210,24 @@ export async function GET(request: Request) {
   // confirmação do cliente (só aviso: nada conclui sozinho).
   const { data: pedidosParceiro } = await admin
     .from("parceiro_pedidos")
-    .select("id, codigo, status, cliente_id, horario_confirmado, entregue_em, parceiros(user_id)")
+    .select("id, codigo, categoria, status, cliente_id, horario_confirmado, entregue_em, parceiros(user_id), parceiro_servicos(titulo), properties(title, address, city)")
     .in("status", ["agendado", "entregue"])
     .limit(1000);
   for (const p of pedidosParceiro ?? []) {
     const parceiroUser = (p.parceiros as unknown as { user_id?: string } | null)?.user_id;
     const url = `/dashboard/servicos/pedidos/${p.id}`;
+    // E267: o serviço e o imóvel do pedido no corpo (não só o número).
+    const pi = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
+    const imovelPedido = pi ? linhaImovel({ titulo: pi.title, bairro: pi.address, cidade: pi.city }) || undefined : undefined;
+    const servico = (p.parceiro_servicos as unknown as { titulo?: string | null } | null)?.titulo || rotuloCategoria(p.categoria as string);
     if (precisaLembrete24h(p.status as string, p.horario_confirmado as string | null, agora)) {
       const quando = dataHoraBRT(p.horario_confirmado as string, { semEtiqueta: true });
       for (const quem of [p.cliente_id as string, parceiroUser].filter((x): x is string => !!x)) {
-        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando }) });
+        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando, imovel: imovelPedido, servico }) });
       }
     }
     if (precisaAvisoConclusao(p.status as string, p.entregue_em as string | null, agora)) {
-      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string }) });
+      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string, imovel: imovelPedido, servico }) });
     }
   }
 
@@ -236,7 +243,7 @@ export async function GET(request: Request) {
     const inicio = blocos.map((b) => b.inicio).sort()[0];
     if (!inicio || inicio < hoje || inicio > dia(LEMBRETE_DONO_DIAS)) continue;
     const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
-    const imovel = prop?.title || undefined;
+    const imovel = linhaImovel({ titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const url = HREF_ESTADIA(c.id as string);
     const condicao = {
       inicio,

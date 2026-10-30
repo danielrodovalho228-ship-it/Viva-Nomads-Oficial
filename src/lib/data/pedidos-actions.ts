@@ -18,8 +18,8 @@ import { explicarNota, melhorPor, porQueCombina, type ImovelCompativel, type Ite
 import {
   detalheResposta,
   detalheAceito,
-  detalheExpirando,
 } from "@/lib/pedidos/notify-templates";
+import { despacharProativos, enfileirarProativo } from "@/lib/notifications/proativos-servidor";
 import {
   contemContato,
   detectarContato,
@@ -48,13 +48,12 @@ type Recip = {
   id?: string | null;
 };
 
-type PedidoEvent = "pedido_resposta" | "pedido_aceito" | "pedido_expirando";
+type PedidoEvent = "pedido_resposta" | "pedido_aceito";
 
 /** Deep-link interno do push por evento. */
 const PUSH_URL: Record<PedidoEvent, string> = {
   pedido_resposta: "/dashboard/pedidos",
   pedido_aceito: "/dashboard/mensagens",
-  pedido_expirando: "/dashboard/pedidos",
 };
 
 async function notificar(
@@ -415,19 +414,19 @@ export async function getMeusPedidos() {
       ),
     );
     if (aExpirar.length > 0) {
-      const { data: me } = await supabase
-        .from("profiles")
-        .select("full_name, email, notif_email")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (me?.notif_email !== false) {
+      // E264-B: o aviso entra na fila dos proativos (cartão do pedido, teto por pessoa, categoria desligável); a chave
+      // leva a validade do pedido, então cada ciclo avisa uma vez só. Marcado como avisado ao entrar na fila.
+      const admin = createAdminClient();
+      if (admin) {
         for (const p of aExpirar) {
-          await notificar("pedido_expirando", me as Recip, detalheExpirando());
+          const r = p as Record<string, unknown>;
+          await enfileirarProativo(admin, { usuarioId: user.id, evento: "pedido_expirando", refId: r.id as string, ciclo: String(r.expira_em ?? "") });
           await supabase
             .from("pedidos_moradia")
             .update({ lembrete_expira_em: new Date().toISOString(), aviso_renovar_em: new Date().toISOString() })
-            .eq("id", (p as Record<string, unknown>).id as string);
+            .eq("id", r.id as string);
         }
+        await despacharProativos(admin, user.id);
       }
     }
   } catch {

@@ -1,5 +1,6 @@
 "use client";
 
+import { PetsRegrasCampos, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
@@ -9,7 +10,7 @@ import { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } from "@/lib/anuncio/sugestoes
 import { PrivacidadeCampos } from "@/components/anuncio/privacidade-campos";
 import type { Privacidade } from "@/lib/anuncio/privacidade";
 import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anuncio/blocos-cadastro";
-import { avisosConsistenciaTitulo } from "@/lib/anuncio/titulo-bairro";
+import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { cn } from "@/lib/utils";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
@@ -92,6 +93,9 @@ export function EtapaEncontramos(p: {
   setFurnished: (fn: (v: boolean) => boolean) => void;
   petsOk: boolean;
   setPetsOk: (fn: (v: boolean) => boolean) => void;
+  /** E263-A: as condições de pets do dono (abrem com "Aceita pets" ligado). */
+  petsRegras: RegrasPetsForm;
+  setPetsRegras: (v: RegrasPetsForm) => void;
   childrenAllowed: boolean;
   setChildrenAllowed: (fn: (v: boolean) => boolean) => void;
   smokingAllowed: boolean;
@@ -115,6 +119,7 @@ export function EtapaEncontramos(p: {
 
   if (p.parte === "regras") {
     return (
+      <>
       <div className="grid gap-2 sm:grid-cols-2" data-testid="etapa-regras-casa">
         {/* E110: "Regras da casa" já é o título do passo (H1); não se repete aqui. E193 (30/10): os sim/não em grade de
             cartões grandes, como as outras escolhas do assistente. */}
@@ -132,6 +137,9 @@ export function EtapaEncontramos(p: {
         <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." />
         <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." />
       </div>
+      {/* E263-A: ligado, "Aceita pets" abre as condições do dono — tudo opcional; desligado, nenhuma condição vai junto. */}
+      {p.petsOk && <PetsRegrasCampos value={p.petsRegras} onChange={p.setPetsRegras} />}
+      </>
     );
   }
 
@@ -157,7 +165,7 @@ export function EtapaEncontramos(p: {
             data-testid="cadastro-titulo"
           />
           <Erro msg={p.erros.titulo} />
-          <AvisoBairro titulo={p.title} bairro={p.neighborhood} tipo={p.propertyType} quartos={p.bedrooms} />
+          <AvisosConsistenciaTitulo titulo={p.title} bairro={p.neighborhood} tipo={p.propertyType} quartos={p.bedrooms} />
         </Labeled>
         <Labeled label="Descrição" sugerido={p.sugerido("descricao")}>
           <textarea
@@ -312,18 +320,4 @@ function GrupoComodidades(p: {
       </div>
     </div>
   );
-}
-
-/** F17 + E150: o título confere com o bairro, o tipo e os quartos do anúncio (aviso que pode manter, nunca trava). */
-function AvisoBairro({ titulo, bairro, tipo, quartos }: { titulo: string; bairro: string; tipo?: string; quartos?: string }) {
-  const avisos = avisosConsistenciaTitulo(titulo, { bairro, tipo, quartos });
-  return avisos.length ? (
-    <div role="status" className="mt-1 space-y-1 text-xs text-amber-700" data-testid="aviso-titulo-consistencia">
-      {avisos.map((a) => (
-        <p key={a} data-testid={a.startsWith("O título cita") ? "aviso-titulo-bairro" : undefined}>
-          {a}
-        </p>
-      ))}
-    </div>
-  ) : null;
 }

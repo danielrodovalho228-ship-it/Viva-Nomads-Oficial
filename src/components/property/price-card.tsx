@@ -1,7 +1,7 @@
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
-import { calcularTotalMensal } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovel } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
@@ -38,6 +38,9 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
   const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: property.availableFrom });
+  // E254-A: o total do período pela mesma função da prévia do Passo 10 e do cartão de Meus anúncios — com a limpeza de
+  // saída somada e discriminada na conta (ela segue fora do "Total por mês", na linha própria abaixo).
+  const estadia = meses > 1 ? estadiaDoImovel(property, meses) : null;
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
@@ -47,13 +50,18 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
           {preco.valor}
         </span>
         <span className="text-sm text-ink">/mês</span>
-        {preco.estadia && (
+        {estadia && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {preco.estadia}
+            · {formatBRL(estadia.total)} em {estadia.meses} meses
           </span>
         )}
       </p>
+      {estadia && (
+        <p className="text-xs text-muted" data-testid="cartao-lateral-estadia-conta">
+          {estadia.conta}
+        </p>
+      )}
       <p className="mb-4 text-xs text-muted" data-testid="cartao-nao-segura">
         {FRASE_NAO_SEGURA_DINHEIRO}: o valor vai direto ao proprietário.
       </p>

@@ -65,7 +65,9 @@ export function avisosConsistenciaTitulo(titulo: string, a: { bairro?: string; t
   if (bairro) avisos.push(bairro);
   const citados = tiposCitados(titulo);
   // "Casa de condomínio" é casa; "apartamento" cita "ap": só avisa quando o tipo do anúncio NÃO está entre os citados.
-  const tipoBase = a.tipo === "casa_condominio" ? "casa" : a.tipo;
+  // E261: o editor lê o tipo gravado no banco (anúncios antigos com "Studio", "Chácara"): compara sem caixa nem acento.
+  const tipo = a.tipo?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  const tipoBase = tipo === "casa_condominio" ? "casa" : tipo;
   if (tipoBase && citados.length && !citados.includes(tipoBase)) {
     const doTitulo = PALAVRAS_TIPO.find((p) => p.tipo === citados[0])!.rotulo;
     const doAnuncio = PALAVRAS_TIPO.find((p) => p.tipo === tipoBase)?.rotulo ?? tipoBase;

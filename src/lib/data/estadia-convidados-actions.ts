@@ -8,6 +8,7 @@
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { notify } from "@/lib/notifications";
+import { linhaImovel } from "@/lib/notifications/transacionais-estadia";
 import { primeiroNome } from "@/lib/display-name";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { entradaDoConvidado, podeConvidar } from "@/lib/anuncio/chegada-e-pedido";
@@ -48,7 +49,8 @@ export async function convidarOcupante(contratoId: string, email: string): Promi
         event: "estadia_convite_ocupante",
         email: alvo,
         pushUrl: destino,
-        body: () => `${quem} incluiu você como morador da estadia em ${ctx.c.properties?.city ?? "um imóvel da Viva"}. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.`,
+        // E267: o imóvel por título · bairro, cidade (nunca o endereço exato). Quem é convidado ainda não tem nome na Viva.
+        body: () => `${quem} incluiu você como morador da estadia em ${linhaImovel({ titulo: ctx.c.properties?.title, bairro: ctx.c.properties?.address, cidade: ctx.c.properties?.city }) || "um imóvel da Viva"}. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.`,
       });
     } catch {
       /* aviso é best-effort */

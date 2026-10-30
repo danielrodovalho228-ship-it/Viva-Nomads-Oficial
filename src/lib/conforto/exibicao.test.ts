@@ -30,10 +30,12 @@ test("o que falta para publicar: 'Falta confirmar: [itens]' na ordem da lista; t
   const semDois = CHAVES_CONFORTO.filter((k) => k !== "agua_quente" && k !== "iluminacao");
   assert.equal(textoFaltaConfirmar(semDois), "Falta confirmar: Água quente, Iluminação.");
   assert.equal(itensNaoConfirmados([]).length, 12);
-  // O botão Publicar nunca fica desabilitado em silêncio: a Revisão mostra a lista ao lado dele.
+  // O botão Publicar nunca fica desabilitado em silêncio: o motivo aponta para a lista de conferência, a única fonte
+  // das pendências (E260 — sem o "Falta confirmar" repetido embaixo da lista).
   const rv = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
-  assert.match(rv, /data-testid="publicar-falta"/);
-  assert.match(rv, /textoFaltaConfirmar\(p\.conforto\)/);
+  assert.match(rv, /data-testid="publicar-motivo"/);
+  assert.match(rv, /data-testid="lista-conferencia"/);
+  assert.doesNotMatch(rv, /data-testid="publicar-falta/);
   assert.doesNotMatch(rv, /<ChecklistConforto/, "o checklist saiu da Revisão");
 });
 

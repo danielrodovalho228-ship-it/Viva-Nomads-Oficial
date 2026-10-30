@@ -150,7 +150,8 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     // 10 passos: das Comodidades à Revisão são 5 "Continuar" (Regras, Descrição, Preço, Disponibilidade, Revisão).
     await continuarAte(page, "comodidades", "revisao");
     await expect(page.getByTestId("etapa-revisar").locator('[data-itens~="conforto"]')).toHaveAttribute("data-ok", "0", { timeout: 20_000 });
-    await expect(page.getByTestId("publicar-falta-conforto")).toContainText(`Falta confirmar: ${ITENS_CONFORTO[0].rotulo}.`);
+    // E260: a lista de conferência é a única fonte — sem o "Falta confirmar" repetido embaixo dela.
+    await expect(page.getByTestId("publicar-falta")).toHaveCount(0);
     await expect(page.getByTestId("publicar-anuncio")).toBeDisabled();
     await semRolagemLateral(page);
     await page.screenshot({ path: "tests/laboratorio/saida/t292-1-falta-1-item-390.png", fullPage: true });

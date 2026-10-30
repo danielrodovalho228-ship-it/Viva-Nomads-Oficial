@@ -119,12 +119,12 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
     // Publicar: sem "Falta confirmar" do padrão mínimo; o anúncio fica ativo.
     await abrir(page, "revisao");
     await noPasso(page, "revisao", 30_000);
-    await expect(page.getByTestId("publicar-falta-conforto")).toHaveCount(0);
+    await expect(page.getByTestId("etapa-revisar").locator('[data-itens~="conforto"]')).toHaveCount(0);
     await aceitarTermoIaSePreciso(page);
     const publicar = page.getByTestId("publicar-anuncio");
-    const faltaOutros = page.getByTestId("publicar-falta-outros");
-    await expect(publicar.and(page.locator(":enabled")).or(faltaOutros)).toBeVisible({ timeout: 20_000 });
-    expect(await faltaOutros.isVisible() ? await faltaOutros.innerText() : "", "nada mais falta para publicar").toBe("");
+    // Nada mais falta: o Publicar libera e o motivo some (enquanto a tela carrega, o motivo pode aparecer por um instante).
+    await expect(publicar).toBeEnabled({ timeout: 20_000 });
+    await expect(page.getByTestId("publicar-motivo"), "nada mais falta para publicar").toHaveCount(0);
     await publicar.click();
     await page.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
     const { data: pub } = await adm().from("properties").select("status").eq("id", ids.imovel!).single();

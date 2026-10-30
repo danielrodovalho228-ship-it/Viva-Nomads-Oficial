@@ -127,7 +127,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
                 <CampoReais semPrefixo centavos value={t.valorLimpeza || null} onChange={(v) => set("valorLimpeza", v ?? 0)} />
               </Campo>
               <Campo rotulo="Taxa pet (R$/mês, se houver)">
-                <CampoReais semPrefixo centavos value={t.taxaPet || null} onChange={(v) => set("taxaPet", v ?? 0)} />
+                <CampoReais semPrefixo centavos value={t.taxaPet || null} onChange={(v) => set("taxaPet", v ?? 0)} testid="proposta-taxa-pet" />
               </Campo>
               <Campo rotulo="Limpeza de preparação (R$, única)">
                 <CampoReais semPrefixo centavos value={t.limpezaUnica || null} onChange={(v) => set("limpezaUnica", v ?? 0)} />

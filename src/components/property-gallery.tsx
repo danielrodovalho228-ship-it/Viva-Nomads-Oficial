@@ -14,6 +14,8 @@ import { VideoModal } from "@/components/video-walkthrough";
 
 /** O mosaico mostra 5 fotos (0–4); o "+N mais" abre na primeira oculta. */
 export const PRIMEIRA_FOTO_OCULTA = 5;
+/** O `sizes` das fotos do mosaico e do carrossel; a galeria aberta reusa esta versão (já no cache) por baixo da grande. */
+const SIZES_MINIATURA = "(max-width: 768px) 100vw, 50vw";
 
 const isPhoto = (s?: string) =>
   typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
@@ -129,7 +131,7 @@ function Tile({
             treat={false}
             priority={prioridade}
             rounded="rounded-none"
-            sizes="(max-width: 768px) 100vw, 50vw"
+            sizes={SIZES_MINIATURA}
             className="h-full w-full opacity-80 transition-transform duration-500 group-hover:scale-105"
           />
         )}
@@ -154,7 +156,7 @@ function Tile({
           treat={false}
           priority={prioridade}
           rounded="rounded-none"
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes={SIZES_MINIATURA}
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"
         />
       ) : (
@@ -353,7 +355,13 @@ function Lightbox({
         )}
         <div className="w-full max-w-4xl">
           {isPhoto(photos[index]) ? (
-            <BrandImage src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" fit="object-contain" rounded="rounded-xl" className="h-[80vh] w-full bg-transparent" />
+            // E262 (a): na abertura fria o painel abria em branco até a versão grande chegar. Embaixo, a MESMA versão da
+            // miniatura do mosaico/carrossel (mesmo `sizes` = mesma URL, já no cache) aparece na hora; por cima, a grande,
+            // pedida já e com prioridade alta, cobre quando chega.
+            <div className="relative h-[80vh] w-full" data-testid="galeria-lightbox-foto">
+              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_MINIATURA} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
+              <BrandImage key={photos[index]} src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" priority fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
+            </div>
           ) : (
             <PhotoPlaceholder label={photos[index]} className="aspect-[4/3] w-full rounded-xl" />
           )}

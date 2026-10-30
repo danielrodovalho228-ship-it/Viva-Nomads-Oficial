@@ -7,6 +7,8 @@ import {
   PORTES_PET,
   MAX_PETS,
   MAX_TEXTO_CONDOMINIO,
+  MAX_OBSERVACAO_PET,
+  rotuloQtdPets,
   TIPOS_VALOR_PET,
   ROTULO_TIPO_VALOR_PET,
   ROTULO_ESPECIE,
@@ -17,24 +19,28 @@ import {
   type TipoValorPet,
 } from "@/lib/anuncio/pets-regras";
 
-/** Rascunho do formulário: tudo em texto até o servidor validar. */
+/** Rascunho do formulário: tudo em texto até o servidor validar. E263-A: tudo opcional ("" = não informado). */
 export interface RegrasPetsForm {
   especies: EspeciePet[];
-  porteMax: PortePet;
+  porteMax: PortePet | "";
   qtdMax: string;
   regrasCondominio: string;
   valorPet: string;
   valorPetTipo: TipoValorPet;
+  taxaMensal: string;
+  observacao: string;
 }
 
 export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
   return {
-    especies: r?.especies ?? ["cao", "gato"],
-    porteMax: r?.porteMax ?? "M",
-    qtdMax: String(r?.qtdMax ?? 1),
+    especies: r?.especies ?? [...ESPECIES_PET],
+    porteMax: r?.porteMax ?? "",
+    qtdMax: r?.qtdMax ? String(r.qtdMax) : "",
     regrasCondominio: r?.regrasCondominio ?? "",
     valorPet: r?.valorPet && r.valorPet > 0 ? String(r.valorPet) : "",
     valorPetTipo: r?.valorPetTipo ?? "reembolsavel",
+    taxaMensal: r?.taxaMensal && r.taxaMensal > 0 ? String(r.taxaMensal) : "",
+    observacao: r?.observacao ?? "",
   };
 }
 
@@ -58,12 +64,13 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
             </label>
           ))}
         </div>
-        {value.especies.length === 0 && <p className="mt-1 text-xs text-red-700">Marque ao menos um tipo de animal.</p>}
+        {value.especies.length === 0 && <p className="mt-1 text-xs text-muted">Sem nenhum marcado, vale qualquer animal.</p>}
       </fieldset>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Porte máximo
-          <select className={campo} value={value.porteMax} onChange={(e) => onChange({ ...value, porteMax: e.target.value as PortePet })}>
+          <select className={campo} data-testid="pets-porte" value={value.porteMax} onChange={(e) => onChange({ ...value, porteMax: e.target.value as PortePet | "" })}>
+            <option value="">Sem limite de porte</option>
             {PORTES_PET.map((p) => (
               <option key={p} value={p}>{ROTULO_PORTE[p]}</option>
             ))}
@@ -71,13 +78,27 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
         </label>
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Quantos animais, no máximo?
-          <select className={campo} value={value.qtdMax} onChange={(e) => onChange({ ...value, qtdMax: e.target.value })}>
-            {Array.from({ length: MAX_PETS }, (_, i) => String(i + 1)).map((n) => (
-              <option key={n} value={n}>{n}</option>
+          <select className={campo} data-testid="pets-qtd" value={value.qtdMax} onChange={(e) => onChange({ ...value, qtdMax: e.target.value })}>
+            <option value="">Sem limite</option>
+            {Array.from({ length: MAX_PETS }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={String(n)}>{rotuloQtdPets(n)}</option>
             ))}
           </select>
         </label>
       </div>
+      <label className="grid gap-1 text-sm font-semibold text-ink">
+        Taxa mensal de pet (R$/mês, opcional)
+        <CampoReais
+          semPrefixo
+          centavos
+          className={campo}
+          placeholder="0"
+          testid="pets-taxa-mensal"
+          value={reaisOu(value.taxaMensal, NaN) >= 0 ? reaisOu(value.taxaMensal, NaN) : null}
+          onChange={(v) => onChange({ ...value, taxaMensal: v == null ? "" : String(v) })}
+        />
+        <span className="text-xs font-normal text-muted">Entra na proposta de quem tem pet; você pode ajustar ao montar.</span>
+      </label>
       <div className="grid gap-3 sm:grid-cols-2" data-testid="valor-pet-campos">
         <label className="grid gap-1 text-sm font-semibold text-ink">
           Valor pet (R$, opcional)
@@ -108,6 +129,20 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Regra do condomínio sobre pets (opcional)
         <input className={campo} maxLength={MAX_TEXTO_CONDOMINIO} value={value.regrasCondominio} onChange={(e) => onChange({ ...value, regrasCondominio: e.target.value })} />
+      </label>
+      <label className="grid gap-1 text-sm font-semibold text-ink">
+        Observação (opcional)
+        <input
+          className={campo}
+          data-testid="pets-observacao"
+          maxLength={MAX_OBSERVACAO_PET}
+          placeholder="Ex.: gatos castrados; nada de animais no sofá."
+          value={value.observacao}
+          onChange={(e) => onChange({ ...value, observacao: e.target.value })}
+        />
+        <span className="text-xs font-normal text-muted" data-testid="pets-observacao-conta">
+          {value.observacao.length}/{MAX_OBSERVACAO_PET}
+        </span>
       </label>
     </div>
   );

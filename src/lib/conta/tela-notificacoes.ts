@@ -21,6 +21,8 @@ export const TIPOS_AVISO: readonly { categoria: CategoriaComInterruptor; titulo:
   { categoria: "mensagens", titulo: "Novas mensagens", texto: "Receba quando alguém te enviar uma mensagem" },
   { categoria: "lembretes", titulo: "Lembretes da estadia", texto: "Alertas sobre a conferência de entrada e de saída e os detalhes da estadia" },
   { categoria: "outros", titulo: "Novidades e dicas da Viva", texto: "Receba novidades, dicas e conteúdo sobre imóveis mobiliados" },
+  // E264-B: os e-mails proativos (no máximo 1 por dia), com o descadastro de um clique em cada e-mail.
+  { categoria: "sugestoes", titulo: "Sugestões e novidades", texto: "Imóveis novos para o seu pedido ou busca e pedidos que combinam com o seu imóvel" },
 ];
 
 export const CANAIS_AVISO: readonly { canal: keyof CanaisAviso; titulo: string; texto: string }[] = [

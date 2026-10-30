@@ -75,7 +75,7 @@ function dataBr(iso: string): string {
 }
 
 /** Linha de detalhe (texto puro) do e-mail/WhatsApp: só datas e nome do imóvel, nada pessoal. */
-export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fim?: string; dias?: 1 | 3; numero?: string; quando?: string; faltam?: string[] }): string {
+export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fim?: string; dias?: 1 | 3; numero?: string; quando?: string; faltam?: string[]; servico?: string }): string {
   const imovel = ctx.imovel ? `Imóvel: ${ctx.imovel}.` : "";
   switch (tipo) {
     case "anuncio_incompleto":
@@ -89,9 +89,9 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
     case "proposta_vencendo":
       return `${imovel} A proposta ${ctx.numero ?? ""} vence em menos de 24 horas. Aceite, contraproponha ou recuse pela plataforma.`.replace(/\s+/g, " ").trim();
     case "parceiro_lembrete":
-      return `Pedido ${ctx.numero ?? ""}: serviço marcado para ${ctx.quando ?? "as próximas horas"} (horário de Brasília). Combine os detalhes pelas mensagens do pedido.`.replace(/\s+/g, " ").trim();
+      return `${imovel} Pedido ${ctx.numero ?? ""}: serviço${ctx.servico ? ` de ${ctx.servico.toLowerCase()}` : ""} marcado para ${ctx.quando ?? "as próximas horas"} (horário de Brasília). Combine os detalhes pelas mensagens do pedido.`.replace(/\s+/g, " ").trim();
     case "parceiro_conclusao_pendente":
-      return `Pedido ${ctx.numero ?? ""}: a entrega foi marcada há 7 dias. Confirme a conclusão ou fale com o parceiro pelas mensagens do pedido. Nada é concluído sem você.`.replace(/\s+/g, " ").trim();
+      return `${imovel} Pedido ${ctx.numero ?? ""}${ctx.servico ? ` (${ctx.servico.toLowerCase()})` : ""}: a entrega foi marcada há 7 dias. Confirme a conclusão ou fale com o parceiro pelas mensagens do pedido. Nada é concluído sem você.`.replace(/\s+/g, " ").trim();
     case "estadia_instrucoes_liberadas":
       return `${imovel} Entrada em ${ctx.fim ? dataBr(ctx.fim) : "7 dias"}. As instruções de chegada estão na página da estadia.`.trim();
     case "estadia_instrucoes_pendentes":

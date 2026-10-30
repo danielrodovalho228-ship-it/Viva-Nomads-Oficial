@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { aberturaDoPedido, dataDoPedido, imovelDoPedido, linhasDoPedido, type PedidoParaEmail } from "./email-pedido.ts";
+import { EVENTOS_DO_PEDIDO, aberturaDoPedido, dataDoPedido, imovelDoPedido, linhasDoPedido, type PedidoParaEmail } from "./email-pedido.ts";
 import { catalogoEmails } from "../notifications/catalogo-emails.ts";
 import { emailCodigo2fa, emailCodigoAssinatura, emailCodigoVinculo, ANTIFRAUDE_CODIGO } from "../notifications/montar-email.ts";
 import { AVISO_ANTIGOLPE } from "../notifications/aviso-antigolpe.ts";
@@ -46,9 +46,10 @@ test("E204: pedido novo diz serviço, imóvel e data, sem valor; orçamento rece
   assert.match(aberturaDoPedido("parceiro_orcamento_aceito", P, "Ana"), /aceitou o seu orçamento de limpeza pós-saída para Apto Santa Mônica \(R\$ 180\)/);
 });
 
-test("E204: o servidor manda os dados nesses três avisos e lê serviço e imóvel pelo pedido", () => {
+test("E204/E267: o servidor manda os dados em todos os avisos do pedido e lê serviço e imóvel pelo pedido", () => {
   const fonte = readFileSync(new URL("./pedido-servidor.ts", import.meta.url), "utf8");
-  assert.match(fonte, /EVENTOS_COM_DADOS = new Set<NotificationEvent>\(\["parceiro_pedido_novo", "parceiro_orcamento_recebido", "parceiro_orcamento_aceito"\]\)/);
+  assert.match(fonte, /EVENTOS_DO_PEDIDO\.has\(ev\)/);
+  for (const ev of ["parceiro_pedido_novo", "parceiro_orcamento_recebido", "parceiro_orcamento_aceito"]) assert.ok(EVENTOS_DO_PEDIDO.has(ev), ev);
   assert.match(fonte, /parceiro_servicos\(titulo\), properties\(title, address, city\)/);
   assert.match(fonte, /detailsHtml: blocoDados\(/);
 });

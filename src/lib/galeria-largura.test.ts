@@ -26,8 +26,11 @@ test("mosaico do desktop tem altura fixa de 480 px (nenhuma variante usa aspect/
 test("lightbox: a foto tem altura real e usa object-contain", () => {
   const linha = galeria.match(/<BrandImage[^\n]*foto \$\{index \+ 1\}[^\n]*/)?.[0] ?? "";
   assert.match(linha, /fit="object-contain"/);
-  assert.match(linha, /h-\[80vh\]/);
-  assert.doesNotMatch(linha, /max-h-\[80vh\]/);
+  // E262 (a): a altura real fica na moldura das duas camadas (miniatura por baixo, grande por cima), que a preenchem.
+  const moldura = galeria.match(/<div[^\n]*data-testid="galeria-lightbox-foto"[^\n]*/)?.[0] ?? "";
+  assert.match(moldura, /h-\[80vh\]/);
+  assert.doesNotMatch(moldura, /max-h-\[80vh\]/);
+  assert.match(linha, /h-full w-full/);
 });
 
 test("BrandImage aceita fit e mantém object-cover como padrão", () => {

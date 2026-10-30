@@ -65,7 +65,7 @@ export async function recusarNovaData(pedidoId: string): Promise<Res> {
   const pedido = { ...p, chave_automacao: p.chave_automacao };
   const caminho = decidirRecusaDaNovaData(ctx.saida, hojeEmBrasilia(agora));
   if (caminho === "cancelar_remarcado") {
-    if (!(await cancelarPorRemarcacao(admin, pedido, agora, "nova_data_recusada"))) return { ok: false, erro: "O pedido mudou. Atualize a página." };
+    if (!(await cancelarPorRemarcacao(admin, pedido, agora, "nova_data_recusada", ctx.saida))) return { ok: false, erro: "O pedido mudou. Atualize a página." };
   } else {
     // Volta a esperar o parceiro, na janela nova (que o reagendamento já gravou): o aceite anterior deixa de valer.
     const { data: ok } = await admin
@@ -88,13 +88,8 @@ export async function recusarNovaData(pedidoId: string): Promise<Res> {
   }
   await evento(admin, p.id, user.id, "recusar_nova_data", { caminho, saida: ctx.saida });
   await mensagem(admin, p, user.id, "O parceiro recusou a nova data.");
-  await avisar(admin, p.cliente_id, "parceiro_pedido_recusado", p.id, {
-    texto:
-      caminho === "cancelar_remarcado"
-        ? "o parceiro recusou a nova data da limpeza. O pedido foi cancelado e volta a ser feito perto da nova saída."
-        : "o parceiro recusou a nova data da limpeza. O pedido voltou a esperar a resposta dele; sem resposta em 24 horas, você troca de parceiro pelo pedido.",
-    url: rota(p.id),
-  });
+  // E267: o e-mail nomeia o parceiro, o serviço e o imóvel (aberturaDoPedido), não "o parceiro … da limpeza".
+  await avisar(admin, p.cliente_id, "parceiro_pedido_recusado", p.id, { fato: { novaDataRecusada: { cancelado: caminho === "cancelar_remarcado" } }, url: rota(p.id) });
   revalidatePath(rota(p.id));
   revalidatePath("/dashboard/servicos");
   revalidatePath("/dashboard/parceiro");
