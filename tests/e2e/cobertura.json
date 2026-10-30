@@ -1037,7 +1037,8 @@
         "t622-varredura-bloco56",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t703-e254-estadia-minima"
+        "t703-e254-estadia-minima",
+        "t717-e273-e275-rascunhos-publicaveis"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1195,7 +1196,8 @@
         "t704-e265-tipos-sem-selo",
         "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
-        "t697-e259-pessoas-sugerido-grava"
+        "t697-e259-pessoas-sugerido-grava",
+        "t717-e273-e275-rascunhos-publicaveis"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1689,7 +1691,9 @@
         "t705-e263-pets-condicoes",
         "t702-e262-galeria-e-destaques",
         "t696-varredura-bloco74",
-        "t698-e259-entrada-grava-e-limite"
+        "t698-e259-entrada-grava-e-limite",
+        "t717-e273-e275-rascunhos-publicaveis",
+        "t716-e274-foto-cartao-proativo"
       ]
     },
     "/modelodenegocio": {
