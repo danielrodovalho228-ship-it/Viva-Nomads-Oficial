@@ -6,7 +6,7 @@ import { TAMANHOS } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T688 — VARREDURA DA PÁGINA INTEIRA, BLOCO 73 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
+  T694 — VARREDURA DA PÁGINA INTEIRA, BLOCO 73 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
   toda rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400. As telas dos merges de hoje:
     · #1573 (E84): as páginas de tema da Ajuda (FAQ com o nome em português);
     · #1574 (E258): o Passo 5 do cadastro (cada bloco diz como grava, aviso do "por perto" sem CEP) e o Passo 10 (a
@@ -28,8 +28,8 @@ interface Tela {
 const sufixo = novoSufixo();
 const senha = novaSenha();
 const ids: Record<string, string> = {};
-const EMAIL_DONO = `dono.t688.${sufixo}@lab.vivanomads.test`;
-const EMAIL_MOR = `mor.t688.${sufixo}@lab.vivanomads.test`;
+const EMAIL_DONO = `dono.t694.${sufixo}@lab.vivanomads.test`;
+const EMAIL_MOR = `mor.t694.${sufixo}@lab.vivanomads.test`;
 const BASE = { street: "Rua Santos Dumont", numero: "100", neighborhood: "Centro", city: "Uberlândia", uf: "MG", cep: "", minPeriod: "30", maxPeriod: "180", monthlyPrice: "3200", bathrooms: "1", areaM2: "40", bedrooms: "1", etapaMax: 9 };
 
 const TELAS: Tela[] = [
@@ -59,7 +59,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return (await browser.newContext()).newPage();
 }
 
-test.describe("T688 — varredura da página inteira, bloco 73 (temas da Ajuda, Passos 5 e 10 do cadastro, Minha conta) (390 e 1280 px)", () => {
+test.describe("T694 — varredura da página inteira, bloco 73 (temas da Ajuda, Passos 5 e 10 do cadastro, Minha conta) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeAll(async ({}, info) => {
@@ -70,7 +70,7 @@ test.describe("T688 — varredura da página inteira, bloco 73 (temas da Ajuda, 
     await adm().from("profiles").update({ is_teste: true, intencao: ["anunciar"], preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", ids.dono);
     await adm().from("profiles").update({ is_teste: true, preferred_mode: "tenant", papel_ativo: "morador" }).eq("id", ids.mor);
     // Sem CEP e sem data de início: o Passo 10 mostra as duas notas do E258 e o Passo 5, o aviso do "por perto".
-    ids.rascunho = await prepararRascunho(ids.dono, `Studio sem CEP t688 ${sufixo}`, BASE);
+    ids.rascunho = await prepararRascunho(ids.dono, `Studio sem CEP t694 ${sufixo}`, BASE);
   });
   test.afterAll(async ({}, info) => {
     if (info.project.name !== "chromium") return;
