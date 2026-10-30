@@ -138,5 +138,53 @@ test("t168: a tela troca a etiqueta na hora com o status da ação, sem esperar 
   // O cartão da visita (Visitas e conversa) aplica o status na hora.
   const cartao = readFileSync("src/components/visitas/cartao-visita.tsx", "utf8");
   assert.match(cartao, /onStatus\?\.\(statusAposAcao\(acao\.acao\)\)/);
-  assert.match(cartao, /data-testid="visita-status"[^>]*>\s*\{passou \? HORARIO_PASSOU : expirada \? ROTULO_EXPIRADA : STATUS_VISITA_ROTULO\[status\]\}/);
+  // E269-B: a cancelada com motivo vira "Cancelada · motivo"; o resto, o rótulo do status (que muda na hora).
+  assert.match(cartao, /data-testid="visita-status"[^>]*>\s*\{passou \? HORARIO_PASSOU : expirada \? ROTULO_EXPIRADA : status === "cancelado" && v\.status === "cancelado" && v\.motivoRecusa \? [^:]+ : STATUS_VISITA_ROTULO\[status\]\}/);
+});
+
+test("E269-B: cancelar a visita com motivo OPCIONAL — opções por lado, texto até 140, sem HTML", async () => {
+  const { motivosDoCancelamento, motivoDoCancelamento, textoDoCancelamento, mudancaDeStatus, TEXTO_CANCELAMENTO_MAX } = await import("./visitas-video.ts");
+  assert.deepEqual(
+    motivosDoCancelamento("morador").map((m) => m.rotulo),
+    ["Surgiu um imprevisto", "O horário não serve mais", "Já encontrei outro imóvel", "Outro motivo"],
+  );
+  assert.deepEqual(
+    motivosDoCancelamento("dono").map((m) => m.rotulo),
+    ["Surgiu um imprevisto", "O horário não serve mais", "O imóvel não está mais disponível", "Outro motivo"],
+  );
+  // Sem nada: sem motivo. Só a opção; opção + texto; só o texto; "Outro motivo" + texto vira só o texto.
+  assert.equal(motivoDoCancelamento("morador", undefined, ""), null);
+  assert.equal(motivoDoCancelamento("morador", "outro_imovel", ""), "Já encontrei outro imóvel");
+  assert.equal(motivoDoCancelamento("dono", "indisponivel", " Vazamento  no banheiro "), "O imóvel não está mais disponível: Vazamento no banheiro");
+  assert.equal(motivoDoCancelamento("morador", undefined, "Mudei de planos"), "Mudei de planos");
+  assert.equal(motivoDoCancelamento("morador", "outro", "Mudei de planos"), "Mudei de planos");
+  assert.equal(motivoDoCancelamento("morador", "outro", ""), "Outro motivo");
+  // Opção do outro lado é ignorada (o morador não diz "o imóvel não está disponível").
+  assert.equal(motivoDoCancelamento("morador", "indisponivel", ""), null);
+  assert.equal(motivoDoCancelamento("dono", "outro_imovel", "x"), "x");
+  // Texto: sem HTML, sem quebra, até 140.
+  assert.equal(textoDoCancelamento("<b>Mudei</b>\nde <script>alert(1)</script>planos"), "Mudei de alert(1) planos");
+  assert.equal(textoDoCancelamento("a".repeat(300)).length, TEXTO_CANCELAMENTO_MAX);
+  assert.doesNotMatch(String(motivoDoCancelamento("dono", "horario", "<img src=x onerror=1>ok")), /[<>]/);
+
+  const agora = new Date("2026-10-19T12:00:00Z");
+  // Morador cancela o pedido sem motivo: ok, sem motivo gravado.
+  const semMotivo = mudancaDeStatus("pedido", "morador", { acao: "cancelar" }, agora);
+  assert.ok(semMotivo.ok && semMotivo.campos.motivo_recusa === null);
+  // Dono cancela a CONFIRMADA com opção + texto.
+  const comMotivo = mudancaDeStatus("confirmado", "dono", { acao: "cancelar", opcao: "imprevisto", motivo: "Viagem" }, agora);
+  assert.ok(comMotivo.ok && comMotivo.campos.motivo_recusa === "Surgiu um imprevisto: Viagem");
+  // A RECUSA do dono (pedido) continua exigindo o motivo de antes.
+  assert.equal(mudancaDeStatus("pedido", "dono", { acao: "cancelar" }, agora).ok, false);
+  assert.ok(mudancaDeStatus("pedido", "dono", { acao: "cancelar", motivo: "Imóvel já alugado" }, agora).ok);
+});
+
+test("E269-B: o motivo vai só à outra parte (a cópia de quem cancelou nunca o mostra) e aparece no status", () => {
+  const avisos = readFileSync(new URL("./visitas/avisos-servidor.ts", import.meta.url), "utf8");
+  const copia = avisos.slice(avisos.indexOf("E269: a cópia de quem cancelou"));
+  assert.match(copia, /motivo: null,[\s\S]{0,300}paraQuemCancelou: true/);
+  const cartao = readFileSync(new URL("../components/visitas/cartao-visita.tsx", import.meta.url), "utf8");
+  assert.match(cartao, /`\$\{STATUS_VISITA_ROTULO\.cancelado\} · \$\{v\.motivoRecusa\}`/);
+  assert.match(cartao, /data-testid="visita-cancelar-confirmar"[\s\S]{0,80}Cancelar a visita/);
+  assert.match(cartao, /maxLength=\{TEXTO_CANCELAMENTO_MAX\}/);
 });

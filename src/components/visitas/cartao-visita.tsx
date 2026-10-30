@@ -16,6 +16,8 @@ import {
   instanteParaCampoBrasilia,
   statusAposAcao,
   CONFIRMAR_ATE_DIAS,
+  TEXTO_CANCELAMENTO_MAX,
+  motivosDoCancelamento,
   type ModalidadeVisita,
   type StatusVisita,
 } from "@/lib/visitas-video";
@@ -102,7 +104,7 @@ export function CartaoVisita({
           )}
         </div>
         <span data-testid="visita-status" data-passou={passou ? "1" : undefined} data-expirada={expirada ? "1" : undefined} className={`rounded-full px-3 py-1 text-xs font-semibold ${passou || expirada ? TOM.feito : TOM[status]}`}>
-          {passou ? HORARIO_PASSOU : expirada ? ROTULO_EXPIRADA : STATUS_VISITA_ROTULO[status]}
+          {passou ? HORARIO_PASSOU : expirada ? ROTULO_EXPIRADA : status === "cancelado" && v.status === "cancelado" && v.motivoRecusa ? `${STATUS_VISITA_ROTULO.cancelado} · ${v.motivoRecusa}` : STATUS_VISITA_ROTULO[status]}
         </span>
       </div>
 
@@ -148,12 +150,7 @@ export function CartaoVisita({
         </>
       )}
 
-      {v.status === "cancelado" && v.motivoRecusa && !expiradaGravada && (
-        <p className="mt-2 text-sm text-muted" data-testid="visita-motivo-recusa-texto">
-          Motivo: {v.motivoRecusa}
-        </p>
-      )}
-
+      {/* E269-B: o motivo do cancelamento (ou da recusa) aparece no próprio status: "Cancelada · motivo". */}
       {/* E211: o endereço da presencial nas duas pontas (o dono vê o do próprio imóvel), pela mesma regra. */}
       {v.modalidade === "presencial" && !passou && !expirada && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
         v.status === "confirmado" && v.endereco ? (
@@ -227,9 +224,64 @@ function Erro({ msg }: { msg: string | null }) {
   ) : null;
 }
 
+/**
+ * E269-B — cancelar a visita com motivo OPCIONAL: opções de um toque do lado de quem cancela e um texto de até 140
+ * caracteres. "Cancelar a visita" funciona sem escolher nada. O motivo vai só à outra parte.
+ */
+function FolhaCancelamento({ quem, ocupado, onCancelar, onVoltar }: { quem: "dono" | "morador"; ocupado: boolean; onCancelar: (opcao: string | undefined, texto: string) => void; onVoltar: () => void }) {
+  const [opcao, setOpcao] = useState<string | undefined>(undefined);
+  const [texto, setTexto] = useState("");
+  return (
+    <div className="mt-3 flex flex-col gap-3 rounded-xl border border-line bg-surface-2 p-3" data-testid="visita-folha-cancelar">
+      <p className="text-sm font-semibold text-ink">Quer contar o motivo? (opcional)</p>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Motivo do cancelamento">
+        {motivosDoCancelamento(quem).map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            role="radio"
+            aria-checked={opcao === m.id}
+            data-testid={`visita-cancelar-opcao-${m.id}`}
+            onClick={() => setOpcao(opcao === m.id ? undefined : m.id)}
+            className={cn(
+              "min-h-11 rounded-full border px-4 text-sm font-medium",
+              opcao === m.id ? "border-forest bg-forest text-white" : "border-line bg-white text-ink",
+            )}
+          >
+            {m.rotulo}
+          </button>
+        ))}
+      </div>
+      <label className="flex flex-col gap-1 text-xs font-medium text-ink">
+        Quer acrescentar algo? (opcional, a outra parte vê)
+        <textarea
+          value={texto}
+          maxLength={TEXTO_CANCELAMENTO_MAX}
+          rows={2}
+          onChange={(e) => setTexto(e.target.value)}
+          data-testid="visita-cancelar-texto"
+          className="w-full rounded-xl border border-line bg-white px-3 py-2 text-base text-ink"
+        />
+        <span className="text-muted">
+          {texto.length}/{TEXTO_CANCELAMENTO_MAX}
+        </span>
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="destructive" size="sm" disabled={ocupado} data-testid="visita-cancelar-confirmar" onClick={() => onCancelar(opcao, texto)}>
+          Cancelar a visita
+        </Button>
+        <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar-voltar" onClick={onVoltar}>
+          Voltar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 /** Ações do PROPRIETÁRIO: confirmar um horário (vídeo: com o link), propor outro (Remarcar), recusar com motivo, concluir. */
 function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; passou?: boolean; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
   const { msg, ocupado, respondido, rodar } = useResposta(onMudou, onStatus);
+  const [cancelando, setCancelando] = useState(false);
   // Só os horários que ainda não passaram podem ser confirmados (o servidor recusa os passados).
   const [validos] = useState(() => horariosAindaValidos(v.horarios, new Date()));
   const [horario, setHorario] = useState(validos[0] ?? "");
@@ -341,12 +393,15 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
           <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-concluir" onClick={() => rodar({ acao: "concluir", id: v.id })}>
             Marcar como feita
           </Button>
-          {!passou && (
-            <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar" onClick={() => rodar({ acao: "cancelar", id: v.id })}>
+          {!passou && !cancelando && (
+            <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar" onClick={() => setCancelando(true)}>
               Cancelar
             </Button>
           )}
         </div>
+      )}
+      {v.status === "confirmado" && !passou && cancelando && (
+        <FolhaCancelamento quem="dono" ocupado={ocupado} onVoltar={() => setCancelando(false)} onCancelar={(opcao, texto) => rodar({ acao: "cancelar", id: v.id, opcao, motivo: texto })} />
       )}
       {recusa}
       <Erro msg={msg} />
@@ -357,6 +412,7 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
 /** Ações do MORADOR: aceitar o horário proposto (Remarcar) e cancelar o próprio pedido. */
 function AcoesMorador({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
   const { msg, ocupado, respondido, rodar } = useResposta(onMudou, onStatus);
+  const [cancelando, setCancelando] = useState(false);
   if (respondido || !(v.status === "pedido" || v.status === "confirmado" || v.status === "remarcar")) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-2">
@@ -365,9 +421,16 @@ function AcoesMorador({ v, onMudou, onStatus }: { v: VisitaNaTela; onMudou?: () 
           Aceitar o novo horário
         </Button>
       )}
-      <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar-morador" onClick={() => rodar({ acao: "cancelar", id: v.id })}>
-        Cancelar pedido
-      </Button>
+      {!cancelando && (
+        <Button variant="ghost" size="sm" disabled={ocupado} data-testid="visita-cancelar-morador" onClick={() => setCancelando(true)}>
+          Cancelar pedido
+        </Button>
+      )}
+      {cancelando && (
+        <div className="w-full">
+          <FolhaCancelamento quem="morador" ocupado={ocupado} onVoltar={() => setCancelando(false)} onCancelar={(opcao, texto) => rodar({ acao: "cancelar", id: v.id, opcao, motivo: texto })} />
+        </div>
+      )}
       <Erro msg={msg} />
     </div>
   );
