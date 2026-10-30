@@ -141,7 +141,10 @@ for (const largura of LARGURAS) {
         await expect(barra).toBeVisible();
         const mes = num(await barra.getByTestId("barra-preco-mes").innerText());
         await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
-        expect(num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 3 meses/, ""))).toBeCloseTo(mes * 3, 0);
+        // E254-A: o total do período da barra é o do cartão de preço (a mesma função, com os pagamentos únicos).
+        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 3 meses/, ""));
+        expect(totalBarra).toBeGreaterThanOrEqual(mes * 3 - 0.5);
+        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, "")));
         await expect(barra.getByTestId("barra-nao-segura")).toContainText("A Viva não segura dinheiro");
         // O mesmo número do cartão de preço.
         expect(num(await page.getByTestId("total-por-mes").innerText())).toBe(mes);
@@ -149,7 +152,12 @@ for (const largura of LARGURAS) {
         const cartao = page.locator("#cartao-preco");
         const mes = num(await cartao.getByTestId("cartao-lateral-mes").innerText());
         await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
-        expect(num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, ""))).toBeCloseTo(mes * 3, 0);
+        // E254-A: o total do período = 3 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
+        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, ""));
+        const conta = await cartao.getByTestId("cartao-lateral-estadia-conta").innerText();
+        expect(conta).toMatch(/^3 × R\$/);
+        const unicos = [...conta.matchAll(/\+ [^R]*R\$\s?([\d.]+,\d{2})/g)].reduce((s, m) => s + num(m[1]), 0);
+        expect(totalPeriodo).toBeCloseTo(mes * 3 + unicos, 0);
         await expect(cartao.getByTestId("cartao-nao-segura")).toContainText("A Viva não segura dinheiro");
       }
       // N = 1: só "/mês".

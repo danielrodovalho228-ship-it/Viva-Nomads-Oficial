@@ -29,6 +29,8 @@ export function barraFixaImovel(p: {
   totalMensal?: number;
   /** Meses da estadia (mesesDoCartao: a duração da busca ou a estadia mínima); padrão 1. */
   meses?: number;
+  /** E254-A: o total do período pela função do anúncio (estadiaDoImovel, com a limpeza de saída); sem ele, mês × meses. */
+  totalPeriodo?: number | null;
   exemplo: boolean;
   candidatouSe: boolean;
   availableFrom?: string;
@@ -45,7 +47,7 @@ export function barraFixaImovel(p: {
     estado: p.candidatouSe ? "candidatou" : "candidatar",
     valor: precoValido ? formatBRL(total) : "",
     mes: preco?.mes ?? "",
-    estadia: preco?.estadia ?? null,
+    estadia: preco?.estadia && p.totalPeriodo != null ? `${formatBRL(p.totalPeriodo)} em ${preco.meses} meses` : (preco?.estadia ?? null),
     linha: "Caução e taxas no detalhe",
     status: statusDisponibilidade(p.availableFrom, p.hoje ?? new Date().toISOString().slice(0, 10)),
   };
