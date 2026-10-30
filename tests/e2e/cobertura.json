@@ -701,7 +701,8 @@
         "t662-varredura-bloco63",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t721-e284-servicos-morador-cidade"
       ]
     },
     "/dashboard/assinatura": {
@@ -2152,7 +2153,10 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t720-e286-seletor-mostra-rotulo",
+        "t721-e284-servicos-morador-cidade",
+        "t722-e285-todas-e-vazio-390"
       ]
     },
     "/admin/contratos/[id]": {
