@@ -14,7 +14,7 @@ export const RAIO_METROS = 2000;
 /** PERTO-B: até 3 lugares por categoria (troca o teto de 8 no total). */
 export const MAX_POR_CATEGORIA = 3;
 
-export type TipoLugar = "hospital" | "universidade" | "escola" | "mercado" | "farmacia" | "academia" | "onibus" | "coworking";
+export type TipoLugar = "hospital" | "universidade" | "escola" | "mercado" | "farmacia" | "academia" | "onibus" | "coworking" | "empresa";
 
 /** Ordem fixa das categorias na tela: Saúde, Educação, Trabalho, Mercado, Transporte. */
 export const ORDEM_CATEGORIAS: readonly ProximityCategory[] = ["saude", "educacao", "trabalho", "mercado", "transporte"];
@@ -28,7 +28,12 @@ export const TIPOS_LUGAR: readonly { tipo: TipoLugar; rotulo: string; categoria:
   { tipo: "academia", rotulo: "Academia", categoria: "saude", filtros: ['["leisure"="fitness_centre"]'] },
   { tipo: "onibus", rotulo: "Parada de ônibus", categoria: "transporte", filtros: ['["highway"="bus_stop"]'] },
   { tipo: "coworking", rotulo: "Coworking", categoria: "trabalho", filtros: ['["amenity"="coworking_space"]', '["office"="coworking"]'] },
+  // E259: só das âncoras oficiais (tabela destinos, tipo "empresa"); o OSM não busca empresa.
+  { tipo: "empresa", rotulo: "Empresa", categoria: "trabalho", filtros: [] },
 ];
+
+/** E259: paradas de ônibus só até 600 m — no raio de 2 km eram centenas e a consulta estourava o tempo do Overpass. */
+export const RAIO_ONIBUS_METROS = 600;
 
 export interface LugarProximo {
   tipo: TipoLugar;
@@ -54,7 +59,10 @@ export function distanciaMetros(a: { lat: number; lng: number }, b: { lat: numbe
 /** Consulta Overpass QL: os 8 tipos num raio de 2 km do ponto, com centro dos polígonos. */
 export function consultaOverpass(lat: number, lng: number, raio = RAIO_METROS): string {
   const linhas = TIPOS_LUGAR.flatMap((t) =>
-    t.filtros.flatMap((f) => [`node${f}(around:${raio},${lat},${lng});`, `way${f}(around:${raio},${lat},${lng});`]),
+    t.filtros.flatMap((f) => {
+      const r = t.tipo === "onibus" ? Math.min(raio, RAIO_ONIBUS_METROS) : raio;
+      return [`node${f}(around:${r},${lat},${lng});`, `way${f}(around:${r},${lat},${lng});`];
+    }),
   );
   return `[out:json][timeout:20];(${linhas.join("")});out center 200;`;
 }
@@ -93,6 +101,20 @@ function nomeDoLugar(tags: Record<string, string>, tipo: TipoLugar): string | nu
 export function escolherProximidades(resposta: unknown, origem: { lat: number; lng: number }): LugarProximo[] {
   const elementos = (resposta as { elements?: ElementoOverpass[] } | null)?.elements;
   if (!Array.isArray(elementos)) return [];
+  return escolherDosElementos(elementos, origem);
+}
+
+/**
+ * E259: o Overpass responde HTTP 200 com `elements: []` e um `remark` ("runtime error: Query timed out…") quando a
+ * consulta estoura o tempo. Isso é FALHA (a busca não respondeu), não "nada por perto".
+ */
+export function overpassFalhou(resposta: unknown): boolean {
+  const r = resposta as { elements?: unknown; remark?: unknown } | null;
+  if (!r || !Array.isArray(r.elements)) return true;
+  return r.elements.length === 0 && typeof r.remark === "string" && /error|timed out|timeout|out of memory/i.test(r.remark);
+}
+
+function escolherDosElementos(elementos: ElementoOverpass[], origem: { lat: number; lng: number }): LugarProximo[] {
   const porCategoria = new Map<ProximityCategory, LugarProximo[]>();
   const vistos = new Set<string>();
   for (const e of elementos) {
