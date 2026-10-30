@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
@@ -26,7 +26,12 @@ test.describe("T706 — E271: Passo 10 sem pendência repetida; alt neutro no Pa
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    for (const l of LARGURAS) ids.rascunho[l] = await prepararRascunho(ids.dono, `Studio t706 ${l} ${sufixo}`);
+    for (const l of LARGURAS) {
+      ids.rascunho[l] = await prepararRascunho(ids.dono, `Studio t706 ${l} ${sufixo}`);
+      // Sem o documento do imóvel (o laboratório já cria um aprovado): a seção "Documento do imóvel" fica pendente.
+      const { error } = await adm().from("qualification_checklists").delete().eq("property_id", ids.rascunho[l]);
+      expect(error).toBeNull();
+    }
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono!]);
@@ -38,7 +43,7 @@ test.describe("T706 — E271: Passo 10 sem pendência repetida; alt neutro no Pa
       const decl = p.getByTestId("antes-secao-declaracoes");
       const doc = p.getByTestId("antes-secao-documento");
       await expect(decl).toBeVisible({ timeout: 30_000 });
-      // As duas pendentes (o rascunho novo não tem documento aprovado nem declarações respondidas).
+      // As duas pendentes: sem documento e com as declarações por responder.
       await expect(doc).toHaveAttribute("data-estado", "falta");
       if ((await decl.getAttribute("data-estado")) !== "falta") {
         await p.getByTestId("antes-secao-declaracoes-abrir").click();
