@@ -80,7 +80,7 @@ import {
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
-import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
@@ -728,6 +728,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
   const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
   if (janelaCurta) return { ok: false, error: janelaCurta };
+  // E263-A: as condições de pets (todas opcionais) são validadas aqui; a tela só repete os limites.
+  const erroPets = input.petsAllowed ? erroRegrasPets(input.petsRegras) : null;
+  if (erroPets) return { ok: false, error: erroPets };
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };
@@ -851,6 +854,13 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
   await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
+  // E263-A: o anúncio criado já leva as condições de pets (antes, só a edição gravava).
+  try {
+    const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
+    if (regras) await supabase.from("properties").update({ pets_regras: regras }).eq("id", data.id).eq("owner_id", user.id);
+  } catch {
+    /* migração 0119 ausente — segue com o aceite geral */
+  }
 
   // Comodidades por categoria (catálogo único). Best-effort.
   if (input.amenityKeys && input.amenityKeys.length > 0) {
@@ -988,6 +998,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
   const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
   if (janelaCurta) return { ok: false, error: janelaCurta };
+  // E263-A: as condições de pets (todas opcionais) são validadas aqui; a tela só repete os limites.
+  const erroPets = input.petsAllowed ? erroRegrasPets(input.petsRegras) : null;
+  if (erroPets) return { ok: false, error: erroPets };
   // Tour em vídeo (ordem 6f964617): só YouTube/Vimeo em https, validado no servidor.
   if (input.videoUrl?.trim() && !videoTourPermitido(input.videoUrl)) {
     return { ok: false, error: "O vídeo precisa ser um link do YouTube ou do Vimeo." };

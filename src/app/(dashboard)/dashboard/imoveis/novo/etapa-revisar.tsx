@@ -17,7 +17,6 @@ import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn, formatBRL } from "@/lib/utils";
-import { textoFaltaConfirmar } from "@/lib/conforto/exibicao";
 import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
 import { CONVITE_FOTO_ANUNCIO_TEXTO } from "@/lib/perfil/convite-foto";
 
@@ -37,7 +36,7 @@ export function EtapaRevisar(p: {
   /** E251: no computador o "Publicar anúncio" mora na coluna da prévia; no celular, no rodapé do fluxo. */
   telaLarga: boolean;
   rotuloPublicar: string;
-  /** O motivo em uma linha ("Falta: documento do imóvel"); null quando nada falta. */
+  /** O motivo em uma linha ("Faltam 2 itens da lista de conferência"); null quando nada falta. */
   motivoTravado: string | null;
   /** Tocar no motivo leva ao primeiro item que falta. */
   onMotivo: () => void;
@@ -66,7 +65,6 @@ export function EtapaRevisar(p: {
   avisoAceite?: string | null;
   /** L2-B item 23: o dono já aceitou a versão atual do termo (servidor) → linha no lugar da caixa. */
   termoJaAceito?: { aceitoEm: string } | null;
-  conforto: string[];
   publishError: string | null;
   podePublicar: boolean;
   /** E102-A: só no tipo Chácara/Sítio — os dados preenchidos do grupo rural. */
@@ -247,8 +245,7 @@ export function EtapaRevisar(p: {
           </div>
         )}
         {p.publishError && <p className="text-sm text-red-600">{p.publishError}</p>}
-        {/* Prompt 59-A (critério f da varredura): o que falta, por extenso, logo abaixo da lista. */}
-        {!p.podePublicar && !p.publishing && <FaltaParaPublicar {...p} />}
+        {/* E260 (b): o que falta mora só na lista de conferência (acima) — sem o "Falta confirmar/resolver" repetido aqui. */}
         {/* Ordem 504d9679, peça 3: convite opcional; nunca entra na conta de podePublicar. */}
         {!p.editingId && <ConviteFotoCandidatura texto={CONVITE_FOTO_ANUNCIO_TEXTO} testId="convite-foto-anuncio" />}
         {/* Celular: o motivo do "Publicar anúncio" do rodapé, em uma linha, logo acima dele. */}
@@ -298,41 +295,12 @@ export function EtapaRevisar(p: {
   );
 }
 
-/** O motivo do "Publicar anúncio" travado, em UMA linha; tocar leva ao primeiro item que falta. */
+/** O motivo do "Publicar anúncio" travado, em UMA linha; tocar desce até a lista de conferência. */
 function MotivoTravado({ motivo, onMotivo }: { motivo: string | null; onMotivo: () => void }) {
   if (!motivo) return null;
   return (
     <button type="button" onClick={onMotivo} className="block w-full truncate text-center text-sm font-medium text-red-700 underline-offset-2 hover:underline" title={motivo} data-testid="publicar-motivo">
       {motivo}
     </button>
-  );
-}
-
-/** "Falta confirmar: Água quente, Iluminação." e o resto do que trava a publicação, visível embaixo do botão. */
-function FaltaParaPublicar(p: { editingId?: string | null; conforto: string[]; completude: ItemProntidao[]; aceitouIa: boolean; onResolver: (i: ItemProntidao) => void }) {
-  const conforto = p.editingId ? null : textoFaltaConfirmar(p.conforto);
-  const itemConforto = p.completude.find((i) => i.key === "conforto" && !i.ok);
-  const outros = p.completude.filter((i) => !i.ok && i.key !== "conforto").map((i) => i.label);
-  if (!p.aceitouIa) outros.push("aceite do termo da IA");
-  if (!conforto && outros.length === 0) return null;
-  return (
-    <div className="space-y-1 text-sm text-ink" data-testid="publicar-falta">
-      {conforto && (
-        <p data-testid="publicar-falta-conforto">
-          {conforto}{" "}
-          {itemConforto && (
-            <button type="button" data-testid="publicar-falta-conforto-resolver" onClick={() => p.onResolver(itemConforto)} className="font-semibold text-forest underline underline-offset-2">
-              Confirmar agora
-            </button>
-          )}
-        </p>
-      )}
-      {/* E251: no celular o motivo do "Publicar anúncio" (uma linha, logo abaixo) já diz isso — não repete. */}
-      {outros.length > 0 && (
-        <p className="hidden lg:block" data-testid="publicar-falta-outros">
-          Falta resolver: {outros.join(", ")}.
-        </p>
-      )}
-    </div>
   );
 }

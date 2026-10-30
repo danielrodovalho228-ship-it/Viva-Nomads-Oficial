@@ -1,5 +1,6 @@
 "use server";
 
+import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
@@ -150,13 +151,15 @@ interface ImovelProposta {
   checkout_cleaning_fee: number | null;
   limpeza_estadia: unknown;
   negociacao: unknown;
+  pets_allowed?: boolean | null;
+  pets_regras?: unknown;
 }
 
 async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelProposta | null> {
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -168,8 +171,20 @@ function limitesDoImovel(im: ImovelProposta) {
   return { mesesMin: m.min, mesesMax: m.max, capacidade: im.max_guests && im.max_guests > 0 ? im.max_guests : null };
 }
 
+/**
+ * E263-A: a taxa mensal de pet do anúncio entra na proposta só quando o morador tem pet no perfil ("Meus pets");
+ * sem pet (ou sem taxa no anúncio), 0. O proprietário pode mudar ao montar.
+ */
+async function taxaPetDaProposta(admin: Admin, im: ImovelProposta, tenantId: string): Promise<number> {
+  if (!im.pets_allowed) return 0;
+  const taxa = normalizarRegrasPets(im.pets_regras)?.taxaMensal ?? 0;
+  if (taxa <= 0) return 0;
+  const { count } = await admin.from("pets_inquilino").select("id", { count: "exact", head: true }).eq("user_id", tenantId);
+  return (count ?? 0) > 0 ? taxa : 0;
+}
+
 /** Valores que a montagem abre preenchidos (do anúncio), todos editáveis pelo proprietário. */
-function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string, neg: Negociacao): TermosProposta {
+function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string, neg: Negociacao, taxaPet = 0): TermosProposta {
   const limpeza = normalizarLimpezaEstadia(im.limpeza_estadia);
   const porMes = limpeza?.porMes ?? 0;
   return {
@@ -184,7 +199,7 @@ function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string,
     consumo: im.utilities_mode === "fixed" ? Number(im.utilities_estimate) || 0 : 0,
     limpezasMes: porMes,
     valorLimpeza: porMes > 0 && limpeza ? Math.round((limpeza.valorMes / porMes) * 100) / 100 : 0,
-    taxaPet: 0,
+    taxaPet,
     limpezaUnica: (Number(im.prep_fee) || 0) + (im.checkout_cleaning_enabled ? Number(im.checkout_cleaning_fee) || 0 : 0),
   };
 }
@@ -424,7 +439,7 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
     leadId,
     interessado: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
     imovel: { id: im.id, titulo: im.title },
-    termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg),
+    termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg, await taxaPetDaProposta(s.admin, im, lead.tenant_id as string)),
     limites: lim,
     negociacao: neg,
     taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,

@@ -142,7 +142,7 @@ test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
     const p = await abrir(1280, browser);
     const publicar = p.locator('[data-testid="publicar-anuncio"]:visible');
     await expect(publicar).toBeDisabled();
-    await expect(p.getByTestId("publicar-falta")).toContainText("aceite do termo da IA");
+    await expect(p.getByTestId("publicar-motivo")).toContainText("aceite do termo da IA");
     await aceitarTermoIaSePreciso(p);
     await expect(publicar).toBeEnabled({ timeout: 10_000 });
     await expect(publicar).toHaveText("Publicar anúncio");

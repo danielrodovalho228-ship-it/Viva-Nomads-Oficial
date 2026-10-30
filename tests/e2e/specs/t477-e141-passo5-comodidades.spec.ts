@@ -71,7 +71,7 @@ test.describe("T477 — Passo 5: comodidades, nível opcional, por perto", () =>
 
       // 1. E141 — uma cobrança só, e o Essencial declarado.
       await expect(p.getByTestId("deteccao-falta")).toHaveCount(0);
-      await expect(p.getByTestId("nivel-cadastro-declarado")).toHaveText("O Essencial é o que você declara no padrão mínimo: publica sem foto nenhuma.");
+      await expect(p.getByTestId("nivel-cadastro-declarado")).toHaveText("O Essencial é o que você declara no padrão mínimo: não pede foto de cada item (as 8 fotos do anúncio, do Passo 2, continuam valendo).");
       const subir = p.getByTestId("nivel-cadastro-subir");
       if (await subir.count()) await expect(subir).toContainText("opcional");
       // E151 — o subtítulo do item de internet medida não repete o título.

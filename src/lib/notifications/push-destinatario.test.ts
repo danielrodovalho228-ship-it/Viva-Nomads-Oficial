@@ -7,6 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { CATEGORIAS_COM_INTERRUPTOR } from "../../config/matriz-notificacoes.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
@@ -27,6 +28,7 @@ test("decisão e segurança não furam o push desligado (a isenção é só das 
   const push = ler("src/lib/notifications/push.ts");
   assert.doesNotMatch(push, /decisao|seguranca/, "nenhuma exceção por categoria no filtro do canal push");
   const idx = ler("src/lib/notifications/index.ts");
-  // As categorias com interruptor (mensagens, lembretes, outros) são as únicas que a pessoa desliga por tipo.
-  assert.match(idx, /eventoDesligadoPelaPessoa\(event, \["mensagens", "lembretes", "outros"\]\)/);
+  // As categorias com interruptor (mensagens, lembretes, outros e, E264-B, sugestões) são as únicas que a pessoa desliga.
+  assert.match(idx, /eventoDesligadoPelaPessoa\(event, CATEGORIAS_COM_INTERRUPTOR\)/);
+  assert.deepEqual([...CATEGORIAS_COM_INTERRUPTOR], ["mensagens", "lembretes", "outros", "sugestoes"]);
 });

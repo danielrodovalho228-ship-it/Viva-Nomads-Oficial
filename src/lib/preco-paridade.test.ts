@@ -71,7 +71,8 @@ test("varredura: as telas de preço de imóvel usam rotuloPreco", () => {
     "app/(public)/imoveis/[id]/opengraph-image.tsx",
   ];
   for (const f of superficies) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
-  for (const f of ["lib/barra-fixa-imovel.ts", "lib/busca/alerta-busca.ts"]) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
+  // E264-B: o e-mail do alerta (e dos outros proativos) mostra o preço pelo cartão do imóvel do modelo de e-mail.
+  for (const f of ["lib/barra-fixa-imovel.ts", "lib/notifications/cartoes-email.ts"]) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
 });
 
 test("varredura: nenhuma tela monta 'R$ X/mês' do imóvel à mão (formatBRL(monthlyPrice) + '/mês')", () => {

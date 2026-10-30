@@ -7,7 +7,7 @@ import { montarNotificacao, urlInterna } from "./montar-email";
 import { primeiroNome } from "@/lib/display-name";
 import { textoEmail, textoPlano } from "./texto-seguro";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
-import { eventoDesligadoPelaPessoa } from "@/config/matriz-notificacoes";
+import { CATEGORIAS_COM_INTERRUPTOR, eventoDesligadoPelaPessoa } from "@/config/matriz-notificacoes";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export { isEmailConfigured, isWhatsappConfigured };
@@ -30,7 +30,7 @@ const EVENTOS_INTERNOS = new Set<NotificationEvent>(["chamado_equipe", "document
  * Sem banco ou sem a 0227, nada é desligado.
  */
 async function desligadoPelaPessoa(userId: string, event: NotificationEvent): Promise<boolean> {
-  if (!eventoDesligadoPelaPessoa(event, ["mensagens", "lembretes", "outros"])) return false;
+  if (!eventoDesligadoPelaPessoa(event, CATEGORIAS_COM_INTERRUPTOR)) return false;
   const admin = createAdminClient();
   if (!admin) return false;
   const { data, error } = await admin.from("profiles").select("notif_categorias_desligadas").eq("id", userId).maybeSingle();
@@ -85,6 +85,8 @@ export async function notify(params: {
   remetenteNome?: string | null;
   /** Texto da decisão no push ("Nova proposta de R$ 3.200 para o Apto Santa Mônica: responda até amanhã"). */
   decisao?: DadosDaDecisao;
+  /** E264-B: e-mail proativo — URL assinada do descadastro de um clique (List-Unsubscribe-Post). */
+  descadastroUmCliqueUrl?: string;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -151,6 +153,7 @@ export async function notify(params: {
         imagem: m.imagem,
         // Aviso de rotina ganha o "Gerenciar avisos" no cabeçalho; segurança e documentos, não.
         ...(SEM_GERENCIAR_AVISOS.has(params.event) || interno ? {} : { gerenciarAvisosUrl: `${SITE_URL}/dashboard/notificacoes` }),
+        ...(params.descadastroUmCliqueUrl && !interno ? { descadastroUmCliqueUrl: params.descadastroUmCliqueUrl } : {}),
         // A caixa de e-mails de teste é gravada dentro do sendEmail (uma vez só, depois do envio aceito).
         evento: params.event,
         usuarioId: params.userId,
