@@ -185,7 +185,7 @@ test.describe("T710 — E265: nenhum cartão com foto leva o selo 'Imagem ilustr
         const foto = p.getByTestId("tipo-loft-foto");
         await foto.scrollIntoViewIfNeeded();
         await expect.poll(() => foto.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
-        await expect(foto).toHaveAttribute("alt", "Foto ilustrativa de um loft");
+        await expect(foto).toHaveAttribute("alt", "Foto de um loft"); // E271 (#1605): alt neutro nas fotos do Passo 1
         const molduras = () => linha.locator("img").evaluateAll((els) => els.map((e) => ({ texto: (e.parentElement?.textContent ?? "").trim(), filhos: e.parentElement?.childElementCount ?? -1 })));
         expect(await molduras()).toEqual(Array.from({ length: 9 }, () => ({ texto: "", filhos: 1 })));
         await p.screenshot({ path: `${SAIDA}/t710-passo1-marcado-${largura}.png` });

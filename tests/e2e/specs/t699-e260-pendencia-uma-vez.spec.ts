@@ -10,7 +10,7 @@ import { CHAVES_CONFORTO, VERSAO_CONFORTO } from "../../../src/config/conforto-m
    1. Passo 9 → 10: janela de 24 dias com mínimo de 30 → "Continuar" recusa (o aviso só junto das datas); a data final
       corrigida para 38 dias tira o aviso na hora e o "Continuar" leva ao Passo 10, onde a linha Disponibilidade está
       feita com "Disponível a partir de dd/mm/aaaa." e o motivo do "Publicar anúncio" conta UMA pendência, no singular
-      ("Falta 1 item da lista de conferência", + "e o aceite do termo da IA" enquanto o dono nunca aceitou). As datas
+      ("Falta 1 item antes de publicar" — texto do E271, #1605 —, + "e o aceite do termo da IA" enquanto o dono nunca aceitou). As datas
       ficam no rascunho do banco (draft_data).
    2. Ida e volta: o Passo 9 reaberto em outra sessão lê as datas do banco (sem aviso). Pela lista, "Resolver" de
       Comodidades → "Confirmo todos" grava os 12 itens (conforto_declaracoes); o Passo 10 reaberto lê do banco: lista sem
@@ -144,7 +144,7 @@ test.describe("T699 — E260: cada pendência dita uma vez, gravada e lida de vo
       await expect(p.getByTestId("conferencia-revisao")).toHaveCount(0);
       if (!comAceite) await expect(p.getByTestId("aceite-ia-ja-aceito")).toBeVisible({ timeout: 20_000 });
       const motivo = p.getByTestId("publicar-motivo");
-      await expect(motivo).toHaveText(`Falta 1 item da lista de conferência${SUFIXO_ACEITE}`, { timeout: 20_000 });
+      await expect(motivo).toHaveText(`Falta 1 item antes de publicar${SUFIXO_ACEITE}`, { timeout: 20_000 });
       await expect(p.getByTestId("publicar-anuncio")).toBeDisabled();
       await motivo.evaluate((el) => el.scrollIntoView({ block: "center" }));
       await p.screenshot({ path: `${SAIDA}/t699-1-passo10-singular-${w}.png` });
