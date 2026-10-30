@@ -137,8 +137,8 @@ export function PropertyDetail({
   const authChecked = useAuthStore((s) => s.authChecked);
   const semLogin = authChecked && !usuario && !isExemplo(property);
   // E93: anúncio de teste aberto pelo link. Quem não é o dono nem admin (e enquanto a sessão não carregou) vê a faixa
-  // e o "Solicitar" desativado; o dono e o admin veem a página normal, com a faixa discreta.
-  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin" });
+  // e o "Solicitar" desativado; o dono, o admin e a conta de teste (is_teste) veem a página normal, com a faixa discreta.
+  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true });
   const testeVisitante = modoTeste === "visitante";
   const [abrirVideo, setAbrirVideo] = useState(false);
   const [abrirPresencial, setAbrirPresencial] = useState(false);
