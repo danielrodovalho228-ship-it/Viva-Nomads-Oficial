@@ -350,7 +350,8 @@
         "t158-ajuda-parceiro",
         "t438-vocab-a",
         "t20-p1-agentes",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t694-varredura-bloco73"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -833,7 +834,8 @@
         "t607-varredura-bloco51",
         "t645-e238-e239-conta-passos",
         "t661-varredura-bloco62",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t694-varredura-bloco73"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1180,7 +1182,8 @@
         "t685-e258-como-cada-bloco-grava",
         "t689-e193-cartoes-tocaveis",
         "t690-e259-passo2-contagem",
-        "t692-e259-pagina-publica"
+        "t692-e259-pagina-publica",
+        "t694-varredura-bloco73"
       ]
     },
     "/dashboard/indicacoes": {
