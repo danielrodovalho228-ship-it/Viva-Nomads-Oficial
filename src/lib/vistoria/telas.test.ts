@@ -40,7 +40,7 @@ test("o dono não escolhe o avaliador, nem por API: o pedido só leva o imóvel 
 });
 
 test("chave VISTORIA_ATIVA desligada: nada para o dono nem para o morador; credenciamento e admin seguem", () => {
-  assert.match(BLOCO_DONO, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
   assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
   assert.match(corpo(ACOES, "pedirAvaliacao"), /chaveAtiva: await vistoriaAtiva\(\)/);
   assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtiva\(\)\)\) return DESLIGADA;/);
