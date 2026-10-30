@@ -7,8 +7,8 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
   "como grava" de cada bloco do Passo 5; esta prova que o que o texto promete é verdade, sem nenhum "Salvar" a mais:
    1. Ruído — "Vale depois de 'Salvar ruído'": marcado e NÃO salvo, some ao recarregar e nada vai para imovel_ruido;
    2. Extras — "Vale depois de 'Salvar extras'": marcado e não salvo some; marcado e salvo volta e está em imovel_extras;
-   3. Acessibilidade — "Cada toque salva na hora.": um toque e recarregar, sem botão nenhum, e o item segue marcado (e
-      gravado em imovel_estrutura); outro toque desmarca e também fica.
+   3. Acessibilidade — "Cada toque salva na hora.": um toque (o status vira "Salvo.") e recarregar, sem botão nenhum, e
+      o item segue marcado (e gravado em imovel_estrutura); outro toque desmarca e também fica.
   Lê também os textos uma vez (390 e 1280), para a prova falar do mesmo bloco que a t682. Conta de teste e rascunho
   semeados aqui e apagados no fim. Só no laboratório.
 */
@@ -94,7 +94,8 @@ test.describe("T685 — E258: cada bloco do Passo 5 grava como diz (Ruído e Ext
     await expect(item).toHaveAttribute("aria-checked", "true");
     const gravado = async () => ((await adm().from("imovel_estrutura").select("checklist").eq("property_id", ids.rascunho!).maybeSingle()).data?.checklist as Record<string, boolean> | undefined)?.entradaSemDegrauOuRampa ?? null;
     await expect.poll(gravado, { timeout: 20_000 }).toBe(true);
-    await expect(p.getByTestId("estrutura-como-salva")).toHaveText("Cada toque salva na hora.", { timeout: 20_000 });
+    // Sem botão nenhum, o próprio toque gravou: o status troca a regra por "Salvo." (estado "salvo" do componente).
+    await expect(p.getByTestId("estrutura-como-salva")).toHaveText("Salvo.", { timeout: 20_000 });
 
     // Recarrega sem tocar em botão nenhum: o bloco nasce ligado (tem dado) e o item segue marcado.
     await p.reload({ waitUntil: "domcontentloaded" });
@@ -107,6 +108,7 @@ test.describe("T685 — E258: cada bloco do Passo 5 grava como diz (Ruído e Ext
     // Outro toque desmarca, e isso também grava na hora.
     await deNovo.click();
     await expect(deNovo).toHaveAttribute("aria-checked", "false");
+    await expect(p.getByTestId("estrutura-como-salva")).toHaveText("Salvo.", { timeout: 20_000 });
     await expect.poll(gravado, { timeout: 20_000 }).not.toBe(true);
     await p.reload({ waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
