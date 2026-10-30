@@ -8,6 +8,7 @@ import { gravarMarca } from "@/lib/marcas/servidor";
 import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
+import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
 import { ligarMatriculaAoImovel, ligarQualificacaoAoImovel } from "@/lib/data/ligar-qualificacao";
 import { colunaVideoArquivo } from "@/lib/video-anuncio";
 import { caminhoDoDono, colunasDeOperacao, tipoDocParaGravar } from "@/lib/anuncio/operacao";
@@ -1894,6 +1895,8 @@ export async function saveDraftData(snap: {
   areaM2?: number;
   description?: string;
   data: unknown;
+  /** P0 (30/10): "Começar outro" — o dono pediu um anúncio NOVO: nunca reaproveita o rascunho vazio recente. */
+  novo?: boolean;
 }): Promise<{ ok: boolean; id?: string; error?: string; demo?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -1918,7 +1921,8 @@ export async function saveDraftData(snap: {
   };
 
   // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
-  const rascunhoId = snap.id || (await rascunhoVazioRecente(supabase, user.id));
+  // P0 (30/10): o "Começar outro" pede um anúncio novo de verdade — o inacabado continua no aviso e em Meus anúncios.
+  const rascunhoId = snap.id || (snap.novo === true ? null : await rascunhoVazioRecente(supabase, user.id));
   if (rascunhoId) {
     const { atualizou, error } = await atualizarRascunhoDoDono(supabase, rascunhoId, user.id, fields);
     if (error) {
@@ -2164,7 +2168,7 @@ export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
   const cidade = p.city ? await cidadeFechada(supabase, userId, p.city) : null;
   if (cidade) faltas.push({ rotulo: cidade, href: editar });
   const pr = await prontidaoDoImovel(supabase, userId, id);
-  for (const i of pr?.obrigatorios ?? []) if (!i.ok) faltas.push({ rotulo: i.detalhe ? `${i.label}: ${i.detalhe}` : i.label, href: editar });
+  for (const i of pr?.obrigatorios ?? []) if (!i.ok) faltas.push({ rotulo: i.detalhe ? `${i.label}: ${i.detalhe}` : i.label, href: destinoPendencia({ id, status: p.status }, i.etapa) });
   if (p.descricao_gerada_por_ia) {
     const { count } = await supabase.from("anuncio_aceites_ia").select("id", { count: "exact", head: true }).eq("property_id", id).eq("versao_termo", TERMO_IA_VERSAO);
     if (!count) faltas.push({ rotulo: "Aceite do termo da IA (confira o texto e aceite na etapa Revisar)", href: editar });

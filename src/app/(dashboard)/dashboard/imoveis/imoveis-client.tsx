@@ -16,6 +16,7 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
 import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
+import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
@@ -179,7 +180,22 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-2">
                         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
-                      {comp.faltam.length > 0 && <p className="mt-1 text-[11px] text-amber-800">Falta para publicar: {comp.faltam.join(" · ")}</p>}
+                      {/* P0 (30/10): cada pendência é um atalho para o PASSO dela no assistente (rascunho) — nunca o editor. */}
+                      {comp.faltam.length > 0 && (
+                        <p className="mt-1 text-[11px] text-amber-800" data-testid="falta-publicar">
+                          Falta para publicar:{" "}
+                          {comp.obrigatorios
+                            .filter((o) => !o.ok)
+                            .map((o, i) => (
+                              <span key={o.key}>
+                                {i > 0 && " · "}
+                                <Link href={destinoPendencia(p, o.etapa)} className="font-medium underline" data-testid={`pendencia-${o.key}`}>
+                                  {o.detalhe ? `${o.label} (${o.detalhe})` : o.label}
+                                </Link>
+                              </span>
+                            ))}
+                        </p>
+                      )}
                       {comp.melhorar.length > 0 && (
                         <p className="mt-1 text-[11px] text-muted">
                           Para melhorar (opcional):{" "}

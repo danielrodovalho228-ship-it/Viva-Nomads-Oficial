@@ -7,6 +7,7 @@
       ],
       "specs": [
         "t66-home-busca-principal",
+        "t707-conformidade-home",
         "t69-botoes-header",
         "t90-orcamento-velocidade",
         "t96-antigolpe-atalhos",
@@ -22,7 +23,8 @@
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
         "t669-ms1-topo-publico",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/acesso-socios": {
@@ -323,6 +325,7 @@
       ],
       "specs": [
         "t158-ajuda-parceiro",
+        "t709-conformidade-ajuda",
         "t19-atendimento-online",
         "t20-p1-agentes",
         "t21-central-agentes",
@@ -473,6 +476,7 @@
       ],
       "specs": [
         "t277-preco-grade-47",
+        "t710-conformidade-busca",
         "t234-ideal-para",
         "t10-buscar-url",
         "t14-app-mode",
@@ -519,7 +523,8 @@
         "t479-e136b-calendario-pt-br",
         "t543-e166-fundo-clean-publico",
         "t489-e176-menus",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/cidades": {
@@ -576,7 +581,8 @@
         "t354-varredura-bloco19",
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/comparar": {
@@ -1038,7 +1044,8 @@
         "t622-varredura-bloco56",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t703-e254-estadia-minima"
+        "t703-e254-estadia-minima",
+        "t708-e254-estadia-minima-uma-fonte"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1067,7 +1074,9 @@
         "t668-e225-estrutura-acessibilidade",
         "t701-e261-avisos-editor",
         "t696-varredura-bloco74",
-        "t698-e259-entrada-grava-e-limite"
+        "t698-e259-entrada-grava-e-limite",
+        "t713-e261-avisos-titulo",
+        "t709-e263-pets-condicoes-ida-e-volta"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1196,7 +1205,12 @@
         "t704-e265-tipos-sem-selo",
         "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
-        "t697-e259-pessoas-sugerido-grava"
+        "t697-e259-pessoas-sugerido-grava",
+        "t699-e260-pendencia-uma-vez",
+        "t713-e261-avisos-titulo",
+        "t707-e262-galeria-destaques-previa",
+        "t708-e254-estadia-minima-uma-fonte",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1351,7 +1365,8 @@
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
         "t312-varredura-bloco9",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t709-e263-pets-condicoes-ida-e-volta"
       ]
     },
     "/dashboard/pedidos": {
@@ -1556,7 +1571,8 @@
         "t325-fotos-ilustrativas-empresas",
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/excluir-conta": {
@@ -1690,7 +1706,13 @@
         "t705-e263-pets-condicoes",
         "t702-e262-galeria-e-destaques",
         "t696-varredura-bloco74",
-        "t698-e259-entrada-grava-e-limite"
+        "t698-e259-entrada-grava-e-limite",
+        "t699-e260-pendencia-uma-vez",
+        "t713-e261-avisos-titulo",
+        "t707-e262-galeria-destaques-previa",
+        "t708-e254-estadia-minima-uma-fonte",
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/modelodenegocio": {
@@ -1721,7 +1743,8 @@
         "t438-vocab-a",
         "t414-varredura-bloco31",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/parceiros": {
@@ -2147,7 +2170,8 @@
       "specs": [
         "t250-parceiros-contratacao",
         "t368-varredura-bloco20",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -2193,7 +2217,8 @@
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
         "t600-e200-conversa-da-estadia",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -2207,7 +2232,8 @@
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
         "t631-e222b-renovar-aditivo",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2228,7 +2254,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -2568,7 +2595,8 @@
         "publico"
       ],
       "specs": [
-        "t695-e264b-proativos"
+        "t695-e264b-proativos",
+        "t711-e264b-proativos-corpo"
       ]
     }
   },
