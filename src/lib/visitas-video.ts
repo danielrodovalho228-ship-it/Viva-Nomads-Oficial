@@ -136,12 +136,47 @@ export type AcaoVisitaDono =
   | { acao: "confirmar"; horario: string; link?: string }
   | { acao: "remarcar"; horario: string; link?: string }
   | { acao: "aceitar_remarcacao" }
-  | { acao: "cancelar"; motivo?: string }
+  | { acao: "cancelar"; motivo?: string; /** E269-B: a opção de um toque do cancelamento (MOTIVOS_CANCELAMENTO). */ opcao?: string }
   | { acao: "concluir" };
 
 /** Janela para o dono confirmar ou propor um horário: de agora até 14 dias. */
 export const CONFIRMAR_ATE_DIAS = 14;
 export const MSG_HORARIO_CONFIRMAR = `Escolha um horário nos próximos ${CONFIRMAR_ATE_DIAS} dias.`;
+/**
+ * E269-B — cancelar a visita (morador, ou dono numa visita confirmada): motivo OPCIONAL, com opções de um toque por
+ * lado e um texto de até 140 caracteres. Vai para a outra parte (e-mail e cartão); quem cancelou não recebe de volta.
+ * A RECUSA do dono (pedido ou remarcação) continua com o motivo obrigatório de antes.
+ */
+export const MOTIVOS_CANCELAMENTO = [
+  { id: "imprevisto", rotulo: "Surgiu um imprevisto", lados: ["morador", "dono"] },
+  { id: "horario", rotulo: "O horário não serve mais", lados: ["morador", "dono"] },
+  { id: "outro_imovel", rotulo: "Já encontrei outro imóvel", lados: ["morador"] },
+  { id: "indisponivel", rotulo: "O imóvel não está mais disponível", lados: ["dono"] },
+  { id: "outro", rotulo: "Outro motivo", lados: ["morador", "dono"] },
+] as const satisfies readonly { id: string; rotulo: string; lados: readonly ("morador" | "dono")[] }[];
+export const TEXTO_CANCELAMENTO_MAX = 140;
+
+export function motivosDoCancelamento(quem: "dono" | "morador"): { id: string; rotulo: string }[] {
+  return MOTIVOS_CANCELAMENTO.filter((m) => (m.lados as readonly string[]).includes(quem)).map(({ id, rotulo }) => ({ id, rotulo }));
+}
+
+/** O texto livre: sem HTML, sem quebra, até 140 caracteres. */
+export function textoDoCancelamento(bruto: unknown): string {
+  return typeof bruto === "string" ? bruto.replace(/<[^>]*>/g, " ").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, TEXTO_CANCELAMENTO_MAX).trim() : "";
+}
+
+/**
+ * O motivo gravado (motivo_recusa): "Opção", "Opção: texto", só o texto, ou nada (null). Opção que não é do lado de
+ * quem cancela é ignorada; "Outro motivo" com texto vira só o texto.
+ */
+export function motivoDoCancelamento(quem: "dono" | "morador", opcao: unknown, texto: unknown): string | null {
+  const o = motivosDoCancelamento(quem).find((m) => m.id === opcao);
+  const t = textoDoCancelamento(texto);
+  if (o && o.id !== "outro") return t ? `${o.rotulo}: ${t}` : o.rotulo;
+  if (t) return t;
+  return o ? o.rotulo : null;
+}
+
 export const MOTIVO_RECUSA_MIN = 3;
 export const MOTIVO_RECUSA_MAX = 200;
 export const MSG_MOTIVO_RECUSA = "Diga o motivo da recusa (ex.: imóvel já alugado nessas datas).";
@@ -187,12 +222,15 @@ export function mudancaDeStatus(
     campos.horario_proposto = null;
   }
   if (entrada.acao === "cancelar") {
-    const motivo = typeof entrada.motivo === "string" ? entrada.motivo.replace(/\s+/g, " ").trim() : "";
-    // O dono RECUSA um pedido (ou uma remarcação) sempre com motivo; o morador cancela sem precisar explicar.
-    if (quem === "dono" && de !== "confirmado" && (motivo.length < MOTIVO_RECUSA_MIN || motivo.length > MOTIVO_RECUSA_MAX)) {
-      return { ok: false, error: MSG_MOTIVO_RECUSA };
+    // O dono RECUSA um pedido (ou uma remarcação) sempre com motivo; cancelar (morador, ou dono na confirmada) tem
+    // motivo opcional — E269-B: a opção de um toque e o texto de até 140 caracteres.
+    if (quem === "dono" && de !== "confirmado") {
+      const motivo = typeof entrada.motivo === "string" ? entrada.motivo.replace(/\s+/g, " ").trim() : "";
+      if (motivo.length < MOTIVO_RECUSA_MIN || motivo.length > MOTIVO_RECUSA_MAX) return { ok: false, error: MSG_MOTIVO_RECUSA };
+      campos.motivo_recusa = motivo.slice(0, MOTIVO_RECUSA_MAX);
+    } else {
+      campos.motivo_recusa = motivoDoCancelamento(quem, entrada.opcao, entrada.motivo);
     }
-    campos.motivo_recusa = motivo ? motivo.slice(0, MOTIVO_RECUSA_MAX) : null;
   }
   return { ok: true, campos };
 }

@@ -233,7 +233,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     await d.context().close();
     const r = await entrar(browser, real.email, senha);
     await abrir(r, "/dashboard/visitas");
-    await expect(r.getByTestId("visita-motivo-recusa-texto").first()).toContainText("Imóvel já alugado nessas datas", { timeout: 25_000 });
+    await expect(r.getByTestId("visita-status").first()).toContainText("Cancelada · Imóvel já alugado nessas datas", { timeout: 25_000 });
     await expect(r.getByText(ENDERECO)).toHaveCount(0);
     await r.context().close();
   });

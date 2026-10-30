@@ -193,7 +193,7 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     await inq.reload({ waitUntil: "domcontentloaded" });
     const cartao = inq.locator(`#visita-${v.id}`);
     await expect(cartao.getByTestId("visita-status")).toHaveText("Expirada", { timeout: 20_000 });
-    await expect(cartao.getByTestId("visita-motivo-recusa-texto")).toHaveCount(0);
+    await expect(cartao.getByTestId("visita-status")).toHaveText("Expirada");
     // Rodar de novo não repete o aviso.
     await inq.reload({ waitUntil: "domcontentloaded" });
     await new Promise((r) => setTimeout(r, 3000));
@@ -228,14 +228,21 @@ test.describe("T585 — E205-B: e-mails novos", () => {
 
     // O dono cancela com motivo: o morador recebe quem, o motivo, o horário e "Pedir outro horário".
     await dono.reload({ waitUntil: "domcontentloaded" });
+    // E269-B: a folha do cancelamento — opção do lado do dono + texto; o motivo vai só ao morador.
     await cartao.getByTestId("visita-cancelar").click();
-    const motivo = cartao.getByTestId("visita-motivo-recusa");
-    if (await motivo.isVisible().catch(() => false)) {
-      await motivo.fill("Surgiu um imprevisto no imóvel");
-      await cartao.getByTestId("visita-recusar-enviar").click();
-    }
-    await expect.poll(async () => (await adm().from("visitas_video").select("status").eq("id", v.id).single()).data?.status, { timeout: 25_000 }).toBe("cancelado");
+    const folha = cartao.getByTestId("visita-folha-cancelar");
+    await expect(folha.getByTestId("visita-cancelar-opcao-outro_imovel")).toHaveCount(0); // opção só do morador
+    await folha.getByTestId("visita-cancelar-opcao-indisponivel").click();
+    await folha.getByTestId("visita-cancelar-texto").fill("Vazamento no banheiro");
+    await folha.getByTestId("visita-cancelar-confirmar").click();
+    await expect.poll(async () => (await adm().from("visitas_video").select("status, motivo_recusa").eq("id", v.id).single()).data, { timeout: 25_000 }).toEqual({
+      status: "cancelado",
+      motivo_recusa: "O imóvel não está mais disponível: Vazamento no banheiro",
+    });
+    await dono.reload({ waitUntil: "domcontentloaded" });
+    await expect(cartao.getByTestId("visita-status")).toHaveText("Cancelada · O imóvel não está mais disponível: Vazamento no banheiro");
     const cancelada = await emailDe(c.inq.id, "visita_cancelada");
+    expect(cancelada).toContain("Motivo: O imóvel não está mais disponível: Vazamento no banheiro");
     expect(cancelada).toContain("Dona cancelou a visita presencial");
     expect(cancelada).toContain("Cancelada por: Dona");
     expect(cancelada).toMatch(/Horário: .*horário de Brasília/);
@@ -245,9 +252,49 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     expect(copia).toContain("você cancelou a visita presencial");
     expect(copia).toContain("O morador já recebeu o aviso.");
     expect(copia).toContain("Cancelada por: Você");
+    expect(copia, "quem cancelou não recebe o motivo de volta").not.toContain("Motivo:");
     expect(await assuntoDe(c.dono.id, "visita_cancelada")).toBe("Você cancelou a visita · Viva Nomads");
     expect(await contar(c.inq.id, "visita_cancelada")).toBe(1);
     expect(await contar(c.dono.id, "visita_cancelada")).toBe(1);
     await dono.context().close();
+  });
+
+  test("d3. E269-B: o morador cancela sem motivo (nenhuma linha de motivo) e com texto (sem HTML, até 140)", async ({ browser }) => {
+    const c = await cenario("Cancela");
+    const amanha = new Date(Date.now() + 26 * 3600_000).toISOString();
+    const { data: v1, error: e1 } = await adm().from("visitas_video").insert({ property_id: c.imovel, owner_id: c.dono.id, tenant_id: c.inq.id, horarios: [amanha], modalidade: "video" }).select("id").single();
+    if (e1) throw e1;
+    const inq = await abrir(browser, c.inq.email, "/dashboard/visitas");
+    // 1) Sem escolher nada: "Cancelar a visita" funciona; o e-mail do dono não tem a linha de motivo.
+    const c1 = inq.locator(`#visita-${v1.id}`);
+    await c1.getByTestId("visita-cancelar-morador").click();
+    await expect(c1.getByTestId("visita-cancelar-opcao-indisponivel")).toHaveCount(0); // opção só do dono
+    await c1.getByTestId("visita-cancelar-confirmar").click();
+    await expect.poll(async () => (await adm().from("visitas_video").select("status, motivo_recusa").eq("id", v1.id).single()).data, { timeout: 25_000 }).toEqual({ status: "cancelado", motivo_recusa: null });
+    const semMotivo = await emailDe(c.dono.id, "visita_cancelada");
+    expect(semMotivo).not.toContain("Motivo:");
+
+    // 2) Só o texto, com HTML e mais de 140 caracteres: grava limpo e cortado; chega ao dono, não volta à moradora.
+    const { data: v2, error: e2 } = await adm().from("visitas_video").insert({ property_id: c.imovel, owner_id: c.dono.id, tenant_id: c.inq.id, horarios: [amanha], modalidade: "video" }).select("id").single();
+    if (e2) throw e2;
+    await inq.reload({ waitUntil: "domcontentloaded" });
+    const c2 = inq.locator(`#visita-${v2.id}`);
+    await c2.getByTestId("visita-cancelar-morador").click();
+    // O campo tem maxlength 140; o servidor corta e limpa de novo (não confia na tela).
+    await expect(c2.getByTestId("visita-cancelar-texto")).toHaveAttribute("maxlength", "140");
+    await c2.getByTestId("visita-cancelar-texto").fill(`<b>Mudei</b> de planos ${"x".repeat(200)}`);
+    await c2.getByTestId("visita-cancelar-confirmar").click();
+    await expect.poll(async () => (await adm().from("visitas_video").select("status").eq("id", v2.id).single()).data?.status, { timeout: 25_000 }).toBe("cancelado");
+    const { data: gravado } = await adm().from("visitas_video").select("motivo_recusa").eq("id", v2.id).single();
+    expect(gravado?.motivo_recusa).toMatch(/^Mudei de planos x+$/);
+    expect(String(gravado?.motivo_recusa).length).toBeLessThanOrEqual(140);
+    await expect.poll(async () => (await adm().from("emails_teste").select("corpo").eq("usuario_id", c.dono.id).eq("evento", "visita_cancelada")).data?.length ?? 0, { timeout: 30_000 }).toBe(2);
+    const { data: doDono } = await adm().from("emails_teste").select("corpo").eq("usuario_id", c.dono.id).eq("evento", "visita_cancelada");
+    expect((doDono ?? []).some((e) => String(e.corpo).includes("Motivo: Mudei de planos"))).toBe(true);
+    expect((doDono ?? []).every((e) => !String(e.corpo).includes("<b>"))).toBe(true);
+    const { data: daMoradora } = await adm().from("emails_teste").select("corpo").eq("usuario_id", c.inq.id).eq("evento", "visita_cancelada");
+    expect((daMoradora ?? []).length).toBe(2);
+    expect((daMoradora ?? []).every((e) => !String(e.corpo).includes("Motivo:"))).toBe(true);
+    await inq.context().close();
   });
 });

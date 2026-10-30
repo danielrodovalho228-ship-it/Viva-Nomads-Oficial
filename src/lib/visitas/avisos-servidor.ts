@@ -88,9 +88,10 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
       await notify({ event: "visita_cancelada", email: destino.email, name: destino.full_name ?? undefined, userId: para, pushUrl: t.url, body: t.abertura, ctaLabel: t.cta, detailsHtml: d.html, detailsText: d.texto });
     // E269: a cópia de quem cancelou (os dois lados, 1 cada).
     if (autor?.email && autor.notif_email !== false) {
+      // E269-B: o motivo vai só à outra parte; quem cancelou não o recebe de volta.
       const c = visitaCancelada({
         quemCancelou,
-        motivo: v.motivo_recusa,
+        motivo: null,
         horario: horarioDe(v),
         tipo: tipoDe(v),
         imovel: im?.title,
