@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T677 — E202 reaberto (QA do Muse, 29/10): o caminho da CANDIDATURA (Solicitar → Interessados → Aprovar) usa os
+  T678 — E202 reaberto (QA do Muse, 29/10): o caminho da CANDIDATURA (Solicitar → Interessados → Aprovar) usa os
   modelos com dados do pacote E202–E206. Contas do laboratório marcadas como de teste (is_teste): os e-mails caem na
   caixa de teste (emails_teste), lida aqui.
    1. A moradora escolhe entrada e saída (30 dias) no calendário e envia a candidatura (tela). A saída vai ao banco
@@ -16,8 +16,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t677.${sufixo}@lab.vivanomads.test`, nome: "Daniel Candidatura Sobrenome", role: "owner" as const };
-const inq = { email: `inq.t677.${sufixo}@lab.vivanomads.test`, nome: "Ana Candidatura Sobrenome", role: "tenant" as const };
+const dono = { email: `dono.t678.${sufixo}@lab.vivanomads.test`, nome: "Daniel Candidatura Sobrenome", role: "owner" as const };
+const inq = { email: `inq.t678.${sufixo}@lab.vivanomads.test`, nome: "Ana Candidatura Sobrenome", role: "tenant" as const };
 const titulo = `Premium da candidatura ${sufixo}`;
 const ALUGUEL = 3200;
 const ids: { dono?: string; inq?: string; imovel?: string; lead?: string } = {};
@@ -67,7 +67,7 @@ function confereQuadro(c: string) {
   expect(c).not.toContain("A combinar com o proprietário");
 }
 
-test.describe("T677 — E202: os e-mails da candidatura trazem o imóvel, as datas e os valores", () => {
+test.describe("T678 — E202: os e-mails da candidatura trazem o imóvel, as datas e os valores", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
@@ -150,7 +150,7 @@ test.describe("T677 — E202: os e-mails da candidatura trazem o imóvel, as dat
     // (b) O Fechamento herda o período da candidatura aceita: 1 mês (antes, 4 meses).
     await page.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByLabel(/Prazo total em meses/i)).toHaveValue("1", { timeout: 20_000 });
-    await page.screenshot({ path: `${SAIDA}/t677-fechamento-1-mes-1280.png` });
+    await page.screenshot({ path: `${SAIDA}/t678-fechamento-1-mes-1280.png` });
     await page.context().close();
   });
 });
