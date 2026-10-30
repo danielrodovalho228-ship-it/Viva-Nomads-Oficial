@@ -3,6 +3,7 @@
 import { AtivarNotificacoes } from "@/components/app/push-app";
 import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Lock, Bell, Trash2, Check, BadgeCheck } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
@@ -347,18 +348,18 @@ export function AjudaContato() {
         equipe quando precisar.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <a
+        <Link
           href="/ajuda"
           className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
         >
           Central de Ajuda
-        </a>
-        <a
+        </Link>
+        <Link
           href="/ajuda/fale-com-a-viva?novo=1"
           className="inline-flex items-center gap-2 rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest hover:border-sage"
         >
           Abrir chamado
-        </a>
+        </Link>
       </div>
     </Panel>
   );

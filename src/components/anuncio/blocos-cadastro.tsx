@@ -125,7 +125,8 @@ export function ProximidadesAutomaticas({
       )}
       {!carregando && !temItens && !buscou && (
         <p className="text-sm text-muted" data-testid="proximidades-aguardando">
-          Os lugares por perto aparecem aqui quando o endereço estiver completo (CEP e rua).
+          Os lugares por perto aparecem aqui quando o endereço tiver CEP e rua (Passo 3). O CEP não segura a publicação; sem
+          ele, esta parte fica de fora do anúncio.
         </p>
       )}
       {!carregando && (buscou || temItens) && (
@@ -254,7 +255,8 @@ export function ProntoParaTrabalhar({
             {sugeridas.includes(it.chave) && on && <span className="sr-only"> ({MARCA_SUGERIDO})</span>}
           </>
         }
-        dica={essencial ? "Essencial" : undefined}
+        // E257: o grupo é só título por desenho — "Essenciais" e "Opcionais" já dizem o que conta para a etiqueta.
+        data-essencial={essencial ? "sim" : undefined}
       />
     );
   };

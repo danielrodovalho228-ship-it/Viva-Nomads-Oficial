@@ -31,9 +31,10 @@ test("E141/E142: sem o 'Falta foto de' do topo (uma cobrança só, no nível); a
   assert.match(pagina, /\{step === ETAPA\.comodidades && \(\s*<div className="space-y-6">[\s\S]{0,600}<SugestoesDasFotos[\s\S]*?<EtapaEncontramos parte="comodidades"/);
 });
 
-test("comodidade achada e ainda não marcada: tracejada, com 'Confirme'; tocar marca", () => {
+test("comodidade achada e ainda não marcada: o mesmo cartão da grade, com a estrela (E257); tocar marca", () => {
   const grade = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx");
   assert.match(grade, /const detectada = !on && !!p\.detectadas\?\.includes\(it\.key\);/);
-  assert.match(grade, /detectada && "border-dashed border-forest"/);
-  assert.match(grade, /Confirme/);
+  assert.match(grade, /icone=\{sug \|\| detectada \? Sparkles : iconeDaComodidade\(it\.key\)\}/);
+  assert.doesNotMatch(grade, /border-dashed/);
+  assert.doesNotMatch(grade, /comodidade-confirme-/);
 });

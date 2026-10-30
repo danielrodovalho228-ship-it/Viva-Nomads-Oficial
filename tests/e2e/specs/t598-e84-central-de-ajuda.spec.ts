@@ -53,6 +53,11 @@ for (const largura of [390, 1280] as const) {
       await expect(perguntas.getByRole("heading", { level: 2 })).toHaveText("Perguntas deste tema");
       await expect(perguntas.locator("li button")).toHaveText(["Como funciona a caução?", "Posso renovar o contrato?", "Algo quebrou no imóvel. O que eu faço?", "Qual o prazo mínimo e máximo da locação?"]);
       await expect(page.getByTestId("ajuda-voltar-central")).toHaveAttribute("href", "/ajuda");
+      // Nada em inglês: nem na tela, nem nos dados estruturados (o FAQPage leva o nome do tema em português).
+      expect(await page.evaluate(() => document.body.innerText)).not.toMatch(/Frequently|Asked Questions/i);
+      const faq = JSON.parse((await page.locator('script[type="application/ld+json"]').allTextContents()).find((t) => t.includes('"FAQPage"'))!);
+      expect(faq.name).toBe("Contratos e pagamentos · Perguntas frequentes");
+      expect(faq.inLanguage).toBe("pt-BR");
       if (largura === 1280) {
         const caixa = await perguntas.boundingBox();
         expect(caixa!.width).toBeGreaterThan(900);
