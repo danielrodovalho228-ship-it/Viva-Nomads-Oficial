@@ -63,7 +63,7 @@ test.describe("T20 — P1 dos agentes", () => {
 
   for (const [rota, tipo] of [
     ["/", "Organization"],
-    ["/ajuda", "FAQPage"],
+    ["/ajuda/seguranca", "FAQPage"], // E84: as perguntas moram na página de cada tema
     ["/precos", "Offer"],
     ["/buscar", "ItemList"],
   ] as const) {

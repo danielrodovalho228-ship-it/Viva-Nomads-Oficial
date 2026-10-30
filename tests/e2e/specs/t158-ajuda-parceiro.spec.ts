@@ -9,7 +9,8 @@ for (const largura of [390, 1280]) {
     test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: 844 } });
 
     test("uma pergunta só, com resposta para os dois tipos de empresa", async ({ page }) => {
-      await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
+      // E84: as perguntas moram na página de cada tema (parceiros: "Para proprietários").
+      await page.goto("/ajuda/proprietarios", { waitUntil: "domcontentloaded" });
       const perguntas = page.getByRole("button", { name: /virar parceiro/i });
       await expect(perguntas).toHaveCount(1);
       await expect(perguntas).toHaveText("Como posso virar parceiro da Viva?");
@@ -27,7 +28,7 @@ for (const largura of [390, 1280]) {
     });
 
     test("caução na Ajuda segue a página pública (até 3 vezes o valor mensal)", async ({ page }) => {
-      await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
+      await page.goto("/ajuda/contratos", { waitUntil: "domcontentloaded" });
       const pergunta = page.getByRole("button", { name: /Como funciona a caução/i });
       await expect(async () => {
         await pergunta.click();

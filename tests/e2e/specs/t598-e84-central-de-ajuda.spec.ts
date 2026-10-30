@@ -4,8 +4,8 @@ import { test, expect, type Page } from "@playwright/test";
 /*
   T598 — E84: a Central de Ajuda nos mockups aprovados (ajuda-central, pagina-fale-com-a-viva, ajuda-termos,
   ajuda-privacidade). Cada destino com página própria; a promessa "em até 24 h" uma vez por página (antes, 4× na /ajuda).
-   1. /ajuda: foto no topo, cartão "Fale com a Viva", 4 cartões de tema que filtram as perguntas, documentos; sem chat
-      nem formulário de chamado; largura da página (não a coluna estreita de antes).
+   1. /ajuda: foto no topo, cartão "Fale com a Viva", 4 cartões de tema COM FOTO que levam à página própria do tema
+      (/ajuda/<tema>, com as suas perguntas), documentos; o hub não lista perguntas (QA de 29/10); sem chat nem chamado.
    2. /ajuda/fale-com-a-viva: o chat e o chamado; links antigos (/ajuda?novo=1) chegam aqui.
    3. /termos e /privacidade: páginas próprias com índice e "Ficou alguma dúvida? Fale com a Viva."
 */
@@ -21,35 +21,48 @@ for (const largura of [390, 1280] as const) {
   test.describe(`T598 — E84 a ${largura} px`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
-    test("1. hub: foto, Fale com a Viva, 4 temas que filtram, documentos; a promessa uma vez", async ({ page }) => {
+    test("1. hub limpo: foto, Fale com a Viva, 4 temas com foto que levam à página própria; nenhuma pergunta no hub", async ({ page }) => {
       await page.goto("/ajuda", { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1 })).toHaveText("Central de ajuda", { timeout: 30_000 });
       await expect(page.getByTestId("banner-topo")).toBeVisible();
       await expect(page.getByTestId("ajuda-cartao-fale")).toBeVisible();
       await expect(page.getByTestId("ajuda-ir-fale")).toHaveAttribute("href", "/ajuda/fale-com-a-viva");
-      for (const t of ["morador", "proprietarios", "contratos", "seguranca"]) await expect(page.getByTestId(`ajuda-tema-${t}`)).toBeVisible();
+      for (const t of ["morador", "proprietarios", "contratos", "seguranca"]) {
+        const cartao = page.getByTestId(`ajuda-tema-${t}`);
+        await expect(cartao).toHaveAttribute("href", `/ajuda/${t}`);
+        // Todo cartão de tema com foto (o 4º antes era só o ícone).
+        await expect(cartao.locator("img")).toHaveCount(1);
+      }
+      // Hub limpo: nenhuma pergunta despejada, nenhum título em inglês.
+      await expect(page.getByTestId("ajuda-perguntas")).toHaveCount(0);
+      await expect(page.locator("main")).not.toContainText(/Frequently|Questions/);
       await expect(page.getByTestId("viva-chat-bloco")).toHaveCount(0);
       await expect(page.getByTestId("atendimento-abrir")).toHaveCount(0);
       await expect(page.getByTestId("ajuda-doc-termos")).toHaveAttribute("href", "/termos");
       await expect(page.getByTestId("ajuda-doc-privacidade")).toHaveAttribute("href", "/privacidade");
-      await expect(page.getByTestId("ajuda-perguntas")).toBeVisible();
       expect(await vezes(page, "em até 24 h")).toBe(1);
-      if (largura === 1280) {
-        // Página inteira, não a coluna de 768 px de antes.
-        const caixa = await page.getByTestId("ajuda-perguntas").boundingBox();
-        expect(caixa!.width).toBeGreaterThan(900);
-      }
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t598-hub-${largura}.png`, fullPage: true });
 
+      // Cada tema na sua página, com as suas perguntas (em português).
       await page.getByTestId("ajuda-tema-contratos").click();
-      await expect(page).toHaveURL(/\/ajuda\?tema=contratos#perguntas$/);
+      await expect(page).toHaveURL(/\/ajuda\/contratos$/, { timeout: 30_000 });
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Contratos e pagamentos");
       const perguntas = page.getByTestId("ajuda-perguntas");
-      await expect(perguntas.getByRole("heading", { level: 2 })).toHaveText("Contratos e pagamentos");
+      await expect(perguntas.getByRole("heading", { level: 2 })).toHaveText("Perguntas deste tema");
       await expect(perguntas.locator("li button")).toHaveText(["Como funciona a caução?", "Posso renovar o contrato?", "Algo quebrou no imóvel. O que eu faço?", "Qual o prazo mínimo e máximo da locação?"]);
-      await expect(page.getByTestId("ajuda-tema-contratos")).toHaveAttribute("aria-current", "true");
-      await expect(page.getByTestId("ajuda-todas")).toBeVisible();
-      await page.screenshot({ path: `${SAIDA}/t598-hub-tema-${largura}.png`, fullPage: false });
+      await expect(page.getByTestId("ajuda-voltar-central")).toHaveAttribute("href", "/ajuda");
+      if (largura === 1280) {
+        const caixa = await perguntas.boundingBox();
+        expect(caixa!.width).toBeGreaterThan(900);
+      }
+      await semRolagemLateral(page);
+      await page.screenshot({ path: `${SAIDA}/t598-tema-${largura}.png`, fullPage: true });
+
+      // Link antigo (/ajuda?tema=x) chega à página do tema.
+      await page.goto("/ajuda?tema=seguranca", { waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(/\/ajuda\/seguranca$/, { timeout: 30_000 });
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Segurança e conta");
     });
 
     test("2. Fale com a Viva: página própria com o chat e o chamado; /ajuda?novo=1 chega aqui", async ({ page }) => {

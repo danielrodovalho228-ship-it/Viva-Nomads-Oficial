@@ -20,6 +20,11 @@ test("E84: os 4 cartões de tema do mockup, e cada pergunta citada existe na FAQ
     for (const p of t.perguntas) assert.ok(ids.has(p), `${t.id}: ${p}`);
   }
   assert.deepEqual(perguntasDoTema("contratos"), ["caucao", "renovar", "manutencao", "prazo"]);
+  // O hub não lista perguntas: toda pergunta da FAQ mora em pelo menos um tema (página própria).
+  const nosTemas = new Set(TEMAS_AJUDA.flatMap((t) => t.perguntas));
+  for (const p of FAQ) assert.ok(nosTemas.has(p.id), `sem tema: ${p.id}`);
+  // Todo cartão de tema tem foto do acervo, com descrição.
+  for (const t of TEMAS_AJUDA) assert.ok(t.foto.startsWith("/images/") && t.alt.length > 0, t.id);
   assert.equal(perguntasDoTema(null).length, FAQ.length);
   assert.equal(temaAjuda("nao-existe"), null);
 });
@@ -29,6 +34,18 @@ test("E84: os textos dos temas usam o vocabulário aprovado (o mockup falava de 
   for (const proibida of ["temporada", "hóspede", "reserva", "check-in", "comissão", "inquilino", "aluguel", "limpeza", "whatsapp"]) {
     assert.ok(!texto.includes(proibida), proibida);
   }
+});
+
+test("E84: hub limpo (cartões que levam à página do tema, sem perguntas); cada tema com a sua página, em português", () => {
+  const hub = ler("app/(public)/ajuda/page.tsx");
+  assert.doesNotMatch(hub, /PerguntasDaCentral|faqPage|#perguntas/);
+  assert.match(hub, /href=\{hrefDoTema\(t\.id\)\}/);
+  assert.match(hub, /if \(tema\) redirect\(hrefDoTema\(tema\.id\)\);/);
+  const pagina = ler("app/(public)/ajuda/[tema]/page.tsx");
+  assert.match(pagina, /<PerguntasDaCentral ids=\{tema\.perguntas\} titulo="Perguntas deste tema" \/>/);
+  assert.match(pagina, /faqPage\(tema\.perguntas\)/);
+  assert.match(pagina, /export const dynamicParams = false;/);
+  assert.doesNotMatch(hub + pagina + ler("components/ajuda/central-ajuda.tsx"), /Frequently|Questions/);
 });
 
 test("E84: links antigos do atendimento (?novo=1, ?chamado=…, e-mails) seguem para a página própria; o hub abre normal", () => {
