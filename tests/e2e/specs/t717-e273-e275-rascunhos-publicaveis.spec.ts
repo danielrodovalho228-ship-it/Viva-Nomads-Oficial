@@ -114,7 +114,12 @@ async function publicarDoPasso10(page: Page, id: string, letra: string) {
   await noPasso(page, "revisao", 30_000);
   // Nada a fazer nos passos 1–9: a lista de conferência já vem toda feita.
   const lista = page.getByTestId("lista-conferencia");
-  await expect(lista).toHaveAttribute("data-faltam", "0", { timeout: 20_000 });
+  await expect(lista).toBeVisible({ timeout: 20_000 });
+  // Se algo faltar, o erro diz o quê (a 1ª rodada no lab só viu data-faltam="1").
+  await expect
+    .poll(async () => lista.locator('[data-ok="0"]').evaluateAll((els) => els.map((e) => `${e.getAttribute("data-testid")}: ${(e.textContent ?? "").replace(/\s+/g, " ").trim()}`)), { timeout: 20_000, message: `rascunho ${letra}: itens que faltam` })
+    .toEqual([]);
+  await expect(lista).toHaveAttribute("data-faltam", "0");
   await expect(lista.getByRole("heading", { name: "Tudo certo para publicar" })).toBeVisible();
   await expect(lista.locator('[data-ok="0"]')).toHaveCount(0);
   await expect(lista.getByText(/^Falta:/)).toHaveCount(0);
