@@ -15,7 +15,7 @@ import type { NotificationEvent } from "../lib/notifications/eventos-email.ts";
 import type { EventoAvulso } from "../lib/notifications/imagens-email.ts";
 
 export type CanalNotificacao = "push" | "central" | "email";
-export type CategoriaNotificacao = "decisao" | "seguranca" | "mensagens" | "lembretes" | "outros";
+export type CategoriaNotificacao = "decisao" | "seguranca" | "mensagens" | "lembretes" | "outros" | "sugestoes";
 export type PapelNotificacao = "morador" | "proprietario" | "parceiro" | "admin";
 export type EventoNotificacao = NotificationEvent | EventoAvulso;
 
@@ -121,7 +121,8 @@ export const MATRIZ_NOTIFICACOES = {
   verificacao_parada: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   // E205-B2: só o morador, sem push.
   bloco_inicio_lembrete: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
-  pedido_expirando: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
+  // E264-B: os 5 proativos ficam em "Sugestões e novidades" (desligável, com teto por pessoa e descadastro de 1 clique).
+  pedido_expirando: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
   visita_vespera: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   parceiro_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   parceiro_conclusao_pendente: { categoria: "lembretes", papeis: CLIENTE, canais: SEM_PUSH },
@@ -137,12 +138,12 @@ export const MATRIZ_NOTIFICACOES = {
   proposta_aceita: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   proposta_recusada: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
   boas_vindas: { categoria: "outros", papeis: DUAS_PARTES, canais: ["email"] },
-  saved_search_match: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  saved_search_match: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
   subscription_status: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   pedido_novo_cidade: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
-  pedido_compativel: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
-  pedido_resumo: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
-  pedido_imovel_novo: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  pedido_compativel: { categoria: "sugestoes", papeis: ["proprietario"], canais: SEM_PUSH },
+  pedido_resumo: { categoria: "sugestoes", papeis: ["proprietario"], canais: SEM_PUSH },
+  pedido_imovel_novo: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
   pedido_moderado: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   pedido_encerrado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   documento_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
@@ -205,7 +206,7 @@ export function categoriaTemInterruptor(categoria: CategoriaNotificacao): boolea
 }
 
 /** Prompt 44 (item 4): as categorias que a pessoa pode desligar em /dashboard/notificacoes. */
-export const CATEGORIAS_COM_INTERRUPTOR = ["mensagens", "lembretes", "outros"] as const;
+export const CATEGORIAS_COM_INTERRUPTOR = ["mensagens", "lembretes", "outros", "sugestoes"] as const;
 export type CategoriaComInterruptor = (typeof CATEGORIAS_COM_INTERRUPTOR)[number];
 
 /** O que vem do banco ou do formulário, só com categorias que têm interruptor, sem repetição e na ordem da tela. */
@@ -233,4 +234,5 @@ export const ROTULO_CATEGORIA: Record<CategoriaNotificacao, string> = {
   mensagens: "Mensagens",
   lembretes: "Lembretes",
   outros: "Outros avisos",
+  sugestoes: "Sugestões e novidades",
 };

@@ -38,7 +38,9 @@ test("2. logado com os avisos por e-mail desligados: a frase diz isso + 'Ligar e
   assert.match(comp, /aviso\.tipo === "email_desligado" && \(\s*<Link\s+href=\{HREF_NOTIFICACOES\}[\s\S]*?min-h-11[\s\S]*?\{ROTULO_LIGAR_NOTIFICACOES\}/);
   // A preferência é a mesma que o envio do alerta respeita (profiles.notif_email) — nenhuma chave nova.
   assert.match(acoes, /select\("notif_email"\)[\s\S]*?avisoEmail: notificacaoLigada\(/);
-  assert.match(ler("lib/data/alerta-busca-servidor.ts"), /notificacaoLigada\(perfil\.notif_email\)/);
+  // E264-B: o envio do alerta é o da fila dos proativos, que respeita a mesma preferência (recebeAvisoComum → notif_email).
+  assert.match(ler("lib/notifications/proativos-servidor.ts"), /recebeAvisoComum\(p\)/);
+  assert.match(ler("lib/notifications/preferencias.ts"), /recebeAvisoComum[\s\S]*?notificacaoLigada\(p\.notif_email\)/);
 });
 
 test("3. visitante: a busca fica no aparelho e o convite para entrar continua", () => {

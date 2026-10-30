@@ -19,7 +19,7 @@ test("localização: todo lugar que mostra bairro e cidade usa linhaLocalizacao 
     "app/(dashboard)/dashboard/comparar/page.tsx",
     "app/(public)/imoveis/[id]/opengraph-image.tsx",
     "lib/anuncio/metadados-imovel.ts",
-    "lib/busca/alerta-busca.ts",
+    "lib/notifications/cartoes-email.ts",
     "lib/anuncio/assistente-telas.ts",
   ]) {
     const s = ler(f);
@@ -31,12 +31,14 @@ test("localização: todo lugar que mostra bairro e cidade usa linhaLocalizacao 
 });
 
 test("e-mail do alerta: o bairro vem da coluna `address` (a tabela não tem `neighborhood`) e a UF entra na linha", () => {
-  const f = ler("lib/data/alerta-busca-servidor.ts");
-  const select = f.match(/from\("properties"\)\s*\.select\("([^"]+)"\)/)?.[1] ?? "";
+  // E264-B: o cartão do imóvel dos proativos (alerta de busca e imóvel novo para o pedido) lê os dados aqui.
+  const f = ler("lib/notifications/proativos-servidor.ts");
+  const select = f.match(/from\("properties"\)\.select\("([^"]+)"\)/)?.[1] ?? "";
   const colunas = select.split(",").map((c) => c.trim());
   assert.ok(colunas.includes("address") && colunas.includes("state"), select);
   assert.ok(!colunas.includes("neighborhood"), "a coluna neighborhood não existe em properties");
-  assert.match(f, /neighborhood: \(r\.address as string\)/);
+  assert.match(f, /bairro: \(r\.address as string \| null\)/);
+  assert.match(f, /uf: \(r\.state as string \| null\)/);
 });
 
 test("detecção na edição: as sugestões ficam na página do nível, acima dos itens de prova; comodidade grava na hora", () => {
