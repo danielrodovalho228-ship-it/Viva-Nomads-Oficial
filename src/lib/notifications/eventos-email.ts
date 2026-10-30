@@ -143,7 +143,7 @@ export type NotificationEvent =
 export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: string) => string; cta: string; path: string }> = {
   new_lead: { subject: "Novo interessado no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, você recebeu um novo interessado no Viva Nomads.`, cta: "Ver interessado", path: "/dashboard/leads" },
   new_message: { subject: "Você tem uma nova mensagem", body: (n) => `Olá${n ? " " + n : ""}, você recebeu uma nova mensagem no Viva Nomads.`, cta: "Ver mensagem", path: "/dashboard/mensagens" },
-  application_received: { subject: "Candidatura recebida", body: () => "Recebemos sua candidatura. O proprietário foi notificado.", cta: "Acompanhar candidatura", path: "/dashboard/candidaturas" },
+  application_received: { subject: "Candidatura enviada", body: () => "Recebemos sua candidatura. O proprietário foi notificado.", cta: "Ver a candidatura", path: "/dashboard/candidaturas" },
   candidatura_aceita: { subject: "Sua candidatura foi aceita", body: (n) => `Boa notícia${n ? ", " + n : ""}! O proprietário aceitou sua candidatura. A conversa está liberada em Mensagens — a negociação segue toda pela plataforma.`, cta: "Abrir a conversa", path: "/dashboard/mensagens" },
   saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads.", cta: "Ver imóvel", path: "/dashboard/buscas" },
   verification_ready: { subject: "Sua verificação está pronta", body: () => "A conferência da sua identidade foi concluída. Veja o resultado no painel.", cta: "Ver resultado", path: "/dashboard/verificacao" },

@@ -139,7 +139,10 @@ export function PropertyDetail({
   // E93: anúncio de teste aberto pelo link. Quem não é o dono nem admin (e enquanto a sessão não carregou) vê a faixa
   // e o "Solicitar" desativado; o dono, o admin e a conta de teste (is_teste) veem a página normal, com a faixa discreta.
   const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true });
-  const testeVisitante = modoTeste === "visitante";
+  // QA do Muse (29/10): enquanto a sessão ou o perfil (is_teste) não chegaram, o anúncio de teste não mostra a faixa de
+  // visitante — antes ela piscava para a conta de teste até o perfil carregar. O "Solicitar" fica só desativado.
+  const aguardandoPerfil = modoTeste === "visitante" && (!authChecked || (!!usuario && usuario.isTeste === undefined));
+  const testeVisitante = modoTeste === "visitante" && !aguardandoPerfil;
   const [abrirVideo, setAbrirVideo] = useState(false);
   const [abrirPresencial, setAbrirPresencial] = useState(false);
   // "Agendar visita" do rodapé fixo do celular: abre a mesma janela do cartão (cada toque soma 1).
@@ -233,7 +236,7 @@ export function PropertyDetail({
     // E53: a saída ainda não tem coluna no pedido — com o período completo ela segue numa linha da mensagem.
     const periodo = kind === "candidatura" ? linhaPeriodoNaMensagem(selecao) : null;
     if (periodo) note = note ? `${note}\n\n${periodo}` : periodo;
-    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined, kind === "candidatura" ? pessoas : undefined).catch(() => null);
+    const r = await requestLead(property.id, property.title, kind, note, kind === "candidatura" && inicioDesejado ? inicioDesejado : undefined, kind === "candidatura" ? motivoEstadia : undefined, kind === "candidatura" ? pessoas : undefined, kind === "candidatura" && selecao.saida ? selecao.saida : undefined).catch(() => null);
     setPending(null);
     if (r?.needsAuth) {
       // Sem sessão: leva ao login e volta para este anúncio depois de entrar (a visita volta com a janela aberta).
@@ -268,6 +271,7 @@ export function PropertyDetail({
   const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
   function abrirSolicitacao() {
     if (testeVisitante) return;
+    if (aguardandoPerfil) return;
     setLeadErro(null);
     // E53: o erro de data é ao vivo (resumo.erro); aqui só zera o da mensagem.
     setSolicitacaoErro(null);
@@ -408,7 +412,7 @@ export function PropertyDetail({
         size="lg"
         className="hidden w-full lg:inline-flex"
         onClick={abrirSolicitacao}
-        disabled={pending !== null || testeVisitante}
+        disabled={pending !== null || testeVisitante || aguardandoPerfil}
         data-testid="cartao-solicitar"
       >
         {!testeVisitante && <FileSignature className="h-4 w-4" />}
@@ -707,7 +711,7 @@ export function PropertyDetail({
     // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
     // (computador) traz o valor e o "Solicitar".
     <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 lg:pb-8" data-testid="imovel-largura-total">
-      {modoTeste && (
+      {modoTeste && !aguardandoPerfil && (
         <p
           role="note"
           data-testid="faixa-anuncio-teste"
@@ -728,6 +732,7 @@ export function PropertyDetail({
         barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
+        aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
         onAgendarVisita={() => (semLogin ? irParaLogin("visita") : setSinalVisita((n) => n + 1))}
       />

@@ -1,5 +1,6 @@
 "use client";
 
+import { prazoInicial } from "@/lib/inicio-estadia";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { mensalDoFechamento, parcelaDoMes, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
@@ -106,7 +107,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente">("none");
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
-  const [prazoMeses, setPrazoMeses] = useState(ACORDO ? ACORDO.meses : DEFAULT_MESES);
+  // E202 (candidatura): sem proposta, abre com os meses do período da candidatura aceita (dentro de 1..6); sem período, 4.
+  const [prazoMeses, setPrazoMeses] = useState(ACORDO ? ACORDO.meses : prazoInicial(ctx.mesesSugerido, { padrao: DEFAULT_MESES, min: MESES_MIN, max: MESES_MAX }));
   // F37: data de início da estadia (obrigatória, hoje ou futura); os blocos partem dela.
   const hoje = hojeBR();
   const [inicioISO, setInicioISO] = useState(ctx.inicioSugerido ?? hoje);
