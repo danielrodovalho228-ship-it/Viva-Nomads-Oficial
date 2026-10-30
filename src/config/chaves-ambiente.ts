@@ -29,6 +29,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "REDES_USUARIO_ATIVO", rotulo: "Redes sociais da própria pessoa", variavel: "NEXT_PUBLIC_REDES_USUARIO_ATIVO" },
   { nome: "TRIAGEM_VINCULO_ATIVA", rotulo: "Triagem do morador (comprovante de vínculo)", variavel: "NEXT_PUBLIC_TRIAGEM_VINCULO_ATIVA" },
   { nome: "DETECCAO_FOTOS_ATIVO", rotulo: "Sugestões a partir das fotos do anúncio", variavel: "DETECCAO_FOTOS_ATIVO" },
+  { nome: "ENQUADRAMENTO_REFORMA", rotulo: "Reforma tributária: \"Você entra na regra nova?\" (Ganhos do dono)", variavel: "NEXT_PUBLIC_ENQUADRAMENTO_REFORMA" },
 ];
 
 export const ONDE_MUDA_AMBIENTE = "Muda na Vercel (Daniel)";
