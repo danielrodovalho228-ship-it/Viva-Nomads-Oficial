@@ -910,6 +910,8 @@ export default function NewPropertyPage() {
   }
 
   const draftIdRef = useRef<string | null>(null);
+  // P0 (30/10): depois do "Começar outro", a 1ª gravação cria um rascunho NOVO (o servidor não reaproveita o inacabado).
+  const comecouOutroRef = useRef(false);
   useEffect(() => {
     if (!draftParam || draftParam === draftIdRef.current) return;
     let alive = true;
@@ -1119,6 +1121,7 @@ export default function NewPropertyPage() {
       try {
         res = await saveDraftData({
           id: draftIdRef.current,
+          novo: !draftIdRef.current && comecouOutroRef.current,
           title,
           city,
           monthlyPrice: Number(monthlyPrice) || 0,
@@ -1140,6 +1143,7 @@ export default function NewPropertyPage() {
         if (res.id) {
           const novo = draftIdRef.current !== res.id;
           draftIdRef.current = res.id;
+          comecouOutroRef.current = false;
           setDraftServerId(res.id);
           if (novo && !editId) window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
         }
@@ -1371,6 +1375,7 @@ export default function NewPropertyPage() {
       if (userId) localStorage.removeItem(draftKey(userId));
     } catch {}
     draftIdRef.current = null;
+    comecouOutroRef.current = true;
     setDraftServerId(null);
     setSaveStatus("idle");
     setStep(ORDEM_ETAPAS[0]);
@@ -1570,9 +1575,10 @@ export default function NewPropertyPage() {
     }
     const dados = { ...JSON.parse(draftJson), qualificacaoConforto: estado };
     try {
-      const res = await saveDraftData({ id: null, title, city, monthlyPrice: 0, neighborhood, bathrooms: 0, areaM2: 0, description, data: dados });
+      const res = await saveDraftData({ id: null, novo: comecouOutroRef.current, title, city, monthlyPrice: 0, neighborhood, bathrooms: 0, areaM2: 0, description, data: dados });
       if (!res.ok || !res.id) return null;
       draftIdRef.current = res.id;
+      comecouOutroRef.current = false;
       // As confirmações gravam ANTES de a tela sair da Qualificação: quem abre o Passo 5 em seguida já as encontra.
       if (conforto.length) await confirmarConforto(res.id, conforto).catch(() => {});
       setDraftServerId(res.id);

@@ -16,7 +16,7 @@ export function VideoInstitucional({ titulo = "A Viva em 30 segundos", id = "vid
   const tituloId = `${id}-titulo`;
   return (
     <section aria-labelledby={tituloId} data-testid="secao-video-institucional" className="container-page section-y">
-      <h2 id={tituloId} className="font-title text-2xl font-semibold text-ink">
+      <h2 id={tituloId} className="font-title font-semibold text-ink display-lg">
         {titulo}
       </h2>
       <div className="mt-4 overflow-hidden rounded-xl bg-night ">

@@ -109,7 +109,8 @@ test.describe("T233 — e-mails profissionais", () => {
     expect(corpoA).toContain("Comprovante de propriedade do imóvel · Precisa de ajuste");
     expect(corpoA).toContain("Comprovante de propriedade do imóvel · Aprovado");
     expect(corpoA).toContain("Motivo: Documento ilegível ou incompleto");
-    expect(corpoA).toMatch(new RegExp(`Reenviar documento \\(https?://[^)]+/dashboard/imoveis/${ids.a}/editar\\)`));
+    // P0 (30/10): o imóvel A é rascunho — o botão abre o assistente, não o editor por seções.
+    expect(corpoA).toMatch(new RegExp(`Reenviar documento \\(https?://[^)]+/dashboard/imoveis/novo\\?draft=${ids.a}\\)`));
     expect(a.imagem).toBe("transacional.jpg");
     expect(problemasDoAssunto(String(a.assunto))).toEqual([]);
     await page.screenshot({ path: `${SAIDA}/t233-admin-decisoes-1280.png`, fullPage: true });

@@ -28,6 +28,7 @@ export default function FaleComAVivaPage() {
         titulo="Fale com a Viva"
         subtitulo={<p data-testid="fale-promessa">{PROMESSA_ATENDIMENTO}.</p>}
         posicaoFoto="50% 45%"
+        coluna="max-w-6xl"
       />
 
       <div className="container-page relative z-10 -mt-12 pb-16">

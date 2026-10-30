@@ -49,6 +49,7 @@ const COMODIDADES: [string, RegExp][] = [
   ["coworking", /coworking/i],
   ["cabine_chamadas", /cabine/i],
   ["ar_condicionado", /ar[- ]?condicionado/i],
+  ["ventilador_teto", /ventilador de teto/i],
   ["maquina_lavar", /m[aá]quina de lavar|lava e seca/i],
   ["lava_loucas", /lava[- ]lou[cç]as/i],
   ["enxoval", /roupa de cama|enxoval/i],
