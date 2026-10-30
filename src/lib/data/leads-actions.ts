@@ -4,6 +4,8 @@ import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrat
 import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
+import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
 import { notify } from "@/lib/notifications";
 import { COMISSAO_POR_PLANO, plano as planoPorId, type PlanoId } from "@/config/planos";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
@@ -112,6 +114,8 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
         .eq("id", lead.tenant_id)
         .maybeSingle();
       if (t?.email) {
+        // E202 (candidatura): imóvel, período e valores no corpo (antes: só o desfecho).
+        const corpo = await corpoDoEmailDaCandidatura(admin, leadId, "aceita").catch(() => null);
         await notify({
           event: "candidatura_aceita",
           email: t.email,
@@ -119,6 +123,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
           userId: lead.tenant_id,
           // E228: "Abrir a conversa" abre a conversa desta candidatura em Mensagens (o mesmo id que o pedido gravou).
           pushUrl: `/dashboard/mensagens?conversa=${conversationId(lead.tenant_id, user.id, lead.property_id)}`,
+          ...(corpo ? { body: corpo.body, detailsHtml: corpo.detailsHtml, detailsText: corpo.detailsText } : {}),
         });
       }
     }
@@ -270,6 +275,8 @@ export interface FechamentoContexto {
   proposta?: { id: string; numero: string; valorMensal: number; meses: number; dataEntrada: string; termos?: TermosDoAcordo | null } | null;
   /** Prompt 8: quantas pessoas vão morar, da candidatura (o Fechamento abre com o número). */
   ocupantesSugerido?: number | null;
+  /** E202 (candidatura): meses do período escolhido na candidatura (entrada → saída); o Fechamento abre com ele. */
+  mesesSugerido?: number | null;
   /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
   identidadeInquilino?: EstadoIdentidade | null;
 }
@@ -307,6 +314,7 @@ export async function getFechamentoContext(
   let inicioDesejado: string | null = null;
   let proposta: FechamentoContexto["proposta"] = null;
   let ocupantesSugerido: number | null = null;
+  let mesesSugerido: number | null = null;
   let identidadeInquilino: EstadoIdentidade | null = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
@@ -315,8 +323,10 @@ export async function getFechamentoContext(
     if (admin) {
       taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
       // O SELECT de leads é por coluna para o usuário; a data desejada vem pelo servidor.
-      const { data: d } = await admin.from("leads").select("inicio_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
+      const { data: d } = await admin.from("leads").select("inicio_desejado, fim_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
+      // E202 (candidatura): o período escolhido vira o prazo do Fechamento (antes abria sempre em 4 meses).
+      mesesSugerido = periodoDaCandidatura(inicioDesejado, (d?.fim_desejado as string | null) ?? null)?.meses ?? null;
       const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
       if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
@@ -356,6 +366,7 @@ export async function getFechamentoContext(
     inicioSugerido: inicioSugerido(proposta?.dataEntrada ?? inicioDesejado, hojeBR()),
     proposta,
     ocupantesSugerido,
+    mesesSugerido,
     identidadeInquilino,
   };
 }

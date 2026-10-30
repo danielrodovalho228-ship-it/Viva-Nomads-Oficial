@@ -117,7 +117,8 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
             const st = status[l.id] ?? uiInicial(l.status);
             const open = st === "approved";
             return (
-              <Panel key={l.id}>
+              // E202 (candidatura): o e-mail ao dono aponta para este cartão (#candidato-<id>).
+              <Panel key={l.id} id={`candidato-${l.id}`} className="scroll-mt-24">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex min-w-0 items-start gap-3" data-testid="cartao-candidato">
                     {/* Foto só depois do aceite; antes, um avatar neutro (sem inicial nem nome). */}

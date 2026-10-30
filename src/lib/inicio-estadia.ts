@@ -31,3 +31,12 @@ export function validarInicioEstadia(inicioISO: unknown, hoje: string): InicioVa
 export function inicioSugerido(desejada: unknown, hoje: string): string {
   return validarInicioEstadia(desejada, hoje).ok ? (desejada as string).trim() : hoje;
 }
+
+/**
+ * E202 (candidatura): prazo que o Fechamento abre — os meses do período da candidatura aceita (entrada → saída), dentro
+ * dos limites do seletor; sem período, o padrão. (Antes abria sempre no padrão: 4 meses para uma candidatura de 1.)
+ */
+export function prazoInicial(mesesDaCandidatura: number | null | undefined, lim: { padrao: number; min: number; max: number }): number {
+  const n = Math.round(Number(mesesDaCandidatura));
+  return mesesDaCandidatura != null && Number.isFinite(n) && n >= 1 ? Math.min(lim.max, Math.max(lim.min, n)) : lim.padrao;
+}
