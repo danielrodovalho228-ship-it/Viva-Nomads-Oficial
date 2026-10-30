@@ -130,3 +130,10 @@ export const TRIAGEM_VINCULO_ATIVA = process.env.NEXT_PUBLIC_TRIAGEM_VINCULO_ATI
  * próprio navegador (cookie, ver src/lib/fotos/deteccao-chave.ts).
  */
 export const DETECCAO_FOTOS_ATIVO = process.env.DETECCAO_FOTOS_ATIVO === "on";
+
+/**
+ * E255 — "Você entra na regra nova?" (reforma tributária, enquadramento da pessoa física que tem imóveis alugados) no
+ * painel do dono. DESLIGADA até o parecer jurídico (item 22). Só "on" liga; desligada, nada aparece (nem o aviso, nem
+ * a ferramenta em Ganhos).
+ */
+export const ENQUADRAMENTO_REFORMA = process.env.NEXT_PUBLIC_ENQUADRAMENTO_REFORMA === "on";
