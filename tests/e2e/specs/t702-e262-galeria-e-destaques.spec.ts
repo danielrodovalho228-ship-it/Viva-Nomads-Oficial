@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
   T702 — E262 (reprova do E259 no QA, 30/10), nas duas larguras (1280 e 390):
@@ -41,7 +42,12 @@ test.describe("T702 — E262: galeria na abertura fria e destaques da prévia ×
     ids.galeria = await criarImovelPronto(ids.dono, `Studio galeria ${sufixo}`, { ativo: true });
     await fotosReais(ids.galeria, ids.dono);
     for (const l of LARGURAS) {
-      ids.destaques[l] = await criarImovelPronto(ids.dono, `Studio destaques ${l} ${sufixo}`);
+      // O mesmo anúncio dos dois lados: no assistente (draft_data, o que a prévia lê) e no banco (o que a página lê).
+      ids.destaques[l] = await prepararRascunho(ids.dono, `Studio destaques ${l} ${sufixo}`, {
+        amenityKeys: { home_office: true, internet_fibra: true, ar_condicionado: true },
+        parkingSpots: "1",
+        internetMbps: "300",
+      });
       await marcarPrincipais(ids.destaques[l]);
     }
   });
