@@ -1,5 +1,6 @@
 "use client";
 
+import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { ROTULO_FALTA_CHACARA, linhasChacaraRevisao, type DadosChacara } from "@/lib/anuncio/chacara";
 import { useState, type ReactNode } from "react";
@@ -160,6 +161,18 @@ export function EtapaRevisar(p: {
                   data-testid={`conferencia-resolver-${i.id}`}
                 >
                   {pendente.key === "qualificacao" ? "Responder aqui" : "Resolver"}
+                </button>
+              )}
+              {/* E251 (b): o resumo agrupado — cada grupo já feito ganha "Editar", que volta ao passo dele. */}
+              {i.ok && (
+                <button
+                  type="button"
+                  onClick={() => p.irPara(ETAPA[i.id])}
+                  className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-forest underline underline-offset-2"
+                  aria-label={`Editar ${i.rotulo}`}
+                  data-testid={`conferencia-editar-${i.id}`}
+                >
+                  Editar
                 </button>
               )}
             </li>

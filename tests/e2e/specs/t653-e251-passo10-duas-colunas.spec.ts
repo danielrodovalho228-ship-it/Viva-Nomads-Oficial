@@ -11,6 +11,7 @@ import { abrirSecoesPasso10 } from "../fixtures/cadastro";
       rodapé fixo, com o motivo em uma linha logo acima.
    3. As regras não mudam: sem os 12 itens do essencial o Publicar trava ("padrão mínimo de conforto"); convenção "Não"
       trava ("declarações do imóvel"); "Não sei" publica com pendência (libera com o aceite).
+   5. E251 (b): o resumo agrupado — cada grupo feito da lista de conferência tem "Editar", que leva ao passo dele.
    4. Parecer do coordenador: (b) a identidade "a confirmar" tem tom neutro (nunca a cor de "falta"); (d) o anúncio não
       tem contrato — na prévia e no cartão de Meus anúncios o total do período é "Estadia mínima (N meses): R$ X".
 */
@@ -139,6 +140,17 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     await aceitarTermoIaSePreciso(p);
     await expect(previa.getByTestId("publicar-anuncio")).toBeEnabled({ timeout: 10_000 });
     await expect(p.getByTestId("publicar-motivo")).toHaveCount(0);
+    // E251 (b): resumo agrupado — cada grupo feito ganha "Editar", que leva ao passo dele; o que falta segue com "Resolver".
+    const listaConf = p.getByTestId("lista-conferencia");
+    for (const id of ["fotos", "endereco", "detalhes", "comodidades", "regras", "preco", "disponibilidade"]) {
+      const linha = listaConf.getByTestId(`conferencia-${id}`);
+      if ((await linha.getAttribute("data-ok")) === "1") await expect(linha.getByTestId(`conferencia-editar-${id}`)).toHaveText("Editar");
+      else await expect(linha.getByTestId(`conferencia-editar-${id}`)).toHaveCount(0);
+    }
+    await listaConf.scrollIntoViewIfNeeded();
+    await p.screenshot({ path: `${SAIDA}/t653-editar-grupos-1280.png` });
+    await listaConf.getByTestId("conferencia-editar-preco").click();
+    await expect(p.getByText("Passo 8 de 10")).toBeVisible({ timeout: 15_000 });
     await p.context().close();
   });
 
@@ -166,6 +178,11 @@ test.describe("T653 — E251: Passo 10 em duas colunas", () => {
     await expect(p.getByTestId("previa-preco-estadia-minima")).toContainText(/Estadia mínima \(\d+ m(ês|eses)\)/);
     await p.getByTestId("revisao-cartao").screenshot({ path: `${SAIDA}/t653-previa-aberta-390.png` });
     expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    // E251 (b): no celular, o mesmo "Editar" por grupo.
+    const lista390 = p.getByTestId("lista-conferencia");
+    await expect(lista390.getByTestId("conferencia-editar-fotos")).toBeVisible();
+    await lista390.scrollIntoViewIfNeeded();
+    await p.screenshot({ path: `${SAIDA}/t653-editar-grupos-390.png` });
     await p.context().close();
   });
 
