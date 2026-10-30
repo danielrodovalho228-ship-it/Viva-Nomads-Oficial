@@ -1062,7 +1062,8 @@
         "t551-varredura-bloco40",
         "t623-varredura-bloco57",
         "t663-varredura-bloco64",
-        "t668-e225-estrutura-acessibilidade"
+        "t668-e225-estrutura-acessibilidade",
+        "t701-e261-avisos-editor"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1186,6 +1187,7 @@
         "t694-varredura-bloco73",
         "t691-e259-polimento-assistente",
         "t693-prova-de-publicacao",
+        "t700-e260-avisos-unicos",
         "t704-e265-tipos-sem-selo"
       ]
     },
@@ -1676,7 +1678,8 @@
         "t588-varredura-bloco46",
         "t668-e225-estrutura-acessibilidade",
         "t671-varredura-bloco66",
-        "t693-prova-de-publicacao"
+        "t693-prova-de-publicacao",
+        "t705-e263-pets-condicoes"
       ]
     },
     "/modelodenegocio": {
@@ -2548,6 +2551,14 @@
       "specs": [
         "t596-qa-login-direto"
       ]
+    },
+    "/avisos/desligar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t695-e264b-proativos"
+      ]
     }
   },
   "rotas": {
@@ -3253,6 +3264,14 @@
       ],
       "specs": [
         "t596-qa-login-direto"
+      ]
+    },
+    "/api/avisos/desligar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t695-e264b-proativos"
       ]
     }
   },
@@ -6915,6 +6934,12 @@
       "specs": [
         "t590-espaco-trabalho-interesse"
       ]
+    },
+    "src/app/(public)/avisos/desligar/acao.ts#desligarSugestoes": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
     }
   }
 }
