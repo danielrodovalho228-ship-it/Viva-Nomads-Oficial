@@ -254,7 +254,8 @@ export function ProntoParaTrabalhar({
             {sugeridas.includes(it.chave) && on && <span className="sr-only"> ({MARCA_SUGERIDO})</span>}
           </>
         }
-        dica={essencial ? "Essencial" : undefined}
+        // E257: o grupo é só título por desenho — "Essenciais" e "Opcionais" já dizem o que conta para a etiqueta.
+        data-essencial={essencial ? "sim" : undefined}
       />
     );
   };

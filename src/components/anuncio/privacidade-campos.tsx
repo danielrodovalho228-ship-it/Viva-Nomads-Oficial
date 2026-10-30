@@ -40,6 +40,7 @@ export function PrivacidadeCampos({ valor, onChange }: { valor: Privacidade; onC
           }}
           testid="cameras-externas"
           rotulo="Há câmeras externas ou em áreas comuns"
+          dica="Diga onde ficam; o morador vê antes de pedir."
         />
         {temExternas && (
           <input
