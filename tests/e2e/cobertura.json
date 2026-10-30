@@ -1064,7 +1064,8 @@
         "t623-varredura-bloco57",
         "t663-varredura-bloco64",
         "t668-e225-estrutura-acessibilidade",
-        "t701-e261-avisos-editor"
+        "t701-e261-avisos-editor",
+        "t696-varredura-bloco74"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1189,7 +1190,8 @@
         "t691-e259-polimento-assistente",
         "t693-prova-de-publicacao",
         "t700-e260-avisos-unicos",
-        "t704-e265-tipos-sem-selo"
+        "t704-e265-tipos-sem-selo",
+        "t696-varredura-bloco74"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1681,7 +1683,8 @@
         "t671-varredura-bloco66",
         "t693-prova-de-publicacao",
         "t705-e263-pets-condicoes",
-        "t702-e262-galeria-e-destaques"
+        "t702-e262-galeria-e-destaques",
+        "t696-varredura-bloco74"
       ]
     },
     "/modelodenegocio": {
