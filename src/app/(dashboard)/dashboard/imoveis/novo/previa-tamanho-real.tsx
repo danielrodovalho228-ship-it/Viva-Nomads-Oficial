@@ -6,6 +6,7 @@ import { Maximize2, MapPin, X } from "lucide-react";
 import { PropertyGallery } from "@/components/property-gallery";
 import { PriceCard } from "@/components/property/price-card";
 import { DestaquesImovel } from "@/components/property/destaques-imovel";
+import { mesesDoCartao } from "@/lib/cartao-preco";
 import { linhaLocalizacao } from "@/lib/localizacao";
 import type { Property } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,7 @@ export function BotaoTamanhoReal({ imovel, className }: { imovel: Property; clas
               <aside data-testid="previa-real-cartao">
                 <PriceCard
                   property={imovel}
+                  meses={mesesDoCartao(undefined, imovel.minPeriodDays)}
                   actions={<p className="text-xs text-muted">Aqui o morador vê o botão “Solicitar”.</p>}
                 />
               </aside>
