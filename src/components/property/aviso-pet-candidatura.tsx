@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PawPrint, TriangleAlert } from "lucide-react";
+import { PawPrint } from "lucide-react";
 import { meusPets, type PetSalvo } from "@/lib/data/pets-ficha-actions";
-import { compatibilidadePets, linhaValorPetCandidatura, ROTULO_ESPECIE, type RegrasPets } from "@/lib/anuncio/pets-regras";
+import { linhaCompatibilidadePets, linhaValorPetCandidatura, ROTULO_ESPECIE, type RegrasPets } from "@/lib/anuncio/pets-regras";
 
 /**
- * Antes de enviar a candidatura (ordem 022afabb, itens 1 e 4): mostra os pets da ficha
- * que irão junto e avisa, em linguagem clara, quando algum não cabe nas regras do imóvel.
- * É só aviso: a pessoa decide se envia. Sem sessão ou sem pets cadastrados, não mostra nada.
+ * Antes de enviar a candidatura (ordem 022afabb, itens 1 e 4): mostra os pets da ficha que irão junto. E263-A: a
+ * compatibilidade vira UMA linha neutra ("dentro das condições do dono" ou "confira com o dono: …"), só quando o dono
+ * informou porte e quantidade; nunca bloqueia a candidatura. Sem sessão ou sem pets cadastrados, não mostra nada.
  */
 export function AvisoPetCandidatura({
   petsAllowed,
@@ -35,16 +35,13 @@ export function AvisoPetCandidatura({
   }, [exemplo]);
 
   if (pets.length === 0) return null;
-  const { ok, motivos } = compatibilidadePets(petsAllowed, regras ?? null, pets);
+  const compat = linhaCompatibilidadePets(petsAllowed, regras, pets);
   const valorPet = linhaValorPetCandidatura(petsAllowed, regras, pets.length);
   return (
-    <div
-      data-testid={ok ? "pet-candidatura-ok" : "pet-candidatura-aviso"}
-      className={`rounded-xl border px-3 py-3 text-xs ${ok ? "border-sage-200 bg-sage-100 text-ink" : "border-amber-300 bg-amber-50 text-amber-900"}`}
-    >
+    <div data-testid="pet-candidatura" className="rounded-xl border border-sage-200 bg-sage-100 px-3 py-3 text-xs text-ink">
       <p className="flex items-center gap-2 font-semibold">
-        {ok ? <PawPrint className="h-4 w-4 shrink-0" /> : <TriangleAlert className="h-4 w-4 shrink-0" />}
-        {ok ? "Seus pets vão na candidatura" : "Atenção: seu pet pode não caber nas regras deste imóvel"}
+        <PawPrint className="h-4 w-4 shrink-0" aria-hidden />
+        Seus pets vão na candidatura
       </p>
       <p className="mt-1">{pets.map((p) => `${p.nome} (${ROTULO_ESPECIE[p.especie]}, porte ${p.porte})`).join(", ")}</p>
       {valorPet && (
@@ -52,12 +49,10 @@ export function AvisoPetCandidatura({
           {valorPet}
         </p>
       )}
-      {!ok && (
-        <ul className="mt-1 list-disc pl-4">
-          {motivos.map((m) => (
-            <li key={m}>{m}</li>
-          ))}
-        </ul>
+      {compat && (
+        <p data-testid="pet-compatibilidade" data-dentro={compat.dentro ? "1" : "0"} className="mt-1">
+          {compat.texto}
+        </p>
       )}
       <Link href="/dashboard/conta/perfil" className="mt-1 inline-block font-semibold underline">
         Ver minha ficha de pets

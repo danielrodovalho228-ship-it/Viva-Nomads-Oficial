@@ -1,5 +1,6 @@
 "use client";
 
+import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -242,6 +243,8 @@ export default function NewPropertyPage() {
   const [availableUntil, setAvailableUntil] = useState("");
   const [furnished, setFurnished] = useState(true);
   const [petsOk, setPetsOk] = useState(false);
+  // E263-A: "Aceita pets" ligado abre as condições do dono (as mesmas do editor), todas opcionais.
+  const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(() => formDeRegras());
   const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
@@ -744,6 +747,7 @@ export default function NewPropertyPage() {
       maxPeriodDays: Number(maxPeriod) || undefined,
       furnished,
       petsAllowed: petsOk,
+      petsRegras: petsOk ? petsRegras : undefined,
       semCamerasInterior: privacidade.semCamerasInterior,
       camerasExternas: privacidade.camerasExternas,
       // E259 (2): a coluna antiga sai da resposta do Passo 6 (sem ela, fica a que já estava gravada).
@@ -833,6 +837,7 @@ export default function NewPropertyPage() {
     if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
+    if (d.petsRegras && typeof d.petsRegras === "object") setPetsRegras({ ...formDeRegras(), ...(d.petsRegras as Partial<RegrasPetsForm>) });
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
@@ -992,6 +997,7 @@ export default function NewPropertyPage() {
       setCity(p.city || "Uberlândia");
       setFurnished(p.furnished ?? true);
       setPetsOk(p.petsAllowed ?? false);
+      setPetsRegras(formDeRegras(p.petsRegras));
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
       setChegada(formDeChegada(p.chegadaEPedido));
@@ -1049,7 +1055,7 @@ export default function NewPropertyPage() {
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
-    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
+    privacidade, furnished, petsOk, petsRegras, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
@@ -1717,6 +1723,8 @@ export default function NewPropertyPage() {
     setFurnished,
     petsOk,
     setPetsOk,
+    petsRegras,
+    setPetsRegras,
     childrenAllowed,
     setChildrenAllowed,
     smokingAllowed,

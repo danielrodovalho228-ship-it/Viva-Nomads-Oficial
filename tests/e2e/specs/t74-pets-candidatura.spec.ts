@@ -3,7 +3,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /**
  * T74 — Pets na candidatura (ordem 022afabb, itens 1 e 4): o inquilino com pet cadastrado vê, antes de enviar,
- * os pets que vão junto e um aviso claro quando o porte/espécie não cabe nas regras do imóvel.
+ * os pets que vão junto e um aviso claro quando o porte/espécie não cabe nas regras do imóvel. E263-A: o aviso é UMA linha
+ * neutra ("Confira com o dono: …" / "dentro das condições do dono"), sem bloquear a candidatura.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -39,10 +40,13 @@ test.describe("T74 — Aviso de pet na candidatura", () => {
       .eq("id", ids.imovel!);
     const page = await entrar(browser, inquilino.email, senha);
     await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
-    const aviso = page.getByTestId("pet-candidatura-aviso").first();
-    await expect(aviso).toBeVisible({ timeout: 20_000 });
-    await expect(aviso).toContainText("Rex");
-    await expect(aviso).toContainText("porte máximo");
+    const bloco = page.getByTestId("pet-candidatura").first();
+    await expect(bloco).toBeVisible({ timeout: 20_000 });
+    await expect(bloco).toContainText("Rex");
+    const linha = bloco.getByTestId("pet-compatibilidade");
+    await expect(linha).toHaveAttribute("data-dentro", "0");
+    await expect(linha).toContainText("Confira com o dono:");
+    await expect(linha).toContainText("porte máximo");
     await page.context().close();
   });
 
@@ -54,8 +58,9 @@ test.describe("T74 — Aviso de pet na candidatura", () => {
       .eq("id", ids.imovelG!);
     const page = await entrar(browser, inquilino.email, senha);
     await page.goto(`/imoveis/${ids.imovelG}`, { waitUntil: "networkidle" });
-    await expect(page.getByTestId("pet-candidatura-ok").first()).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByTestId("pet-candidatura-aviso")).toHaveCount(0);
+    const linha = page.getByTestId("pet-candidatura").first().getByTestId("pet-compatibilidade");
+    await expect(linha).toHaveAttribute("data-dentro", "1", { timeout: 20_000 });
+    await expect(linha).toHaveText("Seus pets estão dentro das condições do dono.");
     await page.context().close();
   });
 });
