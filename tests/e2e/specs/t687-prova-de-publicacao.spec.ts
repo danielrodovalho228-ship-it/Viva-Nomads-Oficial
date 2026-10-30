@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
 import { abrirSecoesPasso10, continuarAte, noPasso } from "../fixtures/cadastro";
@@ -8,7 +9,8 @@ import { emDiasBR, isoParaBR, reais } from "../fixtures/rascunho-cadastro";
   pública com os MESMOS números da prévia do Passo 10.
   Massa no padrão da 0259 (supabase/migrations/0259_qa_rascunho_prova_publicacao.sql), descartável e só no laboratório:
   uma conta de teste, um rascunho NOVO e vazio "[TESTE QA] Prova de publicação …" (preço 0, sem endereço, só o título
-  no draft_data) e a qualificação DESTE rascunho com o documento já aprovado — a aprovação real é ação de admin. Todo o
+  no draft_data) e a qualificação DESTE rascunho com o documento já aprovado E com o arquivo no bucket (sem o arquivo, a
+  qualificação nova que a tela grava ao publicar não herda a aprovação) — a aprovação real é ação de admin. Todo o
   resto (tipo, fotos, endereço, detalhes, comodidades, regras, descrição, preço, disponibilidade, identidade, publicar)
   é feito na tela, como a t186. Nada de migração: tudo criado aqui e apagado no fim.
    1. Os 10 passos, a 1280 px, até "Publicar anúncio" → o anúncio fica "active".
@@ -50,13 +52,21 @@ test.describe("T687 — prova de publicação: os 10 passos, publicar e a págin
       .single();
     if (error) throw error;
     ids.imovel = data!.id as string;
-    // …e a qualificação dele com o documento aprovado (o portão do Publicar lê a última do imóvel). O "Antes de anunciar"
-    // já respondido, como a /qualificar deixaria (a t186 grava o mesmo depois do envio do documento).
+    // …e a qualificação dele com o documento aprovado (o portão do Publicar lê a última do imóvel). Como na 0259, a linha
+    // precisa do ARQUIVO (document_path): antes de publicar a tela grava uma qualificação nova, e o gatilho da 0072 só
+    // herda a aprovação de uma linha com arquivo — sem ele o servidor recusa ("Documentação do imóvel ainda não aprovada").
+    // O "Antes de anunciar" já respondido, como a /qualificar deixaria (a t186 grava o mesmo depois do envio do documento).
+    const caminhoDoc = `${ids.dono}/${randomBytes(6).toString("hex")}.png`;
+    const { error: eUp } = await adm().storage.from("property-docs").upload(caminhoDoc, pngDeTeste(7), { contentType: "image/png" });
+    if (eUp) throw eUp;
     const { error: eQ } = await adm()
       .from("qualification_checklists")
       .insert({
         owner_id: ids.dono,
         property_id: ids.imovel,
+        document_path: caminhoDoc,
+        document_hash_sha256: randomBytes(32).toString("hex"),
+        document_uploaded_at: new Date().toISOString(),
         document_status: "approved",
         document_reviewed_at: new Date().toISOString(),
         status: "pending",
