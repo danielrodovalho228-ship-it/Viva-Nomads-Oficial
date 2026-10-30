@@ -2,7 +2,7 @@ import "server-only";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { calcularTempos, provedorDisponivel } from "@/lib/integrations/rotas";
 import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
-import { OVERPASS_SERVIDORES, consultaOverpass, distanciaMetros, escolherProximidades, tentativasNominatim, type LugarProximo } from "@/lib/proximidades/osm";
+import { OVERPASS_SERVIDORES, consultaOverpass, distanciaMetros, escolherProximidades, overpassFalhou, tentativasNominatim, type LugarProximo } from "@/lib/proximidades/osm";
 
 /*
   PERTO-B — o caminho do servidor até o OpenStreetMap, usado pela rota /api/proximidades (busca do cadastro e da
@@ -22,7 +22,8 @@ async function aguardarVez(): Promise<void> {
 }
 
 export type Ponto = { lat: number; lng: number };
-export type FonteProximidades = "osm" | "mapbox" | "sem_ponto" | "sem_lugares" | "limite" | "cache" | "lab";
+/** E259: "erro" = o Overpass não respondeu (os dois servidores); a tela diz "não respondeu", nunca "nada por perto". */
+export type FonteProximidades = "osm" | "mapbox" | "sem_ponto" | "sem_lugares" | "limite" | "cache" | "lab" | "erro";
 
 async function nominatim(params: URLSearchParams, etapas: string[]): Promise<Ponto | null> {
   await aguardarVez();
@@ -89,7 +90,13 @@ export async function buscarLugares(ponto: Ponto, etapas: string[] = []): Promis
         etapas.push(`${nome}:${res.status}`);
         continue;
       }
-      const itens = escolherProximidades(await res.json(), ponto);
+      const json = await res.json();
+      // E259: 200 com "remark" de erro e nada nos elementos é tempo estourado — tenta o espelho, como numa falha.
+      if (overpassFalhou(json)) {
+        etapas.push(`${nome}:200:remark`);
+        continue;
+      }
+      const itens = escolherProximidades(json, ponto);
       etapas.push(`${nome}:200:${itens.length}`);
       return itens;
     } catch (e) {
