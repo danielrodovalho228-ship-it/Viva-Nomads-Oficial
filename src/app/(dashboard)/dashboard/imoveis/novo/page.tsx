@@ -1,5 +1,6 @@
 "use client";
 
+import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -51,7 +52,8 @@ import { type PhotoItem } from "@/components/photo-uploader";
 import { PRIVACIDADE_VAZIA, tipoAcessoDaEntrada, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
-import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
+import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
+import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
@@ -112,7 +114,7 @@ import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { useTelaLarga } from "@/components/ui/use-tela-larga";
-import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, oQueFaltaParaPublicar, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
+import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
 import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
@@ -176,6 +178,12 @@ export default function NewPropertyPage() {
   function irPara(i: number) {
     setEtapaMax((m) => etapaMaisAvancada(m, step, i));
     setStep(i);
+    // E259 (6): "Pessoas" vazio mostrava o "2" cinza do contador e a dica do Continuar dizia que faltava. Ao chegar no
+    // Passo 4, o vazio vira a sugestão (2 por quarto, mínimo 2), marcada "sugerido" — o número na tela é o que vale.
+    if (i === ETAPA.detalhes && !maxGuests.trim()) {
+      setMaxGuests(String(capacidadeSugerida(Number(bedrooms) || 0)));
+      setSugeridos((s) => (s.includes("capacidade") ? s : [...s, "capacidade"]));
+    }
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
   // IA das fotos (prompt 10): roda sozinha ao terminar o envio; uma vez por rascunho.
@@ -236,6 +244,8 @@ export default function NewPropertyPage() {
   const [availableUntil, setAvailableUntil] = useState("");
   const [furnished, setFurnished] = useState(true);
   const [petsOk, setPetsOk] = useState(false);
+  // E263-A: "Aceita pets" ligado abre as condições do dono (as mesmas do editor), todas opcionais.
+  const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(() => formDeRegras());
   const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
@@ -408,10 +418,10 @@ export default function NewPropertyPage() {
       setTimeout(() => document.querySelector(`[data-testid="antes-secao-${secao}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }, 50);
   }
-  /** E251: o motivo do botão travado leva ao primeiro item que falta. */
+  /** E260 (b): o motivo do botão travado aponta para a lista de conferência — tocar desce até ela (o "Resolver" de cada
+   *  linha leva ao passo). Sem nada na lista, leva ao que falta fora dela: as declarações ou o aceite. */
   function irAoQueFalta() {
-    const item = prontidao.obrigatorios.find((i) => !i.ok);
-    if (item) return resolverItem(item);
+    if (faltamNaLista > 0) return document.querySelector('[data-testid="lista-conferencia"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (!qualificado) return abrirSecaoPasso10("declaracoes");
     if (!aceiteValido) document.querySelector('[data-testid="aceite-ia"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -433,7 +443,11 @@ export default function NewPropertyPage() {
   const completude = prontidao.obrigatorios;
   const podePublicar = prontidao.podePublicar && qualificado && aceiteValido;
   // E251: o motivo do "Publicar anúncio" travado, em uma linha (as mesmas regras de sempre: prontidão, isEligible, aceite).
-  const motivoTravado = podePublicar ? null : motivoPublicarTravado(oQueFaltaParaPublicar({ completude, declaracoesOk: qualificado, aceitouIa: aceiteValido }));
+  // E260 (b): sem repetir os itens — conta o que a lista de conferência mostra e só nomeia o que fica fora dela.
+  const faltamNaLista = faltamNaConferencia(conferenciaAssistente(prontidao));
+  const motivoTravado = podePublicar
+    ? null
+    : motivoPublicarTravado({ faltamNaLista, aceitouIa: aceiteValido, declaracoesForaDaLista: !qualificado && !completude.some((i) => i.key === "qualificacao") });
   const telaLarga = useTelaLarga();
 
   /** Campos obrigatórios da etapa atual (chave → mensagem). Só barra o AVANÇO; a Revisão é o portão final. */
@@ -485,8 +499,9 @@ export default function NewPropertyPage() {
       irPara(Math.min(ULTIMA_ETAPA, step + 1));
       return;
     }
-    // E135: recusado → leva o olho até a lista do que falta.
-    setTimeout(() => document.querySelector('[data-testid="passo-erros"]')?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
+    // E135: recusado → leva o olho até a lista do que falta. E260 (a): se só a janela curta segura, até o aviso dela.
+    const alvo = errosDoResumo(e).length > 0 ? "passo-erros" : "janela-curta";
+    setTimeout(() => document.querySelector(`[data-testid="${alvo}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" }), 0);
   }
 
   function voltarEtapa() {
@@ -744,6 +759,7 @@ export default function NewPropertyPage() {
       maxPeriodDays: Number(maxPeriod) || undefined,
       furnished,
       petsAllowed: petsOk,
+      petsRegras: petsOk ? petsRegras : undefined,
       semCamerasInterior: privacidade.semCamerasInterior,
       camerasExternas: privacidade.camerasExternas,
       // E259 (2): a coluna antiga sai da resposta do Passo 6 (sem ela, fica a que já estava gravada).
@@ -833,6 +849,7 @@ export default function NewPropertyPage() {
     if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
+    if (d.petsRegras && typeof d.petsRegras === "object") setPetsRegras({ ...formDeRegras(), ...(d.petsRegras as Partial<RegrasPetsForm>) });
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
@@ -992,6 +1009,7 @@ export default function NewPropertyPage() {
       setCity(p.city || "Uberlândia");
       setFurnished(p.furnished ?? true);
       setPetsOk(p.petsAllowed ?? false);
+      setPetsRegras(formDeRegras(p.petsRegras));
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
       setChegada(formDeChegada(p.chegadaEPedido));
@@ -1049,7 +1067,7 @@ export default function NewPropertyPage() {
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
-    privacidade, furnished, petsOk, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
+    privacidade, furnished, petsOk, petsRegras, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
@@ -1717,6 +1735,8 @@ export default function NewPropertyPage() {
     setFurnished,
     petsOk,
     setPetsOk,
+    petsRegras,
+    setPetsRegras,
     childrenAllowed,
     setChildrenAllowed,
     smokingAllowed,
@@ -1784,11 +1804,12 @@ export default function NewPropertyPage() {
             {meta.subtitle}
           </p>
           {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
-          {Object.keys(erros).length > 0 && (
+          {/* E260 (a): a janela curta não entra aqui — o aviso dela, junto das datas, já diz tudo (uma vez só). */}
+          {errosDoResumo(erros).length > 0 && (
             <div role="alert" className="mt-4 rounded-xl border border-red-300 bg-white p-3 text-sm text-red-700" data-testid="passo-erros">
               <p className="font-semibold">Para continuar, falta:</p>
               <ul className="mt-1 list-disc pl-4">
-                {Object.values(erros).map((m) => (
+                {errosDoResumo(erros).map((m) => (
                   <li key={m}>{m}</li>
                 ))}
               </ul>
@@ -2035,7 +2056,6 @@ export default function NewPropertyPage() {
                 setAceitouIa={marcarAceite}
                 avisoAceite={termoJaAceito ? null : textoMudouDepoisDoAceite ? AVISO_TEXTO_MUDOU : avisoAceite}
                 termoJaAceito={termoJaAceito}
-                conforto={conforto}
                 publishError={publishError}
                 podePublicar={podePublicar}
                 chacara={ehChacara(propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado } : null}

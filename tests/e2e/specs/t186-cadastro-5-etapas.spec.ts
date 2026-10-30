@@ -333,9 +333,9 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await page.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await noPasso(page, "revisao");
       await aceitarTermoIaSePreciso(page);
-      // Sem o padrão mínimo confirmado, a revisão diz "Falta confirmar" e leva às Comodidades (Prompt 59-A): se o
-      // rascunho reabrir sem ele, confirma por esse caminho e volta à revisão.
-      const resolver = page.getByTestId("publicar-falta-conforto-resolver");
+      // Sem o padrão mínimo confirmado, a linha de Comodidades da lista de conferência leva a ele (E260: a lista é a
+      // única fonte das pendências): se o rascunho reabrir sem ele, confirma por esse caminho e volta à revisão.
+      const resolver = page.getByTestId("conferencia-resolver-comodidades");
       const publicar = page.getByTestId("publicar-anuncio");
       await expect(publicar.and(page.locator(":enabled")).or(resolver)).toBeVisible({ timeout: 20_000 });
       if (await resolver.isVisible()) {

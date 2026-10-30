@@ -9,6 +9,7 @@ import { linhasRegrasCasa, type ChaveRegraCasa } from "./regras-casa.ts";
 import { linhasDetalhes } from "./detalhes-anuncio.ts";
 import { textoCompromissoManutencao } from "../conforto/exibicao.ts";
 import { amenityKeysFromLabels } from "../amenities.ts";
+import { linhaPetsPublica } from "./pets-regras.ts";
 
 export type ChaveDestaque = "saude" | "educacao" | "trabalho" | "internet" | "ar" | "pronto" | "vaga";
 export interface Destaque {
@@ -105,7 +106,8 @@ const maiuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 export function itensRegrasCasa(p: Property): ItemRegraCasa[] {
   const i: ItemRegraCasa[] = [];
   if (p.maxGuests != null) i.push({ chave: "pessoas", texto: maiuscula(pessoas(p.maxGuests)) });
-  if (p.petsAllowed !== undefined) i.push({ chave: "pets", texto: p.petsAllowed ? "Aceita pets" : "Sem pets" });
+  // E263-A: "Aceita pets" com as condições do dono, numa linha só.
+  if (p.petsAllowed !== undefined) i.push({ chave: "pets", texto: p.petsAllowed ? linhaPetsPublica(true, p.petsRegras) : "Sem pets" });
   // E259 (9): "Aceita crianças" do Passo 6 vira linha nas regras (antes não aparecia em lugar nenhum da página).
   if (p.childrenAllowed !== undefined) i.push({ chave: "criancas", texto: p.childrenAllowed ? "Aceita crianças" : "Sem crianças" });
   // CAMPOS-2: com a janela de entrada/saída ligada, ela substitui os horários antigos (uma linha só).

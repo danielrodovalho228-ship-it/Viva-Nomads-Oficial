@@ -10,7 +10,7 @@ import { CANAIS_AVISO, TIPOS_AVISO, canaisPadrao, categoriasDesligadasDe, normal
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
 test("os três tipos e os três canais na ordem do desenho", () => {
-  assert.deepEqual(TIPOS_AVISO.map((t) => t.titulo), ["Novas mensagens", "Lembretes da estadia", "Novidades e dicas da Viva"]);
+  assert.deepEqual(TIPOS_AVISO.map((t) => t.titulo), ["Novas mensagens", "Lembretes da estadia", "Novidades e dicas da Viva", "Sugestões e novidades"]);
   assert.deepEqual(CANAIS_AVISO.map((c) => c.titulo), ["E-mail", "Notificação no celular (push)", "WhatsApp"]);
 });
 
@@ -28,8 +28,9 @@ test("sem preferência salva = ligado; só false desliga", () => {
 });
 
 test("interruptor desligado vira categoria desligada", () => {
-  assert.deepEqual(categoriasDesligadasDe({ mensagens: true, lembretes: true, outros: true }), []);
-  assert.deepEqual(categoriasDesligadasDe({ mensagens: false, lembretes: true, outros: false }), ["mensagens", "outros"]);
+  assert.deepEqual(categoriasDesligadasDe({ mensagens: true, lembretes: true, outros: true, sugestoes: true }), []);
+  assert.deepEqual(categoriasDesligadasDe({ mensagens: false, lembretes: true, outros: false, sugestoes: true }), ["mensagens", "outros"]);
+  assert.deepEqual(categoriasDesligadasDe({ mensagens: true, lembretes: true, outros: true, sugestoes: false }), ["sugestoes"]);
 });
 
 test("a tela grava as duas preferências num só 'Salvar preferências' e não liga envio", () => {

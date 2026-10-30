@@ -97,6 +97,9 @@ export interface ItemConferencia {
   nota?: string;
 }
 
+/** E259 (8): o nome da linha da etapa 1 na Lista de conferência (o que ela confere é a Qualificação). */
+export const ROTULO_CONFERENCIA_DECLARACOES = "Declarações do imóvel";
+
 /** E258 (a): o CEP não segura a publicação (rua, bairro e cidade bastam), mas sem ele a busca do "por perto" não roda. */
 export const NOTA_ENDERECO_SEM_CEP = "Sem CEP: o “O que tem por perto” fica de fora do anúncio.";
 /** E258 (b): sem data de início, o anúncio mostra "Disponível agora" (o mesmo texto do cartão de preço). */
@@ -145,10 +148,17 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
     const estado = porEtapa.get(e.n);
     if (!estado && !SEMPRE.has(e.id)) continue;
     const ok = estado?.ok ?? true;
-    const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo: e.titulo, ok, faltam: estado?.faltam ?? [] };
+    // E259 (8): na etapa 1 o que a lista confere são as declarações do imóvel (IPTU, água, luz e gás) — o tipo nunca falta.
+    const rotulo = e.id === "tipo" ? ROTULO_CONFERENCIA_DECLARACOES : e.titulo;
+    const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo, ok, faltam: estado?.faltam ?? [] };
     if (ok && ctx && e.id === "endereco" && !ctx.cepOk) item.nota = NOTA_ENDERECO_SEM_CEP;
     if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_DISPONIVEL_AGORA;
     itens.push(item);
   }
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };
+}
+
+/** E260 (b): quantas pendências a lista de conferência mostra (as linhas por passo + as da própria Revisão). */
+export function faltamNaConferencia(c: { itens: ItemConferencia[]; pendentesNaRevisao: string[] }): number {
+  return c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length;
 }

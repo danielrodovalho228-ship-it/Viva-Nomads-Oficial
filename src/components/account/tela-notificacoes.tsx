@@ -14,7 +14,7 @@ type Tipos = Record<CategoriaComInterruptor, boolean>;
 
 /**
  * A6 — Conta › Notificações (mockup perfil-06): o cartão dos tipos de aviso (Novas mensagens, Lembretes da estadia,
- * Novidades e dicas) e o cartão "Canais" (E-mail, push, WhatsApp) com "Salvar preferências". Decisões e segurança
+ * Novidades e dicas, Sugestões e novidades) e o cartão "Canais" (E-mail, push, WhatsApp) com "Salvar preferências". Decisões e segurança
  * sempre chegam (sem interruptor). Gravar a preferência não liga envio: WhatsApp e push seguem atrás das chaves.
  */
 export function TelaNotificacoes() {
@@ -28,7 +28,7 @@ export function TelaNotificacoes() {
     let vivo = true;
     Promise.all([getCategoriasDesligadas().catch((): CategoriaComInterruptor[] => []), getCanais().catch(() => null), getAlertasEquipe().catch(() => null)]).then(([desl, c, eq]) => {
       if (!vivo) return;
-      setTipos({ mensagens: !desl.includes("mensagens"), lembretes: !desl.includes("lembretes"), outros: !desl.includes("outros") });
+      setTipos({ mensagens: !desl.includes("mensagens"), lembretes: !desl.includes("lembretes"), outros: !desl.includes("outros"), sugestoes: !desl.includes("sugestoes") });
       setCanaisUi(c ?? { email: true, push: true, whatsapp: true });
       setEquipe(eq);
     });
