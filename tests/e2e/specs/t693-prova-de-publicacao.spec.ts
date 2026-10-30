@@ -5,7 +5,7 @@ import { abrirSecoesPasso10, continuarAte, noPasso } from "../fixtures/cadastro"
 import { emDiasBR, isoParaBR, reais } from "../fixtures/rascunho-cadastro";
 
 /*
-  T690 — PROVA DE PUBLICAÇÃO (QA do Muse, 30/10): o assistente inteiro, do rascunho vazio ao anúncio no ar, e a página
+  T693 — PROVA DE PUBLICAÇÃO (QA do Muse, 30/10): o assistente inteiro, do rascunho vazio ao anúncio no ar, e a página
   pública com os MESMOS números da prévia do Passo 10.
   Massa no padrão da 0259 (supabase/migrations/0259_qa_rascunho_prova_publicacao.sql), descartável e só no laboratório:
   uma conta de teste, um rascunho NOVO e vazio "[TESTE QA] Prova de publicação …" (preço 0, sem endereço, só o título
@@ -27,7 +27,7 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const bairro = `Bairro Prova ${sufixo}`;
 const titulo = `[TESTE QA] Prova de publicação ${sufixo}`;
-const dono = { email: `dono.t690.${sufixo}@lab.vivanomads.test`, nome: "Paula Prova Sobrenome", role: "owner" as const };
+const dono = { email: `dono.t693.${sufixo}@lab.vivanomads.test`, nome: "Paula Prova Sobrenome", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 const previa: { mensal?: number; totalMes?: number } = {};
 
@@ -36,7 +36,7 @@ async function esperarSalvo(page: Page) {
   await expect(page.getByText("Salvando…")).toHaveCount(0, { timeout: 15_000 });
 }
 
-test.describe("T690 — prova de publicação: os 10 passos, publicar e a página pública igual à prévia", () => {
+test.describe("T693 — prova de publicação: os 10 passos, publicar e a página pública igual à prévia", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (integrações simuladas).");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(300_000);
@@ -159,7 +159,7 @@ test.describe("T690 — prova de publicação: os 10 passos, publicar e a págin
     previa.totalMes = reais((await page.getByTestId("previa-preco-total-mes").textContent()) ?? "");
     expect(previa.mensal, "Mensal na prévia").toBe(3200);
     expect(previa.totalMes, "Total por mês na prévia").toBeGreaterThan(3200);
-    await page.screenshot({ path: `${SAIDA}/t690-10-previa-1280.png`, fullPage: true });
+    await page.screenshot({ path: `${SAIDA}/t693-10-previa-1280.png`, fullPage: true });
     await esperarSalvo(page);
     await page.getByTestId("assistente-sair").click();
     await page.waitForURL(/\/dashboard\/imoveis\?saiu=assistente$/, { timeout: 30_000 });
@@ -222,7 +222,7 @@ test.describe("T690 — prova de publicação: os 10 passos, publicar e a págin
     await expect(fora).toContainText("Fora do total mensal");
     expect(reais((await fora.locator('li[data-taxa="preparacao"]').textContent()) ?? "")).toBe(450);
     await p.getByTestId("total-mensal").scrollIntoViewIfNeeded();
-    await p.screenshot({ path: `${SAIDA}/t690-publico-precos-1280.png`, fullPage: false });
+    await p.screenshot({ path: `${SAIDA}/t693-publico-precos-1280.png`, fullPage: false });
     await ctx.close();
   });
 
@@ -235,7 +235,7 @@ test.describe("T690 — prova de publicação: os 10 passos, publicar e a págin
       await expect(p.getByTestId("faixa-anuncio-teste")).toHaveAttribute("data-modo", "visitante");
       const botao = largura === 1280 ? p.getByTestId("cartao-solicitar") : p.getByTestId("barra-solicitar");
       await expect(botao).toBeDisabled();
-      await p.screenshot({ path: `${SAIDA}/t690-publico-faixa-${largura}.png`, fullPage: false });
+      await p.screenshot({ path: `${SAIDA}/t693-publico-faixa-${largura}.png`, fullPage: false });
 
       await p.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("card-resultado").first()).toBeVisible({ timeout: 30_000 });
