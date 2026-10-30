@@ -722,7 +722,8 @@
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
         "t362-perfil-avaliacoes-pix",
-        "t352-varredura-bloco17"
+        "t352-varredura-bloco17",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/buscas": {
@@ -945,7 +946,8 @@
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
-        "t602-e181-familia-contadores"
+        "t602-e181-familia-contadores",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/fechamento": {
@@ -1315,7 +1317,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/pedidos": {
@@ -1414,7 +1417,8 @@
         "t55-manutencao-ciclo",
         "t183-telas-logadas-390",
         "t288-padrao-minimo-59a",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/tributacao": {
@@ -2157,7 +2161,8 @@
         "t329-varredura-bloco11",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2167,7 +2172,8 @@
       ],
       "specs": [
         "t304-airbnb-exibicao-61a",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/estadia/[contratoId]/encerrar": {
@@ -2176,7 +2182,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -2194,7 +2201,8 @@
       ],
       "specs": [
         "t256-pagina-da-estadia",
-        "t329-varredura-bloco11"
+        "t329-varredura-bloco11",
+        "t676-varredura-bloco69"
       ]
     },
     "/admin/destinos": {
