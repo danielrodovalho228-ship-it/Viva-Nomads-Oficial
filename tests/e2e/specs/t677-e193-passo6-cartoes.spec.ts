@@ -8,6 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    - interruptor só o do bloco opcional (padrão E56: data-testid "bloco-…-toggle");
    - "O que considerar antes de pedir" em cartões de marcar; o acesso segue em cartão de escolha única.
   1280 e 390, com prints.
+  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com o #1566 e o #1568, no lab-crítico do bloco 70 (t679).
 */
 const SAIDA = "tests/laboratorio/saida";
 
