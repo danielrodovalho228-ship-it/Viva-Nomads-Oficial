@@ -1,29 +1,47 @@
+import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Star } from "lucide-react";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
+import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
+import { BRAND_BLUR } from "@/lib/media";
 import type { ParceiroPublico } from "@/lib/data/parceiros-publico";
 
 /** Cartão do parceiro na busca: foto, nome, categorias, cidades e a nota real (ou "Novo na Viva"). Sem contato. */
 /** `consulta`: parâmetros que seguem para a página do parceiro (ex.: o imóvel do cadastro, Prompt 31b). */
+/**
+ * E277 (mockup aprovado): foto no topo (16:10, igual em todos) — a capa que o parceiro enviou ou, sem capa, a foto da
+ * categoria principal dele — e a foto de perfil (ou a inicial) sobre a borda da capa.
+ */
 export function CartaoParceiro({ p, consulta }: { p: ParceiroPublico; consulta?: string }) {
+  const capaCategoria = fotoDaCategoria(p.categorias[0] ?? "");
   return (
     <li className="min-w-0">
       <Link
         href={`/parceiros/${p.slug}${consulta ? `?${consulta}` : ""}`}
-        className="flex h-full gap-4 rounded-xl border border-line bg-white p-4 transition "
+        className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-white transition-colors hover:border-forest"
         data-testid="cartao-parceiro"
         data-slug={p.slug}
       >
-        {p.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio
-          <img src={p.avatarUrl} alt={`Foto de ${p.nomePublico}`} width={64} height={64} className="h-16 w-16 shrink-0 rounded-full object-cover" />
-        ) : (
-          <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full bg-sage-100 font-title text-xl font-semibold text-forest" aria-hidden>
-            {p.nomePublico.slice(0, 1).toUpperCase()}
+        <span className="relative block aspect-[16/10] bg-surface-2" data-testid="cartao-parceiro-capa">
+          {p.bannerUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio
+            <img src={p.bannerUrl} alt={`Capa de ${p.nomePublico}`} className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            capaCategoria && <Image src={capaCategoria.src} alt={capaCategoria.alt} fill sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" />
+          )}
+          <span className="absolute -bottom-6 left-4 rounded-full border-2 border-white bg-white">
+            {p.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio
+              <img src={p.avatarUrl} alt={`Foto de ${p.nomePublico}`} width={56} height={56} className="h-14 w-14 rounded-full object-cover" />
+            ) : (
+              <span className="grid h-14 w-14 place-items-center rounded-full bg-sage-100 font-title text-xl font-semibold text-forest" aria-hidden>
+                {p.nomePublico.slice(0, 1).toUpperCase()}
+              </span>
+            )}
           </span>
-        )}
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate font-title text-base font-semibold text-ink">{p.nomePublico}</h3>
+        </span>
+        <div className="min-w-0 flex-1 px-4 pb-4 pt-8">
+          <h3 className="truncate font-title text-base font-semibold text-ink group-hover:text-forest">{p.nomePublico}</h3>
           <p className="mt-1 text-sm text-muted">{p.categorias.map(rotuloCategoria).join(" · ")}</p>
           <p className="mt-1 flex items-center gap-1 text-sm text-ink">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden /> <span className="truncate">{p.cidades.join(", ")}</span>

@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T718 — conformidade visual da HOME (passada final, 30/10), a 1280 e 390:
+  T730 — conformidade visual da HOME (passada final, 30/10), a 1280 e 390:
    1. o selo "Internet para home office" fica dentro da foto (antes saía da coluna: -right-4 -top-4);
    2. os atalhos ("Encontre o imóvel do seu jeito") começam na mesma coluna das outras seções e o título fica à
       esquerda, como os demais;
@@ -18,7 +18,7 @@ const caixa = (p: Page, sel: string) => p.locator(sel).first().evaluate((el) => 
   return { l: Math.round(r.left), r: Math.round(r.right), t: Math.round(r.top + scrollY), b: Math.round(r.bottom + scrollY), fonte: cs.fontSize, alinhado: cs.textAlign };
 });
 
-test.describe("T718 — conformidade da home", () => {
+test.describe("T730 — conformidade da home", () => {
   for (const largura of [1280, 390] as const) {
     test(`${largura} px: selo dentro da foto, atalhos na coluna, títulos de seção iguais, varredura limpa`, async ({ browser }) => {
       test.setTimeout(150_000);
@@ -66,10 +66,10 @@ test.describe("T718 — conformidade da home", () => {
       for (const c of Object.keys(CLASSES) as Classe[]) expect.soft(achados[c], `home ${largura} — ${CLASSES[c]}`).toEqual([]);
 
       await seloEl.scrollIntoViewIfNeeded();
-      await p.screenshot({ path: `${SAIDA}/t718-home-selo-${largura}.png` });
+      await p.screenshot({ path: `${SAIDA}/t730-home-selo-${largura}.png` });
       if (await atalhos.count()) {
         await p.locator("#atalhos-titulo").scrollIntoViewIfNeeded();
-        await p.screenshot({ path: `${SAIDA}/t718-home-atalhos-${largura}.png` });
+        await p.screenshot({ path: `${SAIDA}/t730-home-atalhos-${largura}.png` });
       }
       await ctx.close();
     });
