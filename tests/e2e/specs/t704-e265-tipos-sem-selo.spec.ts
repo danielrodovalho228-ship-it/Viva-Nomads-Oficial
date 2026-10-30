@@ -28,7 +28,8 @@ test.describe("T704 — E265: Passo 1 sem selo sobre as fotos", () => {
     test(`${largura} px: os 9 cartões de tipo com foto e sem selo por cima`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
+      // Direto no Passo 1 (a conta nova abriria antes a qualificação inicial).
+      await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
       const linha = p.getByRole("radiogroup", { name: "Tipo do imóvel" });
       await expect(linha).toBeVisible({ timeout: 30_000 });
       const fotos = linha.locator("img");

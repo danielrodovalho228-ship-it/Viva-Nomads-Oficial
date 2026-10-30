@@ -20,7 +20,8 @@ test.describe("T325 — fotos ilustrativas dos cartões de seção", () => {
         await expect(page.getByTestId("cartao-foto-pendente")).toHaveCount(0);
         // As fotos dos cartões de seção carregam de verdade e nenhuma leva selo por cima.
         const fotos = page.locator('img[src*="unicas%2Fempresas-"], img[src*="unicas%2Fproprietarios-"], img[src*="unicas/empresas-"], img[src*="unicas/proprietarios-"]');
-        await expect(fotos).toHaveCount(pg.fotos, { timeout: 20_000 });
+        // Os cartões de seção têm ${pg.fotos} fotos; a página pode reusar as mesmas imagens em outro bloco.
+        await expect.poll(() => fotos.count(), { timeout: 20_000 }).toBeGreaterThanOrEqual(pg.fotos);
         for (let i = 0; i < pg.fotos; i++) {
           const img = fotos.nth(i);
           await img.scrollIntoViewIfNeeded();
