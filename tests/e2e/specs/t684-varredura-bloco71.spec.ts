@@ -5,7 +5,7 @@ import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta,
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T682 — VARREDURA DA PÁGINA INTEIRA, BLOCO 71 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
+  T684 — VARREDURA DA PÁGINA INTEIRA, BLOCO 71 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
   toda rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400. As próximas telas do painel
   varridas há mais tempo (blocos 33, 35, 38 e 39), revistas sobre o topo, as barras e o rodapé de hoje:
     · proprietário: Fechamento, Garantias, Recibos e notas, Ferramentas e Excluir minha conta;
@@ -43,7 +43,7 @@ const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/
 
 const MASSA = lerMassa();
 
-test.describe("T682 — varredura da página inteira, bloco 71 (fechamento, garantias, recibos, ferramentas, excluir conta, estadia) (390 e 1280 px)", () => {
+test.describe("T684 — varredura da página inteira, bloco 71 (fechamento, garantias, recibos, ferramentas, excluir conta, estadia) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
