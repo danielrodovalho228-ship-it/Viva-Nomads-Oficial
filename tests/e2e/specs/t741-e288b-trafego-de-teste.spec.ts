@@ -33,8 +33,9 @@ test.describe("T741 — E288-B: tráfego de teste fora das métricas", () => {
 
   test("gravação: real, e2e (cabeçalho), e2e (cookie) e teste (conta is_teste)", async ({ browser, baseURL }) => {
     const corpo = JSON.stringify({ tipo: "busca", cidade: CIDADE });
-    // Contexto de API sem os padrões do playwright.config (sem a marca de teste).
-    const semMarca = await api.newContext({ baseURL });
+    // Contexto de API SEM a marca de teste: o request de @playwright/test herda os padrões do playwright.config
+    // (inclusive o cabeçalho x-vn-origem), então os cabeçalhos extras são zerados explicitamente.
+    const semMarca = await api.newContext({ baseURL, extraHTTPHeaders: {} });
     expect((await semMarca.post("/api/evento", { data: corpo, headers: { "content-type": "text/plain" } })).status()).toBe(204);
     expect((await semMarca.post("/api/evento", { data: corpo, headers: { "content-type": "text/plain", "x-vn-origem": "e2e" } })).status()).toBe(204);
     expect((await semMarca.post("/api/evento", { data: corpo, headers: { "content-type": "text/plain", cookie: "vn_trafego=e2e" } })).status()).toBe(204);
