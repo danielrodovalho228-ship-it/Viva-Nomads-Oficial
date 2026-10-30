@@ -38,6 +38,15 @@ export function papelDoModo(modo: Modo): Papel {
 }
 
 /** Morador e proprietário têm modo próprio; parceiro mantém o modo de antes por baixo. */
+/**
+ * E283/L-78 — a conta ainda está no PRIMEIRO acesso: nunca respondeu a intenção e nunca teve papel ativo gravado.
+ * Fonte única do "1º acesso" — o papel inicial e as boas-vindas saem da intenção só nesse estado; abrir uma página de
+ * outra área (SincronizarPapel) não o gasta.
+ */
+export function contaNoPrimeiroAcesso(intencao: unknown, papelAtivo: unknown): boolean {
+  return intencao == null && papelAtivo == null;
+}
+
 export function modoDoPapel(papel: Papel): Modo | null {
   return papel === "proprietario" ? "owner" : papel === "morador" ? "tenant" : null;
 }

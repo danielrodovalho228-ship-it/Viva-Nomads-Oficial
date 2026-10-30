@@ -39,7 +39,8 @@ export function SincronizarPapel() {
     // …e grava só o que esta aba ainda não gravou.
     if (gravado.current === alvo) return;
     gravado.current = alvo;
-    usarPapel(alvo)
+    // E283: "area" — numa conta no 1º acesso, só o modo é gravado (o papel inicial fica para a intenção decidir).
+    usarPapel(alvo, "area")
       .then(() => window.dispatchEvent(new Event(EVENTO_PAPEL)))
       .catch(() => {
         gravado.current = null;
