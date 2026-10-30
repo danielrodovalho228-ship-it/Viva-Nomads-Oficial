@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarBoasVindas } from "@/lib/notifications/boas-vindas-servidor";
 import { intencaoAoAnunciar, normalizarIntencoes, type Intencao } from "@/lib/auth/entrada";
+import { contaNoPrimeiroAcesso } from "@/lib/papel/papel-ativo";
 
 /*
   O caminho ÚNICO de gravar a intenção (Prompt 49 + E205-B): a tela de intenção, a Conta › Papéis e — E268-B — o
@@ -19,7 +20,8 @@ export async function gravarIntencao(
   modo: "owner" | "tenant" | null,
 ): Promise<{ ok: boolean; papelAplicado: "owner" | "tenant" | null }> {
   const { data: antes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", userId).maybeSingle();
-  const primeiroAcesso = (antes as { intencao?: unknown } | null)?.intencao == null && (antes as { papel_ativo?: unknown } | null)?.papel_ativo == null;
+  const a = antes as { intencao?: unknown; papel_ativo?: unknown } | null;
+  const primeiroAcesso = contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo);
   const { error } = await supabase.from("profiles").update({ intencao }).eq("id", userId);
   if (error) return { ok: false, papelAplicado: null };
   let papelAplicado: "owner" | "tenant" | null = null;
