@@ -104,7 +104,8 @@ test("fonte única: selo, barra, Conta, login e troca leem/gravam profiles.papel
   assert.match(acoes, /update\(modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \}\)/);
   assert.match(acoes, /papel === "parceiro" && !\(await ehParceiroAprovado/);
   assert.match(ler("src/lib/data/mode-actions.ts"), /papel_ativo: mode === "owner" \? "proprietario" : "morador"/);
-  const intencao = ler("src/lib/data/intencao-actions.ts");
+  // E268-B: o caminho único de gravar a intenção (a ação, a Conta e o 1º rascunho de anúncio).
+  const intencao = ler("src/lib/data/intencao-servidor.ts");
   assert.match(intencao, /const primeiroAcesso = .*intencao == null && .*papel_ativo == null/);
   assert.match(intencao, /if \(primeiroAcesso && \(modo === "owner" \|\| modo === "tenant"\)\)/);
   // A troca é a MESMA no selo e na Conta (um hook só).

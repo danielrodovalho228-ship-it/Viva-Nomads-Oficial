@@ -18,6 +18,7 @@ import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
+import { registrarIntencaoDeAnunciar } from "@/lib/data/intencao-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registrarAtivacao } from "@/lib/ativacao/servidor";
 import type { EligibilityState, QualityState } from "@/lib/qualification";
@@ -232,6 +233,8 @@ export async function saveQualification(
   // vaza dados do documento — só o fato de que há item para conferir). Só
   // admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
   if (doc.avisarAdmins) await avisarAdminsDocumentoRecebido();
+  // E268-B: a qualificação antes do Passo 1 também é o começo do anúncio.
+  await registrarIntencaoDeAnunciar(supabase, user.id);
   return { ok: true, id: (data as { id: string }).id };
 }
 
@@ -823,6 +826,8 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
     .single();
 
   if (error) return { ok: false, error: erroBancoPT(error) };
+  // E268-B: o anúncio criado direto (sem rascunho antes) também declara a intenção de anunciar.
+  await registrarIntencaoDeAnunciar(supabase, user.id);
 
   // Enriquecimento (campos das migrações 0018/0019). Best-effort: se a migração
   // ainda não rodou, o update falha em silêncio mas o imóvel já foi criado.
@@ -1935,6 +1940,8 @@ export async function saveDraftData(snap: {
     console.error("[saveDraftData] novo", error.code, error.message);
     return { ok: false, error: erroBancoPT(error) };
   }
+  // E268-B: o primeiro rascunho declara a intenção de anunciar (boas-vindas de dono, uma por conta).
+  await registrarIntencaoDeAnunciar(supabase, user.id);
   await gravarChegadaEPedido(supabase, user.id, data.id as string, chegadaDoRascunho(snap.data));
   await sincronizarFotos(supabase, data.id as string, user.id, urlsDoRascunho(snap.data));
   // A qualificação enviada antes do rascunho passa a pertencer a ele (prontidão "Em análise", não "Não enviado").

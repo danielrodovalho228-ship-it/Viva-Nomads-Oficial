@@ -54,6 +54,15 @@ export const ROTULO_INTENCAO: Record<Intencao, string> = {
   servicos: "Presto serviços",
 };
 
+/**
+ * E268-B — quem começa um anúncio declarou a intenção de anunciar. Devolve a intenção nova (com "anunciar") quando ela
+ * ainda não está lá, ou null quando não há nada a gravar. `atual` null = a conta nunca respondeu à tela de intenção.
+ */
+export function intencaoAoAnunciar(atual: readonly Intencao[] | null): Intencao[] | null {
+  if (atual?.includes("anunciar")) return null;
+  return normalizarIntencoes([...(atual ?? []), "anunciar"]);
+}
+
 /** Só as 3 chaves, sem repetir, na ordem da lista. Lixo some. */
 export function normalizarIntencoes(bruto: unknown): Intencao[] {
   const lista = Array.isArray(bruto) ? bruto : [];
