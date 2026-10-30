@@ -64,13 +64,17 @@ test.describe("T695 — E264-B: proativos com cartão, agrupados, sem repetiçã
     const { data: busca, error: eb } = await adm().from("buscas_salvas").insert({ usuario_id: ids.beto, parametros: "local=Uberl%C3%A2ndia", resumo: "Uberlândia", alerta_ativo: true }).select("id").single();
     expect(eb).toBeNull();
     for (const im of imoveis) expect((await fila(ids.beto, "saved_search_match", im, { busca_id: busca!.id })).error).toBeNull();
-    // C: o pedido do Caio expira em 4 dias (já calculado: o recálculo do disparo diário não mexe nele).
+    // C: o pedido do Caio expira em 4 dias. O gatilho trg_pedido_expira calcula expira_em = maior entre criado_em + 30 dias
+    // e o fim do dia de entrada: publicado há 26,5 dias com entrada em 2 dias → expira em ~3,5 dias (o e-mail diz 4).
     const { data: ped, error: ep } = await adm()
       .from("pedidos_moradia")
-      .insert({ inquilino_id: ids.caio, cidade: "Uberlândia", uf: "MG", data_inicio: new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10), prazo_meses: 3, orcamento_mensal: 3200, qtd_ocupantes: 2, motivo: "trabalho_remoto", pets: true, compativeis_ao_publicar: 0, expira_em: new Date(Date.now() + 4 * 86_400_000 - 3_600_000).toISOString() })
-      .select("id")
+      .insert({ inquilino_id: ids.caio, cidade: "Uberlândia", uf: "MG", data_inicio: new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10), prazo_meses: 3, orcamento_mensal: 3200, qtd_ocupantes: 2, motivo: "trabalho_remoto", pets: true, compativeis_ao_publicar: 0, criado_em: new Date(Date.now() - 26.5 * 86_400_000).toISOString() })
+      .select("id, expira_em")
       .single();
     expect(ep).toBeNull();
+    const faltam = (new Date(ped!.expira_em as string).getTime() - Date.now()) / 86_400_000;
+    expect(faltam).toBeGreaterThan(3.2);
+    expect(faltam).toBeLessThan(3.8);
     ids.pedidoCaio = ped!.id;
     expect((await fila(ids.caio, "pedido_expirando", ids.pedidoCaio)).error).toBeNull();
 
