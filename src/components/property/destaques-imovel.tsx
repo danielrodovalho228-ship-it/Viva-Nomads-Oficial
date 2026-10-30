@@ -1,4 +1,4 @@
-import { Briefcase, Car, GraduationCap, HeartPulse, Home, type LucideIcon } from "lucide-react";
+import { AirVent, Briefcase, Car, GraduationCap, HeartPulse, Home, Wifi, type LucideIcon } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { destaquesDoImovel, type ChaveDestaque } from "@/lib/anuncio/resumos-imovel";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
@@ -8,6 +8,8 @@ const ICONES: Record<ChaveDestaque, LucideIcon> = {
   educacao: GraduationCap,
   pronto: Home,
   trabalho: Briefcase,
+  internet: Wifi,
+  ar: AirVent,
   vaga: Car,
 };
 
