@@ -58,7 +58,7 @@ import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, dataBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { isEligible } from "@/lib/qualification";
 import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
@@ -1946,6 +1946,7 @@ export default function NewPropertyPage() {
             {step === ETAPA.revisao && (
               <EtapaRevisar
                 previewProperty={previewProperty}
+                contextoConferencia={{ cepOk: !!cepValido(cep), disponivelDesde: availableFrom ? dataBR(availableFrom) : "" }}
                 // E104 → E251: quem opera, identidade, documento e declarações, em acordeão na coluna "Antes de publicar".
                 antesDePublicar={
                   <AntesDePublicar

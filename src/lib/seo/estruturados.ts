@@ -38,12 +38,18 @@ export function organizacao(siteUrl: string) {
 }
 
 /** FAQPage da Central de Ajuda: as mesmas perguntas e respostas da tela. */
-/** FAQPage: todas as perguntas, ou só as de um tema da Central (na ordem do tema). */
-export function faqPage(ids?: readonly string[]) {
+/**
+ * FAQPage: todas as perguntas, ou só as de um tema da Central (na ordem do tema). E84 (QA de 29/10): com o nome do
+ * tema em português — sem `name`, ferramentas que leem os dados estruturados mostram o rótulo padrão em inglês
+ * ("Frequently Asked Questions").
+ */
+export function faqPage(ids?: readonly string[], nome = "Perguntas frequentes") {
   const lista = ids ? ids.map((id) => FAQ.find((p) => p.id === id)).filter((p): p is (typeof FAQ)[number] => !!p) : FAQ;
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
+    name: nome,
+    inLanguage: "pt-BR",
     mainEntity: lista.map((p) => ({
       "@type": "Question",
       name: p.pergunta,

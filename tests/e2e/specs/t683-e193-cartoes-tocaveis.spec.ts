@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T681 — E193 (#1567 Passo 5, #1568 Passo 6): spec permanente da Pista C. A t680 e a t677 (Pista A) inventariam os
+  T683 — E193 (#1567 Passo 5, #1568 Passo 6): spec permanente da Pista C. A t680 e a t677 (Pista A) inventariam os
   controles (nenhuma pílula, nenhuma caixa, interruptor só no bloco opcional); esta cobre o que o inventário não vê:
    1. TOCÁVEL: todo cartão de escolha à vista nos Passos 5 e 6 (blocos opcionais abertos) tem ao menos 48 px de altura
       e 44 px de largura, e nenhum sai da tela (390 e 1280);
@@ -15,7 +15,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t681.${sufixo}@lab.vivanomads.test`, nome: "Lia Cartoes", role: "owner" as const };
+const dono = { email: `dono.t683.${sufixo}@lab.vivanomads.test`, nome: "Lia Cartoes", role: "owner" as const };
 const ids: Record<string, string> = {};
 
 const passo = (etapa: string) => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=${etapa}`;
@@ -56,14 +56,14 @@ const cartoesRuins = (p: Page) =>
     return { total, ruins };
   });
 
-test.describe("T681 — E193: cartões grandes tocáveis nos Passos 5 e 6 (marcar, escolha única, toggle, grava)", () => {
+test.describe("T683 — E193: cartões grandes tocáveis nos Passos 5 e 6 (marcar, escolha única, toggle, grava)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t681 ${sufixo}`);
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t683 ${sufixo}`);
   });
   test.afterAll(async () => {
     if (ids.rascunho) await adm().from("imovel_ruido").delete().eq("property_id", ids.rascunho);
@@ -78,10 +78,10 @@ test.describe("T681 — E193: cartões grandes tocáveis nos Passos 5 e 6 (marca
         await abrir(p, etapa);
         await abrirBlocos(p);
         const { total, ruins } = await cartoesRuins(p);
-        console.log(`t681 ${largura} ${etapa}: ${total} cartões`);
+        console.log(`t683 ${largura} ${etapa}: ${total} cartões`);
         expect(total, `${etapa}: cartões à vista`).toBeGreaterThan(5);
         expect(ruins, `${etapa} @${largura}: cartões pequenos ou fora da tela`).toEqual([]);
-        await p.screenshot({ path: `${SAIDA}/t681-${etapa}-${largura}.png`, fullPage: true });
+        await p.screenshot({ path: `${SAIDA}/t683-${etapa}-${largura}.png`, fullPage: true });
       }
       await p.context().close();
     });
@@ -136,7 +136,7 @@ test.describe("T681 — E193: cartões grandes tocáveis nos Passos 5 e 6 (marca
     await expect(p.getByTestId("bloco-nivel-ruido-toggle")).toHaveAttribute("aria-checked", "true", { timeout: 20_000 });
     await expect(p.getByTestId("ruido-via_intensa")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("ruido-noturno_obra_100m")).toHaveAttribute("aria-checked", "false");
-    await p.getByTestId("ruido-form").screenshot({ path: `${SAIDA}/t681-ruido-gravado-1280.png` });
+    await p.getByTestId("ruido-form").screenshot({ path: `${SAIDA}/t683-ruido-gravado-1280.png` });
     await p.context().close();
   });
 });

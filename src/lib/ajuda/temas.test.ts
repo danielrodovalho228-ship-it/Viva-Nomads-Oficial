@@ -43,7 +43,7 @@ test("E84: hub limpo (cartões que levam à página do tema, sem perguntas); cad
   assert.match(hub, /if \(tema\) redirect\(hrefDoTema\(tema\.id\)\);/);
   const pagina = ler("app/(public)/ajuda/[tema]/page.tsx");
   assert.match(pagina, /<PerguntasDaCentral ids=\{tema\.perguntas\} titulo="Perguntas deste tema" \/>/);
-  assert.match(pagina, /faqPage\(tema\.perguntas\)/);
+  assert.match(pagina, /faqPage\(tema\.perguntas, `\$\{tema\.titulo\} · Perguntas frequentes`\)/);
   assert.match(pagina, /export const dynamicParams = false;/);
   assert.doesNotMatch(hub + pagina + ler("components/ajuda/central-ajuda.tsx"), /Frequently|Questions/);
 });

@@ -7,6 +7,9 @@ import { nasceLigado } from "@/lib/anuncio/bloco-opcional";
 import { lerChecklistEstrutura, salvarChecklistEstrutura } from "@/lib/data/estrutura-actions";
 import { GRUPOS_ESTRUTURA, ITENS_ESTRUTURA, NOTA_ESTRUTURA_INFORMADA, temEstruturaInformada, type ChecklistEstrutura, type ItemChecklist } from "@/lib/selos-estrutura";
 
+/** E258 (c): aqui não há botão — cada toque grava; a tela diz isso antes do primeiro toque. */
+export const COMO_SALVA_ESTRUTURA = "Cada toque salva na hora.";
+
 /**
  * E225-A — "O imóvel tem estrutura de acessibilidade?" (padrão E56), no fim do Passo 5 e no editar. Ligado, abre os
  * 8 itens em dois grupos (Acessibilidade e Mobilidade reduzida), cada um num cartão de marcar com a linha de critério. Cada toque
@@ -92,7 +95,8 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
           <p className="text-xs text-muted" data-testid="estrutura-nota">
             No anúncio: “{NOTA_ESTRUTURA_INFORMADA}”
           </p>
-          <p className="text-xs" role="status" aria-live="polite">
+          <p className="text-xs" role="status" aria-live="polite" data-testid="estrutura-como-salva">
+            {estado === "" && <span className="text-muted">{COMO_SALVA_ESTRUTURA}</span>}
             {estado === "salvando" && <span className="text-muted">Salvando…</span>}
             {estado === "salvo" && <span className="text-forest">Salvo.</span>}
             {estado === "erro" && <span className="text-red-700">Não foi possível salvar agora. Tente de novo.</span>}
