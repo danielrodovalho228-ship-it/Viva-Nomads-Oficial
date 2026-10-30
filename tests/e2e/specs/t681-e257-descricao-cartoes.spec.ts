@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /*
   T681 — E257 (QA do Muse, 29/10): consistência da descrição dentro dos grupos de cartões dos Passos 5 e 6. Em cada
-  grupo (os cartões irmãos de um mesmo contêiner), ou todos têm a linha curta de descrição, ou nenhum tem; e nenhum
+  grupo (os cartões irmãos de um mesmo contêiner; "Pronto para trabalhar" e as declarações de privacidade contam como um grupo só), ou todos têm a linha curta de descrição, ou nenhum tem; e nenhum
   cartão da grade foge do desenho (borda tracejada). Blocos opcionais abertos. 1280 e 390, com prints.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -18,9 +18,16 @@ const grupos = (p: Page) =>
       if (r.width < 2 || r.height < 2) continue;
       const nome = (c.querySelector("span.block")?.textContent ?? "").trim().slice(0, 40);
       const temDica = !!c.querySelector("span.min-w-0 > span:nth-child(2)");
-      const g = porPai.get(c.parentElement!) ?? { com: [], sem: [] };
+      // O grupo: o bloco "Pronto para trabalhar" inteiro (Essenciais + Opcionais), as declarações de privacidade (sem o
+      // tipo de acesso, que é outro grupo) ou, no resto, os cartões irmãos do mesmo contêiner.
+      const chave =
+        c.closest('[data-testid="tipo-acesso"]') ??
+        c.closest('[data-testid="pronto-trabalhar"]') ??
+        c.closest('[data-testid="privacidade-campos"]') ??
+        c.parentElement!;
+      const g = porPai.get(chave) ?? { com: [], sem: [] };
       (temDica ? g.com : g.sem).push(nome);
-      porPai.set(c.parentElement!, g);
+      porPai.set(chave, g);
       if (getComputedStyle(c).borderStyle === "dashed") tracejados.push(nome);
     }
     const misturados = [...porPai.values()].filter((g) => g.com.length && g.sem.length).map((g) => `com: ${g.com.join(", ")} | sem: ${g.sem.join(", ")}`);
