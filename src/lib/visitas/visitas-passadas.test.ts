@@ -23,7 +23,7 @@ test("endereço da presencial: a linha exata vale; sem ela, rua, número e compl
 
 test("cartão: sem cancelar o que já passou; confirmada sem endereço não promete 'quando for confirmada'", () => {
   const tela = readFileSync("src/components/visitas/cartao-visita.tsx", "utf8");
-  assert.match(tela, /\{!passou && \(\s*<Button[^>]*data-testid="visita-cancelar"/);
+  assert.match(tela, /\{!passou && !cancelando && \(\s*<Button[^>]*data-testid="visita-cancelar"/);
   assert.match(tela, /passou \? null : <AcoesMorador/);
   assert.match(tela, /data-testid="visita-endereco-pendente"/);
 });

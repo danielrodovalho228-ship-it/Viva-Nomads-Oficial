@@ -38,7 +38,7 @@ test.describe("T704 — E265: Passo 1 sem selo sobre as fotos", () => {
         const img = fotos.nth(i);
         await img.scrollIntoViewIfNeeded();
         await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
-        expect(await img.getAttribute("alt")).toMatch(/^Foto ilustrativa de /);
+        expect(await img.getAttribute("alt")).toMatch(/^Foto de /);
       }
       // Nada escrito por cima das fotos: dentro da moldura de cada foto só há a imagem.
       await expect(linha.getByText("Imagem ilustrativa")).toHaveCount(0);

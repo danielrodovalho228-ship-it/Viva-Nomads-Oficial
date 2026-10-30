@@ -197,11 +197,8 @@ export function EtapaRevisar(p: {
           </ul>
         </div>
       )}
-      {conf.pendentesNaRevisao.length > 0 && (
-        <p className="mt-2 text-sm text-ink" data-testid="conferencia-revisao">
-          Falta: {conf.pendentesNaRevisao.join("; ")}
-        </p>
-      )}
+      {/* E271: as pendências do próprio Passo 10 (documento, quem opera, declarações) não se repetem aqui — aparecem uma
+          vez, na sua seção de "Antes de publicar", onde o dono resolve no lugar. */}
       {p.melhorar.length > 0 && (
         <p className="mt-3 text-sm text-muted" data-testid="prontidao-opcionais">
           Para melhorar (opcional, não impede publicar):{" "}

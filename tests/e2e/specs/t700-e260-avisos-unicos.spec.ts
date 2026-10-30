@@ -8,8 +8,8 @@ import { abrirPasso, emDiasBR, isoParaBR, prepararRascunho } from "../fixtures/r
    (a) Passo 9: janela de 24 dias com mínimo de 30 e "Continuar" → o aviso aparece só junto das datas (`janela-curta`,
        com a explicação e a saída); o resumo "Para continuar, falta:" do topo não o repete. O Continuar segue recusando.
    (b) Passo 10: a lista de conferência é a única fonte das pendências. Saem o "Falta confirmar: …" e o "Falta resolver:
-       …"; o motivo do "Publicar anúncio" vira uma frase curta que aponta para a lista ("Faltam N itens da lista de
-       conferência"), sem repetir os itens, e tocar nele desce até a lista.
+       …"; o motivo do "Publicar anúncio" vira uma frase curta ("Faltam N itens antes de publicar" — E271), sem repetir
+       os itens, e tocar nele desce até a lista.
   Nas duas larguras (1280 e 390).
 */
 const CAPTURAS = "tests/laboratorio/saida";
@@ -78,12 +78,13 @@ test.describe("T700 — E260: avisos únicos nos Passos 9 e 10", () => {
       expect(await vezesNaTela(p, "Falta resolver"), "sem 'Falta resolver'").toBe(0);
       // O motivo: quantos itens da lista (e o aceite, que não está nela), sem nomear item nenhum da lista.
       const motivo = p.getByTestId("publicar-motivo");
-      await expect(motivo).toHaveText(/^Faltam? (\d+) ite(m|ns) da lista de conferência( e o aceite do termo da IA)?$/);
+      await expect(motivo).toHaveText(/^Faltam? (\d+) ite(m|ns) antes de publicar( e o aceite do termo da IA)?$/);
       const n = Number((await motivo.innerText()).match(/\d+/)![0]);
       const faltamLinhas = Number(await lista.getAttribute("data-faltam"));
-      const revisao = p.getByTestId("conferencia-revisao");
-      const faltamRevisao = (await revisao.count()) ? (await revisao.innerText()).replace(/^Falta:\s*/, "").split("; ").length : 0;
-      expect(n, "o número do motivo é o da lista").toBe(faltamLinhas + faltamRevisao);
+      // E271: as pendências do Passo 10 contam pela seção delas (sem o "Falta: …" repetido embaixo da lista).
+      await expect(p.getByTestId("conferencia-revisao")).toHaveCount(0);
+      const faltamSecoes = await p.locator('[data-testid="antes-secao-documento"][data-estado="falta"], [data-testid="antes-secao-operacao"][data-estado="falta"], [data-testid="antes-secao-declaracoes"][data-estado="falta"]').count();
+      expect(n, "o número do motivo = linhas da lista + seções do Passo 10 que faltam").toBe(faltamLinhas + faltamSecoes);
       for (const nome of ["padrão mínimo", "Padrão mínimo", "documento", "declarações"]) await expect(motivo).not.toContainText(nome);
       // Tocar no motivo desce até a lista.
       await motivo.evaluate((el) => el.scrollIntoView({ block: "center" }));

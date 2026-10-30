@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T706 — E261 (#1597), o que a t701 não grava nem lê de volta. Pista C, 30/10. Nas duas larguras (1280 e 390).
+  T713 — E261 (#1597), o que a t701 não grava nem lê de volta. Pista C, 30/10. Nas duas larguras (1280 e 390).
    1. Os avisos acompanham os quartos GRAVADOS: num studio de 1 quarto no Centro, "Casa com 3 quartos no Tibery…" dá os
       três avisos (bairro, tipo, quartos); "Salvar seção" grava o título. Na seção "Detalhes & preço", Quartos = 3 tira
       o aviso dos quartos na hora (os outros dois ficam) e o salvar grava bedrooms = 3. O editor reaberto lê título e
@@ -18,7 +18,7 @@ const SAIDA = "tests/laboratorio/saida";
 const LARGURAS = [1280, 390] as const;
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t706.${sufixo}@lab.vivanomads.test`, nome: "Tito Titulo", role: "owner" as const };
+const dono = { email: `dono.t713.${sufixo}@lab.vivanomads.test`, nome: "Tito Titulo", role: "owner" as const };
 const ids: { dono?: string; studio: Record<number, string>; chacara: Record<number, string>; rascunho: Record<number, string> } = { studio: {}, chacara: {}, rascunho: {} };
 const tituloCasa = (w: number) => `Casa com 3 quartos no Tibery ${w} ${sufixo}`;
 
@@ -50,7 +50,7 @@ async function abrirSecao(p: Page, nome: RegExp): Promise<Locator> {
 const lerImovel = async (id: string) =>
   (await adm().from("properties").select("title, bedrooms, status").eq("id", id).single()).data as { title: string; bedrooms: number; status: string } | null;
 
-test.describe("T706 — E261: avisos do título no editor, gravados e lidos de volta", () => {
+test.describe("T713 — E261: avisos do título no editor, gravados e lidos de volta", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -111,7 +111,7 @@ test.describe("T706 — E261: avisos do título no editor, gravados e lidos de v
       avisos = secao.getByTestId("aviso-titulo-consistencia");
       await expect.poll(() => avisosDe(avisos), { timeout: 10_000 }).toEqual([AVISO_BAIRRO, AVISO_TIPO]);
       await avisos.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      await p.screenshot({ path: `${SAIDA}/t706-1-editor-reaberto-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t713-1-editor-reaberto-${w}.png` });
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await p.context().close();
 
@@ -121,7 +121,7 @@ test.describe("T706 — E261: avisos do título no editor, gravados e lidos de v
       await pub.goto(`/imoveis/${id}`, { waitUntil: "domcontentloaded" });
       await expect(pub.getByRole("heading", { level: 1, name: tituloCasa(w) })).toBeVisible({ timeout: 30_000 });
       await expect(pub.getByTestId("imovel-sintese")).toContainText("3 quartos");
-      await pub.screenshot({ path: `${SAIDA}/t706-1-anuncio-${w}.png` });
+      await pub.screenshot({ path: `${SAIDA}/t713-1-anuncio-${w}.png` });
       await ctx.close();
     });
   }
@@ -152,7 +152,7 @@ test.describe("T706 — E261: avisos do título no editor, gravados e lidos de v
       const avisos = secao.getByTestId("aviso-titulo-consistencia");
       await expect(avisos).toHaveText(AVISO_CHACARA);
       await avisos.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      await p.screenshot({ path: `${SAIDA}/t706-2-chacara-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t713-2-chacara-${w}.png` });
       await p.context().close();
     });
   }
@@ -170,7 +170,7 @@ test.describe("T706 — E261: avisos do título no editor, gravados e lidos de v
       await expect.poll(() => avisosDe(avisos), { timeout: 10_000 }).toEqual([AVISO_BAIRRO, AVISO_TIPO, AVISO_QUARTOS]);
       await expect(avisos.getByTestId("aviso-titulo-bairro")).toHaveText(AVISO_BAIRRO);
       await avisos.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      await p.screenshot({ path: `${SAIDA}/t706-3-passo7-${w}.png` });
+      await p.screenshot({ path: `${SAIDA}/t713-3-passo7-${w}.png` });
       // Aviso nunca trava: o rascunho grava o título novo.
       await expect
         .poll(async () => ((await adm().from("properties").select("draft_data").eq("id", id).single()).data?.draft_data as { title?: string } | null)?.title, { timeout: 30_000 })

@@ -135,7 +135,7 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
     await expect(detalhes).toContainText(MOTIVO);
     await expect(page.getByTestId("lista-conferencia")).not.toContainText("Velocidade da internet");
     // E260: o motivo do botão aponta para a lista (que já diz o porquê), sem repetir o item.
-    await expect(page.getByTestId("publicar-motivo").first()).toContainText("lista de conferência", { timeout: 20_000 });
+    await expect(page.getByTestId("publicar-motivo").first()).toContainText("antes de publicar", { timeout: 20_000 });
     await expect(page.getByTestId("publicar-falta")).toHaveCount(0);
     await expect(page.locator('[data-testid="publicar-anuncio"]:visible')).toBeDisabled();
     await page.screenshot({ path: "tests/laboratorio/saida/t400-2-revisao-barrado.png", fullPage: true });

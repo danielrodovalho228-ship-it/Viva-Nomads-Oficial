@@ -21,6 +21,9 @@ import { continuarAte, noPasso, abrirCadastroNovo, abrirSecoesPasso10 } from "..
   9. Disponibilidade: datas; campos dentro do cartão.
   10. Revise e publique: identidade e documento no "Antes de publicar" (E104), conferido na hora; publica. O anúncio mostra o que o dono confirmou, e o limite privado
      não aparece.
+  E268-B: a conta entra direto pelo anúncio (sem a tela de intenção). A 1280 (conta zerada) recebe UM boas-vindas de
+  dono no primeiro rascunho, e as gravações seguintes (rascunho, documento, publicação) não repetem; a 390 já tinha
+  recebido o de morador ("Quero morar" + a chave de envio): ganha "anunciar" na intenção, sem outro boas-vindas.
   Laboratório: o Supabase local é http e a regra do editor só aceita fotos https na pasta do dono; por isso as fotos
   do rascunho são trocadas pelas de teste (como em criarImovelPronto) antes de publicar.
 */
@@ -94,6 +97,11 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
     }
   });
   test.afterAll(async () => {
+    const donos = [ids.dono390, ids.dono1280].filter((x): x is string => !!x);
+    if (donos.length) {
+      await adm().from("emails_teste").delete().in("usuario_id", donos);
+      await adm().from("automacoes_envios").delete().in("usuario_id", donos);
+    }
     await apagarContas([ids.dono390, ids.dono1280, ids.vizinho]);
   });
 
@@ -104,6 +112,12 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       const nome = `Clara ${largura === 390 ? "Celular" : "Computador"} Sobrenome`;
       const donoId = await criarConta({ email, nome, role: "owner" }, senha);
       ids[`dono${largura}`] = donoId;
+      // E268-B: caixa de teste ligada; a 390 já recebeu o boas-vindas de morador (intenção "morar" + a chave de envio).
+      await adm().from("profiles").update({ is_teste: true, intencao: null, papel_ativo: null }).eq("id", donoId);
+      if (largura === 390) {
+        await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", donoId);
+        await adm().from("automacoes_envios").insert({ chave: `boas_vindas:${donoId}`, tipo: "boas_vindas", usuario_id: donoId });
+      }
       const page = await entrar(browser, email, senha);
       await page.setViewportSize({ width: largura, height: 900 });
       await page.addInitScript(() => {
@@ -152,6 +166,8 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await expect(page.getByTestId("cadastro-cidade")).toHaveValue("Uberlândia");
       await page.getByTestId("cadastro-numero").fill("102");
       await esperarSalvo(page); // o rascunho existe: o documento fica ligado a ele
+      // E268-B: o primeiro rascunho declarou a intenção de anunciar.
+      await expect.poll(async () => (await adm().from("profiles").select("intencao").eq("id", donoId).single()).data?.intencao, { timeout: 20_000 }).toEqual(largura === 390 ? ["morar", "anunciar"] : ["anunciar"]);
 
       // E104: o Passo 3 é só endereço (identidade e documento ficam no "Antes de publicar" da Revisão).
       await expect(page.getByTestId("etapa-identidade")).toHaveCount(0);
@@ -368,6 +384,18 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await p2.screenshot({ path: `${SAIDA}/t186-7-anuncio-publicado-${largura}.png`, fullPage: false });
       await publico.close();
       await page.context().close();
+
+      // E268-B: UM boas-vindas de dono por conta (a 1280); a 390, que já tinha o de morador, não recebe outro.
+      const boasVindas = async () => (await adm().from("emails_teste").select("assunto").eq("usuario_id", donoId).eq("evento", "boas_vindas")).data ?? [];
+      if (largura === 1280) {
+        await expect.poll(async () => (await boasVindas()).length, { timeout: 30_000 }).toBe(1);
+        expect((await boasVindas())[0].assunto).toBe("Boas-vindas: como anunciar o seu imóvel · Viva Nomads");
+        const { data: perfil } = await adm().from("profiles").select("papel_ativo").eq("id", donoId).single();
+        expect(perfil?.papel_ativo).toBe("proprietario");
+      } else {
+        await new Promise((r) => setTimeout(r, 3_000));
+        expect(await boasVindas()).toHaveLength(0);
+      }
     });
   }
 });

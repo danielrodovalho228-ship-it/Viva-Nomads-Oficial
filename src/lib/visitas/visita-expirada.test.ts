@@ -43,6 +43,7 @@ test("cartão: etiqueta Expirada e aviso; a tela não cancela sozinha; dono prop
 test("E205-B: cancelado com o motivo \"expirou\" segue Expirada no cartão, sem a linha Motivo", () => {
   const tela = readFileSync(new URL("../../components/visitas/cartao-visita.tsx", import.meta.url), "utf8");
   assert.match(tela, /expiradaGravada = status === "cancelado" && v\.motivoRecusa === MOTIVO_EXPIROU/);
-  assert.match(tela, /v\.motivoRecusa && !expiradaGravada/);
+  // E269-B: o motivo mora no status ("Cancelada · motivo"), e a expirada é conferida antes (fica "Expirada", sem motivo).
+  assert.match(tela, /expirada \? ROTULO_EXPIRADA : status === "cancelado" && v\.status === "cancelado" && v\.motivoRecusa \?/);
   assert.match(tela, /O pedido expirou sem resposta\. Peça outros horários\./);
 });
