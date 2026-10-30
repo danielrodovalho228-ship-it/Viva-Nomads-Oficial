@@ -1197,7 +1197,8 @@
         "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
         "t697-e259-pessoas-sugerido-grava",
-        "t717-e273-e275-rascunhos-publicaveis"
+        "t717-e273-e275-rascunhos-publicaveis",
+        "t714-e268b-boas-vindas-dono"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1514,7 +1515,8 @@
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
         "t589-varredura-bloco47",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t715-e269b-cancelar-visita-motivo"
       ]
     },
     "/dashboard/visitas/[id]": {
