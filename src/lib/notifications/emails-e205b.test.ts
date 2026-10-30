@@ -133,7 +133,7 @@ test("detalhes: link externo vira o ÚNICO botão; interno fica com o botão pad
 
 test("GUARDA: os chamadores — boas-vindas na 1ª entrada, aceite com 2 e-mails, recusa própria, visitas e cron", () => {
   const intencao = ler("../data/intencao-servidor.ts");
-  assert.match(intencao, /if \(primeiroAcesso\) \{[\s\S]{0,300}enviarBoasVindas\(admin, userId, intencao, modo\)/);
+  assert.match(intencao, /if \(registraIntencaoNova\(a\?\.intencao, intencao\)\) \{[\s\S]{0,300}enviarBoasVindas\(admin, userId, intencao, modo\)/);
   const bv = ler("./boas-vindas-servidor.ts");
   assert.match(bv, /from\("automacoes_envios"\)\.insert\(\{ chave: CHAVE_BOAS_VINDAS\(usuarioId\)/);
   assert.match(bv, /if \(error\) return false;/);
