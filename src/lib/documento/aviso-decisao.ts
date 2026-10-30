@@ -4,6 +4,8 @@
   motivo) e UM botão para aquele imóvel. Quem decide QUANDO avisar é o banco (decisoes_documento_para_avisar, 0185).
 */
 import { assuntoDecisaoDocumento } from "../notifications/assuntos.ts";
+import { destinoPendencia, emCadastro } from "../anuncio/destino-pendencia.ts";
+import { ETAPA } from "../anuncio/etapas-ids.ts";
 import { blocoDados } from "../notifications/modelo-email.ts";
 import { textoEmail, textoPlano } from "../notifications/texto-seguro.ts";
 
@@ -83,6 +85,8 @@ export function emailDecisaoDocumento(o: {
   bairro: string | null;
   linhas: LinhaAviso[];
   prontoParaPublicar: boolean;
+  /** P0 (30/10): rascunho → o botão abre o assistente (Revisão, se já pode publicar); publicado → o editor. */
+  status?: string | null;
 }): EmailDecisao {
   const recusa = o.linhas.some((l) => !l.aprovado);
   const um = o.linhas.length === 1;
@@ -115,6 +119,6 @@ export function emailDecisaoDocumento(o: {
     intro,
     detailsHtml: dados,
     detailsText: texto,
-    cta: { label: botaoDecisao(o.linhas, o.prontoParaPublicar), path: o.propertyId ? `/dashboard/imoveis/${encodeURIComponent(o.propertyId)}/editar` : "/dashboard/imoveis" },
+    cta: { label: botaoDecisao(o.linhas, o.prontoParaPublicar), path: o.propertyId ? destinoPendencia({ id: o.propertyId, status: o.status }, emCadastro(o.status) && o.prontoParaPublicar ? ETAPA.revisao : null) : "/dashboard/imoveis" },
   };
 }

@@ -46,6 +46,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
         titulo="Central de ajuda"
         subtitulo={<p>Respostas curtas para as dúvidas mais comuns.</p>}
         posicaoFoto="50% 40%"
+        coluna="max-w-5xl"
       />
 
       <div className="container-page relative z-10 -mt-12 pb-16">
