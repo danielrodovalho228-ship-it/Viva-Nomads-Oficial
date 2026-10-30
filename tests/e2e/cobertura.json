@@ -1174,7 +1174,7 @@
         "t681-e257-descricao-cartoes",
         "t682-e258-conferencia-opcionais",
         "t687-e259-entrada-unica",
-        "t687-prova-de-publicacao"
+        "t690-prova-de-publicacao"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1664,7 +1664,7 @@
         "t588-varredura-bloco46",
         "t668-e225-estrutura-acessibilidade",
         "t671-varredura-bloco66",
-        "t687-prova-de-publicacao"
+        "t690-prova-de-publicacao"
       ]
     },
     "/modelodenegocio": {
