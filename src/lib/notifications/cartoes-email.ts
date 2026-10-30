@@ -43,10 +43,17 @@ const dataBR = (iso: string) => {
 };
 const limpo = (s: string | null | undefined, max = 120) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
+/**
+ * Largura e qualidade do otimizador para a foto do cartão. E274: o Next 16 só aceita as qualidades da lista
+ * `images.qualities` (padrão [75]) e as larguras de `deviceSizes`/`imageSizes` (640 está no padrão); fora delas a
+ * produção responde 400 (INVALID_IMAGE_OPTIMIZE_REQUEST) e o e-mail sai sem a foto — era o q=70.
+ */
+export const FOTO_CARTAO = { largura: 640, qualidade: 75 } as const;
+
 /** Foto de capa redimensionada (640 px) pelo otimizador do site; só fotos do Storage público. */
 export function fotoDoCartao(siteUrl: string, foto: string | null | undefined): string | null {
   if (!foto || !/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(foto)) return null;
-  return `${siteUrl}/_next/image?url=${encodeURIComponent(foto)}&w=640&q=70`;
+  return `${siteUrl}/_next/image?url=${encodeURIComponent(foto)}&w=${FOTO_CARTAO.largura}&q=${FOTO_CARTAO.qualidade}`;
 }
 
 export function urlDoImovel(siteUrl: string, id: string): string {
