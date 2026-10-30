@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T711 — E276 (pedido do Daniel, 30/10), na HOME DO MORADOR, a 1280 e 390: a seção "Serviços" deixa de ser seis
+  T733 — E276 (pedido do Daniel, 30/10), na HOME DO MORADOR, a 1280 e 390: a seção "Serviços" deixa de ser seis
   botões só de texto. Cada serviço (Fotografia, Mudança, Limpeza, Lavanderia, Montagem de móveis, Manutenção) é um
   cartão com a foto da categoria — carregada de verdade (complete + naturalWidth), todas do MESMO tamanho e
   proporção 16:10 — com o nome e uma frase curta; grade par (2 colunas no celular, 3 no computador). O destino de cada cartão é o mesmo
@@ -23,7 +23,7 @@ const SERVICOS = [
   ["manutencao", "Manutenção"],
 ] as const;
 
-test.describe("T711 — E276: serviços do painel do morador com foto", () => {
+test.describe("T733 — E276: serviços do painel do morador com foto", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -77,7 +77,7 @@ test.describe("T711 — E276: serviços do painel do morador com foto", () => {
       const srcs = await painel.locator("img").evaluateAll((is) => is.map((i) => (i as HTMLImageElement).currentSrc));
       expect(new Set(srcs).size).toBe(6);
 
-      await painel.screenshot({ path: `${SAIDA}/t711-servicos-${largura}.png` });
+      await painel.screenshot({ path: `${SAIDA}/t733-servicos-${largura}.png` });
       // O clique leva à busca de parceiros da categoria.
       await painel.getByTestId("servicos-limpeza").click();
       await expect(p).toHaveURL(/\/parceiros\/buscar\?categoria=limpeza&cidade=Uberl/, { timeout: 20_000 });

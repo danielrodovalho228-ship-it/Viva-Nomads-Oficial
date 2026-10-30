@@ -59,7 +59,7 @@ export function ServicosPainel({ cidade }: { cidade?: string | null }) {
           );
         })}
       </ul>
-      <div className="mt-6 border-t border-line pt-5" data-testid="servicos-como-funciona">
+      <div className="mt-6 border-t border-line pt-4" data-testid="servicos-como-funciona">
         <h3 className="text-sm font-semibold text-ink">Como funciona</h3>
         <ol className="mt-3 grid gap-3 sm:grid-cols-3 sm:gap-4">
           {COMO_FUNCIONA_SERVICOS.map((p, i) => (
