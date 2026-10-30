@@ -1173,6 +1173,7 @@
         "t680-e193-passo5-cartoes",
         "t681-e257-descricao-cartoes",
         "t682-e258-conferencia-opcionais",
+        "t687-e259-entrada-unica",
         "t685-e258-como-cada-bloco-grava"
       ]
     },
@@ -1208,7 +1209,8 @@
         "t338-varredura-bloco15",
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
-        "t553-varredura-bloco41"
+        "t553-varredura-bloco41",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/locacoes": {
@@ -1228,7 +1230,8 @@
         "t221-contrato-estado-periodo",
         "t491-e182-estadias-com-nome",
         "t557-varredura-bloco42",
-        "t489-e176-menus"
+        "t489-e176-menus",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1296,7 +1299,8 @@
         "t388-varredura-bloco23",
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1309,7 +1313,8 @@
         "t183-telas-logadas-390",
         "t193-propostas",
         "t298-varredura-logada-bloco4",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/orcamentos/nova": {
@@ -1339,7 +1344,8 @@
         "t232-pedido-moradia-completo",
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1484,7 +1490,8 @@
         "t388-varredura-bloco23",
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1950,7 +1957,8 @@
         "t212-ferramentas-proprietario",
         "t298-varredura-logada-bloco4",
         "t553-varredura-bloco41",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t686-varredura-bloco72"
       ]
     },
     "/dashboard/servicos": {

@@ -5,6 +5,7 @@ import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { cepValido, distanciaMetros, PROXIMIDADES_LAB, type LugarProximo } from "@/lib/proximidades/osm";
 import { buscarLugares, geocodificarEndereco, geocodificarLugar, type FonteProximidades, type Ponto } from "@/lib/proximidades/osm-servidor";
+import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximidades/ancoras";
 
 /*
   "O que tem por perto" (prompt 10; PERTO-B). Chamada pelo cadastro novo E pela edição (ao abrir a seção e sempre que o
@@ -16,12 +17,16 @@ import { buscarLugares, geocodificarEndereco, geocodificarLugar, type FonteProxi
   • acao "lugar": o endereço de um lugar adicionado à mão → a distância CALCULADA até o endereço do anúncio.
   • O ponto exato do imóvel NUNCA vai à resposta; só serve para achar os lugares e medir a distância.
   • Laboratório (INTEGRACOES_SIMULADAS=on): lista fixa, nada sai para a rede.
+  • E259 item 7 — FONTE ÚNICA com a página: as âncoras oficiais da cidade (tabela destinos, a mesma do "Tempo até")
+    entram na lista, e tudo é medido de UM ponto — o ponto público do anúncio já salvo (imovelId), o mesmo da página;
+    num anúncio novo, o do endereço. O Overpass que não responde (tempo estourado nos dois servidores) é "erro", nunca
+    "nada por perto", e não grava lista vazia no cache.
 */
 
 const CACHE_DIAS = 30;
 const s = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[<>]/g, "").trim().slice(0, max) : "");
 
-function registrar(fonte: FonteProximidades | "lugar_ok" | "lugar_sem_ponto", etapas: string[]) {
+function registrar(fonte: FonteProximidades | "ancoras" | "lugar_ok" | "lugar_sem_ponto", etapas: string[]) {
   console.info("[proximidades]", fonte, etapas.join(" ") || "-");
 }
 
@@ -57,36 +62,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ distanciaM: origem && lugar ? distanciaMetros(origem, lugar) : null });
   }
 
+  // E259: o ponto público do anúncio já salvo (o mesmo do "Tempo até" da página) e as âncoras oficiais da cidade.
+  const imovelId = typeof corpo?.imovelId === "string" ? corpo.imovelId : typeof corpo?.propertyId === "string" ? corpo.propertyId : null;
+  const [pontoPublico, destinos] = await Promise.all([pontoPublicoDoAnuncio(admin, imovelId, user.id), destinosAncora(admin)]);
+  const responder = (osm: LugarProximo[] | null, fonteOsm: string, pontoEndereco: Ponto | null) => {
+    const referencia = pontoPublico ?? pontoEndereco;
+    const ancoras = referencia ? ancorasPerto(referencia, destinos, { cidade: endereco.cidade, uf: endereco.uf }) : [];
+    const r = respostaPerto({ osm, fonteOsm, referencia, ancoras });
+    registrar(r.fonte as FonteProximidades | "ancoras", ancoras.length ? [...etapas, `ancoras:${ancoras.length}`] : etapas);
+    return NextResponse.json(r);
+  };
+
   if (integracoesSimuladas()) {
     await registrarSimulado("osm", { acao: "proximidades", cep });
-    if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: -18.918, lng: -48.258, itens: PROXIMIDADES_LAB, fonte: "lab", atualizado_em: new Date().toISOString() });
-    return NextResponse.json({ itens: PROXIMIDADES_LAB, fonte: "lab" });
+    const pontoLab = { lat: -18.918, lng: -48.258 };
+    if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: pontoLab.lat, lng: pontoLab.lng, itens: PROXIMIDADES_LAB, fonte: "lab", atualizado_em: new Date().toISOString() });
+    return responder(PROXIMIDADES_LAB, "lab", pontoLab);
   }
 
+  let pontoCache: Ponto | null = null;
   if (admin) {
-    const { data: cache } = await admin.from("proximidades_cep").select("itens, atualizado_em").eq("cep", cep).maybeSingle();
+    const { data: cache } = await admin.from("proximidades_cep").select("itens, atualizado_em, lat, lng").eq("cep", cep).maybeSingle();
+    if (cache && Number.isFinite(cache.lat) && Number.isFinite(cache.lng)) pontoCache = { lat: Number(cache.lat), lng: Number(cache.lng) };
     const fresco = cache && Date.now() - Date.parse(cache.atualizado_em as string) < CACHE_DIAS * 86_400_000;
-    if (fresco && Array.isArray(cache.itens) && cache.itens.length > 0) {
-      return NextResponse.json({ itens: cache.itens, fonte: "cache" });
-    }
+    if (fresco && Array.isArray(cache.itens) && cache.itens.length > 0) return responder(cache.itens as LugarProximo[], "cache", pontoCache);
   }
 
   // OSM é gratuito, mas é de todos: limita por pessoa além do cache.
-  if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) {
-    registrar("limite", etapas);
-    return NextResponse.json({ itens: [], fonte: "limite" });
-  }
+  if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) return responder(null, "limite", pontoCache);
 
   const { ponto, fonte } = await geocodificarEndereco(endereco, etapas);
-  if (!ponto || !fonte) {
-    registrar("sem_ponto", etapas);
-    return NextResponse.json({ itens: [], fonte: "sem_ponto" });
-  }
-  const itens: LugarProximo[] = (await buscarLugares(ponto, etapas)) ?? [];
-  // O ponto fica no cache mesmo sem lugares: a distância dos lugares adicionados à mão parte dele.
-  if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens, fonte, atualizado_em: new Date().toISOString() });
-  registrar(itens.length ? fonte : "sem_lugares", etapas);
-  return NextResponse.json({ itens, fonte: itens.length ? fonte : "sem_lugares" });
+  if (!ponto || !fonte) return responder(null, "sem_ponto", pontoCache);
+  const achados = await buscarLugares(ponto, etapas);
+  // O ponto fica no cache mesmo sem lugares (a distância dos lugares adicionados à mão parte dele); a lista só quando o
+  // Overpass respondeu — a falha não vira "nada por perto" guardado por 30 dias.
+  if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens: achados ?? [], fonte: achados ? fonte : "erro", atualizado_em: new Date().toISOString() });
+  return responder(achados, achados ? fonte : "erro", ponto);
+}
+
+/** E259: as âncoras oficiais ativas (tabela destinos), a mesma fonte do "Tempo até" da página do imóvel. */
+async function destinosAncora(admin: ReturnType<typeof createAdminClient>): Promise<DestinoAncora[]> {
+  if (!admin) return [];
+  const { data } = await admin.from("destinos").select("nome, tipo, cidade, uf, lat, lng").eq("ativo", true);
+  return (data ?? []) as DestinoAncora[];
+}
+
+/** E259: o ponto PÚBLICO de um anúncio do PRÓPRIO dono (o mesmo que a página usa), ou null. Nunca vai à resposta. */
+async function pontoPublicoDoAnuncio(admin: ReturnType<typeof createAdminClient>, id: string | null, userId: string): Promise<Ponto | null> {
+  if (!admin || !id || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data } = await admin.from("properties").select("owner_id, lat, lng").eq("id", id).maybeSingle();
+  if (!data || data.owner_id !== userId || data.lat == null || data.lng == null) return null;
+  const p = { lat: Number(data.lat), lng: Number(data.lng) };
+  return Number.isFinite(p.lat) && Number.isFinite(p.lng) ? p : null;
 }
 
 /** O ponto do endereço do anúncio: o do cache do CEP; sem cache, geocodifica agora. */

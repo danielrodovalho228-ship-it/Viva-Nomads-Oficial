@@ -9,8 +9,8 @@ export function iconeLinhaPrivacidade(linha: string): LucideIcon {
 }
 
 /** Bloco "Privacidade" do anúncio público: só o que o anunciante declarou. */
-export function PrivacidadeAcesso({ privacidade }: { privacidade?: Privacidade }) {
-  const linhas = linhasPrivacidadePublica(privacidade);
+export function PrivacidadeAcesso({ privacidade, tipoEntrada }: { privacidade?: Privacidade; tipoEntrada?: string | null }) {
+  const linhas = linhasPrivacidadePublica(privacidade, tipoEntrada);
   if (linhas.length === 0) return null;
   return (
     <section className="rounded-xl border border-line bg-white p-4" data-testid="bloco-privacidade">

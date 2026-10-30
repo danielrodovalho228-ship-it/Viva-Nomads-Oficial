@@ -5,7 +5,6 @@ import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import {
   MAX_CAMERAS_EXTERNAS,
   TEXTO_DECLARACAO_CAMERAS,
-  TIPOS_ACESSO,
   type Privacidade,
 } from "@/lib/anuncio/privacidade";
 
@@ -54,33 +53,7 @@ export function PrivacidadeCampos({ valor, onChange }: { valor: Privacidade; onC
         )}
       </div>
 
-      {/* E193: escolha única em cartões (antes, lista suspensa). */}
-      <fieldset data-testid="tipo-acesso">
-        <legend className="mb-2 block text-sm font-medium text-ink">Tipo de acesso ao imóvel</legend>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de acesso ao imóvel">
-          {[{ valor: null, rotulo: "Não informar" }, ...TIPOS_ACESSO].map((t) => (
-            <CartaoEscolha
-              key={t.valor ?? "nenhum"}
-              on={(valor.tipoAcesso ?? null) === t.valor}
-              onClick={() => {
-                const novo = t.valor as Privacidade["tipoAcesso"];
-                set({ tipoAcesso: novo, senhaTrocadaEstadia: novo === "fechadura_senha" ? valor.senhaTrocadaEstadia : false });
-              }}
-              rotulo={t.rotulo}
-              testid={`tipo-acesso-${t.valor ?? "nenhum"}`}
-            />
-          ))}
-        </div>
-      </fieldset>
-      {valor.tipoAcesso === "fechadura_senha" && (
-        <CartaoEscolha
-          papel="checkbox"
-          on={valor.senhaTrocadaEstadia}
-          onClick={() => set({ senhaTrocadaEstadia: !valor.senhaTrocadaEstadia })}
-          testid="senha-trocada"
-          rotulo="A senha é trocada antes de cada nova estadia"
-        />
-      )}
+      {/* E259 (2): a entrada do imóvel é perguntada uma vez só, no Passo 6 ("Como se entra no imóvel?"). */}
     </div>
   );
 }
