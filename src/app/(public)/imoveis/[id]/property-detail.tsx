@@ -51,7 +51,7 @@ import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
-import { calcularTotalMensal } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovel } from "@/lib/precos";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { mesesDoCartao } from "@/lib/cartao-preco";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -729,7 +729,7 @@ export function PropertyDetail({
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: meses > 1 ? estadiaDoImovel(property, meses)?.total : null, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}

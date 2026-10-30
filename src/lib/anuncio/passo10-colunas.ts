@@ -10,7 +10,7 @@
 import type { ItemProntidao } from "./prontidao.ts";
 import type { DeclaracoesPasso10 } from "./requisitos-passo10.ts";
 import { TEXTO_HABITAVEL, TEXTO_IPTU } from "./requisitos-passo10.ts";
-import { ROTULO_MENSAL, ROTULO_TOTAL_MES, precoDoImovel, rotuloEstadiaMinima } from "../precos.ts";
+import { ROTULO_MENSAL, ROTULO_TOTAL_MES, estadiaDoImovel, precoDoImovel, rotuloEstadiaMinima } from "../precos.ts";
 import { mesesDoCartao } from "../cartao-preco.ts";
 import type { Property } from "../types.ts";
 
@@ -157,10 +157,12 @@ export interface LinhaPrecoPrevia {
 export function precosDaPrevia(property: Property): LinhaPrecoPrevia[] {
   const meses = mesesDoCartao(undefined, property.minPeriodDays);
   const p = precoDoImovel(property, meses);
+  // E254-A: o total do período e a conta pela mesma função do cartão de Meus anúncios e da página pública.
+  const estadia = estadiaDoImovel(property, meses);
   return [
     { rotulo: ROTULO_MENSAL, valor: p.mensal },
     { rotulo: ROTULO_TOTAL_MES, valor: p.totalPorMes },
-    { rotulo: rotuloEstadiaMinima(meses), valor: p.totalContrato, conta: p.conta },
+    { rotulo: rotuloEstadiaMinima(meses), valor: estadia?.total ?? null, conta: estadia?.conta ?? null },
   ];
 }
 
