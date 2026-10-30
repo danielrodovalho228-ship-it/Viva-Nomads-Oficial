@@ -65,7 +65,7 @@ export default async function TemaAjudaPage({ params }: { params: Promise<{ tema
           </Link>
         </p>
       </div>
-      <JsonLd dados={faqPage(tema.perguntas)} />
+      <JsonLd dados={faqPage(tema.perguntas, `${tema.titulo} · Perguntas frequentes`)} />
     </div>
   );
 }
