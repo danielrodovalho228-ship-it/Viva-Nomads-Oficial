@@ -8,6 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
       (/ajuda/<tema>, com as suas perguntas), documentos; o hub não lista perguntas (QA de 29/10); sem chat nem chamado.
    2. /ajuda/fale-com-a-viva: o chat e o chamado; links antigos (/ajuda?novo=1) chegam aqui.
    3. /termos e /privacidade: páginas próprias com índice e "Ficou alguma dúvida? Fale com a Viva."
+  Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
 */
 const SAIDA = "tests/laboratorio/saida";
 

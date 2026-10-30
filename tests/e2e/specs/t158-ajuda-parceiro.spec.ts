@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 /**
  * Ordem e8838fa3 (D10) — /ajuda tem UMA pergunta sobre virar parceiro, que separa empresa que
  * quer moradia (/empresas) de empresa que quer ser parceira (/parceiros). Público, 390 e 1280 px.
+ * Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
  */
 for (const largura of [390, 1280]) {
   test.describe(`T158 — Ajuda: virar parceiro (${largura} px)`, () => {

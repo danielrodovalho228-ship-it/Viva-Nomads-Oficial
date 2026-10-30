@@ -99,7 +99,7 @@ test("menu: a seção do papel ativo sobe para depois da Visão geral, sem escon
 test("fonte única: selo, barra, Conta, login e troca leem/gravam profiles.papel_ativo; intenção não troca depois do 1º acesso", () => {
   assert.match(ler("src/lib/nav-mobile.ts"), /return papelAtivo\(\{ admin: p\.admin, modo: p\.modo, parceiroEscolhido: !!p\.preferenciaParceiro/);
   assert.match(ler("src/lib/use-papel-barra.ts"), /useAuthStore\(\(s\) => s\.parceiroAtivo\)/);
-  assert.match(ler("src/components/auth-provider.tsx"), /select\("full_name, role, preferred_mode, papel_ativo"\)/);
+  assert.match(ler("src/components/auth-provider.tsx"), /select\("full_name, role, preferred_mode, papel_ativo(, is_teste)?"\)/);
   const acoes = ler("src/lib/data/papel-actions.ts");
   assert.match(acoes, /update\(modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \}\)/);
   assert.match(acoes, /papel === "parceiro" && !\(await ehParceiroAprovado/);

@@ -103,3 +103,24 @@ export function chaveLimiteConta(email: string): string {
   return `qa-entrar:conta:${sha256Hex(`qa:${email}`).slice(0, 32)}`;
 }
 export const chaveLimiteIp = (ipHash: string) => `qa-entrar:ip:${ipHash}`;
+
+/**
+ * E256-B: motivo de cada 404 da porta, só para o LOG do servidor (o cliente recebe sempre o mesmo 404). Nunca leva
+ * e-mail, chave nem IP: só o código.
+ */
+export const MOTIVOS_RECUSA_QA = ["desligada", "metodo", "chave", "perfil", "2fa", "padrao", "admin_fechada"] as const;
+export type MotivoRecusaQa = (typeof MOTIVOS_RECUSA_QA)[number];
+
+/** Por que tipoDeEntrada recusou esta conta existente (mesmas regras, na mesma ordem). null = não recusou. */
+export function motivoRecusaConta(p: PerfilQa | null, temFator2fa: boolean, adminQaAberta: boolean): MotivoRecusaQa | null {
+  if (tipoDeEntrada(p, temFator2fa, adminQaAberta)) return null;
+  if (!p || p.is_teste !== true) return "perfil";
+  if (p.qa_admin === true) return p.role === "admin" ? "admin_fechada" : "perfil";
+  if (temFator2fa) return "2fa";
+  return "perfil";
+}
+
+/** A linha do log: JSON com o evento e o código. Nada além disso. */
+export function linhaLogRecusaQa(motivo: MotivoRecusaQa): string {
+  return JSON.stringify({ evento: "qa_porta_recusa", motivo });
+}

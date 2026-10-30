@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: profile } = await supabase!
           .from("profiles")
-          .select("full_name, role, preferred_mode, papel_ativo")
+          .select("full_name, role, preferred_mode, papel_ativo, is_teste")
           .eq("id", u.id)
           .maybeSingle();
         if (profile && (profile.full_name || profile.role)) {
@@ -85,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             fullName: profile.full_name ?? metaName,
             email: u.email ?? "",
             role: (profile.role as UserRole) ?? metaRole,
+            isTeste: (profile as { is_teste?: boolean | null }).is_teste === true,
           });
         }
         // Modo ativo é PREFERÊNCIA DE PERFIL (B1): o servidor é a autoridade no

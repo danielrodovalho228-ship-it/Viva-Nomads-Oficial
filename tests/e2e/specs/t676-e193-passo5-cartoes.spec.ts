@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T672 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 5 inteiro no padrão único de cartões grandes
+  T676 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 5 inteiro no padrão único de cartões grandes
   tocáveis da Qualificação. Com os blocos opcionais abertos, inventaria os controles de escolha à vista:
    - nenhuma pílula (botão arredondado de chip) e nenhuma caixa quadrada;
    - interruptor só o do bloco opcional (padrão E56: data-testid "bloco-…-toggle");
@@ -40,18 +40,18 @@ const inventario = (p: Page) =>
     return r;
   });
 
-test.describe("T672 — E193: Passo 5 em cartões", () => {
+test.describe("T676 — E193: Passo 5 em cartões", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
   const senha = novaSenha();
   const sufixo = novoSufixo();
-  const dono = { email: `dono.t672.${sufixo}@lab.vivanomads.test`, nome: "Tais Cartao", role: "owner" as const };
+  const dono = { email: `dono.t676.${sufixo}@lab.vivanomads.test`, nome: "Tais Cartao", role: "owner" as const };
   const ids: Record<string, string> = {};
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.dono);
-    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t672 ${sufixo}`);
+    ids.rascunho = await criarImovelPronto(ids.dono, `Rascunho t676 ${sufixo}`);
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
@@ -76,7 +76,7 @@ test.describe("T672 — E193: Passo 5 em cartões", () => {
       }
       await p.waitForTimeout(500);
       const inv = await inventario(p);
-      console.log(`t672 ${largura}`, JSON.stringify(inv));
+      console.log(`t676 ${largura}`, JSON.stringify(inv));
       expect(inv.pilula, `pílulas: ${inv.pilula.join(" | ")}`).toEqual([]);
       expect(inv.caixa, `caixas: ${inv.caixa.join(" | ")}`).toEqual([]);
       expect(inv.chave, `interruptores fora do bloco opcional: ${inv.chave.join(" | ")}`).toEqual([]);
@@ -87,7 +87,7 @@ test.describe("T672 — E193: Passo 5 em cartões", () => {
         await expect(ruido.getByRole("checkbox")).toHaveCount(4);
         await expect(ruido.getByRole("radio")).toHaveCount(0);
       }
-      await p.screenshot({ path: `${SAIDA}/t672-passo5-${largura}.png`, fullPage: true });
+      await p.screenshot({ path: `${SAIDA}/t676-passo5-${largura}.png`, fullPage: true });
       await p.context().close();
     });
   }
