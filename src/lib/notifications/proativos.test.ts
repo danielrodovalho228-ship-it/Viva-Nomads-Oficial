@@ -43,7 +43,7 @@ const DESC = `${SITE}/avisos/desligar?u=x&t=y`;
 
 test("cartão do imóvel: foto de capa real redimensionada, título, bairro e cidade, Total por mês (com contas) e 'Ver o imóvel'", () => {
   const c = cartaoImovel(SITE, imovel(1));
-  assert.ok(c.html.includes(`${SITE}/_next/image?url=${encodeURIComponent(FOTO)}&amp;w=640&amp;q=70`) || c.html.includes(`${SITE}/_next/image?url=${encodeURIComponent(FOTO)}&w=640&q=70`));
+  assert.ok(c.html.includes(`${SITE}/_next/image?url=${encodeURIComponent(FOTO)}&amp;w=640&amp;q=75`) || c.html.includes(`${SITE}/_next/image?url=${encodeURIComponent(FOTO)}&w=640&q=75`));
   assert.match(c.html, /Apto mobiliado 1/);
   assert.match(c.html, /Santa Mônica, Uberlândia - MG/);
   assert.ok(c.html.includes(ROTULO_TOTAL_MES), "o rótulo da casa");
@@ -212,4 +212,19 @@ test("0262: categoria 'sugestoes' no check, quem desligou 'outros' fica sem suge
   const volta = ler("supabase/producao/rollback/0262_rollback.sql");
   assert.match(volta, /drop table if exists public\.emails_proativos/);
   assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261030000262'/);
+});
+
+test("E274: a foto do cartão pede ao otimizador só largura e qualidade que o Next 16 aceita (senão: 400 e e-mail sem foto)", async () => {
+  const { FOTO_CARTAO, fotoDoCartao } = await import("./cartoes-email.ts");
+  const cfg = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
+  // Sem `qualities` na config, o Next 16 aceita só 75; com a lista, a qualidade tem de estar nela.
+  const lista = /qualities:\s*\[([^\]]*)\]/.exec(cfg);
+  const qualidades = lista ? lista[1].split(",").map((x) => Number(x.trim())) : [75];
+  assert.ok(qualidades.includes(FOTO_CARTAO.qualidade), `q=${FOTO_CARTAO.qualidade} fora de ${qualidades.join(",")}`);
+  // Sem deviceSizes/imageSizes próprios, 640 está nas larguras padrão do Next.
+  assert.doesNotMatch(cfg, /deviceSizes|imageSizes/);
+  assert.ok([640, 750, 828, 1080, 1200, 1920, 2048, 3840, 16, 32, 48, 64, 96, 128, 256, 384].includes(FOTO_CARTAO.largura));
+  const u = fotoDoCartao(SITE, FOTO)!;
+  assert.match(u, /&w=640&q=75$/);
+  assert.doesNotMatch(u, /q=70/);
 });
