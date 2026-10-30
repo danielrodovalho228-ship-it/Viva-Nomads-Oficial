@@ -18,6 +18,8 @@ export function BannerTopo({
   className,
   posicaoFoto,
   coluna,
+  mosaico,
+  testid = "banner-topo",
 }: {
   foto: string;
   alt: string;
@@ -32,11 +34,25 @@ export function BannerTopo({
   posicaoFoto?: string;
   /** Largura da coluna do conteúdo da página abaixo (ex.: "max-w-5xl"): o título se alinha a ela, não à borda. */
   coluna?: string;
+  /** E285: mosaico de fotos (lado a lado, mesma altura) no lugar da foto única. As fotos são decorativas (alt vazio). */
+  mosaico?: readonly string[];
+  /** Marca de teste da seção (padrão: banner-topo). */
+  testid?: string;
 }) {
   const centro = alinhamento === "centro";
   return (
-    <section data-testid="banner-topo" className={cn("relative isolate overflow-hidden bg-night text-white", className)}>
-      <Image src={foto} alt={alt} fill priority sizes="100vw" placeholder="blur" blurDataURL={BRAND_BLUR} className="-z-10 object-cover" style={posicaoFoto ? { objectPosition: posicaoFoto } : undefined} />
+    <section data-testid={testid} className={cn("relative isolate overflow-hidden bg-night text-white", className)}>
+      {mosaico?.length ? (
+        <div className="absolute inset-0 -z-10 grid" style={{ gridTemplateColumns: `repeat(${mosaico.length}, minmax(0, 1fr))` }} aria-hidden>
+          {mosaico.map((src) => (
+            <div key={src} className="relative">
+              <Image src={src} alt="" fill priority sizes={`${Math.ceil(100 / mosaico.length)}vw`} placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Image src={foto} alt={alt} fill priority sizes="100vw" placeholder="blur" blurDataURL={BRAND_BLUR} className="-z-10 object-cover" style={posicaoFoto ? { objectPosition: posicaoFoto } : undefined} />
+      )}
       <div
         aria-hidden
         className={cn(

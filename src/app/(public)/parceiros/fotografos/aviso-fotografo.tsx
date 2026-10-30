@@ -18,6 +18,7 @@ export function AvisoFotografo({
   voltarPara,
   autoAvisar = false,
   categoria = "fotografia",
+  ladoALado = false,
 }: {
   cidade: string;
   uf: string;
@@ -27,6 +28,9 @@ export function AvisoFotografo({
   autoAvisar?: boolean;
   /** Prompt 31a: o avise-me vale para qualquer categoria de parceiro. */
   categoria?: string;
+  /** E285: no estado vazio da busca de parceiros, o cartão fica ao lado do "Indique um profissional", com o mesmo
+   *  título curto ("Quero ser avisado") e a frase de apoio embaixo. */
+  ladoALado?: boolean;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
@@ -53,10 +57,19 @@ export function AvisoFotografo({
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-sage-200 bg-sage-50 p-4" data-testid="aviso-fotografo">
-      <p className="flex items-center gap-2 font-semibold text-ink">
-        <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {categoria === "fotografia" ? CONVITE_AVISO : "Avisamos você quando houver um parceiro desta categoria na sua cidade."}
-      </p>
+    <div className={ladoALado ? "h-full rounded-xl border border-line bg-white p-4" : "mt-4 rounded-xl border border-sage-200 bg-sage-50 p-4"} data-testid="aviso-fotografo">
+      {ladoALado ? (
+        <>
+          <p className="flex items-center gap-2 font-semibold text-ink">
+            <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> Quero ser avisado
+          </p>
+          <p className="mt-1 text-sm text-muted">Avisamos você quando houver um parceiro desta categoria na sua cidade.</p>
+        </>
+      ) : (
+        <p className="flex items-center gap-2 font-semibold text-ink">
+          <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {categoria === "fotografia" ? CONVITE_AVISO : "Avisamos você quando houver um parceiro desta categoria na sua cidade."}
+        </p>
+      )}
       {enviando && !msg && autoAvisar && (
         <p className="mt-2 text-sm text-ink" role="status">
           Registrando o seu pedido de aviso…
