@@ -323,6 +323,7 @@
       ],
       "specs": [
         "t158-ajuda-parceiro",
+        "t709-conformidade-ajuda",
         "t19-atendimento-online",
         "t20-p1-agentes",
         "t21-central-agentes",
