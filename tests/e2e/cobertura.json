@@ -1060,7 +1060,8 @@
         "t551-varredura-bloco40",
         "t623-varredura-bloco57",
         "t663-varredura-bloco64",
-        "t668-e225-estrutura-acessibilidade"
+        "t668-e225-estrutura-acessibilidade",
+        "t696-varredura-bloco74"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1180,7 +1181,8 @@
         "t685-e258-como-cada-bloco-grava",
         "t689-e193-cartoes-tocaveis",
         "t690-e259-passo2-contagem",
-        "t692-e259-pagina-publica"
+        "t692-e259-pagina-publica",
+        "t696-varredura-bloco74"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1669,7 +1671,8 @@
         "t574-e207-voltar-resultados",
         "t588-varredura-bloco46",
         "t668-e225-estrutura-acessibilidade",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t696-varredura-bloco74"
       ]
     },
     "/modelodenegocio": {
