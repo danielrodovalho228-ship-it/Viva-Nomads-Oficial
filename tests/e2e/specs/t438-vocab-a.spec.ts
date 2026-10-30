@@ -7,6 +7,7 @@ import { test, expect } from "@playwright/test";
  *  3. Páginas públicas (home, /como-funciona, /empresas, /guias): nenhum "inquilino" nem "comissão" no texto da tela.
  *  4. /ajuda: a resposta de "Esqueci minha senha" começa por "Você não precisa de senha".
  *  Em 390 e 1280 px, com prints.
+ * Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
  */
 const PROIBIDAS = /\binquilin[oa]s?\b|\bcomiss(ão|ões)\b/i;
 
