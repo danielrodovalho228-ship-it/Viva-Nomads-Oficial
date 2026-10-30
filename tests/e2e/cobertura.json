@@ -1065,7 +1065,8 @@
         "t623-varredura-bloco57",
         "t663-varredura-bloco64",
         "t668-e225-estrutura-acessibilidade",
-        "t701-e261-avisos-editor"
+        "t701-e261-avisos-editor",
+        "t706-e261-avisos-titulo"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1192,7 +1193,9 @@
         "t700-e260-avisos-unicos",
         "t704-e265-tipos-sem-selo",
         "t707-e262-galeria-destaques-previa",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t699-e260-pendencia-uma-vez",
+        "t706-e261-avisos-titulo"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1686,7 +1689,9 @@
         "t705-e263-pets-condicoes",
         "t702-e262-galeria-e-destaques",
         "t707-e262-galeria-destaques-previa",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t699-e260-pendencia-uma-vez",
+        "t706-e261-avisos-titulo"
       ]
     },
     "/modelodenegocio": {
