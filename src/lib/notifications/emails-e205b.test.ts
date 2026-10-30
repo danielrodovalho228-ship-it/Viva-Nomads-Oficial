@@ -14,6 +14,8 @@ import {
   propostaRecusada,
   vesperaDaVisita,
   vesperaTexto,
+  assuntoVespera,
+  diaDaVisita,
   visitaCancelada,
 } from "./emails-e205b.ts";
 import { comMarca, problemasDoAssunto } from "./assuntos.ts";
@@ -153,4 +155,59 @@ test("GUARDA: os chamadores — boas-vindas na 1ª entrada, aceite com 2 e-mails
   const cron = ler("../../app/api/cron/automacoes/route.ts");
   assert.match(cron, /expirarVisitasVencidas\(admin, agora, \{ simular \}\)/);
   assert.match(cron, /vesperasDasVisitas\(admin, agora, simular\)/);
+});
+
+/* ── E269/E270 (prova ao vivo de 30/10) ──────────────────────────────────────────────────────────────────────── */
+
+test("E269: recusa da proposta — os dois lados recebem (a moradora que recusou vê imóveis parecidos)", () => {
+  // O caso da prova: a moradora recusa → o dono recebe "Ana recusou…" e a moradora a sua cópia.
+  const aoDono = propostaRecusada({ quemRecusou: "tenant", nomeDeQuemRecusou: "Ana Souza", motivo: "Datas", propostaId: "P1", cidade: "Uberlândia" });
+  const copia = propostaRecusada({ quemRecusou: "tenant", motivo: "Datas", propostaId: "P1", cidade: "Uberlândia", paraQuemRecusou: true, nomeDaOutraParte: "Carlos Lima" });
+  assert.equal(aoDono.cta, "Ajustar e enviar nova versão");
+  assert.equal(copia.assunto, "Você recusou a proposta");
+  assert.equal(copia.abertura("Ana"), "Olá Ana, você recusou a proposta. Motivo: Datas. O proprietário já recebeu o aviso. Há outros imóveis parecidos na busca.");
+  assert.equal(copia.cta, "Ver outros imóveis parecidos");
+  assert.equal(copia.url, "/buscar?cidade=Uberl%C3%A2ndia");
+  // O dono que recusa recebe a cópia dele (volta à proposta), com o primeiro nome da moradora.
+  const copiaDono = propostaRecusada({ quemRecusou: "owner", motivo: "Valor", propostaId: "P1", paraQuemRecusou: true, nomeDaOutraParte: "Ana Souza" });
+  assert.equal(copiaDono.abertura("Carlos"), "Olá Carlos, você recusou a proposta. Motivo: Valor. Ana já recebeu o aviso.");
+  assert.equal(copiaDono.cta, "Ver a proposta");
+  assert.equal(copiaDono.url, "/dashboard/propostas/P1");
+  assert.doesNotMatch(copiaDono.abertura("Carlos"), /Souza/);
+});
+
+test("E269: visita cancelada — os dois lados recebem (o dono que cancelou recebe a cópia)", () => {
+  const base = { quemCancelou: "dono" as const, nomeDeQuemCancelou: "Carlos Lima", motivo: "Imóvel alugado", horario: "qui., 05/11 às 10:00", tipo: "presencial", imovel: "Apto Centro", propertyId: "I1" };
+  const aoMorador = visitaCancelada({ ...base, paraMorador: true });
+  assert.equal(aoMorador.cta, "Pedir outro horário");
+  const copia = visitaCancelada({ ...base, paraMorador: false, paraQuemCancelou: true });
+  assert.equal(copia.abertura("Carlos"), "Olá Carlos, você cancelou a visita presencial em Apto Centro. O morador já recebeu o aviso.");
+  assert.ok(copia.linhas.some((l) => l.rotulo === "Cancelada por" && l.valor === "Você"));
+  assert.ok(copia.linhas.some((l) => l.rotulo === "Motivo" && l.valor === "Imóvel alugado"));
+  assert.equal(copia.cta, "Ver as visitas");
+  assert.equal(copia.url, "/dashboard/visitas?de=dono");
+  // O morador que cancela também recebe a dele.
+  const copiaMorador = visitaCancelada({ ...base, quemCancelou: "morador", paraMorador: true, paraQuemCancelou: true });
+  assert.match(copiaMorador.abertura("Ana"), /O proprietário já recebeu o aviso\.$/);
+  // O servidor manda a cópia a quem cancelou (autor) e a proposta, a quem recusou.
+  const srv = ler("../visitas/avisos-servidor.ts");
+  assert.match(srv, /paraQuemCancelou: true/);
+  assert.match(srv, /subject: ASSUNTOS\.visitaCanceladaPorVoce/);
+  assert.match(ler("../data/propostas-actions.ts"), /await copiaDaRecusa\(s\.admin, p, papel, motivo, texto\)/);
+});
+
+test("E270: o assunto da véspera acompanha o caso — hoje ou amanhã (Brasília), e o corpo diz o mesmo", () => {
+  const agora = new Date("2026-10-30T13:00:00Z"); // 10h em Brasília
+  assert.equal(diaDaVisita("2026-10-30T19:00:00Z", agora), "hoje"); // 16h do mesmo dia
+  assert.equal(diaDaVisita("2026-10-31T02:30:00Z", agora), "hoje"); // 23h30 de Brasília ainda é hoje
+  assert.equal(diaDaVisita("2026-10-31T03:30:00Z", agora), "amanhã"); // 00h30 de Brasília já é amanhã
+  assert.equal(diaDaVisita("2026-10-31T12:00:00Z", agora), "amanhã");
+  assert.equal(assuntoVespera("hoje"), "Sua visita é hoje");
+  assert.equal(assuntoVespera("amanhã"), "Sua visita é amanhã");
+  const hoje = vesperaTexto({ modalidade: "presencial", paraMorador: false, horario: "x", nomeMorador: "Ana", quando: "hoje" });
+  assert.equal(hoje.abertura("Carlos"), "Olá Carlos, a visita presencial com Ana é hoje.");
+  assert.match(vesperaTexto({ modalidade: "video", paraMorador: true, horario: "x", quando: "amanhã" }).abertura("Ana"), /a visita por vídeo é amanhã\./);
+  const srv = ler("../visitas/avisos-servidor.ts");
+  assert.match(srv, /subject: assuntoVespera\(quando\)/);
+  assert.match(srv, /const quando = diaDaVisita\(v\.horario_confirmado!, agora\)/);
 });

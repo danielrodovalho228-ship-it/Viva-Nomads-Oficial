@@ -39,6 +39,13 @@ async function emailDe(usuarioId: string, evento: string): Promise<string> {
   throw new Error(`sem e-mail ${evento} na caixa de teste`);
 }
 
+/** E269/E270: o assunto do último e-mail do evento. */
+async function assuntoDe(usuarioId: string, evento: string): Promise<string> {
+  await emailDe(usuarioId, evento);
+  const { data } = await adm().from("emails_teste").select("assunto").eq("usuario_id", usuarioId).eq("evento", evento).order("criado_em", { ascending: false }).limit(1);
+  return String(data?.[0]?.assunto ?? "");
+}
+
 async function contar(usuarioId: string, evento: string): Promise<number> {
   const { count } = await adm().from("emails_teste").select("id", { count: "exact", head: true }).eq("usuario_id", usuarioId).eq("evento", evento);
   return count ?? 0;
@@ -145,6 +152,13 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     expect(aoDono).toContain("Inês recusou a proposta");
     expect(aoDono).toContain("Motivo: Datas.");
     expect(aoDono).toContain("Ajustar e enviar nova versão");
+    // E269: a cópia da MORADORA que recusou (os dois lados, 1 cada).
+    const copiaMoradora = await emailDe(c.inq.id, "proposta_recusada");
+    expect(copiaMoradora).toContain("você recusou a proposta. Motivo: Datas.");
+    expect(copiaMoradora).toContain("Ver outros imóveis parecidos");
+    expect(await assuntoDe(c.inq.id, "proposta_recusada")).toBe("Você recusou a proposta · Viva Nomads");
+    expect(await contar(c.inq.id, "proposta_recusada")).toBe(1);
+    expect(await contar(c.dono.id, "proposta_recusada")).toBe(1);
 
     const c2 = await cenario("RecusaDono");
     const id2 = await propostaNoBanco(c2, "tenant");
@@ -158,6 +172,11 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     expect(aoMorador).toContain("Dona recusou a proposta");
     expect(aoMorador).toContain("Ver outros imóveis parecidos");
     expect(aoMorador).toContain("/buscar?cidade=Uberl%C3%A2ndia");
+    // E269: e a cópia do dono que recusou.
+    const copiaDono = await emailDe(c2.dono.id, "proposta_recusada");
+    expect(copiaDono).toContain("você recusou a proposta. Motivo: Valor.");
+    expect(copiaDono).toContain("Ver a proposta");
+    expect(await contar(c2.inq.id, "proposta_recusada")).toBe(1);
   });
 
   test("d1. visita expirada: abrir as visitas aplica a regra — cancelado/expirou, e-mail aos dois, cartão Expirada", async ({ browser }) => {
@@ -193,6 +212,12 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     await cartao.getByTestId("visita-confirmar").first().click();
     await expect.poll(async () => (await adm().from("visitas_video").select("status").eq("id", v.id).single()).data?.status, { timeout: 25_000 }).toBe("confirmado");
     const aoMorador = await emailDe(c.inq.id, "visita_vespera");
+    // E270: o assunto acompanha o caso — hoje ou amanhã no calendário de Brasília (a visita é daqui a 3 h).
+    const diaBRT = (t: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(t);
+    const quando = diaBRT(daqui3h) === diaBRT(new Date()) ? "hoje" : "amanhã";
+    expect(await assuntoDe(c.inq.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
+    expect(await assuntoDe(c.dono.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
+    expect(aoMorador).toContain(`a visita presencial é ${quando}.`);
     expect(aoMorador).toContain(`Endereço: ${ENDERECO}`);
     expect(aoMorador).toMatch(/Abrir no mapa: https:\/\//);
     expect(aoMorador).toContain("horário de Brasília");
@@ -215,6 +240,14 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     expect(cancelada).toContain("Cancelada por: Dona");
     expect(cancelada).toMatch(/Horário: .*horário de Brasília/);
     expect(cancelada).toContain("Pedir outro horário");
+    // E269: a cópia do DONO que cancelou.
+    const copia = await emailDe(c.dono.id, "visita_cancelada");
+    expect(copia).toContain("você cancelou a visita presencial");
+    expect(copia).toContain("O morador já recebeu o aviso.");
+    expect(copia).toContain("Cancelada por: Você");
+    expect(await assuntoDe(c.dono.id, "visita_cancelada")).toBe("Você cancelou a visita · Viva Nomads");
+    expect(await contar(c.inq.id, "visita_cancelada")).toBe(1);
+    expect(await contar(c.dono.id, "visita_cancelada")).toBe(1);
     await dono.context().close();
   });
 });
