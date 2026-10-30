@@ -26,12 +26,11 @@ test.describe("T709 — conformidade da Central de ajuda", () => {
         const titulo = await esquerda(p, '[data-testid="banner-topo"] h1');
         const conteudo = await esquerda(p, pg.conteudo);
         expect(titulo, `o título (x=${titulo}) começa na coluna do conteúdo (x=${conteudo})`).toBe(conteudo);
+        await p.screenshot({ path: `${SAIDA}/t709-${pg.nome}-${largura}.png` });
         if (pg.nome === "hub") {
           const achados = await varrerPagina(p, respostas);
           for (const c of Object.keys(CLASSES) as Classe[]) expect.soft(achados[c], `ajuda ${largura} — ${CLASSES[c]}`).toEqual([]);
         }
-        await p.evaluate(() => window.scrollTo(0, 0));
-        await p.screenshot({ path: `${SAIDA}/t709-${pg.nome}-${largura}.png` });
         await ctx.close();
       });
     }
