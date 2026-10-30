@@ -54,7 +54,22 @@ test("máximo de 3 destaques, na ordem de prioridade", () => {
   assert.equal(d.length, 3);
   assert.match(d[0].titulo, /Hospital A/);
   assert.match(d[1].titulo, /Universidade B/);
-  assert.equal(d[2].titulo, "Pronto para morar");
+  // E259 (9): a comodidade principal (trabalho) vem antes de "Pronto para morar".
+  assert.equal(d[2].titulo, "Espaço para trabalhar");
+});
+
+test("E259 (9): as comodidades principais viram destaque (antes só '1 vaga de garagem'); crianças vira regra", () => {
+  const amenities = ["Home office / escritório dedicado", "Internet fibra de alta velocidade", "Mesa de trabalho", "Ar-condicionado"];
+  const d = destaquesDoImovel(com({ amenities, internetMbps: 500, parkingSpots: 1 }));
+  assert.deepEqual(d.map((x) => x.chave), ["trabalho", "internet", "ar"]);
+  assert.equal(d[0].detalhe, "Com mesa de trabalho");
+  assert.equal(d[1].titulo, "Internet fibra");
+  assert.equal(d[1].detalhe, "500 Mbps informados");
+  // Só a velocidade (sem a comodidade marcada) também conta como internet.
+  assert.deepEqual(destaquesDoImovel(com({ internetMbps: 300 })).map((x) => x.titulo), ["Internet"]);
+  const regras = linhasBomSaber(com({ childrenAllowed: true })).find((l) => l.chave === "regras")!;
+  assert.ok(regras.itens!.some((i) => i.chave === "criancas" && i.texto === "Aceita crianças"));
+  assert.ok(linhasBomSaber(com({ childrenAllowed: false })).find((l) => l.chave === "regras")!.itens!.some((i) => i.texto === "Sem crianças"));
 });
 
 test("espaço de trabalho e vaga só aparecem com dado", () => {

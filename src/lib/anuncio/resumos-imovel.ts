@@ -8,8 +8,9 @@ import { proximidadesDoImovel, proximidadesVisiveis } from "./proximidades.ts";
 import { linhasRegrasCasa, type ChaveRegraCasa } from "./regras-casa.ts";
 import { linhasDetalhes } from "./detalhes-anuncio.ts";
 import { textoCompromissoManutencao } from "../conforto/exibicao.ts";
+import { amenityKeysFromLabels } from "../amenities.ts";
 
-export type ChaveDestaque = "saude" | "educacao" | "pronto" | "trabalho" | "vaga";
+export type ChaveDestaque = "saude" | "educacao" | "trabalho" | "internet" | "ar" | "pronto" | "vaga";
 export interface Destaque {
   chave: ChaveDestaque;
   titulo: string;
@@ -20,18 +21,27 @@ export const MAX_DESTAQUES = 3;
 /** Acima disto a descrição ganha "Mostrar mais" (≈ 5 linhas no celular). */
 export const LIMITE_DESCRICAO_CURTA = 280;
 
-/** Até 3 destaques, em ordem de relevância; só com dado cadastrado. */
+/**
+ * Até 3 destaques, em ordem de relevância; só com dado cadastrado. E259 (9): as comodidades principais marcadas no
+ * assistente (espaço de trabalho, internet, ar-condicionado) entram antes de "Pronto para morar" e da vaga — antes, um
+ * anúncio com 20 comodidades mostrava só "1 vaga de garagem".
+ */
 export function destaquesDoImovel(p: Property): Destaque[] {
   const d: Destaque[] = [];
+  const chaves = new Set(amenityKeysFromLabels(p.amenities ?? []));
   // PERTO-B: a mesma lista visível de "O que tem por perto" (o mais perto de cada categoria vem primeiro).
   const prox = proximidadesVisiveis(proximidadesDoImovel(p));
   const saude = prox.find((x) => x.categoria === "saude");
   const educ = prox.find((x) => x.categoria === "educacao");
   if (saude) d.push({ chave: "saude", titulo: `Perto de ${saude.nome}`, detalhe: saude.texto });
   if (educ) d.push({ chave: "educacao", titulo: `Perto de ${educ.nome}`, detalhe: educ.texto });
+  if (p.tagHomeOffice || (p.workFeatures ?? []).length > 0 || chaves.has("home_office"))
+    d.push({ chave: "trabalho", titulo: "Espaço para trabalhar", detalhe: p.workFeatures?.[0] ?? (chaves.has("mesa_trabalho") ? "Com mesa de trabalho" : undefined) });
+  const mbps = p.internetMbps ?? 0;
+  if (chaves.has("internet_fibra") || mbps > 0)
+    d.push({ chave: "internet", titulo: chaves.has("internet_fibra") ? "Internet fibra" : "Internet", detalhe: mbps > 0 ? `${mbps} Mbps informados` : undefined });
+  if (chaves.has("ar_condicionado")) d.push({ chave: "ar", titulo: "Ar-condicionado" });
   if (p.readyToLiveBadge) d.push({ chave: "pronto", titulo: "Pronto para morar", detalhe: "Imóvel mobiliado e equipado" });
-  if (p.tagHomeOffice || (p.workFeatures ?? []).length > 0)
-    d.push({ chave: "trabalho", titulo: "Espaço para trabalhar", detalhe: p.workFeatures?.[0] });
   const vagas = p.parkingSpots ?? 0;
   if (vagas > 0) d.push({ chave: "vaga", titulo: `${vagas} ${vagas === 1 ? "vaga" : "vagas"} de garagem` });
   return d.slice(0, MAX_DESTAQUES);
@@ -51,7 +61,7 @@ export interface LinhaBomSaber {
   itens?: ItemRegraCasa[];
 }
 
-export type ChaveItemRegra = "pessoas" | "pets" | "entrada" | "saida" | ChaveRegraCasa;
+export type ChaveItemRegra = "pessoas" | "pets" | "criancas" | "entrada" | "saida" | ChaveRegraCasa;
 export interface ItemRegraCasa {
   chave: ChaveItemRegra;
   texto: string;
@@ -96,6 +106,8 @@ export function itensRegrasCasa(p: Property): ItemRegraCasa[] {
   const i: ItemRegraCasa[] = [];
   if (p.maxGuests != null) i.push({ chave: "pessoas", texto: maiuscula(pessoas(p.maxGuests)) });
   if (p.petsAllowed !== undefined) i.push({ chave: "pets", texto: p.petsAllowed ? "Aceita pets" : "Sem pets" });
+  // E259 (9): "Aceita crianças" do Passo 6 vira linha nas regras (antes não aparecia em lugar nenhum da página).
+  if (p.childrenAllowed !== undefined) i.push({ chave: "criancas", texto: p.childrenAllowed ? "Aceita crianças" : "Sem crianças" });
   // CAMPOS-2: com a janela de entrada/saída ligada, ela substitui os horários antigos (uma linha só).
   const janela = linhasDetalhes(p.detalhesAnuncio).find((d) => d.chave === "janela");
   if (janela) i.push({ chave: "entrada", texto: janela.texto });
