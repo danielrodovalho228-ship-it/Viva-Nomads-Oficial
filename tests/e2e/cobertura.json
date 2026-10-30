@@ -1176,7 +1176,8 @@
         "t680-e193-passo5-cartoes",
         "t681-e257-descricao-cartoes",
         "t682-e258-conferencia-opcionais",
-        "t687-e259-entrada-unica"
+        "t687-e259-entrada-unica",
+        "t685-e258-como-cada-bloco-grava"
       ]
     },
     "/dashboard/indicacoes": {
