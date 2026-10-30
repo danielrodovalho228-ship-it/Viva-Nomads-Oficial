@@ -22,7 +22,8 @@
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
         "t669-ms1-topo-publico",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/acesso-socios": {
@@ -519,7 +520,8 @@
         "t479-e136b-calendario-pt-br",
         "t543-e166-fundo-clean-publico",
         "t489-e176-menus",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/cidades": {
@@ -576,7 +578,8 @@
         "t354-varredura-bloco19",
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/comparar": {
@@ -1066,7 +1069,8 @@
         "t663-varredura-bloco64",
         "t668-e225-estrutura-acessibilidade",
         "t701-e261-avisos-editor",
-        "t706-e261-avisos-titulo"
+        "t706-e261-avisos-titulo",
+        "t709-e263-pets-condicoes-ida-e-volta"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1195,7 +1199,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t699-e260-pendencia-uma-vez",
-        "t706-e261-avisos-titulo"
+        "t706-e261-avisos-titulo",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1350,7 +1355,8 @@
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
         "t312-varredura-bloco9",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t709-e263-pets-condicoes-ida-e-volta"
       ]
     },
     "/dashboard/pedidos": {
@@ -1555,7 +1561,8 @@
         "t325-fotos-ilustrativas-empresas",
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/excluir-conta": {
@@ -1691,7 +1698,9 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t699-e260-pendencia-uma-vez",
-        "t706-e261-avisos-titulo"
+        "t706-e261-avisos-titulo",
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/modelodenegocio": {
@@ -1722,7 +1731,8 @@
         "t438-vocab-a",
         "t414-varredura-bloco31",
         "t543-e166-fundo-clean-publico",
-        "t559-varredura-bloco43"
+        "t559-varredura-bloco43",
+        "t710-e265-sem-selo-em-todo-cartao"
       ]
     },
     "/parceiros": {
