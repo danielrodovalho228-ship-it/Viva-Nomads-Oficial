@@ -2158,7 +2158,8 @@
       "specs": [
         "t250-parceiros-contratacao",
         "t368-varredura-bloco20",
-        "t597-e213b-limpeza-renovacao"
+        "t597-e213b-limpeza-renovacao",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/admin/parceiros/pedidos": {
@@ -2204,7 +2205,8 @@
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
         "t600-e200-conversa-da-estadia",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -2218,7 +2220,8 @@
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
         "t631-e222b-renovar-aditivo",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2239,7 +2242,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t712-e267-transacionais-corpo"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -2579,7 +2583,8 @@
         "publico"
       ],
       "specs": [
-        "t695-e264b-proativos"
+        "t695-e264b-proativos",
+        "t711-e264b-proativos-corpo"
       ]
     }
   },

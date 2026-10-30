@@ -14,7 +14,7 @@ import { prepararRascunho, reais } from "../fixtures/rascunho-cadastro";
    3. anúncio publicado com DOIS pagamentos únicos (preparação R$ 300 + limpeza de saída R$ 250, configurada no editor) e
       mínimo de 150 dias: "5 × R$ 2.500 + limpeza de preparação R$ 300 + limpeza de saída R$ 250" = R$ 13.050 em Meus
       anúncios, no cartão público e na barra do celular; nenhuma das duas limpezas entra no Total por mês;
-   4. (fixme — defeito relatado) o "Ver no tamanho real" do Passo 10 ("assim o morador vê") deveria mostrar no cartão o
+   4. (test.fail — L-77, Pista C, 30/10) o "Ver no tamanho real" do Passo 10 ("assim o morador vê") deveria mostrar no cartão o
       mesmo "R$ 13.900 em 4 meses" + a conta da página pública; hoje o PriceCard da prévia é chamado sem `meses` (= 1) e
       a linha não aparece.
 */
@@ -188,9 +188,10 @@ test.describe("T708 — E254-A: o mesmo total da estadia mínima em todo lugar, 
     }
   });
 
-  // Defeito relatado: previa-tamanho-real.tsx chama <PriceCard> sem `meses`, então o cartão "como o morador vê" não
+  // L-77 (Pista C, 30/10; fonte: previa-tamanho-real.tsx:73 × property-detail.tsx:910): previa-tamanho-real.tsx chama <PriceCard> sem `meses`, então o cartão "como o morador vê" não
   // tem a linha "R$ X em N meses" nem a conta que a página pública (property-detail, meses = mesesDoCartao) mostra.
-  test.fixme("4. tamanho real do Passo 10: o cartão mostra o mesmo 'R$ 13.900 em 4 meses' e a conta da página pública", async ({ browser }) => {
+  test("4. tamanho real do Passo 10: o cartão mostra o mesmo 'R$ 13.900 em 4 meses' e a conta da página pública", async ({ browser }) => {
+    test.fail(true, "L-77: o PriceCard do 'Ver no tamanho real' não recebe `meses` e esconde o total da estadia mínima que a página pública mostra");
     const id = await prepararRascunho(ids.dono!, `Studio tamanho real ${sufixo}`, {
       monthlyPrice: String(QUATRO.mensal), condoFee: String(QUATRO.condominio), minPeriod: String(QUATRO.dias),
       utilitiesMode: "fixed", utilitiesEstimate: QUATRO.contas, prepFee: QUATRO.preparacao,
