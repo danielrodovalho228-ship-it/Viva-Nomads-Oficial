@@ -12,7 +12,7 @@ import {
   limparCamerasExternas,
   privacidadeDaLinha,
   TEXTO_DECLARACAO_CAMERAS,
-} from "./privacidade.ts";
+ tipoAcessoDaEntrada } from "./privacidade.ts";
 import { fatosDaLinha, prontidaoAnuncio, ROTULO_FALTA_PRIVACIDADE, type FatosAnuncio, type LinhaAnuncio } from "./prontidao.ts";
 
 const LINHA: LinhaAnuncio = {
@@ -124,4 +124,36 @@ test("checklist de câmeras na conferência de entrada: só o inquilino, contrat
   assert.ok(!/vistoria/i.test(m.ITEM_CONFERENCIA_CAMERAS + m.DICAS_CONFERENCIA_CAMERAS.join(" ")));
   const src = readFileSync(new URL("../../components/contrato/contrato-detalhe.tsx", import.meta.url), "utf8");
   assert.match(src, /checklist-cameras/);
+});
+
+test("E259 (2): a entrada é uma pergunta só (Passo 6) — o público lê dela; a coluna antiga sai derivada", () => {
+  assert.equal(tipoAcessoDaEntrada("chave_com_proprietario"), "chave");
+  assert.equal(tipoAcessoDaEntrada("cofre_de_chaves"), "cofre");
+  assert.equal(tipoAcessoDaEntrada("fechadura_com_codigo"), "fechadura_senha");
+  assert.equal(tipoAcessoDaEntrada("porteiro"), null);
+  assert.equal(tipoAcessoDaEntrada("qualquer"), null);
+  // Com a resposta do Passo 6, o "Acesso" usa o vocabulário dela (mesmo com um tipo_acesso antigo diferente gravado).
+  assert.deepEqual(linhasPrivacidadePublica({ semCamerasInterior: true, camerasExternas: "", tipoAcesso: "chave", senhaTrocadaEstadia: false }, "porteiro"), [
+    "Sem câmeras no interior (declarado pelo anunciante)",
+    "Sem câmeras externas declaradas",
+    "Acesso: Porteiro ou recepção",
+  ]);
+  assert.deepEqual(linhasPrivacidadePublica({ semCamerasInterior: false, camerasExternas: "", tipoAcesso: "fechadura_senha", senhaTrocadaEstadia: true }, "fechadura_com_codigo"), [
+    "Acesso: Fechadura com código",
+    "A senha é trocada antes de cada nova estadia",
+  ]);
+  assert.deepEqual(linhasPrivacidadePublica(null, "cofre_de_chaves"), ["Acesso: Cofre de chaves"]);
+  // Anúncio antigo, sem a resposta do Passo 6: continua mostrando o que tinha.
+  assert.deepEqual(linhasPrivacidadePublica({ semCamerasInterior: false, camerasExternas: "", tipoAcesso: "chave", senhaTrocadaEstadia: false }), ["Acesso: Chave"]);
+});
+
+test("E259 (2): o Passo 5 não pergunta mais a entrada; a senha trocada vai para o Passo 6, com a fechadura com código", () => {
+  const ler = (f: string) => readFileSync(new URL(`../../${f}`, import.meta.url), "utf8");
+  const priv = ler("components/anuncio/privacidade-campos.tsx");
+  assert.doesNotMatch(priv, /Tipo de acesso ao imóvel|tipo-acesso|TIPOS_ACESSO|senha-trocada/);
+  const passo6 = ler("components/anuncio/chegada-e-pedido-campos.tsx");
+  assert.match(passo6, /value\.tipoEntrada === "fechadura_com_codigo" && onSenhaTrocada && \(/);
+  assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /<PrivacidadeAcesso privacidade=\{property\.privacidade\} tipoEntrada=\{property\.chegadaEPedido\?\.tipoEntrada\} \/>/);
+  for (const f of ["app/(dashboard)/dashboard/imoveis/novo/page.tsx", "app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx"])
+    assert.match(ler(f), /tipoAcesso: chegada\.tipoEntrada \? tipoAcessoDaEntrada\(chegada\.tipoEntrada\) : privacidade\.tipoAcesso,/);
 });

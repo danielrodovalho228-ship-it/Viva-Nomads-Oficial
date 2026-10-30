@@ -22,7 +22,7 @@ test("(b) Regras do topo: os quatro cartões com descrição", () => {
 
 test("(c) Privacidade: as duas declarações com descrição", () => {
   const p = ler("src/components/anuncio/privacidade-campos.tsx");
-  const decl = p.slice(p.indexOf('testid="declaracao-sem-cameras"'), p.indexOf('data-testid="tipo-acesso"'));
+  const decl = p.slice(p.indexOf('testid="declaracao-sem-cameras"'));
   assert.equal((decl.match(/dica="/g) ?? []).length, 2);
 });
 

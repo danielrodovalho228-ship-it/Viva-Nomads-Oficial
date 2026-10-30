@@ -48,7 +48,7 @@ import { linhaEnderecoExato } from "@/lib/visitas/endereco-visita";
 import { UBERLANDIA_CENTER, geocodeForSave } from "@/lib/integrations/geocoding";
 import { Button } from "@/components/ui/button";
 import { type PhotoItem } from "@/components/photo-uploader";
-import { PRIVACIDADE_VAZIA, type Privacidade } from "@/lib/anuncio/privacidade";
+import { PRIVACIDADE_VAZIA, tipoAcessoDaEntrada, type Privacidade } from "@/lib/anuncio/privacidade";
 import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoDocValido } from "@/lib/anuncio/operacao";
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual } from "@/lib/anuncio/periodo-disponivel";
@@ -740,7 +740,8 @@ export default function NewPropertyPage() {
       petsAllowed: petsOk,
       semCamerasInterior: privacidade.semCamerasInterior,
       camerasExternas: privacidade.camerasExternas,
-      tipoAcesso: privacidade.tipoAcesso,
+      // E259 (2): a coluna antiga sai da resposta do Passo 6 (sem ela, fica a que já estava gravada).
+      tipoAcesso: chegada.tipoEntrada ? tipoAcessoDaEntrada(chegada.tipoEntrada) : privacidade.tipoAcesso,
       senhaTrocadaEstadia: privacidade.senhaTrocadaEstadia,
       smokingAllowed,
       childrenAllowed,
@@ -1897,7 +1898,12 @@ export default function NewPropertyPage() {
             {step === ETAPA.regras && (
               <div>
                 <EtapaEncontramos parte="regras" {...camposImovel} />
-                <ChegadaEPedidoCampos value={chegada} onChange={setChegada} />
+                <ChegadaEPedidoCampos
+                  value={chegada}
+                  onChange={setChegada}
+                  senhaTrocada={privacidade.senhaTrocadaEstadia}
+                  onSenhaTrocada={(v) => setPrivacidade((p) => ({ ...p, senhaTrocadaEstadia: v }))}
+                />
               </div>
             )}
 
