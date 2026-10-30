@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { periodoDisponivelValido } from "./periodo-disponivel.ts";
 
 test("até antes de a partir de é recusado", () => {
@@ -39,4 +40,16 @@ test("E137 — o erro da janela some quando a data é corrigida e muda quando a 
   // Sem Continuar recusado, não aparece erro na caixa: o aviso ao vivo fica no próprio campo.
   const sem = { preco: "x" };
   assert.equal(errosComJanelaAtual(sem, novo), sem);
+});
+
+import { errosDoResumo } from "./periodo-disponivel.ts";
+
+test("E260 (a): o resumo do topo não repete a janela curta (ela aparece uma vez, junto das datas)", () => {
+  const janela = erroJanelaDisponivel("2026-10-27", "2026-11-20", 30)!;
+  assert.deepEqual(errosDoResumo({ janela }), []);
+  assert.deepEqual(errosDoResumo({ preco: "Informe o valor mensal.", janela }), ["Informe o valor mensal."]);
+  // O Continuar segue recusando: a página só tira a janela do resumo, não da validação.
+  const pg = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
+  assert.match(pg, /errosDoResumo\(erros\)\.map/);
+  assert.match(pg, /if \(janela\) e\.janela = janela;/);
 });

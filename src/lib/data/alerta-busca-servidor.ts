@@ -4,101 +4,23 @@
  *
  *  • Imóvel PUBLICADO → compara com as buscas salvas (alerta ligado) e registra
  *    o par busca×imóvel em `alertas_busca_envios` (chave única: não repete).
- *  • No máximo 1 e-mail por busca por dia (`consumirLimite`): o primeiro sai
- *    na hora; o que chegar depois fica pendente e vai no resumo do cron.
- *  • Respeita `profiles.notif_email` e `buscas_salvas.alerta_ativo`.
- *  • Sem dado do proprietário no e-mail; só cidade/bairro (região aproximada).
+ *  • E264-B: o e-mail é o dos proativos — cartão do imóvel, UM por pessoa e imóvel (duas buscas que acham o mesmo
+ *    imóvel dão um cartão só), no máximo 1 e-mail de sugestões por dia e 3 por semana por pessoa; o que não cabe
+ *    sai agrupado no próximo envio. Respeita notif_email, conta pausada, `alerta_ativo` e a categoria desligada.
+ *  • Sem dado do proprietário no e-mail; só bairro e cidade (região aproximada).
  */
-import { totalMesDaLinha } from "@/lib/precos";
 import { chaveDoDestino, destinoDaUrl, type DestinoBusca } from "@/lib/busca/destino-busca";
 import { resolverDestino, temposAte } from "@/lib/data/tempos";
 import type { ModoRota } from "@/lib/rotas/tempo";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProperty } from "@/lib/data/properties";
-import { notificacaoLigada } from "@/lib/notifications/preferencias";
-import { notify } from "@/lib/notifications";
-import { consumirLimite, DIA } from "@/lib/limites";
-import { SITE_URL } from "@/lib/site";
-import {
-  ALERTAS_POR_BUSCA_POR_DIA,
-  assinarDesligarAlerta,
-  imovelBateComBusca,
-  type MinutosAte,
-  montarAlerta,
-  type ImovelNoAlerta,
-} from "@/lib/busca/alerta-busca";
+import { despacharProativos, despacharTodosProativos, enfileirarProativo } from "@/lib/notifications/proativos-servidor";
+import { imovelBateComBusca, type MinutosAte } from "@/lib/busca/alerta-busca";
 
-type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 interface BuscaLinha {
   id: string;
   usuario_id: string;
   parametros: string;
-}
-
-export function urlDesligarAlerta(buscaId: string): string | null {
-  const segredo = process.env.CRON_SECRET;
-  if (!segredo) return null;
-  return `${SITE_URL}/alerta-busca/desligar?b=${encodeURIComponent(buscaId)}&t=${encodeURIComponent(assinarDesligarAlerta(buscaId, segredo))}`;
-}
-
-/** Envia o e-mail da busca com os imóveis pendentes (se o limite do dia deixar) e marca como enviados. */
-async function enviarDaBusca(admin: Admin, busca: BuscaLinha, imoveis: ImovelNoAlerta[]): Promise<"enviado" | "limite" | "sem_email" | "vazio"> {
-  if (imoveis.length === 0) return "vazio";
-  const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email, pausada_em").eq("id", busca.usuario_id).maybeSingle();
-  // Prompt 51 F1: conta pausada não recebe alerta de busca.
-  if (!perfil?.email || !notificacaoLigada(perfil.notif_email) || perfil.pausada_em) {
-    // Sem e-mail ou avisos desligados: não envia e descarta o pendente (não acumula nem reaparece depois).
-    await admin.from("alertas_busca_envios").update({ enviado_em: new Date().toISOString() }).eq("busca_id", busca.id).is("enviado_em", null);
-    return "sem_email";
-  }
-  if (!(await consumirLimite(`alerta-busca:${busca.id}`, ALERTAS_POR_BUSCA_POR_DIA, DIA))) return "limite";
-  const msg = montarAlerta({
-    buscaParametros: busca.parametros,
-    imoveis,
-    siteUrl: SITE_URL,
-    desligarUrl: urlDesligarAlerta(busca.id),
-    buscasUrl: `${SITE_URL}/dashboard/buscas`,
-  });
-  await notify({
-    event: "saved_search_match",
-    email: perfil.email as string,
-    name: (perfil.full_name as string) ?? undefined,
-    pushUrl: "/dashboard/buscas",
-    subject: msg.subject,
-    detailsHtml: msg.html,
-    detailsText: msg.text,
-  });
-  await admin
-    .from("alertas_busca_envios")
-    .update({ enviado_em: new Date().toISOString() })
-    .eq("busca_id", busca.id)
-    .in("imovel_id", imoveis.map((i) => i.id))
-    .is("enviado_em", null);
-  return "enviado";
-}
-
-async function pendentes(admin: Admin, buscaId: string): Promise<ImovelNoAlerta[]> {
-  const { data: envios } = await admin.from("alertas_busca_envios").select("imovel_id").eq("busca_id", buscaId).is("enviado_em", null).limit(50);
-  const ids = (envios ?? []).map((e) => e.imovel_id as string);
-  if (ids.length === 0) return [];
-  const { data } = await admin
-    .from("properties")
-    .select("id, title, city, address, state, monthly_price, bedrooms, condo_fee, utilities_mode, utilities_estimate, min_period_days, available_from")
-    .in("id", ids)
-    .eq("status", "active");
-  return (data ?? []).map((r) => ({
-    id: r.id as string,
-    title: (r.title as string) || "Imóvel mobiliado",
-    city: (r.city as string) ?? "",
-    // O bairro mora na coluna `address` (não existe `neighborhood` na tabela; pedir essa coluna derrubava a consulta).
-    neighborhood: (r.address as string) ?? "",
-    state: (r.state as string) ?? "",
-    monthlyPrice: Number(r.monthly_price) || 0,
-    bedrooms: Number(r.bedrooms) || 0,
-    totalMes: totalMesDaLinha(r),
-    minPeriodDays: Number(r.min_period_days) || undefined,
-    availableFrom: (r.available_from as string | null) ?? null,
-  }));
 }
 
 /**
@@ -131,39 +53,47 @@ export async function avisarBuscasDoImovel(imovelId: string): Promise<{ combinam
   const combinam = buscas.filter(
     (b) => b.usuario_id !== imovel.ownerId && imovelBateComBusca(b.parametros, imovel, minutos)
   );
-  let enviados = 0;
+  const pessoas = new Set<string>();
   for (const busca of combinam) {
     try {
       // Chave única (busca, imóvel): reenviar a publicação não duplica o aviso.
       const { error } = await admin.from("alertas_busca_envios").insert({ busca_id: busca.id, imovel_id: imovelId });
       if (error) continue;
-      if ((await enviarDaBusca(admin, busca, await pendentes(admin, busca.id))) === "enviado") enviados++;
+      // A fila é por (pessoa, imóvel): duas buscas da mesma pessoa que acham este imóvel dão um cartão só.
+      await enfileirarProativo(admin, { usuarioId: busca.usuario_id, evento: "saved_search_match", refId: imovelId, extra: { busca_id: busca.id } });
+      pessoas.add(busca.usuario_id);
     } catch (e) {
       console.error("[avisarBuscasDoImovel] falha:", e);
     }
   }
+  let enviados = 0;
+  for (const u of pessoas) if ((await despacharProativos(admin, u)) === "enviado") enviados++;
   return { combinam: combinam.length, enviados };
 }
 
-/** Resumo diário (cron): uma mensagem por busca com o que ficou pendente além do limite de 1/dia. */
+/**
+ * Disparo diário (cron): o que ficou pendente em alertas_busca_envios (inclusive o de antes da fila) entra na fila dos
+ * proativos, e a fila é despachada — um e-mail no máximo por pessoa, agrupado, dentro do teto.
+ */
 export async function enviarResumosAlertaBusca(): Promise<{ buscas: number; enviados: number }> {
   const admin = createAdminClient();
   if (!admin) return { buscas: 0, enviados: 0 };
-  const { data: linhas } = await admin.from("alertas_busca_envios").select("busca_id").is("enviado_em", null).limit(1000);
-  const ids = [...new Set((linhas ?? []).map((l) => l.busca_id as string))];
-  let enviados = 0;
-  for (const id of ids) {
-    try {
-      const { data: busca } = await admin.from("buscas_salvas").select("id, usuario_id, parametros, alerta_ativo").eq("id", id).maybeSingle();
-      if (!busca || busca.alerta_ativo === false) {
-        // Alerta desligado depois: pendências viram "descartadas" (enviado_em preenchido) para não acumular.
-        await admin.from("alertas_busca_envios").update({ enviado_em: new Date().toISOString() }).eq("busca_id", id).is("enviado_em", null);
+  const { data: linhas } = await admin.from("alertas_busca_envios").select("busca_id, imovel_id").is("enviado_em", null).limit(1000);
+  const pend = (linhas ?? []) as { busca_id: string; imovel_id: string }[];
+  const ids = [...new Set(pend.map((l) => l.busca_id))];
+  if (ids.length) {
+    const { data: bs } = await admin.from("buscas_salvas").select("id, usuario_id, alerta_ativo").in("id", ids);
+    const busca = new Map(((bs ?? []) as { id: string; usuario_id: string; alerta_ativo: boolean | null }[]).map((b) => [b.id, b]));
+    for (const l of pend) {
+      const b = busca.get(l.busca_id);
+      if (!b || b.alerta_ativo === false) {
+        // Alerta desligado depois: a pendência vira "descartada" (enviado_em preenchido) para não acumular.
+        await admin.from("alertas_busca_envios").update({ enviado_em: new Date().toISOString() }).eq("busca_id", l.busca_id).eq("imovel_id", l.imovel_id).is("enviado_em", null);
         continue;
       }
-      if ((await enviarDaBusca(admin, busca as BuscaLinha, await pendentes(admin, id))) === "enviado") enviados++;
-    } catch (e) {
-      console.error("[enviarResumosAlertaBusca] falha:", e);
+      await enfileirarProativo(admin, { usuarioId: b.usuario_id, evento: "saved_search_match", refId: l.imovel_id, extra: { busca_id: l.busca_id } });
     }
   }
-  return { buscas: ids.length, enviados };
+  const r = await despacharTodosProativos();
+  return { buscas: ids.length, enviados: r.enviados };
 }
