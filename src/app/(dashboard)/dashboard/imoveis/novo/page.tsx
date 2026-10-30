@@ -176,6 +176,12 @@ export default function NewPropertyPage() {
   function irPara(i: number) {
     setEtapaMax((m) => etapaMaisAvancada(m, step, i));
     setStep(i);
+    // E259 (6): "Pessoas" vazio mostrava o "2" cinza do contador e a dica do Continuar dizia que faltava. Ao chegar no
+    // Passo 4, o vazio vira a sugestão (2 por quarto, mínimo 2), marcada "sugerido" — o número na tela é o que vale.
+    if (i === ETAPA.detalhes && !maxGuests.trim()) {
+      setMaxGuests(String(capacidadeSugerida(Number(bedrooms) || 0)));
+      setSugeridos((s) => (s.includes("capacidade") ? s : [...s, "capacidade"]));
+    }
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
   // IA das fotos (prompt 10): roda sozinha ao terminar o envio; uma vez por rascunho.

@@ -92,7 +92,8 @@ export function EtapaTipo({ tipo, onTipo, sugerido }: { tipo: string; onTipo: (v
                 )}
               >
                 <span className="relative block aspect-[4/3] w-full bg-sage-100">
-                  <Image src={FOTO_TIPO[t.valor]} alt={t.alt} fill sizes="192px" className="pointer-events-none object-cover" draggable={false} data-testid={`tipo-${t.valor}-foto`} />
+                  {/* E259 (5): as 9 fotos são pequenas e a linha rola de lado — carregam já, sem esperar entrar na tela. */}
+                  <Image src={FOTO_TIPO[t.valor]} alt={t.alt} fill sizes="192px" loading="eager" className="pointer-events-none object-cover" draggable={false} data-testid={`tipo-${t.valor}-foto`} />
                   <span className="pointer-events-none absolute bottom-2 left-2 rounded-full bg-night/70 px-2 py-1 text-xs font-semibold text-white" data-testid="selo-ilustrativa">
                     {SELO_ILUSTRATIVA}
                   </span>
