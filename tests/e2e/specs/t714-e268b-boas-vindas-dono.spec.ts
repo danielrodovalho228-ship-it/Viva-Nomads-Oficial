@@ -64,8 +64,11 @@ test.describe("T714 — E268-B: boas-vindas de dono para quem vira dono pelo an�
   });
 
   test("A. morador sem intenção: o 1º rascunho manda UM boas-vindas de dono (corpo com o nome e os passos); o 2º não repete", async ({ browser }) => {
-    // L-78 (Pista C, 30/10), corrigida no E283 (#1622): antes, o SincronizarPapel gravava papel_ativo ao abrir o
-    // "Anunciar" e o gravarIntencao não tratava o 1º rascunho como 1º acesso — o boas-vindas de dono não saía.
+    // L-78 (Pista C, 30/10) — correção PARCIAL no E283 (#1622): o SincronizarPapel já não grava papel_ativo na abertura,
+    // mas a guarda de área do dashboard-shell (dashboard-shell.tsx:196/219/270 → salvarModo → setPreferredMode, em
+    // mode-actions.ts) ainda grava `papel_ativo` junto com o modo; o gravarIntencao não vê o 1º acesso. Fonte: lab-crítico
+    // 41114986558 (main com o E283): intenção gravada, 0 boas-vindas.
+    test.fail(true, "L-78 (parcial após E283): a guarda de área grava papel_ativo via setPreferredMode e o boas-vindas de dono não sai");
     const c = await conta("morador", "Tainá Morador Sobrenome", "tenant", {});
     const page = await entrar(browser, c.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
