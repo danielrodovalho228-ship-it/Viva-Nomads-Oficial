@@ -24,10 +24,12 @@ export function AtalhosCategoria({ imoveis }: { imoveis: Property[] }) {
   return (
     <section className="bg-surface py-12 sm:py-12" aria-labelledby="atalhos-titulo">
       <div className="container-page">
-        <h2 id="atalhos-titulo" className="text-center font-title text-xl font-semibold text-ink">
+        {/* Conformidade (30/10): título e grade na coluna da página, como as outras seções da home (com poucos atalhos,
+            a grade estreita e centrada deixava os cartões à esquerda sob um título centralizado). */}
+        <h2 id="atalhos-titulo" className="font-title font-semibold text-ink display-lg">
           Encontre o imóvel do seu jeito
         </h2>
-        <ul className="mx-auto mt-6 grid max-w-6xl auto-rows-fr grid-cols-2 gap-x-4 gap-y-6 sm:mt-12 sm:gap-x-6 lg:grid-cols-6" data-testid="atalhos-categoria">
+        <ul className="mt-6 grid auto-rows-fr grid-cols-2 gap-x-4 gap-y-6 sm:mt-12 sm:gap-x-6 lg:grid-cols-6" data-testid="atalhos-categoria">
           {atalhos.map((a) => {
             const Icone = ICONES[a.icone] ?? MapPin;
             return (

@@ -170,7 +170,8 @@ export default async function HomePage() {
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="aspect-[5/4] w-full rounded-xl"
             />
-            <div className="absolute -right-4 -top-4 rounded-xl border border-line bg-white px-4 py-3">
+            {/* Conformidade (30/10): o selo fica DENTRO da foto — com -right-4 -top-4 ele saía da coluna no celular. */}
+            <div className="absolute right-3 top-3 rounded-xl border border-line bg-white px-4 py-3" data-testid="selo-home-office">
               <p className="font-title text-lg font-semibold text-ink">Internet para home office</p>
             </div>
           </div>
