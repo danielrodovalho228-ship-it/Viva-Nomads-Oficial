@@ -716,7 +716,13 @@ export function SearchClient({
           <h1 className="text-base font-semibold tabular-nums text-ink" data-testid="titulo-busca">
             {contagemDaBusca({ n: results.length, local: locationQuery.trim() || cidadeDaLista })}
           </h1>
-          {results.length > 0 && <span className="text-sm text-muted" data-testid="complemento-busca">· R$ 0 de taxa para você</span>}
+          {/* Conformidade (30/10): no celular o complemento quebrava a linha começando pelo "·" solto; lá ele fica na
+              linha de baixo, sem o separador; do sm para cima, na mesma linha, com o "·". */}
+          {results.length > 0 && (
+            <span className="w-full text-sm text-muted sm:w-auto" data-testid="complemento-busca">
+              <span aria-hidden className="hidden sm:inline">· </span>R$ 0 de taxa para você
+            </span>
+          )}
           {/* As duas ações ficam juntas (no celular, uma linha só abaixo da contagem). */}
           <div className="flex flex-wrap items-center gap-x-4">
             {results.length > 0 && <SalvarBusca versao={versaoBusca} />}
