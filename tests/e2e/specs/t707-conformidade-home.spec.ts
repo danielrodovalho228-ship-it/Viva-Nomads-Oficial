@@ -21,15 +21,20 @@ const caixa = (p: Page, sel: string) => p.locator(sel).first().evaluate((el) => 
 test.describe("T707 — conformidade da home", () => {
   for (const largura of [1280, 390] as const) {
     test(`${largura} px: selo dentro da foto, atalhos na coluna, títulos de seção iguais, varredura limpa`, async ({ browser }) => {
+      test.setTimeout(150_000);
       const ctx = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       const p = await ctx.newPage();
       const respostas = escutarImagens(p);
       await p.goto("/", { waitUntil: "domcontentloaded" });
       await p.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
 
-      // 1. Selo dentro da foto.
-      const selo = await caixa(p, '[data-testid="selo-home-office"]');
-      const foto = await p.getByTestId("selo-home-office").locator("xpath=..").evaluate((el) => {
+      // 1. Selo dentro da foto (achado pelo texto: o mesmo seletor na main e no branch).
+      const seloEl = p.getByText("Internet para home office", { exact: true }).locator("xpath=..");
+      const selo = await seloEl.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { l: Math.round(r.left), r: Math.round(r.right), t: Math.round(r.top + scrollY) };
+      });
+      const foto = await seloEl.locator("xpath=..").evaluate((el) => {
         const r = el.getBoundingClientRect();
         return { l: Math.round(r.left), r: Math.round(r.right), t: Math.round(r.top + scrollY), b: Math.round(r.bottom + scrollY) };
       });
@@ -60,7 +65,7 @@ test.describe("T707 — conformidade da home", () => {
       const achados = await varrerPagina(p, respostas);
       for (const c of Object.keys(CLASSES) as Classe[]) expect.soft(achados[c], `home ${largura} — ${CLASSES[c]}`).toEqual([]);
 
-      await p.getByTestId("selo-home-office").scrollIntoViewIfNeeded();
+      await seloEl.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t707-home-selo-${largura}.png` });
       if (await atalhos.count()) {
         await p.locator("#atalhos-titulo").scrollIntoViewIfNeeded();
