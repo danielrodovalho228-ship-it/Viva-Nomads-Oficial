@@ -129,8 +129,8 @@ export function EtapaEncontramos(p: {
           sugerido={p.sugerido("mobiliado")}
         />
         <Toggle checked={p.petsOk} onChange={() => p.setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." />
-        <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" />
-        <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" />
+        <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." />
+        <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." />
       </div>
     );
   }
@@ -234,10 +234,10 @@ export function EtapaEncontramos(p: {
       {grupos.filter((g) => g.category !== "seguranca").map((g) => (
         <GrupoComodidades key={g.category} grupo={g} titulo={g.titulo} marcadas={p.amenityKeys} sugeridas={sugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
       ))}
-      {sugeridas.length > 0 && (
-        <p className="text-xs text-muted">
+      {(sugeridas.length > 0 || (p.comodidadesDetectadas ?? []).some((k) => !p.amenityKeys[k])) && (
+        <p className="text-xs text-muted" data-testid="legenda-estrela">
           <Sparkles className="mr-1 inline h-3 w-3" aria-hidden />
-          Comodidades com a estrela foram sugeridas pelas fotos. Toque para desmarcar o que não tiver.
+          A estrela marca o que as fotos sugerem. Toque para marcar ou desmarcar.
         </p>
       )}
 
@@ -286,7 +286,8 @@ function GrupoComodidades(p: {
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);
-          // Detecção-A: achada numa foto e ainda não marcada — tracejada, com "Confirme"; tocar marca (confirma).
+          // Detecção-A: achada numa foto e ainda não marcada; tocar marca (confirma). E257: o mesmo cartão da grade, só
+          // com a estrela no lugar do ícone (a confirmação com "Confirmar"/"Não é isso" fica no cartão da detecção).
           const detectada = !on && !!p.detectadas?.includes(it.key);
           return (
             <CartaoEscolha
@@ -294,20 +295,15 @@ function GrupoComodidades(p: {
               papel="pressed"
               on={on}
               onClick={() => p.onAlternar(it.key)}
-              icone={sug ? Sparkles : iconeDaComodidade(it.key)}
+              icone={sug || detectada ? Sparkles : iconeDaComodidade(it.key)}
               data-sugerido={sug ? "1" : undefined}
               data-detectada={detectada ? "1" : undefined}
               data-comodidade={it.key}
-              className={cn(detectada && "border-dashed border-forest")}
               rotulo={
                 <>
                   {it.label}
                   {sug && <span className="sr-only"> (sugerido · confira)</span>}
-                  {detectada && (
-                    <span className="ml-1 font-semibold text-forest underline underline-offset-2" data-testid={`comodidade-confirme-${it.key}`}>
-                      Confirme
-                    </span>
-                  )}
+                  {detectada && <span className="sr-only"> (vista numa foto · toque para confirmar)</span>}
                 </>
               }
             />
