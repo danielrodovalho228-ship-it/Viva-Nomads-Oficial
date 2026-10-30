@@ -58,6 +58,7 @@ export function PhotoUploader({
   variante = "padrao",
   imagemVazia,
   conferir = tratar,
+  onProgresso,
 }: {
   photos: PhotoItem[];
   onChange: (photos: PhotoItem[]) => void;
@@ -75,6 +76,8 @@ export function PhotoUploader({
   imagemVazia?: string;
   /** E133: confere se cada foto enviada é do imóvel (padrão: as fotos tratadas do anúncio; documentos não). */
   conferir?: boolean;
+  /** E259 (3): cada foto concluída no envio (null ao terminar) — a contagem do passo anda junto. */
+  onProgresso?: (p: { feitas: number; total: number } | null) => void;
 }) {
   const cad = variante === "cadastro";
   const ownerId = useAuthStore((s) => s.user?.id);
@@ -116,7 +119,10 @@ export function PhotoUploader({
         ownerId,
         tratar,
         uploader,
-        aoProgresso: (feitas, total) => setProgresso({ feitas, total }),
+        aoProgresso: (feitas, total) => {
+          setProgresso({ feitas, total });
+          onProgresso?.({ feitas, total });
+        },
       });
       let novas: PhotoItem[] = r.novas;
       // E133: cada foto nova passa pela conferência "é do imóvel?" antes de entrar na galeria.
@@ -134,6 +140,7 @@ export function PhotoUploader({
     } finally {
       setUploading(false);
       setProgresso(null);
+      onProgresso?.(null);
     }
   }
 

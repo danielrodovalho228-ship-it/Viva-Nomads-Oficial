@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Info, Loader2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GuiaFotos } from "@/components/fotos/guia-fotos";
 import { PhotoUploader, type PhotoItem } from "@/components/photo-uploader";
@@ -78,13 +78,23 @@ export function EtapaFotos({
   useEffect(() => {
     if (window.location.hash === `#${ANCORA_VIDEO_ASSISTENTE}`) document.getElementById(ANCORA_VIDEO_ASSISTENTE)?.scrollIntoView({ block: "start" });
   }, []);
-  const faltam = Math.max(0, MIN_PHOTOS - photos.length);
-  const bloqueado = photos.length < MIN_PHOTOS;
+  // E259 (3): durante o envio, a contagem soma as fotos já concluídas (antes ficava em 0 até a última terminar).
+  const [enviadas, setEnviadas] = useState(0);
+  const contadas = photos.length + enviadas;
+  const faltam = Math.max(0, MIN_PHOTOS - contadas);
+  const bloqueado = contadas < MIN_PHOTOS;
   return (
     <div data-testid="etapa-fotos">
       {/* Mockup cadastro-imovel-02: a galeria logo abaixo do título (foto principal larga, miniaturas e o "+ Adicionar
           foto" tracejado), a dica de luz e, depois, a contagem e o resto do passo. */}
-      <PhotoUploader photos={photos} onChange={setPhotos} max={MAX_FOTOS_POR_ANUNCIO} variante="cadastro" imagemVazia={PHOTOS.cadastro.uploadEmpty} />
+      <PhotoUploader
+        photos={photos}
+        onChange={setPhotos}
+        max={MAX_FOTOS_POR_ANUNCIO}
+        variante="cadastro"
+        imagemVazia={PHOTOS.cadastro.uploadEmpty}
+        onProgresso={(p) => setEnviadas(p?.feitas ?? 0)}
+      />
       <Erro msg={erroFotos} />
 
       <p className="mt-4 flex items-start gap-2 text-sm text-muted" data-testid="fotos-dica">
@@ -95,7 +105,7 @@ export function EtapaFotos({
       <div className="mt-4 rounded-xl border border-sage-200 p-4" data-testid="fotos-contagem">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-ink">
-            {photos.length} / {MIN_PHOTOS} fotos
+            <span data-testid="fotos-contagem-numero">{contadas}</span> / {MIN_PHOTOS} fotos
             {bloqueado && <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>}
           </span>
           {photos.length >= MIN_PHOTOS && (
@@ -105,7 +115,7 @@ export function EtapaFotos({
           )}
         </div>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
-          <div className={cn("h-full rounded-full transition-all", bloqueado ? "bg-champagne" : "bg-forest")} style={{ width: `${Math.min(100, (photos.length / 20) * 100)}%` }} />
+          <div className={cn("h-full rounded-full transition-all", bloqueado ? "bg-champagne" : "bg-forest")} style={{ width: `${Math.min(100, (contadas / 20) * 100)}%` }} />
         </div>
         {passoFotos && !passoFotos.podeContinuar && passoFotos.mensagem && (
           <p className="mt-2 text-sm font-semibold text-red-700" data-testid="fotos-trava" data-trava={passoFotos.trava ?? undefined}>
