@@ -167,7 +167,12 @@ export function propostaRecusada(o: {
   texto?: string | null;
   propostaId: string;
   cidade?: string | null;
+  /** E269: a cópia de QUEM recusou ("Você recusou a proposta"); sem isso, é o e-mail da outra parte. */
+  paraQuemRecusou?: boolean;
+  /** E269: primeiro nome da outra parte, para a cópia de quem recusou. */
+  nomeDaOutraParte?: string | null;
 }): EmailPassos {
+  if (o.paraQuemRecusou) return propostaRecusadaCopia(o);
   const pn = primeiroNome(o.nomeDeQuemRecusou);
   const quem = pn || (o.quemRecusou === "tenant" ? "O morador" : "O proprietário");
   const motivo = [o.motivo?.trim(), o.texto?.trim()].filter(Boolean).join(". ");
@@ -186,6 +191,26 @@ export function propostaRecusada(o: {
   };
 }
 
+/**
+ * E269 — a cópia de quem recusou (os dois lados recebem, 1 cada). O morador que recusou vê imóveis parecidos (a mesma
+ * cidade); o dono que recusou volta à proposta.
+ */
+function propostaRecusadaCopia(o: { quemRecusou: "owner" | "tenant"; motivo?: string | null; texto?: string | null; propostaId: string; cidade?: string | null; nomeDaOutraParte?: string | null }): EmailPassos {
+  const outra = primeiroNome(o.nomeDaOutraParte);
+  const motivo = [o.motivo?.trim(), o.texto?.trim()].filter(Boolean).join(". ");
+  const morador = o.quemRecusou === "tenant";
+  const cidade = o.cidade?.trim();
+  return {
+    assunto: "Você recusou a proposta",
+    abertura: (n) =>
+      `${ola(n)}, você recusou a proposta.${motivo ? ` Motivo: ${motivo}.` : ""} ${morador ? "O proprietário já recebeu o aviso. Há outros imóveis parecidos na busca." : `${outra || "O morador"} já recebeu o aviso.`}`.replace(/\.\./g, "."),
+    titulo: "",
+    passos: [],
+    cta: morador ? "Ver outros imóveis parecidos" : "Ver a proposta",
+    url: morador ? (cidade ? `/buscar?cidade=${encodeURIComponent(cidade)}` : "/buscar") : `/dashboard/propostas/${o.propostaId}`,
+  };
+}
+
 /* ── (d) Visitas ─────────────────────────────────────────────────────────────────────────────────────────────── */
 
 /** O motivo gravado quando o pedido expira (status "cancelado"; sem status novo, sem migração). */
@@ -201,9 +226,11 @@ export function visitaCancelada(o: {
   imovel?: string | null;
   propertyId: string;
   paraMorador: boolean;
+  /** E269: a cópia de QUEM cancelou ("Você cancelou a visita"); os dois lados recebem, 1 cada. */
+  paraQuemCancelou?: boolean;
 }): { abertura: (n?: string) => string; linhas: { rotulo: string; valor: string }[]; cta: string; url: string } {
   const pn = primeiroNome(o.nomeDeQuemCancelou);
-  const quem = pn || (o.quemCancelou === "dono" ? "O proprietário" : "O morador");
+  const quem = o.paraQuemCancelou ? "Você" : pn || (o.quemCancelou === "dono" ? "O proprietário" : "O morador");
   const linhas = [
     ...(o.imovel ? [{ rotulo: "Imóvel", valor: o.imovel }] : []),
     { rotulo: "Visita", valor: o.tipo },
@@ -211,6 +238,13 @@ export function visitaCancelada(o: {
     { rotulo: "Cancelada por", valor: quem },
     ...(o.motivo?.trim() ? [{ rotulo: "Motivo", valor: o.motivo.trim() }] : []),
   ];
+  if (o.paraQuemCancelou)
+    return {
+      abertura: (n) => `${ola(n)}, você cancelou a visita ${o.tipo}${o.imovel ? ` em ${o.imovel}` : ""}. ${o.paraMorador ? "O proprietário" : "O morador"} já recebeu o aviso.`,
+      linhas,
+      cta: "Ver as visitas",
+      url: o.paraMorador ? "/dashboard/visitas" : "/dashboard/visitas?de=dono",
+    };
   return {
     abertura: (n) => `${ola(n)}, ${pn || quem.toLowerCase()} cancelou a visita ${o.tipo}.${o.paraMorador ? " Se ainda quiser conhecer o imóvel, peça outro horário." : ""}`,
     linhas,
@@ -252,6 +286,25 @@ export function vesperaDaVisita(v: { status: string; horarioConfirmado: string |
  *  • presencial ao DONO: horário + primeiro nome do morador (sem endereço);
  *  • vídeo: "Entrar na chamada" para os dois.
  */
+/** Data de Brasília (yyyy-mm-dd) de um instante. */
+function diaBrasilia(t: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(t);
+}
+
+/**
+ * E270 — a visita da véspera é HOJE ou AMANHÃ (calendário de Brasília). A véspera sai com até 24 h de antecedência,
+ * então só existem esses dois casos; o assunto e o corpo dizem o mesmo.
+ */
+export function diaDaVisita(horarioConfirmado: string, agora: Date): "hoje" | "amanhã" {
+  const t = Date.parse(horarioConfirmado);
+  return Number.isFinite(t) && diaBrasilia(new Date(t)) === diaBrasilia(agora) ? "hoje" : "amanhã";
+}
+
+/** E270: o assunto da véspera acompanha o caso ("Sua visita é hoje" / "Sua visita é amanhã"). */
+export function assuntoVespera(quando: "hoje" | "amanhã"): string {
+  return `Sua visita é ${quando}`;
+}
+
 export function vesperaTexto(o: {
   modalidade: "presencial" | "video";
   paraMorador: boolean;
@@ -260,11 +313,14 @@ export function vesperaTexto(o: {
   nomeMorador?: string | null;
   endereco?: { texto: string; mapa: string } | null;
   linkChamada?: string | null;
+  /** E270: hoje ou amanhã (diaDaVisita); sem isso, o texto antigo "amanhã ou nas próximas horas". */
+  quando?: "hoje" | "amanhã";
 }): { abertura: (n?: string) => string; linhas: { rotulo: string; valor: string }[]; cta: string; url: string } {
+  const quando = o.quando ?? "amanhã ou nas próximas horas";
   const linhas = [...(o.imovel ? [{ rotulo: "Imóvel", valor: o.imovel }] : []), { rotulo: "Horário", valor: o.horario }];
   if (o.modalidade === "video") {
     return {
-      abertura: (n) => `${ola(n)}, a visita por vídeo é amanhã ou nas próximas horas. Na hora, entre pela chamada.`,
+      abertura: (n) => `${ola(n)}, a visita por vídeo é ${quando}. Na hora, entre pela chamada.`,
       linhas,
       cta: "Entrar na chamada",
       url: o.linkChamada || "/dashboard/visitas",
@@ -272,7 +328,7 @@ export function vesperaTexto(o: {
   }
   if (o.paraMorador) {
     return {
-      abertura: (n) => `${ola(n)}, a visita presencial é amanhã ou nas próximas horas. O endereço está abaixo.`,
+      abertura: (n) => `${ola(n)}, a visita presencial é ${quando}. O endereço está abaixo.`,
       linhas: [...linhas, ...(o.endereco ? [{ rotulo: "Endereço", valor: o.endereco.texto }] : [])],
       cta: "Abrir no mapa",
       url: o.endereco?.mapa || "/dashboard/visitas",
@@ -280,7 +336,7 @@ export function vesperaTexto(o: {
   }
   const pn = primeiroNome(o.nomeMorador);
   return {
-    abertura: (n) => `${ola(n)}, ${pn ? `a visita presencial com ${pn}` : "a visita presencial"} é amanhã ou nas próximas horas.`,
+    abertura: (n) => `${ola(n)}, ${pn ? `a visita presencial com ${pn}` : "a visita presencial"} é ${quando}.`,
     linhas: [...linhas, ...(pn ? [{ rotulo: "Morador", valor: pn }] : [])],
     cta: "Ver a visita",
     url: "/dashboard/visitas",

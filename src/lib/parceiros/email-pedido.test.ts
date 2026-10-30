@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { EVENTOS_DO_PEDIDO, aberturaDoPedido, dataDoPedido, imovelDoPedido, linhasDoPedido, type PedidoParaEmail } from "./email-pedido.ts";
+import { EVENTOS_DO_PEDIDO, aberturaDoPedido, assuntoDoPedido, dataDoPedido, imovelDoPedido, linhasDoPedido, type PedidoParaEmail } from "./email-pedido.ts";
 import { catalogoEmails } from "../notifications/catalogo-emails.ts";
 import { emailCodigo2fa, emailCodigoAssinatura, emailCodigoVinculo, ANTIFRAUDE_CODIGO } from "../notifications/montar-email.ts";
 import { AVISO_ANTIGOLPE } from "../notifications/aviso-antigolpe.ts";
@@ -85,4 +85,13 @@ test("E206: os e-mails falam de estadia, não de \"contrato de locação\"", () 
   assert.doesNotMatch(TEMPLATES.contract_status.body("Ana"), /locação/);
   const actions = readFileSync(new URL("../data/actions.ts", import.meta.url), "utf8");
   assert.doesNotMatch(actions, /quer renovar a locação/);
+});
+
+test("E270: o orçamento recebido traz o valor e o serviço no assunto", () => {
+  assert.equal(assuntoDoPedido("parceiro_orcamento_recebido", P), "Orçamento de R$ 180 para Limpeza pós-saída");
+  assert.equal(assuntoDoPedido("parceiro_orcamento_recebido", { ...P, valorCombinado: null }), null, "sem valor, o assunto do evento");
+  assert.equal(assuntoDoPedido("parceiro_orcamento_aceito", P), null);
+  assert.match(readFileSync(new URL("./pedido-servidor.ts", import.meta.url), "utf8"), /subject: assuntoDoPedido\(ev as EventoPedido, ped\)!/);
+  const cat = catalogoEmails("https://vivanomads.com.br");
+  assert.match(cat.find((e) => e.chave === "parceiro_orcamento_recebido")!.assunto, /^Orçamento de R\$ 180 para Limpeza pós-saída/);
 });

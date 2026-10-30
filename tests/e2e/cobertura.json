@@ -1065,6 +1065,7 @@
         "t663-varredura-bloco64",
         "t668-e225-estrutura-acessibilidade",
         "t701-e261-avisos-editor",
+        "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite"
       ]
     },
@@ -1191,6 +1192,7 @@
         "t693-prova-de-publicacao",
         "t700-e260-avisos-unicos",
         "t704-e265-tipos-sem-selo",
+        "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
         "t697-e259-pessoas-sugerido-grava"
       ]
@@ -1685,6 +1687,7 @@
         "t693-prova-de-publicacao",
         "t705-e263-pets-condicoes",
         "t702-e262-galeria-e-destaques",
+        "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite"
       ]
     },

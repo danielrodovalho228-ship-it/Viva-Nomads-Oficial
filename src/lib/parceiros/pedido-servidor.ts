@@ -8,7 +8,7 @@ import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
 import { rotuloCategoria } from "./regras";
 import { primeiroNome } from "@/lib/display-name";
-import { EVENTOS_DO_PEDIDO, aberturaDoPedido, linhasDoPedido, type EventoPedido, type FatoDoPedido, type PedidoParaEmail } from "./email-pedido";
+import { EVENTOS_DO_PEDIDO, aberturaDoPedido, assuntoDoPedido, linhasDoPedido, type EventoPedido, type FatoDoPedido, type PedidoParaEmail } from "./email-pedido";
 
 /*
   Peças do 31b usadas pelas ações (pedido-actions) e pelo servidor do 38 (cron e eventos da estadia, sem sessão).
@@ -118,6 +118,8 @@ export async function avisar(
       pushUrl: opcoes.url ?? rota(pedidoId),
       semPush: opcoes.semPush,
       ...(ped ? { body: (nome?: string) => aberturaDoPedido(ev as EventoPedido, ped, nome, opcoes.fato) } : {}),
+      // E270: o orçamento recebido traz o valor e o serviço no assunto.
+      ...(ped && assuntoDoPedido(ev as EventoPedido, ped) ? { subject: assuntoDoPedido(ev as EventoPedido, ped)! } : {}),
       ...(opcoes.texto ? { body: (nome?: string) => `Olá${nome ? " " + nome : ""}, ${opcoes.texto}` } : {}),
       ...(linhas
         ? {

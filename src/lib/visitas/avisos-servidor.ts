@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { formatarHorarioBrasilia, MODALIDADE_ROTULO, ehModalidade, type ModalidadeVisita } from "@/lib/visitas-video";
 import { enderecoDaVisita } from "./endereco-visita";
 import {
@@ -9,6 +10,8 @@ import {
   TEXTO_EXPIRADA_MORADOR,
   detalhes,
   pedidoDeVisitaExpirou,
+  assuntoVespera,
+  diaDaVisita,
   vesperaDaVisita,
   vesperaTexto,
   visitaCancelada,
@@ -61,7 +64,7 @@ function horarioDe(v: LinhaVisita): string {
   return (v.horarios ?? []).map(formatarHorarioBrasilia).filter(Boolean).join("; ");
 }
 
-/** Cancelada (pelo dono ou pelo morador): à OUTRA parte, com quem cancelou, o motivo e o horário. */
+/** Cancelada (pelo dono ou pelo morador): à OUTRA parte, com quem cancelou, o motivo e o horário; E269: e a cópia a quem cancelou. */
 export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quemCancelou: "dono" | "morador"): Promise<void> {
   try {
     const { data } = await admin.from("visitas_video").select(COLUNAS).eq("id", visitaId).maybeSingle();
@@ -70,7 +73,6 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
     const para = quemCancelou === "dono" ? v.tenant_id : v.owner_id;
     const de = quemCancelou === "dono" ? v.owner_id : v.tenant_id;
     const [destino, autor, im] = await Promise.all([perfil(admin, para), perfil(admin, de), imovel(admin, v.property_id)]);
-    if (!destino?.email || destino.notif_email === false) return;
     const t = visitaCancelada({
       quemCancelou,
       nomeDeQuemCancelou: autor?.full_name,
@@ -82,7 +84,23 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
       paraMorador: para === v.tenant_id,
     });
     const d = detalhes({ linhas: t.linhas });
-    await notify({ event: "visita_cancelada", email: destino.email, name: destino.full_name ?? undefined, userId: para, pushUrl: t.url, body: t.abertura, ctaLabel: t.cta, detailsHtml: d.html, detailsText: d.texto });
+    if (destino?.email && destino.notif_email !== false)
+      await notify({ event: "visita_cancelada", email: destino.email, name: destino.full_name ?? undefined, userId: para, pushUrl: t.url, body: t.abertura, ctaLabel: t.cta, detailsHtml: d.html, detailsText: d.texto });
+    // E269: a cópia de quem cancelou (os dois lados, 1 cada).
+    if (autor?.email && autor.notif_email !== false) {
+      const c = visitaCancelada({
+        quemCancelou,
+        motivo: v.motivo_recusa,
+        horario: horarioDe(v),
+        tipo: tipoDe(v),
+        imovel: im?.title,
+        propertyId: v.property_id,
+        paraMorador: de === v.tenant_id,
+        paraQuemCancelou: true,
+      });
+      const dc = detalhes({ linhas: c.linhas });
+      await notify({ event: "visita_cancelada", email: autor.email, name: autor.full_name ?? undefined, userId: de, pushUrl: c.url, subject: ASSUNTOS.visitaCanceladaPorVoce, body: c.abertura, ctaLabel: c.cta, detailsHtml: dc.html, detailsText: dc.texto, semPush: true });
+    }
   } catch {
     /* best-effort */
   }
@@ -146,12 +164,14 @@ export async function vesperaDaVisitaSeFor(admin: Admin, visitaId: string, agora
   const { data } = await admin.from("visitas_video").select(COLUNAS).eq("id", visitaId).maybeSingle();
   const v = data as LinhaVisita | null;
   if (!v || !vesperaDaVisita({ status: v.status, horarioConfirmado: v.horario_confirmado }, agora)) return 0;
-  return enviarVespera(admin, v);
+  return enviarVespera(admin, v, agora);
 }
 
-async function enviarVespera(admin: Admin, v: LinhaVisita): Promise<number> {
+async function enviarVespera(admin: Admin, v: LinhaVisita, agora: Date): Promise<number> {
   const modalidade: ModalidadeVisita = ehModalidade(v.modalidade) ? v.modalidade : "video";
   const horario = formatarHorarioBrasilia(v.horario_confirmado!);
+  // E270: hoje ou amanhã (Brasília) — o assunto e o corpo acompanham o caso.
+  const quando = diaDaVisita(v.horario_confirmado!, agora);
   const [im, morador] = await Promise.all([imovel(admin, v.property_id), perfil(admin, v.tenant_id)]);
   let n = 0;
   for (const para of [v.tenant_id, v.owner_id]) {
@@ -162,7 +182,7 @@ async function enviarVespera(admin: Admin, v: LinhaVisita): Promise<number> {
     if (error) continue; // já saiu
     // Endereço exato: só presencial, confirmada, não passada, só ao morador (regra de endereco-visita.ts).
     const endereco = modalidade === "presencial" && paraMorador ? await enderecoExato(admin, v.property_id) : null;
-    const t = vesperaTexto({ modalidade, paraMorador, horario, imovel: im?.title, nomeMorador: morador?.full_name, endereco, linkChamada: v.link_chamada });
+    const t = vesperaTexto({ modalidade, paraMorador, horario, imovel: im?.title, nomeMorador: morador?.full_name, endereco, linkChamada: v.link_chamada, quando });
     const externo = /^https:\/\//.test(t.url) ? { label: t.cta, url: t.url } : null;
     const d = detalhes({ linhas: t.linhas, externo });
     await notify({
@@ -170,6 +190,7 @@ async function enviarVespera(admin: Admin, v: LinhaVisita): Promise<number> {
       email: p.email,
       name: p.full_name ?? undefined,
       userId: para,
+      subject: assuntoVespera(quando),
       pushUrl: externo ? "/dashboard/visitas" : t.url,
       body: t.abertura,
       ctaLabel: externo ? undefined : t.cta,
@@ -188,6 +209,6 @@ export async function vesperasDasVisitas(admin: Admin, agora: Date, simular: boo
   const linhas = ((data ?? []) as LinhaVisita[]).filter((v) => vesperaDaVisita({ status: v.status, horarioConfirmado: v.horario_confirmado }, agora));
   if (simular) return linhas.length;
   let n = 0;
-  for (const v of linhas) n += await enviarVespera(admin, v).catch(() => 0);
+  for (const v of linhas) n += await enviarVespera(admin, v, agora).catch(() => 0);
   return n;
 }
