@@ -21,7 +21,8 @@
         "t352-varredura-bloco17",
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
-        "t669-ms1-topo-publico"
+        "t669-ms1-topo-publico",
+        "t671-varredura-bloco66"
       ]
     },
     "/acesso-socios": {
@@ -335,7 +336,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t671-varredura-bloco66"
       ]
     },
     "/ajuda/[tema]": {
@@ -363,7 +365,8 @@
         "t63-chamado-identificacao",
         "t80-camera-chamado",
         "t607-varredura-bloco51",
-        "t669-ms1-topo-publico"
+        "t669-ms1-topo-publico",
+        "t671-varredura-bloco66"
       ]
     },
     "/alerta-busca/desligar": {
@@ -686,7 +689,8 @@
         "t661-varredura-bloco62",
         "t662-varredura-bloco63",
         "t663-varredura-bloco64",
-        "t664-e230-sem-score"
+        "t664-e230-sem-score",
+        "t670-e190-troca-de-modo"
       ]
     },
     "/dashboard/assinatura": {
@@ -822,7 +826,8 @@
         "t561-e192-por-que-na-cidade",
         "t607-varredura-bloco51",
         "t645-e238-e239-conta-passos",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t670-e190-troca-de-modo"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1155,7 +1160,8 @@
         "t652-e242-ver-tamanho-real",
         "t653-e251-passo10-duas-colunas",
         "t665-varredura-bloco65",
-        "t668-e225-estrutura-acessibilidade"
+        "t668-e225-estrutura-acessibilidade",
+        "t671-varredura-bloco66"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1258,7 +1264,8 @@
         "t602-e181-familia-contadores",
         "t607-varredura-bloco51",
         "t648-e243-e245-mensagens",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t670-e190-troca-de-modo"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1275,7 +1282,8 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t568-e176-parte2-conta",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t670-e190-troca-de-modo"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1627,7 +1635,8 @@
         "t563-e191-tem-completo",
         "t574-e207-voltar-resultados",
         "t588-varredura-bloco46",
-        "t668-e225-estrutura-acessibilidade"
+        "t668-e225-estrutura-acessibilidade",
+        "t671-varredura-bloco66"
       ]
     },
     "/modelodenegocio": {
@@ -1763,7 +1772,8 @@
         "t414-varredura-bloco31",
         "t543-e166-fundo-clean-publico",
         "t591-varredura-bloco48",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t671-varredura-bloco66"
       ]
     },
     "/privacidade": {
