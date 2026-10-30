@@ -1037,7 +1037,8 @@
         "t622-varredura-bloco56",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t703-e254-estadia-minima"
+        "t703-e254-estadia-minima",
+        "t708-e254-estadia-minima-uma-fonte"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1189,7 +1190,9 @@
         "t691-e259-polimento-assistente",
         "t693-prova-de-publicacao",
         "t700-e260-avisos-unicos",
-        "t704-e265-tipos-sem-selo"
+        "t704-e265-tipos-sem-selo",
+        "t707-e262-galeria-destaques-previa",
+        "t708-e254-estadia-minima-uma-fonte"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1681,7 +1684,9 @@
         "t671-varredura-bloco66",
         "t693-prova-de-publicacao",
         "t705-e263-pets-condicoes",
-        "t702-e262-galeria-e-destaques"
+        "t702-e262-galeria-e-destaques",
+        "t707-e262-galeria-destaques-previa",
+        "t708-e254-estadia-minima-uma-fonte"
       ]
     },
     "/modelodenegocio": {
