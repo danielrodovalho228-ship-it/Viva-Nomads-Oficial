@@ -15,6 +15,7 @@ import { PHOTOS } from "@/lib/media";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
+import { PrecoJustoBadge } from "@/components/ui/badge";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
@@ -163,12 +164,17 @@ function PrecoJusto() {
   return (
     <section id="preco-justo" className="container-page section-y scroll-mt-24">
       <h2 className="font-title text-2xl font-semibold text-ink">Selo “Preço justo”</h2>
-      <p className="mt-3 max-w-3xl text-ink">
-        O selo aparece quando o valor mensal do imóvel na Viva fica abaixo do equivalente mensal que o próprio
-        proprietário informou ter no Airbnb. Esse campo é opcional e declarado por quem anuncia; a Viva não
-        confere o valor em outro site. Quem tem o selo ganha só um pequeno impulso na ordem da busca, e nunca
-        passa na frente de um anúncio de qualidade maior. Imóvel sem o campo preenchido aparece normalmente.
-      </p>
+      {/* E99 (anti-"cara de AI"): o critério num cartão, com o selo como ele aparece nos cartões da busca — antes, um
+          parágrafo solto. O texto não muda. */}
+      <div className="mt-6 flex flex-col gap-4 rounded-xl border border-sage-200 bg-surface-2 p-4 sm:flex-row sm:items-start sm:p-6" data-testid="cf-preco-justo">
+        <PrecoJustoBadge className="self-start border border-sage-200" />
+        <p className="max-w-3xl text-ink">
+          O selo aparece quando o valor mensal do imóvel na Viva fica abaixo do equivalente mensal que o próprio
+          proprietário informou ter no Airbnb. Esse campo é opcional e declarado por quem anuncia; a Viva não
+          confere o valor em outro site. Quem tem o selo ganha só um pequeno impulso na ordem da busca, e nunca
+          passa na frente de um anúncio de qualidade maior. Imóvel sem o campo preenchido aparece normalmente.
+        </p>
+      </div>
     </section>
   );
 }
@@ -247,7 +253,8 @@ function DuranteDepois() {
   return (
     <section className="container-page pb-4">
       <h2 className="font-title text-2xl font-semibold text-ink">Durante e depois da estadia</h2>
-      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+      {/* E99: os 3 cartões numa linha a partir do tablet (antes, 2 + 1 sozinho embaixo). */}
+      <div className="mt-6 grid gap-6 md:grid-cols-3" data-testid="cf-durante-depois">
         {itens.map((it) => (
           <div key={it.title} className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
@@ -289,7 +296,8 @@ function ProtegidoPor() {
   return (
     <section className="container-page pb-12">
       <h2 className="font-title text-2xl font-semibold text-ink">Você fica protegido por</h2>
-      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+      {/* E99: 2 cartões ocupam a largura (antes, grade de 3 com 1/3 vazio). */}
+      <div className="mt-6 grid gap-6 sm:grid-cols-2" data-testid="cf-protegido">
         {itens.map((it) => (
           <div key={it.title} className="flex flex-col overflow-hidden rounded-xl border border-sage-200 bg-white">
             <StepImage src={it.img} alt={it.alt} />
