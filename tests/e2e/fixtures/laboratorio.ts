@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createHash, randomBytes } from "node:crypto";
 import { deflateSync } from "node:zlib";
 import { expect, type Browser, type Page } from "@playwright/test";
+import { rasterDeTeste } from "./raster-foto";
 import { CHAVES_CONFORTO, VERSAO_CONFORTO } from "../../../src/config/conforto-minimo";
 
 /**
@@ -89,19 +90,13 @@ function bloco(tipo: string, dados: Buffer): Buffer {
   crc.writeUInt32BE(crc32(td));
   return Buffer.concat([len, td, crc]);
 }
-/** PNG real e legível (640×480 por padrão). `n` muda a cor: cada foto é diferente. */
+/** PNG real e legível (640×480 por padrão). `n` muda a cor e a textura: cada foto é diferente e parece foto (não print). */
 export function pngDeTeste(n: number, w = 640, h = 480): Buffer {
-  const cor = [(60 + n * 23) % 220, (90 + n * 41) % 220, (120 + n * 67) % 220];
+  const { rgb } = rasterDeTeste(n, w, h);
   const raw = Buffer.alloc((w * 3 + 1) * h);
   for (let y = 0; y < h; y++) {
     raw[y * (w * 3 + 1)] = 0;
-    const faixa = Math.floor(y / (h / 6)) % 2 ? 0.85 : 1;
-    for (let x = 0; x < w; x++) {
-      const o = y * (w * 3 + 1) + 1 + x * 3;
-      raw[o] = cor[0] * faixa;
-      raw[o + 1] = cor[1] * faixa;
-      raw[o + 2] = cor[2] * faixa;
-    }
+    raw.set(rgb.subarray(y * w * 3, (y + 1) * w * 3), y * (w * 3 + 1) + 1);
   }
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0);
