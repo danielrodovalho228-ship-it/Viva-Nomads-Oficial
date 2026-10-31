@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
 /*
   T779 — estados vazios que dizem o que fazer, 2ª leva (Pista B, 31/10). Pista C, bloco 104. Pelas telas de verdade, a
   1280 e a 390 px, com contas novas:
-   A. carteira do proprietário com um contrato que termina daqui a 200 dias: as três faixas de vencimento dizem
+   A. carteira do proprietário com um contrato que termina daqui a 120 dias: as três faixas de vencimento dizem
       "Nenhum contrato termina nesta faixa." (#1705);
    B. agenda do parceiro publicado sem janela nem bloqueio: o que vale sem janela e para que serve o bloqueio
       (#1702, #1706);
@@ -46,17 +46,17 @@ test.describe("T779 — estados vazios: carteira, agenda do parceiro, avaliaçã
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     const agora = new Date();
     const dia = (d: Date) => d.toISOString().slice(0, 10);
-    // Em vigência (F27): as duas assinaturas, bloco ativo e 1º aluguel confirmado. Termina daqui a 200 dias: fora das faixas.
+    // Em vigência (F27): as duas assinaturas, bloco ativo e 1º aluguel confirmado. Termina daqui a 120 dias (prazo máximo 180): fora das faixas de até 90.
     const { data: ct, error } = await adm()
       .from("contratos")
-      .insert({ property_id: ids.imovel, tenant_id: ids.morador, lead_id: ids.lead, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 200, aluguel_mensal: 3200, tamanho_bloco_meses: 6, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao", assinado_proprietario_em: agora.toISOString(), assinado_inquilino_em: agora.toISOString() })
+      .insert({ property_id: ids.imovel, tenant_id: ids.morador, lead_id: ids.lead, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200, tamanho_bloco_meses: 4, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao", assinado_proprietario_em: agora.toISOString(), assinado_inquilino_em: agora.toISOString() })
       .select("id")
       .single();
     if (error) throw error;
     ids.contrato = ct.id as string;
     const { data: bloco, error: eb } = await adm()
       .from("contrato_blocos")
-      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(agora), fim: dia(new Date(agora.getTime() + 200 * 86_400_000)), meses: 6, valor: 19200, caucao: 3200, status: "ativo" })
+      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(agora), fim: dia(new Date(agora.getTime() + 120 * 86_400_000)), meses: 4, valor: 12800, caucao: 3200, status: "ativo" })
       .select("id")
       .single();
     if (eb) throw eb;
