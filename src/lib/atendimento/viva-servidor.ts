@@ -5,6 +5,7 @@ import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { agoraBRTexto } from "@/lib/atendimento/data-br";
 import { notify } from "@/lib/notifications";
+import { corpoLembreteInteressado, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
@@ -284,7 +285,14 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
         return { conteudo: "Lembrete da manutenção enviado ao proprietário." };
       }
       if (!(await consumirLimite(`viva:lembrete:candidatura:${uid}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário nas últimas 24 horas.", erro: true };
-      const { data: lead } = await admin.from("leads").select("owner_id").eq("tenant_id", uid).eq("status", "new").order("created_at", { ascending: false }).limit(1).maybeSingle();
+      const { data: lead } = await admin
+        .from("leads")
+        .select("owner_id, created_at, properties(title, address, city)")
+        .eq("tenant_id", uid)
+        .eq("status", "new")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (!lead) return { conteudo: "Não há candidatura aguardando resposta." };
       const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", lead.owner_id).maybeSingle();
       if (dono?.email && dono.notif_email !== false) {
@@ -295,6 +303,8 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           userId: lead.owner_id as string,
           pushUrl: "/dashboard/leads",
           subject: ASSUNTOS.lembreteInteressado,
+          // E267: o lembrete diz quem aguarda (primeiro nome), sobre qual imóvel e desde quando.
+          ...paraNotify(corpoLembreteInteressado({ imovel: imovelDoLead(lead), interessado: await primeiroNomeDe(admin, uid), desde: lead.created_at as string })),
         }).catch(() => null);
       }
       await registrarAcaoViva(admin, c, "viva_lembrete_dono", "candidatura");
@@ -757,4 +767,16 @@ export async function gerarResumo(chamadoId: string): Promise<{ resumo: ResumoCh
     console.error("[viva] resumo:", e instanceof Error ? e.message : e);
     return { resumo: regras(), simulacao: false };
   }
+}
+
+/** E267: o imóvel da candidatura para o lembrete (título · bairro, cidade). */
+function imovelDoLead(lead: unknown) {
+  const p = (lead as { properties?: { title?: string | null; address?: string | null; city?: string | null } | null } | null)?.properties;
+  return p ? { titulo: p.title, bairro: p.address, cidade: p.city } : null;
+}
+
+/** E267: só o primeiro nome do interessado (privacidade: nunca o nome inteiro nem o contato). */
+async function primeiroNomeDe(admin: NonNullable<ReturnType<typeof createAdminClient>>, id: string): Promise<string | null> {
+  const { data } = await admin.from("profiles").select("full_name").eq("id", id).maybeSingle();
+  return String((data as { full_name?: string | null } | null)?.full_name ?? "").trim().split(/\s+/)[0] || null;
 }
