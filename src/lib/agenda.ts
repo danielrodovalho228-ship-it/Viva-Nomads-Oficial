@@ -109,3 +109,41 @@ export function moverMes(ano: number, mes: number, delta: number): { ano: number
   const t = ano * 12 + (mes - 1) + delta;
   return { ano: Math.floor(t / 12), mes: (t % 12) + 1 };
 }
+
+/** Um dia dentro de uma estadia (AGENDA-A): o imóvel e se é a ponta (entrada/saída) ou o meio. */
+export interface DiaDeEstadia {
+  contrato: string;
+  propertyId: string;
+  imovel: string;
+  ponta: boolean;
+}
+
+/**
+ * AGENDA-A — o período da estadia pintado em TODOS os dias (não só na entrada e na saída): liga a entrada e a saída do
+ * mesmo contrato (ids "entrada-<contrato>" / "saida-<contrato>") e devolve, por dia, as estadias que o ocupam. Sem a
+ * saída (ou saída antes da entrada), só a ponta que existe. Teto de 400 dias por estadia.
+ */
+export function diasEmEstadia(itens: ItemAgenda[]): Map<string, DiaDeEstadia[]> {
+  const pontas = new Map<string, { entrada?: ItemAgenda; saida?: ItemAgenda }>();
+  for (const i of itens) {
+    if (i.tipo !== "entrada" && i.tipo !== "saida") continue;
+    const contrato = i.id.replace(/^(entrada|saida)-/, "");
+    pontas.set(contrato, { ...pontas.get(contrato), [i.tipo]: i });
+  }
+  const mapa = new Map<string, DiaDeEstadia[]>();
+  const marcar = (dia: string, d: DiaDeEstadia) => mapa.set(dia, [...(mapa.get(dia) ?? []), d]);
+  for (const [contrato, { entrada, saida }] of pontas) {
+    const base = entrada ?? saida!;
+    const ini = entrada ? diaBrasilia(entrada.quando) : null;
+    const fim = saida ? diaBrasilia(saida.quando) : null;
+    const d = (dia: string, ponta: boolean) => marcar(dia, { contrato, propertyId: base.propertyId, imovel: base.imovel, ponta });
+    if (ini && fim && fim >= ini) {
+      let n = 0;
+      for (let dia = ini; dia <= fim && n < 400; dia = somarDias(dia, 1), n++) d(dia, dia === ini || dia === fim);
+    } else {
+      if (ini) d(ini, true);
+      if (fim) d(fim, true);
+    }
+  }
+  return mapa;
+}
