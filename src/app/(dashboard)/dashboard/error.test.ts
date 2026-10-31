@@ -9,7 +9,10 @@ test("o painel tem error.tsx de cliente com Tentar de novo e saída para o paine
   assert.ok(existsSync(arquivo));
   const fonte = readFileSync(arquivo, "utf8");
   assert.match(fonte, /^"use client";/);
-  assert.match(fonte, /retry\(\)/);
+  // Next 16: o botão chama unstable_retry (busca e renderiza de novo), com reset como alternativa; a prop antiga `retry` não existe.
+  assert.match(fonte, /unstable_retry/);
+  assert.match(fonte, /reset/);
+  assert.doesNotMatch(fonte, /\bretry\(\)/);
   assert.match(fonte, /Tentar de novo/);
   assert.match(fonte, /href="\/dashboard"/);
   assert.match(fonte, /role="alert"/);
