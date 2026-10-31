@@ -34,6 +34,8 @@ test.describe("T776 — estados vazios do painel dizem o que fazer (#1695, #1696
     await adm().from("profiles").update({ intencao: ["anunciar"] }).eq("id", ids.dono);
     await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", ids.morador);
     ids.imovel = await criarImovelPronto(ids.dono, `Casa vazia T776 ${sufixo}`, { ativo: true });
+    // Um anúncio publicado sem contrato: o bloco do dono no Início (com a "Atividade recente") só aparece com anúncio no ar.
+    ids.publicado = await criarImovelPronto(ids.dono, `Studio no ar T776 ${sufixo}`, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     const agora = new Date().toISOString();
     const { data, error } = await adm()
