@@ -9,7 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   papel MORADOR ativo (profiles.preferred_mode = tenant, papel_ativo = morador):
    1. 1280 e 390: o Início do morador sem blocos de proprietário (sem "Como proprietário", sem o Início do dono);
    2. as abas do morador (topo a 1280, barra de baixo a 390) são exatamente os 5 nomes do desenho — Início · Buscar ·
-      Pedidos · Mensagens · Estadia —, sem nenhum item de dono, e sem barra lateral.
+      Pedidos · Mensagens · Estadia —, sem nenhum item de dono, e sem barra lateral.  Reconferência do E167 pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
