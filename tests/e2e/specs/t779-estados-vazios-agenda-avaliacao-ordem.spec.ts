@@ -123,6 +123,8 @@ test.describe("T779 — estados vazios: carteira, agenda do parceiro, avaliaçã
 
     test(`B. ${largura} px: agenda do parceiro sem janela nem bloqueio diz o que vale e para que serve (#1702, #1706)`, async ({ browser }) => {
       const p = await abrir(browser, avaliadora.email, "/dashboard/parceiro", largura);
+      // A agenda fica na aba "Atendimento" do painel do parceiro.
+      await p.getByTestId("parceiro-aba-atendimento").click({ timeout: 30_000 });
       await expect(p.getByTestId("parceiro-janelas-vazio")).toHaveText(
         "Nenhuma janela ainda: por enquanto, os pedidos aceitam qualquer horário futuro fora dos bloqueios. Adicione abaixo os dias e horários em que você atende, e só eles passam a valer.",
         { timeout: 30_000 },
