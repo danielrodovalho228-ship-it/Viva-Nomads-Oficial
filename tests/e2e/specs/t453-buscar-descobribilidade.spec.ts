@@ -7,6 +7,7 @@ import { test, expect } from "@playwright/test";
  *  2. No painel Local, o "Tempo máximo até o trabalho" aparece já ao abrir — desabilitado, com a dica "escolha um
  *     destino" — e, escolhido o destino, vira o seletor com os minutos.
  *  Em 390 e 1280 px, com prints.
+ *  Reconferência pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual (capturas locais em docs/capturas/e106).
  */
 const SAIDA = "tests/laboratorio/saida";
 
