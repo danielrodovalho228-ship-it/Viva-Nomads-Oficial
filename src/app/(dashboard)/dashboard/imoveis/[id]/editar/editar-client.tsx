@@ -58,6 +58,8 @@ import type { Property } from "@/lib/types";
 import { MSG_DISPONIVEL_ATE_ANTES, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { formatBRL, cn } from "@/lib/utils";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
+import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
@@ -657,6 +659,7 @@ export function EditarImovelClient({
         <Section
           icon={Briefcase}
           title="Comodidades"
+          testid="secao-comodidades"
           summary={`${Object.keys(amenityKeys).filter((k) => amenityKeys[k] && comodidadeValeParaTipo(k, property.propertyType)).length} selecionada(s)`}
           saving={savingSection === "amen"}
           saved={savedSection === "amen"}
@@ -668,27 +671,20 @@ export function EditarImovelClient({
               <div key={g.category}>
                 <p className="font-medium text-ink">{g.label}</p>
                 <p className="mb-2 text-xs text-muted">{AMENITY_HINT[g.category] ?? ""}</p>
-                <div className="flex flex-wrap gap-2">
-                  {g.items.map((it) => {
-                    const on = !!amenityKeys[it.key];
-                    return (
-                      <button
-                        key={it.key}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => toggleAmenity(it.key)}
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors",
-                          on
-                            ? "border-forest bg-sage-100 text-forest"
-                            : "border-sage-200 text-muted hover:border-sage"
-                        )}
-                      >
-                        {on && <Check className="h-3.5 w-3.5" />}
-                        {it.label}
-                      </button>
-                    );
-                  })}
+                {/* Conformidade (31/10): o mesmo cartão do Passo 5 do cadastro (E193) — ícone próprio por comodidade
+                    (iconeDaComodidade), em grade de 2 colunas; antes eram pílulas sem ícone. */}
+                <div className="grid gap-2 sm:grid-cols-2" data-testid="editar-comodidades-grade">
+                  {g.items.map((it) => (
+                    <CartaoEscolha
+                      key={it.key}
+                      papel="pressed"
+                      on={!!amenityKeys[it.key]}
+                      onClick={() => toggleAmenity(it.key)}
+                      icone={iconeDaComodidade(it.key)}
+                      data-comodidade={it.key}
+                      rotulo={it.label}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
