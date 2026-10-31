@@ -9,7 +9,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade),
   página toda rolada, 390 e 1280 px, HTTP abaixo de 400. Rodízio pelo registro de cobertura (main + rascunhos da Pista
   C): as telas PÚBLICAS com parâmetro na URL (e a /como-funciona) que o ciclo (blocos 72–90) ainda não varreu, como
-  visitante — guias, polos de Uberlândia, imóveis perto de um destino, perfil público do proprietário (DONO17 da massa),
+  visitante — guias, polos de Uberlândia, imóveis perto de um destino (um destino ativo do banco), perfil público do proprietário (DONO17 da massa),
   página do parceiro (o da massa, com 6 fotos na galeria; o slug sai do banco) e o novo pedido de moradia.
   Fica de fora /avaliadores/[numero] (precisa de avaliador credenciado; a t591 semeia um). Defeito novo entra como
   test.fail ligado a um item (L-82 / D-V9 são os próximos livres).
@@ -23,13 +23,15 @@ interface Tela {
 }
 
 let slugParceiro = "";
+/** Um destino ATIVO do banco do laboratório (o hc-ufu só fica ativo durante a t261); sem nenhum, o caso pula. */
+let destino = "";
 const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", nome: "Como funciona", rota: () => "/como-funciona" },
   { conta: "VISITANTE", papel: "visitante", nome: "Guia: o que é a caução", rota: () => "/guias/o-que-e-a-caucao" },
   { conta: "VISITANTE", papel: "visitante", nome: "Guia: como precificar estadia de meses", rota: () => "/guias/como-precificar-estadia-de-meses" },
   { conta: "VISITANTE", papel: "visitante", nome: "Polo: Centro", rota: () => "/cidades/uberlandia/centro" },
   { conta: "VISITANTE", papel: "visitante", nome: "Polo: HC-UFU Umuarama", rota: () => "/cidades/uberlandia/hc-ufu-umuarama" },
-  { conta: "VISITANTE", papel: "visitante", nome: "Imóveis perto do HC-UFU", rota: () => "/imoveis-perto-de/hc-ufu" },
+  { conta: "VISITANTE", papel: "visitante", nome: "Imóveis perto de um destino", rota: () => `/imoveis-perto-de/${destino}` },
   { conta: "VISITANTE", papel: "visitante", nome: "Perfil público do proprietário", rota: (m) => `/proprietario/${m.ids.DONO17}` },
   { conta: "VISITANTE", papel: "visitante", nome: "Página do parceiro", rota: () => `/parceiros/${slugParceiro}` },
   { conta: "VISITANTE", papel: "visitante", nome: "Novo pedido de moradia", rota: () => "/pedidos/novo" },
@@ -57,6 +59,8 @@ test.describe("T755 — varredura da página inteira, bloco 91 (públicas com pa
     if (!MASSA) return;
     const { data } = await adm().from("parceiros").select("slug").eq("id", MASSA.parceiro).maybeSingle();
     slugParceiro = String(data?.slug ?? "");
+    const { data: d } = await adm().from("destinos").select("slug").eq("ativo", true).limit(1).maybeSingle();
+    destino = String((d as { slug?: string } | null)?.slug ?? "");
   });
 
   for (const t of TELAS) {
@@ -66,6 +70,7 @@ test.describe("T755 — varredura da página inteira, bloco 91 (públicas com pa
       test.skip(t.conta === "SOCIO" && !CODIGO_SOCIOS, "SOCIOS_ACCESS_CODE não definido neste ambiente");
       const rota = t.rota(MASSA!);
       if (rota === "/parceiros/") throw new Error("a massa não trouxe o slug do parceiro");
+      test.skip(rota === "/imoveis-perto-de/", "o laboratório não tem destino ativo");
       const rotulo = rota.replace(/[0-9a-f-]{36}/g, ":id");
       const relatorio: Record<string, Record<string, string[]>> = {};
       mkdirSync(SAIDA, { recursive: true });
