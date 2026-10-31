@@ -117,7 +117,8 @@
         "t419-varredura-bloco36",
         "t466-admin5-agentes",
         "t420-varredura-bloco37",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/ajuda-publicacao": {
@@ -169,7 +170,8 @@
         "t183-telas-logadas-390",
         "t286-esqueletos-vazios-48",
         "t301-varredura-logada-bloco5",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/cidades": {
@@ -179,7 +181,8 @@
       "specs": [
         "t196-cidades-liberadas",
         "t202-cidades-liberadas-logado",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/documentos": {
@@ -200,7 +203,8 @@
         "t286-esqueletos-vazios-48",
         "t336-varredura-bloco14",
         "t407-varredura-bloco26",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/emails-teste": {
@@ -234,7 +238,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t301-varredura-logada-bloco5",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/fotos-perfil": {
@@ -275,7 +280,8 @@
         "t419-varredura-bloco36",
         "t551-varredura-bloco40",
         "t655-observador-botoes-filas",
-        "t630-e227b-pendentes-fila-unica"
+        "t630-e227b-pendentes-fila-unica",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/pedidos": {
@@ -289,7 +295,8 @@
         "t232-pedido-moradia-completo",
         "t255-admin-f15-f16-f18-f20",
         "t301-varredura-logada-bloco5",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t750-varredura-bloco86"
       ]
     },
     "/admin/socios": {
@@ -2294,7 +2301,8 @@
         "t261-tempo-ate-o-trabalho",
         "t301-varredura-logada-bloco5",
         "t332-merges-1170-1172",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t750-varredura-bloco86"
       ]
     },
     "/imoveis-perto-de/[slug]": {
@@ -2349,7 +2357,8 @@
         "t292-conforto-manutencao-59",
         "t288-padrao-minimo-59a",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t750-varredura-bloco86"
       ]
     },
     "/dashboard/imoveis/[id]/conforto": {
@@ -2434,7 +2443,8 @@
         "t341-credenciamento-avaliador-62a",
         "t344-avaliacao-telas-62a-parte2",
         "t387-varredura-bloco22",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t750-varredura-bloco86"
       ]
     },
     "/dashboard/parceiro/avaliacao": {
