@@ -6,6 +6,7 @@
         "publico"
       ],
       "specs": [
+        "t742-publico-a-seletor-idioma",
         "t66-home-busca-principal",
         "t730-conformidade-home",
         "t69-botoes-header",

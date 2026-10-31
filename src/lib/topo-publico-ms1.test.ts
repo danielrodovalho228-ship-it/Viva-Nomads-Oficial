@@ -1,7 +1,8 @@
 /*
   MS-1/PUBLICO-A — topo público simples: Imóveis · Anunciar · Empresas + "Fale com a Viva" em texto + Entrar como único
   botão cheio. Publicar pedido, Como funciona, Preços e Parceiros saem do topo e moram no rodapé; Parceiros também
-  aparece dentro do Fale com a Viva. Sem globo de idioma e sem menu "Mais" no topo.
+  aparece dentro do Fale com a Viva. Sem menu "Mais" no topo. O globo PT/EN (desenho de 24/10, pedido de 31/10) só
+  aparece atrás da chave SELETOR_IDIOMA, desligada por padrão.
   Roda: node --test src/lib/topo-publico-ms1.test.ts
 */
 import { test } from "node:test";
@@ -16,7 +17,9 @@ test("topo: só Imóveis · Anunciar · Empresas; Fale com a Viva em texto; Entr
   const topo = ler("components/layout/navbar.tsx");
   assert.equal((topo.match(/variant="primary"/g) ?? []).length, 2, "Entrar no computador e no menu do celular");
   assert.match(topo, /data-testid="nav-fale-com-a-viva"/);
-  for (const fora of ["Publicar pedido", "Como funciona", "Preços", "Parceiros", "Mais", "Globe", "idioma"]) assert.doesNotMatch(topo, new RegExp(fora), fora);
+  for (const fora of ["Publicar pedido", "Como funciona", "Preços", "Parceiros", "Mais", "Globe"]) assert.doesNotMatch(topo, new RegExp(fora), fora);
+  // O globo de idioma: só pela chave (desligada, o topo fica igual).
+  assert.equal((topo.match(/<SeletorIdioma/g) ?? []).length, (topo.match(/SELETOR_IDIOMA && <SeletorIdioma/g) ?? []).length);
 });
 
 test("rodapé: Publicar pedido, Como funciona, Preços e Parceiros", () => {
