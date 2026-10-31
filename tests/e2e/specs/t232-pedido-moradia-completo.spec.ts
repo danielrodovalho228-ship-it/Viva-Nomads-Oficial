@@ -16,6 +16,8 @@ import { NO_LABORATORIO, TELEFONE_LAB, adm, apagarContas, criarConta, criarImove
       inquilino recebe o aviso; desligar volta na hora;
    6. portas: "Publicar pedido" na busca (inclusive barra condensada), cartão com menos de 3 reais, home e a aba Pedidos.
 */
+// E267: o assunto agora cita a cidade ("Pedido de moradia em X encerrado"); ainda aceita o texto antigo.
+const ASSUNTO_ENCERRADO = /Pedido de moradia.* encerrado|foi encerrado/;
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -216,7 +218,7 @@ test.describe("T232 — pedido de moradia completo", () => {
     expect(linha!.status).toBe("excluido");
     expect(linha!.excluido_em).toBeTruthy();
     await expect
-      .poll(async () => (await lerSaida()).slice(antes).some((l) => l.para === dono.email && /foi encerrado/.test(String(l.assunto))), { timeout: 20_000 })
+      .poll(async () => (await lerSaida()).slice(antes).some((l) => l.para === dono.email && ASSUNTO_ENCERRADO.test(String(l.assunto))), { timeout: 20_000 })
       .toBe(true);
 
     const d = proprietario;
