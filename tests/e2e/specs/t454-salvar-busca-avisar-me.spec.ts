@@ -9,6 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *     "Ligar em Notificações".
  *  3. Visitante: "Busca guardada neste aparelho. Entre com seu e-mail para receber alertas."
  *  Em 390 e 1280 px, com prints dos três estados.
+ *  Reconferência pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
