@@ -122,7 +122,7 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
     await m.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
     const passo = m.getByTestId("solicitacao-passo");
     await expect(async () => {
-      await m.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first().click();
+      await m.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first().click();
       await expect(passo).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
     await passo.getByRole("button", { name: "Continuar" }).click();

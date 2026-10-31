@@ -33,17 +33,17 @@ test("página do imóvel: ordem do Prompt 41 (galeria → título → síntese �
   assert.match(g, /<Images className="h-4 w-4" \/> Ver todas as fotos/);
 });
 
-test("página do imóvel: UM primário 'Solicitar' (a candidatura de sempre); a visita é texto terciário", () => {
+test("página do imóvel: UM primário 'Pedir para morar' (IMÓVEL-CTA; a candidatura de sempre); a visita é texto terciário", () => {
   const d = semComentarios(ler("app/(public)/imoveis/[id]/property-detail.tsx"));
   const acoes = d.slice(d.indexOf("const actions = candidatouSe"), d.indexOf("const composer ="));
   assert.equal((acoes.match(/variant="primary"/g) ?? []).length, 1);
-  assert.match(acoes, /"Solicitar"/);
+  assert.match(acoes, /ROTULO_CTA_IMOVEL/);
   assert.match(acoes, /onClick=\{abrirSolicitacao\}/); // o mesmo fluxo da candidatura
   assert.match(acoes, /variante="tertiary"/);
   // O passo final do fluxo segue sendo "Enviar candidatura".
   assert.match(d, /"Enviar candidatura"/);
   const barra = ler("components/property/barra-fixa-celular.tsx");
-  assert.match(barra, /\{pending \? "Enviando\.\.\." : "Solicitar"\}/);
+  assert.match(barra, /\{pending \? "Enviando\.\.\." : ROTULO_CTA_IMOVEL\}/);
   assert.match(barra, /data-cta=\{marcaCta\("primary"\)\}/);
   assert.match(barra, /buttonClasses\(\{ variant: "tertiary", size: "sm" \}\)\}>\s*Agendar visita/);
   assert.match(barra, /shadow-flutuante/);

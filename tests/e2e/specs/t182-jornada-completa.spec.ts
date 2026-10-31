@@ -117,7 +117,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await expect(page.getByRole("heading", { level: 1 }).first()).toContainText(titulo, { timeout: 20_000 });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     // Prompt 41: o primário "Solicitar" (barra fixa no celular, cartão no computador) abre a candidatura de sempre.
-    await page.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first().click();
+    await page.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first().click();
     const passo = page.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();
     await passo.getByRole("button", { name: "Continuar" }).click();

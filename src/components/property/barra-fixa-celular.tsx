@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { buttonClasses, marcaCta } from "@/components/ui/button";
+import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 
@@ -116,13 +117,19 @@ export function BarraFixaCelular({
               data-testid="barra-solicitar"
               className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 px-3 py-1 text-xs leading-snug" : "h-11 flex-1 px-3" })}
             >
-              {bloqueio ? bloqueio : <>{pending ? "Enviando..." : "Solicitar"}</>}
+              {bloqueio ? bloqueio : <>{pending ? "Enviando..." : ROTULO_CTA_IMOVEL}</>}
             </button>
           )}
           <button type="button" onClick={onAgendarVisita} data-testid="barra-agendar-visita" className={buttonClasses({ variant: "tertiary", size: "sm" })}>
             Agendar visita
           </button>
         </div>
+        {/* IMÓVEL-CTA (adendo de 24/10): a frase de tranquilidade, em texto pequeno, sob o botão. */}
+        {barra.estado !== "candidatou" && !bloqueio && (
+          <p data-testid="barra-cta-frase" className="mt-1 text-[11px] leading-snug text-muted">
+            {FRASE_CTA_IMOVEL}
+          </p>
+        )}
       </div>
     </div>
   );

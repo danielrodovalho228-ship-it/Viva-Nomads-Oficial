@@ -74,7 +74,7 @@ export function BotaoTamanhoReal({ imovel, className }: { imovel: Property; clas
                 <PriceCard
                   property={imovel}
                   meses={mesesDoCartao(undefined, imovel.minPeriodDays)}
-                  actions={<p className="text-xs text-muted">Aqui o morador vê o botão “Solicitar”.</p>}
+                  actions={<p className="text-xs text-muted">Aqui o morador vê o botão “Pedir para morar”.</p>}
                 />
               </aside>
             </div>

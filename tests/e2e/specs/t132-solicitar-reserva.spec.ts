@@ -21,7 +21,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
         if (r.method() === "POST") gravacoes.push(r.url());
       });
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Solicitar", exact: true }).click();
+      await gatilho.getByRole("button", { name: "Pedir para morar", exact: true }).click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
       // E53: no Revisar a entrada vem no campo editável do diálogo (a mesma seleção da caixa e do calendário).
@@ -45,7 +45,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       });
       await card.getByTestId("candidatura-inicio").fill("2020-01-10");
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Solicitar", exact: true }).click();
+      await gatilho.getByRole("button", { name: "Pedir para morar", exact: true }).click();
       await expect(page.getByTestId("solicitacao-erro")).toContainText("hoje ou depois");
     });
   });
