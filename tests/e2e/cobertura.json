@@ -25,7 +25,8 @@
         "t543-e166-fundo-clean-publico",
         "t669-ms1-topo-publico",
         "t671-varredura-bloco66",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t726-publico-a-chave-desligada"
       ]
     },
     "/acesso-socios": {
@@ -525,7 +526,8 @@
         "t543-e166-fundo-clean-publico",
         "t489-e176-menus",
         "t588-varredura-bloco46",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t726-publico-a-chave-desligada"
       ]
     },
     "/cidades": {
@@ -537,7 +539,8 @@
         "t20-p1-agentes",
         "t311-marco-principal-unico",
         "t543-e166-fundo-clean-publico",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t727-varredura-bloco80"
       ]
     },
     "/cidades/[cidade]": {
@@ -1575,7 +1578,8 @@
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t726-publico-a-chave-desligada"
       ]
     },
     "/excluir-conta": {
@@ -1583,7 +1587,8 @@
         "publico"
       ],
       "specs": [
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t727-varredura-bloco80"
       ]
     },
     "/excluir-conta/confirmar": {
@@ -1612,7 +1617,8 @@
       ],
       "specs": [
         "t311-marco-principal-unico",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t727-varredura-bloco80"
       ]
     },
     "/guias": {
@@ -1623,7 +1629,8 @@
         "t105-guias",
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t727-varredura-bloco80"
       ]
     },
     "/guias/[slug]": {
@@ -1747,7 +1754,8 @@
         "t414-varredura-bloco31",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t726-publico-a-chave-desligada"
       ]
     },
     "/parceiros": {
@@ -1806,7 +1814,8 @@
         "t18-seo-a11y",
         "t5-pedido-moradia",
         "t310-vao-fim-de-pagina",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t727-varredura-bloco80"
       ]
     },
     "/pedidos/novo": {
@@ -1853,7 +1862,8 @@
         "t543-e166-fundo-clean-publico",
         "t591-varredura-bloco48",
         "t661-varredura-bloco62",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t727-varredura-bloco80"
       ]
     },
     "/privacidade": {
@@ -1866,7 +1876,8 @@
         "t543-e166-fundo-clean-publico",
         "t557-varredura-bloco42",
         "t598-e84-central-de-ajuda",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t727-varredura-bloco80"
       ]
     },
     "/proprietario/[id]": {
@@ -1930,7 +1941,8 @@
         "t311-marco-principal-unico",
         "t438-vocab-a",
         "t543-e166-fundo-clean-publico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t727-varredura-bloco80"
       ]
     },
     "/simulacao": {
@@ -1967,7 +1979,8 @@
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t727-varredura-bloco80"
       ]
     },
     "/tributario": {
@@ -2464,7 +2477,8 @@
       ],
       "specs": [
         "t314-entrada-avaliador-62b3",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t727-varredura-bloco80"
       ]
     },
     "/avaliadores/[numero]": {
