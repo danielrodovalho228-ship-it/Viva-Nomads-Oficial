@@ -43,23 +43,29 @@ const semAntiga = (txt: string) => {
   for (const a of ANTIGAS) assert.ok(!txt.includes(a), `voltou a frase genérica: "${a}" em "${txt}"`);
 };
 
-test("Horário do serviço confirmado: as DUAS cópias (cliente e parceiro) com o nome e o horário (03/12 às 13:00)", () => {
-  for (const nome of ["Daniel", "Lara"]) {
-    const t = aberturaDoPedido("parceiro_horario_confirmado", PEDIDO, nome);
-    assert.equal(t, `Olá ${nome}, o horário do serviço de limpeza de saída em Apto Santa Mônica está confirmado: 03/12/2026 às 13:00 (horário de Brasília).`);
+test("Horário do serviço confirmado: as DUAS cópias (cliente e parceiro) com o nome, com quem e o horário (03/12 às 13:00)", () => {
+  // O servidor monta a outra parte vista por quem recebe: o nome público do parceiro para o cliente, o 1º nome do
+  // cliente para o parceiro (pedidoParaEmail). E267 (resíduo, 31/10): o corpo diz com quem é o serviço.
+  for (const [nome, outra] of [["Daniel", "Lara Limpa"], ["Lara", "Daniel"]] as const) {
+    const t = aberturaDoPedido("parceiro_horario_confirmado", { ...PEDIDO, outraParte: outra }, nome);
+    assert.equal(t, `Olá ${nome}, o horário do serviço de limpeza de saída em Apto Santa Mônica com ${outra} está confirmado: 03/12/2026 às 13:00 (horário de Brasília).`);
     semAntiga(t);
   }
 });
 
 test("Pedido mudou de data (pedido_auto_atualizado → parceiro): nome, imóvel e a nova data", () => {
   const t = aberturaDoPedido("pedido_auto_atualizado", { ...PEDIDO, horarioConfirmado: null }, "Lara", { reagendado: true });
-  assert.match(t, /^Olá Lara, a estadia em Apto Santa Mônica foi renovada e a data do serviço de limpeza de saída mudou \(janela: 03\/12\/2026 às 13:00 a 05\/12\/2026 às 11:00\)/);
+  assert.match(t, /^Olá Lara, a estadia em Apto Santa Mônica foi renovada e a data do serviço de limpeza de saída pedido por Daniel mudou \(janela: 03\/12\/2026 às 13:00 a 05\/12\/2026 às 11:00\)/);
   semAntiga(t);
 });
 
 test("Pedido cancelado (pedido_auto_cancelado → parceiro): nome, imóvel e a nova saída", () => {
   const t = aberturaDoPedido("pedido_auto_cancelado", PEDIDO, "Lara", { cancelamento: { motivo: "saida_remarcada", novaSaida: "2026-12-15" } });
-  assert.equal(t, "Olá Lara, a saída do morador mudou (nova saída: 15/12/2026) e o pedido de limpeza de saída em Apto Santa Mônica foi cancelado. O pedido volta a ser feito perto da nova data.");
+  assert.equal(t, "Olá Lara, a saída do morador mudou (nova saída: 15/12/2026) e o pedido de limpeza de saída feito por Daniel em Apto Santa Mônica foi cancelado. O pedido volta a ser feito perto da nova data.");
+  assert.equal(
+    aberturaDoPedido("pedido_auto_cancelado", PEDIDO, "Lara", { cancelamento: { motivo: "contrato_encerrado" } }),
+    "Olá Lara, o contrato em Apto Santa Mônica foi encerrado e o pedido de limpeza de saída feito por Daniel foi cancelado. Nada a fazer.",
+  );
   semAntiga(t);
 });
 

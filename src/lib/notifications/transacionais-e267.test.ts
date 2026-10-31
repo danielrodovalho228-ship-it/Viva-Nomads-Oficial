@@ -65,7 +65,9 @@ test("E267: todo evento do pedido de serviço nomeia a pessoa, o imóvel e o fat
 
 test("E267: 'Horário do serviço confirmado' diz QUAL horário (o caso do circuito de 30/10: 03/12 13h)", () => {
   const p = { ...PEDIDO, horarioConfirmado: "2026-12-03T16:00:00Z" };
-  assert.equal(aberturaDoPedido("parceiro_horario_confirmado", p, "Daniel"), "Olá Daniel, o horário do serviço de limpeza completa em Studio Jardim está confirmado: 03/12/2026 às 13:00 (horário de Brasília).");
+  assert.equal(aberturaDoPedido("parceiro_horario_confirmado", p, "Daniel"), "Olá Daniel, o horário do serviço de limpeza completa em Studio Jardim com Lara Limpa está confirmado: 03/12/2026 às 13:00 (horário de Brasília).");
+  // Sem a outra parte (perfil sem nome), a frase continua inteira.
+  assert.equal(aberturaDoPedido("parceiro_horario_confirmado", { ...p, outraParte: null }, "Daniel"), "Olá Daniel, o horário do serviço de limpeza completa em Studio Jardim está confirmado: 03/12/2026 às 13:00 (horário de Brasília).");
 });
 
 const ESTADIA: DadosEstadiaEmail = {

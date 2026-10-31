@@ -150,7 +150,8 @@ export function aberturaDoPedido(ev: EventoPedido, p: PedidoParaEmail, nome?: st
           : `${ola}, ${outra || "o parceiro"} recusou a nova data do serviço de ${servico}${em}. O pedido voltou a esperar a resposta dele; sem resposta em 24 horas, você troca de parceiro pelo pedido.`;
       return `${ola}, ${outra || "o parceiro"} recusou o pedido de ${servico}${doImovel}. Você pode pedir a outro parceiro pela plataforma.`;
     case "parceiro_horario_confirmado": {
-      if (p.horarioConfirmado && quando(p.horarioConfirmado)) return `${ola}, o horário do serviço de ${servico}${em} está confirmado: ${quando(p.horarioConfirmado)} (horário de Brasília).`;
+      // E267 (resíduo): as duas cópias dizem com quem — o parceiro (para o cliente) ou o cliente (para o parceiro).
+      if (p.horarioConfirmado && quando(p.horarioConfirmado)) return `${ola}, o horário do serviço de ${servico}${em}${outra ? ` com ${outra}` : ""} está confirmado: ${quando(p.horarioConfirmado)} (horário de Brasília).`;
       const proposto = quando(fato.horarioProposto);
       return `${ola}, ${outra || "o parceiro"} propôs outro horário para o serviço de ${servico}${em}${proposto ? `: ${proposto} (horário de Brasília)` : ""}. Confirme pelo pedido.`;
     }
@@ -168,14 +169,15 @@ export function aberturaDoPedido(ev: EventoPedido, p: PedidoParaEmail, nome?: st
       return `${ola}, ${outra || "o parceiro"} não respondeu em 24 horas ao pedido de ${servico}${doImovel}. Você pode esperar ou trocar de parceiro com 1 toque.`;
     case "pedido_auto_atualizado":
       return fato.reagendado
-        ? `${ola}, a estadia${em} foi renovada e a data do serviço de ${servico} mudou${data ? ` (${data.rotulo.toLowerCase()}: ${data.valor})` : ""}. Confirme um dos novos horários ou recuse a nova data pelo pedido. O valor combinado continua o mesmo.`
-        : `${ola}, a estadia${em} foi remarcada e a data do serviço de ${servico} mudou${data ? ` (${data.rotulo.toLowerCase()}: ${data.valor})` : ""}. Confira pelo pedido.`;
+        ? `${ola}, a estadia${em} foi renovada e a data do serviço de ${servico}${outra ? ` pedido por ${outra}` : ""} mudou${data ? ` (${data.rotulo.toLowerCase()}: ${data.valor})` : ""}. Confirme um dos novos horários ou recuse a nova data pelo pedido. O valor combinado continua o mesmo.`
+        : `${ola}, a estadia${em} foi remarcada e a data do serviço de ${servico}${outra ? ` pedido por ${outra}` : ""} mudou${data ? ` (${data.rotulo.toLowerCase()}: ${data.valor})` : ""}. Confira pelo pedido.`;
     case "pedido_auto_cancelado": {
       const c = fato.cancelamento;
-      if (!c || c.motivo === "contrato_encerrado") return `${ola}, o contrato${em} foi encerrado e o pedido de ${servico} foi cancelado. Nada a fazer.`;
+      const dequem = outra ? ` feito por ${outra}` : "";
+      if (!c || c.motivo === "contrato_encerrado") return `${ola}, o contrato${em} foi encerrado e o pedido de ${servico}${dequem} foi cancelado. Nada a fazer.`;
       const nova = dia(c.novaSaida);
       const porque = c.motivo === "nova_data_recusada" ? "você recusou a nova data" : "a saída do morador mudou";
-      return `${ola}, ${porque}${nova ? ` (nova saída: ${nova})` : ""} e o pedido de ${servico}${em} foi cancelado. O pedido volta a ser feito perto da nova data.`;
+      return `${ola}, ${porque}${nova ? ` (nova saída: ${nova})` : ""} e o pedido de ${servico}${dequem}${em} foi cancelado. O pedido volta a ser feito perto da nova data.`;
     }
     case "parceiro_pedido_novo":
       return `${ola}, você recebeu um pedido de orçamento de ${servico}${doImovel}. Veja os detalhes abaixo e responda pelo pedido.`;
