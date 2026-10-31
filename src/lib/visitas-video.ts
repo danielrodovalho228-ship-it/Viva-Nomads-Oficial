@@ -221,6 +221,9 @@ export function mudancaDeStatus(
     campos.horario_confirmado = atual.horarioProposto;
     campos.horario_proposto = null;
   }
+  // E290: a visita que acaba (cancelada ou concluída) não guarda mais o link da chamada. Antes ele ficava legível
+  // para as duas partes e o admin depois do fim; um link de sala fixa vazado seguia valendo para as próximas chamadas.
+  if (para === "cancelado" || para === "feito") campos.link_chamada = null;
   if (entrada.acao === "cancelar") {
     // O dono RECUSA um pedido (ou uma remarcação) sempre com motivo; cancelar (morador, ou dono na confirmada) tem
     // motivo opcional — E269-B: a opção de um toque e o texto de até 140 caracteres.

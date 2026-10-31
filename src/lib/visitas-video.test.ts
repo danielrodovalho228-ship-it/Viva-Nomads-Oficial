@@ -188,3 +188,19 @@ test("E269-B: o motivo vai só à outra parte (a cópia de quem cancelou nunca o
   assert.match(cartao, /data-testid="visita-cancelar-confirmar"[\s\S]{0,80}Cancelar a visita/);
   assert.match(cartao, /maxLength=\{TEXTO_CANCELAMENTO_MAX\}/);
 });
+
+test("E290: a visita que acaba (cancelada ou concluída) apaga o link da chamada; as outras transições não", async () => {
+  const { mudancaDeStatus } = await import("./visitas-video.ts");
+  const agora = new Date("2026-10-18T12:00:00Z");
+  const link = (r: ReturnType<typeof mudancaDeStatus>) => (r.ok ? r.campos.link_chamada : "recusado");
+  // Concluir (dono) e cancelar (dono ou morador, de qualquer estado aberto): o link sai do banco junto com o status.
+  assert.equal(link(mudancaDeStatus("confirmado", "dono", { acao: "concluir" }, agora)), null);
+  assert.equal(link(mudancaDeStatus("confirmado", "morador", { acao: "cancelar" }, agora)), null);
+  assert.equal(link(mudancaDeStatus("confirmado", "dono", { acao: "cancelar" }, agora)), null);
+  assert.equal(link(mudancaDeStatus("remarcar", "morador", { acao: "cancelar" }, agora)), null);
+  assert.equal(link(mudancaDeStatus("remarcar", "dono", { acao: "cancelar", motivo: "Imóvel alugado" }, agora)), null);
+  // Aceitar a remarcação não mexe no link (ele é o da chamada confirmada); confirmar e remarcar gravam o novo.
+  const aceitar = mudancaDeStatus("remarcar", "morador", { acao: "aceitar_remarcacao" }, agora, { horarioProposto: "2026-10-20T12:00:00Z", linkChamada: "https://meet.google.com/abc-defg-hij" });
+  assert.ok(aceitar.ok && !("link_chamada" in aceitar.campos));
+  assert.equal(link(mudancaDeStatus("pedido", "dono", { acao: "remarcar", horario: "2026-10-20T12:00:00Z", link: "https://zoom.us/j/123" }, agora)), "https://zoom.us/j/123");
+});
