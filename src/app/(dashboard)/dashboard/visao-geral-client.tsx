@@ -402,7 +402,15 @@ function PainelDoDono({
               <Activity text="3 novas visualizações" time="ontem" />
             </ul>
           ) : (
-            <p className="py-3 text-sm text-muted">Sem atividade recente ainda.</p>
+            // O painel ainda não tem feed próprio: fora da demonstração ele dizia sempre que não havia atividade, mesmo com
+            // interessados, propostas e visitas. Diz onde as novidades chegam e leva até lá.
+            <p className="py-3 text-sm text-muted" data-testid="atividade-recente-vazia">
+              As novidades dos seus imóveis (interessados, propostas, visitas e avisos) chegam em{" "}
+              <Link href="/dashboard/notificacoes" className="font-medium text-forest underline">
+                Notificações
+              </Link>
+              .
+            </p>
           )}
         </Panel>
       </div>
