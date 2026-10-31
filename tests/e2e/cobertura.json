@@ -1542,7 +1542,8 @@
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
         "t589-varredura-bloco47",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t772-e290-link-some-ao-acabar"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1553,7 +1554,8 @@
       "specs": [
         "t593-e211-visita-do-dono",
         "t589-varredura-bloco47",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t772-e290-link-some-ao-acabar"
       ]
     },
     "/decisao": {
