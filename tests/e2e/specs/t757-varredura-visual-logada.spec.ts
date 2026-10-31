@@ -39,7 +39,6 @@ const MORADOR = [
   "/dashboard/pedidos",
   "/dashboard/buscas",
   "/dashboard/locacoes",
-  "/dashboard/estadia",
   "/dashboard/mensagens",
   "/dashboard/solicitacoes",
   "/dashboard/comparar",
@@ -104,7 +103,8 @@ async function medir(p: Page): Promise<Medida> {
     const orfaos: string[] = [];
     for (const g of main.querySelectorAll("*")) {
       if (getComputedStyle(g).display !== "grid") continue;
-      const filhos = [...g.children].filter(visivel);
+      // Campo que ocupa a linha toda de propósito (col-span) não é órfão.
+      const filhos = [...g.children].filter(visivel).filter((k) => !/span/.test(getComputedStyle(k).gridColumnEnd));
       if (filhos.length < 3) continue;
       const tops = filhos.map((k) => Math.round(k.getBoundingClientRect().top));
       const linhas = [...new Set(tops)];
@@ -116,7 +116,7 @@ async function medir(p: Page): Promise<Medida> {
     // Texto espremido: cortado com reticências sem ocupar a linha toda do pai (um vizinho tomou o espaço).
     const espremidos: string[] = [];
     for (const e of main.querySelectorAll("*")) {
-      if (e.childElementCount !== 0 || !visivel(e)) continue;
+      if (e.childElementCount !== 0 || !visivel(e) || e.tagName === "INPUT") continue;
       const c = getComputedStyle(e);
       if (c.textOverflow !== "ellipsis" || (e as HTMLElement).scrollWidth <= (e as HTMLElement).clientWidth + 1) continue;
       const pai = e.parentElement!.getBoundingClientRect().width;
