@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
+import { BannerTopo } from "@/components/institucional/banner-topo";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { ROTA_RECRUTAMENTO } from "@/lib/vistoria/entrada";
@@ -38,16 +40,28 @@ const COMO = [
 
 export default function AvaliadoresRecrutamentoPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6" data-testid="recrutamento-avaliador">
+    <div data-testid="recrutamento-avaliador">
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }, { nome: "Avaliadores credenciados", caminho: ROTA_RECRUTAMENTO }])} />
-      <h1 className="font-display text-2xl font-semibold text-ink sm:text-[28px]">Seja avaliador credenciado</h1>
-      <p className="mt-2 text-ink/70">
-        A Viva Nomads está montando a rede de avaliadores credenciados que fazem a avaliação do imóvel antes do anúncio ganhar o selo
-        &ldquo;vistoriado&rdquo;. Se você avalia imóveis, peça o credenciamento.
-      </p>
-      <div className="mt-4">
-        <ButtonLink href={PEDIR} data-testid="pedir-credenciamento">Pedir credenciamento</ButtonLink>
-      </div>
+      {/* E52: o topo no padrão das páginas institucionais (o mesmo BannerTopo de /parceiros e /empresas): foto do acervo,
+          rótulo, título, frase e o único botão cheio da tela no banner. */}
+      <BannerTopo
+        foto="/images/unicas/qualificar-hero.webp"
+        alt="Sala e cozinha integradas de um imóvel mobiliado"
+        eyebrow="Parceiros"
+        titulo="Seja avaliador credenciado"
+        testid="topo-avaliadores"
+        subtitulo={
+          <p>
+            A Viva Nomads está montando a rede de avaliadores credenciados que fazem a avaliação do imóvel antes do anúncio ganhar o
+            selo &ldquo;vistoriado&rdquo;. Se você avalia imóveis, peça o credenciamento.
+          </p>
+        }
+      >
+        <ButtonLink href={PEDIR} variant="inverse" size="lg" data-testid="pedir-credenciamento">
+          Pedir credenciamento <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+      </BannerTopo>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-ink">Como funciona</h2>
@@ -85,6 +99,7 @@ export default function AvaliadoresRecrutamentoPage() {
         </p>
         <ButtonLink href={PEDIR} variant="outline" size="sm" className="mt-3">Pedir credenciamento</ButtonLink>
       </div>
+    </div>
     </div>
   );
 }

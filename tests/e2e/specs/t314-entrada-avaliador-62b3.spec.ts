@@ -64,6 +64,10 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
       await p.getByRole("link", { name: "Ser avaliador credenciado" }).click();
       await expect(p).toHaveURL(/\/parceiros\/avaliadores$/);
       await expect(p.getByTestId("recrutamento-avaliador")).toBeVisible();
+      // E52: o topo no padrão das institucionais — banner com foto, título e o Pedir credenciamento dentro dele.
+      const topo = p.getByTestId("topo-avaliadores");
+      await expect(topo.getByRole("heading", { level: 1, name: "Seja avaliador credenciado" })).toBeVisible();
+      await expect(topo.getByTestId("pedir-credenciamento")).toBeVisible();
       await expect(p.getByTestId("recrutamento-requisitos")).toContainText("Identidade verificada");
       await expect(p.getByTestId("recrutamento-pagamento")).not.toContainText(/R\$\s*\d/);
       await expect(p.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
