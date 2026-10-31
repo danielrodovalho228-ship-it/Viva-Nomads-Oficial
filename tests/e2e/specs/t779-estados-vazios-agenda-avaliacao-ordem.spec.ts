@@ -48,7 +48,7 @@ test.describe("T779 — estados vazios: carteira, agenda do parceiro, avaliaçã
     const dia = (d: Date) => d.toISOString().slice(0, 10);
     // Em vigência (F27): as duas assinaturas, bloco ativo e 1º aluguel confirmado. Termina daqui a 120 dias, fora das
     // faixas de até 90: dois blocos de 2 meses (prazo máximo 180 dias, bloco de 1 a 3 meses e até 90 dias); a carteira
-    // lê o fim do último bloco (periodoDosBlocos).
+    // lê o fim do último bloco (periodoDosBlocos). O 2º bloco entra com os dois aceites (regra da renovação).
     const { data: ct, error } = await adm()
       .from("contratos")
       .insert({ property_id: ids.imovel, tenant_id: ids.morador, lead_id: ids.lead, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200, tamanho_bloco_meses: 2, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao", assinado_proprietario_em: agora.toISOString(), assinado_inquilino_em: agora.toISOString() })
@@ -63,7 +63,7 @@ test.describe("T779 — estados vazios: carteira, agenda do parceiro, avaliaçã
       .select("id")
       .single();
     if (eb) throw eb;
-    const { error: eb2 } = await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 2, inicio: emDias(61), fim: emDias(120), meses: 2, valor: 6400, caucao: 0, status: "agendado" });
+    const { error: eb2 } = await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 2, inicio: emDias(61), fim: emDias(120), meses: 2, valor: 6400, caucao: 0, status: "agendado", aceite_proprietario_em: agora.toISOString(), aceite_inquilino_em: agora.toISOString() });
     if (eb2) throw eb2;
     const { error: ep } = await adm().from("pagamentos_bloco").insert({ bloco_id: bloco.id, contrato_id: ids.contrato, tipo: "aluguel", valor: 3200, data_pagamento: dia(agora), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: agora.toISOString() });
     if (ep) throw ep;
