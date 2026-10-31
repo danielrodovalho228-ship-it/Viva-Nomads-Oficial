@@ -279,6 +279,10 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       <ImportarCalendario propertyId={propertyId} onMudou={recarregar} />
       {/* E44: o par da importação — o link .ics para o Airbnb/Booking bloquear as datas daqui. */}
       <ExportarCalendario propertyId={propertyId} />
+      {/* AGENDA-A: do calendário do imóvel para a Agenda (estadias, visitas e bloqueios de todos os imóveis). */}
+      <Link href={`/dashboard/agenda?imovel=${propertyId}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline" data-testid="calendario-ver-agenda">
+        Ver na Agenda
+      </Link>
 
       {/* Lista dos bloqueios */}
       {blocks.length > 0 && (

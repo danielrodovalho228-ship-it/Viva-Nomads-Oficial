@@ -2,13 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight, List, LogIn, LogOut, Lock, MapPin, Video } from "lucide-react";
+import { BedDouble, CalendarDays, ChevronLeft, ChevronRight, List, LogIn, LogOut, Lock, MapPin, Video } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { Avatar } from "@/components/ui/avatar";
+import { ExportarCalendario } from "@/components/property/exportar-calendario";
 import {
   ROTULO_TIPO_AGENDA,
   agruparPorDia,
   diaBrasilia,
+  diasEmEstadia,
   filtrarPorImovel,
   gradeDoMes,
   horaBrasilia,
@@ -87,14 +89,16 @@ function Linha({ i }: { i: ItemAgenda }) {
   );
 }
 
-export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[]; imoveis: { id: string; titulo: string }[]; hojeISO: string }) {
+export function AgendaClient({ itens, imoveis, hojeISO, imovelInicial = "" }: { itens: ItemAgenda[]; imoveis: { id: string; titulo: string }[]; hojeISO: string; imovelInicial?: string }) {
   const hoje = diaBrasilia(hojeISO) ?? hojeISO.slice(0, 10);
   const [vista, setVista] = useState<"mes" | "lista">("mes");
-  const [imovel, setImovel] = useState<string>("");
+  const [imovel, setImovel] = useState<string>(imoveis.some((p) => p.id === imovelInicial) ? imovelInicial : "");
   const [cursor, setCursor] = useState({ ano: Number(hoje.slice(0, 4)), mes: Number(hoje.slice(5, 7)) });
   const [diaAberto, setDiaAberto] = useState<string>(hoje);
 
   const porDia = useMemo(() => agruparPorDia(filtrarPorImovel(itens, imovel || null)), [itens, imovel]);
+  // AGENDA-A: a estadia pinta TODOS os dias do período (entrada → saída), não só as pontas.
+  const emEstadia = useMemo(() => diasEmEstadia(filtrarPorImovel(itens, imovel || null)), [itens, imovel]);
   const semanas = gradeDoMes(cursor.ano, cursor.mes);
   const prefixoMes = `${cursor.ano}-${String(cursor.mes).padStart(2, "0")}`;
   const proximos = [...porDia.entries()].filter(([d]) => d >= hoje);
@@ -163,6 +167,7 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
           <div className="mt-1 grid grid-cols-7 gap-1">
             {semanas.flat().map(({ dia, doMes }) => {
               const doDia = porDia.get(dia) ?? [];
+              const estadia = emEstadia.get(dia) ?? [];
               return (
                 <button
                   key={dia}
@@ -170,10 +175,11 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
                   onClick={() => setDiaAberto(dia)}
                   data-testid={`agenda-dia-${dia}`}
                   data-qtd={doDia.length}
-                  aria-label={`${dataLonga(dia)}: ${doDia.length} ${doDia.length === 1 ? "item" : "itens"}`}
+                  data-estadia={estadia.length || undefined}
+                  aria-label={`${dataLonga(dia)}: ${doDia.length} ${doDia.length === 1 ? "item" : "itens"}${estadia.length ? " · em estadia" : ""}`}
                   className={cn(
                     "min-h-14 min-w-0 rounded-lg border p-1 text-left align-top sm:min-h-24",
-                    doMes ? "border-sage-200 bg-white" : "border-transparent bg-surface-2 text-muted",
+                    doMes ? (estadia.length ? "border-emerald-200 bg-emerald-50" : "border-sage-200 bg-white") : "border-transparent bg-surface-2 text-muted",
                     dia === diaAberto && "ring-2 ring-forest",
                   )}
                 >
@@ -199,7 +205,18 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
           </div>
           <div className="mt-4 border-t border-sage-200 pt-3" data-testid="agenda-dia-aberto">
             <h3 className="text-sm font-semibold text-ink">{dataLonga(diaAberto)}</h3>
-            {(porDia.get(diaAberto) ?? []).length === 0 ? (
+            {/* AGENDA-A: nos dias do meio da estadia (sem entrada nem saída), a estadia aparece por nome. */}
+            {(emEstadia.get(diaAberto) ?? [])
+              .filter((e) => !e.ponta)
+              .map((e) => (
+                <p key={e.contrato} className="mt-1 flex items-center gap-2 text-sm text-ink" data-testid="agenda-estadia-andamento">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-800">
+                    <BedDouble className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  Estadia em andamento · {e.imovel}
+                </p>
+              ))}
+            {(porDia.get(diaAberto) ?? []).length === 0 && !(emEstadia.get(diaAberto) ?? []).length ? (
               <p className="mt-1 text-sm text-muted">Nada marcado neste dia.</p>
             ) : (
               <ul className="mt-1 divide-y divide-sage-100">
@@ -232,6 +249,15 @@ export function AgendaClient({ itens, imoveis, hojeISO }: { itens: ItemAgenda[];
             </div>
           )}
         </Panel>
+      )}
+
+      {/* AGENDA-A + E44: o link .ics de exportação (o mesmo da edição do imóvel) também mora aqui, por imóvel. */}
+      {imovel ? (
+        <ExportarCalendario key={imovel} propertyId={imovel} />
+      ) : (
+        <p className="text-sm text-muted" data-testid="agenda-exportar-escolha">
+          Para exportar o calendário (.ics) para o Airbnb ou o Booking, escolha um imóvel acima.
+        </p>
       )}
     </div>
   );
