@@ -384,7 +384,8 @@
       "specs": [
         "t125-alerta-busca-salva",
         "t306-varredura-bloco7",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t748-varredura-bloco85"
       ]
     },
     "/app/boas-vindas": {
@@ -395,7 +396,8 @@
         "t14-app-mode",
         "t16-app-boas-vindas",
         "t282-boas-vindas-foto",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t748-varredura-bloco85"
       ]
     },
     "/auth": {
@@ -610,7 +612,8 @@
         "t23-pacote-seguranca",
         "t260-documentos-registro",
         "t306-varredura-bloco7",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t748-varredura-bloco85"
       ]
     },
     "/conferir/[codigo]": {
@@ -1561,7 +1564,8 @@
         "socio"
       ],
       "specs": [
-        "t252-dev-emails"
+        "t252-dev-emails",
+        "t748-varredura-bloco85"
       ]
     },
     "/empresas": {
@@ -1585,7 +1589,8 @@
         "publico"
       ],
       "specs": [
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t748-varredura-bloco85"
       ]
     },
     "/excluir-conta/confirmar": {
@@ -1605,7 +1610,8 @@
         "t138-paineis-viva-vazio",
         "t160-favoritos-pagina",
         "t48-varredura",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t748-varredura-bloco85"
       ]
     },
     "/guia-fotos": {
@@ -1614,7 +1620,8 @@
       ],
       "specs": [
         "t311-marco-principal-unico",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t748-varredura-bloco85"
       ]
     },
     "/guias": {
@@ -1625,7 +1632,8 @@
         "t105-guias",
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t748-varredura-bloco85"
       ]
     },
     "/guias/[slug]": {
@@ -2588,7 +2596,8 @@
       ],
       "specs": [
         "t470-qa-leitor-caixas",
-        "t521-qa-caixa-sem-token"
+        "t521-qa-caixa-sem-token",
+        "t748-varredura-bloco85"
       ]
     },
     "/qa/entrar": {
@@ -2605,7 +2614,8 @@
       ],
       "specs": [
         "t695-e264b-proativos",
-        "t711-e264b-proativos-corpo"
+        "t711-e264b-proativos-corpo",
+        "t748-varredura-bloco85"
       ]
     }
   },
