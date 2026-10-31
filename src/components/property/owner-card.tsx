@@ -167,7 +167,7 @@ export function OwnerCard({
           {d.reputacao && (
             <Link
               href={d.reputacao.href}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-ink hover:text-forest"
+              className="alvo-toque mt-2 inline-flex items-center gap-1 text-sm font-medium text-ink hover:text-forest"
               data-testid="proprietario-reputacao"
             >
               <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />

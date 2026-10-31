@@ -1,0 +1,7 @@
+antes /imoveis/ube-001 [data-testid=estrelas-titulo] 20px; toque ±18px: ERRA
+antes /imoveis/ube-001 [data-testid=avaliacoes-como-funcionam] 20px; toque ±18px: ERRA
+antes /imoveis/ube-001 [data-testid=proprietario-reputacao] 20px; toque ±18px: ERRA
+antes /imoveis/ube-001 [data-testid=avaliacao-exemplo] button 20px; toque ±18px: ERRA
+antes /ajuda/morador [data-testid=ajuda-tema-fale] 20px; toque ±18px: ERRA
+antes / [class*=bg-night] a[href="/precos"] 20px; toque ±18px: ERRA
+antes / section a.underline[href="/buscar"] 20px; toque ±18px: ERRA
