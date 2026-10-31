@@ -285,6 +285,24 @@ export interface ParceiroNaBusca {
   emiteNota?: boolean | null;
 }
 
+/*
+  E297 — o parceiro de teste segue a regra do anúncio de teste (E93): fora da busca e das listagens públicas para
+  quem não é da equipe (filtrarParceiros), noindex na página, e uma faixa que diz por quê. A equipe (o próprio
+  parceiro, o admin ou uma conta de teste) vê a página normal com a faixa discreta e pode pedir orçamento (o QA fecha
+  o ciclo); qualquer outra pessoa, com ou sem login, vê a faixa de visitante e o pedido desativado.
+*/
+export const FAIXA_PARCEIRO_TESTE_VISITANTE = "Parceiro de teste da equipe Viva — não é um prestador disponível";
+export const FAIXA_PARCEIRO_TESTE_EQUIPE = "Parceiro de teste: fora da busca e das listagens";
+export const PEDIDO_PARCEIRO_TESTE_RECUSADO = "Este é um parceiro de teste da equipe Viva e não recebe pedidos.";
+
+export type ModoParceiroTeste = "visitante" | "equipe" | null;
+
+/** null = parceiro de verdade; "equipe" = o próprio parceiro, o admin ou uma conta de teste; "visitante" = qualquer outra pessoa. */
+export function modoParceiroTeste(teste: boolean, quem: { dono: boolean; admin: boolean; teste: boolean }): ModoParceiroTeste {
+  if (!teste) return null;
+  return quem.dono || quem.admin || quem.teste ? "equipe" : "visitante";
+}
+
 export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const R = 6371;
   const rad = (g: number) => (g * Math.PI) / 180;
