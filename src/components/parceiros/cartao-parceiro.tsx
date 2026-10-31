@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck, MapPin, ReceiptText, Star } from "lucide-react";
-import { rotuloCategoria } from "@/lib/parceiros/regras";
+import { FAIXA_PARCEIRO_TESTE_EQUIPE, rotuloCategoria } from "@/lib/parceiros/regras";
 import { BRAND_BLUR } from "@/lib/media";
 import type { ParceiroPublico } from "@/lib/data/parceiros-publico";
 import { SELO_APROVADO, capaDoParceiro, iniciaisDoParceiro } from "@/lib/parceiros/apresentacao";
@@ -43,6 +43,12 @@ export function CartaoParceiro({ p, consulta }: { p: ParceiroPublico; consulta?:
           </span>
         </span>
         <div className="min-w-0 flex-1 px-4 pb-4 pt-8">
+          {/* E297: só a equipe (conta de teste ou admin) recebe parceiro de teste na busca; a faixa diz que o público não o vê. */}
+          {p.teste && (
+            <p className="mb-2 rounded-lg bg-surface-2 px-2 py-1 text-xs font-semibold text-muted" data-testid="cartao-parceiro-teste">
+              {FAIXA_PARCEIRO_TESTE_EQUIPE}
+            </p>
+          )}
           <h3 className="truncate font-title text-base font-semibold text-ink group-hover:text-forest">{p.nomePublico}</h3>
           <p className="mt-1 text-sm text-muted">{p.categorias.map(rotuloCategoria).join(" · ")}</p>
           <p className="mt-1 flex items-center gap-1 text-sm text-ink">

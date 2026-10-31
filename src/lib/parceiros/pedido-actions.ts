@@ -15,7 +15,7 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
-import { categoriaValida, rotuloCategoria } from "./regras";
+import { PEDIDO_PARCEIRO_TESTE_RECUSADO, categoriaValida, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import { EVENTOS_DE_HORARIO, reagendamentoPendente } from "@/lib/automacao/remarcacao";
@@ -150,6 +150,20 @@ export interface EntradaPedido {
   doCadastroDoImovel?: boolean;
 }
 
+/**
+ * E297: parceiro de CONTA DE TESTE só recebe pedido da equipe — quem pede também é conta de teste ou é admin. Parceiro
+ * de conta real: sempre pode. Falha de leitura: não pode (melhor recusar do que criar pedido para um perfil de teste).
+ */
+async function podePedirAoParceiro(admin: Admin, donoDoParceiro: string, quemPede: string): Promise<boolean> {
+  const { data, error } = await admin.from("profiles").select("id, is_teste, role").in("id", [donoDoParceiro, quemPede]);
+  if (error || !data) return false;
+  const perfis = data as { id: string; is_teste: boolean | null; role: string | null }[];
+  const dono = perfis.find((x) => x.id === donoDoParceiro);
+  if (dono?.is_teste !== true) return true;
+  const cliente = perfis.find((x) => x.id === quemPede);
+  return cliente?.is_teste === true || cliente?.role === "admin";
+}
+
 export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: string; codigo: string }>> {
   const s = await sessao();
   if ("erro" in s) return { ok: false, erro: s.erro };
@@ -159,6 +173,9 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
   const parceiro = parc as { id: string; user_id: string; status: string; categorias: string[] | null } | null;
   if (!parceiro || parceiro.status !== "publicado") return { ok: false, erro: "Este parceiro não está recebendo pedidos agora." };
   if (parceiro.user_id === userId) return { ok: false, erro: "Você não pode pedir orçamento para a sua própria página." };
+  // E297: parceiro de conta de teste só recebe pedido da equipe (conta de teste ou admin) — o QA fecha o ciclo; um
+  // usuário real que chegue pelo link não cria pedido para um prestador que não existe.
+  if (!(await podePedirAoParceiro(admin, parceiro.user_id, userId))) return { ok: false, erro: PEDIDO_PARCEIRO_TESTE_RECUSADO };
   if (!(parceiro.categorias ?? []).includes(e.categoria)) return { ok: false, erro: "Este parceiro não atende essa categoria." };
   if (e.servicoId) {
     if (!UUID.test(e.servicoId)) return { ok: false, erro: "Escolha o serviço." };

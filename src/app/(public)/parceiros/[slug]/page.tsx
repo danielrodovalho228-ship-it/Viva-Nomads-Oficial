@@ -9,9 +9,9 @@ import { SolicitarOrcamento } from "@/components/parceiros/solicitar-orcamento";
 import { createClient } from "@/lib/supabase/server";
 import { imoveisParaServico } from "@/lib/parceiros/imoveis-servico";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
-import { parceiroPorSlug } from "@/lib/data/parceiros-publico";
+import { modoDaPaginaDoParceiro, parceiroPorSlug } from "@/lib/data/parceiros-publico";
 import { destinoDaCategoria } from "@/lib/parceiros/rotas-categoria";
-import { REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
+import { FAIXA_PARCEIRO_TESTE_EQUIPE, FAIXA_PARCEIRO_TESTE_VISITANTE, REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
 import { documentoDoServico } from "@/lib/parceiros/fiscal";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 
@@ -57,6 +57,8 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   const imoveis = usuario ? await imoveisParaServico(usuario.id) : [];
   const imovelDoCadastro = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : null;
   const { parceiro: p, servicos, galeria } = d;
+  // E297: parceiro de teste aberto pelo link — faixa e, para quem não é da equipe, o pedido desativado (como o E93).
+  const modoTeste = await modoDaPaginaDoParceiro(p);
   // Vindo da página da estadia pela busca (Prompt 41): a categoria pedida já vem escolhida na folha.
   const categoriaInicial = sp.categoria && p.categorias.includes(sp.categoria) ? sp.categoria : null;
   const doCadastro = !!imovelDoCadastro && sp.cadastro === "1";
@@ -119,6 +121,19 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
           </div>
         </div>
 
+        {/* E297: a faixa do parceiro de teste. Fica logo abaixo do cabeçalho (E296): antes dele, o avatar — que sobe 64 px
+            sobre a capa — a cobria. */}
+        {modoTeste && (
+          <p
+            role="status"
+            data-testid="faixa-parceiro-teste"
+            data-modo={modoTeste}
+            className={`mt-4 rounded-lg px-4 py-2 text-sm font-semibold ${modoTeste === "visitante" ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-muted"}`}
+          >
+            {modoTeste === "visitante" ? FAIXA_PARCEIRO_TESTE_VISITANTE : FAIXA_PARCEIRO_TESTE_EQUIPE}
+          </p>
+        )}
+
         <div className="mt-8 grid gap-8 pb-12 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0 space-y-8">
             {/* E299: "Sobre" e "Galeria" sempre presentes (o mesmo desenho para todo parceiro); sem conteúdo, uma linha
@@ -169,22 +184,29 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
             </section>
           </div>
           <aside className="min-w-0 space-y-4">
-            <div className="rounded-xl border border-line bg-white p-4">
-              <SolicitarOrcamento
-                parceiroId={p.id}
-                nomeParceiro={p.nomePublico}
-                categorias={p.categorias}
-                servicos={servicos.map((s) => ({ id: s.id, titulo: s.titulo, categoria: s.categoria }))}
-                logado={logado}
-                voltarPara={voltarPara}
-                imovelInicial={imovelDoCadastro}
-                categoriaInicial={categoriaInicial}
-                imoveis={imoveis}
-                doCadastroDoImovel={doCadastro}
-                descricaoInicial={descricaoInicial}
-              />
-              <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
-            </div>
+            {modoTeste === "visitante" ? (
+              <div className="rounded-xl border border-line bg-white p-4" data-testid="parceiro-pedido-teste">
+                <p className="font-semibold text-ink">Pedidos de orçamento</p>
+                <p className="mt-1 text-sm text-muted">{FAIXA_PARCEIRO_TESTE_VISITANTE}. Este perfil não recebe pedidos.</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-line bg-white p-4">
+                <SolicitarOrcamento
+                  parceiroId={p.id}
+                  nomeParceiro={p.nomePublico}
+                  categorias={p.categorias}
+                  servicos={servicos.map((s) => ({ id: s.id, titulo: s.titulo, categoria: s.categoria }))}
+                  logado={logado}
+                  voltarPara={voltarPara}
+                  imovelInicial={imovelDoCadastro}
+                  categoriaInicial={categoriaInicial}
+                  imoveis={imoveis}
+                  doCadastroDoImovel={doCadastro}
+                  descricaoInicial={descricaoInicial}
+                />
+                <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
+              </div>
+            )}
             {redes.length > 0 && (
               <div className="rounded-xl border border-line bg-white p-4" data-testid="parceiro-redes">
                 <h2 className="font-title text-base font-semibold text-ink">Redes</h2>

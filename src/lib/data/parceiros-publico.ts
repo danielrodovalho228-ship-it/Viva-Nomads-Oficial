@@ -8,7 +8,7 @@ import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { chaveCidade } from "@/lib/cidades";
 import { passaFiltroNota } from "@/lib/parceiros/fiscal";
-import { filtrarParceiros, lerParceiroGeral, type ParceiroGeral, type ParceiroNaBusca } from "@/lib/parceiros/regras";
+import { filtrarParceiros, lerParceiroGeral, modoParceiroTeste, type ModoParceiroTeste, type ParceiroGeral, type ParceiroNaBusca } from "@/lib/parceiros/regras";
 
 /**
  * Leitura PÚBLICA dos parceiros (Prompt 31a): só a view parceiros_publicos (status publicado; sem documento,
@@ -91,20 +91,44 @@ export interface ResultadoBusca {
  * busca — o QA acha o próprio parceiro de teste. Visitante e conta real: nunca. Qualquer falha: não enxerga.
  */
 async function veParceirosDeTeste(): Promise<boolean> {
+  const q = await quemOlha();
+  return q.teste || q.admin;
+}
+
+/** Quem está olhando: id, conta de teste e admin (lidos só no servidor). Sem login ou qualquer falha: ninguém. */
+async function quemOlha(): Promise<{ id: string | null; teste: boolean; admin: boolean }> {
+  const ninguem = { id: null, teste: false, admin: false };
   try {
     const supabase = await createClient();
     const admin = createAdminClient();
-    if (!supabase || !admin) return false;
+    if (!supabase || !admin) return ninguem;
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return false;
+    if (!user) return ninguem;
     const { data } = await admin.from("profiles").select("is_teste, role").eq("id", user.id).maybeSingle();
     const p = data as { is_teste: boolean | null; role: string | null } | null;
-    return p?.is_teste === true || p?.role === "admin";
+    return { id: user.id, teste: p?.is_teste === true, admin: p?.role === "admin" };
   } catch {
-    return false;
+    return ninguem;
   }
+}
+
+/**
+ * E297: a página de um parceiro de TESTE aberta pelo link — o mesmo desenho do anúncio de teste (E93). Parceiro de
+ * verdade: null (nada muda, nenhuma leitura extra). De teste: "equipe" (o próprio parceiro, o admin ou conta de
+ * teste) ou "visitante" (qualquer outra pessoa).
+ */
+export async function modoDaPaginaDoParceiro(p: Pick<ParceiroPublico, "id" | "teste">): Promise<ModoParceiroTeste> {
+  if (!p.teste) return null;
+  const q = await quemOlha();
+  let dono = false;
+  if (q.id) {
+    const admin = createAdminClient();
+    const { data } = admin ? await admin.from("parceiros").select("user_id").eq("id", p.id).maybeSingle() : { data: null };
+    dono = (data as { user_id: string } | null)?.user_id === q.id;
+  }
+  return modoParceiroTeste(true, { dono, admin: q.admin, teste: q.teste });
 }
 
 /** Busca pública: categoria, cidade e/ou CEP (o CEP vira cidade e, com o mapa ligado, um ponto para o raio). */
