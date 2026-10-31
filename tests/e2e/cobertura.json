@@ -703,7 +703,8 @@
         "t662-varredura-bloco63",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/assinatura": {
@@ -734,7 +735,8 @@
         "t302-varredura-logada-bloco6",
         "t362-perfil-avaliacoes-pix",
         "t352-varredura-bloco17",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/buscas": {
@@ -747,7 +749,8 @@
         "t183-telas-logadas-390",
         "t339-varredura-bloco16",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/candidaturas": {
@@ -804,7 +807,8 @@
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/conta": {
@@ -904,7 +908,8 @@
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
         "t588-varredura-bloco46",
-        "t608-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/contratos": {
@@ -987,7 +992,8 @@
         "t221-contrato-estado-periodo",
         "t416-varredura-bloco33",
         "t489-e176-menus",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/ferramentas": {
@@ -1017,7 +1023,8 @@
         "t416-varredura-bloco33",
         "t461-prop5-contratos-sem-repeticao",
         "t418-varredura-bloco35",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/imoveis": {
@@ -1428,7 +1435,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t302-varredura-logada-bloco6",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/roi-imovel": {
@@ -1472,7 +1480,8 @@
         "t183-telas-logadas-390",
         "t288-padrao-minimo-59a",
         "t339-varredura-bloco16",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/tributacao": {
@@ -1503,7 +1512,8 @@
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
         "t402-conta-leva2",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/viabilidade": {
@@ -2556,7 +2566,8 @@
         "t365-conta-a1-casca-perfil",
         "t375-conta-a8-ajuda",
         "t421-varredura-bloco38",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t754-varredura-bloco90"
       ]
     },
     "/dashboard/conta/avaliacoes": {
@@ -2570,7 +2581,8 @@
         "t385-varredura-bloco21",
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t754-varredura-bloco90"
       ]
     },
     "/prova/celular/aviso": {
