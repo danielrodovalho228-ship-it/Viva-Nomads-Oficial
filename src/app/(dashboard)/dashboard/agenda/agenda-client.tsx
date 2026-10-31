@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ExportarCalendario } from "@/components/property/exportar-calendario";
 import {
   ROTULO_TIPO_AGENDA,
+  textoDiaSemAgenda,
   agruparPorDia,
   diaBrasilia,
   diasEmEstadia,
@@ -217,7 +218,7 @@ export function AgendaClient({ itens, imoveis, hojeISO, imovelInicial = "" }: { 
                 </p>
               ))}
             {(porDia.get(diaAberto) ?? []).length === 0 && !(emEstadia.get(diaAberto) ?? []).length ? (
-              <p className="mt-1 text-sm text-muted">Nada marcado neste dia.</p>
+              <p className="mt-1 text-sm text-muted" data-testid="agenda-dia-vazio">{textoDiaSemAgenda(imoveis.find((p) => p.id === imovel)?.titulo)}</p>
             ) : (
               <ul className="mt-1 divide-y divide-sage-100">
                 {(porDia.get(diaAberto) ?? []).map((i) => (
