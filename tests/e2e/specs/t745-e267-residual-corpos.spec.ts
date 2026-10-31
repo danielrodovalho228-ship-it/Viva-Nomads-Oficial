@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   pessoa ("Olá <primeiro nome>"), o imóvel e o fato, com o bloco de dados "Imóvel · …" no HTML. Pista C, bloco 82.
   Pelas telas e rotas de verdade, com contas de teste (is_teste: o texto do e-mail cai em emails_teste):
     M1. o dono inicia o atendimento    → morador: manutencao_atualizada "mudou a manutenção de hidráulica em <T> para
-                                          "Em andamento"", bloco Imóvel / Manutenção / Aberta em / Situação agora;
+                                          "<situação>"", bloco Imóvel / Manutenção / Aberta em / Situação agora;
     M2. o morador escreve na ordem      → dono: manutencao_mensagem "o morador escreveu na manutenção de hidráulica em <T>";
     M3. o dono marca a provisória       → morador: "marcou a solução provisória na manutenção de elétrica em <T>";
     M4. o morador confirma a solução    → dono: "confirmou a solução da manutenção em <T>" (categoria "outros" não entra
@@ -24,6 +24,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   Fora daqui (registrado no PR): o manutencao_atrasada sai do cron de atendimento, que varre as ordens de todos os specs
   (um 2º servidor mandaria o aviso aos donos dos outros specs); o lembrete do interessado sai de uma ferramenta da Viva
   no chat. Os dois têm a ligação provada no teste unitário do #1646.
+  L-81 (achado deste bloco): o e-mail da manutenção chama a situação de "Em andamento" (statusHumano), a tela de
+  "Em atendimento" (SO_STATUS_META, critério 4 do Daniel). Caso M1-situação em test.fail.
   L-80 (achado deste bloco): o assunto do internet_abaixo_medida nunca leva o imóvel — o prefixo tem 47 caracteres, a
   régua de assuntos.ts deixa 8 para o título e exige 10, então volta sempre ao assunto do modelo. Caso I1-assunto em
   test.fail; o resto do e-mail (corpo e bloco) está certo e é cobrado no I1.
@@ -179,15 +181,17 @@ test.describe("T745 — E267 residual: manutenção, pedido encerrado, foto pelo
     const o = await novaOrdem({ category: "hidraulica", priority: "media", description: desc, status: "aberto", opened_at: new Date(Date.now() - 2 * H).toISOString() });
     const dono = await abrir(browser, "dono", "/dashboard/solicitacoes");
     await (await ordem(dono, desc)).getByRole("button", { name: "Iniciar atendimento" }).click();
-    await expect(dono.getByTestId("ordem-manutencao").filter({ hasText: desc }).getByTestId("status-ordem")).toHaveText(/andamento/i, { timeout: 20_000 });
+    await expect(dono.getByTestId("ordem-manutencao").filter({ hasText: desc }).getByTestId("status-ordem")).toHaveText("Em atendimento", { timeout: 20_000 });
     await dono.context().close();
 
-    const m1 = await emailCom(ids.morador, "manutencao_atualizada", "para \"Em andamento\"");
+    // O nome da situação é cobrado à parte (L-81, caso M1-situação); aqui, o resto da frase e o bloco.
+    const m1 = await emailCom(ids.morador, "manutencao_atualizada", `mudou a manutenção de hidráulica em ${T} para "`);
     await regua("morador", m1, {
       assunto: `Manutenção atualizada: ${T}`,
-      abertura: `Olá Ivo, o proprietário mudou a manutenção de hidráulica em ${T} para "Em andamento". Veja o histórico pela plataforma.`,
-      bloco: [`Imóvel ${porExtenso(T)}`, "Manutenção Hidráulica", `Aberta em ${quando(o.abertaEm)} (horário de Brasília)`, "Situação agora Em andamento"],
+      abertura: `Olá Ivo, o proprietário mudou a manutenção de hidráulica em ${T} para "`,
+      bloco: [`Imóvel ${porExtenso(T)}`, "Manutenção Hidráulica", `Aberta em ${quando(o.abertaEm)} (horário de Brasília)`, "Situação agora"],
     });
+    expect(m1.corpo).toContain('". Veja o histórico pela plataforma.');
 
     const morador = await abrir(browser, "morador", "/dashboard/solicitacoes");
     const om = await ordem(morador, desc);
@@ -204,6 +208,15 @@ test.describe("T745 — E267 residual: manutenção, pedido encerrado, foto pelo
     });
     // O texto da mensagem não vai no e-mail (só o fato de que há mensagem).
     expect(m2.corpo).not.toContain(MSG_MORADOR);
+  });
+
+  test("M1-situação. L-81: o e-mail chama a situação pelo nome da tela (\"Em atendimento\")", async () => {
+    // L-81: a tela (SO_STATUS_META, critério 4 do Daniel: Aberta → Em atendimento → Resolvida) mostra "Em atendimento";
+    // o e-mail usa statusHumano() e diz "Em andamento" — o morador lê uma situação que não existe na tela.
+    test.fail(true, 'L-81: e-mail da manutenção diz "Em andamento"; a tela diz "Em atendimento"');
+    const m1 = await emailCom(ids.morador, "manutencao_atualizada", `mudou a manutenção de hidráulica em ${T} para "`);
+    expect(m1.corpo).toContain(`para "Em atendimento".`);
+    expect(await saidaDo("morador", m1.assunto)).toContain("Situação agora Em atendimento");
   });
 
   test("M3. urgente: o dono marca a solução provisória → o morador recebe a provisória da elétrica no imóvel", async ({ browser }) => {
