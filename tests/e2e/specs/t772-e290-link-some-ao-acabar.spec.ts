@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   bloco 102. Pelas telas de verdade (/dashboard/visitas), com contas de teste e uma visita confirmada por imóvel:
    A. o morador cancela a visita confirmada → status "cancelado" e link_chamada nulo no banco; o "Entrar na chamada"
       some dos dois lados (lista e detalhe), a 1280 e a 390 px;
-   B. o proprietário marca a visita confirmada como feita → status "feito" e link_chamada nulo; sem o link nos dois
+   B. o proprietário, no detalhe da visita, marca a confirmada como feita → status "feito" e link_chamada nulo; sem o link nos dois
       lados.
   Antes de cada ação o link aparece (a confirmada com horário futuro mostra "Entrar na chamada").
 */
@@ -87,7 +87,8 @@ test.describe("T772 — E290: a visita que acaba apaga o link da chamada", () =>
   });
 
   test("B. o proprietário marca como feita: link nulo no banco e fora da tela dos dois lados", async ({ browser }) => {
-    const p = await abrir(browser, dono.email, "/dashboard/visitas");
+    // O proprietário abre a visita pelo detalhe (como na t593: Agenda, lista e e-mail levam a /dashboard/visitas/<id>).
+    const p = await abrir(browser, dono.email, `/dashboard/visitas/${ids.visitaB}`);
     const cartao = p.locator(`#visita-${ids.visitaB}`);
     await expect(cartao.getByTestId("visita-link-chamada")).toHaveAttribute("href", LINKS.B, { timeout: 20_000 });
     await cartao.getByTestId("visita-concluir").click();
