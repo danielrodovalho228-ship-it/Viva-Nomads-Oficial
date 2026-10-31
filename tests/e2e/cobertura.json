@@ -1047,7 +1047,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t717-e273-e275-rascunhos-publicaveis"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1213,7 +1214,9 @@
         "t713-e261-avisos-titulo",
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t714-e268b-boas-vindas-dono",
+        "t717-e273-e275-rascunhos-publicaveis"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1531,7 +1534,8 @@
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
         "t589-varredura-bloco47",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t715-e269b-cancelar-visita-motivo"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1715,7 +1719,9 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t716-e274-foto-cartao-proativo",
+        "t717-e273-e275-rascunhos-publicaveis"
       ]
     },
     "/modelodenegocio": {
