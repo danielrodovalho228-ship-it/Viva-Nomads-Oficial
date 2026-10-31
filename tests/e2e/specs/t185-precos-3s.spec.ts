@@ -84,7 +84,9 @@ test("T185 — 390px: o 'Fale com a Viva' não tampa os botões nem as faixas da
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/precos", { waitUntil: "networkidle" });
   const flut = page.getByTestId("fale-com-a-viva");
-  await expect(flut).toBeVisible();
+  // E246 (31/10): no celular o flutuante não aparece — nada a tampar.
+  await expect(flut).toBeHidden();
+  if (!(await flut.isVisible())) return;
   const alvos = [page.getByTestId("precos-botoes"), ...(await page.getByTestId("faixas-taxa-cartoes").locator(":scope > li").all())];
   for (const alvo of alvos) {
     await alvo.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));

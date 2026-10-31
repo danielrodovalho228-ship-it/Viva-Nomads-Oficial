@@ -96,6 +96,11 @@ for (const { largura, altura } of LARGURAS) {
     test("página do imóvel: o 'Fale com a Viva' fica acima da barra de preço (celular) e fora do rodapé no fim", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
       const flut = page.getByTestId("fale-com-a-viva");
+      // E246 (31/10): abaixo de 768 px o flutuante não aparece — nada fica por cima da barra nem do rodapé.
+      if (largura < 768) {
+        await expect(flut).toBeHidden();
+        return;
+      }
       await expect(flut).toBeVisible();
       if (largura < 1024) {
         const barra = page.getByTestId("barra-fixa-imovel");
