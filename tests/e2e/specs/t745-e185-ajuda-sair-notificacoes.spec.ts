@@ -6,7 +6,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
    1. "Ajuda" tem UM destino: o "Ajuda" do avatar abre a Ajuda da Conta (/dashboard/conta/ajuda), a mesma da Conta.
    2. "Sair" uma vez por tela: na Ajuda da Conta a tela tem "Sair da conta" e o avatar não repete "Sair"; fora dela, o
       avatar mantém os itens do D2 (Minha conta · Ajuda · Sair).
-   3. "Notificações" é uma página só: o sino e o item da Conta levam a /dashboard/notificacoes.
+   3. "Notificações" é uma página só (/dashboard/notificacoes) e aparece UMA vez na tela da Conta (resíduo de 31/10).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -55,11 +55,12 @@ test.describe("T745 — E185: Ajuda com um destino, Sair uma vez, Notificações
       await p.screenshot({ path: `${SAIDA}/t745-ajuda-avatar-${largura}.png` });
       await p.keyboard.press("Escape");
 
-      // Notificações: uma página só (o sino e a Conta levam ao mesmo lugar).
-      const sinoPx = largura === 390 ? "morador-celular" : "morador";
-      await expect(p.locator('a[aria-label^="Notificações"]').filter({ visible: true })).toHaveCount(1);
-      const hrefs = await p.locator('a[aria-label^="Notificações"]').evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-      expect(new Set(hrefs), `sino ${sinoPx}`).toEqual(new Set(["/dashboard/notificacoes"]));
+      // Notificações: uma página só, e UMA entrada visível na tela da Conta (E185 resíduo, 31/10): no celular o sino;
+      // no computador o item do menu lateral da Conta (o topo não repete o sino nas telas da Conta).
+      const notif = p.locator('a[href="/dashboard/notificacoes"]').filter({ visible: true });
+      await expect(notif).toHaveCount(1);
+      if (largura === 1280) await expect(notif).toHaveAttribute("data-testid", "conta-menu-notificacoes");
+      else await expect(notif).toHaveAttribute("data-testid", "sino-morador-celular");
       await p.context().close();
     });
   }
