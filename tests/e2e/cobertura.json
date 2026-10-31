@@ -212,7 +212,8 @@
         "t48-varredura",
         "t183-telas-logadas-390",
         "t388-varredura-bloco23",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t771-e274-foto-na-caixa-qa"
       ]
     },
     "/admin/financeiro": {
@@ -2600,7 +2601,8 @@
       ],
       "specs": [
         "t470-qa-leitor-caixas",
-        "t521-qa-caixa-sem-token"
+        "t521-qa-caixa-sem-token",
+        "t771-e274-foto-na-caixa-qa"
       ]
     },
     "/qa/entrar": {
