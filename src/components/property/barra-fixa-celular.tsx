@@ -7,7 +7,6 @@ import { useEffect, useRef } from "react";
 import { buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
-import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 
 /**
  * Rodapé fixo do celular (< lg) da página do imóvel (Prompt 41, item 1): "R$ X/mês · R$ Y em N meses" (N = 1 → só
@@ -100,9 +99,8 @@ export function BarraFixaCelular({
             {barra.status}
           </span>
         </div>
-        <p data-testid="barra-nao-segura" className="text-[11px] leading-snug text-muted">
-          {FRASE_NAO_SEGURA_DINHEIRO}: o valor vai direto ao proprietário.
-        </p>
+        {/* Decisão do Muse (31/10): sem a linha "A Viva não segura dinheiro…" — a frase oficial sob o botão (IMÓVEL-CTA)
+            já diz que o pagamento vai direto ao proprietário; a barra não repete. */}
         <div className="mt-1 flex items-center gap-4">
           {barra.estado === "candidatou" ? (
             <Link href="/dashboard/mensagens" className={buttonClasses({ variant: "secondary", size: "sm", className: "h-11 flex-1 px-3" })}>

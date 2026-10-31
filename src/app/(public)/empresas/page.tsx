@@ -161,14 +161,16 @@ export default function EmpresasPage() {
       </section>
 
       <section className="bg-surface-2 section-y" data-testid="empresas-faq">
-        <div className="container-page max-w-3xl">
+        <div className="container-page max-w-5xl">
           <h2 className="font-title text-2xl font-semibold text-ink">Perguntas rápidas</h2>
-          <div className="mt-6 space-y-3">
+          {/* Regra do E186: acordeão só dentro das páginas de tema da Central de Ajuda — aqui, cada pergunta é um bloco
+              aberto, a resposta à vista (os três cartões numa linha a partir do tablet). */}
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
             {FAQ_EMPRESAS.map((f) => (
-              <details key={f.p} className="rounded-xl border border-line bg-white p-4">
-                <summary className="cursor-pointer font-semibold text-ink">{f.p}</summary>
+              <div key={f.p} className="rounded-xl border border-line bg-white p-4" data-testid="empresas-faq-item">
+                <h3 className="font-semibold text-ink">{f.p}</h3>
                 <p className="mt-2 text-sm text-muted">{f.r}</p>
-              </details>
+              </div>
             ))}
           </div>
         </div>
