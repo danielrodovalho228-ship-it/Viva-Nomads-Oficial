@@ -15,7 +15,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
    - parceiro (PARCEIRO): o mesmo pedido de serviço;
    - conta de três papéis (TRES): conta › papéis.
   O pedido de serviço é semeado aqui (parceiro e morador da massa, como na t368) e apagado no fim. Defeito novo entra
-  como test.fail ligado a um item (L-82 / D-V9 livres).
+  como test.fail ligado a um item. D-V9 (achado deste bloco): conta › papéis estoura 15 px a 390 px com os três papéis.
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
 interface Tela {
@@ -23,6 +23,8 @@ interface Tela {
   papel: string;
   nome: string;
   rota: (m: Massa) => string;
+  /** Defeito visual registrado (D-V*): a tela inteira vira falha esperada até a correção. */
+  falha?: string;
 }
 
 let pedidoId = "";
@@ -34,7 +36,10 @@ const TELAS: Tela[] = [
   { conta: "INQUILINA", papel: "morador", nome: "Nova solicitação de orçamento", rota: () => "/dashboard/orcamentos/nova" },
   { conta: "INQUILINA", papel: "morador", nome: "Pedido de serviço", rota: () => `/dashboard/servicos/pedidos/${pedidoId}` },
   { conta: "PARCEIRO", papel: "parceiro", nome: "Pedido de serviço", rota: () => `/dashboard/servicos/pedidos/${pedidoId}` },
-  { conta: "TRES", papel: "três papéis", nome: "Conta › Papéis", rota: () => "/dashboard/conta/papeis" },
+  // D-V9 (bloco 96, lab-crítico 41195030351): a 390 px, com os três papéis, a coluna da tela inteira passa 15 px da
+  // direita (cartões "Quero morar/anunciar/ser parceiro" e "Seus papéis" com x=16 e 389 px de largura). Pelo DONO17 (t761)
+  // e pela INQUILINA (acima) a mesma tela cabe.
+  { conta: "TRES", papel: "três papéis", nome: "Conta › Papéis", rota: () => "/dashboard/conta/papeis", falha: "D-V9: /dashboard/conta/papeis estoura 15 px à direita a 390 px com os três papéis" },
 ];
 
 /** Achados já registrados como defeito de produto (L-*) ou que são o desenho pedido: ficam anotados e não derrubam o teste. */
@@ -72,6 +77,7 @@ test.describe("T762 — varredura da página inteira, bloco 96 (morador nas comp
   for (const t of TELAS) {
     test(`${t.papel} — ${t.nome}: as seis classes, rolando a página inteira`, async ({ browser }) => {
       test.setTimeout(180_000);
+      if (t.falha) test.fail(true, t.falha);
       test.skip(t.conta !== "VISITANTE" && t.conta !== "SOCIO" && !temContaVarredura(t.conta), `sem a conta ${t.conta} na massa`);
       test.skip(t.conta === "SOCIO" && !CODIGO_SOCIOS, "SOCIOS_ACCESS_CODE não definido neste ambiente");
       const rota = t.rota(MASSA!);
