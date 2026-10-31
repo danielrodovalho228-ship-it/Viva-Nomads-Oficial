@@ -291,6 +291,16 @@ export function linhaEstadiaMinima(p: Parameters<typeof precoDoImovel>[0], meses
   return e ? `${rotuloEstadiaMinima(e.meses)}: ${formatBRL(e.total)} · ${e.conta}` : null;
 }
 
+/**
+ * QA do Muse (31/10): o cartão de Meus anúncios SEMPRE diz a estadia mínima configurada — com mais de 1 mês, a linha
+ * com o total e a conta (E254-A); com 1 mês, só o rótulo da casa, "Estadia mínima (1 mês)" (o total é o do mês, já no
+ * cartão). Sem min_period_days gravado, nada: o cartão não inventa número.
+ */
+export function estadiaDoCartaoDoDono(p: Parameters<typeof precoDoImovel>[0] & { minPeriodDays?: number | null }, meses: number): string | null {
+  if (!p.minPeriodDays || p.minPeriodDays <= 0) return null;
+  return meses > 1 ? linhaEstadiaMinima(p, meses) : rotuloEstadiaMinima(1);
+}
+
 /** Termos de uma versão de proposta (os mesmos campos de TermosProposta; os totais batem com calcularTotais). */
 export interface TermosPreco {
   valorMensal: number;

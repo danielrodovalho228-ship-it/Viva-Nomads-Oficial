@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { calcularTotalMensal, estadiaDoImovel, linhaEstadiaMinima, precoDoImovel } from "./precos.ts";
+import { calcularTotalMensal, estadiaDoCartaoDoDono, estadiaDoImovel, linhaEstadiaMinima, precoDoImovel } from "./precos.ts";
 import { precosDaPrevia } from "./anuncio/passo10-colunas.ts";
 import { barraFixaImovel } from "./barra-fixa-imovel.ts";
 import { formatBRL } from "./utils.ts";
@@ -33,8 +33,19 @@ test("E254-A: mínimo de 3 meses + limpeza de saída R$ 450 — o total soma a l
   assert.equal(barra.estadia, `${formatBRL(10800)} em 3 meses`);
 });
 
-test("E254-A: mínimo de 1 mês — o cartão não mostra a linha da estadia", () => {
+test("E254-A: mínimo de 1 mês — sem a linha do total (o total é o do mês)", () => {
   assert.equal(linhaEstadiaMinima(imovel({ minPeriodDays: 30 }), 1), null);
+});
+
+test("QA 31/10: o cartão de Meus anúncios SEMPRE diz a estadia mínima configurada; sem o campo, não inventa", () => {
+  // 1 mês: só o rótulo da casa.
+  assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 30 }), 1), "Estadia mínima (1 mês)");
+  // Mais de 1 mês: a linha com total e conta (a mesma do E254-A).
+  assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 90 }), 3), linhaEstadiaMinima(imovel({ minPeriodDays: 90 }), 3));
+  assert.match(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 90 }), 3)!, /^Estadia mínima \(3 meses\): /);
+  // Sem min_period_days gravado: nada.
+  assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: undefined }), 1), null);
+  assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 0 }), 1), null);
 });
 
 test("E254-A: sem limpeza de saída — a conta não menciona limpeza", () => {
@@ -46,7 +57,7 @@ test("E254-A: sem limpeza de saída — a conta não menciona limpeza", () => {
 
 test("E254-A: prévia, cartão de Meus anúncios e página pública usam a mesma função", () => {
   assert.match(ler("lib/anuncio/passo10-colunas.ts"), /estadiaDoImovel\(property, meses\)/);
-  assert.match(ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /estadia: linhaEstadiaMinima\(p, r\.meses\)/);
+  assert.match(ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /estadia: estadiaDoCartaoDoDono\(p, r\.meses\)/);
   assert.match(ler("components/property/price-card.tsx"), /estadiaDoImovel\(property, meses\)/);
   assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /totalPeriodo: meses > 1 \? estadiaDoImovel\(property, meses\)\?\.total : null/);
 });
