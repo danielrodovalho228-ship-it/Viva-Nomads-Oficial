@@ -33,7 +33,7 @@ export function RedesOficiais({ comTexto = false, className = "", linkClassName 
             target="_blank"
             rel="noopener"
             aria-label={`${r.nome}${comTexto ? ` ${arroba(r.url)}` : ""} da Viva Nomads (abre em nova aba)`}
-            className={`inline-flex min-h-10 items-center gap-2 ${linkClassName}`}
+            className={`inline-flex min-h-11 min-w-11 items-center gap-2 ${linkClassName}`}
           >
             {r.nome === "Instagram" ? <IconeInstagram className="h-5 w-5 shrink-0" /> : null}
             {comTexto ? <span>{arroba(r.url)}</span> : r.nome !== "Instagram" ? <span>{r.nome}</span> : null}
