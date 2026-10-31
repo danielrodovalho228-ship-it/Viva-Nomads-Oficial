@@ -151,8 +151,10 @@ test.describe("T781 — merges de 31/10: regras no Passo 6, ícones, motivo inte
       const faqs = blocos
         .flatMap((b) => {
           try {
+            // O FAQPage vem solto (cidade) ou dentro do "@graph" (polo e bairro).
             const j = JSON.parse(b) as unknown;
-            return Array.isArray(j) ? j : [j];
+            const lista = Array.isArray(j) ? j : [j];
+            return lista.flatMap((x) => (x && typeof x === "object" && Array.isArray((x as { "@graph"?: unknown[] })["@graph"]) ? (x as { "@graph": unknown[] })["@graph"] : [x]));
           } catch {
             return [];
           }
