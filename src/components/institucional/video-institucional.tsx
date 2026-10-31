@@ -78,7 +78,7 @@ export function VideoInstitucional({ titulo = "A Viva em 30 segundos", id = "vid
               <Play className="ml-1 h-7 w-7 fill-white md:h-9 md:w-9" />
             </span>
             <span
-              className="absolute bottom-3 right-3 rounded-full bg-night/80 px-3 py-1 text-xs font-semibold tabular-nums text-white"
+              className="absolute bottom-3 right-3 rounded-full bg-ink/80 px-3 py-1 text-xs font-semibold tabular-nums text-white"
               data-testid="video-institucional-duracao"
               aria-hidden
             >
