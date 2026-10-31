@@ -177,7 +177,9 @@ export default async function AvaliacaoParceiroPage() {
       </Panel>
       <Panel title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
         {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
-          <p className="text-sm text-muted">Nada por aqui ainda.</p>
+          <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
+            Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas. Ainda não há nenhuma.
+          </p>
         ) : (
           <ul className="grid gap-3">
             {encerradas.map((p) => (
