@@ -56,14 +56,18 @@ test.describe("T755 — AGENDA-A: período pintado e iCal na Agenda", () => {
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto("/dashboard/agenda", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("agenda")).toBeVisible({ timeout: 30_000 });
-      for (const d of [diaBR(0), diaBR(1)]) await expect(p.getByTestId(`agenda-dia-${d}`), d).toHaveAttribute("data-estadia", "1");
+      // Hoje (a entrada) já é do período; o resto da grade deste mês, do jeito que vier (o mês pode acabar hoje).
+      await expect(p.getByTestId(`agenda-dia-${diaBR(0)}`)).toHaveAttribute("data-estadia", "1");
       await expect(p.getByTestId("agenda-exportar-escolha")).toBeVisible();
       await p.screenshot({ path: `${SAIDA}/t755-agenda-mes-${largura}.png`, fullPage: true });
 
-      // Um dia do MEIO do período, no mês seguinte: marcado, sem entrada nem saída, e com a estadia por nome.
-      const meio = diaBR(0).slice(0, 7) === diaBR(20).slice(0, 7) ? diaBR(35) : diaBR(20);
-      if (meio.slice(0, 7) !== diaBR(0).slice(0, 7)) await p.getByTestId("agenda-proximo").click();
-      const celula = p.getByTestId(`agenda-dia-${meio}`);
+      // No mês seguinte (o bloco vai de hoje a hoje + 59): o dia 1 e um dia do MEIO marcados; o do meio, sem entrada
+      // nem saída, mostra a estadia por nome.
+      await p.getByTestId("agenda-proximo").click();
+      const [a, m] = diaBR(0).split("-").map(Number);
+      const proximo = (d: number) => new Date(Date.UTC(a, m, d)).toISOString().slice(0, 10);
+      await expect(p.getByTestId(`agenda-dia-${proximo(1)}`)).toHaveAttribute("data-estadia", "1");
+      const celula = p.getByTestId(`agenda-dia-${proximo(10)}`);
       await expect(celula).toHaveAttribute("data-estadia", "1");
       await celula.click();
       await expect(p.getByTestId("agenda-estadia-andamento")).toContainText(`Estadia em andamento · Studio da agenda ${sufixo}`);
