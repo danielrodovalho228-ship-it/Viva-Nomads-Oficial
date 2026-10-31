@@ -116,7 +116,7 @@ export function MeuLocalTrabalho() {
                 Salvo: <strong>{salvo}</strong>
               </>
             ) : (
-              "Nenhum local salvo."
+              "Nenhum local salvo ainda: escolha abaixo o lugar e como você vai até ele, e toque em \"Salvar local de trabalho\"."
             )}
           </p>
           <CampoDestino
