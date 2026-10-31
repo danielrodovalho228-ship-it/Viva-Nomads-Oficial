@@ -87,3 +87,15 @@ test("Conta (avatar): Ferramentas fora; troca de modo e Sair como ações; morad
   assert.ok(itensDaConta("morador", { temImovel: false, admin: true }).some((i) => i.href === "/admin"));
   assert.equal(itensDaConta("morador", { temImovel: false }).filter((i) => i.acao === "sair").length, 1);
 });
+
+test("E185: 'Ajuda' tem um destino só (a Ajuda da Conta) e 'Sair' aparece uma vez na tela da Ajuda", () => {
+  for (const papel of PAPEIS) {
+    const itens = itensDaConta(papel, { temImovel: true });
+    assert.equal(itens.find((i) => i.id === "ajuda")?.href, "/dashboard/conta/ajuda", papel);
+    assert.ok(itens.some((i) => i.id === "sair"), `${papel}: fora da Ajuda o avatar mantém o Sair (D2)`);
+    for (const rota of ["/dashboard/conta/ajuda", "/dashboard/conta/ajuda?pessoa=1"]) {
+      assert.ok(!itensDaConta(papel, { temImovel: true, pathname: rota }).some((i) => i.id === "sair"), `${papel} em ${rota}: a tela já tem "Sair da conta"`);
+    }
+    assert.ok(itensDaConta(papel, { temImovel: true, pathname: "/dashboard/conta" }).some((i) => i.id === "sair"));
+  }
+});
