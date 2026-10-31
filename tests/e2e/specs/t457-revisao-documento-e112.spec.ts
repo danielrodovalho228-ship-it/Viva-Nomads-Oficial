@@ -10,6 +10,7 @@ import { abrirNoEndereco, irParaAntesDePublicar } from "../fixtures/cadastro";
       Ainda não enviado" e o "Enviar documento" dela abre a escolha do arquivo ali mesmo. Nenhum "passo Endereço" na tela.
    2. Sem o número: o mesmo botão leva ao Passo 3 com o foco no número (o que falta para conferir o documento).
   A 390 e 1280 px, com prints do Passo 10.
+  Reconferência pedida pelo Muse (31/10): os destinos dos botões do Passo 10, rodada no lab-crítico sobre a main atual.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
