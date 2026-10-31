@@ -45,7 +45,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "caucao",
     pergunta: "Como funciona a caução?",
-    resposta: `${CAUCAO_FRASE} Ela volta para o inquilino no fim, depois da conferência de saída.`,
+    resposta: `${CAUCAO_FRASE} Ela volta para o morador no fim, depois da conferência de saída.`,
     termos: ["caucao", "deposito", "garantia", "poupanca", "devolucao"],
   },
   {
@@ -84,22 +84,22 @@ export const FAQ: Pergunta[] = [
   },
   {
     id: "inquilino-paga",
-    pergunta: "O inquilino paga alguma taxa para a plataforma?",
+    pergunta: "O morador paga alguma taxa para a plataforma?",
     resposta:
-      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o inquilino. A taxa de 12% sobre o valor total do contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
-    termos: ["taxa", "inquilino", "custo", "gratis"],
+      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o morador. A taxa de 12% sobre o valor total do contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
+    termos: ["taxa", "inquilino", "morador", "custo", "gratis"],
     links: [LINK_PRECOS],
   },
   {
     id: "prazo",
-    pergunta: "Qual o prazo mínimo e máximo da locação?",
+    pergunta: "Qual o prazo mínimo e máximo da estadia?",
     resposta: `Estadias de 30 a ${REGRAS_CONTRATO.prazoMaxDias} dias, de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses.`,
     termos: ["prazo", "minimo", "maximo", "meses", "dias", "duracao"],
   },
   {
     id: "renovar",
     pergunta: "Posso renovar o contrato?",
-    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação só vale com o aceite do proprietário e do inquilino, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
+    resposta: `Sim, enquanto o total não passar de ${REGRAS_CONTRATO.prazoMaxDias} dias. A renovação só vale com o aceite do proprietário e do morador, e é cobrada à parte do proprietário: a taxa da faixa dele sobre o valor total do período renovado (cada período é cobrado uma só vez). Depois de ${REGRAS_CONTRATO.prazoMaxDias} dias, é preciso um novo contrato.`,
     termos: ["renovar", "renovacao", "prorrogar", "estender"],
   },
   {
@@ -114,7 +114,7 @@ export const FAQ: Pergunta[] = [
     id: "limpeza-estadia",
     pergunta: "Posso oferecer limpezas durante a estadia?",
     resposta:
-      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. Se houver valor, ele entra no total por mês que o inquilino vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal.",
+      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. Se houver valor, ele entra no total por mês que o morador vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal.",
     termos: ["limpeza", "faxina", "durante a estadia", "pacote", "total por mes"],
   },
   {
@@ -133,7 +133,7 @@ export const FAQ: Pergunta[] = [
   },
   {
     id: "contato",
-    pergunta: "Por que não vejo o telefone do proprietário (ou do inquilino)?",
+    pergunta: "Por que não vejo o telefone do proprietário (ou do morador)?",
     resposta:
       "Para a sua segurança, a conversa acontece toda pela plataforma: telefone, e-mail e redes sociais aparecem como \"contato protegido\". Assim tudo fica registrado e vale como prova se houver qualquer problema.",
     termos: ["telefone", "whatsapp", "contato", "zap", "numero"],
