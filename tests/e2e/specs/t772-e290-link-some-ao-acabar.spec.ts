@@ -37,15 +37,18 @@ async function visitaConfirmada(imovel: string): Promise<string> {
   return data.id as string;
 }
 
-/** O "Entrar na chamada" da visita nos dois lados (lista e detalhe), na largura dada. */
+/** Quantos "Entrar na chamada" com o link da visita aparecem nos dois lados (lista e detalhe), na largura dada. */
 async function linkNosDoisLados(browser: Browser, id: string, largura: number): Promise<number[]> {
   const contagens: number[] = [];
   for (const email of [morador.email, dono.email]) {
     for (const caminho of ["/dashboard/visitas", `/dashboard/visitas/${id}`]) {
       const p = await abrir(browser, email, caminho, largura);
-      const cartao = p.locator(`#visita-${id}`);
-      await expect(cartao).toBeVisible({ timeout: 20_000 });
-      contagens.push(await cartao.getByTestId("visita-link-chamada").count());
+      await p.locator("main").first().waitFor({ timeout: 20_000 });
+      await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      // No detalhe o cartão da visita aparece; na lista a visita encerrada pode ir para o histórico (fora da lista
+      // principal): a conferência é o link em qualquer lugar da página.
+      if (caminho.endsWith(id)) await expect(p.locator(`#visita-${id}`)).toBeVisible({ timeout: 20_000 });
+      contagens.push(await p.locator(`a[href="${LINK}"]`).count());
       await p.context().close();
     }
   }
