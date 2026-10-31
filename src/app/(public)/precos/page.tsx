@@ -3,7 +3,8 @@ import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa, ROTULO_FAIXA_NEGOCIAVEL } from "@/lib/cobranca/regra";
+import { GESTOR_PRECO } from "@/config/planos";
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -109,6 +110,18 @@ export default function PricingPage() {
               </li>
             ))}
           </ul>
+
+          {/* E302/E303 (QA 31/10): o "Ver o Plano Gestor" de /parceiros chega aqui (#plano-gestor), e os dois números não
+              se confundem — o Gestor começa em GESTOR_PRECO.minimoImoveis imóveis (ou administradora); o 31+ da tabela é a
+              faixa da taxa negociável, que vale para qualquer anunciante pela quantidade de imóveis ativos. */}
+          <div id="plano-gestor" className="mt-6 scroll-mt-24 rounded-xl bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="plano-gestor-secao">
+            <h3 className="font-semibold text-ink">Plano Gestor</h3>
+            <p className="mt-1">
+              Para quem tem {GESTOR_PRECO.minimoImoveis} imóveis ou mais, ou é administradora: condições negociadas com o time da Viva.
+              É outra regra, diferente da faixa &ldquo;31+ · {ROTULO_FAIXA_NEGOCIAVEL}&rdquo; da tabela acima, que vale para qualquer
+              anunciante pela quantidade de imóveis ativos.
+            </p>
+          </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row" data-testid="precos-botoes">
             <ButtonLink href="/dashboard/imoveis/novo" variant="primary" size="lg">

@@ -26,11 +26,18 @@ const CARDS = [
     links: [{ href: "/parceiros?categoria=fotografia#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
   { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor para quem tem ${GESTOR_PRECO.minimoImoveis} ou mais imóveis.`,
-    links: [{ href: "/precos", rotulo: "Ver o Plano Gestor" }] },
+    // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora), não ao topo da página.
+    links: [{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }] },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
     links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
-    links: [{ href: "/parceiros?categoria=mudanca#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=mudanca", rotulo: "Procurar" }] },
+    // E301 (QA 31/10): o cartão junta duas categorias — cada link leva à sua (antes, os dois iam só a "mudanca").
+    links: [
+      { href: "/parceiros?categoria=montagem#quero-ser-parceiro", rotulo: "Atender montagem" },
+      { href: "/parceiros?categoria=mudanca#quero-ser-parceiro", rotulo: "Atender mudança" },
+      { href: "/parceiros/buscar?categoria=montagem", rotulo: "Procurar montagem" },
+      { href: "/parceiros/buscar?categoria=mudanca", rotulo: "Procurar mudança" },
+    ] },
   { id: "seguros", titulo: "Seguros", selo: "Em breve", texto: "Seguros para imóveis mobiliados. Em breve: peça a parceria como \"Outro serviço\" e avisamos quando abrir.",
     links: [{ href: "/parceiros?categoria=outro#quero-ser-parceiro", rotulo: "Pedir parceria" }] },
 ];
@@ -109,12 +116,19 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         </ul>
         {/* Correção 62-B3: a entrada do avaliador credenciado, fora da grade de cartões (a categoria fica fora do formulário
             comum e do catálogo). */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white p-6" data-testid="parceiros-avaliador">
-          <div className="min-w-0">
+        {/* E305 (QA 31/10): a faixa ganha foto, como as demais seções visuais da página (a mesma do topo de
+            /parceiros/avaliadores, E52). */}
+        <div className="mt-6 grid overflow-hidden rounded-xl border border-line bg-white sm:grid-cols-[12rem_minmax(0,1fr)_auto] sm:items-center" data-testid="parceiros-avaliador">
+          <div data-testid="parceiros-avaliador-foto">
+            <BrandImage src="/images/unicas/qualificar-hero.webp" alt="Sala e cozinha integradas de um imóvel mobiliado" rounded="rounded-none" sizes="(min-width: 640px) 192px, 100vw" className="aspect-[16/9] w-full sm:aspect-[4/3]" />
+          </div>
+          <div className="min-w-0 px-6 pt-4 sm:py-6">
             <h3 className="font-title text-lg font-semibold text-ink">É avaliador de imóveis?</h3>
             <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.</p>
           </div>
-          <Link href="/parceiros/avaliadores" className="text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
+          <div className="px-6 pb-6 pt-3 sm:py-6">
+            <Link href="/parceiros/avaliadores" className="text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
+          </div>
         </div>
       </section>
 

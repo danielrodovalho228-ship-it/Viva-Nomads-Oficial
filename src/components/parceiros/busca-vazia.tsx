@@ -5,6 +5,9 @@ import { BRAND_BLUR } from "@/lib/media";
 import { ButtonLink } from "@/components/ui/button";
 import { AvisoFotografo } from "@/app/(public)/parceiros/fotografos/aviso-fotografo";
 import { mostrarParceiroGeral, rotuloCategoria, type ParceiroGeral } from "@/lib/parceiros/regras";
+import { MUNICIPIOS } from "@/lib/municipios";
+import { ufUnicaDaCidade } from "@/lib/parceiros/indicacao";
+import { IndicarProfissional } from "@/components/parceiros/indicar-profissional";
 
 /**
  * Busca sem parceiro (Prompt 31a, item 6): avise-me (qualquer categoria), "Indique um profissional" e, se a equipe
@@ -33,6 +36,9 @@ export function BuscaVazia({
 }) {
   // Sem categoria ("Todas"): a foto de manutenção (caixa de ferramentas), a mais geral das seis.
   const foto = fotoDaCategoria(categoria) ?? fotoDaCategoria("manutencao");
+  // E304 (QA 31/10): cidade digitada sem a UF deixava o "Quero ser avisado" desligado. Com o nome único no Brasil, a UF
+  // vem da lista do IBGE; ambígua (ex.: "Bom Jesus"), o aviso continua pedindo a UF.
+  const ufEfetiva = uf || (cidade ? ufUnicaDaCidade(cidade, MUNICIPIOS)?.uf ?? "" : "");
   return (
     <div className="mt-4 space-y-4" data-testid="busca-parceiros-vazia">
       <div className="grid overflow-hidden rounded-xl border border-line bg-white md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
@@ -48,7 +54,7 @@ export function BuscaVazia({
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {cidade ? (
-              <AvisoFotografo cidade={cidade} uf={uf} logado={logado} voltarPara={voltarPara} autoAvisar={autoAvisar} categoria={categoria || "outro"} ladoALado />
+              <AvisoFotografo cidade={cidade} uf={ufEfetiva} logado={logado} voltarPara={voltarPara} autoAvisar={autoAvisar} categoria={categoria || "outro"} ladoALado />
             ) : (
               <div className="h-full rounded-xl border border-line bg-white p-4" data-testid="aviso-fotografo" data-sem-cidade="1">
                 <p className="flex items-center gap-2 font-semibold text-ink">
@@ -65,9 +71,7 @@ export function BuscaVazia({
                 <UserPlus className="h-5 w-5 shrink-0 text-forest" aria-hidden /> Indique um profissional
               </p>
               <p className="mt-1 text-sm text-muted">Conhece alguém bom que atende aí? Mande o link: o pedido de parceria é feito pela própria pessoa, com a conta dela.</p>
-              <ButtonLink href={`/parceiros${categoria ? `?categoria=${categoria}` : ""}#quero-ser-parceiro`} variant="secondary" size="sm" className="mt-3">
-                Abrir a página de parceiros
-              </ButtonLink>
+              <IndicarProfissional categoria={categoria} />
             </div>
           </div>
         </div>
