@@ -5,7 +5,7 @@ import { abrirComoConta, temContaVarredura } from "../fixtures/varredura";
 
 /*
   T790 — merges de 31/10 (noite), Pista C, bloco 111. Pelas telas de verdade, a 390 e a 1280 px:
-   A. #1732 — Conta (celular): a descrição de cada item vai em até 2 linhas, sem corte numa linha só;
+   A. #1732 — Conta (celular, 390): a descrição de cada item vai em até 2 linhas, sem corte numa linha só;
    B. #1734 — cartões de número (StatCard): o rótulo vai em até 2 linhas, sem corte numa linha só (Início do morador);
    C. #1733 — Seja parceiro (/parceiros, visitante): grade de 2 colunas nas categorias; com número ímpar, a última
       ocupa a linha inteira (nenhuma fica sozinha numa coluna);
@@ -48,6 +48,9 @@ test.describe("T790 — merges de 31/10 (noite): descrições e rótulos inteiro
 
   for (const largura of LARGURAS) {
     test(`A. ${largura} px: Conta — a descrição de cada item vai em até 2 linhas (#1732)`, async ({ browser }) => {
+      // O menu da Conta (com as descrições) é a tela do celular; no computador a Conta abre direto na seção, com o menu
+      // lateral (o #1732 é "Conta (celular)").
+      test.skip(largura !== 390, "o menu com as descrições é a tela do celular");
       const p = await (await browser.newContext({ storageState: authFile("inquilino"), viewport: { width: largura, height: altura(largura) } })).newPage();
       await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("conta-menu")).toBeVisible({ timeout: 30_000 });
@@ -82,7 +85,7 @@ test.describe("T790 — merges de 31/10 (noite): descrições e rótulos inteiro
 
     test(`D. ${largura} px: /seguranca abre com o banner das institucionais (#1736)`, async ({ browser }) => {
       const p = await visitante(browser, largura, "/seguranca");
-      const banner = p.getByTestId("banner-topo").first();
+      const banner = p.getByTestId("topo-seguranca").first();
       await expect(banner).toBeVisible({ timeout: 30_000 });
       await expect(banner.getByRole("heading", { level: 1 })).toHaveText("Morar com segurança na Viva Nomads");
       const topo = await banner.boundingBox();
