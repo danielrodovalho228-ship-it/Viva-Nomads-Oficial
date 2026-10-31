@@ -23,6 +23,7 @@ import {
   podeResponder,
   ROTULO_ESTADO_CONFERENCIA as ROTULO_ESTADO,
   rotuloConfirmar,
+  textoConferenciaVazia,
   textoPrazoConferencia,
   type ItemTela,
   type LaudoTela,
@@ -208,7 +209,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-sm text-muted">Nenhum item registrado ainda.</p>
+        <p className="mt-3 text-sm text-muted" data-testid={`conferencia-${tipo}-vazia`}>
+          {textoConferenciaVazia({ tipo, parte, travada })}
+        </p>
       )}
 
       {conf && respostas.length > 0 && (

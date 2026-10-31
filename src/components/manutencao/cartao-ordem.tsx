@@ -12,7 +12,7 @@ import {
   responderAte,
 } from "@/config/atendimento";
 import { SO_PRIORITY_META, SO_STATUS_META, categoryLabel, type ServiceOrder, type SOPriority, type SOStatus } from "@/lib/service-orders";
-import { prazoDaOrdem, proximosStatus, textoEvento, type EventoOrdem, type PapelOrdem } from "@/lib/manutencao-solicitacoes";
+import { prazoDaOrdem, proximosStatus, textoEvento, textoMensagensOrdemVazia, type EventoOrdem, type PapelOrdem } from "@/lib/manutencao-solicitacoes";
 import {
   detalheSolicitacao,
   marcarSolucaoProvisoria,
@@ -281,7 +281,7 @@ export function CartaoOrdem({
           <section>
             <h3 className="mb-2 text-sm font-semibold text-ink">Mensagens</h3>
             <ul data-testid="mensagens-ordem" className="space-y-2">
-              {mensagens.length === 0 && <li className="text-sm text-muted">Nenhuma mensagem ainda.</li>}
+              {mensagens.length === 0 && <li className="text-sm text-muted" data-testid="mensagens-ordem-vazio">{textoMensagensOrdemVazia(papel)}</li>}
               {mensagens.map((m) => (
                 <li key={m.id} className={cn("rounded-xl px-3 py-2 text-sm", m.autor === "voce" ? "bg-forest/5" : "bg-sage-50")}>
                   <span className="block text-xs text-muted">

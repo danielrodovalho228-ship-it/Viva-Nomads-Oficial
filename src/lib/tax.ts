@@ -111,6 +111,11 @@ export interface TaxInput {
    * progressiva: o imposto atribuído ao aluguel é a DIFERENÇA (com − sem o aluguel). Padrão 0.
    */
   otherMonthlyIncome?: number;
+  /**
+   * E292 ("a Viva só conecta"): custo anual de manter a empresa (contador, taxas, certificado) DIGITADO pelo dono.
+   * Sem ele, a memória interna (/tributario) usa a referência PJ_ACCOUNTING_YEAR; a tela do dono sempre passa o dele.
+   */
+  pjAnnualCost?: number;
 }
 
 export interface TaxResult {
@@ -135,7 +140,7 @@ export interface TaxResult {
   ibsCbsAviso: boolean;
 }
 
-export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0, otherMonthlyIncome = 0 }: TaxInput): TaxResult {
+export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0, otherMonthlyIncome = 0, pjAnnualCost: custoInformado }: TaxInput): TaxResult {
   const aluguel = Math.max(0, monthlyRent);
   const annualRevenue = aluguel * 12;
 
@@ -152,7 +157,8 @@ export function simulateTax({ monthlyRent, propertyCount, monthlyDeductions = 0,
   const pfRate = annualRevenue > 0 ? pfAnnualTax / annualRevenue : 0; // alíquota EFETIVA
   const pjRate = PJ_PRESUMIDO_RATE;
   const pjAnnualTax = Math.round(annualRevenue * pjRate);
-  const pjAnnualCost = annualRevenue > 0 ? PJ_ACCOUNTING_YEAR : 0;
+  const custoEmpresa = custoInformado === undefined ? PJ_ACCOUNTING_YEAR : Math.max(0, Number.isFinite(custoInformado) ? custoInformado : 0);
+  const pjAnnualCost = annualRevenue > 0 ? custoEmpresa : 0;
   const taxDifference = pfAnnualTax - pjAnnualTax;
   const taxSavings = taxDifference - pjAnnualCost;
 

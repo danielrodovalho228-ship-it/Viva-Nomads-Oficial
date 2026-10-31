@@ -81,11 +81,12 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
     test(`1–4. ${largura} — Simulador e Calculadora dão o mesmo líquido; canais; cenários; barra negativa`, async ({ browser }) => {
       test.setTimeout(120_000);
       const p = await comoDono(browser, largura);
-      // Simulador com os números do Muse.
+      // Simulador com os números do Muse. E294: tudo começa vazio (sem número da Viva) — sem os números, não há conta.
       await abrir(p, "/dashboard/simulador");
+      await expect(p.getByTestId("sim-vazio")).toBeVisible();
       await numero(p, "Valor mensal pretendido", 3000);
-      await numero(p, "Condomínio + IPTU (mês)", 0);
       await numero(p, "Contas de consumo — água, luz, internet (mês)", 400);
+      await numero(p, "Meses ocupados no ano (1 a 12)", 10);
       await numero(p, "Investimento na mobília", 25000);
       await numero(p, "Reposição e desgaste da mobília (% do investimento por ano)", 10);
       await expect(p.getByTestId("sim-liquida")).toContainText("23.900");
@@ -96,20 +97,18 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t212-simulador-${largura}.png`, fullPage: true });
 
-      // Calculadora de ROI com os mesmos números.
-      await abrir(p, "/dashboard/roi-imovel");
-      await numero(p, "Investimento para mobiliar", 25000);
-      await numero(p, "Valor mensal MOBILIADO pretendido", 3000);
-      await numero(p, "Condomínio + IPTU (mês)", 0);
-      await numero(p, "Contas de consumo — água, luz, internet (mês)", 400);
-      await numero(p, "Reposição e desgaste da mobília (% do investimento por ano)", 10);
-      await numero(p, "Valor mensal VAZIO de referência", 1800);
+      // E294: a comparação com o tradicional é a MESMA tela e a MESMA conta — só com o valor mensal dele digitado.
+      await expect(p.getByTestId("roi-sem-tradicional")).toBeVisible();
+      await numero(p, "Valor mensal do tradicional (sem mobília)", 1800);
+      await numero(p, "Meses vazios por ano", 1);
+      await numero(p, "Taxa de administração (%)", 10);
+      await numero(p, "Taxa de contrato: 1 valor mensal a cada (meses)", 30);
       await expect(p.getByTestId("roi-liquidos")).toContainText("23.900");
       const main = await p.locator("main").innerText();
       expect(main).not.toMatch(/quinto\s*andar/i);
       await expect(p.getByTestId("roi-canal")).toHaveCount(3);
       await expect(p.getByTestId("roi-canais")).toContainText("Contrato tradicional (12+ meses)");
-      await expect(p.getByTestId("roi-cenarios").locator("tbody tr td:first-child")).toHaveText(["Conservador", "Realista", "Otimista"]);
+      await expect(p.getByTestId("sim-cenarios").locator("thead")).toContainText("Ganho × tradicional");
 
       // Ano 1 do mobiliado: −R$ 1.100, barra com altura e abaixo do zero.
       const barra = p.locator('[data-testid="roi-acumulado-barra"][data-grupo="Ano 1"][data-serie="Mobiliado"]');

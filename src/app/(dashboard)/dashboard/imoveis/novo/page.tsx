@@ -1,6 +1,7 @@
 "use client";
 
 import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
+import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -246,6 +247,8 @@ export default function NewPropertyPage() {
   const [petsOk, setPetsOk] = useState(false);
   // E263-A: "Aceita pets" ligado abre as condições do dono (as mesmas do editor), todas opcionais.
   const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(() => formDeRegras());
+  // Conformidade (mockup cadastro-imovel-06): silêncio, festas, visitas e "Outras regras" no próprio Passo 6.
+  const [regrasCasa, setRegrasCasa] = useState<RegrasCasaForm>(() => formDeRegrasCasa());
   const [privacidade, setPrivacidade] = useState<Privacidade>(PRIVACIDADE_VAZIA);
   const [smokingAllowed, setSmokingAllowed] = useState(false);
   const [childrenAllowed, setChildrenAllowed] = useState(true);
@@ -771,6 +774,7 @@ export default function NewPropertyPage() {
       furnished,
       petsAllowed: petsOk,
       petsRegras: petsOk ? petsRegras : undefined,
+      regrasCasa: payloadDeRegrasCasa(regrasCasa),
       semCamerasInterior: privacidade.semCamerasInterior,
       camerasExternas: privacidade.camerasExternas,
       // E259 (2): a coluna antiga sai da resposta do Passo 6 (sem ela, fica a que já estava gravada).
@@ -861,6 +865,11 @@ export default function NewPropertyPage() {
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
     if (d.petsRegras && typeof d.petsRegras === "object") setPetsRegras({ ...formDeRegras(), ...(d.petsRegras as Partial<RegrasPetsForm>) });
+    if (d.regrasCasa && typeof d.regrasCasa === "object") {
+      const base = formDeRegrasCasa();
+      const r = d.regrasCasa as Partial<RegrasCasaForm>;
+      setRegrasCasa({ ...base, ...r, ligados: { ...base.ligados, ...(r.ligados ?? {}) } });
+    }
     if (d.privacidade && typeof d.privacidade === "object") setPrivacidade({ ...PRIVACIDADE_VAZIA, ...(d.privacidade as Partial<Privacidade>) });
     if (typeof d.smokingAllowed === "boolean") setSmokingAllowed(d.smokingAllowed);
     if (typeof d.childrenAllowed === "boolean") setChildrenAllowed(d.childrenAllowed);
@@ -1023,6 +1032,7 @@ export default function NewPropertyPage() {
       setFurnished(p.furnished ?? true);
       setPetsOk(p.petsAllowed ?? false);
       setPetsRegras(formDeRegras(p.petsRegras));
+      setRegrasCasa(formDeRegrasCasa(p.regrasCasa));
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
       setChegada(formDeChegada(p.chegadaEPedido));
@@ -1081,7 +1091,7 @@ export default function NewPropertyPage() {
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
-    privacidade, furnished, petsOk, petsRegras, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
+    privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
@@ -1944,6 +1954,11 @@ export default function NewPropertyPage() {
             {step === ETAPA.regras && (
               <div>
                 <EtapaEncontramos parte="regras" {...camposImovel} />
+                {/* Conformidade (mockup cadastro-imovel-06): silêncio, festas, visitas e "Outras regras" aqui, como no
+                    Editar anúncio; o fumo fica no cartão "Permite fumar" acima. */}
+                <div className="mt-6" data-testid="cadastro-regras-casa">
+                  <RegrasCasaCampos value={regrasCasa} onChange={setRegrasCasa} omitir={["fumo"]} />
+                </div>
                 <ChegadaEPedidoCampos
                   value={chegada}
                   onChange={setChegada}

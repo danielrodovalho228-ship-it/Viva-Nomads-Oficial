@@ -45,7 +45,16 @@ const SIM_NAO = [
  * Convivência no desenho da tela 06 dos mockups aprovados: cada regra (silêncio, fumo, festas, visitas) num bloco
  * opcional próprio (padrão E56). Desligada = não definida, não aparece no anúncio.
  */
-export function RegrasCasaCampos({ value, onChange }: { value: RegrasCasaForm; onChange: (v: RegrasCasaForm) => void }) {
+export function RegrasCasaCampos({
+  value,
+  onChange,
+  omitir = [],
+}: {
+  value: RegrasCasaForm;
+  onChange: (v: RegrasCasaForm) => void;
+  /** Regras que a tela já pergunta de outro jeito (o Passo 6 do cadastro tem o cartão "Permite fumar"). */
+  omitir?: readonly RegraConvivencia[];
+}) {
   const muda = (p: Partial<RegrasCasaForm>) => onChange({ ...value, ...p });
   const silencioIncompleto = (value.silencioInicio === "") !== (value.silencioFim === "");
   const conteudo: Record<RegraConvivencia, React.ReactNode> = {
@@ -93,7 +102,7 @@ export function RegrasCasaCampos({ value, onChange }: { value: RegrasCasaForm; o
         <h3 className="text-sm font-semibold text-ink">Convivência</h3>
         <p className="mt-1 text-xs text-muted">Ligue só as regras que valem na sua casa. O que ficar desligado não aparece no anúncio.</p>
       </div>
-      {REGRAS_CONVIVENCIA.map(({ chave, titulo, descricao }) => (
+      {REGRAS_CONVIVENCIA.map(({ chave, titulo, descricao }) => omitir.includes(chave) ? null : (
         <BlocoOpcional
           key={chave}
           id={chave}

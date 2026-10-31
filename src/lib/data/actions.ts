@@ -867,6 +867,23 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   } catch {
     /* migração 0119 ausente — segue com o aceite geral */
   }
+  // Conformidade (mockup cadastro-imovel-06): o anúncio criado já leva as regras da casa do Passo 6 (antes, só a edição
+  // gravava). Nada definido = não grava; o fumo definido acerta o smoking_allowed antigo, como na edição.
+  if ("regrasCasa" in input) {
+    try {
+      const regras = normalizarRegrasCasa(input.regrasCasa);
+      const fumante = fumoParaSmokingAllowed(regras);
+      if (regras) {
+        await supabase
+          .from("properties")
+          .update({ regras_casa: regras, ...(fumante !== undefined ? { smoking_allowed: fumante } : {}) })
+          .eq("id", data.id)
+          .eq("owner_id", user.id);
+      }
+    } catch {
+      /* migração 0233 ausente — segue com os fatos antigos */
+    }
+  }
 
   // Comodidades por categoria (catálogo único). Best-effort.
   if (input.amenityKeys && input.amenityKeys.length > 0) {

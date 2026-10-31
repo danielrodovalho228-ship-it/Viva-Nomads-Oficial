@@ -127,6 +127,13 @@ test.describe("T37 — Simulador do painel (proprietário)", () => {
     const corpo = limpo(await page.locator("body").innerText());
     expect(corpo).not.toMatch(/Gratuito|Essencial|Profissional|Simular no plano|Assinatura \/ ano/);
     const entrada = { aluguelMensal: 3000, condoIptu: 550, contas: 350, mesesOcupados: 10, prazoMedioMeses: 4 };
+    // E294: o simulador começa vazio (sem número da Viva); o dono digita os números.
+    await expect(page.getByTestId("sim-vazio")).toBeVisible();
+    await page.getByTestId("sim-valor-mensal").fill("3000");
+    await page.getByRole("textbox", { name: /^Condomínio \+ IPTU \(mês\)/ }).fill("550");
+    await page.getByRole("textbox", { name: /^Contas de consumo/ }).fill("350");
+    await page.getByTestId("sim-meses").fill("10");
+    await page.getByTestId("sim-prazo").getByRole("button", { name: "4 meses" }).click();
     for (const f of FAIXAS_COMISSAO_PADRAO) {
       await page.locator("#imoveis-ativos").fill(String(f.minImoveis));
       await expect(page.getByTestId("imoveis-ativos")).toHaveText(String(f.minImoveis));

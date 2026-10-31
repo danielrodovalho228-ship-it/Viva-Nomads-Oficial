@@ -70,6 +70,18 @@ export function prazoConferencia(tipo: TipoConferencia, datas: EntradaDoContrato
   return tipo === "entrada" ? prazoConferenciaEntrada(datas) : prazoConferenciaSaida(datas);
 }
 
+/**
+ * A conferência sem nenhum item: diz o que falta e o que fazer, conforme a vez de quem lê. Antes era sempre
+ * "Nenhum item registrado ainda." — a mesma frase para quem ainda pode registrar e para a conferência já fechada.
+ */
+export function textoConferenciaVazia(o: { tipo: TipoConferencia; parte: ParteConferencia | null; travada: boolean }): string {
+  const qual = o.tipo === "entrada" ? "de entrada" : "de saída";
+  // Travada (as duas partes responderam, ou quem lê já respondeu): não há mais o que registrar desta vez.
+  if (o.travada) return `Nenhum cômodo foi registrado nesta conferência ${qual}.`;
+  if (!o.parte) return `Nenhum cômodo registrado ainda na conferência ${qual}.`;
+  return `Ninguém registrou cômodos ainda. Registre abaixo o estado de cada cômodo, com foto, em "Adicionar item": a outra parte confere e confirma ou contesta.`;
+}
+
 /** "até 20/10 às 15:00, horário de Brasília" — o mesmo texto na seção e na linha do tempo. */
 export function textoPrazoConferencia(prazo: Date | string | null): string {
   if (!prazo) return "";

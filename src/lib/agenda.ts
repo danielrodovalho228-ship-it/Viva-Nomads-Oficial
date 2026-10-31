@@ -31,6 +31,16 @@ export const ROTULO_TIPO_AGENDA: Record<TipoAgenda, string> = {
   bloqueio: "Bloqueado",
 };
 
+/**
+ * Dia aberto sem nada na Agenda. Diz o que a Agenda mostra (os 4 tipos) e, com o filtro de um imóvel ligado, que o vazio
+ * é só daquele imóvel — antes era sempre "Nada marcado neste dia.", mesmo com outro imóvel ocupado no dia.
+ */
+export function textoDiaSemAgenda(imovelFiltrado?: string | null): string {
+  const base = "Nenhuma visita, entrada, saída ou data bloqueada neste dia";
+  const t = (imovelFiltrado ?? "").trim();
+  return t ? `${base} em ${t}. Escolha "Todos os imóveis" para ver os outros.` : `${base}.`;
+}
+
 const DATA_PURA = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Dia (AAAA-MM-DD) no horário de Brasília. Data pura fica como está (não vira o dia anterior por fuso). */

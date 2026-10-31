@@ -9,9 +9,9 @@ test("o painel tem error.tsx de cliente com Tentar de novo e saída para o paine
   assert.ok(existsSync(arquivo));
   const fonte = readFileSync(arquivo, "utf8");
   assert.match(fonte, /^"use client";/);
-  // Next 16: o botão chama unstable_retry (busca e renderiza de novo), com reset como alternativa; a prop antiga `retry` não existe.
-  assert.match(fonte, /unstable_retry/);
-  assert.match(fonte, /reset/);
+  // O "Tentar de novo" chama a função que o Next 16 entrega (unstable_retry; reset de reserva). A prop `retry`, que esta
+  // guarda aceitava, não existe: o botão quebrava (corrigido no #1689).
+  assert.match(fonte, /\(unstable_retry \?\? reset\)\?\.\(\)/);
   assert.doesNotMatch(fonte, /\bretry\(\)/);
   assert.match(fonte, /Tentar de novo/);
   assert.match(fonte, /href="\/dashboard"/);

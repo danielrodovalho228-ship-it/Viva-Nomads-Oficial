@@ -102,7 +102,13 @@ test.describe("T192 — simulador tributário só em Ferramentas", () => {
       await expect(ferramenta.getByTestId("tax-outros-rendimentos")).toBeVisible();
       const corpo = await ferramenta.innerText();
       expect(corpo).not.toMatch(/Lucro presumido \+ IBS\/CBS|ago\/2026/);
-      await expect(ferramenta.getByTestId("tax-resultado")).toContainText("custo de manter a empresa");
+      // E292: começa vazio (sem número da Viva); o resultado só aparece com a receita digitada pelo dono.
+      await expect(ferramenta.getByTestId("tax-sem-receita")).toBeVisible();
+      await expect(ferramenta.getByTestId("tax-resultado")).toHaveCount(0);
+      await ferramenta.getByTestId("tax-receita").fill("10000");
+      await ferramenta.getByTestId("tax-custo-empresa").fill("3600");
+      await expect(ferramenta.getByTestId("tax-resultado")).toContainText("custo de manter a empresa que você informou");
+      await expect(ferramenta.getByTestId("tax-resultado")).toContainText("3.600");
       // Aviso de IBS/CBS segue desligado até a revisão.
       await expect(ferramenta.getByTestId("tax-aviso-ibs-cbs")).toHaveCount(0);
       await semRolagemLateral(page);

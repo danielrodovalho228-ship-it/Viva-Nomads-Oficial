@@ -92,3 +92,17 @@ test("formulário e servidor: editor tem o grupo, servidor valida, página lê �
   const folha = ler("src/components/property/bom-saber.tsx");
   assert.match(folha, /ICONES_REGRA\[it\.chave\]/);
 });
+
+test("conformidade (mockup cadastro-imovel-06): o Passo 6 do cadastro tem as regras da casa, salvas no rascunho e no anúncio criado", () => {
+  const pagina = ler("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx");
+  const passo = pagina.slice(pagina.indexOf("{step === ETAPA.regras && ("), pagina.indexOf("{step === ETAPA.descricao &&"));
+  assert.match(passo, /<RegrasCasaCampos value=\{regrasCasa\} onChange=\{setRegrasCasa\} omitir=\{\["fumo"\]\} \/>/, "no Passo 6, sem repetir o fumo");
+  assert.match(pagina, /regrasCasa: payloadDeRegrasCasa\(regrasCasa\)/, "vai ao publicar");
+  assert.match(pagina, /petsRegras, regrasCasa, smokingAllowed/, "entra no rascunho");
+  assert.match(pagina, /if \(d\.regrasCasa && typeof d\.regrasCasa === "object"\)/, "volta do rascunho");
+  assert.match(pagina, /setRegrasCasa\(formDeRegrasCasa\(p\.regrasCasa\)\)/, "volta do anúncio");
+  const acoes = ler("src/lib/data/actions.ts");
+  const criar = acoes.slice(acoes.indexOf("export async function createProperty"), acoes.indexOf("export async function updateProperty"));
+  assert.match(criar, /normalizarRegrasCasa\(input\.regrasCasa\)[\s\S]*?regras_casa: regras/, "o anúncio criado já grava");
+  assert.match(ler("src/components/anuncio/regras-casa-campos.tsx"), /REGRAS_CONVIVENCIA\.map\(\(\{ chave, titulo, descricao \}\) => omitir\.includes\(chave\) \? null :/);
+});

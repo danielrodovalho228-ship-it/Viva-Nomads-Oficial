@@ -7,7 +7,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { RETORNO_AIRBNB_UBERLANDIA } from "./compare-precos.ts";
 
-const PAGINA = readFileSync("src/app/(dashboard)/dashboard/roi-imovel/page.tsx", "utf8");
+// E294: a Calculadora de ROI está dentro do Simulador do imóvel; /dashboard/roi-imovel só redireciona para lá.
+const PAGINA = readFileSync("src/app/(dashboard)/dashboard/simulador/page.tsx", "utf8");
+
+test("roi-imovel redireciona para o simulador (um cálculo só)", () => {
+  assert.match(readFileSync("src/app/(dashboard)/dashboard/roi-imovel/page.tsx", "utf8"), /permanentRedirect\("\/dashboard\/simulador"\)/);
+  assert.match(readFileSync("src/app/(dashboard)/dashboard/viabilidade/page.tsx", "utf8"), /permanentRedirect\("\/dashboard\/simulador"\)/);
+});
 
 test("roi-imovel não usa planos nem assinatura", () => {
   assert.doesNotMatch(PAGINA, /PlanoPills|Simular no plano|assinaturaAnual|sob consulta|@\/config\/planos/);

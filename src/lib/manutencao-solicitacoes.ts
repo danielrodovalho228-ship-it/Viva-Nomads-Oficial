@@ -80,6 +80,16 @@ export function linhaParaOrdem(l: LinhaOrdem): ServiceOrder {
 export type PapelOrdem = "inquilino" | "proprietario";
 
 /**
+ * Ordem sem mensagens: diz a cada lado com quem fala e o que conta. A primeira mensagem do proprietário carimba a
+ * primeira resposta do chamado (responderSolicitacao grava first_response_at), por isso o texto dele diz isso.
+ */
+export function textoMensagensOrdemVazia(papel: PapelOrdem): string {
+  if (papel === "proprietario")
+    return "Nenhuma mensagem ainda. Escreva abaixo para o inquilino: a sua primeira mensagem já conta como resposta ao chamado.";
+  return "Nenhuma mensagem ainda. Escreva abaixo para o proprietário sobre este reparo: a conversa fica registrada nesta ordem.";
+}
+
+/**
  * Para onde cada lado pode levar a ordem (critério 4):
  *  • proprietário: Aberta → Em atendimento; Aberta/Em atendimento → Resolvida;
  *  • inquilino: marca como Resolvida enquanto não estiver resolvida;

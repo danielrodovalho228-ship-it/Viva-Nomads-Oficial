@@ -88,6 +88,9 @@ export default async function PoloPage({ params }: Params) {
       {
         "@type": "FAQPage",
         "@id": `${url}#faq`,
+        // E84 (micro): nome em português (sem ele, o rótulo padrão é "Frequently Asked Questions").
+        name: `Perguntas frequentes · ${p.nome}`,
+        inLanguage: "pt-BR",
         mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
       {

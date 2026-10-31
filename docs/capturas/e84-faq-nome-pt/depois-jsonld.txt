@@ -1,0 +1,3 @@
+/cidades/uberlandia → name: Perguntas frequentes · Uberlândia | inLanguage: pt-BR | perguntas: 5
+/cidades/uberlandia/hc-ufu-umuarama → name: Perguntas frequentes · Perto do HC-UFU e Umuarama | inLanguage: pt-BR | perguntas: 3
+/cidades/uberlandia/santa-monica → name: Perguntas frequentes · Santa Mônica, Uberlândia | inLanguage: pt-BR | perguntas: 3

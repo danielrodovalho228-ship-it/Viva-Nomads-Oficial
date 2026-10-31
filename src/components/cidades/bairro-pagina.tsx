@@ -61,6 +61,9 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
       {
         "@type": "FAQPage",
         "@id": `${url}#faq`,
+        // E84 (micro): sem `name`, as ferramentas mostram o rótulo padrão em inglês ("Frequently Asked Questions").
+        name: `Perguntas frequentes · ${bairro.nome}, ${cidade.name}`,
+        inLanguage: "pt-BR",
         mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
       },
       {

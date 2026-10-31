@@ -10,10 +10,14 @@ import { formatBRL, cn, numBR } from "@/lib/utils";
 /**
  * Simulador tributário PF x PJ (educativo, não é aconselhamento fiscal).
  * Base: Reforma Tributária / LC 214/2025.
+ * E292 ("a Viva só conecta", diretriz do Daniel de 31/10): nenhum número próprio da Viva. Os campos começam vazios
+ * (nada de receita ou nº de imóveis de exemplo), o custo de manter a empresa é o que o dono digita (o do contador
+ * dele) e as alíquotas são as da lei. Sem receita digitada, nenhum cenário aparece.
  */
 export function TaxSimulator() {
-  const [monthlyRent, setMonthlyRent] = useState(10000);
-  const [propertyCount, setPropertyCount] = useState(4);
+  const [monthlyRent, setMonthlyRent] = useState(0);
+  const [propertyCount, setPropertyCount] = useState(0);
+  const [custoEmpresa, setCustoEmpresa] = useState(0);
   const [deducoes, setDeducoes] = useState(0);
   const [outros, setOutros] = useState(0);
 
@@ -24,8 +28,9 @@ export function TaxSimulator() {
         propertyCount: Math.max(0, Math.floor(propertyCount)),
         monthlyDeductions: limitar(deducoes, MAX_RECEITA_CARTEIRA),
         otherMonthlyIncome: limitar(outros, MAX_RECEITA_CARTEIRA),
+        pjAnnualCost: limitar(custoEmpresa, MAX_RECEITA_CARTEIRA),
       }),
-    [monthlyRent, propertyCount, deducoes, outros]
+    [monthlyRent, propertyCount, deducoes, outros, custoEmpresa]
   );
   const aviso = avisoTeto(monthlyRent, MAX_RECEITA_CARTEIRA);
 
@@ -46,7 +51,7 @@ export function TaxSimulator() {
             centavos
             value={monthlyRent || null}
             onChange={(v) => setMonthlyRent(v ?? 0)}
-            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage"
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage" testid="tax-receita"
           />
         </label>
         <label className="block">
@@ -84,9 +89,28 @@ export function TaxSimulator() {
           />
           <span className="mt-1 block text-xs text-muted">A receita das locações soma a eles na tabela do imposto de renda.</span>
         </label>
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-ink">
+            Custo por ano de manter uma empresa (contador, taxas, certificado)
+          </span>
+          <CampoReais
+            semPrefixo
+            centavos
+            value={custoEmpresa || null}
+            onChange={(v) => setCustoEmpresa(v ?? 0)}
+            className="w-full rounded-xl border border-sage-200 px-4 py-3 text-sm outline-none focus:border-sage" testid="tax-custo-empresa"
+          />
+          <span className="mt-1 block text-xs text-muted">Peça o valor ao seu contador. Sem ele, a comparação considera custo zero.</span>
+        </label>
       </div>
       {aviso && <p className="mt-2 text-xs text-amber-700">{aviso}</p>}
 
+      {r.annualRevenue <= 0 ? (
+        <p className="mt-4 rounded-xl bg-surface-2 p-4 text-sm text-muted" data-testid="tax-sem-receita">
+          Digite a receita mensal das locações para ver os dois cenários. Os números são os seus; as alíquotas são as da lei.
+        </p>
+      ) : (
+      <>
       {/* Resultado */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Card
@@ -107,7 +131,7 @@ export function TaxSimulator() {
           title="Pessoa Jurídica (CNPJ)"
           tax={r.pjAnnualTax + r.pjAnnualCost}
           rate={r.annualRevenue > 0 ? (r.pjAnnualTax + r.pjAnnualCost) / r.annualRevenue : 0}
-          note={`Lucro presumido ${formatBRL(r.pjAnnualTax)} + custo de manter a empresa ${formatBRL(r.pjAnnualCost)}`}
+          note={`Lucro presumido ${formatBRL(r.pjAnnualTax)} + custo de manter a empresa que você informou ${formatBRL(r.pjAnnualCost)}`}
         />
       </div>
 
@@ -117,11 +141,13 @@ export function TaxSimulator() {
         <span className="text-muted">
           Nesta simulação, o cenário{" "}
           <strong className="text-ink">{r.taxSavings > 0 ? "Pessoa Jurídica" : "Pessoa Física"}</strong> sai mais em conta: a diferença
-          de imposto é de {formatBRL(Math.abs(r.taxDifference))}/ano e, descontado o custo de manter a empresa (
+          de imposto é de {formatBRL(Math.abs(r.taxDifference))}/ano e, descontado o custo de manter a empresa que você informou (
           {formatBRL(r.pjAnnualCost)}/ano), a vantagem real é de{" "}
           <strong className="text-forest">{formatBRL(Math.abs(r.taxSavings))}</strong>/ano. Valores estimados.
         </span>
       </div>
+      </>
+      )}
 
       {/* IBS/CBS: só pela regra cumulativa e só depois da revisão do Sérgio (AVISO_IBS_CBS_LIBERADO). */}
       {AVISO_IBS_CBS_LIBERADO && r.ibsCbsAviso && (
