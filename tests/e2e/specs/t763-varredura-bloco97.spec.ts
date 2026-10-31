@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, criarLead } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
@@ -21,7 +21,7 @@ interface Tela {
   rota: (m: Massa) => string;
 }
 
-const ids: { proposta?: string; visita?: string; visitaCriada?: boolean } = {};
+const ids: { lead?: string; proposta?: string; visita?: string; visitaCriada?: boolean } = {};
 const emDias = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const TELAS: Tela[] = [
   { conta: "INQUILINA", papel: "morador", nome: "Proposta recebida", rota: () => `/dashboard/propostas/${ids.proposta}` },
@@ -52,10 +52,12 @@ test.describe("T763 — varredura da página inteira, bloco 97 (proposta e visit
     if (!MASSA) return;
     const dono = MASSA.ids.DONO17;
     const morador = MASSA.ids.INQUILINA;
+    // A proposta nasce de uma candidatura (lead_id é obrigatório).
+    ids.lead = await criarLead(dono, morador, MASSA.imovel17, true);
     const { data: numero } = await adm().rpc("next_document_number", { p_type: "orcamento", p_year: new Date().getFullYear() });
     const { data: pr, error: ep } = await adm()
       .from("propostas")
-      .insert({ numero, property_id: MASSA.imovel17, owner_id: dono, tenant_id: morador, status: "enviada", versao_atual: 1, validade_dias: 7, valida_ate: `${emDias(7)}T23:00:00Z` })
+      .insert({ numero, lead_id: ids.lead, property_id: MASSA.imovel17, owner_id: dono, tenant_id: morador, status: "enviada", versao_atual: 1, validade_dias: 7, valida_ate: `${emDias(7)}T23:00:00Z` })
       .select("id")
       .single();
     if (ep) throw ep;
@@ -86,6 +88,7 @@ test.describe("T763 — varredura da página inteira, bloco 97 (proposta e visit
       await adm().from("propostas").delete().eq("id", ids.proposta);
     }
     if (ids.visita && ids.visitaCriada) await adm().from("visitas_video").delete().eq("id", ids.visita);
+    if (ids.lead) await adm().from("leads").delete().eq("id", ids.lead);
   });
 
   for (const t of TELAS) {
