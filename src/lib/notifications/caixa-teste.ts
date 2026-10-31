@@ -74,6 +74,40 @@ export interface EmailParaCaixa {
   imagem?: string;
   /** Só os NOMES dos anexos (ex.: "REC-2026-000004.pdf"); o conteúdo nunca é guardado. */
   anexos?: string[];
+  /** E274: a URL da foto de capa de cada cartão de imóvel do HTML (fotosDosCartoes), para o QA ver a foto que saiu. */
+  fotos?: string[];
+}
+
+/** No máximo 3 fotos por e-mail na caixa (o e-mail agrupado mostra até 3 cartões). */
+export const FOTOS_CAIXA_MAX = 3;
+export const ROTULO_FOTO_CARTAO = "Foto do cartão";
+/** Só a foto do cartão do imóvel: a capa do Storage público, servida pelo otimizador de imagens do próprio site. */
+const FOTO_DO_CARTAO_RE = /^https:\/\/[a-z0-9.-]+(?::\d+)?\/_next\/image\?url=https%3A%2F%2F[a-z0-9-]+\.supabase\.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2F[^\s"'<>]+$/i;
+
+/** Uma URL de foto de cartão que a caixa aceita guardar e a tela aceita mostrar como imagem. */
+export function fotoDeCartaoValida(url: string): boolean {
+  return FOTO_DO_CARTAO_RE.test(url);
+}
+
+/**
+ * E274: a caixa guarda texto puro, e o cartão do imóvel em texto não tem foto — a prova ao vivo via só "Imagem:
+ * transacional.jpg" (o cabeçalho) e concluía que a capa não saía. Aqui sai do HTML a URL da foto de cada cartão de
+ * imóvel (data-cartao="imovel"), a mesma que o cliente de e-mail carrega.
+ */
+export function fotosDosCartoes(html: string | null | undefined): string[] {
+  const fotos: string[] = [];
+  for (const cartao of String(html ?? "").match(/<table[^>]*data-cartao="imovel"[\s\S]*?<\/table>/g) ?? []) {
+    const src = /<img[^>]*\ssrc="([^"]+)"/.exec(cartao)?.[1]?.replace(/&amp;/g, "&");
+    if (src && fotoDeCartaoValida(src) && !fotos.includes(src)) fotos.push(src);
+    if (fotos.length >= FOTOS_CAIXA_MAX) break;
+  }
+  return fotos;
+}
+
+/** As fotos de cartão que o corpo guardado traz ("Foto do cartão: …"), só as válidas: a tela as mostra como imagem. */
+export function fotosNoCorpo(corpo: string): string[] {
+  const re = new RegExp(`^${ROTULO_FOTO_CARTAO}: (\\S+)$`, "gm");
+  return [...corpo.matchAll(re)].map((m) => m[1]).filter(fotoDeCartaoValida).slice(0, FOTOS_CAIXA_MAX);
 }
 
 /** Linha "Anexo: REC-2026-000004.pdf" no fim do corpo: o QA vê que o PDF foi junto, sem o conteúdo na tabela. */
@@ -83,9 +117,10 @@ export function corpoComAnexos(texto: string, anexos: string[] | undefined): str
   return `${texto}\n\n${nomes.length === 1 ? "Anexo" : "Anexos"}: ${nomes.join(", ")}`;
 }
 
-/** "Remetente: …" e "Imagem: …" no topo do corpo guardado. */
-export function corpoComCabecalho(texto: string, p: { remetente?: string; imagem?: string }): string {
-  const linhas = [p.remetente ? `Remetente: ${p.remetente}` : "", p.imagem ? `Imagem: ${p.imagem}` : ""].filter(Boolean);
+/** "Remetente: …", "Imagem: …" e (E274) "Foto do cartão: …" no topo do corpo guardado. */
+export function corpoComCabecalho(texto: string, p: { remetente?: string; imagem?: string; fotos?: string[] }): string {
+  const fotos = (p.fotos ?? []).filter(fotoDeCartaoValida).slice(0, FOTOS_CAIXA_MAX).map((f) => `${ROTULO_FOTO_CARTAO}: ${f}`);
+  const linhas = [p.remetente ? `Remetente: ${p.remetente}` : "", p.imagem ? `Imagem: ${p.imagem}` : "", ...fotos].filter(Boolean);
   return linhas.length ? `${linhas.join("\n")}\n\n${texto}` : texto;
 }
 
