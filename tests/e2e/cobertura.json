@@ -143,7 +143,8 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t419-varredura-bloco36",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t775-varredura-bloco103"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -553,7 +554,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t775-varredura-bloco103"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -596,7 +598,8 @@
         "t156-comparar-exemplos",
         "t48-varredura",
         "t311-marco-principal-unico",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t775-varredura-bloco103"
       ]
     },
     "/conferir": {
@@ -949,7 +952,8 @@
         "t624-varredura-bloco58",
         "t631-e222b-renovar-aditivo",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t776-estados-vazios-dizem-o-que-fazer"
       ]
     },
     "/dashboard/favoritos": {
@@ -1855,7 +1859,8 @@
         "t543-e166-fundo-clean-publico",
         "t591-varredura-bloco48",
         "t661-varredura-bloco62",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t775-varredura-bloco103"
       ]
     },
     "/privacidade": {
@@ -1868,7 +1873,8 @@
         "t543-e166-fundo-clean-publico",
         "t557-varredura-bloco42",
         "t598-e84-central-de-ajuda",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t775-varredura-bloco103"
       ]
     },
     "/proprietario/[id]": {
@@ -1932,7 +1938,8 @@
         "t311-marco-principal-unico",
         "t438-vocab-a",
         "t543-e166-fundo-clean-publico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t775-varredura-bloco103"
       ]
     },
     "/simulacao": {
@@ -1969,7 +1976,8 @@
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t775-varredura-bloco103"
       ]
     },
     "/tributario": {
@@ -2058,7 +2066,8 @@
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
         "t537-e165-admin-contrato-assinaturas",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t775-varredura-bloco103"
       ]
     },
     "/admin/solicitacoes": {
@@ -2081,7 +2090,8 @@
         "t231-admin-numeros-com-lista",
         "t48-varredura",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t775-varredura-bloco103"
       ]
     },
     "/admin/eventos": {
@@ -2156,7 +2166,8 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t775-varredura-bloco103"
       ]
     },
     "/admin/contratos/[id]": {
@@ -2284,7 +2295,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t776-estados-vazios-dizem-o-que-fazer"
       ]
     },
     "/admin/destinos": {
