@@ -5,7 +5,7 @@ import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta,
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T755 — VARREDURA DA PÁGINA INTEIRA, BLOCO 91 (Pista C, 31/10). O protocolo do bloco 21 (t385): seis classes (imagem
+  T757 — VARREDURA DA PÁGINA INTEIRA, BLOCO 91 (Pista C, 31/10). O protocolo do bloco 21 (t385): seis classes (imagem
   pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade),
   página toda rolada, 390 e 1280 px, HTTP abaixo de 400. Rodízio pelo registro de cobertura (main + rascunhos da Pista
   C): as telas PÚBLICAS com parâmetro na URL (e a /como-funciona) que o ciclo (blocos 72–90) ainda não varreu, como
@@ -49,7 +49,7 @@ const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco91";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
-test.describe("T755 — varredura da página inteira, bloco 91 (públicas com parâmetro) (390 e 1280 px)", () => {
+test.describe("T757 — varredura da página inteira, bloco 91 (públicas com parâmetro) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
