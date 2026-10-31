@@ -166,7 +166,9 @@ export default async function AvaliacaoParceiroPage() {
       </Panel>
       <Panel title="Visitas" data-testid="avaliacoes-visitas">
         {visitas.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma visita marcada.</p>
+          <p className="text-sm text-muted" data-testid="avaliacoes-visitas-vazio">
+            Nenhuma visita por enquanto. As avaliações que você aceitar aparecem aqui, para agendar a visita com o proprietário, e saem daqui quando o laudo sai ou a avaliação é encerrada.
+          </p>
         ) : (
           <ul className="grid gap-3">
             {visitas.map((p) => (
