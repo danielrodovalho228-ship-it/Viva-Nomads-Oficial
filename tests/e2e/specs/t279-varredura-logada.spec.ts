@@ -47,6 +47,13 @@ const TELAS: Tela[] = [
   { conta: "ADMIN", papel: "admin (leitura)", rota: () => "/admin/financeiro", nome: "Financeiro" },
 ];
 
+// Desenho do E248 (#1536): o "›" sólido da fileira que rola senta sobre o item da borda (t662). Vai como anotação,
+// não como falha (achado do lab de 31/10 em "proprietário — Contratos" @390: "Recibos e notas" sob o "›").
+const CONHECIDOS: { rota: RegExp; classe: Classe; achado: RegExp; l: string }[] = [
+  { rota: /^\/dashboard(\/|\?|$)/, classe: "fixo", achado: /coberto por button "Ver mais itens"$/, l: "E248-desenho" },
+];
+const conhecido = (rota: string, classe: Classe, a: string) => CONHECIDOS.find((c) => c.classe === classe && c.rota.test(rota) && c.achado.test(a));
+
 const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-logada";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
@@ -82,7 +89,12 @@ test.describe("T279 — varredura da página inteira nas telas logadas (390 e 12
           for (const classe of Object.keys(CLASSES) as Classe[]) {
             await test.step(`${classe} @${tam.nome}`, async () => {
               for (const a of achados[classe]) console.log(`VARREDURA|${classe}|${tam.nome}|${t.papel}|${rota.replace(/[0-9a-f-]{36}/g, ":id")}|${a}`);
-              expect.soft(achados[classe], `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
+              const novos = achados[classe].filter((x) => {
+                const c = conhecido(rota, classe, x);
+                if (c) test.info().annotations.push({ type: c.l, description: `${t.nome} @${tam.nome} (${classe}): ${x}` });
+                return !c;
+              });
+              expect.soft(novos, `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
             });
           }
         } finally {
