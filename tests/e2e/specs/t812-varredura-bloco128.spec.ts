@@ -108,7 +108,12 @@ test.describe("T812 — varredura da página inteira, bloco 128 (4ª volta: iní
             });
           }
           await page.screenshot({ path: `${SAIDA}/${slug(`${t.papel}-${t.nome}`)}-${tam.width}.png`, fullPage: true }).catch(() => {});
-          const consoleErros = erros.lista();
+          // Prefetch de cartão apagado por outra spec: o Next pré-busca os links dos cartões; se outra spec do laboratório
+          // apaga aquele anúncio no meio da rodada, a pré-busca dá 404 no console (run 41253470142, home a 1280, passou na
+          // repetição). Não é defeito da tela: fica anotado. Qualquer outro erro de console segue derrubando.
+          const preBuscaApagada = (a: string) => /Failed to load resource: .*status of 404.* http:\/\/[^ ]+\/imoveis\/[0-9a-f-]{36}$/.test(a) && !rota.startsWith("/imoveis/");
+          for (const a of erros.lista().filter(preBuscaApagada)) test.info().annotations.push({ type: "pre-busca-apagada", description: `${rotulo} @${tam.nome}: ${a}` });
+          const consoleErros = erros.lista().filter((a) => !preBuscaApagada(a));
           await test.step(`console @${tam.nome}`, async () => {
             for (const a of consoleErros) console.log(`VARREDURA|console|${tam.nome}|${t.papel}|${rotulo}|${a}`);
             expect.soft(consoleErros, `${t.papel} — ${t.nome} @${tam.nome} — console: erro de console ou de página`).toEqual([]);
