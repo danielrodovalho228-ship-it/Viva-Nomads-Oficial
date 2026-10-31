@@ -200,9 +200,10 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
 
       <fieldset>
         <legend className="text-sm font-medium text-ink">Categorias</legend>
-        <div className="mt-1 grid grid-cols-2 gap-2">
+        {/* Grade par (31/10): com número ímpar de categorias, a última ocupa a linha inteira em vez de ficar sozinha. */}
+        <div className="mt-1 grid grid-cols-2 gap-2" data-testid="sp-categorias">
           {CATEGORIAS_CATALOGO.map((k) => (
-            <label key={k.valor} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-3 text-sm text-ink">
+            <label key={k.valor} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-3 text-sm text-ink odd:last:col-span-2">
               <input
                 type="checkbox"
                 checked={temCategoria(k.valor)}
