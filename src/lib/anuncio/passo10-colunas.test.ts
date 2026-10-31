@@ -149,3 +149,10 @@ test("E251 (b): cada grupo feito da lista de conferência tem 'Editar' que volta
   assert.match(revisar, /\{i\.ok && \(\s*<button[\s\S]*?onClick=\{\(\) => p\.irPara\(ETAPA\[i\.id\]\)\}[\s\S]*?data-testid=\{`conferencia-editar-\$\{i\.id\}`\}/);
   assert.match(revisar, /data-testid=\{`conferencia-resolver-\$\{i\.id\}`\}/);
 });
+
+test("varredura 31/10: o motivo do Publicar travado aparece inteiro (quebra a linha, não corta com reticências)", () => {
+  const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
+  const botao = revisar.match(/<button[^>]*data-testid="publicar-motivo"/)![0];
+  assert.doesNotMatch(botao, /\btruncate\b|line-clamp/);
+  assert.match(botao, /text-balance/);
+});

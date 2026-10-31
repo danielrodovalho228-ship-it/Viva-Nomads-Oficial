@@ -292,11 +292,15 @@ export function EtapaRevisar(p: {
   );
 }
 
-/** O motivo do "Publicar anúncio" travado, em UMA linha; tocar desce até a lista de conferência. */
+/**
+ * O motivo do "Publicar anúncio" travado, numa frase só; tocar desce até a lista de conferência. Varredura 31/10: com
+ * `truncate`, "… e o aceite do termo da IA" virava "… e o aceite do t…" (1280 e 390) e o motivo sumia; a frase quebra
+ * a linha (equilibrada) em vez de cortar.
+ */
 function MotivoTravado({ motivo, onMotivo }: { motivo: string | null; onMotivo: () => void }) {
   if (!motivo) return null;
   return (
-    <button type="button" onClick={onMotivo} className="block w-full truncate text-center text-sm font-medium text-red-700 underline-offset-2 hover:underline" title={motivo} data-testid="publicar-motivo">
+    <button type="button" onClick={onMotivo} className="block w-full text-balance text-center text-sm font-medium text-red-700 underline-offset-2 hover:underline" data-testid="publicar-motivo">
       {motivo}
     </button>
   );
