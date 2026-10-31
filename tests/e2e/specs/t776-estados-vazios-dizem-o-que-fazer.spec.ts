@@ -2,13 +2,17 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T776 — estados vazios que dizem o que fazer (Pista B, 31/10): #1695 (Início do proprietário, "Atividade recente"),
-  #1696 (conferência sem itens) e #1697 (ocupantes sem ninguém). Pista C, bloco 103. Pelas telas de verdade, a 1280 e
-  a 390 px, com um proprietário novo e uma moradora num contrato assinado para 2 ocupantes, bloco começando hoje:
-   A. Início do proprietário: no lugar de "Sem atividade recente ainda.", a frase leva às Notificações;
+  T776 — estados vazios que dizem o que fazer (Pista B, 31/10): #1696 (conferência sem itens) e #1697 (ocupantes sem
+  ninguém). Pista C, bloco 103. Pelas telas de verdade, a 1280 e a 390 px, com um proprietário novo e uma moradora num
+  contrato assinado para 2 ocupantes, bloco começando hoje:
    B. conferência de entrada sem cômodo, pelo proprietário (a vez dele): diz o que registrar e onde, no lugar de
       "Nenhum item registrado ainda.";
    C. ocupantes sem ninguém: a moradora lê o que preencher ("até 2 pessoas") e o proprietário lê o que vai aparecer.
+  Fora daqui o #1695 ("Atividade recente" do Início do proprietário): o ramo que ele mudou (PainelDoDono fora da
+  demonstração) não aparece para ninguém — no modo dono o Início é o InicioDono (inicioDono é sempre montado em
+  dashboard/page.tsx, sem "Atividade recente"); fora dele, o Início é só do morador; o layout combinado só sai na
+  demonstração, que mostra as atividades de exemplo. Três rodadas do lab-crítico (41224025586, 41224759932,
+  41225500907) com um dono com anúncio publicado não mostraram o bloco. Fica como observação ao Muse, não como spec.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -23,7 +27,7 @@ async function abrir(browser: Browser, email: string, caminho: string, largura: 
   return p;
 }
 
-test.describe("T776 — estados vazios do painel dizem o que fazer (#1695, #1696, #1697)", () => {
+test.describe("T776 — estados vazios do painel dizem o que fazer (#1696, #1697)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
 
@@ -34,8 +38,6 @@ test.describe("T776 — estados vazios do painel dizem o que fazer (#1695, #1696
     await adm().from("profiles").update({ intencao: ["anunciar"] }).eq("id", ids.dono);
     await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", ids.morador);
     ids.imovel = await criarImovelPronto(ids.dono, `Casa vazia T776 ${sufixo}`, { ativo: true });
-    // Um anúncio publicado sem contrato: o bloco do dono no Início (com a "Atividade recente") só aparece com anúncio no ar.
-    ids.publicado = await criarImovelPronto(ids.dono, `Studio no ar T776 ${sufixo}`, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     const agora = new Date().toISOString();
     const { data, error } = await adm()
@@ -66,16 +68,6 @@ test.describe("T776 — estados vazios do painel dizem o que fazer (#1695, #1696
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`A. ${largura} px: Início do proprietário leva às Notificações (#1695)`, async ({ browser }) => {
-      const p = await abrir(browser, dono.email, "/dashboard", largura);
-      const vazio = p.getByTestId("atividade-recente-vazia");
-      await expect(vazio).toBeVisible({ timeout: 30_000 });
-      await expect(vazio).toHaveText("As novidades dos seus imóveis (interessados, propostas, visitas e avisos) chegam em Notificações.");
-      await expect(vazio.getByRole("link", { name: "Notificações" })).toHaveAttribute("href", "/dashboard/notificacoes");
-      await expect(p.getByText("Sem atividade recente ainda.")).toHaveCount(0);
-      await p.context().close();
-    });
-
     test(`B. ${largura} px: conferência de entrada sem cômodo diz o que registrar (#1696)`, async ({ browser }) => {
       const p = await abrir(browser, dono.email, `/dashboard/contratos/${ids.contrato}`, largura);
       const vazio = p.getByTestId("conferencia-entrada-vazia");
