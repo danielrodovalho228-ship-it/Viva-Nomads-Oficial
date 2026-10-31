@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
   T767 — L-60 (#1673, Pista B): na /buscar com um destino, o imóvel sem ponto no mapa fica SEM a linha de distância. O
   defeito era o (0, 0) que o mapeamento da busca põe no lugar da coordenada nula virar "≈ 5.640,0 km em linha reta até
   …" (a t261 anotava L-60 nos imóveis da massa). Pista C, bloco 99. Pela tela de verdade, a 1280 e a 390 px, como
-  visitante, com um destino em Uberlândia passado na URL (dlat/dlng/drot):
+  visitante, com um destino em Uberlândia passado na URL (dlat/dlng/drot e modo=carro):
    - nenhum cartão diz 1.000 km ou mais (todo imóvel do laboratório está em Minas);
    - o imóvel semeado com ponto, perto do destino, tem a linha de distância; o semeado sem ponto (lat/lng nulos),
      quando aparece na página, não tem linha nenhuma.
@@ -14,7 +14,8 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const DESTINO = { lat: -18.919, lng: -48.277, rotulo: `Rua T767 ${sufixo}` };
 const ids: { dono?: string; comPonto?: string; semPonto?: string } = {};
-const url = `/buscar?dlat=${DESTINO.lat}&dlng=${DESTINO.lng}&drot=${encodeURIComponent(DESTINO.rotulo)}`;
+// Com o modo (como a t261 e as varreduras): sem ele a busca não desenha a linha de tempo/distância nos cartões.
+const url = `/buscar?dlat=${DESTINO.lat}&dlng=${DESTINO.lng}&drot=${encodeURIComponent(DESTINO.rotulo)}&modo=carro`;
 
 test.describe("T767 — L-60: imóvel sem ponto não ganha distância de milhares de km", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
