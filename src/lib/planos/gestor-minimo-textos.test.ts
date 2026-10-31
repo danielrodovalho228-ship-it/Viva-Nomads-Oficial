@@ -44,6 +44,19 @@ test("VARREDURA: nenhuma frase liga 'Gestor' a um número fixo de imóveis (falh
   assert.deepEqual(achados, []);
 });
 
+test("VARREDURA public/: as páginas estáticas não ligam 'Gestor' a um número fixo nem chamam a faixa 31+ de Plano Gestor", () => {
+  // HTML estático não lê a constante: o Gestor não pode vir com número escrito à mão, e a faixa sem teto da taxa é
+  // "taxa negociável" (E252-B). Achado da varredura do E236: /apresentacao dizia "31+ imóveis (Plano Gestor)".
+  const achados: string[] = [];
+  for (const f of readdirSync(new URL("public/", RAIZ)).filter((n) => /\.html?$/.test(n)).map((n) => `public/${n}`)) {
+    for (const fr of ler(f).split(/(?<=[.;])\s+|\n/)) {
+      if (/Gestor/.test(fr) && (NUMERO_FIXO.test(fr) || /\b31\b/.test(fr))) achados.push(`${f}: ${fr.trim().slice(0, 140)}`);
+    }
+  }
+  assert.deepEqual(achados, []);
+  assert.match(ler("public/apresentacao.html"), /<span>31\+ imóveis · taxa negociável<\/span>/);
+});
+
 test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => {
   for (const f of [
     "src/app/(public)/parceiros/page.tsx",
