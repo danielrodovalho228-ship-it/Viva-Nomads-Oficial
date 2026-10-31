@@ -46,20 +46,25 @@ test.describe("T779 — estados vazios: carteira, agenda do parceiro, avaliaçã
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     const agora = new Date();
     const dia = (d: Date) => d.toISOString().slice(0, 10);
-    // Em vigência (F27): as duas assinaturas, bloco ativo e 1º aluguel confirmado. Termina daqui a 120 dias (prazo máximo 180): fora das faixas de até 90.
+    // Em vigência (F27): as duas assinaturas, bloco ativo e 1º aluguel confirmado. Termina daqui a 120 dias, fora das
+    // faixas de até 90: dois blocos de 2 meses (prazo máximo 180 dias, bloco de 1 a 3 meses e até 90 dias); a carteira
+    // lê o fim do último bloco (periodoDosBlocos).
     const { data: ct, error } = await adm()
       .from("contratos")
-      .insert({ property_id: ids.imovel, tenant_id: ids.morador, lead_id: ids.lead, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200, tamanho_bloco_meses: 4, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao", assinado_proprietario_em: agora.toISOString(), assinado_inquilino_em: agora.toISOString() })
+      .insert({ property_id: ids.imovel, tenant_id: ids.morador, lead_id: ids.lead, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200, tamanho_bloco_meses: 2, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao", assinado_proprietario_em: agora.toISOString(), assinado_inquilino_em: agora.toISOString() })
       .select("id")
       .single();
     if (error) throw error;
     ids.contrato = ct.id as string;
+    const emDias = (n: number) => dia(new Date(agora.getTime() + n * 86_400_000));
     const { data: bloco, error: eb } = await adm()
       .from("contrato_blocos")
-      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(agora), fim: dia(new Date(agora.getTime() + 120 * 86_400_000)), meses: 4, valor: 12800, caucao: 3200, status: "ativo" })
+      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: emDias(0), fim: emDias(60), meses: 2, valor: 6400, caucao: 3200, status: "ativo" })
       .select("id")
       .single();
     if (eb) throw eb;
+    const { error: eb2 } = await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 2, inicio: emDias(61), fim: emDias(120), meses: 2, valor: 6400, caucao: 0, status: "agendado" });
+    if (eb2) throw eb2;
     const { error: ep } = await adm().from("pagamentos_bloco").insert({ bloco_id: bloco.id, contrato_id: ids.contrato, tipo: "aluguel", valor: 3200, data_pagamento: dia(agora), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: agora.toISOString() });
     if (ep) throw ep;
     const { data: so, error: eo } = await adm()
