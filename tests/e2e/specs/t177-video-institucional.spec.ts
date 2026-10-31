@@ -25,7 +25,13 @@ for (const rota of ["/", "/como-funciona"]) {
       await expect(video).toHaveAttribute("preload", "none");
       await expect(video).toHaveAttribute("poster", "/media/institucional-poster.webp");
       await expect(video).toHaveAttribute("aria-label", /Vídeo institucional/);
-      await expect(video).toHaveAttribute("controls", "");
+      // E295: antes do play, a capa (quadro do meio do vídeo) com o play verde e a duração; os controles nativos só
+      // depois do toque.
+      const play = secao.getByTestId("video-institucional-play");
+      await expect(play).toBeVisible();
+      await expect(play).toHaveAccessibleName(/Assistir ao vídeo/);
+      await expect(secao.getByTestId("video-institucional-duracao")).toHaveText(/^\d:\d\d$/);
+      await expect(video).not.toHaveAttribute("controls", /.*/);
       await expect(video).not.toHaveAttribute("autoplay", /.*/);
       const track = video.locator("track");
       await expect(track).toHaveAttribute("kind", "captions");
@@ -53,9 +59,11 @@ for (const rota of ["/", "/como-funciona"]) {
       // promessa pode não resolver); o que importa aqui é o pedido do mp4 só depois do play.
       await video.evaluate((v: HTMLVideoElement) => {
         v.muted = true;
-        void v.play().catch(() => undefined);
       });
+      await play.click();
       await expect.poll(() => mp4.length, { timeout: 15_000 }).toBeGreaterThan(0);
+      await expect(play).toHaveCount(0);
+      await expect(video).toHaveAttribute("controls", "");
       // A legenda carrega de verdade (cues válidas): o navegador analisou o WebVTT.
       await video.evaluate((v: HTMLVideoElement) => {
         if (v.textTracks[0]) v.textTracks[0].mode = "showing";
