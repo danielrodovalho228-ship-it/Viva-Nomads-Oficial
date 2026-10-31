@@ -507,7 +507,11 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
 
         <p className="mt-6 text-sm font-medium text-ink">Bloqueios (férias, datas sem atender)</p>
         <ul className="mt-2 space-y-1 text-sm">
-          {bloqueios.length === 0 && <li className="text-muted">Nenhum bloqueio.</li>}
+          {bloqueios.length === 0 && (
+            <li className="text-muted" data-testid="parceiro-bloqueios-vazio">
+              Nenhum bloqueio. Bloqueie abaixo as datas em que você não atende (férias, por exemplo): nelas, nenhum pedido aceita horário.
+            </li>
+          )}
           {bloqueios.map((b) => (
             <li key={b.id} className="flex items-center justify-between gap-2">
               <span>
