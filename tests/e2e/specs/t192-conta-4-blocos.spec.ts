@@ -87,30 +87,17 @@ test.describe("T192 — simulador tributário só em Ferramentas", () => {
   test.use({ storageState: authFile("proprietario") });
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px — Ferramentas › Tributação PF × PJ com outros rendimentos e custo da empresa; cadastro sem simulador`, async ({ page, browser }) => {
+    test(`${largura}px — E292-bis: sem Tributação PF × PJ (redirect a Ferramentas); cadastro sem simulador`, async ({ page, browser }) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/dashboard/ferramentas", { waitUntil: "domcontentloaded" });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      // O cartão da página (o menu lateral também aponta para cá desde o Prompt 42 e fica escondido a 390 px).
-      const cartao = page.locator('main a[href="/dashboard/tributacao"]');
-      await expect(cartao.first()).toBeVisible();
+      // E292-bis: o simulador PF × PJ saiu (a Viva não calcula imposto com regra própria): nenhum cartão nem link no
+      // hub, e o endereço antigo leva a Ferramentas.
+      await expect(page.locator('main a[href="/dashboard/tributacao"]')).toHaveCount(0);
       await expect(page.locator('a[href="/tributario"]')).toHaveCount(0);
-      await cartao.first().click();
-      await expect(page).toHaveURL(/\/dashboard\/tributacao$/);
-      const ferramenta = page.getByTestId("ferramenta-tributacao");
-      await expect(ferramenta.getByText("Simulador tributário PF × PJ")).toBeVisible();
-      await expect(ferramenta.getByTestId("tax-outros-rendimentos")).toBeVisible();
-      const corpo = await ferramenta.innerText();
-      expect(corpo).not.toMatch(/Lucro presumido \+ IBS\/CBS|ago\/2026/);
-      // E292: começa vazio (sem número da Viva); o resultado só aparece com a receita digitada pelo dono.
-      await expect(ferramenta.getByTestId("tax-sem-receita")).toBeVisible();
-      await expect(ferramenta.getByTestId("tax-resultado")).toHaveCount(0);
-      await ferramenta.getByTestId("tax-receita").fill("10000");
-      await ferramenta.getByTestId("tax-custo-empresa").fill("3600");
-      await expect(ferramenta.getByTestId("tax-resultado")).toContainText("custo de manter a empresa que você informou");
-      await expect(ferramenta.getByTestId("tax-resultado")).toContainText("3.600");
-      // Aviso de IBS/CBS segue desligado até a revisão.
-      await expect(ferramenta.getByTestId("tax-aviso-ibs-cbs")).toHaveCount(0);
+      expect(await page.locator("main").innerText()).not.toMatch(/PF × PJ|Simulador tributário/);
+      await page.goto("/dashboard/tributacao", { waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(/\/dashboard\/ferramentas$/);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t192-tributacao-${largura}.png`, fullPage: true });
 
