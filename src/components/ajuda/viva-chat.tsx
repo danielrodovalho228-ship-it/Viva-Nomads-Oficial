@@ -151,11 +151,11 @@ export function VivaChatFlutuante() {
         "vn-viva-flut web-only fixed z-40 flex flex-col gap-3 print:hidden",
         pos?.lado === "esq" ? "items-start" : "items-end",
         !visivel && "max-md:hidden",
-        // E246 (varredura do dono, 29/10): no painel do CELULAR não há faixa livre para o botão (no computador a coluna
-        // reserva a da direita — CONTA-A C4), e ele sentava sobre a caixa "Taxa de serviço" (Contratos) e a foto do
-        // "Continue seu anúncio" (Início). Como no E95 (/buscar) e no E60 (Perfil), ali ele some; o "Fale com a Viva"
-        // continua em Conta › Ajuda.
-        painel && "max-md:hidden"
+        // E246 (varredura do dono, 29/10; vigia, 31/10): no CELULAR (< 768 px) não há faixa livre para um botão fixo —
+        // ao rolar ele sempre senta sobre algum texto ou cartão (a "Taxa de serviço" em Contratos, a foto do "Continue
+        // seu anúncio", as listas das páginas públicas). Ali ele some em TODAS as telas; o "Fale com a Viva" continua no
+        // menu ☰ do topo público e em Conta › Ajuda no painel. Do tablet para cima, nada muda.
+        "max-md:hidden"
       )}
       style={estilo}
       data-posicao={arrastando ? "arrastando" : pos ? pos.lado : "padrao"}

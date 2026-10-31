@@ -72,7 +72,11 @@ test("t182: o botão flutuante some em Mensagens (tampava o 'Enviar' da conversa
   assert.doesNotMatch(linha, /"\/dashboard"[,\]]/);
 });
 
-test("E246: no painel do celular (< 768 px) o botão flutuante some (sentava sobre a 'Taxa de serviço' e a capa do Início); no computador fica na faixa reservada", () => {
+test("E246: no celular (< 768 px) o botão flutuante some em TODAS as telas (sentava sobre texto e cartões ao rolar); do tablet para cima continua", () => {
   const fonte = readFileSync(new URL("./viva-chat.tsx", import.meta.url), "utf8");
-  assert.match(fonte, /painel && "max-md:hidden"/);
+  // Incondicional no contêiner do botão (não depende de rota nem de foco).
+  assert.match(fonte, /\n\s+"max-md:hidden"\n\s+\)\}\n\s+style=\{estilo\}/);
+  assert.doesNotMatch(fonte, /painel && "max-md:hidden"/);
+  // O caminho no celular existe: o "Fale com a Viva" do menu do topo público.
+  assert.match(readFileSync(new URL("../layout/navbar.tsx", import.meta.url), "utf8"), /FALE_COM_A_VIVA\.href/);
 });
