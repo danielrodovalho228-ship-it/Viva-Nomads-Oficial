@@ -206,6 +206,10 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByTestId("fotos-adicionar").click()]);
       await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura) })));
       await expect(page.getByTestId("etapa-fotos")).toContainText("7 / 8 fotos", { timeout: 60_000 });
+      // A contagem soma as fotos ainda em envio (E259): o "7 / 8" aparece antes de o lote terminar. Soltar a 8ª nesse meio
+      // dispara um segundo envio sobre a lista antiga e as fotos de um dos dois se perdem (L-83, t786). Espera as 7 na
+      // galeria antes de soltar a 8ª (o que a t204 prova é soltar, não soltar durante o envio).
+      await expect(page.getByTestId("fotos-galeria").locator('[data-testid="foto-principal"], [data-testid="foto-miniatura"]')).toHaveCount(7, { timeout: 60_000 });
       // Arrastar e soltar um arquivo na galeria.
       const png8 = pngDeTeste(8 + 20 * largura).toString("base64");
       await page.getByTestId("fotos-galeria").evaluate((alvo, b64) => {
