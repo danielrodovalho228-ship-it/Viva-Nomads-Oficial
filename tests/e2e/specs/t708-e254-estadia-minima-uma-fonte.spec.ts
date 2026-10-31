@@ -17,6 +17,8 @@ import { prepararRascunho, reais } from "../fixtures/rascunho-cadastro";
    4. (L-77, corrigida no #1606) o "Ver no tamanho real" do Passo 10 ("assim o morador vê") deveria mostrar no cartão o
       mesmo "R$ 13.900 em 4 meses" + a conta da página pública; hoje o PriceCard da prévia é chamado sem `meses` (= 1) e
       a linha não aparece.
+  Reconferência pedida pelo Muse (31/10, QA ao vivo de 29/10): o cartão de Meus anúncios mostra a "Estadia mínima" —
+  quando o mínimo passa de 1 mês (com 30 dias, por desenho, só o valor mensal) — rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

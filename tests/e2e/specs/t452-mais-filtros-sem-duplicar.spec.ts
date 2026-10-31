@@ -8,6 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
  *  2. Nenhuma opção de filtro se perdeu: preço, tipo e nível seguem nas pílulas, com a contagem.
  *  3. "Limpar tudo" é um BOTÃO de contorno, ao lado do "Mostrar N imóveis", e zera o rascunho.
  *  Em 390 e 1280 px, com prints.
+ *  Reconferência pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual (capturas locais em docs/capturas/e105).
  */
 const SAIDA = "tests/laboratorio/saida";
 const FORA_DA_FOLHA = ["Preço por mês", "Tipo de imóvel", "Nível a partir de", "Entrada em"];
