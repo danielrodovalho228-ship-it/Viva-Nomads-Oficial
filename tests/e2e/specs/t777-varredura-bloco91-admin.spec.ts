@@ -7,7 +7,7 @@ import { TAMANHOS, lerMassa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T756 — VARREDURA DA PÁGINA INTEIRA, BLOCO 91, parte do ADMIN (Pista C, 31/10). O protocolo do bloco 21 (t385): seis
+  T777 — VARREDURA DA PÁGINA INTEIRA, BLOCO 91, parte do ADMIN (Pista C, 31/10). O protocolo do bloco 21 (t385): seis
   classes (imagem pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400. As telas do ADMIN que o ciclo (blocos 72–90)
   ainda não varreu — as com id na URL e a de refazer as duas etapas —, com a sessão de admin do laboratório:
@@ -55,7 +55,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return (await browser.newContext()).newPage();
 }
 
-test.describe("T756 — varredura da página inteira, bloco 91 (admin: chamado, contrato, pedido de parceiro, refazer duas etapas) (390 e 1280 px)", () => {
+test.describe("T777 — varredura da página inteira, bloco 91 (admin: chamado, contrato, pedido de parceiro, refazer duas etapas) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeEach(({}, info) => {
