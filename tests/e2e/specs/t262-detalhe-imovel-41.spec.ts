@@ -170,7 +170,7 @@ for (const largura of LARGURAS) {
     test("UM primário 'Solicitar' (a candidatura de sempre) e 'Agendar visita' em texto terciário, sem travar", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       await expect(page.locator(largura === 390 ? '[data-testid="barra-solicitar"]' : '[data-testid="cartao-solicitar"]')).toBeVisible();
-      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual(["Solicitar"]);
+      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual(["Pedir para morar"]);
       const escopo = largura === 390 ? page.getByTestId("barra-fixa-imovel") : page.locator("#cartao-preco");
       const visita = largura === 390 ? escopo.getByTestId("barra-agendar-visita") : escopo.getByTestId("agendar-visita");
       await expect(visita).toHaveText(/Agendar visita/);
@@ -184,7 +184,7 @@ for (const largura of LARGURAS) {
       await page.getByTestId("visita-presencial-passo").click({ position: { x: 5, y: 5 } });
       await expect(page.getByTestId("visita-presencial-passo")).toHaveCount(0);
       // "Solicitar" abre o MESMO fluxo de candidatura (passo de revisão; o envio final é "Enviar candidatura").
-      await escopo.getByRole("button", { name: "Solicitar", exact: true }).click();
+      await escopo.getByRole("button", { name: "Pedir para morar", exact: true }).click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
       await expect(passo.getByTestId("solicitacao-demo")).toBeVisible(); // ube-001 é exemplo: nada é enviado

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
+import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
 import { useAuthStore } from "@/lib/store";
@@ -405,7 +406,7 @@ export function PropertyDetail({
           {EXEMPLO_AVISO_DEMO}
         </p>
       )}
-      {/* UM primário por tela (Prompt 41): "Solicitar" é a candidatura de sempre (só o rótulo mudou). No celular e
+      {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
         variant="primary"
@@ -416,8 +417,14 @@ export function PropertyDetail({
         data-testid="cartao-solicitar"
       >
         {!testeVisitante && <FileSignature className="h-4 w-4" />}
-        {testeVisitante ? FAIXA_TESTE_VISITANTE : pending === "candidatura" ? "Enviando..." : "Solicitar"}
+        {testeVisitante ? FAIXA_TESTE_VISITANTE : pending === "candidatura" ? "Enviando..." : ROTULO_CTA_IMOVEL}
       </Button>
+      {/* IMÓVEL-CTA (adendo de 24/10): a frase de tranquilidade, em texto pequeno, logo sob o botão. */}
+      {!testeVisitante && (
+        <p className="hidden text-center text-xs leading-snug text-muted lg:block" data-testid="cta-frase">
+          {FRASE_CTA_IMOVEL}
+        </p>
+      )}
       {/* A visita é opção, nunca trava a solicitação: texto terciário. */}
       <VisitaPresencial
         propertyId={property.id}

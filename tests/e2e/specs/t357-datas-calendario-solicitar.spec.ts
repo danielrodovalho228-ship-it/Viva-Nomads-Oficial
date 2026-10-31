@@ -52,7 +52,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       await card.getByTestId("candidatura-pessoas").selectOption("2");
 
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Solicitar", exact: true }).click();
+      await gatilho.getByRole("button", { name: "Pedir para morar", exact: true }).click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();
       await expect(passo.getByTestId("solicitacao-inicio")).toHaveValue(dataBR(entrada));

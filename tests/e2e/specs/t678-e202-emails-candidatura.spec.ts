@@ -98,7 +98,7 @@ test.describe("T678 — E202: os e-mails da candidatura trazem o imóvel, as dat
     const card = page.locator("#cartao-preco");
     const passo = page.getByTestId("solicitacao-passo");
     await expect(async () => {
-      await card.getByRole("button", { name: "Solicitar", exact: true }).click();
+      await card.getByRole("button", { name: "Pedir para morar", exact: true }).click();
       await expect(passo).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
     await expect(passo.getByTestId("solicitacao-saida")).toHaveValue(br(periodo.saida!));

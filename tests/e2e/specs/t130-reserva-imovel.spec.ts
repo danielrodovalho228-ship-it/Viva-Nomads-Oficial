@@ -13,7 +13,7 @@ test.describe("T130 — Reserva no imóvel", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
     const card = page.locator("#cartao-preco");
-    await expect(card.getByRole("button", { name: "Solicitar", exact: true })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Pedir para morar", exact: true })).toBeVisible();
     await expect(card.getByRole("button", { name: "Enviar mensagem" })).toBeVisible();
     await expect(card.getByRole("link", { name: /WhatsApp|Falar com a Viva/ })).toBeVisible();
     await expect(card.getByTestId("taxas-itemizadas").locator('[data-taxa="caucao"]')).toContainText("devolvida no fim");
@@ -40,7 +40,7 @@ test.describe("T130 — Reserva no imóvel", () => {
       if (ehGravacaoDeLead(r.method(), r.postData(), ["Posso entrar em dezembro?"])) gravacoes.push(r.url());
     });
     const card = page.locator("#cartao-preco");
-    await card.getByRole("button", { name: "Solicitar", exact: true }).click();
+    await card.getByRole("button", { name: "Pedir para morar", exact: true }).click();
     await expect(page.getByTestId("solicitacao-demo")).toBeVisible();
     await page.getByRole("dialog").getByRole("button", { name: "Entendi" }).click();
     await card.getByRole("button", { name: "Enviar mensagem" }).click();
@@ -65,7 +65,7 @@ test.describe("T130 — Reserva no imóvel", () => {
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
     const barra = page.getByTestId("barra-fixa-imovel");
     await expect(barra).toBeVisible();
-    await expect(barra.getByRole("button", { name: "Solicitar", exact: true })).toBeVisible();
+    await expect(barra.getByRole("button", { name: "Pedir para morar", exact: true })).toBeVisible();
     await expect(barra.getByRole("button", { name: "Agendar visita" })).toBeVisible();
     const card = page.locator("#cartao-preco");
     await expect(card.getByRole("button", { name: "Enviar mensagem" })).toBeAttached();
@@ -75,7 +75,7 @@ test.describe("T130 — Reserva no imóvel", () => {
     expect(c!.x).toBeGreaterThanOrEqual(0);
     expect(c!.x + c!.width).toBeLessThanOrEqual(391);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await barra.getByRole("button", { name: "Solicitar", exact: true }).click();
+    await barra.getByRole("button", { name: "Pedir para morar", exact: true }).click();
     await expect(page.getByTestId("solicitacao-demo")).toBeVisible();
   });
 });
