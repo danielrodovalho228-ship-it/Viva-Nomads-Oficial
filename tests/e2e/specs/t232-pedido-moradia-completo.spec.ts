@@ -216,7 +216,7 @@ test.describe("T232 — pedido de moradia completo", () => {
     expect(linha!.status).toBe("excluido");
     expect(linha!.excluido_em).toBeTruthy();
     await expect
-      .poll(async () => (await lerSaida()).slice(antes).some((l) => l.para === dono.email && /foi encerrado/.test(String(l.assunto))), { timeout: 20_000 })
+      .poll(async () => (await lerSaida()).slice(antes).some((l) => l.para === dono.email && /^Pedido de moradia em Uberlândia encerrado/.test(String(l.assunto))), { timeout: 20_000 })
       .toBe(true);
 
     const d = proprietario;
