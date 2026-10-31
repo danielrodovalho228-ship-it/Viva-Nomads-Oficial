@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import type { OcupanteView } from "@/lib/data/estadia";
 import { adicionarOcupante, removerOcupante } from "@/lib/data/estadia-actions";
-import { podeAdicionarOcupante, textoTetoOcupantes } from "@/lib/estadia/ocupantes";
+import { podeAdicionarOcupante, textoOcupantesVazio, textoTetoOcupantes } from "@/lib/estadia/ocupantes";
 import { ListaPortaria } from "../estadia-tela";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
@@ -54,7 +54,7 @@ export function OcupantesTela({
     <>
       <Panel title={`Ocupantes (${ocupantes.length} de ${previstos})`} data-testid="ocupantes-lista">
         {ocupantes.length === 0 ? (
-          <p className="text-sm text-muted">Nenhum ocupante preenchido ainda.</p>
+          <p className="text-sm text-muted" data-testid="ocupantes-vazio">{textoOcupantesVazio({ podeEditar, previstos })}</p>
         ) : (
           <ul className="divide-y divide-line">
             {ocupantes.map((o) => (
