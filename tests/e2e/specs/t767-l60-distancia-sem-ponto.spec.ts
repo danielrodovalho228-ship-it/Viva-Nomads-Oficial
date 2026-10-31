@@ -38,6 +38,8 @@ test.describe("T767 — L-60: imóvel sem ponto não ganha distância de milhare
       const page = await ctx.newPage();
       await page.goto(url, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("card-resultado").first()).toBeVisible({ timeout: 30_000 });
+      // O destino da URL entra no estado depois da hidratação: espera a 1ª linha antes de ler os cartões (como a t261).
+      await expect(page.getByTestId("tempo-cartao").first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByTestId("tempo-cartao").filter({ hasText: "calculando…" })).toHaveCount(0, { timeout: 20_000 });
       const linhas = await page.getByTestId("card-resultado").evaluateAll((els) =>
         els.map((el) => [el.getAttribute("data-id") ?? "", el.querySelector('[data-testid="tempo-cartao"]')?.textContent?.trim() ?? ""] as [string, string]),
