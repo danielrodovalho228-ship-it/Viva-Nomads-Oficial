@@ -343,7 +343,9 @@ function Macros({ macros }: { macros: Macro[] }) {
       </Panel>
       <Panel title="Respostas prontas">
         {macros.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma ainda.</p>
+          <p className="text-sm text-muted" data-testid="respostas-prontas-vazio">
+            Nenhuma resposta pronta ainda. Salve uma no formulário acima: ela aparece em &quot;Resposta pronta&quot;, no Responder de cada chamado, com {"{nome}"} trocado pelo primeiro nome da pessoa.
+          </p>
         ) : (
           <ul className="divide-y divide-line">
             {macros.map((m) => (
