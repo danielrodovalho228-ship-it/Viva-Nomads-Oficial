@@ -5,17 +5,18 @@ import { FOTO_TESTE, abrirCadastroNovo, noPasso } from "../fixtures/cadastro";
 /*
   T714 — E268-B (#1607): quem vira dono pelo anúncio recebe o boas-vindas de DONO. O 1º rascunho de anúncio
   (saveDraftData novo) passa pelo mesmo caminho da tela de intenção (intencao-servidor.ts): grava "anunciar" na
-  intenção e, SÓ no primeiro acesso da conta (intenção e papel ativo ainda vazios), o papel inicial e UM boas-vindas.
+  intenção e, quando essa intenção estava VAZIA (regra do E283-B, relay nº 20, #1630), UM boas-vindas de dono — mesmo
+  com papel ativo já gravado pelo uso; uma vez por conta (chave boas_vindas:<conta>).
   A t186 já cobre a conta de DONO zerada (1280) e a de dono que já tinha "morar" (390); aqui, a conta de MORADOR:
     A. conta de morador que nunca respondeu a tela de intenção abre "Anunciar" (/dashboard/imoveis/novo): abrir a
        tela não manda nada; o 1º rascunho (uma foto no Passo 2) manda UM boas-vindas de dono, com o corpo que nomeia
        a pessoa e diz o que vem (Qualificação → Cadastro → Publicar, "Anunciar meu imóvel"); a intenção vira
        ["anunciar"], o papel ativo vira proprietário e o modo, owner — o role de cadastro não muda (nunca role).
        O 2º rascunho (um anúncio novo de verdade, não o vazio reaproveitado) não manda outro.
-    B. conta que já era dona (papel ativo proprietário, intenção nunca respondida): o 1º rascunho só grava "anunciar";
-       nenhum boas-vindas.
-    C. moradora que já respondeu "Quero morar" (390): ganha "anunciar" na intenção, sem boas-vindas (não é o 1º acesso,
-       mesmo sem a chave de envio gravada).
+    B. conta que já era dona (papel ativo proprietário, intenção nunca respondida): pelo relay nº 20, a intenção vazia
+       que vira "anunciar" manda UM boas-vindas de dono (antes do E283-B, nenhum); o papel e o modo seguem de dono.
+    C. moradora que já respondeu "Quero morar" (390): ganha "anunciar" na intenção, sem boas-vindas (a intenção não
+       estava vazia, mesmo sem a chave de envio gravada).
   Contas do laboratório marcadas como de teste: o e-mail cai em emails_teste (o texto do e-mail), lido aqui.
 */
 const senha = novaSenha();
@@ -64,11 +65,8 @@ test.describe("T714 — E268-B: boas-vindas de dono para quem vira dono pelo an�
   });
 
   test("A. morador sem intenção: o 1º rascunho manda UM boas-vindas de dono (corpo com o nome e os passos); o 2º não repete", async ({ browser }) => {
-    // L-78 (Pista C, 30/10) — correção PARCIAL no E283 (#1622): o SincronizarPapel já não grava papel_ativo na abertura,
-    // mas a guarda de área do dashboard-shell (dashboard-shell.tsx:196/219/270 → salvarModo → setPreferredMode, em
-    // mode-actions.ts) ainda grava `papel_ativo` junto com o modo; o gravarIntencao não vê o 1º acesso. Fonte: lab-crítico
-    // 41114986558 (main com o E283): intenção gravada, 0 boas-vindas.
-    test.fail(true, "L-78 (parcial após E283): a guarda de área grava papel_ativo via setPreferredMode e o boas-vindas de dono não sai");
+    // L-78 (Pista C, 30/10) corrigida pelo E283-B (#1630, relay nº 20): o boas-vindas sai pela intenção nova, não pelo
+    // "primeiro acesso" que a guarda de área (setPreferredMode) desfazia ao gravar o papel.
     const c = await conta("morador", "Tainá Morador Sobrenome", "tenant", {});
     const page = await entrar(browser, c.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -106,16 +104,16 @@ test.describe("T714 — E268-B: boas-vindas de dono para quem vira dono pelo an�
     await page.context().close();
   });
 
-  test("B. conta que já era dona (papel proprietário, intenção nunca respondida): só grava 'anunciar', sem boas-vindas", async ({ browser }) => {
+  test("B. conta que já era dona (papel proprietário, intenção nunca respondida): grava 'anunciar' e, pela intenção nova, UM boas-vindas de dono", async ({ browser }) => {
     const c = await conta("dona", "Olívia Dona Sobrenome", "owner", { papel_ativo: "proprietario", preferred_mode: "owner" });
     const page = await entrar(browser, c.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await rascunhoPelaTela(page, c.id, 0);
     await expect.poll(async () => (await perfil(c.id)).intencao, { timeout: 20_000 }).toEqual(["anunciar"]);
-    await page.waitForTimeout(4_000);
-    expect(await boasVindas(c.id)).toHaveLength(0);
+    // Relay nº 20 (E283-B): a intenção estava vazia → UM boas-vindas de dono, com a chave da conta.
+    await expect.poll(async () => (await boasVindas(c.id)).length, { timeout: 30_000, message: "UM boas-vindas de dono pela intenção nova" }).toBe(1);
     const { data: chave } = await adm().from("automacoes_envios").select("chave").eq("usuario_id", c.id).eq("tipo", "boas_vindas");
-    expect(chave ?? []).toHaveLength(0);
+    expect(chave ?? []).toHaveLength(1);
     expect(await perfil(c.id)).toMatchObject({ role: "owner", papel_ativo: "proprietario", preferred_mode: "owner" });
     await page.context().close();
   });
