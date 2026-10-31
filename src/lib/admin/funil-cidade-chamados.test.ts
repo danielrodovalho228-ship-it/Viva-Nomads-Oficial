@@ -19,8 +19,9 @@ test("F18: toda etapa do funil vem de um indicador x_* calculado pela mesma fun�
 });
 
 test("F18: o filtro de cidade dos eventos é feito no banco (eq cidade_chave), nunca somando eventos sem cidade", () => {
-  const i = dados.indexOf("export async function eventosDoPeriodo");
-  const corpo = dados.slice(i, i + 900);
+  // E288-B: a leitura mora em eventosDoPeriodoComFora (eventosDoPeriodo só devolve os que contam).
+  const i = dados.indexOf("export async function eventosDoPeriodoComFora");
+  const corpo = dados.slice(i, i + 1500);
   assert.match(corpo, /if \(k\) q = q\.eq\("cidade_chave", k\)/);
   assert.doesNotMatch(corpo, /\.or\(.*cidade_chave.*is\.null/);
 });

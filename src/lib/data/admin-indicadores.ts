@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { todasAsPaginas } from "@/lib/admin/paginas";
+import { eventoConta } from "@/lib/eventos/trafego";
 import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import {
   EVENTOS_HOME,
@@ -441,20 +443,60 @@ export async function candidaturasSemResposta48h(admin: Admin): Promise<Candidat
     .map(paraCandidatura);
 }
 
-/** Eventos anônimos do período por tipo (contas de teste fora; cidade pela chave do evento) — a mesma regra da 0181. */
+/**
+ * E288-B: a coluna `trafego` (0266) existe? Antes da migração aplicar, a leitura segue sem ela (só a regra das contas
+ * de teste). Lembra só o "sim" (depois de aplicada, não volta a faltar).
+ */
+let temTrafego = false;
+export async function colunaTrafego(admin: Admin): Promise<boolean> {
+  if (temTrafego) return true;
+  const { error } = await admin.from("eventos").select("trafego").limit(1);
+  temTrafego = !error;
+  return temTrafego;
+}
+
+/**
+ * Eventos anônimos do período por tipo (cidade pela chave do evento): só os que CONTAM — tráfego 'real' e conta que não
+ * é de teste (a mesma regra da 0181; E288-B). `fora` = quantos ficaram de fora por serem de teste (suíte automática,
+ * conta is_teste).
+ */
+export async function eventosDoPeriodoComFora(
+  admin: Admin,
+  periodo: { ini: string; fim: string },
+  cidade: string | null | undefined,
+  tipos: readonly string[]
+): Promise<{ reais: { tipo: string; criadoEm: string }[]; fora: number }> {
+  const k = cidade ? chaveCidade(cidade) : null;
+  const comTrafego = await colunaTrafego(admin);
+  // E281: o servidor do banco devolve no máximo 1.000 linhas por consulta (max_rows) — o limite de 50.000 pedido antes era
+  // cortado em silêncio (Buscas 987 em /admin/eventos e 909 em /admin/funil, contra 6.529 de verdade em 01–30/10).
+  // Agora lê página a página, em ordem estável (id), até acabar.
+  const pagina = (de: number, ate: number) => {
+    let q = admin
+      .from("eventos")
+      .select(comTrafego ? "id, tipo, criado_em, usuario_id, trafego" : "id, tipo, criado_em, usuario_id")
+      .in("tipo", [...tipos])
+      .gte("criado_em", periodo.ini)
+      .lt("criado_em", periodo.fim);
+    if (k) q = q.eq("cidade_chave", k);
+    return q.order("id", { ascending: true }).range(de, ate);
+  };
+  const [linhas, teste] = await Promise.all([
+    todasAsPaginas<{ tipo: string; criado_em: string; usuario_id: string | null; trafego?: string | null }>(pagina),
+    idsContasTeste(admin),
+  ]);
+  const reais = linhas.filter((e) => eventoConta(e, teste));
+  return { reais: reais.map((e) => ({ tipo: e.tipo, criadoEm: e.criado_em })), fora: linhas.length - reais.length };
+}
+
+/** Eventos anônimos do período por tipo que contam (tráfego real, contas de teste fora) — a mesma regra da 0181. */
 export async function eventosDoPeriodo(
   admin: Admin,
   periodo: { ini: string; fim: string },
   cidade: string | null | undefined,
   tipos: readonly string[]
 ): Promise<{ tipo: string; criadoEm: string }[]> {
-  const k = cidade ? chaveCidade(cidade) : null;
-  let q = admin.from("eventos").select("tipo, criado_em, usuario_id, cidade_chave").in("tipo", [...tipos]).gte("criado_em", periodo.ini).lt("criado_em", periodo.fim).limit(50000);
-  if (k) q = q.eq("cidade_chave", k);
-  const [{ data }, teste] = await Promise.all([q, idsContasTeste(admin)]);
-  return ((data ?? []) as { tipo: string; criado_em: string; usuario_id: string | null }[])
-    .filter((e) => !e.usuario_id || !teste.has(e.usuario_id))
-    .map((e) => ({ tipo: e.tipo, criadoEm: e.criado_em }));
+  return (await eventosDoPeriodoComFora(admin, periodo, cidade, tipos)).reais;
 }
 
 /** "Chamados urgentes sem resposta há mais de 4 h" (manutenção) — mesma regra da 0181. */

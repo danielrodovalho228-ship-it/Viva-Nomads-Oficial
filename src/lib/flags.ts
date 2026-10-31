@@ -137,3 +137,10 @@ export const DETECCAO_FOTOS_ATIVO = process.env.DETECCAO_FOTOS_ATIVO === "on";
  * a ferramenta em Ganhos).
  */
 export const ENQUADRAMENTO_REFORMA = process.env.NEXT_PUBLIC_ENQUADRAMENTO_REFORMA === "on";
+
+/**
+ * PUBLICO-A (desenho aprovado em 24/10): o globo PT/EN ao lado do "Entrar" no topo público. SÓ o desenho do seletor:
+ * o português é o padrão e o inglês aparece "em breve" (a tradução é fase pós-lançamento; o seletor não promete idioma
+ * que as telas ainda não têm). DESLIGADA por padrão; só "on" liga.
+ */
+export const SELETOR_IDIOMA = process.env.NEXT_PUBLIC_SELETOR_IDIOMA === "on";

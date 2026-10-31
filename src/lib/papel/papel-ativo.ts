@@ -47,6 +47,18 @@ export function contaNoPrimeiroAcesso(intencao: unknown, papelAtivo: unknown): b
   return intencao == null && papelAtivo == null;
 }
 
+/**
+ * E283-B (relay nº 20) — o boas-vindas sai quando a conta REGISTRA AGORA uma intenção que estava vazia (null = nunca
+ * respondeu; [] = "Agora não"). O papel ativo — inclusive o gravado só pelo uso (navegação, guarda de área) — NÃO entra
+ * na decisão. "Agora não" na 1ª resposta também conta (o boas-vindas de morador, como no E205-B). O "uma vez por
+ * conta" é a chave boas_vindas:<conta> em automacoes_envios, conferida no envio.
+ */
+export function registraIntencaoNova(antes: unknown, nova: readonly string[]): boolean {
+  const vazia = antes == null || (Array.isArray(antes) && antes.length === 0);
+  if (!vazia) return false;
+  return antes == null || nova.length > 0;
+}
+
 export function modoDoPapel(papel: Papel): Modo | null {
   return papel === "proprietario" ? "owner" : papel === "morador" ? "tenant" : null;
 }

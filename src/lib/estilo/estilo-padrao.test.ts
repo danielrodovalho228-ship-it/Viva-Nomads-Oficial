@@ -282,6 +282,7 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/estadia/acoes-estadia.tsx", // botão flutuante "cogumelo" (Prompt 41)
     "components/layout/mobile-tab-bar.tsx", // barra inferior do celular/app (Prompt 41)
     "components/layout/navbar.tsx", // cabeçalho fixo (busca fixa) e menu suspenso
+    "components/layout/seletor-idioma.tsx", // menu suspenso do globo PT/EN do topo público (PUBLICO-A)
     "components/layout/topo-dono.tsx", // menu suspenso "Conta ▾" do topo do dono (PROP-1)
     "components/location-search.tsx", // menu suspenso de sugestões
     "components/property/barra-fixa-celular.tsx", // barra fixa do celular

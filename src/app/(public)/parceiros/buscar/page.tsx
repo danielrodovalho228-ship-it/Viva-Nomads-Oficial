@@ -14,6 +14,7 @@ import { formatarCep } from "@/lib/fotografos/regras";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { FaixaCategorias } from "@/components/parceiros/faixa-categorias";
+import { SelosConfianca } from "@/components/parceiros/selos-confianca";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 
 export const metadata: Metadata = {
@@ -52,16 +53,25 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   return (
     <>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }, { nome: "Buscar", caminho: "/parceiros/buscar" }])} />
-      {fotoTopo && <BannerTopo foto={fotoTopo.src} alt={fotoTopo.alt} titulo={titulo} subtitulo={<p>{subtitulo}</p>} className="[&>div]:min-h-[16rem] md:[&>div]:min-h-[18rem]" />}
-    <div className="container-page py-8">
-      {!fotoTopo && (
-        <>
-          <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">{titulo}</h1>
-          <p className="mt-2 max-w-2xl text-muted">{subtitulo}</p>
-        </>
+      {/* E285: "Todas" também abre com foto — mosaico de três categorias (mudança, limpeza e manutenção). */}
+      {fotoTopo ? (
+        <BannerTopo foto={fotoTopo.src} alt={fotoTopo.alt} titulo={titulo} subtitulo={<p>{subtitulo}</p>} className="[&>div]:min-h-[16rem] md:[&>div]:min-h-[18rem]" />
+      ) : (
+        <BannerTopo
+          foto={fotoDaCategoria("mudanca")!.src}
+          alt=""
+          mosaico={["mudanca", "limpeza", "manutencao"].map((c) => fotoDaCategoria(c)!.src)}
+          testid="topo-todas"
+          titulo={titulo}
+          subtitulo={<p>{subtitulo}</p>}
+          className="[&>div]:min-h-[16rem] md:[&>div]:min-h-[18rem]"
+        />
       )}
+    <div className="container-page py-8">
 
-      <form method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_0.6fr_1fr_auto] lg:items-end" data-testid="busca-parceiros-filtros">
+      {/* E286: a faixa de categorias navega no cliente e o React reaproveita os campos (defaultValue não muda campo já
+          montado) — o seletor ficava em "Todas" com a categoria aberta. A key remonta o formulário a cada busca. */}
+      <form key={`${categoria}|${r.cidade}|${r.uf}|${r.cep}|${soNota}`} method="get" className="mt-6 grid gap-3 rounded-xl border border-sage-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_1.2fr_0.6fr_1fr_auto] lg:items-end" data-testid="busca-parceiros-filtros">
         {imovel && <input type="hidden" name="imovel" value={imovel} />}
         <div>
           <label htmlFor="bp-categoria" className="block text-sm font-medium text-ink">Categoria</label>
@@ -108,6 +118,8 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
           Não encontramos esse CEP. Confira os números ou busque pela cidade.
         </p>
       )}
+
+      <SelosConfianca />
 
       <FaixaCategorias atual={categoria} consulta={consultaFaixa} />
 

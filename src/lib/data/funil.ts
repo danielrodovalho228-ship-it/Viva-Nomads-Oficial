@@ -1,6 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { idsContasTeste } from "@/lib/data/admin-indicadores";
+import { colunaTrafego, idsContasTeste } from "@/lib/data/admin-indicadores";
+import { todasAsPaginas } from "@/lib/admin/paginas";
+import { eventoConta } from "@/lib/eventos/trafego";
 import { motivoDaReprovacao, type LaudoParaMotivo } from "@/config/verificacao-motivos";
 import {
   buscaPedido,
@@ -26,6 +28,8 @@ import {
   Prompt 50 — o FUNIL do admin, lido do que já existe (sem tabela nova): sessões da tabela eventos, profiles
   (conta e intenção), leads + pedidos_moradia (1º pedido), properties (rascunho → publicado), parceiro_solicitacoes
   (resposta da Viva) e tenant_verifications + verificacao_revisoes (degraus da verificação). Contas de teste fora.
+  E288-B: dos eventos, só o tráfego 'real' conta (a suíte automática e as contas is_teste ficam de fora; `eventosFora`
+  diz quantos, na semana atual).
   As duas semanas (esta e a anterior) vêm da mesma leitura; o topo é a maior queda.
 */
 
@@ -33,6 +37,8 @@ export interface Funil {
   etapas: (Etapa & { queda: number | null; anterior: number | null })[];
   degrausVerificacao: DegrauVerificacao[];
   periodo: Periodo;
+  /** E288-B: eventos de teste (suíte automática, contas is_teste) da semana atual que ficaram fora da contagem. */
+  eventosFora: number;
 }
 
 export async function funilDaSemana(agora = new Date()): Promise<Funil | null> {
@@ -40,11 +46,20 @@ export async function funilDaSemana(agora = new Date()): Promise<Funil | null> {
   if (!admin) return null;
   const { atual, anterior } = semanas(agora);
   const desde = anterior.de;
-  const teste = await idsContasTeste(admin);
+  const [teste, comTrafego] = await Promise.all([idsContasTeste(admin), colunaTrafego(admin)]);
   const ehTeste = (id: string | null | undefined) => !!id && teste.has(id);
 
-  const [ev, perfis, leads, pedidos, imoveis, sols, verifs, revisoes] = await Promise.all([
-    admin.from("eventos").select("sessao, usuario_id, criado_em, tipo").gte("criado_em", desde).not("sessao", "is", null).limit(50000),
+  // E281/E288-B: página a página (o banco corta cada resposta em 1.000 linhas), em ordem estável.
+  const paginaEventos = (de: number, ate: number) =>
+    admin
+      .from("eventos")
+      .select(comTrafego ? "id, sessao, usuario_id, criado_em, tipo, trafego" : "id, sessao, usuario_id, criado_em, tipo")
+      .gte("criado_em", desde)
+      .not("sessao", "is", null)
+      .order("id", { ascending: true })
+      .range(de, ate);
+  const [linhasEv, perfis, leads, pedidos, imoveis, sols, verifs, revisoes] = await Promise.all([
+    todasAsPaginas<{ sessao: string; usuario_id: string | null; criado_em: string; tipo: string; trafego?: string | null }>(paginaEventos),
     admin.from("profiles").select("id, created_at, intencao").gte("created_at", desde).limit(20000),
     admin.from("leads").select("tenant_id, created_at").gte("created_at", desde).limit(20000),
     admin.from("pedidos_moradia").select("inquilino_id, criado_em").gte("criado_em", desde).limit(20000),
@@ -54,8 +69,9 @@ export async function funilDaSemana(agora = new Date()): Promise<Funil | null> {
     admin.from("verificacao_revisoes").select("user_id").gte("criado_em", desde).limit(5000),
   ]);
 
-  const eventos = (ev.data ?? []) as { sessao: string; usuario_id: string | null; criado_em: string; tipo: string }[];
-  const visitas: Visita[] = eventos.map((e) => ({ sessao: e.sessao, em: e.criado_em, teste: ehTeste(e.usuario_id) }));
+  const eventos = linhasEv.filter((e) => eventoConta(e, teste));
+  const eventosFora = linhasEv.filter((e) => e.criado_em >= atual.de && e.criado_em < atual.ate && !eventoConta(e, teste)).length;
+  const visitas: Visita[] = eventos.map((e) => ({ sessao: e.sessao, em: e.criado_em, teste: false }));
   const contas: Conta[] = ((perfis.data ?? []) as { id: string; created_at: string; intencao: string[] | null }[]).map((p) => ({
     id: p.id,
     criadaEm: p.created_at,
@@ -104,5 +120,6 @@ export async function funilDaSemana(agora = new Date()): Promise<Funil | null> {
     etapas: ordenarPorQueda(agoraCalc.etapas, antes.etapas).map((e) => ({ ...e, anterior: valorAntes.get(e.chave) ?? null })),
     degrausVerificacao: agoraCalc.degraus,
     periodo: atual,
+    eventosFora,
   };
 }

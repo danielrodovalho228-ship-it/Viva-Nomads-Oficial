@@ -6,6 +6,7 @@
         "publico"
       ],
       "specs": [
+        "t742-publico-a-seletor-idioma",
         "t66-home-busca-principal",
         "t730-conformidade-home",
         "t69-botoes-header",
@@ -632,6 +633,7 @@
         "admin"
       ],
       "specs": [
+        "t736-e284-servicos-todo-morador",
         "t733-e276-servicos-com-foto",
         "t138-paineis-viva-vazio",
         "t1-auth-guards",
@@ -2147,6 +2149,9 @@
         "publico"
       ],
       "specs": [
+        "t740-e286-categoria-no-seletor",
+        "t739-varredura-parceiros-390",
+        "t737-e285-parceiros-todas-aviso",
         "t735-e277-busca-parceiros-fotos",
         "t236-parceiros-ciclo",
         "t241-contas-teste-36",

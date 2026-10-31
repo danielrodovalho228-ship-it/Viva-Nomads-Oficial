@@ -28,9 +28,11 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   // login cairia na tela de acesso da Vercel (o config do Playwright não se
   // aplica a este navegador, aberto à parte).
   const secret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
-  const extraHTTPHeaders = secret
-    ? { "x-vercel-protection-bypass": secret, "x-vercel-set-bypass-cookie": "true" }
-    : undefined;
+  // E288-B: a marca de teste também aqui — o proxy devolve o cookie vn_trafego=e2e, que vai junto na sessão gravada.
+  const extraHTTPHeaders = {
+    "x-vn-origem": "e2e",
+    ...(secret ? { "x-vercel-protection-bypass": secret, "x-vercel-set-bypass-cookie": "true" } : {}),
+  };
 
   const browser = await chromium.launch({ executablePath });
   try {
@@ -40,7 +42,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       // (lab ec62b16, c03ff36 e bb86a49 gravaram 0/0/0 porque um único login quebrou o global-setup).
       try {
         await comTentativas(async () => {
-          const context = await browser.newContext({ baseURL, ...(extraHTTPHeaders ? { extraHTTPHeaders } : {}) });
+          const context = await browser.newContext({ baseURL, extraHTTPHeaders });
           try {
             const page = await context.newPage();
             await loginAs(page, role);

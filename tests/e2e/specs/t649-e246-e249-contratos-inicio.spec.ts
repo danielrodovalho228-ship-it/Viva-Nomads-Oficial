@@ -11,6 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    E249 — "Início da estadia" aparece UMA vez no cartão Contrato.
   Rodadas fora do lab completo (teto L-5): no lab-crítico do PR que toca a spec; 29/10, junto com o bloco 63 (t662).
   Prova a 390 px pedida pelo coordenador (29/10, E243/E244/E248 já no ar): rodada no lab-crítico sobre a main atual.
+  Reconferência do E246 pedida pela vigia (31/10, depois do PUBLICO-A): rodada de novo no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
