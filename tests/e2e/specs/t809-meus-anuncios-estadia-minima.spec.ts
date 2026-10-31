@@ -42,7 +42,7 @@ test.describe("T809 — Meus anúncios: o cartão sempre diz a estadia mínima (
       await expect(um).toContainText("Estadia mínima (1 mês)");
       await expect(um).not.toContainText("Estadia mínima (1 mês):");
       const tres = cartao(titulos.tresMeses);
-      await expect(tres).toContainText(/Estadia mínima \(3 meses\): R\$\s?[\d.]+,\d{2} · /);
+      await expect(tres).toContainText(/Estadia mínima \(3 meses\): R\$\s?[\d.]+(,\d{2})? · 3 × R\$/);
       await p.context().close();
     });
   }
