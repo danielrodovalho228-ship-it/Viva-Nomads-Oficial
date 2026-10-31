@@ -6,6 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
   T565 — E194 (print do Daniel, 25/10): a Qualificação abre DENTRO da moldura do assistente — o mesmo selo "Anunciar
   imóvel" do topo e o mesmo rodapé fixo ("Antes do Passo 1 · Qualificação N de 5", barra contínua, primário). Ao começar
   o cadastro, o Passo 1 segue da barra onde a Qualificação parou (nada recomeça do zero).
+  Reconferência pedida pelo Muse (31/10): Anunciar → Qualificação → Passo 1, rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
