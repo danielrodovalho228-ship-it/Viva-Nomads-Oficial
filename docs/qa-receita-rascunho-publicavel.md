@@ -19,7 +19,7 @@ O editor (`/dashboard/imoveis/novo?draft=<id>`) lê o **`draft_data`**. A lista 
 | Descrição | `description` | `description` (a lista de rascunhos conta por ela) |
 | Fotos (8) | `photos` (url + path na pasta do dono) | `property_photos` |
 | Documento aprovado | — | `qualification_checklists` com o arquivo aprovado de um anúncio de teste do mesmo dono |
-| Tipo de entrada, câmeras, internet | `privacidade.tipoAcesso`, `privacidade.semCamerasInterior`, `internetMbps` | `tipo_entrada`, `sem_cameras_interior`, `internet_mbps` |
+| Tipo de entrada, câmeras, internet | `tipoEntrada` (a resposta do Passo 6, que o assistente lê), `privacidade.tipoAcesso`, `privacidade.semCamerasInterior`, `internetMbps` | `tipo_entrada`, `sem_cameras_interior`, `internet_mbps` |
 
 ## Código público único (E275)
 O código público ("Código VN-XXXXXX") não é gravado no banco. Ele é calculado com os **6 primeiros caracteres do id**
