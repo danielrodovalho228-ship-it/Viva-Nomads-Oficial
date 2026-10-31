@@ -9,6 +9,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, cpfAleator
   das linhas de dado REAL (o servidor já recusa); vê "Só leitura" no lugar. Nas linhas de TESTE os botões continuam.
   O admin comum vê os botões nas duas. Filas provadas: fotos de perfil e pedidos de parceria (+ o pedido por suporte).
   1280 e 390.
+  Reconferência do E216 pedida pela vigia (31/10): rodada de novo no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
