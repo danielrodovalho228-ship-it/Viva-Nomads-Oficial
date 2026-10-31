@@ -10,8 +10,7 @@ import { TITULO_PASSO } from "../fixtures/cadastro";
    2. O simulador diz que o morador paga R$ 16.400 (4.100 × 4) e que a taxa é R$ 1.728 = 12% sobre o valor mensal × meses
       (R$ 3.600 × 4 = R$ 14.400) — a base escrita, igual à conta.
    3. A taxa é explicada uma vez: sem a linha "Num contrato de…", sem a regra pública repetida, "só com contrato fechado" 1×.
-   4. Comparador do Airbnb no MESMO período do simulador; trocar os meses troca o comparador; conta aberta dos dois lados;
-      o sugerido é rotulado como equivalência e o botão diz o valor que vai entrar.
+   4. E292-bis: o comparador do Airbnb saiu do passo (era conta da Viva); trocar os meses só troca o simulador.
    0. Sem valor mensal, a Revisão diz "Valor mensal ainda não definido." (não "R$ 150/mês no total").
   A 390 e 1280 px, com prints.
 */
@@ -40,7 +39,7 @@ test.describe("T472 — E139/E140/E151: o Passo 8 fecha a conta", () => {
   });
 
   for (const w of [390, 1280] as const) {
-    test(`a ${w} px: prévia, simulador e comparador com a mesma conta e o mesmo período`, async ({ browser }) => {
+    test(`a ${w} px: prévia e simulador com a mesma conta, sem o comparador do Airbnb`, async ({ browser }) => {
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await abrirPreco(page);
@@ -82,31 +81,12 @@ test.describe("T472 — E139/E140/E151: o Passo 8 fecha a conta", () => {
       await simulador.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t472-simulador-${w}.png`, fullPage: true });
 
-      // 4. Comparador no mesmo período; conta aberta; equivalência rotulada.
-      const comp = page.getByTestId("preco-sugerido");
-      await comp.getByRole("button", { name: /Comparar com o Airbnb/ }).click();
-      await expect(comp).toContainText("pelos mesmos 4 meses");
-      await comp.getByPlaceholder("10300").fill("9000");
-      // Airbnb: 9.000 × (1 − 16%) = 7.560; equivalente na Viva em 4 meses: 7.560 / (4 × 0,88) → R$ 2.148/mês.
-      await expect(page.getByTestId("conta-airbnb")).toContainText("R$ 9.000 cobrados");
-      await expect(page.getByTestId("recebe-airbnb")).toHaveText("R$ 7.560");
-      await expect(page.getByTestId("conta-viva")).toContainText("R$ 2.148 × 4 = R$ 8.592 do morador");
-      await expect(page.getByTestId("conta-viva")).toContainText("12% sobre o valor mensal × meses");
-      await expect(page.getByTestId("sugerido-equivalencia")).toContainText("R$ 2.148/mês é uma equivalência");
-      await comp.scrollIntoViewIfNeeded();
-      await page.screenshot({ path: `${SAIDA}/t472-comparador-${w}.png`, fullPage: true });
-
-      // Trocar os meses no simulador troca o comparador (um período só na tela).
+      // 4. E292-bis: sem o comparador do Airbnb; trocar os meses troca só o simulador, e o valor mensal fica o digitado.
+      await expect(page.getByTestId("preco-sugerido")).toHaveCount(0);
+      expect(await etapa.innerText()).not.toMatch(/airbnb/i);
       await simulador.getByTestId("bolso-meses").fill("2");
-      await expect(comp).toContainText("pelos mesmos 2 meses");
-      await expect(page.getByTestId("conta-viva")).toContainText("× 2 =");
-
-      // O botão diz o valor que entra e só troca o valor mensal quando a pessoa clica.
+      await expect(simulador.getByTestId("bolso-taxa-detalhe")).toContainText("(R$ 3.600 × 2 = R$ 7.200)");
       await expect(page.getByTestId("cadastro-preco")).toHaveValue("3.600");
-      const usar = comp.getByRole("button", { name: /^Usar R\$\s?[\d.]+\/mês como valor mensal$/ });
-      const rotulo = (await usar.innerText()).match(/R\$\s?([\d.]+)/)![1];
-      await usar.click();
-      await expect(page.getByTestId("cadastro-preco")).toHaveValue(rotulo);
 
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await page.context().close();
