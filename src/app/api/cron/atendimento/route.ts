@@ -5,6 +5,7 @@ import { dispararEncaminhamentos } from "@/lib/agentes/motor";
 import { rodarAvisosDaniel } from "@/lib/agentes/avisos-daniel-servidor";
 import { avisarEquipe, type ChamadoResumo } from "@/lib/atendimento/servidor";
 import { notify } from "@/lib/notifications";
+import { corpoManutencaoAtrasada, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { enviarPushAdiados } from "@/lib/notifications/push-servidor";
 import { verificarCopiaNoturna } from "@/lib/notifications/alertas-operacionais";
 import { corteRetencaoPushEnvios } from "@/lib/notifications/diagnostico-push";
@@ -85,14 +86,14 @@ export async function GET(request: Request) {
   let atrasadas = 0;
   const { data: ordens } = await admin
     .from("chamados")
-    .select("id, service_order_id, service_orders(id, owner_id, priority, opened_at, first_response_at, status, properties(title))")
+    .select("id, service_order_id, service_orders(id, owner_id, priority, category, opened_at, first_response_at, status, properties(title, address, city))")
     .eq("simulacao", false)
     .eq("tipo", "manutencao")
     .not("service_order_id", "is", null)
     .not("status", "in", "(resolvido,encerrado)")
     .limit(200);
   for (const ch of ordens ?? []) {
-    const so = ch.service_orders as unknown as { id: string; owner_id: string; priority: UrgenciaManutencao; opened_at: string; first_response_at: string | null; status: string; properties?: { title?: string | null } | null } | null;
+    const so = ch.service_orders as unknown as { id: string; owner_id: string; priority: UrgenciaManutencao; category?: string | null; opened_at: string; first_response_at: string | null; status: string; properties?: { title?: string | null; address?: string | null; city?: string | null } | null } | null;
     if (!so || so.first_response_at || so.status === "resolvido") continue;
     const venceu = new Date(so.opened_at).getTime() + (PRAZO_MANUTENCAO_H[so.priority] ?? 24) * 3600_000 < Date.now();
     if (!venceu) continue;
@@ -110,6 +111,15 @@ export async function GET(request: Request) {
         userId: so.owner_id,
         pushUrl: "/dashboard/solicitacoes",
         decisao: { imovel: so.properties?.title ?? null, destinatarioEhParte: true },
+        // E267: o e-mail nomeia o imóvel, a manutenção (categoria e abertura) e o prazo que venceu.
+        ...paraNotify(
+          corpoManutencaoAtrasada({
+            imovel: so.properties ? { titulo: so.properties.title, bairro: so.properties.address, cidade: so.properties.city } : null,
+            categoria: so.category,
+            abertaEm: so.opened_at,
+            prazoHoras: PRAZO_MANUTENCAO_H[so.priority] ?? 24,
+          })
+        ),
       }).catch(() => null);
     }
   }

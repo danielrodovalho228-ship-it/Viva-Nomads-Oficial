@@ -10,6 +10,7 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
+import { corpoPedidoEncerrado, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compat";
 import { destinoParaDono, localDaEntrada } from "@/lib/data/local-trabalho";
 import { temposAte } from "@/lib/data/tempos";
@@ -332,10 +333,16 @@ export async function excluirPedido(pedidoId: string): Promise<ActionResult & { 
     if (admin) {
       const { data: resps } = await admin
         .from("respostas_pedido")
-        .select("proprietario_id, status")
+        .select("proprietario_id, status, imovel_id")
         .eq("pedido_id", pedidoId)
         .in("status", ["enviada", "vista", "aceita_para_conversa"]);
-      const donos = [...new Set(((resps ?? []) as { proprietario_id: string }[]).map((r) => r.proprietario_id))];
+      const linhasResp = (resps ?? []) as { proprietario_id: string; imovel_id: string | null }[];
+      const donos = [...new Set(linhasResp.map((r) => r.proprietario_id))];
+      // E267: o e-mail diz qual pedido (a cidade) e com qual imóvel a pessoa respondeu.
+      const { data: ped } = await admin.from("pedidos_moradia").select("cidade").eq("id", pedidoId).maybeSingle();
+      const idsImoveis = [...new Set(linhasResp.map((r) => r.imovel_id).filter((x): x is string => !!x))];
+      const { data: ims } = idsImoveis.length ? await admin.from("properties").select("id, title, address, city").in("id", idsImoveis) : { data: [] };
+      const imovelPorId = new Map(((ims ?? []) as { id: string; title: string | null; address: string | null; city: string | null }[]).map((i) => [i.id, { titulo: i.title, bairro: i.address, cidade: i.city }]));
       for (const donoId of donos) {
         const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", donoId).maybeSingle();
         if (!perfil?.email || perfil.notif_email === false) continue;
@@ -345,6 +352,12 @@ export async function excluirPedido(pedidoId: string): Promise<ActionResult & { 
           name: (perfil.full_name as string) ?? undefined,
           userId: donoId,
           pushUrl: "/dashboard/pedidos-cidade",
+          ...paraNotify(
+            corpoPedidoEncerrado({
+              cidade: (ped as { cidade?: string | null } | null)?.cidade ?? null,
+              imovel: imovelPorId.get(linhasResp.find((r) => r.proprietario_id === donoId && r.imovel_id)?.imovel_id ?? "") ?? null,
+            })
+          ),
         }).catch(() => {});
         avisados += 1;
       }

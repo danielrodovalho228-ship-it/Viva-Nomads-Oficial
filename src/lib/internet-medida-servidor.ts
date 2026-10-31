@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { notify, type NotificationEvent } from "@/lib/notifications";
+import { corpoInternetAbaixo, corpoInternetRemedir, paraNotify, type CorpoResidual } from "@/lib/notifications/corpo-e267-residual";
 import { INTERNET } from "@/config/internet";
 import {
   dentroDoLimite,
@@ -136,11 +137,11 @@ export async function medidasPublicas(ids: string[]): Promise<Map<string, Medica
   return m;
 }
 
-async function avisarUsuario(admin: Admin, destino: string, ev: NotificationEvent, url: string) {
+async function avisarUsuario(admin: Admin, destino: string, ev: NotificationEvent, url: string, corpo?: CorpoResidual) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url });
+    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, ...(corpo ? paraNotify(corpo) : {}) });
   } catch {
     /* aviso é complemento */
   }
@@ -240,9 +241,21 @@ export async function registrarMedicao(entrada: {
   if (papel === "morador" && local.validada) {
     const dono = await ultimaMedidaDoDono(admin, imovelId, agora);
     if (sinalMorador(dono, junta)) {
-      const { data: p } = await admin.from("properties").select("owner_id").eq("id", imovelId).maybeSingle();
-      const ownerId = (p as { owner_id: string } | null)?.owner_id;
-      if (ownerId) await avisarUsuario(admin, ownerId, "internet_abaixo_medida", `/dashboard/imoveis/${imovelId}/editar#internet`);
+      const { data: p } = await admin.from("properties").select("owner_id, title, address, city").eq("id", imovelId).maybeSingle();
+      const pp = p as { owner_id: string; title: string | null; address: string | null; city: string | null } | null;
+      // E267: o imóvel e os números das duas medições (o que o morador mediu e a última do dono).
+      if (pp?.owner_id)
+        await avisarUsuario(
+          admin,
+          pp.owner_id,
+          "internet_abaixo_medida",
+          `/dashboard/imoveis/${imovelId}/editar#internet`,
+          corpoInternetAbaixo({
+            imovel: { titulo: pp.title, bairro: pp.address, cidade: pp.city },
+            morador: { download: junta.downloadMbps, upload: junta.uploadMbps },
+            dono: dono ? { download: dono.downloadMbps, upload: dono.uploadMbps } : null,
+          })
+        );
     }
   }
   return { ok: true, validada: local.validada, motivo: local.motivo, medicao: { ...junta, medidoEm: agora.toISOString(), validoAte: ate.toISOString() } };
@@ -270,7 +283,7 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date, simular = fal
   const desde = new Date(agora.getTime() - INTERNET.avisoAposDias * DIA).toISOString();
   const { data } = await admin
     .from("internet_medicoes")
-    .select("id, property_id, medido_em, valido_ate, properties!inner(owner_id, title)")
+    .select("id, property_id, medido_em, valido_ate, properties!inner(owner_id, title, address, city)")
     .eq("papel", "dono")
     .eq("validada", true)
     .is("avisado_remedir_em", null)
@@ -279,7 +292,7 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date, simular = fal
     .limit(500);
   let avisos = 0;
   const vistos = new Set<string>();
-  for (const l of (data ?? []) as unknown as { id: string; property_id: string; medido_em: string; valido_ate: string; properties: { owner_id: string } }[]) {
+  for (const l of (data ?? []) as unknown as { id: string; property_id: string; medido_em: string; valido_ate: string; properties: { owner_id: string; title?: string | null; address?: string | null; city?: string | null } }[]) {
     if (!horaDeAvisarRemedicao({ medidoEm: l.medido_em, validoAte: l.valido_ate }, agora)) continue;
     if (simular) {
       if (!vistos.has(l.property_id)) avisos += 1;
@@ -290,7 +303,14 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date, simular = fal
     const { data: marcada } = await admin.from("internet_medicoes").update({ avisado_remedir_em: agora.toISOString() }).eq("id", l.id).is("avisado_remedir_em", null).select("id");
     if (!(marcada ?? []).length || vistos.has(l.property_id)) continue;
     vistos.add(l.property_id);
-    await avisarUsuario(admin, l.properties.owner_id, "internet_remedir", `/dashboard/imoveis/${l.property_id}/editar#internet`);
+    // E267: o imóvel e o dia em que a medição vence.
+    await avisarUsuario(
+      admin,
+      l.properties.owner_id,
+      "internet_remedir",
+      `/dashboard/imoveis/${l.property_id}/editar#internet`,
+      corpoInternetRemedir({ imovel: { titulo: l.properties.title, bairro: l.properties.address, cidade: l.properties.city }, validoAte: l.valido_ate })
+    );
     avisos += 1;
   }
   return { avisosInternet: avisos };

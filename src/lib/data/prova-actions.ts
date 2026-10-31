@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { notify } from "@/lib/notifications";
+import { corpoProvaCelular, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { SITE_URL } from "@/lib/site";
 import { DOMINIOS_PROPRIOS } from "@/lib/cartoes/compartilhar";
 import { ehChaveNivel, itemNivel } from "@/config/niveis";
@@ -88,7 +89,18 @@ export async function pedirLinkCelular(propertyId: string, chave: string): Promi
     const { data: perfil } = await c.admin.from("profiles").select("email, full_name").eq("id", c.uid).maybeSingle();
     const email = (perfil?.email as string | null) ?? c.email;
     if (email) {
-      const r = await notify({ event: "nivel_prova_celular", email, name: (perfil?.full_name as string | null) ?? undefined, userId: c.uid, pushUrl: caminho, semPush: true });
+      // E267: o e-mail diz qual item fotografar, de qual imóvel, e até quando o link vale.
+      const { data: im } = await c.admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
+      const imovel = im ? { titulo: im.title as string | null, bairro: im.address as string | null, cidade: im.city as string | null } : null;
+      const r = await notify({
+        event: "nivel_prova_celular",
+        email,
+        name: (perfil?.full_name as string | null) ?? undefined,
+        userId: c.uid,
+        pushUrl: caminho,
+        semPush: true,
+        ...paraNotify(corpoProvaCelular({ imovel, item: ehChaveNivel(chave) ? itemNivel(chave).rotulo : null, expiraEm })),
+      });
       emailEnviado = !!r.email;
     }
   } catch {
