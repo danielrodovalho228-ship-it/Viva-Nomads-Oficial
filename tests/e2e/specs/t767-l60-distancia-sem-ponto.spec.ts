@@ -6,9 +6,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
   defeito era o (0, 0) que o mapeamento da busca põe no lugar da coordenada nula virar "≈ 5.640,0 km em linha reta até
   …" (a t261 anotava L-60 nos imóveis da massa). Pista C, bloco 99. Pela tela de verdade, a 1280 e a 390 px, como
   visitante, com um destino em Uberlândia passado na URL (dlat/dlng/drot e modo=carro):
-   - nenhum cartão diz 1.000 km ou mais (todo imóvel do laboratório está em Minas);
    - o imóvel semeado com ponto, perto do destino, tem a linha de distância; o semeado sem ponto (lat/lng nulos),
-     quando aparece na página, não tem linha nenhuma.
+     quando aparece na página, não tem linha nenhuma (o que o #1673 corrigiu no cálculo do navegador);
+   - nenhum cartão diz 1.000 km ou mais (todo imóvel do laboratório está em Minas) — L-82 em test.fail: a linha reta
+     que vem do servidor (src/lib/data/tempos.ts) não tem a trava do (0, 0) e ainda diz "≈ 5.668,6 km".
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -32,28 +33,43 @@ test.describe("T767 — L-60: imóvel sem ponto não ganha distância de milhare
     await apagarContas([ids.dono]);
   });
 
+  async function cartoes(browser: import("@playwright/test").Browser, largura: number): Promise<{ linhas: [string, string][]; fechar: () => Promise<void> }> {
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
+    const page = await ctx.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("card-resultado").first()).toBeVisible({ timeout: 30_000 });
+    // O destino da URL entra no estado depois da hidratação: espera a 1ª linha antes de ler os cartões (como a t261).
+    await expect(page.getByTestId("tempo-cartao").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("tempo-cartao").filter({ hasText: "calculando…" })).toHaveCount(0, { timeout: 20_000 });
+    const linhas = await page.getByTestId("card-resultado").evaluateAll((els) =>
+      els.map((el) => [el.getAttribute("data-id") ?? "", el.querySelector('[data-testid="tempo-cartao"]')?.textContent?.trim() ?? ""] as [string, string]),
+    );
+    return { linhas, fechar: () => ctx.close() };
+  }
+
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px: com destino, nenhum cartão passa de 1.000 km e o sem ponto fica sem linha`, async ({ browser }) => {
-      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
-      const page = await ctx.newPage();
-      await page.goto(url, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("card-resultado").first()).toBeVisible({ timeout: 30_000 });
-      // O destino da URL entra no estado depois da hidratação: espera a 1ª linha antes de ler os cartões (como a t261).
-      await expect(page.getByTestId("tempo-cartao").first()).toBeVisible({ timeout: 20_000 });
-      await expect(page.getByTestId("tempo-cartao").filter({ hasText: "calculando…" })).toHaveCount(0, { timeout: 20_000 });
-      const linhas = await page.getByTestId("card-resultado").evaluateAll((els) =>
-        els.map((el) => [el.getAttribute("data-id") ?? "", el.querySelector('[data-testid="tempo-cartao"]')?.textContent?.trim() ?? ""] as [string, string]),
-      );
-      // Nenhum "≈ 1.000 km" ou mais (o (0, 0) dava ~5.640 km).
-      const longe = linhas.filter(([, t]) => /^≈ [\d.]+(,\d)? km/.test(t) && Number(t.match(/^≈ ([\d.]+)/)![1].replace(/\./g, "")) >= 1000);
-      expect(longe, "cartões com distância de milhares de km").toEqual([]);
+    test(`${largura} px: o imóvel com ponto tem a linha de distância e o sem ponto fica sem linha`, async ({ browser }) => {
+      const { linhas, fechar } = await cartoes(browser, largura);
       const mapa = new Map(linhas);
-      // O semeado com ponto, a ~450 m do destino, aparece com a linha (tempo de rota ou "em linha reta"), sem os km do (0, 0).
+      // O semeado com ponto, a ~450 m do destino, aparece com a linha (tempo de rota ou "em linha reta").
       expect(mapa.has(ids.comPonto!), "o imóvel com ponto aparece na busca com destino").toBe(true);
       expect(mapa.get(ids.comPonto!), "o imóvel com ponto tem a linha de distância").not.toBe("");
-      // O sem ponto, se estiver na página, não tem linha nenhuma.
+      expect(mapa.get(ids.comPonto!)).not.toMatch(/[\d.]{5,} km/);
+      // O sem ponto (lat/lng nulos), se estiver na página, não tem linha nenhuma — o que o #1673 corrigiu.
       if (mapa.has(ids.semPonto!)) expect(mapa.get(ids.semPonto!), "imóvel sem ponto sem linha de distância").toBe("");
-      await ctx.close();
+      await fechar();
     });
   }
+
+  test("1280 px: nenhum cartão passa de 1.000 km (L-82: o servidor ainda mede do ponto público (0, 0))", async ({ browser }) => {
+    // L-82 (bloco 99, lab-crítico 41203364871): o #1673 pôs a trava do (0, 0) só no distanciaAte do navegador; a linha
+    // reta que vem do SERVIDOR (src/lib/data/tempos.ts, ramo "linha reta" com p.lat/p.lng públicos) não tem a trava e
+    // ganha do cálculo local no cartão (textoDoCartao prefere a do servidor): dezenas de cartões dizem
+    // "≈ 5.668,6 km em linha reta até …". Falha esperada até a correção.
+    test.fail(true, "L-82: linha reta do servidor mede imóveis com ponto público (0, 0) — '≈ 5.668,6 km'");
+    const { linhas, fechar } = await cartoes(browser, 1280);
+    const longe = linhas.filter(([, t]) => /^≈ [\d.]+(,\d)? km/.test(t) && Number(t.match(/^≈ ([\d.]+)/)![1].replace(/\./g, "")) >= 1000);
+    await fechar();
+    expect(longe, "cartões com distância de milhares de km").toEqual([]);
+  });
 });
