@@ -46,7 +46,9 @@ export function PropertyRow({
         className="h-14 w-14 shrink-0 rounded-xl object-cover"
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-ink">{title}</span>
+        {/* Conformidade (31/10): o título em até 2 linhas, como em "Meus imóveis" na mesma tela; antes, a 390, ficava
+            "Imóvel mobiliado com home off…". */}
+        <span className="line-clamp-2 text-sm font-medium text-ink" data-testid="linha-imovel-titulo">{title}</span>
         {/* Anúncio de exemplo: selo honesto também nas listas do painel. */}
         {isExemplo(id) && (
           <span className="mt-1 inline-flex rounded-full bg-night/85 px-2 py-1 text-[10px] font-semibold text-white">
