@@ -1392,7 +1392,7 @@
         "t416-varredura-bloco33",
         "t559-varredura-bloco43",
         "t686-varredura-bloco72",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1478,7 +1478,7 @@
         "t288-padrao-minimo-59a",
         "t339-varredura-bloco16",
         "t676-varredura-bloco69",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "/dashboard/tributacao": {
@@ -2834,7 +2834,7 @@
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
         "t631-e222b-renovar-aditivo",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -3197,7 +3197,7 @@
       "specs": [
         "t275-internet-medida",
         "t410-niveis-medir-rascunho",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "/api/parceiros/pedidos/[id]": {
@@ -4342,7 +4342,7 @@
       ],
       "specs": [
         "t55-manutencao-ciclo",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/manutencao-actions.ts#responderSolicitacao": {
@@ -4352,7 +4352,7 @@
       ],
       "specs": [
         "t55-manutencao-ciclo",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/marketing-admin.ts#apagarGastoMarketing": {
@@ -5224,7 +5224,7 @@
       ],
       "specs": [
         "t232-pedido-moradia-completo",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/pedidos-actions.ts#renovarPedido": {
@@ -6111,7 +6111,7 @@
         "proprietario"
       ],
       "specs": [
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/manutencao-actions.ts#pedirReclassificacao": {
@@ -6139,7 +6139,7 @@
       ],
       "specs": [
         "t292-conforto-manutencao-59",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/nivel-actions.ts#analisarFotoNivel": {
@@ -6904,7 +6904,7 @@
       ],
       "specs": [
         "t397-foto-na-hora",
-        "t746-e267-residual-corpos"
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/prova-actions.ts#provaDoItem": {
