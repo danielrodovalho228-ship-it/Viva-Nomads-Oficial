@@ -78,6 +78,9 @@ begin
       'furnished', true, 'petsOk', false, 'smokingAllowed', false, 'childrenAllowed', true, 'issuesInvoice', false,
       'ownershipType', 'own', 'subleaseAuthorized', false, 'subleaseDoc', '[]'::jsonb, 'subleaseDocTipo', '',
       'privacidade', jsonb_build_object('tipoAcesso', 'porteiro', 'camerasExternas', '', 'semCamerasInterior', true, 'senhaTrocadaEstadia', false),
+      -- L-79: a resposta do Passo 6 (tipo de entrada) que o assistente lê (formDeRascunho); a coluna tipo_entrada sozinha
+      -- não basta e o Passo 10 acusava "Tipo de entrada".
+      'tipoEntrada', 'porteiro',
       'declaracoesPasso10', jsonb_build_object('iptuOk', true, 'habitavel', true, 'convencao', 'yes'),
       'qualificacaoConforto', jsonb_build_object('status', 'pulada', 'respostas', '{}'::jsonb),
       'description', 'Apartamento mobiliado de 2 quartos no Santa Mônica para estadias de 30 a 180 dias, com home office, internet de 300 Mbps, cozinha completa e portaria. Anúncio de teste do QA.',
