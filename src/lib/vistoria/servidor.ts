@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify, type NotificationEvent } from "@/lib/notifications";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { escaparHtml } from "@/lib/escapar-html";
+import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import {
@@ -28,12 +31,55 @@ export const rotaDono = (propertyId: string) => `/dashboard/imoveis/${propertyId
 export const rotaMorador = (pedidoId: string) => `/dashboard/avaliacao-imovel/${pedidoId}`;
 export const ROTA_ADMIN = "/admin/avaliadores";
 
-export async function avisar(admin: Admin, destino: string | null | undefined, ev: NotificationEvent, url: string): Promise<void> {
+/** De onde vêm os fatos do e-mail (E289): o pedido de avaliação (imóvel, data da visita, avaliador) ou só o imóvel. */
+export type RefVistoria = { pedidoId?: string | null; propertyId?: string | null };
+
+/** E289: lê no banco o que o e-mail precisa nomear — imóvel (título, bairro, cidade), visita e avaliador. */
+export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<FatosVistoria> {
+  let propertyId = ref.propertyId ?? null;
+  let visita: string | null = null;
+  let avaliador: string | null = null;
+  if (ref.pedidoId) {
+    const { data: p } = await admin
+      .from("vistoria_pedidos")
+      .select("property_id, agendado_para, avaliadores_credenciamento(parceiros(nome_publico))")
+      .eq("id", ref.pedidoId)
+      .maybeSingle();
+    const pp = p as { property_id?: string | null; agendado_para?: string | null; avaliadores_credenciamento?: { parceiros?: { nome_publico?: string | null } | null } | null } | null;
+    propertyId = propertyId ?? pp?.property_id ?? null;
+    visita = pp?.agendado_para ?? null;
+    avaliador = pp?.avaliadores_credenciamento?.parceiros?.nome_publico ?? null;
+  }
+  if (!propertyId) return { imovel: null, visita, avaliador };
+  const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
+  const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
+  return { imovel: i ? { titulo: i.title, bairro: i.address, cidade: i.city } : null, visita, avaliador };
+}
+
+/**
+ * Avisa uma pessoa de um evento da avaliação. E289: com `ref`, o e-mail sai com os fatos do caso (imóvel nomeado, data
+ * e hora da visita, avaliador) no assunto, no corpo e no bloco de dados.
+ */
+export async function avisar(admin: Admin, destino: string | null | undefined, ev: NotificationEvent, url: string, ref?: RefVistoria): Promise<void> {
   if (!destino) return;
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url });
+    const corpo = ref && EVENTOS_VISTORIA_COM_FATOS.has(ev) ? corpoVistoria(ev as EventoVistoria, await fatosDaVistoria(admin, ref)) : null;
+    await notify({
+      event: ev,
+      email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
+      name: d?.full_name ?? undefined,
+      userId: destino,
+      pushUrl: url,
+      ...(corpo
+        ? {
+            ...(corpo.subject ? { subject: corpo.subject } : {}),
+            body: corpo.body,
+            ...(corpo.linhas.length ? { detailsHtml: blocoDados(corpo.linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) } : {}),
+          }
+        : {}),
+    });
   } catch {
     /* aviso é complemento */
   }
@@ -167,7 +213,7 @@ export async function designar(admin: Admin, pedidoId: string, agora = new Date(
   await admin.from("vistoria_pedidos").update({ status: "designado", avaliador_id: a.id, designado_em: quando, aguardando_avaliador: false, atualizado_em: quando }).eq("id", p.id);
   await admin.from("avaliadores_credenciamento").update({ ultima_designacao_em: quando }).eq("id", a.id);
   await admin.from("vistoria_fila_admin").update({ resolvido_em: quando }).eq("tipo", "sem_avaliador").eq("pedido_id", p.id).is("resolvido_em", null);
-  await avisar(admin, a.userId, "vistoria_designada", ROTA_AVALIADOR);
+  await avisar(admin, a.userId, "vistoria_designada", ROTA_AVALIADOR, { pedidoId: p.id });
   return a.id;
 }
 
@@ -218,9 +264,9 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     if (!v.agendado_para || !visitaAmanha(v.agendado_para, hoje)) continue;
     const { data: marcou } = await admin.from("vistoria_pedidos").update({ lembrete_d1_em: agora.toISOString() }).eq("id", v.id).is("lembrete_d1_em", null).select("id");
     if (!marcou?.length) continue;
-    await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id));
-    await avisar(admin, v.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_lembrete", ROTA_AVALIADOR);
-    await avisar(admin, v.morador_id, "vistoria_lembrete", rotaMorador(v.id));
+    await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id), { pedidoId: v.id });
+    await avisar(admin, v.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_lembrete", ROTA_AVALIADOR, { pedidoId: v.id });
+    await avisar(admin, v.morador_id, "vistoria_lembrete", rotaMorador(v.id), { pedidoId: v.id });
     lembretes++;
   }
   const { data: emitidos } = await admin.from("vistoria_pedidos").select("id, avaliador_id, teste").eq("status", "laudo_emitido").not("avaliador_id", "is", null);

@@ -225,7 +225,7 @@ export async function enviarFotoCorrecao(form: FormData): Promise<Res> {
   const r = await gravarFoto(c.admin, c.l.pedido_versao_id, form);
   if (!r.ok) return r;
   const { data: cred } = c.l.avaliador_id ? await c.admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", c.l.avaliador_id).maybeSingle() : { data: null };
-  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_correcao_enviada", ROTA_AVALIADOR);
+  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_correcao_enviada", ROTA_AVALIADOR, { propertyId: c.l.property_id });
   revalidatePath(`/dashboard/imoveis/${c.l.property_id}/nivel`);
   return { ok: true, mensagem: "Foto enviada. O avaliador confere e o laudo ganha nova versão." };
 }
@@ -291,7 +291,7 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
   await designar(a.admin, p.id as string, agora);
-  await avisar(a.admin, im.owner_id as string, "vistoria_verificacao", rotaDono(im.id as string));
+  await avisar(a.admin, im.owner_id as string, "vistoria_verificacao", rotaDono(im.id as string), { propertyId: im.id as string });
   revalidatePath(ROTA_ADMIN);
   return { ok: true, mensagem: "Verificação aberta e designada pelo rodízio." };
 }

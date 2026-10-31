@@ -118,3 +118,32 @@ export function assuntoVinculoResposta(nomeParceiro: string | null | undefined, 
   const q = `${quem.charAt(0).toLocaleUpperCase("pt-BR")}${quem.slice(1)}`;
   return aceitou ? `${q} aceitou ser sua ${servico}` : `${q} recusou ser sua ${servico}`;
 }
+
+/**
+ * E289: assunto com o fato e o imóvel — `${antes}${título}${depois}`, com o título encolhido para o assunto inteiro
+ * (com a marca) caber em 70 caracteres. Sem título (ou sem espaço para ele), null: vale o assunto do modelo.
+ */
+export function assuntoComTitulo(antes: string, titulo: string | null | undefined, depois = ""): string | null {
+  if (!String(titulo ?? "").trim()) return null;
+  const cabe = Math.min(TITULO_IMOVEL_MAX, ASSUNTO_MAX - SUFIXO_ASSUNTO.length - antes.length - depois.length);
+  if (cabe < 10) return null;
+  const t = tituloNoAssunto(titulo, cabe);
+  if (t === "seu imóvel") return null;
+  const a = `${antes}${t}${depois}`;
+  return `${a.charAt(0).toLocaleUpperCase("pt-BR")}${a.slice(1)}`;
+}
+
+/** "03/11" (o assunto não leva o ano: número longo fica no corpo). Vazio sem data. */
+export function diaNoAssunto(iso: string | null | undefined): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  return m ? `${m[3]}/${m[2]}` : "";
+}
+
+/** "03/11 às 10:00" no horário de Brasília. Vazio sem data. */
+export function diaHoraNoAssunto(iso: string | null | undefined): string {
+  const t = Date.parse(String(iso ?? ""));
+  if (!Number.isFinite(t)) return "";
+  const p = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t));
+  const v = (k: string) => p.find((x) => x.type === k)?.value ?? "";
+  return `${v("day")}/${v("month")} às ${v("hour")}:${v("minute")}`;
+}
