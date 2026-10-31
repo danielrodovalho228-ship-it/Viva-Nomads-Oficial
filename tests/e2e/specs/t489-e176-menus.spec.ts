@@ -11,6 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    6. Voltar — Fechamento com "← Interessados" no topo e sem o "Voltar" do fim do formulário.
    7. Topo público — Imóveis · Anunciar · Empresas + Fale com a Viva + Entrar; o cabeçalho fica na /buscar; /auth com
       "Voltar ao site".
+  Reconferência do E176 (parte logada) pedida pela vigia (31/10): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
