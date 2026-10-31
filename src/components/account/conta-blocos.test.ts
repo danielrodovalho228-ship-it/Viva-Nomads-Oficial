@@ -40,14 +40,16 @@ test("Conta: sem repetições — cada assunto numa tela só; nada de página lo
   assert.doesNotMatch(CONTA, /<PageTitle|<ConfiancaLista|<ChangePassword/);
 });
 
-test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/dashboard/tributacao)", () => {
+test("E292-bis: simulador tributário aposentado — fora da Conta, do cadastro, do hub; /dashboard/tributacao leva a Ferramentas", () => {
   assert.doesNotMatch(ler("src/components/account/conta-secoes.tsx"), /TaxSimulator/);
   assert.doesNotMatch(ler("src/app/auth/page.tsx"), /TaxSimulator/);
-  assert.match(ler("src/app/(dashboard)/dashboard/tributacao/page.tsx"), /<TaxSimulator \/>/);
+  const tela = ler("src/app/(dashboard)/dashboard/tributacao/page.tsx");
+  assert.match(tela, /permanentRedirect\("\/dashboard\/ferramentas"\)/);
+  assert.doesNotMatch(tela, /TaxSimulator/);
   // O cadastro e Ferramentas não mandam o público para a página interna (/tributario fica atrás do acesso de sócios).
   assert.doesNotMatch(ler("src/app/auth/page.tsx"), /href="\/tributario"/);
-  assert.match(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /href: "\/dashboard\/tributacao"/);
-  assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
+  const hub = ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx");
+  assert.doesNotMatch(hub, /\/dashboard\/tributacao|conta#tributacao|PF × PJ/);
 });
 
 test("menu: 'Verificação' abre direto a tela de Verificação (E76: /dashboard/verificacao, não a Privacidade)", () => {

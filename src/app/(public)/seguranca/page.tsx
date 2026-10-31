@@ -3,6 +3,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch } from "lucide-react";
+import { BannerTopo } from "@/components/institucional/banner-topo";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/seguranca" },
@@ -49,20 +50,25 @@ function Faq({ q, children }: { q: string; children: React.ReactNode }) {
 
 export default function SegurancaPage() {
   return (
-    <div className="container-page max-w-3xl py-12 md:py-16">
+    <>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Sua segurança", caminho: "/seguranca" }])} />
-      <span className="inline-flex items-center gap-2 rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
-        <ShieldCheck className="h-3.5 w-3.5" /> Sua segurança
-      </span>
-      <h1 className="mt-4 font-title text-[28px] font-semibold text-ink">
-        Morar com segurança na Viva Nomads
-      </h1>
-      <p className="mt-4 text-lg text-muted">
-        Golpistas agem quase sempre com pressa e pedido de dinheiro por fora. Veja os
-        golpes mais comuns e como a plataforma foi desenhada para proteger os dois lados.
-      </p>
-
-      <section className="mt-12 grid gap-4">
+      {/* Conformidade (mockup publico-seguranca): o topo no padrão das institucionais (BannerTopo com foto do acervo),
+          como /precos, /para-proprietarios, /parceiros e /empresas. Textos mantidos. */}
+      <BannerTopo
+        foto="/images/home/home-hero-chegada.webp"
+        alt="Morador chegando ao imóvel mobiliado, com mala e notebook"
+        eyebrow="Sua segurança"
+        titulo="Morar com segurança na Viva Nomads"
+        testid="topo-seguranca"
+        subtitulo={
+          <p>
+            Golpistas agem quase sempre com pressa e pedido de dinheiro por fora. Veja os golpes mais comuns e como a
+            plataforma foi desenhada para proteger os dois lados.
+          </p>
+        }
+      />
+    <div className="container-page max-w-3xl py-12 md:py-16">
+      <section className="grid gap-4">
         {GOLPES.map((g) => {
           const Icon = g.icon;
           return (
@@ -103,5 +109,6 @@ export default function SegurancaPage() {
         </div>
       </section>
     </div>
+    </>
   );
 }
