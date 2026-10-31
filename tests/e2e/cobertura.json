@@ -1997,6 +1997,7 @@
         "proprietario"
       ],
       "specs": [
+        "t755-agenda-a-periodo-ical",
         "t209-jornada-dois-lados",
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
