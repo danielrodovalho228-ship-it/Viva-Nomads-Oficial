@@ -5,6 +5,7 @@ import { authFile } from "../fixtures/auth";
   T568 — E176-IMPL parte 2 (mesma especificação aprovada): "Notificações" é uma página só (a do sino, na casca da
   Conta: preferências do perfil-06 em cima e os avisos embaixo; /dashboard/conta/notificacoes redireciona);
   "Segurança e verificações" é item próprio da Conta; as filhas da Conta têm "← <seção>" no topo, em toda largura.
+  Reconferência do E176 (parte logada) pedida pela vigia (31/10): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 
