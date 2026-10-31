@@ -143,7 +143,8 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t419-varredura-bloco36",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -212,7 +213,8 @@
         "t48-varredura",
         "t183-telas-logadas-390",
         "t388-varredura-bloco23",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/financeiro": {
@@ -224,7 +226,8 @@
         "t183-telas-logadas-390",
         "t231-admin-numeros-com-lista",
         "t271-admin-visual",
-        "t339-varredura-bloco16"
+        "t339-varredura-bloco16",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/fotografos": {
@@ -318,7 +321,8 @@
         "t286-esqueletos-vazios-48",
         "t352-varredura-bloco17",
         "t419-varredura-bloco36",
-        "t656-e224-plano-gestor"
+        "t656-e224-plano-gestor",
+        "t744-varredura-bloco82"
       ]
     },
     "/ajuda": {
@@ -1387,7 +1391,8 @@
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
         "t559-varredura-bloco43",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t749-e267-residual-corpos"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1472,7 +1477,8 @@
         "t183-telas-logadas-390",
         "t288-padrao-minimo-59a",
         "t339-varredura-bloco16",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t749-e267-residual-corpos"
       ]
     },
     "/dashboard/tributacao": {
@@ -2042,7 +2048,8 @@
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
         "t352-varredura-bloco17",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/contratos": {
@@ -2057,7 +2064,8 @@
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
         "t537-e165-admin-contrato-assinaturas",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/solicitacoes": {
@@ -2080,7 +2088,8 @@
         "t231-admin-numeros-com-lista",
         "t48-varredura",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/eventos": {
@@ -2326,7 +2335,8 @@
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
         "t596-qa-login-direto",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t744-varredura-bloco82"
       ]
     },
     "/admin/retencao": {
@@ -2375,7 +2385,8 @@
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t744-varredura-bloco82"
       ]
     },
     "/dashboard/imoveis/[id]/nivel": {
@@ -2508,7 +2519,8 @@
         "t316-sair-da-viva-51",
         "t319-varredura-bloco10",
         "t467-admin6-rotas",
-        "t420-varredura-bloco37"
+        "t420-varredura-bloco37",
+        "t744-varredura-bloco82"
       ]
     },
     "/dashboard/imoveis/[id]/desempenho": {
@@ -2821,7 +2833,8 @@
         "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t749-e267-residual-corpos"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -3183,7 +3196,8 @@
       ],
       "specs": [
         "t275-internet-medida",
-        "t410-niveis-medir-rascunho"
+        "t410-niveis-medir-rascunho",
+        "t749-e267-residual-corpos"
       ]
     },
     "/api/parceiros/pedidos/[id]": {
@@ -4327,7 +4341,8 @@
         "proprietario"
       ],
       "specs": [
-        "t55-manutencao-ciclo"
+        "t55-manutencao-ciclo",
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/manutencao-actions.ts#responderSolicitacao": {
@@ -4336,7 +4351,8 @@
         "proprietario"
       ],
       "specs": [
-        "t55-manutencao-ciclo"
+        "t55-manutencao-ciclo",
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/marketing-admin.ts#apagarGastoMarketing": {
@@ -5207,7 +5223,8 @@
         "inquilino"
       ],
       "specs": [
-        "t232-pedido-moradia-completo"
+        "t232-pedido-moradia-completo",
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/pedidos-actions.ts#renovarPedido": {
@@ -6093,7 +6110,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t749-e267-residual-corpos"
+      ]
     },
     "src/lib/data/manutencao-actions.ts#pedirReclassificacao": {
       "personas": [
@@ -6119,7 +6138,8 @@
         "proprietario"
       ],
       "specs": [
-        "t292-conforto-manutencao-59"
+        "t292-conforto-manutencao-59",
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/nivel-actions.ts#analisarFotoNivel": {
@@ -6883,7 +6903,8 @@
         "proprietario"
       ],
       "specs": [
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t749-e267-residual-corpos"
       ]
     },
     "src/lib/data/prova-actions.ts#provaDoItem": {
