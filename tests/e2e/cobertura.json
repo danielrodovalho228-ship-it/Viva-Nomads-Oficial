@@ -539,8 +539,7 @@
         "t20-p1-agentes",
         "t311-marco-principal-unico",
         "t543-e166-fundo-clean-publico",
-        "t591-varredura-bloco48",
-        "t727-varredura-bloco80"
+        "t591-varredura-bloco48"
       ]
     },
     "/cidades/[cidade]": {
@@ -555,7 +554,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t727-varredura-bloco80"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -1814,8 +1814,7 @@
         "t18-seo-a11y",
         "t5-pedido-moradia",
         "t310-vao-fim-de-pagina",
-        "t591-varredura-bloco48",
-        "t727-varredura-bloco80"
+        "t591-varredura-bloco48"
       ]
     },
     "/pedidos/novo": {
@@ -2477,8 +2476,7 @@
       ],
       "specs": [
         "t314-entrada-avaliador-62b3",
-        "t591-varredura-bloco48",
-        "t727-varredura-bloco80"
+        "t591-varredura-bloco48"
       ]
     },
     "/avaliadores/[numero]": {

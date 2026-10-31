@@ -8,8 +8,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
 /*
   T727 — VARREDURA DA PÁGINA INTEIRA, BLOCO 80 (Pista C, 31/10). O protocolo do bloco 21 (t385): seis classes, página
   toda rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400. Rodízio das telas PÚBLICAS: as que os
-  blocos 73–78 ainda não varreram neste ciclo — cidades, guias, guia de fotos, preços, segurança, termos, privacidade,
-  avaliadores, pedidos e excluir conta — todas já com o topo do #1637 (chave do globo desligada). Visitante, sem massa
+  blocos 73–78 ainda não varreram neste ciclo — a página da cidade, guias, guia de fotos, preços, segurança, termos,
+  privacidade e excluir conta (/cidades leva à cidade; /avaliadores leva à página do bloco 77; /pedidos pede login) — todas já com o topo do #1637 (chave do globo desligada). Visitante, sem massa
   própria. Defeito novo entra como test.fail ligado a um item D-V (próximo livre: D-V9), com print e descrição curta.
 */
 type Conta = "ADMIN" | "VISITANTE";
@@ -24,15 +24,13 @@ interface Tela {
 
 const TELAS: Tela[] = [
   ...[
-    ["Cidades", "/cidades"],
+    ["Cidade (Uberlândia)", "/cidades/uberlandia"],
     ["Guias", "/guias"],
     ["Guia de fotos", "/guia-fotos"],
     ["Preços", "/precos"],
     ["Segurança", "/seguranca"],
     ["Termos de uso", "/termos"],
     ["Privacidade", "/privacidade"],
-    ["Avaliadores credenciados", "/avaliadores"],
-    ["Pedidos de moradia", "/pedidos"],
     ["Excluir conta", "/excluir-conta"],
   ].map(([nome, rota]) => ({ conta: "VISITANTE" as const, papel: "visitante", nome, rota: () => rota })),
 ];
@@ -55,7 +53,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return (await browser.newContext()).newPage();
 }
 
-test.describe("T727 — varredura da página inteira, bloco 80 (telas públicas: cidades, guias, preços, segurança, termos, privacidade, avaliadores, pedidos, excluir conta) (390 e 1280 px)", () => {
+test.describe("T727 — varredura da página inteira, bloco 80 (telas públicas: cidade, guias, preços, segurança, termos, privacidade, excluir conta) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeEach(({}, info) => {
