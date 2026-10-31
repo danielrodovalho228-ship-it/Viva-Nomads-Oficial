@@ -4,7 +4,7 @@ import { createWriteStream, existsSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, definirPlano, entrar, lerSaida, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
 /*
-  T745 — E267 residual (#1646): os últimos e-mails a clientes que saíam com o corpo genérico do modelo passam a dizer a
+  T746 — E267 residual (#1646): os últimos e-mails a clientes que saíam com o corpo genérico do modelo passam a dizer a
   pessoa ("Olá <primeiro nome>"), o imóvel e o fato, com o bloco de dados "Imóvel · …" no HTML. Pista C, bloco 82.
   Pelas telas e rotas de verdade, com contas de teste (is_teste: o texto do e-mail cai em emails_teste):
     M1. o dono inicia o atendimento    → morador: manutencao_atualizada "mudou a manutenção de hidráulica em <T> para
@@ -32,7 +32,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 */
 const SAIDA = "tests/laboratorio/saida";
 const PORTA = 3176;
-const SEGREDO = `lab-t745-${Math.random().toString(36).slice(2)}`;
+const SEGREDO = `lab-t746-${Math.random().toString(36).slice(2)}`;
 const MARCA = " · Viva Nomads";
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -60,7 +60,7 @@ function quando(iso: string): string {
 const diaIso = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
 async function conta(quem: string, nome: string, role: "owner" | "tenant") {
-  emails[quem] = `${quem}.t745.${sufixo}@lab.vivanomads.test`;
+  emails[quem] = `${quem}.t746.${sufixo}@lab.vivanomads.test`;
   const id = await criarConta({ email: emails[quem], nome, role }, senha);
   await adm().from("profiles").update({ is_teste: true }).eq("id", id);
   ids[quem] = id;
@@ -132,7 +132,7 @@ async function medicaoDoDono(imovel: string, o: { download: number; upload: numb
   if (error) throw error;
 }
 
-test.describe("T745 — E267 residual: manutenção, pedido encerrado, foto pelo celular e internet com o imóvel e o fato", () => {
+test.describe("T746 — E267 residual: manutenção, pedido encerrado, foto pelo celular e internet com o imóvel e o fato", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -162,7 +162,7 @@ test.describe("T745 — E267 residual: manutenção, pedido encerrado, foto pelo
     const pessoas = ["dono", "morador", "pedinte"].map((k) => ids[k]).filter(Boolean);
     if (ids.imovel) {
       await adm().from("service_orders").delete().eq("property_id", ids.imovel);
-      await adm().from("prova_capturas").delete().eq("property_id", ids.imovel);
+      await adm().from("prova_links_celular").delete().eq("property_id", ids.imovel);
     }
     for (const im of [ids.imovel, ids.net].filter(Boolean)) await adm().from("internet_medicoes").delete().eq("property_id", im);
     if (ids.pedido) await adm().from("pedidos_moradia").delete().eq("id", ids.pedido);
@@ -302,7 +302,7 @@ test.describe("T745 — E267 residual: manutenção, pedido encerrado, foto pelo
     await expect(pc.getByTestId(`prova-celular-${item}`).getByTestId("prova-celular-email")).toBeVisible({ timeout: 20_000 });
     await pc.context().close();
 
-    const { data: cap } = await adm().from("prova_capturas").select("expira_em").eq("property_id", ids.imovel).eq("chave", item).order("criado_em", { ascending: false }).limit(1).single();
+    const { data: cap } = await adm().from("prova_links_celular").select("expira_em").eq("property_id", ids.imovel).eq("chave", item).order("expira_em", { ascending: false }).limit(1).single();
     const ate = quando(cap!.expira_em as string);
     const m = await emailCom(ids.dono, "nivel_prova_celular", "2 jogos de roupa de cama");
     await regua("dono", m, {
@@ -352,7 +352,7 @@ test.describe("T745 — E267 residual: manutenção, pedido encerrado, foto pelo
     vence.setUTCHours(15, 0, 0, 0);
     await medicaoDoDono(ids.net, { download: 300, upload: 90, medidoEm: new Date(Date.now() - 170 * DIA).toISOString(), validoAte: vence.toISOString() });
 
-    const log = createWriteStream(`${SAIDA}/t745-servidor-cron.log`);
+    const log = createWriteStream(`${SAIDA}/t746-servidor-cron.log`);
     servidor = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(PORTA)], {
       env: { ...process.env, CRON_SECRET: SEGREDO, AUTOMACOES_ATIVO: "1", PORT: String(PORTA) },
       stdio: ["ignore", "pipe", "pipe"],
