@@ -2452,7 +2452,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t341-credenciamento-avaliador-62a",
         "t387-varredura-bloco22",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -2826,7 +2827,8 @@
         "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -6295,7 +6297,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "src/lib/data/video-link-actions.ts#conferirLinkVideo": {
@@ -6328,7 +6331,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "src/lib/vistoria/actions.ts#concordarVisita": {
