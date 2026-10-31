@@ -74,7 +74,9 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
       <h2 className="mb-4 text-sm font-semibold text-white">
         {title}
       </h2>
-      <ul className="space-y-3 text-sm">{children}</ul>
+      {/* Passada de celular (31/10): no celular cada link é um alvo de toque de 44 px (antes 17 px, a 10 px um do outro);
+          no computador fica como era. */}
+      <ul className="text-sm md:space-y-3">{children}</ul>
     </div>
   );
 }
@@ -82,7 +84,7 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <li>
-      <Link href={href} className="text-white/60 transition-colors hover:text-white">
+      <Link href={href} className="inline-flex min-h-11 items-center text-white/60 transition-colors hover:text-white md:inline md:min-h-0">
         {children}
       </Link>
     </li>
