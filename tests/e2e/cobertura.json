@@ -703,7 +703,8 @@
         "t662-varredura-bloco63",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t790-merges-rotulos-inteiros-banner"
       ]
     },
     "/dashboard/assinatura": {
@@ -845,7 +846,8 @@
         "t645-e238-e239-conta-passos",
         "t661-varredura-bloco62",
         "t672-e190-troca-de-modo",
-        "t694-varredura-bloco73"
+        "t694-varredura-bloco73",
+        "t790-merges-rotulos-inteiros-banner"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -887,7 +889,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t791-varredura-bloco111"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1371,7 +1374,8 @@
         "t216-taxa-matriz",
         "t312-varredura-bloco9",
         "t676-varredura-bloco69",
-        "t709-e263-pets-condicoes-ida-e-volta"
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t791-varredura-bloco111"
       ]
     },
     "/dashboard/pedidos": {
@@ -1767,7 +1771,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t790-merges-rotulos-inteiros-banner"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1932,7 +1937,8 @@
         "t311-marco-principal-unico",
         "t438-vocab-a",
         "t543-e166-fundo-clean-publico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t790-merges-rotulos-inteiros-banner"
       ]
     },
     "/simulacao": {
@@ -2114,7 +2120,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t791-varredura-bloco111"
       ]
     },
     "/parceiros/[slug]": {
@@ -2181,7 +2188,8 @@
         "t250-parceiros-contratacao",
         "t368-varredura-bloco20",
         "t597-e213b-limpeza-renovacao",
-        "t712-e267-transacionais-corpo"
+        "t712-e267-transacionais-corpo",
+        "t791-varredura-bloco111"
       ]
     },
     "/admin/parceiros/pedidos": {
