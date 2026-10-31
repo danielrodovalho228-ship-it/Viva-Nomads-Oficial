@@ -4,8 +4,8 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
 /*
   T779 — estados vazios que dizem o que fazer, 2ª leva (Pista B, 31/10). Pista C, bloco 104. Pelas telas de verdade, a
   1280 e a 390 px, com contas novas:
-   A. carteira do proprietário com um contrato que termina daqui a 120 dias: as três faixas de vencimento dizem
-      "Nenhum contrato termina nesta faixa." (#1705);
+   A. carteira do proprietário (3 imóveis ativos, a regra da abertura) com um contrato que termina daqui a 120 dias:
+      as três faixas de vencimento dizem "Nenhum contrato termina nesta faixa." (#1705);
    B. agenda do parceiro publicado sem janela nem bloqueio: o que vale sem janela e para que serve o bloqueio
       (#1702, #1706);
    C. avaliadora credenciada ativa sem pedido: "Visitas" diz o que entra e quando sai (#1707) e o histórico diz o que
@@ -43,6 +43,8 @@ test.describe("T779 — estados vazios: carteira, agenda do parceiro, avaliaçã
     await adm().from("profiles").update({ intencao: ["anunciar"] }).eq("id", ids.dono);
     for (const id of [ids.morador, ids.avaliadora]) await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", id);
     ids.imovel = await criarImovelPronto(ids.dono, `Casa da ordem T779 ${sufixo}`, { ativo: true });
+    // A análise da carteira abre com 3 imóveis ativos (MIN_IMOVEIS_ANALISE_CARTEIRA): mais dois, vagos.
+    for (const n of [2, 3]) await criarImovelPronto(ids.dono, `Casa vaga ${n} T779 ${sufixo}`, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     const agora = new Date();
     const dia = (d: Date) => d.toISOString().slice(0, 10);
