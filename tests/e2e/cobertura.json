@@ -1049,7 +1049,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t809-meus-anuncios-estadia-minima"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1416,7 +1417,8 @@
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
         "t487-e178-primeiro-pagamento",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t808-varredura-bloco126"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1544,7 +1546,8 @@
       "specs": [
         "t593-e211-visita-do-dono",
         "t589-varredura-bloco47",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t808-varredura-bloco126"
       ]
     },
     "/decisao": {
