@@ -9,6 +9,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
 /*
   T604 — E216: o admin observador da QA (profiles.qa_admin) não vê o link "Caixa dos Sócios" na barra do admin (a página
   já é 404 para ele), nem na Visão geral. O admin comum continua vendo o link. 1280 e 390.
+  Reconferência do E216 pedida pela vigia (31/10): rodada de novo no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
