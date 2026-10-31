@@ -143,8 +143,9 @@ test("ações do servidor: sessão, UUID, só as partes (RLS), dono grava pelo R
   assert.match(resp, /validarMensagem\(texto\)/);
   assert.match(resp, /consumirLimite\(`manutencao-msg:\$\{s\.uid\}`/);
   assert.match(resp, /guardContactInfo\(v\.texto\)/);
-  assert.match(a, /avisarOutraParte\(ordem, papel, "manutencao_atualizada"\)/);
-  assert.match(a, /avisarOutraParte\(alvo\.ordem, alvo\.papel, "manutencao_mensagem"\)/);
+  // E267: o aviso leva o fato (a nova situação ou a mensagem) para o corpo do e-mail.
+  assert.match(a, /avisarOutraParte\(ordem, papel, "manutencao_atualizada", \{ tipo: "status", para: novo \}\)/);
+  assert.match(a, /avisarOutraParte\(alvo\.ordem, alvo\.papel, "manutencao_mensagem", \{ tipo: "mensagem" \}\)/);
 });
 
 test("critério 5: notificações ligadas por padrão e /dashboard/notificacoes existe", () => {

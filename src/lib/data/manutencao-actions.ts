@@ -20,6 +20,7 @@ import type { ServiceOrder, SOStatus } from "@/lib/service-orders";
 import { consumirLimite } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { notify } from "@/lib/notifications";
+import { corpoManutencao, paraNotify, type FatoManutencao } from "@/lib/notifications/corpo-e267-residual";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { camposReabertura, moradorPodeResponder, reclassificar, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -96,7 +97,7 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
 const COLUNAS_ORDEM_ANTIGAS = "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, properties(title)";
 /** Prompt 59: + imóvel/cidade (botão do parceiro) e o prazo de solução (0210). */
 const COLUNAS_ORDEM =
-  "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, property_id, provisoria_em, solucao_marcada_em, solucao_confirmada_em, reaberta_em, prioridade_original, reclassificacao_pedida_em, properties(title, city)";
+  "id, category, priority, description, status, opened_at, first_response_at, resolved_at, tenant_id, owner_id, property_id, provisoria_em, solucao_marcada_em, solucao_confirmada_em, reaberta_em, prioridade_original, reclassificacao_pedida_em, properties(title, address, city)";
 
 type Sessao = { supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>; uid: string };
 
@@ -122,8 +123,11 @@ async function ordemDaParte(s: Sessao, id: string): Promise<{ ordem: OrdemDaPart
   return null;
 }
 
-/** Avisa a OUTRA parte (e-mail se ligado — sem preferência salva = ligado — e push). Nunca lança. */
-async function avisarOutraParte(ordem: OrdemDaParte, papel: PapelOrdem, evento: "manutencao_atualizada" | "manutencao_mensagem") {
+/**
+ * Avisa a OUTRA parte (e-mail se ligado — sem preferência salva = ligado — e push). Nunca lança.
+ * E267: o e-mail nomeia o imóvel, a manutenção (categoria e abertura) e o fato (nova situação, mensagem, solução).
+ */
+async function avisarOutraParte(ordem: OrdemDaParte, papel: PapelOrdem, evento: "manutencao_atualizada" | "manutencao_mensagem", fato: FatoManutencao) {
   const admin = createAdminClient();
   if (!admin) return;
   const destino = papel === "proprietario" ? ordem.tenant_id : ordem.owner_id;
@@ -134,7 +138,20 @@ async function avisarOutraParte(ordem: OrdemDaParte, papel: PapelOrdem, evento: 
     name: (p?.full_name as string) ?? undefined,
     userId: destino,
     pushUrl: "/dashboard/solicitacoes",
+    ...paraNotify(corpoManutencao(dadosDoEmail(ordem, papel), fato)),
   }).catch(() => null);
+}
+
+/** Os fatos da ordem para o e-mail (E267): imóvel (título · bairro, cidade), categoria, abertura e quem agiu. */
+function dadosDoEmail(ordem: OrdemDaParte, papel: PapelOrdem) {
+  const im = (ordem as unknown as { properties?: { title?: string | null; address?: string | null; city?: string | null } | null }).properties;
+  const o = ordem as unknown as { category?: string | null; opened_at?: string | null };
+  return {
+    imovel: im ? { titulo: im.title, bairro: im.address, cidade: im.city } : null,
+    categoria: o.category ?? null,
+    abertaEm: o.opened_at ?? null,
+    quem: papel === "proprietario" ? ("proprietario" as const) : ("morador" as const),
+  };
 }
 
 export interface MensagemOrdem {
@@ -214,7 +231,7 @@ export async function mudarStatusSolicitacao(
     .from("service_order_eventos")
     .insert({ service_order_id: id, ator_id: s.uid, papel, tipo: "status", status_de: atual, status_para: novo });
   if (eHist) console.error("[mudarStatusSolicitacao] histórico", eHist.code);
-  await avisarOutraParte(ordem, papel, "manutencao_atualizada");
+  await avisarOutraParte(ordem, papel, "manutencao_atualizada", { tipo: "status", para: novo });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem) };
 }
@@ -246,7 +263,7 @@ export async function responderSolicitacao(id: string, texto: string): Promise<{
   if (alvo.papel === "proprietario" && !alvo.ordem.first_response_at) {
     await admin.from("service_orders").update({ first_response_at: m.created_at }).eq("id", id).is("first_response_at", null);
   }
-  await avisarOutraParte(alvo.ordem, alvo.papel, "manutencao_mensagem");
+  await avisarOutraParte(alvo.ordem, alvo.papel, "manutencao_mensagem", { tipo: "mensagem" });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, mensagem: { id: m.id as string, autor: "voce", texto: body, criadoEm: m.created_at as string } };
 }
@@ -340,7 +357,7 @@ export async function marcarSolucaoProvisoria(id: string): Promise<ResultadoOrde
   const { data: nova, error } = await s.supabase.from("service_orders").update(campos).eq("id", id).eq("owner_id", s.uid).is("provisoria_em", null).select(COLUNAS_ORDEM).maybeSingle();
   if (error || !nova) return { ok: false, error: "Não foi possível atualizar agora. Recarregue e tente de novo." };
   await historico(id, s.uid, "proprietario", "provisoria");
-  await avisarOutraParte(o, "proprietario", "manutencao_atualizada");
+  await avisarOutraParte(o, "proprietario", "manutencao_atualizada", { tipo: "provisoria" });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem), mensagem: "Solução provisória registrada." };
 }
@@ -361,7 +378,7 @@ export async function responderSolucaoMorador(id: string, acao: "confirmar" | "r
   if (error || !nova) return { ok: false, error: "Não foi possível atualizar agora. Recarregue e tente de novo." };
   await historico(id, s.uid, "inquilino", acao === "confirmar" ? "confirmada" : "reaberta", acao === "reabrir" ? "em_andamento" : null);
   if (acao === "reabrir") await avisarPrazoManutencao(admin, id, "reaberta").catch(() => null);
-  else await avisarOutraParte(alvo.ordem, "inquilino", "manutencao_atualizada");
+  else await avisarOutraParte(alvo.ordem, "inquilino", "manutencao_atualizada", { tipo: "confirmada" });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem), mensagem: acao === "confirmar" ? "Solução confirmada." : "Ordem reaberta. O prazo original continua valendo." };
 }
