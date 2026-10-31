@@ -1,0 +1,10 @@
+Inventário renderizado (1280, modo demonstração) — grupo: cartões com descrição / total
+comodidades ok    0/4 trabalho-essenciais / Essenciais · contam para a etiqueta 
+comodidades ok    0/3 trabalho-opcionais / Opcionais · não contam 
+comodidades ok    0/3 etapa-encontramos / No prédio 
+comodidades ok    0/9 etapa-encontramos / Conforto do imóvel 
+comodidades ok    0/9 etapa-encontramos / Prédio / condomínio 
+comodidades ok    0/2 seguranca-imovel / Segurança 
+regras ok    4/4 etapa-regras-casa /  
+regras ok    0/5 chegada-e-pedido / Aparece no anúncio. Código, senha e onde 
+regras ok    0/5 chegada-e-pedido / Dizer antes evita surpresa e conta a fav 

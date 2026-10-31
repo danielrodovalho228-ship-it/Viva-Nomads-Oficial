@@ -64,7 +64,6 @@ test("1. a contraproposta, o piso privado, o preço do anúncio, os simuladores 
   usa("../app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx");
   usa("../components/simulador/ui.tsx");
   usa("../components/precos/simulador-bolso.tsx");
-  usa("../components/precos/preco-sugerido.tsx");
   usa("../app/(dashboard)/dashboard/orcamentos/nova/montagem-proposta.tsx");
   usa("../components/anuncio/limpeza-estadia-campos.tsx");
   usa("../components/anuncio/pets-regras-campos.tsx");

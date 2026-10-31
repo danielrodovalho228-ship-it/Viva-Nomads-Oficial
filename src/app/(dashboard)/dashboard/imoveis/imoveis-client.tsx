@@ -20,7 +20,7 @@ import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { linhaEstadiaMinima, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -316,5 +316,6 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
  */
 function rotuloDoCartaoDoDono(p: Property) {
   const r = rotuloPreco({ mensal: precoDoImovel(p).totalPorMes, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom });
-  return { ...r, estadia: linhaEstadiaMinima(p, r.meses) };
+  return { ...r, estadia: estadiaDoCartaoDoDono(p, r.meses) };
 }
+

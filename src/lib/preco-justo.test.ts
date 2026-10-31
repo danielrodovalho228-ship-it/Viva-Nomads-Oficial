@@ -39,14 +39,14 @@ test("entrada inválida não quebra: devolve null / zero", () => {
   assert.deepEqual(economiaDoMorador(0, 100, 2), { reais: 0, pct: 0 });
 });
 
-test("o passo de preço do cadastro mostra o PrecoSugerido (opcional) e o botão usa o preço sugerido", async () => {
-  const { readFileSync } = await import("node:fs");
-  const pagina = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx", "utf8");
-  assert.match(pagina, /<PrecoSugerido aluguel=\{aluguel\} meses=\{mesesExemplo\} taxa=\{taxa\} onUsar=/);
+// E292-bis ("a Viva só conecta", 31/10): o comparativo do Airbnb (taxa de 16% e "preço sugerido" de equivalência)
+// saiu do passo de preço. As funções acima ficam só como conta; nenhuma tela as mostra.
+test("E292-bis: o passo de preço do cadastro não tem mais o comparativo do Airbnb", async () => {
+  const { readFileSync, existsSync } = await import("node:fs");
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx", "utf8").replace(/\{?\/\*[\s\S]*?\*\/\}?/g, "");
+  assert.doesNotMatch(pagina, /PrecoSugerido|preco-sugerido|Airbnb|airbnb/);
   assert.match(pagina, /const aluguel = Number\(p\.monthlyPrice\) \|\| 0;/);
-  const comp = readFileSync("src/components/precos/preco-sugerido.tsx", "utf8");
-  assert.match(comp, /Usar \{brlTaxa\(sugerido\)\}\/mês como valor mensal/);
-  assert.doesNotMatch(comp, /\b(comissão|corretagem)\b/i);
+  assert.equal(existsSync("src/components/precos/preco-sugerido.tsx"), false);
 });
 
 test("taxaDoNovoAnuncio: faixa pelos ativos já contando o anúncio novo", () => {
