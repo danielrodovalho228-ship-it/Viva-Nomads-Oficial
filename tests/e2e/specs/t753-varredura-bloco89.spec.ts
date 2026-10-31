@@ -8,10 +8,11 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   T753 — VARREDURA DA PÁGINA INTEIRA, BLOCO 89 (Pista C, 31/10). O protocolo do bloco 21 (t385): seis classes (imagem
   pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade),
   página toda rolada, 390 e 1280 px, HTTP abaixo de 400. Rodízio pelo registro de cobertura: as telas do PAINEL DO
-  PROPRIETÁRIO sem id na URL que o ciclo (blocos 72–88) ainda não varreu — agenda, assinatura, ganhos, recibos,
+  PROPRIETÁRIO sem id na URL que o ciclo (blocos 72–88) ainda não varreu — agenda, carteira, ganhos, recibos,
   respostas rápidas, retorno do imóvel, viabilidade, tributação, simulador e ferramentas —, com a conta DONO17 da massa
   da varredura (scripts/lab/massa-varredura.mjs). Defeito novo entra como test.fail ligado a um item (L-82 / D-V9 são
   os próximos livres).
+  A /dashboard/assinatura fica de fora: redireciona para /precos por desenho (tela aposentada, sem mensalidade).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
 interface Tela {
@@ -24,7 +25,7 @@ interface Tela {
 const TELAS: Tela[] = [
   ...[
     ["Agenda", "/dashboard/agenda"],
-    ["Assinatura", "/dashboard/assinatura"],
+    ["Carteira", "/dashboard/carteira"],
     ["Ganhos", "/dashboard/ganhos"],
     ["Recibos", "/dashboard/recibos"],
     ["Respostas rápidas", "/dashboard/respostas-rapidas"],

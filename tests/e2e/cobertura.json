@@ -717,8 +717,7 @@
         "t38-varios-imoveis-por-dono",
         "t39-app-ida-e-volta",
         "t183-telas-logadas-390",
-        "t591-varredura-bloco48",
-        "t753-varredura-bloco89"
+        "t591-varredura-bloco48"
       ]
     },
     "/dashboard/avaliacoes": {
@@ -795,7 +794,8 @@
         "t221-contrato-estado-periodo",
         "t339-varredura-bloco16",
         "t631-e222b-renovar-aditivo",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t753-varredura-bloco89"
       ]
     },
     "/dashboard/comparar": {
