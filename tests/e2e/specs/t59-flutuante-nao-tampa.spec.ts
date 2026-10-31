@@ -151,13 +151,14 @@ test("Q4/E246 — /imoveis/ube-001 a 390 px: sem flutuante; Avaliações e o tot
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
   await expect(page.getByTestId("fale-com-a-viva")).toBeHidden();
-  for (const alvo of [page.locator("#avaliacoes-title"), page.getByText("o inquilino não paga nada à plataforma", { exact: false }).first()]) {
-    await alvo.evaluate((el) => el.scrollIntoView({ block: "center" }));
-    await expect(alvo).toBeVisible();
+  // O total do mês diz "o morador não paga nada à plataforma" (antes, "o inquilino"); Avaliações só existe com nota.
+  for (const alvo of [page.locator("#avaliacoes-title").filter({ visible: true }), page.getByText("não paga nada à plataforma", { exact: false }).filter({ visible: true })]) {
+    if ((await alvo.count()) === 0) continue;
+    await alvo.first().scrollIntoViewIfNeeded();
+    await expect(alvo.first()).toBeInViewport();
     await expect(page.getByTestId("fale-com-a-viva")).toBeHidden();
   }
   await nadaTampa(page);
-  await page.locator("#avaliacoes-title").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "tests/laboratorio/saida/t59-q4-imovel-390.png" });
 });
 
