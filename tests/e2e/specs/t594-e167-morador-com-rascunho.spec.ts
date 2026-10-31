@@ -9,6 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    1. 1280 e 390, papel morador: o Início é só do morador — sem "Para publicar seu anúncio", sem "Como proprietário",
       sem o Início do dono, sem barra lateral; abas/barra de baixo do morador.
    2. Simétrico, papel proprietário: o Início do dono, sem os blocos do morador.
+  Reconferência do E167 pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
