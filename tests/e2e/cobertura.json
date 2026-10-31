@@ -82,7 +82,9 @@
         "t546-e175-parcerias-uma-linha",
         "t549-varredura-bloco39",
         "t588-varredura-bloco46",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t724-varredura-bloco77",
+        "t723-e288b-marcado-fora-real-dentro"
       ]
     },
     "/admin/2fa/refazer": {
@@ -1764,7 +1766,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t724-varredura-bloco77"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1774,7 +1777,8 @@
       "specs": [
         "t314-entrada-avaliador-62b3",
         "t319-varredura-bloco10",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t724-varredura-bloco77"
       ]
     },
     "/parceiros/fotografos": {
@@ -1789,7 +1793,8 @@
         "t236-parceiros-ciclo",
         "t311-marco-principal-unico",
         "t353-varredura-bloco18",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t724-varredura-bloco77"
       ]
     },
     "/pedidos": {
@@ -2087,7 +2092,9 @@
       "specs": [
         "t231-admin-numeros-com-lista",
         "t48-varredura",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t724-varredura-bloco77",
+        "t723-e288b-marcado-fora-real-dentro"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -2134,7 +2141,8 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t724-varredura-bloco77"
       ]
     },
     "/parceiros/buscar": {
@@ -2152,7 +2160,8 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t724-varredura-bloco77"
       ]
     },
     "/admin/contratos/[id]": {
@@ -2494,7 +2503,9 @@
       "specs": [
         "t313-ativacao-funil-50",
         "t319-varredura-bloco10",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t724-varredura-bloco77",
+        "t723-e288b-marcado-fora-real-dentro"
       ]
     },
     "/admin/qualidade": {
