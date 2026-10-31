@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, escutarErros, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
@@ -10,8 +10,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
   régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 121 (registro de cobertura: última
   varredura no bloco 108, t787): as PÚBLICAS com parâmetro na URL (e a /como-funciona), como visitante — guias, polos de
-  Uberlândia (FAQPage em português do #1711), imóveis perto de um destino (um destino ativo do banco; sem nenhum,
-  pula), perfil público do proprietário (DONO17 da massa), página do parceiro (o da massa; o slug sai do banco) e o novo
+  Uberlândia (FAQPage em português do #1711), imóveis perto de um destino (a spec cria um destino ativo próprio e o
+  apaga no fim, como a t261), perfil público do proprietário (DONO17 da massa), página do parceiro (o da massa; o slug sai do banco) e o novo
   pedido de moradia. Defeito novo entra como test.fail ligado a um item (L-84 / D-V11 são os próximos livres).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
@@ -23,8 +23,13 @@ interface Tela {
 }
 
 let slugParceiro = "";
-/** Um destino ATIVO do banco do laboratório (o hc-ufu só fica ativo durante a t261); sem nenhum, o caso pula. */
+/**
+ * Um destino ATIVO para "Imóveis perto de um destino". No laboratório os destinos ficam inativos (o hc-ufu só liga
+ * durante a t261), e por isso a tela pulou nas duas voltas anteriores (blocos 91 e 108). Como a t261, a spec cria o
+ * próprio destino (Uberlândia, com ponto, ativo) e o apaga no fim; não mexe no hc-ufu.
+ */
 let destino = "";
+let destinoCriado = "";
 const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", nome: "Como funciona", rota: () => "/como-funciona" },
   { conta: "VISITANTE", papel: "visitante", nome: "Guia: o que é a caução", rota: () => "/guias/o-que-e-a-caucao" },
@@ -59,8 +64,18 @@ test.describe("T804 — varredura da página inteira, bloco 122 (3ª volta, púb
     if (!MASSA) return;
     const { data } = await adm().from("parceiros").select("slug").eq("id", MASSA.parceiro).maybeSingle();
     slugParceiro = String(data?.slug ?? "");
-    const { data: d } = await adm().from("destinos").select("slug").eq("ativo", true).limit(1).maybeSingle();
-    destino = String((d as { slug?: string } | null)?.slug ?? "");
+    const slug = `lab-t804-${novoSufixo()}`;
+    const { data: d, error } = await adm()
+      .from("destinos")
+      .insert({ slug, nome: `Clínica Lab T804`, artigo: "a", tipo: "outro", cidade: "Uberlândia", uf: "MG", lat: -18.9186, lng: -48.2772, ativo: true })
+      .select("id, slug")
+      .single();
+    if (error) throw error;
+    destinoCriado = String(d.id);
+    destino = String(d.slug);
+  });
+  test.afterAll(async () => {
+    if (destinoCriado) await adm().from("destinos").delete().eq("id", destinoCriado);
   });
 
   for (const t of TELAS) {
