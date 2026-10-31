@@ -180,13 +180,16 @@ export interface ItemConta extends ItemAba {
  * verificação, pagamentos, notificações, avaliações e plano moram dentro da Conta (um nome só para cada tela, E85).
  */
 const MINHA_CONTA: ItemConta = { id: "conta", rotulo: "Minha conta", href: "/dashboard/conta" };
-const AJUDA: ItemConta = { id: "ajuda", rotulo: "Ajuda", href: "/ajuda" };
+// E185: "Ajuda" tem UM destino em todos os menus (nomes únicos por destino, pacote de menus): a Ajuda da Conta, que
+// leva à Central de ajuda, aos termos e ao "Sair da conta". Antes o avatar ia para a Central pública (/ajuda).
+export const HREF_AJUDA_CONTA = "/dashboard/conta/ajuda";
+const AJUDA: ItemConta = { id: "ajuda", rotulo: "Ajuda", href: HREF_AJUDA_CONTA };
 
 /**
  * O menu da Conta por papel (o mesmo no "Conta ▾" do computador e no avatar do celular). MENUS-5, item 3: as
  * Ferramentas saem daqui (viram os cartões do Início do dono com "Todas as ferramentas").
  */
-export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; admin?: boolean }): ItemConta[] {
+export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; admin?: boolean; pathname?: string }): ItemConta[] {
   const itens: ItemConta[] = [MINHA_CONTA];
   if (papel === "proprietario") {
     itens.push({ id: "modo-morador", rotulo: "Modo morador", href: "/dashboard", acao: "modo-morador" });
@@ -198,7 +201,8 @@ export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; a
   itens.push(AJUDA);
   // Só contas da equipe (fora dos 4 itens de morador/dono): é a única porta do painel para o /admin.
   if (p.admin) itens.push({ id: "admin", rotulo: "Painel admin", href: "/admin" });
-  itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });
+  // E185: "Sair" aparece UMA vez por tela — na Ajuda da Conta a própria tela já tem "Sair da conta" (mockup perfil-08).
+  if (!p.pathname?.startsWith(HREF_AJUDA_CONTA)) itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });
   return itens;
 }
 

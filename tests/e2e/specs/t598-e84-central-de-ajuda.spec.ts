@@ -9,6 +9,7 @@ import { test, expect, type Page } from "@playwright/test";
    2. /ajuda/fale-com-a-viva: o chat e o chamado; links antigos (/ajuda?novo=1) chegam aqui.
    3. /termos e /privacidade: páginas próprias com índice e "Ficou alguma dúvida? Fale com a Viva."
   Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
+  Reconferência do E186 pedida pela vigia (31/10): o hub sem perguntas e cada tema na sua página, no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 

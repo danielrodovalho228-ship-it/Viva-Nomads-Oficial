@@ -854,6 +854,7 @@
         "admin"
       ],
       "specs": [
+        "t745-e185-ajuda-sair-notificacoes",
         "t14-app-mode",
         "t17-conta-salvar",
         "t36-cadastro-ponta-a-ponta",

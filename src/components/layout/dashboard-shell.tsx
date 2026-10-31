@@ -290,7 +290,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const papelTopo = naAreaAdmin ? null : papelAtivo;
   const comContrato = estadiaAtiva || contratosParaAssinar > 0;
   const abasTopo = abasDoPapelPainel(papelTopo, { comContrato });
-  const itensConta = itensDaConta(papelTopo, { temImovel, admin: display.role === "admin" });
+  const itensConta = itensDaConta(papelTopo, { temImovel, admin: display.role === "admin", pathname });
   const aoAcaoConta = (acao: NonNullable<ItemConta["acao"]>) => {
     if (acao === "sair") handleSignOut();
     else void irParaModo(acao === "modo-morador" ? "tenant" : "owner");
