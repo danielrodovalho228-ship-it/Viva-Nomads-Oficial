@@ -11,9 +11,18 @@ import { formatBRL } from "../../../src/lib/utils";
   2. ROI: contrato tradicional com padrões editáveis; ponto de equilíbrio (valor e ocupação); cenários, gráfico,
      "Como calculamos"; a líquida do mobiliado é a MESMA do simulador com as mesmas entradas.
   3. Sem número de mercado sem fonte nos painéis de destaque; sem rolagem lateral.
+  E294: os dois viraram um cálculo só (/dashboard/simulador), só com os números do dono — tudo começa vazio e o
+  tradicional entra só com o valor mensal dele digitado. /dashboard/roi-imovel leva para o simulador.
 */
 const SAIDA = "tests/laboratorio/saida";
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ");
+
+/** Digita no campo pelo rótulo (R$ em texto brasileiro; os outros numéricos). */
+async function digitar(page: Page, rotulo: string, valor: number) {
+  const esc = rotulo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const nome = new RegExp(`^${esc}( R\\$)?$`);
+  await page.getByRole("spinbutton", { name: nome }).or(page.getByRole("textbox", { name: nome })).fill(String(valor));
+}
 
 async function semRolagemLateral(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
@@ -29,6 +38,14 @@ test.describe("T189 — simulador e ROI (prompt 15)", () => {
       await page.goto("/dashboard/simulador", { waitUntil: "networkidle" });
       const corpo = limpo(await page.locator("main").innerText());
       expect(corpo).not.toMatch(/2\.800–3\.400|~10 meses\/ano/);
+
+      // E294: começa vazio — nenhuma conta sem os números do dono.
+      await expect(page.getByTestId("sim-vazio")).toBeVisible();
+      await expect(page.getByTestId("sim-liquida")).toHaveCount(0);
+      await digitar(page, "Valor mensal pretendido", 3000);
+      await digitar(page, "Condomínio + IPTU (mês)", 550);
+      await digitar(page, "Contas de consumo — água, luz, internet (mês)", 350);
+      await digitar(page, "Meses ocupados no ano (1 a 12)", 10);
 
       // Padrão: cobrado à parte nos dois.
       for (const id of ["cobranca-condo", "cobranca-contas"]) {
@@ -63,11 +80,23 @@ test.describe("T189 — simulador e ROI (prompt 15)", () => {
       await page.screenshot({ path: `${SAIDA}/t189-simulador-${largura}.png`, fullPage: true });
     });
 
-    test(`${largura}px — ROI: tradicional com padrões, ponto de equilíbrio e cenários`, async ({ page }) => {
+    test(`${largura}px — ROI no mesmo cálculo: tradicional digitado, ponto de equilíbrio e cenários`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/dashboard/roi-imovel", { waitUntil: "networkidle" });
+      // E294: o endereço antigo leva ao simulador (um cálculo só).
+      await expect(page).toHaveURL(/\/dashboard\/simulador$/);
       const corpo = limpo(await page.locator("main").innerText());
       expect(corpo).not.toMatch(/\+40–70%|2–4 anos/);
+      await digitar(page, "Valor mensal pretendido", 3000);
+      await digitar(page, "Contas de consumo — água, luz, internet (mês)", 400);
+      await digitar(page, "Meses ocupados no ano (1 a 12)", 10);
+      await digitar(page, "Investimento na mobília", 25000);
+      await digitar(page, "Reposição e desgaste da mobília (% do investimento por ano)", 10);
+      await expect(page.getByTestId("roi-sem-tradicional")).toBeVisible();
+      await digitar(page, "Valor mensal do tradicional (sem mobília)", 1800);
+      await digitar(page, "Meses vazios por ano", 1);
+      await digitar(page, "Taxa de administração (%)", 10);
+      await digitar(page, "Taxa de contrato: 1 valor mensal a cada (meses)", 30);
 
       const entrada = {
         investimentoMobiliar: 25000,
@@ -85,7 +114,7 @@ test.describe("T189 — simulador e ROI (prompt 15)", () => {
       // Mesma base do simulador: líquido do mobiliado = base − reposição.
       expect(r.netMobiliadoAnual).toBe(baseMobiliadoAno({ valorMensal: 3000, condoIptu: 0, contas: 400, mesesOcupados: 10 }, 0.12).liquidaAnual - 2500);
 
-      await expect(page.getByTestId("roi-tradicional")).toContainText("referência de mercado");
+      await expect(page.getByTestId("roi-tradicional")).toContainText("Digite os números do contrato tradicional");
       await expect(page.getByTestId("roi-equilibrio-valor")).toContainText(limpo(formatBRL(r.valorMinimoEmpate!)));
       await expect(page.getByTestId("roi-equilibrio-ocupacao")).toContainText(`${r.ocupacaoMinimaEmpate} meses por ano`);
 
@@ -94,11 +123,11 @@ test.describe("T189 — simulador e ROI (prompt 15)", () => {
       await page.getByLabel(/Rendimento anual se o investimento ficasse aplicado/).fill("10");
       await expect(page.getByTestId("roi-aplicacao")).toBeVisible();
 
-      await expect(page.getByTestId("roi-cenarios").locator("tbody tr")).toHaveCount(3);
+      await expect(page.getByTestId("sim-cenarios").locator("tbody tr")).toHaveCount(3);
       await expect(page.getByTestId("roi-grafico")).toContainText("mobiliado × tradicional");
-      const como = page.getByTestId("roi-como-calculamos");
+      const como = page.getByTestId("sim-como-calculamos");
       await como.locator("summary").click();
-      await expect(como).toContainText("É a mesma conta do Simulador de rentabilidade");
+      await expect(como).toContainText("Tudo sai dos números que você digitou");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t189-roi-${largura}.png`, fullPage: true });
     });

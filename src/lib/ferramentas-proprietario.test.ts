@@ -11,7 +11,8 @@ import { htmlSimulacao } from "./print-simulacao.ts";
 
 const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
 const SIM = ler("../app/(dashboard)/dashboard/simulador/page.tsx");
-const ROI = ler("../app/(dashboard)/dashboard/roi-imovel/page.tsx");
+// E294: a Calculadora de ROI virou parte do Simulador (um cálculo só); o endereço antigo só redireciona.
+const ROI = SIM;
 
 // Os números do print do Muse: R$ 3.000 mobiliado, 10 meses, sem condomínio, contas R$ 400 à parte,
 // investimento R$ 25.000 com 10% de reposição, 12% de taxa. Antes: Simulador 26.400 × Calculadora 23.900.
@@ -44,8 +45,9 @@ test("p27 item 1 — as duas telas chamam a mesma função; nenhuma faz conta pr
   assert.equal((ler("./simulador.ts").match(/liquidoMobiliadoAnual\(/g) ?? []).length, 3, "definição + Simulador + ROI");
   for (const tela of [SIM, ROI]) assert.doesNotMatch(tela, /baseMobiliadoAno\(/, "a tela não calcula por fora");
   assert.match(SIM, /Reposição e desgaste da mobília/);
-  assert.match(SIM, /mesma conta do mobiliado na Calculadora de ROI/);
-  assert.match(ROI, /mesma conta do Simulador de rentabilidade \(a mesma função\)/);
+  // E294: uma tela, um cálculo (lib/calculo-imovel.ts chama simularRentabilidade e simularROI com a mesma entrada).
+  assert.match(SIM, /calcularImovel\(e, faixa\.taxa\)/);
+  assert.match(ler("../app/(dashboard)/dashboard/roi-imovel/page.tsx"), /permanentRedirect\("\/dashboard\/simulador"\)/);
   assert.equal(liquidoMobiliadoAnual({ valorMensal: 3000, condoIptu: 0, contas: 0, mesesOcupados: 10, investimentoMobilia: 25000, reposicaoAnualPct: 0.1 }, 0.12).liquidoAnual, 23900);
 });
 
@@ -64,7 +66,7 @@ test("p27 item 3 — cenários Conservador / Realista / Otimista nas duas telas 
   for (const tela of [SIM, ROI]) {
     assert.doesNotMatch(tela, /Pessimista|"Esperado"/);
     assert.match(tela, /c\.nome === "Realista"/);
-    assert.match(tela, /cenarios: cenarios\.map/);
+    assert.match(tela, /cenarios: calc\.cenarios\.map/);
   }
   const html = htmlSimulacao({ titulo: "t", entradas: [], resultados: [], cenarios: cenariosOcupacao(10).map((c) => ({ label: c.nome, valor: "x" })) });
   assert.match(html, /Cenários de ocupação/);

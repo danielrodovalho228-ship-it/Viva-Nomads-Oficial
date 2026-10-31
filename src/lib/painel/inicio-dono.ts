@@ -109,6 +109,6 @@ export const PECA_NA_VIVA = {
 
 export const ATALHOS_INICIO_DONO = [
   { id: "agenda", rotulo: "Agenda", texto: "Veja visitas e manutenções", href: "/dashboard/agenda" },
-  { id: "simulador", rotulo: "Simulador de rentabilidade", texto: "Estime receita mensal e despesas", href: "/dashboard/simulador" },
+  { id: "simulador", rotulo: "Simulador do imóvel", texto: "Rentabilidade e retorno com os seus números", href: "/dashboard/simulador" },
   { id: "recibos", rotulo: "Recibos e notas", texto: "Emissão e histórico de comprovantes", href: "/dashboard/recibos" },
 ] as const;

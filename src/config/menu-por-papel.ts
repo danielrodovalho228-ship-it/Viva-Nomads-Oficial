@@ -154,8 +154,8 @@ const FERRAMENTAS_E_CONTA: ItemDoPapel[] = [
     filhos: [
       { id: "ferramentas-todas", rotulo: "Todas as ferramentas", icone: "ferramentas", href: "/dashboard/ferramentas" },
       { id: "agenda", rotulo: "Agenda", icone: "visitas", href: "/dashboard/agenda", quando: (ctx) => ctx.temImovel },
-      { id: "simulador", rotulo: "Simulador de rentabilidade", icone: "simulador", href: "/dashboard/simulador" },
-      { id: "roi", rotulo: "Calculadora de ROI", icone: "roi", href: "/dashboard/roi-imovel" },
+      // E294: Simulador de rentabilidade + Calculadora de ROI = um cálculo só (o endereço antigo do ROI leva para cá).
+      { id: "simulador", rotulo: "Simulador do imóvel", icone: "simulador", href: "/dashboard/simulador" },
       // Prompt 42, item 4: o simulador PF × PJ (já em /dashboard/tributacao e no hub) também no menu.
       { id: "tributacao", rotulo: "Tributação PF × PJ", icone: "dinheiro", href: "/dashboard/tributacao" },
       {

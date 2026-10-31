@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   TrendingUp,
-  Percent,
   Calculator,
   Scale,
   FileText,
@@ -55,16 +54,11 @@ const GRUPOS: Grupo[] = [
     texto: "Entenda o retorno antes de anunciar ou de investir em móveis.",
     itens: [
       {
+        // E294: o Simulador de rentabilidade e a Calculadora de ROI viraram um cálculo só, com os números do dono.
         href: "/dashboard/simulador",
-        titulo: "Simulador de rentabilidade",
-        texto: "Quanto o seu imóvel rende por mês na Viva Nomads — receita, custos e líquido.",
+        titulo: "Simulador do imóvel",
+        texto: "Com os seus números: quanto o imóvel rende por mês, a comparação com o contrato tradicional, o payback e o ROI da mobília.",
         icone: TrendingUp,
-      },
-      {
-        href: "/dashboard/roi-imovel",
-        titulo: "Calculadora de ROI",
-        texto: "Vale a pena mobiliar? Veja o payback do investimento e o retorno anual.",
-        icone: Percent,
       },
       {
         href: "/dashboard/carteira",
@@ -77,6 +71,13 @@ const GRUPOS: Grupo[] = [
         titulo: "Tributação PF × PJ",
         texto: "Estime o imposto das locações como pessoa física e como empresa.",
         icone: Scale,
+      },
+      {
+        // E294: com o simulador e o ROI num cartão só, a grade 2×2 ganha os recibos (o informe anual sai deles).
+        href: "/dashboard/recibos",
+        titulo: "Recibos e notas",
+        texto: "Comprovantes emitidos, histórico e o informe anual para o imposto de renda.",
+        icone: Receipt,
       },
     ],
   },

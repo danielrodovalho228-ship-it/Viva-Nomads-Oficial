@@ -15,7 +15,8 @@ test.describe("T97 — Análise da carteira pela regra das faixas e Viabilidade 
     test(`${largura}px — viabilidade redireciona; carteira sem trava de plano`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/dashboard/viabilidade", { waitUntil: "domcontentloaded" });
-      await expect(page).toHaveURL(/\/dashboard\/roi-imovel$/);
+      // E294: a Calculadora de ROI se juntou ao Simulador do imóvel; a viabilidade leva direto para lá.
+      await expect(page).toHaveURL(/\/dashboard\/simulador$/);
 
       await page.goto("/dashboard/carteira", { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { name: "Análise da carteira" }).first()).toBeVisible({ timeout: 15_000 });
