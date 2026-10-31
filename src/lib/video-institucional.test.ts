@@ -30,3 +30,9 @@ test("legenda no vocabulário da Viva e arquivos do player no tamanho certo", ()
   assert.ok(statSync("public/media/institucional.mp4").size < 6 * 1024 * 1024, "mp4 leve (< 6 MB)");
   assert.ok(statSync("public/media/institucional-poster.webp").size < 200 * 1024, "capa leve (< 200 KB)");
 });
+
+test("varredura 31/10: a caixa do vídeo tem o fundo do pôster (branco) — sem arcos escuros nos cantos arredondados", () => {
+  const c = readFileSync("src/components/institucional/video-institucional.tsx", "utf8");
+  assert.match(c, /className="mt-4 overflow-hidden rounded-xl bg-white" data-testid="video-institucional-caixa"/);
+  assert.doesNotMatch(c, /rounded-xl bg-night/);
+});

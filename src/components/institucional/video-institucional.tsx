@@ -19,7 +19,8 @@ export function VideoInstitucional({ titulo = "A Viva em 30 segundos", id = "vid
       <h2 id={tituloId} className="font-title font-semibold text-ink display-lg">
         {titulo}
       </h2>
-      <div className="mt-4 overflow-hidden rounded-xl bg-night ">
+      {/* Varredura 31/10: o pôster e o vídeo têm fundo branco; o fundo escuro vazava em arcos nos cantos arredondados. */}
+      <div className="mt-4 overflow-hidden rounded-xl bg-white" data-testid="video-institucional-caixa">
         <video
           data-testid="video-institucional"
           className="aspect-video h-auto w-full"
