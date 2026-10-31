@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ERRO_LINK_CELULAR, ERRO_LINK_OUTRA_CONTA } from "@/lib/niveis/prova-camera";
 
-export const metadata = { title: "Fotografar pelo celular · Viva Nomads", robots: { index: false } };
+export const metadata = { title: "Fotografar pelo celular", robots: { index: false } };
 
 /** FOTO-NA-HORA-B — o link do celular não abriu: vencido, já usado ou de outra conta. */
 export default async function AvisoLinkCelular({ searchParams }: { searchParams: Promise<{ m?: string }> }) {

@@ -166,7 +166,7 @@ export function AvailabilityCalendar({
           ];
           return (
             <div key={`${y}-${m}`} className="rounded-xl border border-sage-200 p-3">
-              <p className="mb-2 text-center text-sm font-semibold capitalize text-ink">
+              <p className="mb-2 text-center text-sm font-semibold text-ink first-letter:uppercase">
                 {MESES[m]} {y}
               </p>
               <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted">

@@ -133,7 +133,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
           <ul className="divide-y divide-line">
             {totais.map((t) => (
               <li key={t.mes} className="flex items-center justify-between py-2 text-sm">
-                <span className="capitalize text-ink">{mesLabel(t.mes)}</span>
+                <span className="inline-block text-ink first-letter:uppercase">{mesLabel(t.mes)}</span>
                 <span className="font-semibold text-ink">{formatBRL(t.total)}</span>
               </li>
             ))}
@@ -160,7 +160,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
                 <li key={g.id} className="flex items-center justify-between gap-3 py-3 text-sm">
                   <span className="min-w-0">
                     <span className="block text-ink">
-                      <span className="capitalize">{mesLabel(g.mes)}</span> · {canalLabel(g.canal)}
+                      <span className="inline-block first-letter:uppercase">{mesLabel(g.mes)}</span> · {canalLabel(g.canal)}
                     </span>
                     {g.observacao && <span className="block truncate text-muted">{g.observacao}</span>}
                   </span>

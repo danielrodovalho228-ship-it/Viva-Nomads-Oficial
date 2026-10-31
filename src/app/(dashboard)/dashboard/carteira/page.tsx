@@ -9,7 +9,7 @@ import { getCarteiraDoDono } from "@/lib/data/carteira";
 import { CarteiraClient } from "./carteira-client";
 
 export const metadata: Metadata = {
-  title: "Análise da carteira — Viva Nomads",
+  title: "Análise da carteira",
 };
 
 /**
