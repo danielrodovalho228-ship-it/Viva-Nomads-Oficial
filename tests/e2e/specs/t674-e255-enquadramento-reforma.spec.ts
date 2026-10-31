@@ -9,6 +9,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, no
    3. Os campos "fora da Viva" nunca saem do navegador (nenhuma requisição leva os números digitados); o resultado
       muda na hora; nenhum percentual na tela.
   Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
+  Reconferência pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 
