@@ -12,6 +12,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { primeiroNomeExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+import { SELETOR_IDIOMA } from "@/lib/flags";
+import { SeletorIdioma } from "@/components/layout/seletor-idioma";
 
 const LINK = "whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-forest";
 
@@ -93,6 +95,8 @@ export function Navbar() {
           <Link href={FALE_COM_A_VIVA.href} className={LINK} data-testid="nav-fale-com-a-viva">
             {FALE_COM_A_VIVA.label}
           </Link>
+          {/* PUBLICO-A: globo PT/EN ao lado do Entrar, atrás da chave SELETOR_IDIOMA (desligada). */}
+          {SELETOR_IDIOMA && <SeletorIdioma />}
           {loggedIn ? (
             <MeuPainel nome={nome} foto={foto} />
           ) : (
@@ -124,6 +128,7 @@ export function Navbar() {
             <Link href={FALE_COM_A_VIVA.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-50" onClick={() => setOpen(false)}>
               {FALE_COM_A_VIVA.label}
             </Link>
+            {SELETOR_IDIOMA && <SeletorIdioma celular className="px-3" />}
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
                 <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
