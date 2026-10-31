@@ -329,7 +329,7 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
     expect(aberto?.status()).toBe(200);
     await expect(page.getByTestId("admin-contrato-selo")).toHaveText(seloLista!, { timeout: 20_000 });
     if (assinaturaLista === "Assinado pelas duas partes") {
-      await expect(page.getByTestId("admin-contrato-assinaturas")).not.toContainText("Nenhuma assinatura ainda.");
+      await expect(page.getByTestId("admin-contrato-assinaturas")).not.toContainText("Nenhuma das partes assinou ainda.");
     }
     await page.context().close();
   });
