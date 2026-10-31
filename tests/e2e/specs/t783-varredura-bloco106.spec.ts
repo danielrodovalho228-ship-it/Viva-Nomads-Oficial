@@ -10,10 +10,11 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
   régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 105 (registro de cobertura: última
   varredura no bloco 89, t753): as do PAINEL DO PROPRIETÁRIO sem id na URL — agenda, carteira, ganhos, recibos,
-  respostas rápidas, tributação, simulador e ferramentas —, com a conta DONO17 da massa da varredura. Várias mudaram
+  respostas rápidas, simulador e ferramentas —, com a conta DONO17 da massa da varredura. Várias mudaram
   hoje (#1713 agenda, #1714 tributação, #1715 simulador e ferramentas).
   Ficam de fora, por desenho: /dashboard/roi-imovel e /dashboard/viabilidade, que desde o #1715 (E294) redirecionam
-  para o simulador (o cálculo é um só), e /dashboard/assinatura (redireciona para /precos).
+  para o simulador (o cálculo é um só); /dashboard/tributacao, que desde o #1747 (E292-bis) redireciona para
+  Ferramentas (a Viva não calcula imposto); e /dashboard/assinatura (redireciona para /precos).
   Defeito novo entra como test.fail ligado a um item (L-83 / D-V10 são os próximos livres).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
@@ -31,7 +32,6 @@ const TELAS: Tela[] = [
     ["Ganhos", "/dashboard/ganhos"],
     ["Recibos", "/dashboard/recibos"],
     ["Respostas rápidas", "/dashboard/respostas-rapidas"],
-    ["Tributação", "/dashboard/tributacao"],
     ["Simulador", "/dashboard/simulador"],
     ["Ferramentas", "/dashboard/ferramentas"],
   ].map(([nome, rota]) => ({ conta: "DONO17" as const, papel: "proprietário", nome, rota: () => rota })),
