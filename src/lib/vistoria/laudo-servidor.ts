@@ -191,7 +191,7 @@ async function registrarStrike(admin: Admin, ownerId: string, propertyId: string
   const criado = agora.toISOString();
   await admin.from("proprietario_strikes").insert({ owner_id: ownerId, property_id: propertyId, pedido_id: pedidoId, ordem: proximaOrdem(antes), origem, criado_em: criado, expira_em: expiraEm(criado) });
   await aplicarEscada(admin, ownerId, agora);
-  await avisar(admin, ownerId, "vistoria_strike", rotaDono(propertyId));
+  await avisar(admin, ownerId, "vistoria_strike", rotaDono(propertyId), { propertyId });
   // O nível do imóvel perde o "· vistoriado".
   await recalcularNivel(admin, propertyId, agora);
 }
@@ -317,7 +317,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   // Segurança grave: fora da busca na hora (fora da contagem de strikes); volta com a correção comprovada.
   if (r.graves.length) {
     await bloquear(admin, p.property_id, p.owner_id, "seguranca_grave", p.id, true);
-    await avisar(admin, p.owner_id, "vistoria_fora_da_busca", rotaDono(p.property_id));
+    await avisar(admin, p.owner_id, "vistoria_fora_da_busca", rotaDono(p.property_id), { propertyId: p.property_id });
   } else {
     await liberar(admin, p.property_id, ["seguranca_grave"], agora);
   }
@@ -349,13 +349,13 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
         prazo_ate: new Date(agora.getTime() + PRAZO_DEVOLUCAO_DIAS * DIA).toISOString(),
       });
       const { data: c1 } = anterior.avaliador_id ? await admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", anterior.avaliador_id).maybeSingle() : { data: null };
-      await avisar(admin, (c1?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_devolucao", ROTA_AVALIADOR);
+      await avisar(admin, (c1?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_devolucao", ROTA_AVALIADOR, { propertyId: p.property_id });
     }
     await aplicarEscada(admin, p.owner_id, agora);
   }
 
   await recalcularNivel(admin, p.property_id, agora);
-  await avisar(admin, p.owner_id, "vistoria_laudo_emitido", rotaDono(p.property_id));
+  await avisar(admin, p.owner_id, "vistoria_laudo_emitido", rotaDono(p.property_id), { propertyId: p.property_id });
   return { ok: true, laudoId: novo.id as string, numero: reg.numero, resultado: r.resultado };
 }
 
@@ -436,7 +436,7 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
     } else {
       await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: "Ressalva não corrigida em 15 dias: avaliar abrir verificação." });
     }
-    await avisar(admin, l.owner_id, "vistoria_ressalva_vencida", rotaDono(l.property_id));
+    await avisar(admin, l.owner_id, "vistoria_ressalva_vencida", rotaDono(l.property_id), { propertyId: l.property_id });
     r.ressalvasVencidas++;
   }
 
@@ -449,7 +449,7 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
       r.expirados++;
     } else if (!l.aviso_expiracao_em && avisoExpiracao(l.vistoriado_em, agora)) {
       await admin.from("vistoria_laudos").update({ aviso_expiracao_em: quando }).eq("id", l.id);
-      await avisar(admin, l.owner_id, "vistoria_vistoriado_expira", rotaDono(l.property_id));
+      await avisar(admin, l.owner_id, "vistoria_vistoriado_expira", rotaDono(l.property_id), { propertyId: l.property_id });
       r.avisosExpiracao++;
     }
   }

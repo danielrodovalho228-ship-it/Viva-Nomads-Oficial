@@ -7,13 +7,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { corpoAutomacao, TIPOS_COM_CORPO, type TipoCorpoAutomacao } from "./corpo-automacao.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
+import { comMarca, problemasDoAssunto } from "../notifications/assuntos.ts";
 
 const IMOVEL = { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" };
 const PROIBIDAS = /comiss[ãa]o|aluguel/i;
 
 test("saída (3 dias): imóvel, data e horário da saída no assunto, no corpo e no bloco", () => {
   const c = corpoAutomacao("saida_lembrete", { imovel: IMOVEL, data: "2026-11-03", horario: "11:00:00" });
-  assert.equal(c.subject, "Lembrete: saída de Apto Santa Mônica em 03/11/2026");
+  assert.equal(c.subject, "Saída de Apto Santa Mônica em 03/11");
   assert.equal(c.body("Lara"), "Olá Lara, a saída de Apto Santa Mônica é em 03/11/2026 (até as 11:00). Combine a conferência de saída pela plataforma.");
   assert.deepEqual(c.linhas, [
     { rotulo: "Imóvel", valor: "Apto Santa Mônica · Santa Mônica, Uberlândia" },
@@ -23,20 +24,20 @@ test("saída (3 dias): imóvel, data e horário da saída no assunto, no corpo e
 
 test("avaliação (1 dia depois): imóvel e data em que a estadia terminou", () => {
   const c = corpoAutomacao("avaliacao_pedido", { imovel: IMOVEL, data: "2026-10-30" });
-  assert.equal(c.subject, "Como foi a estadia em Apto Santa Mônica? Deixe sua avaliação");
+  assert.equal(c.subject, "Como foi a estadia em Apto Santa Mônica?");
   assert.match(c.body("Daniel"), /^Olá Daniel, a estadia em Apto Santa Mônica terminou em 30\/10\/2026\./);
 });
 
 test("renovação (15 dias antes): imóvel e o fim do período", () => {
   const c = corpoAutomacao("renovacao_aviso", { imovel: IMOVEL, data: "2026-11-15" });
-  assert.equal(c.subject, "Apto Santa Mônica: o período termina em 15/11/2026. Quer renovar?");
+  assert.equal(c.subject, "Renovar Apto Santa Mônica? O período termina em 15/11");
   assert.match(c.body("Lara"), /^Olá Lara, o período atual do contrato de Apto Santa Mônica termina em 15\/11\/2026\./);
   assert.deepEqual(c.linhas.at(-1), { rotulo: "Fim do período", valor: "15/11/2026" });
 });
 
 test("proposta vencendo (24 h): número, imóvel e o prazo em data e hora de Brasília", () => {
   const c = corpoAutomacao("proposta_vencendo", { imovel: IMOVEL, numero: "VN-PR-0042", prazo: "2026-10-31T21:30:00Z" });
-  assert.equal(c.subject, "Proposta VN-PR-0042 de Apto Santa Mônica vence em 31/10/2026 18:30");
+  assert.equal(c.subject, "Proposta de Apto Santa Mônica vence em 31/10 às 18:30");
   assert.equal(c.body("Lara"), "Olá Lara, a proposta VN-PR-0042 de Apto Santa Mônica aguarda a sua resposta e vence em 31/10/2026 18:30 (horário de Brasília). Aceite, contraproponha ou recuse pela plataforma.");
   assert.deepEqual(c.linhas.slice(1), [
     { rotulo: "Proposta", valor: "VN-PR-0042" },
@@ -46,7 +47,7 @@ test("proposta vencendo (24 h): número, imóvel e o prazo em data e hora de Bra
 
 test("instruções pendentes (D-10): imóvel, data e horário da entrada e o dia em que o morador recebe (D-7)", () => {
   const c = corpoAutomacao("estadia_instrucoes_pendentes", { imovel: IMOVEL, data: "2026-11-10", horario: "14:00" });
-  assert.equal(c.subject, "Instruções de chegada de Apto Santa Mônica: entrada em 10/11/2026");
+  assert.equal(c.subject, "Instruções de chegada: Apto Santa Mônica, entrada 10/11");
   assert.equal(c.body("Daniel"), "Olá Daniel, a entrada do morador em Apto Santa Mônica é em 10/11/2026. Preencha as instruções de chegada: o morador as recebe em 03/11/2026.");
   assert.deepEqual(c.linhas.slice(1), [
     { rotulo: "Entrada do morador", valor: "10/11/2026, a partir das 14:00" },
@@ -57,7 +58,9 @@ test("instruções pendentes (D-10): imóvel, data e horário da entrada e o dia
 test("sem dado (imóvel apagado, data vazia): frase completa, sem 'undefined', sem fato inventado", () => {
   for (const t of TIPOS_COM_CORPO) {
     const c = corpoAutomacao(t as TipoCorpoAutomacao, { imovel: null });
-    for (const s of [c.subject, c.body(), c.body("Lara")]) {
+    // Sem imóvel, vale o assunto do modelo.
+    assert.equal(c.subject, null, t);
+    for (const s of [c.body(), c.body("Lara")]) {
       assert.doesNotMatch(s, /undefined|null|NaN|—|\s{2}| ,|\.\./, `${t}: "${s}"`);
     }
     assert.deepEqual(c.linhas, []);
@@ -73,6 +76,18 @@ test("vocabulário da plataforma: nenhum assunto ou corpo fala em comissão ou a
     // O corpo novo não é o do modelo genérico (que não nomeia o imóvel).
     assert.notEqual(c.body("Lara"), TEMPLATES[t as TipoCorpoAutomacao].body("Lara"), t);
     assert.ok(c.body("Lara").includes("Apto Santa Mônica"), t);
+  }
+});
+
+test("régua dos assuntos: até 70 com a marca, sem ano, sem número de proposta; título longo encolhe", () => {
+  const longo = { titulo: "Apartamento enorme com vista para o mar e varanda gourmet no Centro", bairro: "Centro", cidade: "Uberlândia" };
+  for (const imovel of [IMOVEL, longo, { titulo: "apto 1201 centro" }]) {
+    for (const t of TIPOS_COM_CORPO) {
+      const c = corpoAutomacao(t as TipoCorpoAutomacao, { imovel, data: "2026-11-03", numero: "VN-PR-0042", prazo: "2026-10-31T21:30:00Z" });
+      assert.ok(c.subject, t);
+      assert.deepEqual(problemasDoAssunto(comMarca(c.subject!)), [], `${t}: "${c.subject}"`);
+      assert.doesNotMatch(c.subject!, /VN-PR|2026/, t);
+    }
   }
 });
 

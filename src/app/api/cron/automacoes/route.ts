@@ -82,7 +82,7 @@ type Alvo = {
 function comFatos(tipo: TipoCorpoAutomacao, dados: DadosAutomacao): Pick<Alvo, "subject" | "body" | "detailsHtml"> {
   const c = corpoAutomacao(tipo, dados);
   return {
-    subject: c.subject,
+    subject: c.subject ?? undefined,
     body: c.body,
     detailsHtml: c.linhas.length ? blocoDados(c.linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) : undefined,
   };

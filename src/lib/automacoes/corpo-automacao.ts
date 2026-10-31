@@ -7,6 +7,7 @@
 */
 import { dataHoraBRT } from "../datas-brasilia.ts";
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
+import { assuntoComTitulo, diaHoraNoAssunto, diaNoAssunto } from "../notifications/assuntos.ts";
 
 export type TipoCorpoAutomacao = "saida_lembrete" | "avaliacao_pedido" | "renovacao_aviso" | "proposta_vencendo" | "estadia_instrucoes_pendentes";
 
@@ -30,7 +31,8 @@ export interface DadosAutomacao {
 }
 
 export interface CorpoAutomacao {
-  subject: string;
+  /** Assunto com o fato e o imóvel (régua de assuntos.ts); null → vale o assunto do modelo. */
+  subject: string | null;
   body: (nome?: string) => string;
   linhas: LinhaEmail[];
 }
@@ -68,7 +70,7 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
     case "saida_lembrete": {
       if (data) linhas.push({ rotulo: "Saída", valor: h ? `${data}, até as ${h}` : data });
       return {
-        subject: `Lembrete: saída${titulo ? ` de ${titulo}` : ""} em ${data || "3 dias"}`,
+        subject: assuntoComTitulo("Saída de ", titulo, d.data ? ` em ${diaNoAssunto(d.data)}` : " em 3 dias"),
         body: (n) =>
           `${ola(n)}, a saída${titulo ? ` de ${titulo}` : " do imóvel do seu contrato"} é em ${data || "3 dias"}${h ? ` (até as ${h})` : ""}. Combine a conferência de saída pela plataforma.`,
         linhas,
@@ -77,7 +79,7 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
     case "avaliacao_pedido": {
       if (data) linhas.push({ rotulo: "Saída", valor: data });
       return {
-        subject: titulo ? `Como foi a estadia em ${titulo}? Deixe sua avaliação` : "Como foi a estadia? Deixe sua avaliação",
+        subject: assuntoComTitulo("Como foi a estadia em ", titulo, "?"),
         body: (n) =>
           `${ola(n)}, a estadia${titulo ? ` em ${titulo}` : ""} terminou${data ? ` em ${data}` : ""}. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`,
         linhas,
@@ -86,7 +88,7 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
     case "renovacao_aviso": {
       if (data) linhas.push({ rotulo: "Fim do período", valor: data });
       return {
-        subject: `${titulo ? `${titulo}: o` : "O"} período termina em ${data || "15 dias"}. Quer renovar?`,
+        subject: assuntoComTitulo("Renovar ", titulo, `? O período termina em ${diaNoAssunto(d.data) || "15 dias"}`),
         body: (n) =>
           `${ola(n)}, o período atual do contrato${titulo ? ` de ${titulo}` : ""} termina em ${data || "15 dias"}. Se quiserem seguir, combinem a renovação pela plataforma: o aditivo de prorrogação já vem preenchido.`,
         linhas,
@@ -99,7 +101,8 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
       if (numero) linhas.push({ rotulo: "Proposta", valor: numero });
       if (vence) linhas.push({ rotulo: "Vence em", valor: `${vence} (horário de Brasília)` });
       return {
-        subject: `Proposta${numero ? ` ${numero}` : ""}${titulo ? ` de ${titulo}` : ""} vence ${vence ? `em ${vence}` : "em menos de 24 horas"}`,
+        // O número da proposta vai no corpo, nunca no assunto (régua de assuntos.ts).
+        subject: assuntoComTitulo("Proposta de ", titulo, ` vence ${diaHoraNoAssunto(d.prazo) ? `em ${diaHoraNoAssunto(d.prazo)}` : "em 24 horas"}`),
         body: (n) =>
           `${ola(n)}, a proposta${numero ? ` ${numero}` : ""}${titulo ? ` de ${titulo}` : ""} aguarda a sua resposta e vence ${vence ? `em ${vence} (horário de Brasília)` : "em menos de 24 horas"}. Aceite, contraproponha ou recuse pela plataforma.`,
         linhas,
@@ -110,7 +113,7 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
       if (data) linhas.push({ rotulo: "Entrada do morador", valor: h ? `${data}, a partir das ${h}` : data });
       if (libera) linhas.push({ rotulo: "O morador recebe as instruções em", valor: libera });
       return {
-        subject: `Instruções de chegada${titulo ? ` de ${titulo}` : ""}: entrada em ${data || "10 dias"}`,
+        subject: assuntoComTitulo("Instruções de chegada: ", titulo, `, entrada ${diaNoAssunto(d.data) || "em 10 dias"}`),
         body: (n) =>
           `${ola(n)}, a entrada do morador${titulo ? ` em ${titulo}` : ""} é em ${data || "10 dias"}. Preencha as instruções de chegada: o morador as recebe ${libera ? `em ${libera}` : "7 dias antes"}.`,
         linhas,
