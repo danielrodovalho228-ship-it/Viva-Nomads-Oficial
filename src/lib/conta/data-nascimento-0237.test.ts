@@ -37,6 +37,15 @@ test("ações: leem e gravam profiles.data_nascimento pela sessão e limpam a c�
   assert.doesNotMatch(acoes, /updateUser\(\{ data: \{ data_nascimento: r\.iso/);
 });
 
+test("L-54: zero linhas gravadas é falha — a tela nunca diz \"salvo\" sem gravar", () => {
+  const acoes = ler("src/lib/data/nascimento-actions.ts");
+  // O update devolve a linha (RETURNING) e a ação confere que ela veio.
+  assert.match(acoes, /const \{ data: gravou, error \} = await supabase\.from\("profiles"\)\.update\(\{ data_nascimento: r\.iso \}\)\.eq\("id", user\.id\)\.select\("id"\);/);
+  assert.match(acoes, /if \(error \|\| !gravou\?\.length\) return \{ ok: false/);
+  // A cópia antiga em user_metadata só é limpa DEPOIS de a coluna gravar.
+  assert.ok(acoes.indexOf("!gravou?.length") < acoes.indexOf("updateUser({ data: { data_nascimento: null } })"));
+});
+
 test("exportar meus dados e inventário de retenção apontam a coluna", () => {
   assert.match(ler("src/app/api/conta/meus-dados/route.ts"), /dataNascimento: typeof perfil\?\.data_nascimento === "string"/);
   assert.match(ler("src/config/retencao.ts"), /"public\.profiles", "[^"]*data de nascimento/);
