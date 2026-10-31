@@ -7,8 +7,8 @@ import { TITULO_PASSO, type PassoCadastro } from "../fixtures/cadastro";
   T455 — E108–E110 (textos do assistente de cadastro), na QA do Muse. Só no laboratório (conta nova de proprietário).
    1. Nos 10 passos, o texto da tela não tem "Prompt NN", "inquilino" nem "Em breve" (E108, E109, E110).
    2. Passo 6: "Regras da casa" só no título do passo, não repetido como subtítulo (E110).
-   3. Passo 8: um horizonte só — a taxa do simulador e o comparador do Airbnb acompanham os mesmos meses (E110, E140);
-      sem o seguro-fiança "Em breve" (E110).
+   3. Passo 8: um horizonte só — a taxa do simulador acompanha os meses (E110, E140); sem o comparador do Airbnb
+      (E292-bis) e sem o seguro-fiança "Em breve" (E110).
    4. Passo 9: a faixa de 30 a 90 dias diz "proprietário e morador" (E109).
   A 390 e 1280 px, com prints.
 */
@@ -59,7 +59,7 @@ test.describe("T455 — E108–E110: textos do assistente de cadastro", () => {
       await expect(page.getByText("Regras da casa", { exact: true })).toHaveCount(1);
       await page.screenshot({ path: `${SAIDA}/t455-regras-${w}.png` });
 
-      // 3. Passo 8 (E110 → E139/E140): um período só — o simulador e o comparador do Airbnb dizem os mesmos meses.
+      // 3. Passo 8 (E110 → E139/E140): um período só no simulador. E292-bis: sem o comparador do Airbnb.
       await irPara(page, "preco");
       await page.getByTestId("cadastro-preco").fill("3600");
       const simulador = page.getByTestId("simulador-bolso");
@@ -67,9 +67,7 @@ test.describe("T455 — E108–E110: textos do assistente de cadastro", () => {
       await expect(simulador.getByTestId("bolso-taxa-detalhe")).toContainText(`× ${await meses.inputValue()} =`);
       await meses.fill("6");
       await expect(simulador.getByTestId("bolso-taxa-detalhe")).toContainText("(R$ 3.600 × 6 = R$ 21.600)");
-      const comparar = page.getByTestId("preco-sugerido");
-      await comparar.getByRole("button", { name: /Comparar com o Airbnb/ }).click();
-      await expect(comparar).toContainText("pelos mesmos 6 meses");
+      await expect(page.getByTestId("preco-sugerido")).toHaveCount(0);
       await expect(page.getByText("Seguro-fiança")).toHaveCount(0);
       await simulador.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t455-preco-${w}.png` });
