@@ -2,9 +2,23 @@ import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
-import { linhaParaTela, type LinhaEmailTeste } from "@/lib/notifications/caixa-teste";
+import { fotosNoCorpo, linhaParaTela, type LinhaEmailTeste } from "@/lib/notifications/caixa-teste";
 
 const quando = (iso: string) => dataHoraBRT(iso, { tabela: true });
+
+/** E274: a foto de capa de cada cartão de imóvel que o e-mail levou, como o cliente de e-mail a carrega. */
+function FotosDoCartao({ corpo }: { corpo: string }) {
+  const fotos = fotosNoCorpo(corpo);
+  if (!fotos.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-2" data-testid="emails-teste-fotos">
+      {fotos.map((f) => (
+        // eslint-disable-next-line @next/next/no-img-element -- a mesma URL que o cliente de e-mail carrega
+        <img key={f} src={f} alt="Foto do cartão do imóvel" width={160} className="h-auto w-40 max-w-full rounded-lg border border-sage-200" loading="lazy" />
+      ))}
+    </div>
+  );
+}
 
 /**
  * A lista de e-mails das caixas de teste — a MESMA em /admin/emails-teste e em /dashboard/qa/emails (QA-CAIXA-B).
@@ -28,6 +42,7 @@ export function ListaEmailsTeste({ linhas, titulo = "Mais recentes primeiro", va
                 <p className="mt-1 break-words font-semibold text-ink">{l.assunto}</p>
                 <details className="mt-2">
                   <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-forest">Ler o e-mail</summary>
+                  <FotosDoCartao corpo={l.corpo} />
                   <pre className="whitespace-pre-wrap break-words text-sm text-ink">{l.corpo}</pre>
                 </details>
               </li>
@@ -51,6 +66,7 @@ export function ListaEmailsTeste({ linhas, titulo = "Mais recentes primeiro", va
                     <td className="py-2">
                       <details>
                         <summary className="cursor-pointer break-words font-semibold text-ink">{l.assunto}</summary>
+                        <FotosDoCartao corpo={l.corpo} />
                         <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{l.corpo}</pre>
                       </details>
                     </td>
