@@ -12,6 +12,7 @@ import {
   semFiltro,
   temFiltro,
   DESCRICAO_MAX_CARACTERES,
+  DICA_DESCRICAO_CURTA,
   DICA_SEM_FILTRO,
   type ChaveChip,
   type FiltrosDescricao,
@@ -37,11 +38,18 @@ export function DescricaoBusca({
   const [aplicados, setAplicados] = useState<FiltrosDescricao | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [semResultado, setSemResultado] = useState(false);
+  // L-51: o botão não trava em silêncio. Com menos de 3 letras ele continua clicável e o clique diz o que falta.
+  const [curto, setCurto] = useState(false);
 
   async function interpretar(e: React.FormEvent) {
     e.preventDefault();
     const descricao = limparDescricao(texto);
-    if (descricao.length < 3 || carregando) return;
+    if (carregando) return;
+    if (descricao.length < 3) {
+      setCurto(true);
+      return;
+    }
+    setCurto(false);
     setCarregando(true);
     setSemResultado(false);
     let filtros: FiltrosDescricao | null = null;
@@ -92,15 +100,25 @@ export function DescricaoBusca({
             autoComplete="off"
             maxLength={DESCRICAO_MAX_CARACTERES}
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            onChange={(e) => {
+              setTexto(e.target.value);
+              if (curto && limparDescricao(e.target.value).length >= 3) setCurto(false);
+            }}
+            aria-describedby={curto ? "descricao-busca-curta" : undefined}
+            aria-invalid={curto || undefined}
             placeholder="Descreva o lugar ideal: 2 quartos perto do HC, aceita gato, até 2.500"
             className="h-12 w-full rounded-full border border-line bg-white pl-12 pr-4 text-sm text-ink outline-none placeholder:text-muted hover:border-ink focus:border-ink"
           />
         </div>
-        <Button type="submit" disabled={carregando || limparDescricao(texto).length < 3} data-testid="descricao-aplicar" className="h-12 shrink-0">
+        <Button type="submit" disabled={carregando} data-testid="descricao-aplicar" className="h-12 shrink-0">
           {carregando ? "Entendendo…" : "Aplicar nos filtros"}
         </Button>
       </form>
+      {curto && (
+        <p id="descricao-busca-curta" role="status" className="mt-2 text-sm text-muted" data-testid="descricao-curta">
+          {DICA_DESCRICAO_CURTA}
+        </p>
+      )}
       {semResultado && (
         <p role="status" className="mt-2 text-sm text-muted" data-testid="descricao-vazia">
           {DICA_SEM_FILTRO}

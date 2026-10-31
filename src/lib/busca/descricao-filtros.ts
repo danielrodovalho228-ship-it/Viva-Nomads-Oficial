@@ -130,6 +130,8 @@ export function interpretarLocal(descricao: string, locais: readonly string[] = 
  * Wi-Fi e cozinha são garantia do padrão mínimo e não viram filtro (L-49) — a dica não pode prometê-los.
  */
 export const DICA_SEM_FILTRO = "Não achei filtros nessa descrição. Cite preço, quartos, cidade ou bairro, pets ou garagem.";
+/** L-51: o "Aplicar nos filtros" com menos de 3 letras responde com o motivo, em vez de ficar travado sem dizer por quê. */
+export const DICA_DESCRICAO_CURTA = "Escreva ao menos 3 letras para aplicar nos filtros.";
 
 const PORTES: readonly string[] = ["P", "M", "G"];
 const CHAVES_COMODIDADE: readonly string[] = COMODIDADES_FILTRAVEIS.map((c) => c.chave);

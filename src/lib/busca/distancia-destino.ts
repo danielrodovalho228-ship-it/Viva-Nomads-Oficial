@@ -31,9 +31,14 @@ export interface DistanciaNaTela {
   metros: number;
 }
 
-/** Linha reta do ponto público do imóvel até o destino. Sem ponto, null (o cartão fica sem a linha). */
+/**
+ * Linha reta do ponto público do imóvel até o destino. Sem ponto, null (o cartão fica sem a linha).
+ * L-60: (0, 0) também é "sem ponto" — o mapeamento da busca troca a coordenada nula por 0, e nenhum imóvel fica no Golfo
+ * da Guiné; sem esta trava o cartão dizia "≈ 5.640,0 km em linha reta até …".
+ */
 export function distanciaAte(imovel: { lat?: number | null; lng?: number | null }, destino: { ponto: Ponto; rotulo: string } | null): DistanciaNaTela | null {
   if (!destino || imovel.lat == null || imovel.lng == null || !Number.isFinite(Number(imovel.lat)) || !Number.isFinite(Number(imovel.lng))) return null;
+  if (Number(imovel.lat) === 0 && Number(imovel.lng) === 0) return null;
   const metros = metrosEntre({ lat: Number(imovel.lat), lng: Number(imovel.lng) }, destino.ponto);
   return { texto: rotuloReta(metros, destino.rotulo), metros };
 }

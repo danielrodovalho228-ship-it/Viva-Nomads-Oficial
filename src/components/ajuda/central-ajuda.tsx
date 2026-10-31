@@ -246,7 +246,7 @@ function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonl
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Ex.: caução, senha, anúncio não publica"
+          placeholder="Ex.: caução, senha"
           className="w-full rounded-xl border border-line bg-white py-3 pl-12 pr-3 text-sm text-ink focus:border-forest focus:outline-none"
         />
       </label>

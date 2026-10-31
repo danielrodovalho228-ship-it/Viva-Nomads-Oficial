@@ -32,7 +32,7 @@ for (const largura of [390, 1280]) {
     test("ube-002: 'Solicitar' abre o resumo com a limpeza e 'Total por mês' R$ 3.130", async ({ page }) => {
       await page.goto("/imoveis/ube-002", { waitUntil: "domcontentloaded" });
       // No celular o botão está na barra fixa; no computador, no cartão de preço (Prompt 41: rótulo "Solicitar").
-      const botao = page.getByRole("button", { name: "Solicitar", exact: true }).locator("visible=true").first();
+      const botao = page.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first();
       await botao.click();
       const passo = page.getByTestId("solicitacao-passo");
       await expect(passo).toBeVisible();

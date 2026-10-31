@@ -36,7 +36,7 @@ test.describe("T75 — Barra fixa do imóvel", () => {
         await expect(barra).toBeVisible();
         await expect(barra).toContainText(/R\$\s?2\.800/);
         await expect(barra).toContainText("Caução e taxas no detalhe");
-        await expect(barra.getByRole("button", { name: "Solicitar", exact: true })).toBeVisible();
+        await expect(barra.getByRole("button", { name: "Pedir para morar", exact: true })).toBeVisible();
         const caixa = await barra.boundingBox();
         expect(caixa!.x).toBeGreaterThanOrEqual(0);
         expect(caixa!.x + caixa!.width).toBeLessThanOrEqual(largura + 1);
@@ -48,7 +48,7 @@ test.describe("T75 — Barra fixa do imóvel", () => {
     test("sem sessão, o botão leva ao login e volta para o anúncio (mesma ação do cartão)", async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 800 });
       await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
-      await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Solicitar", exact: true }).click();
+      await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Pedir para morar", exact: true }).click();
       // Passo de confirmação (#671): só o último "Enviar candidatura" (após Continuar) leva ao login.
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();

@@ -207,7 +207,7 @@ function ColunaVencimento({ titulo, tom, itens, faixa }: { titulo: string; tom: 
         <span className={`h-2 w-2 rounded-full ${dot}`} /> {titulo}
       </p>
       {itens.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">Nenhum</p>
+        <p className="mt-3 text-sm text-muted" data-testid={`carteira-vence-${faixa}-vazio`}>Nenhum contrato termina nesta faixa.</p>
       ) : (
         <ul className="mt-2 space-y-3">
           {itens.map((i) => (

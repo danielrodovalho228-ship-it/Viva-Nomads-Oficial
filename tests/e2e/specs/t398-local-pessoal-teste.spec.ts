@@ -119,7 +119,7 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
     await expect(page.getByTestId("faixa-anuncio-teste")).toHaveAttribute("data-modo", "equipe", { timeout: 20_000 });
     await expect(page.getByTestId("faixa-anuncio-teste")).toHaveText("Anúncio de teste: fora da busca e das listagens");
     await expect(page.getByTestId("cartao-solicitar")).toBeEnabled();
-    await expect(page.getByTestId("cartao-solicitar")).toHaveText("Solicitar");
+    await expect(page.getByTestId("cartao-solicitar")).toHaveText("Pedir para morar");
     await page.screenshot({ path: "tests/laboratorio/saida/t398-3-dono-1280.png", fullPage: false });
     await page.context().close();
   });
@@ -138,7 +138,7 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
         if (teste) {
           await expect(faixa).toHaveText("Anúncio de teste: fora da busca e das listagens");
           await expect(botao).toBeEnabled();
-          await expect(botao).toHaveText("Solicitar");
+          await expect(botao).toHaveText("Pedir para morar");
         } else {
           await expect(faixa).toHaveText(VISITANTE);
           await expect(botao).toBeDisabled();

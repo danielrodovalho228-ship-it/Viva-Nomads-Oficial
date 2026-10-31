@@ -51,3 +51,13 @@ test("a busca usa o mesmo cálculo no cartão e na ordem, e leva o destino à p�
   // O servidor segue nunca devolvendo coordenada do imóvel; a âncora (lugar público) leva o ponto à busca.
   assert.match(ler("src/lib/data/tempos.ts"), /\.select\("id, slug, nome, artigo, tipo, cidade, uf, lat, lng"\)/);
 });
+
+test("L-60: imóvel sem coordenada (a busca o mapeia para 0, 0) fica sem a linha, nunca '≈ 5.640 km'", () => {
+  const alvo = pontoDoDestino({ lat: -18.92, lng: -48.26, rot: "Rua Sem Rota" }, ANCORAS);
+  assert.equal(distanciaAte({ lat: 0, lng: 0 }, alvo), null);
+  assert.equal(distanciaAte({ lat: null, lng: null }, alvo), null);
+  // Só o par (0, 0) é "sem ponto": um eixo zero com o outro válido continua sendo ponto.
+  assert.ok(distanciaAte({ lat: 0, lng: -48.26 }, alvo));
+  // Sem distância, o cartão fica sem a linha e a ordem "Mais perto do trabalho" o põe por último.
+  assert.equal(textoDoCartao(undefined, null, false), null);
+});
