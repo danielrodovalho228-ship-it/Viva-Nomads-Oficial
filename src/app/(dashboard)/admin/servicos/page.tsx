@@ -24,7 +24,7 @@ export default async function AdminServicosPage() {
       <ListaNumeros className="mb-6" itens={[{ rotulo: "Confirmados", valor: andamento, href: "#lista" }]} />
       <Panel id="lista" className="scroll-mt-24">
         {pedidos.length === 0 ? (
-          <p className="text-sm text-muted">Nenhum pedido ainda.</p>
+          <p className="text-sm text-muted" data-testid="admin-servicos-vazio">Nenhum pedido de serviço dos moradores ainda. Cada pedido feito em Serviços, no painel do morador, aparece aqui com o prestador, a data desejada e o estado, para a equipe acompanhar.</p>
         ) : (
           <ul className="grid gap-3" data-testid="admin-servicos-lista">
             {pedidos.map((p) => (
