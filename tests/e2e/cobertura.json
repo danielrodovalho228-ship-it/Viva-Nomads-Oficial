@@ -394,7 +394,8 @@
         "t14-app-mode",
         "t16-app-boas-vindas",
         "t282-boas-vindas-foto",
-        "t306-varredura-bloco7"
+        "t306-varredura-bloco7",
+        "t743-varredura-bloco81"
       ]
     },
     "/auth": {
@@ -595,7 +596,8 @@
         "t156-comparar-exemplos",
         "t48-varredura",
         "t311-marco-principal-unico",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t743-varredura-bloco81"
       ]
     },
     "/conferir": {
@@ -1603,7 +1605,8 @@
         "t138-paineis-viva-vazio",
         "t160-favoritos-pagina",
         "t48-varredura",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t743-varredura-bloco81"
       ]
     },
     "/guia-fotos": {
@@ -2445,7 +2448,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t341-credenciamento-avaliador-62a",
         "t387-varredura-bloco22",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -2819,7 +2823,8 @@
         "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "/api/cron/avisos-daniel": {
@@ -6288,7 +6293,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "src/lib/data/video-link-actions.ts#conferirLinkVideo": {
@@ -6321,7 +6327,8 @@
       ],
       "specs": [
         "t303-avaliadores-credenciados-62b1",
-        "t315-telas-avaliacao-dono-62a"
+        "t315-telas-avaliacao-dono-62a",
+        "t728-e289-automacoes-com-fatos"
       ]
     },
     "src/lib/vistoria/actions.ts#concordarVisita": {
