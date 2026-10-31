@@ -2,13 +2,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { authFile } from "../fixtures/auth";
-import { TAMANHOS } from "../fixtures/varredura";
+import { TAMANHOS, escutarErros } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
   T782 — VARREDURA DA PÁGINA INTEIRA, BLOCO 105 (Pista C, 31/10), 2ª volta do ciclo. O protocolo do bloco 21 (t385):
   seis classes, página toda rolada, carregamento real de cada imagem, elemento fixo sobre conteúdo, 390 e 1280 px, HTTP
-  abaixo de 400. As telas varridas há mais tempo depois do bloco 104 (registro de cobertura: última varredura no bloco
+  abaixo de 400; e, pedido do Muse na reativação, o console (erro de console ou de página, régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 104 (registro de cobertura: última varredura no bloco
   88, t752): as do ADMIN sem id na URL — ajuda da publicação, encerramentos de contratos, dados de teste, fotos de
   perfil, marketing, pedidos de parceiros, retenção, serviços, sócios e solicitações. Sessão de admin do laboratório,
   sem massa própria. Defeito novo entra como test.fail ligado a um item (L-83 / D-V10 são os próximos livres).
@@ -74,6 +74,8 @@ test.describe("T782 — varredura da página inteira, bloco 105 (2ª volta, admi
         await page.setViewportSize({ width: tam.width, height: tam.height });
         try {
           const respostas = escutarImagens(page);
+          // Console e erro de página (critério d da t249, com as exceções de terceiros de lá) também entram no relatório.
+          const erros = escutarErros(page);
           const resposta = await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
           expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
           expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
@@ -96,8 +98,13 @@ test.describe("T782 — varredura da página inteira, bloco 105 (2ª volta, admi
               expect.soft(novos, `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
             });
           }
+          const consoleErros = erros.lista();
+          await test.step(`console @${tam.nome}`, async () => {
+            for (const a of consoleErros) console.log(`VARREDURA|console|${tam.nome}|${t.papel}|${rotulo}|${a}`);
+            expect.soft(consoleErros, `${t.papel} — ${t.nome} @${tam.nome} — console: erro de console ou de página`).toEqual([]);
+          });
           await page.screenshot({ path: `${SAIDA}/${slug(`${t.papel}-${t.nome}`)}-${tam.width}.png`, fullPage: true }).catch(() => {});
-          relatorio[tam.nome] = achados;
+          relatorio[tam.nome] = { ...achados, console: consoleErros };
         } finally {
           await page.context().close();
         }
