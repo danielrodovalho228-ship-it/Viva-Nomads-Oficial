@@ -4,6 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /*
   T572 — E196: uma "Qualificação" só. No cartão do rascunho (Meus imóveis), "Qualificação" abre as mesmas 5 telas do
   assistente, daquele rascunho; a página longa de requisitos e selo tem nome próprio ("Requisitos e selo"). 390 e 1280.
+  Reconferência pedida pelo Muse (31/10): rodada no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
