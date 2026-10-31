@@ -30,7 +30,9 @@ test.describe("T776 — estados vazios do painel dizem o que fazer (#1695, #1696
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.morador = await criarConta(morador, senha);
-    for (const id of [ids.dono, ids.morador]) await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", id);
+    // Com intenção gravada o login cai no painel; o proprietário com "anunciar" (o Início dele mostra o bloco do dono).
+    await adm().from("profiles").update({ intencao: ["anunciar"] }).eq("id", ids.dono);
+    await adm().from("profiles").update({ intencao: ["morar"] }).eq("id", ids.morador);
     ids.imovel = await criarImovelPronto(ids.dono, `Casa vazia T776 ${sufixo}`, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     const agora = new Date().toISOString();
