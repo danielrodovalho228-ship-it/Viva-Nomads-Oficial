@@ -1553,8 +1553,7 @@
       ],
       "specs": [
         "t3-isolamento-papeis",
-        "t307-varredura-bloco8",
-        "t743-varredura-bloco81"
+        "t307-varredura-bloco8"
       ]
     },
     "/dev/emails": {
@@ -1922,8 +1921,7 @@
         "t3-isolamento-papeis",
         "t200-roi-socios",
         "t208-sem-nomade-drive",
-        "t307-varredura-bloco8",
-        "t743-varredura-bloco81"
+        "t307-varredura-bloco8"
       ]
     },
     "/seguranca": {
@@ -1947,8 +1945,7 @@
         "t7-fluxo-publico",
         "t200-roi-socios",
         "t208-sem-nomade-drive",
-        "t307-varredura-bloco8",
-        "t743-varredura-bloco81"
+        "t307-varredura-bloco8"
       ]
     },
     "/socios": {
@@ -1982,8 +1979,7 @@
       ],
       "specs": [
         "t192-conta-4-blocos",
-        "t307-varredura-bloco8",
-        "t743-varredura-bloco81"
+        "t307-varredura-bloco8"
       ]
     },
     "/admin/dados-de-teste": {

@@ -119,7 +119,8 @@ async function saidaDo(quem: string, assunto: string): Promise<string> {
 async function regua(quem: string, m: Email, o: { assunto: string; abertura: string; detalhe?: string; bloco: string[] }) {
   expect(m.assunto, "assunto com o fato e o imóvel").toBe(`${o.assunto}${MARCA}`);
   expect(m.assunto.length, "o assunto cabe em 70 caracteres").toBeLessThanOrEqual(70);
-  expect(m.corpo.split("\n")[0], "o título do e-mail é o assunto").toBe(o.assunto);
+  // O texto guardado começa com o cabeçalho da caixa de QA ("Remetente: …"); o título do e-mail vem logo depois.
+  expect(m.corpo.split("\n").map((l) => l.trim()), "o título do e-mail é o assunto").toContain(o.assunto);
   expect(m.corpo, "a abertura com o nome e o fato").toContain(o.abertura);
   if (o.detalhe) expect(m.corpo, "a linha de detalhe").toContain(o.detalhe);
   expect(m.corpo, "sem o endereço exato").not.toContain(RUA);

@@ -8,8 +8,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
 /*
   T743 — VARREDURA DA PÁGINA INTEIRA, BLOCO 81 (Pista C, 31/10). O protocolo do bloco 21 (t385): seis classes, página
   toda rolada, carregamento real de cada imagem, 390 e 1280 px, HTTP abaixo de 400. Rodízio das telas públicas que o
-  ciclo (blocos 73–80) ainda não varreu: simulação, ROI, tributário, decisão, comparar, favoritos (visitante) e as
-  boas-vindas do app. Visitante, sem massa própria. Defeito novo entra como test.fail ligado a um item D-V
+  ciclo (blocos 73–80) ainda não varreu: comparar, favoritos (visitante) e as boas-vindas do app (simulação, ROI,
+  tributário e decisão levam a /acesso-socios: são da área de sócios, fora do visitante). Visitante, sem massa própria. Defeito novo entra como test.fail ligado a um item D-V
   (próximo livre: D-V9). Numeração: t729–t742 estão tomados pelas Pistas A/B; a série da C segue em t743.
 */
 type Conta = "ADMIN" | "VISITANTE";
@@ -24,10 +24,6 @@ interface Tela {
 
 const TELAS: Tela[] = [
   ...[
-    ["Simulação", "/simulacao"],
-    ["ROI", "/roi"],
-    ["Tributário", "/tributario"],
-    ["Decisão", "/decisao"],
     ["Comparar", "/comparar"],
     ["Favoritos (visitante)", "/favoritos"],
     ["Boas-vindas do app", "/app/boas-vindas"],
@@ -52,7 +48,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return (await browser.newContext()).newPage();
 }
 
-test.describe("T743 — varredura da página inteira, bloco 81 (simulação, ROI, tributário, decisão, comparar, favoritos, boas-vindas do app) (390 e 1280 px)", () => {
+test.describe("T743 — varredura da página inteira, bloco 81 (comparar, favoritos, boas-vindas do app) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeEach(({}, info) => {
