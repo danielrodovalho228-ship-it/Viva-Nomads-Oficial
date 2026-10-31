@@ -57,6 +57,8 @@ export function NumInput({
   step = 1,
   prefix,
   max,
+  vazioQuandoZero = false,
+  testid,
 }: {
   label: string;
   value: number;
@@ -65,6 +67,9 @@ export function NumInput({
   prefix?: string;
   /** Teto do campo: acima dele, usa o máximo e avisa (antes aceitava R$ 99 mi). */
   max?: number;
+  /** E294: o campo começa (e fica) vazio enquanto o valor é 0 — nenhum número aparece que o dono não digitou. */
+  vazioQuandoZero?: boolean;
+  testid?: string;
 }) {
   const [passou, setPassou] = useState(false);
   return (
@@ -76,7 +81,8 @@ export function NumInput({
           // Dinheiro: texto no formato brasileiro ("3.300"), pela fonte única lerReais (complemento do prompt 27, parte B).
           <CampoReais
             semPrefixo
-            value={value}
+            value={vazioQuandoZero && !value ? null : value}
+            testid={testid}
             onChange={(n) => {
               const v = Math.max(0, Math.round(n ?? 0));
               const acima = max !== undefined && v > max;
@@ -92,7 +98,8 @@ export function NumInput({
           min={0}
           max={max}
           step={step}
-          value={value}
+          value={vazioQuandoZero && !value ? "" : value}
+          data-testid={testid}
           onChange={(e) => {
             const v = Math.max(0, Math.round(Number(e.target.value) || 0));
             const acima = max !== undefined && v > max;
