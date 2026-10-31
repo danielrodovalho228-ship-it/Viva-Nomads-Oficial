@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Clock, MapPin, Star } from "lucide-react";
+import { BadgeCheck, Clock, MapPin, Star } from "lucide-react";
+import { SELO_APROVADO, capaDoParceiro, iniciaisDoParceiro } from "@/lib/parceiros/apresentacao";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
@@ -69,34 +70,45 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   }).toString();
   const voltarPara = `/parceiros/${slug}${consulta ? `?${consulta}` : ""}`;
   const redes = REDES.filter((r) => p.redes[r.chave]);
+  // E298: a capa nunca é uma área vazia (capa enviada → foto do parceiro → foto da categoria).
+  const capa = capaDoParceiro(p);
 
   return (
     <div data-testid="pagina-parceiro" data-slug={p.slug}>
       {/* Aberta pelo QR/link do cartão do parceiro: confere a assinatura e conta a visita (POST, sem gravar no render). */}
       <RefDaVisita parceiroId={p.id} />
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros/buscar" }, { nome: p.nomePublico, caminho: `/parceiros/${p.slug}` }])} />
-      <div className="relative h-40 w-full overflow-hidden bg-sage-100 sm:h-56 lg:h-72">
-        {p.bannerUrl && (
-          // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio
-          <img src={p.bannerUrl} alt={`Capa de ${p.nomePublico}`} className="h-full w-full object-cover" data-testid="parceiro-banner" />
+      <div className="relative h-40 w-full overflow-hidden bg-sage-100 sm:h-56 lg:h-72" data-testid="parceiro-capa" data-origem={capa?.origem ?? "nenhuma"}>
+        {capa && (
+          // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público (ou do acervo), já reduzida
+          <img src={capa.src} alt={capa.alt} className="h-full w-full object-cover" data-testid="parceiro-banner" />
         )}
       </div>
       <div className="container-page">
-        <div className="-mt-12 flex flex-col gap-4 sm:-mt-16 sm:flex-row sm:items-end">
+        {/* E296 (QA 31/10): o banner é posicionado (relative) e o bloco que sobe sobre ele com margem negativa não era —
+            o banner era pintado por cima: o avatar cortado pela metade e o nome escondido. Agora o bloco fica acima
+            (relative z-10), só o avatar sobe sobre a capa e o nome começa abaixo dela, em qualquer largura. */}
+        <div className="relative z-10 -mt-12 flex flex-col gap-4 sm:-mt-16 sm:flex-row sm:items-start" data-testid="parceiro-cabecalho">
           {p.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio
-            <img src={p.avatarUrl} alt={`Foto de ${p.nomePublico}`} width={128} height={128} className="h-24 w-24 rounded-full border-4 border-white bg-white object-cover sm:h-32 sm:w-32" data-testid="parceiro-avatar" />
+            <img src={p.avatarUrl} alt={`Foto de ${p.nomePublico}`} width={128} height={128} className="h-24 w-24 shrink-0 rounded-full border-4 border-white bg-white object-cover sm:h-32 sm:w-32" data-testid="parceiro-avatar" />
           ) : (
-            <span className="grid h-24 w-24 place-items-center rounded-full border-4 border-white bg-sage-100 font-title text-[28px] font-semibold text-forest sm:h-32 sm:w-32">{p.nomePublico.slice(0, 1)}</span>
+            <span className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-4 border-white bg-sage-100 font-title text-[28px] font-semibold text-forest sm:h-32 sm:w-32" aria-hidden data-testid="parceiro-avatar">
+              {iniciaisDoParceiro(p.nomePublico)}
+            </span>
           )}
-          <div className="min-w-0 flex-1 pb-1">
-            <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]">{p.nomePublico}</h1>
+          <div className="min-w-0 flex-1 sm:pt-16">
+            <h1 className="font-title text-2xl font-semibold text-ink sm:text-[28px]" data-testid="parceiro-nome">{p.nomePublico}</h1>
             <p className="mt-1 text-muted">{p.categorias.map(rotuloCategoria).join(" · ")}</p>
             <p className="mt-1 flex items-center gap-1 text-sm text-ink">
               <MapPin className="h-4 w-4 shrink-0" aria-hidden /> {p.cidades.join(", ")}
             </p>
           </div>
-          <div className="pb-1" data-testid="parceiro-nota">
+          <div className="flex flex-wrap items-center gap-2 sm:pt-16" data-testid="parceiro-nota">
+            {/* E299: o mesmo selo do cartão da busca — todo parceiro publicado passou pela aprovação da Viva. */}
+            <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1 text-sm font-semibold text-forest" data-testid="selo-aprovado">
+              <BadgeCheck className="h-4 w-4" aria-hidden /> {SELO_APROVADO}
+            </span>
             {p.avaliacoesQtd > 0 && p.notaMedia ? (
               <p className="flex items-center gap-1 font-semibold text-ink">
                 <Star className="h-5 w-5 text-amber-500" aria-hidden /> {p.notaMedia.toFixed(1)} · {p.avaliacoesQtd} {p.avaliacoesQtd === 1 ? "avaliação" : "avaliações"}
@@ -109,12 +121,16 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
 
         <div className="mt-8 grid gap-8 pb-12 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0 space-y-8">
-            {p.descricao && (
-              <section aria-labelledby="h-sobre">
-                <h2 id="h-sobre" className="font-title text-xl font-semibold text-ink">Sobre</h2>
-                <p className="mt-2 whitespace-pre-line text-ink">{p.descricao}</p>
-              </section>
-            )}
+            {/* E299: "Sobre" e "Galeria" sempre presentes (o mesmo desenho para todo parceiro); sem conteúdo, uma linha
+                honesta em vez de sumir a seção. */}
+            <section aria-labelledby="h-sobre" data-testid="parceiro-sobre">
+              <h2 id="h-sobre" className="font-title text-xl font-semibold text-ink">Sobre</h2>
+              {p.descricao || p.descricaoCurta ? (
+                <p className="mt-2 whitespace-pre-line text-ink">{p.descricao ?? p.descricaoCurta}</p>
+              ) : (
+                <p className="mt-2 text-muted">{p.nomePublico} ainda não escreveu sobre o trabalho.</p>
+              )}
+            </section>
             <section aria-labelledby="h-servicos">
               <h2 id="h-servicos" className="font-title text-xl font-semibold text-ink">Serviços</h2>
               <ul className="mt-3 grid gap-3 sm:grid-cols-2" data-testid="parceiro-servicos">
@@ -133,9 +149,11 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                 ))}
               </ul>
             </section>
-            {galeria.length > 0 && (
-              <section aria-labelledby="h-galeria">
-                <h2 id="h-galeria" className="font-title text-xl font-semibold text-ink">Galeria</h2>
+            <section aria-labelledby="h-galeria" data-testid="parceiro-galeria-secao">
+              <h2 id="h-galeria" className="font-title text-xl font-semibold text-ink">Galeria</h2>
+              {galeria.length === 0 ? (
+                <p className="mt-2 text-muted">Ainda sem fotos de trabalhos.</p>
+              ) : (
                 <ul className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-3" data-testid="parceiro-galeria">
                   {galeria.map((g) => (
                     <li key={g.id} className="min-w-0">
@@ -147,8 +165,8 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                     </li>
                   ))}
                 </ul>
-              </section>
-            )}
+              )}
+            </section>
           </div>
           <aside className="min-w-0 space-y-4">
             <div className="rounded-xl border border-line bg-white p-4">
