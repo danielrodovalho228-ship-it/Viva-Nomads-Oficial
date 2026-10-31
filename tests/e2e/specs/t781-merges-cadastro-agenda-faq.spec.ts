@@ -108,6 +108,10 @@ test.describe("T781 — merges de 31/10: regras no Passo 6, ícones, motivo inte
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto(`/dashboard/imoveis/${ids.publicado}/editar`, { waitUntil: "domcontentloaded" });
+      // A seção "Comodidades" nasce fechada (abre no toque, como as outras do Editar).
+      const secao = p.getByTestId("secao-comodidades");
+      await secao.locator(":scope > button").click({ timeout: 30_000 });
+      await expect(secao).toHaveAttribute("data-aberta", "true");
       const grade = p.getByTestId("editar-comodidades-grade").first();
       await expect(grade).toBeVisible({ timeout: 30_000 });
       const cartoes = p.getByTestId("editar-comodidades-grade").locator("[data-comodidade]");
