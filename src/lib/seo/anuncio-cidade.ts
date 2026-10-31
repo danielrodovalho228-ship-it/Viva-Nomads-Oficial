@@ -108,6 +108,9 @@ export function faqPageCidade(cidade: string) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage" as const,
+    // E84 (micro): nome em português — sem ele, as ferramentas mostram "Frequently Asked Questions".
+    name: `Perguntas frequentes · ${cidade}`,
+    inLanguage: "pt-BR",
     mainEntity: perguntasCidade(cidade).map((p) => ({
       "@type": "Question" as const,
       name: p.pergunta,

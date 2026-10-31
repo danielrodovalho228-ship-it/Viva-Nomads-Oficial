@@ -56,3 +56,21 @@ test("a página da cidade e o JSON-LD do anúncio usam os construtores", () => {
   assert.match(cidade, /<JsonLd dados=\{faqPageCidade\(name\)\} \/>/);
   assert.match(ler("src/components/seo/property-json-ld.tsx"), /ofertaDoAnuncio\(SITE_URL, property, disponibilidadeSchema\(property\)\)/);
 });
+
+test("E84 (micro): todo FAQPage tem nome em português (sem ele, o rótulo padrão é 'Frequently Asked Questions')", async () => {
+  const { readFileSync, readdirSync, statSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const raiz = new URL("../../", import.meta.url).pathname;
+  const arquivos = (d: string): string[] =>
+    readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? arquivos(join(d, n)) : /\.tsx?$/.test(n) && !/\.test\./.test(n) ? [join(d, n)] : []));
+  const semNome: string[] = [];
+  for (const f of arquivos(raiz)) {
+    const s = readFileSync(f, "utf8");
+    for (const m of s.matchAll(/"@type": "FAQPage"/g)) {
+      const bloco = s.slice(m.index, m.index! + 400);
+      if (!/\bname: [`"]Perguntas frequentes|\bname: nome\b/.test(bloco) || !/inLanguage: "pt-BR"/.test(bloco)) semNome.push(f.replace(raiz, ""));
+    }
+  }
+  assert.deepEqual(semNome, []);
+  assert.equal(faqPageCidade("Uberlândia").name, "Perguntas frequentes · Uberlândia");
+});
