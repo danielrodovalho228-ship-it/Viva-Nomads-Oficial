@@ -30,8 +30,9 @@ const qa = { email: `qa.t771.${sufixo}@lab.vivanomads.test`, nome: "Quésia Foto
 let qaId = "";
 
 async function conferir(p: Page, largura: number) {
-  await expect(p.getByTestId("emails-teste")).toBeVisible({ timeout: 20_000 });
+  // A lista é o mesmo componente nas duas telas (o envoltório muda: no admin é a aba "E-mails" de Dados de teste).
   const lista = p.getByTestId(largura < 768 ? "emails-teste-cartoes" : "emails-teste-tabela");
+  await expect(lista).toBeVisible({ timeout: 20_000 });
   const linha = lista.locator(largura < 768 ? "li" : "tr").filter({ hasText: COM_FOTO });
   await expect(linha).toHaveCount(1, { timeout: 20_000 });
   await linha.locator("summary").first().click();
