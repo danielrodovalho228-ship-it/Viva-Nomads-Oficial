@@ -37,6 +37,16 @@ export function textoTetoOcupantes(previstos: number): string {
   return `Este contrato prevê ${previstos} ${previstos === 1 ? "ocupante" : "ocupantes"}. Para mudar, use "Propor alteração".`;
 }
 
+/**
+ * Lista de ocupantes vazia. Quem pode preencher (o morador, depois da assinatura) lê o que fazer e para quê; quem não
+ * pode (o dono, ou o morador antes da assinatura) lê o que vai aparecer aqui. O motivo do bloqueio vem logo abaixo.
+ */
+export function textoOcupantesVazio(o: { podeEditar: boolean; previstos: number }): string {
+  if (!o.podeEditar) return "Ninguém na lista ainda. Quando o morador preencher quem vai morar no imóvel, os nomes e a lista para a portaria aparecem aqui.";
+  const quantos = Math.max(1, o.previstos);
+  return `Ninguém na lista ainda. Preencha abaixo quem vai morar no imóvel (${quantos === 1 ? "1 pessoa" : `até ${quantos} pessoas`}): a lista para a portaria sai com esses nomes.`;
+}
+
 /** Texto para copiar ou baixar: "Lista para a portaria". */
 export function textoListaPortaria(
   c: { numero: string; imovel: string; inicio: string | null; fim: string | null },
