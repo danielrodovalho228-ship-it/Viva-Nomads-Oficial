@@ -816,7 +816,7 @@ export function PropertyDetail({
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
                   igual à seção de avaliações. Sem review real → selo honesto. */}
               {resumoExemplo ? (
-                <a href="#avaliacoes" data-testid="estrelas-titulo" className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest hover:underline">
+                <a href="#avaliacoes" data-testid="estrelas-titulo" className="alvo-toque inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest hover:underline">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
                   {numBR(resumoExemplo.media, 1)} · {resumoExemplo.n} avaliações
                 </a>

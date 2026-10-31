@@ -17,3 +17,17 @@ test("Instagram, Compartilhar e o zoom do mapa com 44 px", () => {
   assert.match(ler("components/share-button.tsx"), /"grid h-11 w-11 place-items-center rounded-full/);
   assert.match(ler("app/globals.css"), /\.leaflet-container\.leaflet-touch \.leaflet-bar a\.leaflet-control-zoom-in[\s\S]*?width: 44px;\s*height: 44px;/);
 });
+
+test("links de texto soltos: área de toque de 44 px (só em tela de toque), sem mudar o visual", () => {
+  const css = ler("app/globals.css");
+  assert.match(css, /@media \(pointer: coarse\) \{\s*\.alvo-toque \{\s*position: relative;[\s\S]*?\.alvo-toque::after \{[\s\S]*?height: 44px;/);
+  for (const [arq, marca] of [
+    ["app/(public)/imoveis/[id]/property-detail.tsx", 'data-testid="estrelas-titulo" className="alvo-toque'],
+    ["components/avaliacoes/como-funcionam-avaliacoes.tsx", 'className="alvo-toque text-sm text-forest'],
+    ["components/property/owner-card.tsx", 'className="alvo-toque mt-2 inline-flex'],
+    ["components/property/avaliacoes-exemplo.tsx", 'className="alvo-toque mt-1 text-sm'],
+    ["app/(public)/ajuda/[tema]/page.tsx", 'className="alvo-toque inline-flex'],
+    ["app/(public)/page.tsx", '<Link href="/precos" className="alvo-toque'],
+  ])
+    assert.ok(ler(arq).includes(marca), arq);
+});
