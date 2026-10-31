@@ -82,7 +82,11 @@ test.describe("T279 — varredura da página inteira nas telas logadas (390 e 12
           for (const classe of Object.keys(CLASSES) as Classe[]) {
             await test.step(`${classe} @${tam.nome}`, async () => {
               for (const a of achados[classe]) console.log(`VARREDURA|${classe}|${tam.nome}|${t.papel}|${rota.replace(/[0-9a-f-]{36}/g, ":id")}|${a}`);
-              expect.soft(achados[classe], `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
+              // Desenho do E248 (#1536): o "›" sólido da fileira que rola senta sobre o item da borda (t662). Fica anotado, como
+              // nas varreduras dos blocos 62 em diante; aparece ou não conforme a fileira rola (laboratório completo de bafabcdda).
+              const desenho = (a: string) => classe === "fixo" && /^\/dashboard(\/|\?|$)/.test(rota) && /coberto por button "Ver mais itens"$/.test(a);
+              for (const a of achados[classe].filter(desenho)) test.info().annotations.push({ type: "E248-desenho", description: `${rota} @${tam.nome}: ${a}` });
+              expect.soft(achados[classe].filter((a) => !desenho(a)), `${t.papel} — ${t.nome} @${tam.nome} — ${classe}: ${CLASSES[classe]}`).toEqual([]);
             });
           }
         } finally {

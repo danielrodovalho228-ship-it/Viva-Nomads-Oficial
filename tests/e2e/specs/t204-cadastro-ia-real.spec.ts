@@ -206,6 +206,10 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByTestId("fotos-adicionar").click()]);
       await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura) })));
       await expect(page.getByTestId("etapa-fotos")).toContainText("7 / 8 fotos", { timeout: 60_000 });
+      // A contagem soma as fotos ainda em envio (E259): o "7 / 8" aparece antes de o lote terminar. Soltar a 8ª nesse meio
+      // dispara um segundo envio sobre a lista antiga e as fotos de um dos dois se perdem (L-83, t786). Espera as 7 na
+      // galeria antes de soltar a 8ª (o que a t204 prova é soltar, não soltar durante o envio).
+      await expect(page.getByTestId("fotos-galeria").locator('[data-testid="foto-principal"], [data-testid="foto-miniatura"]')).toHaveCount(7, { timeout: 60_000 });
       // Arrastar e soltar um arquivo na galeria.
       const png8 = pngDeTeste(8 + 20 * largura).toString("base64");
       await page.getByTestId("fotos-galeria").evaluate((alvo, b64) => {
@@ -247,6 +251,10 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
     // E104: a matrícula fica no "Antes de publicar" da Revisão.
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    // E271: as seções do "Antes de publicar" nascem fechadas e abrem no toque; a do documento guarda o envio.
+    const secaoDoc = d.page.getByTestId("antes-secao-documento");
+    await expect(secaoDoc).toBeVisible({ timeout: 30_000 });
+    if ((await secaoDoc.getAttribute("data-aberta")) !== "1") await d.page.getByTestId("antes-secao-documento-abrir").click();
     await expect(d.page.getByTestId("documento-vinculo")).toBeVisible({ timeout: 30_000 });
     // PDF sem o marcador do laboratório: ninguém consegue ler (como um arquivo ilegível em produção).
     await d.page.getByTestId("documento-vinculo").locator('input[type="file"]').setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });
