@@ -121,7 +121,12 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
  * curta por documento — o bucket é privado. O e-mail do dono NÃO é exposto ao
  * cliente (só o primeiro nome).
  */
-export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
+const MSG_FILA_DOCUMENTOS_NAO_CARREGOU = "Não foi possível carregar a fila de documentos agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 16: com `exigir` (a página da fila), a falha do banco LANÇA — o admin
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de "fila vazia" (a equipe perderia o prazo de
+ * 48 h achando que não há nada). */
+export async function listDocumentosPendentes(opcoes: { exigir?: boolean } = {}): Promise<DocumentoPendente[]> {
   // E28: confirma admin ANTES e lê com o cliente de serviço — a MESMA fonte do "na fila agora" (filaDocumentos).
   // Pela sessão, a RLS (is_admin(), que exige aal2 no token de quem tem 2FA) devolvia [] em silêncio enquanto o
   // contador, pelo serviço, mostrava a fila: contador 4, lista 0.
@@ -135,6 +140,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     .order("created_at", { ascending: true })
     .limit(200);
   if (error) console.error("[E28] fila de documentos:", error.message);
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_DOCUMENTOS_NAO_CARREGOU);
 
   // Um item por documento: re-salvar a qualificação repete o documento em
   // outra linha (0072) — mostra só a mais recente de cada (dono, imóvel, arquivo).

@@ -68,10 +68,10 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
   const triagemLigada = await triagemVinculoAtiva();
   const vinculos = triagemLigada ? await listarVinculosPendentes() : null;
   const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora, ultimaDoc, ultimaMatricula] = await Promise.all([
-    listDocumentosPendentes(),
+    listDocumentosPendentes({ exigir: true }),
     listConferidosAutomaticamente(),
     contadoresConferencia(),
-    listMatriculasFila(),
+    listMatriculasFila(undefined, { exigir: true }),
     contadoresMatriculas(),
     listarFalhasDocumentos(),
     admin ? filaDocumentos(admin).catch(() => null) : Promise.resolve(null),
