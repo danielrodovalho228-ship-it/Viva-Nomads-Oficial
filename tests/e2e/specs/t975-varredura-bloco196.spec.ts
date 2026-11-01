@@ -12,7 +12,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   varredura no bloco 179, t904): as PÚBLICAS com parâmetro na URL (e a /como-funciona), como visitante — guias, polos de
   Uberlândia, imóveis perto de um destino (a spec cria um destino ativo próprio e o apaga no fim, como a t261), perfil
   público do proprietário (DONO17 da massa), página do parceiro (o da massa) e o novo pedido de moradia. Defeito novo
-  entra como test.fail ligado a um item (L-90 / D-V11 livres).
+  entra como test.fail ligado a um item. Achado novo deste bloco: D-V11 (o aviso do mapa do E419 cobre o cabeçalho a
+  1280, no polo Centro e em "Imóveis perto de"); L-90 / D-V12 seguem livres.
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
 interface Tela {
@@ -81,6 +82,10 @@ test.describe("T975 — varredura da página inteira, bloco 196 (8ª volta, púb
   for (const t of TELAS) {
     test(`${t.papel} — ${t.nome}: as seis classes, rolando a página inteira`, async ({ browser }) => {
       test.setTimeout(180_000);
+      // D-V11 (registro-defeitos.md, novo neste bloco): a 1280 o aviso "Não foi possível carregar o mapa agora." do E419
+      // (absolute inset-0 z-[500], num contêiner relative SEM z-index) passa por cima do cabeçalho sticky z-40 (logo e
+      // menu cobertos) — lab-crítico do #2135, run 41362439873, nas 2 tentativas. Quem corrigir tira este test.fail.
+      test.fail(["Polo: Centro", "Imóveis perto de um destino"].includes(t.nome), "D-V11: o aviso do mapa (E419) cobre o cabeçalho a 1280");
       test.skip(t.conta !== "VISITANTE" && t.conta !== "SOCIO" && !temContaVarredura(t.conta), `sem a conta ${t.conta} na massa`);
       test.skip(t.conta === "SOCIO" && !CODIGO_SOCIOS, "SOCIOS_ACCESS_CODE não definido neste ambiente");
       const rota = t.rota(MASSA!);
