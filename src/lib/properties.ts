@@ -1,6 +1,7 @@
 import type { Property } from "./types.ts";
 import { galleryFor } from "./media.ts";
 import { temSeloPrecoJusto } from "./preco-justo.ts";
+import { calcularTudoIncluido } from "./precos.ts";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -33,7 +34,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     areaM2: 68,
     minPeriodDays: 30,
     monthlyPrice: 3200,
-    airbnbMonthlyPrice: 3900, // dado do anúncio de exemplo (não é número de mercado); gera o selo "Preço justo" pelo critério real
+    airbnbMonthlyPrice: 4200, // dado do anúncio de exemplo (não é número de mercado); E399-B: acima do total por mês com as contas (R$ 3.960), o selo sai pelo critério real
     utilitiesMode: "fixed",
     utilitiesEstimate: 280,
     utilitiesOverageMargin: 20,
@@ -871,7 +872,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
 ];
 
 /* Selo "Preço justo" também nos exemplos, pelo MESMO critério dos anúncios reais (nunca forçado). */
-for (const p of SAMPLE_PROPERTIES) p.precoJusto = temSeloPrecoJusto(p.monthlyPrice, p.airbnbMonthlyPrice);
+// E399-B: o total por mês do cartão (com as contas), como a coluna gerada da 0277.
+for (const p of SAMPLE_PROPERTIES) p.precoJusto = temSeloPrecoJusto(calcularTudoIncluido(p).total, p.airbnbMonthlyPrice);
 
 export function getPropertyById(id: string): Property | undefined {
   return SAMPLE_PROPERTIES.find((p) => p.id === id);

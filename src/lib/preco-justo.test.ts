@@ -42,10 +42,38 @@ test("taxaDoNovoAnuncio: faixa pelos ativos já contando o anúncio novo", () =>
   assert.equal(taxaDoNovoAnuncio(-3), 0.12);
 });
 
-test("selo Preço justo: só quando o aluguel fica abaixo do Airbnb informado", () => {
+test("selo Preço justo (E399-B): total por mês NÃO maior que o Airbnb informado", () => {
   assert.equal(temSeloPrecoJusto(4602, 5150), true);
-  assert.equal(temSeloPrecoJusto(5150, 5150), false); // igual não ganha selo
+  assert.equal(temSeloPrecoJusto(5150, 5150), true); // igual ganha o selo ("não maior", Daniel × Rogério)
   assert.equal(temSeloPrecoJusto(6000, 5150), false);
+});
+
+test("E399-B: contas à parte — o selo compara o TOTAL por mês (com as contas), não o valor mensal sozinho", async () => {
+  const { calcularTudoIncluido } = await import("./precos.ts");
+  // Valor mensal R$ 3.200 + contas fixas R$ 150 + condomínio R$ 100 = R$ 3.450 por mês; Airbnb declarado R$ 3.300.
+  const comContas = { monthlyPrice: 3200, condoFee: 100, utilitiesMode: "fixed", utilitiesEstimate: 150 } as Parameters<typeof calcularTudoIncluido>[0];
+  const total = calcularTudoIncluido(comContas).total;
+  assert.equal(total, 3450);
+  // Antes (valor mensal sozinho, "<"): 3.200 < 3.300 → ganhava o selo saindo MAIS CARO para o morador.
+  assert.equal(3200 < 3300, true);
+  // Agora: 3.450 > 3.300 → sem selo.
+  assert.equal(temSeloPrecoJusto(total, 3300), false);
+  // Total realmente menor ou igual mantém o selo (com a limpeza durante a estadia também na conta).
+  assert.equal(temSeloPrecoJusto(total, 3450), true);
+  const comLimpeza = calcularTudoIncluido({ ...comContas, limpezaEstadia: { porMes: 2, inclui: "pisos", valorMes: 180 } }).total;
+  assert.equal(comLimpeza, 3630);
+  assert.equal(temSeloPrecoJusto(comLimpeza, 3500), false);
+  assert.equal(temSeloPrecoJusto(comLimpeza, 3700), true);
+});
+
+test("E399-B: a coluna gerada (0277) usa a mesma conta do cartão e o '≤'", async () => {
+  const { readFileSync } = await import("node:fs");
+  const m = readFileSync(new URL("../../supabase/migrations/0277_preco_justo_total.sql", import.meta.url), "utf8");
+  assert.match(m, /coalesce\(monthly_price, 0\)\s*\+ coalesce\(condo_fee, 0\)\s*\+ case when utilities_mode = 'fixed' then coalesce\(utilities_estimate, 0\) else 0 end/);
+  assert.match(m, /limpeza_estadia ->> 'valorMes'/);
+  assert.match(m, /\) <= airbnb_monthly_price/);
+  assert.match(m, /grant select \(preco_justo\) on public\.properties to anon, authenticated;/);
+  assert.doesNotMatch(m, /airbnb\.com|fetch|http/i);
 });
 
 test("selo Preço justo: campo opcional ou inválido nunca gera selo", () => {
