@@ -74,7 +74,23 @@ test.describe("T944 — E411: segundo pedido de visita explica a regra e o camin
       const enviar = page.getByTestId("visita-presencial-enviar");
       await enviar.scrollIntoViewIfNeeded({ timeout: 5_000 });
       await enviar.click({ timeout: 6_000 }).catch(() => enviar.dispatchEvent("click"));
-      await expect(page.getByTestId("visita-presencial-erro")).toHaveText(ERRO, { timeout: 25_000 });
+      // Diagnóstico (vigia): se a recusa não aparecer, o erro traz o que a tela mostrou depois do envio.
+      try {
+        await expect(page.getByTestId("visita-presencial-erro")).toHaveText(ERRO, { timeout: 25_000 });
+      } catch (e) {
+        const texto = async (id: string) => ((await page.getByTestId(id).count()) ? await page.getByTestId(id).first().innerText().catch(() => "?") : "(ausente)");
+        const diag = {
+          url: page.url(),
+          erro: await texto("visita-presencial-erro"),
+          ok: await texto("visita-presencial-ok"),
+          passo: await page.getByTestId("visita-presencial-passo").count(),
+          pedida: await texto("visita-presencial-pedida"),
+          agendar: await page.getByTestId("agendar-visita").count(),
+          alertas: await page.getByRole("alert").allInnerTexts().catch(() => []),
+          noBanco: (await adm().from("visitas_video").select("status, modalidade").eq("tenant_id", inq.id).eq("property_id", imovel)).data,
+        };
+        throw new Error(`t944 diag: ${JSON.stringify(diag)}\n${(e as Error).message}`);
+      }
       await expect(page.getByTestId("visita-presencial-ok")).toHaveCount(0);
       const { count } = await adm().from("visitas_video").select("id", { count: "exact", head: true }).eq("tenant_id", inq.id).eq("property_id", imovel);
       expect(count, "nenhum segundo pedido gravado").toBe(1);
