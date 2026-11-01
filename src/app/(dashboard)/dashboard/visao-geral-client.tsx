@@ -290,7 +290,7 @@ function PainelDoDono({
             )}
             <Link
               href="/dashboard/verificacao"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-champagne px-4 py-2 text-sm font-semibold text-night transition-colors hover:bg-champagne-600"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-champagne px-4 text-sm font-semibold text-night transition-colors hover:bg-champagne-600"
             >
               {demo ? "Continuar verificação" : "Iniciar verificação"} <ArrowRight className="h-4 w-4" />
             </Link>
