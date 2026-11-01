@@ -93,30 +93,31 @@ export interface AvaliacaoRecebida {
   resposta: string | null;
 }
 
-/** Avaliações PUBLICADAS recebidas por quem anuncia, com a resposta pública dele. */
+/**
+ * Avaliações PUBLICADAS recebidas por quem anuncia, com a resposta pública dele.
+ * Achado 59: a falha de leitura LANÇA — antes o perfil público dizia "Ainda sem avaliações publicadas" para quem tem.
+ * A falha só das respostas não esconde as avaliações (a resposta pública é um complemento).
+ */
 export async function getAvaliacoesRecebidas(donoId: string): Promise<AvaliacaoRecebida[]> {
   const admin = createAdminClient();
   if (!admin || !UUID_RE.test(donoId)) return [];
-  try {
-    const { data } = await admin
-      .from("avaliacoes")
-      .select("id, nota_geral, comentario_publico, publicada_em")
-      .eq("alvo_id", donoId)
-      .eq("status", "publicada")
-      .order("publicada_em", { ascending: false })
-      .limit(20);
-    const linhas = (data ?? []) as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[];
-    if (linhas.length === 0) return [];
-    const { data: resp } = await admin.from("avaliacao_respostas").select("avaliacao_id, texto").in("avaliacao_id", linhas.map((l) => l.id));
-    const porId = new Map(((resp ?? []) as { avaliacao_id: string; texto: string }[]).map((r) => [r.avaliacao_id, r.texto]));
-    return linhas.map((l) => ({
-      id: l.id,
-      nota: Number(l.nota_geral),
-      comentario: l.comentario_publico ?? "",
-      data: l.publicada_em,
-      resposta: porId.get(l.id) ?? null,
-    }));
-  } catch {
-    return [];
-  }
+  const { data, error } = await admin
+    .from("avaliacoes")
+    .select("id, nota_geral, comentario_publico, publicada_em")
+    .eq("alvo_id", donoId)
+    .eq("status", "publicada")
+    .order("publicada_em", { ascending: false })
+    .limit(20);
+  if (error) throw new Error("Não foi possível ler as avaliações agora.");
+  const linhas = (data ?? []) as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[];
+  if (linhas.length === 0) return [];
+  const { data: resp } = await admin.from("avaliacao_respostas").select("avaliacao_id, texto").in("avaliacao_id", linhas.map((l) => l.id));
+  const porId = new Map(((resp ?? []) as { avaliacao_id: string; texto: string }[]).map((r) => [r.avaliacao_id, r.texto]));
+  return linhas.map((l) => ({
+    id: l.id,
+    nota: Number(l.nota_geral),
+    comentario: l.comentario_publico ?? "",
+    data: l.publicada_em,
+    resposta: porId.get(l.id) ?? null,
+  }));
 }

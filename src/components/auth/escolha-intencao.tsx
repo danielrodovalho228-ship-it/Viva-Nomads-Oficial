@@ -100,12 +100,14 @@ export function MinhaIntencao() {
   const [salvando, setSalvando] = useState(false);
   const [ok, setOk] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Achado 58: falhou a leitura → nada marcado por padrão que "Salvar" gravaria por cima; avisa e trava o salvar.
+  const [falhouLeitura, setFalhouLeitura] = useState(false);
 
   useEffect(() => {
     let vivo = true;
     getMinhaIntencao()
       .then((v) => vivo && setMarcadas(v ?? []))
-      .catch(() => {})
+      .catch(() => vivo && setFalhouLeitura(true))
       .finally(() => vivo && setCarregando(false));
     return () => {
       vivo = false;
@@ -138,6 +140,10 @@ export function MinhaIntencao() {
             <span key={n} className="block h-14 rounded-xl border-2 border-sage-200 bg-surface-2" aria-hidden />
           ))}
         </div>
+      ) : falhouLeitura ? (
+        <p role="alert" className="mt-3 text-sm text-red-600" data-testid="minha-intencao-falha">
+          Não foi possível carregar suas escolhas agora. Recarregue a página para tentar de novo.
+        </p>
       ) : (
         <>
           <div className="mt-4">

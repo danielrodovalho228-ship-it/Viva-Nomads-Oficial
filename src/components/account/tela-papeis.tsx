@@ -36,14 +36,16 @@ import {
 export function TelaPapeis() {
   const [intencao, setIntencao] = useState<Intencao[] | null>(null);
   const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState<"ok" | "salvando" | "erro" | null>(null);
+  const [estado, setEstado] = useState<"ok" | "salvando" | "erro" | "erro_leitura" | null>(null);
   const parceiro = useParceiroAprovado();
 
   useEffect(() => {
     let vivo = true;
-    Promise.all([getMinhaIntencao().catch(() => null), getMeuPerfilPublico().catch(() => null)]).then(([i, p]) => {
+    // Achado 58: falhou a leitura da intenção → os interruptores ficam desabilitados (intencao null) e a tela avisa.
+    Promise.all([getMinhaIntencao().catch(() => "falhou" as const), getMeuPerfilPublico().catch(() => null)]).then(([i, p]) => {
       if (!vivo) return;
-      setIntencao(i ?? []);
+      if (i === "falhou") setEstado("erro_leitura");
+      else setIntencao(i ?? []);
       setCidade(p?.cidade ?? "");
     });
     return () => {
@@ -117,7 +119,7 @@ export function TelaPapeis() {
           data-testid="papeis-preferencias"
           data-estado={estado ?? "ok"}
         >
-          {estado === "erro" ? "Não foi possível salvar. Tente de novo." : estado === "salvando" ? "Salvando…" : (
+          {estado === "erro_leitura" ? "Não foi possível carregar suas escolhas agora. Recarregue a página para tentar de novo." : estado === "erro" ? "Não foi possível salvar. Tente de novo." : estado === "salvando" ? "Salvando…" : (
             <>
               <Check className="h-4 w-4" aria-hidden /> Preferências salvas
             </>

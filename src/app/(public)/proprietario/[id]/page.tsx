@@ -46,7 +46,7 @@ export default async function ProprietarioPage({ params }: Params) {
   if (ex) return <PerfilExemplo p={ex} />;
   const p = await getPerfilProprietario(id);
   if (!p) notFound();
-  const [imoveis, avaliacoes] = await Promise.all([listPropertiesDoProprietario(id), getAvaliacoesRecebidas(id)]);
+  const [imoveis, avaliacoes] = await Promise.all([listPropertiesDoProprietario(id), getAvaliacoesRecebidas(id).catch(() => null)]);
   const desde = desdeLabel(p.desde);
 
   const fatos = [
@@ -142,7 +142,12 @@ export default async function ProprietarioPage({ params }: Params) {
         <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
           Avaliações recebidas
         </h2>
-        {avaliacoes.length === 0 ? (
+        {/* Achado 59: falhou a leitura → aviso honesto, nunca "Ainda sem avaliações publicadas". */}
+        {avaliacoes === null ? (
+          <p role="alert" className="mt-3 text-muted" data-testid="avaliacoes-falha">
+            Não foi possível carregar as avaliações agora. Recarregue a página para ver.
+          </p>
+        ) : avaliacoes.length === 0 ? (
           <p className="mt-3 text-muted">Ainda sem avaliações publicadas.</p>
         ) : (
           <ul className="mt-4 grid gap-4">
