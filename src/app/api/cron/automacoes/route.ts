@@ -6,8 +6,10 @@ import { gerarCartoesAutomaticos } from "@/lib/data/cartoes-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { hojeEmBrasilia } from "@/lib/checkin";
-import { expirarVencidas } from "@/lib/data/propostas-servidor";
-import { STATUS_ABERTOS, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
+import { COLUNAS_VERSAO, expirarVencidas, termosDaLinha, type LinhaVersao } from "@/lib/data/propostas-servidor";
+import { precoDaProposta } from "@/lib/precos";
+import { brl } from "@/lib/notifications/dados-negociacao";
+import { STATUS_ABERTOS, calcularTotais, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
 import { limparSombra } from "@/lib/data/ranking";
 import { precisaAvisoConclusao, precisaLembrete24h } from "@/lib/parceiros/pedido";
 import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "@/lib/parceiros/email-pedido";
@@ -201,25 +203,33 @@ export async function GET(request: Request) {
   const agora = new Date();
   const { data: abertas } = await admin
     .from("propostas")
-    .select("id, numero, owner_id, tenant_id, versao_atual, valida_ate, properties(title, address, city), proposta_versoes(versao, autor)")
+    // E343: a versão inteira (valores), para o e-mail dizer o valor mensal e o total do que o dono decide.
+    .select(`id, numero, owner_id, tenant_id, versao_atual, valida_ate, properties(title, address, city), proposta_versoes(${COLUNAS_VERSAO})`)
     .in("status", STATUS_ABERTOS as string[])
     .gt("valida_ate", agora.toISOString())
     .lte("valida_ate", new Date(agora.getTime() + 86_400_000).toISOString())
     .limit(500);
   for (const p of abertas ?? []) {
     if (!venceEm24h(p.valida_ate as string, agora)) continue;
-    const ultima = ((p.proposta_versoes as { versao: number; autor: Autor }[] | null) ?? []).find((v) => v.versao === p.versao_atual);
+    const ultima = ((p.proposta_versoes as unknown as (LinhaVersao & { autor: Autor })[] | null) ?? []).find((v) => v.versao === p.versao_atual);
     if (!ultima) continue;
+    // E343: o valor mensal e o total do contrato — a MESMA conta da tela e dos e-mails do E202 (precoDaProposta).
+    const termosProposta = termosDaLinha(ultima);
+    const totProposta = calcularTotais(termosProposta);
+    const contaProposta = precoDaProposta({ ...termosProposta, valorMensal: totProposta.valorMensal }).conta ?? brl(totProposta.totalContrato);
+    const valoresProposta = { valorMensal: totProposta.valorMensal, totalContrato: totProposta.totalContrato, contaTotal: contaProposta };
     const vez = daVez(ultima.autor);
     const pp = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
+    // E344: a linha do imóvel com bairro e cidade, como nos outros e-mails do cron (linhaImovel), não só o título.
+    const imovelProposta = pp ? linhaImovel({ titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "";
     alvos.push({
       tipo: "proposta_vencendo",
       usuarioId: (vez === "owner" ? p.owner_id : p.tenant_id) as string,
       refId: p.id as string,
       variante: String(p.versao_atual),
       url: `/dashboard/propostas/${p.id}`,
-      detalhe: detalheAutomacao("proposta_vencendo", { imovel: pp?.title || undefined, numero: p.numero as string }),
-      ...comFatos("proposta_vencendo", { imovel: pp ? { titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, prazo: p.valida_ate as string }),
+      detalhe: detalheAutomacao("proposta_vencendo", { imovel: imovelProposta || undefined, numero: p.numero as string }),
+      ...comFatos("proposta_vencendo", { imovel: pp ? { titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, ...valoresProposta, prazo: p.valida_ate as string }),
       // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
       decisao: { imovel: pp?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
     });
