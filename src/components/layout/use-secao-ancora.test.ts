@@ -6,7 +6,7 @@ import { ABAS_PARCEIRO, abaAtivaPainel, ancorasDasAbas } from "../../config/abas
 
 const ids = ["pedidos", "agenda", "ganhos"];
 /** Documento falso: cada seção com o topo (px) na tela. */
-const doc = (tops: Record<string, number>) => ({ getElementById: (id: string) => (id in tops ? ({ id, getBoundingClientRect: () => ({ top: tops[id] }) } as unknown as HTMLElement) : null) });
+const doc = (tops: Record<string, number>) => ({ getElementById: (id: string) => (id in tops ? ({ id, getBoundingClientRect: () => ({ top: tops[id], bottom: tops[id] + 200 }) } as unknown as HTMLElement) : null) });
 const janela = (scrollY: number, docAltura = 3000) => ({ innerHeight: 800, scrollY, docAltura });
 
 test("E340 — a seção acesa acompanha a rolagem (linha a 35% da tela)", () => {
@@ -39,4 +39,20 @@ test("E340 — o topo do computador e a barra do celular usam a seção visível
   const barra = readFileSync(new URL("./mobile-tab-bar.tsx", import.meta.url), "utf8");
   assert.match(barra, /if \(ancora\) return pathname === rota && ancora === \(secao \?\? "pedidos"\);/);
   assert.match(barra, /const secao = useSecaoAncora\(/);
+});
+
+test("E340 (t776) — a seção pedida (#âncora ou aba clicada) vale enquanto estiver à vista, mesmo curta no fim da página", () => {
+  // Ganhos curto, abaixo da linha de 35%: sem preferência acenderia Agenda; pedida, acende Ganhos.
+  const tops = { pedidos: -900, agenda: 100, ganhos: 520 };
+  assert.equal(secaoVisivel(ids, "#ganhos", doc(tops), janela(900)), "agenda");
+  assert.equal(secaoVisivel(ids, "#ganhos", doc(tops), janela(900), "ganhos"), "ganhos");
+  // Fora da tela, a preferência não vale: manda a seção visível.
+  assert.equal(secaoVisivel(ids, "", doc({ pedidos: 50, agenda: 900, ganhos: 1700 }), janela(0), "ganhos"), "pedidos");
+});
+
+test("E340 (t776) — o hook refaz a rolagem até o #âncora quando a seção aparece e solta a preferência quando a pessoa rola", () => {
+  const h = readFileSync(new URL("./use-secao-ancora.ts", import.meta.url), "utf8");
+  assert.match(h, /if \(!rolouAteAncora && preferida\) \{[\s\S]{0,160}el\.scrollIntoView\(\{ block: "start" \}\);/);
+  assert.match(h, /for \(const ev of \["wheel", "touchmove", "keydown"\] as const\) window\.addEventListener\(ev, soltar/);
+  assert.match(h, /document\.addEventListener\("click", aoClicar, true\);/);
 });
