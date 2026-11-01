@@ -1341,7 +1341,8 @@
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
         "t672-e190-troca-de-modo",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t956-achado52-preferencias-falha"
       ]
     },
     "/dashboard/orcamentos": {
