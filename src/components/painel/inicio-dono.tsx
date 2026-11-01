@@ -7,6 +7,9 @@ import type { Decisao } from "@/lib/painel/decisoes";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 
+/** O estado de cada passo, com o rótulo do mockup painel-proprietario. */
+export const ROTULO_ESTADO_PASSO = { feito: "Concluído", agora: "Em andamento", depois: "Pendente" } as const;
+
 const ICONE = { agenda: CalendarDays, simulador: ChartNoAxesColumnIncreasing, recibos: ReceiptText } as const;
 
 /**
@@ -73,18 +76,22 @@ export function InicioDono({
               <div className="mt-6">
                 <p className="text-sm text-muted">Próximos passos</p>
                 <ul className="mt-2 space-y-2" data-testid="inicio-dono-passos">
-                  {bloco.passos.map((p, i) => (
+                  {bloco.passos.map((p, i) => {
+                    const estado = p.feito ? "feito" : i === bloco.passos.findIndex((x) => !x.feito) ? "agora" : "depois";
+                    return (
                     <li key={p.rotulo}>
                       <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
-                        <IconePasso estado={p.feito ? "feito" : i === bloco.passos.findIndex((x) => !x.feito) ? "agora" : "depois"} />
+                        <IconePasso estado={estado} />
                         <span className="min-w-0 flex-1 py-2">
-                          <strong className="font-semibold">{p.rotulo}</strong> — {p.feito ? "Concluído" : "Pendente"}
+                          {/* Conformidade painel-proprietario (01/11): o passo atual diz "Em andamento", como no mockup. */}
+                          <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
                           {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
                         </span>
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
                       </Link>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             )}

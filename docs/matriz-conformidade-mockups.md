@@ -63,7 +63,7 @@ Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linh
 | `morador-pedir` | /pedidos/novo | Conforme | /pedidos/novo (formulário em cartões, um botão cheio). |
 | `morador-servico` | /dashboard/servicos | Conferido sem achado | Serviços com foto por categoria, grade de 6. |
 | `pagina-fale-com-a-viva` | /ajuda/fale-com-a-viva | Conforme | Banner com foto e título (padrão das institucionais). |
-| `painel-proprietario` | /dashboard (dono) | Parcial | #1724 (Meus anúncios uniformes). Comparação completa com o mockup a fazer. |
+| `painel-proprietario` | /dashboard (dono) | Corrigido — PR aberto | Comparado em 01/11 (código do Início do dono, PROP-6, e lab t645): faixa de alerta, bloco principal com % e barra, "Continuar de onde parou", Próximos passos com ícone por estado, "Peça na Viva" e os três atalhos (lista no celular, cartões no computador) conferem. Achado: o passo atual dizia "Pendente" — agora "Em andamento" como no mockup. Fica como está: sem foto do anúncio, o bloco principal não mostra foto (regra do PROP-6, nada de foto inventada); os botões do "Peça na Viva" contornados (um botão cheio por tela). |
 | `parceiro-cadastro` | /dashboard/parceiro | Parcial | #1733 (grade par das categorias). Comparação completa com o mockup a fazer. |
 | `parceiro-ordens` | /dashboard/parceiro (ordens) | A conferir com sessão de parceiro | Só aparece com parceiro aprovado (não alcançável no modo demonstração); fica para o laboratório. |
 | `parceiro-painel` | /dashboard/parceiro (ativo) | Conforme | /dashboard/parceiro: formulário "Quero ser parceiro" sem conta de parceiro ativa; grade par em #1733. |
