@@ -69,7 +69,6 @@ test("1. a contraproposta, o piso privado, o preço do anúncio, os simuladores 
   usa("../components/anuncio/pets-regras-campos.tsx");
   usa("../app/(dashboard)/dashboard/contratos/contratos-client.tsx");
   usa("../app/(dashboard)/dashboard/reembolsos/page.tsx");
-  usa("../components/tax-simulator.tsx");
   // A causa do reteste: "3.300" virava 3,3.
   const detalhe = ler("../app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx");
   assert.doesNotMatch(detalhe, /replace\(",", "\."\)/);

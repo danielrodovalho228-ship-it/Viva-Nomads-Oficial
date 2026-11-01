@@ -133,9 +133,7 @@ export const PLANOS: Plano[] = PLANOS_BASE.map((p) => ({
  * arquivo repete estes números).
  */
 export const MERCADO = {
-  /** Airbnb: taxa única de 16% para anfitriões no Brasil (central de ajuda do Airbnb, out/2026). */
-  airbnbTaxa: 0.16,
-  airbnbFonte: "Airbnb: taxa única de 16% para anfitriões no Brasil (central de ajuda do Airbnb, out/2026).",
+  // E292-bis: a taxa do Airbnb (16%) saiu daqui — era usada só pelo "preço sugerido", que deixou de existir.
   /** Imobiliária tradicional (média de mercado): um aluguel inteiro de intermediação + 8% de administração ao mês. */
   imobiliariaAdmMensal: 0.08,
   imobiliariaPrimeiroAluguel: 1,
