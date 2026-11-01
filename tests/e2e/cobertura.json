@@ -126,7 +126,8 @@
       ],
       "specs": [
         "t191-ajuda-publicacao",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t962-achado55-56-ajuda-andamento"
       ]
     },
     "/admin/atendimento": {
@@ -1049,7 +1050,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t962-achado55-56-ajuda-andamento"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
