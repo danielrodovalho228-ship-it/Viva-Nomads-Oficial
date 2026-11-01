@@ -1,8 +1,10 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { INVENTARIO } from "@/config/retencao";
+import { contarGuardados } from "@/lib/data/admin-contagens";
 import { LIMPEZA_MATRICULA_ELIMINADA } from "@/lib/documento/conferencia-matricula";
 import { planoDoItem, textoPrazo, type Candidato, type ItemInventario } from "@/lib/minimizacao/regras";
+import { diaBRT } from "@/lib/datas-brasilia";
 
 type Admin = SupabaseClient;
 const DOCS_INQUILINO = "inquilino-docs";
@@ -124,9 +126,8 @@ const COLETORES: Record<string, Coletor> = {
 
 /** Quanto existe hoje numa tabela do inventário (para o relatório simulado). Bucket: não conta (null). */
 async function guardados(admin: Admin, item: ItemInventario): Promise<number | null> {
-  if (!item.origem.startsWith("public.")) return null;
-  const { count, error } = await admin.from(item.origem.slice(7)).select("*", { count: "exact", head: true });
-  return error ? null : (count ?? 0);
+  // E334: a mesma contagem da caixa de e-mails de teste e da coluna "Guardados agora" da Retenção.
+  return item.origem.startsWith("public.") ? contarGuardados(admin, item.origem.slice(7)) : null;
 }
 
 export interface ResultadoEliminacao {
@@ -140,7 +141,8 @@ export interface ResultadoEliminacao {
  * chave `ELIMINACAO_ATIVA=1`. Grava o relatório do dia (eliminacoes_simulado) e, no real, o livro.
  */
 export async function rodarEliminacao(admin: Admin, agora: Date, simular: boolean): Promise<ResultadoEliminacao> {
-  const dia = agora.toISOString().slice(0, 10);
+  // E333: o dia do relatório é o do calendário de Brasília (uma rodada manual às 22h não cai no dia seguinte do UTC).
+  const dia = diaBRT(agora)!;
   const r: ResultadoEliminacao = { eliminados: 0, simulados: 0, falhas: 0 };
   for (const item of INVENTARIO) {
     try {

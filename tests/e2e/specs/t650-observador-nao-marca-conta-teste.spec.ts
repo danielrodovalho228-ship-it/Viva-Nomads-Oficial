@@ -6,10 +6,11 @@ import { authFile } from "../fixtures/auth";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T650 — prova de segurança da observadora (Pista C, 29/10): o admin observador da QA (profiles.qa_admin) VÊ "Marcar como
-  conta de teste" em Admin → Usuários (é admin), mas o SERVIDOR recusa a ação para ele — nem a própria conta, nem a de
-  terceiros, reais ou de teste — mesmo com a chamada montada à mão:
-    1. pela tela: o clique devolve a mensagem do observador e nada é gravado;
+  T650 — prova de segurança da observadora (Pista C, 29/10): o SERVIDOR recusa "Marcar como conta de teste" ao admin
+  observador da QA (profiles.qa_admin) — nem a própria conta, nem a de terceiros, reais ou de teste — mesmo com a chamada
+  montada à mão:
+    1. pela tela (E338, 01/11): o observador vê tipo e marca de teste em só leitura, sem a ação; a chamada da ação é
+       capturada no clique do admin comum (e desfeita);
     2. a mesma server action (Next-Action capturado no clique) reenviada à mão com outros alvos e valores: recusada;
     3. direto na API do banco com a sessão dele (update em profiles.is_teste): o gatilho da 0135 mantém o valor;
     4. controle: o admin comum, com a MESMA chamada montada à mão, marca e desmarca (a chamada é válida).
@@ -105,8 +106,25 @@ test.describe("T650 — o servidor recusa 'Marcar como conta de teste' para o ad
     await apagarContas([ids.obs, ids.real, ids.teste].filter(Boolean));
   });
 
-  test("1. pela tela: o observador vê a ação, mas o clique é recusado e nada é gravado", async ({ browser }) => {
-    const page = await (await browser.newContext({ storageState: sessao, viewport: { width: 1280, height: 900 } })).newPage();
+  test("1. pela tela (E338): o observador vê os valores em só leitura, sem a ação; a chamada vem do clique do admin comum", async ({ browser }) => {
+    // E338 (01/11): a tela não promete ao observador uma ação que o servidor recusa — sem "Marcar como conta de teste"
+    // e sem o seletor do tipo da conta, a 1280 e a 390.
+    for (const largura of [1280, 390]) {
+      const obs = await (await browser.newContext({ storageState: sessao, viewport: { width: largura, height: 900 } })).newPage();
+      await obs.goto(`/admin/usuarios?q=${encodeURIComponent(nomeReal)}`, { waitUntil: "domcontentloaded" });
+      expect(new URL(obs.url()).pathname).toBe("/admin/usuarios");
+      await expect(obs.getByTestId("so-leitura-qa")).toBeVisible({ timeout: 30_000 });
+      await expect(obs.getByTestId("tipo-conta-leitura").filter({ visible: true }).first()).toBeVisible();
+      await expect(obs.getByTestId("conta-teste")).toHaveCount(0);
+      await expect(obs.getByTestId("marcar-teste")).toHaveCount(0);
+      await expect(obs.getByTestId("tipo-conta-select")).toHaveCount(0);
+      if (largura === 1280) await expect(obs.getByTestId("conta-teste-leitura").first()).toHaveText("Não");
+      await obs.screenshot({ path: `tests/laboratorio/saida/t650-1-so-leitura-${largura}.png` });
+      await obs.context().close();
+    }
+
+    // A chamada da server action (para os passos 2 e 4) é capturada no clique do admin comum, e a marca é desfeita.
+    const page = await (await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } })).newPage();
     page.on("request", (r) => {
       const h = r.headers();
       // Só a chamada desta ação (o corpo leva o id do alvo); a página dispara outras server actions ao abrir.
@@ -116,19 +134,21 @@ test.describe("T650 — o servidor recusa 'Marcar como conta de teste' para o ad
         chamada = { url: r.url(), headers, corpo: r.postData() };
       }
     });
-    await page.goto(`/admin/usuarios?q=${encodeURIComponent(nomeReal)}`, { waitUntil: "domcontentloaded" });
-    expect(new URL(page.url()).pathname).toBe("/admin/usuarios");
-    const bloco = page.locator(`[data-testid="conta-teste"][data-usuario-id="${ids.real}"]`).filter({ visible: true }).first();
-    // A ação aparece para o observador (o que a prova ao vivo viu).
-    await expect(bloco.getByTestId("marcar-teste")).toBeVisible({ timeout: 30_000 });
-    await bloco.getByTestId("marcar-teste").click();
-    await bloco.getByTestId("marcar-teste-confirmar").click();
-    await expect(bloco.getByTestId("conta-teste-erro")).toContainText(MSG, { timeout: 20_000 });
-    expect(await isTeste(ids.real), "a conta real continua real").toBe(false);
-    // O corpo da chamada da tela é [id, true]: a mesma forma que a chamada à mão monta.
-    expect(chamada?.corpo, "corpo da server action capturada").toBe(JSON.stringify([ids.real, true]));
-    await page.screenshot({ path: "tests/laboratorio/saida/t650-1-recusa-na-tela.png" });
-    await page.context().close();
+    try {
+      await page.goto(`/admin/usuarios?q=${encodeURIComponent(nomeReal)}`, { waitUntil: "domcontentloaded" });
+      const bloco = page.locator(`[data-testid="conta-teste"][data-usuario-id="${ids.real}"]`).filter({ visible: true }).first();
+      await expect(bloco.getByTestId("marcar-teste")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("so-leitura-qa")).toHaveCount(0);
+      await bloco.getByTestId("marcar-teste").click();
+      await bloco.getByTestId("marcar-teste-confirmar").click();
+      await expect.poll(() => isTeste(ids.real), { timeout: 20_000 }).toBe(true);
+      // O corpo da chamada da tela é [id, true]: a mesma forma que a chamada à mão monta.
+      expect(chamada?.corpo, "corpo da server action capturada").toBe(JSON.stringify([ids.real, true]));
+    } finally {
+      await adm().from("profiles").update({ is_teste: false }).eq("id", ids.real);
+      await page.context().close();
+    }
+    expect(await isTeste(ids.real), "a conta real voltou a real").toBe(false);
   });
 
   test("2. a chamada montada à mão (mesma server action, outros alvos): recusada para o próprio e para terceiros", async ({ browser }) => {

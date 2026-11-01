@@ -6,7 +6,7 @@ import { funilDaSemana } from "@/lib/data/funil";
 import { FORMULAS, type ChaveFunil } from "@/lib/funil/regras";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { hojeBR } from "@/lib/utils";
-import { resolverPeriodo } from "@/lib/admin/visao-geral";
+import { resolverPeriodo, rotuloPeriodo } from "@/lib/admin/visao-geral";
 import { getVisaoGeral, cidadesComAnuncio } from "@/lib/data/admin-visao-geral";
 import { baseDoFunil } from "@/lib/admin/contagens";
 import { rotuloForaDaContagem } from "@/lib/eventos/trafego";
@@ -42,7 +42,9 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
   const sp = await searchParams;
   const aberta = typeof sp.etapa === "string" && sp.etapa in FORMULAS ? (sp.etapa as ChaveFunil) : null;
   const um = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : null);
-  const periodo = resolverPeriodo({ periodo: um("periodo"), de: um("de"), ate: um("ate") }, hojeBR());
+  // E337 (01/11): sem período na URL, os indicadores abrem nos mesmos 7 dias do funil da semana (a página não mistura
+  // janelas por padrão); com outro período escolhido, cada seção diz a própria janela no título.
+  const periodo = resolverPeriodo({ periodo: um("periodo") ?? "7", de: um("de"), ate: um("ate") }, hojeBR());
   const cidade = (um("cidade") ?? "").trim().slice(0, 80) || null;
   // ADMIN-4: Crescimento, Oferta, Demanda e Liquidez saíram da inicial e moram aqui, abaixo do funil da semana.
   const [f, indicadores, cidades] = await Promise.all([
@@ -63,15 +65,20 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
   const topo = f.etapas.find((e) => (e.queda ?? 0) > 0) ?? null;
   const lista = aberta ? f.etapas.find((e) => e.chave === aberta) : null;
   const foraRotulo = rotuloForaDaContagem(f.eventosFora);
+  const janelaSemana = `Últimos 7 dias (até ${dataBRT(f.periodo.ate)}) contra os 7 anteriores`;
+  const janelaIndicadores = `${periodo.id === "custom" || periodo.id === "ano" ? "Período escolhido" : `Últimos ${periodo.dias} dias`}: ${rotuloPeriodo(periodo.inicio, periodo.fim)}`;
+  const mesmaJanela = periodo.id === "7";
 
   return (
     <div data-testid="admin-funil">
-      <PageTitle title={rotuloDoAdmin("/admin/funil")} subtitle={`Últimos 7 dias (até ${dataBRT(f.periodo.ate)}) contra os 7 anteriores · contas de teste fora`} />
+      <PageTitle title={rotuloDoAdmin("/admin/funil")} subtitle="Contas de teste fora. Cada seção diz a janela dos próprios números." />
       {foraRotulo && (
         <p className="-mt-2 mb-4 text-xs text-muted" data-testid="funil-fora-da-contagem" data-fora={f.eventosFora}>
           {foraRotulo} (suíte automática e contas de teste).
         </p>
       )}
+      <section aria-labelledby="funil-semana-titulo" data-testid="funil-semana">
+      <CabecalhoJanela id="funil-semana-titulo" titulo="Funil da semana" janela={janelaSemana} testid="funil-semana-janela" />
       <Panel className="mb-6" data-testid="funil-topo">
         {topo ? (
           <p className="text-sm text-ink">
@@ -105,6 +112,7 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
           ))}
         </ul>
       </Panel>
+      </section>
       {lista && (
         <Panel title={ROTULO_LISTA[lista.chave]} data-testid="funil-lista" id="lista">
           {lista.ids.length === 0 ? (
@@ -122,9 +130,36 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
           )}
         </Panel>
       )}
-      <section className="mt-6" data-testid="funil-indicadores">
+      <section className="mt-8 border-t-2 border-line pt-6" aria-labelledby="funil-indicadores-titulo" data-testid="funil-indicadores" data-janela={periodo.id}>
+        <CabecalhoJanela
+          id="funil-indicadores-titulo"
+          titulo="Indicadores do período"
+          janela={janelaIndicadores}
+          nota={mesmaJanela ? "Mesma janela do funil da semana." : "Janela diferente do funil da semana acima: não compare os números das duas seções."}
+          destaque={!mesmaJanela}
+          testid="funil-indicadores-janela"
+        />
         <VisaoGeralClient dados={indicadores.ok ? indicadores.dados : null} aviso={avisoIndicadores} periodo={periodo} cidade={cidade} cidades={cidades} base="/admin/funil" />
       </section>
+    </div>
+  );
+}
+
+/** E337: o título da seção com a janela dos números em destaque — nenhum número é lido com o período do vizinho. */
+function CabecalhoJanela({ id, titulo, janela, nota, destaque = false, testid }: { id: string; titulo: string; janela: string; nota?: string; destaque?: boolean; testid: string }) {
+  return (
+    <div className="mb-4 flex flex-col gap-2">
+      <h2 id={id} className="font-title text-xl font-semibold text-ink">
+        {titulo}
+      </h2>
+      <p data-testid={testid} className="w-fit max-w-full rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-forest">
+        {janela}
+      </p>
+      {nota && (
+        <p data-testid={`${testid}-nota`} className={destaque ? "text-sm font-semibold text-amber-800" : "text-xs text-muted"}>
+          {nota}
+        </p>
+      )}
     </div>
   );
 }

@@ -15,6 +15,9 @@ import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type Endereco
 import { primeiroNome } from "@/lib/calendario-estadias";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
 import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { corpoVisitaConfirmada, corpoVisitaPedida, type CorpoVisita } from "@/lib/visitas/emails-visita";
+import { blocoDados } from "@/lib/notifications/modelo-email";
+import { escaparHtml } from "@/lib/escapar-html";
 import {
   ehModalidade,
   ehStatusVisita,
@@ -43,7 +46,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Depois da resposta (`after`) e best-effort: o aviso nunca quebra o fluxo.
  */
 /** `decisao` (44-SITE, item 2): o push de visita pedida/remarcada diz o imóvel e até quando responder. */
-function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao) {
+/** `corpo` (E325): assunto, abertura e bloco com o imóvel (título + código) — no lugar do texto genérico do modelo. */
+function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao, corpo?: CorpoVisita) {
   after(async () => {
     try {
       const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", para).maybeSingle();
@@ -55,9 +59,11 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
         userId: para,
         pushUrl: "/dashboard/visitas",
         ...(decisao ? { decisao } : {}),
+        ...(corpo ? { ...(corpo.subject ? { subject: corpo.subject } : {}), body: corpo.body } : {}),
         // Visita presencial confirmada: o endereço exato e "Abrir no mapa" vão SÓ para o morador (complemento do prompt 23).
         detailsText: endereco ? `${detalhe}\nEndereço: ${endereco.texto}\nAbrir no mapa: ${endereco.mapa}` : detalhe,
         detailsHtml:
+          (corpo ? blocoDados(corpo.linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) : "") +
           `<p style="margin:12px 0 0">${detalhe.replace(/[<>&]/g, "")}</p>` +
           (endereco
             ? `<p style="margin:8px 0 0"><strong>Endereço:</strong> ${endereco.texto.replace(/[<>&"]/g, "")}</p><p style="margin:8px 0 0"><a href="${endereco.mapa.replace(/"/g, "%22")}">Abrir no mapa</a></p>`
@@ -125,6 +131,8 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     undefined,
     // Responder antes do primeiro horário proposto.
     { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
+    // E325: o e-mail diz de qual imóvel é o pedido (título + código).
+    corpoVisitaPedida({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");
@@ -323,7 +331,22 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
       const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", v.property_id).maybeSingle(); // consistency-ignore: complemento do prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
       endereco = p ? enderecoDaVisita(p) : null;
     }
-    avisarVisita(admin, outro, "visita_confirmada", `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`, endereco);
+    // E325: o e-mail diz de qual imóvel é a visita (título + código) e quem confirmou.
+    const { data: imovelConf } = await admin.from("properties").select("title").eq("id", v.property_id).maybeSingle();
+    avisarVisita(
+      admin,
+      outro,
+      "visita_confirmada",
+      `Visita ${tipo} confirmada para ${formatarHorarioBrasilia(campos.horario_confirmado)}.`,
+      endereco,
+      undefined,
+      corpoVisitaConfirmada({
+        imovel: { id: v.property_id as string, titulo: (imovelConf?.title as string | null) ?? null },
+        modalidade,
+        horario: campos.horario_confirmado,
+        quemConfirmou: quem === "dono" ? "proprietario" : "morador",
+      }),
+    );
     // E205-B: confirmada com menos de 24 h de antecedência → a véspera sai na hora (a chave segura o cron).
     after(() => vesperaDaVisitaSeFor(admin, v.id as string, new Date()).catch(() => 0));
   } else if (campos.status === "remarcar" && campos.horario_proposto) {

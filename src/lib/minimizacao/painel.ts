@@ -3,6 +3,8 @@
   do arquivo nem o conteúdo eliminado. Contas de teste ficam à parte.
 */
 
+import { dataBRT, diaBRT, horaBRT } from "../datas-brasilia.ts";
+
 export interface LinhaLivro {
   tipo: string;
   motivo: string;
@@ -39,4 +41,18 @@ export function resumoDaSemana(livro: readonly LinhaLivro[], agora: Date): Resum
     grupos.set(k, g);
   }
   return { total, teste, porItem: [...grupos.values()].sort((a, b) => b.n + b.teste - (a.n + a.teste) || a.tipo.localeCompare(b.tipo)) };
+}
+
+/**
+ * E333: "O que seria apagado hoje (DD/MM/AAAA)" leva a data do DIA DA LEITURA (calendário de Brasília), nunca a do
+ * último relatório. A rotina diária roda às 10h; antes dela (ou se ela falhar), os números são da rodada anterior e a
+ * nota diz de quando são — antes, no dia 01/11 a tela dizia "hoje (31/10/2026)".
+ */
+export function cabecalhoRelatorioHoje(diaRelatorio: string | null, geradoEm: string | null, agora: Date): { titulo: string; nota: string | null } {
+  const hoje = diaBRT(agora)!;
+  const titulo = `O que seria apagado hoje (${dataBRT(agora)})`;
+  if (!diaRelatorio) return { titulo, nota: null };
+  if (diaRelatorio === hoje) return { titulo, nota: geradoEm ? `Rodada de hoje às ${horaBRT(geradoEm)}.` : null };
+  const quando = geradoEm ? `${dataBRT(geradoEm)} às ${horaBRT(geradoEm)}` : dataBRT(`${diaRelatorio}T12:00:00Z`);
+  return { titulo, nota: `A rodada de hoje ainda não saiu (a rotina roda às 10h). Os números abaixo são da rodada de ${quando}.` };
 }

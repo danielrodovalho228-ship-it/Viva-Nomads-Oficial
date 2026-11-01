@@ -67,3 +67,32 @@ test("a inicial: rodapé, saúde e no máximo ~6 leituras em paralelo", () => {
   assert.match(pagina, /l\.chave === "backup"/, "a saúde usa a mesma leitura das filas");
   assert.match(pagina, /numerosDaInicial\(admin, teste\)/, "as contas de teste são lidas uma vez só");
 });
+
+test("E334: contas de teste por uma regra só — as de Usuários (proprietário/inquilino não anonimizado) e o resto à parte", async () => {
+  const { resumoContasTeste, textoContasTeste } = await import("./contagens.ts");
+  // O caso de produção: 4 proprietários + 9 inquilinos + 1 admin, todos is_teste.
+  const contas = [
+    ...Array.from({ length: 4 }, () => ({ role: "owner" })),
+    ...Array.from({ length: 9 }, () => ({ role: "tenant" })),
+    { role: "admin" },
+  ];
+  const r = resumoContasTeste(contas);
+  assert.deepEqual(r, { total: 14, usuarios: 13, outras: 1 });
+  assert.equal(textoContasTeste(r), "14 · 13 proprietários e inquilinos (os de Usuários) · 1 da equipe ou anonimizada");
+  assert.deepEqual(resumoContasTeste([{ role: "owner", anonymized_at: "2026-10-01" }]), { total: 1, usuarios: 0, outras: 1 });
+  assert.equal(textoContasTeste(resumoContasTeste([{ role: "tenant" }])), "1");
+});
+
+test("E334: Retenção e caixa de e-mails contam os guardados pela mesma função, agora", async () => {
+  const { readFileSync } = await import("node:fs");
+  const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
+  assert.match(ler("lib/data/admin-contagens.ts"), /return \(await contarGuardados\(admin, "emails_teste"\)\) \?\? 0/);
+  assert.match(ler("lib/minimizacao/servidor.ts"), /contarGuardados\(admin, item\.origem\.slice\(7\)\)/);
+  const ret = ler("app/(dashboard)/admin/retencao/page.tsx");
+  assert.match(ret, /contarGuardados\(admin, origem\.slice\(7\)\)/);
+  assert.match(ret, /Guardados agora/);
+  const testes = ler("app/(dashboard)/admin/dados-de-teste/page.tsx");
+  assert.match(testes, /Contas de teste · \$\{textoContasTeste\(resumoTeste\)\}/);
+  // A contagem de Usuários segue a mesma regra (proprietário/inquilino não anonimizado).
+  assert.match(ler("lib/data/admin-contagens.ts"), /\.is\("anonymized_at", null\)\.in\("role", \[\.\.\.PAPEIS_USUARIOS\]\)/);
+});
