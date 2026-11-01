@@ -408,20 +408,24 @@ export interface InteressadoParaProposta {
 export async function interessadosParaProposta(): Promise<InteressadoParaProposta[]> {
   const s = await sessao();
   if (!s) return [];
-  const { data } = await s.supabase
+  // Achado 49: a falha de leitura LANÇA (a tela abre o aviso de erro com "Tentar de novo") — antes virava "Nenhum
+  // interessado" e, na 2ª leitura, perdia a marca de proposta em andamento (dava para mandar outra por cima).
+  const { data, error } = await s.supabase
     .from("leads")
     .select("id, status, tenant_id, property_id, property:properties!leads_property_id_fkey ( title )")
     .eq("owner_id", s.user.id)
     .in("status", ["new", "accepted"])
     .order("created_at", { ascending: false })
     .limit(100);
+  if (error) throw new Error("Não foi possível ler os interessados agora.");
   const linhas = (data ?? []) as unknown as { id: string; status: string; tenant_id: string; property_id: string; property: { title: string | null } | null }[];
   if (!linhas.length) return [];
-  const { data: abertas } = await s.admin
+  const { data: abertas, error: eAbertas } = await s.admin
     .from("propostas")
     .select("lead_id")
     .in("lead_id", linhas.map((l) => l.id))
     .in("status", ["enviada", "vista", "contraproposta"]);
+  if (eAbertas) throw new Error("Não foi possível ler as propostas em andamento agora.");
   const comAberta = new Set(((abertas ?? []) as { lead_id: string }[]).map((a) => a.lead_id));
   const out: InteressadoParaProposta[] = [];
   for (const l of linhas) {

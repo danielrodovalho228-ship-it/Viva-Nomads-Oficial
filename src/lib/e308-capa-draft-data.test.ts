@@ -12,6 +12,9 @@ test("E308 — capa pelo draft_data: a 1ª foto do bucket do próprio dono; fora
   assert.equal(capaDoDraftData({ photos: [{ url: "blob:x" }, { url: "https://evil.example/a.jpg" }, { url: `${base}c.webp` }] }, DONO), `${base}c.webp`);
   assert.equal(capaDoDraftData({ photos: [] }, DONO), null);
   assert.equal(capaDoDraftData(null, DONO), null);
+  // Storage local do laboratório (http) também exibe; outra pasta não.
+  assert.equal(capaDoDraftData({ photos: [{ url: `http://127.0.0.1:54321/storage/v1/object/public/property-photos/${DONO}/l.png` }] }, DONO), `http://127.0.0.1:54321/storage/v1/object/public/property-photos/${DONO}/l.png`);
+  assert.equal(capaDoDraftData({ photos: [{ url: "http://127.0.0.1:54321/storage/v1/object/public/property-photos/outro/l.png" }] }, DONO), null);
 });
 
 test("E308 — o Início usa property_photos e, sem linha ali, o draft_data", () => {

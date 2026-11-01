@@ -22,11 +22,13 @@ test("E329 + varredura 01/11 — o anúncio reflete a visita em aberto (agendada
   // O mesmo recorte do índice único do banco (um em aberto por morador, imóvel e modalidade).
   assert.match(f, /\.in\("status", \["pedido", "confirmado", "remarcar"\]\)/);
   const botao = ler("../../components/property/visita-video.tsx");
-  assert.match(botao, /if \(estado && !exemplo\) \{[\s\S]{0,80}<ButtonLink\s+href="\/dashboard\/visitas"/);
-  assert.match(botao, /data-testid=\{`\$\{t\.prefixo\}-\$\{estado\}`\}/);
-  assert.match(botao, /estado === "agendada" \? "Visita agendada" : estado === "pedida" \? t\.feito : "Ver minha visita"/);
+  assert.match(botao, /if \(estado && !exemplo\) \{[\s\S]{0,240}<ButtonLink\s+href="\/dashboard\/visitas"/);
+  // E422: o rótulo e o testid são os do PRÓPRIO botão (tBotao), não os da modalidade escolhida no diálogo.
+  assert.match(botao, /data-testid=\{`\$\{tBotao\.prefixo\}-\$\{estado\}`\}/);
+  assert.match(botao, /estado === "agendada" \? "Visita agendada" : estado === "pedida" \? tBotao\.feito : "Ver minha visita"/);
   const detalhe = ler("../../app/(public)/imoveis/[id]/property-detail.tsx");
   assert.match(detalhe, /estado=\{visitas\.video\}/);
   assert.match(detalhe, /estado=\{visitas\.presencial\}/);
-  assert.match(detalhe, /visitas\.presencial \? router\.push\("\/dashboard\/visitas"\)/);
+  // E422: o rodapé só leva a Visitas com as DUAS modalidades ocupadas; com a presencial ocupada, abre a de vídeo.
+  assert.match(detalhe, /if \(destino === "visitas"\) router\.push\("\/dashboard\/visitas"\)/);
 });

@@ -36,6 +36,8 @@ import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
+import { entradaNivelDoCadastro } from "@/lib/data/nivel-cadastro-actions";
+import type { ProvasDoRascunho } from "@/lib/anuncio/qualificacao-nivel";
 import { EstruturaAcessibilidade } from "@/components/anuncio/estrutura-acessibilidade";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
@@ -1566,6 +1568,21 @@ export default function NewPropertyPage() {
   const mostrarQualificacao =
     (approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente") ||
     (approved === true && !editId && qualDoRascunho && !!draftParam && draftServerId === draftParam);
+  // E415: com rascunho salvo, o resultado da Qualificação credita as provas já feitas (foto na hora, internet medida,
+  // ruído) — antes calculava só pelas respostas e o item fotografado seguia como "falta".
+  const [provasQual, setProvasQual] = useState<{ id: string; provas: ProvasDoRascunho | null } | null>(null);
+  const idProvasQual = mostrarQualificacao ? imovelId : null;
+  useEffect(() => {
+    if (!idProvasQual) return;
+    let vivo = true;
+    entradaNivelDoCadastro(idProvasQual)
+      .then((e) => vivo && setProvasQual({ id: idProvasQual, provas: e }))
+      .catch(() => vivo && setProvasQual({ id: idProvasQual, provas: null }));
+    return () => {
+      vivo = false;
+    };
+  }, [idProvasQual, telaQual]);
+  const provasDaQualificacao = provasQual && provasQual.id === idProvasQual ? provasQual.provas : null;
 
   /** Responder: as MESMAS confirmações de conforto e comodidades do Passo 5 (fonte única), e a velocidade da internet. */
   function responderQualificacao(id: string, valor: string | boolean) {
@@ -1665,6 +1682,26 @@ export default function NewPropertyPage() {
       </div>
     ) : null;
 
+  // E420 / L-88 (t943): o aviso vem ANTES da espera do "approved". Rascunho que não abre não libera o formulário
+  // (approved segue null, nada é gravado), e antes disso o return null deixava a página em branco.
+  if (rascunhoFechado) {
+    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
+    return (
+      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
+        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
+        <p className="mt-2 text-sm text-ink">{t.texto}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
+            Ver meus imóveis
+          </Link>
+          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
+            Começar um anúncio novo
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (approved === null) return null;
 
   if (mostrarQualificacao) {
@@ -1673,6 +1710,7 @@ export default function NewPropertyPage() {
         aviso={avisoRascunho}
         tela={telaQual}
         respostas={qualConf.respostas}
+        provas={provasDaQualificacao}
         onResponder={responderQualificacao}
         onTela={(t) => {
           setTelaQual(t);
@@ -1787,24 +1825,6 @@ export default function NewPropertyPage() {
     erros,
   };
   const meta = STEP_META[step];
-
-  if (rascunhoFechado) {
-    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
-    return (
-      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
-        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
-        <p className="mt-2 text-sm text-ink">{t.texto}</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
-            Ver meus imóveis
-          </Link>
-          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
-            Começar um anúncio novo
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">

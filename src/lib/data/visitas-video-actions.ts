@@ -1,5 +1,6 @@
 "use server";
 
+import { erroPedidoAberto } from "@/lib/visitas/um-pedido-aberto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isExemplo, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
@@ -12,10 +13,10 @@ import { notify } from "@/lib/notifications";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
-import { primeiroNome } from "@/lib/calendario-estadias";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
-import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
-import { corpoVisitaConfirmada, corpoVisitaPedida, type CorpoVisita } from "@/lib/visitas/emails-visita";
+import { nomeComInicial, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { getAvatarUrl } from "@/lib/data/avatar-actions";
+import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
 import {
@@ -113,7 +114,8 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     modalidade,
   });
   if (error) {
-    if (error.code === "23505") return { ok: false, error: "Você já tem um pedido de visita em aberto para este imóvel." };
+    // E411: diz o porquê e o caminho (cancelar em Visitas e pedir de novo).
+    if (error.code === "23505") return { ok: false, error: erroPedidoAberto(modalidade) };
     return { ok: false, error: erroBancoPT(error) };
   }
   // Abre (ou continua) a conversa com o proprietário: o cartão da visita aparece no topo dela, com as ações.
@@ -135,6 +137,16 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
     // E325: o e-mail diz de qual imóvel é o pedido (título + código).
     corpoVisitaPedida({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+  );
+  // E424: o morador também recebe a cópia do pedido (horários e próximos passos); antes ele não recebia nada.
+  avisarVisita(
+    admin,
+    user.id,
+    "visita_pedida_morador",
+    `Pedido de visita ${MODALIDADE_ROTULO[modalidade].toLowerCase()} enviado. Horários propostos: ${v.horarios.map(formatarHorarioBrasilia).join("; ")}.`,
+    undefined,
+    undefined,
+    corpoVisitaPedidaMorador({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");
@@ -416,6 +428,8 @@ export interface VisitaDetalhe extends MinhaVisita {
    * confirmação do horário (o aceite prático da visita) ou, para o dono, com candidatura aceita ou contrato.
    */
   pessoa: string | null;
+  /** E409: a foto da outra parte, só onde a regra do avatar libera (dono do imóvel: pública; morador: relação aceita). */
+  fotoPessoa: string | null;
 }
 
 /**
@@ -442,10 +456,12 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
   const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
   const e = p && mostraEnderecoDaVisita(v, new Date()) ? enderecoDaVisita(p) : null;
   let pessoa: string | null = null;
+  let fotoPessoa: string | null = null;
+  // E409: "Ana C." (1º nome + inicial do sobrenome), como o desenho promete depois do aceite; a foto pela regra do avatar.
   const nomeDe = async (id: string) => {
     const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", id).maybeSingle();
-    const nome = primeiroNome((perfil as { full_name?: string | null } | null)?.full_name ?? null);
-    return nome === "Inquilino" ? null : nome;
+    fotoPessoa = (await getAvatarUrl({ targetId: id, propertyId: r.property_id }).catch(() => ({ url: null }))).url ?? null;
+    return nomeComInicial((perfil as { full_name?: string | null } | null)?.full_name ?? null);
   };
   if (papel === "dono") {
     // E328: a confirmação do horário libera o nome; antes dela, só a candidatura aceita ou o contrato (como antes).
@@ -462,7 +478,7 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
     // E328: o morador vê o 1º nome de quem recebe a partir da confirmação.
     pessoa = await nomeDe(r.owner_id);
   }
-  return { ...v, papel, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null, pessoa };
+  return { ...v, papel, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null, pessoa, fotoPessoa };
 }
 
 /**

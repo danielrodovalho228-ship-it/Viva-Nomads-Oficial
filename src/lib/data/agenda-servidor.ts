@@ -2,9 +2,8 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
-import { primeiroNome } from "@/lib/calendario-estadias";
 import type { ItemAgenda } from "@/lib/agenda";
-import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { nomeComInicial, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 
 /*
   Agenda do proprietário (prompt 23, item 5). Tudo filtrado pelo DONO logado no servidor: outro proprietário nunca
@@ -82,7 +81,11 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
   const nomes = new Map<string, string>();
   if (tenantIds.length) {
     const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", tenantIds);
-    for (const p of (perfis ?? []) as { id: string; full_name: string | null }[]) nomes.set(p.id, primeiroNome(p.full_name));
+    // E409: "Ana C." (1º nome + inicial do sobrenome), como o desenho promete depois do aceite.
+    for (const p of (perfis ?? []) as { id: string; full_name: string | null }[]) {
+      const nome = nomeComInicial(p.full_name);
+      if (nome) nomes.set(p.id, nome);
+    }
   }
   const fotos = new Map<string, string | null>();
   await Promise.all(
