@@ -1227,7 +1227,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t298-varredura-logada-bloco4",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t890-varredura-0111-campos-rotulo"
       ]
     },
     "/dashboard/leads": {
@@ -2327,7 +2328,8 @@
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
         "t596-qa-login-direto",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t890-varredura-0111-campos-rotulo"
       ]
     },
     "/admin/retencao": {
