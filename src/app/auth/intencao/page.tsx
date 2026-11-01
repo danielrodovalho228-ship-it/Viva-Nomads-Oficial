@@ -17,7 +17,9 @@ export default async function IntencaoPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient();
   const usuario = supabase ? (await supabase.auth.getUser()).data.user : null;
   if (supabase && !usuario) redirect(`/auth?redirect=${encodeURIComponent(destino)}`);
-  if ((await getMinhaIntencao()) !== null) redirect(destino);
+  // Achado 58: sem conseguir ler a intenção, segue para o destino (não pergunta de novo nem grava por cima).
+  const intencao = await getMinhaIntencao().catch(() => "indisponivel" as const);
+  if (intencao !== null) redirect(destino);
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-md">

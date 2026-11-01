@@ -20,7 +20,10 @@ export async function getMinhaIntencao(): Promise<Intencao[] | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("intencao").eq("id", user.id).maybeSingle();
+  // Achado 58: a falha de leitura LANÇA — antes virava "ainda não respondeu"/"nada marcado", e um toque ou "Salvar"
+  // gravava só a opção escolhida por cima das outras.
+  const { data, error } = await supabase.from("profiles").select("intencao").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler sua intenção agora.");
   const v = (data as { intencao?: unknown } | null)?.intencao;
   return v == null ? null : normalizarIntencoes(v);
 }
