@@ -554,8 +554,12 @@ export async function assinarContrato(input: {
         const { data: imovel } = imovelId ? await admin.from("properties").select("status, title, address, city").eq("id", imovelId).maybeSingle() : { data: null };
         if (ownerId && imovel?.status === "active" && (await garantirCartao(admin, { tipo: "ownercard", usuarioId: ownerId, propertyId: imovelId }))) {
           // E267 (resíduo): o aviso diz QUAL anúncio (o dono pode ter vários).
+          // L-86 (t941): sem o e-mail o aviso não saía (a matriz deixa este evento sem push). O dono é quem assinou
+          // por último (user) ou a outra parte (pessoa), já lida acima.
+          const emailDono = ownerId === user.id ? user.email : pessoa?.user?.email;
           await notify({
             event: "anuncio_compartilhar",
+            email: emailDono ?? undefined,
             userId: ownerId,
             pushUrl: `/dashboard/imoveis/${imovelId}/cartao`,
             ...paraNotify(corpoAnuncioCompartilhar({ imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),

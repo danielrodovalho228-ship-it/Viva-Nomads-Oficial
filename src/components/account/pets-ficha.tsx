@@ -27,21 +27,34 @@ export function PetsFicha() {
   const [enviando, setEnviando] = useState<string | null>(null);
   const [verMais, setVerMais] = useState<Set<string>>(new Set());
   const [ligado, setLigado] = useState(false);
+  // Achado 51: falhou a leitura → aviso com "Tentar de novo", nunca a ficha vazia (o morador recadastraria os pets).
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     let vivo = true;
     meusPets()
       .then((p) => {
         if (!vivo) return;
+        setFalhou(false);
         setPets(p);
         setLigado(toggleInicial((p ?? []).length > 0));
       })
-      .catch(() => vivo && setPets(null));
+      .catch(() => vivo && setFalhou(true));
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tentativa]);
 
+  if (falhou)
+    return (
+      <p role="alert" className="text-sm text-red-700" data-testid="pets-falha">
+        Não foi possível carregar seus pets agora.{" "}
+        <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setTentativa((n) => n + 1)} data-testid="pets-tentar">
+          Tentar de novo
+        </button>
+      </p>
+    );
   if (!pets && pets !== undefined) return null; // sem sessão ou demonstração
   if (pets === undefined) return null;
 

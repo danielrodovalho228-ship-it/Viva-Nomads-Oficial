@@ -71,6 +71,25 @@ export function corpoVisitaPedida(d: { imovel: ImovelDaVisita; modalidade: "vide
   };
 }
 
+/** E424: pedido de visita → cópia ao próprio morador (antes ele não recebia nada). */
+export function corpoVisitaPedidaMorador(d: { imovel: ImovelDaVisita; modalidade: "video" | "presencial"; horarios: string[] }): CorpoVisita {
+  const horarios = [...d.horarios].sort().map(quandoVisita).filter(Boolean);
+  const linhas: LinhaVisitaEmail[] = [
+    { rotulo: "Imóvel", valor: imovelDaVisitaTexto(d.imovel) },
+    { rotulo: "Visita", valor: d.modalidade === "video" ? "Por vídeo" : "Presencial" },
+  ];
+  if (horarios.length) linhas.push({ rotulo: "Horários propostos", valor: `${horarios.join("; ")} (horário de Brasília)` });
+  const depois =
+    d.modalidade === "video"
+      ? "O proprietário confirma um dos horários e envia o link da chamada."
+      : "O proprietário confirma um dos horários; o endereço exato aparece depois da confirmação.";
+  return {
+    subject: assuntoComTitulo("Visita pedida: ", d.imovel.titulo),
+    body: (n) => `${ola(n)}, seu pedido de visita ${tipoNaFrase(d.modalidade)} ${aoImovel(d.imovel)} foi enviado. ${depois} Você acompanha em Visitas, na plataforma.`,
+    linhas,
+  };
+}
+
 /** Visita confirmada → a outra parte. `quemConfirmou`: quem agiu (o dono confirma; o morador aceita o novo horário). */
 export function corpoVisitaConfirmada(d: {
   imovel: ImovelDaVisita;
