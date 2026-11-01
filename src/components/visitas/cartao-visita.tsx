@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapPin, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { responderVisita, type AcaoVisita } from "@/lib/data/visitas-video-actions";
 import {
+  AJUDA_LINK_CHAMADA,
+  MSG_LINK_OBRIGATORIO,
   MODALIDADE_ROTULO,
   ROTULO_FUSO,
   STATUS_VISITA_ROTULO,
@@ -296,6 +298,8 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
   const [horario, setHorario] = useState(validos[0] ?? "");
   const [outro, setOutro] = useState("");
   const [link, setLink] = useState("");
+  const [erroLink, setErroLink] = useState<string | null>(null);
+  const campoLink = useRef<HTMLInputElement>(null);
   const [recusando, setRecusando] = useState(false);
   const [motivo, setMotivo] = useState("");
   // Limites calculados uma vez (complemento do prompt 23): não mudam a cada redesenho.
@@ -306,6 +310,13 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
   if (v.status === "feito" || v.status === "cancelado" || respondido) return null;
   const outroIso = outro ? campoBrasiliaParaIso(outro) : null;
   const video = v.modalidade === "video";
+  /** E327 (01/11): na visita por vídeo, confirmar (ou propor outro horário) exige o link — pedido aqui, antes do envio. */
+  const linkOk = () => {
+    if (!video || link.trim()) return true;
+    setErroLink(MSG_LINK_OBRIGATORIO);
+    campoLink.current?.focus();
+    return false;
+  };
 
   const recusa = recusando ? (
     <div className="flex flex-col gap-2" data-testid="visita-recusa">
@@ -358,16 +369,37 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
           </fieldset>
           {video && (
             <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-              Link da chamada (Meet, Zoom, Teams ou chamada do WhatsApp)
+              <span>
+                Link da chamada (Meet, Zoom, Teams ou chamada do WhatsApp){" "}
+                <span className="text-red-700" data-testid="visita-link-obrigatorio">
+                  (obrigatório)
+                </span>
+              </span>
               <input
+                ref={campoLink}
                 type="url"
                 inputMode="url"
+                required
+                aria-required="true"
+                aria-invalid={erroLink ? true : undefined}
+                aria-describedby={`link-ajuda-${v.id}`}
                 data-testid="visita-link"
                 value={link}
-                onChange={(e) => setLink(e.target.value)}
+                onChange={(e) => {
+                  setLink(e.target.value);
+                  if (erroLink) setErroLink(null);
+                }}
                 placeholder="https://meet.google.com/..."
-                className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
+                className={cn("h-11 w-full rounded-xl border bg-white px-3 text-base text-ink", erroLink ? "border-red-600" : "border-line")}
               />
+              <span id={`link-ajuda-${v.id}`} className="font-normal text-muted" data-testid="visita-link-ajuda">
+                {AJUDA_LINK_CHAMADA}
+              </span>
+              {erroLink && (
+                <span role="alert" className="font-normal text-red-600" data-testid="visita-link-erro">
+                  {erroLink}
+                </span>
+              )}
             </label>
           )}
           <div className="flex flex-wrap gap-2">
@@ -377,12 +409,12 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
                 size="sm"
                 disabled={ocupado || !outroIso}
                 data-testid="visita-propor"
-                onClick={() => outroIso && rodar({ acao: "remarcar", id: v.id, horario: outroIso, link: video ? link : undefined })}
+                onClick={() => outroIso && linkOk() && rodar({ acao: "remarcar", id: v.id, horario: outroIso, link: video ? link : undefined })}
               >
                 Propor este horário
               </Button>
             ) : validos.length === 0 ? null : (
-              <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-confirmar" onClick={() => rodar({ acao: "confirmar", id: v.id, horario, link: video ? link : undefined })}>
+              <Button variant="secondary" size="sm" disabled={ocupado} data-testid="visita-confirmar" onClick={() => linkOk() && rodar({ acao: "confirmar", id: v.id, horario, link: video ? link : undefined })}>
                 Confirmar horário
               </Button>
             )}
