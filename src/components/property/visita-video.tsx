@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Video, Check, CalendarCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { pedirVisita } from "@/lib/data/visitas-video-actions";
 import { JANELA_DIAS, MAX_HORARIOS, MSG_HORARIOS, ROTULO_FUSO, campoBrasiliaParaIso, instanteParaCampoBrasilia, type ModalidadeVisita } from "@/lib/visitas-video";
@@ -44,6 +44,7 @@ const TEXTOS = {
     titulo: "Visita por vídeo",
     ok: "Pedido enviado. O proprietário confirma um horário e informa o link da chamada; você acompanha em Visitas.",
     prefixo: "visita-video",
+    comoFunciona: "Num anúncio real, você propõe até 3 horários, o proprietário confirma um deles e envia o link da chamada. Você acompanha tudo em Visitas.",
   },
   presencial: {
     botao: "Agendar visita",
@@ -51,8 +52,27 @@ const TEXTOS = {
     titulo: "Agendar uma visita",
     ok: "Pedido de visita enviado. O proprietário confirma aqui na plataforma e você recebe um aviso.",
     prefixo: "visita-presencial",
+    comoFunciona: "Num anúncio real, você propõe até 3 horários e o proprietário confirma um deles aqui na plataforma. O endereço exato aparece depois da confirmação.",
   },
 } as const;
+
+/**
+ * E320 (uso real, 31/10): no anúncio de exemplo o pedido não é enviado (por desenho), e a folha ficava só com o aviso e
+ * o "Fechar" — beco sem saída. Agora ela explica como a visita funciona num anúncio real e leva aos imóveis reais.
+ */
+function ExemploVisita({ prefixo, comoFunciona }: { prefixo: string; comoFunciona: string }) {
+  return (
+    <div data-testid={`${prefixo}-demo`} className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+      <p className="font-medium text-forest">{EXEMPLO_AVISO_DEMO}</p>
+      <p className="mt-1" data-testid={`${prefixo}-como-funciona`}>
+        {comoFunciona}
+      </p>
+      <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid={`${prefixo}-ver-reais`}>
+        Ver imóveis reais
+      </ButtonLink>
+    </div>
+  );
+}
 
 /**
  * Pedido de visita (vídeo ou presencial). FUSO (prompt 23, P0): o horário escolhido é lido como horário de BRASÍLIA
@@ -149,9 +169,13 @@ function PedidoVisita({
             </h3>
             {enviado ? (
               <>
-                <p data-testid={`${t.prefixo}-ok`} className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-forest">
-                  {demo ? EXEMPLO_AVISO_DEMO : t.ok}
-                </p>
+                {demo || exemplo ? (
+                  <ExemploVisita prefixo={t.prefixo} comoFunciona={t.comoFunciona} />
+                ) : (
+                  <p data-testid={`${t.prefixo}-ok`} className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-forest">
+                    {t.ok}
+                  </p>
+                )}
                 <div className="mt-4 flex justify-end">
                   <Button variant="ghost" size="sm" onClick={() => fechar()}>
                     Fechar
@@ -204,11 +228,7 @@ function PedidoVisita({
                   </select>
                 </label>
                 <p className="mt-3 text-xs text-muted">Seu nome e contato não aparecem para o proprietário antes do aceite.</p>
-                {exemplo && (
-                  <p data-testid={`${t.prefixo}-demo`} className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-                    {EXEMPLO_AVISO_DEMO}
-                  </p>
-                )}
+                {exemplo && <ExemploVisita prefixo={t.prefixo} comoFunciona={t.comoFunciona} />}
                 {erro && (
                   <p role="alert" data-testid={`${t.prefixo}-erro`} className="mt-3 text-sm text-red-600">
                     {erro}
