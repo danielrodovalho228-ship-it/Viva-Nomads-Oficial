@@ -48,6 +48,8 @@ export interface ExtrasDoServidor {
   vistoriado?: boolean;
   /** 61-B: considerarPreenchido(...) — algum item ou texto em "o que considerar antes de pedir". */
   considerarAntes?: boolean;
+  /** E399-C: com a chave PRECO_JUSTO_COMPARADOR, o selo pelo motor (sem a chave: undefined, vale a coluna da 0277). */
+  precoJustoMotor?: boolean;
 }
 
 const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 : Number(v) || 0);
@@ -75,7 +77,8 @@ export function sinaisDaLinha(l: LinhaRankingSinais, extras: ExtrasDoServidor): 
     avaliacoesQtd: n(l.avaliacoes_qtd),
     avaliacoesMedia: media != null && Number.isFinite(media) ? media : null,
     cancelamentosDono12m: n(l.cancelamentos_dono_12m),
-    precoJusto: l.preco_justo === true,
+    precoJusto: extras.precoJustoMotor ?? l.preco_justo === true,
+    precoJustoMotor: extras.precoJustoMotor !== undefined,
     homeOffice: extras.homeOffice ?? null,
     internetAbaixoMorador: extras.internetAbaixoMorador === true,
     confortoProcedentes12m: extras.confortoProcedentes12m ?? 0,
