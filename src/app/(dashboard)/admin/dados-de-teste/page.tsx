@@ -10,6 +10,7 @@ import { ACOES_DADOS_TESTE, ACOES_JORNADA, ALVOS_JORNADA, ROTULO_ACAO_DADOS_TEST
 import { EncerrarJornadasTeste } from "./encerrar-jornadas";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { SemearCarteiraTeste } from "./semear-carteira";
+import { GerarResumoSemanal } from "./gerar-resumo-semanal";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { ABAS_DADOS_TESTE, HREF_EMAILS_TESTE, abaDadosTeste, type AbaDadosTeste } from "@/lib/admin/dados-teste-abas";
 import { EmailsTesteLista } from "@/components/admin/emails-teste-lista";
@@ -116,6 +117,9 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
             inquilinos={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
           />
         )}
+      </Panel>
+      <Panel title="Resumo semanal de recomendações" className="mt-6">
+        <GerarResumoSemanal />
       </Panel>
       <Panel title="Registro das outras ações de teste" className="mt-6" data-testid="log-dados-teste">
         {linhasOutros.length === 0 ? (

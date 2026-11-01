@@ -17,6 +17,7 @@ export type NotificationEvent =
   | "pedido_compativel" // pedido compatível com um imóvel do dono → proprietário
   | "pedido_resumo" // resumo diário dos pedidos compatíveis além do limite → proprietário
   | "pedido_imovel_novo" // imóvel compatível publicado depois → inquilino
+  | "resumo_semanal" // E375-B: resumo da semana (novos para o pedido/busca e favoritos que baixaram de valor) → morador
   | "pedido_resposta" // proprietário respondeu → inquilino
   | "pedido_aceito" // inquilino aceitou para conversa → proprietário
   | "pedido_expirando" // pedido expira em 3 dias → inquilino
@@ -153,6 +154,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_compativel: { subject: "Pedido de moradia compatível com o seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um pedido de moradia combina com um imóvel seu. Veja por que e responda pela plataforma.`, cta: "Ver pedido e responder", path: "/dashboard/pedidos-cidade" },
   pedido_resumo: { subject: "Resumo do dia: pedidos compatíveis com seus imóveis", body: (n) => `Olá${n ? " " + n : ""}, estes pedidos de moradia combinam com imóveis seus.`, cta: "Ver pedidos do dia", path: "/dashboard/pedidos-cidade" },
   pedido_imovel_novo: { subject: "Surgiu um imóvel compatível com o seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um imóvel publicado agora combina com o seu pedido de moradia. O proprietário também foi avisado.`, cta: "Ver o imóvel", path: "/dashboard/pedidos" },
+  resumo_semanal: { subject: "Seu resumo da semana", body: (n) => `Olá${n ? " " + n : ""}, este é o seu resumo da semana: imóveis novos para você e favoritos que baixaram de valor.`, cta: "Ver os imóveis", path: "/dashboard/pedidos" },
   pedido_resposta: { subject: "Um proprietário respondeu ao seu pedido", body: (n) => `Olá${n ? " " + n : ""}, um proprietário respondeu ao seu pedido de moradia com um imóvel. Veja e aceite para conversar.`, cta: "Ver a resposta", path: "/dashboard/pedidos" },
   pedido_aceito: { subject: "Seu imóvel foi aceito para conversa", body: (n) => `Olá${n ? " " + n : ""}, um inquilino aceitou sua resposta e abriu a conversa. Responda pela plataforma.`, cta: "Abrir a conversa", path: "/dashboard/mensagens" },
   pedido_expirando: { subject: "Ainda procurando? Renove com um clique", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 5 dias. Ainda procurando? Renove com um clique; se já resolveu, marque como atendido.`, cta: "Renovar pedido", path: "/dashboard/pedidos" },

@@ -144,3 +144,10 @@ export const ENQUADRAMENTO_REFORMA = process.env.NEXT_PUBLIC_ENQUADRAMENTO_REFOR
  * que as telas ainda não têm). DESLIGADA por padrão; só "on" liga.
  */
 export const SELETOR_IDIOMA = process.env.NEXT_PUBLIC_SELETOR_IDIOMA === "on";
+
+/**
+ * E375-B — resumo semanal de recomendações (às terças, no disparo diário /api/cron/resumo-pedidos). DESLIGADO por
+ * padrão; só "1" liga (decisão posterior do Daniel). Desligado, o botão do QA em Admin → Dados de teste continua
+ * gerando o resumo SÓ para as contas de teste.
+ */
+export const RESUMO_SEMANAL_ATIVO = process.env.RESUMO_SEMANAL_ATIVO === "1";

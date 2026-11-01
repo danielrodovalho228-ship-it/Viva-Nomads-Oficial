@@ -22,6 +22,27 @@ export interface ImovelDoCartao {
   totalMes: number;
   /** URL pública da foto de capa (Storage do anúncio). */
   fotoCapa?: string | null;
+  /** E375-B (resumo semanal): área, quartos e vagas da página pública; ausentes, a linha não aparece. */
+  areaM2?: number | null;
+  quartos?: number | null;
+  vagas?: number | null;
+  /** E375-B: por que este imóvel está no e-mail (só fatos reais do casamento). */
+  motivo?: string | null;
+}
+
+/** "62 m² · 2 quartos · 1 vaga" (só o que o anúncio informa). */
+export function linhaFichaDoImovel(i: Pick<ImovelDoCartao, "areaM2" | "quartos" | "vagas">): string {
+  const n = (v: number | null | undefined) => (v != null && Number.isFinite(Number(v)) && Number(v) > 0 ? Math.round(Number(v)) : null);
+  const area = n(i.areaM2);
+  const quartos = n(i.quartos);
+  const vagas = i.vagas == null ? null : Math.max(0, Math.round(Number(i.vagas)) || 0);
+  return [
+    area ? `${area} m²` : "",
+    quartos ? `${quartos} ${quartos === 1 ? "quarto" : "quartos"}` : "",
+    vagas == null ? "" : vagas === 0 ? "sem vaga" : `${vagas} ${vagas === 1 ? "vaga" : "vagas"}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export interface PedidoDoCartao {
@@ -72,16 +93,28 @@ export function cartaoImovel(siteUrl: string, i: ImovelDoCartao): { html: string
   const foto = fotoDoCartao(siteUrl, i.fotoCapa);
   // A função de preço única (a mesma do cartão da busca e da página do imóvel), sobre o total do mês com contas.
   const total = i.totalMes > 0 ? rotuloPreco({ mensal: i.totalMes }).valor.replace(/\u00a0/g, " ") : null;
+  const ficha = linhaFichaDoImovel(i);
+  const motivo = limpo(i.motivo, 220);
   const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="vn-box" data-cartao="imovel" style="margin:0 0 16px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
   ${foto ? `<tr><td style="padding:0;font-size:0;line-height:0;"><a href="${url}"><img src="${foto}" alt="${escaparHtml(titulo)}" width="536" style="display:block;width:100%;max-width:536px;height:auto;border:0;" /></a></td></tr>` : ""}
   <tr><td style="padding:14px 16px;">
     <div class="vn-t" style="font-size:16px;font-weight:700;color:#0f3d2e;">${escaparHtml(titulo)}</div>
     ${lugar ? `<div class="vn-p" style="margin-top:2px;font-size:14px;color:#475569;">${escaparHtml(lugar)}</div>` : ""}
+    ${ficha ? `<div class="vn-p" data-ficha style="margin-top:2px;font-size:13px;color:#475569;">${escaparHtml(ficha)}</div>` : ""}
     ${total ? `<div style="margin-top:8px;font-size:13px;color:#6b7280;" class="vn-mut">${escaparHtml(ROTULO_TOTAL_MES)}</div><div class="vn-t" style="font-size:18px;font-weight:800;color:#123b26;">${total}</div>` : ""}
+    ${motivo ? `<div class="vn-p" data-motivo style="margin-top:8px;font-size:13px;color:#1c6b3a;">${escaparHtml(motivo)}</div>` : ""}
     ${botaoCartao(url, "Ver o imóvel")}
   </td></tr>
 </table>`;
-  const text = [`• ${titulo}${lugar ? ` — ${lugar}` : ""}`, total ? `  ${ROTULO_TOTAL_MES}: ${total}` : "", `  Ver o imóvel: ${url}`].filter(Boolean).join("\n");
+  const text = [
+    `• ${titulo}${lugar ? ` — ${lugar}` : ""}`,
+    ficha ? `  ${ficha}` : "",
+    total ? `  ${ROTULO_TOTAL_MES}: ${total}` : "",
+    motivo ? `  ${motivo}` : "",
+    `  Ver o imóvel: ${url}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
   return { html, text };
 }
 
