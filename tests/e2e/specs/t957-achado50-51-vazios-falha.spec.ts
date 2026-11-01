@@ -35,12 +35,6 @@ async function soAcaoComFalha(page: Page, padrao: string, marca: string, liga: b
     }
   });
 }
-async function acoesFalham(page: Page, padrao: string, liga: boolean) {
-  if (!liga) return page.unroute(padrao);
-  await page.route(padrao, (r) =>
-    r.request().method() === "POST" && r.request().headers()["next-action"] ? r.fulfill({ status: 500, body: "falha simulada (t957)" }) : r.continue(),
-  );
-}
 
 test.describe("T957 — #2070 achados 50/51: pets e calendários importados avisam a falha", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -89,7 +83,7 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
     const rota = `**/dashboard/imoveis/${ids.imovel}/editar**`;
     for (const largura of [390, 1280] as const) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await acoesFalham(page, rota, true);
+      await soAcaoComFalha(page, rota, LINK, true);
       await page.goto(`/dashboard/imoveis/${ids.imovel}/editar#calendario`, { waitUntil: "domcontentloaded" });
       const painel = page.getByTestId("importar-calendario");
       await painel.scrollIntoViewIfNeeded({ timeout: 30_000 });
@@ -97,7 +91,7 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
       await expect(falha).toBeVisible({ timeout: 30_000 });
       await expect(falha).toContainText("Não foi possível carregar os calendários importados agora.");
       await expect(painel.getByTestId("importacao-item")).toHaveCount(0);
-      await acoesFalham(page, rota, false);
+      await soAcaoComFalha(page, rota, LINK, false);
       await painel.getByTestId("importacoes-tentar").click();
       await expect(painel.getByTestId("importacao-item")).toHaveCount(1, { timeout: 30_000 });
       await expect(painel.getByTestId("importacoes-falha")).toHaveCount(0);
