@@ -70,3 +70,12 @@ test("migrações 0275 e 0276: aplicar idempotente registrado, rollback, massa s
   assert.match(rb, /a0276c00-0000-4000-8000-000000000001/);
   assert.match(rb, /title like '\[TESTE QA\] Resumo semanal 0276 %'/);
 });
+
+test("0276: clona só as colunas que aceitam valor (a produção recusou a cópia da linha inteira com coluna gerada)", () => {
+  for (const f of ["supabase/migrations/0276_qa_massa_resumo_semanal.sql", "supabase/producao/aplicar-0276.sql"]) {
+    const s = ler(f);
+    assert.match(s, /is_generated = 'NEVER'/, f);
+    assert.match(s, /pg_temp\.vn_0276_clonar\('properties'/, f);
+    assert.doesNotMatch(s, /jsonb_populate_record\([^)]*\)\)\.\*/, f);
+  }
+});

@@ -8,6 +8,23 @@
 -- Não toca o contrato-semente, AUTOMACOES_ATIVO, pedidos nem nenhum dado real. Prova: Admin → Dados de teste →
 -- "Gerar resumo semanal agora" → aba E-mails. Desfazer: supabase/producao/rollback/0276_rollback.sql.
 
+-- Clona uma linha pelo jsonb SÓ nas colunas que aceitam valor (fora as geradas — autorizacao_anexada, preco_justo… —
+-- e as identity "always"): a 1ª versão copiava a linha inteira e a produção recusou ("cannot insert a non-DEFAULT value
+-- into column autorizacao_anexada"; a Action desfez a 0276 inteira). Função temporária: some no fim da sessão.
+create or replace function pg_temp.vn_0276_clonar(p_tabela text, p_linha jsonb) returns void
+language plpgsql as $f$
+declare
+  v_cols text;
+begin
+  select string_agg(quote_ident(column_name), ', ' order by ordinal_position) into v_cols
+    from information_schema.columns
+   where table_schema = 'public' and table_name = p_tabela
+     and is_generated = 'NEVER' and coalesce(identity_generation, '') <> 'ALWAYS';
+  execute format('insert into public.%I (%s) select %s from jsonb_populate_record(null::public.%I, $1)', p_tabela, v_cols, v_cols, p_tabela)
+    using p_linha;
+end
+$f$;
+
 do $$
 declare
   v_dono uuid;
@@ -42,24 +59,19 @@ begin
   for i in 1..2 loop
     v_novo := c_imoveis[i];
     continue when exists (select 1 from public.properties where id = v_novo);
-    insert into public.properties
-    select (jsonb_populate_record(null::public.properties,
+    perform pg_temp.vn_0276_clonar('properties',
               to_jsonb(p) || jsonb_build_object('id', v_novo, 'title', c_titulos[i], 'status', 'active',
-                                                'publicado_em', now(), 'created_at', now(), 'updated_at', now()))).*
+                                                'publicado_em', now(), 'created_at', now(), 'updated_at', now()))
       from public.properties p where p.id = c_fonte;
-    insert into public.property_photos
-    select (jsonb_populate_record(null::public.property_photos,
-              to_jsonb(f) || jsonb_build_object('id', gen_random_uuid(), 'property_id', v_novo))).*
+    perform pg_temp.vn_0276_clonar('property_photos', to_jsonb(f) || jsonb_build_object('id', gen_random_uuid(), 'property_id', v_novo))
       from public.property_photos f where f.property_id = c_fonte;
     -- A qualificação aprovada mais recente do a0269 (a compatibilidade exige documento aprovado).
     v_qual := c_qualificacoes[i];
     if not exists (select 1 from public.qualification_checklists where id = v_qual) then
-      insert into public.qualification_checklists
-      select (jsonb_populate_record(null::public.qualification_checklists,
-                to_jsonb(q) || jsonb_build_object('id', v_qual, 'property_id', v_novo))).*
-        from public.qualification_checklists q
-       where q.property_id = c_fonte and q.owner_id = v_dono and q.document_status = 'approved'
-       order by q.created_at desc limit 1;
+      perform pg_temp.vn_0276_clonar('qualification_checklists', to_jsonb(q) || jsonb_build_object('id', v_qual, 'property_id', v_novo))
+        from (select * from public.qualification_checklists q0
+               where q0.property_id = c_fonte and q0.owner_id = v_dono and q0.document_status = 'approved'
+               order by q0.created_at desc limit 1) q;
     end if;
   end loop;
 
