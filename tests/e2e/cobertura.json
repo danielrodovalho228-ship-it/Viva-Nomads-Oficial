@@ -3463,6 +3463,13 @@
         "t321-video-alcancavel-65b"
       ]
     },
+    "src/lib/data/actions.ts#abrirRascunho": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/actions.ts#loadDraftData": {
       "personas": [
         "inquilino",

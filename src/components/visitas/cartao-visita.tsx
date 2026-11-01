@@ -57,8 +57,10 @@ export interface VisitaNaTela {
   enderecoMapa?: string | null;
   /** E211: bairro · cidade (o que se mostra fora da janela do endereço exato). */
   regiao?: string | null;
-  /** E211: para o dono, o 1º nome de quem vem (só depois do aceite). */
+  /** E211 + E409: o nome da outra parte depois do aceite ("Ana C.": 1º nome e inicial do sobrenome). */
   pessoa?: string | null;
+  /** E409: a foto da outra parte, quando a regra do avatar libera. */
+  fotoPessoa?: string | null;
   /** E318: quando a visita foi pedida (a cancelada mostra, para diferenciar pedidos parecidos). */
   criadoEm?: string | null;
 }
@@ -105,13 +107,21 @@ export function CartaoVisita({
           {!compacto && <h3 className="line-clamp-2 font-title text-base font-semibold text-ink">{v.imovel}</h3>}
           {v.motivo && <p className="text-xs text-muted">Motivo da estadia: {v.motivo}</p>}
           {papel === "dono" && v.pessoa !== undefined && (
-            <p className="text-xs text-muted" data-testid="visita-pessoa">
+            <p className="flex items-center gap-2 text-xs text-muted" data-testid="visita-pessoa">
+              {v.pessoa && v.fotoPessoa && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={v.fotoPessoa} alt="" width={24} height={24} className="h-6 w-6 rounded-full object-cover" data-testid="visita-pessoa-foto" />
+              )}
               Quem vem: {v.pessoa ?? "Interessado(a)"}
             </p>
           )}
           {/* E328: a partir da confirmação, o morador vê o 1º nome de quem recebe (a promessa "depois do aceite"). */}
           {papel !== "dono" && v.pessoa && (
-            <p className="text-xs text-muted" data-testid="visita-pessoa-dono">
+            <p className="flex items-center gap-2 text-xs text-muted" data-testid="visita-pessoa-dono">
+              {v.fotoPessoa && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={v.fotoPessoa} alt="" width={24} height={24} className="h-6 w-6 rounded-full object-cover" data-testid="visita-pessoa-dono-foto" />
+              )}
               Quem recebe: {v.pessoa}
             </p>
           )}

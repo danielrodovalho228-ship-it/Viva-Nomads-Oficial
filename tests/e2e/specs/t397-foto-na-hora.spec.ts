@@ -184,7 +184,7 @@ test.describe("T397 — FOTO-NA-HORA-B: prova de nível só com a foto feita na 
     await expect(painel.getByTestId("prova-celular-qr")).toBeVisible({ timeout: 20_000 });
     await expect(painel.getByTestId("prova-celular-link")).toHaveText("Continuar no celular");
     await expect(painel.getByTestId("prova-celular-email")).toBeVisible();
-    await expect(pc.getByTestId("camera-prova")).toHaveCount(0); // a webcam não é oferecida
+    await expect(pc.getByTestId("camera-prova")).toHaveCount(0); // a webcam não abre sozinha (E413: só pelo botão "Usar a câmera deste computador")
     const link = (await painel.getByTestId("prova-celular-link").getAttribute("href"))!;
     expect(link).toMatch(/\/prova\/celular\?t=[A-Za-z0-9_-]{43}$/);
     await pc.screenshot({ path: "tests/laboratorio/saida/t397-4-qr-1280.png", fullPage: true });
