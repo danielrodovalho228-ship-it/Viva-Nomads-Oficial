@@ -40,6 +40,7 @@ import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
 import styles from "@/components/admin/agentes/central.module.css";
 import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { MSG_ATRASO_NAO_LIDO } from "@/lib/atendimento/aviso-topo-admin";
 
 /*
   Central de Agentes v2 — ADMIN-5: nos tokens do admin (fundo claro, sem o tema escuro do QG), avatares hexagonais
@@ -192,7 +193,7 @@ const botaoLinha = `${botao} border border-line text-ink hover:bg-surface-2`;
 const campoBase = "rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-forest focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
-export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[]; abaInicial?: Aba }) {
+export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[] | null; abaInicial?: Aba }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   // O link antigo /admin/agentes#aprovacoes (o hash não chega ao servidor) abre a aba Aprovações.
@@ -228,7 +229,15 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
 
   return (
     <div className="overflow-x-hidden text-ink" data-testid="central-agentes">
-      {vermelhos.length > 0 && (
+      {vermelhos === null && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-red-800" role="alert" data-testid="chamados-vermelhos-erro">
+          {MSG_ATRASO_NAO_LIDO}{" "}
+          <Link href="/admin/atendimento" className="font-semibold text-ink underline">
+            Abrir a fila
+          </Link>
+        </div>
+      )}
+      {vermelhos && vermelhos.length > 0 && (
         <div className="mb-4 rounded-lg border border-red-200 bg-white px-4 py-3 text-sm text-red-800" role="alert" data-testid="chamados-vermelhos">
           <b className="text-ink">
             {vermelhos.length} chamado{vermelhos.length > 1 ? "s" : ""} sem resposta da equipe há 6 h ou mais:

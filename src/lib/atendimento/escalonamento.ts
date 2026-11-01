@@ -23,9 +23,13 @@ export interface ChamadoEsperando {
  * sem nenhuma resposta de uma pessoa da equipe, há 2 h ou mais. A resposta
  * automática da Viva (acolhimento) não conta: o que se mede é a resposta humana.
  */
-export async function chamadosEsperandoEquipe(admin: Admin, agora = new Date()): Promise<ChamadoEsperando[]> {
+export async function chamadosEsperandoEquipe(
+  admin: Admin,
+  agora = new Date(),
+  opcoes: { exigir?: boolean } = {}
+): Promise<ChamadoEsperando[]> {
   const limite = new Date(agora.getTime() - 2 * 3_600_000).toISOString();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("chamados")
     .select("id, numero_publico, assunto, prioridade, categoria, status, responsavel_tipo, usuario_id, visitante_email, visitante_nome, criado_em")
     .eq("simulacao", false)
@@ -34,14 +38,17 @@ export async function chamadosEsperandoEquipe(admin: Admin, agora = new Date()):
     .lt("criado_em", limite)
     .order("criado_em")
     .limit(100);
+  // Achado 28: quem mostra o aviso pede "exigir" — falha de leitura não pode virar "nenhum atrasado".
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler os chamados à espera da equipe.");
   const lista = data ?? [];
   if (!lista.length) return [];
-  const { data: respostas } = await admin
+  const { data: respostas, error: erroRespostas } = await admin
     .from("chamado_mensagens")
     .select("chamado_id")
     .in("chamado_id", lista.map((c) => c.id as string))
     .eq("autor", "admin")
     .eq("interno", false);
+  if (erroRespostas && opcoes.exigir) throw new Error("Não foi possível ler as respostas da equipe.");
   const respondidos = new Set((respostas ?? []).map((r) => r.chamado_id as string));
   const out: ChamadoEsperando[] = [];
   for (const c of lista) {
