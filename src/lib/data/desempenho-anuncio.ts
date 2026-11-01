@@ -64,7 +64,9 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: im } = await admin.from("properties").select("id, owner_id, title, status, city, address, bedrooms, lat, lng").eq("id", propertyId).maybeSingle();
+  const { data: im, error: erroImovel } = await admin.from("properties").select("id, owner_id, title, status, city, address, bedrooms, lat, lng").eq("id", propertyId).maybeSingle();
+  // Achado 45: falha de leitura não vira "não encontrado" (404) nem painel zerado ("ninguém viu o anúncio").
+  if (erroImovel) throw new Error(`[desempenho] imóvel: ${erroImovel.message}`);
   const alvo = im as Linha | null;
   if (!alvo || alvo.owner_id !== user.id) return null;
 
@@ -73,7 +75,7 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
   const desdeLinha = new Date(agora.getTime() - 8 * 7 * 86_400_000).toISOString();
   const desdeMaisCedo = desde < desdeLinha ? desde : desdeLinha;
 
-  const [{ data: evs }, { data: publicacoes }, { data: medicoes }, { data: nivelLinha }, sinais, nivel] = await Promise.all([
+  const [lEvs, lPublicacoes, lMedicoes, lNivel, sinais, nivel] = await Promise.all([
     admin.from("eventos").select("tipo, criado_em, usuario_id").eq("imovel_id", propertyId).in("tipo", TIPOS).gte("criado_em", desdeMaisCedo).limit(20000),
     admin.from("eventos").select("criado_em").eq("imovel_id", propertyId).eq("tipo", "publicar_anuncio").gte("criado_em", desdeLinha),
     admin.from("internet_medicoes").select("medido_em").eq("property_id", propertyId).gte("medido_em", desdeLinha),
@@ -81,6 +83,12 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
     sinaisDosAnuncios([propertyId], admin).catch(() => []),
     nivelDoMeuImovel(propertyId).catch(() => null),
   ]);
+  const falha = [lEvs, lPublicacoes, lMedicoes, lNivel].find((r) => r.error);
+  if (falha) throw new Error(`[desempenho] leitura do painel: ${falha.error!.message}`);
+  const { data: evs } = lEvs;
+  const { data: publicacoes } = lPublicacoes;
+  const { data: medicoes } = lMedicoes;
+  const { data: nivelLinha } = lNivel;
   const eventos = (evs ?? []) as Evento[];
   const fora = { donoId: user.id, contasTeste: await contasDeTeste(admin, eventos.map((e) => e.usuario_id ?? "")) };
   const atual = contar(eventos, j.atual, fora);
