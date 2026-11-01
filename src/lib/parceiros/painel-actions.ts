@@ -35,6 +35,8 @@ export interface PainelParceiro {
   slug: string;
   status: string;
   suspensoMotivo: string | null;
+  /** E339: a conta do parceiro é de teste (profiles.is_teste) — o perfil não aparece para o público. */
+  teste: boolean;
   tipoPessoa: string;
   /** FISCAL-PARCEIRO-B: Sim/Não do PJ (null = não respondeu; PF sempre null). */
   emiteNota: boolean | null;
@@ -144,11 +146,13 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     return url ? [{ id: g.id as string, url, legenda: (g.legenda as string | null) ?? null, ordem: Number(g.ordem) }] : [];
   });
   const rec = (p.dados_recebimento ?? {}) as { chave?: string };
+  const { data: perfil } = p.user_id ? await admin.from("profiles").select("is_teste").eq("id", p.user_id as string).maybeSingle() : { data: null };
   return {
     id,
     slug: p.slug as string,
     status: p.status as string,
     suspensoMotivo: (p.suspenso_motivo as string | null) ?? null,
+    teste: (perfil as { is_teste?: boolean } | null)?.is_teste === true,
     tipoPessoa: p.tipo_pessoa as string,
     emiteNota: (p.emite_nota as boolean | null) ?? null,
     notaPendente: faltaRespostaNota({ tipoPessoa: p.tipo_pessoa as string, emiteNota: p.emite_nota as boolean | null }),

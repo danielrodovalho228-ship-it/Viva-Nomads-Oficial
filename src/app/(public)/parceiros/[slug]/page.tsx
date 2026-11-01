@@ -11,7 +11,7 @@ import { imoveisParaServico } from "@/lib/parceiros/imoveis-servico";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { modoDaPaginaDoParceiro, parceiroPorSlug } from "@/lib/data/parceiros-publico";
 import { destinoDaCategoria } from "@/lib/parceiros/rotas-categoria";
-import { FAIXA_PARCEIRO_TESTE_EQUIPE, FAIXA_PARCEIRO_TESTE_VISITANTE, REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
+import { FAIXA_PARCEIRO_TESTE_DONO, FAIXA_PARCEIRO_TESTE_EQUIPE, FAIXA_PARCEIRO_TESTE_VISITANTE, REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
 import { documentoDoServico } from "@/lib/parceiros/fiscal";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
 
@@ -130,7 +130,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
             data-modo={modoTeste}
             className={`mt-4 rounded-lg px-4 py-2 text-sm font-semibold ${modoTeste === "visitante" ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-muted"}`}
           >
-            {modoTeste === "visitante" ? FAIXA_PARCEIRO_TESTE_VISITANTE : FAIXA_PARCEIRO_TESTE_EQUIPE}
+            {modoTeste === "visitante" ? FAIXA_PARCEIRO_TESTE_VISITANTE : modoTeste === "dono" ? FAIXA_PARCEIRO_TESTE_DONO : FAIXA_PARCEIRO_TESTE_EQUIPE}
           </p>
         )}
 
