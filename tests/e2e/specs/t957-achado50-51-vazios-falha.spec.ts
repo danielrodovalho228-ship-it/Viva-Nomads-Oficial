@@ -21,13 +21,18 @@ const LINK = `https://www.airbnb.com.br/calendar/ical/t957-${sufixo}.ics?s=abc`;
 
 /** Só a ação que devolve `marca` (os pets do morador) responde 500 — as outras ações da tela (o próprio perfil) passam. */
 async function soAcaoComFalha(page: Page, padrao: string, marca: string, liga: boolean) {
-  if (!liga) return page.unroute(padrao);
+  // Desliga esperando o handler em andamento terminar (senão o pedido do "Tentar de novo" cai na rota velha).
+  if (!liga) return page.unrouteAll({ behavior: "wait" });
   await page.route(padrao, async (r) => {
-    if (r.request().method() !== "POST" || !r.request().headers()["next-action"]) return r.continue();
-    const resp = await r.fetch();
-    const corpo = await resp.text();
-    if (corpo.includes(marca)) return r.fulfill({ status: 500, body: "falha simulada (t957)" });
-    return r.fulfill({ response: resp, body: corpo });
+    if (r.request().method() !== "POST" || !r.request().headers()["next-action"]) return r.continue().catch(() => {});
+    try {
+      const resp = await r.fetch();
+      const corpo = await resp.text();
+      if (corpo.includes(marca)) return await r.fulfill({ status: 500, body: "falha simulada (t957)" });
+      return await r.fulfill({ response: resp, body: corpo });
+    } catch {
+      /* a página navegou ou a rota já foi resolvida */
+    }
   });
 }
 async function acoesFalham(page: Page, padrao: string, liga: boolean) {
