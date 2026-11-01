@@ -9,7 +9,7 @@ import { prepararRascunho } from "../fixtures/rascunho-cadastro";
   nada muda):
    1) Passo 5 (Comodidades): em toda grade grade-par visível, com nº ímpar de casas a última ocupa a largura da grade;
       com nº par, a última fica na sua coluna;
-   2) Passo Preço: "Duração máxima" (90 e 180 dias) em 2 colunas, lado a lado, sem as duas casas vazias da grade de 4.
+   2) Passo Disponibilidade (a etapa que mostra "Disponibilidade e prazo"): "Duração máxima" (90 e 180 dias) em 2 colunas, lado a lado, sem as duas casas vazias da grade de 4.
   Rascunho do laboratório, criado e apagado aqui.
 */
 const senha = novaSenha();
@@ -68,10 +68,10 @@ test.describe("T854 — grade par no assistente (#1840)", () => {
     await page.context().close();
   });
 
-  test("Passo Preço: 'Duração máxima' em 2 colunas, lado a lado (1280 px)", async ({ browser }) => {
+  test("Passo Disponibilidade: 'Duração máxima' em 2 colunas, lado a lado (1280 px)", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=preco`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
     const grupo = page.getByRole("radiogroup", { name: "Duração máxima" });
     await expect(grupo).toBeVisible({ timeout: 30_000 });
     const [g, a, b] = await Promise.all([grupo.boundingBox(), page.getByTestId("duracao-maxima-90").boundingBox(), page.getByTestId("duracao-maxima-180").boundingBox()]);
