@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { CheckCircle2, Circle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -100,7 +101,7 @@ export default async function AvaliacaoParceiroPage() {
             )}
             <label className="text-sm">Cidade onde vai avaliar<input name="cidade" required className={campo} /></label>
             <label className="text-sm">Portfólio ou referência (link https)<input name="experienciaLink" type="url" className={campo} /></label>
-            <label className="text-sm">Ou envie um arquivo (PDF ou imagem)<input name="experienciaArquivo" type="file" accept="application/pdf,image/*" className={campo} /></label>
+            <div className="grid gap-1 text-sm"><p>Ou envie um arquivo (PDF ou imagem)</p><SeletorArquivo name="experienciaArquivo" accept="application/pdf,image/*" ariaLabel="Ou envie um arquivo (PDF ou imagem)" /></div>
             <label className="text-sm">
               Relações com proprietários ou imóveis (e-mails dos proprietários e links dos anúncios com quem você tem vínculo pessoal ou comercial)
               <textarea name="relacoes" rows={3} className={campo} />

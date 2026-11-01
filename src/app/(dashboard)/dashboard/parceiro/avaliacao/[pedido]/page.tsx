@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -125,7 +126,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
             <FormAcao acao={enviarFotoAvaliacao} className="mt-3 grid gap-2" testid="avaliacao-foto-form">
               <input type="hidden" name="pedidoId" value={p.id} />
               <label className="text-sm">Cômodo<input name="comodo" placeholder="Ex.: quarto principal" required className={campo} /></label>
-              <label className="text-sm">Foto<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" capture="environment" required className={campo} /></label>
+              <div className="grid gap-1 text-sm"><p>Foto</p><SeletorArquivo name="foto" accept="image/jpeg,image/png,image/webp" capture="environment" required rotulo="Tirar ou escolher foto" ariaLabel="Foto" /></div>
               <Button type="submit" size="sm" variant="secondary" className="justify-self-start">Enviar foto</Button>
             </FormAcao>
           </Panel>

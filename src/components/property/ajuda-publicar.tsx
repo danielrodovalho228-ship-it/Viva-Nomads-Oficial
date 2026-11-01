@@ -1,5 +1,6 @@
 "use client";
 import { enviarFotoDoAnuncio } from "@/lib/fotos/enviar-foto-cliente";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 
 import { useState } from "react";
 import { HandHelping, X } from "lucide-react";
@@ -135,8 +136,8 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
           </ul>
         )}
         {fotos.length < MAX_FOTOS_AJUDA && (
-          <input
-            type="file"
+          <SeletorArquivo
+            rotulo="Escolher fotos"
             accept="image/jpeg,image/png,image/webp"
             multiple
             disabled={subindo}
@@ -144,9 +145,9 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
               void anexar(e.target.files);
               e.target.value = "";
             }}
-            aria-label="Enviar fotos do imóvel"
-            className="mt-2 block w-full text-sm"
-            data-testid="ajuda-publicar-foto-input"
+            ariaLabel="Enviar fotos do imóvel"
+            className="mt-2"
+            testid="ajuda-publicar-foto-input"
           />
         )}
         {subindo && <p className="mt-1 text-xs text-muted">Enviando…</p>}

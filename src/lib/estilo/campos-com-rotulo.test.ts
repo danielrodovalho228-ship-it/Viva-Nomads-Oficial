@@ -7,6 +7,6 @@ const ler = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.ur
 test("varredura 01/11: campos que não tinham rótulo para leitor de tela", () => {
   const t = ler("components/admin/testar-leitura-ia.tsx");
   assert.match(t, /aria-label="Tipo do arquivo"\s+data-testid="testar-leitura-tipo"/);
-  assert.match(t, /aria-label="Arquivo fictício para testar a leitura"\s+data-testid="testar-leitura-arquivo"/);
+  assert.match(t, /ariaLabel="Arquivo fictício para testar a leitura"\s+testid="testar-leitura-arquivo"/);
   assert.match(ler("app/(dashboard)/dashboard/indicacoes/page.tsx"), /readOnly\s+value=\{link\}\s+aria-label="Seu link de indicação"/);
 });
