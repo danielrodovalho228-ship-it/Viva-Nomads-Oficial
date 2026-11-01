@@ -84,6 +84,7 @@ export default function ReferralsPage() {
           <input
             readOnly
             value={link}
+            aria-label="Seu link de indicação"
             className="flex-1 rounded-xl bg-white/10 px-4 py-3 text-sm text-white outline-none"
           />
           <div className="flex gap-2">
