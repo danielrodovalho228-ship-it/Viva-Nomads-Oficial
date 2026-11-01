@@ -7,9 +7,12 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
   achados nº 14 e 15"). Os dois merges passaram a mostrar "Não conseguimos abrir esta tela" (painel-erro) quando o
   BANCO falha — antes a falha virava "contrato não encontrado" (404) ou "você ainda não é parceiro". A falha do banco
   é do servidor e tem teste de unidade em cada merge. Aqui, o lado que a troca poderia quebrar, sem falha nenhuma:
-   1) #1868: a estadia de um contrato que NÃO EXISTE (uuid novo) segue 404, sem a tela de erro;
-   2) #1868: a estadia de um contrato que existe mas é de OUTRAS pessoas segue 404 para quem não é parte, sem a tela
-      de erro (o contrato é um qualquer do laboratório; a spec só lê);
+   1) #1868: a estadia de um contrato que NÃO EXISTE (uuid novo) segue no "não encontrado" do painel
+      (painel-nao-encontrado), sem a tela de erro;
+   2) #1868: a estadia de um contrato que existe mas é de OUTRAS pessoas segue no "não encontrado" para quem não é
+      parte, sem a tela de erro (o contrato é um qualquer do laboratório; a spec só lê);
+  O código HTTP não entra: com o painel em streaming, o notFound() do App Router responde 200 com a tela de não
+  encontrado (o mesmo das outras specs de acesso, que conferem a tela).
    3) #1870: quem ainda não é parceiro, em /dashboard/parceiro, vê o formulário "Quero ser parceiro"
       (seja-parceiro-form), sem a tela de erro.
   Conta do laboratório, criada e apagada aqui. A 390 px.
@@ -31,12 +34,12 @@ test.describe("T864 — 404 e 'ainda não é parceiro' continuam de pé (#1868, 
     await apagarContas([ids.morador]);
   });
 
-  test("1 e 2. estadia de contrato inexistente ou de outras pessoas: 404, sem a tela de erro", async ({ browser }) => {
+  test("1 e 2. estadia de contrato inexistente ou de outras pessoas: não encontrado, sem a tela de erro", async ({ browser }) => {
     const page = await entrar(browser, morador.email, senha);
     await page.setViewportSize({ width: 390, height: 844 });
 
-    const r1 = await page.goto(`/dashboard/estadia/${randomUUID()}`, { waitUntil: "domcontentloaded" });
-    expect(r1?.status(), "contrato que não existe").toBe(404);
+    await page.goto(`/dashboard/estadia/${randomUUID()}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("painel-nao-encontrado"), "contrato que não existe").toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("painel-erro")).toHaveCount(0);
 
     // A conta nova não é dona de imóvel nenhum: basta o contrato não ter ela como morador.
@@ -44,8 +47,8 @@ test.describe("T864 — 404 e 'ainda não é parceiro' continuam de pé (#1868, 
     expect(error).toBeNull();
     const alheio = (data ?? []).find((c) => c.tenant_id !== ids.morador);
     test.skip(!alheio, "nenhum contrato no laboratório para o caso 'de outras pessoas'");
-    const r2 = await page.goto(`/dashboard/estadia/${alheio!.id}`, { waitUntil: "domcontentloaded" });
-    expect(r2?.status(), "contrato de outras pessoas").toBe(404);
+    await page.goto(`/dashboard/estadia/${alheio!.id}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("painel-nao-encontrado"), "contrato de outras pessoas").toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("painel-erro")).toHaveCount(0);
     await page.context().close();
   });
