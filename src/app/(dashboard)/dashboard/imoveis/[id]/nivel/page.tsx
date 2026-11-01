@@ -24,7 +24,7 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
   const { fotografar, medir } = await searchParams;
   // NIVEIS-MEDIR-B: o link do celular da medição chega com ?medir=<ponto>; sem ele, o quarto principal vem primeiro.
   const pontoMedir = medir === "trabalho" ? "trabalho" : "quarto_principal";
-  const [dados, comodidades] = await Promise.all([nivelDoMeuImovel(id), comodidadesDoMeuImovel(id)]);
+  const [dados, comodidades] = await Promise.all([nivelDoMeuImovel(id), comodidadesDoMeuImovel(id).catch(() => null)]);
   // E143: esta página segue viva para a CAPTURA (link do celular/QR) e a avaliação. Quem chegou para fotografar ou medir
   // tem o caminho de volta ao lugar do anúncio: rascunho → Passo 5 do cadastro; publicado → a seção do nível na edição.
   const captura = typeof fotografar === "string" || typeof medir === "string";
@@ -91,7 +91,14 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
             <MedirNoNivel propertyId={id} ponto={pontoMedir} />
           </section>
           {/* E101: o que as fotos sugerem fica acima dos itens de prova. */}
-          <SugestoesNoNivel propertyId={id} comodidades={comodidades} />
+          {/* Achado 64: sem saber o que o anúncio já tem, as sugestões das fotos não aparecem (avisa). */}
+          {comodidades ? (
+            <SugestoesNoNivel propertyId={id} comodidades={comodidades} />
+          ) : (
+            <p role="alert" className="text-sm text-muted" data-testid="sugestoes-nivel-falha">
+              Não foi possível carregar as sugestões das fotos agora. Recarregue a página para ver.
+            </p>
+          )}
           <FormNivel propertyId={id} dados={dados} fotografar={typeof fotografar === "string" ? fotografar : null} />
           {/* Prompt 62-B1/62-A: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
           <BlocoAvaliacaoDono propertyId={id} />

@@ -84,7 +84,9 @@ export async function meusDegraus(): Promise<Degrau[] | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("full_name, avatar_url, phone").eq("id", user.id).maybeSingle();
+  // Achado 61: a falha de leitura LANÇA — antes nome, foto e telefone apareciam "pendentes" e a pessoa refazia.
+  const { data, error } = await supabase.from("profiles").select("full_name, avatar_url, phone").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler seu perfil agora.");
   const p = (data ?? {}) as { full_name?: string | null; avatar_url?: string | null; phone?: string | null };
   const admin = createAdminClient();
   const identidade = admin ? await estadoIdentidade(admin, user.id).catch(() => null) : null;

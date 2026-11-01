@@ -87,9 +87,11 @@ export async function apagarResposta(id: string): Promise<Res> {
 export async function respostasDaConversaDoImovel(propertyId: string): Promise<RespostaRapida[]> {
   const s = await sessao();
   if (!s || !UUID.test(String(propertyId))) return [];
-  const { data: im } = await s.supabase.from("properties").select("owner_id, mensagem_para_pedido").eq("id", propertyId).maybeSingle();
+  // Achado 62: as duas leituras LANÇAM — antes "nenhuma resposta salva", e o dono recriava (duplicava) as que já tem.
+  const { data: im, error } = await s.supabase.from("properties").select("owner_id, mensagem_para_pedido").eq("id", propertyId).maybeSingle();
+  if (error) throw new Error("Não foi possível ler o anúncio agora.");
   if (!im || im.owner_id !== s.userId) return [];
-  return respostasDaConversa(await minhasRespostas(), im.mensagem_para_pedido as string | null);
+  return respostasDaConversa(await minhasRespostas({ exigir: true }), im.mensagem_para_pedido as string | null);
 }
 
 // ── Mensagens programadas ──────────────────────────────────────────────────────────────────────────────────────

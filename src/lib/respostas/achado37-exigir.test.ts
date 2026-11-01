@@ -14,7 +14,8 @@ test("minhasRespostas aceita exigir e lança no erro", () => {
   const s = ler("../data/respostas-actions.ts");
   assert.match(s, /export async function minhasRespostas\(opcoes: \{ exigir\?: boolean \} = \{\}\)/);
   assert.match(s, /if \(error && opcoes\.exigir\) throw new Error/);
-  assert.match(s, /respostasDaConversa\(await minhasRespostas\(\),/);
+  // Achado 62: a conversa também exige — o bloco das respostas rápidas agora avisa a falha com "Tentar de novo".
+  assert.match(s, /respostasDaConversa\(await minhasRespostas\(\{ exigir: true \}\),/);
 });
 
 test("a página pede exigir e o painel tem 'Tentar de novo'", () => {
