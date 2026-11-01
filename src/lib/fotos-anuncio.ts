@@ -37,10 +37,12 @@ export function urlsDoRascunho(data: unknown): unknown[] {
  * E308: a capa do rascunho pelo `draft_data` — a 1ª foto do bucket na pasta do próprio dono, ou null. Só para EXIBIR:
  * aceita http e https (o Storage local do laboratório é http); gravar em `property_photos` segue `fotosDoDono` (https).
  */
-export function capaDoDraftData(data: unknown, ownerId: string): string | null {
+export function capaDoDraftData(data: unknown, ownerId: string, existentes: ReadonlySet<string> | null = null): string | null {
   const pasta = `/storage/v1/object/public/property-photos/${ownerId}/`;
   for (const u of urlsDoRascunho(data)) {
     if (typeof u !== "string") continue;
+    // E308 (causa raiz): arquivo que já não existe no bucket não vira capa (seria imagem quebrada).
+    if (!soFotosExistentes([u], existentes).length) continue;
     try {
       const url = new URL(u);
       if ((url.protocol === "https:" || url.protocol === "http:") && url.pathname.startsWith(pasta)) return u;
@@ -49,4 +51,31 @@ export function capaDoDraftData(data: unknown, ownerId: string): string | null {
     }
   }
   return null;
+}
+
+/** Caminho no bucket `property-photos` a partir da URL pública (sem `?…`, decodificado); null se não é do bucket. */
+export function caminhoNoBucketFotos(url: unknown): string | null {
+  if (typeof url !== "string") return null;
+  const marca = "/object/public/property-photos/";
+  const i = url.indexOf(marca);
+  if (i < 0) return null;
+  let c: string;
+  try {
+    c = decodeURIComponent(url.slice(i + marca.length).split("?")[0]);
+  } catch {
+    return null;
+  }
+  return c && !c.includes("..") ? c : null;
+}
+
+/**
+ * E308 (causa raiz, 01/11): só as fotos cujo arquivo AINDA EXISTE no bucket. `existentes` = caminhos presentes no
+ * bucket (null = não deu para conferir → não filtra nada). URL que não é do bucket passa como está.
+ */
+export function soFotosExistentes(urls: readonly string[], existentes: ReadonlySet<string> | null): string[] {
+  if (!existentes) return [...urls];
+  return urls.filter((u) => {
+    const c = caminhoNoBucketFotos(u);
+    return c === null || existentes.has(c);
+  });
 }
