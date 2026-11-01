@@ -119,3 +119,18 @@ aplicar idempotente e rollback.
 - o selo "Preço justo";
 - `AUTOMACOES_ATIVO`;
 - o grupo 2 do E289.
+
+## 6. Andamento (01/11/2026)
+
+- Feitos e mesclados: P1, P2, P3, P5 (frases fixas no lugar do texto livre da CAF) e P7.
+- **Relatório simulado honesto:** os itens de fase 2 com prazo declarado (medição do morador, motivo da saída, denúncia
+  resolvida, `eventos`, `push_envios`) passam a ser contados. Antes, sem coletor, apareciam com "0 vencidos" sem ninguém
+  ter contado. Os coletores só contam: a fase 2 continua sem apagar nada. Uma guarda
+  (`src/lib/minimizacao/relatorio-contagem.test.ts`) exige contagem ou motivo escrito para todo item com prazo.
+  Produção em 01/11: os cinco dão zero vencidos.
+- **Seguem esperando decisão do Daniel** (não executados):
+  - P4 (Google Places: opção a ou b);
+  - P5, segunda parte (coluna `caf_transacao_id` e limpeza das verificações vencidas);
+  - P6 (apagar de verdade os caches de fornecedor e passar itens da fase 2 para a fase 1);
+  - `airbnb_monthly_price` no inventário, que depende do E399-B parte 2 (parecer da Dra. Beatriz);
+  - os prazos do item 13.

@@ -124,6 +124,88 @@ const COLETORES: Record<string, Coletor> = {
   },
 };
 
+/*
+  E293 (relatório honesto): itens de FASE 2 com prazo já declarado. Sem coletor, o relatório mostrava "0 vencidos" — um
+  zero falso. Estes coletores SÓ CONTAM: a fase 2 nunca apaga (eliminaDeVerdade = false), e o `eliminar` daqui recusa
+  por garantia. Passar algum para a fase 1 é decisão do Daniel (e, nos de prazo pendente, do item 13).
+*/
+const LIMITE_CONTAGEM = 5000;
+
+function prazoDe(id: string): number {
+  const p = INVENTARIO.find((x) => x.id === id)?.prazoDias;
+  if (p === null || p === undefined) throw new Error(`${id}: sem prazo declarado`);
+  return p;
+}
+
+/** Corte grosso (o plano refaz a conta exata em dias inteiros): só lê o que pode ter vencido. */
+function corte(id: string): string {
+  return new Date(Date.now() - prazoDe(id) * 86_400_000).toISOString();
+}
+
+async function soContar(): Promise<void> {
+  throw new Error("fase 2: este item só entra na contagem do relatório; nada é apagado");
+}
+
+type LinhaContagem = { id: string; desde: string | null; teste?: boolean | null; dono?: string | null };
+
+async function candidatosDe(admin: Admin, linhas: LinhaContagem[], testePorConta: boolean): Promise<Candidato[]> {
+  const teste = testePorConta ? await contasDeTeste(admin, linhas.map((l) => l.dono ?? "")) : new Set<string>();
+  return linhas.map((l) => ({ ref: l.id, desde: l.desde, teste: l.teste === true || (!!l.dono && teste.has(l.dono)) }));
+}
+
+function lerOuFalhar<T>(r: { data: T[] | null; error: { message: string } | null }, item: string): T[] {
+  if (r.error) throw new Error(`${item}: ${r.error.message}`);
+  return r.data ?? [];
+}
+
+const COLETORES_FASE_2: Record<string, Coletor> = {
+  // Medição do morador: o sinal sai no aviso ao dono na hora da medição; a linha deveria sair logo depois (prazo 0 †).
+  "internet_medicoes/morador": {
+    async candidatos(admin) {
+      const r = await admin.from("internet_medicoes").select("id, medido_em, user_id").eq("papel", "morador").lt("medido_em", corte("internet_medicoes/morador")).limit(LIMITE_CONTAGEM);
+      const linhas = lerOuFalhar(r, "internet_medicoes/morador") as { id: string; medido_em: string; user_id: string }[];
+      return candidatosDe(admin, linhas.map((l) => ({ id: l.id, desde: l.medido_em, dono: l.user_id })), true);
+    },
+    eliminar: soContar,
+  },
+  // Motivo da saída: anonimizar aos 12 meses † (fica papel, motivo e data).
+  saidas_motivos: {
+    async candidatos(admin) {
+      const r = await admin.from("saidas_motivos").select("id, criado_em, teste").lt("criado_em", corte("saidas_motivos")).limit(LIMITE_CONTAGEM);
+      const linhas = lerOuFalhar(r, "saidas_motivos") as { id: string; criado_em: string; teste: boolean }[];
+      return candidatosDe(admin, linhas.map((l) => ({ id: l.id, desde: l.criado_em, teste: l.teste })), false);
+    },
+    eliminar: soContar,
+  },
+  // Denúncia de anúncio: 12 meses † depois de resolvida (o gatilho é a decisão; a última mudança de estado marca a data).
+  denuncias_anuncio: {
+    async candidatos(admin) {
+      const r = await admin.from("denuncias_anuncio").select("id, atualizado_em, teste").eq("status", "resolvida").lt("atualizado_em", corte("denuncias_anuncio")).limit(LIMITE_CONTAGEM);
+      const linhas = lerOuFalhar(r, "denuncias_anuncio") as { id: string; atualizado_em: string; teste: boolean }[];
+      return candidatosDe(admin, linhas.map((l) => ({ id: l.id, desde: l.atualizado_em, teste: l.teste })), false);
+    },
+    eliminar: soContar,
+  },
+  // Os dois abaixo têm rotina que já apaga (pg_cron da 0067, rotina de atendimento): a contagem
+  // confere que a rotina está em dia — o esperado é zero.
+  eventos: {
+    async candidatos(admin) {
+      const r = await admin.from("eventos").select("id, criado_em").lt("criado_em", corte("eventos")).limit(LIMITE_CONTAGEM);
+      const linhas = lerOuFalhar(r, "eventos") as { id: number | string; criado_em: string }[];
+      return linhas.map((l) => ({ ref: String(l.id), desde: l.criado_em }));
+    },
+    eliminar: soContar,
+  },
+  push_envios: {
+    async candidatos(admin) {
+      const r = await admin.from("push_envios").select("id, criado_em, user_id").lt("criado_em", corte("push_envios")).limit(LIMITE_CONTAGEM);
+      const linhas = lerOuFalhar(r, "push_envios") as { id: string; criado_em: string; user_id: string | null }[];
+      return candidatosDe(admin, linhas.map((l) => ({ id: l.id, desde: l.criado_em, dono: l.user_id })), true);
+    },
+    eliminar: soContar,
+  },
+};
+
 /** Quanto existe hoje numa tabela do inventário (para o relatório simulado). Bucket: não conta (null). */
 async function guardados(admin: Admin, item: ItemInventario): Promise<number | null> {
   // E334: a mesma contagem da caixa de e-mails de teste e da coluna "Guardados agora" da Retenção.
@@ -146,7 +228,7 @@ export async function rodarEliminacao(admin: Admin, agora: Date, simular: boolea
   const r: ResultadoEliminacao = { eliminados: 0, simulados: 0, falhas: 0 };
   for (const item of INVENTARIO) {
     try {
-      const col = COLETORES[item.id];
+      const col = COLETORES[item.id] ?? COLETORES_FASE_2[item.id];
       const candidatos = col ? await col.candidatos(admin) : [];
       const plano = planoDoItem(item, candidatos, agora);
       const real = plano.real && !simular && !!col;
