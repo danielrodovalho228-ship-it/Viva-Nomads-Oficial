@@ -75,7 +75,7 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
             <fieldset key={g.id} data-testid={`estrutura-grupo-${g.id}`}>
               <legend className="text-sm font-semibold text-ink">{g.titulo}</legend>
               {/* E193 (reteste de 30/10): cada item no cartão grande da Qualificação (antes, um interruptor por linha). */}
-              <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              <ul className="grade-par mt-2 grid gap-2 sm:grid-cols-2">
                 {g.itens.map((item) => (
                   <li key={item}>
                     <CartaoEscolha

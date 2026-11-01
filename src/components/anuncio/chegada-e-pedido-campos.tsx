@@ -68,7 +68,7 @@ export function ChegadaEPedidoCampos({
         <legend className="text-sm font-semibold text-ink">Como se entra no imóvel?</legend>
         <p className="mt-1 text-xs text-ink-soft">{AJUDA_TIPO_ENTRADA}</p>
         {/* E193: escolha única em cartões, o padrão da Qualificação (antes, botões redondos de rádio). */}
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Como se entra no imóvel?">
+        <div className="grade-par mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Como se entra no imóvel?">
           {TIPOS_ENTRADA.map((t) => (
             <CartaoEscolha
               key={t.chave}
@@ -117,7 +117,7 @@ export function ChegadaEPedidoCampos({
         <legend className="text-sm font-semibold text-ink">O que considerar antes de pedir (opcional)</legend>
         <p className="mt-1 text-xs text-ink-soft">Dizer antes evita surpresa e conta a favor do anúncio na busca.</p>
         {/* E193 (reteste de 30/10): várias escolhas = o cartão grande da Qualificação, em grade (antes, pílulas). */}
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grade-par mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {CONSIDERAR_OPCOES.map((o) => (
             <CartaoEscolha key={o.chave} papel="checkbox" on={value.considerarAntes.includes(o.chave)} onClick={() => alternar(o.chave)} testid={`considerar-${o.chave}`} rotulo={o.rotulo} />
           ))}
