@@ -4,10 +4,12 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 /**
  * T960 — E397 (regressão, ordem do Daniel 01/11): o pet NUNCA entra em candidatura de imóvel que não aceita animais.
  * Morador com um pet cadastrado; anúncio com pets_allowed = false. Pela tela real, 390 e 1280:
- *   1. no anúncio, o bloco "pets que vão junto" da candidatura (pet-candidatura) não aparece e o nome do pet não está
- *      na página;
+ *   1. no anúncio, o bloco "pets que vão junto" da candidatura (pet-candidatura) não aparece — no lugar, o aviso
+ *      "Este imóvel não aceita animais. Seus pets não vão na candidatura." (pet-candidatura-nao-vai, do #2086) — e o
+ *      nome do pet não está na página;
  *   2. em Interessados do dono, o cartão da candidatura desse morador (#candidato-<lead>) não traz a ficha do pet
  *      (ficha-pet-candidatura) nem o nome do pet.
+ * O E397 foi corrigido no #2086 (vermelho antes: lab do #2085, run 41354306315); a spec é a regressão permanente.
  * Contraprova (mesmo morador e pet, anúncio que ACEITA animais): o bloco e a ficha aparecem — a regra é do anúncio,
  * não um sumiço geral do pet.
  */
@@ -47,10 +49,6 @@ test.describe("T960 — E397: pet nunca entra em candidatura de imóvel que não
   });
 
   test("morador: o anúncio sem animais não leva o pet; o que aceita mostra (390 e 1280)", async ({ browser }) => {
-    // E397 (aberto, aguardando o PR da correção): no anúncio com pets_allowed = false o bloco "pet-candidatura" aparece com
-    // o pet (lab do #2085, run 41354306315: Expected 0, Received 1; a contraprova no anúncio que aceita passou). Quem
-    // mergear a correção do E397 tira este test.fail no mesmo PR — ou a Pista C tira no merge.
-    test.fail(true, "E397: o pet entra na candidatura do anúncio que não aceita animais (bloco pet-candidatura aparece)");
     const page = await entrar(browser, mor.email, senha);
     for (const largura of LARGURAS) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
@@ -61,6 +59,8 @@ test.describe("T960 — E397: pet nunca entra em candidatura de imóvel que não
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(page.getByRole("heading", { level: 1 })).toContainText("Studio Sem Animais t960", { timeout: 30_000 });
       await expect(page.getByTestId("pet-candidatura")).toHaveCount(0);
+      // E397 (#2086): no lugar, o aviso de que os pets não vão.
+      await expect(page.getByTestId("pet-candidatura-nao-vai").first()).toHaveText("Este imóvel não aceita animais. Seus pets não vão na candidatura.");
       expect(await page.locator("body").innerText(), "o nome do pet não aparece no anúncio sem animais").not.toContain(PET);
     }
     await page.context().close();
