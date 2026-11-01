@@ -200,7 +200,8 @@
         "t286-esqueletos-vazios-48",
         "t336-varredura-bloco14",
         "t407-varredura-bloco26",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/emails-teste": {
