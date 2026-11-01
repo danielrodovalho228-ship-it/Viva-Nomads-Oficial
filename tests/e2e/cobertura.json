@@ -1717,7 +1717,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t944-e411-segunda-visita"
       ]
     },
     "/modelodenegocio": {
@@ -5133,7 +5134,8 @@
       ],
       "specs": [
         "t209-jornada-dois-lados",
-        "t211-complemento-23"
+        "t211-complemento-23",
+        "t944-e411-segunda-visita"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#responderVisita": {
