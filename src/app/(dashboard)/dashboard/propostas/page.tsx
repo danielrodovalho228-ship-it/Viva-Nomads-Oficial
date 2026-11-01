@@ -11,7 +11,7 @@ import { cn, dataBR, formatBRL } from "@/lib/utils";
  * validade com contagem regressiva e status. As que o proprietário enviou ficam em Orçamentos.
  */
 export default async function PropostasPage() {
-  const todas = await listarPropostas();
+  const todas = await listarPropostas({ exigir: true });
   const recebidas = todas.filter((p) => p.papel === "tenant");
   const enviadas = todas.length - recebidas.length;
   const agora = new Date();

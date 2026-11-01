@@ -238,7 +238,12 @@ export interface LocacaoView {
  * Minhas locações (visão do INQUILINO): contratos onde tenant_id = eu, com o
  * proprietário do imóvel (para avaliar). Best-effort: [] em demo/sem sessão.
  */
-export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
+const MSG_LOCACOES_NAO_CARREGARAM = "Não foi possível carregar as suas locações agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
+ * home, notificações), segue a lista vazia. */
+export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Promise<LocacaoView[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -246,11 +251,12 @@ export async function getMinhasLocacoes(): Promise<LocacaoView[]> {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select(`id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
+  if (error && opcoes.exigir) throw new Error(MSG_LOCACOES_NAO_CARREGARAM);
 
   // E182 (QA 25/10): o RLS de properties só mostra ao morador os imóveis ATIVOS — de um imóvel pausado ou encerrado o
   // join volta vazio e o cartão virava "Imóvel". Para os contratos DELE (tenant_id = eu, já filtrados acima), o

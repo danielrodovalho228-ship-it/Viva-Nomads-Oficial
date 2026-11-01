@@ -202,7 +202,12 @@ function expirarDepois(usuarioId: string) {
 }
 
 /** Pedidos dos imóveis do proprietário logado (RLS + filtro; tenant_id nem é legível). */
-export async function listVisitasDono(): Promise<(VisitaDono & { endereco: string | null; enderecoMapa: string | null; regiao: string | null })[]> {
+const MSG_VISITAS_NAO_CARREGARAM = "Não foi possível carregar as visitas agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
+ * home, notificações), segue a lista vazia. */
+export async function listVisitasDono(opcoes: { exigir?: boolean } = {}): Promise<(VisitaDono & { endereco: string | null; enderecoMapa: string | null; regiao: string | null })[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -210,12 +215,13 @@ export async function listVisitasDono(): Promise<(VisitaDono & { endereco: strin
   } = await supabase.auth.getUser();
   if (!user) return [];
   expirarDepois(user.id);
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("visitas_video")
     .select(COLUNAS)
     .eq("owner_id", user.id)
     .order("criado_em", { ascending: false })
     .limit(100);
+  if (error && opcoes.exigir) throw new Error(MSG_VISITAS_NAO_CARREGARAM);
   const linhas = ((data ?? []) as unknown as Linha[]).map((r) => mapear(r, (m) => motivoParaDono(m)));
   // E211: o dono também vê o endereço exato do PRÓPRIO imóvel na presencial confirmada (a mesma regra de
   // endereco-visita.ts); antes da confirmação e depois que passou, só a região (bairro · cidade).
@@ -233,7 +239,10 @@ export async function listVisitasDono(): Promise<(VisitaDono & { endereco: strin
 }
 
 /** Pedidos do morador logado. tenant_id não é legível pela sessão, então o servidor filtra com o id da sessão. */
-export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
+/** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
+ * home, notificações), segue a lista vazia. */
+export async function listMinhasVisitas(opcoes: { exigir?: boolean } = {}): Promise<MinhaVisita[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -243,12 +252,13 @@ export async function listMinhasVisitas(): Promise<MinhaVisita[]> {
   const admin = createAdminClient();
   if (!admin) return [];
   expirarDepois(user.id);
-  const { data } = await admin
+  const { data, error } = await admin
     .from("visitas_video")
     .select(COLUNAS)
     .eq("tenant_id", user.id)
     .order("criado_em", { ascending: false })
     .limit(100);
+  if (error && opcoes.exigir) throw new Error(MSG_VISITAS_NAO_CARREGARAM);
   const linhas = ((data ?? []) as unknown as Linha[]).map((r) => mapear(r, (m) => (m && isMotivo(m) ? motivoLabel(m) : "")));
   // Endereço exato só da visita PRESENCIAL CONFIRMADA e ainda não passada (o resto: só a região aproximada).
   const agora = new Date();
