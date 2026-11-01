@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function VisitasPage({ searchParams }: { searchParams: Promise<{ de?: string }> }) {
   const dono = (await searchParams).de === "dono";
-  const visitas = dono ? await listVisitasDono() : await listMinhasVisitas();
+  const visitas = dono ? await listVisitasDono({ exigir: true }) : await listMinhasVisitas({ exigir: true });
   return (
     <>
       <PageTitle
