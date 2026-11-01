@@ -3123,7 +3123,8 @@
         "admin"
       ],
       "specs": [
-        "t240-conferencia-provas-admin"
+        "t240-conferencia-provas-admin",
+        "t929-achado41-provas-contrato"
       ]
     },
     "/api/conta/local-trabalho": {
