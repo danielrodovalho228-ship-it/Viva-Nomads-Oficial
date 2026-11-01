@@ -20,6 +20,7 @@ import {
 import { integracoesSimuladas } from "@/lib/integracoes";
 import {
   decidirConferencia,
+  leituraParaGravar,
   rotuloEstado,
   statusDoEstado,
   REVISAO_PRAZO_HORAS,
@@ -228,13 +229,13 @@ export async function POST(request: Request) {
     document_reviewed_at: r.estado === "revisao" ? null : agora.toISOString(),
     conferido_por: r.estado === "revisao" ? null : "automatico",
     revisao_ate: r.estado === "revisao" ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
-    // Trilha de auditoria: o que foi lido, por quem, e o checklist marcado. CPF só o trecho do meio.
+    // Trilha de auditoria: o veredito do que foi lido (sim/não, sem dado pessoal — E293 P2), por quem, e o checklist.
     conferencia: {
-      versao: 1,
+      versao: 2,
       estado: r.estado,
       checklist: r.checklist,
       motivos: r.motivos,
-      leitura,
+      lido: leituraParaGravar(leitura, r.checklist),
       conferidor,
       modelo,
       em: agora.toISOString(),
