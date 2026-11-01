@@ -26,7 +26,7 @@ export default function GuiasPage() {
       </p>
       <ul className="mt-8 grid gap-4 sm:grid-cols-2">
         {GUIAS.map((g) => (
-          <li key={g.slug}>
+          <li key={g.slug} className="sm:odd:last:col-span-2">
             <Link
               href={`/guias/${g.slug}`}
               className="block h-full rounded-xl border border-line bg-white p-4 transition hover:border-forest "
