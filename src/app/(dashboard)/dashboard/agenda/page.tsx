@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 /** Ferramentas › Agenda (prompt 23): visitas, entradas, saídas e datas bloqueadas de todos os imóveis. */
 export default async function AgendaPage({ searchParams }: { searchParams: Promise<{ imovel?: string }> }) {
-  const { itens, imoveis } = await carregarAgendaDoDono();
+  const { itens, imoveis } = await carregarAgendaDoDono({ exigir: true });
   // AGENDA-A: "Ver na Agenda" da edição do imóvel abre a Agenda já filtrada nele.
   const { imovel } = await searchParams;
   return (

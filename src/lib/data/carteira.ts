@@ -11,8 +11,13 @@ import { hojeBR } from "@/lib/utils";
  * O nome curto do morador só existe porque há contrato (depois do aceite); é lido no servidor.
  * Conta de teste (is_teste) vê os próprios dados de teste normalmente — só as métricas do admin as deixam de fora.
  */
-export async function getCarteiraDoDono(hojeISO = hojeBR()): Promise<ItemCarteira[]> {
-  const [props, contratos] = await Promise.all([listMyProperties(), getMeusContratos()]);
+/**
+ * Auditoria de erros e estados vazios, achado nº 12: com `exigir` (telas Carteira e Ganhos), a falha do banco nos imóveis
+ * ou nos contratos LANÇA — o painel mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de uma
+ * carteira vazia e de "R$ 0" de ganhos.
+ */
+export async function getCarteiraDoDono(hojeISO = hojeBR(), opcoes: { exigir?: boolean } = {}): Promise<ItemCarteira[]> {
+  const [props, contratos] = await Promise.all([listMyProperties({ exigir: opcoes.exigir }), getMeusContratos({ exigir: opcoes.exigir })]);
   const ativos = props.filter((p) => p.status === "active");
   if (ativos.length === 0) return [];
   const idsInquilinos = [...new Set(contratos.filter((c) => c.status === "ativo").map((c) => c.tenantId).filter(Boolean))];

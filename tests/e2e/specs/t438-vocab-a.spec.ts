@@ -31,7 +31,10 @@ for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
       await page.goto("/para-proprietarios", { waitUntil: "domcontentloaded" });
       const texto = await page.locator("main").innerText();
       expect(texto).toContain("A taxa de serviço da Viva é de 12% sobre o valor total do contrato fechado");
-      expect(texto).toContain("de 12% a 6%; acima de 30 imóveis, condições negociadas");
+      // E321: a faixa 31+ é regra de TAXA ("taxa negociável"); o Gestor tem a porta própria.
+      expect(texto).toContain("de 12% a 6%; com 31 ou mais imóveis ativos, taxa negociável");
+      expect(texto).toContain("Plano Gestor: 20 imóveis ou mais com documento aprovado, ou conta de administradora");
+      expect(texto).not.toContain("acima de 30 imóveis, condições negociadas");
       expect(texto).not.toMatch(PROIBIDAS);
       await page.screenshot({ path: `tests/laboratorio/saida/t438-proprietarios-${largura}.png` });
     });

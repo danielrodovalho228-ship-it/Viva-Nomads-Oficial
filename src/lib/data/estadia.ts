@@ -68,7 +68,10 @@ export interface Contexto {
 }
 
 /** A sessão e o papel no contrato. Quem não é parte não descobre que o contrato existe. */
-export async function contextoDaEstadia(contratoId: string): Promise<Contexto | { erro: string }> {
+/** Achado nº 14 (erros e estados vazios): a leitura do contrato FALHOU (banco) — não é "não encontrado". */
+export const MSG_ESTADIA_NAO_CARREGOU = "Não foi possível carregar a estadia agora. Tente de novo.";
+
+export async function contextoDaEstadia(contratoId: string): Promise<Contexto | { erro: string; falhou?: true }> {
   if (!UUID_RE.test(String(contratoId))) return { erro: "Contrato não encontrado." };
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -77,7 +80,8 @@ export async function contextoDaEstadia(contratoId: string): Promise<Contexto | 
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { erro: "Entre para continuar." };
-  const { data } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("id", contratoId).maybeSingle();
+  const { data, error } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("id", contratoId).maybeSingle();
+  if (error) return { erro: MSG_ESTADIA_NAO_CARREGOU, falhou: true };
   const c = data as unknown as LinhaContratoEstadia | null;
   if (!c) return { erro: "Contrato não encontrado." };
   const papel: PapelEstadia | null = c.tenant_id === user.id ? "inquilino" : c.properties?.owner_id === user.id ? "proprietario" : null;
@@ -178,6 +182,8 @@ async function fotoDoImovel(admin: SupabaseClient, propertyId: string): Promise<
 /** A página inteira, já na visão do papel de quem está olhando. */
 export async function carregarEstadia(contratoId: string, agora: Date = new Date()): Promise<EstadiaView | null> {
   const ctx = await contextoDaEstadia(contratoId);
+  // Falha do banco LANÇA: o painel mostra "Não conseguimos abrir esta tela" com "Tentar de novo", nunca a página 404.
+  if ("erro" in ctx && ctx.falhou) throw new Error(MSG_ESTADIA_NAO_CARREGOU);
   if ("erro" in ctx) return null;
   const { admin, c, papel, userId } = ctx;
   const blocos = blocosOrdenados(c).filter((b) => b.status !== "nao_aceito");

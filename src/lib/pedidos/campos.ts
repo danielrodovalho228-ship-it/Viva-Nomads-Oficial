@@ -197,6 +197,19 @@ export function dataPedidoBR(iso: string | null | undefined): string {
   return Number.isFinite(d.getTime()) ? d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "";
 }
 
+/**
+ * E319 (devolução 31/10): a data do "Fica no ar até o fim do dia …" por extenso, no dia de Brasília
+ * ("1º de março de 2027"). Só a forma muda — o dia é o mesmo de dataPedidoBR.
+ */
+export function dataPedidoPorExtenso(iso: string | null | undefined): string {
+  const d = new Date(String(iso ?? ""));
+  if (!Number.isFinite(d.getTime())) return "";
+  const partes = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "numeric", month: "long", year: "numeric" }).formatToParts(d);
+  const v = (t: string) => partes.find((x) => x.type === t)?.value ?? "";
+  const dia = Number(v("day"));
+  return `${dia === 1 ? "1º" : dia} de ${v("month").toLowerCase()} de ${v("year")}`;
+}
+
 /** Prompt 57 fase 2: o que o dono lê no cartão do pedido ("Internet medida 100+ Mbps"); sem exigência → null. */
 export function textoInternetPedido(mbps: number | null | undefined): string | null {
   return mbps && mbps > 0 ? `Internet medida ${mbps}+ Mbps` : null;

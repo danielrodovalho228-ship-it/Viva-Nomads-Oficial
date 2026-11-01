@@ -29,6 +29,15 @@ export interface RegistroEmailTeste {
   usuario_id: string | null;
 }
 
+/**
+ * E322 (01/11): o imóvel por extenso, lido da linha "Imóvel: …" do corpo (o assunto encurta o título em 40 caracteres,
+ * regra do e-mail). A caixa de teste mostra esse nome inteiro na própria linha. Sem a linha, null.
+ */
+export function imovelDoCorpo(corpo: string | null | undefined): string | null {
+  const m = /^\s*Imóvel:\s*(.+?)\s*$/m.exec(String(corpo ?? ""));
+  return m ? m[1] : null;
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Monta a linha a gravar: corta tamanhos e tira caracteres de controle. */

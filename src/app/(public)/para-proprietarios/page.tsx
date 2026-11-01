@@ -12,7 +12,8 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
-import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto } from "@/lib/cobranca/regra";
+import { PORTA_GESTOR_TEXTO } from "@/config/planos";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
 const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
@@ -49,7 +50,7 @@ export default function ForLandlordsPage() {
               condomínio e IPTU que podem ser transferidos ao morador conforme o contrato.
             </p>
             <p className="mt-4 text-base text-white/90">
-              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; acima de {LIMITE_FAIXAS} imóveis, condições negociadas). Sem mensalidade —{" "}
+              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; com {LIMITE_FAIXAS + 1} ou mais imóveis ativos, {ROTULO_FAIXA_NEGOCIAVEL}). Plano Gestor: {PORTA_GESTOR_TEXTO}. Sem mensalidade —{" "}
               <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
                 ver os preços
               </Link>

@@ -753,21 +753,30 @@ function resumo(rows: LinhaPedido[], papel: PapelNoPedido, nomes: Map<string, st
   }));
 }
 
+const MSG_PEDIDOS_SERVICO_NAO_CARREGARAM = "Não foi possível carregar os pedidos de serviço agora.";
+
 /** "Meus pedidos" de quem contrata (morador ou dono). */
-export async function meusPedidosDeServico(): Promise<ResumoPedido[]> {
+/** Auditoria de erros e estados vazios, achado nº 10: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhum pedido". */
+export async function meusPedidosDeServico(opcoes: { exigir?: boolean } = {}): Promise<ResumoPedido[]> {
   const s = await sessao();
   if ("erro" in s) return [];
-  const { data } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("cliente_id", s.userId).order("criado_em", { ascending: false }).limit(100);
+  const { data, error } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("cliente_id", s.userId).order("criado_em", { ascending: false }).limit(100);
+  if (error && opcoes.exigir) throw new Error(MSG_PEDIDOS_SERVICO_NAO_CARREGARAM);
   return resumo((data ?? []) as unknown as LinhaPedido[], "cliente", new Map());
 }
 
 /** Pedidos do parceiro logado (novos primeiro). O nome do cliente é só o primeiro até o aceite. */
-export async function pedidosDoMeuParceiro(): Promise<ResumoPedido[]> {
+/** Auditoria de erros e estados vazios, achado nº 10: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhum pedido". */
+export async function pedidosDoMeuParceiro(opcoes: { exigir?: boolean } = {}): Promise<ResumoPedido[]> {
   const s = await sessao();
   if ("erro" in s) return [];
-  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data: parc, error: erroParc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  if (erroParc && opcoes.exigir) throw new Error(MSG_PEDIDOS_SERVICO_NAO_CARREGARAM);
   if (!parc) return [];
-  const { data } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("parceiro_id", (parc as { id: string }).id).eq("aguardando_dono", false).order("criado_em", { ascending: false }).limit(200);
+  const { data, error } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("parceiro_id", (parc as { id: string }).id).eq("aguardando_dono", false).order("criado_em", { ascending: false }).limit(200);
+  if (error && opcoes.exigir) throw new Error(MSG_PEDIDOS_SERVICO_NAO_CARREGARAM);
   const rows = (data ?? []) as unknown as LinhaPedido[];
   const { data: perfis } = await s.admin.from("profiles").select("id, full_name").in("id", [...new Set(rows.map((r) => r.cliente_id))]);
   const completo = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((x) => [x.id, x.full_name]));

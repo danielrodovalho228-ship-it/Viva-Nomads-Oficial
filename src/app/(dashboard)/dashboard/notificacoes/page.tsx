@@ -9,6 +9,8 @@ import { listarPropostas } from "@/lib/data/propostas-actions";
 import { textoVencimento } from "@/lib/propostas/regras";
 import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
 
+const MSG_AVISOS_NAO_CARREGARAM = "Não conseguimos carregar os avisos agora. Recarregue a página em instantes.";
+
 /**
  * Notificações (critério 5) — E176 (parte 2): UMA página só, na casca da Conta. Em cima, o título e os dois cartões
  * do mockup perfil-06 (tipos de aviso e canais, LIGADOS por padrão); embaixo, os avisos (#avisos): propostas, pedidos
@@ -17,12 +19,14 @@ import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
 export default async function NotificacoesPage() {
   const [r, todas, pedidosNovos] = await Promise.all([
     avisosRecentes(),
-    listarPropostas().catch(() => []),
+    // Achado nº 13: a falha das propostas não pode virar "nada para responder" calado.
+    listarPropostas({ exigir: true }).catch(() => null),
     pedidosNovosCompativeis().catch(() => ({ total: 0, recentes: [] })),
   ]);
   const avisos = r?.avisos ?? [];
   // Propostas esperando a SUA resposta (prompt 27, item 7): o aviso no site, junto do push e do e-mail.
-  const propostas = todas.filter((p) => p.aguardandoVoce);
+  const propostas = (todas ?? []).filter((p) => p.aguardandoVoce);
+  const naoCarregou = todas === null || r?.falhou === true;
   const agora = new Date();
   return (
     <CascaConta ativo="notificacoes">
@@ -40,15 +44,20 @@ export default async function NotificacoesPage() {
         >
           Avisos recentes
         </h2>
+        {naoCarregou && (
+          <p role="alert" data-testid="avisos-falha" className="mb-4 rounded-lg border border-line bg-white px-3 py-2 text-sm text-amber-900">
+            {MSG_AVISOS_NAO_CARREGARAM}
+          </p>
+        )}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             label="Manutenções em aberto"
-            value={r?.abertas ?? 0}
+            value={r?.falhou ? "—" : (r?.abertas ?? 0)}
             icon={Wrench}
           />
           <StatCard
             label="Atualizações recentes"
-            value={avisos.length}
+            value={r?.falhou ? "—" : avisos.length}
             icon={Bell}
           />
         </div>
@@ -117,7 +126,9 @@ export default async function NotificacoesPage() {
           title="Atualizações de manutenção"
           data-testid="avisos-manutencao"
         >
-          {avisos.length === 0 ? (
+          {avisos.length === 0 && r?.falhou ? (
+            <p className="text-sm text-muted">{MSG_AVISOS_NAO_CARREGARAM}</p>
+          ) : avisos.length === 0 ? (
             <p className="text-sm text-muted">
               Nenhuma atualização por enquanto. As ordens de manutenção ficam em{" "}
               <Link

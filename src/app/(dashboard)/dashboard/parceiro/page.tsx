@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function ParceiroPainelPage({ searchParams }: { searchParams: Promise<{ ativada?: string }> }) {
   const sp = await searchParams;
-  const painel = await meuPainelParceiro();
+  const painel = await meuPainelParceiro({ exigir: true });
   if (painel) {
     return (
       <>

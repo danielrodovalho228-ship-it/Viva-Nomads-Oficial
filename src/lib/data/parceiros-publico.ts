@@ -31,6 +31,8 @@ export interface ParceiroPublico extends ParceiroNaBusca {
   descricaoCurta: string | null;
   avatarUrl: string | null;
   bannerUrl: string | null;
+  /** E306 (01/11): a 1ª foto da galeria do parceiro (só na busca) — capa do cartão quando ele não enviou capa. */
+  galeriaCapaUrl?: string | null;
   redes: { instagram: string | null; linkedin: string | null; facebook: string | null; tiktok: string | null; site: string | null };
 }
 
@@ -148,7 +150,19 @@ export async function buscarParceiros(f: { categoria?: string | null; cidade?: s
   const todos = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha).filter((p) => p.categorias.length > 0), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
   // O filtro "Emite nota fiscal" passa pela mesma função do documento do serviço (fiscal.ts).
   const comNota = todos.filter((p) => passaFiltroNota(p, true)).length;
-  const lista = f.soNota ? todos.filter((p) => passaFiltroNota(p, true)) : todos;
+  const filtrada = f.soNota ? todos.filter((p) => passaFiltroNota(p, true)) : todos;
+  // E306 (01/11): sem capa enviada, o cartão usa uma foto DO PRÓPRIO parceiro — a 1ª da galeria (antes caía na foto
+  // genérica da categoria). Uma consulta só para os parceiros sem capa.
+  const semCapa = filtrada.filter((p) => !p.bannerUrl).map((p) => p.id);
+  const primeira = new Map<string, string>();
+  if (semCapa.length) {
+    const { data: fotos } = await sb.from("parceiro_galeria").select("parceiro_id, path, ordem").in("parceiro_id", semCapa).order("ordem");
+    for (const g of (fotos ?? []) as { parceiro_id: string; path: string }[]) {
+      const url = urlMidiaParceiro(g.path);
+      if (url && !primeira.has(g.parceiro_id)) primeira.set(g.parceiro_id, url);
+    }
+  }
+  const lista = filtrada.map((p) => (primeira.has(p.id) ? { ...p, galeriaCapaUrl: primeira.get(p.id)! } : p));
   return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota };
 }
 

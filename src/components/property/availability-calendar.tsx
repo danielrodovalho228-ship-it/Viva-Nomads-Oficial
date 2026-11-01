@@ -167,8 +167,9 @@ export function AvailabilityCalendar({
           ];
           return (
             <div key={`${y}-${m}`} className="rounded-xl border border-sage-200 p-3">
-              <p className="mb-2 text-center text-sm font-semibold text-ink first-letter:uppercase">
-                {MESES[m]} {y}
+              {/* E310: mês minúsculo, como se escreve em português ("novembro de 2026"). */}
+              <p className="mb-2 text-center text-sm font-semibold text-ink">
+                {MESES[m]} de {y}
               </p>
               <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-muted">
                 {DIAS.map((d, i) => (
