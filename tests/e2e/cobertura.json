@@ -1215,7 +1215,8 @@
         "t713-e261-avisos-titulo",
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t954-e415-qualificacao-credita-provas"
       ]
     },
     "/dashboard/indicacoes": {
@@ -6226,7 +6227,8 @@
         "proprietario"
       ],
       "specs": [
-        "t296-niveis-exibicao-59-1"
+        "t296-niveis-exibicao-59-1",
+        "t954-e415-qualificacao-credita-provas"
       ]
     },
     "src/lib/data/intencao-actions.ts#getMinhaIntencao": {
