@@ -58,7 +58,8 @@ for (const largura of LARGURAS) {
 
     test(`#1875: títulos de "Fale com a Viva" e de "Publique seu pedido" em verde (${largura} px)`, async ({ page }) => {
       await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
-      const titulos = page.locator("h2", { hasText: /^(Antes de escrever|Outros assuntos)$/ });
+      // O texto do h2 vem depois do ícone com um espaço na frente (" Antes de escrever"): a regra aceita o espaço em volta.
+      const titulos = page.locator("h2", { hasText: /^\s*(Antes de escrever|Outros assuntos)\s*$/ });
       await expect(titulos).toHaveCount(2, { timeout: 20_000 });
       const verde = await verdeDaMarca(page);
       const estilos = await titulos.evaluateAll((els) => els.map((e) => ({ texto: e.textContent?.trim(), cor: getComputedStyle(e).color, tamanho: getComputedStyle(e).fontSize })));
