@@ -134,3 +134,16 @@ aplicar idempotente e rollback.
   - P6 (apagar de verdade os caches de fornecedor e passar itens da fase 2 para a fase 1);
   - `airbnb_monthly_price` no inventário, que depende do E399-B parte 2 (parecer da Dra. Beatriz);
   - os prazos do item 13.
+
+## 7. Deleções aprovadas (01/11/2026)
+
+- **Aprovação:** Daniel, 01/11/2026, 17:28 (CST), no chat principal; registrada na lista-master (linha do E293).
+- **O que entra** (migração `0281`, aplicada no merge; rotina diária às 04h17 UTC pelo `pg_cron`; cada linha no livro
+  `eliminacoes_registro` com motivo `decisao`):
+  - P6: medição do morador processada (1 dia); do dono, só a última medição válida de cada imóvel e ponto;
+    `tempos_deslocamento` e `proximidades_cep` com mais de 30 dias; linhas da Mapbox;
+  - P5: verificação CAF vencida fica só com o veredito.
+- **Conferido antes, em produção (só leitura, 01/11):** 0 linhas em cada critério. A primeira rodada não apaga nada hoje.
+- **Fora (não é deleção ou depende de outra decisão):** P4 (opção a/b), coluna `caf_transacao_id`, `destinos` refeitos
+  pelo OSM e os prazos do item 13.
+
