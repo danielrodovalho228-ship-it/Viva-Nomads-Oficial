@@ -84,7 +84,8 @@
         "t546-e175-parcerias-uma-linha",
         "t549-varredura-bloco39",
         "t588-varredura-bloco46",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t853-varredura-bloco157"
       ]
     },
     "/admin/2fa/refazer": {
@@ -1533,7 +1534,8 @@
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
         "t589-varredura-bloco47",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t853-varredura-bloco157"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1767,7 +1769,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t853-varredura-bloco157"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1777,7 +1780,8 @@
       "specs": [
         "t314-entrada-avaliador-62b3",
         "t319-varredura-bloco10",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t853-varredura-bloco157"
       ]
     },
     "/parceiros/fotografos": {
@@ -1792,7 +1796,8 @@
         "t236-parceiros-ciclo",
         "t311-marco-principal-unico",
         "t353-varredura-bloco18",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t853-varredura-bloco157"
       ]
     },
     "/pedidos": {
@@ -2024,7 +2029,8 @@
       "specs": [
         "t219-servicos-morador",
         "t298-varredura-logada-bloco4",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t853-varredura-bloco157"
       ]
     },
     "/admin/servicos": {
@@ -2091,7 +2097,8 @@
       "specs": [
         "t231-admin-numeros-com-lista",
         "t48-varredura",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t853-varredura-bloco157"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -2138,7 +2145,8 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t853-varredura-bloco157"
       ]
     },
     "/parceiros/buscar": {
@@ -2498,7 +2506,8 @@
       "specs": [
         "t313-ativacao-funil-50",
         "t319-varredura-bloco10",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t853-varredura-bloco157"
       ]
     },
     "/admin/qualidade": {
