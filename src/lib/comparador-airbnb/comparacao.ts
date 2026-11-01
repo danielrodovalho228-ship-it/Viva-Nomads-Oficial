@@ -80,3 +80,34 @@ export function precisaReconsultar(consultadoEm: string | null, agora: Date): bo
   const t = Date.parse(consultadoEm);
   return !Number.isFinite(t) || agora.getTime() - t >= DIAS_RECONSULTA * DIA_MS;
 }
+
+/** Pacote 3 — o que a FICHA do anúncio mostra (só com o selo; o aviso de preço acima é só do dono). */
+export interface ComparacaoFicha {
+  totalAirbnb30: number;
+  /** Quanto o total por mês da Viva fica abaixo das 30 noites no Airbnb. */
+  diferenca: number;
+  consultadoEm: string;
+  /** Fonte simulada (antes do fornecedor real). */
+  simulado: boolean;
+}
+
+export function comparacaoParaFicha(e: (EntradaSelo & { fonte: string | null }) | null, agora: Date): ComparacaoFicha | null {
+  if (!e || !decidirSelo(e, agora).selo || e.total30 == null || !e.consultadoEm) return null;
+  return {
+    totalAirbnb30: e.total30,
+    diferenca: Math.round((e.total30 - e.totalViva) * 100) / 100,
+    consultadoEm: e.consultadoEm,
+    simulado: (e.fonte ?? "simulada") === "simulada",
+  };
+}
+
+const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+export function textoComparacaoFicha(c: ComparacaoFicha): { principal: string; detalhe: string; simulado: string | null } {
+  const [, mes, dia] = c.consultadoEm.slice(0, 10).split("-");
+  return {
+    principal: `Total por mês ${brl(c.diferenca)} a menos que 30 noites do mesmo imóvel no Airbnb.`,
+    detalhe: `30 noites no Airbnb: ${brl(c.totalAirbnb30)}, com descontos, limpeza e taxas (consulta de ${dia}/${mes}).`,
+    simulado: c.simulado ? "Valores simulados enquanto a consulta real não está ligada." : null,
+  };
+}
