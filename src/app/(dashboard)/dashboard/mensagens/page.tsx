@@ -9,5 +9,5 @@ export default async function MessagesPage({ searchParams }: { searchParams?: Pr
   // em que a pessoa é parte (vazia se ainda não há mensagem, com o nome do outro lado); conversa que não está na lista
   // a tela diz que não encontrou — nunca abre a de outra pessoa.
   const pedida = sp.conversa && UUID_RE.test(sp.conversa) ? sp.conversa : undefined;
-  return <MessagesClient initial={await listConversations()} abrir={pedida} />;
+  return <MessagesClient initial={await listConversations({ exigir: true })} abrir={pedida} />;
 }
