@@ -20,7 +20,7 @@ import {
   carregarQualificacao,
   saveQualification,
   saveDraftData,
-  loadDraftData,
+  abrirRascunho,
   enderecoGravadoDoImovel,
   getLatestDraft,
   carregarLimitesNegociacao,
@@ -28,6 +28,8 @@ import {
   type DocumentStatus,
 } from "@/lib/data/actions";
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
+import Link from "next/link";
+import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -919,14 +921,24 @@ export default function NewPropertyPage() {
   }
 
   const draftIdRef = useRef<string | null>(null);
+  // E420: rascunho da URL que não existe ou é de outra conta — avisa, em vez de abrir um cadastro novo em silêncio.
+  const [fechado, setFechado] = useState<{ id: string; motivo: MotivoRascunhoFechado } | null>(null);
+  // Vale só para o ?draft= atual: "Começar um anúncio novo" (mesma rota, sem ?draft=) já não mostra o aviso.
+  const rascunhoFechado = fechado && fechado.id === draftParam ? fechado.motivo : null;
   // P0 (30/10): depois do "Começar outro", a 1ª gravação cria um rascunho NOVO (o servidor não reaproveita o inacabado).
   const comecouOutroRef = useRef(false);
   useEffect(() => {
     if (!draftParam || draftParam === draftIdRef.current) return;
     let alive = true;
     (async () => {
-      const d = await loadDraftData(draftParam);
+      const r = await abrirRascunho(draftParam).catch(() => ({ ok: false as const, motivo: "indisponivel" as const }));
       if (!alive) return;
+      if (!r.ok) {
+        // Sem adotar o id nem liberar o formulário: nada é gravado por cima, nenhum rascunho novo nasce daqui.
+        setFechado({ id: draftParam, motivo: r.motivo });
+        return;
+      }
+      const d = r.draft;
       draftIdRef.current = draftParam;
       setDraftServerId(draftParam);
       setApproved(true);
@@ -1775,6 +1787,24 @@ export default function NewPropertyPage() {
     erros,
   };
   const meta = STEP_META[step];
+
+  if (rascunhoFechado) {
+    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
+    return (
+      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
+        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
+        <p className="mt-2 text-sm text-ink">{t.texto}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
+            Ver meus imóveis
+          </Link>
+          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
+            Começar um anúncio novo
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
