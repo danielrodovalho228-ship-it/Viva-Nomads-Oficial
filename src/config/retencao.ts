@@ -173,7 +173,9 @@ export const INVENTARIO: ItemInventario[] = [
   i("limites_uso", "public.limites_uso", "chave com uid ou hash do IP", "limite de uso", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("emails_teste", "public.emails_teste", "e-mails das contas de teste", "o QA ler os e-mails enviados", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("pedidos_ajuda_publicacao", "public.pedidos_ajuda_publicacao", "observação do dono", "ajuda para publicar", CONTA),
-  i("property_ownership_checks", "public.property_ownership_checks", "matrícula, motivo e campos conferidos", "titularidade", CONTA, "veredito"),
+  // E293 P1: dos proprietários só o veredito (nome/CPF conferem, fração, quantos); ônus sem credor. Ao sair o arquivo,
+  // saem também campos_extraidos, onus, matricula_numero e cartorio (LIMPEZA_MATRICULA_ELIMINADA).
+  i("property_ownership_checks", "public.property_ownership_checks", "número da matrícula, cartório, veredito por proprietário (sem nome nem CPF), tipos de ônus (sem credor) e motivo", "titularidade", CONTA, "veredito (resultado, motivo e CAF ok); o resto sai junto com o arquivo"),
   i("qualification_checklists", "public.qualification_checklists", "caminho do documento do imóvel", "qualificação", CONTA, "veredito"),
   i("tempos_deslocamento", "public.tempos_deslocamento", "chave com lat/lng do local de trabalho digitado", "tempo até o trabalho (37)", CONTA),
   // DESTINO-PESSOAL-B: o "Outro local" da pessoa logada (rótulo sem número, ponto com 3 casas). Só ela lê; sai com a conta.
