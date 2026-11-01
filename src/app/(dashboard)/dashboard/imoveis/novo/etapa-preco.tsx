@@ -195,7 +195,8 @@ export function EtapaPreco(p: {
             </fieldset>
             <fieldset className="mt-3">
               <legend className="text-sm font-medium text-ink">Duração máxima</legend>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Duração máxima">
+              {/* Varredura 01/11: 2 opções → 2 colunas (na grade de 4 sobravam duas casas vazias). */}
+              <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Duração máxima">
                 {["90", "180"].map((d) => (
                   <CartaoEscolha key={d} on={p.maxPeriod === d} onClick={() => p.setMaxPeriod(d)} rotulo={`${d} dias`} testid={`duracao-maxima-${d}`} />
                 ))}

@@ -290,7 +290,7 @@ function GrupoComodidades(p: {
       <p className="text-sm font-semibold text-forest">{p.titulo}</p>
       {/* E193 (reteste de 30/10, ordem do Daniel de 25/10): várias escolhas = o cartão grande tocável da Qualificação,
           em grade (mockup cadastro-imovel-05), o mesmo de todo o assistente. */}
-      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      <div className="grade-par mt-2 grid gap-2 sm:grid-cols-2">
         {itens.map((it) => {
           const on = !!p.marcadas[it.key];
           const sug = on && p.sugeridas.includes(it.key);

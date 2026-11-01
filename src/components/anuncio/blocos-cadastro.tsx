@@ -287,11 +287,11 @@ export function ProntoParaTrabalhar({
       <p className="mt-1 text-xs text-muted">Profissionais procuram isso primeiro.</p>
       {/* E146: essenciais e opcionais em linhas separadas — o contador conta só a primeira, chip a chip. */}
       <p className="mt-3 text-xs font-semibold text-ink">Essenciais · contam para a etiqueta</p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="trabalho-essenciais">
+      <div className="grade-par mt-2 grid gap-2 sm:grid-cols-2" data-testid="trabalho-essenciais">
         {ESSENCIAIS_TRABALHO.map((it) => item(it, true))}
       </div>
       <p className="mt-3 text-xs font-semibold text-ink">Opcionais · não contam</p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-2" data-testid="trabalho-opcionais">
+      <div className="grade-par mt-2 grid gap-2 sm:grid-cols-2" data-testid="trabalho-opcionais">
         {OPCIONAIS_TRABALHO.map((it) => item(it, false))}
       </div>
       {semInternet ? (
