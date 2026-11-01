@@ -51,10 +51,19 @@ export async function contarUsuarios(admin: Admin): Promise<Contagem> {
   return contarRealETeste((data ?? []) as { is_teste: boolean | null }[], (p) => p.is_teste === true);
 }
 
+/**
+ * E334: quantos registros uma tabela guarda AGORA — a mesma contagem para a caixa de e-mails de teste, para a rodada
+ * diária da retenção (que grava o retrato das 10h) e para a coluna "Guardados agora" de Admin → Retenção.
+ * null = não deu para ler.
+ */
+export async function contarGuardados(admin: Admin, tabela: string): Promise<number | null> {
+  const { count, error } = await admin.from(tabela).select("*", { count: "exact", head: true });
+  return error ? null : (count ?? 0);
+}
+
 /** E-mails de teste guardados: o total exato (não o tamanho da lista mostrada). */
 export async function contarEmailsTeste(admin: Admin): Promise<number> {
-  const { count } = await admin.from("emails_teste").select("id", { count: "exact", head: true });
-  return count ?? 0;
+  return (await contarGuardados(admin, "emails_teste")) ?? 0;
 }
 
 /** Os 4 números da inicial, em paralelo, com UMA leitura das contas de teste. */

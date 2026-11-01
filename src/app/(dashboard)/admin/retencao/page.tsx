@@ -9,6 +9,7 @@ import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import { resumoDaSemana, rotuloMotivo, type LinhaLivro } from "@/lib/minimizacao/painel";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { textoRealTeste } from "@/lib/admin/contagens";
+import { contarGuardados } from "@/lib/data/admin-contagens";
 
 export const metadata = { title: tituloDoAdmin("/admin/retencao"), robots: { index: false, follow: false } };
 
@@ -56,7 +57,16 @@ export default async function AdminRetencaoPage() {
   const dia = (ultimo?.dia as string | undefined) ?? null;
   const { data: relatorio } = dia ? await admin.from("eliminacoes_simulado").select("dia, item, guardados, vencidos, vencidos_teste, real, prazo, base").eq("dia", dia).order("item") : { data: [] };
   const semana = resumoDaSemana((livro ?? []) as LinhaLivro[], agora);
-  const linhas = (relatorio ?? []) as Simulado[];
+  const linhasDaRodada = (relatorio ?? []) as Simulado[];
+  // E334: "Guardados" é AGORA, pela mesma contagem da caixa de e-mails de teste (contarGuardados). O retrato da rodada
+  // das 10h ficava atrás (188 na Retenção × 190 na caixa); sem leitura agora, fica o número da rodada.
+  const agoraGuardados = await Promise.all(
+    linhasDaRodada.map((l) => {
+      const origem = POR_ID.get(l.item)?.origem;
+      return origem?.startsWith("public.") ? contarGuardados(admin, origem.slice(7)).catch(() => null) : Promise.resolve(null);
+    }),
+  );
+  const linhas = linhasDaRodada.map((l, i) => ({ ...l, guardados: agoraGuardados[i] ?? l.guardados }));
   const abertos = (alertas ?? []) as { id: string; item: string; erro: string; criado_em: string }[];
 
   return (
@@ -102,7 +112,7 @@ export default async function AdminRetencaoPage() {
               <thead className="text-xs text-muted">
                 <tr>
                   <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3">Guardados</th>
+                  <th className="py-2 pr-3">Guardados agora</th>
                   <th className="py-2 pr-3">Vencidos</th>
                   <th className="py-2 pr-3">Teste</th>
                   <th className="py-2 pr-3">Prazo</th>
