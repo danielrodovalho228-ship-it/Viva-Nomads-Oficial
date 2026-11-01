@@ -375,7 +375,8 @@
         "t80-camera-chamado",
         "t607-varredura-bloco51",
         "t669-ms1-topo-publico",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t856-conformidade-fina-ajuda-busca"
       ]
     },
     "/alerta-busca/desligar": {
@@ -1830,7 +1831,8 @@
         "t310-vao-fim-de-pagina",
         "t368-varredura-bloco20",
         "t479-e136b-calendario-pt-br",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t856-conformidade-fina-ajuda-busca"
       ]
     },
     "/precos": {
