@@ -35,3 +35,15 @@ export function capaDoParceiro(p: { nomePublico: string; bannerUrl: string | nul
 
 /** E299: o selo que todo parceiro publicado tem (passou pela aprovação da Viva) — o mesmo texto no cartão e no detalhe. */
 export const SELO_APROVADO = "Aprovado pela Viva";
+
+/**
+ * E341 (01/11): o que o editor do parceiro diz sobre a capa que VALE na página pública (a mesma `capaDoParceiro`). Sem
+ * capa própria, a página usa outra foto — o editor mostra qual e como trocar, em vez de "sem capa".
+ */
+export function avisoCapaNoEditor(origem: NonNullable<CapaParceiro>["origem"] | null): string {
+  if (origem === "capa") return "Esta é a capa da sua página.";
+  if (origem === "galeria") return "Sem capa própria: sua página usa como capa a 1ª foto da sua galeria. Envie uma capa para escolher a sua.";
+  if (origem === "foto") return "Sem capa própria: sua página usa como capa a sua foto de perfil. Envie uma capa para escolher a sua.";
+  if (origem === "categoria") return "Sem capa própria: sua página usa uma foto ilustrativa da sua categoria. Envie uma capa ou fotos do seu trabalho.";
+  return "Sem capa: envie uma foto larga para o topo da sua página.";
+}
