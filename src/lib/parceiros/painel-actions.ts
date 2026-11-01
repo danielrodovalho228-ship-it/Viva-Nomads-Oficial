@@ -61,7 +61,9 @@ export interface PainelParceiro {
   falta: string[];
 }
 
-async function meu(): Promise<{ admin: Admin; userId: string; p: Record<string, unknown> } | null> {
+const MSG_PAINEL_PARCEIRO_NAO_CARREGOU = "Não foi possível carregar o seu painel de parceiro agora.";
+
+async function meu(opcoes: { exigir?: boolean } = {}): Promise<{ admin: Admin; userId: string; p: Record<string, unknown> } | null> {
   const supabase = await createClient();
   if (!supabase) return null;
   const {
@@ -69,7 +71,9 @@ async function meu(): Promise<{ admin: Admin; userId: string; p: Record<string, 
   } = await supabase.auth.getUser();
   const admin = createAdminClient();
   if (!user || !admin) return null;
-  const { data: p } = await admin.from("parceiros").select("*").eq("user_id", user.id).maybeSingle();
+  const { data: p, error } = await admin.from("parceiros").select("*").eq("user_id", user.id).maybeSingle();
+  // Achado nº 15: a falha do banco não pode virar "ainda não é parceiro" (o painel mostraria o formulário de pedido).
+  if (error && opcoes.exigir) throw new Error(MSG_PAINEL_PARCEIRO_NAO_CARREGOU);
   return p ? { admin, userId: user.id, p } : null;
 }
 
@@ -112,16 +116,19 @@ function faltaDe(p: Record<string, unknown>, c: { servicos: number; fotos: numbe
 function atualizarTelas(_slug: string) {
   void _slug;
 }
-export async function meuPainelParceiro(): Promise<PainelParceiro | null> {
-  const m = await meu();
+/** Achado nº 15 (erros e estados vazios): com `exigir` (a tela do painel), a falha do banco LANÇA — o painel mostra
+ * "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez do formulário de pedido ou de "nenhum serviço". */
+export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Promise<PainelParceiro | null> {
+  const m = await meu(opcoes);
   if (!m) return null;
   const { admin, p } = m;
   const id = p.id as string;
-  const [{ data: sv }, { data: gl }, { data: ag }] = await Promise.all([
+  const [{ data: sv, error: e1 }, { data: gl, error: e2 }, { data: ag, error: e3 }] = await Promise.all([
     admin.from("parceiro_servicos").select("id, categoria, titulo, descricao, preco_base, unidade, prazo_dias, ativo").eq("parceiro_id", id).order("criado_em"),
     admin.from("parceiro_galeria").select("id, path, legenda, ordem").eq("parceiro_id", id).order("ordem"),
     admin.from("parceiro_agenda").select("id, tipo, dia_semana, inicio, fim, data_inicio, data_fim").eq("parceiro_id", id).order("tipo").order("dia_semana").order("data_inicio"),
   ]);
+  if ((e1 || e2 || e3) && opcoes.exigir) throw new Error(MSG_PAINEL_PARCEIRO_NAO_CARREGOU);
   const servicos = (sv ?? []).map((s) => ({
     id: s.id as string,
     categoria: s.categoria as string,
