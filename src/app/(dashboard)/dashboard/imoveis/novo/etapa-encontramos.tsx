@@ -17,6 +17,10 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
+/** Conformidade do cadastro (mockup cadastro-imovel-04, 01/11): título do cartão dos números e o lembrete do mockup. */
+export const TITULO_CARACTERISTICAS = "Características do imóvel";
+export const ESPACO_EDITAR_DEPOIS = "Você pode revisar e editar depois, a qualquer momento.";
+
 const CHAVES_BLOCO_TRABALHO = new Set<string>([...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO].map((i) => i.chave));
 
 /** Qual pedaço do cadastro esta tela mostra (assistente em 10 passos, mockups cadastro-imovel-01..10). */
@@ -212,13 +216,21 @@ export function EtapaEncontramos(p: {
       <div className="space-y-4" data-testid="etapa-espaco">
         {/* E134: cartão de linhas iguais (mockup cadastro-imovel-04) — rótulo e dica à esquerda, contador à direita;
             nenhuma dica desloca a caixa e não sobra buraco de grade ímpar. */}
-        <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros">
+        {/* Conformidade do cadastro (mockup 04, 01/11): o cartão dos números tem o título do mockup. */}
+        <h2 className="text-base font-semibold text-ink" id="caracteristicas-titulo">
+          {TITULO_CARACTERISTICAS}
+        </h2>
+        <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros" aria-labelledby="caracteristicas-titulo">
           <LinhaNumero label="Quartos" dica="Número de quartos" valor={p.bedrooms} onChange={(v) => { p.setBedrooms(v); p.tirarSugestao("quartos"); }} sugerido={p.sugerido("quartos")} testid="cadastro-quartos" />
           <LinhaNumero label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
           <LinhaNumero label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
           <LinhaNumero label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
           <LinhaNumero label="Vagas" dica="Vagas de garagem" valor={p.parkingSpots} onChange={p.setParkingSpots} daMatricula={p.daMatricula?.has("vagas")} testid="cadastro-vagas" />
         </div>
+        {/* Mockup 04: o lembrete de que nada é definitivo (o mesmo papel do "reorganizar depois" do Passo 2). */}
+        <p className="text-sm text-muted" data-testid="espaco-editar-depois">
+          {ESPACO_EDITAR_DEPOIS}
+        </p>
       </div>
     );
   }
