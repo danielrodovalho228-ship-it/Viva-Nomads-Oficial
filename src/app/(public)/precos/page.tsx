@@ -4,7 +4,7 @@ import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
 import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa, ROTULO_FAIXA_NEGOCIAVEL } from "@/lib/cobranca/regra";
-import { GESTOR_PRECO } from "@/config/planos";
+import { PORTA_GESTOR_TEXTO } from "@/config/planos";
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -117,7 +117,7 @@ export default function PricingPage() {
           <div id="plano-gestor" className="mt-6 scroll-mt-24 rounded-xl bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="plano-gestor-secao">
             <h3 className="font-semibold text-ink">Plano Gestor</h3>
             <p className="mt-1">
-              Para quem tem {GESTOR_PRECO.minimoImoveis} imóveis ou mais, ou é administradora: condições negociadas com o time da Viva.
+              Para {PORTA_GESTOR_TEXTO}: condições negociadas com o time da Viva.
               É outra regra, diferente da faixa &ldquo;31+ · {ROTULO_FAIXA_NEGOCIAVEL}&rdquo; da tabela acima, que vale para qualquer
               anunciante pela quantidade de imóveis ativos.
             </p>
@@ -128,6 +128,11 @@ export default function PricingPage() {
               Anunciar meu imóvel
             </ButtonLink>
             <PlanoGestorForm />
+            {/* E302 (resíduo, 01/11): a ação de VER o Plano Gestor também aqui — rola até a seção #plano-gestor da própria
+                página; "Falar sobre o Plano Gestor" segue como a ação de contato. */}
+            <ButtonLink href="#plano-gestor" variant="tertiary" size="lg" className="self-center" data-testid="precos-ver-plano-gestor">
+              Ver o Plano Gestor
+            </ButtonLink>
           </div>
         </div>
 

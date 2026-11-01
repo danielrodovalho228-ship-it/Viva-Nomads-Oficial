@@ -200,6 +200,85 @@ export function corpoInternetAbaixo(d: { imovel: Imovel; morador?: { download?: 
   };
 }
 
+// ── Calendário importado (Prompt 53) ────────────────────────────────────────────────────────────────────────────
+const COMPROMISSO: Record<string, string> = { contrato: "um contrato", proposta: "uma proposta", candidatura: "uma candidatura" };
+
+/** E267 (restante): data importada cruza um compromisso da Viva — o imóvel, as datas de lá e o compromisso daqui. */
+export function corpoCalendarioConflito(d: {
+  imovel: Imovel;
+  importado: { inicio: string; fim: string };
+  compromisso: { tipo: string; inicio: string; fim: string };
+}): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  const la = `${dia(d.importado.inicio)} a ${dia(d.importado.fim)}`;
+  const aqui = `${COMPROMISSO[d.compromisso.tipo] ?? "um compromisso"} de ${dia(d.compromisso.inicio)} a ${dia(d.compromisso.fim)}`;
+  const linhas = linhaImovel(d.imovel);
+  linhas.push({ rotulo: "Ocupado no outro site", valor: la });
+  linhas.push({ rotulo: "Na Viva", valor: aqui.charAt(0).toLocaleUpperCase("pt-BR") + aqui.slice(1) });
+  return {
+    subject: assuntoComTitulo("Datas importadas cruzam a agenda de ", titulo),
+    body: (n) =>
+      `${ola(n)}, o calendário importado marcou ${la} como ocupado${titulo ? ` em ${titulo}` : " no seu imóvel"}, e na Viva há ${aqui}. Nada foi cancelado: confira as datas e decida qual vale.`,
+    linhas,
+  };
+}
+
+/** E267 (restante): o link do calendário falhou 3 vezes — o imóvel e a causa. */
+export function corpoCalendarioFalha(d: { imovel: Imovel; causa?: string | null }): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  const causa = limpo(d.causa);
+  const linhas = linhaImovel(d.imovel);
+  if (causa) linhas.push({ rotulo: "O que aconteceu", valor: causa });
+  return {
+    subject: assuntoComTitulo("Não conseguimos ler o calendário importado de ", titulo),
+    body: (n) =>
+      `${ola(n)}, tentamos ler o link do calendário do outro site${titulo ? ` de ${titulo}` : ""} 3 vezes seguidas, sem sucesso${causa ? ` (${causa.replace(/\.$/, "")})` : ""}. Enquanto isso, as datas de lá não chegam aqui.`,
+    linhas,
+  };
+}
+
+// ── Verificação de identidade parada (Prompt 50) ──────────────────────────────────────────────────────────────
+/** E267 (restante): o motivo da última tentativa e o próximo passo NO CORPO (antes, só na versão em texto). */
+export function corpoVerificacaoParada(d: { titulo: string; proximoPasso: string }): CorpoResidual {
+  return {
+    subject: null,
+    body: (n) => `${ola(n)}, a última tentativa de verificar sua identidade não passou: ${d.titulo.toLocaleLowerCase("pt-BR")}. ${d.proximoPasso}`,
+    linhas: [
+      { rotulo: "Última tentativa", valor: d.titulo },
+      { rotulo: "O que fazer agora", valor: d.proximoPasso },
+    ],
+  };
+}
+
+// ── Pedido de moradia: resposta e aceite (E267, resíduo de 01/11) ───────────────────────────────────────────────
+/** Ao morador: QUEM respondeu ao pedido de moradia, com QUAL imóvel (antes: "um proprietário respondeu"). */
+export function corpoPedidoResposta(d: { imovel: Imovel; quem?: string | null; cidade?: string | null; inicio?: string | null }): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  const quem = limpo(d.quem) || "um proprietário";
+  const cidade = limpo(d.cidade);
+  const inicio = dia(d.inicio);
+  const linhas = linhaImovel(d.imovel);
+  if (cidade || inicio) linhas.push({ rotulo: "Seu pedido", valor: [cidade, inicio ? `entrada em ${inicio}` : ""].filter(Boolean).join(", ") });
+  return {
+    subject: assuntoComTitulo("Resposta ao seu pedido: ", titulo),
+    body: (n) =>
+      `${ola(n)}, ${quem} respondeu ao seu pedido de moradia${cidade ? ` em ${cidade}` : ""} com ${titulo ? `o imóvel ${titulo}` : "um imóvel"}. Veja e aceite para conversar pela plataforma.`,
+    linhas,
+  };
+}
+
+/** Ao dono: QUEM aceitou a resposta e sobre QUAL imóvel a conversa abriu (antes: "um inquilino aceitou"). */
+export function corpoPedidoAceito(d: { imovel: Imovel; quem?: string | null }): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  const quem = limpo(d.quem) || "o morador";
+  return {
+    subject: assuntoComTitulo("Conversa aberta sobre ", titulo),
+    body: (n) =>
+      `${ola(n)}, ${quem} aceitou a sua resposta ao pedido de moradia${titulo ? ` com ${titulo}` : ""} e abriu a conversa. Responda pela plataforma.`,
+    linhas: linhaImovel(d.imovel),
+  };
+}
+
 /** O que vai ao notify(): assunto (se houver), abertura e o bloco "Imóvel / …" em HTML escapado. */
 export function paraNotify(c: CorpoResidual): { subject?: string; body: (nome?: string) => string; detailsHtml?: string } {
   return {

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
@@ -171,7 +173,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <legend className="text-sm font-medium text-ink">Você atende como</legend>
         <div className="mt-1 grid grid-cols-2 gap-2">
           {(["pf", "pj"] as const).map((t) => (
-            <label key={t} className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold ${c.tipoPessoa === t ? "border-blue-500 bg-blue-50 text-blue-700" : "border-sage-200 bg-white text-ink"}`}>
+            <label key={t} className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold ${c.tipoPessoa === t ? "border-forest bg-sage-100 text-forest" : "border-sage-200 bg-white text-ink"}`}>
               <input type="radio" name="sp-tipo" value={t} checked={c.tipoPessoa === t} onChange={() => set("tipoPessoa", t)} className="sr-only" />
               {t === "pf" ? "Pessoa física (CPF)" : "Empresa ou MEI (CNPJ)"}
             </label>
@@ -188,7 +190,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
           <legend className="text-sm font-medium text-ink">{PERGUNTA_NOTA}</legend>
           <div className="mt-1 grid grid-cols-2 gap-2">
             {(["sim", "nao"] as const).map((v) => (
-              <label key={v} className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold ${c.emiteNota === v ? "border-blue-500 bg-blue-50 text-blue-700" : "border-sage-200 bg-white text-ink"}`}>
+              <label key={v} className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold ${c.emiteNota === v ? "border-forest bg-sage-100 text-forest" : "border-sage-200 bg-white text-ink"}`}>
                 <input type="radio" name="sp-emite-nota" value={v} checked={c.emiteNota === v} onChange={() => set("emiteNota", v)} className="sr-only" data-testid={`sp-emite-nota-${v}`} />
                 {v === "sim" ? "Sim" : "Não"}
               </label>
@@ -200,20 +202,45 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
 
       <fieldset>
         <legend className="text-sm font-medium text-ink">Categorias</legend>
-        {/* Grade par (31/10): com número ímpar de categorias, a última ocupa a linha inteira em vez de ficar sozinha. */}
-        <div className="mt-1 grid grid-cols-2 gap-2" data-testid="sp-categorias">
-          {CATEGORIAS_CATALOGO.map((k) => (
-            <label key={k.valor} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-3 text-sm text-ink odd:last:col-span-2">
-              <input
-                type="checkbox"
-                checked={temCategoria(k.valor)}
-                onChange={(e) => set("categorias", e.target.checked ? [...c.categorias, k.valor] : c.categorias.filter((x) => x !== k.valor))}
-                data-testid={`sp-cat-${k.valor}`}
-              />
-              {k.rotulo}
-            </label>
-          ))}
+        {/* Conformidade parceiro-cadastro (01/11): as categorias com foto viram cartões com foto, como no mockup (2 no
+            celular, 3 no computador — grade par com as 6 fotos); a que não tem foto ("Outro serviço") fica numa linha
+            inteira embaixo, sem foto inventada. A caixa de marcar continua no canto do cartão. */}
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="sp-categorias">
+          {CATEGORIAS_CATALOGO.filter((k) => fotoDaCategoria(k.valor)).map((k) => {
+            const foto = fotoDaCategoria(k.valor)!;
+            return (
+              <label
+                key={k.valor}
+                className="relative flex cursor-pointer flex-col overflow-hidden rounded-lg border-2 border-sage-200 bg-white text-sm text-ink has-checked:border-forest"
+                data-testid={`sp-cat-cartao-${k.valor}`}
+              >
+                <span className="relative block aspect-[4/3] bg-surface-2">
+                  <Image src={foto.src} alt="" fill sizes="(min-width: 640px) 200px, 45vw" className="object-cover" />
+                </span>
+                <input
+                  type="checkbox"
+                  checked={temCategoria(k.valor)}
+                  onChange={(e) => set("categorias", e.target.checked ? [...c.categorias, k.valor] : c.categorias.filter((x) => x !== k.valor))}
+                  className="absolute right-2 top-2 h-5 w-5 accent-forest"
+                  data-testid={`sp-cat-${k.valor}`}
+                />
+                <span className="px-3 py-2 text-center font-semibold">{k.rotulo}</span>
+              </label>
+            );
+          })}
         </div>
+        {CATEGORIAS_CATALOGO.filter((k) => !fotoDaCategoria(k.valor)).map((k) => (
+          <label key={k.valor} className="mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border-2 border-sage-200 bg-white px-3 text-sm font-semibold text-ink has-checked:border-forest">
+            <input
+              type="checkbox"
+              checked={temCategoria(k.valor)}
+              onChange={(e) => set("categorias", e.target.checked ? [...c.categorias, k.valor] : c.categorias.filter((x) => x !== k.valor))}
+              className="h-5 w-5 accent-forest"
+              data-testid={`sp-cat-${k.valor}`}
+            />
+            {k.rotulo}
+          </label>
+        ))}
         {/* Prompt 62-A, item 1: avaliação de imóveis é credenciamento à parte (nunca categoria do catálogo). */}
         <div className="mt-2 rounded-lg border border-sage-200 bg-white p-3 text-sm" data-testid="sp-convite-avaliacao">
           <p className="font-semibold text-ink">{CONVITE_SEJA_PARCEIRO.titulo}</p>

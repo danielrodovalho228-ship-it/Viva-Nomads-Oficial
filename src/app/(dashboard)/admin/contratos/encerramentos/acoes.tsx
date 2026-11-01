@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { atualizarPedidoEncerramento } from "@/lib/data/estadia-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Conduzir ou concluir o pedido (concluir encerra o contrato em acerto de saída). */
 export function AcoesEncerramento({ pedidoId, status }: { pedidoId: string; status: string }) {
@@ -14,7 +15,7 @@ export function AcoesEncerramento({ pedidoId, status }: { pedidoId: string; stat
   const rodar = (novo: "em_conducao" | "concluido") =>
     iniciar(async () => {
       setErro(null);
-      const r = await atualizarPedidoEncerramento(pedidoId, novo);
+      const r = await semQuedaDeRede(atualizarPedidoEncerramento(pedidoId, novo));
       if (!r.ok) setErro(r.erro);
       else router.refresh();
     });

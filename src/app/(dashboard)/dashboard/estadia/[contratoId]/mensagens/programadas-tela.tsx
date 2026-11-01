@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarClock } from "lucide-react";
 import { cancelarMensagemProgramada, programarMensagem, type PainelProgramadas } from "@/lib/data/respostas-actions";
 import { MSG_CONTATO_BLOQUEADO, ROTULO_MOTIVO, TEXTO_MAX, rotuloHorario, temContato } from "@/lib/respostas/regras";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 type Slot = PainelProgramadas["slots"][number];
 
@@ -34,7 +35,7 @@ function SlotProgramada({ contratoId, slot, ativo }: { contratoId: string; slot:
   function salvar() {
     if (temContato(texto)) return setMsg({ ok: false, texto: MSG_CONTATO_BLOQUEADO });
     iniciar(async () => {
-      const r = await programarMensagem(contratoId, slot.quando, texto);
+      const r = await semQuedaDeRede(programarMensagem(contratoId, slot.quando, texto));
       setMsg(r.ok ? { ok: true, texto: "Mensagem programada." } : { ok: false, texto: r.erro });
       if (r.ok) {
         setEditando(false);
@@ -44,7 +45,7 @@ function SlotProgramada({ contratoId, slot, ativo }: { contratoId: string; slot:
   }
   function cancelar() {
     iniciar(async () => {
-      const r = await cancelarMensagemProgramada(contratoId, slot.quando);
+      const r = await semQuedaDeRede(cancelarMensagemProgramada(contratoId, slot.quando));
       setMsg(r.ok ? { ok: true, texto: "Mensagem cancelada." } : { ok: false, texto: r.erro });
       if (r.ok) router.refresh();
     });

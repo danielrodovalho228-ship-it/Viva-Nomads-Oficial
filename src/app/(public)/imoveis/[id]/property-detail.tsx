@@ -791,7 +791,7 @@ export function PropertyDetail({
             {/* "Ideal para" (QA do Prompt 40): saiu do cartão e mora aqui, logo depois da linha-síntese; regra em src/lib/ideal-para.ts ("Com pet" em 1º). */}
             <IdealPara property={property} className="mt-2 text-sm" />
 
-            {/* Anfitrião: foto, nome curto e selos (tempo de resposta e calendário em miúdo). */}
+            {/* Proprietário: foto, nome curto e selos (tempo de resposta e calendário em miúdo). */}
             <FaixaProprietario real={exemplo ? null : proprietario} exemplo={donoExemplo} hoje={hojeBR()} />
 
             {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}

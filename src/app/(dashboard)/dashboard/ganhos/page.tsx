@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Ganhos" };
  * contrato a contrato. A Viva não recebe o valor mensal: ele vai direto do morador para o proprietário.
  */
 export default async function GanhosPage() {
-  const g = ganhosDoDono(isSupabaseConfigured() ? await getCarteiraDoDono() : []);
+  const g = ganhosDoDono(isSupabaseConfigured() ? await getCarteiraDoDono(undefined, { exigir: true }) : []);
   const reforma = await dadosDaReforma();
   return (
     <div data-testid="ganhos">

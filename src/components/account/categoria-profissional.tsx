@@ -12,6 +12,7 @@ import {
 import { contemContato, CONTATO_AVISO } from "@/lib/pedidos/pedidos";
 import { getMinhaCategoria, setMinhaCategoria } from "@/lib/data/perfil-actions";
 import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const SELECT_OUTRO = "__outro__";
 
@@ -66,7 +67,7 @@ export function CategoriaProfissional() {
     }
     const value = isOutro ? CATEGORIA_OUTRO_PREFIX + outro.trim() : sel;
     setSaving(true);
-    const res = await setMinhaCategoria(value);
+    const res = await semQuedaDeRede(setMinhaCategoria(value));
     setSaving(false);
     if (res.ok) {
       setOk(true);

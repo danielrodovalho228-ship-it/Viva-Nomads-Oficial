@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { avaliar } from "@/lib/data/avaliacoes-actions";
 import { LIMITE_COMENTARIO, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Formulário de avaliação reutilizável (avaliação bidirecional). Serve para o
@@ -52,7 +53,7 @@ export function AvaliacaoForm({
       return;
     }
     setEnviando(true);
-    const r = await avaliar({ contratoId, alvoId, papelAutor, rating, comentario });
+    const r = await semQuedaDeRede(avaliar({ contratoId, alvoId, papelAutor, rating, comentario }));
     setEnviando(false);
     if (r.ok) {
       setModeracao(!!r.moderacao);

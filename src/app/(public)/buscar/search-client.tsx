@@ -714,7 +714,17 @@ export function SearchClient({
             Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
           <h1 className="text-base font-semibold tabular-nums text-ink" data-testid="titulo-busca">
-            {contagemDaBusca({ n: results.length, local: locationQuery.trim() || cidadeDaLista })}
+            {/* Conformidade fina (01/11, mockup busca-card): o lugar em verde, o resto em tinta (o texto é o mesmo). */}
+            {(() => {
+              const texto = contagemDaBusca({ n: results.length, local: locationQuery.trim() || cidadeDaLista });
+              const i = texto.lastIndexOf(" em ");
+              return i < 0 ? texto : (
+                <>
+                  {texto.slice(0, i + 4)}
+                  <span className="text-forest" data-testid="titulo-busca-local">{texto.slice(i + 4)}</span>
+                </>
+              );
+            })()}
           </h1>
           {/* Conformidade (30/10): no celular o complemento quebrava a linha começando pelo "·" solto; lá ele fica na
               linha de baixo, sem o separador; do sm para cima, na mesma linha, com o "·". */}

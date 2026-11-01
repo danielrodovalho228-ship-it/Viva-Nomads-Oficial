@@ -6,6 +6,7 @@ import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { nasceLigado } from "@/lib/anuncio/bloco-opcional";
 import { lerChecklistEstrutura, salvarChecklistEstrutura } from "@/lib/data/estrutura-actions";
 import { GRUPOS_ESTRUTURA, ITENS_ESTRUTURA, NOTA_ESTRUTURA_INFORMADA, temEstruturaInformada, type ChecklistEstrutura, type ItemChecklist } from "@/lib/selos-estrutura";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** E258 (c): aqui não há botão — cada toque grava; a tela diz isso antes do primeiro toque. */
 export const COMO_SALVA_ESTRUTURA = "Cada toque salva na hora.";
@@ -41,7 +42,7 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
   async function gravar(novo: ChecklistEstrutura) {
     setChecklist(novo);
     setEstado("salvando");
-    const r = await salvarChecklistEstrutura(propertyId, novo);
+    const r = await semQuedaDeRede(salvarChecklistEstrutura(propertyId, novo));
     if (r.ok) {
       ultimo.current = novo;
       setEstado("salvo");
@@ -74,7 +75,7 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
             <fieldset key={g.id} data-testid={`estrutura-grupo-${g.id}`}>
               <legend className="text-sm font-semibold text-ink">{g.titulo}</legend>
               {/* E193 (reteste de 30/10): cada item no cartão grande da Qualificação (antes, um interruptor por linha). */}
-              <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              <ul className="grade-par mt-2 grid gap-2 sm:grid-cols-2">
                 {g.itens.map((item) => (
                   <li key={item}>
                     <CartaoEscolha

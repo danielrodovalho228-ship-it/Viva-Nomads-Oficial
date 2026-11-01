@@ -31,7 +31,7 @@ function dataBR(iso: string | null): string {
 }
 
 export default async function CandidaturasPage() {
-  const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas(), triagemVinculoAtiva()]);
+  const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas({ exigir: true }), triagemVinculoAtiva()]);
 
   return (
     <>

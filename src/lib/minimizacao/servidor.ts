@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { INVENTARIO } from "@/config/retencao";
+import { LIMPEZA_MATRICULA_ELIMINADA } from "@/lib/documento/conferencia-matricula";
 import { planoDoItem, textoPrazo, type Candidato, type ItemInventario } from "@/lib/minimizacao/regras";
 
 type Admin = SupabaseClient;
@@ -103,8 +104,19 @@ const COLETORES: Record<string, Coletor> = {
       if (c.extra?.caso) await apagarArquivo(admin, DOCS_IMOVEL, c.extra.caso);
       const { error } = await admin
         .from("property_ownership_checks")
-        .update({ arquivo_path: null, caso_documento_path: null, arquivo_eliminado_em: agora.toISOString() })
+        .update({ ...LIMPEZA_MATRICULA_ELIMINADA, arquivo_path: null, caso_documento_path: null, arquivo_eliminado_em: agora.toISOString() })
         .eq("id", c.extra!.id);
+      if (error) throw new Error(error.message);
+    },
+  },
+  // E293 P7: registro técnico da IA, 90 dias † desde a criação. Fase 2: o relatório só conta (não apaga) até a fase 2.
+  ia_chamadas: {
+    async candidatos(admin) {
+      const { data } = await admin.from("ia_chamadas").select("id, criada_em").order("criada_em", { ascending: true }).limit(1000);
+      return ((data ?? []) as { id: string; criada_em: string }[]).map((l) => ({ ref: l.id, desde: l.criada_em }));
+    },
+    async eliminar(admin, c) {
+      const { error } = await admin.from("ia_chamadas").delete().eq("id", c.ref);
       if (error) throw new Error(error.message);
     },
   },

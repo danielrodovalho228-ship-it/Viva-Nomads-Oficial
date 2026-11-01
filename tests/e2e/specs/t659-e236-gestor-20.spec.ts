@@ -5,10 +5,10 @@ import { FAIXAS_COMISSAO_PADRAO, rotuloFaixaTaxa } from "../../../src/lib/cobran
   T659 — E236 (#1524): o Plano Gestor começa em GESTOR_PRECO.minimoImoveis (20) em todo texto público — antes, várias
   telas diziam 31. A faixa de comissão "31 ou mais" dos Termos continua (é a faixa, não o Plano Gestor); o que não pode
   é "Plano Gestor" junto de 31.
-    1. /parceiros: "Plano Gestor para quem tem 20 ou mais imóveis."
+    1. /parceiros: "Plano Gestor para 20 imóveis ou mais com documento aprovado, ou conta de administradora." (E321)
     2. /modelodenegocio: "Plano Gestor a partir de 20 imóveis".
-    3. /precos: "20 imóveis ou mais? Plano Gestor…" e a janela do "Falar sobre o Plano Gestor" com o título
-       "Plano Gestor: 20 imóveis ou mais".
+    3. /precos: a janela do "Falar sobre o Plano Gestor" com a porta inteira (E321): "20 imóveis ou mais com documento
+       aprovado, ou conta de administradora".
     4. /termos: nenhum "Plano Gestor" ao lado de 31.
   390 e 1280 px; sem conta. /modelodenegocio é dos sócios e abre pela porta /acesso-socios (SOCIOS_ACCESS_CODE).
 */
@@ -47,7 +47,7 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
 
       const parceiros = await textoDe(page, "/parceiros");
-      expect(parceiros).toContain("Plano Gestor para quem tem 20 ou mais imóveis");
+      expect(parceiros).toContain("Plano Gestor para 20 imóveis ou mais com documento aprovado, ou conta de administradora"); // E321
       expect(parceiros).not.toMatch(GESTOR_COM_31);
 
       // /modelodenegocio é dos sócios: entra pela porta /acesso-socios com o código do laboratório (sem ele, pula só esta tela).
@@ -70,8 +70,8 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await expect(botao).toBeVisible({ timeout: 15_000 });
       await botao.click();
       const janela = page.getByRole("dialog").filter({ hasText: "Plano Gestor" }).first();
-      await expect(janela).toContainText("Plano Gestor: 20 imóveis ou mais", { timeout: 10_000 });
-      await expect(janela).toContainText("20 imóveis ou mais? Plano Gestor");
+      // E321: a porta inteira do Gestor, a mesma em todas as telas.
+      await expect(janela).toContainText("Para 20 imóveis ou mais com documento aprovado, ou conta de administradora", { timeout: 10_000 });
       await expect(janela).not.toContainText(/\b31\b/);
       await page.keyboard.press("Escape");
 

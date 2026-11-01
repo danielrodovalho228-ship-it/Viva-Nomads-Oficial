@@ -32,6 +32,7 @@ import {
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
@@ -114,11 +115,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
     // O aviso de "tente a partir de…" é da tentativa anterior: some ao reenviar (complemento do prompt 27, parte B).
     setAviso(null);
     setEnviando(true);
-    const res = await responderProposta(p.id, r);
+    const res = await semQuedaDeRede(responderProposta(p.id, r));
     setEnviando(false);
     if (!res.ok) {
       setErro(res.error);
-      if (res.aviso) setAviso(res.aviso);
+      if ("aviso" in res && res.aviso) setAviso(res.aviso);
       return;
     }
     if ("fechamentoUrl" in res && res.fechamentoUrl) return router.push(res.fechamentoUrl);

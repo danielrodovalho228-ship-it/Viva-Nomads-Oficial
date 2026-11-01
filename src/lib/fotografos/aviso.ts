@@ -28,3 +28,13 @@ export function validarAvisoFotografo(entrada: { cidade?: unknown; uf?: unknown 
   if (!chave || chave.length < 2) return { ok: false, erro: "Informe a cidade." };
   return { ok: true, uf, chave, cidade, mensagem: `Anotado! Avisamos você quando houver fotógrafo parceiro em ${cidade}.` };
 }
+
+/**
+ * E321 (carona de cópia, 01/11): a confirmação do aviso de parceiro. Sem categoria (a busca "Todas" grava "outro"), a
+ * frase é a neutra — "quando houver parceiro em {cidade}" —, nunca "parceiro de outro serviço".
+ */
+export function mensagemAvisoParceiro(categoria: string, cidade: string, rotulo: string): string {
+  return categoria === "outro"
+    ? `Anotado! Avisamos você quando houver parceiro em ${cidade}.`
+    : `Anotado! Avisamos você quando houver parceiro de ${rotulo.toLowerCase()} em ${cidade}.`;
+}

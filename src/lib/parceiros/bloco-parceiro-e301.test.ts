@@ -32,10 +32,10 @@ test("E303: o Gestor é 20+ (ou administradora); o 31+ é a faixa da taxa negoci
   const negociavel = FAIXAS_COMISSAO_PADRAO.find((f) => f.negociavel)!;
   assert.equal(negociavel.minImoveis, 31);
   const secao = PRECOS.slice(PRECOS.indexOf('id="plano-gestor"'), PRECOS.indexOf('data-testid="precos-botoes"'));
-  assert.match(secao, /\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais, ou é administradora/);
+  assert.match(secao, /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas/);
   assert.match(secao, /31\+ · \{ROTULO_FAIXA_NEGOCIAVEL\}/);
   assert.match(secao, /É outra regra/);
-  assert.match(PARCEIROS, /\$\{GESTOR_PRECO\.minimoImoveis\} ou mais imóveis/);
+  assert.match(PARCEIROS, /Plano Gestor para \$\{PORTA_GESTOR_TEXTO\}/);
 });
 
 test("E304: cidade sem UF habilita o aviso quando o nome é único; indicar manda o link do pedido de parceria", () => {

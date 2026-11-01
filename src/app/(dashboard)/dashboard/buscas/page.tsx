@@ -13,7 +13,7 @@ const SAMPLE_SAVED = [
 
 export default async function SavedSearchesPage() {
   // Modo real: as buscas salvas no coração da /buscar (0122); demo: mostra exemplos.
-  const reais = isSupabaseConfigured() ? await listarBuscasSalvas() : null;
+  const reais = isSupabaseConfigured() ? await listarBuscasSalvas({ exigir: true }) : null;
   const vazio = reais ? reais.length === 0 : SAMPLE_SAVED.length === 0;
 
   return (

@@ -18,7 +18,7 @@ export const metadata = { title: "Avaliações" };
  * com a busca (?aba=&q=).
  */
 export default async function AvaliacoesRecebidasPage({ searchParams }: { searchParams: Promise<{ aba?: string; q?: string }> }) {
-  const res = await avaliacoesRecebidas();
+  const res = await avaliacoesRecebidas({ exigir: true });
   if (!res) redirect("/auth?next=/dashboard/avaliacoes");
   const sp = await searchParams;
   const aba: AbaAvaliacoes = ABAS_AVALIACOES.some((a) => a.valor === sp.aba) ? (sp.aba as AbaAvaliacoes) : "todas";

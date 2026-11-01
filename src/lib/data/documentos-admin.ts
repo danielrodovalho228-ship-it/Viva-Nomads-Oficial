@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { avisarDecisoesDoImovel } from "@/lib/data/aviso-decisao-documento";
 import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
+import { lidoParaAdmin } from "@/lib/documento/conferencia";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { erroBancoPT } from "@/lib/erros-banco";
@@ -86,6 +87,8 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
   if (!c || typeof c !== "object") return null;
   const o = c as Record<string, unknown>;
   const l = (o.leitura && typeof o.leitura === "object" ? o.leitura : null) as Record<string, unknown> | null;
+  // E293 P2: a trilha nova guarda só o veredito da leitura (`lido`); a equipe lê o documento pelo link.
+  const lido = (o.lido && typeof o.lido === "object" ? o.lido : null) as Record<string, unknown> | null;
   const end = (l?.endereco && typeof l.endereco === "object" ? l.endereco : {}) as Record<string, unknown>;
   const txt = (v: unknown) => (typeof v === "string" && v ? v : null);
   return {
@@ -94,7 +97,9 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
       ? o.motivos.map((m) => (m && typeof m === "object" ? txt((m as Record<string, unknown>).texto) : txt(m))).filter((m): m is string => !!m)
       : [],
     checklist: (o.checklist && typeof o.checklist === "object" ? o.checklist : {}) as Record<string, boolean>,
-    leitura: l
+    leitura: lido
+      ? lidoParaAdmin(lido)
+      : l
       ? {
           tipo: txt(l.tipo),
           titular: txt(l.titular),
@@ -116,7 +121,12 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
  * curta por documento — o bucket é privado. O e-mail do dono NÃO é exposto ao
  * cliente (só o primeiro nome).
  */
-export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
+const MSG_FILA_DOCUMENTOS_NAO_CARREGOU = "Não foi possível carregar a fila de documentos agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 16: com `exigir` (a página da fila), a falha do banco LANÇA — o admin
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de "fila vazia" (a equipe perderia o prazo de
+ * 48 h achando que não há nada). */
+export async function listDocumentosPendentes(opcoes: { exigir?: boolean } = {}): Promise<DocumentoPendente[]> {
   // E28: confirma admin ANTES e lê com o cliente de serviço — a MESMA fonte do "na fila agora" (filaDocumentos).
   // Pela sessão, a RLS (is_admin(), que exige aal2 no token de quem tem 2FA) devolvia [] em silêncio enquanto o
   // contador, pelo serviço, mostrava a fila: contador 4, lista 0.
@@ -130,6 +140,7 @@ export async function listDocumentosPendentes(): Promise<DocumentoPendente[]> {
     .order("created_at", { ascending: true })
     .limit(200);
   if (error) console.error("[E28] fila de documentos:", error.message);
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_DOCUMENTOS_NAO_CARREGOU);
 
   // Um item por documento: re-salvar a qualificação repete o documento em
   // outra linha (0072) — mostra só a mais recente de cada (dono, imóvel, arquivo).

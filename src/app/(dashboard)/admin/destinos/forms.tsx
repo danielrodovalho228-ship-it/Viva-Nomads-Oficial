@@ -8,6 +8,7 @@ import { TIPOS_DESTINO } from "@/lib/destinos/regras";
 import { pontoColado, type PontoSugerido } from "@/lib/destinos/ponto";
 import { Button } from "@/components/ui/button";
 import { PropertyMap } from "@/components/property-map-lazy";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 
@@ -45,7 +46,7 @@ export function DestinoForm({ inicial, pontoInicial }: { inicial?: DestinoEditav
     const cidade = (form?.elements.namedItem("cidade") as HTMLInputElement | null)?.value ?? "";
     const uf = (form?.elements.namedItem("uf") as HTMLInputElement | null)?.value ?? "";
     iniciarBusca(async () => {
-      const r = await buscarPontoDestino(busca, cidade, uf);
+      const r = await semQuedaDeRede(buscarPontoDestino(busca, cidade, uf));
       if (!r.ok) {
         setErroBusca(r.erro);
         setSugestoes(null);
@@ -189,7 +190,7 @@ export function DestinoBotao({ id, ativo, temPonto }: { id: string; ativo: boole
         disabled={pendente || (!ativo && !temPonto)}
         data-testid="alternar-destino"
         onClick={() => iniciar(async () => {
-          const r = await alternarDestino(id, !ativo);
+          const r = await semQuedaDeRede(alternarDestino(id, !ativo));
           setErro(r.ok ? null : r.erro ?? null);
         })}
       >
@@ -213,7 +214,7 @@ export function ResolverReporte({ id }: { id: string }) {
         disabled={pendente}
         data-testid="resolver-reporte"
         onClick={() => iniciar(async () => {
-          const r = await resolverReporteProximidade(id);
+          const r = await semQuedaDeRede(resolverReporteProximidade(id));
           setErro(r.ok ? null : r.erro ?? null);
           if (r.ok) window.location.reload();
         })}
@@ -238,7 +239,7 @@ export function ResolverNaoAchado({ id }: { id: string }) {
         disabled={pendente}
         data-testid="resolver-nao-achado"
         onClick={() => iniciar(async () => {
-          const r = await resolverLocalNaoAchado(id);
+          const r = await semQuedaDeRede(resolverLocalNaoAchado(id));
           setErro(r.ok ? null : r.erro ?? null);
           if (r.ok) window.location.reload();
         })}

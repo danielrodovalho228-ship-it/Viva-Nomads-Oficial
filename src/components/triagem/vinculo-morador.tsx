@@ -6,6 +6,7 @@ import { linkMeuVinculo, meuVinculo, type MeuVinculo } from "@/lib/data/triagem-
 import { TIPOS_VINCULO, podeEnviar, type TipoVinculo } from "@/lib/triagem/vinculo";
 import { abrirLinkEmNovaAba } from "@/lib/abrir-aba";
 import { validarArquivoDoc } from "@/lib/upload-limits";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const dataBR = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "");
 
@@ -51,7 +52,7 @@ export function VinculoMorador() {
     const ok = await abrirLinkEmNovaAba(
       () => window.open("about:blank", "_blank"),
       async () => {
-        const r = await linkMeuVinculo();
+        const r = await semQuedaDeRede(linkMeuVinculo());
         if (r.ok && r.url) return r.url;
         if (r.error) motivo = r.error;
         return null;

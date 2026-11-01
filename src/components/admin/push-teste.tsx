@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { enviarPushDeTeste } from "@/lib/data/push-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export function PushTeste() {
   const [msg, setMsg] = useState<string | null>(null);
@@ -14,7 +15,7 @@ export function PushTeste() {
         className="min-h-11 rounded-xl border border-line px-4 text-sm font-semibold disabled:opacity-60"
         onClick={() =>
           iniciar(async () => {
-            const r = await enviarPushDeTeste();
+            const r = await semQuedaDeRede(enviarPushDeTeste());
             setMsg(r.ok ? `Enviado para ${r.enviados} aparelho(s).` : (r.erro ?? "Falhou."));
           })
         }

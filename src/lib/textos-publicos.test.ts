@@ -51,7 +51,8 @@ test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e fras
   assert.doesNotMatch(titulo, /Viva Nomads/);
   // Prompt 13: a frase do Plano Gestor está na janela do formulário (a caixa cinza repetia a tabela).
   const p = ler("src/components/precos/plano-gestor-form.tsx");
-  assert.match(p, /\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais\? Plano Gestor: condições negociadas, entre em contato\./);
+  // E321: a porta inteira do Gestor (N+ com documento aprovado ou administradora), da constante.
+  assert.match(p, /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas com o time da Viva\. Entre em contato\./);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
 

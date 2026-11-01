@@ -54,3 +54,28 @@ test("criação devolve só o id → buscar a transação por GET", () => {
   assert.equal(idSemResultado({ id: "abc", status: "APPROVED", sections: {} }), null);
   assert.equal(idSemResultado(null), null);
 });
+
+/*
+  E293 P5 (parte de código) — `notes` guardava até 8 motivos da CAF em texto livre do fornecedor (pode trazer nome ou
+  número do documento). Agora cada motivo vira uma frase fixa nossa; o texto do fornecedor não vai para caf_result.
+*/
+test("E293 P5: motivos da CAF viram frases fixas — nunca o texto do fornecedor", async () => {
+  const { NOTAS_MOTIVO_CAF, notaDoMotivoCaf } = await import("./caf-resposta.ts");
+  const { motivoDaReprovacao } = await import("../../config/verificacao-motivos.ts");
+  const l = lerRespostaCaf(
+    {
+      validations: { identity: true, liveness: true, document: false },
+      risk: { level: "MEDIUM", reasons: ["Low light on document of MARIA SOUZA", "Document blurry - CPF 11144477735", "Low light again", "Unknown rule 42"] },
+    },
+    PERFIL,
+  );
+  assert.deepEqual(l.notes, [NOTAS_MOTIVO_CAF.luz, NOTAS_MOTIVO_CAF.foco, NOTAS_MOTIVO_CAF.outro]);
+  const json = JSON.stringify(l.notes);
+  for (const proibido of ["MARIA", "11144477735", "Unknown", "Low light"]) assert.ok(!json.includes(proibido), proibido);
+  for (const n of l.notes) assert.ok((Object.values(NOTAS_MOTIVO_CAF) as string[]).includes(n), n);
+  // As frases fixas mantêm o motivo legível da tela (Prompt 50).
+  assert.equal(motivoDaReprovacao({ notes: [notaDoMotivoCaf("escuro demais")] }), "foto_escura");
+  assert.equal(motivoDaReprovacao({ document: false, notes: [notaDoMotivoCaf("documento borrado")] }), "documento_ilegivel");
+  assert.equal(notaDoMotivoCaf("Face does not match"), NOTAS_MOTIVO_CAF.rosto);
+  assert.equal(notaDoMotivoCaf("liveness failed"), NOTAS_MOTIVO_CAF.vida);
+});

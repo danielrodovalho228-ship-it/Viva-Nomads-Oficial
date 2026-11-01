@@ -189,7 +189,12 @@ export interface MinhaCandidatura {
  * Candidaturas do INQUILINO logado — acompanhamento completo (todos os estados),
  * com o vocabulário digno da fonte única. Sem sessão/demo → lista vazia.
  */
-export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
+const MSG_CANDIDATURAS_NAO_CARREGARAM = "Não foi possível carregar as suas candidaturas agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 7: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhum". Sem `exigir` (home, ganhos,
+ * garantias, carteira), segue a lista vazia. */
+export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}): Promise<MinhaCandidatura[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -205,6 +210,7 @@ export async function listMinhasCandidaturas(): Promise<MinhaCandidatura[]> {
     )
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
+  if (error && opcoes.exigir) throw new Error(MSG_CANDIDATURAS_NAO_CARREGARAM);
   if (error || !data) return [];
 
   // "Em análise" = o dono já mandou mensagem ao inquilino nesse imóvel. Uma

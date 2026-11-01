@@ -15,6 +15,7 @@ const API_BASE =
 
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { valorComissao } from "@/lib/comissao";
+import { erroDoFornecedor } from "@/lib/integrations/erro-fornecedor";
 
 export function isAsaasConfigured() {
   return !!process.env.ASAAS_API_KEY && !integracoesSimuladas();
@@ -32,8 +33,7 @@ async function asaasFetch<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Asaas ${res.status}: ${body}`);
+    throw erroDoFornecedor("Asaas", res.status, await res.text().catch(() => ""));
   }
   return res.json() as Promise<T>;
 }

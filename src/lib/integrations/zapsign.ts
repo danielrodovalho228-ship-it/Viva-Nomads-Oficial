@@ -7,6 +7,7 @@
 
 import { MARCA_MINUTA } from "@/lib/contrato-etapas";
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
+import { erroDoFornecedor } from "@/lib/integrations/erro-fornecedor";
 
 const API_BASE = "https://api.zapsign.com.br/api/v1";
 
@@ -69,7 +70,7 @@ export async function createContract(input: ContractInput): Promise<ContractResu
   });
 
   if (!res.ok) {
-    throw new Error(`ZapSign ${res.status}: ${await res.text()}`);
+    throw erroDoFornecedor("ZapSign", res.status, await res.text().catch(() => ""));
   }
 
   const data = (await res.json()) as { token?: string; status?: string; sign_url?: string };

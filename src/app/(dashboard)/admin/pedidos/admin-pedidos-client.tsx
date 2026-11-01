@@ -17,6 +17,7 @@ import { dataPedidoBR, textoBairros, textoFaixaValor } from "@/lib/pedidos/campo
 import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
 import { abasPedidos, filtrarPedidosAdmin } from "@/lib/admin/pedidos-filtro";
 import { rotuloDoAdmin } from "@/config/menu-admin";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 type Pedido = {
   id: string;
@@ -78,7 +79,7 @@ export function AdminPedidosClient({
 
   async function ocultar(motivo: string): Promise<string | null> {
     if (!ocultando) return null;
-    const res = await moderarPedido(ocultando.id, motivo);
+    const res = await semQuedaDeRede(moderarPedido(ocultando.id, motivo));
     if (!res.ok) return res.error ?? "Não foi possível ocultar.";
     setOcultando(null);
     router.refresh();
@@ -87,7 +88,7 @@ export function AdminPedidosClient({
   async function reativar(id: string) {
     setBusy(id);
     setErro((e) => ({ ...e, [id]: "" }));
-    const res = await reativarPedido(id);
+    const res = await semQuedaDeRede(reativarPedido(id));
     setBusy(null);
     if (!res.ok) setErro((e) => ({ ...e, [id]: res.error ?? "Não foi possível reativar." }));
     router.refresh();

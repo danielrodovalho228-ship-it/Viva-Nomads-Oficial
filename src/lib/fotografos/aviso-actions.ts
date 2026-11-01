@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { situacaoLimite } from "@/lib/limites";
-import { validarAvisoFotografo } from "./aviso";
+import { mensagemAvisoParceiro, validarAvisoFotografo } from "./aviso";
 import { categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
 
 export type ResultadoAviso = { ok: boolean; erro?: string; mensagem?: string };
@@ -46,6 +46,6 @@ export async function avisarFotografoNaCidade(entrada: { cidade: string; uf: str
   }
   return {
     ok: true,
-    mensagem: categoria === "fotografia" ? v.mensagem : `Anotado! Avisamos você quando houver parceiro de ${rotuloCategoria(categoria).toLowerCase()} em ${v.cidade}.`,
+    mensagem: categoria === "fotografia" ? v.mensagem : mensagemAvisoParceiro(categoria, v.cidade, rotuloCategoria(categoria)),
   };
 }

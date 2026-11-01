@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { denunciarAnuncio, minhaDenuncia } from "@/lib/saida/acoes";
 import { MOTIVOS_DENUNCIA, ROTULO_ESTADO_DENUNCIA, type EstadoDenuncia } from "@/lib/saida/regras";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Prompt 51 F1, item 6 — "Denunciar este anúncio" (terciário, no fim da página do imóvel). Motivo fechado + texto
@@ -58,7 +59,7 @@ export function DenunciarAnuncio({ propertyId }: { propertyId: string }) {
             f.set("motivo", motivo);
             f.set("texto", texto);
             iniciar(async () => {
-              const r = await denunciarAnuncio(f);
+              const r = await semQuedaDeRede(denunciarAnuncio(f));
               setRes(r.ok ? { ok: true, texto: r.mensagem ?? "Denúncia recebida." } : { ok: false, texto: r.erro });
               if (r.ok) setEstado({ logado: true, denuncia: { status: "recebida", motivo } });
             });

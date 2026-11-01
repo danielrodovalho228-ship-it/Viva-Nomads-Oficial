@@ -21,6 +21,7 @@ import {
 import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 import { rotuloDoAdmin } from "@/config/menu-admin";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -316,7 +317,7 @@ function Macros({ macros }: { macros: Macro[] }) {
   const [erro, setErro] = useState<string | null>(null);
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
-    const r = await salvarMacro(edit);
+    const r = await semQuedaDeRede(salvarMacro(edit));
     if (!r.ok) setErro(r.error);
     else {
       setErro(null);
@@ -361,7 +362,7 @@ function Macros({ macros }: { macros: Macro[] }) {
                   className="shrink-0"
                   botaoClassName="rounded-lg p-2 text-muted hover:bg-surface-2 hover:text-red-700"
                   onConfirmar={async () => {
-                    await apagarMacro(m.id);
+                    await semQuedaDeRede(apagarMacro(m.id));
                     router.refresh();
                   }}
                 >

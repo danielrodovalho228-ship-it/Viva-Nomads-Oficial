@@ -24,6 +24,7 @@ import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export const SUBTITULO_PERFIL = "Gerencie suas informações pessoais e como os proprietários veem seu perfil.";
 const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base text-ink outline-none focus:border-forest";
@@ -234,7 +235,7 @@ export function PerfilTela() {
               temDados={!!p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR}
               textoConfirmar={tProf.confirmar}
               onLimpar={async () => {
-                const r = await setMinhaCategoria(CATEGORIA_NAO_INFORMAR);
+                const r = await semQuedaDeRede(setMinhaCategoria(CATEGORIA_NAO_INFORMAR));
                 if (r.ok) window.dispatchEvent(new Event(PERFIL_ATUALIZADO));
                 return r.ok;
               }}

@@ -70,7 +70,14 @@ export function proprietariosParaAdmin(campos: unknown): string[] {
   const lista = Array.isArray(c.proprietarios) ? c.proprietarios : [];
   return lista
     .filter((p): p is Record<string, unknown> => !!p && typeof p === "object")
-    .map((p) => {
+    .map((p, i) => {
+      // E293 P1: a linha nova não guarda nome nem final do documento — só o veredito. A equipe lê o nome no arquivo.
+      if (!("nome" in p) && !("documento_final" in p)) {
+        const doc = p.documento_confere === true ? "CPF/CNPJ confere com o perfil" : p.documento_confere === false ? "CPF/CNPJ não confere" : "sem CPF";
+        const partes = [`Proprietário ${i + 1}`, doc, p.nome_confere === true ? "nome igual ao do perfil" : "nome diferente"];
+        if (typeof p.fracao === "string") partes.push(p.fracao);
+        return partes.join(" · ");
+      }
       const partes = [typeof p.nome === "string" ? p.nome : "Sem nome legível"];
       if (typeof p.documento_final === "string") {
         partes.push(`CPF/CNPJ final ${p.documento_final} · ${p.documento_confere === true ? "confere com o perfil" : "não confere"}`);

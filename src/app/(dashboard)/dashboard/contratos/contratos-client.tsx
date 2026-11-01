@@ -49,6 +49,7 @@ import { rotuloDoBloco } from "@/lib/bloco-status";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { hrefContratoDono } from "@/lib/contratos/area-dono";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
@@ -524,7 +525,7 @@ function RegistrarRecebimento({
     enviando.current = true;
     setSaving(true);
     setErro(null);
-    const r = await marcarPagamentoRecebido({
+    const r = await semQuedaDeRede(marcarPagamentoRecebido({
       blocoId: blocoId ?? "",
       contratoId,
       tipo,
@@ -540,7 +541,7 @@ function RegistrarRecebimento({
       forma: forma as "pix" | "boleto" | "transferencia" | "dinheiro" | "outro",
       dataPagamento: data,
       observacao: obs || undefined,
-    });
+    }));
     setSaving(false);
     if (r.ok) {
       setJaRegistrado(r.jaRegistrado ? (r.mensagem ?? "Este recebimento já foi registrado") : null);

@@ -5,7 +5,8 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import {
   corpoInternetAbaixo,
   corpoInternetRemedir,
@@ -131,4 +132,82 @@ test("ponto de envio: os 6 lugares passam os fatos ao construtor", () => {
   const net = ler("src/lib/internet-medida-servidor.ts");
   assert.match(net, /corpoInternetAbaixo\(\{/);
   assert.match(net, /corpoInternetRemedir\(\{ imovel:/);
+});
+
+/*
+  E267 (restante, 01/11) — a varredura de todo notify() do repo achou três e-mails a clientes que ainda saíam com o corpo
+  genérico no HTML: o conflito e a falha do calendário importado (sem o imóvel; as datas e a causa iam só na versão em
+  texto) e a verificação parada (o motivo ia só na versão em texto). Agora o corpo e o bloco nomeiam o imóvel e o fato.
+*/
+test("calendário: conflito diz o imóvel, as datas de lá e o compromisso daqui; falha diz o imóvel e a causa", async () => {
+  const { corpoCalendarioConflito, corpoCalendarioFalha } = await import("./corpo-e267-residual.ts");
+  const c = corpoCalendarioConflito({ imovel: IMOVEL, importado: { inicio: "2026-12-10", fim: "2026-12-15" }, compromisso: { tipo: "contrato", inicio: "2026-12-01", fim: "2027-02-28" } });
+  assert.equal(c.subject, "Datas importadas cruzam a agenda de Apto Santa Mônica");
+  assert.equal(c.body("Daniel"), "Olá Daniel, o calendário importado marcou 10/12/2026 a 15/12/2026 como ocupado em Apto Santa Mônica, e na Viva há um contrato de 01/12/2026 a 28/02/2027. Nada foi cancelado: confira as datas e decida qual vale.");
+  assert.deepEqual(c.linhas, [BLOCO, { rotulo: "Ocupado no outro site", valor: "10/12/2026 a 15/12/2026" }, { rotulo: "Na Viva", valor: "Um contrato de 01/12/2026 a 28/02/2027" }]);
+  const f = corpoCalendarioFalha({ imovel: IMOVEL, causa: "O Airbnb recusou o link." });
+  assert.equal(f.body("Daniel"), "Olá Daniel, tentamos ler o link do calendário do outro site de Apto Santa Mônica 3 vezes seguidas, sem sucesso (O Airbnb recusou o link). Enquanto isso, as datas de lá não chegam aqui.");
+  assert.deepEqual(f.linhas, [BLOCO, { rotulo: "O que aconteceu", valor: "O Airbnb recusou o link." }]);
+  // O HTML do e-mail leva o bloco (antes, só o texto levava o detalhe).
+  assert.match(paraNotify(c).detailsHtml ?? "", /Ocupado no outro site/);
+  const srv = readFileSync("src/lib/calendario/importar-servidor.ts", "utf8");
+  assert.match(srv, /\.\.\.paraNotify\(c\)/);
+  assert.match(srv, /corpoCalendarioConflito\(\{ imovel, importado: c\.importado, compromisso: c\.compromisso \}\)/);
+  assert.match(srv, /corpoCalendarioFalha\(\{ imovel, causa \}\)/);
+});
+
+test("verificação parada: o motivo e o próximo passo no corpo e no bloco do e-mail", async () => {
+  const { corpoVerificacaoParada } = await import("./corpo-e267-residual.ts");
+  const v = corpoVerificacaoParada({ titulo: "Foto escura", proximoPasso: "Tire de novo perto de uma janela, com luz de frente e sem flash." });
+  assert.equal(v.body("Lara"), "Olá Lara, a última tentativa de verificar sua identidade não passou: foto escura. Tire de novo perto de uma janela, com luz de frente e sem flash.");
+  assert.match(paraNotify(v).detailsHtml ?? "", /O que fazer agora/);
+  assert.match(readFileSync("src/lib/lembretes/servidor.ts", "utf8"), /\.\.\.paraNotify\(corpoVerificacaoParada\(m\)\)/);
+});
+
+test("varredura: nenhum notify() a cliente sai só com o corpo do modelo (fora vistoria, push puro e avisos à equipe)", () => {
+  // Push puro (sem e-mail), avisos à equipe e a família da vistoria (Onda 6) ficam fora; os demais precisam de body/detailsHtml.
+  const SO_PUSH_OU_EQUIPE = new Set(["anuncio_compartilhar", "pedido_compativel", "new_message", "documento_recebido"]);
+  // Conferidos sem imóvel por natureza (parceria, selo do parceiro): a pessoa e o fato já estão no modelo.
+  const SEM_IMOVEL = new Set(["parceria_recebida", "parceria_convite", "parceiro_selo_nota_removido"]);
+  const arquivos = (d: string): string[] => readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? arquivos(join(d, n)) : /\.tsx?$/.test(n) && !/\.test\./.test(n) ? [join(d, n)] : []));
+  const genericos: string[] = [];
+  for (const f of arquivos("src")) {
+    const s = readFileSync(f, "utf8");
+    for (const m of s.matchAll(/\bnotify\(\{/g)) {
+      let i = (m.index ?? 0) + 7;
+      let d = 1;
+      while (d && i < s.length) {
+        if (s[i] === "{") d++;
+        else if (s[i] === "}") d--;
+        i++;
+      }
+      const obj = s.slice(m.index, i);
+      const ev = (obj.match(/event:\s*"([a-z_]+)"/) ?? [])[1];
+      if (!ev || ev.startsWith("vistoria_") || SO_PUSH_OU_EQUIPE.has(ev) || SEM_IMOVEL.has(ev) || /interno:\s*true/.test(obj)) continue;
+      if (!/\bbody\b\s*[:,]|\.\.\.|detailsHtml/.test(obj)) genericos.push(`${f}: ${ev}`);
+    }
+  }
+  assert.deepEqual(genericos, []);
+});
+
+/*
+  E267 (resíduo, 01/11 noite) — pedido de moradia: "Um proprietário respondeu ao seu pedido" e "Um inquilino aceitou sua
+  resposta" saíam sem dizer quem nem qual imóvel (o bloco não recebia dado nenhum do caso). Agora o corpo nomeia quem agiu
+  (só o primeiro nome) e o imóvel; o bloco leva "Imóvel" e o pedido.
+*/
+test("pedido de moradia: resposta e aceite nomeiam quem agiu e o imóvel", async () => {
+  const { corpoPedidoAceito, corpoPedidoResposta } = await import("./corpo-e267-residual.ts");
+  const r = corpoPedidoResposta({ imovel: IMOVEL, quem: "Daniel", cidade: "Uberlândia", inicio: "2026-12-01" });
+  assert.equal(r.subject, "Resposta ao seu pedido: Apto Santa Mônica");
+  assert.equal(r.body("Lara"), "Olá Lara, Daniel respondeu ao seu pedido de moradia em Uberlândia com o imóvel Apto Santa Mônica. Veja e aceite para conversar pela plataforma.");
+  assert.deepEqual(r.linhas, [BLOCO, { rotulo: "Seu pedido", valor: "Uberlândia, entrada em 01/12/2026" }]);
+  const a = corpoPedidoAceito({ imovel: IMOVEL, quem: "Lara" });
+  assert.equal(a.subject, "Conversa aberta sobre Apto Santa Mônica");
+  assert.equal(a.body("Daniel"), "Olá Daniel, Lara aceitou a sua resposta ao pedido de moradia com Apto Santa Mônica e abriu a conversa. Responda pela plataforma.");
+  // Sem nome (perfil vazio): a frase continua inteira, sem "undefined".
+  assert.match(corpoPedidoAceito({ imovel: IMOVEL }).body(), /^Olá, o morador aceitou/);
+  const srv = readFileSync("src/lib/data/pedidos-actions.ts", "utf8");
+  assert.match(srv, /corpoPedidoResposta\(\{/);
+  assert.match(srv, /corpoPedidoAceito\(\{/);
+  assert.doesNotMatch(srv, /notificar\("pedido_(resposta|aceito)", [^;]*detalhe(Resposta|Aceito)\(\)\);/);
 });

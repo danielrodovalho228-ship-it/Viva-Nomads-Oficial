@@ -6,6 +6,7 @@ import { linkDocInquilino, listarDocsInquilino, type DocInquilinoResumo } from "
 import { DOCS_INQUILINO, documentosInquilinoCompletos, type TipoDocInquilino } from "@/lib/documentos-inquilino";
 import { abrirLinkEmNovaAba } from "@/lib/abrir-aba";
 import { validarArquivoDoc } from "@/lib/upload-limits";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 function dataBR(iso: string): string {
   const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -57,7 +58,7 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
     const ok = await abrirLinkEmNovaAba(
       () => window.open("about:blank", "_blank"),
       async () => {
-        const r = await linkDocInquilino(leadId, tipo);
+        const r = await semQuedaDeRede(linkDocInquilino(leadId, tipo));
         if (r.ok && "url" in r && r.url) return r.url;
         if ("error" in r && r.error) motivo = r.error;
         return null;

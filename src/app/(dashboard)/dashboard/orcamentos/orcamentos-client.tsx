@@ -142,7 +142,8 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
                       <p className="text-xs font-semibold text-muted">
                         {p.numero} · v{p.versaoAtual}
                       </p>
-                      <p className="truncate font-medium text-ink">{p.imovel}</p>
+                      {/* E322 (01/11): o título inteiro do imóvel, com quebra de linha — o dono identifica sem abrir a linha. */}
+                      <p className="break-words font-medium text-ink" data-testid="orcamento-imovel">{p.imovel}</p>
                       <p className="text-xs text-muted">{p.outraParte}</p>
                     </div>
                     <StatusChip status={p.status} />
@@ -178,7 +179,7 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
                     <td className="px-4 py-3 font-medium text-forest">
                       <Link href={`/dashboard/propostas/${p.id}`}>{p.numero}</Link>
                     </td>
-                    <td className="max-w-[16rem] truncate px-4 py-3 text-ink">{p.imovel}</td>
+                    <td className="min-w-[12rem] max-w-[20rem] whitespace-normal break-words px-4 py-3 text-ink" data-testid="orcamento-imovel">{p.imovel}</td>
                     <td className="px-4 py-3 text-ink">{p.outraParte}</td>
                     <td className="px-4 py-3 text-right font-semibold text-ink" title={p.conta ?? undefined}>
                       {formatBRL(p.totalContrato)}

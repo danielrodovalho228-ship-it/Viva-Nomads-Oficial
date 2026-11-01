@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { agirNaPendencia } from "@/lib/data/conforto-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export function DecidirContestacao({ id }: { id: string }) {
   const [pendente, iniciar] = useTransition();
@@ -11,7 +12,7 @@ export function DecidirContestacao({ id }: { id: string }) {
   const router = useRouter();
   const decidir = (decisao: "procedente" | "improcedente") =>
     iniciar(async () => {
-      const r = await agirNaPendencia(id, "decidir", { decisao });
+      const r = await semQuedaDeRede(agirNaPendencia(id, "decidir", { decisao }));
       setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Decisão registrada." } : { ok: false, t: r.erro });
       if (r.ok) router.refresh();
     });

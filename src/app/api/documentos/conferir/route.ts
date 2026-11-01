@@ -8,6 +8,7 @@ import { tipoRealPorMagicBytes, DOC_MIME } from "@/lib/upload-limits";
 import { lerDocumento, lerMatricula, matriculaDoLaboratorio } from "@/lib/documento/conferidor";
 import {
   camposParaGravar,
+  onusParaGravar,
   decidirMatricula,
   decisaoComFalhaDeLeitura,
   estadoTelaDaMatricula,
@@ -20,6 +21,7 @@ import {
 import { integracoesSimuladas } from "@/lib/integracoes";
 import {
   decidirConferencia,
+  leituraParaGravar,
   rotuloEstado,
   statusDoEstado,
   REVISAO_PRAZO_HORAS,
@@ -169,7 +171,7 @@ export async function POST(request: Request) {
         resultado: d.resultado,
         motivo: d.motivo,
         campos_extraidos: mat ? camposParaGravar(mat, d.comparacao) : {},
-        onus: mat?.onus ?? [],
+        onus: mat ? onusParaGravar(mat.onus) : [],
         caf_ok: caf.ok,
         caf_simulado: caf.ok && (laudo?.caf_result as Record<string, unknown> | null)?.simulado === true,
       })
@@ -228,13 +230,13 @@ export async function POST(request: Request) {
     document_reviewed_at: r.estado === "revisao" ? null : agora.toISOString(),
     conferido_por: r.estado === "revisao" ? null : "automatico",
     revisao_ate: r.estado === "revisao" ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
-    // Trilha de auditoria: o que foi lido, por quem, e o checklist marcado. CPF só o trecho do meio.
+    // Trilha de auditoria: o veredito do que foi lido (sim/não, sem dado pessoal — E293 P2), por quem, e o checklist.
     conferencia: {
-      versao: 1,
+      versao: 2,
       estado: r.estado,
       checklist: r.checklist,
       motivos: r.motivos,
-      leitura,
+      lido: leituraParaGravar(leitura, r.checklist),
       conferidor,
       modelo,
       em: agora.toISOString(),

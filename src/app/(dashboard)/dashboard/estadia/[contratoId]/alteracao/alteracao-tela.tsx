@@ -9,6 +9,7 @@ import { proporAlteracao } from "@/lib/data/estadia-actions";
 import { HREF_ESTADIA, ddmmaaaa } from "@/lib/estadia/estadia";
 import type { PreviaRenovacao } from "@/lib/estadia/renovacao";
 import { formatBRL } from "@/lib/utils";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -36,7 +37,7 @@ export function AlteracaoTela({
   const enviar = () =>
     iniciar(async () => {
       setErro(null);
-      const r = await proporAlteracao(
+      const r = await semQuedaDeRede(proporAlteracao(
         contratoId,
         renovacao
           ? { inicio: null, meses, ocupantes: null, valorMensal: null }
@@ -46,7 +47,7 @@ export function AlteracaoTela({
               ocupantes: temFuturo && ocupantes !== atual.ocupantes ? ocupantes : null,
               valorMensal: temFuturo && valor != null && valor !== atual.valorMensal ? valor : null,
             },
-      );
+      ));
       if (!r.ok) setErro(r.erro);
       // Navegação completa: um router.push depois da ação pode ser descartado pelas ações e prefetches que o painel
       // dispara ao mesmo tempo (t256), e a proposta enviada deixaria a pessoa parada no formulário.

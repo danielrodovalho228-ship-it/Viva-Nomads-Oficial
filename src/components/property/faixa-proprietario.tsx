@@ -9,7 +9,7 @@ import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 
 /**
- * Anfitrião (Prompt 41, item 1), logo depois da linha-síntese: foto, nome curto e selos numa linha; embaixo, em miúdo,
+ * Proprietário (Prompt 41, item 1; vocabulário da casa: "proprietário", nunca "anfitrião"), logo depois da linha-síntese: foto, nome curto e selos numa linha; embaixo, em miúdo,
  * o tempo de resposta e o link para as datas livres (prompt 9). Nada inventado:
  * - anúncio REAL: números do 0149 (menos de 3 conversas → "Novo na Viva") e os selos reais do perfil; o calendário
  *   não tem data de atualização registrada, então só leva às datas livres;
@@ -55,7 +55,7 @@ export function FaixaProprietario({
         )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-semibold text-ink">
-            Anfitrião: <span data-testid="faixa-nome">{nome}</span>
+            Proprietário: <span data-testid="faixa-nome">{nome}</span>
           </p>
           {desde && <p className="text-sm text-muted">{tempoNaVivaLabel(desde, hoje)}</p>}
         </div>

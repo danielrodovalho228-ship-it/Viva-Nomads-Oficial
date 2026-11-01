@@ -68,6 +68,7 @@ import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
 import { EstruturaAcessibilidade } from "@/components/anuncio/estrutura-acessibilidade";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { ANCORA_NIVEL_EDICAO } from "@/lib/niveis/destino-nivel";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const MIN_DESC = 60;
 
@@ -324,10 +325,10 @@ export function EditarImovelClient({
       setSavingSection(null);
       return false;
     }
-    const res = await updateProperty(property.id, buildInput(asDraft));
+    const res = await semQuedaDeRede(updateProperty(property.id, buildInput(asDraft)));
     // O limite PRIVADO vai à parte (tabela só do dono), nunca no anúncio.
     if (res.ok && key === "negociacao") {
-      const l = await salvarLimitesNegociacao(property.id, negociacao.aceita ? limites : { valorMinimo: null, limpezasMax: null });
+      const l = await semQuedaDeRede(salvarLimitesNegociacao(property.id, negociacao.aceita ? limites : { valorMinimo: null, limpezasMax: null }));
       if (!l.ok) {
         setSavingSection(null);
         setErro(l.error ?? "Não foi possível salvar o seu limite.");
@@ -350,7 +351,7 @@ export function EditarImovelClient({
     if (demo) return;
     setSavingSection("video");
     setErro(null);
-    const r = await gravarVideoArquivo(property.id, novo);
+    const r = await semQuedaDeRede(gravarVideoArquivo(property.id, novo));
     setSavingSection(null);
     if (r.ok) {
       setSavedSection("video");
@@ -673,7 +674,7 @@ export function EditarImovelClient({
                 <p className="mb-2 text-xs text-muted">{AMENITY_HINT[g.category] ?? ""}</p>
                 {/* Conformidade (31/10): o mesmo cartão do Passo 5 do cadastro (E193) — ícone próprio por comodidade
                     (iconeDaComodidade), em grade de 2 colunas; antes eram pílulas sem ícone. */}
-                <div className="grid gap-2 sm:grid-cols-2" data-testid="editar-comodidades-grade">
+                <div className="grade-par grid gap-2 sm:grid-cols-2" data-testid="editar-comodidades-grade">
                   {g.items.map((it) => (
                     <CartaoEscolha
                       key={it.key}

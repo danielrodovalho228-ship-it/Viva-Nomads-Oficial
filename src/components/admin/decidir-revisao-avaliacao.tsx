@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { decidirRevisaoAvaliacao } from "@/lib/data/avaliacoes-resposta-actions";
 import { Button } from "@/components/ui/button";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Decisão do pedido de revisão de uma avaliação (ADMIN-2: mora na Central de Pendências, filtro "Avaliações contestadas"). */
 export function DecidirRevisaoAvaliacao({ id }: { id: string }) {
@@ -13,7 +14,7 @@ export function DecidirRevisaoAvaliacao({ id }: { id: string }) {
   const router = useRouter();
   const decidir = (d: "removida" | "mantida") =>
     start(async () => {
-      const r = await decidirRevisaoAvaliacao(id, d, just);
+      const r = await semQuedaDeRede(decidirRevisaoAvaliacao(id, d, just));
       if (!r.ok) return setErro(r.error ?? "Não foi possível decidir.");
       setErro(null);
       router.refresh();

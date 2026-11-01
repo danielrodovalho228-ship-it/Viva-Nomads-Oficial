@@ -39,6 +39,6 @@ export default async function PortfolioPage() {
       </>
     );
   }
-  const itens = isSupabaseConfigured() ? await getCarteiraDoDono() : [];
+  const itens = isSupabaseConfigured() ? await getCarteiraDoDono(undefined, { exigir: true }) : [];
   return <CarteiraClient itens={itens} />;
 }

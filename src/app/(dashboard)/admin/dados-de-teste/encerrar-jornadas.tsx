@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { encerrarJornadasDeTeste } from "@/lib/data/jornada-teste-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** "Encerrar jornadas de teste" (Prompt 29, item 2): confirmação na página, resultado sempre escrito na tela. */
 export function EncerrarJornadasTeste() {
@@ -19,7 +20,7 @@ export function EncerrarJornadasTeste() {
         confirmar="Encerrar jornadas"
         testid="encerrar-jornadas"
         onConfirmar={async () => {
-          const r = await encerrarJornadasDeTeste();
+          const r = await semQuedaDeRede(encerrarJornadasDeTeste());
           setMsg(
             r.ok
               ? { ok: true, texto: `${r.encerrados} ${r.encerrados === 1 ? "contrato de teste encerrado" : "contratos de teste encerrados"} em ${r.anuncios} ${r.anuncios === 1 ? "anúncio" : "anúncios"} de teste.` }

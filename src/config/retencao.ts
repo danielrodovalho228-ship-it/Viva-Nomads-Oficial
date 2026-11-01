@@ -173,7 +173,14 @@ export const INVENTARIO: ItemInventario[] = [
   i("limites_uso", "public.limites_uso", "chave com uid ou hash do IP", "limite de uso", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("emails_teste", "public.emails_teste", "e-mails das contas de teste", "o QA ler os e-mails enviados", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("pedidos_ajuda_publicacao", "public.pedidos_ajuda_publicacao", "observação do dono", "ajuda para publicar", CONTA),
-  i("property_ownership_checks", "public.property_ownership_checks", "matrícula, motivo e campos conferidos", "titularidade", CONTA, "veredito"),
+  // E293 P7: itens que estavam fora do inventário, e o prazo de 90 dias † do registro técnico da IA (fase 2: por ora só
+  // o relatório simulado conta o que sairia; apagar de verdade espera a decisão de ligar a fase 2).
+  i("ia_chamadas", "public.ia_chamadas", "registro técnico da chamada de IA e erro_resumo (até 300 caracteres do erro do fornecedor)", "diagnóstico da IA no admin", { prazoDias: 90, gatilho: "criacao", modo: "apagar", base: "proposta", fase: 2 }, "nada"),
+  i("ai_generations", "public.ai_generations", "quem gerou um texto de anúncio por IA e quando (sem o texto gerado)", "limite diário de gerações", CONTA, "nada (sai em cascata com a conta)"),
+  i("push_envios", "public.push_envios", "contagem de cada envio de push por pessoa", "diagnóstico do push no admin", { prazoDias: 30, gatilho: "criacao", modo: "apagar", base: "proposta", fase: 2 }, "nada (já apagado aos 30 dias pela rotina de atendimento, corteRetencaoPushEnvios)"),
+  // E293 P1: dos proprietários só o veredito (nome/CPF conferem, fração, quantos); ônus sem credor. Ao sair o arquivo,
+  // saem também campos_extraidos, onus, matricula_numero e cartorio (LIMPEZA_MATRICULA_ELIMINADA).
+  i("property_ownership_checks", "public.property_ownership_checks", "número da matrícula, cartório, veredito por proprietário (sem nome nem CPF), tipos de ônus (sem credor) e motivo", "titularidade", CONTA, "veredito (resultado, motivo e CAF ok); o resto sai junto com o arquivo"),
   i("qualification_checklists", "public.qualification_checklists", "caminho do documento do imóvel", "qualificação", CONTA, "veredito"),
   i("tempos_deslocamento", "public.tempos_deslocamento", "chave com lat/lng do local de trabalho digitado", "tempo até o trabalho (37)", CONTA),
   // DESTINO-PESSOAL-B: o "Outro local" da pessoa logada (rótulo sem número, ponto com 3 casas). Só ela lê; sai com a conta.
@@ -187,6 +194,64 @@ export const INVENTARIO: ItemInventario[] = [
   i("prova_links_celular", "public.prova_links_celular", "hash do link de uso único, item e dono", "abrir a câmera do item no celular do próprio dono", { prazoDias: 1, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "nada"),
   i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
 ];
+
+/*
+  E293 P3 — colunas jsonb. A guarda por nome de coluna (inventario.test.ts) não enxerga o que entra DENTRO de um jsonb, e
+  foi por aí que a leitura do modelo (matrícula e documento) ficou guardada além do desenho. Toda coluna jsonb das
+  migrações precisa estar em uma das duas listas abaixo; coluna nova sem decisão quebra o teste.
+*/
+
+/** jsonb que recebe saída de FORNECEDOR (modelo de IA, CAF, OSM/Mapbox, Google, Resend): o que fica nela. */
+export const JSONB_DE_FORNECEDOR: Record<string, string> = {
+  "property_ownership_checks.campos_extraidos": "modelo de IA (matrícula): só o veredito por proprietário (nome/CPF conferem, fração, quantos), sem nome nem documento (E293 P1); sai junto com o arquivo",
+  "property_ownership_checks.onus": "modelo de IA (matrícula): tipo do ônus e se é em favor de terceiro, sem credor (E293 P1); sai junto com o arquivo",
+  "qualification_checklists.conferencia": "modelo de IA (documento do imóvel): veredito da leitura em sim/não e contagens, checklist, motivos, conferidor e modelo (E293 P2); trilhas antigas com `leitura` bruta estão listadas para limpeza",
+  "tenant_verifications.caf_result": "CAF/Certta: resultado (risco, identidade, documento, prova de vida) e `notes` com motivos do fornecedor; vale 12 meses (E293 P5 pendente: id da transação e códigos fixos)",
+  "proximidades_cep.itens": "OSM (Overpass) ou Mapbox: lugares próximos do CEP, cache de 30 dias na leitura (E293 P6: Mapbox e linhas velhas listadas)",
+  "properties.google_places": "Google Places: nenhum código grava hoje (coluna legada); destino decidido no E293 P4",
+  "documentos_fiscais.envio": "Resend: papel e status do envio por destinatário, nunca o endereço de e-mail",
+  "documentos_reenvios.resultado": "Resend: papel e status do reenvio por destinatário, nunca o endereço de e-mail",
+};
+
+/** jsonb escrito por nós ou pela própria pessoa (formulário, regra, contagem): nada vem de fornecedor. */
+export const JSONB_PROPRIO: Record<string, string> = {
+  "_backup_p0_draft_data.draft_data": "cópia de migração do rascunho do anúncio",
+  "agentes_rondas.achados": "relatório interno das rondas dos agentes da equipe",
+  "avaliacoes.notas_categorias": "notas que a pessoa deu",
+  "chamado_mensagens.anexos": "caminhos dos anexos do chamado (arquivo no bucket inventariado)",
+  "chaves_plataforma.valor": "valor de configuração da plataforma",
+  "contracts.cost_split": "divisão de custos acordada no contrato",
+  "contrato_aditivos.mudancas": "mudanças pedidas no aditivo",
+  "contrato_eventos.dados": "dados do evento do contrato (nosso)",
+  "contratos.ocorrencia_ocupacao": "ocorrência registrada pelas partes",
+  "contratos.pets_regras_congeladas": "regras de pets do anúncio no dia do contrato",
+  "documentos_fiscais.encargos": "valores calculados por nós",
+  "emails_proativos.extra": "dados do e-mail proativo montado por nós",
+  "imovel_estrutura.checklist": "checklist preenchido pelo dono",
+  "imovel_nivel.diferenciais": "extras marcados pelo dono",
+  "imovel_nivel.por_area": "nível por área calculado por nós",
+  "lab_execucoes.falhas": "resultado do laboratório (testes)",
+  "lab_execucoes.por_categoria": "resultado do laboratório (testes)",
+  "lab_execucoes.por_spec": "resultado do laboratório (testes)",
+  "pagamentos_bloco.encargos": "valores calculados por nós",
+  "parceiro_pedido_eventos.dados": "dados do evento do pedido (nosso)",
+  "parceiro_solicitacoes.checklist": "checklist preenchido pelo parceiro",
+  "parceiro_solicitacoes.dados_categoria": "campos da categoria preenchidos pelo parceiro",
+  "parceiros.dados_recebimento": "dados de recebimento digitados pelo parceiro",
+  "pedidos_moradia.destino": "destino escolhido pela pessoa (coordenada coberta pela guarda de coordenadas)",
+  "profiles.local_trabalho": "local escolhido pela pessoa (coordenada coberta pela guarda de coordenadas)",
+  "properties.detalhes_anuncio": "detalhes digitados pelo dono",
+  "properties.draft_data": "rascunho digitado pelo dono",
+  "properties.limpeza_estadia": "regra de limpeza do dono",
+  "properties.negociacao": "regra de negociação do dono",
+  "properties.pets_regras": "regras de pets do dono",
+  "properties.regras_casa": "regras da casa do dono",
+  "qualification_checklists.formulario": "formulário preenchido pelo dono",
+  "ranking_sombra.busca": "filtros da busca (modo sombra da ordem)",
+  "vistoria_laudos.ressalvas": "ressalvas escritas pelo avaliador",
+  "vistoria_laudos.resumo": "resumo calculado por nós",
+  "vistoria_pedidos.ruido_respostas": "respostas do dono sobre ruído",
+};
 
 /** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
 export const SEM_DADO_PESSOAL: Record<string, string> = {
@@ -215,7 +280,6 @@ export const SEM_DADO_PESSOAL: Record<string, string> = {
   eliminacoes_registro: "o livro de eliminações (nunca guarda o conteúdo)",
   fotos_anuncio_hash: "só o hash perceptual da foto do anúncio e o caminho (dono/uuid.webp) — exceção aprovada, antifraude",
   gastos_marketing: "observação do gasto",
-  ia_chamadas: "motivo técnico da chamada de IA",
   interesse_cidade: "chave anônima de contagem",
   interesse_fotografo_cidade: "chave anônima de contagem",
   moderacao_log: "motivo da decisão de moderação",

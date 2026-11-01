@@ -396,7 +396,7 @@ function DemoFlow({
         headers: { "Content-Type": "application/json" },
         // Laudo usa o NOME COMPLETO do perfil (nunca o e-mail cru que o campo
         // `name` carrega como fallback técnico) — item 1 do fechamento do QA.
-        body: JSON.stringify({ name: user?.fullName ?? "Inquilino" }),
+        body: JSON.stringify({ name: user?.fullName ?? "Morador" }),
       });
       setResult((await res.json()) as CafResult);
       setValidUntil(validadeDoLaudo(new Date()).toLocaleDateString("pt-BR"));

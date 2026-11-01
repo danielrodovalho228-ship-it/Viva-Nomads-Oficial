@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { BUCKETS_INVENTARIADOS, INVENTARIO, SEM_DADO_PESSOAL } from "../../config/retencao.ts";
+import { BUCKETS_INVENTARIADOS, INVENTARIO, JSONB_DE_FORNECEDOR, JSONB_PROPRIO, SEM_DADO_PESSOAL } from "../../config/retencao.ts";
 import { eliminaDeVerdade } from "./regras.ts";
 
 const DIR = new URL("../../../supabase/migrations/", import.meta.url);
@@ -102,4 +102,41 @@ test("coordenadas: só nas tabelas permitidas, com motivo; a medição de intern
   const sobrando = [...achadas].filter((t) => !(t in COORDENADAS_PERMITIDAS)).sort();
   assert.deepEqual(sobrando, [], `coordenada sem decisão escrita: ${sobrando.join(", ")}`);
   assert.ok(!achadas.has("internet_medicoes"), "a medição guarda só a distância");
+});
+
+/*
+  E293 P3 — GUARDA das colunas jsonb: toda coluna jsonb das migrações está classificada — ou recebe saída de fornecedor
+  (e diz o que fica nela) ou é nossa/da pessoa. Uma coluna jsonb nova sem decisão quebra este teste.
+*/
+function colunasJsonb(): Set<string> {
+  const out = new Set<string>();
+  for (const s of migracoes) {
+    for (const m of s.matchAll(/create table (?:if not exists )?(?:public\.)?([a-z_0-9]+)\s*\(([\s\S]*?)\n\s*\);/g)) {
+      for (const c of m[2].matchAll(/^\s*([a-z_0-9]+)\s+jsonb/gm)) out.add(`${m[1]}.${c[1]}`);
+    }
+    for (const m of s.matchAll(/alter table (?:if exists )?(?:only )?(?:public\.)?([a-z_0-9]+)([\s\S]*?);/g)) {
+      for (const c of m[2].matchAll(/add column (?:if not exists )?([a-z_0-9]+)\s+jsonb/g)) out.add(`${m[1]}.${c[1]}`);
+    }
+  }
+  return out;
+}
+
+test("GUARDA (E293 P3): toda coluna jsonb está classificada — de fornecedor (com o que fica) ou nossa", () => {
+  const nas = colunasJsonb();
+  assert.ok(nas.size >= 40, `achei só ${nas.size} colunas jsonb nas migrações`);
+  const faltam = [...nas].filter((c) => !(c in JSONB_DE_FORNECEDOR) && !(c in JSONB_PROPRIO)).sort();
+  assert.deepEqual(faltam, [], `coluna jsonb sem decisão (src/config/retencao.ts, JSONB_DE_FORNECEDOR ou JSONB_PROPRIO):\n${faltam.join("\n")}`);
+  const inventadas = [...Object.keys(JSONB_DE_FORNECEDOR), ...Object.keys(JSONB_PROPRIO)].filter((c) => !nas.has(c)).sort();
+  assert.deepEqual(inventadas, [], "a lista cita coluna jsonb que não existe nas migrações");
+  const nasDuas = Object.keys(JSONB_DE_FORNECEDOR).filter((c) => c in JSONB_PROPRIO);
+  assert.deepEqual(nasDuas, [], "coluna nas duas listas");
+});
+
+test("GUARDA (E293 P3): as colunas que já guardaram saída de fornecedor estão na lista de fornecedor, com o que fica", () => {
+  for (const c of ["property_ownership_checks.campos_extraidos", "property_ownership_checks.onus", "qualification_checklists.conferencia", "tenant_verifications.caf_result", "proximidades_cep.itens"]) {
+    assert.ok(c in JSONB_DE_FORNECEDOR, c);
+  }
+  for (const [c, fica] of Object.entries(JSONB_DE_FORNECEDOR)) {
+    assert.ok(fica.length > 20 && /:/.test(fica), `${c}: diga o fornecedor e o que fica`);
+  }
 });

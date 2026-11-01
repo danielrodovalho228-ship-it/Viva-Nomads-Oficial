@@ -677,12 +677,18 @@ async function registroDaProposta(admin: Admin, propostaId: string): Promise<Pro
 }
 
 /** Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). */
-export async function listarPropostas(): Promise<PropostaResumo[]> {
+const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
+ * home, notificações), segue a lista vazia. */
+export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promise<PropostaResumo[]> {
   const s = await sessao();
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.
-  const { data } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("atualizada_em", { ascending: false }).limit(200);
+  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("atualizada_em", { ascending: false }).limit(200);
+  if (error && opcoes.exigir) throw new Error(MSG_PROPOSTAS_NAO_CARREGARAM);
   const ps = (data ?? []) as LinhaProposta[];
   if (!ps.length) return [];
   const [{ data: vs }, { data: ims }] = await Promise.all([

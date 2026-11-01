@@ -12,6 +12,7 @@ import {
 import { salvarLocalTrabalho } from "@/lib/data/local-trabalho-actions";
 import type { EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const VAZIO: EstadoDestino = { destino: null, modo: "carro", ate: 0 };
 
@@ -59,7 +60,7 @@ export function MeuLocalTrabalho() {
   const salvar = (e: EstadoDestino | null) =>
     iniciar(async () => {
       const d = e?.destino;
-      const r = await salvarLocalTrabalho(
+      const r = await semQuedaDeRede(salvarLocalTrabalho(
         !e || !d
           ? null
           : "slug" in d
@@ -71,7 +72,7 @@ export function MeuLocalTrabalho() {
                 modo: e.modo,
                 ate: e.ate,
               },
-      );
+      ));
       if (r.ok) {
         setSalvo(r.rotulo);
         if (!e) setEstado(VAZIO);
@@ -95,7 +96,7 @@ export function MeuLocalTrabalho() {
           temDados={!!salvo}
           textoConfirmar={textosToggle("local-trabalho").confirmar}
           onLimpar={async () => {
-            const r = await salvarLocalTrabalho(null);
+            const r = await semQuedaDeRede(salvarLocalTrabalho(null));
             if (r.ok) {
               setSalvo(null);
               setEstado(VAZIO);

@@ -5,6 +5,7 @@
   serviços). A emissão de NF do aluguel pelo proprietário PJ fica para fase futura
   (campo issues_invoice e gancho já prontos). Sem NFSE_API_TOKEN, modo demonstração.
 */
+import { erroDoFornecedor } from "@/lib/integrations/erro-fornecedor";
 
 export type InvoiceType = "platform" | "rent";
 
@@ -54,7 +55,7 @@ export async function emitInvoice(params: {
     }),
   });
 
-  if (!res.ok) throw new Error(`NFS-e ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw erroDoFornecedor("NFS-e", res.status, await res.text().catch(() => ""));
   const data = (await res.json()) as { ref?: string; status?: string; url?: string };
   return {
     demo: false,

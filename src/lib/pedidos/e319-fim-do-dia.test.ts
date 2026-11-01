@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dataPedidoBR } from "./campos.ts";
 
-test("E319: o cartão do pedido do morador diz 'Fica no ar até o fim do dia DD/MM/AAAA'", () => {
+test("E319: o cartão do pedido do morador diz 'Fica no ar até o fim do dia …' (a data por extenso: e319-por-extenso)", () => {
   const src = readFileSync(new URL("../../app/(dashboard)/dashboard/pedidos/pedidos-client.tsx", import.meta.url), "utf8");
-  assert.match(src, /"Fica no ar até o fim do dia"\} \{dataPedidoBR\(p\.expira_em\)\}/);
+  assert.match(src, /`Fica no ar até o fim do dia \$\{/);
   assert.doesNotMatch(src, /"Fica no ar até"\}/);
 });
 

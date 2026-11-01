@@ -8,6 +8,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { DESCRICAO_PEDIDO_MAX, HORARIOS_MAX } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { solicitarOrcamento } from "@/lib/parceiros/pedido-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -76,7 +77,7 @@ export function SolicitarOrcamento({
   const enviar = () =>
     iniciar(async () => {
       setErro(null);
-      const r = await solicitarOrcamento({
+      const r = await semQuedaDeRede(solicitarOrcamento({
         parceiroId,
         servicoId: servicoId || null,
         categoria,
@@ -84,7 +85,7 @@ export function SolicitarOrcamento({
         propertyId: imovel || null,
         horarios: horarios.filter(Boolean).map((h) => `${h}:00-03:00`),
         doCadastroDoImovel,
-      });
+      }));
       if (!r.ok) setErro(r.erro);
       else router.push(`/dashboard/servicos/pedidos/${r.valor.id}`);
     });

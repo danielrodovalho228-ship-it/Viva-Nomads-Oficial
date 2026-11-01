@@ -62,17 +62,23 @@ const txt = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null
  * Matrículas para a equipe (prompt 19): em revisão e prováveis ainda sem decisão (amostra), a mais antiga primeiro.
  * A matrícula abre por URL assinada curta (bucket privado); do laudo CAF só os booleanos.
  */
-export async function listMatriculasFila(limite = 40): Promise<MatriculaNaFila[]> {
+const MSG_FILA_MATRICULAS_NAO_CARREGOU = "Não foi possível carregar a fila de matrículas agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 16: com `exigir` (a página da fila), a falha do banco LANÇA — o admin
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de "fila vazia" (a equipe perderia o prazo de
+ * 48 h achando que não há nada). */
+export async function listMatriculasFila(limite = 40, opcoes: { exigir?: boolean } = {}): Promise<MatriculaNaFila[]> {
   const ctx = await soAdmin();
   if (!ctx) return [];
   const { admin } = ctx;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("property_ownership_checks")
     .select("id, user_id, property_id, arquivo_path, resultado, motivo, campos_extraidos, onus, caf_ok, caf_simulado, caso, caso_documento_path, criada_em")
     .in("resultado", ["em_revisao", "provavel"])
     .is("revisado_em", null)
     .order("criada_em", { ascending: true })
     .limit(Math.min(100, Math.max(1, limite)));
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_MATRICULAS_NAO_CARREGOU);
   const out: MatriculaNaFila[] = [];
   for (const r of data ?? []) {
     const [{ data: perfil }, prop, arq, casoArq, laudo] = await Promise.all([

@@ -98,6 +98,14 @@ body {
   Duas medidas que NÃO quebram line-clamp: line-height folgado e padding-bottom.
   (Não forçar overflow aqui — isso anulava o line-clamp dos títulos.)
 */
+/* Grade par (regra da casa): numa grade de opções ou cartões, se a última casa for ímpar ela ocupa a linha inteira —
+   nunca sobra uma casa vazia desemparelhada. Vale para qualquer número de colunas (no celular, de 1 coluna, nada muda). */
+@utility grade-par {
+  & > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
 @layer base {
   /* Corpo 16/400 com linha 1,5 (adendo do Prompt 40). */
   body {

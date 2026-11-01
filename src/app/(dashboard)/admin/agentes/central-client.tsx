@@ -39,6 +39,7 @@ import { AtivarNotificacoes } from "@/components/app/push-app";
 import { ChipPrioridade, RaioX } from "@/components/admin/agentes/raiox";
 import styles from "@/components/admin/agentes/central.module.css";
 import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /*
   Central de Agentes v2 — ADMIN-5: nos tokens do admin (fundo claro, sem o tema escuro do QG), avatares hexagonais
@@ -1088,7 +1089,7 @@ function AceiteOrdem({ ordemId, podeDecidir }: { ordemId: string; podeDecidir: b
   const decidir = (decisao: "aceitar" | "reabrir") =>
     iniciar(async () => {
       setErro(null);
-      const r = await responderAceiteOrdem(ordemId, decisao, falta);
+      const r = await semQuedaDeRede(responderAceiteOrdem(ordemId, decisao, falta));
       if (!r.ok) return setErro(r.erro ?? "Não foi possível registrar agora.");
       router.refresh();
     });
@@ -1179,7 +1180,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
   }
 
   async function virarOrdem(chave: string, slug: string, texto: string) {
-    const r = await deixarOrdem(slug, texto);
+    const r = await semQuedaDeRede(deixarOrdem(slug, texto));
     setVirou((v) => ({ ...v, [chave]: r.ok ? (r.aviso ?? "Ordem criada.") : (r.erro ?? "Não consegui.") }));
     if (r.ok) router.refresh();
   }

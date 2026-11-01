@@ -15,6 +15,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { ignorarPedido, oferecerImovel, voltarParaNovos } from "@/lib/data/pedidos-actions";
 import type { PedidoParaDono, PropriedadeMinima } from "@/lib/data/pedidos-actions";
 import { statusHumano } from "@/lib/status-humano";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const ORDEM_SITUACAO = { compativel: 0, quase: 1, demais: 2 } as const;
 
@@ -183,7 +184,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                       <p className="text-xs text-muted">{p.ignoradoMotivo ? `Ignorado: ${p.ignoradoMotivo}` : "Ignorado"}</p>
                       <BotaoAcao
                         onClick={async () => {
-                          const r = await voltarParaNovos(p.id);
+                          const r = await semQuedaDeRede(voltarParaNovos(p.id));
                           if (r.ok) router.refresh();
                         }}
                         testid="voltar-novos"
@@ -284,7 +285,7 @@ function OfertaForm({ pedidoId, opcoes, onCancel, onDone }: { pedidoId: string; 
           onClick={async () => {
             setErro(null);
             setEnviando(true);
-            const r = await oferecerImovel(pedidoId, imovelId, mensagem);
+            const r = await semQuedaDeRede(oferecerImovel(pedidoId, imovelId, mensagem));
             setEnviando(false);
             if (r.ok) onDone();
             else setErro(r.error ?? "Não foi possível enviar a oferta.");
@@ -319,7 +320,7 @@ function IgnorarForm({ pedidoId, onCancel, onDone }: { pedidoId: string; onCance
           onClick={async () => {
             setErro(null);
             setEnviando(true);
-            const r = await ignorarPedido(pedidoId, motivo);
+            const r = await semQuedaDeRede(ignorarPedido(pedidoId, motivo));
             setEnviando(false);
             if (r.ok) onDone();
             else setErro(r.error ?? "Não foi possível ignorar.");

@@ -16,6 +16,7 @@ import { cn, dataBR } from "@/lib/utils";
 import { rotuloPreco, textoPreco } from "@/lib/cartao-preco";
 import { totalMesDaLinha } from "@/lib/precos";
 import { statusHumano } from "@/lib/status-humano";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import {
   motivoLabel,
   PEDIDO_STATUS_LABEL,
@@ -34,6 +35,7 @@ import {
   DIAS_AVISO_RENOVAR,
   TEXTO_AVISO_RENOVAR,
   dataPedidoBR,
+  dataPedidoPorExtenso,
   textoAcimaDoTeto,
   textoBairros,
   textoFaixaValor,
@@ -190,7 +192,7 @@ export function PedidosClient({
                       <p className="mt-2 max-w-2xl text-sm text-ink">{p.apresentacao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted">
-                      {p.status === "expirado" ? "Expirou em" : "Fica no ar até o fim do dia"} {dataPedidoBR(p.expira_em)}
+                      {p.status === "expirado" ? `Expirou em ${dataPedidoBR(p.expira_em)}` : `Fica no ar até o fim do dia ${dataPedidoPorExtenso(p.expira_em)}`}
                     </p>
                   </div>
                   {/* Ações do pedido */}
@@ -381,7 +383,7 @@ function NotifPrefs({ inicial }: { inicial: { email: boolean } }) {
   async function salvar(v: boolean) {
     setEmail(v);
     setSalvo(false);
-    const res = await setNotifPrefs({ email: v });
+    const res = await semQuedaDeRede(setNotifPrefs({ email: v }));
     if (res.ok) {
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);

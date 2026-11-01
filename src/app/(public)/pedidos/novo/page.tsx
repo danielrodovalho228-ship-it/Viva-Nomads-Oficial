@@ -35,6 +35,7 @@ import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino
 import { CHIPS_INTERNET } from "@/lib/busca/filtro-internet";
 import type { EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Um só estilo para todos os campos do formulário: 48 px de altura (prompt 12). */
 const CAMPO =
@@ -401,13 +402,13 @@ function PedidoForm() {
     };
     setEnviando(true);
     if (editarId) {
-      const r = await editarPedido(editarId, dados);
+      const r = await semQuedaDeRede(editarPedido(editarId, dados));
       setEnviando(false);
       if (r.ok) router.push("/dashboard/pedidos?editado=1");
       else setErro(r.error ?? "Não foi possível salvar o pedido.");
       return;
     }
-    const res = await criarPedido(dados);
+    const res = await semQuedaDeRede(criarPedido(dados));
     setEnviando(false);
     if (res.ok) {
       registrarEvento("publicar_pedido", { cidade });
@@ -497,7 +498,8 @@ function PedidoForm() {
 
   return (
     <div data-testid="pedido-formulario">
-      <h2 className="font-title text-2xl font-semibold text-ink md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
+      {/* Conformidade fina (01/11, mockup morador-pedir): o título do formulário em verde. */}
+      <h2 className="font-title text-2xl font-semibold text-forest md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
       <p className="mt-1 text-sm text-muted">
         {editarId ? "As mudanças valem na hora para os proprietários da cidade." : "Os proprietários da cidade veem seu pedido e respondem pela plataforma."}
       </p>
@@ -668,7 +670,8 @@ function PedidoForm() {
           </div>
           <div>
             <span className="mb-2 block text-sm font-medium text-ink">Precisa de</span>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" data-testid="pedido-necessidades">
+            {/* Varredura 01/11: grade par — com número ímpar, a última opção ocupa a linha inteira. */}
+            <div className="grid grid-cols-2 gap-2" data-testid="pedido-necessidades">
               {NECESSIDADES.map((n) => (
                 <BotaoMarca
                   key={n.valor}
@@ -676,6 +679,7 @@ function PedidoForm() {
                   onClick={() => setNecessidades((a) => (a.includes(n.valor) ? a.filter((x) => x !== n.valor) : [...a, n.valor]))}
                   icone={Plus}
                   testid={`pedido-nec-${n.valor}`}
+                  className="odd:last:col-span-2"
                 >
                   {n.rotulo}
                 </BotaoMarca>
@@ -843,12 +847,14 @@ function BotaoMarca({
   icone: Icone,
   testid,
   children,
+  className,
 }: {
   ativo: boolean;
   onClick: () => void;
   icone: React.ComponentType<{ className?: string }>;
   testid: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
@@ -859,6 +865,7 @@ function BotaoMarca({
       className={cn(
         "flex h-12 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
         ativo ? "border-forest bg-sage-100 text-forest" : "border-line bg-white text-ink hover:border-sage",
+        className,
       )}
     >
       {ativo ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Icone className="h-4 w-4 shrink-0 text-muted" />}
