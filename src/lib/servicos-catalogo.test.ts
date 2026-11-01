@@ -44,7 +44,7 @@ test("'Meus pedidos' (Prompt 31b): os pedidos de parceiro do cliente; o catálog
   assert.equal(MEUS_PEDIDOS_VAZIO, "Quando você pedir um serviço, ele aparece aqui com o andamento.");
   const pagina = ler("../app/(dashboard)/dashboard/servicos/page.tsx");
   assert.match(pagina, /text=\{MEUS_PEDIDOS_VAZIO\}/);
-  assert.match(pagina, /meusPedidosDeServico\(\)/);
+  assert.match(pagina, /meusPedidosDeServico\((\{ exigir: true \})?\)/);
   assert.doesNotMatch(pagina, /catalogoServicosMorador|servicos_adicionais|CatalogoServicos/);
   assert.equal(existsSync(fileURLToPath(new URL(CATALOGO, import.meta.url))), false, "o catálogo antigo saiu da tela");
   assert.doesNotMatch(ler("./data/servicos-morador-actions.ts"), /export async function (pedirServico|meusPedidosServico)/);
