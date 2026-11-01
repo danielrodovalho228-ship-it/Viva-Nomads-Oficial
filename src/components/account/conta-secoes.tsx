@@ -47,6 +47,7 @@ export function DadosPessoais() {
   const [nascimento, setNascimento] = useState("");
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [dadosFalharam, setDadosFalharam] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
@@ -61,7 +62,12 @@ export function DadosPessoais() {
         setEmail(d.email);
         setEmailConfirmado(d.emailConfirmado);
       })
-      .catch(() => {});
+      // Achado 66: falhou a leitura → avisa e trava o salvar (nome/telefone vazios apagariam o que está gravado).
+      .catch(() => {
+        if (!vivo) return;
+        setDadosFalharam(true);
+        setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
+      });
     getNascimento()
       .then((n) => vivo && setNascimento(n))
       .catch(() => {});
@@ -75,6 +81,7 @@ export function DadosPessoais() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
+    if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
     setErro(null);
     setOk(false);
     const nasc = validarNascimento(nascimento);

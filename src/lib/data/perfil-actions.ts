@@ -48,11 +48,13 @@ export async function getMinhaCategoria(): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+  // Achado 69: a falha de leitura LANÇA — antes o formulário abria vazio e "Salvar" apagava o que estava gravado.
+  const { data, error } = await supabase
     .from("profiles")
     .select("professional_category")
     .eq("id", user.id)
     .maybeSingle();
+  if (error) throw new Error("Não foi possível ler sua categoria profissional agora.");
   return (data?.professional_category as string | null) ?? null;
 }
 
@@ -85,11 +87,13 @@ export async function getMeuPorQueNaCidade(): Promise<PorQueNaCidade | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+  // Achado 68: a falha de leitura LANÇA — antes o formulário abria vazio e "Salvar" apagava o que estava gravado.
+  const { data, error } = await supabase
     .from("profiles")
     .select("cidade_periodo_inicio, cidade_periodo_fim, cidade_empresa, cidade_frase")
     .eq("id", user.id)
     .maybeSingle();
+  if (error) throw new Error("Não foi possível ler seu cartão da cidade agora.");
   return {
     inicio: (data?.cidade_periodo_inicio as string | null) ?? null,
     fim: (data?.cidade_periodo_fim as string | null) ?? null,
@@ -135,11 +139,13 @@ export async function getMeuEspacoTrabalho(): Promise<EspacoTrabalho | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+  // Achado 67: a falha de leitura LANÇA — antes o formulário abria vazio e "Salvar" apagava o que estava gravado.
+  const { data, error } = await supabase
     .from("profiles")
     .select("espaco_trabalho_oferta, espaco_trabalho_procura")
     .eq("id", user.id)
     .maybeSingle();
+  if (error) throw new Error("Não foi possível ler seu espaço de trabalho agora.");
   const v = validarEspacoTrabalho({ oferta: data?.espaco_trabalho_oferta, procura: data?.espaco_trabalho_procura });
   return v.ok ? v.valor : { oferta: null, procura: null };
 }
@@ -182,11 +188,13 @@ export async function getMeusDados(): Promise<MeusDados | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+  // Achado 66: a falha de leitura LANÇA — antes o formulário abria vazio e "Salvar" apagava o que estava gravado.
+  const { data, error } = await supabase
     .from("profiles")
     .select("full_name, phone, linkedin_url, motivo_estadia")
     .eq("id", user.id)
     .maybeSingle();
+  if (error) throw new Error("Não foi possível ler seus dados agora.");
   return {
     fullName: (data?.full_name as string) ?? "",
     email: user.email ?? "",
