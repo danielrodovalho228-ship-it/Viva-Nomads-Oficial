@@ -1561,7 +1561,8 @@
         "socio"
       ],
       "specs": [
-        "t252-dev-emails"
+        "t252-dev-emails",
+        "t963-varredura-bloco191"
       ]
     },
     "/empresas": {
@@ -2589,7 +2590,8 @@
       ],
       "specs": [
         "t470-qa-leitor-caixas",
-        "t521-qa-caixa-sem-token"
+        "t521-qa-caixa-sem-token",
+        "t963-varredura-bloco191"
       ]
     },
     "/qa/entrar": {
@@ -2606,7 +2608,8 @@
       ],
       "specs": [
         "t695-e264b-proativos",
-        "t711-e264b-proativos-corpo"
+        "t711-e264b-proativos-corpo",
+        "t963-varredura-bloco191"
       ]
     }
   },
