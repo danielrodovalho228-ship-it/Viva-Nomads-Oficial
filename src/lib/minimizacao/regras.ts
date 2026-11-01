@@ -19,6 +19,7 @@ export type Gatilho =
   | "exclusao_conta" // pedido de exclusão da conta / do titular
   | "sinal_processado" // depois de usado (ex.: medição do morador → sinal de qualidade)
   | "remocao_anuncio" // anúncio removido
+  | "criacao" // desde a criação da linha (registro técnico, ex.: ia_chamadas)
   | "sem_gatilho_automatico"; // fica enquanto a conta existir; sai na exclusão da conta
 
 export interface ItemInventario {
@@ -107,6 +108,7 @@ export function textoPrazo(item: Pick<ItemInventario, "prazoDias" | "base" | "ga
     exclusao_conta: "depois do pedido de exclusão",
     sinal_processado: "depois de processado o sinal",
     remocao_anuncio: "depois da remoção do anúncio",
+    criacao: "depois de criado",
     sem_gatilho_automatico: "",
   };
   const dias = item.prazoDias === 0 ? "na hora" : `${item.prazoDias} dias`;

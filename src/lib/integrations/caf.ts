@@ -11,6 +11,7 @@ import type { CafResult } from "@/lib/closing";
 import { idSemResultado, lerRespostaCaf } from "@/lib/integrations/caf-resposta";
 
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
+import { erroDoFornecedor } from "@/lib/integrations/erro-fornecedor";
 
 const API_BASE = process.env.CAF_API_BASE ?? "https://api.combateafraude.com";
 
@@ -57,7 +58,7 @@ export async function verifyTenant(req: CafRequest): Promise<CafResult> {
   });
 
   if (!res.ok) {
-    throw new Error(`CAF ${res.status}: ${await res.text()}`);
+    throw erroDoFornecedor("CAF", res.status, await res.text().catch(() => ""));
   }
 
   // A documentação descreve a criação da transação devolvendo só o id; o resultado vem no GET da transação.

@@ -59,7 +59,7 @@ export function CamposChacara({
       <fieldset className="mt-4">
         <legend className="text-sm font-semibold text-ink">Acesso até a casa</legend>
         {/* E193: escolha única no cartão da Qualificação (antes, botões redondos de rádio). */}
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Acesso até a casa">
+        <div className="grade-par mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Acesso até a casa">
           {ACESSOS_CHACARA.map((a) => (
             <CartaoEscolha key={a.valor} on={valor.acesso === a.valor} onClick={() => onChange({ ...valor, acesso: a.valor })} rotulo={a.rotulo} testid={`chacara-acesso-${a.valor}`} />
           ))}
@@ -69,7 +69,7 @@ export function CamposChacara({
       <fieldset className="mt-4">
         <legend className="text-sm font-semibold text-ink">Tipo de internet</legend>
         <p className="text-xs text-muted">A velocidade (Mbps) vai no bloco de internet, como em todo anúncio.</p>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de internet">
+        <div className="grade-par mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de internet">
           {INTERNETS_CHACARA.map((a) => (
             <CartaoEscolha key={a.valor} on={valor.internet === a.valor} onClick={() => onChange({ ...valor, internet: a.valor })} rotulo={a.rotulo} testid={`chacara-internet-${a.valor}`} />
           ))}

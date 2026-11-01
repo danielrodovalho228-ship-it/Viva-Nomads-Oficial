@@ -9,7 +9,7 @@ import { RespostaRapida } from "@/components/ajuda/resposta-rapida";
 
 export default async function MeusPedidosPage() {
   const [pedidos, respostas, prefs] = await Promise.all([
-    getMeusPedidos(),
+    getMeusPedidos({ exigir: true }),
     getRespostasRecebidas(),
     getNotifPrefs(),
   ]);

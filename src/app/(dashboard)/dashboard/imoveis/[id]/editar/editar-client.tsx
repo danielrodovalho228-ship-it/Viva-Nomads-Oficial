@@ -674,7 +674,7 @@ export function EditarImovelClient({
                 <p className="mb-2 text-xs text-muted">{AMENITY_HINT[g.category] ?? ""}</p>
                 {/* Conformidade (31/10): o mesmo cartão do Passo 5 do cadastro (E193) — ícone próprio por comodidade
                     (iconeDaComodidade), em grade de 2 colunas; antes eram pílulas sem ícone. */}
-                <div className="grid gap-2 sm:grid-cols-2" data-testid="editar-comodidades-grade">
+                <div className="grade-par grid gap-2 sm:grid-cols-2" data-testid="editar-comodidades-grade">
                   {g.items.map((it) => (
                     <CartaoEscolha
                       key={it.key}

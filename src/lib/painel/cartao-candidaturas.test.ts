@@ -17,7 +17,7 @@ test("o painel lê listMinhasCandidaturas e passa o total ao cartão", () => {
 });
 
 test("a lista da tela de candidaturas usa a mesma função", () => {
-  assert.match(ler("src/app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\(\)/);
+  assert.match(ler("src/app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\((\{ exigir: true \})?\)/);
 });
 
 test("o cartão não é mais um número fixo", () => {
