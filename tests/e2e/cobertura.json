@@ -526,7 +526,9 @@
         "t543-e166-fundo-clean-publico",
         "t489-e176-menus",
         "t588-varredura-bloco46",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t765-l51-aplicar-com-motivo",
+        "t767-l60-distancia-sem-ponto"
       ]
     },
     "/cidades": {
@@ -887,7 +889,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t766-l54-nascimento-grava"
       ]
     },
     "/dashboard/conta/seguranca": {
