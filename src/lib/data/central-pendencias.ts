@@ -26,7 +26,7 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
   const ehTeste = (dono: string | undefined) => !!dono && teste.has(dono);
   const ler = async <T,>(f: () => Promise<T[]>): Promise<T[]> => f().catch((e) => (console.error("[central]", e), [] as T[]));
 
-  const [pend, ordensFora, ordensConfirmar, adequ, fotos, docs, revisoes] = await Promise.all([
+  const [pend, ordensFora, ordensConfirmar, adequ, fotos, docs, revisoes, linksAirbnb] = await Promise.all([
     ler(async () => {
       const { data, error } = await admin
         .from("conforto_pendencias")
@@ -91,6 +91,16 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
         id: string; autor_id: string; motivo: string; detalhe: string; criada_em: string;
         avaliacoes: { nota_geral: number; comentario_publico: string | null } | { nota_geral: number; comentario_publico: string | null }[] | null;
       }[];
+    }),
+    // E399-C: link do Airbnb que não confere (cidade ou quartos) — o selo fica bloqueado; a equipe olha.
+    ler(async () => {
+      const { data, error } = await admin
+        .from("preco_justo_airbnb")
+        .select("property_id, divergencias, conferido_em, properties!inner(title, owner_id)")
+        .eq("conferencia", "diverge")
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as unknown as { property_id: string; divergencias: string[] | null; conferido_em: string | null; properties: Prop }[];
     }),
   ]);
 
@@ -197,6 +207,18 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
       acao: { rotulo: "Decidir", href: "/admin/pendencias?filtro=avaliacoes_contestadas" },
       teste: ehTeste(r.autor_id),
       ref: { revisao: r.id },
+    });
+  }
+  for (const l of linksAirbnb) {
+    add("preco_justo_divergencia", {
+      id: `airbnb:${l.property_id}`,
+      titulo: `Link do Airbnb não confere · ${titulo(l.properties)}`,
+      detalhe: (l.divergencias ?? []).map((x) => (x === "cidade" ? "cidade diferente" : x === "quartos" ? "quartos diferentes" : x)).join(" · ") || null,
+      desde: l.conferido_em ?? agora.toISOString(),
+      prazoAte: null,
+      gravidade: "media",
+      acao: { rotulo: "Ver anúncio", href: `/imoveis/${l.property_id}` },
+      teste: ehTeste(l.properties.owner_id),
     });
   }
   const d = docs[0];

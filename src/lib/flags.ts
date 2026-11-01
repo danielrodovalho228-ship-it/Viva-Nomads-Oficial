@@ -151,3 +151,10 @@ export const SELETOR_IDIOMA = process.env.NEXT_PUBLIC_SELETOR_IDIOMA === "on";
  * gerando o resumo SÓ para as contas de teste.
  */
 export const RESUMO_SEMANAL_ATIVO = process.env.RESUMO_SEMANAL_ATIVO === "1";
+
+/**
+ * E399-C — selo "Preço justo" pelo link do anúncio no Airbnb (campo do link, trava antifraude e comparação). OFF em
+ * produção: o campo não aparece e nada é lido nem gravado. Ligada, a fonte de dados ainda é SIMULADA; o fornecedor real
+ * (Apify/AirROI) fica para depois do CNPJ (decisão E406 do Daniel).
+ */
+export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR === "on";
