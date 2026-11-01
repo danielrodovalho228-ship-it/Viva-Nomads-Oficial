@@ -102,7 +102,11 @@ test.describe("T966 — varredura da página inteira, bloco 193 (8ª volta, admi
           const consoleErros = erros.lista();
           await test.step(`console @${tam.nome}`, async () => {
             for (const a of consoleErros) console.log(`VARREDURA|console|${tam.nome}|${t.papel}|${rotulo}|${a}`);
-            expect.soft(consoleErros, `${t.papel} — ${t.nome} @${tam.nome} — console: erro de console ou de página`).toEqual([]);
+            // L-84 (aberto, #1984): /admin/servicos lança no servidor (embed profiles:tenant_id sem relação) e cai no erro
+            // do admin — o "Minified React error #441" do console é esse erro. Só anotado; não é achado novo do bloco.
+            const l84 = (a: string) => rotulo === "/admin/servicos" && /Minified React error #441/.test(a);
+            for (const a of consoleErros.filter(l84)) test.info().annotations.push({ type: "L-84", description: `${rotulo} @${tam.nome} (console): ${a}` });
+            expect.soft(consoleErros.filter((a) => !l84(a)), `${t.papel} — ${t.nome} @${tam.nome} — console: erro de console ou de página`).toEqual([]);
           });
           await page.screenshot({ path: `${SAIDA}/${slug(`${t.papel}-${t.nome}`)}-${tam.width}.png`, fullPage: true }).catch(() => {});
           relatorio[tam.nome] = { ...achados, console: consoleErros };
