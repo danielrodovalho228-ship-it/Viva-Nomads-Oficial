@@ -104,6 +104,16 @@ export function assuntoChamado(evento: "chamado_aberto" | "chamado_respondido" |
   return n ? `${base} (${n})` : base;
 }
 
+/**
+ * E402: confirmação ao morador do pedido de moradia publicado ou atualizado. A cidade entra cortada em palavra (até 24
+ * caracteres), para o assunto com a marca caber nos 70.
+ */
+export function assuntoPedidoConfirmado(acao: "publicado" | "editado", cidade: string | null | undefined): string {
+  const c = String(cidade ?? "").trim() ? tituloNoAssunto(cidade, 24) : "";
+  const base = acao === "publicado" ? "Pedido de moradia publicado" : "Pedido de moradia atualizado";
+  return c ? `${base} em ${c}` : base;
+}
+
 export function assuntoManutencao(o: { urgente: boolean; lembrete: boolean }): string {
   if (o.lembrete) return ASSUNTOS.manutencaoLembrete;
   return o.urgente ? ASSUNTOS.manutencaoUrgente : ASSUNTOS.manutencao;

@@ -146,6 +146,8 @@ export const MATRIZ_NOTIFICACOES = {
   pedido_imovel_novo: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
   resumo_semanal: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
   pedido_moderado: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  // E402: confirmação ao próprio morador ao publicar ou editar o pedido (sem push: foi ele mesmo que agiu).
+  pedido_confirmado: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   pedido_encerrado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   documento_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   checklist_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
