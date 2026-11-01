@@ -43,7 +43,7 @@ import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
 import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications/dados-candidatura";
 import { amenityRows } from "@/lib/amenities";
-import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
+import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
@@ -89,7 +89,7 @@ import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regr
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
-import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
+import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
@@ -2028,7 +2028,13 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
-  return { ok: true, draft: row.draft_data ?? null };
+  return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
+}
+
+/** E426: o draft_data sem as fotos cujo arquivo já saiu do bucket (nada de miniatura quebrada ao retomar). */
+async function semFotosApagadas(draft: unknown, ownerId: string): Promise<unknown> {
+  if (!draft || typeof draft !== "object" || !Array.isArray((draft as { photos?: unknown }).photos)) return draft;
+  return rascunhoSemFotosApagadas(draft, await arquivosDoDono(createAdminClient(), ownerId));
 }
 
 /** Carrega o estado salvo (draft_data) de um rascunho do dono, para retomar. */
@@ -2042,7 +2048,7 @@ export async function loadDraftData(id: string): Promise<unknown | null> {
   // C4: draft_data saiu do SELECT por coluna; o dono lê pela RPC (checa owner).
   const { data } = await supabase.rpc("property_private_details", { prop_id: id });
   const row = Array.isArray(data) ? data[0] : data;
-  return (row as { draft_data?: unknown } | null)?.draft_data ?? null;
+  return semFotosApagadas((row as { draft_data?: unknown } | null)?.draft_data ?? null, user.id);
 }
 
 /**
@@ -2100,7 +2106,7 @@ export async function getLatestDraft(): Promise<{
   return {
     id: data.id as string,
     title: (data.title as string) || "Rascunho de anúncio",
-    data: (row as { draft_data?: unknown } | null)?.draft_data ?? null,
+    data: await semFotosApagadas((row as { draft_data?: unknown } | null)?.draft_data ?? null, user.id),
     prontidao,
   };
 }

@@ -79,3 +79,19 @@ export function soFotosExistentes(urls: readonly string[], existentes: ReadonlyS
     return c === null || existentes.has(c);
   });
 }
+
+/**
+ * E426 (01/11): o rascunho reaberto no assistente sem as fotos cujo arquivo já saiu do bucket (eram miniaturas
+ * quebradas no Passo 2 e na prévia). Só `photos` muda; foto fora do bucket fica; `existentes` null = não filtra. O
+ * próximo salvamento grava o rascunho já limpo (e a sincronização tira as linhas órfãs de property_photos).
+ */
+export function rascunhoSemFotosApagadas<T>(data: T, existentes: ReadonlySet<string> | null): T {
+  if (!existentes || !data || typeof data !== "object") return data;
+  const fotos = (data as { photos?: unknown }).photos;
+  if (!Array.isArray(fotos)) return data;
+  const ficam = fotos.filter((f) => {
+    const url = f && typeof f === "object" ? (f as { url?: unknown }).url : f;
+    return typeof url !== "string" || soFotosExistentes([url], existentes).length > 0;
+  });
+  return ficam.length === fotos.length ? data : ({ ...(data as object), photos: ficam } as T);
+}
