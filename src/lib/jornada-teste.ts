@@ -11,10 +11,12 @@ export const ACOES_DADOS_TESTE = {
   jornadasEncerradas: "jornadas_teste_encerradas",
   carteiraSemeada: "carteira_teste_semeada",
   carteiraLimpa: "carteira_teste_limpa",
+  resumoSemanalGerado: "resumo_semanal_teste_gerado",
 } as const;
 
 export const ROTULO_ACAO_DADOS_TESTE: Record<string, string> = {
   [ACOES_DADOS_TESTE.jornadasEncerradas]: "Jornadas de teste encerradas",
   [ACOES_DADOS_TESTE.carteiraSemeada]: "Carteira de teste semeada",
   [ACOES_DADOS_TESTE.carteiraLimpa]: "Carteira de teste limpa",
+  [ACOES_DADOS_TESTE.resumoSemanalGerado]: "Resumo semanal gerado (contas de teste)",
 };

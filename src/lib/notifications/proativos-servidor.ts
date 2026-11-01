@@ -41,8 +41,8 @@ async function descartar(admin: Admin, ids: string[], motivo: string): Promise<v
   await admin.from("emails_proativos").update({ descartado_em: new Date().toISOString(), motivo_descarte: motivo }).in("id", ids).is("enviado_em", null);
 }
 
-/** Quando saiu cada e-mail proativo da pessoa nos últimos 8 dias (um por envio_id). */
-async function enviosRecentes(admin: Admin, usuarioId: string, agora: Date): Promise<string[]> {
+/** Quando saiu cada e-mail proativo da pessoa nos últimos 8 dias (um por envio_id). E375-B: o resumo semanal usa a mesma. */
+export async function enviosRecentes(admin: Admin, usuarioId: string, agora: Date): Promise<string[]> {
   const { data } = await admin
     .from("emails_proativos")
     .select("envio_id, enviado_em")
