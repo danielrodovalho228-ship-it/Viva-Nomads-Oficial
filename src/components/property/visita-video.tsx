@@ -22,6 +22,8 @@ type PropsVisita = {
   variante?: "secondary" | "tertiary";
   /** Prompt 41: cada aumento abre a janela (o "Agendar visita" do rodapé fixo do celular). */
   abrirSinal?: number;
+  /** E329: o morador já tem visita CONFIRMADA (e por vir) desta modalidade neste imóvel → "Visita agendada" leva a Visitas. */
+  agendada?: boolean;
 };
 
 /** Botão "Visita por vídeo" ao lado de "Solicitar reserva": até 3 horários nos próximos 7 dias. */
@@ -88,6 +90,7 @@ function PedidoVisita({
   modalidade,
   variante = "secondary",
   abrirSinal = 0,
+  agendada = false,
 }: PropsVisita & { modalidade: ModalidadeVisita }) {
   const t = TEXTOS[modalidade];
   const [abertoManual, setAberto] = useState(false);
@@ -134,6 +137,21 @@ function PedidoVisita({
     if (!r.ok) return setErro(r.error ?? "Não foi possível enviar.");
     setDemo(!!r.demo);
     setEnviado(true);
+  }
+
+  // E329 (01/11): com a visita já confirmada, o anúncio mostra o estado e leva a Visitas — não oferece pedir outra igual.
+  if (agendada && !exemplo) {
+    return (
+      <ButtonLink
+        href="/dashboard/visitas"
+        variant={variante}
+        size="md"
+        className={variante === "tertiary" ? "self-center" : "w-full"}
+        data-testid={`${t.prefixo}-agendada`}
+      >
+        <CalendarCheck className="h-4 w-4" /> Visita agendada
+      </ButtonLink>
+    );
   }
 
   return (

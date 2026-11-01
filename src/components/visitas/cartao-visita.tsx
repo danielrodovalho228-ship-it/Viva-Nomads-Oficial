@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CampoDataHora } from "@/components/ui/campo-data";
 import { responderVisita, type AcaoVisita } from "@/lib/data/visitas-video-actions";
 import {
+  AVISO_VISITA_CONFIRMADA,
   AJUDA_LINK_CHAMADA,
   MSG_LINK_OBRIGATORIO,
   MODALIDADE_ROTULO,
@@ -219,6 +220,7 @@ function useResposta(onMudou?: () => void, onStatus?: (s: StatusVisita) => void)
   const [msg, setMsg] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [respondido, setRespondido] = useState(false);
+  const [feita, setFeita] = useState<AcaoVisita["acao"] | null>(null);
   async function rodar(acao: AcaoVisita) {
     setMsg(null);
     setOcupado(true);
@@ -227,11 +229,12 @@ function useResposta(onMudou?: () => void, onStatus?: (s: StatusVisita) => void)
     if (!r?.ok) return setMsg(r?.error ?? "Não foi possível agora. Tente de novo.");
     // Os botões somem na hora e a lista é recarregada, sem depender só da revalidação da ação (t168).
     setRespondido(true);
+    setFeita(acao.acao);
     onStatus?.(statusAposAcao(acao.acao));
     router.refresh();
     onMudou?.();
   }
-  return { msg, ocupado, respondido, rodar };
+  return { msg, ocupado, respondido, feita, rodar };
 }
 
 function Erro({ msg }: { msg: string | null }) {
@@ -298,7 +301,7 @@ function FolhaCancelamento({ quem, ocupado, onCancelar, onVoltar }: { quem: "don
 
 /** Ações do PROPRIETÁRIO: confirmar um horário (vídeo: com o link), propor outro (Remarcar), recusar com motivo, concluir. */
 function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; passou?: boolean; onMudou?: () => void; onStatus?: (s: StatusVisita) => void }) {
-  const { msg, ocupado, respondido, rodar } = useResposta(onMudou, onStatus);
+  const { msg, ocupado, respondido, feita, rodar } = useResposta(onMudou, onStatus);
   const [cancelando, setCancelando] = useState(false);
   // Só os horários que ainda não passaram podem ser confirmados (o servidor recusa os passados).
   const [validos] = useState(() => horariosAindaValidos(v.horarios, new Date()));
@@ -314,6 +317,14 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
     const agora = new Date();
     return { min: instanteParaCampoBrasilia(agora), max: instanteParaCampoBrasilia(new Date(agora.getTime() + CONFIRMAR_ATE_DIAS * 24 * 3600_000)) };
   });
+  // E329 (01/11): confirmar tem um momento de sucesso — o aviso fica no cartão depois que a lista recarrega.
+  if (respondido && feita === "confirmar") {
+    return (
+      <p role="status" data-testid="visita-confirmada-aviso" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+        {AVISO_VISITA_CONFIRMADA}
+      </p>
+    );
+  }
   if (v.status === "feito" || v.status === "cancelado" || respondido) return null;
   const outroIso = outro ? campoBrasiliaParaIso(outro) : null;
   const video = v.modalidade === "video";

@@ -103,6 +103,8 @@ export type ResultadoLink = { ok: true; url: string } | { ok: false; error: stri
 export const MSG_LINK =
   "Informe o link da chamada (Google Meet, Zoom, Teams ou chamada de vídeo do WhatsApp). Link com número de telefone não é aceito.";
 
+/** E329 (01/11): o aviso ao dono logo depois de confirmar a visita (o e-mail "visita_confirmada" sai ao morador). */
+export const AVISO_VISITA_CONFIRMADA = "Visita confirmada — o morador foi avisado por e-mail";
 /** E327 (01/11): a orientação do campo "Link da chamada" na confirmação da visita por vídeo (lado do dono). */
 export const AJUDA_LINK_CHAMADA = "Use um link novo para cada visita; ele fica visível só para você e o morador e some depois do uso.";
 /** E327: confirmar (ou propor horário) numa visita por vídeo sem o link — a tela pede antes de enviar. */
