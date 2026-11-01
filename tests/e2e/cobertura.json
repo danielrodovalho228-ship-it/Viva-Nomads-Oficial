@@ -2822,7 +2822,8 @@
         "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t885-e342-assunto-titulo-inteiro"
       ]
     },
     "/api/cron/avisos-daniel": {
