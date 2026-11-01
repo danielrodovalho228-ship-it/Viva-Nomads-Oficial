@@ -12,6 +12,8 @@ import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { lerLinkAirbnb } from "@/lib/comparador-airbnb/link-airbnb";
 import { conferirAnuncio, type Conferencia, type Divergencia } from "@/lib/comparador-airbnb/antifraude";
 import { fonteAtual } from "@/lib/comparador-airbnb/fonte";
+import { decidirSelo, type DecisaoSelo } from "@/lib/comparador-airbnb/comparacao";
+import { COLUNAS_IMOVEL_PRECO, compararAnuncio, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ERRO = "Não foi possível salvar o link agora. Tente de novo.";
@@ -21,6 +23,10 @@ export interface MeuLinkAirbnb {
   airbnbId: string | null;
   conferencia: Conferencia | null;
   divergencias: Divergencia[];
+  /** Pacote 2: o selo e, se a Viva ficou igual ou acima, o aviso ao dono (valor no Airbnb e "até R$ Y"). */
+  decisao: DecisaoSelo | null;
+  /** Total por mês da Viva usado na comparação. */
+  totalViva: number | null;
 }
 
 type Resultado = { ok: true; link: MeuLinkAirbnb } | { ok: false; erro: string };
@@ -35,21 +41,34 @@ async function imovelDoDono(propertyId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data, error } = await admin.from("properties").select("id, city, bedrooms").eq("id", propertyId).eq("owner_id", user.id).maybeSingle();
+  const { data, error } = await admin.from("properties").select(COLUNAS_IMOVEL_PRECO).eq("id", propertyId).eq("owner_id", user.id).maybeSingle();
   if (error) throw new Error(ERRO);
-  return data ? { admin, imovel: data as { id: string; city: string | null; bedrooms: number | null } } : null;
+  return data ? { admin, imovel: data as unknown as ImovelParaPreco } : null;
 }
 
 export async function meuLinkAirbnb(propertyId: string): Promise<MeuLinkAirbnb | null> {
   if (!PRECO_JUSTO_COMPARADOR) return null;
   const dono = await imovelDoDono(propertyId);
   if (!dono) return null;
-  const { data, error } = await dono.admin.from("preco_justo_airbnb").select("airbnb_id, conferencia, divergencias").eq("property_id", propertyId).maybeSingle();
+  const { data, error } = await dono.admin
+    .from("preco_justo_airbnb")
+    .select("airbnb_id, conferencia, divergencias, total_30_noites, consultado_em")
+    .eq("property_id", propertyId)
+    .maybeSingle();
   if (error) throw new Error("Não foi possível ler o link do Airbnb.");
+  const conferencia = (data?.conferencia as Conferencia | undefined) ?? null;
+  const totalViva = totalVivaDoImovel(dono.imovel);
   return {
     airbnbId: (data?.airbnb_id as string | undefined) ?? null,
-    conferencia: (data?.conferencia as Conferencia | undefined) ?? null,
+    conferencia,
     divergencias: ((data?.divergencias as Divergencia[] | null) ?? []).filter((d) => d === "cidade" || d === "quartos"),
+    decisao: data
+      ? decidirSelo(
+          { totalViva, total30: data.total_30_noites == null ? null : Number(data.total_30_noites), consultadoEm: (data.consultado_em as string | null) ?? null, conferencia: conferencia ?? "pendente" },
+          new Date(),
+        )
+      : null,
+    totalViva,
   };
 }
 
@@ -63,7 +82,7 @@ export async function salvarLinkAirbnb(propertyId: string, texto: string): Promi
   if (!link.ok && link.vazio) {
     const { error } = await admin.from("preco_justo_airbnb").delete().eq("property_id", propertyId);
     if (error) return { ok: false, erro: ERRO };
-    return { ok: true, link: { airbnbId: null, conferencia: null, divergencias: [] } };
+    return { ok: true, link: { airbnbId: null, conferencia: null, divergencias: [], decisao: null, totalViva: null } };
   }
   if (!link.ok) return { ok: false, erro: link.erro };
 
@@ -90,5 +109,10 @@ export async function salvarLinkAirbnb(propertyId: string, texto: string): Promi
     { onConflict: "property_id" },
   );
   if (error) return { ok: false, erro: ERRO };
-  return { ok: true, link: { airbnbId: link.id, conferencia, divergencias } };
+  // Pacote 2: com o anúncio conferido, compara já (o dono vê o resultado na hora; a reconsulta é semanal).
+  const decisao =
+    conferencia === "confere"
+      ? await compararAnuncio(admin, { property_id: propertyId, airbnb_id: link.id, conferencia, consultado_em: null, total_30_noites: null, aviso_valor: null }, imovel, new Date()).catch(() => null)
+      : null;
+  return { ok: true, link: { airbnbId: link.id, conferencia, divergencias, decisao, totalViva: totalVivaDoImovel(imovel) } };
 }

@@ -80,7 +80,9 @@ test("servidor e banco: guarda só o id, na tabela fechada (0279), com dono conf
   assert.match(aplicar, /^commit;/m);
   assert.match(aplicar, /'20261101000279', '0279_preco_justo_link_airbnb'/);
   // Sem coluna de link em properties nem nos tipos públicos.
-  for (const f of ["src/lib/data/properties.ts", "src/lib/types.ts", "src/lib/data/actions.ts"]) assert.doesNotMatch(ler(f), /airbnb_id|preco_justo_airbnb|linkAirbnb/, f);
+  for (const f of ["src/lib/types.ts", "src/lib/data/actions.ts"]) assert.doesNotMatch(ler(f), /airbnb_id|preco_justo_airbnb|linkAirbnb/, f);
+  // Pacote 2: a leitura pública só tira o selo (sim/não) da tabela, nunca o número do anúncio.
+  assert.doesNotMatch(ler("src/lib/data/properties.ts"), /airbnb_id|linkAirbnb/);
 });
 
 test("telas: o campo aparece só com a chave; a divergência entra na Central de Pendências do admin", () => {
