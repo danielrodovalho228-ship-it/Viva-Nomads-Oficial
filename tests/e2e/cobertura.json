@@ -2036,7 +2036,8 @@
       "specs": [
         "t219-servicos-morador",
         "t298-varredura-logada-bloco4",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/admin/servicos": {
