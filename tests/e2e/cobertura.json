@@ -2081,7 +2081,8 @@
         "t231-admin-numeros-com-lista",
         "t48-varredura",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t908-achado32-admin-candidaturas"
       ]
     },
     "/admin/eventos": {
