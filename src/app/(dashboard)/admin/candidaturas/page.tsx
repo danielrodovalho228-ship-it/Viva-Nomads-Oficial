@@ -34,10 +34,11 @@ export default async function AdminCandidaturasPage({ searchParams }: { searchPa
   const cidade = um("cidade") || null;
   const admin = await adminDaPagina();
   let lista: CandidaturaAdmin[] = [];
+  // Achado 32: com "exigir", a falha de leitura cai no aviso do admin ("Tentar de novo"), não em "Nenhuma candidatura".
   if (admin) {
-    if (status === "sem_resposta") lista = await candidaturasSemResposta48h(admin);
+    if (status === "sem_resposta") lista = await candidaturasSemResposta48h(admin, { exigir: true });
     else {
-      const todas = await candidaturasDoPeriodo(admin, intervaloBRT(p.inicio, p.fim), cidade);
+      const todas = await candidaturasDoPeriodo(admin, intervaloBRT(p.inicio, p.fim), cidade, { exigir: true });
       lista = status === "aceita" ? todas.filter((c) => c.aceitaEm) : status === "respondida" ? todas.filter((c) => c.aceitaEm || c.recusadaEm) : todas;
     }
   }
