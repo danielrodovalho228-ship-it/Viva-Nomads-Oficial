@@ -28,7 +28,14 @@ export interface DadosAutomacao {
   /** Proposta: número e prazo (instante ISO). */
   numero?: string | null;
   prazo?: string | null;
+  /** E343: proposta — o valor mensal, o total do contrato e a conta aberta do total (a mesma da tela). */
+  valorMensal?: number | null;
+  totalContrato?: number | null;
+  contaTotal?: string | null;
 }
+
+const reais = (v: number | null | undefined) =>
+  typeof v === "number" && Number.isFinite(v) && v > 0 ? `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 })}` : "";
 
 export interface CorpoAutomacao {
   /** Assunto com o fato e o imóvel (régua de assuntos.ts); null → vale o assunto do modelo. */
@@ -98,13 +105,19 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
       const numero = limpo(d.numero);
       const prazo = d.prazo ? dataHoraBRT(d.prazo, { semEtiqueta: true }) : "";
       const vence = prazo && prazo !== "—" ? prazo : "";
+      // E343: o valor do que o dono decide (aceitar, contrapor ou recusar) — mensal e total, como no E202.
+      const mensal = reais(d.valorMensal);
+      const total = reais(d.totalContrato);
+      if (mensal) linhas.push({ rotulo: "Valor mensal", valor: mensal });
+      if (limpo(d.contaTotal) || total) linhas.push({ rotulo: "Total do contrato", valor: limpo(d.contaTotal) || total });
       if (numero) linhas.push({ rotulo: "Proposta", valor: numero });
       if (vence) linhas.push({ rotulo: "Vence em", valor: `${vence} (horário de Brasília)` });
+      const valores = mensal ? `, de ${mensal} por mês${total ? ` (total do contrato ${total})` : ""},` : "";
       return {
         // O número da proposta vai no corpo, nunca no assunto (régua de assuntos.ts).
         subject: assuntoComTitulo("Proposta de ", titulo, ` vence ${diaHoraNoAssunto(d.prazo) ? `em ${diaHoraNoAssunto(d.prazo)}` : "em 24 horas"}`),
         body: (n) =>
-          `${ola(n)}, a proposta${numero ? ` ${numero}` : ""}${titulo ? ` de ${titulo}` : ""} aguarda a sua resposta e vence ${vence ? `em ${vence} (horário de Brasília)` : "em menos de 24 horas"}. Aceite, contraproponha ou recuse pela plataforma.`,
+          `${ola(n)}, a proposta${numero ? ` ${numero}` : ""}${titulo ? ` de ${titulo}` : ""}${valores} aguarda a sua resposta e vence ${vence ? `em ${vence} (horário de Brasília)` : "em menos de 24 horas"}. Aceite, contraproponha ou recuse pela plataforma.`,
         linhas,
       };
     }
