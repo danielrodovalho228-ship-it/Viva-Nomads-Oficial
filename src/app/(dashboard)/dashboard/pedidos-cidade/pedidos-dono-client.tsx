@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Megaphone, Home, Plus, Info, Check, Sparkles, EyeOff, Undo2, MessageCircle, UserRound, ShieldCheck, Mail, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { cn } from "@/lib/utils";
 import { rotuloPreco } from "@/lib/cartao-preco";
@@ -193,11 +193,9 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
                       </BotaoAcao>
                     </div>
                   ) : naCidade.length === 0 ? (
-                    <Link href="/dashboard/imoveis/novo" className="block">
-                      <Button variant="ghost" className="w-full">
-                        <Plus className="h-4 w-4" /> Cadastrar imóvel em {p.cidade}
-                      </Button>
-                    </Link>
+                    <ButtonLink href="/dashboard/imoveis/novo" variant="ghost" className="w-full">
+                      <Plus className="h-4 w-4" /> Cadastrar imóvel em {p.cidade}
+                    </ButtonLink>
                   ) : aberto?.id === p.id && aberto.modo === "oferecer" ? (
                     <OfertaForm pedidoId={p.id} opcoes={opcoes} onCancel={() => setAberto(null)} onDone={() => { setAberto(null); router.refresh(); }} />
                   ) : aberto?.id === p.id && aberto.modo === "ignorar" ? (

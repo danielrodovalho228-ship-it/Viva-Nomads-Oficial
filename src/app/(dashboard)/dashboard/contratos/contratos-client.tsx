@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import {
@@ -196,9 +196,9 @@ export function ContratosClient({
           title="Nenhum contrato ainda"
           text="Seu primeiro fechamento aparece aqui — o contrato, os blocos e o registro dos recebimentos."
           action={
-            <Link href="/dashboard/fechamento">
-              <Button variant="gold">Ir para o fechamento</Button>
-            </Link>
+            <ButtonLink href="/dashboard/fechamento" variant="gold">
+              Ir para o fechamento
+            </ButtonLink>
           }
         />
       ) : (

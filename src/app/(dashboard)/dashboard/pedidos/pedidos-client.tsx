@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Check, X, Pause, Play, MessageSquare, Home, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
-import { Button, buttonClasses } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClasses } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn, dataBR } from "@/lib/utils";
 import { rotuloPreco, textoPreco } from "@/lib/cartao-preco";
@@ -125,11 +125,9 @@ export function PedidosClient({
         title="Meus pedidos de moradia"
         subtitle="Publique o que precisa e receba respostas dos proprietários — tudo pela plataforma."
         action={
-          <Link href="/pedidos/novo">
-            <Button variant="gold">
-              <Plus className="h-4 w-4" /> Novo pedido
-            </Button>
-          </Link>
+          <ButtonLink href="/pedidos/novo" variant="gold">
+            <Plus className="h-4 w-4" /> Novo pedido
+          </ButtonLink>
         }
       />
 
