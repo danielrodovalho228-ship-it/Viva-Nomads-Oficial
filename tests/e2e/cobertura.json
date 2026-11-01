@@ -887,7 +887,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t924-e391-sair-local"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -904,7 +905,8 @@
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
         "t588-varredura-bloco46",
-        "t608-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela",
+        "t924-e391-sair-local"
       ]
     },
     "/dashboard/contratos": {
