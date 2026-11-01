@@ -2448,7 +2448,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t341-credenciamento-avaliador-62a",
         "t387-varredura-bloco22",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t906-achado30-avaliador-lista"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
