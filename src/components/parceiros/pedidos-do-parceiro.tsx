@@ -21,7 +21,7 @@ const NA_AGENDA = ["aceito", "agendado", "em_execucao"];
  * pela plataforma estiver desligado, o rótulo "registro, sem dinheiro".
  */
 export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: boolean }) {
-  const pedidos = await pedidosDoMeuParceiro();
+  const pedidos = await pedidosDoMeuParceiro({ exigir: true });
   const fechados = pedidos.filter((p) => FECHADOS.includes(p.status) && p.valor != null);
   const total = fechados.reduce((t, p) => t + Math.round((p.valor ?? 0) * 100), 0) / 100;
   const taxa = fechados.reduce((t, p) => t + Math.round((p.valorTaxa ?? 0) * 100), 0) / 100;

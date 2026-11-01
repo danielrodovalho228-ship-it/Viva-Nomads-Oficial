@@ -64,7 +64,7 @@ export function WorkspaceSection({ property }: { property: Property }) {
           {property.workFeatures.map((f) => {
             const Icone = iconeDaComodidade(f);
             return (
-              <li key={f} className="flex items-center gap-3 text-sm text-ink odd:last:col-span-2 odd:last:justify-center" /* E313: grade sempre par */>
+              <li key={f} className="flex items-center gap-3 text-sm text-ink" /* E313: o último ímpar fica na 1ª coluna, nunca centrado */>
                 <Icone className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden /> {f}
               </li>
             );
