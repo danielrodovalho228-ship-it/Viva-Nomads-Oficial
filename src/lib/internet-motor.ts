@@ -33,6 +33,24 @@ export const RODADA_SIMULADA: Rodada = { downloadMbps: 328, uploadMbps: 42, late
 
 export type Medidor = { promessa: Promise<Rodada>; cancelar: () => void };
 
+/**
+ * E414: prazo de uma rodada. A biblioteca não tem prazo total: um pedido parado ao servidor de teste deixava a tela em
+ * "Medindo… 95%" para sempre e o item da Qualificação travado. Passado o prazo, a rodada para e falha com um aviso.
+ */
+export const PRAZO_RODADA_MS = 60_000;
+
+/** A promessa ou o erro "demorou" depois de `ms` (o `cancelar` para o motor). Puro, testável. */
+export function comPrazo<T>(promessa: Promise<T>, ms: number, cancelar: () => void): Promise<T> {
+  let t: ReturnType<typeof setTimeout> | null = null;
+  const limite = new Promise<never>((_, falha) => {
+    t = setTimeout(() => {
+      cancelar();
+      falha(new Error("demorou"));
+    }, ms);
+  });
+  return Promise.race([promessa, limite]).finally(() => t && clearTimeout(t));
+}
+
 /** Uma rodada. `progresso` recebe 0..1 ao longo da rodada. */
 export function medirUmaRodada(simulado: boolean, progresso: (f: number) => void): Medidor {
   if (simulado) {
@@ -74,5 +92,5 @@ export function medirUmaRodada(simulado: boolean, progresso: (f: number) => void
       })
       .catch(falha);
   });
-  return { promessa, cancelar: () => cancelar() };
+  return { promessa: comPrazo(promessa, PRAZO_RODADA_MS, () => motor?.pause()), cancelar: () => cancelar() };
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { explicacaoPedidoAberto } from "@/lib/visitas/um-pedido-aberto";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Video, Check, CalendarCheck, X } from "lucide-react";
@@ -147,15 +148,23 @@ function PedidoVisita({
   // pedir outra igual (o banco aceita uma em aberto por morador, imóvel e modalidade; antes o pedido voltava recusado).
   if (estado && !exemplo) {
     return (
-      <ButtonLink
-        href="/dashboard/visitas"
-        variant={variante}
-        size="md"
-        className={variante === "tertiary" ? "self-center" : "w-full"}
-        data-testid={`${t.prefixo}-${estado}`}
-      >
-        <CalendarCheck className="h-4 w-4" /> {estado === "agendada" ? "Visita agendada" : estado === "pedida" ? t.feito : "Ver minha visita"}
-      </ButtonLink>
+      <div className={variante === "tertiary" ? "flex flex-col items-center gap-1" : "flex w-full flex-col gap-1"}>
+        <ButtonLink
+          href="/dashboard/visitas"
+          variant={variante}
+          size="md"
+          className={variante === "tertiary" ? "self-center" : "w-full"}
+          data-testid={`${t.prefixo}-${estado}`}
+        >
+          <CalendarCheck className="h-4 w-4" /> {estado === "agendada" ? "Visita agendada" : estado === "pedida" ? t.feito : "Ver minha visita"}
+        </ButtonLink>
+        {/* E411: por que não dá para pedir outra e como mudar os horários. */}
+        {(estado === "pedida" || estado === "agendada") && (
+          <p className="text-xs text-muted" data-testid={`${t.prefixo}-${estado}-explica`}>
+            {explicacaoPedidoAberto(modalidade, estado)}
+          </p>
+        )}
+      </div>
     );
   }
 

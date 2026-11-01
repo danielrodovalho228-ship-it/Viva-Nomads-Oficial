@@ -1,5 +1,6 @@
 "use server";
 
+import { idDeRascunhoValido, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
@@ -2007,6 +2008,25 @@ async function sincronizarFotos(
   } catch (e) {
     console.error("[sincronizarFotos] erro:", e);
   }
+}
+
+/**
+ * E420: abre o rascunho da URL só se ele é DESTA conta. A RPC só devolve a linha ao dono: sem linha, o rascunho não
+ * existe ou é de outra conta (uma resposta só — não revela o anúncio dos outros). Falha da leitura: "indisponível".
+ */
+export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unknown } | { ok: false; motivo: MotivoRascunhoFechado }> {
+  if (!idDeRascunhoValido(id)) return { ok: false, motivo: "nao_encontrado" };
+  const supabase = await createClient();
+  if (!supabase) return { ok: true, draft: null };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, motivo: "nao_encontrado" };
+  const { data, error } = await supabase.rpc("property_private_details", { prop_id: id });
+  if (error) return { ok: false, motivo: "indisponivel" };
+  const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
+  if (!row) return { ok: false, motivo: "nao_encontrado" };
+  return { ok: true, draft: row.draft_data ?? null };
 }
 
 /** Carrega o estado salvo (draft_data) de um rascunho do dono, para retomar. */
