@@ -128,6 +128,11 @@ export default function PricingPage() {
               Anunciar meu imóvel
             </ButtonLink>
             <PlanoGestorForm />
+            {/* E302 (resíduo, 01/11): a ação de VER o Plano Gestor também aqui — rola até a seção #plano-gestor da própria
+                página; "Falar sobre o Plano Gestor" segue como a ação de contato. */}
+            <ButtonLink href="#plano-gestor" variant="tertiary" size="lg" className="self-center" data-testid="precos-ver-plano-gestor">
+              Ver o Plano Gestor
+            </ButtonLink>
           </div>
         </div>
 
