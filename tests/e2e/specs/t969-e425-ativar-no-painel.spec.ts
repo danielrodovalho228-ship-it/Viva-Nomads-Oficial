@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { createHash, randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -51,6 +52,9 @@ test.describe("T969 — E425: o parceiro aprovado ativa a página pelo painel", 
         cidades: ["Uberlândia"],
         status: "aprovada",
         origem: "site",
+        // Pedido aprovado sempre tem o token do link do e-mail (parceiro_solicitacoes_aprovada_token); o painel ativa sem ele.
+        token_ativacao_hash: createHash("sha256").update(randomBytes(32).toString("base64url")).digest("hex"),
+        token_expira_em: new Date(Date.now() + 7 * 86_400_000).toISOString(),
       });
       if (error) throw error;
 
