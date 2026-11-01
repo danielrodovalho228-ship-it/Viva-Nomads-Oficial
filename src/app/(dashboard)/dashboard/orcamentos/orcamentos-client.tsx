@@ -90,7 +90,8 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
               aria-selected={filtro === f.chave}
               onClick={() => setFiltro(f.chave)}
               className={cn(
-                "rounded-full border px-3 py-2 text-xs font-medium transition-colors",
+                // Varredura 01/11: filtros com 44 px de altura (eram 34 px no celular).
+                "inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-medium transition-colors",
                 filtro === f.chave ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage",
               )}
             >
