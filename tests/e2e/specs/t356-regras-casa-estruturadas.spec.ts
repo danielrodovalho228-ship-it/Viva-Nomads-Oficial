@@ -92,7 +92,9 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
       await expect(page.getByTestId("bom-saber-regras")).toContainText("Até 3 pessoas · sem pets", { timeout: 30_000 });
       const janela = await abrirFolhaRegras(page);
       const lista = janela.getByTestId("regras-casa-lista");
-      await expect(lista.locator("li")).toHaveCount(6);
+      // E259 (10): a folha também diz se aceita crianças — 7 linhas (o t356 contava 6 de antes dela).
+      await expect(lista.locator("li")).toHaveCount(7);
+      await expect(janela.getByTestId("regra-casa-criancas")).toHaveText(/^(Aceita crianças|Sem crianças)$/);
       await expect(janela.getByTestId("regra-casa-pessoas")).toHaveText("Até 3 pessoas");
       await expect(janela.getByTestId("regra-casa-pets")).toHaveText("Sem pets");
       await expect(janela.getByTestId("regra-casa-silencio")).toHaveText("Silêncio das 22h às 8h");
