@@ -11,7 +11,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   bloco 103 (registro de cobertura: última varredura no bloco 87, t751):
    - painel com id na URL, pela massa da varredura (scripts/lab/massa-varredura.mjs): contrato, imóvel (cartão,
      conforto, desempenho, nível, parceiros) e estadia do DONO17; locação e as telas da estadia da INQUILINA;
-   - sócios: /acesso-socios (a porta) e as 6 páginas internas, abertas pela porta com o código do laboratório
+   - sócios: /acesso-socios (a porta) e as páginas internas (/tributario saiu no #1793), abertas pela porta com o código do laboratório
      (SOCIOS_ACCESS_CODE; sem ele, pula), como a t307;
    - autenticação, como visitante: /auth, /auth/reset, /auth/verificar-codigo e /auth/pronto.
   Defeito novo entra como test.fail ligado a um item (L-83 / D-V10 são os próximos livres).
@@ -48,7 +48,7 @@ const TELAS: Tela[] = [
     ["Modelo de negócio", "/modelodenegocio"],
     ["Retorno", "/roi"],
     ["Simulação", "/simulacao"],
-    ["Tributário", "/tributario"],
+    // E292-bis (#1793): /tributario saiu (redireciona para /dashboard/ferramentas), como na t307.
   ].map(([nome, rota]) => ({ conta: "SOCIO" as const, papel: "sócio", nome, rota: () => rota })),
   // Autenticação.
   ...[

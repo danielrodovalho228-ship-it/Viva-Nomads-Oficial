@@ -1992,8 +1992,7 @@
       ],
       "specs": [
         "t192-conta-4-blocos",
-        "t307-varredura-bloco8",
-        "t780-varredura-bloco104"
+        "t307-varredura-bloco8"
       ]
     },
     "/admin/dados-de-teste": {
