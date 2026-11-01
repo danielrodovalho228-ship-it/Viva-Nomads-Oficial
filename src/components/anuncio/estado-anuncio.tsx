@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { emAndamentoDoAnuncio, pausarAnuncio, reativarAnuncio } from "@/lib/data/actions";
-import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, textoEmAndamento } from "@/lib/anuncio/pausa";
+import { MSG_ANDAMENTO_FALHOU, MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, textoEmAndamento } from "@/lib/anuncio/pausa";
 import { textoDoErro } from "@/lib/erro-de-rede";
 import { cn } from "@/lib/utils";
 
@@ -82,7 +82,7 @@ export function EstadoDoAnuncio({ id, status, motivo }: { id: string; status: St
     setAndamento(null);
     emAndamentoDoAnuncio(id)
       .then((e) => setAndamento(e ? textoEmAndamento(e) : []))
-      .catch(() => setAndamento([]));
+      .catch(() => setAndamento([MSG_ANDAMENTO_FALHOU]));
   }
 
   function confirmarPausa() {

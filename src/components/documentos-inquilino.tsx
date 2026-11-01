@@ -22,11 +22,16 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
   const [docs, setDocs] = useState<DocInquilinoResumo[] | null>(null);
   const [enviando, setEnviando] = useState<TipoDocInquilino | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // Achado nº 21: falha ao ler não vira "nenhum documento" — a tela avisa e oferece tentar de novo.
+  const [falhou, setFalhou] = useState(false);
 
   const recarregar = useCallback(() => {
-    listarDocsInquilino(leadId)
-      .then(setDocs)
-      .catch(() => setDocs([]));
+    listarDocsInquilino(leadId, { exigir: true })
+      .then((d) => {
+        setFalhou(false);
+        setDocs(d);
+      })
+      .catch(() => setFalhou(true));
   }, [leadId]);
   useEffect(recarregar, [recarregar]);
 
@@ -67,6 +72,16 @@ export function DocumentosInquilino({ leadId, modo }: { leadId: string; modo: "i
     if (!ok) setErro(motivo);
   }
 
+  if (falhou) {
+    return (
+      <p role="alert" className="text-sm text-red-600" data-testid="docs-inquilino-erro">
+        Não foi possível carregar os documentos agora.{" "}
+        <button type="button" onClick={recarregar} className="font-medium underline">
+          Tentar de novo
+        </button>
+      </p>
+    );
+  }
   if (docs === null) return null;
   const enviados = new Map(docs.map((d) => [d.tipo, d]));
   const completos = documentosInquilinoCompletos(enviados.keys());
