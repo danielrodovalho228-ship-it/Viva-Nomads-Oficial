@@ -107,7 +107,7 @@ export function SeletorPrioridade({ valor, onChange }: { valor: SOPriority; onCh
 }
 
 const ROTULO_ACAO: Partial<Record<SOStatus, string>> = { em_andamento: "Iniciar atendimento", resolvido: "Marcar como resolvida" };
-const AUTOR: Record<MensagemOrdem["autor"], string> = { voce: "Você", inquilino: "Inquilino", proprietario: "Proprietário" };
+const AUTOR: Record<MensagemOrdem["autor"], string> = { voce: "Você", inquilino: "Morador", proprietario: "Proprietário" };
 
 /** Histórico de exemplo (modo demonstração): sai dos carimbos da própria ordem. */
 function eventosDemo(o: ServiceOrder): EventoOrdem[] {

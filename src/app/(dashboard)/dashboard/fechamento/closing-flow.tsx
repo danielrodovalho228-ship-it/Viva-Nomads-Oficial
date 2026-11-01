@@ -413,7 +413,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Identificação clara dos papéis (A6) */}
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-white px-4 py-3 text-sm">
               <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
-                Inquilino: {tenant.name}
+                Morador: {tenant.name}
               </span>
               <span className="text-muted">{tenant.profile}</span>
               <ArrowRight className="h-4 w-4 text-muted" />
@@ -1054,7 +1054,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                               : "text-muted"
                           )}
                         >
-                          {party === "owner" ? "Proprietário" : "Inquilino"}
+                          {party === "owner" ? "Proprietário" : "Morador"}
                         </button>
                       ))}
                     </div>

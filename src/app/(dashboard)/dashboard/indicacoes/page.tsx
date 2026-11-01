@@ -61,12 +61,12 @@ export default function ReferralsPage() {
     <>
       <PageTitle
         title="Programa de indicação"
-        subtitle="Indique e ganhe créditos quando seus indicados fecharem a primeira reserva."
+        subtitle="Indique e ganhe créditos quando seus indicados fecharem a primeira locação."
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Indicados" value="0" icon={Users} />
-        <StatCard label="Aguardando 1ª reserva" value="0" icon={Clock} />
+        <StatCard label="Aguardando 1ª locação" value="0" icon={Clock} />
         <StatCard label="Converteram" value="0" icon={Check} />
         <StatCard label="Créditos" value="R$ 0" icon={BadgeDollarSign} />
       </div>
@@ -110,7 +110,7 @@ export default function ReferralsPage() {
         <Panel title="Indicou um proprietário?">
           <p className="text-sm text-muted">
             Você ganha <strong className="text-forest">crédito na taxa de serviço</strong> (ou serviço
-            grátis: verificação/contrato) quando o proprietário indicado fecha a primeira reserva.
+            grátis: verificação/contrato) quando o proprietário indicado fecha a primeira locação.
           </p>
         </Panel>
         <Panel title="Indicou um morador?">
@@ -123,7 +123,7 @@ export default function ReferralsPage() {
       </div>
 
       <p className="mt-4 text-xs text-muted">
-        A recompensa é liberada apenas após o evento qualificador real (primeira reserva ou
+        A recompensa é liberada apenas após o evento qualificador real (primeira
         locação), evitando fraude.
       </p>
     </>

@@ -127,7 +127,7 @@ function ReembolsoPreview() {
           <Panel>
             <div className="rounded-xl bg-surface-2 p-4 text-sm">
               <Row label="Contrato" value={LOCACAO.contrato} />
-              <Row label="Inquilino" value={LOCACAO.inquilino} />
+              <Row label="Morador" value={LOCACAO.inquilino} />
               <Row label="Imóvel" value={LOCACAO.imovel} />
               <Row label="Caução na poupança" value={formatBRL(LOCACAO.caucao)} />
             </div>
