@@ -185,6 +185,20 @@ export function corpoInternetRemedir(d: { imovel: Imovel; validoAte?: string | n
   };
 }
 
+/**
+ * E267 (resíduo): o cartão do anúncio para compartilhar (contrato assinado pelas duas partes) diz QUAL anúncio — o dono
+ * pode ter vários; antes era "o cartão do seu anúncio está pronto".
+ */
+export function corpoAnuncioCompartilhar(d: { imovel: Imovel }): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  return {
+    subject: assuntoComTitulo("Compartilhe o cartão de ", titulo),
+    body: (n) =>
+      `${ola(n)}, o contrato${titulo ? ` de ${titulo}` : ""} foi assinado pelas duas partes, e o cartão do anúncio está pronto, com um QR que leva direto ao imóvel. Compartilhe no WhatsApp em um toque.`,
+    linhas: linhaImovel(d.imovel),
+  };
+}
+
 export function corpoInternetAbaixo(d: { imovel: Imovel; morador?: { download?: number; upload?: number } | null; dono?: { download?: number; upload?: number } | null }): CorpoResidual {
   const titulo = limpo(d.imovel?.titulo);
   const mor = d.morador?.download != null ? `${mbps(d.morador.download)} de download e ${mbps(d.morador.upload)} de upload` : "";
