@@ -9,6 +9,7 @@ import { test } from "node:test";
 const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/imoveis/page.tsx", import.meta.url), "utf8");
 
 test("meus imóveis: lista e cliente em Promise.all, sem await em sequência", () => {
-  assert.match(pagina, /await Promise\.all\(\[listMyProperties\(\{ exigir: true \}\), createClient\(\), meusPedidosDeAjuda\(\)\]\)/);
+  // Achado 55: a leitura da ajuda segue no mesmo Promise.all, agora com o catch que vira o aviso.
+  assert.match(pagina, /await Promise\.all\(\[listMyProperties\(\{ exigir: true \}\), createClient\(\), meusPedidosDeAjuda\(\)\.catch\(\(\) => null\)\]\)/);
   assert.doesNotMatch(pagina, /const properties = await listMyProperties\(/);
 });
