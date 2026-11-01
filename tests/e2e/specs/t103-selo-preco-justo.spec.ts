@@ -6,8 +6,9 @@ import { account, hasAccount } from "../fixtures/accounts";
  * Rodada da vigia 24/10 (Pista C): triagem do lab completo de 5f44161, no lab-crítico, sem a carga do lab inteiro.
  * T103 — Selo "Preço justo" no anúncio e no cartão (ordem 4c74ac38, item 2; achado do Moacir no #567).
  * E399-B: o selo compara o TOTAL POR MÊS (valor mensal + condomínio + contas fixas + limpeza) com o equivalente do Airbnb,
- * com "≤". Caso positivo: equivalente IGUAL ao total → selo. Caso "contas à parte": equivalente entre o valor mensal e o
- * total → SEM selo (antes ganhava). Ausente → sem selo. Restaura o valor original no fim.
+ * com "≤". Caso positivo: equivalente IGUAL ao total → selo na página. Casos sem selo (conferidos na coluna gerada, sem
+ * depender do ISR): "contas à parte" (equivalente entre o valor mensal e o total, antes ganhava), abaixo do valor mensal
+ * e ausente. Restaura o valor original no fim.
  */
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -44,20 +45,19 @@ test.describe("T103 — Selo Preço justo", () => {
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(sobra).toBeLessThanOrEqual(0);
 
-      // Contas à parte: o equivalente cobre o valor mensal, mas não o total → sem selo (o bug do E399-B dava o selo).
-      // Conferido na coluna gerada (determinístico): a página pública revalida por ISR e a troca de "com selo" para
-      // "sem selo" é conferida logo abaixo, como antes do E399-B — uma troca só, para não depender do tempo do cache.
-      if (total > mensal) {
-        await adm.from("properties").update({ airbnb_monthly_price: mensal + (total - mensal) / 2 }).eq("id", id);
+      // Os casos SEM selo são conferidos na coluna gerada `preco_justo` (determinístico). A página pública revalida por
+      // ISR (60 s) e a troca de "com selo" para "sem selo" depois de um update direto no banco às vezes passava dos
+      // 150 s no lab-critico (falhava na 1ª tentativa e passava na repetição — #1995 e #2000). A regra é do banco; a
+      // página já provou acima que mostra o selo quando a coluna diz que sim.
+      const semSelo = async (airbnb: number | null) => {
+        await adm.from("properties").update({ airbnb_monthly_price: airbnb }).eq("id", id);
         const { data: linha } = await adm.from("properties").select("preco_justo").eq("id", id).single();
-        expect(linha!.preco_justo).toBe(false);
-      }
-
-      await adm.from("properties").update({ airbnb_monthly_price: Math.max(1, mensal - 1) }).eq("id", id);
-      await confere(false);
-
-      await adm.from("properties").update({ airbnb_monthly_price: null }).eq("id", id);
-      await confere(false);
+        expect(linha!.preco_justo, `Airbnb ${airbnb} contra total ${total}`).toBe(false);
+      };
+      // Contas à parte: o equivalente cobre o valor mensal, mas não o total → sem selo (o bug do E399-B dava o selo).
+      if (total > mensal) await semSelo(mensal + (total - mensal) / 2);
+      await semSelo(Math.max(1, mensal - 1));
+      await semSelo(null);
     } finally {
       await adm.from("properties").update({ airbnb_monthly_price: imovel!.airbnb_monthly_price }).eq("id", id);
     }
