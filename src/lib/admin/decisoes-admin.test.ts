@@ -113,3 +113,35 @@ test("E175: a parceria atrasada conta uma vez só — o total bate com a lista d
   assert.ok(semLer.semLeitura.includes("parceiros_para_aprovar"));
   assert.ok(!("parceiros_sem_resposta_1_dia" in juntarParcerias({ parceiros_para_aprovar: { n: 5 }, parceiros_sem_resposta_1_dia: { n: 3 } })));
 });
+
+test("E330: a Central recebe só as decisões que não são filtros dela, e o título conta a fila inteira", async () => {
+  const { decisoesForaDaCentral, tituloCentral } = await import("./decisoes-admin.ts");
+  const d = montarDecisoesAdmin({
+    backup: { n: 2, detalhe: "a última cópia falhou" },
+    parceiros_para_aprovar: { n: 3 },
+    fotos_nivel: { n: 1 },
+    documentos_pendentes: { n: 4 },
+    chamados_p1: { n: null },
+    manutencao_fora_prazo: { n: null },
+  });
+  const fora = decisoesForaDaCentral(d)!;
+  assert.deepEqual(fora.linhas.map((l) => l.chave), ["backup", "parceiros_para_aprovar"]);
+  assert.equal(fora.total, 5);
+  assert.ok(fora.semLeitura.includes("chamados_p1"));
+  assert.ok(!fora.semLeitura.includes("manutencao_fora_prazo"), "filtro da Central não entra no aviso de fora");
+  assert.equal(decisoesForaDaCentral(null), null);
+  // O caso da tela: Central vazia + 2 alertas de backup + 3 parcerias = 5 pendências, nunca "Nada pendente agora".
+  assert.equal(tituloCentral(0 + fora.total), "5 pendências esperando ação");
+  assert.equal(tituloCentral(0), "Nada pendente agora");
+  assert.equal(tituloCentral(1), "1 pendência esperando ação");
+});
+
+test("E330: a página da Central não tem mais o topo 'Hoje você tem N decisões' separado da fila", async () => {
+  const { readFileSync } = await import("node:fs");
+  const pg = readFileSync(new URL("../../app/(dashboard)/admin/pendencias/page.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(pg, /<DecisoesHoje/);
+  assert.match(pg, /decisoesForaDaCentral\(decisoes\)/);
+  assert.match(pg, /const total = totalCentral \+ \(outras\?\.total \?\? 0\)/);
+  assert.match(pg, /central\.linhas\.length === 0 && !outras\?\.linhas\.length/);
+  assert.match(pg, /<LinhaDecisao key=/);
+});

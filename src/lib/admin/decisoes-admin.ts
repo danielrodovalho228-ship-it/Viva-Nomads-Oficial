@@ -18,7 +18,7 @@
   Roda: node --test src/lib/admin/decisoes-admin.test.ts
 */
 
-import { hrefCentral } from "./central-pendencias.ts";
+import { ehFiltroCentral, hrefCentral } from "./central-pendencias.ts";
 
 export type ChaveDecisaoAdmin =
   | "manutencao_fora_prazo"
@@ -155,4 +155,22 @@ export function haQuantoTempo(horas: number | null | undefined): string | null {
   if (horas < 1) return "há menos de 1 h";
   if (horas < 48) return `há ${Math.round(horas)} h`;
   return `há ${Math.round(horas / 24)} dias`;
+}
+
+/**
+ * E330: a Central de Pendências é "uma fila só". As decisões do topo que NÃO são filtros da Central (backup, parcerias,
+ * chamados, recibos…) entram na fila dela como itens acionáveis; as que já são filtros (manutenção fora do prazo,
+ * contestações, fotos de nível, documentos) ficam fora daqui, para não contar duas vezes. Assim o título da Central e a
+ * fila logo abaixo contam a mesma coisa.
+ */
+export function decisoesForaDaCentral(d: DecisoesAdmin | null): DecisoesAdmin | null {
+  if (!d) return null;
+  const linhas = d.linhas.filter((l) => !ehFiltroCentral(l.chave));
+  return { total: linhas.reduce((s, l) => s + l.n, 0), linhas, semLeitura: d.semLeitura.filter((c) => !ehFiltroCentral(c)) };
+}
+
+/** E330: o título da Central conta a fila inteira — os itens da Central mais as decisões das outras telas. */
+export function tituloCentral(total: number): string {
+  if (total <= 0) return "Nada pendente agora";
+  return total === 1 ? "1 pendência esperando ação" : `${total} pendências esperando ação`;
 }
