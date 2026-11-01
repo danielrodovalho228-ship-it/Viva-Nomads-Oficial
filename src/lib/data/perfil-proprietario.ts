@@ -53,10 +53,13 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
     const l = ((data as Linha[] | null) ?? [])[0];
     if (error || !l) return null;
     // Reputação pelo cliente do servidor (sem cookies): a página do imóvel é estática e quebraria ao ler a sessão.
-    const [fotoUrl, notas, fones] = await Promise.all([
+    const [fotoUrl, notas, fones, perfil] = await Promise.all([
       signAvatarPath(l.avatar_url, donoId),
       admin.from("avaliacoes").select("nota_geral").eq("alvo_id", donoId).eq("status", "publicada"),
       admin.rpc("telefones_verificados", { p_ids: [donoId] }),
+      // E427 (01/11): o nome abreviado sai do nome completo pela MESMA regra da visita (nomeCurto). O nome_curto do banco
+      // usava a inicial do último pedaço mesmo sendo número ("Daniel 1."); só o resultado abreviado sai daqui.
+      admin.from("profiles").select("full_name").eq("id", donoId).maybeSingle(),
     ]);
     // Selo do telefone (0150): sem a função (ainda não aplicada) ou com erro, simplesmente não aparece.
     const telefoneVerificado = !fones.error && ((fones.data ?? []) as { verificado: boolean }[]).some((f) => f.verificado);
@@ -66,7 +69,7 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       : { media: 0, n: 0 };
     return {
       id: donoId,
-      nome: nomeCurto(l.nome_curto) ?? "Proprietário",
+      nome: nomeCurto((perfil.data as { full_name?: string | null } | null)?.full_name) ?? nomeCurto(l.nome_curto) ?? "Proprietário",
       fotoUrl,
       desde: l.desde,
       cidade: l.cidade,
