@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 
 /**
  * E340 (01/11): nas abas-âncora (painel do parceiro: #pedidos, #agenda, #ganhos numa página só), a aba acesa acompanha a
- * SEÇÃO visível — a última cujo topo passou da linha a 35% da tela; no fim da página, a última seção à vista. Antes de
+ * SEÇÃO visível — a 1ª que ainda ocupa a faixa de cima da tela; no fim da página, já passada ela, a última à vista. Antes de
  * as seções existirem (carregando) e em página que não rola, vale o #âncora da URL (ou a 1ª). Fora da `rota`: null.
  * `preferida`: a seção que a pessoa pediu (#âncora ao abrir ou aba clicada) vale enquanto estiver à vista — uma seção
  * curta no fim da página pode nunca chegar à linha (t776: abrir com #ganhos acendia Agenda).
  */
+/** A faixa de cima da tela (px) que conta como "lendo agora": abaixo do cabeçalho fixo e do scroll-mt das seções. */
+const LIMITE_TOPO = 120;
+
 export function secaoVisivel(
   ids: readonly string[],
   hash: string,
@@ -26,10 +29,12 @@ export function secaoVisivel(
   }
   // Página que não rola (tudo cabe na tela): vale o #âncora clicado; sem ele, a 1ª seção.
   if (win.docAltura <= win.innerHeight + 2) return ids.includes(daUrl) ? daUrl : els[0].id;
-  const linha = win.innerHeight * 0.35;
-  let atual = els[0].id;
-  for (const el of els) if (el.getBoundingClientRect().top <= linha) atual = el.id;
-  if (win.scrollY > 0 && win.innerHeight + win.scrollY >= win.docAltura - 2) {
+  // A 1ª seção que ainda ocupa a faixa de cima da tela (abaixo do cabeçalho fixo). Seções curtas (lista vazia) não
+  // "empurram" a vizinha de baixo para a aba acesa (t776 no lab: rolar até Pedidos acendia Agenda).
+  const naFaixa = els.find((el) => el.getBoundingClientRect().bottom > LIMITE_TOPO);
+  let atual = (naFaixa ?? els[els.length - 1]).id;
+  // Fim da página e a pessoa já passou daquela seção: a última seção à vista (senão ela nunca acenderia).
+  if (naFaixa && naFaixa.getBoundingClientRect().top < 0 && win.scrollY > 0 && win.innerHeight + win.scrollY >= win.docAltura - 2) {
     const aVista = els.filter((el) => el.getBoundingClientRect().top < win.innerHeight);
     if (aVista.length) atual = aVista[aVista.length - 1].id;
   }
