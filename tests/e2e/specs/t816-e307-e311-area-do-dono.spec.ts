@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T816 — #1775 (E307–E311, QA do Muse de 31/10), Pista C, bloco 130. A área do dono, pela tela de verdade, a 390 e a
-  1280 px, com um proprietário NOVO (sem anúncio, sem interessado e sem proposta), apagado no fim:
+  1280 px, com um proprietário NOVO (um anúncio publicado, sem interessado e sem proposta), apagado no fim:
    1. Orçamentos fala com o dono: vazio diz "Aqui aparecem as propostas que você enviar aos interessados. Publique seu
       anúncio para receber o primeiro." e a ação é "Ver meus anúncios" (→ /dashboard/imoveis);
    2. títulos sem a marca repetida: Ganhos e Análise da carteira terminam em "· Viva Nomads" uma vez só;
@@ -22,6 +22,9 @@ test.describe("T816 — E307–E311: Orçamentos do dono novo, títulos sem marc
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ intencao: ["anunciar"] }).eq("id", ids.dono);
+    // A Agenda só desenha o calendário do mês com um imóvel; o anúncio não muda o Orçamentos vazio (sem interessado
+    // e sem proposta, é o "dono novo" do E307).
+    await criarImovelPronto(ids.dono, `Casa da agenda t816 ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono!]);
