@@ -43,7 +43,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ rela
 
   if (relatorio === "parceiro") {
     if (!ehAno(anoParam)) return erro(400, "Ano inválido.");
-    const p = await servicosConcluidosDoParceiro();
+    // Achado 79: leitura que falha → 503, nunca um resumo anual com zero serviços.
+    const p = await servicosConcluidosDoParceiro().catch(() => "falhou" as const);
+    if (p === "falhou") return erro(503, "Não foi possível gerar o resumo agora. Tente de novo em instantes.");
     if (!p) return erro(401, "Entre na sua conta de parceiro.");
     const pdf = await gerarPdf(conteudoParceiroAnual(resumoAnualParceiro(p.servicos, anoParam), p.parceiro, agora));
     return arquivo(pdf, `resumo-servicos-${anoParam}.pdf`, "application/pdf");

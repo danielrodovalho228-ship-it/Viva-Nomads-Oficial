@@ -208,6 +208,9 @@ function PedidoForm() {
   // então só vale enquanto os campos não mudam (sem precisar zerar estado dentro do effect).
   const [contagem, setContagem] = useState<{ chave: string; r: ResultadoContador } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // Achado 71: a leitura do pedido em edição falhou — nada de formulário vazio que salvaria por cima.
+  const [leituraFalhou, setLeituraFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   const [enviando, setEnviando] = useState(false);
 
   // Pré-preenchimento (ordem 8302024d): o que a última busca e o último pedido deixaram no aparelho.
@@ -270,12 +273,14 @@ function PedidoForm() {
         if (d) setDestinoEstado({ destino: d.destino_id ? { slug: `id:${d.destino_id}` } : { lat: d.lat, lng: d.lng, rot: d.rotulo }, modo: d.modo_preferido ?? "carro", ate: d.ate ?? 0 });
       })
       .catch(() => {
-        if (vivo) setCarregando(false);
+        if (!vivo) return;
+        setCarregando(false);
+        setLeituraFalhou(true);
       });
     return () => {
       vivo = false;
     };
-  }, [editarId]);
+  }, [editarId, tentativa]);
 
   useEffect(() => {
     let vivo = true;
@@ -492,6 +497,26 @@ function PedidoForm() {
           </Link>
           <Button onClick={() => router.push("/dashboard/pedidos")}>Ver meus pedidos</Button>
         </div>
+      </div>
+    );
+  }
+
+  if (editarId && leituraFalhou) {
+    return (
+      <div className="rounded-xl border border-line p-4" role="alert" data-testid="pedido-leitura-falha">
+        <p className="text-sm text-ink">Não foi possível abrir o seu pedido agora. Nada foi alterado.</p>
+        <Button
+          type="button"
+          className="mt-3"
+          onClick={() => {
+            setLeituraFalhou(false);
+            setCarregando(true);
+            setTentativa((t) => t + 1);
+          }}
+          data-testid="pedido-leitura-tentar"
+        >
+          Tentar de novo
+        </Button>
       </div>
     );
   }

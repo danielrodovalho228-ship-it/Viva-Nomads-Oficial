@@ -107,3 +107,15 @@ export const TEXTOS_REVISAO = {
 export function localPrevia(bairro: string, cidade: string, uf: string): string {
   return linhaLocalizacao(bairro, cidade, uf);
 }
+
+/**
+ * Conformidade do cadastro (mockup cadastro-imovel-09, 01/11): a prévia do Passo 9 fecha com o resumo da disponibilidade —
+ * "Resumo: Disponível a partir de 12/11 · Mínimo 30 dias" (ou "Disponível agora"). Mesma regra de data da página do
+ * imóvel (statusDisponibilidade). `hoje` em AAAA-MM-DD.
+ */
+export function resumoDisponibilidadePrevia(availableFrom: string, minDias: string | number, hoje: string): string {
+  const de = availableFrom?.slice(0, 10);
+  const status = !de || !/^\d{4}-\d{2}-\d{2}$/.test(de) || de <= hoje ? "Disponível agora" : `Disponível a partir de ${de.slice(8, 10)}/${de.slice(5, 7)}`;
+  const n = Math.round(Number(minDias));
+  return Number.isFinite(n) && n > 0 ? `Resumo: ${status} · Mínimo ${n} dias` : `Resumo: ${status}`;
+}

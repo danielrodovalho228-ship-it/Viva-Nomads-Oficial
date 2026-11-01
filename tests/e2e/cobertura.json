@@ -5429,6 +5429,12 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/ativacao-actions.ts#ativarPeloPainel": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": []
+    },
     "src/lib/parceiros/ativacao-actions.ts#estadoAtivacao": {
       "personas": [
         "publico"
@@ -6953,6 +6959,14 @@
       ],
       "specs": [
         "t410-niveis-medir-rascunho"
+      ]
+    },
+    "src/lib/data/fotos-cadastro-actions.ts#removerFotoDoCadastro": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t796-e308-capa-arquivo-apagado"
       ]
     },
     "src/lib/data/fotos-perfil-actions.ts#aprovarFotoPerfil": {

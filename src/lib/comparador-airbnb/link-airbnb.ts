@@ -1,7 +1,7 @@
 /*
   E399-C — o link do anúncio do Airbnb que o dono cola no cadastro. Guarda só o número do anúncio (a chave do
   fornecedor, desenho do E293); datas, hóspedes e rastreio do link saem. PURO.
-  Roda: node --test src/lib/comparador-airbnb/comparador.test.ts
+  Roda: node --test src/lib/comparador-airbnb/pacote1.test.ts
 */
 
 export type LinkAirbnb = { ok: true; id: string; url: string } | { ok: false; vazio?: true; erro: string };

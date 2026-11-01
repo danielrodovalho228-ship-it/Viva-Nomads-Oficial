@@ -19,7 +19,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Entre na sua conta." }, { status: 401 });
-  const dados = await carregarProvas(id);
+  // Achado 77: leitura que falha → 503, nunca um pacote incompleto (nem "não encontrado").
+  const dados = await carregarProvas(id).catch(() => "falhou" as const);
+  if (dados === "falhou") return NextResponse.json({ error: "Não foi possível gerar o pacote agora. Tente de novo em instantes." }, { status: 503 });
   if (!dados) return NextResponse.json({ error: "Contrato não encontrado." }, { status: 404 });
   const pdf = await gerarPacoteProvasRegistrado(dados, user.id).catch(() => null);
   if (!pdf) return NextResponse.json({ error: "Não foi possível gerar o pacote agora." }, { status: 503 });

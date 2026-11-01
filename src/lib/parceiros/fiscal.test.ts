@@ -90,7 +90,8 @@ test("pendência: só PJ sem resposta; bloqueia a primeira publicação, nunca q
 
 test("servidor: o pedido grava o valor validado e a ativação copia (só PJ) nos dois caminhos", () => {
   assert.match(ler("lib/parceiros/solicitacao-actions.ts"), /emite_nota: v\.valor\.emiteNota,/);
-  for (const arq of ["lib/parceiros/ativacao-actions.ts", "lib/vistoria/actions.ts"]) {
+  // E425: a cópia do pedido para a página mora no núcleo comum ao link e ao painel (ativacao-nucleo.ts).
+  for (const arq of ["lib/parceiros/ativacao-nucleo.ts", "lib/vistoria/actions.ts"]) {
     assert.match(ler(arq), /emite_nota: sol\.tipo_pessoa === "pj" \? \(\(sol\.emite_nota as boolean \| null\) \?\? null\) : null,/, arq);
   }
 });

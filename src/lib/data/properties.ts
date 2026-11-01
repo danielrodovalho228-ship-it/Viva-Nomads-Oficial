@@ -13,6 +13,8 @@ import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { decidirSelo } from "@/lib/comparador-airbnb/comparacao";
 import type { Conferencia } from "@/lib/comparador-airbnb/antifraude";
 import { COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
+import { soFotosExistentes } from "@/lib/fotos-anuncio";
+import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
@@ -772,6 +774,9 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   const lista = (data as unknown as PropertyRow[]).map(rowToProperty);
   // As fotos vêm de property_photos (sem isso o card ficava sem capa).
   await attachCoverPhotos(supabase, lista);
+  // E308 (causa raiz, 01/11): foto cujo arquivo já saiu do bucket não vira capa quebrada no card (rascunho ou anúncio).
+  const existentes = await arquivosDoDono(createAdminClient(), user.id);
+  for (const p of lista) if (p.photos?.length) p.photos = soFotosExistentes(p.photos, existentes);
   // PROP-2: o pacote de limpeza entra no total do mês (sem ele, o Anúncios mostrava menos que a página do imóvel).
   if (lista.length) {
     const { data: limpezas } = await supabase.from("properties").select("id, limpeza_estadia").in("id", lista.map((p) => p.id));

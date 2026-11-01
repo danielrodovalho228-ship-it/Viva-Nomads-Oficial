@@ -26,6 +26,8 @@ export function PreviaAnuncio(p: {
   publicado: boolean;
   /** E242: o "Ver no tamanho real", embaixo da foto. */
   tamanhoReal?: ReactNode;
+  /** Mockup 09 (01/11): o resumo da disponibilidade no fim do cartão (só no Passo 9). */
+  resumo?: string | null;
 }) {
   const linha = linhaPrevia(p.quartos, p.areaM2);
   const local = localPrevia(p.bairro, p.cidade, p.uf);
@@ -69,6 +71,11 @@ export function PreviaAnuncio(p: {
       {local && (
         <p className="mt-3 flex items-center gap-2 text-sm text-ink" data-testid="previa-local">
           <MapPin className="h-4 w-4 shrink-0 text-forest" aria-hidden /> {local}
+        </p>
+      )}
+      {p.resumo && (
+        <p className="mt-3 text-sm text-ink" data-testid="previa-resumo">
+          {p.resumo}
         </p>
       )}
       {!p.publicado && (
