@@ -38,7 +38,7 @@ test("E181 (família inteira): Candidaturas e Mensagens da home também contam a
   // Mensagens: listConversations, na home e em /dashboard/mensagens (a tela abre em "Todas").
   assert.match(pagina, /listConversations\(\)\.catch\(\(\) => \[\]\)/);
   assert.match(pagina, /totalConversas=\{conversas\.length\}/);
-  assert.match(ler("app/(dashboard)/dashboard/mensagens/page.tsx"), /initial=\{await listConversations\(\)\}/);
+  assert.match(ler("app/(dashboard)/dashboard/mensagens/page.tsx"), /initial=\{await listConversations\(\{ exigir: true \}\)\}/);
   assert.match(ler("app/(dashboard)/dashboard/mensagens/messages-client.tsx"), /useState<Filtro>\("todas"\)/);
   assert.match(home, /label="Mensagens" value=\{demo \? "1" : String\(totalConversas\)\}/);
   // Nenhum contador do morador com número fixo fora do modo demonstração.
