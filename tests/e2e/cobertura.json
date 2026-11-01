@@ -1049,7 +1049,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t843-reativar-anuncio-sem-rede"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
