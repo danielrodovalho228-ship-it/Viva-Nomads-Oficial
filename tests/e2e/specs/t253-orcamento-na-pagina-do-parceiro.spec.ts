@@ -8,6 +8,10 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha,
  *  - no laboratório: cria um parceiro publicado e abre a página dele;
  *  - no deploy (preview ou produção, workflow E2E): abre o parceiro de QA (TESTES_PARCEIRO_SLUG, padrão o do Muse).
  * Sem login, o botão leva à entrada e volta para a mesma página; nunca fica desabilitado.
+ * E297 (#1771, 01/11): parceiro de CONTA DE TESTE, para o visitante, mostra a faixa "Parceiro de teste" e, no lugar do
+ * pedido, o aviso de que o perfil não recebe pedidos (a regra do anúncio de teste). O parceiro de QA do deploy é de conta
+ * de teste: lá a spec confere esse aviso (sem botão e sem o texto antigo). No laboratório o parceiro é de conta real e o
+ * botão vivo continua sendo a prova; lá a faixa de teste derruba o teste.
  */
 test.use({ storageState: { cookies: [], origins: [] } });
 
@@ -46,6 +50,16 @@ test.describe("T253 — Solicitar orçamento na página pública do parceiro", (
       const r = await page.goto(`/parceiros/${slug}`, { waitUntil: "domcontentloaded" });
       test.skip(!NO_LABORATORIO && r?.status() === 404, `parceiro de QA ${slug} não publicado neste ambiente`);
       await expect(page.getByTestId("pagina-parceiro")).toBeVisible();
+
+      const faixaTeste = page.locator('[data-testid="faixa-parceiro-teste"][data-modo="visitante"]');
+      if (await faixaTeste.count()) {
+        expect(NO_LABORATORIO, "no laboratório o parceiro é de conta real: não pode sair como parceiro de teste").toBe(false);
+        info.annotations.push({ type: "E297", description: `${slug} é parceiro de conta de teste: para o visitante, o aviso no lugar do pedido` });
+        await expect(page.getByTestId("parceiro-pedido-teste")).toContainText("Este perfil não recebe pedidos");
+        await expect(page.getByTestId("solicitar-orcamento")).toHaveCount(0);
+        await expect(page.locator("body")).not.toContainText(TEXTO_ANTIGO);
+        return;
+      }
 
       const botao = page.getByTestId("solicitar-orcamento");
       await expect(botao).toBeVisible();
