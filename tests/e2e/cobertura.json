@@ -143,7 +143,8 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t419-varredura-bloco36",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t836-varredura-bloco145"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -553,7 +554,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t836-varredura-bloco145"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -596,7 +598,8 @@
         "t156-comparar-exemplos",
         "t48-varredura",
         "t311-marco-principal-unico",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t836-varredura-bloco145"
       ]
     },
     "/conferir": {
@@ -1855,7 +1858,8 @@
         "t543-e166-fundo-clean-publico",
         "t591-varredura-bloco48",
         "t661-varredura-bloco62",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t836-varredura-bloco145"
       ]
     },
     "/privacidade": {
@@ -1868,7 +1872,8 @@
         "t543-e166-fundo-clean-publico",
         "t557-varredura-bloco42",
         "t598-e84-central-de-ajuda",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t836-varredura-bloco145"
       ]
     },
     "/proprietario/[id]": {
@@ -1932,7 +1937,8 @@
         "t311-marco-principal-unico",
         "t438-vocab-a",
         "t543-e166-fundo-clean-publico",
-        "t557-varredura-bloco42"
+        "t557-varredura-bloco42",
+        "t836-varredura-bloco145"
       ]
     },
     "/simulacao": {
@@ -1969,7 +1975,8 @@
         "t543-e166-fundo-clean-publico",
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t836-varredura-bloco145"
       ]
     },
     "/tributario": {
@@ -2058,7 +2065,8 @@
         "t388-varredura-bloco23",
         "t419-varredura-bloco36",
         "t537-e165-admin-contrato-assinaturas",
-        "t589-varredura-bloco47"
+        "t589-varredura-bloco47",
+        "t836-varredura-bloco145"
       ]
     },
     "/admin/solicitacoes": {
@@ -2081,7 +2089,8 @@
         "t231-admin-numeros-com-lista",
         "t48-varredura",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t836-varredura-bloco145"
       ]
     },
     "/admin/eventos": {
@@ -2156,7 +2165,8 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t836-varredura-bloco145"
       ]
     },
     "/admin/contratos/[id]": {
