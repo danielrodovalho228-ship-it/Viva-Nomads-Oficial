@@ -144,7 +144,8 @@ function PedidoVisita({
         data-testid={modalidade === "video" ? "visita-video-abrir" : "agendar-visita"}
         onClick={() => (semLogin && onEntrar ? onEntrar() : setAberto(true))}
       >
-        {enviado ? (
+        {/* No anúncio de exemplo nada é enviado: o botão não diz "pedida" (varredura 01/11, achado do E320). */}
+        {enviado && !demo && !exemplo ? (
           <>
             <Check className="h-4 w-4" /> {t.feito}
           </>
