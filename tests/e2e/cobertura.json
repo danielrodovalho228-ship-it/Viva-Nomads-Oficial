@@ -963,8 +963,7 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t602-e181-familia-contadores",
-        "t676-varredura-bloco69",
-        "t925-varredura-0111-titulos"
+        "t676-varredura-bloco69"
       ]
     },
     "/dashboard/fechamento": {
@@ -1537,7 +1536,8 @@
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
         "t589-varredura-bloco47",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t925-varredura-0111-titulos"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -2018,7 +2018,8 @@
         "t298-varredura-logada-bloco4",
         "t553-varredura-bloco41",
         "t559-varredura-bloco43",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t925-varredura-0111-titulos"
       ]
     },
     "/dashboard/servicos": {

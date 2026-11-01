@@ -6,7 +6,7 @@ import { abrirComoConta, temContaVarredura } from "../fixtures/varredura";
   T925 — #2008 (Pista A, varredura 01/11): os títulos não pulam mais de h1 para h3 — o estado vazio do painel
   (EmptyState), o nome do candidato em Interessados e o cartão do imóvel no Fechamento viraram h2. Na tela de verdade, a
   390 e a 1280 px, a sequência de títulos VISÍVEIS do <main> começa em h1 e nunca sobe mais de um nível de uma vez:
-   - conta nova de morador (sem nada): favoritos, buscas salvas e candidaturas — o estado vazio logo abaixo do h1;
+   - conta nova de morador (sem nada): buscas salvas, candidaturas, propostas e visitas (telas com o EmptyState) — o estado vazio logo abaixo do h1;
    - proprietário da massa (DONO17): Interessados, com o nome do candidato.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -45,7 +45,7 @@ test.describe("T925 — #2008: títulos sem pular de h1 para h3 (390 e 1280 px)"
     test(`morador sem nada @${largura}: estado vazio em h2 logo abaixo do h1`, async ({ browser }) => {
       const page = await entrar(browser, email, senha);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      for (const rota of ["/dashboard/favoritos", "/dashboard/buscas", "/dashboard/candidaturas"]) {
+      for (const rota of ["/dashboard/buscas", "/dashboard/candidaturas", "/dashboard/propostas", "/dashboard/visitas"]) {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("estado-vazio").first()).toBeVisible({ timeout: 30_000 });
         const lista = await titulos(page);
