@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { emAndamentoDoAnuncio, pausarAnuncio, reativarAnuncio } from "@/lib/data/actions";
-import { donoPodeReativar, textoDaPausa, textoEmAndamento } from "@/lib/anuncio/pausa";
+import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, textoEmAndamento } from "@/lib/anuncio/pausa";
+import { textoDoErro } from "@/lib/erro-de-rede";
 import { cn } from "@/lib/utils";
 
 const ROTULO = { draft: "Rascunho", active: "Ativo", paused: "Pausado" } as const;
@@ -86,7 +87,13 @@ export function EstadoDoAnuncio({ id, status, motivo }: { id: string; status: St
 
   function confirmarPausa() {
     iniciar(async () => {
-      const r = await pausarAnuncio(id);
+      // Sem conexão, a ação rejeita: o aviso diz isso em português e a tela continua de pé (nada de limite de erro).
+      let r: Awaited<ReturnType<typeof pausarAnuncio>>;
+      try {
+        r = await pausarAnuncio(id);
+      } catch (e) {
+        return setAviso({ ok: false, texto: textoDoErro(e, MSG_PAUSAR_FALHOU) });
+      }
       if (!r.ok) return setAviso({ ok: false, texto: r.erro });
       setEtapa("nada");
       setAviso({ ok: true, texto: r.mensagem ?? "Anúncio pausado." });
@@ -98,7 +105,15 @@ export function EstadoDoAnuncio({ id, status, motivo }: { id: string; status: St
     setAberto(false);
     setAviso(null);
     iniciar(async () => {
-      const r = await reativarAnuncio(id);
+      // Auditoria de erros (achado nº 2): sem conexão, a ação rejeita — aviso em português, a tela não cai.
+      let r: Awaited<ReturnType<typeof reativarAnuncio>>;
+      try {
+        r = await reativarAnuncio(id);
+      } catch (e) {
+        setFaltas([]);
+        setAviso({ ok: false, texto: textoDoErro(e, MSG_REATIVAR_FALHOU) });
+        return;
+      }
       if (r.ok) {
         setEtapa("nada");
         setAviso({ ok: true, texto: r.mensagem ?? "Anúncio reativado." });

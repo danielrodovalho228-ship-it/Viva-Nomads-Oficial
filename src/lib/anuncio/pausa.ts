@@ -52,3 +52,7 @@ export function textoEmAndamento(e: EmAndamento): string[] {
   if (e.candidaturasAbertas) t.push(`${plural(e.candidaturasAbertas, "candidatura aberta continua", "candidaturas abertas continuam")}; você pode responder a ${e.candidaturasAbertas === 1 ? "ela" : "elas"}.`);
   return t;
 }
+
+/** Auditoria de erros (achados nº 2): a frase quando reativar ou pausar falha sem motivo nosso (banco ou conexão). */
+export const MSG_REATIVAR_FALHOU = "Não foi possível reativar agora. Tente de novo.";
+export const MSG_PAUSAR_FALHOU = "Não foi possível pausar agora. Tente de novo.";
