@@ -42,11 +42,21 @@ type Cred = { id: string; cidade: string; numero_credenciado: string; status: St
  * ausências, a fila de rodízio por cidade e a tabela de preço com histórico. Abaixo, o que o 62-B2 trouxe (verificação,
  * bloqueios, strikes, laudos e auditoria), que o 62-A Parte 2 redesenha.
  */
+/**
+ * Achado 39: uma leitura que falha não pode virar "Nenhum pedido de credenciamento" / "Nenhuma recusa" com os números
+ * zerados — o admin decidiria em cima de uma tela vazia falsa. Qualquer erro sobe para o aviso do admin ("Tentar de novo").
+ */
+function semFalhaDeLeitura<T extends readonly { error: { message: string } | null }[]>(leituras: T): T {
+  const falha = leituras.find((r) => r.error);
+  if (falha) throw new Error(`Falha ao ler a rede de avaliadores: ${falha.error!.message}`);
+  return leituras;
+}
+
 export default async function AdminAvaliadoresPage() {
   const admin = createAdminClient();
   if (!admin) return <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco." action={null} />;
   const agora = new Date();
-  const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = await Promise.all([
+  const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = semFalhaDeLeitura(await Promise.all([
     admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, parceiros(nome_publico), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
     admin.from("vistoria_precos").select(COLUNAS_PRECO).order("vigente_desde", { ascending: false }).limit(200),
     admin.from("vistoria_fila_admin").select("id, tipo, motivo, criado_em, pedido_id, avaliador_id").is("resolvido_em", null).order("criado_em"),
@@ -56,7 +66,7 @@ export default async function AdminAvaliadoresPage() {
     admin.from("vistoria_bloqueios").select("id, property_id, motivo, criado_em").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100),
     admin.from("proprietario_strikes").select("id, owner_id, property_id, ordem, origem, criado_em, suspenso_ate, expira_em").order("criado_em", { ascending: false }).limit(100),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, property_id, emitido_em").order("emitido_em", { ascending: false }).limit(30),
-  ]);
+  ]));
   const lista = (creds ?? []) as unknown as Cred[];
   // E35-B: a identidade de quem ainda não está ativo (solicitado, em teste, suspenso) — é requisito da ATIVAÇÃO.
   const identidade = new Map(
@@ -68,20 +78,21 @@ export default async function AdminAvaliadoresPage() {
   );
   const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();
   // Prompt 62-A, Parte 2: contestações em aberto (com o 2º avaliador), devoluções a devolver e laudos fora das 48 h úteis.
-  const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }, { data: semLaudo }] = await Promise.all([
+  const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }, { data: semLaudo }] = semFalhaDeLeitura(await Promise.all([
     admin.from("vistoria_pedidos").select("id, cidade, status, criado_em, origem_pedido_id, avaliadores_credenciamento(numero_credenciado)").eq("tipo", "contestacao").in("status", ["pedido", "designado", "agendado", "realizada"]).order("criado_em").limit(50),
     admin.from("vistoria_devolucoes").select("id, valor, prazo_ate, avaliadores_credenciamento(numero_credenciado)").is("recebido_confirmado_em", null).order("prazo_ate").limit(50),
     admin.from("vistoria_pedidos").select("id, cidade, visita_concluida_em, avaliadores_credenciamento(numero_credenciado)").eq("status", "realizada").not("visita_concluida_em", "is", null).limit(100),
-  ]);
+  ]));
   type ComNumero = { avaliadores_credenciamento: { numero_credenciado: string } | null };
   const contestacoesLista = (contestacoesAbertas ?? []) as unknown as ({ id: string; cidade: string; status: string; criado_em: string; origem_pedido_id: string | null } & ComNumero)[];
   const devolucoesLista = (devolucoesAbertas ?? []) as unknown as ({ id: string; valor: number; prazo_ate: string } & ComNumero)[];
   const atrasadosLista = ((semLaudo ?? []) as unknown as ({ id: string; cidade: string; visita_concluida_em: string } & ComNumero)[]).filter((x) => laudoAtrasado(x.visita_concluida_em, null, agora));
-  const [fila_rodizio, { data: recusas }, { data: perfisTeste }] = await Promise.all([
+  const [fila_rodizio, recusasLeitura, perfisLeitura] = await Promise.all([
     filaDaCidade(admin),
     admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
   ]);
+  const [{ data: recusas }, { data: perfisTeste }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura] as const);
   const idsTeste = ((perfisTeste ?? []) as { id: string }[]).map((x) => x.id);
   const contasTeste = new Set(idsTeste);
   // E30: quem já tem a avaliação de teste feita (laudo emitido num pedido de teste) — só esses podem ser ativados.
