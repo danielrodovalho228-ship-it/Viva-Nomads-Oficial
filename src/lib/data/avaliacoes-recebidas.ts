@@ -12,7 +12,11 @@ export type AvaliacaoRecebidaComRevisao = AvaliacaoRecebida & { contestacaoAbert
  * SESSÃO (RLS: publicadas são legíveis; contestação só do avaliado). O nome e a foto de quem avaliou vêm pelo cliente
  * de serviço, como no perfil público: só o nome curto e a foto do caminho canônico — houve estadia entre os dois.
  */
-export async function avaliacoesRecebidas(): Promise<{ userId: string; avaliacoes: AvaliacaoRecebidaComRevisao[] } | null> {
+const MSG_AVALIACOES_NAO_CARREGARAM = "Não foi possível carregar as suas avaliações agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 9: com `exigir` (as telas de avaliações), a falha do banco LANÇA — o painel mostra
+ * "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma avaliação". As duas telas que usam esta lista passam `exigir`. */
+export async function avaliacoesRecebidas(opcoes: { exigir?: boolean } = {}): Promise<{ userId: string; avaliacoes: AvaliacaoRecebidaComRevisao[] } | null> {
   const supabase = await createClient();
   if (!supabase) return null;
   const {
@@ -20,12 +24,13 @@ export async function avaliacoesRecebidas(): Promise<{ userId: string; avaliacoe
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("avaliacoes")
     .select("id, autor_id, papel_autor, imovel_id, nota_geral, comentario_publico, publicada_em")
     .eq("alvo_id", user.id)
     .eq("status", "publicada")
     .order("publicada_em", { ascending: false });
+  if (error && opcoes.exigir) throw new Error(MSG_AVALIACOES_NAO_CARREGARAM);
   type Linha = { id: string; autor_id: string; papel_autor: string; imovel_id: string | null; nota_geral: number; comentario_publico: string | null; publicada_em: string | null };
   const linhas = (data ?? []) as Linha[];
   if (linhas.length === 0) return { userId: user.id, avaliacoes: [] };

@@ -30,7 +30,11 @@ type LinhaVisita = {
   horario_proposto: string | null;
 };
 
-export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
+const MSG_AGENDA_NAO_CARREGOU = "Não foi possível carregar a agenda agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 9: com `exigir` (a tela Agenda), a falha do banco LANÇA — o painel mostra
+ * "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nada na agenda". Sem `exigir` (o resumo de hoje na home), segue como antes. */
+export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): Promise<AgendaDoDono> {
   const vazio: AgendaDoDono = { itens: [], imoveis: [], horarios: {} };
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -40,11 +44,12 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
   } = await supabase.auth.getUser();
   if (!user) return vazio;
 
-  const { data: props } = await admin
+  const { data: props, error: erroProps } = await admin
     .from("properties")
     .select("id, title, checkin_after, checkout_before")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
+  if (erroProps && opcoes.exigir) throw new Error(MSG_AGENDA_NAO_CARREGOU);
   const linhasImoveis = (props ?? []) as { id: string; title: string | null; checkin_after: string | null; checkout_before: string | null }[];
   const imoveis = linhasImoveis.map((p) => ({ id: p.id, titulo: p.title || "Imóvel" }));
   const horarios = Object.fromEntries(linhasImoveis.map((p) => [p.id, { entrada: p.checkin_after, saida: p.checkout_before }]));
@@ -52,7 +57,7 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
   const ids = imoveis.map((p) => p.id);
   const titulo = new Map(imoveis.map((p) => [p.id, p.titulo]));
 
-  const [{ data: visitas }, { data: contratos }, { data: bloqueios }, { data: aceitas }] = await Promise.all([
+  const [{ data: visitas, error: e1 }, { data: contratos, error: e2 }, { data: bloqueios, error: e3 }, { data: aceitas }] = await Promise.all([
     admin
       .from("visitas_video")
       .select("id, property_id, tenant_id, modalidade, status, horarios, horario_confirmado, horario_proposto")
@@ -63,6 +68,7 @@ export async function carregarAgendaDoDono(): Promise<AgendaDoDono> {
     admin.from("property_blocks").select("id, property_id, inicio, fim").in("property_id", ids),
     admin.from("leads").select("tenant_id, property_id").eq("owner_id", user.id).eq("status", "accepted"),
   ]);
+  if ((e1 || e2 || e3) && opcoes.exigir) throw new Error(MSG_AGENDA_NAO_CARREGOU);
 
   // Relação aceita (candidatura aceita ou contrato): só então nome curto e foto.
   const aceito = new Set<string>(((aceitas ?? []) as { tenant_id: string; property_id: string }[]).map((l) => `${l.tenant_id}_${l.property_id}`));
