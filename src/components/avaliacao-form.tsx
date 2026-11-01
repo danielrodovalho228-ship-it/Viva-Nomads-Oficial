@@ -112,7 +112,9 @@ export function AvaliacaoForm({
             <Star
               className={cn(
                 "h-6 w-6 transition-colors",
-                (hover || rating) >= n ? "fill-champagne text-champagne" : "text-sage-200"
+                // Varredura 01/11: a estrela vazia é o próprio controle da nota — contorno sage (~5:1) em vez de sage-200
+                // (1,25:1); a marcada ganha contorno champagne-600 (≥3:1) além do preenchimento.
+                (hover || rating) >= n ? "fill-champagne text-champagne-600" : "text-sage"
               )}
             />
           </button>
