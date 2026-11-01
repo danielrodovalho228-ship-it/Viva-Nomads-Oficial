@@ -21,6 +21,8 @@ const PET = `Thor ${sufixo}`;
 const DOMINIO = `cal-t957-${sufixo}.example.com`;
 const LINK = `https://${DOMINIO}/calendario.ics`;
 
+/** Diagnóstico: as ações vistas pela rota de falha (status, tamanho, se trazem a marca). */
+const vistas: string[] = [];
 /** Só a ação que devolve `marca` (os pets do morador) responde 500 — as outras ações da tela (o próprio perfil) passam. */
 async function soAcaoComFalha(page: Page, padrao: string, marca: string, liga: boolean) {
   // Desliga esperando o handler em andamento terminar (senão o pedido do "Tentar de novo" cai na rota velha).
@@ -30,6 +32,7 @@ async function soAcaoComFalha(page: Page, padrao: string, marca: string, liga: b
     try {
       const resp = await r.fetch();
       const corpo = await resp.text();
+      vistas.push(`${resp.status()} ${corpo.length}b ${corpo.includes(marca) ? "COM a marca" : "sem a marca"}`);
       if (corpo.includes(marca)) return await r.fulfill({ status: 500, body: "falha simulada (t957)" });
       return await r.fulfill({ response: resp, body: corpo });
     } catch {
@@ -90,7 +93,11 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
       const painel = page.getByTestId("importar-calendario");
       await painel.scrollIntoViewIfNeeded({ timeout: 30_000 });
       const falha = painel.getByTestId("importacoes-falha");
-      await expect(falha).toBeVisible({ timeout: 30_000 });
+      try {
+        await expect(falha).toBeVisible({ timeout: 30_000 });
+      } catch (e) {
+        throw new Error(`t957 diag @${largura}: ações vistas = ${JSON.stringify(vistas)}; itens = ${await painel.getByTestId("importacao-item").count()}\n${(e as Error).message}`);
+      }
       await expect(falha).toContainText("Não foi possível carregar os calendários importados agora.");
       await expect(painel.getByTestId("importacao-item")).toHaveCount(0);
       await soAcaoComFalha(page, rota, DOMINIO, false);
