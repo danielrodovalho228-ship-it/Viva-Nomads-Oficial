@@ -7,7 +7,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { CampoDataHora } from "@/components/ui/campo-data";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { pedirVisita } from "@/lib/data/visitas-video-actions";
-import { JANELA_DIAS, MAX_HORARIOS, MSG_HORARIOS, ROTULO_FUSO, campoBrasiliaParaIso, instanteParaCampoBrasilia, type ModalidadeVisita } from "@/lib/visitas-video";
+import { JANELA_DIAS, MAX_HORARIOS, MSG_HORARIOS, ROTULO_FUSO, campoBrasiliaParaIso, instanteParaCampoBrasilia, type EstadoVisitaAnuncio, type ModalidadeVisita } from "@/lib/visitas-video";
 import { EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 
 type PropsVisita = {
@@ -22,8 +22,11 @@ type PropsVisita = {
   variante?: "secondary" | "tertiary";
   /** Prompt 41: cada aumento abre a janela (o "Agendar visita" do rodapé fixo do celular). */
   abrirSinal?: number;
-  /** E329: o morador já tem visita CONFIRMADA (e por vir) desta modalidade neste imóvel → "Visita agendada" leva a Visitas. */
-  agendada?: boolean;
+  /**
+   * E329 + varredura 01/11: o morador já tem visita em aberto desta modalidade neste imóvel — confirmada e por vir
+   * ("Visita agendada"), pedida ("… pedida") ou confirmada já passada ("Ver minha visita"). O botão leva a Visitas.
+   */
+  estado?: EstadoVisitaAnuncio;
 };
 
 /** Botão "Visita por vídeo" ao lado de "Solicitar reserva": até 3 horários nos próximos 7 dias. */
@@ -90,7 +93,7 @@ function PedidoVisita({
   modalidade,
   variante = "secondary",
   abrirSinal = 0,
-  agendada = false,
+  estado,
 }: PropsVisita & { modalidade: ModalidadeVisita }) {
   const t = TEXTOS[modalidade];
   const [abertoManual, setAberto] = useState(false);
@@ -139,17 +142,18 @@ function PedidoVisita({
     setEnviado(true);
   }
 
-  // E329 (01/11): com a visita já confirmada, o anúncio mostra o estado e leva a Visitas — não oferece pedir outra igual.
-  if (agendada && !exemplo) {
+  // E329 (01/11) + varredura 01/11: com uma visita em aberto, o anúncio mostra o estado e leva a Visitas — não oferece
+  // pedir outra igual (o banco aceita uma em aberto por morador, imóvel e modalidade; antes o pedido voltava recusado).
+  if (estado && !exemplo) {
     return (
       <ButtonLink
         href="/dashboard/visitas"
         variant={variante}
         size="md"
         className={variante === "tertiary" ? "self-center" : "w-full"}
-        data-testid={`${t.prefixo}-agendada`}
+        data-testid={`${t.prefixo}-${estado}`}
       >
-        <CalendarCheck className="h-4 w-4" /> Visita agendada
+        <CalendarCheck className="h-4 w-4" /> {estado === "agendada" ? "Visita agendada" : estado === "pedida" ? t.feito : "Ver minha visita"}
       </ButtonLink>
     );
   }
