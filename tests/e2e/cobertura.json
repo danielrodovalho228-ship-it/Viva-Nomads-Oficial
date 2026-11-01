@@ -200,7 +200,8 @@
         "t286-esqueletos-vazios-48",
         "t336-varredura-bloco14",
         "t407-varredura-bloco26",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t875-admin-contagens-uma-fonte"
       ]
     },
     "/admin/emails-teste": {
@@ -1989,7 +1990,8 @@
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
         "t212-ferramentas-proprietario",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t875-admin-contagens-uma-fonte"
       ]
     },
     "/dashboard/agenda": {
@@ -2339,7 +2341,8 @@
         "t301-varredura-logada-bloco5",
         "t419-varredura-bloco36",
         "t467-admin6-rotas",
-        "t420-varredura-bloco37"
+        "t420-varredura-bloco37",
+        "t875-admin-contagens-uma-fonte"
       ]
     },
     "/admin/conforto": {
@@ -2376,7 +2379,8 @@
         "t296-niveis-exibicao-59-1",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t875-admin-contagens-uma-fonte"
       ]
     },
     "/dashboard/imoveis/[id]/nivel": {
