@@ -10,5 +10,6 @@ test("cadastro-imovel-01 (mockup): nome do tipo centrado e um passo maior", () =
 
 test("cadastro-imovel-02: 'Faltam N fotos' uma vez só (a trava embaixo já diz)", () => {
   const f = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx");
-  assert.match(f, /\{bloqueado && !\(passoFotos && !passoFotos\.podeContinuar && passoFotos\.mensagem\) && \(/);
+  // E417 (D8): a trava do cartão sai de avisoDaContagem (mesma conta do número); o "Faltam" do topo some quando ela fala.
+  assert.match(f, /\{bloqueado && !aviso\.mensagem && \(/);
 });
