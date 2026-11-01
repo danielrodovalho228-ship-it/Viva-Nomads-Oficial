@@ -84,9 +84,11 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
   });
 
   test("achado 50 — calendários importados: falha avisa, 'Tentar de novo' traz o link (390 e 1280)", async ({ browser }) => {
-    const page = await entrar(browser, dono.email, senha);
     const rota = `**/dashboard/imoveis/${ids.imovel}/editar**`;
+    // Uma página nova por largura: na 2ª volta da mesma página o editor reaproveitava a lista da volta anterior.
     for (const largura of [390, 1280] as const) {
+      const page = await entrar(browser, dono.email, senha);
+      vistas.length = 0;
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await soAcaoComFalha(page, rota, DOMINIO, true);
       await page.goto(`/dashboard/imoveis/${ids.imovel}/editar#calendario`, { waitUntil: "domcontentloaded" });
@@ -105,7 +107,7 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
       await expect(painel.getByTestId("importacao-item")).toHaveCount(1, { timeout: 30_000 });
       await expect(painel.getByTestId("importacoes-falha")).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      await page.context().close();
     }
-    await page.context().close();
   });
 });
