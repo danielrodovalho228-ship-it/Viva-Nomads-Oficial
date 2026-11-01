@@ -636,7 +636,9 @@ export async function getNotifPrefs(): Promise<{ email: boolean }> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { email: true };
-  const { data } = await supabase.from("profiles").select("notif_email").eq("id", user.id).maybeSingle();
+  // Achado 54: a falha de leitura LANÇA (o painel avisa) — "sem preferência salva = ligado" vale só quando a leitura deu certo.
+  const { data, error } = await supabase.from("profiles").select("notif_email").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler sua preferência de e-mail agora.");
   // Critério 5: sem preferência salva = ligado.
   return { email: notificacaoLigada(data?.notif_email) };
 }

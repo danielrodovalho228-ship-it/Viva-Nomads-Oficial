@@ -11,7 +11,8 @@ export default async function MeusPedidosPage() {
   const [pedidos, respostas, prefs] = await Promise.all([
     getMeusPedidos({ exigir: true }),
     getRespostasRecebidas(),
-    getNotifPrefs(),
+    // Achado 54: falhou a leitura da preferência → o bloco avisa (null), sem derrubar a página.
+    getNotifPrefs().catch(() => null),
   ]);
   return (
     <>
