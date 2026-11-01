@@ -110,7 +110,7 @@ export default async function PoloPage({ params }: Params) {
       <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/60">
-            <Link href="/" className="hover:text-champagne">Início</Link> /{" "}
+            <Link href="/" className="alvo-toque hover:text-champagne">Início</Link> /{" "}
             <Link href={`/cidades/${cidade}`} className="hover:text-champagne">{c.name}</Link> /{" "}
             <span className="text-white/80">{p.nome}</span>
           </nav>

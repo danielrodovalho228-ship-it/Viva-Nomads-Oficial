@@ -69,7 +69,7 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
           )}
         </div>
         <p className="mt-3 text-sm">
-          <Link href="/precos#compare" className="web-only font-medium text-forest underline">
+          <Link href="/precos#compare" className="alvo-toque web-only font-medium text-forest underline">
             Ver a comparação completa
           </Link>
         </p>

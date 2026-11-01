@@ -245,7 +245,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <div className="mt-2 rounded-lg border border-sage-200 bg-white p-3 text-sm" data-testid="sp-convite-avaliacao">
           <p className="font-semibold text-ink">{CONVITE_SEJA_PARCEIRO.titulo}</p>
           <p className="mt-1 text-muted">{CONVITE_SEJA_PARCEIRO.texto}</p>
-          <Link href="/dashboard/parceiro/avaliacao" className="mt-1 inline-block font-semibold text-forest underline underline-offset-2">
+          <Link href="/dashboard/parceiro/avaliacao" className="alvo-toque mt-1 inline-block font-semibold text-forest underline underline-offset-2">
             {CONVITE_SEJA_PARCEIRO.link}
           </Link>
         </div>
