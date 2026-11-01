@@ -6,8 +6,9 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
   T859 — CONFORMIDADE FINA DO CADASTRO (Pista C, 01/11; merge #1847, mockups cadastro-imovel-01 e -02). O merge trouxe
   só teste de fonte; aqui, na tela de verdade, a 390 e 1280 px:
    1) Passo Tipo: o nome de cada tipo de imóvel sai centrado no cartão e um passo maior (text-lg, 18 px);
-   2) Passo Fotos com 3 fotos: "Faltam 5 fotos" aparece UMA vez só — a trava embaixo (fotos-trava) já diz, e a contagem
-      do topo deixa de repetir; a contagem continua "3 / 8 fotos".
+   2) Passo Fotos com 3 fotos: na caixa da contagem (fotos-contagem), "Faltam 5 fotos" aparece UMA vez só — a trava
+      embaixo (fotos-trava) já diz, e a linha do topo deixa de repetir; a contagem continua "3 / 8 fotos". (O bloco da IA,
+      fora da caixa, tem outra frase — "Faltam 5 fotos para a IA montar seu anúncio." — e não entra na conta.)
   Rascunhos do laboratório, criados e apagados aqui.
 */
 const senha = novaSenha();
@@ -50,7 +51,8 @@ test.describe("T859 — conformidade fina do cadastro (#1847)", () => {
       const contagem = page.getByTestId("fotos-contagem");
       await expect(contagem).toContainText("3 / 8 fotos", { timeout: 20_000 });
       await expect(page.getByTestId("fotos-trava")).toContainText("Faltam 5 fotos");
-      await expect(page.getByTestId("etapa-fotos").getByText(/Faltam 5 fotos/), "a frase aparece uma vez só no passo").toHaveCount(1);
+      await expect(contagem.getByText(/Faltam 5 fotos/), "na caixa da contagem, a frase aparece uma vez só").toHaveCount(1);
+      await expect(contagem.getByText(/Faltam 5 fotos/)).toHaveAttribute("data-testid", "fotos-trava");
       await page.context().close();
     });
   }
