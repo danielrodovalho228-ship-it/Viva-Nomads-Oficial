@@ -92,7 +92,7 @@ test("item 3: Financeiro com UMA base — a soma da tabela = os cartões (Real e
 test("item 3: a página lê o financeiro com recorte, a tabela vem da lista dos cartões e cada cartão mostra a base", () => {
   const pagina = ler("../../app/(dashboard)/admin/financeiro/page.tsx");
   assert.match(pagina, /recorteDaUrl\(um\("tipo"\)\)/);
-  assert.match(pagina, /cidade, recorte\)\.catch/);
+  assert.match(pagina, /cidade, recorte(, \{ exigir: true \})?\)\.catch/);
   assert.match(pagina, /comissoesDosContratos\(contratos, cobrancas\)/);
   assert.match(ler("../data/admin-financeiro.ts"), /admin_financeiro_recorte/);
   const tela = ler("../../app/(dashboard)/admin/financeiro/financeiro-client.tsx");
