@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { CampoDataHoraFormulario } from "@/components/ui/campo-data";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
@@ -269,7 +270,7 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
       {["designado", "agendado"].includes(p.status) && r === "aceita" && (
         <FormAcao acao={agendarVisita} className="mt-2 flex flex-wrap items-end gap-2" testid="agendar-visita">
           <input type="hidden" name="pedidoId" value={p.id} />
-          <label className="text-sm">Data e hora da visita<input type="datetime-local" name="quando" required className={campo} /></label>
+          <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
           <Button type="submit" variant="secondary" size="sm">{p.agendado_para ? "Reagendar" : "Agendar"}</Button>
           <span className="w-full text-xs text-muted">Horário de Brasília. Combine a data com o proprietário pelas mensagens da Viva.</span>
         </FormAcao>

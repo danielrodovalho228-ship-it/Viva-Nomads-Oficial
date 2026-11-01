@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type ChangeEvent, type InputHTMLAttributes } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type InputHTMLAttributes } from "react";
 import { CalendarDays } from "lucide-react";
 import { CalendarioBR } from "@/components/ui/calendario-br";
 import { useToque } from "@/components/ui/use-toque";
@@ -21,6 +21,7 @@ export function CampoDataTexto({
   testid,
   className,
   rotuloCalendario,
+  aceitarTexto,
   ...resto
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange" | "min"> & {
   value: string;
@@ -30,6 +31,8 @@ export function CampoDataTexto({
   testid?: string;
   /** O nome do campo no botão e no calendário ("Abrir calendário: Disponível a partir de"). */
   rotuloCalendario?: string;
+  /** Texto inteiro que o dono do campo trata (ex.: data e hora "AAAA-MM-DDTHH:MM" colada no campo de data e hora). */
+  aceitarTexto?: (bruto: string) => boolean;
 }) {
   const caixa = useRef<HTMLSpanElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
@@ -55,6 +58,7 @@ export function CampoDataTexto({
         value={texto}
         onChange={(e) => {
           const bruto = e.target.value;
+          if (aceitarTexto?.(bruto.trim())) return;
           const iso = /^\d{4}-\d{1,2}-\d{1,2}$/.test(bruto.trim()) ? interpretarDataColada(bruto) : null;
           if (iso) {
             setTexto(isoParaBr(iso));
@@ -192,4 +196,132 @@ export function CampoDataFormulario({
 }: Omit<Parameters<typeof CampoData>[0], "value" | "onChange" | "defaultValue" | "name"> & { name: string; defaultValue?: string }) {
   const [valor, setValor] = useState(defaultValue);
   return <CampoData {...resto} name={name} value={valor} onChange={(e) => setValor(e.target.value)} />;
+}
+
+const DATA_HORA = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/;
+/** Horas oferecidas no campo do computador: de 30 em 30 minutos, das 06:00 às 22:00. */
+const HORAS = Array.from({ length: 33 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
+
+/**
+ * Varredura 01/11: data e hora no padrão do site. O `datetime-local` nativo do computador sai em mm/dd/yyyy e AM/PM num
+ * navegador em inglês; aqui a data é dd/mm/aaaa (`CampoDataTexto`, calendário pt-BR) e a hora uma lista de 24 h. No
+ * toque, o nativo do aparelho. Valor "AAAA-MM-DDTHH:MM" (como o nativo) — "" enquanto falta a data ou a hora. Um valor
+ * inteiro "AAAA-MM-DDTHH:MM" preenchido ou colado no campo da data também vale (o mesmo que o nativo aceitava).
+ */
+export function CampoDataHora({
+  value,
+  aoMudar,
+  min,
+  max,
+  testid,
+  className,
+  rotulo,
+}: {
+  value: string;
+  aoMudar: (valor: string) => void;
+  /** "AAAA-MM-DDTHH:MM" (só a data entra no calendário). */
+  min?: string;
+  max?: string;
+  testid?: string;
+  className?: string;
+  rotulo?: string;
+}) {
+  const toque = useToque();
+  const m = DATA_HORA.exec(value);
+  const [data, setData] = useState(m?.[1] ?? "");
+  const [hora, setHora] = useState(m?.[2] ?? "");
+  // Mudança de fora (valor zerado ou trocado): as partes acompanham — ajuste na renderização, sem efeito.
+  const [anterior, setAnterior] = useState(value);
+  if (anterior !== value) {
+    setAnterior(value);
+    if (value !== (data && hora ? `${data}T${hora}` : "")) {
+      setData(m?.[1] ?? (value ? data : ""));
+      setHora(m?.[2] ?? (value ? hora : ""));
+    }
+  }
+  const emitir = (d: string, h: string) => {
+    setData(d);
+    setHora(h);
+    const v = d && h ? `${d}T${h}` : "";
+    setAnterior(v);
+    aoMudar(v);
+  };
+
+  if (toque) {
+    // Nativo SEM value controlado: meio preenchido (só a data) vale "" para o React, e reaplicar "" apagava o que a pessoa
+    // já tinha escolhido (complemento do prompt 23). Mudança de fora entra pelo efeito.
+    return <DataHoraNativo value={value} aoMudar={aoMudar} min={min} max={max} rotulo={rotulo} testid={testid} className={className} />;
+  }
+  const horas = hora && !HORAS.includes(hora) ? [...HORAS, hora].sort() : HORAS;
+  return (
+    <span className="grid min-w-0 grid-cols-[minmax(0,1fr)_7rem] gap-2" data-campo-data-hora>
+      <CampoDataTexto
+        value={data}
+        min={min?.slice(0, 10)}
+        ariaLabel={rotulo ? `${rotulo}: data` : "Data"}
+        rotuloCalendario={rotulo}
+        testid={testid}
+        className={className}
+        aoMudar={(d) => emitir(d, hora)}
+        aceitarTexto={(bruto) => {
+          const t = DATA_HORA.exec(bruto);
+          if (!t) return false;
+          emitir(t[1], t[2]);
+          return true;
+        }}
+      />
+      <select
+        value={hora}
+        onChange={(e) => emitir(data, e.target.value)}
+        aria-label={rotulo ? `${rotulo}: hora` : "Hora"}
+        data-testid={testid ? `${testid}-hora` : undefined}
+        className={cn("min-w-0", className)}
+      >
+        <option value="">Hora</option>
+        {horas.map((h) => (
+          <option key={h} value={h}>
+            {h}
+          </option>
+        ))}
+      </select>
+    </span>
+  );
+}
+
+function DataHoraNativo({ value, aoMudar, min, max, rotulo, testid, className }: { value: string; aoMudar: (v: string) => void; min?: string; max?: string; rotulo?: string; testid?: string; className?: string }) {
+  const campo = useRef<HTMLInputElement>(null);
+  const ultimo = useRef(value);
+  useEffect(() => {
+    if (campo.current && value !== ultimo.current) {
+      campo.current.value = value;
+      ultimo.current = value;
+    }
+  }, [value]);
+  return (
+    <input
+      ref={campo}
+      type="datetime-local"
+      min={min}
+      max={max}
+      defaultValue={value}
+      onChange={(e) => {
+        ultimo.current = e.target.value;
+        aoMudar(e.target.value);
+      }}
+      aria-label={rotulo}
+      data-testid={testid}
+      className={cn("block w-full min-w-0 max-w-full", className)}
+    />
+  );
+}
+
+/** Varredura 01/11: `CampoDataHora` num formulário de ação de servidor — envia "AAAA-MM-DDTHH:MM" pelo `name`. */
+export function CampoDataHoraFormulario({ name, required, rotulo, className, testid }: { name: string; required?: boolean; rotulo?: string; className?: string; testid?: string }) {
+  const [valor, setValor] = useState("");
+  return (
+    <>
+      <CampoDataHora value={valor} aoMudar={setValor} rotulo={rotulo} className={className} testid={testid} />
+      <input type="hidden" name={name} value={valor} required={required} />
+    </>
+  );
 }

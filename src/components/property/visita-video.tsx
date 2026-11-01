@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Video, Check, CalendarCheck } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CampoDataHora } from "@/components/ui/campo-data";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
 import { pedirVisita } from "@/lib/data/visitas-video-actions";
 import { JANELA_DIAS, MAX_HORARIOS, MSG_HORARIOS, ROTULO_FUSO, campoBrasiliaParaIso, instanteParaCampoBrasilia, type ModalidadeVisita } from "@/lib/visitas-video";
@@ -191,18 +192,14 @@ function PedidoVisita({
                 </p>
                 <div className="mt-3 flex flex-col gap-2">
                   {horarios.map((h, i) => (
-                    <input
+                    <CampoDataHora
                       key={h.id}
-                      type="datetime-local"
-                      aria-label={`Horário ${i + 1} (${ROTULO_FUSO})`}
-                      data-testid={`${t.prefixo}-horario-${i}`}
+                      rotulo={`Horário ${i + 1} (${ROTULO_FUSO})`}
+                      testid={`${t.prefixo}-horario-${i}`}
                       min={min}
                       max={max}
-                      defaultValue={h.valor}
-                      onChange={(e) => {
-                        const valor = e.target.value;
-                        setHorarios((l) => l.map((x) => (x.id === h.id ? { ...x, valor } : x)));
-                      }}
+                      value={h.valor}
+                      aoMudar={(valor) => setHorarios((l) => l.map((x) => (x.id === h.id ? { ...x, valor } : x)))}
                       className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
                     />
                   ))}

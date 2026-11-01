@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CampoDataHora } from "@/components/ui/campo-data";
 import { Chip } from "@/components/ui/chip";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
@@ -392,10 +393,8 @@ function ProporHorario({ pendente, onPropor }: { pendente: boolean; onPropor: (i
   const [quando, setQuando] = useState("");
   return (
     <div className="mt-4 grid gap-2">
-      <label className="text-sm font-semibold text-ink" htmlFor="pedido-outro-horario">
-        Nenhum serve? Proponha outro (horário de Brasília)
-      </label>
-      <input id="pedido-outro-horario" type="datetime-local" className={campo} value={quando} onChange={(e) => setQuando(e.target.value)} data-testid="pedido-outro-horario" />
+      <p className="text-sm font-semibold text-ink">Nenhum serve? Proponha outro (horário de Brasília)</p>
+      <CampoDataHora rotulo="Outro horário (horário de Brasília)" value={quando} aoMudar={setQuando} className={campo} testid="pedido-outro-horario" />
       <Button variant="secondary" size="sm" disabled={pendente || !quando} onClick={() => onPropor(`${quando}:00-03:00`)} data-testid="pedido-propor-horario">
         Propor este horário
       </Button>

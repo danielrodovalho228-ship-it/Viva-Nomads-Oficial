@@ -43,7 +43,10 @@ test("item 1 — a rua sai do rascunho para a coluna restrita (o rascunho é apa
 test("item 2 — o horário tem chave estável e não é campo controlado (não some quando outro campo muda)", () => {
   const tela = ler("../components/property/visita-video.tsx");
   assert.match(tela, /key=\{h\.id\}/);
-  assert.match(tela, /defaultValue=\{h\.valor\}/);
+  // Varredura 01/11: o campo é o CampoDataHora; no toque, o nativo dele não tem value controlado (defaultValue) e, no
+  // computador, data e hora ficam no estado do próprio campo — meio preenchido não some quando outro campo muda.
+  assert.match(tela, /<CampoDataHora\s+key=\{h\.id\}[\s\S]{0,400}value=\{h\.valor\}/);
+  assert.match(ler("../components/ui/campo-data.tsx"), /function DataHoraNativo[\s\S]*defaultValue=\{value\}/);
   assert.doesNotMatch(tela, /key=\{i\}/);
   assert.doesNotMatch(tela, /value=\{h\}/);
   assert.match(tela, /const \[\{ min, max \}\] = useState\(/, "limites calculados uma vez");

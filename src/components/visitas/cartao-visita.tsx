@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapPin, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CampoDataHora } from "@/components/ui/campo-data";
 import { responderVisita, type AcaoVisita } from "@/lib/data/visitas-video-actions";
 import {
   AJUDA_LINK_CHAMADA,
@@ -356,13 +357,12 @@ function AcoesDono({ v, passou = false, onMudou, onStatus }: { v: VisitaNaTela; 
             ))}
             <label className="flex flex-col gap-1 text-xs font-medium text-ink">
               {validos.length ? `Ou proponha outro horário (${ROTULO_FUSO})` : `Proponha outro horário (${ROTULO_FUSO})`}
-              <input
-                type="datetime-local"
-                data-testid="visita-outro-horario"
+              <CampoDataHora
+                testid="visita-outro-horario"
                 min={min}
                 max={max}
                 value={outro}
-                onChange={(e) => setOutro(e.target.value)}
+                aoMudar={setOutro}
                 className="h-11 w-full rounded-xl border border-line bg-white px-3 text-base text-ink"
               />
             </label>
