@@ -43,9 +43,9 @@ export function PropertyMiniCard({ property }: { property: Property }) {
           </span>
         </div>
         {/* Título com espaço próprio — line-clamp-2, nada por cima. */}
-        <h3 className="mt-1 line-clamp-2 font-title text-base font-semibold leading-snug text-ink">
+        <h2 className="mt-1 line-clamp-2 font-title text-base font-semibold leading-snug text-ink">
           {property.title}
-        </h3>
+        </h2>
         {/* Selos em fluxo normal, quebram naturalmente (sem position absolute). */}
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {property.readyToLiveBadge && <ReadyToLiveBadge size="sm" />}

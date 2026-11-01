@@ -155,7 +155,8 @@ export function EmptyState({
           </span>
         )}
         <div className="min-w-0">
-          <h3 className="font-title text-base font-semibold text-ink">{title}</h3>
+          {/* Varredura 01/11: h2 — o estado vazio vem logo abaixo do h1 da tela (antes h3 pulava um nível). */}
+          <h2 className="font-title text-base font-semibold text-ink">{title}</h2>
           <p className="mt-1 max-w-md text-sm text-muted">{text}</p>
           <div className="mt-4" data-testid="estado-vazio-acao">
             {action}

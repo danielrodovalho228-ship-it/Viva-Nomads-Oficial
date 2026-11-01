@@ -158,7 +158,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                       <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
                         {LIGHT[l.light].label}
                       </span>
-                      <h3 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">{l.name}</h3>
+                      <h2 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">{l.name}</h2>
                       {/* PROP-3 (E118): verificada/pendente pela MESMA função do Fechamento; sem os textos "para mim". */}
                       <span
                         className={cn(
