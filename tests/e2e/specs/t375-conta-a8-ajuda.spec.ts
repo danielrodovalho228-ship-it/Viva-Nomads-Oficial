@@ -5,8 +5,9 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 /**
  * T375 — CONTA-A A8 (mockup perfil-08): Conta › Ajuda.
  *   1. Um cartão com Central de ajuda, Fale com a Viva, Termos de uso e Política de privacidade, nessa ordem, cada um
- *      com o seu destino; "Sair da conta"; o rodapé "Viva Nomads · Uberlândia, MG". 1280 e 390, com prints.
- *   2. "Sair da conta" encerra a sessão.
+ *      com o seu destino; o rodapé "Viva Nomads · Uberlândia, MG". 1280 e 390, com prints. E312 (31/10): sem o botão
+ *      "Sair da conta" na tela — o "Sair" é o do menu da Conta.
+ *   2. O "Sair" do menu da Conta, aberto na Ajuda, encerra a sessão.
  *   3. "Sair da Viva" (pausar/apagar) é a subtela /dashboard/conta/excluir, com Privacidade ativa no menu.
  */
 const SAIDA = "tests/laboratorio/saida";
@@ -62,8 +63,8 @@ test.describe("T375 — CONTA-A A8: Ajuda (perfil-08)", () => {
       await expect(p.getByTestId("ajuda-desc-termos")).toHaveText("As regras da plataforma");
       await expect(p.getByTestId("ajuda-desc-privacidade")).toHaveText("Seus dados, suas regras");
       await expect(p.getByTestId("tela-ajuda").getByTestId("cartao-foto")).toHaveCount(1);
-      // E71/E75: "Sair da conta" dentro do cartão; a tela fecha na linha institucional, sem vão.
-      await expect(p.getByTestId("ajuda-sair")).toHaveText("Sair da conta");
+      // E312: sem "Sair da conta" na tela (o do menu da Conta basta); a tela fecha na linha institucional, sem vão.
+      await expect(p.getByTestId("ajuda-sair")).toHaveCount(0);
       await expect(p.getByTestId("conta-fechamento")).toHaveText("Viva Nomads · Uberlândia, MG");
       if (w === 1280) await expect(p.getByTestId("conta-menu-ajuda")).toHaveAttribute("aria-current", "page");
       else await expect(p.getByTestId("conta-voltar")).toBeVisible();
@@ -82,10 +83,13 @@ test.describe("T375 — CONTA-A A8: Ajuda (perfil-08)", () => {
     await p.context().close();
   });
 
-  test("2. Sair da conta encerra a sessão", async ({ browser }) => {
+  test("2. o Sair do menu da Conta, na Ajuda, encerra a sessão", async ({ browser }) => {
     const p = await como(browser, 390);
     await p.goto("/dashboard/conta/ajuda", { waitUntil: "domcontentloaded" });
-    await p.getByTestId("ajuda-sair").click();
+    const avatar = p.getByTestId("topo-celular").locator('[data-testid^="conta-"][data-testid$="-celular"]').first();
+    await expect(avatar).toBeVisible({ timeout: 30_000 });
+    await avatar.click();
+    await p.getByRole("menuitem", { name: "Sair" }).click();
     await p.waitForURL(/\/app\/boas-vindas/, { timeout: 30_000 });
     await p.goto("/dashboard/conta/ajuda", { waitUntil: "domcontentloaded" });
     await expect(p).toHaveURL(/\/auth/);

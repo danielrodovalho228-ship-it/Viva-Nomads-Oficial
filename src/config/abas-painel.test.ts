@@ -88,16 +88,18 @@ test("Conta (avatar): Ferramentas fora; troca de modo e Sair como ações; morad
   assert.equal(itensDaConta("morador", { temImovel: false }).filter((i) => i.acao === "sair").length, 1);
 });
 
-test("E185: 'Ajuda' tem um destino só (a Ajuda da Conta) e 'Sair' aparece uma vez na tela da Ajuda", () => {
+test("E185 + E312: 'Ajuda' tem um destino só e 'Sair' aparece UMA vez no total — o do menu da Conta, em toda tela", async () => {
+  const { readFileSync } = await import("node:fs");
   for (const papel of PAPEIS) {
     const itens = itensDaConta(papel, { temImovel: true });
     assert.equal(itens.find((i) => i.id === "ajuda")?.href, "/dashboard/conta/ajuda", papel);
-    assert.ok(itens.some((i) => i.id === "sair"), `${papel}: fora da Ajuda o avatar mantém o Sair (D2)`);
-    for (const rota of ["/dashboard/conta/ajuda", "/dashboard/conta/ajuda?pessoa=1"]) {
-      assert.ok(!itensDaConta(papel, { temImovel: true, pathname: rota }).some((i) => i.id === "sair"), `${papel} em ${rota}: a tela já tem "Sair da conta"`);
+    for (const rota of ["/dashboard", "/dashboard/conta", "/dashboard/conta/ajuda", "/dashboard/conta/ajuda?pessoa=1"]) {
+      assert.equal(itensDaConta(papel, { temImovel: true, pathname: rota }).filter((i) => i.id === "sair").length, 1, `${papel} em ${rota}`);
     }
-    assert.ok(itensDaConta(papel, { temImovel: true, pathname: "/dashboard/conta" }).some((i) => i.id === "sair"));
   }
+  // A tela de Ajuda não repete o botão (dono e morador usam a mesma tela).
+  const tela = readFileSync(new URL("../components/account/tela-ajuda.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(tela, /ajuda-sair|Sair da conta|useSair/);
 });
 
 test("E185 (resíduo 31/10): nas telas da Conta o topo não repete o sino — o menu lateral já tem Notificações", async () => {

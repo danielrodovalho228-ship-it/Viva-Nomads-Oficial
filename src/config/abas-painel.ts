@@ -201,8 +201,9 @@ export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; a
   itens.push(AJUDA);
   // Só contas da equipe (fora dos 4 itens de morador/dono): é a única porta do painel para o /admin.
   if (p.admin) itens.push({ id: "admin", rotulo: "Painel admin", href: "/admin" });
-  // E185: "Sair" aparece UMA vez por tela — na Ajuda da Conta a própria tela já tem "Sair da conta" (mockup perfil-08).
-  if (!p.pathname?.startsWith(HREF_AJUDA_CONTA)) itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });
+  // E185 + E312 (QA 31/10): "Sair" aparece UMA vez no total — aqui, no menu da Conta, em todas as telas (inclusive a
+  // Ajuda, que deixou de ter o botão próprio).
+  itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });
   return itens;
 }
 

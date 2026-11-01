@@ -23,7 +23,8 @@ test("E71: contato em destaque com a frase do atendimento; descrições das linh
     ["Guias e respostas rápidas", "As regras da plataforma", "Seus dados, suas regras"],
   );
   const tela = ler("components/account/tela-ajuda.tsx");
-  assert.ok(tela.indexOf('data-testid="ajuda-sair"') > tela.indexOf("LINHAS_AJUDA.map"), "Sair é a última linha do cartão dos links");
+  // E312 (QA 31/10): o "Sair" mora só no menu da Conta — a tela de Ajuda não tem o botão.
+  assert.doesNotMatch(tela, /data-testid="ajuda-sair"|Sair da conta/);
 });
 
 test("E71: artigos de custo e taxa levam a /precos; golpe e contato, a /seguranca", () => {

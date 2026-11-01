@@ -35,7 +35,7 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
   // preferências (mockup perfil-06) e os avisos. /dashboard/conta/notificacoes redireciona para ela.
   { id: "notificacoes", rotulo: "Notificações", href: "/dashboard/notificacoes", icone: "Bell", descricao: "Seus avisos e como a Viva avisa você." },
   { id: "pagamentos", rotulo: "Pagamentos", href: "/dashboard/conta/pagamentos", icone: "CreditCard", descricao: "Para onde vai o valor mensal." },
-  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e sair da conta." },
+  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e privacidade." },
 ] as const;
 
 /** Endereços antigos das subtelas que agora caem numa seção nova (links salvos, e-mails, app). */
