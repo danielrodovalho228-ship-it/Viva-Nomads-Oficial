@@ -10,7 +10,8 @@ import { authFile } from "../fixtures/auth";
    B. #1723 — Conta › Meus dados, sem local de trabalho salvo: diz o próximo passo (conta nova);
    C. #1724 — Meus anúncios: a foto fica 4:3 (não estica com o cartão) e os botões ficam no mesmo lugar em todos os
       cartões, com um anúncio de estadia mínima longa (a linha que empurrava os botões);
-   D. #1726 — Início do morador: o título dos Imóveis recomendados vai em até 2 linhas (não corta em uma);
+   D. (saiu) #1726 — o título em 2 linhas das linhas de Imóveis recomendados: o #1794 trocou essas linhas por cartões
+      com foto (conformidade morador-inicio), com a guarda dele na t761-morador-inicio-conformidade;
    E. #1725 e #1731 — alvos de toque no celular (390, tela de toque): links do rodapé, Instagram e Compartilhar com
       44 px; os links de texto soltos (.alvo-toque) ganham a área de 44 px só em tela de toque (a 1280, com mouse, não).
   Já guardados pelo próprio merge: #1727 (t597) e #1728 (t240, t537). #1719 e #1722 são rascunhos da própria Pista C.
@@ -133,23 +134,7 @@ test.describe("T784 — merges de 31/10: vazios do admin e da conta, cartões de
       expect(Math.abs(medidas[0].esquerda - medidas[1].esquerda), `botões na mesma coluna (${JSON.stringify(medidas)})`).toBeLessThanOrEqual(2);
       await p.context().close();
     });
-
-    test(`D. ${largura} px: Início do morador — título dos recomendados em até 2 linhas (#1726)`, async ({ browser }) => {
-      const p = await comoConta(browser, morador.email, largura, "/dashboard");
-      const titulos = p.getByTestId("linha-imovel-titulo");
-      await expect(titulos.first()).toBeVisible({ timeout: 30_000 });
-      const caixas = await titulos.evaluateAll((els) =>
-        els.map((e) => {
-          const s = getComputedStyle(e);
-          const linha = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.5;
-          return { clamp: s.webkitLineClamp || s.getPropertyValue("-webkit-line-clamp"), nowrap: s.whiteSpace === "nowrap", linhas: Math.round(e.getBoundingClientRect().height / linha) };
-        }),
-      );
-      for (const c of caixas) {
-        expect(c.clamp, "até 2 linhas (line-clamp)").toBe("2");
-        expect(c.nowrap, "não corta numa linha só").toBe(false);
-        expect(c.linhas, "no máximo 2 linhas").toBeLessThanOrEqual(2);
-      }
+  }
       await p.context().close();
     });
   }
