@@ -2074,7 +2074,8 @@
         "t48-varredura",
         "t231-admin-numeros-com-lista",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/candidaturas": {
