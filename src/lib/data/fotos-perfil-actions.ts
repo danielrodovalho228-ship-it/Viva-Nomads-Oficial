@@ -41,11 +41,16 @@ export interface FotoNaFila {
   url: string | null;
 }
 
+const MSG_FILA_FOTOS_NAO_CARREGOU = "Não foi possível carregar a fila de fotos de perfil agora.";
+
 /** Fila: denunciadas no topo, depois a mais antiga primeiro. null = sem permissão. */
-export async function filaFotosPerfil(): Promise<FotoNaFila[] | null> {
+/** Auditoria de erros e estados vazios, achado nº 17: com `exigir` (a página da fila), a falha do banco LANÇA — o admin
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de "Nada pendente". */
+export async function filaFotosPerfil(opcoes: { exigir?: boolean } = {}): Promise<FotoNaFila[] | null> {
   const a = await exigirAdmin();
   if (!a) return null;
-  const { data } = await a.admin.from("fotos_perfil_revisao").select("id, user_id, caminho, enviada_em, denunciada_em").eq("status", "em_revisao").limit(200);
+  const { data, error } = await a.admin.from("fotos_perfil_revisao").select("id, user_id, caminho, enviada_em, denunciada_em").eq("status", "em_revisao").limit(200);
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_FOTOS_NAO_CARREGOU);
   const linhas = (data ?? []) as { id: string; user_id: string; caminho: string; enviada_em: string; denunciada_em: string | null }[];
   const ids = [...new Set(linhas.map((l) => l.user_id))];
   const { data: perfis } = ids.length ? await a.admin.from("profiles").select("id, full_name").in("id", ids) : { data: [] };

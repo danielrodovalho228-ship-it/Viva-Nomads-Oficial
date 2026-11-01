@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  * admin, e as ações conferem admin + 2FA de novo.
  */
 export default async function AdminFotosPerfilPage() {
-  const fila = await filaFotosPerfil();
+  const fila = await filaFotosPerfil({ exigir: true });
   const soLeitura = fila?.length ? await soLeituraNaTela(fila.map((f) => ({ id: f.id, alvo: { perfis: [f.userId] } }))) : [];
   return (
     <>
