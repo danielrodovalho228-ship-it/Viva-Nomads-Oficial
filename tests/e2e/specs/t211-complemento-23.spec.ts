@@ -97,10 +97,15 @@ test.describe("T211 — complemento do prompt 23: endereço da visita, horário 
       // Outro campo muda e a tela redesenha: o horário fica.
       const motivo = p.getByTestId("visita-presencial-motivo");
       const opcoes = await motivo.locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+      // Varredura 01/11: no computador o campo é data dd/mm/aaaa + lista de hora (o nativo saía em mm/dd/yyyy e AM/PM).
+      const naTela = `${campo.slice(8, 10)}/${campo.slice(5, 7)}/${campo.slice(0, 4)}`;
+      const hora = p.getByTestId("visita-presencial-horario-0-hora");
       await motivo.selectOption(opcoes[0]);
-      await expect(horario).toHaveValue(campo);
+      await expect(horario).toHaveValue(naTela);
+      await expect(hora).toHaveValue(campo.slice(11));
       await motivo.selectOption(opcoes[1] ?? opcoes[0]);
-      await expect(horario).toHaveValue(campo);
+      await expect(horario).toHaveValue(naTela);
+      await expect(hora).toHaveValue(campo.slice(11));
       await p.screenshot({ path: `${SAIDA}/t211-horario-fica-${largura}.png` });
       await p.getByTestId("visita-presencial-enviar").click();
       await expect(p.getByTestId("visita-presencial-ok")).toBeVisible({ timeout: 25_000 });

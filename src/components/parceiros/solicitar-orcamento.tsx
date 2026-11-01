@@ -4,6 +4,7 @@ import { urlEntrada } from "@/lib/auth/entrada";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { CampoDataHora } from "@/components/ui/campo-data";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { DESCRICAO_PEDIDO_MAX, HORARIOS_MAX } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
@@ -165,13 +166,13 @@ export function SolicitarOrcamento({
           <fieldset className="grid gap-2">
             <legend className="text-sm font-semibold text-ink">Até {HORARIOS_MAX} horários que servem para você (horário de Brasília)</legend>
             {horarios.map((h, i) => (
-              <input
+              <CampoDataHora
                 key={i}
-                type="datetime-local"
+                rotulo={`Horário ${i + 1}`}
                 className={campo}
                 value={h}
-                onChange={(e) => setHorarios((l) => l.map((x, j) => (j === i ? e.target.value : x)))}
-                data-testid={`solicitar-orcamento-horario-${i}`}
+                aoMudar={(v) => setHorarios((l) => l.map((x, j) => (j === i ? v : x)))}
+                testid={`solicitar-orcamento-horario-${i}`}
               />
             ))}
             {horarios.length < HORARIOS_MAX && (

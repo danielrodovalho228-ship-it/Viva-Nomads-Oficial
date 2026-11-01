@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Circle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { CampoDataHoraFormulario } from "@/components/ui/campo-data";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
@@ -151,7 +152,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (
               <FormAcao acao={agendarVisita} className="flex flex-wrap items-end gap-2" testid="dono-agendar">
                 <input type="hidden" name="pedidoId" value={atual.id} />
-                <label className="text-sm">Data e hora da visita<input type="datetime-local" name="quando" required className={campo} /></label>
+                <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
                 <Button type="submit" variant="secondary" size="sm">{atual.agendado_para ? "Reagendar" : "Propor data"}</Button>
                 {atual.agendado_para && <span className="w-full text-xs text-muted">Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.</span>}
               </FormAcao>

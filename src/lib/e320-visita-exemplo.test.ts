@@ -15,5 +15,5 @@ test("E320: anúncio de exemplo — a folha explica a visita num anúncio real e
 
 test("E320: anúncio real segue com o formulário e a confirmação de sempre", () => {
   assert.match(src, /data-testid=\{`\$\{t\.prefixo\}-ok`\}/);
-  assert.match(src, /data-testid=\{`\$\{t\.prefixo\}-horario-\$\{i\}`\}/);
+  assert.match(src, /testid=\{`\$\{t\.prefixo\}-horario-\$\{i\}`\}/);
 });
