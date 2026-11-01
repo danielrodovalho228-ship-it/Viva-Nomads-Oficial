@@ -534,7 +534,11 @@ export interface FiltrosFila {
 }
 
 /** Fila do admin (simulação fora). Ordem: prioridade, depois prazo. */
-export async function filaAtendimento(f: FiltrosFila = {}): Promise<ChamadoAdmin[] | null> {
+const MSG_FILA_ATENDIMENTO_NAO_CARREGOU = "Não foi possível carregar a fila do atendimento agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 17: com `exigir` (a página da fila), a falha do banco LANÇA — o admin
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de "Nada pendente". */
+export async function filaAtendimento(f: FiltrosFila = {}, opcoes: { exigir?: boolean } = {}): Promise<ChamadoAdmin[] | null> {
   const ctx = await exigirAdmin();
   if (!ctx) return null;
   let q = ctx.admin.from("chamados").select(COLS_ADMIN).eq("simulacao", false);
@@ -550,7 +554,8 @@ export async function filaAtendimento(f: FiltrosFila = {}): Promise<ChamadoAdmin
   if (busca) {
     q = ehNumeroPublico(busca) ? q.eq("numero_publico", busca.toUpperCase()) : q.ilike("assunto", `%${busca.replace(/[%_]/g, "")}%`);
   }
-  const { data } = await q.order("prioridade", { ascending: true }).order("prazo_primeira_resposta", { ascending: true }).limit(200);
+  const { data, error } = await q.order("prioridade", { ascending: true }).order("prazo_primeira_resposta", { ascending: true }).limit(200);
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_ATENDIMENTO_NAO_CARREGOU);
   return (data ?? []) as ChamadoAdmin[];
 }
 
