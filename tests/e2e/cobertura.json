@@ -930,7 +930,8 @@
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t889-e346-avaliar-estadia-link"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1272,7 +1273,8 @@
         "t491-e182-estadias-com-nome",
         "t557-varredura-bloco42",
         "t489-e176-menus",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t889-e346-avaliar-estadia-link"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -2822,7 +2824,8 @@
         "t586-e205-emails-chegada-d7",
         "t595-e205b2-lembrete-no-aceite",
         "t597-e213b-limpeza-renovacao",
-        "t631-e222b-renovar-aditivo"
+        "t631-e222b-renovar-aditivo",
+        "t889-e346-avaliar-estadia-link"
       ]
     },
     "/api/cron/avisos-daniel": {
