@@ -19,7 +19,7 @@ export default async function AdminPedidoParceiroPage({ params }: { params: Prom
   if (!UUID_RE.test(id)) notFound();
   const admin = createAdminClient();
   if (!admin || !(await registrarVistaDoAdmin(id))) notFound();
-  const [{ data: p }, { data: ev }] = await Promise.all([
+  const [{ data: p, error: erroPedido }, { data: ev, error: erroEventos }] = await Promise.all([
     admin
       .from("parceiro_pedidos")
       .select("codigo, status, categoria, descricao, valor_combinado, taxa_percent, valor_taxa, valor_parceiro, pagamento_status, pagamento_ref, origem, ref_tipo, ref_codigo, horario_confirmado, criado_em, parceiros(nome_publico)")
@@ -27,6 +27,9 @@ export default async function AdminPedidoParceiroPage({ params }: { params: Prom
       .maybeSingle(),
     admin.from("parceiro_pedido_eventos").select("tipo, criado_em, dados").eq("pedido_id", id).order("criado_em"),
   ]);
+  // Achado 42: falha de leitura não vira "pedido não encontrado" nem histórico vazio — sobe para o aviso do admin.
+  const falha = erroPedido ?? erroEventos;
+  if (falha) throw new Error(`Falha ao ler o pedido do parceiro: ${falha.message}`);
   if (!p) notFound();
   const x = p as unknown as Record<string, string | number | null> & { parceiros: { nome_publico: string } | null };
   return (
