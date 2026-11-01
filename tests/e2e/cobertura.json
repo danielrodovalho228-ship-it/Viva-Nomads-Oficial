@@ -624,7 +624,8 @@
         "t23-pacote-seguranca",
         "t260-documentos-registro",
         "t311-marco-principal-unico",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t936-e247-seletor-arquivo"
       ]
     },
     "/dashboard": {
@@ -2327,7 +2328,8 @@
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
         "t596-qa-login-direto",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t936-e247-seletor-arquivo"
       ]
     },
     "/admin/retencao": {
