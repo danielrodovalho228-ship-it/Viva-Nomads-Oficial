@@ -7,6 +7,7 @@ import { enviarVideoAnuncio, ErroEnvioVideo, removerVideoAnuncio, VIDEO_ACCEPT }
 import { erroDoLinkDeVideo, formatarDuracao, GUIA_VIDEO_HREF, segundosDoCaminho, TEXTO_LIMITES_VIDEO } from "@/lib/video-anuncio";
 import { useAuthStore } from "@/lib/store";
 import { conferirVideo } from "@/lib/fotos/conferir-cliente";
+import { ehErroDeRede, textoDoErro } from "@/lib/erro-de-rede";
 import { AVISO_VIDEO_NAO_IMOVEL, ROTULO_MOTIVO, confirmarConteudo, conteudoPendente, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { conferirLinkVideo } from "@/lib/data/video-link-actions";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
@@ -104,7 +105,7 @@ export function VideoUploader({
       if (antigo) await removerVideoAnuncio(antigo); // troca: o anterior sai do bucket
     } catch (e) {
       const tentarDeNovo = e instanceof ErroEnvioVideo && e.tentarDeNovo;
-      setErro({ texto: e instanceof Error ? e.message : "Não foi possível enviar o vídeo agora.", arquivo: tentarDeNovo ? file : null });
+      setErro({ texto: textoDoErro(e, "Não foi possível enviar o vídeo agora."), arquivo: tentarDeNovo || ehErroDeRede(e) ? file : null });
     } finally {
       setEnviando(false);
       if (inputRef.current) inputRef.current.value = "";

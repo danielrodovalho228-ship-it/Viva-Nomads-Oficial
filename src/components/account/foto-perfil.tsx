@@ -22,6 +22,7 @@ import {
 } from "@/lib/avatar-image";
 import { getMyAvatarUrl, setMyAvatarPath } from "@/lib/data/avatar-actions";
 import { cn } from "@/lib/utils";
+import { textoDoErro } from "@/lib/erro-de-rede";
 
 /*
   CONTA-A — o fluxo ÚNICO da foto de perfil (topo da Conta e todos os convites de foto abrem ESTE fluxo):
@@ -253,7 +254,9 @@ function RecorteFoto({ imagem, userId, onCancelar, onSalva, onErro }: { imagem: 
       avisarFotoAtualizada(nova.url);
       onSalva();
     } catch (e) {
-      onErro(e instanceof Error && e.message && !["canvas", "codificar", "sem-supabase"].includes(e.message) ? e.message : "Não foi possível processar a imagem.");
+      // Códigos internos do recorte viram a frase padrão; sem conexão (inclusive na ação que grava o perfil), a frase
+      // de conexão — nunca o texto cru do navegador.
+      onErro(e instanceof Error && ["canvas", "codificar", "sem-supabase"].includes(e.message) ? "Não foi possível processar a imagem." : textoDoErro(e, "Não foi possível processar a imagem."));
     } finally {
       setSalvando(false);
     }

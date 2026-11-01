@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { CheckCircle2, Clock, FileText, Loader2, ShieldCheck, Upload, XCircle } from "lucide-react";
 import { DOCUMENTOS_ACEITOS_TEXTO, FORMATOS_ACEITOS_TEXTO, type EstadoConferencia } from "@/lib/documento/conferencia";
 import { validarArquivoDoc } from "@/lib/upload-limits";
+import { MSG_SEM_CONEXAO, textoDoErro } from "@/lib/erro-de-rede";
 import {
   enderecoParaDocumento,
   faltaEnderecoDocumento,
@@ -107,7 +108,9 @@ export function DocumentoVinculo({
 
   /** Botão da CAF (prompt 19): confirma a identidade e confere a MESMA matrícula de novo. Devolve o erro, se houver. */
   async function confirmarIdentidade(): Promise<string | null> {
-    const res = await fetch("/api/caf/verify", { method: "POST" });
+    // Sem conexão, o fetch rejeita: a tela do resultado recebe o texto em português, não a promessa rejeitada.
+    const res = await fetch("/api/caf/verify", { method: "POST" }).catch(() => null);
+    if (!res) return MSG_SEM_CONEXAO;
     const r = (await res.json().catch(() => ({}))) as { error?: string };
     if (!res.ok) return r.error ?? "Não foi possível confirmar sua identidade agora.";
     if (!ultimoPath) return null;
@@ -115,7 +118,7 @@ export function DocumentoVinculo({
       await conferir(ultimoPath);
       return null;
     } catch (e) {
-      return e instanceof Error ? e.message : "Não foi possível conferir o documento agora.";
+      return textoDoErro(e, "Não foi possível conferir o documento agora.");
     } finally {
       setEnviando(null);
     }
@@ -148,7 +151,7 @@ export function DocumentoVinculo({
       setUltimoPath(upJson.path);
       await conferir(upJson.path);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível enviar o documento agora.");
+      setErro(textoDoErro(e, "Não foi possível enviar o documento agora."));
     } finally {
       setEnviando(null);
     }
@@ -220,7 +223,7 @@ export function DocumentoVinculo({
               ? () => {
                   setErro(null);
                   void conferir(ultimoPath)
-                    .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível conferir o documento agora."))
+                    .catch((e) => setErro(textoDoErro(e, "Não foi possível conferir o documento agora.")))
                     .finally(() => setEnviando(null));
                 }
               : undefined
