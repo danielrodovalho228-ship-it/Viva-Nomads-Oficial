@@ -3,22 +3,36 @@ import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { authFile } from "../fixtures/auth";
 
 /*
-  T867 — FILAS DE DOCUMENTOS E MATRÍCULAS DO ADMIN ABREM, SEM A TELA DE ERRO (Pista C, 01/11; merge #1876, "Erros,
-  achado nº 16"). A tela /admin/documentos passou a chamar listDocumentosPendentes e listMatriculasFila com `exigir`:
-  uma FALHA do banco lança e o admin vê "Não conseguimos abrir esta tela do admin" (admin-erro) em vez de "fila vazia".
-  A falha do banco é do servidor e tem teste de unidade no merge. Aqui, o lado que a troca poderia quebrar, sem falha
-  nenhuma: com a sessão de admin do laboratório, a tela abre com as abas e as duas filas (vazias ou não), nunca na tela
-  de erro. A 390 e 1280 px.
+  T867 — FILAS DO ADMIN ABREM, SEM A TELA DE ERRO (Pista C, 01/11; merges #1876 e #1880, "Erros, achados nº 16 e 17").
+  As filas passaram a ser lidas com `exigir`: uma FALHA do banco lança e o admin vê "Não conseguimos abrir esta tela do
+  admin" (admin-erro) em vez de "fila vazia" / "Nada pendente":
+   - #1876: /admin/documentos (listDocumentosPendentes e listMatriculasFila);
+   - #1880: /admin/atendimento (filaAtendimento, fila e aprovações) e /admin/fotos-perfil (filaFotosPerfil).
+  A falha do banco é do servidor e tem teste de unidade em cada merge. Aqui, o lado que a troca poderia quebrar, sem
+  falha nenhuma: com a sessão de admin do laboratório, cada tela abre (HTTP abaixo de 400, o título visível; em
+  Documentos, as abas), vazia ou com itens, nunca na tela de erro. A 390 e 1280 px.
 */
+const TELAS: { rota: string; merge: string; marca?: string }[] = [
+  { rota: "/admin/documentos", merge: "#1876", marca: "documentos-aba-fila" },
+  { rota: "/admin/atendimento", merge: "#1880" },
+  { rota: "/admin/fotos-perfil", merge: "#1880" },
+];
+
 for (const largura of [390, 1280] as const) {
-  test(`T867 — /admin/documentos abre com as filas, sem a tela de erro (#1876) @${largura}`, async ({ browser }) => {
+  test(`T867 — filas do admin abrem, sem a tela de erro (#1876, #1880) @${largura}`, async ({ browser }) => {
     test.skip(!NO_LABORATORIO, "Só no laboratório (sessão de admin).");
+    test.setTimeout(120_000);
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
     const page = await ctx.newPage();
-    const r = await page.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
-    expect(r?.status()).toBeLessThan(400);
-    await expect(page.getByTestId("documentos-aba-fila")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("admin-erro"), "a tela do admin não pode cair no erro").toHaveCount(0);
+    for (const t of TELAS) {
+      await test.step(`${t.rota} (${t.merge})`, async () => {
+        const r = await page.goto(t.rota, { waitUntil: "domcontentloaded" });
+        expect(r?.status(), `${t.rota} HTTP`).toBeLessThan(400);
+        if (t.marca) await expect(page.getByTestId(t.marca)).toBeVisible({ timeout: 30_000 });
+        else await expect(page.locator("main h1, h1").first()).toBeVisible({ timeout: 30_000 });
+        await expect(page.getByTestId("admin-erro"), `${t.rota}: a tela do admin não pode cair no erro`).toHaveCount(0);
+      });
+    }
     await ctx.close();
   });
 }
