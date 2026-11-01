@@ -24,7 +24,7 @@ test.describe("T897 — achado nº 25: Financeiro sem aviso falso de leitura (12
         expect(new URL(page.url()).pathname).toBe("/admin/financeiro");
         await page.locator("main").first().waitFor({ timeout: 30_000 });
         await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
-        await expect(page.getByText(/Taxa|Financeiro/).first(), "a tela do Financeiro abriu").toBeVisible({ timeout: 30_000 });
+        await expect(page.getByText(/Taxa|Financeiro/).filter({ visible: true }).first(), "a tela do Financeiro abriu").toBeVisible({ timeout: 30_000 });
         const avisos = await page.getByTestId("fin-aviso-leitura").allInnerTexts();
         console.log(`t897|${nome}|${largura}|avisos=${avisos.length}`);
         expect(avisos, "nenhuma leitura falhou: sem aviso").toEqual([]);
