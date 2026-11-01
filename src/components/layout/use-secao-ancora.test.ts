@@ -9,12 +9,16 @@ const ids = ["pedidos", "agenda", "ganhos"];
 const doc = (tops: Record<string, number>) => ({ getElementById: (id: string) => (id in tops ? ({ id, getBoundingClientRect: () => ({ top: tops[id], bottom: tops[id] + 200 }) } as unknown as HTMLElement) : null) });
 const janela = (scrollY: number, docAltura = 3000) => ({ innerHeight: 800, scrollY, docAltura });
 
-test("E340 — a seção acesa acompanha a rolagem (linha a 35% da tela)", () => {
+test("E340 — a seção acesa acompanha a rolagem (a 1ª que ocupa a faixa de cima da tela)", () => {
+  // Seções curtas (t776 no lab): Pedidos rolado ao topo acende Pedidos, não a vizinha de baixo.
+  assert.equal(secaoVisivel(ids, "", doc({ pedidos: 96, agenda: 262, ganhos: 430 }), janela(500)), "pedidos");
   assert.equal(secaoVisivel(ids, "", doc({ pedidos: 100, agenda: 900, ganhos: 1600 }), janela(0)), "pedidos");
   assert.equal(secaoVisivel(ids, "", doc({ pedidos: -700, agenda: 96, ganhos: 800 }), janela(800)), "agenda");
   assert.equal(secaoVisivel(ids, "", doc({ pedidos: -1400, agenda: -600, ganhos: 96 }), janela(1500)), "ganhos");
   // Fim da página: a última seção à vista, mesmo sem chegar à linha.
-  assert.equal(secaoVisivel(ids, "", doc({ pedidos: -1500, agenda: 0, ganhos: 600 }), janela(2200)), "ganhos");
+  assert.equal(secaoVisivel(ids, "", doc({ pedidos: -1500, agenda: -50, ganhos: 600 }), janela(2200)), "ganhos");
+  // Fim da página sem ter passado da seção (ela começa na tela): fica a seção para onde a pessoa rolou.
+  assert.equal(secaoVisivel(ids, "", doc({ pedidos: -1500, agenda: 300, ganhos: 520 }), janela(2200)), "agenda");
 });
 
 test("E340 — carregando (sem seções) e página que não rola: vale o #âncora; sem ele, a 1ª", () => {
