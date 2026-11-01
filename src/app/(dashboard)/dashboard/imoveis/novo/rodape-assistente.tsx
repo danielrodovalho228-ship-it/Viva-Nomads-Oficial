@@ -33,6 +33,8 @@ export function RodapeAssistente(p: {
   primario: PrimarioRodape | null;
   /** E194: a Qualificação usa o mesmo rodapé com o seu texto ("Antes do Passo 1 · …") e a barra contínua. */
   texto?: string;
+  /** E382: uma 2ª linha curta sob o texto (na Qualificação, "3 de 12 respondidas"). */
+  detalhe?: string | null;
   pct?: number;
 }) {
   const pct = p.pct ?? progressoPasso(p.pos, p.total);
@@ -52,9 +54,16 @@ export function RodapeAssistente(p: {
               </button>
             )}
             {/* No celular, ao lado do "Publicar anúncio", o passo cabe inteiro em texto menor (nunca cortado). */}
-            <p className="whitespace-nowrap text-xs text-muted sm:text-sm" aria-live="polite" data-testid="passo-texto">
-              {p.texto ?? textoPasso(p.pos, p.total)}
-            </p>
+            <div className="min-w-0">
+              <p className="whitespace-nowrap text-xs text-muted sm:text-sm" aria-live="polite" data-testid="passo-texto">
+                {p.texto ?? textoPasso(p.pos, p.total)}
+              </p>
+              {p.detalhe && (
+                <p className="whitespace-nowrap text-xs font-semibold text-forest" aria-live="polite" data-testid="passo-detalhe">
+                  {p.detalhe}
+                </p>
+              )}
+            </div>
           </div>
           {p.primario && (
           <Button

@@ -8,6 +8,7 @@ import {
   TELAS_QUALIFICACAO,
   TOTAL_TELAS,
   aplicarRespostas,
+  contarRespondidas,
   criterioDe,
   faltamDoEssencial,
   nivelDoResultado,
@@ -17,7 +18,7 @@ import {
   type Respostas,
 } from "@/lib/anuncio/qualificacao-conforto";
 import { cn } from "@/lib/utils";
-import { progressoQualificacao, textoQualificacao } from "@/lib/anuncio/assistente-telas";
+import { progressoQualificacao, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
 import { RodapeAssistente } from "./rodape-assistente";
 
 const ICONES: Record<IconeOpcao, React.ComponentType<{ className?: string }>> = {
@@ -73,6 +74,7 @@ export function Qualificacao(p: {
   // E194 (print do Daniel, 25/10): a Qualificação não é "outro cadastro" — mora na moldura do assistente: o mesmo selo
   // "Anunciar imóvel" do topo dos passos e o mesmo rodapé fixo (botão primário + barra contínua até o Passo 1).
   const telaAtual = resultado ? TOTAL_TELAS : p.tela + 1;
+  const respondidas = contarRespondidas(p.respostas);
   return (
     <section className="w-full" data-testid="qualificacao" data-tela={resultado ? "resultado" : p.tela + 1}>
       <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
@@ -97,7 +99,8 @@ export function Qualificacao(p: {
         pos={0}
         total={10}
         texto={resultado ? "Qualificação pronta · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
-        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS)}
+        detalhe={resultado ? null : textoRespondidas(respondidas)}
+        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, respondidas.feitas / respondidas.total)}
         onVoltar={!resultado && p.tela > 0 ? () => p.onTela(p.tela - 1) : null}
         primario={
           resultado
