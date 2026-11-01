@@ -84,7 +84,7 @@ export default async function CityLandingPage({ params }: Params) {
       <section className="bg-forest section-y text-white">
         <div className="container-page">
           <nav className="text-sm text-white/80">
-            <Link href="/" className="underline-offset-4 hover:underline">
+            <Link href="/" className="alvo-toque underline-offset-4 hover:underline">
               Início
             </Link>{" "}
             / <span className="text-white">{name}</span>

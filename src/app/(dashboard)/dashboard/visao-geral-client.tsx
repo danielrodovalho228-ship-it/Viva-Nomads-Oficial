@@ -387,7 +387,7 @@ function PainelDoDono({
               </ul>
               <Link
                 href="/dashboard/imoveis"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
+                className="alvo-toque mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest hover:text-blue-700"
               >
                 Ver todos <ArrowRight className="h-4 w-4" />
               </Link>
@@ -564,7 +564,7 @@ function TenantDashboard({
             <h2 id="recomendados-titulo" className="font-title text-xl font-semibold text-ink">
               Imóveis recomendados para você
             </h2>
-            <Link href="/buscar" className="text-sm font-medium text-forest hover:underline" data-testid="inicio-recomendados-todos">
+            <Link href="/buscar" className="alvo-toque text-sm font-medium text-forest hover:underline" data-testid="inicio-recomendados-todos">
               Ver todos
             </Link>
           </div>

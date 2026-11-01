@@ -107,7 +107,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
                   </div>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{c.texto}</p>
                   <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-forest">
-                    {c.links.map((l) => <Link key={l.href} href={l.href} className="underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
+                    {c.links.map((l) => <Link key={l.href} href={l.href} className="alvo-toque underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
                   </div>
                 </div>
               </li>
@@ -127,7 +127,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
             <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.</p>
           </div>
           <div className="px-6 pb-6 pt-3 sm:py-6">
-            <Link href="/parceiros/avaliadores" className="text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
+            <Link href="/parceiros/avaliadores" className="alvo-toque text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
           </div>
         </div>
       </section>
