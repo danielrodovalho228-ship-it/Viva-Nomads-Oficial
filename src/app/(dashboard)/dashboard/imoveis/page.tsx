@@ -21,7 +21,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
   // CADASTRO-MOLDURA: o "Sair" do assistente chega aqui com ?saiu=assistente e a linha do rascunho salvo.
   const saiuDoAssistente = (await searchParams).saiu === "assistente";
   // A lista e o usuário não dependem um do outro: busca os dois juntos (ordem 0f66a754, item 4).
-  const [properties, supabase, ajudas] = await Promise.all([listMyProperties(), createClient(), meusPedidosDeAjuda()]);
+  const [properties, supabase, ajudas] = await Promise.all([listMyProperties({ exigir: true }), createClient(), meusPedidosDeAjuda()]);
   const prontidao: Record<string, Prontidao> = {};
   // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva).
   const pausas: Record<string, string | null> = {};
