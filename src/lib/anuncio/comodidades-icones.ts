@@ -1,20 +1,25 @@
 import {
   AirVent, Armchair, Bike, Building, Car, CookingPot, Dumbbell, Fan, Flame, Laptop, MonitorSmartphone,
   Refrigerator, Shirt, ShieldCheck, Sofa, Soup, Tv, UtensilsCrossed, VolumeX, Waves, WashingMachine,
-  Wifi, Camera, Microwave, Users, DoorOpen, Sun, Check, Lamp, Plug, AlarmSmoke, FireExtinguisher, type LucideIcon,
+  Wifi, Camera, Microwave, DoorOpen, Sun, Check, Lamp, Plug, AlarmSmoke, FireExtinguisher, BriefcaseBusiness, Presentation,
+  PartyPopper, Droplets, type LucideIcon,
 } from "lucide-react";
 import { AMENITY_KEY_BY_LABEL } from "../amenities.ts";
 
-/** Chave canônica → ícone. Fonte ÚNICA: página do imóvel, lista completa e card do mapa. */
+/**
+ * Chave canônica → ícone. Fonte ÚNICA: página do imóvel, lista completa e card do mapa.
+ * Conformidade do cadastro (01/11): UM ícone por comodidade — antes "Cômodo ou canto de trabalho" e "Mesa de trabalho"
+ * (notebook), "Sala de reunião" e "Salão de festas" (pessoas), "Máquina de lavar" e "Lavanderia" dividiam o ícone.
+ */
 export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
-  home_office: Laptop,
+  home_office: BriefcaseBusiness,
   internet_fibra: Wifi,
   mesa_trabalho: Laptop,
   cadeira_ergonomica: Armchair,
   ambiente_silencioso: VolumeX,
   iluminacao_boa: Lamp,
   tomadas_mesa: Plug,
-  sala_reuniao: Users,
+  sala_reuniao: Presentation,
   coworking: Building,
   cabine_chamadas: MonitorSmartphone,
   mobiliado: Sofa,
@@ -30,9 +35,9 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
   piscina: Waves,
   portaria_24h: ShieldCheck,
   elevador: DoorOpen,
-  salao_festas: Users,
+  salao_festas: PartyPopper,
   churrasqueira: Flame,
-  lavanderia: WashingMachine,
+  lavanderia: Droplets,
   bicicletario: Bike,
   vaga_garagem: Car,
   detector_fumaca: AlarmSmoke,
