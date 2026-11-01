@@ -234,6 +234,13 @@ export const GESTOR_PRECO = {
   minimoImoveis: 20,
 } as const;
 
+/**
+ * E321 (01/11): a PORTA do Plano Gestor, igual em todas as telas — N+ imóveis com documento aprovado OU conta de
+ * administradora (a mesma regra de gestorElegivel). Não confundir com a faixa "31+ · taxa negociável" da tabela de taxa,
+ * que é regra de TAXA e vale para qualquer anunciante pela quantidade de imóveis ativos.
+ */
+export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mais com documento aprovado, ou conta de administradora`;
+
 /** Assinatura anual do Gestor para `imoveis` imóveis (base + adicionais acima dos inclusos). */
 export function assinaturaAnualGestor(imoveis: number): number {
   const n = Math.max(1, Math.round(Number(imoveis) || 1));
