@@ -302,19 +302,21 @@ export interface ChamadoLista {
 }
 
 /** Meus chamados (RLS: só os da pessoa). */
-export async function meusChamados(): Promise<ChamadoLista[]> {
+/** Achado nº 22: com `exigir`, a falha de leitura LANÇA — "Meus chamados" avisa em vez de dizer "nenhum chamado". */
+export async function meusChamados(opcoes: { exigir?: boolean } = {}): Promise<ChamadoLista[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("chamados")
     .select("id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, primeira_resposta_em")
     .eq("usuario_id", user.id)
     .order("atualizado_em", { ascending: false })
     .limit(50);
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler os seus chamados agora.");
   return (data ?? []) as ChamadoLista[];
 }
 
