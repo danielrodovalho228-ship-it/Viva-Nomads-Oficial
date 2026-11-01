@@ -7,6 +7,7 @@ import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { meuPainelParceiro } from "@/lib/parceiros/painel-actions";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { PainelParceiroCliente } from "./painel-parceiro";
+import { AtivarNoPainel } from "./ativar-no-painel";
 import { PedidosDoParceiro } from "@/components/parceiros/pedidos-do-parceiro";
 import { BlocoRecibosParceiro } from "@/components/recibos/blocos-recibos";
 import { ImoveisFixos } from "@/components/automacao/imoveis-fixos";
@@ -55,7 +56,9 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
           <p className="flex items-center gap-2 font-semibold text-ink">
             <Clock className="h-5 w-5 text-forest" aria-hidden /> Sua parceria foi aprovada.
           </p>
-          <p className="mt-1 text-sm text-muted">Abra o e-mail &quot;Sua parceria foi aprovada&quot; e use o botão para ativar a sua página.</p>
+          <p className="mt-1 text-sm text-muted">Ative aqui ou pelo link do e-mail &quot;Sua parceria foi aprovada&quot;. Ativar cria a sua página (ainda fora do ar) para você completar.</p>
+          {/* E425: o painel ativa a conta do pedido sem depender do e-mail. */}
+          <AtivarNoPainel />
         </Panel>
       ) : (
         <Panel>
