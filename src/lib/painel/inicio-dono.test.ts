@@ -49,8 +49,9 @@ test("Peça na Viva (um botão cheio) e os três atalhos do mockup", () => {
   assert.deepEqual(ATALHOS_INICIO_DONO.map((a) => a.rotulo), ["Agenda", "Simulador do imóvel", "Recibos e notas"]);
   const c = readFileSync("src/components/painel/inicio-dono.tsx", "utf8");
   assert.match(c, /href=\{PECA_NA_VIVA\.secundario\.href\} variant="outline"/);
-  // Sem foto: nada de imagem inventada.
-  assert.match(c, /\{bloco\.foto && \(/);
+  // Sem foto: nada de imagem inventada — a foto só vem de bloco.foto; no rascunho sem foto, o placeholder desenhado (E308).
+  assert.match(c, /\{bloco\.foto \? \(/);
+  assert.match(c, /bloco\.tipo === "rascunho" && \(/);
   const v = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
   assert.match(v, /if \(mode === "owner" && !demo && inicioDono\)/);
 });
