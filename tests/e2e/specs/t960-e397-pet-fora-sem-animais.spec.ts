@@ -21,7 +21,8 @@ const LARGURAS = [390, 1280] as const;
 
 test.describe("T960 — E397: pet nunca entra em candidatura de imóvel que não aceita animais", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial", timeout: 150_000 });
+  // Sem "serial": o caso do dono roda mesmo com o do morador vermelho.
+  test.describe.configure({ timeout: 150_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
@@ -46,6 +47,10 @@ test.describe("T960 — E397: pet nunca entra em candidatura de imóvel que não
   });
 
   test("morador: o anúncio sem animais não leva o pet; o que aceita mostra (390 e 1280)", async ({ browser }) => {
+    // E397 (aberto, aguardando o PR da correção): no anúncio com pets_allowed = false o bloco "pet-candidatura" aparece com
+    // o pet (lab do #2085, run 41354306315: Expected 0, Received 1; a contraprova no anúncio que aceita passou). Quem
+    // mergear a correção do E397 tira este test.fail no mesmo PR — ou a Pista C tira no merge.
+    test.fail(true, "E397: o pet entra na candidatura do anúncio que não aceita animais (bloco pet-candidatura aparece)");
     const page = await entrar(browser, mor.email, senha);
     for (const largura of LARGURAS) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
