@@ -95,7 +95,7 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
                   </span>
                   <Link
                     href={`/dashboard/pedidos-cidade?imovel=${i.propertyId}`}
-                    className="font-medium text-forest underline"
+                    className="alvo-toque font-medium text-forest underline"
                     data-testid="carteira-pedidos-compativeis"
                   >
                     Ver pedidos compatíveis
