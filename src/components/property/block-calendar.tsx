@@ -48,6 +48,8 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
   // Carregamento das datas: o indicador SEMPRE some (sucesso ou falha); falha vira aviso com "Tentar de novo".
   const [carregando, setCarregando] = useState(true);
   const [falhou, setFalhou] = useState(false);
+  // Achado nº 20: falha ao ler as estadias não vira "sem estadias" (dias ocupados apareceriam livres).
+  const [estadiasFalhou, setEstadiasFalhou] = useState(false);
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
@@ -62,11 +64,13 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       .finally(() => {
         if (vivo) setCarregando(false);
       });
-    getEstadiasDoImovel(propertyId)
+    getEstadiasDoImovel(propertyId, { exigir: true })
       .then((e) => {
         if (vivo) setEstadias(e);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (vivo) setEstadiasFalhou(true);
+      });
     return () => {
       vivo = false;
     };
@@ -74,6 +78,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
 
   function recarregar() {
     setFalhou(false);
+    setEstadiasFalhou(false);
     setCarregando(true);
     setTentativa((n) => n + 1);
   }
@@ -161,6 +166,15 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       {falhou && !carregando && (
         <p role="alert" data-testid="bloqueios-erro" className="mb-3 text-sm text-red-600">
           Não foi possível carregar as datas bloqueadas.{" "}
+          <button type="button" onClick={recarregar} className="font-medium underline">
+            Tentar de novo
+          </button>
+        </p>
+      )}
+
+      {estadiasFalhou && !carregando && (
+        <p role="alert" data-testid="estadias-calendario-erro" className="mb-3 text-sm text-red-600">
+          Não foi possível carregar as estadias deste imóvel: os dias ocupados podem não aparecer.{" "}
           <button type="button" onClick={recarregar} className="font-medium underline">
             Tentar de novo
           </button>
