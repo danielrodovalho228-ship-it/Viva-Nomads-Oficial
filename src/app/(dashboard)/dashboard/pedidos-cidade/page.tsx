@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  * para cá). Prompt 30, item 5: abas "Novos para você" · "Respondidos" · "Ignorados".
  */
 export default async function PedidosCidadePage() {
-  const { pedidos, myProperties } = await getPedidosParaProprietario();
+  const { pedidos, myProperties } = await getPedidosParaProprietario({ exigir: true });
   return (
     <Suspense fallback={<div className="min-h-[20rem]" aria-busy="true" />}>
       <PedidosDonoClient pedidos={pedidos} myProperties={myProperties} />
