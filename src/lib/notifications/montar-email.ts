@@ -172,7 +172,9 @@ export function emailParceriaAprovada(siteUrl: string, o: { url: string; nome?: 
     assunto: comMarca(titulo),
     titulo,
     html: corpoNotificacao(siteUrl, { title: titulo, intro, cta: { label: "Ativar minha página", url: o.url }, image: imagemEmail(siteUrl, img.arquivo, img.alt) }),
-    text: textoNotificacao(siteUrl, { title: titulo, intro: `${intro.replace(/ no botão abaixo/, "")} Use o botão "Ativar minha página" na versão completa deste e-mail.` }),
+    // E425: a versão em texto traz a URL completa de ativação (antes só remetia ao botão da versão HTML — quem lia o
+    // texto não tinha como ativar). Na caixa de QA o link sai pela limpeza de credenciais (E163, parâmetro "t").
+    text: textoNotificacao(siteUrl, { title: titulo, intro: intro.replace(/ no botão abaixo/, ""), cta: { label: "Ativar minha página", url: o.url } }),
     imagem: `${img.arquivo}.jpg`,
     botao: "Ativar minha página",
   };

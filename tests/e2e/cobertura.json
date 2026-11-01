@@ -5429,6 +5429,12 @@
         "t236-parceiros-ciclo"
       ]
     },
+    "src/lib/parceiros/ativacao-actions.ts#ativarPeloPainel": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": []
+    },
     "src/lib/parceiros/ativacao-actions.ts#estadoAtivacao": {
       "personas": [
         "publico"
