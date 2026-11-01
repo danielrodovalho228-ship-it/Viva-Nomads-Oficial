@@ -747,7 +747,8 @@
         "t183-telas-logadas-390",
         "t339-varredura-bloco16",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t925-varredura-0111-titulos"
       ]
     },
     "/dashboard/candidaturas": {
@@ -764,7 +765,8 @@
         "t297-varredura-logada-bloco3",
         "t336-varredura-bloco14",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t925-varredura-0111-titulos"
       ]
     },
     "/dashboard/ganhos": {
@@ -961,7 +963,8 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t602-e181-familia-contadores",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t925-varredura-0111-titulos"
       ]
     },
     "/dashboard/fechamento": {
@@ -1251,7 +1254,8 @@
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t925-varredura-0111-titulos"
       ]
     },
     "/dashboard/locacoes": {
