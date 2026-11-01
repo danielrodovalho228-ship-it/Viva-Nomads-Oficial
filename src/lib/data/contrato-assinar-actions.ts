@@ -1,5 +1,6 @@
 "use server";
 
+import { corpoAnuncioCompartilhar, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
@@ -550,9 +551,15 @@ export async function assinarContrato(input: {
         // Cartões compartilháveis (T2): com o contrato assinado, o dono recebe (push) o cartão do anúncio publicado.
         const ownerId = String(c.properties?.owner_id ?? "");
         const imovelId = String(c.property_id ?? "");
-        const { data: imovel } = imovelId ? await admin.from("properties").select("status").eq("id", imovelId).maybeSingle() : { data: null };
+        const { data: imovel } = imovelId ? await admin.from("properties").select("status, title, address, city").eq("id", imovelId).maybeSingle() : { data: null };
         if (ownerId && imovel?.status === "active" && (await garantirCartao(admin, { tipo: "ownercard", usuarioId: ownerId, propertyId: imovelId }))) {
-          await notify({ event: "anuncio_compartilhar", userId: ownerId, pushUrl: `/dashboard/imoveis/${imovelId}/cartao` });
+          // E267 (resíduo): o aviso diz QUAL anúncio (o dono pode ter vários).
+          await notify({
+            event: "anuncio_compartilhar",
+            userId: ownerId,
+            pushUrl: `/dashboard/imoveis/${imovelId}/cartao`,
+            ...paraNotify(corpoAnuncioCompartilhar({ imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),
+          });
         }
       }
     } catch {

@@ -211,3 +211,18 @@ test("pedido de moradia: resposta e aceite nomeiam quem agiu e o imóvel", async
   assert.match(srv, /corpoPedidoAceito\(\{/);
   assert.doesNotMatch(srv, /notificar\("pedido_(resposta|aceito)", [^;]*detalhe(Resposta|Aceito)\(\)\);/);
 });
+
+test("E267 (resíduo): o cartão para compartilhar diz QUAL anúncio, no assunto, na abertura e no bloco", async () => {
+  const { corpoAnuncioCompartilhar } = await import("./corpo-e267-residual.ts");
+  const { comMarca, problemasDoAssunto } = await import("./assuntos.ts");
+  const c = corpoAnuncioCompartilhar({ imovel: { titulo: "Studio Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" } });
+  assert.equal(c.subject, "Compartilhe o cartão de Studio Santa Mônica");
+  assert.deepEqual(problemasDoAssunto(comMarca(c.subject!)), []);
+  assert.match(c.body("Rogério"), /^Olá Rogério, o contrato de Studio Santa Mônica foi assinado pelas duas partes, e o cartão do anúncio está pronto/);
+  assert.ok(c.linhas.some((l) => /Studio Santa Mônica/.test(l.valor)));
+  assert.doesNotMatch(c.body(), /seu anúncio está pronto/);
+  // Sem título: frase neutra, sem "de undefined".
+  assert.doesNotMatch(corpoAnuncioCompartilhar({ imovel: null }).body(), /undefined|de  /);
+  const acoes = readFileSync(new URL("../data/contrato-assinar-actions.ts", import.meta.url), "utf8");
+  assert.match(acoes, /event: "anuncio_compartilhar",[\s\S]{0,200}\.\.\.paraNotify\(corpoAnuncioCompartilhar\(/);
+});
