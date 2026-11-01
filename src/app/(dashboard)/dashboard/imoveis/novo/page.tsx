@@ -1665,6 +1665,26 @@ export default function NewPropertyPage() {
       </div>
     ) : null;
 
+  // E420 / L-88 (t943): o aviso vem ANTES da espera do "approved". Rascunho que não abre não libera o formulário
+  // (approved segue null, nada é gravado), e antes disso o return null deixava a página em branco.
+  if (rascunhoFechado) {
+    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
+    return (
+      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
+        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
+        <p className="mt-2 text-sm text-ink">{t.texto}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
+            Ver meus imóveis
+          </Link>
+          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
+            Começar um anúncio novo
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (approved === null) return null;
 
   if (mostrarQualificacao) {
@@ -1787,24 +1807,6 @@ export default function NewPropertyPage() {
     erros,
   };
   const meta = STEP_META[step];
-
-  if (rascunhoFechado) {
-    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
-    return (
-      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
-        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
-        <p className="mt-2 text-sm text-ink">{t.texto}</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
-            Ver meus imóveis
-          </Link>
-          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
-            Começar um anúncio novo
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">
