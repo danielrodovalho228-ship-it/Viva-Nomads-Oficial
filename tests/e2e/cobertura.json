@@ -2400,7 +2400,8 @@
         "t415-varredura-bloco32",
         "t623-varredura-bloco57",
         "t657-e235-link-avaliador",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t946-e413-camera-computador"
       ]
     },
     "/dashboard/recibos": {
@@ -3301,7 +3302,8 @@
         "proprietario"
       ],
       "specs": [
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t946-e413-camera-computador"
       ]
     },
     "/prova/celular": {
@@ -6193,7 +6195,8 @@
       "specs": [
         "t295-niveis-59-1",
         "t296-niveis-exibicao-59-1",
-        "t397-foto-na-hora"
+        "t397-foto-na-hora",
+        "t946-e413-camera-computador"
       ]
     },
     "src/lib/data/estrutura-actions.ts#lerChecklistEstrutura": {
