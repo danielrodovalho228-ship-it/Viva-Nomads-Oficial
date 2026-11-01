@@ -43,6 +43,7 @@ export function TestarLeituraIa() {
           value={tipo}
           onChange={(e) => setTipo(e.target.value === "documento" ? "documento" : "matricula")}
           className="rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm"
+          aria-label="Tipo do arquivo"
           data-testid="testar-leitura-tipo"
         >
           <option value="matricula">Matrícula</option>
@@ -53,6 +54,7 @@ export function TestarLeituraIa() {
           accept="application/pdf,image/jpeg,image/png"
           onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
           className="min-w-0 max-w-full text-sm"
+          aria-label="Arquivo fictício para testar a leitura"
           data-testid="testar-leitura-arquivo"
         />
         <Button size="sm" variant="primary" disabled={!arquivo || ocupado} onClick={testar} data-testid="testar-leitura-enviar">
