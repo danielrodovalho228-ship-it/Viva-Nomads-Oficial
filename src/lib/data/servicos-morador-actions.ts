@@ -53,11 +53,13 @@ export async function pedidosServicoAdmin(): Promise<PedidoServicoAdmin[] | null
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("servicos_pedidos")
     .select(`${COLUNAS}, profiles:tenant_id(full_name)`)
     .order("criado_em", { ascending: false })
     .limit(200);
+  // Achado 33: erro de leitura sobe e cai no aviso do admin ("Tentar de novo"), não em "Nenhum pedido… ainda".
+  if (error) throw new Error("Não foi possível ler os pedidos de serviço.");
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((p) => ({
     ...paraView(p),
     morador: String((p.profiles as { full_name?: string } | null)?.full_name ?? "Morador"),
