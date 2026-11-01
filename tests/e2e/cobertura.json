@@ -2114,7 +2114,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t969-e425-ativar-no-painel"
       ]
     },
     "/parceiros/[slug]": {
@@ -5433,7 +5434,9 @@
       "personas": [
         "parceiro"
       ],
-      "specs": []
+      "specs": [
+        "t969-e425-ativar-no-painel"
+      ]
     },
     "src/lib/parceiros/ativacao-actions.ts#estadoAtivacao": {
       "personas": [
