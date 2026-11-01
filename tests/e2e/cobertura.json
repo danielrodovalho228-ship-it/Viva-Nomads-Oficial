@@ -4778,6 +4778,13 @@
       ],
       "specs": []
     },
+    "src/lib/data/push-actions.ts#removerTodosPushTokens": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/reservas-actions.ts#solicitarReserva": {
       "personas": [
         "proprietario",

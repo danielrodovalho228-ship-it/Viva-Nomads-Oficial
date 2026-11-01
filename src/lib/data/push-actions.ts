@@ -65,6 +65,27 @@ export async function removerPushToken(token: string): Promise<{ ok: boolean }> 
   return { ok: true };
 }
 
+/**
+ * E391 (1) — "Sair de todos os aparelhos": apaga TODOS os tokens de push do próprio usuário, para que um aparelho
+ * perdido deixe de receber as notificações junto com o fim da sessão. Chamado ANTES do signOut global (ainda logado).
+ */
+export async function removerTodosPushTokens(): Promise<{ ok: boolean }> {
+  const supabase = await createClient();
+  if (!supabase) return { ok: true };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false };
+
+  const { error } = await supabase.from("push_tokens").delete().eq("user_id", user.id);
+  if (error) {
+    console.error("[push] falha ao remover os tokens:", error.message);
+    return { ok: false };
+  }
+  return { ok: true };
+}
+
 /** /admin: push de teste para os aparelhos do PRÓPRIO admin. Só admin; 5 por hora. */
 export async function enviarPushDeTeste(): Promise<{ ok: boolean; erro?: string; enviados?: number }> {
   const supabase = await createClient();

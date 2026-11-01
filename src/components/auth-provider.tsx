@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ESCOPO_EXPIRACAO_24H } from "@/lib/sessao/escopo-saida";
 import { estadoDoPapelGravado } from "@/lib/papel/papel-ativo";
 import { useAuthStore } from "@/lib/store";
 import type { UserRole } from "@/lib/types";
@@ -163,8 +164,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (Date.now() - s.sessionStartedAt > SESSION_MAX_MS) {
+        // E391 (1): as 24h valem POR APARELHO — a expiração aqui não derruba a sessão dos outros aparelhos.
         createClient()
-          ?.auth.signOut()
+          ?.auth.signOut({ scope: ESCOPO_EXPIRACAO_24H })
           .catch(() => {});
         s.signOut();
         if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth")) {

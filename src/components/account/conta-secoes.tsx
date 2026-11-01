@@ -5,7 +5,7 @@ import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Lock, Bell, Trash2, Check, BadgeCheck } from "lucide-react";
+import { Loader2, Lock, Bell, Trash2, Check, BadgeCheck, LogOut } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
 import { useDisplayUser } from "@/lib/demo/demo-mode";
 import { Panel } from "@/components/dashboard/primitives";
@@ -27,6 +27,9 @@ import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 import { getNascimento, salvarNascimento } from "@/lib/data/nascimento-actions";
 import { mascararNascimento, validarNascimento } from "@/lib/conta/nascimento";
 import { PILULA_EMAIL } from "@/lib/perfil/espelho";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
+import { removerTodosPushTokens } from "@/lib/data/push-actions";
+import { ESCOPO_EXCLUIR_CONTA, ESCOPO_SAIR_DE_TODOS, TEXTO_SAIR_DE_TODOS } from "@/lib/sessao/escopo-saida";
 
 
 /*
@@ -703,6 +706,57 @@ export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: str
   );
 }
 
+/**
+ * E391 (1) — Conta → Segurança: "Sair de todos os aparelhos", SEPARADO do "Sair" comum (que agora é só deste aparelho).
+ * Confirmação na página; apaga os avisos no celular de todos os aparelhos e encerra a sessão em todos (escopo global).
+ */
+export function SairDeTodosAparelhos() {
+  const router = useRouter();
+  const signOut = useAuthStore((s) => s.signOut);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function sairDeTodos() {
+    setErro(null);
+    const supabase = createClient();
+    if (supabase) {
+      // Ainda logado: apaga os tokens de push de todos os aparelhos ANTES de encerrar as sessões.
+      await removerTodosPushTokens().catch(() => {});
+      const { error } = await supabase.auth.signOut({ scope: ESCOPO_SAIR_DE_TODOS });
+      if (error) {
+        setErro(TEXTO_SAIR_DE_TODOS.erro);
+        return;
+      }
+    }
+    try {
+      localStorage.removeItem("vn-push-token");
+    } catch {
+      /* segue */
+    }
+    signOut();
+    router.replace("/app/boas-vindas");
+  }
+
+  return (
+    <Panel title={TEXTO_SAIR_DE_TODOS.titulo} className="mt-6">
+      <p className="text-sm text-muted">{TEXTO_SAIR_DE_TODOS.explicacao}</p>
+      <ConfirmarNaPagina
+        className="mt-4"
+        aviso={TEXTO_SAIR_DE_TODOS.aviso}
+        confirmar={TEXTO_SAIR_DE_TODOS.confirmar}
+        onConfirmar={sairDeTodos}
+        testid="sair-de-todos"
+      >
+        <LogOut className="h-4 w-4" /> {TEXTO_SAIR_DE_TODOS.titulo}
+      </ConfirmarNaPagina>
+      {erro && (
+        <p role="alert" className="mt-3 text-sm text-red-600">
+          {erro}
+        </p>
+      )}
+    </Panel>
+  );
+}
+
 export function DangerZone() {
   const router = useRouter();
   const user = useDisplayUser();
@@ -752,7 +806,8 @@ export function DangerZone() {
           }
           return;
         }
-        await supabase.auth.signOut();
+        // Conta excluída: encerra a sessão em TODOS os aparelhos (E391 — o "Sair" comum é só local).
+        await supabase.auth.signOut({ scope: ESCOPO_EXCLUIR_CONTA });
       }
       signOut();
       router.push("/");

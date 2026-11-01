@@ -12,6 +12,7 @@ import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
+import { ESCOPO_SAIR } from "@/lib/sessao/escopo-saida";
 import { removerPushToken } from "@/lib/data/push-actions";
 import { EVENTO_AVISO_ASSINATURA } from "@/components/contrato/aviso-assinatura";
 import {
@@ -246,7 +247,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     }
     // Encerra a sessão TAMBÉM no Supabase (antes só limpava o estado local e o
     // cookie de sessão seguia válido).
-    createClient()?.auth.signOut().catch(() => {});
+    // E391 (1): só ESTE aparelho; "Sair de todos os aparelhos" fica em Conta → Segurança.
+    createClient()?.auth.signOut({ scope: ESCOPO_SAIR }).catch(() => {});
     signOut();
     router.push("/");
   }
