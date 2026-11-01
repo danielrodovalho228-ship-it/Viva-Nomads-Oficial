@@ -1717,7 +1717,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t845-proprietario-e-cadastro-parceiro"
       ]
     },
     "/modelodenegocio": {
@@ -1767,7 +1768,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t845-proprietario-e-cadastro-parceiro"
       ]
     },
     "/parceiros/avaliadores": {
