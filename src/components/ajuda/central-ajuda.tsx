@@ -60,6 +60,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [aviso, setAviso] = useState<string | null>(null);
   const [pessoaLink, setPessoaLink] = useState<{ c: string; s: string } | null>(null);
   const [lista, setLista] = useState<ChamadoLista[] | null>(null);
+  // Achado nº 22: falha ao ler não vira "nenhum chamado" (a pessoa abriria outro igual).
+  const [listaFalhou, setListaFalhou] = useState(false);
   const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
 
   useEffect(() => {
@@ -67,7 +69,13 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   }, [user]);
 
   const recarregar = useCallback(() => {
-    if (user) meusChamados().then(setLista).catch(() => setLista([]));
+    if (user)
+      meusChamados({ exigir: true })
+        .then((l) => {
+          setListaFalhou(false);
+          setLista(l);
+        })
+        .catch(() => setListaFalhou(true));
   }, [user]);
 
   useEffect(() => {
@@ -173,7 +181,14 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
           {user && (
             <section className="mt-6 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
               <h2 className="font-title text-lg font-semibold text-ink">Meus chamados</h2>
-              {lista === null ? (
+              {listaFalhou ? (
+                <p role="alert" className="mt-2 text-sm text-red-600" data-testid="meus-chamados-erro">
+                  Não foi possível carregar os seus chamados agora.{" "}
+                  <button type="button" onClick={recarregar} className="font-medium underline">
+                    Tentar de novo
+                  </button>
+                </p>
+              ) : lista === null ? (
                 <p className="mt-2 text-sm text-muted">Carregando…</p>
               ) : lista.length === 0 ? (
                 <p className="mt-2 text-sm text-muted">Você ainda não abriu nenhum chamado.</p>
