@@ -23,9 +23,10 @@ test("listLeads e listConversations: com exigir, a falha do banco lança", () =>
 test("as telas Interessados e Mensagens pedem com exigir; a home não", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/leads/page.tsx"), /await listLeads\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/mensagens/page.tsx"), /await listConversations\(\{ exigir: true \}\)/);
-  const home = ler("src/app/(dashboard)/dashboard/page.tsx");
-  assert.match(home, /listConversations\(\)\.catch\(\(\) => \[\]\)/);
-  assert.doesNotMatch(home, /exigir: true/);
+  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /ou\("conversas", listConversations\(\{ exigir: true \}\), null\)/);
+  // Achado nº 24: a home pede com exigir, mas SEMPRE dentro de ou(...) — a falha vira aviso no topo, nunca a página de erro.
+  const homeA24 = ler("src/app/(dashboard)/dashboard/page.tsx");
+  assert.equal((homeA24.match(/exigir: true/g) ?? []).length, (homeA24.match(/ou\("[a-z]+", [A-Za-z]+\([^)]*\{ exigir: true \}\)/g) ?? []).length);
   // Leads e Mensagens ficam sob o limite de erro do painel (com "Tentar de novo").
   assert.match(ler("src/app/(dashboard)/dashboard/error.tsx"), /Tentar de novo/);
 });

@@ -12,8 +12,8 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("o painel lê listMinhasCandidaturas e passa o total ao cartão", () => {
   const pagina = ler("src/app/(dashboard)/dashboard/page.tsx");
   assert.match(pagina, /import \{ listMinhasCandidaturas \} from "@\/lib\/data\/leads-actions";/);
-  assert.match(pagina, /listMinhasCandidaturas\(\)\.catch\(\(\) => \[\]\)/);
-  assert.match(pagina, /totalCandidaturas=\{candidaturas\.length\}/);
+  assert.match(pagina, /ou\("candidaturas", listMinhasCandidaturas\(\{ exigir: true \}\), null\)/);
+  assert.match(pagina, /totalCandidaturas=\{candidaturas \? candidaturas\.length : null\}/);
 });
 
 test("a lista da tela de candidaturas usa a mesma função", () => {
@@ -22,6 +22,6 @@ test("a lista da tela de candidaturas usa a mesma função", () => {
 
 test("o cartão não é mais um número fixo", () => {
   const cliente = ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx");
-  assert.match(cliente, /<StatCard label="Candidaturas" value=\{demo \? "2" : String\(totalCandidaturas\)\}/);
+  assert.match(cliente, /<StatCard label="Candidaturas" value=\{demo \? "2" : valorContador\(totalCandidaturas\)\}/);
   assert.match(cliente, /<TenantDashboard [^>]*totalCandidaturas=\{totalCandidaturas\}/);
 });

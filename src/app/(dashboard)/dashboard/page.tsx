@@ -21,6 +21,7 @@ import { carregarAgendaDoDono } from "@/lib/data/agenda-servidor";
 import { cartoesDeHoje } from "@/lib/painel/hoje-dono";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
+import { avisoInicioSemLeitura, type FonteDoInicio } from "@/lib/painel/sem-leitura";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -99,22 +100,30 @@ function rascunhoDoDraft(d: Awaited<ReturnType<typeof getLatestDraft>>): Rascunh
  */
 export default async function DashboardPage() {
   const agora = new Date();
+  // Achado nº 24: cada lista lida com `exigir`; a que falha entra em `semLeitura` (aviso no topo, contador "—"), em vez
+  // de virar lista vazia ("0 decisões", "0 mensagens") sem aviso.
+  const semLeitura: FonteDoInicio[] = [];
+  const ou = <T,>(fonte: FonteDoInicio, p: Promise<T>, vazio: T): Promise<T> =>
+    p.catch(() => {
+      semLeitura.push(fonte);
+      return vazio;
+    });
   const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas, visualizacoes, conversas, buscasSalvas] = await Promise.all([
     listMyProperties(),
     cidadeDoPerfil(),
     interessadosDoDono(),
-    listarPropostas().catch(() => []),
+    ou("propostas", listarPropostas({ exigir: true }), []),
     // Prompt 32: estadias em vigor (topo, decisões e ações da folha do 41).
-    estadiasDaHome(agora).catch(() => []),
+    ou("estadias", estadiasDaHome(agora, { exigir: true }), []),
     getLatestDraft().catch(() => null),
     dadosDasDecisoes(),
     // E72: o cartão "Candidaturas" conta a MESMA lista de /dashboard/candidaturas (um número, uma fonte).
-    listMinhasCandidaturas().catch(() => []),
+    ou("candidaturas", listMinhasCandidaturas({ exigir: true }), null),
     // PROP-3 (E113): Visualizações e Mensagens da MESMA função das páginas de destino (Desempenho e Mensagens).
     visualizacoesDoDono(agora).catch(() => null),
-    listConversations().catch(() => []),
+    ou("conversas", listConversations({ exigir: true }), null),
     // E181: "Buscas salvas" conta a MESMA lista de /dashboard/buscas (um número, uma fonte).
-    listarBuscasSalvas().catch(() => []),
+    ou("buscas", listarBuscasSalvas({ exigir: true }), null),
   ]);
   const [pausadaEm, capaRascunho] = await Promise.all([contaPausadaEm(), capaDoRascunho(draft?.id ?? null)]);
   const rascunho = rascunhoDoDraft(draft);
@@ -176,6 +185,11 @@ export default async function DashboardPage() {
       )}
       {/* Prompt 62-A, Parte 2: 3º passo da escada → os anúncios fora da busca, no topo do painel. */}
       {imoveisDono.length > 0 && <AvisoStrikePainel />}
+      {avisoInicioSemLeitura(semLeitura) && (
+        <p role="alert" data-testid="inicio-sem-leitura" className="mb-4 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
+          {avisoInicioSemLeitura(semLeitura)}
+        </p>
+      )}
       <VisaoGeral
       imoveisDono={imoveisDono}
       interessados={interessados}
@@ -185,10 +199,10 @@ export default async function DashboardPage() {
       cidadePerfil={cidadePerfil}
       estadias={estadias}
       checklists={checklists}
-      totalCandidaturas={candidaturas.length}
+      totalCandidaturas={candidaturas ? candidaturas.length : null}
       visualizacoes={visualizacoes}
-      totalConversas={conversas.length}
-      totalBuscasSalvas={buscasSalvas.length}
+      totalConversas={conversas ? conversas.length : null}
+      totalBuscasSalvas={buscasSalvas ? buscasSalvas.length : null}
       inicioDono={inicioDono}
       />
     </>
