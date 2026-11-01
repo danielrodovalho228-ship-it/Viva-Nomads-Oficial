@@ -16,3 +16,6 @@ export function avisoTopoAdmin(c: ContagemAtraso): { texto: string; href: string
   if (sem) partes.push(estourados ? `${sem} sem resposta da equipe há 2 h ou mais` : `${chamados(sem)} sem resposta da equipe há 2 h ou mais`);
   return { texto: partes.join(" · "), href: "/admin/atendimento" };
 }
+
+/** Achado 28: a contagem não foi lida. O aviso fica no lugar (nunca some como se não houvesse atraso). */
+export const MSG_ATRASO_NAO_LIDO = "Não foi possível conferir agora os chamados atrasados. Abra a fila para ver.";

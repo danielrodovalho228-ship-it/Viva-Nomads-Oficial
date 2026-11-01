@@ -185,7 +185,8 @@ export async function chamadosEmVermelho(): Promise<ChamadoVermelho[]> {
   if (!user || !(await ehAdmin(supabase, user.id))) return [];
   const admin = createAdminClient();
   if (!admin) return [];
-  return (await chamadosEsperandoEquipe(admin)).filter((c) => c.nivel === 6).map((c) => ({ id: c.id, numero: c.numero_publico, categoria: categoria(c.categoria)?.rotulo ?? c.categoria, horas: c.horas }));
+  // Achado 28: com "exigir", falha de leitura sobe para a página, que avisa em vez de esconder o alerta.
+  return (await chamadosEsperandoEquipe(admin, new Date(), { exigir: true })).filter((c) => c.nivel === 6).map((c) => ({ id: c.id, numero: c.numero_publico, categoria: categoria(c.categoria)?.rotulo ?? c.categoria, horas: c.horas }));
 }
 
 /**

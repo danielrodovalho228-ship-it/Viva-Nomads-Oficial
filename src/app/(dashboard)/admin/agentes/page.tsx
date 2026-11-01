@@ -19,7 +19,8 @@ export default async function AgentesPage({ searchParams }: { searchParams: Prom
   const admin = await adminDaPagina();
   const [dados, vermelhos, contadores] = await Promise.all([
     carregarCentral(),
-    chamadosEmVermelho().catch(() => []),
+    // Achado 28: null = não deu para ler; a Central avisa em vez de sumir com o alerta.
+    chamadosEmVermelho().catch(() => null),
     admin ? contadoresAgentes(admin).catch(() => null) : Promise.resolve(null),
   ]);
   return (
