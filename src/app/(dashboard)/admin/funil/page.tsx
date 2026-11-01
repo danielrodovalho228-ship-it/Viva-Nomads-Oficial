@@ -130,7 +130,7 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
           )}
         </Panel>
       )}
-      <section className="mt-10 border-t-2 border-line pt-6" aria-labelledby="funil-indicadores-titulo" data-testid="funil-indicadores" data-janela={periodo.id}>
+      <section className="mt-8 border-t-2 border-line pt-6" aria-labelledby="funil-indicadores-titulo" data-testid="funil-indicadores" data-janela={periodo.id}>
         <CabecalhoJanela
           id="funil-indicadores-titulo"
           titulo="Indicadores do período"
@@ -152,11 +152,11 @@ function CabecalhoJanela({ id, titulo, janela, nota, destaque = false, testid }:
       <h2 id={id} className="font-title text-xl font-semibold text-ink">
         {titulo}
       </h2>
-      <p data-testid={testid} className="w-fit max-w-full rounded-lg bg-sage-100 px-3 py-1.5 text-sm font-semibold text-forest">
+      <p data-testid={testid} className="w-fit max-w-full rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-forest">
         {janela}
       </p>
       {nota && (
-        <p data-testid={`${testid}-nota`} className={destaque ? "text-sm font-medium text-amber-800" : "text-xs text-muted"}>
+        <p data-testid={`${testid}-nota`} className={destaque ? "text-sm font-semibold text-amber-800" : "text-xs text-muted"}>
           {nota}
         </p>
       )}
