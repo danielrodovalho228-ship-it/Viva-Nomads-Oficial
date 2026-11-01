@@ -72,6 +72,11 @@ async function assuntos(usuarioId: string): Promise<string[]> {
   return ((data ?? []) as { assunto: string }[]).map((r) => r.assunto.replace(/ · Viva Nomads$/, "")); // o envio acrescenta a marca (SUFIXO_ASSUNTO)
 }
 
+/** Os assuntos de visita levam o título do imóvel (E325): "Pedido de visita: <título>". Confere pelo começo. */
+async function temAssunto(usuarioId: string, comeco: string): Promise<boolean> {
+  return (await assuntos(usuarioId)).some((a) => a.startsWith(comeco));
+}
+
 async function pedirPresencial(page: Page, imovelId: string, campo: string) {
   await abrir(page, `/imoveis/${imovelId}`);
   const horario = page.getByTestId("visita-presencial-horario-0");
@@ -152,7 +157,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     await expect(d.getByText("Chicago Sobrenome")).toHaveCount(0);
     await d.screenshot({ path: `${SAIDA}/t209-dono-visitas-1280.png`, fullPage: true });
     await d.context().close();
-    await expect.poll(() => assuntos(ids.dono!), { timeout: 20_000 }).toContain("Pedido de visita no seu imóvel");
+    await expect.poll(() => temAssunto(ids.dono!, `Pedido de visita: Studio jornada ${sufixo}`), { timeout: 20_000 }).toBe(true);
   });
 
   test("2a. presencial: endereço oculto antes; o dono confirma; o endereço aparece só para o morador (390)", async ({ browser }) => {
@@ -178,7 +183,7 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
     await semRolagemLateral(a2);
     await a2.screenshot({ path: `${SAIDA}/t209-endereco-confirmada-390.png`, fullPage: true });
     await a2.context().close();
-    await expect.poll(() => assuntos(ids.inqA!), { timeout: 20_000 }).toContain("Visita confirmada");
+    await expect.poll(() => temAssunto(ids.inqA!, `Visita confirmada: Studio jornada ${sufixo}`), { timeout: 20_000 }).toBe(true);
   });
 
   test("2b. presencial pela conversa: o dono propõe outro horário (Remarcar) e o morador aceita (1280)", async ({ browser }) => {
