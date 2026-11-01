@@ -411,9 +411,15 @@ const paraCandidatura = (l: LinhaLead): CandidaturaAdmin => ({
 });
 
 /** Candidaturas do período (imóvel real, inquilino real, cidade do imóvel) — a mesma regra da 0181 (leads_p). */
-export async function candidaturasDoPeriodo(admin: Admin, periodo: { ini: string; fim: string }, cidade?: string | null): Promise<CandidaturaAdmin[]> {
+export async function candidaturasDoPeriodo(
+  admin: Admin,
+  periodo: { ini: string; fim: string },
+  cidade?: string | null,
+  /** Achado 32: com `exigir`, a falha de leitura LANÇA (a lista do admin não vira "Nenhuma candidatura"). */
+  opcoes: { exigir?: boolean } = {},
+): Promise<CandidaturaAdmin[]> {
   const k = cidade ? chaveCidade(cidade) : null;
-  const [{ data }, teste] = await Promise.all([
+  const [{ data, error }, teste] = await Promise.all([
     admin
       .from("leads")
       .select("id, created_at, accepted_at, rejected_at, status, tenant_id, properties!inner(owner_id, title, city)")
@@ -423,6 +429,7 @@ export async function candidaturasDoPeriodo(admin: Admin, periodo: { ini: string
       .limit(5000),
     idsContasTeste(admin),
   ]);
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler as candidaturas.");
   return ((data ?? []) as unknown as LinhaLead[])
     .filter((l) => !teste.has(l.tenant_id) && !teste.has(l.properties.owner_id) && !MARCA_TESTE.test(l.properties.title ?? ""))
     .filter((l) => !k || chaveCidade(l.properties.city) === k)
@@ -430,9 +437,9 @@ export async function candidaturasDoPeriodo(admin: Admin, periodo: { ini: string
 }
 
 /** "Candidaturas sem resposta há mais de 48 h" — a fila do "Precisa de você agora" (mesma regra da 0181). */
-export async function candidaturasSemResposta48h(admin: Admin): Promise<CandidaturaAdmin[]> {
+export async function candidaturasSemResposta48h(admin: Admin, opcoes: { exigir?: boolean } = {}): Promise<CandidaturaAdmin[]> {
   const limite = new Date(Date.now() - 48 * 3_600_000).toISOString();
-  const [{ data }, teste] = await Promise.all([
+  const [{ data, error }, teste] = await Promise.all([
     admin
       .from("leads")
       .select("id, created_at, accepted_at, rejected_at, status, tenant_id, properties!inner(owner_id, title, city)")
@@ -443,6 +450,7 @@ export async function candidaturasSemResposta48h(admin: Admin): Promise<Candidat
       .limit(2000),
     idsContasTeste(admin),
   ]);
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler as candidaturas sem resposta.");
   const fechados = new Set(["accepted", "rejected", "cancelled", "canceled", "expired"]);
   return ((data ?? []) as unknown as LinhaLead[])
     .filter((l) => !fechados.has(String(l.status ?? "")))
