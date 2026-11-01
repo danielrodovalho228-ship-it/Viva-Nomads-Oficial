@@ -318,7 +318,8 @@
         "t286-esqueletos-vazios-48",
         "t352-varredura-bloco17",
         "t419-varredura-bloco36",
-        "t656-e224-plano-gestor"
+        "t656-e224-plano-gestor",
+        "t891-varredura-0111-filtros-altura"
       ]
     },
     "/ajuda": {
@@ -2043,7 +2044,8 @@
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
         "t352-varredura-bloco17",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t891-varredura-0111-filtros-altura"
       ]
     },
     "/admin/contratos": {
@@ -2156,7 +2158,8 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t891-varredura-0111-filtros-altura"
       ]
     },
     "/admin/contratos/[id]": {
