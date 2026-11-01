@@ -2032,7 +2032,8 @@
         "admin"
       ],
       "specs": [
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t909-achado33-admin-servicos"
       ]
     },
     "/admin/imoveis": {
