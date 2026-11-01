@@ -61,6 +61,7 @@ export function MedirInternet({
     let vivo = true;
     fetch(`/api/internet/medicoes?imovel=${encodeURIComponent(imovelId)}&origem=${origem}`, { cache: "no-store" })
       .then((r) => r.json())
+      .then((e: EstadoMedir) => (e && typeof e.ok === "boolean" ? e : { ok: false as const, erro: "Não deu para carregar agora." }))
       .then((e: EstadoMedir) => vivo && setEstado(e))
       .catch(() => vivo && setEstado({ ok: false, erro: "Não deu para carregar agora." }));
     return () => {
@@ -70,7 +71,14 @@ export function MedirInternet({
   }, [imovelId, origem]);
 
   if (!estado) return null;
-  if (!estado.ok) return null;
+  // E414: sem o estado (sessão, imóvel, rede), antes não aparecia NADA e o "Meça agora" abria um espaço vazio — o item
+  // da Qualificação ficava travado sem explicação. Agora o motivo aparece.
+  if (!estado.ok)
+    return (
+      <p className="mt-3 rounded-xl border border-sage-200 bg-white p-4 text-sm text-red-700" role="alert" data-testid="medir-internet-indisponivel">
+        {estado.erro}
+      </p>
+    );
 
   async function medir() {
     if (!estado?.ok) return;
@@ -88,10 +96,13 @@ export function MedirInternet({
         atual.current = m;
         rodadas.push(await m.promessa);
       }
-    } catch {
+    } catch (e) {
       atual.current = null;
       setFase("parado");
-      if (!cancelou.current) setResultado({ ok: false, erro: "A medição não terminou. Confira a conexão e tente de novo." });
+      // E414: a rodada que passa do prazo para e avisa (antes ficava em "Medindo… 95%" sem fim).
+      const demorou = e instanceof Error && e.message === "demorou";
+      if (!cancelou.current)
+        setResultado({ ok: false, erro: demorou ? "A medição demorou demais e parou. Confira o Wi-Fi e tente de novo." : "A medição não terminou. Confira a conexão e tente de novo." });
       return;
     }
     atual.current = null;
