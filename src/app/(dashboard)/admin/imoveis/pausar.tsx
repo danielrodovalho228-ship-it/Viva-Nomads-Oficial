@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { pausarImovelAdmin } from "@/lib/data/imoveis-admin-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export function PausarImovel({ id }: { id: string }) {
   const router = useRouter();
@@ -16,7 +17,7 @@ export function PausarImovel({ id }: { id: string }) {
         size="sm"
         testid="pausar-imovel"
         onConfirmar={async () => {
-          const r = await pausarImovelAdmin(id);
+          const r = await semQuedaDeRede(pausarImovelAdmin(id));
           if (!r.ok) setErro(r.error ?? "Não foi possível pausar.");
           else router.refresh();
         }}

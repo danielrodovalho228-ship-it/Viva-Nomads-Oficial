@@ -22,6 +22,7 @@ import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
 const STATUS_META: Record<PropertyStatus, { label: string; tone: string }> = {
@@ -50,7 +51,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
   async function excluirRascunho(id: string) {
     setErroExcluir(null);
     setExcluindo(id);
-    const res = await deleteProperty(id);
+    const res = await semQuedaDeRede(deleteProperty(id));
     setExcluindo(null);
     if (res.ok) setRemovidos((s) => new Set(s).add(id));
     else setErroExcluir(res.error ?? "Não foi possível excluir agora.");

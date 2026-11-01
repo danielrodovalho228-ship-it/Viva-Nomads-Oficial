@@ -29,6 +29,7 @@ import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-co
 import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapidas-conversa";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -73,7 +74,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         conversations
           .filter((c) => c.otherId)
           .map(async (c) => {
-            const { url } = await getAvatarUrl({ targetId: c.otherId as string, propertyId: c.propertyId });
+            // Foto da outra pessoa: sem conexão, fica sem foto (a inicial aparece), sem rejeitar a lista inteira.
+            const { url } = await getAvatarUrl({ targetId: c.otherId as string, propertyId: c.propertyId }).catch(() => ({ url: null }));
             return [c.id, url] as const;
           })
       );
@@ -152,15 +154,15 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     // grava: a conversa é fictícia e o envio fica só na tela.
     if (!demo) {
       // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
-      if (active.pedidoParceiroId) await enviarMensagemDoPedido(active.pedidoParceiroId, text);
+      if (active.pedidoParceiroId) await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
       else
-        await sendMessage({
+        await semQuedaDeRede(sendMessage({
           conversationId: active.id,
           receiverId: active.otherId,
           propertyId: active.propertyId,
           body: text,
           respostaRapida: usouRapida,
-        });
+        }));
     }
   }
 

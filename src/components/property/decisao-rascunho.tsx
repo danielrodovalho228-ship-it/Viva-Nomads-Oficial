@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { decidirRascunhoAjuda } from "@/lib/data/ajuda-publicacao-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Ordem 65e999b2: o dono aprova o rascunho montado pela equipe ou pede ajustes. */
 export function DecisaoRascunho({ id }: { id: string }) {
@@ -15,7 +16,7 @@ export function DecisaoRascunho({ id }: { id: string }) {
   async function decidir(decisao: "aprovado_dono" | "ajustes_pedidos") {
     setEnviando(true);
     setErro("");
-    const r = await decidirRascunhoAjuda(id, decisao);
+    const r = await semQuedaDeRede(decidirRascunhoAjuda(id, decisao));
     setEnviando(false);
     if (!r.ok) {
       setErro(r.error ?? "Não foi possível enviar agora.");

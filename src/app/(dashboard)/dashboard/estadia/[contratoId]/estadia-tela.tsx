@@ -272,7 +272,7 @@ export function ConvidarOcupante({ contratoId, inicial, limite }: { contratoId: 
     setPendente(true);
     setErro(null);
     setOk(null);
-    const r = await convidarOcupante(contratoId, email);
+    const r = await semQuedaDeRede(convidarOcupante(contratoId, email));
     setPendente(false);
     if (!r.ok) return setErro(r.erro);
     setLista((l) => [...l, r.valor]);
@@ -285,7 +285,7 @@ export function ConvidarOcupante({ contratoId, inicial, limite }: { contratoId: 
     setPendente(true);
     setErro(null);
     setOk(null);
-    const r = await removerConvidado(contratoId, id);
+    const r = await semQuedaDeRede(removerConvidado(contratoId, id));
     setPendente(false);
     if (!r.ok) return setErro(r.erro);
     setLista((l) => l.filter((c) => c.id !== id));

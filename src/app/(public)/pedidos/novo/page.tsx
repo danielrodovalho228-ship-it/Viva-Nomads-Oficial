@@ -35,6 +35,7 @@ import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino
 import { CHIPS_INTERNET } from "@/lib/busca/filtro-internet";
 import type { EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Um só estilo para todos os campos do formulário: 48 px de altura (prompt 12). */
 const CAMPO =
@@ -401,13 +402,13 @@ function PedidoForm() {
     };
     setEnviando(true);
     if (editarId) {
-      const r = await editarPedido(editarId, dados);
+      const r = await semQuedaDeRede(editarPedido(editarId, dados));
       setEnviando(false);
       if (r.ok) router.push("/dashboard/pedidos?editado=1");
       else setErro(r.error ?? "Não foi possível salvar o pedido.");
       return;
     }
-    const res = await criarPedido(dados);
+    const res = await semQuedaDeRede(criarPedido(dados));
     setEnviando(false);
     if (res.ok) {
       registrarEvento("publicar_pedido", { cidade });

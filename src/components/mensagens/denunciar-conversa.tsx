@@ -5,6 +5,7 @@ import { Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { denunciarConversa } from "@/lib/data/denuncia-conversa-actions";
 import { NOTA_DENUNCIA_MAX } from "@/lib/atendimento/denuncia-mensagem";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * "Denunciar mensagem suspeita" (ordem 404cd213, item 3). Abre um chamado de segurança com o id da
@@ -25,7 +26,7 @@ export function DenunciarConversa({ conversationId, demo }: { conversationId: st
       setEnviando(false);
       return;
     }
-    const r = await denunciarConversa({ conversationId, nota });
+    const r = await semQuedaDeRede(denunciarConversa({ conversationId, nota }));
     setEnviando(false);
     if (r.ok) setNumero(r.numero);
     else setErro(r.error);

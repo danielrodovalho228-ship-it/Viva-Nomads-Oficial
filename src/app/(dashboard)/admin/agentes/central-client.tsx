@@ -1180,7 +1180,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
   }
 
   async function virarOrdem(chave: string, slug: string, texto: string) {
-    const r = await deixarOrdem(slug, texto);
+    const r = await semQuedaDeRede(deixarOrdem(slug, texto));
     setVirou((v) => ({ ...v, [chave]: r.ok ? (r.aviso ?? "Ordem criada.") : (r.erro ?? "Não consegui.") }));
     if (r.ok) router.refresh();
   }

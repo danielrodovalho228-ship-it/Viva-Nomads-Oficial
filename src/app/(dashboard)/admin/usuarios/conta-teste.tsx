@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { marcarContaTeste } from "@/lib/data/conta-teste-actions";
 import { AVISO_CONTA_TESTE } from "@/lib/admin/conta-teste";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Prompt 36, item 2: "Marcar como conta de teste" / "Desmarcar", com a confirmação na própria página. */
 export function BotaoContaTeste({ id, isTeste }: { id: string; isTeste: boolean }) {
@@ -20,7 +21,7 @@ export function BotaoContaTeste({ id, isTeste }: { id: string; isTeste: boolean 
         testid={isTeste ? "desmarcar-teste" : "marcar-teste"}
         onConfirmar={async () => {
           setErro(null);
-          const r = await marcarContaTeste(id, !isTeste);
+          const r = await semQuedaDeRede(marcarContaTeste(id, !isTeste));
           if (!r.ok) setErro(r.erro);
           else startTransition(() => router.refresh());
         }}

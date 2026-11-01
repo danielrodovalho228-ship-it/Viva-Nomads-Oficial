@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Fila de CONFERÊNCIA dos documentos de imóvel (matrícula / contrato de gestão).
@@ -231,7 +232,7 @@ function AutoCard({ doc, onReaberto, soLeitura = false }: { doc: ConferidoAutoma
             onClick={async () => {
               setBusy(true);
               setErro(null);
-              const r = await reabrirConferencia(doc.id);
+              const r = await semQuedaDeRede(reabrirConferencia(doc.id));
               setBusy(false);
               if (!r.ok) return setErro(r.error ?? "Não foi possível reabrir.");
               onReaberto();
@@ -262,7 +263,7 @@ function DocCard({ doc, onDone, soLeitura = false }: { doc: DocumentoPendente; o
   async function aprovar() {
     setBusy(true);
     setErro(null);
-    const res = await moderarDocumento(doc.id, true);
+    const res = await semQuedaDeRede(moderarDocumento(doc.id, true));
     setBusy(false);
     if (!res.ok) return setErro(res.error ?? "Não foi possível registrar a decisão.");
     onDone();
@@ -272,7 +273,7 @@ function DocCard({ doc, onDone, soLeitura = false }: { doc: DocumentoPendente; o
     if (!motivoFinal) return setErro("Escolha o motivo (e descreva, se for 'Outro').");
     setBusy(true);
     setErro(null);
-    const res = await moderarDocumento(doc.id, false, motivoFinal);
+    const res = await semQuedaDeRede(moderarDocumento(doc.id, false, motivoFinal));
     setBusy(false);
     if (!res.ok) return setErro(res.error ?? "Não foi possível registrar a decisão.");
     onDone();

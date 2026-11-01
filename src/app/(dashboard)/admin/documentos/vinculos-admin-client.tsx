@@ -61,7 +61,7 @@ function ItemVinculo({ item }: { item: VinculoPendente }) {
     await abrirLinkEmNovaAba(
       () => window.open("about:blank", "_blank"),
       async () => {
-        const r = await linkVinculoAdmin(item.id);
+        const r = await semQuedaDeRede(linkVinculoAdmin(item.id));
         return r.ok && r.url ? r.url : null;
       },
     );

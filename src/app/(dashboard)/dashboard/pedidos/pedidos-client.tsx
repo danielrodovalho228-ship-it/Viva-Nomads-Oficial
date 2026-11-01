@@ -16,6 +16,7 @@ import { cn, dataBR } from "@/lib/utils";
 import { rotuloPreco, textoPreco } from "@/lib/cartao-preco";
 import { totalMesDaLinha } from "@/lib/precos";
 import { statusHumano } from "@/lib/status-humano";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import {
   motivoLabel,
   PEDIDO_STATUS_LABEL,
@@ -381,7 +382,7 @@ function NotifPrefs({ inicial }: { inicial: { email: boolean } }) {
   async function salvar(v: boolean) {
     setEmail(v);
     setSalvo(false);
-    const res = await setNotifPrefs({ email: v });
+    const res = await semQuedaDeRede(setNotifPrefs({ email: v }));
     if (res.ok) {
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);

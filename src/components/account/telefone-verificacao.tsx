@@ -5,6 +5,7 @@ import { BadgeCheck, Loader2, Smartphone } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { confirmarCodigoTelefone, enviarCodigoTelefone, getTelefoneEstado, type EstadoTelefone } from "@/lib/data/telefone-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import {
   CODIGO_SIMULADO,
   ERRO_CODIGO,
@@ -59,7 +60,7 @@ export function TelefoneVerificacao() {
     const v = validarCelularBR(numero);
     if (!v.ok) return setErro(v.erro);
     setOcupado(true);
-    const r = await enviarCodigoTelefone(numero);
+    const r = await semQuedaDeRede(enviarCodigoTelefone(numero));
     setOcupado(false);
     if (!r.ok) return setErro(r.error);
     setEnviadoEm(Date.now());
@@ -74,7 +75,7 @@ export function TelefoneVerificacao() {
     setAviso(null);
     if (codigo.length !== 6) return setErro(ERRO_CODIGO);
     setOcupado(true);
-    const r = await confirmarCodigoTelefone(numero, codigo);
+    const r = await semQuedaDeRede(confirmarCodigoTelefone(numero, codigo));
     setOcupado(false);
     if (!r.ok) return setErro(r.error);
     setEstado((e) => (e ? { ...e, verificado: true, pendente: false } : e));

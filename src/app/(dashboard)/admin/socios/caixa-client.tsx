@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BUCKET_CAIXA, LIMITE_BYTES, LIMITE_FALTA, LIMITE_TEXTO, ROTULO_EXTRACAO, ROTULO_STATUS, mimeAceito, nomeSeguro, podeAceitar } from "@/lib/socios/caixa";
 import { enviarParaCaixa, relerArquivo, responderAceite, type ItemCaixa } from "@/lib/socios/caixa-actions";
 import { rotuloDoAdmin } from "@/config/menu-admin";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const COR_STATUS: Record<ItemCaixa["status"], string> = {
   novo: "border border-line bg-white text-forest",
@@ -144,7 +145,7 @@ export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { it
 
   async function reler(id: string) {
     setRelendo(id);
-    const r = await relerArquivo(id);
+    const r = await semQuedaDeRede(relerArquivo(id));
     setRelendo(null);
     if (!r.ok) setErro(r.erro ?? "Não foi possível ler.");
     router.refresh();
@@ -153,7 +154,7 @@ export function CaixaSociosClient({ itens, aviso, uid, transcricaoLigada }: { it
   async function decidir(id: string, decisao: "aceitar" | "reabrir") {
     setDecidindo(id);
     setErro(null);
-    const r = await responderAceite(id, decisao, falta);
+    const r = await semQuedaDeRede(responderAceite(id, decisao, falta));
     setDecidindo(null);
     if (!r.ok) return setErro(r.erro ?? "Não foi possível registrar.");
     setReabrindo(null);
