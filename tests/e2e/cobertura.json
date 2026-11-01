@@ -887,7 +887,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t848-varredura-bloco153"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1371,7 +1372,8 @@
         "t216-taxa-matriz",
         "t312-varredura-bloco9",
         "t676-varredura-bloco69",
-        "t709-e263-pets-condicoes-ida-e-volta"
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t848-varredura-bloco153"
       ]
     },
     "/dashboard/pedidos": {
@@ -2114,7 +2116,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t848-varredura-bloco153"
       ]
     },
     "/parceiros/[slug]": {
@@ -2181,7 +2184,8 @@
         "t250-parceiros-contratacao",
         "t368-varredura-bloco20",
         "t597-e213b-limpeza-renovacao",
-        "t712-e267-transacionais-corpo"
+        "t712-e267-transacionais-corpo",
+        "t848-varredura-bloco153"
       ]
     },
     "/admin/parceiros/pedidos": {
