@@ -17,7 +17,9 @@ const mor = { email: `mor.t957.${sufixo}@lab.vivanomads.test`, nome: "Mila Pets"
 const dono = { email: `dono.t957.${sufixo}@lab.vivanomads.test`, nome: "Davi Calendário", role: "owner" as const };
 const ids: { mor?: string; dono?: string; imovel?: string } = {};
 const PET = `Thor ${sufixo}`;
-const LINK = `https://www.airbnb.com.br/calendar/ical/t957-${sufixo}.ics?s=abc`;
+// Domínio único: a resposta de listarImportacoes traz o domínio (não o link) — é a marca da falha simulada.
+const DOMINIO = `cal-t957-${sufixo}.example.com`;
+const LINK = `https://${DOMINIO}/calendario.ics`;
 
 /** Só a ação que devolve `marca` (os pets do morador) responde 500 — as outras ações da tela (o próprio perfil) passam. */
 async function soAcaoComFalha(page: Page, padrao: string, marca: string, liga: boolean) {
@@ -46,7 +48,7 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
     const { error } = await adm().from("pets_inquilino").insert({ user_id: ids.mor, nome: PET, especie: "cao", porte: "M", idade_anos: 2, castrado: true, vacinas_em_dia: true });
     if (error) throw error;
     ids.imovel = await criarImovelPronto(ids.dono, `Studio iCal t957 ${sufixo}`, { ativo: true });
-    const { error: e2 } = await adm().from("calendario_importacoes").insert({ property_id: ids.imovel, owner_id: ids.dono, url: LINK, dominio: "www.airbnb.com.br", origem: "airbnb" });
+    const { error: e2 } = await adm().from("calendario_importacoes").insert({ property_id: ids.imovel, owner_id: ids.dono, url: LINK, dominio: DOMINIO, origem: "outro" });
     if (e2) throw e2;
   });
   test.afterAll(async () => {
@@ -83,7 +85,7 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
     const rota = `**/dashboard/imoveis/${ids.imovel}/editar**`;
     for (const largura of [390, 1280] as const) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await soAcaoComFalha(page, rota, LINK, true);
+      await soAcaoComFalha(page, rota, DOMINIO, true);
       await page.goto(`/dashboard/imoveis/${ids.imovel}/editar#calendario`, { waitUntil: "domcontentloaded" });
       const painel = page.getByTestId("importar-calendario");
       await painel.scrollIntoViewIfNeeded({ timeout: 30_000 });
@@ -91,7 +93,7 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
       await expect(falha).toBeVisible({ timeout: 30_000 });
       await expect(falha).toContainText("Não foi possível carregar os calendários importados agora.");
       await expect(painel.getByTestId("importacao-item")).toHaveCount(0);
-      await soAcaoComFalha(page, rota, LINK, false);
+      await soAcaoComFalha(page, rota, DOMINIO, false);
       await painel.getByTestId("importacoes-tentar").click();
       await expect(painel.getByTestId("importacao-item")).toHaveCount(1, { timeout: 30_000 });
       await expect(painel.getByTestId("importacoes-falha")).toHaveCount(0);
