@@ -28,6 +28,7 @@ import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
+import { destinoDoRodape } from "@/lib/visitas/escolha-modalidade";
 import { minhasVisitasNoImovel } from "@/lib/data/visitas-video-actions";
 import type { EstadoVisitaAnuncio, ModalidadeVisita } from "@/lib/visitas-video";
 import { useAuthStore } from "@/lib/store";
@@ -150,6 +151,8 @@ export function PropertyDetail({
   const [abrirPresencial, setAbrirPresencial] = useState(false);
   // "Agendar visita" do rodapé fixo do celular: abre a mesma janela do cartão (cada toque soma 1).
   const [sinalVisita, setSinalVisita] = useState(0);
+  // E422: o rodapé abre o diálogo pelo botão de vídeo quando a presencial já está ocupada.
+  const [sinalVideo, setSinalVideo] = useState(0);
   const irParaLogin = (alvo: AlvoAbrir) => router.push(urlLoginParaAbrir(property.id, alvo));
   useEffect(() => {
     const alvo = alvoAbrir(window.location.search);
@@ -192,16 +195,25 @@ export function PropertyDetail({
 
   // E329 (01/11) + varredura 01/11: visita em aberto deste morador neste imóvel (agendada, pedida ou já passada) → o
   // botão daquela modalidade mostra o estado e leva a Visitas.
-  const [visitas, setVisitas] = useState<Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>>>({});
+  // E423: guarda DE QUEM são os estados; enquanto não chegam para o usuário atual, os botões de visita esperam (antes
+  // "Visita por vídeo" aparecia no 1º desenho e trocava para "Visita agendada" quando a consulta chegava).
+  const [visitasDe, setVisitasDe] = useState<{ para: string | null; estados: Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>> }>({ para: null, estados: {} });
   const usuarioId = usuario?.id ?? null;
+  const visitas = visitasDe.para === usuarioId ? visitasDe.estados : {};
+  const carregandoVisitas = !exemplo && (!authChecked || (!!usuarioId && visitasDe.para !== usuarioId));
+  // E424: pedido enviado → o botão daquela modalidade mostra "… pedida" com a explicação, sem recarregar.
+  const aoPedirVisita = (m: ModalidadeVisita) => setVisitasDe((v) => ({ para: v.para, estados: { ...v.estados, [m]: "pedida" } }));
   useEffect(() => {
     if (!usuarioId || isExemplo(property)) return;
     let vivo = true;
     void minhasVisitasNoImovel(property.id)
       .then((m) => {
-        if (vivo) setVisitas(m);
+        if (vivo) setVisitasDe({ para: usuarioId, estados: m });
       })
-      .catch(() => undefined);
+      // Falhou a leitura: libera os botões (o servidor segue sendo a trava).
+      .catch(() => {
+        if (vivo) setVisitasDe({ para: usuarioId, estados: {} });
+      });
     return () => {
       vivo = false;
     };
@@ -449,13 +461,27 @@ export function PropertyDetail({
         propertyId={property.id}
         exemplo={exemplo}
         estado={visitas.presencial}
+        estados={visitas}
+        carregando={carregandoVisitas}
+        onPedido={aoPedirVisita}
         semLogin={semLogin}
         abrirInicial={abrirPresencial}
         abrirSinal={sinalVisita}
         variante="tertiary"
         onEntrar={() => irParaLogin("visita")}
       />
-      <VisitaVideo propertyId={property.id} exemplo={exemplo} estado={visitas.video} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
+      <VisitaVideo
+        propertyId={property.id}
+        exemplo={exemplo}
+        estado={visitas.video}
+        estados={visitas}
+        carregando={carregandoVisitas}
+        onPedido={aoPedirVisita}
+        semLogin={semLogin}
+        abrirInicial={abrirVideo}
+        abrirSinal={sinalVideo}
+        onEntrar={() => irParaLogin("video")}
+      />
       <Button
         variant="secondary"
         size="md"
@@ -761,7 +787,15 @@ export function PropertyDetail({
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
-        onAgendarVisita={() => (semLogin ? irParaLogin("visita") : visitas.presencial ? router.push("/dashboard/visitas") : setSinalVisita((n) => n + 1))}
+        onAgendarVisita={() => {
+          if (semLogin) return irParaLogin("visita");
+          if (carregandoVisitas) return;
+          // E422: abre na modalidade livre (presencial, senão vídeo); as duas ocupadas → Visitas.
+          const destino = destinoDoRodape(visitas);
+          if (destino === "visitas") router.push("/dashboard/visitas");
+          else if (destino === "video") setSinalVideo((n) => n + 1);
+          else setSinalVisita((n) => n + 1);
+        }}
       />
       {/* E207: sem migalhas visíveis (o BreadcrumbList segue nos dados estruturados, com a cidade). "← Voltar aos
           resultados" só para quem veio da /buscar, de volta à mesma busca com os filtros. */}

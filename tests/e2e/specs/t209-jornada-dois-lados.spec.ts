@@ -92,10 +92,11 @@ async function pedirPresencial(page: Page, imovelId: string, campo: string) {
   const enviar = page.getByTestId("visita-presencial-enviar");
   await enviar.scrollIntoViewIfNeeded({ timeout: 5_000 });
   await enviar.click({ timeout: 6_000 }).catch(() => enviar.dispatchEvent("click"));
-  await expect(page.getByTestId("visita-presencial-ok")).toHaveText(
-    "Pedido de visita enviado. O proprietário confirma aqui na plataforma e você recebe um aviso.",
-    { timeout: 25_000 },
-  );
+  // E424: a confirmação diz a modalidade, os horários e o próximo passo, e leva a Visitas.
+  const ok = page.getByTestId("visita-presencial-ok");
+  await expect(ok).toContainText("Pedido de visita presencial enviado. Horários propostos:", { timeout: 25_000 });
+  await expect(ok).toContainText("acompanha tudo em Visitas");
+  await expect(page.getByTestId("visita-presencial-ver-visitas")).toBeVisible();
 }
 
 const visitaDe = async (tenantId: string) =>

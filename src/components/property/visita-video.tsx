@@ -1,6 +1,7 @@
 "use client";
 
 import { explicacaoPedidoAberto } from "@/lib/visitas/um-pedido-aberto";
+import { confirmacaoNaTela, modalidadeInicial, opcoesDeModalidade, rotuloCampoBrasilia, type EstadosVisita } from "@/lib/visitas/escolha-modalidade";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Video, Check, CalendarCheck, X } from "lucide-react";
@@ -29,6 +30,12 @@ type PropsVisita = {
    * ("Visita agendada"), pedida ("… pedida") ou confirmada já passada ("Ver minha visita"). O botão leva a Visitas.
    */
   estado?: EstadoVisitaAnuncio;
+  /** E422: os estados das DUAS modalidades — o diálogo mostra qual está ocupada e por quê. */
+  estados?: EstadosVisita;
+  /** E423: logado e as visitas ainda não chegaram — nada de botão que depois troca de rótulo. */
+  carregando?: boolean;
+  /** E424: pedido enviado (ao fechar a confirmação) — o anúncio passa a mostrar "Visita pedida" com a explicação. */
+  onPedido?: (modalidade: ModalidadeVisita) => void;
 };
 
 /** Botão "Visita por vídeo" ao lado de "Solicitar reserva": até 3 horários nos próximos 7 dias. */
@@ -50,7 +57,6 @@ const TEXTOS = {
     botao: "Visita por vídeo",
     feito: "Visita por vídeo pedida",
     titulo: "Visita por vídeo",
-    ok: "Pedido enviado. O proprietário confirma um horário e informa o link da chamada; você acompanha em Visitas.",
     prefixo: "visita-video",
     comoFunciona: "Num anúncio real, você propõe até 3 horários, o proprietário confirma um deles e envia o link da chamada. Você acompanha tudo em Visitas.",
   },
@@ -58,7 +64,6 @@ const TEXTOS = {
     botao: "Agendar visita",
     feito: "Visita pedida",
     titulo: "Agendar uma visita",
-    ok: "Pedido de visita enviado. O proprietário confirma aqui na plataforma e você recebe um aviso.",
     prefixo: "visita-presencial",
     comoFunciona: "Num anúncio real, você propõe até 3 horários e o proprietário confirma um deles aqui na plataforma. O endereço exato aparece depois da confirmação.",
   },
@@ -96,8 +101,16 @@ function PedidoVisita({
   variante = "secondary",
   abrirSinal = 0,
   estado,
+  estados = {},
+  carregando = false,
+  onPedido,
 }: PropsVisita & { modalidade: ModalidadeVisita }) {
-  const t = TEXTOS[modalidade];
+  // E422: a modalidade é escolhida no diálogo; abre na do botão (ou na outra, se a do botão estiver ocupada).
+  const [escolhaManual, setEscolha] = useState<ModalidadeVisita | null>(null);
+  const escolhida: ModalidadeVisita = escolhaManual ?? modalidadeInicial(modalidade, estados) ?? modalidade;
+  const ocupada = !!estados[escolhida] && !exemplo;
+  const t = TEXTOS[escolhida];
+  const tBotao = TEXTOS[modalidade];
   const [abertoManual, setAberto] = useState(false);
   const [fechadoManual, setFechado] = useState(false);
   // O sinal do rodapé abre sem efeito: fica aberto enquanto o sinal for maior que o do último fechamento.
@@ -107,6 +120,8 @@ function PedidoVisita({
     setAberto(false);
     setFechado(true);
     setFechadoNoSinal(abrirSinal);
+    // E424: só depois de a pessoa ler a confirmação o anúncio troca o botão por "Visita pedida".
+    if (enviado && !demo && !exemplo) onPedido?.(escolhida);
   };
   // Horários com CHAVE ESTÁVEL (complemento do prompt 23): o campo nunca é recriado nem zerado quando outro campo
   // (ex.: "Motivo da estadia") muda e a tela redesenha. O campo não recebe `value` controlado: um datetime-local meio
@@ -117,6 +132,7 @@ function PedidoVisita({
   const [erro, setErro] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const [demo, setDemo] = useState(false);
+  const [horariosEnviados, setHorariosEnviados] = useState<string[]>([]);
 
   // Limites calculados UMA vez (antes mudavam a cada redesenho, junto com o relógio).
   const [{ min, max }] = useState(() => {
@@ -132,7 +148,7 @@ function PedidoVisita({
       return;
     }
     setEnviando(true);
-    const r = await pedirVisita(propertyId, preenchidos as string[], motivo || undefined, modalidade).catch(() => null);
+    const r = await pedirVisita(propertyId, preenchidos as string[], motivo || undefined, escolhida).catch(() => null);
     setEnviando(false);
     if (!r) return setErro("Não foi possível enviar agora. Tente de novo.");
     if (r.needsAuth) {
@@ -141,11 +157,24 @@ function PedidoVisita({
     }
     if (!r.ok) return setErro(r.error ?? "Não foi possível enviar.");
     setDemo(!!r.demo);
+    setHorariosEnviados(horarios.map((h) => h.valor).filter(Boolean).map(rotuloCampoBrasilia));
     setEnviado(true);
   }
 
   // E329 (01/11) + varredura 01/11: com uma visita em aberto, o anúncio mostra o estado e leva a Visitas — não oferece
   // pedir outra igual (o banco aceita uma em aberto por morador, imóvel e modalidade; antes o pedido voltava recusado).
+  // E423: logado e com as visitas ainda a caminho, um espaço reservado — antes o botão aparecia e logo trocava de
+  // rótulo (ou sumia para "Visita agendada"), e o clique nesse intervalo abria um pedido que o banco recusaria.
+  if (carregando && !exemplo && !semLogin) {
+    return (
+      <div
+        aria-hidden
+        data-testid={`${tBotao.prefixo}-carregando`}
+        className={variante === "tertiary" ? "h-5 w-32 self-center animate-pulse rounded-lg bg-surface-2" : "h-11 w-full animate-pulse rounded-xl bg-surface-2"}
+      />
+    );
+  }
+
   if (estado && !exemplo) {
     return (
       <div className={variante === "tertiary" ? "flex flex-col items-center gap-1" : "flex w-full flex-col gap-1"}>
@@ -154,13 +183,13 @@ function PedidoVisita({
           variant={variante}
           size="md"
           className={variante === "tertiary" ? "self-center" : "w-full"}
-          data-testid={`${t.prefixo}-${estado}`}
+          data-testid={`${tBotao.prefixo}-${estado}`}
         >
-          <CalendarCheck className="h-4 w-4" /> {estado === "agendada" ? "Visita agendada" : estado === "pedida" ? t.feito : "Ver minha visita"}
+          <CalendarCheck className="h-4 w-4" /> {estado === "agendada" ? "Visita agendada" : estado === "pedida" ? tBotao.feito : "Ver minha visita"}
         </ButtonLink>
         {/* E411: por que não dá para pedir outra e como mudar os horários. */}
         {(estado === "pedida" || estado === "agendada") && (
-          <p className="text-xs text-muted" data-testid={`${t.prefixo}-${estado}-explica`}>
+          <p className="text-xs text-muted" data-testid={`${tBotao.prefixo}-${estado}-explica`}>
             {explicacaoPedidoAberto(modalidade, estado)}
           </p>
         )}
@@ -180,11 +209,11 @@ function PedidoVisita({
         {/* No anúncio de exemplo nada é enviado: o botão não diz "pedida" (varredura 01/11, achado do E320). */}
         {enviado && !demo && !exemplo ? (
           <>
-            <Check className="h-4 w-4" /> {t.feito}
+            <Check className="h-4 w-4" /> {TEXTOS[escolhida].feito}
           </>
         ) : (
           <>
-            {modalidade === "video" ? <Video className="h-4 w-4" /> : <CalendarCheck className="h-4 w-4" />} {t.botao}
+            {modalidade === "video" ? <Video className="h-4 w-4" /> : <CalendarCheck className="h-4 w-4" />} {tBotao.botao}
           </>
         )}
       </Button>
@@ -211,9 +240,12 @@ function PedidoVisita({
                 {demo || exemplo ? (
                   <ExemploVisita prefixo={t.prefixo} comoFunciona={t.comoFunciona} />
                 ) : (
-                  <p data-testid={`${t.prefixo}-ok`} className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-forest">
-                    {t.ok}
-                  </p>
+                  <div data-testid={`${t.prefixo}-ok`} className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-forest">
+                    <p role="status">{confirmacaoNaTela(escolhida, horariosEnviados)}</p>
+                    <ButtonLink href="/dashboard/visitas" variant="secondary" size="sm" className="mt-3" data-testid={`${t.prefixo}-ver-visitas`}>
+                      Ver em Visitas
+                    </ButtonLink>
+                  </div>
                 )}
                 <div className="mt-4 flex justify-end">
                   <Button variant="ghost" size="sm" onClick={() => fechar()}>
@@ -223,7 +255,35 @@ function PedidoVisita({
               </>
             ) : (
               <>
-                <p className="mt-1 text-sm text-muted">
+                {/* E422: presencial ou por vídeo, no próprio diálogo; a ocupada diz por quê e leva a Visitas. */}
+                <div role="radiogroup" aria-label="Tipo de visita" className="mt-3 grid grid-cols-2 gap-2" data-testid="visita-modalidade">
+                  {opcoesDeModalidade(exemplo ? {} : estados).map((o) => (
+                    <button
+                      key={o.modalidade}
+                      type="button"
+                      role="radio"
+                      aria-checked={escolhida === o.modalidade}
+                      disabled={enviando}
+                      onClick={() => setEscolha(o.modalidade)}
+                      data-testid={`visita-modalidade-${o.modalidade}`}
+                      data-livre={o.livre ? "sim" : "nao"}
+                      className={`h-11 rounded-xl border px-3 text-sm font-medium ${escolhida === o.modalidade ? "border-forest bg-sage-100 text-forest" : "border-line bg-white text-ink"}`}
+                    >
+                      {o.modalidade === "video" ? <Video className="mr-1 inline h-4 w-4" aria-hidden /> : <CalendarCheck className="mr-1 inline h-4 w-4" aria-hidden />}
+                      {o.rotulo}
+                    </button>
+                  ))}
+                </div>
+                {ocupada ? (
+                  <div className="mt-3 rounded-lg bg-surface-2 px-3 py-3 text-sm text-ink" data-testid={`visita-modalidade-ocupada-${escolhida}`}>
+                    <p>{opcoesDeModalidade(estados).find((o) => o.modalidade === escolhida)?.motivo}</p>
+                    <ButtonLink href="/dashboard/visitas" variant="secondary" size="sm" className="mt-3">
+                      Ver em Visitas
+                    </ButtonLink>
+                  </div>
+                ) : (
+                <>
+                <p className="mt-3 text-sm text-muted">
                   Escolha até {MAX_HORARIOS} horários nos próximos {JANELA_DIAS} dias, no <strong>{ROTULO_FUSO}</strong>. O proprietário
                   confirma um deles aqui na plataforma.
                 </p>
@@ -274,9 +334,11 @@ function PedidoVisita({
                     Voltar
                   </Button>
                   <Button variant="primary" size="sm" onClick={enviar} disabled={enviando} data-testid={`${t.prefixo}-enviar`}>
-                    {enviando ? "Enviando..." : "Pedir visita"}
+                    {enviando ? "Enviando..." : escolhida === "video" ? "Pedir visita por vídeo" : "Pedir visita presencial"}
                   </Button>
                 </div>
+                </>
+                )}
               </>
             )}
           </div>
