@@ -2199,7 +2199,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t930-achado42-pedido-parceiro"
       ]
     },
     "/admin/contratos/encerramentos": {
