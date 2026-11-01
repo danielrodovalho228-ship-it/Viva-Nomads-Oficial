@@ -64,7 +64,7 @@ Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linh
 | `morador-servico` | /dashboard/servicos | Conferido sem achado | Serviços com foto por categoria, grade de 6. |
 | `pagina-fale-com-a-viva` | /ajuda/fale-com-a-viva | Conforme | Banner com foto e título (padrão das institucionais). |
 | `painel-proprietario` | /dashboard (dono) | Parcial | #1724 (Meus anúncios uniformes). Comparação completa com o mockup a fazer. |
-| `parceiro-cadastro` | /dashboard/parceiro | Parcial | #1733 (grade par das categorias). Comparação completa com o mockup a fazer. |
+| `parceiro-cadastro` | /parceiros ("Quero ser parceiro") e /dashboard/parceiro | Corrigido — PR aberto | Comparado em 01/11 (390 e 1280): as categorias viram cartões com foto e marca no canto, como no mockup (grade par 2/3 com as 6 fotos de categoria; "Outro serviço", sem foto, numa linha inteira); os botões Pessoa física/Empresa e "emite nota" saíram do azul para o verde da marca. Fica como está: o formulário pede mais que o mockup (documento, tipo de pessoa, cidades, termos) por regra já aprovada; "Vistoria" não é categoria do catálogo (credenciamento à parte, Prompt 62). |
 | `parceiro-ordens` | /dashboard/parceiro (ordens) | A conferir com sessão de parceiro | Só aparece com parceiro aprovado (não alcançável no modo demonstração); fica para o laboratório. |
 | `parceiro-painel` | /dashboard/parceiro (ativo) | Conforme | /dashboard/parceiro: formulário "Quero ser parceiro" sem conta de parceiro ativa; grade par em #1733. |
 | `perfil-01-topo-espelho` | /dashboard/conta/perfil | A conferir com sessão real | No modo demonstração o Perfil não carrega dados; a varredura do CI (t757, sessão real) não achou defeito. |
