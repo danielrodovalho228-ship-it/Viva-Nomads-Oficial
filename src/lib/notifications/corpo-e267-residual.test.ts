@@ -189,3 +189,25 @@ test("varredura: nenhum notify() a cliente sai só com o corpo do modelo (fora v
   }
   assert.deepEqual(genericos, []);
 });
+
+/*
+  E267 (resíduo, 01/11 noite) — pedido de moradia: "Um proprietário respondeu ao seu pedido" e "Um inquilino aceitou sua
+  resposta" saíam sem dizer quem nem qual imóvel (o bloco não recebia dado nenhum do caso). Agora o corpo nomeia quem agiu
+  (só o primeiro nome) e o imóvel; o bloco leva "Imóvel" e o pedido.
+*/
+test("pedido de moradia: resposta e aceite nomeiam quem agiu e o imóvel", async () => {
+  const { corpoPedidoAceito, corpoPedidoResposta } = await import("./corpo-e267-residual.ts");
+  const r = corpoPedidoResposta({ imovel: IMOVEL, quem: "Daniel", cidade: "Uberlândia", inicio: "2026-12-01" });
+  assert.equal(r.subject, "Resposta ao seu pedido: Apto Santa Mônica");
+  assert.equal(r.body("Lara"), "Olá Lara, Daniel respondeu ao seu pedido de moradia em Uberlândia com o imóvel Apto Santa Mônica. Veja e aceite para conversar pela plataforma.");
+  assert.deepEqual(r.linhas, [BLOCO, { rotulo: "Seu pedido", valor: "Uberlândia, entrada em 01/12/2026" }]);
+  const a = corpoPedidoAceito({ imovel: IMOVEL, quem: "Lara" });
+  assert.equal(a.subject, "Conversa aberta sobre Apto Santa Mônica");
+  assert.equal(a.body("Daniel"), "Olá Daniel, Lara aceitou a sua resposta ao pedido de moradia com Apto Santa Mônica e abriu a conversa. Responda pela plataforma.");
+  // Sem nome (perfil vazio): a frase continua inteira, sem "undefined".
+  assert.match(corpoPedidoAceito({ imovel: IMOVEL }).body(), /^Olá, o morador aceitou/);
+  const srv = readFileSync("src/lib/data/pedidos-actions.ts", "utf8");
+  assert.match(srv, /corpoPedidoResposta\(\{/);
+  assert.match(srv, /corpoPedidoAceito\(\{/);
+  assert.doesNotMatch(srv, /notificar\("pedido_(resposta|aceito)", [^;]*detalhe(Resposta|Aceito)\(\)\);/);
+});
