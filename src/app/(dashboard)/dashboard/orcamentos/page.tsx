@@ -7,6 +7,6 @@ import { OrcamentosClient } from "./orcamentos-client";
  * digitado à mão.
  */
 export default async function OrcamentosPage() {
-  const [propostas, interessados] = await Promise.all([listarPropostas(), interessadosParaProposta()]);
+  const [propostas, interessados] = await Promise.all([listarPropostas({ exigir: true }), interessadosParaProposta()]);
   return <OrcamentosClient propostas={propostas} interessados={interessados} />;
 }

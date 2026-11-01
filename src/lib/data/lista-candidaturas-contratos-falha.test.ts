@@ -22,10 +22,10 @@ test("candidaturas e contratos lançam na falha do banco quando a tela pede com 
   assert.match(ctr, /const props = await listMyProperties\(\{ exigir: opcoes\.exigir \}\);/);
 });
 
-test("as telas pedem com exigir; home, ganhos e garantias não", () => {
+test("as telas pedem com exigir; home e ganhos não (Garantias passou a exigir no achado nº 11)", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/contratos/page.tsx"), /getMeusContratos\(\{ exigir: true \}\), getContratosDoInquilino\(\{ exigir: true \}\), listMyProperties\(\{ exigir: true \}\)/);
-  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/app/(dashboard)/dashboard/ganhos/page.tsx", "src/app/(dashboard)/dashboard/garantias/page.tsx", "src/lib/data/carteira.ts"]) {
+  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/app/(dashboard)/dashboard/ganhos/page.tsx", "src/lib/data/carteira.ts"]) {
     assert.doesNotMatch(ler(f), /exigir: true/, f);
   }
 });

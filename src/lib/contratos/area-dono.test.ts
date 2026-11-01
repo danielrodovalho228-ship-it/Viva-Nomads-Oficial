@@ -84,7 +84,7 @@ test("E188: no modo dono a página de Contratos não renderiza a lista do morado
   assert.doesNotMatch(blocoDono, /\{inquilino\}/);
   // A Caução do dono lê só getMeusContratos (imóveis da pessoa); do morador, só a contagem para o aviso.
   const caucao = ler("src/app/(dashboard)/dashboard/garantias/page.tsx");
-  assert.match(caucao, /getMeusContratos\(\)/);
+  assert.match(caucao, /getMeusContratos\((\{ exigir: true \})?\)/);
   assert.match(caucao, /temContratoDeMorador=\{doInquilino\.length > 0\}/);
   // As consultas do dono seguem presas ao dono do imóvel (owner_id → property_id).
   assert.match(ler("src/lib/data/properties.ts"), /\.eq\("owner_id", user\.id\)/);
