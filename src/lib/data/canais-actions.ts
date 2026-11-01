@@ -20,7 +20,9 @@ export async function getCanais(): Promise<CanaisAviso> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return canaisPadrao();
-  const { data } = await supabase.from("profiles").select("notif_email, notif_whatsapp").eq("id", user.id).maybeSingle();
+  // Achado 53: a falha de leitura LANÇA — antes a tela abria com os três canais ligados e "Salvar" gravava isso.
+  const { data, error } = await supabase.from("profiles").select("notif_email, notif_whatsapp").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler seus canais de aviso agora.");
   return normalizarCanais({
     email: (data as { notif_email?: unknown } | null)?.notif_email,
     whatsapp: (data as { notif_whatsapp?: unknown } | null)?.notif_whatsapp,
