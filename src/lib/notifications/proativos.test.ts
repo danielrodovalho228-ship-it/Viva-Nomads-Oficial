@@ -27,7 +27,7 @@ import { CATEGORIAS_COM_INTERRUPTOR, categoriaDoEvento, eventoDesligadoPelaPesso
 
 const SITE = "https://vivanomads.com.br";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const FOTO = "https://esezeutgtycekfosxplk.supabase.co/storage/v1/object/public/property-photos/dono/foto.webp";
+const FOTO = "https://esezeutgtycekfosxplk.supabase.co/storage/v1/object/public/property-photos/7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp";
 const imovel = (n: number): ImovelDoCartao => ({
   id: `aaaaaaaa-aaaa-4aaa-8aaa-00000000000${n}`,
   titulo: `Apto mobiliado ${n}`,
@@ -43,7 +43,9 @@ const DESC = `${SITE}/avisos/desligar?u=x&t=y`;
 
 test("cartão do imóvel: foto de capa real redimensionada, título, bairro e cidade, Total por mês (com contas) e 'Ver o imóvel'", () => {
   const c = cartaoImovel(SITE, imovel(1));
-  assert.ok(c.html.includes(`${SITE}/_next/image?url=${encodeURIComponent(FOTO)}&amp;w=640&amp;q=75`) || c.html.includes(`${SITE}/_next/image?url=${encodeURIComponent(FOTO)}&w=640&q=75`));
+  // E264-B: a foto vai pela rota do e-mail (sempre JPEG), não pelo otimizador que negocia AVIF/WebP.
+  assert.ok(c.html.includes(`${SITE}/api/email/foto?p=7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp`));
+  assert.doesNotMatch(c.html, /_next\/image/);
   assert.match(c.html, /Apto mobiliado 1/);
   assert.match(c.html, /Santa Mônica, Uberlândia - MG/);
   assert.ok(c.html.includes(ROTULO_TOTAL_MES), "o rótulo da casa");
@@ -214,17 +216,25 @@ test("0262: categoria 'sugestoes' no check, quem desligou 'outros' fica sem suge
   assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261030000262'/);
 });
 
-test("E274: a foto do cartão pede ao otimizador só largura e qualidade que o Next 16 aceita (senão: 400 e e-mail sem foto)", async () => {
-  const { FOTO_CARTAO, fotoDoCartao } = await import("./cartoes-email.ts");
-  const cfg = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
-  // Sem `qualities` na config, o Next 16 aceita só 75; com a lista, a qualidade tem de estar nela.
-  const lista = /qualities:\s*\[([^\]]*)\]/.exec(cfg);
-  const qualidades = lista ? lista[1].split(",").map((x) => Number(x.trim())) : [75];
-  assert.ok(qualidades.includes(FOTO_CARTAO.qualidade), `q=${FOTO_CARTAO.qualidade} fora de ${qualidades.join(",")}`);
-  // Sem deviceSizes/imageSizes próprios, 640 está nas larguras padrão do Next.
-  assert.doesNotMatch(cfg, /deviceSizes|imageSizes/);
-  assert.ok([640, 750, 828, 1080, 1200, 1920, 2048, 3840, 16, 32, 48, 64, 96, 128, 256, 384].includes(FOTO_CARTAO.largura));
-  const u = fotoDoCartao(SITE, FOTO)!;
-  assert.match(u, /&w=640&q=75$/);
-  assert.doesNotMatch(u, /q=70/);
+test("E264-B: a foto do cartão sai pela rota própria do e-mail, só para capas do bucket property-photos", async () => {
+  const { fotoDoCartao, caminhoDaCapa, CAMINHO_FOTO_EMAIL_RE } = await import("./cartoes-email.ts");
+  assert.equal(fotoDoCartao(SITE, FOTO), `${SITE}/api/email/foto?p=7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp`);
+  assert.equal(caminhoDaCapa(FOTO), "7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp");
+  // Nada fora do bucket público de fotos de anúncio, nem caminho com "..", nem outro host.
+  for (const ruim of [
+    "https://evil.example.com/property-photos/7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp",
+    "https://x.supabase.co/storage/v1/object/public/avatars/7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp",
+    "https://x.supabase.co/storage/v1/object/public/property-photos/../segredo/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp",
+    "https://x.supabase.co/storage/v1/object/public/property-photos/7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.svg",
+    null,
+  ]) assert.equal(fotoDoCartao(SITE, ruim), null, String(ruim));
+  assert.equal(CAMINHO_FOTO_EMAIL_RE.test("../bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp"), false);
+  // A rota devolve JPEG inline, sem negociar formato por cliente.
+  const rota = readFileSync(new URL("../../app/api/email/foto/route.ts", import.meta.url), "utf8");
+  assert.match(rota, /if \(!CAMINHO_FOTO_EMAIL_RE\.test\(p\)/);
+  assert.match(rota, /\.jpeg\(\{ quality: FOTO_CARTAO\.qualidade/);
+  assert.match(rota, /"content-type": "image\/jpeg"/);
+  assert.match(rota, /"content-disposition": "inline"/);
+  assert.doesNotMatch(rota, /"vary"/i);
+  assert.match(rota, /storage\/v1\/object\/public\/property-photos\/\$\{p\}/);
 });

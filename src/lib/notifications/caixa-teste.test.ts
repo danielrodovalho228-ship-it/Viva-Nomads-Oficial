@@ -111,7 +111,7 @@ test("E274: a foto de capa do cartão do imóvel vai para a caixa de QA (o texto
   const { cartaoImovel } = await import("./cartoes-email.ts");
   const { corpoComCabecalho, fotosDosCartoes, fotosNoCorpo, fotoDeCartaoValida } = await import("./caixa-teste.ts");
   const SITE = "https://vivanomads.com.br";
-  const CAPA = "https://esezeutgtycekfosxplk.supabase.co/storage/v1/object/public/property-photos/u/capa.webp";
+  const CAPA = "https://esezeutgtycekfosxplk.supabase.co/storage/v1/object/public/property-photos/7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp";
   const cartao = (id: string, foto: string | null) => cartaoImovel(SITE, { id, titulo: `Apto ${id}`, bairro: "Santa Mônica", cidade: "Uberlândia", totalMes: 3350, fotoCapa: foto });
   const a = cartao("a", CAPA);
   // O texto puro do cartão (o que a caixa guardava) não tem foto: era por isso que o QA via só o cabeçalho.
@@ -120,9 +120,9 @@ test("E274: a foto de capa do cartão do imóvel vai para a caixa de QA (o texto
   const fotos = fotosDosCartoes(html);
   // A capa do cartão "a" (a mesma URL que o cliente de e-mail carrega); o cabeçalho e o cartão sem foto ficam de fora;
   // a mesma capa repetida entra uma vez.
-  assert.deepEqual(fotos, [`${SITE}/_next/image?url=${encodeURIComponent(CAPA)}&w=640&q=75`]);
+  assert.deepEqual(fotos, [`${SITE}/api/email/foto?p=7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp`]);
   const corpo = corpoComCabecalho("Olá Ana", { remetente: "Viva Nomads", imagem: "transacional.jpg", fotos });
-  assert.match(corpo, /^Remetente: Viva Nomads\nImagem: transacional\.jpg\nFoto do cartão: https:\/\/vivanomads\.com\.br\/_next\/image\?url=/);
+  assert.match(corpo, /^Remetente: Viva Nomads\nImagem: transacional\.jpg\nFoto do cartão: https:\/\/vivanomads\.com\.br\/api\/email\/foto\?p=/);
   assert.deepEqual(fotosNoCorpo(corpo), fotos);
   // A tela só mostra como imagem a foto do otimizador com a capa do Storage público; nada de URL qualquer.
   assert.equal(fotoDeCartaoValida("https://evil.example/x.jpg"), false);
