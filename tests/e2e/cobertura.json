@@ -887,7 +887,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t957-achado50-51-vazios-falha"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1080,7 +1081,8 @@
         "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
         "t713-e261-avisos-titulo",
-        "t709-e263-pets-condicoes-ida-e-volta"
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t957-achado50-51-vazios-falha"
       ]
     },
     "/dashboard/imoveis/novo": {
