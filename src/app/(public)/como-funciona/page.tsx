@@ -376,7 +376,8 @@ function Steps({
           {badge}
         </span>
       )}
-      <h2 className="font-title text-2xl font-semibold text-ink">{title}</h2>
+      {/* Conformidade fina (01/11, mockup publico-como-funciona): títulos das trilhas e dos passos em verde. */}
+      <h2 className="font-title text-2xl font-semibold text-forest">{title}</h2>
       <div className="mt-8 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((s, i) => {
           const Icon = s.icon;
@@ -394,7 +395,7 @@ function Steps({
                   </div>
                   <span className="font-title text-2xl font-semibold text-sage-200">{i + 1}</span>
                 </div>
-                <h3 className="mt-4 font-title text-lg font-semibold text-ink">{s.title}</h3>
+                <h3 className="mt-4 font-title text-lg font-semibold text-forest">{s.title}</h3>
                 <p className="mt-2 text-sm text-muted">{s.text}</p>
               </div>
             </div>
