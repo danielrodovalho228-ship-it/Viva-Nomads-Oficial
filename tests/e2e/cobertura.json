@@ -2091,7 +2091,8 @@
       "specs": [
         "t231-admin-numeros-com-lista",
         "t48-varredura",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t914-achado38-leitura-paginada"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -2498,7 +2499,8 @@
       "specs": [
         "t313-ativacao-funil-50",
         "t319-varredura-bloco10",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t914-achado38-leitura-paginada"
       ]
     },
     "/admin/qualidade": {
