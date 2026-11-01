@@ -301,7 +301,7 @@ export interface ImovelLinhaAdmin {
 
 /** Imóveis do banco para /admin/imoveis (todos: reais e de teste — o tipo sai de tipoImovel). */
 export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> {
-  const [{ data }, teste] = await Promise.all([
+  const [{ data, error }, teste] = await Promise.all([
     admin
       .from("properties")
       .select("id, title, owner_id, status, city, address, created_at, listing_quality_tier")
@@ -309,6 +309,8 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
       .limit(3000),
     idsContasTeste(admin),
   ]);
+  // Achado nº 26: a falha LANÇA (o limite de erro do /admin mostra "Tentar de novo"); antes, "nenhum imóvel" calado.
+  if (error) throw new Error("Não foi possível ler os imóveis agora.");
   const linhas = (data ?? []) as {
     id: string;
     title: string | null;
