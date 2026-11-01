@@ -11,8 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *   3. a leitura falha (ação do servidor em 500): "Não deu para abrir o rascunho" (data-motivo=indisponivel);
  *   4. o próprio rascunho abre o assistente normalmente (sem o aviso);
  *   5. "Começar um anúncio novo" leva ao assistente sem ?draft= e sem o aviso.
- * L-88 (aberto): hoje o aviso nunca aparece (página em branco) — os casos 1–3 e 5 estão em test.fail até a correção;
- * o "nada nasce / o do outro não muda" e o caso 4 são teste normal.
+ * L-88 (achado aqui: o aviso não aparecia, página em branco) foi corrigido no #2061 — todos os casos são teste normal.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -65,10 +64,6 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
   });
 
   test("rascunho alheio, inexistente e malformado: o mesmo aviso; a falha tem o próprio aviso", async ({ browser }) => {
-    // L-88 (registro-defeitos.md): com ?draft= e o rascunho fechado, nada chama setApproved(true) e o "approved === null →
-    // return null" (page.tsx ~1668) vem antes do "if (rascunhoFechado)" (~1791): a página fica em branco e o aviso do E420
-    // nunca aparece (lab do #2052, run 41344262317, nas 2 tentativas). Quem corrigir tira este test.fail.
-    test.fail(true, "L-88: o aviso do E420 nunca aparece — a página fica em branco com ?draft= de rascunho fechado");
     test.setTimeout(180_000);
     const page = await entrar(browser, dona.email, senha);
     for (const largura of LARGURAS) {
@@ -113,8 +108,6 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
   });
 
   test("'Começar um anúncio novo' do aviso abre o assistente sem ?draft= e sem o aviso (390 e 1280)", async ({ browser }) => {
-    // L-88: depende do aviso, que hoje não aparece (ver o teste acima). Quem corrigir tira este test.fail.
-    test.fail(true, "L-88: o aviso do E420 (e o link 'Começar um anúncio novo') não aparece");
     test.setTimeout(120_000);
     const page = await entrar(browser, dona.email, senha);
     for (const largura of LARGURAS) {
