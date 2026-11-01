@@ -98,7 +98,7 @@ export function AdminPedidosClient({
     <>
       <PageTitle
         title={rotuloDoAdmin("/admin/pedidos")}
-        subtitle="Ocultar pedidos impróprios (com motivo, notificando o inquilino) e reativar."
+        subtitle="Ocultar pedidos impróprios (com motivo, notificando o morador) e reativar."
       />
       {/* Recorte único dos cartões e da lista (complemento do P29, item 5b). */}
       <form method="get" action="/admin/pedidos" className="mb-4 flex flex-wrap items-end gap-2" data-testid="pedidos-recorte">
@@ -159,7 +159,7 @@ export function AdminPedidosClient({
             <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">
                 <tr>
-                  <th className="py-2 font-semibold">Inquilino · motivo · cidade</th>
+                  <th className="py-2 font-semibold">Morador · motivo · cidade</th>
                   <th className="py-2 font-semibold">Entrada</th>
                   <th className="py-2 font-semibold">Faixa · bairros</th>
                   <th className="py-2 font-semibold">Selos</th>
@@ -258,7 +258,7 @@ export function AdminPedidosClient({
         titulo="Ocultar pedido"
         descricao={
           ocultando
-            ? `${motivoLabel(ocultando.motivo)} · ${ocultando.cidade}. O motivo fica registrado e vai ao inquilino.`
+            ? `${motivoLabel(ocultando.motivo)} · ${ocultando.cidade}. O motivo fica registrado e vai ao morador.`
             : undefined
         }
         confirmar="Ocultar"

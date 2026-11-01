@@ -13,7 +13,7 @@ export function EncerrarJornadasTeste() {
   return (
     <div>
       <p className="mb-3 text-sm text-muted">
-        Encerra os contratos ativos de teste (anúncio [TESTE…] e inquilino de teste) de todos os anúncios de teste. Conta real nunca é tocada.
+        Encerra os contratos ativos de teste (anúncio [TESTE…] e morador de teste) de todos os anúncios de teste. Conta real nunca é tocada.
       </p>
       <ConfirmarNaPagina
         aviso="Encerrar todas as jornadas de teste ativas? Os contratos de teste ativos passam para encerrados."
