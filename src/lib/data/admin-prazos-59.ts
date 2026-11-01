@@ -98,14 +98,17 @@ export async function contestacoesConforto(admin: Admin): Promise<ContestacaoAdm
  */
 export async function taxasDeSolucaoDosDonos(admin: Admin, agora = new Date()): Promise<{ donoId: string; nome: string; taxa: number; noPrazo: number; resolvidos: number }[]> {
   const desde = new Date(agora.getTime() - 400 * 86_400_000).toISOString();
-  const { data } = await admin.from("service_orders").select(COLUNAS).eq("status", "resolvido").gte("opened_at", desde).limit(5000);
+  const { data, error } = await admin.from("service_orders").select(COLUNAS).eq("status", "resolvido").gte("opened_at", desde).limit(5000);
+  // Achado 29: erro de leitura sobe — a tela avisa em vez de dizer "nenhum proprietário com 3 ou mais".
+  if (error) throw new Error("Não foi possível ler os chamados resolvidos.");
   const porDono = new Map<string, OrdemSolucao[]>();
   for (const o of ((data ?? []) as unknown as OrdemAdmin[]).filter((x) => !x.simulacao)) {
     porDono.set(o.properties.owner_id, [...(porDono.get(o.properties.owner_id) ?? []), solucao(o)]);
   }
   const linhas = [...porDono.entries()].map(([donoId, ordens]) => ({ donoId, t: taxaSolucaoNoPrazo(ordens, agora) })).filter((x) => x.t);
   if (!linhas.length) return [];
-  const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", linhas.map((l) => l.donoId));
+  const { data: perfis, error: erroPerfis } = await admin.from("profiles").select("id, full_name").in("id", linhas.map((l) => l.donoId));
+  if (erroPerfis) throw new Error("Não foi possível ler os nomes dos proprietários.");
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name ?? "Proprietário"]));
   return linhas
     .map((l) => ({ donoId: l.donoId, nome: nome.get(l.donoId) ?? "Proprietário", taxa: l.t!.taxa, noPrazo: l.t!.noPrazo, resolvidos: l.t!.resolvidos }))
