@@ -778,7 +778,8 @@
         "t489-e176-menus",
         "t591-varredura-bloco48",
         "t674-e255-enquadramento-reforma",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/carteira": {
@@ -1348,7 +1349,8 @@
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
         "t672-e190-troca-de-modo",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/orcamentos": {
