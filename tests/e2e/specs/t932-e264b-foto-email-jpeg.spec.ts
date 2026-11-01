@@ -44,7 +44,7 @@ test.describe("T932 — E264-B (#2018): foto do cartão do e-mail sempre em JPEG
     expect(meta?.height).toBe(427);
   });
 
-  for (const p of ["https://exemplo.com/foto.png", "../segredo/x.png", `${randomUUID()}/${randomUUID()}.gif`, "nao-e-uuid/foto.png"]) {
+  for (const p of ["https://exemplo.com/foto.png", "../segredo/x.png", "0b8f3a52-6f1c-4c39-9d11-2a7e5c4b9e01/7d2e4f60-1a3b-4c5d-8e9f-0a1b2c3d4e5f.gif", "nao-e-uuid/foto.png"]) {
     test(`caminho fora do padrão responde 404: ${p}`, async ({ request }) => {
       const r = await request.get(`/api/email/foto?p=${encodeURIComponent(p)}`);
       expect(r.status()).toBe(404);
