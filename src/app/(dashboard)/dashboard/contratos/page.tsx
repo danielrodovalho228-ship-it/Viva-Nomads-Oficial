@@ -19,7 +19,7 @@ import { contratoComConferenciaPendente } from "@/lib/contratos/area-dono";
  * Prompt 28: a mesma rota mostra os contratos do INQUILINO (aguardando assinatura ainda não é locação).
  */
 export default async function ContratosPage() {
-  const [contratos, doInquilino, imoveis] = await Promise.all([getMeusContratos(), getContratosDoInquilino(), listMyProperties()]);
+  const [contratos, doInquilino, imoveis] = await Promise.all([getMeusContratos({ exigir: true }), getContratosDoInquilino({ exigir: true }), listMyProperties({ exigir: true })]);
   const temImovel = imoveis.length > 0 || contratos.length > 0;
   const hojeISO = hojeBR();
   // Recibos, comprovantes e a devolução da caução de cada contrato (o RLS filtra).

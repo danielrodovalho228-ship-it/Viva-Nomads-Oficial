@@ -179,18 +179,24 @@ export interface ContratoInquilinoView {
   criadoEm: string;
 }
 
-export async function getContratosDoInquilino(): Promise<ContratoInquilinoView[]> {
+const MSG_CONTRATOS_NAO_CARREGARAM = "Não foi possível carregar os seus contratos agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 7: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhum". Sem `exigir` (home, ganhos,
+ * garantias, carteira), segue a lista vazia. */
+export async function getContratosDoInquilino(opcoes: { exigir?: boolean } = {}): Promise<ContratoInquilinoView[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select("id, status, aluguel_mensal, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title), pagamentos_bloco(*)")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
+  if (error && opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM);
   return ((data ?? []) as Record<string, unknown>[]).map((c) => {
     const e = estadoDaLinha(c, "inquilino");
     return {
@@ -302,7 +308,10 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
  * Roda a checagem lazy do ciclo de blocos antes de listar. Best-effort: [] em
  * demo/sem sessão.
  */
-export async function getMeusContratos(): Promise<ContratoView[]> {
+/** Auditoria de erros e estados vazios, achado nº 7: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhum". Sem `exigir` (home, ganhos,
+ * garantias, carteira), segue a lista vazia. */
+export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promise<ContratoView[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -318,17 +327,18 @@ export async function getMeusContratos(): Promise<ContratoView[]> {
     /* best-effort */
   }
 
-  const props = await listMyProperties();
+  const props = await listMyProperties({ exigir: opcoes.exigir });
   const ids = props.map((p) => p.id).filter((id) => UUID_RE.test(id));
   if (ids.length === 0) return [];
   const titleById = new Map(props.map((p) => [p.id, { title: p.title, city: p.city }]));
 
   // Lista fechada de colunas: a taxa (comissao_*) não sai mais pela API (0177) e vem do servidor logo abaixo.
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select(`${COLUNAS_CONTRATO_PARTES}, contrato_blocos(*), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .in("property_id", ids)
     .order("created_at", { ascending: false });
+  if (error && opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM);
 
   const contratos = (data ?? []) as unknown as Record<string, unknown>[];
   // A taxa de cada contrato, lida com o cliente de serviço só para imóveis DESTE dono.

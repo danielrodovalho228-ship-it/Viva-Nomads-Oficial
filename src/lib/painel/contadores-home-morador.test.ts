@@ -33,7 +33,7 @@ test("E181 (família inteira): Candidaturas e Mensagens da home também contam a
   // Candidaturas: listMinhasCandidaturas, na home e em /dashboard/candidaturas.
   assert.match(pagina, /listMinhasCandidaturas\(\)\.catch\(\(\) => \[\]\)/);
   assert.match(pagina, /totalCandidaturas=\{candidaturas\.length\}/);
-  assert.match(ler("app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\(\)/);
+  assert.match(ler("app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\((\{ exigir: true \})?\)/);
   assert.match(home, /label="Candidaturas" value=\{demo \? "2" : String\(totalCandidaturas\)\}/);
   // Mensagens: listConversations, na home e em /dashboard/mensagens (a tela abre em "Todas").
   assert.match(pagina, /listConversations\(\)\.catch\(\(\) => \[\]\)/);
