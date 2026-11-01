@@ -21,6 +21,8 @@ import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
+import { textoDoErro } from "@/lib/erro-de-rede";
+import { MSG_APROVAR_FALHOU, MSG_RECUSAR_FALHOU } from "@/lib/interessados/erros";
 
 /** Motivos de recusa pré-definidos (quick win #3). */
 const REJECT_REASONS = [
@@ -63,10 +65,19 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
     set(id, "approved");
     if (demoOn) return;
     startTransition(async () => {
-      const r = await aceitarCandidatura(id);
+      // Auditoria de erros (achado nº 3): sem conexão a ação REJEITA dentro da transição — sem o try, o erro subia ao
+      // limite de erro e a tela inteira caía. Agora reverte o cartão e diz o motivo em português.
+      let r: Awaited<ReturnType<typeof aceitarCandidatura>>;
+      try {
+        r = await aceitarCandidatura(id);
+      } catch (e) {
+        set(id, "open");
+        setErro(textoDoErro(e, MSG_APROVAR_FALHOU));
+        return;
+      }
       if (!r.ok) {
         set(id, "open"); // reverte se o servidor recusar — e diz por quê
-        setErro(r.error ?? "Não foi possível aprovar agora. Tente de novo.");
+        setErro(r.error ?? MSG_APROVAR_FALHOU);
       } else setErro(null);
     });
   }
@@ -77,8 +88,19 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
     if (demoOn) return;
     const motivo = reasons[id];
     startTransition(async () => {
-      const r = await recusarCandidatura(id, motivo);
-      if (!r.ok) set(id, "rejecting");
+      // Achado nº 3: a recusa também não derruba a tela sem conexão, e a falha agora é dita (antes só voltava, calada).
+      let r: Awaited<ReturnType<typeof recusarCandidatura>>;
+      try {
+        r = await recusarCandidatura(id, motivo);
+      } catch (e) {
+        set(id, "rejecting");
+        setErro(textoDoErro(e, MSG_RECUSAR_FALHOU));
+        return;
+      }
+      if (!r.ok) {
+        set(id, "rejecting");
+        setErro(r.error ?? MSG_RECUSAR_FALHOU);
+      } else setErro(null);
     });
   }
 
