@@ -28,6 +28,8 @@ import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
+import { minhasVisitasAgendadas } from "@/lib/data/visitas-video-actions";
+import type { ModalidadeVisita } from "@/lib/visitas-video";
 import { useAuthStore } from "@/lib/store";
 import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
@@ -187,6 +189,22 @@ export function PropertyDetail({
   useEffect(() => {
     if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
   }, [property]);
+
+  // E329 (01/11): visita já confirmada (e por vir) deste morador neste imóvel → o botão vira "Visita agendada".
+  const [agendadas, setAgendadas] = useState<ModalidadeVisita[]>([]);
+  const usuarioId = usuario?.id ?? null;
+  useEffect(() => {
+    if (!usuarioId || isExemplo(property)) return;
+    let vivo = true;
+    void minhasVisitasAgendadas(property.id)
+      .then((m) => {
+        if (vivo) setAgendadas(m);
+      })
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [usuarioId, property]);
 
   // Marca "Visto" (ordem 8302024d): só logado grava; deslogado/exemplo ignoram em silêncio.
   const marcarVistoLocal = useMarcasStore((s) => s.marcarVistoLocal);
@@ -429,13 +447,14 @@ export function PropertyDetail({
       <VisitaPresencial
         propertyId={property.id}
         exemplo={exemplo}
+        agendada={agendadas.includes("presencial")}
         semLogin={semLogin}
         abrirInicial={abrirPresencial}
         abrirSinal={sinalVisita}
         variante="tertiary"
         onEntrar={() => irParaLogin("visita")}
       />
-      <VisitaVideo propertyId={property.id} exemplo={exemplo} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
+      <VisitaVideo propertyId={property.id} exemplo={exemplo} agendada={agendadas.includes("video")} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
       <Button
         variant="secondary"
         size="md"
@@ -741,7 +760,7 @@ export function PropertyDetail({
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
-        onAgendarVisita={() => (semLogin ? irParaLogin("visita") : setSinalVisita((n) => n + 1))}
+        onAgendarVisita={() => (semLogin ? irParaLogin("visita") : agendadas.includes("presencial") ? router.push("/dashboard/visitas") : setSinalVisita((n) => n + 1))}
       />
       {/* E207: sem migalhas visíveis (o BreadcrumbList segue nos dados estruturados, com a cidade). "← Voltar aos
           resultados" só para quem veio da /buscar, de volta à mesma busca com os filtros. */}

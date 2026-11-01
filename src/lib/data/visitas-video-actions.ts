@@ -449,3 +449,28 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
   }
   return { ...v, papel, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null, pessoa };
 }
+
+/**
+ * E329 (01/11): as modalidades com visita CONFIRMADA e ainda por vir do morador logado neste imóvel. O anúncio troca
+ * o botão daquela modalidade por "Visita agendada" (leva a Visitas) em vez de oferecer pedir outra igual.
+ */
+export async function minhasVisitasAgendadas(propertyId: string): Promise<ModalidadeVisita[]> {
+  if (!UUID.test(String(propertyId))) return [];
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const admin = createAdminClient();
+  if (!admin) return [];
+  const { data } = await admin
+    .from("visitas_video")
+    .select("modalidade")
+    .eq("property_id", propertyId)
+    .eq("tenant_id", user.id)
+    .eq("status", "confirmado")
+    .gt("horario_confirmado", new Date().toISOString());
+  const modalidades = (data ?? []).map((r) => (ehModalidade(r.modalidade) ? r.modalidade : "video"));
+  return [...new Set(modalidades)];
+}

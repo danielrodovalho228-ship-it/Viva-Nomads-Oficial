@@ -103,6 +103,9 @@ export type ResultadoLink = { ok: true; url: string } | { ok: false; error: stri
 export const MSG_LINK =
   "Informe o link da chamada (Google Meet, Zoom, Teams ou chamada de vídeo do WhatsApp). Link com número de telefone não é aceito.";
 
+/** E329 (01/11): o aviso ao dono logo depois de confirmar a visita (o e-mail "visita_confirmada" sai ao morador). */
+export const AVISO_VISITA_CONFIRMADA = "Visita confirmada — o morador foi avisado por e-mail";
+
 export function validarLinkChamada(entrada: unknown): ResultadoLink {
   if (typeof entrada !== "string") return { ok: false, error: MSG_LINK };
   const texto = entrada.trim();
