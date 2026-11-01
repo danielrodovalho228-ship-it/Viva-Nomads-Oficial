@@ -7,7 +7,7 @@ import { authFile } from "../fixtures/auth";
   /admin/usuarios, na tela de verdade, a 1280 e a 390 px:
    - o filtro de papel diz "Proprietários e moradores" e "Morador" (o valor da URL segue papel=inquilino);
    - filtrando por morador (?papel=inquilino), o título/resumo diz "Moradores" e o papel de cada linha diz "Morador";
-   - nenhum "Inquilino"/"inquilinos" visível na tela.
+   - nenhum rótulo "Inquilino"/"Inquilinos" visível (o papel; nomes de contas de teste podem conter a palavra).
 */
 const SAIDA = "tests/laboratorio/saida";
 
@@ -32,7 +32,8 @@ test.describe("T915 — #1977: admin diz 'morador', não 'inquilino' (1280 e 390
       const texto = (await page.locator("main").first().innerText()).replace(/\s+/g, " ");
       console.log(`t915|${largura}|filtrado|${texto.slice(0, 200)}`);
       expect(texto, "o resumo do filtro diz Moradores").toContain("Moradores");
-      expect(texto, "nenhum 'Inquilino' visível nas telas do admin").not.toMatch(/\bInquilinos?\b|\binquilinos\b/);
+      // O rótulo do papel (célula/selo) nunca mais é "Inquilino"/"Inquilinos" (nomes de contas de teste podem conter a palavra).
+      await expect(page.getByText(/^Inquilinos?$/).filter({ visible: true }), "nenhum rótulo 'Inquilino' visível").toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t915-usuarios-moradores-${largura}.png` });
       await ctx.close();
     });
