@@ -41,7 +41,8 @@ export default async function AdminFinanceiroPage({
   };
   const [r, cidades, contratos, vencidas] = await Promise.all([
     getFinanceiro(periodo.inicio, periodo.fim, cidade, recorte),
-    cidadesComAnuncio(),
+    // Achado 65: falhou → aviso de leitura na página, filtro sem cidades (nunca "nenhuma cidade" em silêncio).
+    cidadesComAnuncio().catch(falhou("Não foi possível carregar a lista de cidades do filtro agora.", [] as string[])),
     admin
       ? contratosReais(admin, intervaloBRT(periodo.inicio, periodo.fim), cidade, recorte, { exigir: true }).catch(
           falhou(MSG_FIN_CONTRATOS, null),

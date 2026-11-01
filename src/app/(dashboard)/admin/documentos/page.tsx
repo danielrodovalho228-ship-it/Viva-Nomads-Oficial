@@ -69,7 +69,8 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
   const vinculos = triagemLigada ? await listarVinculosPendentes() : null;
   const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora, ultimaDoc, ultimaMatricula] = await Promise.all([
     listDocumentosPendentes({ exigir: true }),
-    listConferidosAutomaticamente(),
+    // Achado 63: falhou → a aba avisa (null), sem derrubar a fila de revisão.
+    listConferidosAutomaticamente().catch(() => null),
     contadoresConferencia(),
     listMatriculasFila(undefined, { exigir: true }),
     contadoresMatriculas(),
@@ -80,13 +81,13 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
   ]);
   // Pendência 3 do QA-LOGIN-B v2: o admin observador da QA vê as linhas de dado real sem os botões (o servidor recusa).
   const soLeitura = await soLeituraNaTela([
-    ...[...docs, ...auto].map((d) => ({ id: d.id, alvo: { documentos: [d.id] } })),
+    ...[...docs, ...(auto ?? [])].map((d) => ({ id: d.id, alvo: { documentos: [d.id] } })),
     ...matriculas.map((m) => ({ id: m.id, alvo: { perfis: [m.userId], imoveis: [m.propertyId] } })),
   ]);
   return (
     <>
       <Abas atual="fila" />
-      <AdminDocumentosClient docs={docs} auto={auto} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} soLeitura={soLeitura} />
+      <AdminDocumentosClient docs={docs} auto={auto ?? []} autoFalhou={auto === null} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} soLeitura={soLeitura} />
       <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} soLeitura={soLeitura} />
       <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} />
       <VerificacoesRevisao />
