@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LifeBuoy } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { CampoDataFormulario } from "@/components/ui/campo-data";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { contextoDaSaida, painelQualidade } from "@/lib/data/qualidade";
@@ -122,7 +123,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                     <FormAcao acao={adminDefinirCorrecao} className="grid gap-2" testid="correcao-definir">
                       <input type="hidden" name="id" value={c.id} />
                       <label>Dono<input name="dono" required defaultValue={c.dono ?? ""} className={campo} /></label>
-                      <label>Prazo<input name="prazo" type="date" required defaultValue={c.prazo ?? ""} className={campo} /></label>
+                      <label>Prazo<span className="mt-1 block"><CampoDataFormulario name="prazo" required defaultValue={c.prazo ?? ""} className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" /></span></label>
                       <Button type="submit" variant="secondary" size="sm">Salvar dono e prazo</Button>
                     </FormAcao>
                     <FormAcao acao={adminFecharCorrecao} className="grid gap-2" testid="correcao-fechar">
