@@ -47,7 +47,7 @@ test("E304: cidade sem UF habilita o aviso quando o nome é único; indicar mand
   assert.equal(caminhoIndicacao(""), "/parceiros#quero-ser-parceiro");
   assert.equal(caminhoIndicacao("x?y"), "/parceiros#quero-ser-parceiro");
   const vazia = ler("src/components/parceiros/busca-vazia.tsx");
-  assert.match(vazia, /<AvisoFotografo cidade=\{cidade\} uf=\{ufEfetiva\}/);
+  assert.match(vazia, /<AvisoFotografo\s+cidade=\{cidade\}\s+uf=\{ufEfetiva\}/);
   assert.match(vazia, /<IndicarProfissional categoria=\{categoria\} \/>/);
   assert.doesNotMatch(vazia, /Abrir a página de parceiros/);
 });

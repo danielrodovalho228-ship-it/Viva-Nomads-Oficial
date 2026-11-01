@@ -18,3 +18,15 @@ export function ufUnicaDaCidade(cidade: string, municipios: Record<string, reado
   });
   return achadas.length === 1 ? achadas[0]! : null;
 }
+
+/**
+ * E304 (vigia 31/10): os estados onde existe uma cidade com esse nome (ex.: "Bom Jesus" → vários). O aviso de parceiro
+ * oferece só esses estados para a pessoa escolher, em vez de deixar o "Quero ser avisado" desligado.
+ */
+export function ufsDaCidade(cidade: string, municipios: Record<string, readonly string[]>): string[] {
+  if (!cidade.trim()) return [];
+  return Object.entries(municipios)
+    .filter(([, lista]) => acharCidade(lista, cidade))
+    .map(([uf]) => uf)
+    .sort();
+}
