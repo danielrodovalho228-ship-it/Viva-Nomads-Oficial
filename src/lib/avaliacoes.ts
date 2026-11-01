@@ -79,3 +79,12 @@ export function partesDaAvaliacao(euEnviei: boolean, prazo: string | null): { es
     ],
   };
 }
+
+/**
+ * E346: o e-mail "Avaliar a estadia" abre a avaliação DAQUELA estadia — o formulário no cartão do contrato encerrado
+ * (dono: Contratos; morador: Locações), não a lista genérica de avaliações recebidas.
+ */
+export const ancoraAvaliacao = (contratoId: string) => `avaliar-${contratoId}`;
+export function hrefAvaliarEstadia(contratoId: string, papel: "dono" | "morador"): string {
+  return `${papel === "dono" ? "/dashboard/contratos" : "/dashboard/locacoes"}#${ancoraAvaliacao(contratoId)}`;
+}

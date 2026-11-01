@@ -37,6 +37,7 @@ import {
   type BlocoView,
 } from "@/lib/data/contratos-actions";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
+import { ancoraAvaliacao } from "@/lib/avaliacoes";
 import { DevolucaoCaucaoDono, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
@@ -369,7 +370,8 @@ function ContratoCard({
         </>
       )}
 
-      {/* Avaliar o inquilino (reputação bidirecional). */}
+      {/* Avaliar o inquilino (reputação bidirecional). E346: âncora do e-mail "Avaliar a estadia". */}
+      <div id={ancoraAvaliacao(contrato.id)} className="scroll-mt-24">
       <AvaliacaoForm
         contratoId={contrato.id}
         alvoId={contrato.tenantId}
@@ -379,6 +381,7 @@ function ContratoCard({
         placeholder="Comentário (opcional) — pontualidade, cuidado com o imóvel, comunicação…"
         demo={demo}
       />
+      </div>
     </Panel>
   );
 }

@@ -1,4 +1,5 @@
 import { avisarDecisoesAtrasadas } from "@/lib/data/aviso-decisao-documento";
+import { hrefAvaliarEstadia } from "@/lib/avaliacoes";
 import { avisarDocumentosOrfaos } from "@/lib/data/documentos-orfaos-servidor";
 import { NextResponse } from "next/server";
 import { gerarCartoesAutomaticos } from "@/lib/data/cartoes-servidor";
@@ -175,7 +176,7 @@ export async function GET(request: Request) {
     if (pedirAvaliacao(fimFinal, hoje)) {
       for (const u of partes) {
         if (jaAvaliaram.has(`${c.id}:${u}`)) continue;
-        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: `/dashboard/avaliacoes`, detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: fimFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: fimFinal }) });
+        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: fimFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: fimFinal }) });
       }
     }
     for (const b of blocos) {
