@@ -188,6 +188,64 @@ export const INVENTARIO: ItemInventario[] = [
   i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
 ];
 
+/*
+  E293 P3 — colunas jsonb. A guarda por nome de coluna (inventario.test.ts) não enxerga o que entra DENTRO de um jsonb, e
+  foi por aí que a leitura do modelo (matrícula e documento) ficou guardada além do desenho. Toda coluna jsonb das
+  migrações precisa estar em uma das duas listas abaixo; coluna nova sem decisão quebra o teste.
+*/
+
+/** jsonb que recebe saída de FORNECEDOR (modelo de IA, CAF, OSM/Mapbox, Google, Resend): o que fica nela. */
+export const JSONB_DE_FORNECEDOR: Record<string, string> = {
+  "property_ownership_checks.campos_extraidos": "modelo de IA (matrícula): só o veredito por proprietário (nome/CPF conferem, fração, quantos), sem nome nem documento (E293 P1); sai junto com o arquivo",
+  "property_ownership_checks.onus": "modelo de IA (matrícula): tipo do ônus e se é em favor de terceiro, sem credor (E293 P1); sai junto com o arquivo",
+  "qualification_checklists.conferencia": "modelo de IA (documento do imóvel): veredito da leitura em sim/não e contagens, checklist, motivos, conferidor e modelo (E293 P2); trilhas antigas com `leitura` bruta estão listadas para limpeza",
+  "tenant_verifications.caf_result": "CAF/Certta: resultado (risco, identidade, documento, prova de vida) e `notes` com motivos do fornecedor; vale 12 meses (E293 P5 pendente: id da transação e códigos fixos)",
+  "proximidades_cep.itens": "OSM (Overpass) ou Mapbox: lugares próximos do CEP, cache de 30 dias na leitura (E293 P6: Mapbox e linhas velhas listadas)",
+  "properties.google_places": "Google Places: nenhum código grava hoje (coluna legada); destino decidido no E293 P4",
+  "documentos_fiscais.envio": "Resend: papel e status do envio por destinatário, nunca o endereço de e-mail",
+  "documentos_reenvios.resultado": "Resend: papel e status do reenvio por destinatário, nunca o endereço de e-mail",
+};
+
+/** jsonb escrito por nós ou pela própria pessoa (formulário, regra, contagem): nada vem de fornecedor. */
+export const JSONB_PROPRIO: Record<string, string> = {
+  "_backup_p0_draft_data.draft_data": "cópia de migração do rascunho do anúncio",
+  "agentes_rondas.achados": "relatório interno das rondas dos agentes da equipe",
+  "avaliacoes.notas_categorias": "notas que a pessoa deu",
+  "chamado_mensagens.anexos": "caminhos dos anexos do chamado (arquivo no bucket inventariado)",
+  "chaves_plataforma.valor": "valor de configuração da plataforma",
+  "contracts.cost_split": "divisão de custos acordada no contrato",
+  "contrato_aditivos.mudancas": "mudanças pedidas no aditivo",
+  "contrato_eventos.dados": "dados do evento do contrato (nosso)",
+  "contratos.ocorrencia_ocupacao": "ocorrência registrada pelas partes",
+  "contratos.pets_regras_congeladas": "regras de pets do anúncio no dia do contrato",
+  "documentos_fiscais.encargos": "valores calculados por nós",
+  "emails_proativos.extra": "dados do e-mail proativo montado por nós",
+  "imovel_estrutura.checklist": "checklist preenchido pelo dono",
+  "imovel_nivel.diferenciais": "extras marcados pelo dono",
+  "imovel_nivel.por_area": "nível por área calculado por nós",
+  "lab_execucoes.falhas": "resultado do laboratório (testes)",
+  "lab_execucoes.por_categoria": "resultado do laboratório (testes)",
+  "lab_execucoes.por_spec": "resultado do laboratório (testes)",
+  "pagamentos_bloco.encargos": "valores calculados por nós",
+  "parceiro_pedido_eventos.dados": "dados do evento do pedido (nosso)",
+  "parceiro_solicitacoes.checklist": "checklist preenchido pelo parceiro",
+  "parceiro_solicitacoes.dados_categoria": "campos da categoria preenchidos pelo parceiro",
+  "parceiros.dados_recebimento": "dados de recebimento digitados pelo parceiro",
+  "pedidos_moradia.destino": "destino escolhido pela pessoa (coordenada coberta pela guarda de coordenadas)",
+  "profiles.local_trabalho": "local escolhido pela pessoa (coordenada coberta pela guarda de coordenadas)",
+  "properties.detalhes_anuncio": "detalhes digitados pelo dono",
+  "properties.draft_data": "rascunho digitado pelo dono",
+  "properties.limpeza_estadia": "regra de limpeza do dono",
+  "properties.negociacao": "regra de negociação do dono",
+  "properties.pets_regras": "regras de pets do dono",
+  "properties.regras_casa": "regras da casa do dono",
+  "qualification_checklists.formulario": "formulário preenchido pelo dono",
+  "ranking_sombra.busca": "filtros da busca (modo sombra da ordem)",
+  "vistoria_laudos.ressalvas": "ressalvas escritas pelo avaliador",
+  "vistoria_laudos.resumo": "resumo calculado por nós",
+  "vistoria_pedidos.ruido_respostas": "respostas do dono sobre ruído",
+};
+
 /** Tabelas que a varredura acha por nome de coluna mas não guardam dado pessoal (com o porquê). */
 export const SEM_DADO_PESSOAL: Record<string, string> = {
   qualidade_correcoes: "item de correção do painel de qualidade: papel, motivo da taxonomia (chave fechada), contagem, responsável da equipe e prazo (Prompt 51)",
