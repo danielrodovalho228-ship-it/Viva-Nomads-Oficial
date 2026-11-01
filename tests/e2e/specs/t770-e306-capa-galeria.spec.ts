@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { readFileSync } from "node:fs";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T770 — E306 (01/11): na busca de parceiros, o cartão de quem não enviou capa mostra uma foto DO PRÓPRIO parceiro — a
@@ -32,10 +33,11 @@ test.describe("T770 — E306: capa do cartão com a foto do parceiro", () => {
     ids.conta2 = await criarConta({ email: `limp.t770s.${sufixo}@lab.vivanomads.test`, nome: "Sil Semfoto", role: "owner" }, senha);
     ids.comGaleria = await parceiro(ids.conta, `[TESTE QA] Limpeza Galeria T770 ${sufixo}`, slugGaleria);
     ids.semFoto = await parceiro(ids.conta2, `[TESTE QA] Limpeza Sem Foto T770 ${sufixo}`, slugSemFoto);
-    // A galeria do parceiro (sem capa e sem foto de perfil): duas fotos reais no bucket público.
+    // A galeria do parceiro (sem capa e sem foto de perfil): duas fotos reais no bucket público (o bucket só aceita WebP).
+    const arquivos = ["public/images/parceiros-categorias/manutencao.webp", "public/images/parceiros-categorias/lavanderia.webp"];
     for (const i of [0, 1]) {
-      const path = `${ids.comGaleria}/galeria-t770-${i}.png`;
-      const { error: eUp } = await adm().storage.from("parceiros").upload(path, pngDeTeste(i + 3), { contentType: "image/png", upsert: true });
+      const path = `${ids.comGaleria}/galeria-t770-${i}.webp`;
+      const { error: eUp } = await adm().storage.from("parceiros").upload(path, readFileSync(arquivos[i]), { contentType: "image/webp", upsert: true });
       if (eUp) throw eUp;
       const { error } = await adm().from("parceiro_galeria").insert({ parceiro_id: ids.comGaleria, path, ordem: i });
       if (error) throw error;
@@ -55,7 +57,7 @@ test.describe("T770 — E306: capa do cartão com a foto do parceiro", () => {
       const capa = comGaleria.getByTestId("cartao-parceiro-capa");
       await expect(capa).toHaveAttribute("data-origem", "galeria");
       const img = capa.locator("img").first();
-      await expect(img).toHaveAttribute("src", new RegExp(`/storage/v1/object/public/parceiros/${ids.comGaleria}/galeria-t770-0\\.png$`));
+      await expect(img).toHaveAttribute("src", new RegExp(`/storage/v1/object/public/parceiros/${ids.comGaleria}/galeria-t770-0\\.webp$`));
       await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { timeout: 20_000 }).toBe(true);
       // Sem foto nenhuma: a categoria continua como último recurso (a capa nunca vazia, E298).
       const semFoto = page.locator(`[data-testid="cartao-parceiro"][data-slug="${slugSemFoto}"]`);
