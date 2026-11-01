@@ -59,6 +59,7 @@ test.describe("T954 — E415: o resultado da Qualificação credita a prova feit
         foto_path: `${ids.dono}/${randomUUID()}.webp`,
         foto_status: "pendente",
         foto_origem: "camera",
+        foto_capturada_em: new Date(Date.now() - 60_000).toISOString(), // prova de câmera: com a hora da captura (nivel_itens_camera_sem_prazo)
         declarado_por: ids.dono,
         declarado_em: new Date().toISOString(),
       });
