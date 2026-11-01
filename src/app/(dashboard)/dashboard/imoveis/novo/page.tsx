@@ -65,7 +65,7 @@ import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
-import { cn, dataBR } from "@/lib/utils";
+import { cn, dataBR, hojeBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { isEligible } from "@/lib/qualification";
 import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
@@ -120,7 +120,7 @@ import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { useTelaLarga } from "@/components/ui/use-tela-larga";
 import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
-import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
+import { TELAS_ASSISTENTE, resumoDisponibilidadePrevia } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
 /**
@@ -2177,6 +2177,7 @@ export default function NewPropertyPage() {
             uf={uf}
             publicado={!!editingId}
             tamanhoReal={<BotaoTamanhoReal imovel={previewProperty} className="mt-2" />}
+            resumo={step === ETAPA.disponibilidade ? resumoDisponibilidadePrevia(availableFrom, minPeriod, hojeBR()) : null}
           />
         </aside>
         )}
