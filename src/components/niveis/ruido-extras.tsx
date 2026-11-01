@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { EXTRAS, PERGUNTAS_RUIDO, type ChaveRuido } from "@/config/niveis";
 import { salvarExtras, salvarRuido, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** E193: cada pergunta do ruído como afirmação para marcar (✓ = sim). */
 const TEXTO_CARTAO_RUIDO: Record<ChaveRuido, string> = {
@@ -62,7 +63,7 @@ export function Ruido({ propertyId, inicial, onSalvo }: { propertyId: string; in
           onClick={() =>
             iniciar(async () => {
               const respostas = Object.fromEntries(PERGUNTAS_RUIDO.map((p) => [p.chave, r[p.chave] === true]));
-              const res = await salvarRuido(propertyId, respostas);
+              const res = await semQuedaDeRede(salvarRuido(propertyId, respostas));
               setMsg(res.ok ? { ok: true, t: res.mensagem ?? "Salvo." } : { ok: false, t: res.erro });
               if (res.ok) salvo();
             })
@@ -116,7 +117,7 @@ export function Extras({ propertyId, inicial, onSalvo }: { propertyId: string; i
           disabled={pendente}
           onClick={() =>
             iniciar(async () => {
-              const res = await salvarExtras(propertyId, [...sel]);
+              const res = await semQuedaDeRede(salvarExtras(propertyId, [...sel]));
               setMsg(res.ok ? { ok: true, t: res.mensagem ?? "Salvo." } : { ok: false, t: res.erro });
               if (res.ok) salvo();
             })

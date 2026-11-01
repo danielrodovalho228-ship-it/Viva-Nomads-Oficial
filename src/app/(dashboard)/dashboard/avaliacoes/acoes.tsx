@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { pedirRevisaoAvaliacao, responderAvaliacao } from "@/lib/data/avaliacoes-resposta-actions";
 import { LIMITE_RESPOSTA, MOTIVOS_REVISAO, type MotivoRevisao } from "@/lib/avaliacoes-resposta";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const CAMPO = "w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 
@@ -31,8 +32,8 @@ export function AcoesAvaliacao({
     start(async () => {
       const r =
         aberto === "resposta"
-          ? await responderAvaliacao(avaliacaoId, texto)
-          : await pedirRevisaoAvaliacao(avaliacaoId, motivo, texto);
+          ? await semQuedaDeRede(responderAvaliacao(avaliacaoId, texto))
+          : await semQuedaDeRede(pedirRevisaoAvaliacao(avaliacaoId, motivo, texto));
       if (!r.ok) return setErro(r.error ?? "Não foi possível enviar.");
       setErro(null);
       setAberto(null);

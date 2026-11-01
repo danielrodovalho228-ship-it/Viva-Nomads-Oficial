@@ -3,6 +3,7 @@
 import { useActionState, useTransition } from "react";
 import { alternarCidade, cadastrarCidade, type ResultadoCidade } from "@/lib/cidades-liberadas/actions";
 import { Button } from "@/components/ui/button";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 
@@ -25,7 +26,7 @@ export function CadastroCidadeForm() {
 export function CidadeBotao({ uf, chave, liberada }: { uf: string; chave: string; liberada: boolean }) {
   const [pendente, iniciar] = useTransition();
   return (
-    <Button type="button" variant="outline" size="sm" disabled={pendente} onClick={() => iniciar(async () => { await alternarCidade(uf, chave, !liberada); })}>
+    <Button type="button" variant="outline" size="sm" disabled={pendente} onClick={() => iniciar(async () => { await semQuedaDeRede(alternarCidade(uf, chave, !liberada)); })}>
       {liberada ? "Pausar" : "Liberar"}
     </Button>
   );

@@ -11,6 +11,7 @@ import { CAMPOS_INSTRUCOES, type Instrucoes } from "@/lib/estadia/instrucoes";
 import type { PapelEstadia } from "@/lib/estadia/estadia";
 import { convidarOcupante, removerConvidado } from "@/lib/data/estadia-convidados-actions";
 import type { ConvidadoView } from "@/lib/data/estadia-convidados";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -144,7 +145,7 @@ export function EditorInstrucoes({ propertyId, contratoId, inicial, comoEntrarDo
         iniciar(async () => {
           setErro(null);
           setOk(null);
-          const r = await salvarInstrucoes(propertyId, valores, contratoId);
+          const r = await semQuedaDeRede(salvarInstrucoes(propertyId, valores, contratoId));
           if (!r.ok) setErro(r.erro);
           else setOk("Instruções salvas. O morador vê 7 dias antes da entrada, com o contrato assinado e o 1º pagamento registrado.");
         });
@@ -184,7 +185,7 @@ export function ListaPortaria({ contratoId }: { contratoId: string }) {
   const [pendente, iniciar] = useTransition();
   const abrir = () =>
     iniciar(async () => {
-      const r = await listaParaPortaria(contratoId);
+      const r = await semQuedaDeRede(listaParaPortaria(contratoId));
       if (!r.ok) setErro(r.erro);
       else setTexto(r.valor);
     });
@@ -240,7 +241,7 @@ export function NotasPrivadas({ contratoId, inicial }: { contratoId: string; ini
             iniciar(async () => {
               setErro(null);
               setOk(null);
-              const r = await salvarNota(contratoId, texto);
+              const r = await semQuedaDeRede(salvarNota(contratoId, texto));
               if (!r.ok) setErro(r.erro);
               else setOk("Nota salva.");
             })

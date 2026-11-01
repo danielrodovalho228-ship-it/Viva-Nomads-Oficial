@@ -38,3 +38,24 @@ export function textoDoErro(e: unknown, padrao: string): string {
   if (!(e instanceof Error) || !e.message.trim() || ehErroTecnico(e)) return padrao;
   return e.message;
 }
+
+/** Frase padrão de uma ação da tela que falhou sem motivo vindo do servidor. */
+export const MSG_ACAO_FALHOU = "Não foi possível concluir agora. Tente de novo.";
+
+/** O que uma ação do servidor devolve quando a chamada nem chegou (conexão caiu): os dois nomes de campo em uso. */
+export type FalhaDeRede = { ok: false; erro: string; error: string };
+
+/**
+ * Auditoria de erros (achados nº 2 e nº 3, e a varredura seguinte): uma ação do servidor chamada dentro de uma
+ * transição REJEITA quando a conexão cai — sem tratamento, o erro sobe ao limite de erro e a tela inteira cai.
+ * Embrulhada aqui, ela nunca rejeita: devolve { ok: false, erro, error } com a frase em português, e a tela mostra pelo
+ * mesmo caminho em que já mostra a recusa do servidor (r.erro ou r.error).
+ */
+export async function semQuedaDeRede<T extends { ok: boolean }>(acao: Promise<T>, padrao: string = MSG_ACAO_FALHOU): Promise<T | FalhaDeRede> {
+  try {
+    return await acao;
+  } catch (e) {
+    const texto = textoDoErro(e, padrao);
+    return { ok: false, erro: texto, error: texto };
+  }
+}

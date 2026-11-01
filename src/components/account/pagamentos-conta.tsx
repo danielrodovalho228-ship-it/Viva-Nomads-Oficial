@@ -27,6 +27,7 @@ import { PlanoGestorConta } from "@/components/account/plano-gestor-conta";
 import { PHOTOS } from "@/lib/media";
 import { useParceiroAprovado } from "@/lib/use-papel-barra";
 import { gravarLocalStorageBruto, useLocalStorageBruto } from "@/lib/use-client-state";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
 
@@ -70,16 +71,17 @@ export function PagamentosConta() {
   const salvar = () =>
     comecar(async () => {
       setErro(null);
-      const r = await salvarChavePix(tipo, chave);
+      const r = await semQuedaDeRede(salvarChavePix(tipo, chave));
       if (!r.ok) return setErro(r.error ?? "Não foi possível salvar.");
-      setPix(await minhaChavePix());
+      // A chave já foi salva; se a releitura cair, a tela segue (a chave aparece no próximo carregamento).
+      await minhaChavePix().then(setPix, () => null);
       setEditando(false);
       setChave("");
     });
   const remover = () =>
     comecar(async () => {
       setErro(null);
-      const r = await removerChavePix();
+      const r = await semQuedaDeRede(removerChavePix());
       if (!r.ok) return setErro(r.error ?? "Não foi possível remover.");
       setPix(null);
       setCopiado(false);

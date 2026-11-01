@@ -8,6 +8,7 @@ import { lerCidadeUf } from "@/lib/pedidos/formulario";
 import { mensagemCidadeNaoLiberada, type PapelInteresse } from "@/lib/cidades-liberadas/regras";
 import { registrarInteresseCidade, statusCidade } from "@/lib/cidades-liberadas/actions";
 import { useAuthStore } from "@/lib/store";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Convite quando a cidade buscada ainda não foi liberada (ordem 335b4064, item 3): o inquilino pode buscar qualquer
@@ -58,7 +59,7 @@ export function ConviteCidade({ texto, papel = "inquilino" }: { texto: string; p
           disabled={pendente}
           onClick={() =>
             iniciar(async () => {
-              const r = await registrarInteresseCidade({ cidade, uf, papel });
+              const r = await semQuedaDeRede(registrarInteresseCidade({ cidade, uf, papel }));
               setResp({ ok: r.ok, texto: r.ok ? (r.mensagem ?? "Anotado!") : (r.erro ?? "Não foi possível registrar.") });
             })
           }

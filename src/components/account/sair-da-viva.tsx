@@ -7,6 +7,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { DangerZone } from "@/components/account/conta-secoes";
 import { aceitarAjudaSaida, estadoSaida, pausarConta, reativarConta, registrarMotivoSaida } from "@/lib/saida/acoes";
 import { MOTIVOS_DE_VALOR, MOTIVOS_SAIDA, ROTULO_NIVEL_SAIDA, TEXTO_EXCLUSAO, VALORES_SURPRESA, type AjudaSaida, type NivelSaida, type PapelSaida, type PendenciaSaida } from "@/lib/saida/regras";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /*
   Prompt 51, fase 1 — "Sair da Viva". Sem dark pattern: os 3 cartões têm o mesmo peso; o motivo é opcional ("Continuar
@@ -160,9 +161,10 @@ export function SairDaViva() {
                 data-testid="saida-confirmar-pausa"
                 onClick={() =>
                   iniciar(async () => {
-                    const r = await pausarConta();
+                    const r = await semQuedaDeRede(pausarConta());
                     setAviso(r.ok ? { ok: true, texto: r.mensagem ?? "Conta pausada." } : { ok: false, texto: r.erro });
-                    if (r.ok) setEstado(await estadoSaida());
+                    // A ação já valeu (o aviso diz); se a releitura cair, a tela segue em vez de cair.
+                    if (r.ok) await estadoSaida().then(setEstado, () => null);
                   })
                 }
               >
@@ -226,9 +228,9 @@ export function ContaPausada({ aoReativar }: { aoReativar?: (e: Estado | null) =
         data-testid="reativar-conta"
         onClick={() =>
           iniciar(async () => {
-            const r = await reativarConta();
+            const r = await semQuedaDeRede(reativarConta());
             if (!r.ok) setErro(r.erro);
-            else if (aoReativar) aoReativar(await estadoSaida());
+            else if (aoReativar) await estadoSaida().then(aoReativar, () => router.refresh());
             else router.refresh();
           })
         }

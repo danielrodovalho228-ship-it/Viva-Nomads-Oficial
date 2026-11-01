@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ativarParceria, type EstadoAtivacao } from "@/lib/parceiros/ativacao-actions";
 import { pedirNovoLink } from "@/lib/parceiros/solicitacao-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export function AtivarParceria({ token, estado }: { token: string; estado: EstadoAtivacao }) {
   const router = useRouter();
@@ -37,7 +38,7 @@ export function AtivarParceria({ token, estado }: { token: string; estado: Estad
                 data-testid="ativar-novo-link"
                 onClick={() =>
                   iniciar(async () => {
-                    const r = await pedirNovoLink(token);
+                    const r = await semQuedaDeRede(pedirNovoLink(token));
                     setMsg(r.ok ? { ok: true, texto: "Pedido enviado. A equipe manda um novo link para o seu e-mail." } : { ok: false, texto: r.erro });
                   })
                 }
@@ -95,7 +96,7 @@ export function AtivarParceria({ token, estado }: { token: string; estado: Estad
         data-testid="ativar-confirmar"
         onClick={() =>
           iniciar(async () => {
-            const r = await ativarParceria(token);
+            const r = await semQuedaDeRede(ativarParceria(token));
             if (r.ok) router.push("/dashboard/parceiro?ativada=1");
             else setMsg({ ok: false, texto: r.erro });
           })

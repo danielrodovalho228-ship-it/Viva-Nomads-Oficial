@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { rodarPrazosAgora } from "@/lib/data/conforto-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Admin: roda na hora a rotina dos prazos do 59 (a mesma do cron). No laboratório aceita uma data simulada. */
 export function RodarPrazos({ laboratorio }: { laboratorio: boolean }) {
@@ -14,7 +15,7 @@ export function RodarPrazos({ laboratorio }: { laboratorio: boolean }) {
   const [pendente, iniciar] = useTransition();
   const rodar = () =>
     iniciar(async () => {
-      const r = await rodarPrazosAgora(laboratorio && agora ? agora : undefined, laboratorio && imovel ? imovel : undefined);
+      const r = await semQuedaDeRede(rodarPrazosAgora(laboratorio && agora ? agora : undefined, laboratorio && imovel ? imovel : undefined));
       if (!r.ok) return setMsg({ ok: false, t: r.erro });
       const v = r.valor;
       setMsg({

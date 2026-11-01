@@ -8,6 +8,7 @@ import { Chip } from "@/components/ui/chip";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import {
   AVISO_RECUSAR_ORCAMENTO,
   AVISO_RECUSAR_PEDIDO,
@@ -415,7 +416,7 @@ function BaixarArquivo({ pedidoId, alvo, rotulo }: { pedidoId: string; alvo: { e
         onClick={() =>
           iniciar(async () => {
             setErro(null);
-            const r = await linkArquivoDoPedido(pedidoId, alvo);
+            const r = await semQuedaDeRede(linkArquivoDoPedido(pedidoId, alvo));
             if (r.ok) window.location.assign(r.valor);
             else setErro(r.erro);
           })
@@ -530,7 +531,7 @@ function Conversa({ d }: { d: DetalhePedido }) {
           action={() =>
             iniciar(async () => {
               setAviso(null);
-              const r = await enviarMensagemDoPedido(d.id, texto);
+              const r = await semQuedaDeRede(enviarMensagemDoPedido(d.id, texto));
               if (!r.ok) setAviso(r.erro);
               else {
                 setTexto("");

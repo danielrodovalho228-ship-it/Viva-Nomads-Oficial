@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { analisarFotoNivel } from "@/lib/data/nivel-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Adendo 59.1 — o atendimento aceita a foto do item de nível ou recusa com motivo (o item deixa de contar). */
 export function AnalisarFotoNivel({ imovel, chave }: { imovel: string; chave: string }) {
@@ -14,7 +15,7 @@ export function AnalisarFotoNivel({ imovel, chave }: { imovel: string; chave: st
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const agir = (decisao: "aceita" | "recusada") =>
     iniciar(async () => {
-      const r = await analisarFotoNivel(imovel, chave, decisao, decisao === "recusada" ? motivo : undefined);
+      const r = await semQuedaDeRede(analisarFotoNivel(imovel, chave, decisao, decisao === "recusada" ? motivo : undefined));
       setMsg(r.ok ? { ok: true, t: r.mensagem ?? "Feito." } : { ok: false, t: r.erro });
       if (r.ok) router.refresh();
     });

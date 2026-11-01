@@ -9,6 +9,7 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { Panel } from "@/components/dashboard/primitives";
 import { atualizarVinculo, convidarParceiroFixo, encerrarVinculo, type OpcaoParceiro, type ParceirosDoImovel, type VinculoNaTela } from "@/lib/automacao/acoes";
 import { CATEGORIAS_VINCULO, type CategoriaVinculo, type ModoVinculo } from "@/lib/automacao/pedidos-do-evento";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const TITULO: Record<CategoriaVinculo, string> = { limpeza: "Limpeza", manutencao: "Manutenção", lavanderia: "Lavanderia", fotografia: "Fotografia" };
 const QUANDO: Record<CategoriaVinculo, string> = {
@@ -59,7 +60,7 @@ function Vinculado({ v }: { v: VinculoNaTela }) {
   const [pendente, iniciar] = useTransition();
   const salvar = () =>
     iniciar(async () => {
-      const r = await atualizarVinculo(v.id, { modo, instrucoes });
+      const r = await semQuedaDeRede(atualizarVinculo(v.id, { modo, instrucoes }));
       setMsg(r.ok ? { ok: true, texto: "Salvo." } : { ok: false, texto: r.erro });
       if (r.ok) router.refresh();
     });
@@ -88,7 +89,7 @@ function Vinculado({ v }: { v: VinculoNaTela }) {
           confirmar="Encerrar"
           onConfirmar={() =>
             iniciar(async () => {
-              const r = await encerrarVinculo(v.id);
+              const r = await semQuedaDeRede(encerrarVinculo(v.id));
               if (!r.ok) setMsg({ ok: false, texto: r.erro });
               router.refresh();
             })
@@ -132,7 +133,7 @@ function Convidar({ propertyId, categoria, opcoes, cidade }: { propertyId: strin
   const convidar = () =>
     iniciar(async () => {
       setErro(null);
-      const r = await convidarParceiroFixo({ propertyId, categoria, parceiroId, servicoId: servicoId || null, modo: categoria === "manutencao" ? "confirmar" : modo, instrucoes });
+      const r = await semQuedaDeRede(convidarParceiroFixo({ propertyId, categoria, parceiroId, servicoId: servicoId || null, modo: categoria === "manutencao" ? "confirmar" : modo, instrucoes }));
       if (!r.ok) return setErro(r.erro);
       router.refresh();
     });

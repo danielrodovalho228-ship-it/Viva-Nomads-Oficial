@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { apagarResposta, salvarResposta } from "@/lib/data/respostas-actions";
 import { LIMITE_RESPOSTAS, TEXTO_MAX, TITULO_MAX, validarResposta, type RespostaRapida } from "@/lib/respostas/regras";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export function RespostasTela({ inicial }: { inicial: RespostaRapida[] }) {
   const router = useRouter();
@@ -18,7 +19,7 @@ export function RespostasTela({ inicial }: { inicial: RespostaRapida[] }) {
     const v = validarResposta(edicao, inicial.length, !!edicao.id);
     if (!v.ok) return setMsg({ ok: false, texto: v.erro });
     iniciar(async () => {
-      const r = await salvarResposta(edicao);
+      const r = await semQuedaDeRede(salvarResposta(edicao));
       setMsg(r.ok ? { ok: true, texto: "Resposta salva." } : { ok: false, texto: r.erro });
       if (r.ok) {
         setEdicao({ id: null, titulo: "", texto: "" });
@@ -28,7 +29,7 @@ export function RespostasTela({ inicial }: { inicial: RespostaRapida[] }) {
   }
   function apagar(id: string) {
     iniciar(async () => {
-      const r = await apagarResposta(id);
+      const r = await semQuedaDeRede(apagarResposta(id));
       setConfirmar(null);
       setMsg(r.ok ? { ok: true, texto: "Resposta apagada." } : { ok: false, texto: r.erro });
       if (r.ok) router.refresh();

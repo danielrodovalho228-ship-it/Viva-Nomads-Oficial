@@ -8,6 +8,7 @@ import { MOTIVOS_RECUSA, type MotivoRecusa } from "@/lib/triagem/vinculo";
 import { abrirLinkEmNovaAba } from "@/lib/abrir-aba";
 import { Button } from "@/components/ui/button";
 import { dataBRT } from "@/lib/datas-brasilia";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const ROTULO_MOTIVO: Record<MotivoRecusa, string> = {
   ilegivel: "Ilegível",
@@ -51,7 +52,7 @@ function ItemVinculo({ item }: { item: VinculoPendente }) {
 
   function decidir(d: "aprovar" | "recusar") {
     iniciar(async () => {
-      const r = await decidirVinculo(item.id, d, motivo || null, complemento || null);
+      const r = await semQuedaDeRede(decidirVinculo(item.id, d, motivo || null, complemento || null));
       if (!r.ok) return setMsg(r.error ?? "Não foi possível decidir agora.");
       router.refresh();
     });
