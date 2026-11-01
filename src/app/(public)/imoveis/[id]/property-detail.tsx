@@ -28,8 +28,8 @@ import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
-import { minhasVisitasAgendadas } from "@/lib/data/visitas-video-actions";
-import type { ModalidadeVisita } from "@/lib/visitas-video";
+import { minhasVisitasNoImovel } from "@/lib/data/visitas-video-actions";
+import type { EstadoVisitaAnuncio, ModalidadeVisita } from "@/lib/visitas-video";
 import { useAuthStore } from "@/lib/store";
 import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candidatura";
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
@@ -190,15 +190,16 @@ export function PropertyDetail({
     if (!isExemplo(property)) registrarEvento("ver_anuncio", { imovelId: property.id, cidade: property.city });
   }, [property]);
 
-  // E329 (01/11): visita já confirmada (e por vir) deste morador neste imóvel → o botão vira "Visita agendada".
-  const [agendadas, setAgendadas] = useState<ModalidadeVisita[]>([]);
+  // E329 (01/11) + varredura 01/11: visita em aberto deste morador neste imóvel (agendada, pedida ou já passada) → o
+  // botão daquela modalidade mostra o estado e leva a Visitas.
+  const [visitas, setVisitas] = useState<Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>>>({});
   const usuarioId = usuario?.id ?? null;
   useEffect(() => {
     if (!usuarioId || isExemplo(property)) return;
     let vivo = true;
-    void minhasVisitasAgendadas(property.id)
+    void minhasVisitasNoImovel(property.id)
       .then((m) => {
-        if (vivo) setAgendadas(m);
+        if (vivo) setVisitas(m);
       })
       .catch(() => undefined);
     return () => {
@@ -447,14 +448,14 @@ export function PropertyDetail({
       <VisitaPresencial
         propertyId={property.id}
         exemplo={exemplo}
-        agendada={agendadas.includes("presencial")}
+        estado={visitas.presencial}
         semLogin={semLogin}
         abrirInicial={abrirPresencial}
         abrirSinal={sinalVisita}
         variante="tertiary"
         onEntrar={() => irParaLogin("visita")}
       />
-      <VisitaVideo propertyId={property.id} exemplo={exemplo} agendada={agendadas.includes("video")} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
+      <VisitaVideo propertyId={property.id} exemplo={exemplo} estado={visitas.video} semLogin={semLogin} abrirInicial={abrirVideo} onEntrar={() => irParaLogin("video")} />
       <Button
         variant="secondary"
         size="md"
@@ -760,7 +761,7 @@ export function PropertyDetail({
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
-        onAgendarVisita={() => (semLogin ? irParaLogin("visita") : agendadas.includes("presencial") ? router.push("/dashboard/visitas") : setSinalVisita((n) => n + 1))}
+        onAgendarVisita={() => (semLogin ? irParaLogin("visita") : visitas.presencial ? router.push("/dashboard/visitas") : setSinalVisita((n) => n + 1))}
       />
       {/* E207: sem migalhas visíveis (o BreadcrumbList segue nos dados estruturados, com a cidade). "← Voltar aos
           resultados" só para quem veio da /buscar, de volta à mesma busca com os filtros. */}

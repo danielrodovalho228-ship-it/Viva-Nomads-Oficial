@@ -155,13 +155,20 @@ function acende(item: ItemAba, pathname: string): boolean {
 }
 
 /** A aba acesa nesta rota (a aba ou qualquer subaba dela); fora delas, nenhuma. */
-export function abaAtivaPainel(abas: readonly AbaPainel[], pathname: string): AbaPainel | null {
+export function abaAtivaPainel(abas: readonly AbaPainel[], pathname: string, secao: string | null = null): AbaPainel | null {
   for (const aba of abas) {
     if (acende(aba, pathname) || (aba.subabas ?? []).some((s) => acende(s, pathname))) return aba;
   }
-  // Abas-âncora (parceiro): a 1ª acende na própria página.
-  const ancora = abas.find((a) => a.href.includes("#") && rotaAtiva(a.href.split("#")[0], pathname));
-  return ancora ?? null;
+  // Abas-âncora (parceiro): E340 — acende a da SEÇÃO visível (useSecaoAncora); sem seção medida, a 1ª.
+  const ancoras = abas.filter((a) => a.href.includes("#") && rotaAtiva(a.href.split("#")[0], pathname));
+  return (secao ? ancoras.find((a) => a.href.split("#")[1] === secao) : null) ?? ancoras[0] ?? null;
+}
+
+/** E340: a rota e os ids das seções das abas-âncora (ex.: "/dashboard/parceiro" → pedidos, agenda, ganhos). */
+export function ancorasDasAbas(abas: readonly { href: string }[]): { rota: string; ids: string[] } | null {
+  const comAncora = abas.filter((a) => a.href.includes("#"));
+  if (!comAncora.length) return null;
+  return { rota: comAncora[0].href.split("#")[0], ids: comAncora.map((a) => a.href.split("#")[1]) };
 }
 
 /** A subaba acesa nesta rota (dentro da aba ativa). */

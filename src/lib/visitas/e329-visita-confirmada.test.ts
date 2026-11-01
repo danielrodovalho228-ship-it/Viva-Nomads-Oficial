@@ -15,17 +15,18 @@ test("E329 — confirmar tem aviso de sucesso ao dono, e o e-mail ao morador sai
   assert.match(acoes, /campos\.status === "confirmado" && campos\.horario_confirmado\) \{[\s\S]{0,1400}"visita_confirmada"/);
 });
 
-test("E329 — com visita confirmada e por vir, o anúncio mostra 'Visita agendada' levando a Visitas", () => {
+test("E329 + varredura 01/11 — o anúncio reflete a visita em aberto (agendada, pedida ou já passada) e leva a Visitas", () => {
   const acoes = ler("../data/visitas-video-actions.ts");
-  const f = acoes.slice(acoes.indexOf("export async function minhasVisitasAgendadas"));
+  const f = acoes.slice(acoes.indexOf("export async function minhasVisitasNoImovel"));
   assert.match(f, /\.eq\("tenant_id", user\.id\)/);
-  assert.match(f, /\.eq\("status", "confirmado"\)/);
-  assert.match(f, /\.gt\("horario_confirmado", new Date\(\)\.toISOString\(\)\)/);
+  // O mesmo recorte do índice único do banco (um em aberto por morador, imóvel e modalidade).
+  assert.match(f, /\.in\("status", \["pedido", "confirmado", "remarcar"\]\)/);
   const botao = ler("../../components/property/visita-video.tsx");
-  assert.match(botao, /if \(agendada && !exemplo\) \{[\s\S]{0,80}<ButtonLink\s+href="\/dashboard\/visitas"/);
-  assert.match(botao, /data-testid=\{`\$\{t\.prefixo\}-agendada`\}[\s\S]{0,80}Visita agendada/);
+  assert.match(botao, /if \(estado && !exemplo\) \{[\s\S]{0,80}<ButtonLink\s+href="\/dashboard\/visitas"/);
+  assert.match(botao, /data-testid=\{`\$\{t\.prefixo\}-\$\{estado\}`\}/);
+  assert.match(botao, /estado === "agendada" \? "Visita agendada" : estado === "pedida" \? t\.feito : "Ver minha visita"/);
   const detalhe = ler("../../app/(public)/imoveis/[id]/property-detail.tsx");
-  assert.match(detalhe, /agendada=\{agendadas\.includes\("video"\)\}/);
-  assert.match(detalhe, /agendada=\{agendadas\.includes\("presencial"\)\}/);
-  assert.match(detalhe, /agendadas\.includes\("presencial"\) \? router\.push\("\/dashboard\/visitas"\)/);
+  assert.match(detalhe, /estado=\{visitas\.video\}/);
+  assert.match(detalhe, /estado=\{visitas\.presencial\}/);
+  assert.match(detalhe, /visitas\.presencial \? router\.push\("\/dashboard\/visitas"\)/);
 });

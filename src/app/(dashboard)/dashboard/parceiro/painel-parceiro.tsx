@@ -13,7 +13,7 @@ import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { reaisParaCampo } from "@/lib/reais";
 import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
-import { CIDADES_MAX, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
@@ -81,6 +81,12 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
               {STATUS[p.status] ?? p.status}
             </p>
             {suspenso && p.suspensoMotivo && <p className="text-sm text-ink">Motivo: {p.suspensoMotivo}</p>}
+            {/* E339: no painel do próprio parceiro de teste, a explicação certa — o público não vê o perfil. */}
+            {p.teste && (
+              <p className="mt-1 text-sm text-muted" data-testid="parceiro-perfil-teste">
+                {FAIXA_PARCEIRO_TESTE_DONO}.
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {p.status === "publicado" && (
@@ -465,7 +471,7 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
         </Button>
       </Panel>
 
-      <Panel id="agenda" title="Agenda" className="scroll-mt-24">
+      <Panel id="atendimento-agenda" title="Agenda" className="scroll-mt-24">
         <p className="text-sm font-medium text-ink">Janelas da semana</p>
         <ul className="mt-2 space-y-1 text-sm" data-testid="parceiro-janelas">
           {/* Sem janela, a agenda não filtra: qualquer horário futuro fora dos bloqueios vale nos pedidos (horarioNaAgenda). */}

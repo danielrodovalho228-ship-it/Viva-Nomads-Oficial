@@ -9,6 +9,10 @@ import { isFlowRoute, abasDoPapel, papelDaBarra, type MobileTab, type PapelBarra
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { ROTA_CONTADORES, normalizarContadores } from "@/lib/painel/contadores";
 import { cn } from "@/lib/utils";
+import { ancorasDasAbas } from "@/config/abas-painel";
+import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
+
+const ANCORAS_PARCEIRO = ancorasDasAbas(abasDoPapel("parceiro", { comContrato: false }));
 
 /**
  * Barra inferior por PAPEL (Prompt 41, item 2): 5 itens para o morador, o proprietário e o parceiro aprovado; o
@@ -36,6 +40,8 @@ export function MobileTabBar({
   const preferenciaParceiro = usePreferenciaParceiro();
 
   const contrato = useComContrato(comContrato, !!user);
+  // E340: a aba-âncora acesa (parceiro) acompanha a seção visível do painel.
+  const secao = useSecaoAncora(ANCORAS_PARCEIRO?.rota ?? "", ANCORAS_PARCEIRO?.ids ?? [], pathname);
 
   // Telas de fluxo não mostram a barra (mostram o MobileHeader).
   if (isFlowRoute(pathname)) return null;
@@ -49,8 +55,8 @@ export function MobileTabBar({
     const [rota, ancora] = tab.href.split("#");
     // As subabas da aba (ex.: Candidaturas em Pedidos) também a acendem; "/dashboard" só exato.
     if ((tab.ativoEm ?? []).some((h) => (h === "/dashboard" ? pathname === h : pathname === h || pathname.startsWith(h + "/")))) return true;
-    // Abas do parceiro são âncoras da mesma página: acende só a 1ª (Pedidos) na própria página.
-    if (ancora) return pathname === rota && ancora === "pedidos";
+    // Abas do parceiro são âncoras da mesma página. E340: acende a da seção visível (antes, sempre Pedidos).
+    if (ancora) return pathname === rota && ancora === (secao ?? "pedidos");
     if (pathname === rota) return true;
     // Abas "raiz" não acendem em sub-rotas (senão Início ficaria sempre ativo).
     if (rota === "/" || rota === "/dashboard") return false;

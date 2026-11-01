@@ -292,15 +292,19 @@ export interface ParceiroNaBusca {
   o ciclo); qualquer outra pessoa, com ou sem login, vê a faixa de visitante e o pedido desativado.
 */
 export const FAIXA_PARCEIRO_TESTE_VISITANTE = "Parceiro de teste da equipe Viva — não é um prestador disponível";
-export const FAIXA_PARCEIRO_TESTE_EQUIPE = "Parceiro de teste: fora da busca e das listagens";
+// E339 (01/11): a faixa diz a verdade conforme quem vê — a conta de teste (ou o admin) O VÊ na busca; o próprio parceiro
+// lê que o público não o vê. O visitante real nem o encontra na busca (E297, sem mudança).
+export const FAIXA_PARCEIRO_TESTE_EQUIPE = "Parceiro de teste: visível só para contas de teste";
+export const FAIXA_PARCEIRO_TESTE_DONO = "Seu perfil de teste não aparece para o público";
 export const PEDIDO_PARCEIRO_TESTE_RECUSADO = "Este é um parceiro de teste da equipe Viva e não recebe pedidos.";
 
-export type ModoParceiroTeste = "visitante" | "equipe" | null;
+export type ModoParceiroTeste = "visitante" | "equipe" | "dono" | null;
 
-/** null = parceiro de verdade; "equipe" = o próprio parceiro, o admin ou uma conta de teste; "visitante" = qualquer outra pessoa. */
+/** null = parceiro de verdade; "dono" = o próprio parceiro (E339); "equipe" = o admin ou uma conta de teste; "visitante" = qualquer outra pessoa. */
 export function modoParceiroTeste(teste: boolean, quem: { dono: boolean; admin: boolean; teste: boolean }): ModoParceiroTeste {
   if (!teste) return null;
-  return quem.dono || quem.admin || quem.teste ? "equipe" : "visitante";
+  if (quem.dono) return "dono";
+  return quem.admin || quem.teste ? "equipe" : "visitante";
 }
 
 export function distanciaKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {

@@ -5097,12 +5097,13 @@
         "t213-jornada-teste-confirmacao"
       ]
     },
-    "src/lib/data/visitas-video-actions.ts#minhasVisitasAgendadas": {
+    "src/lib/data/visitas-video-actions.ts#minhasVisitasNoImovel": {
       "personas": [
         "inquilino"
       ],
       "specs": [
-        "t772-e329-visita-confirmada"
+        "t772-e329-visita-confirmada",
+        "t774-visita-pedida-no-anuncio"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#pedirVisita": {
