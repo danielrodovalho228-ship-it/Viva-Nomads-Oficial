@@ -36,7 +36,7 @@ import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
-import { donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
+import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
@@ -2154,7 +2154,7 @@ export async function pausarAnuncio(id: string): Promise<ResultadoPausa> {
   if (a.p.status !== "active") return { ok: false, erro: "Só um anúncio publicado pode ser pausado." };
   // O motivo só o servidor grava (a coluna não é do dono, 0223): cliente de serviço, depois de conferir o dono acima.
   const adm = createAdminClient();
-  if (!adm) return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
+  if (!adm) return { ok: false, erro: MSG_PAUSAR_FALHOU };
   const { data, error } = await adm
     .from("properties")
     .update({ status: "paused", pausa_motivo: "dono" })
@@ -2162,7 +2162,7 @@ export async function pausarAnuncio(id: string): Promise<ResultadoPausa> {
     .eq("owner_id", a.userId)
     .eq("status", "active")
     .select("id");
-  if (error || !data?.length) return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
+  if (error || !data?.length) return { ok: false, erro: MSG_PAUSAR_FALHOU };
   revalidarPausa(id);
   return { ok: true, mensagem: "Anúncio pausado. Ele saiu da busca; o que já estava em andamento continua." };
 }
@@ -2193,7 +2193,9 @@ export async function reativarAnuncio(id: string): Promise<ResultadoPausa> {
   if (faltas.length) return { ok: false, erro: "Para reativar, falta:", faltas };
   // Pela sessão do dono: os gatilhos de publicação do banco (documento, fotos, padrão mínimo, laudo, IA) valem aqui.
   const { data, error } = await supabase.from("properties").update({ status: "active" }).eq("id", id).eq("owner_id", userId).eq("status", "paused").select("id");
-  if (error || !data?.length) return { ok: false, erro: error?.message ?? "Não foi possível reativar agora. Tente de novo." };
+  // Auditoria de erros (achado nº 2): nada de texto cru do banco na tela. As mensagens dos gatilhos de publicação
+  // (em português, nossas) passam; o resto vira a frase em português (erroBancoPT).
+  if (error || !data?.length) return { ok: false, erro: erroBancoPT(error, MSG_REATIVAR_FALHOU) };
   await avisarBuscasDoImovel(id).catch(() => null);
   revalidarPausa(id);
   return { ok: true, mensagem: "Anúncio reativado: ele voltou para a busca." };
