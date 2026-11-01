@@ -13,7 +13,7 @@ import { enquadramentoReformaAtivo } from "@/lib/reforma/chave";
 import { mostrarAvisoReforma, numerosNaViva, type NumerosNaViva } from "@/lib/reforma/enquadramento";
 import { AvisoReforma, EnquadramentoReforma } from "@/components/reforma/enquadramento-reforma";
 
-export const metadata: Metadata = { title: "Ganhos — Viva Nomads" };
+export const metadata: Metadata = { title: "Ganhos" };
 
 /**
  * E176 (D1): a subaba "Ganhos" de Contratos. O valor mensal de cada contrato em vigência ou a começar, somado. Mesma
