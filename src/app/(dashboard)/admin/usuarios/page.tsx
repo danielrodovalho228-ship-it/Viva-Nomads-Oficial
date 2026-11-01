@@ -16,6 +16,9 @@ import { PAPEIS_USUARIOS, cadastroCompleto, faltaNoCadastro, filtrosUsuarios, hr
 import { Users } from "lucide-react";
 import { BotaoContaTeste } from "./conta-teste";
 import { TipoConta } from "./tipo-conta";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
+import { ehObservadorQa } from "@/lib/qa/observador";
+import { ROTULO_TIPO_CONTA } from "@/lib/planos/gestor";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin/usuarios"), robots: { index: false, follow: false } };
@@ -67,11 +70,15 @@ export default async function AdminUsuariosPage({
   let total = 0;
   const foneVerificado = new Map<string, boolean>();
   let identidade = new Map<string, { texto: string; validoAte: string | null }>();
+  // E338 (01/11): o admin observador da QA não troca tipo nem marca de teste de conta (o servidor recusa sempre,
+  // recusaObservador sem alvo) — a tela mostra os valores em leitura, como Parceiros e Sistema.
+  let observador = false;
   if (supabase && admin) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user || !(await ehAdmin(supabase, user.id))) notFound();
+    observador = await ehObservadorQa(user.id);
     let q = admin
       .from("profiles")
       .select("id, full_name, role, created_at, fundador, is_teste, avatar_url, cpf, cnpj, account_type")
@@ -130,6 +137,7 @@ export default async function AdminUsuariosPage({
           { rotulo: "Admins", valor: "Ver lista", href: hrefUsuarios({ papel: "admin" }) },
         ]}
       />
+      {observador && <SoLeituraQa className="mb-4" />}
       <form action="/admin/usuarios" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {f.fundador && <input type="hidden" name="fundador" value="1" />}
         {f.comAnuncio && <input type="hidden" name="com_anuncio" value="1" />}
@@ -196,8 +204,17 @@ export default async function AdminUsuariosPage({
                   </p>
                   {u.role !== "admin" && (
                     <div className="mt-2 grid gap-2">
-                      <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} />
-                      <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
+                      {observador ? (
+                        <p className="text-sm text-ink" data-testid="tipo-conta-leitura">
+                          <span className="text-muted">Tipo da conta:</span> {ROTULO_TIPO_CONTA[u.account_type === "gestor" ? "gestor" : "individual"]} ·{" "}
+                          <span className="text-muted">conta de teste:</span> {u.is_teste ? "sim" : "não"}
+                        </p>
+                      ) : (
+                        <>
+                          <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} />
+                          <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
+                        </>
+                      )}
                     </div>
                   )}
                 </li>
@@ -233,8 +250,20 @@ export default async function AdminUsuariosPage({
                       <td className="py-2 pr-4" data-testid="admin-identidade">{idText(u.id)}</td>
                       <td className="py-2 pr-4" data-testid="admin-telefone-verificado">{foneVerificado.get(u.id) ? "Sim" : "Não"}</td>
                       <td className="py-2 pr-4">{dataBRT(u.created_at)}</td>
-                      <td className="py-2 pr-4">{u.role !== "admin" ? <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} /> : "—"}</td>
-                      <td className="py-2">{u.role !== "admin" ? <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} /> : "—"}</td>
+                      <td className="py-2 pr-4">
+                        {u.role === "admin" ? "—" : observador ? (
+                          <span data-testid="tipo-conta-leitura">{ROTULO_TIPO_CONTA[u.account_type === "gestor" ? "gestor" : "individual"]}</span>
+                        ) : (
+                          <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} />
+                        )}
+                      </td>
+                      <td className="py-2">
+                        {u.role === "admin" ? "—" : observador ? (
+                          <span data-testid="conta-teste-leitura">{u.is_teste ? "Sim" : "Não"}</span>
+                        ) : (
+                          <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
