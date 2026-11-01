@@ -71,7 +71,9 @@ export async function contratosReais(
   admin: Admin,
   periodo?: { ini: string; fim: string },
   cidade?: string | null,
-  tipo: "real" | "teste" | "todos" = "real"
+  tipo: "real" | "teste" | "todos" = "real",
+  /** Achado nº 25: com `exigir`, a falha de leitura LANÇA (o Financeiro avisa em vez de mostrar "0 contratos"). */
+  opcoes: { exigir?: boolean } = {},
 ): Promise<ContratoLinhaAdmin[]> {
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
@@ -80,7 +82,8 @@ export async function contratosReais(
     .order("created_at", { ascending: false })
     .limit(2000);
   if (periodo) q = q.gte("created_at", periodo.ini).lt("created_at", periodo.fim);
-  const [{ data }, teste] = await Promise.all([q, idsContasTeste(admin)]);
+  const [{ data, error }, teste] = await Promise.all([q, idsContasTeste(admin)]);
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler os contratos.");
   return ((data ?? []) as unknown as {
     id: string;
     created_at: string;
@@ -532,7 +535,9 @@ export async function urgentesSemResposta4h(admin: Admin, opcoes: { exigir?: boo
 
 /** "Taxas vencidas": cobranças da taxa de serviço com status vencido, pelo recorte Real/Teste/Todos do contrato. */
 export async function taxasVencidas(admin: Admin, tipo: "real" | "teste" | "todos" = "real"): Promise<{ leadId: string; criadoEm: string }[]> {
-  const { data } = await admin.from("cobrancas_fechamento").select("lead_id, criado_em").eq("tipo", "comissao").eq("status", "vencido").limit(2000);
+  // Achado nº 25: a falha LANÇA (nunca "0 taxas vencidas"); todos os chamadores já capturam e avisam.
+  const { data, error } = await admin.from("cobrancas_fechamento").select("lead_id, criado_em").eq("tipo", "comissao").eq("status", "vencido").limit(2000);
+  if (error) throw new Error("Não foi possível ler as taxas vencidas.");
   const linhas = (data ?? []) as { lead_id: string; criado_em: string }[];
   if (!linhas.length || tipo === "todos") return linhas.map((l) => ({ leadId: l.lead_id, criadoEm: l.criado_em }));
   const testeDoLead = await leadsDeTeste(admin, linhas.map((l) => l.lead_id));
@@ -551,7 +556,9 @@ export async function imovelDosLeads(admin: Admin, ids: string[]): Promise<Map<s
 export async function cobrancasTaxa(admin: Admin, leadIds: string[]): Promise<Map<string, { status: string; pagoEm: string | null }>> {
   const ids = [...new Set(leadIds.filter(Boolean))];
   if (!ids.length) return new Map();
-  const { data } = await admin.from("cobrancas_fechamento").select("lead_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
+  // Achado nº 25: a falha LANÇA — sem as cobranças, toda taxa pareceria "sem cobrança" e "Taxa a receber" inflaria.
+  const { data, error } = await admin.from("cobrancas_fechamento").select("lead_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
+  if (error) throw new Error("Não foi possível ler as cobranças das taxas.");
   return new Map(((data ?? []) as { lead_id: string; status: string; pago_em: string | null }[]).map((c) => [c.lead_id, { status: c.status, pagoEm: c.pago_em }]));
 }
 

@@ -1,3 +1,4 @@
+import { MSG_FIN_CONTRATOS, MSG_FIN_COBRANCAS, MSG_FIN_VENCIDAS } from "@/lib/admin/financeiro-avisos";
 import { hojeBR } from "@/lib/utils";
 import { resolverPeriodo } from "@/lib/admin/visao-geral";
 import { recorteDaUrl } from "@/lib/admin/indicadores";
@@ -32,15 +33,27 @@ export default async function AdminFinanceiroPage({
   const soVencidas = um("situacao") === "vencida";
   const admin = await adminDaPagina();
   // Prompt 29, item 6: valor total, taxa e take rate saem da MESMA lista de contratos da home e de /admin/contratos.
+  // Achado nº 25: cada leitura que falha vira um aviso na tela (nunca "0 taxas vencidas" ou taxa "sem cobrança" calada).
+  const avisosLeitura: string[] = [];
+  const falhou = <T,>(texto: string, valor: T) => () => {
+    avisosLeitura.push(texto);
+    return valor;
+  };
   const [r, cidades, contratos, vencidas] = await Promise.all([
     getFinanceiro(periodo.inicio, periodo.fim, cidade, recorte),
     cidadesComAnuncio(),
-    admin ? contratosReais(admin, intervaloBRT(periodo.inicio, periodo.fim), cidade, recorte).catch(() => null) : Promise.resolve(null),
+    admin
+      ? contratosReais(admin, intervaloBRT(periodo.inicio, periodo.fim), cidade, recorte, { exigir: true }).catch(
+          falhou(MSG_FIN_CONTRATOS, null),
+        )
+      : Promise.resolve(null),
     // "Taxas vencidas" da home (agora, sem período): a mesma função, com o recorte da página.
-    admin && soVencidas ? taxasVencidas(admin, recorte).catch(() => []) : Promise.resolve(null),
+    admin && soVencidas ? taxasVencidas(admin, recorte).catch(falhou(MSG_FIN_VENCIDAS, null)) : Promise.resolve(null),
   ]);
   const [cobrancas, imoveis] = await Promise.all([
-    admin && contratos ? cobrancasTaxa(admin, contratos.map((c) => c.leadId ?? "")).catch(() => new Map()) : Promise.resolve(new Map()),
+    admin && contratos
+      ? cobrancasTaxa(admin, contratos.map((c) => c.leadId ?? "")).catch(falhou(MSG_FIN_COBRANCAS, new Map<string, { status: string; pagoEm: string | null }>()))
+      : Promise.resolve(new Map()),
     admin && vencidas ? imovelDosLeads(admin, vencidas.map((v) => v.leadId)).catch(() => new Map<string, string>()) : Promise.resolve(new Map<string, string>()),
   ]);
   // A tabela de taxas sai da mesma lista dos cartões (nunca da lista da 0071, que não tem recorte).
@@ -59,6 +72,7 @@ export default async function AdminFinanceiroPage({
       dados={dados}
       geradoEm={r.ok ? r.geradoEm : null}
       aviso={aviso}
+      avisosLeitura={avisosLeitura}
       periodo={periodo}
       cidade={cidade}
       cidades={cidades}

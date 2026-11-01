@@ -35,6 +35,7 @@ export function FinanceiroClient({
   dados,
   geradoEm,
   aviso,
+  avisosLeitura = [],
   periodo,
   cidade,
   cidades,
@@ -50,6 +51,8 @@ export function FinanceiroClient({
   dados: Record<string, unknown> | null;
   geradoEm: string | null;
   aviso: string | null;
+  /** Achado nº 25: leituras que falharam (contratos, taxas vencidas, cobranças). */
+  avisosLeitura?: string[];
   periodo: Periodo;
   cidade: string | null;
   cidades: string[];
@@ -95,6 +98,11 @@ export function FinanceiroClient({
         </span>
       </form>
 
+      {avisosLeitura.map((t) => (
+        <p key={t} role="alert" data-testid="fin-aviso-leitura" className="mb-3 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
+          {t}
+        </p>
+      ))}
       {aviso && (
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>
       )}
