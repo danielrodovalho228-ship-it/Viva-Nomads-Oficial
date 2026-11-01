@@ -67,7 +67,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
           </section>
 
           <section aria-labelledby="ajuda-temas-titulo">
-            <h2 id="ajuda-temas-titulo" className="font-title text-xl font-semibold text-ink">
+            <h2 id="ajuda-temas-titulo" className="font-title text-xl font-semibold text-forest">
               Temas
             </h2>
             <ul className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -82,7 +82,8 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
                       <Image src={t.foto} alt={t.alt} fill sizes="80px" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block font-title text-lg font-semibold text-ink">{t.titulo}</span>
+                      {/* Conformidade fina (01/11, mockup ajuda-central): título do tema em verde e um passo maior. */}
+                      <span className="block font-title text-xl font-semibold text-forest">{t.titulo}</span>
                       <span className="mt-1 block text-sm text-muted">{t.resumo}</span>
                     </span>
                     <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
@@ -93,7 +94,7 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
           </section>
 
           <section aria-labelledby="ajuda-docs-titulo">
-            <h2 id="ajuda-docs-titulo" className="font-title text-xl font-semibold text-ink">
+            <h2 id="ajuda-docs-titulo" className="font-title text-xl font-semibold text-forest">
               Documentos
             </h2>
             <ul className="mt-4 grid gap-4 md:grid-cols-2">
