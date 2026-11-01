@@ -9,6 +9,7 @@ import { contarAguardandoOk } from "@/lib/data/admin-indicadores";
 import { PREFIXO_MOACIR } from "@/lib/agentes/gerente";
 import { revalidatePath } from "next/cache";
 import { avisoOrdem, type Agente, type Conversa, type Ordem, type Ronda } from "@/lib/agentes/central";
+import { contarRondas24h, juntarUltimas, type Rondas24h } from "@/lib/agentes/painel";
 import { JANELA_EVENTOS_H, montarEventos, type ChamadoEvento, type EventoRede, type FontesRede } from "@/lib/agentes/eventos";
 import { eventosGithub } from "@/lib/agentes/github";
 import { textoReaberto, validarReabertura } from "@/lib/agentes/aceite-ordem";
@@ -22,6 +23,8 @@ import { dispararEncaminhamentosDaSessao } from "@/lib/agentes/servidor";
 export interface DadosCentral {
   agentes: Agente[];
   rondas: Ronda[];
+  /** E335: rondas das últimas 24 h, lidas à parte (a capa conta por aqui, não pela janela das 200). */
+  rondas24h: Rondas24h | null;
   ordens: Ordem[];
   /** Quem está logado: só o criador da ordem vê Aceito/Reabrir (a ação e o gatilho do banco conferem de novo). */
   uid: string | null;
@@ -32,7 +35,8 @@ export interface DadosCentral {
   acessoLiberado: boolean;
 }
 
-const VAZIO: DadosCentral = { agentes: [], rondas: [], ordens: [], uid: null, acessoLiberado: false };
+const VAZIO: DadosCentral = { agentes: [], rondas: [], rondas24h: null, ordens: [], uid: null, acessoLiberado: false };
+const COLUNAS_RONDA = "id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao, ordens_atendidas";
 
 
 export async function carregarCentral(): Promise<DadosCentral> {
@@ -40,15 +44,23 @@ export async function carregarCentral(): Promise<DadosCentral> {
   if (!supabase) return VAZIO;
   const uid = (await supabase.auth.getUser()).data.user?.id ?? null;
   // ADMIN-5: o chat e as atas não vêm aqui; cada aba lê a sua página quando abre (carregarConversas / carregarAtas).
-  const [a, r, o, adm] = await Promise.all([
+  const desde24h = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const [a, r, o, adm, r24] = await Promise.all([
     supabase.from("agentes").select("slug, nome, cargo, esquadrao, rotina_texto, trigger_id, status, briefing, ordem").order("ordem"),
-    supabase.from("agentes_rondas").select("id, agente_slug, iniciada_em, concluida_em, status, resumo, achados, link_sessao, ordens_atendidas").order("iniciada_em", { ascending: false }).limit(200),
+    supabase.from("agentes_rondas").select(COLUNAS_RONDA).order("iniciada_em", { ascending: false }).limit(200),
     supabase.from("agentes_ordens").select("*") /* "*": vale antes e depois da 0085 (colunas do disparo) */.order("criada_em", { ascending: false }).limit(100),
     supabase.rpc("is_admin"),
+    supabase.from("agentes_rondas").select("agente_slug").gte("iniciada_em", desde24h).limit(5000),
   ]);
+  const agentes = (a.data ?? []) as Agente[];
+  // E335: a última ronda de CADA agente, lida à parte — a janela das 200 mais recentes ficava só com o Renato.
+  const ultimas = await Promise.all(
+    agentes.map((ag) => supabase.from("agentes_rondas").select(COLUNAS_RONDA).eq("agente_slug", ag.slug).order("iniciada_em", { ascending: false }).limit(1).maybeSingle()),
+  );
   return {
-    agentes: (a.data ?? []) as Agente[],
-    rondas: (r.data ?? []) as Ronda[],
+    agentes,
+    rondas: juntarUltimas((r.data ?? []) as Ronda[], ultimas.map((u) => u.data as Ronda | null).filter((x): x is Ronda => !!x)),
+    rondas24h: r24.error ? null : contarRondas24h((r24.data ?? []) as { agente_slug: string }[]),
     ordens: (o.data ?? []) as Ordem[],
     uid,
     acessoLiberado: adm.data === true,
