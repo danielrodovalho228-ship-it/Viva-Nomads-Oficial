@@ -37,6 +37,8 @@ import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { primeiroNome } from "@/lib/display-name";
 import { lerChaveSms } from "@/lib/data/chave-sms";
 import { signAvatarPath } from "@/lib/data/avatar-url";
+import { COLUNAS_PEDIDO_EMAIL, corpoConfirmacaoPedido, pedidoDaLinha, type AcaoPedido } from "@/lib/pedidos/email-confirmacao";
+import type { PedidoDoCartao } from "@/lib/notifications/cartoes-email";
 
 /** Aviso in-app + e-mail (Prompt 30, item 8: sem WhatsApp). Best-effort. */
 type Recip = {
@@ -73,6 +75,39 @@ async function notificar(
       ...c,
       detailsHtml: `${c.detailsHtml ?? ""}${detalhe.detailsHtml}`,
       detailsText: detalhe.detailsText,
+    });
+  } catch {
+    /* notificação nunca quebra o fluxo */
+  }
+}
+
+/**
+ * E402: confirma ao próprio morador que o pedido foi publicado ou que a edição foi salva, com os dados do pedido
+ * (e, na edição, o valor anterior do que mudou). Respeita o e-mail desligado na conta. Best-effort: nunca quebra o fluxo.
+ */
+async function confirmarAoMorador(
+  acao: AcaoPedido,
+  userId: string,
+  pedidoId: string,
+  compativeis: number,
+  antes: PedidoDoCartao | null = null,
+): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    if (!admin) return;
+    const [{ data: perfil }, { data: linha }] = await Promise.all([
+      admin.from("profiles").select("email, full_name, notif_email").eq("id", userId).maybeSingle(),
+      admin.from("pedidos_moradia").select(COLUNAS_PEDIDO_EMAIL).eq("id", pedidoId).maybeSingle(),
+    ]);
+    if (!perfil?.email || !notificacaoLigada(perfil.notif_email as boolean | null) || !linha) return;
+    const corpo = corpoConfirmacaoPedido(acao, pedidoDaLinha(linha as unknown as Parameters<typeof pedidoDaLinha>[0]), { compativeis, antes });
+    await notify({
+      event: "pedido_confirmado",
+      email: perfil.email as string,
+      name: primeiroNome((perfil.full_name as string | null) ?? "") || undefined,
+      userId,
+      pushUrl: "/dashboard/pedidos",
+      ...paraNotify({ subject: corpo.subject, body: corpo.body, linhas: corpo.linhas }),
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -255,6 +290,8 @@ export async function criarPedido(
   } catch {
     /* best-effort: o pedido já foi publicado */
   }
+  // E402: a confirmação ao morador (antes, publicar não mandava nada a ele).
+  await confirmarAoMorador("publicado", user.id, data.id as string, compat.compativeis);
 
   return { ok: true, id: data?.id, ...compat };
 }
@@ -287,6 +324,8 @@ export async function editarPedido(pedidoId: string, input: PedidoInput): Promis
   if (!val.ok) return { ok: false, error: val.error };
   const destino = await destinoDoPedido(input);
   if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
+  // E402: a versão anterior, para o e-mail dizer o que mudou (ex.: orçamento R$ 2.500 → R$ 2.600).
+  const { data: anterior } = await supabase.from("pedidos_moradia").select(COLUNAS_PEDIDO_EMAIL).eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
   const { data, error } = await supabase
     .from("pedidos_moradia")
     .update({ ...colunasDoPedido(input, val.v), destino })
@@ -304,6 +343,7 @@ export async function editarPedido(pedidoId: string, input: PedidoInput): Promis
   } catch {
     /* best-effort */
   }
+  await confirmarAoMorador("editado", user.id, pedidoId, compativeis, anterior ? pedidoDaLinha(anterior as unknown as Parameters<typeof pedidoDaLinha>[0]) : null);
   return { ok: true, id: pedidoId, compativeis };
 }
 

@@ -71,6 +71,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   pedido_confirmar_telefone: "transacional",
   pedido_encerrado: "transacional",
   pedido_moderado: "transacional",
+  pedido_confirmado: "transacional",
   documento_aprovado: "documentos",
   documento_recusado: "documentos",
   documento_recebido: "documentos",

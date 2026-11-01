@@ -22,6 +22,7 @@ export type NotificationEvent =
   | "pedido_aceito" // inquilino aceitou para conversa → proprietário
   | "pedido_expirando" // pedido expira em 3 dias → inquilino
   | "pedido_moderado" // pedido ocultado pela moderação → inquilino
+  | "pedido_confirmado" // E402: o morador publicou ou editou o pedido de moradia → confirmação ao próprio morador
   | "pedido_confirmar_telefone" // chave SMS_ATIVO ligada: 7 dias para confirmar o telefone → inquilino (Prompt 30)
   | "pedido_encerrado" // o inquilino excluiu o pedido que você respondeu → proprietário (Prompt 30)
   // Verificação do documento do imóvel (anti-fraude) → proprietário
@@ -160,6 +161,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_expirando: { subject: "Ainda procurando? Renove com um clique", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia expira em até 5 dias. Ainda procurando? Renove com um clique; se já resolveu, marque como atendido.`, cta: "Renovar pedido", path: "/dashboard/pedidos" },
   pedido_confirmar_telefone: { subject: "Confirme seu telefone para manter o pedido visível", body: (n) => `Olá${n ? " " + n : ""}, para o seu pedido de moradia continuar visível aos proprietários, confirme o seu telefone nos próximos 7 dias.`, cta: "Confirmar telefone", path: "/dashboard/conta/perfil" },
   pedido_encerrado: { subject: "Um pedido de moradia que você respondeu foi encerrado", body: (n) => `Olá${n ? " " + n : ""}, o inquilino encerrou um pedido de moradia que você respondeu. Ele não aparece mais na sua lista.`, cta: "Ver pedidos", path: "/dashboard/pedidos-cidade" },
+  pedido_confirmado: { subject: "Seu pedido de moradia está publicado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia está publicado. Quando um proprietário responder, você recebe aqui.`, cta: "Ver meus pedidos", path: "/dashboard/pedidos" },
   pedido_moderado: { subject: "Seu pedido de moradia foi ocultado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de moradia foi ocultado pela moderação. Veja o motivo e ajuste se necessário.`, cta: "Ver o motivo", path: "/dashboard/pedidos" },
   documento_aprovado: { subject: "Documento aprovado", body: (n) => `Olá${n ? " " + n : ""}, a documentação do seu imóvel foi verificada e aprovada. Seu anúncio já pode ser publicado.`, cta: "Publicar meu anúncio", path: "/dashboard/imoveis" },
   documento_recusado: { subject: "Documento precisa de ajuste", body: (n) => `Olá${n ? " " + n : ""}, a documentação enviada não pôde ser aprovada. Veja o motivo, ajuste e reenvie para liberar a publicação.`, cta: "Reenviar documento", path: "/dashboard/imoveis" },
