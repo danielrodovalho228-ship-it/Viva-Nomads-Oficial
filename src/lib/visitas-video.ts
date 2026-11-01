@@ -273,6 +273,16 @@ export function formatarHorario(iso: string): string {
   return `${g("weekday")}, ${g("day")}/${g("month")} às ${g("hour")}:${g("minute")}`;
 }
 
+/**
+ * E318: a visita CANCELADA diz quando foi pedida — dois pedidos para o mesmo horário (ex.: pedir, cancelar e pedir de
+ * novo) davam cartões idênticos. "Pedida em sex., 30/10 às 13:25 (horário de Brasília)"; null fora do cancelado.
+ */
+export function textoPedidaEm(v: { status: string; criadoEm?: string | null }): string | null {
+  if (v.status !== "cancelado" || !v.criadoEm) return null;
+  const t = formatarHorarioBrasilia(v.criadoEm);
+  return t ? `Pedida em ${t}` : null;
+}
+
 /** Igual, com a etiqueta do fuso: "qua., 21/10 às 15:00 (horário de Brasília)". */
 export function formatarHorarioBrasilia(iso: string): string {
   const t = formatarHorario(iso);
