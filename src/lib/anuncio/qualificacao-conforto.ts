@@ -125,6 +125,13 @@ export const TOTAL_TELAS = TELAS_QUALIFICACAO.length;
 /** Resposta de cada pergunta: toggle → true/false; cartões → id da opção; internet → Mbps (texto) ou "nao_tem". */
 export type Respostas = Record<string, string | boolean>;
 
+/** E382: quantas perguntas da Qualificação já têm resposta (Sim/Não, uma opção ou a internet), de todas as telas. */
+export function contarRespondidas(r: Respostas, telas: readonly TelaQualificacao[] = TELAS_QUALIFICACAO): { feitas: number; total: number } {
+  const perguntas = telas.flatMap((t) => t.perguntas);
+  const feitas = perguntas.filter((q) => r[q.id] !== undefined && r[q.id] !== "").length;
+  return { feitas, total: perguntas.length };
+}
+
 export const SEM_INTERNET_QUALIFICACAO = "nao_tem";
 
 /** O critério de cada item ("O que conta?"), lido da lista única. */

@@ -37,8 +37,17 @@ export const progressoPasso = (pos: number, total = TELAS_ASSISTENTE.length) => 
  * é contínua: sobe durante as 5 telas até chegar exatamente onde o Passo 1 começa (sem recomeçar do zero).
  */
 export const textoQualificacao = (tela: number, telas = 5) => `Antes do Passo 1 · Qualificação ${Math.min(tela, telas)} de ${telas}`;
-export const progressoQualificacao = (tela: number, telas = 5, total = TELAS_ASSISTENTE.length) =>
-  Math.round((Math.min(Math.max(tela, 0), telas) / telas) * progressoPasso(0, total));
+/** E382 (01/11): a 2ª linha do rodapé reflete as respostas na hora ("3 de 12 respondidas"); sem resposta, nada. */
+export const textoRespondidas = (r: { feitas: number; total: number }) => (r.feitas > 0 ? `${r.feitas} de ${r.total} respondidas` : null);
+/**
+ * E382 (01/11): a barra sobe com as RESPOSTAS, não só com as telas vencidas — antes ficava em 0 na 1ª tela com as
+ * perguntas respondidas. Vale o maior entre as telas passadas e a fração respondida; nunca passa do início do Passo 1.
+ */
+export const progressoQualificacao = (tela: number, telas = 5, total = TELAS_ASSISTENTE.length, fracaoRespondida = 0) => {
+  const fracao = Math.max(Math.min(Math.max(tela, 0), telas) / telas, Math.min(Math.max(fracaoRespondida, 0), 1));
+  const pct = fracao * progressoPasso(0, total);
+  return fracaoRespondida > 0 ? Math.max(1, Math.round(pct)) : Math.round(pct);
+};
 
 /**
  * Passo 1 (Cadastro 01-b / E87, mockup cadastro-imovel-01): os NOVE tipos, todos em cartões-foto numa linha única
