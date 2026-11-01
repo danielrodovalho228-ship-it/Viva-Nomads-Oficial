@@ -106,7 +106,10 @@ export function EtapaFotos({
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-ink">
             <span data-testid="fotos-contagem-numero">{contadas}</span> / {MIN_PHOTOS} fotos
-            {bloqueado && <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>}
+            {/* Conformidade fina (01/11): o "Faltam N fotos" não se repete — quando a trava já diz embaixo, sai daqui. */}
+            {bloqueado && !(passoFotos && !passoFotos.podeContinuar && passoFotos.mensagem) && (
+              <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>
+            )}
           </span>
           {photos.length >= MIN_PHOTOS && (
             <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", TIER_META[tierFromPhotoCount(photos.length)].tone)}>

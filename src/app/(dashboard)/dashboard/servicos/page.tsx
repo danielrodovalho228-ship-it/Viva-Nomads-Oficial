@@ -26,7 +26,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
  * O catálogo antigo do morador ficou obsoleto: esta tela não lê mais dele.
  */
 export default async function ServicosPage() {
-  const [cidade, pedidos] = await Promise.all([cidadeDosMeusServicos(), meusPedidosDeServico()]);
+  const [cidade, pedidos] = await Promise.all([cidadeDosMeusServicos(), meusPedidosDeServico({ exigir: true })]);
   return (
     <>
       <PageTitle title="Serviços" subtitle={notaPagamentoServicos(PAGAMENTO_PARCEIROS_ATIVO)} />

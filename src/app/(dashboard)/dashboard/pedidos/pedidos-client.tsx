@@ -35,6 +35,7 @@ import {
   DIAS_AVISO_RENOVAR,
   TEXTO_AVISO_RENOVAR,
   dataPedidoBR,
+  dataPedidoPorExtenso,
   textoAcimaDoTeto,
   textoBairros,
   textoFaixaValor,
@@ -191,7 +192,7 @@ export function PedidosClient({
                       <p className="mt-2 max-w-2xl text-sm text-ink">{p.apresentacao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted">
-                      {p.status === "expirado" ? "Expirou em" : "Fica no ar até o fim do dia"} {dataPedidoBR(p.expira_em)}
+                      {p.status === "expirado" ? `Expirou em ${dataPedidoBR(p.expira_em)}` : `Fica no ar até o fim do dia ${dataPedidoPorExtenso(p.expira_em)}`}
                     </p>
                   </div>
                   {/* Ações do pedido */}
