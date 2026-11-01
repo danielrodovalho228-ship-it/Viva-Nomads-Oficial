@@ -23,6 +23,11 @@ export function motorDoMapa(mapboxToken?: string | null): "mapbox" | "leaflet" {
   return mapboxToken ? "mapbox" : "leaflet";
 }
 
+/** Sem base de mapa (sem token Mapbox e sem chave CARTO): o quadro mostra o aviso do E419 e não há o que ampliar. */
+export function mapaSemBase(mapboxToken: string | null | undefined = process.env.NEXT_PUBLIC_MAPBOX_TOKEN, tilesCarto: string | null = TILES_CARTO): boolean {
+  return motorDoMapa(mapboxToken) === "leaflet" && !tilesCarto;
+}
+
 /** Raio (km) da área aproximada exibida na página do imóvel (~500 m). */
 export const RAIO_APROXIMADO_KM = 0.5;
 
