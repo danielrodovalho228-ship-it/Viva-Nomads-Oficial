@@ -27,12 +27,14 @@ export default async function EncerramentosPage() {
   } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
   if (supabase && user) await logModeracao(supabase, user.id, "ver_encerramentos", "fila", "encerramentos");
 
-  const { data } = await admin
+  const { data, error } = await admin
     .from("contrato_encerramento_pedidos")
     .select("id, contrato_id, pedido_por, papel, motivo, texto, status, criado_em, contratos(property_id, properties(title))")
     .order("status")
     .order("criado_em", { ascending: false })
     .limit(200);
+  // Achado 34: falha de leitura cai no aviso do admin ("Tentar de novo"), não em "0 em aberto" + "Nada pendente".
+  if (error) throw new Error("Não foi possível ler os pedidos de encerramento.");
   type Linha = {
     id: string;
     contrato_id: string;
