@@ -8,7 +8,8 @@ import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { HREF_SINO, abaAtivaPainel, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
+import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
+import { HREF_SINO, abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
 
 /**
  * Topo do painel no computador. PROP-1 (dono, mockup painel-proprietario-desktop) e MENUS-5/MORADOR-NAV (morador e
@@ -31,7 +32,10 @@ export function TopoPainel(p: {
   itensConta: readonly ItemConta[];
   onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
 }) {
-  const ativa = abaAtivaPainel(p.abas, p.pathname);
+  // E340: nas abas-âncora (parceiro), a acesa acompanha a seção visível.
+  const ancoras = ancorasDasAbas(p.abas);
+  const secao = useSecaoAncora(ancoras?.rota ?? "", ancoras?.ids ?? [], p.pathname);
+  const ativa = abaAtivaPainel(p.abas, p.pathname, secao);
   const px = prefixoPapel(p.papel);
   return (
     <header className="web-only hidden border-b border-line bg-white lg:block print:hidden" data-testid={`topo-${px}`} data-papel={p.papel}>
