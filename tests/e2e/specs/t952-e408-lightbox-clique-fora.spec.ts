@@ -34,7 +34,8 @@ for (const largura of [390, 1280] as const) {
       await expect(contador).toHaveText(/^1 \/ \d+$/);
 
       // Na foto: não fecha.
-      const foto = caixa.locator("img").first();
+      // A foto grande fica POR CIMA da miniatura (E262): é ela que recebe o clique ("… — foto 1").
+      const foto = caixa.getByRole("img", { name: /— foto 1$/ });
       await expect(foto).toBeVisible();
       await foto.click();
       await expect(caixa).toBeVisible();
