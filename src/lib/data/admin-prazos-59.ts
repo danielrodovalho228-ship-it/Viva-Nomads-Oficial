@@ -42,14 +42,16 @@ export async function contasTeste(admin: Admin): Promise<Set<string>> {
 }
 
 /** "Manutenção fora do prazo": abertas cujo prazo de solução (ou a provisória, no urgente) venceu. Mais antiga primeiro. */
-export async function manutencaoForaDoPrazo(admin: Admin, agora = new Date()): Promise<OrdemAdmin[]> {
-  const [todas, teste] = await Promise.all([ordensForaDoPrazo(admin, agora), contasTeste(admin)]);
+/** Achado nº 19 (erros e estados vazios): com `exigir` (a página /admin/solicitacoes), a falha do banco LANÇA. */
+export async function manutencaoForaDoPrazo(admin: Admin, agora = new Date(), opcoes: { exigir?: boolean } = {}): Promise<OrdemAdmin[]> {
+  const [todas, teste] = await Promise.all([ordensForaDoPrazo(admin, agora, opcoes), contasTeste(admin)]);
   return todas.filter((o) => !teste.has(o.properties.owner_id));
 }
 
 /** Todas as ordens fora do prazo de solução, inclusive de contas de teste (a Central as mostra à parte). */
-export async function ordensForaDoPrazo(admin: Admin, agora = new Date()): Promise<OrdemAdmin[]> {
-  const { data } = await admin.from("service_orders").select(COLUNAS).neq("status", "resolvido").order("opened_at", { ascending: true }).limit(2000);
+export async function ordensForaDoPrazo(admin: Admin, agora = new Date(), opcoes: { exigir?: boolean } = {}): Promise<OrdemAdmin[]> {
+  const { data, error } = await admin.from("service_orders").select(COLUNAS).neq("status", "resolvido").order("opened_at", { ascending: true }).limit(2000);
+  if (error && opcoes.exigir) throw new Error("Não foi possível carregar as solicitações de manutenção agora.");
   return ((data ?? []) as unknown as OrdemAdmin[]).filter((o) => !o.simulacao && estadoSolucao(solucao(o), agora).estado === "vencido");
 }
 
@@ -61,8 +63,9 @@ export function prazoVencidoEm(o: OrdemAdmin, agora = new Date()): string {
 }
 
 /** Pedidos de reclassificação ainda sem decisão (a ordem continua aberta e com a prioridade original do pedido). */
-export async function pedidosDeReclassificacao(admin: Admin): Promise<OrdemAdmin[]> {
-  const { data } = await admin.from("service_orders").select(COLUNAS).not("reclassificacao_pedida_em", "is", null).is("reclassificada_em", null).neq("status", "resolvido").limit(500);
+export async function pedidosDeReclassificacao(admin: Admin, opcoes: { exigir?: boolean } = {}): Promise<OrdemAdmin[]> {
+  const { data, error } = await admin.from("service_orders").select(COLUNAS).not("reclassificacao_pedida_em", "is", null).is("reclassificada_em", null).neq("status", "resolvido").limit(500);
+  if (error && opcoes.exigir) throw new Error("Não foi possível carregar as solicitações de manutenção agora.");
   return ((data ?? []) as unknown as OrdemAdmin[]).filter((o) => !o.simulacao);
 }
 

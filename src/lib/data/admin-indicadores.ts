@@ -191,9 +191,10 @@ export async function chamadosAbertosAgora(admin: Admin): Promise<number> {
 }
 
 /** Manutenção: solicitações abertas no período (imóveis reais, sem simulação) — a lista de /admin/solicitacoes. */
-export async function solicitacoesManutencao(admin: Admin, periodo: { ini: string; fim: string }, cidade?: string | null) {
+/** Achado nº 19: com `exigir` (a página /admin/solicitacoes), a falha do banco LANÇA em vez de "nenhuma solicitação". */
+export async function solicitacoesManutencao(admin: Admin, periodo: { ini: string; fim: string }, cidade?: string | null, opcoes: { exigir?: boolean } = {}) {
   const k = cidade ? chaveCidade(cidade) : null;
-  const [{ data }, teste] = await Promise.all([
+  const [{ data, error }, teste] = await Promise.all([
     admin
       .from("service_orders")
       .select("id, category, priority, status, opened_at, first_response_at, resolved_at, simulacao, properties!inner(owner_id, title, city)")
@@ -203,6 +204,7 @@ export async function solicitacoesManutencao(admin: Admin, periodo: { ini: strin
       .limit(2000),
     idsContasTeste(admin),
   ]);
+  if (error && opcoes.exigir) throw new Error("Não foi possível carregar as solicitações de manutenção agora.");
   return ((data ?? []) as unknown as {
     id: string;
     category: string | null;
@@ -500,9 +502,10 @@ export async function eventosDoPeriodo(
 }
 
 /** "Chamados urgentes sem resposta há mais de 4 h" (manutenção) — mesma regra da 0181. */
-export async function urgentesSemResposta4h(admin: Admin) {
+/** Achado nº 19: com `exigir` (a página /admin/solicitacoes), a falha do banco LANÇA em vez de "nenhum urgente". */
+export async function urgentesSemResposta4h(admin: Admin, opcoes: { exigir?: boolean } = {}) {
   const limite = new Date(Date.now() - 4 * 3_600_000).toISOString();
-  const { data } = await admin
+  const { data, error } = await admin
     .from("service_orders")
     .select("id, category, priority, status, opened_at, first_response_at, resolved_at, simulacao, properties!inner(owner_id, title, city)")
     .eq("priority", "urgente")
@@ -511,6 +514,7 @@ export async function urgentesSemResposta4h(admin: Admin) {
     .lt("opened_at", limite)
     .order("opened_at", { ascending: true })
     .limit(2000);
+  if (error && opcoes.exigir) throw new Error("Não foi possível carregar as solicitações de manutenção agora.");
   return ((data ?? []) as unknown as {
     id: string;
     category: string | null;
