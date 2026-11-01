@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { Video, Check, CalendarCheck } from "lucide-react";
+import { Video, Check, CalendarCheck, X } from "lucide-react";
+import { IconButton } from "@/components/ui/icon-button";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CampoDataHora } from "@/components/ui/campo-data";
 import { MOTIVOS } from "@/lib/pedidos/pedidos";
@@ -188,9 +189,14 @@ function PedidoVisita({
           onClick={() => fechar()}
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 id={`${t.prefixo}-titulo`} className="font-title text-lg font-semibold text-ink">
-              {t.titulo}
-            </h3>
+            {/* E347 (01/11): o X de fechar, no mesmo padrão do lightbox da galeria (IconButton "Fechar"); "Voltar" e o
+                clique fora continuam fechando. */}
+            <div className="flex items-start justify-between gap-2">
+              <h3 id={`${t.prefixo}-titulo`} className="font-title text-lg font-semibold text-ink">
+                {t.titulo}
+              </h3>
+              <IconButton onClick={fechar} label="Fechar" icon={X} iconClassName="h-6 w-6" className="-mr-2 -mt-2 h-10 w-10 shrink-0 text-ink hover:bg-sage-50" data-testid={`${t.prefixo}-fechar`} />
+            </div>
             {enviado ? (
               <>
                 {demo || exemplo ? (
