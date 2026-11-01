@@ -77,6 +77,8 @@ export async function nivelDoMeuImovel(propertyId: string): Promise<NivelDoImove
     c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, motivo_recusa, foto_origem, refazer_ate").eq("property_id", propertyId),
     c.admin.from("imovel_extras").select("chave").eq("property_id", propertyId),
   ]);
+  // Achado 74: itens e extras que não foram lidos não viram "não declarado" na tela do dono.
+  if (itens.error || extras.error) throw new Error("Não foi possível ler o nível do imóvel agora.");
   const rec = await recalcularNivel(c.admin, propertyId, agora);
   const porChave = new Map(
     ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: StatusFoto; motivo_recusa: string | null; foto_origem: OrigemFoto | null; refazer_ate: string | null }[]).map((i) => [i.chave, i]),
