@@ -26,6 +26,8 @@ import {
   validarHorarios,
   MODALIDADE_ROTULO,
   type AcaoVisitaDono,
+  estadosDaVisitaNoAnuncio,
+  type EstadoVisitaAnuncio,
   type ModalidadeVisita,
   type StatusVisita,
 } from "@/lib/visitas-video";
@@ -464,26 +466,29 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
 }
 
 /**
- * E329 (01/11): as modalidades com visita CONFIRMADA e ainda por vir do morador logado neste imóvel. O anúncio troca
- * o botão daquela modalidade por "Visita agendada" (leva a Visitas) em vez de oferecer pedir outra igual.
+ * O estado da visita do morador logado neste imóvel, por modalidade — o mesmo recorte do índice único do banco
+ * (pedido, confirmado ou remarcar: um em aberto por morador, imóvel e modalidade). E329: confirmada e por vir →
+ * "agendada"; varredura 01/11: pedida ou remarcando → "pedida" (antes o anúncio oferecia pedir outra e o servidor
+ * recusava); confirmada com o horário já passado → "ver". Em todos, o botão leva a Visitas em vez de pedir de novo.
  */
-export async function minhasVisitasAgendadas(propertyId: string): Promise<ModalidadeVisita[]> {
-  if (!UUID.test(String(propertyId))) return [];
+export async function minhasVisitasNoImovel(propertyId: string): Promise<Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>>> {
+  if (!UUID.test(String(propertyId))) return {};
   const supabase = await createClient();
-  if (!supabase) return [];
+  if (!supabase) return {};
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) return {};
   const admin = createAdminClient();
-  if (!admin) return [];
+  if (!admin) return {};
   const { data } = await admin
     .from("visitas_video")
-    .select("modalidade")
+    .select("modalidade, status, horario_confirmado")
     .eq("property_id", propertyId)
     .eq("tenant_id", user.id)
-    .eq("status", "confirmado")
-    .gt("horario_confirmado", new Date().toISOString());
-  const modalidades = (data ?? []).map((r) => (ehModalidade(r.modalidade) ? r.modalidade : "video"));
-  return [...new Set(modalidades)];
+    .in("status", ["pedido", "confirmado", "remarcar"]);
+  return estadosDaVisitaNoAnuncio(
+    (data ?? []).map((r) => ({ modalidade: ehModalidade(r.modalidade) ? r.modalidade : "video", status: String(r.status), horarioConfirmado: (r.horario_confirmado as string | null) ?? null })),
+    new Date(),
+  );
 }

@@ -295,3 +295,27 @@ export function formatarHorarioBrasilia(iso: string): string {
   const t = formatarHorario(iso);
   return t ? `${t} (${ROTULO_FUSO})` : "";
 }
+
+/** O que o anúncio mostra no botão da visita quando o morador já tem uma em aberto naquela modalidade. */
+export type EstadoVisitaAnuncio = "agendada" | "pedida" | "ver";
+
+/** Varredura 01/11 (E329 + achado 3): confirmada e por vir → "agendada"; pedida/remarcar → "pedida"; confirmada já passada → "ver". */
+export function estadosDaVisitaNoAnuncio(
+  visitas: readonly { modalidade: ModalidadeVisita; status: string; horarioConfirmado: string | null }[],
+  agora: Date,
+): Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>> {
+  const peso: Record<EstadoVisitaAnuncio, number> = { agendada: 3, pedida: 2, ver: 1 };
+  const r: Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>> = {};
+  for (const v of visitas) {
+    const e: EstadoVisitaAnuncio | null =
+      v.status === "pedido" || v.status === "remarcar"
+        ? "pedida"
+        : v.status === "confirmado"
+          ? v.horarioConfirmado && new Date(v.horarioConfirmado).getTime() > agora.getTime()
+            ? "agendada"
+            : "ver"
+          : null;
+    if (e && (!r[v.modalidade] || peso[e] > peso[r[v.modalidade]!])) r[v.modalidade] = e;
+  }
+  return r;
+}
