@@ -1,6 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+/** Build sem base de mapa (sem chave): o quadro mostra o aviso do E419 e "Ampliar mapa" não aparece. */
+async function semBaseDeMapa(page: Page) {
+  const quadro = page.getByTestId("mapa-imovel").first();
+  await quadro.waitFor({ state: "attached", timeout: 30_000 }).catch(() => {});
+  return (await quadro.getAttribute("data-mapa-base").catch(() => null)) === "sem-chave";
+}
+
 /**
  * T88 — ordem d943f893: página do imóvel COMPLETA (computador e celular).
  *  Galeria · abas âncora presas (Visão geral, Comodidades, Disponibilidade, Avaliações,
@@ -63,14 +70,16 @@ test.describe("T88 — Página do imóvel completa", () => {
     await page.locator("#localizacao").evaluate((el) => el.scrollIntoView({ block: "start" }));
     await expect(nav.getByRole("link", { name: "Localização" })).toHaveAttribute("aria-current", "true");
 
-    // Mapa aproximado em tela cheia; Esc fecha.
-    await page.getByTestId("ampliar-mapa").click();
-    const mapa = page.getByTestId("mapa-tela-cheia");
-    await expect(mapa).toBeVisible();
-    await expect(mapa).toContainText("endereço exato é liberado após o aceite");
-    await page.screenshot({ path: "tests/laboratorio/saida/t88-mapa-1440.png" });
-    await page.keyboard.press("Escape");
-    await expect(mapa).toHaveCount(0);
+    // Mapa aproximado em tela cheia; Esc fecha. Sem base de mapa (build sem chave), não há "Ampliar mapa" (varredura 01/11).
+    if (!(await semBaseDeMapa(page))) {
+      await page.getByTestId("ampliar-mapa").click();
+      const mapa = page.getByTestId("mapa-tela-cheia");
+      await expect(mapa).toBeVisible();
+      await expect(mapa).toContainText("endereço exato é liberado após o aceite");
+      await page.screenshot({ path: "tests/laboratorio/saida/t88-mapa-1440.png" });
+      await page.keyboard.press("Escape");
+      await expect(mapa).toHaveCount(0);
+    }
 
     expect(await semRolagem(page)).toBeLessThanOrEqual(1);
   });
@@ -88,10 +97,12 @@ test.describe("T88 — Página do imóvel completa", () => {
       await page.getByTestId("nav-secoes").getByRole("link", { name: "Localização" }).click();
       await expect(page.getByTestId("nav-secoes").getByRole("link", { name: "Localização" })).toHaveAttribute("aria-current", "true");
       await expect(page.getByTestId("nav-secoes").getByRole("link", { name: "Localização" })).toBeInViewport();
-      await page.getByTestId("ampliar-mapa").click();
-      await expect(page.getByTestId("mapa-tela-cheia")).toBeVisible();
-      await page.getByRole("button", { name: "Fechar mapa" }).click();
-      await expect(page.getByTestId("mapa-tela-cheia")).toHaveCount(0);
+      if (!(await semBaseDeMapa(page))) {
+        await page.getByTestId("ampliar-mapa").click();
+        await expect(page.getByTestId("mapa-tela-cheia")).toBeVisible();
+        await page.getByRole("button", { name: "Fechar mapa" }).click();
+        await expect(page.getByTestId("mapa-tela-cheia")).toHaveCount(0);
+      }
       expect(await semRolagem(page)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `tests/laboratorio/saida/t88-imovel-${largura}.png`, fullPage: false });
     });
