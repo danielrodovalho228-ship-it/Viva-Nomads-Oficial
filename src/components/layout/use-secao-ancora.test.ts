@@ -59,4 +59,6 @@ test("E340 (t776) — o hook refaz a rolagem até o #âncora quando a seção ap
   assert.match(h, /if \(!rolouAteAncora && preferida\) \{[\s\S]{0,160}el\.scrollIntoView\(\{ block: "start" \}\);/);
   assert.match(h, /for \(const ev of \["wheel", "touchmove", "keydown"\] as const\) window\.addEventListener\(ev, soltar/);
   assert.match(h, /document\.addEventListener\("click", aoClicar, true\);/);
+  // Clique no mesmo #âncora que já está na URL: o hook leva a seção à vista (o navegador não rola).
+  assert.match(h, /pediu\(id\);\s+\/\/[^\n]*\n\s+requestAnimationFrame\(\(\) => document\.getElementById\(id\)\?\.scrollIntoView\(\{ block: "start" \}\)\);/);
 });
