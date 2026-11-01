@@ -37,12 +37,12 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
   const agora = new Date();
   const lista = admin
     ? foraPrazo
-      ? await manutencaoForaDoPrazo(admin, agora)
+      ? await manutencaoForaDoPrazo(admin, agora, { exigir: true })
       : reclass
-        ? await pedidosDeReclassificacao(admin)
+        ? await pedidosDeReclassificacao(admin, { exigir: true })
         : urgentes
-          ? await urgentesSemResposta4h(admin)
-          : await solicitacoesManutencao(admin, intervaloBRT(p.inicio, p.fim), cidade)
+          ? await urgentesSemResposta4h(admin, { exigir: true })
+          : await solicitacoesManutencao(admin, intervaloBRT(p.inicio, p.fim), cidade, { exigir: true })
     : [];
   const taxas = admin ? await taxasDeSolucaoDosDonos(admin, agora).catch(() => []) : [];
   const resolvidas = lista.filter((s) => s.resolved_at).length;
