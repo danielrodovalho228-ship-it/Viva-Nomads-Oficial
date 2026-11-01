@@ -3113,7 +3113,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t932-e264b-foto-email-jpeg"
+      ]
     },
     "/api/cartoes/visita": {
       "personas": [
