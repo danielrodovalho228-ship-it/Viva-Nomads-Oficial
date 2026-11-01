@@ -13,7 +13,7 @@ import { getReputacao } from "@/lib/data/avaliacoes-actions";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 import { textoParaDono, type LinhaVinculo } from "@/lib/triagem/vinculo";
-import { donoVeFichaPet, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
+import { donoVeFichaPet, petsVaoNaCandidatura, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
 import { umPorPessoaEImovel } from "@/lib/painel/interessados-unicos";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 
@@ -26,7 +26,7 @@ interface LeadRow {
   status: string;
   tenant_id: string;
   property_id: string;
-  property: { title: string | null } | null;
+  property: { title: string | null; pets_allowed?: boolean | null } | null;
 }
 
 interface VerificacaoRow {
@@ -64,7 +64,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
     .from("leads")
     .select(
       `id, status, tenant_id, property_id,
-       property:properties!leads_property_id_fkey ( title )`
+       property:properties!leads_property_id_fkey ( title, pets_allowed )`
     )
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
@@ -195,7 +195,9 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
 
   return rows.map((r) => {
     const v = verificacoes.get(r.tenant_id);
-    const fichaPet = donoVeFichaPet({ leadStatus: r.status, contratoStatus: contratoDaCandidatura.get(`${r.property_id}:${r.tenant_id}`) ?? null })
+    // E397: imóvel que não aceita animais → a candidatura não leva pet (nem ficha nem "Com 1 pet").
+    const comPets = petsVaoNaCandidatura(r.property?.pets_allowed);
+    const fichaPet = comPets && donoVeFichaPet({ leadStatus: r.status, contratoStatus: contratoDaCandidatura.get(`${r.property_id}:${r.tenant_id}`) ?? null })
       ? resumoPetsCandidatura(petsResumo.get(r.tenant_id) ?? [])
       : null;
     const t = perfis.get(r.tenant_id);
@@ -208,7 +210,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
         inicioDesejado: inicios.has(r.id) ? dataBR(inicios.get(r.id)!) : null,
         qtdOcupantes: ocupantes.get(r.id) ?? null,
         // Com a ficha visível, "Com 1 pet · Totó (cão, porte médio)" substitui o "Com 1 pet".
-        pets: fichaPet ? 0 : (pets.get(r.tenant_id) ?? 0),
+        pets: fichaPet || !comPets ? 0 : (pets.get(r.tenant_id) ?? 0),
         desde: t?.created_at ?? null,
         reputacao: reputacoes.get(r.tenant_id) ?? null,
         emailConfirmado: emailOk.get(r.tenant_id) ?? false,
