@@ -109,6 +109,17 @@ const COLETORES: Record<string, Coletor> = {
       if (error) throw new Error(error.message);
     },
   },
+  // E293 P7: registro técnico da IA, 90 dias † desde a criação. Fase 2: o relatório só conta (não apaga) até a fase 2.
+  ia_chamadas: {
+    async candidatos(admin) {
+      const { data } = await admin.from("ia_chamadas").select("id, criada_em").order("criada_em", { ascending: true }).limit(1000);
+      return ((data ?? []) as { id: string; criada_em: string }[]).map((l) => ({ ref: l.id, desde: l.criada_em }));
+    },
+    async eliminar(admin, c) {
+      const { error } = await admin.from("ia_chamadas").delete().eq("id", c.ref);
+      if (error) throw new Error(error.message);
+    },
+  },
 };
 
 /** Quanto existe hoje numa tabela do inventário (para o relatório simulado). Bucket: não conta (null). */

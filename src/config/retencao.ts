@@ -173,6 +173,11 @@ export const INVENTARIO: ItemInventario[] = [
   i("limites_uso", "public.limites_uso", "chave com uid ou hash do IP", "limite de uso", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("emails_teste", "public.emails_teste", "e-mails das contas de teste", "o QA ler os e-mails enviados", { prazoDias: null, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "pendente", fase: 2 }),
   i("pedidos_ajuda_publicacao", "public.pedidos_ajuda_publicacao", "observação do dono", "ajuda para publicar", CONTA),
+  // E293 P7: itens que estavam fora do inventário, e o prazo de 90 dias † do registro técnico da IA (fase 2: por ora só
+  // o relatório simulado conta o que sairia; apagar de verdade espera a decisão de ligar a fase 2).
+  i("ia_chamadas", "public.ia_chamadas", "registro técnico da chamada de IA e erro_resumo (até 300 caracteres do erro do fornecedor)", "diagnóstico da IA no admin", { prazoDias: 90, gatilho: "criacao", modo: "apagar", base: "proposta", fase: 2 }, "nada"),
+  i("ai_generations", "public.ai_generations", "quem gerou um texto de anúncio por IA e quando (sem o texto gerado)", "limite diário de gerações", CONTA, "nada (sai em cascata com a conta)"),
+  i("push_envios", "public.push_envios", "contagem de cada envio de push por pessoa", "diagnóstico do push no admin", { prazoDias: 30, gatilho: "criacao", modo: "apagar", base: "proposta", fase: 2 }, "nada (já apagado aos 30 dias pela rotina de atendimento, corteRetencaoPushEnvios)"),
   // E293 P1: dos proprietários só o veredito (nome/CPF conferem, fração, quantos); ônus sem credor. Ao sair o arquivo,
   // saem também campos_extraidos, onus, matricula_numero e cartorio (LIMPEZA_MATRICULA_ELIMINADA).
   i("property_ownership_checks", "public.property_ownership_checks", "número da matrícula, cartório, veredito por proprietário (sem nome nem CPF), tipos de ônus (sem credor) e motivo", "titularidade", CONTA, "veredito (resultado, motivo e CAF ok); o resto sai junto com o arquivo"),
@@ -275,7 +280,6 @@ export const SEM_DADO_PESSOAL: Record<string, string> = {
   eliminacoes_registro: "o livro de eliminações (nunca guarda o conteúdo)",
   fotos_anuncio_hash: "só o hash perceptual da foto do anúncio e o caminho (dono/uuid.webp) — exceção aprovada, antifraude",
   gastos_marketing: "observação do gasto",
-  ia_chamadas: "motivo técnico da chamada de IA",
   interesse_cidade: "chave anônima de contagem",
   interesse_fotografo_cidade: "chave anônima de contagem",
   moderacao_log: "motivo da decisão de moderação",
