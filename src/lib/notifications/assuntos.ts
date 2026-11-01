@@ -27,7 +27,31 @@ export function tituloNoAssunto(titulo: string | null | undefined, max = TITULO_
     .replace(/\s+/g, " ")
     .trim();
   if (!t) return "seu imóvel";
-  return t.length > max ? `${t.slice(0, max - 1).trimEnd()}…` : t;
+  return t.length > max ? cortarEmPalavra(t, max) : t;
+}
+
+/**
+ * E342: corta o título numa FRONTEIRA DE PALAVRA, com "…" — o nome nunca morre no meio ("Automaçõ…"). Uma palavra só
+ * maior que o espaço (sem fronteira antes) cai no corte por letra, para o assunto ainda caber.
+ */
+function cortarEmPalavra(t: string, max: number): string {
+  const limite = max - 1;
+  const palavras = t.split(" ");
+  let out = "";
+  for (const w of palavras) {
+    const prox = out ? `${out} ${w}` : w;
+    if (prox.length > limite) break;
+    out = prox;
+  }
+  out = out.replace(/[\s,;:·—-]+$/u, "");
+  return out ? `${out}…` : `${t.slice(0, limite).trimEnd()}…`;
+}
+
+/** E342: o título cortado ainda diz qual é o imóvel? Precisa sobrar ao menos uma palavra de verdade fora do "[TESTE …]". */
+function tituloAindaIdentifica(cortado: string): boolean {
+  // A marca "[TESTE …]" (inteira ou cortada, sem o "]") não identifica imóvel nenhum.
+  const semMarca = cortado.replace(/…$/, "").replace(/\[[^\]]*(?:\]|$)/g, " ");
+  return /[\p{L}\d]{3,}/u.test(semMarca);
 }
 
 const CHAMADO_NO_FIM = /\s\(VN-[A-Z0-9-]{1,20}\)$/;
@@ -123,14 +147,33 @@ export function assuntoVinculoResposta(nomeParceiro: string | null | undefined, 
  * E289: assunto com o fato e o imóvel — `${antes}${título}${depois}`, com o título encolhido para o assunto inteiro
  * (com a marca) caber em 70 caracteres. Sem título (ou sem espaço para ele), null: vale o assunto do modelo.
  */
-export function assuntoComTitulo(antes: string, titulo: string | null | undefined, depois = ""): string | null {
+export function assuntoComTitulo(
+  antes: string,
+  titulo: string | null | undefined,
+  depois = "",
+  /** E342: forma curta do mesmo fato (fato primeiro, imóvel depois), tentada quando o título não cabe inteiro. */
+  compacto?: { antes: string; depois?: string },
+): string | null {
   if (!String(titulo ?? "").trim()) return null;
-  const cabe = Math.min(TITULO_IMOVEL_MAX, ASSUNTO_MAX - SUFIXO_ASSUNTO.length - antes.length - depois.length);
-  if (cabe < 10) return null;
-  const t = tituloNoAssunto(titulo, cabe);
-  if (t === "seu imóvel") return null;
-  const a = `${antes}${t}${depois}`;
-  return `${a.charAt(0).toLocaleUpperCase("pt-BR")}${a.slice(1)}`;
+  const formas = [{ antes, depois }, ...(compacto ? [{ antes: compacto.antes, depois: compacto.depois ?? "" }] : [])];
+  const montar = (f: { antes: string; depois: string }, t: string) => {
+    const a = `${f.antes}${t}${f.depois}`;
+    return `${a.charAt(0).toLocaleUpperCase("pt-BR")}${a.slice(1)}`;
+  };
+  const cabeEm = (f: { antes: string; depois: string }) => Math.min(TITULO_IMOVEL_MAX, ASSUNTO_MAX - SUFIXO_ASSUNTO.length - f.antes.length - f.depois.length);
+  const inteiro = tituloNoAssunto(titulo, Number.MAX_SAFE_INTEGER);
+  if (inteiro === "seu imóvel") return null;
+  // 1º: o título INTEIRO, na forma normal e depois na compacta.
+  for (const f of formas) if (cabeEm(f) >= inteiro.length) return montar(f, inteiro);
+  // 2º: o título cortado numa fronteira de palavra, desde que ainda identifique o imóvel (a forma com mais espaço antes).
+  for (const f of [...formas].sort((x, y) => cabeEm(y) - cabeEm(x))) {
+    const cabe = cabeEm(f);
+    if (cabe < 10) continue;
+    const t = tituloNoAssunto(titulo, cabe);
+    if (tituloAindaIdentifica(t)) return montar(f, t);
+  }
+  // Sem jeito de nomear o imóvel sem mutilar: vale o assunto do modelo (o corpo nomeia o imóvel).
+  return null;
 }
 
 /** "03/11" (o assunto não leva o ano: número longo fica no corpo). Vazio sem data. */
