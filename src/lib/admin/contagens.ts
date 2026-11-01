@@ -3,6 +3,8 @@
   chamam a MESMA (src/lib/data/admin-contagens.ts). A regra das contas de teste é uma só (profiles.is_teste, 0181) e o
   número aparece como "N reais · M de teste" onde as duas coisas existem. Sem denominador, a razão é "—".
 */
+import { PAPEIS_USUARIOS } from "./usuarios-lista.ts";
+
 export interface Contagem {
   reais: number;
   teste: number;
@@ -69,7 +71,9 @@ export function baseDoFunil(tipo: "percentual" | "horas", base: { de: number; to
  * dizia 14 (todas as is_teste, com 1 admin) e Usuários "13 de teste", sem dizer por quê.
  */
 export function resumoContasTeste(contas: readonly { role: string | null; anonymized_at?: string | null }[]): { total: number; usuarios: number; outras: number } {
-  const usuarios = contas.filter((c) => (c.role === "owner" || c.role === "tenant") && !c.anonymized_at).length;
+  // E334 (resíduo): a MESMA lista de papéis da contagem de Usuários (contarUsuarios), não uma cópia à mão.
+  const papeis: readonly string[] = PAPEIS_USUARIOS;
+  const usuarios = contas.filter((c) => c.role !== null && papeis.includes(c.role) && !c.anonymized_at).length;
   return { total: contas.length, usuarios, outras: contas.length - usuarios };
 }
 
