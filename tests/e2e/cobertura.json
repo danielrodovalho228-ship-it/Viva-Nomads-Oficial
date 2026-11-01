@@ -565,7 +565,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t421-varredura-bloco38",
+        "t863-varredura-bloco164"
       ]
     },
     "/como-funciona": {
@@ -584,7 +585,8 @@
         "t368-varredura-bloco20",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t863-varredura-bloco164"
       ]
     },
     "/comparar": {
@@ -1635,7 +1637,8 @@
       "specs": [
         "t105-guias",
         "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t421-varredura-bloco38",
+        "t863-varredura-bloco164"
       ]
     },
     "/imoveis/[id]": {
@@ -1828,7 +1831,8 @@
         "t310-vao-fim-de-pagina",
         "t368-varredura-bloco20",
         "t479-e136b-calendario-pt-br",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t863-varredura-bloco164"
       ]
     },
     "/precos": {
@@ -1892,7 +1896,8 @@
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
         "t608-e174-vinculo-pela-tela",
-        "t663-varredura-bloco64"
+        "t663-varredura-bloco64",
+        "t863-varredura-bloco164"
       ]
     },
     "/qualificar": {
@@ -2129,7 +2134,8 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t545-e187-rotas-categoria-parceiros"
+        "t545-e187-rotas-categoria-parceiros",
+        "t863-varredura-bloco164"
       ]
     },
     "/parceiros/ativar": {
@@ -2305,7 +2311,8 @@
       "specs": [
         "t261-tempo-ate-o-trabalho",
         "t311-marco-principal-unico",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t863-varredura-bloco164"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
