@@ -133,7 +133,7 @@ export function AvisoFotografo({
           <p className="text-sm text-ink" data-testid="aviso-fotografo-deslogado">
             {categoria === "fotografia" ? TEXTO_AVISO_DESLOGADO : "Entre ou crie sua conta para ser avisado quando houver parceiro na sua cidade"}.
           </p>
-          <ButtonLink href={linkEntrarParaAvisar(voltarPara)} className="mt-2 w-full sm:w-auto" data-testid="aviso-fotografo-entrar">
+          <ButtonLink href={linkEntrarParaAvisar(voltarPara)} variant="secondary" className="mt-2 w-full sm:w-auto" data-testid="aviso-fotografo-entrar">
             Entrar ou criar conta
           </ButtonLink>
         </div>

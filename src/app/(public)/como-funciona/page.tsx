@@ -214,7 +214,8 @@ function DoisCaminhos() {
               Diga o que você precisa e os proprietários da cidade respondem com os imóveis deles.
               Sua identidade só aparece para quem você aceitar.
             </p>
-            <ButtonLink href="/pedidos/novo" variant="primary" className="mt-4 self-start">
+            {/* Varredura 01/11: um botão cheio por tela (o "Buscar imóveis" do fechamento); os dois cartões, contornados. */}
+            <ButtonLink href="/pedidos/novo" variant="outline" className="mt-4 self-start">
               Publicar pedido
             </ButtonLink>
           </div>
