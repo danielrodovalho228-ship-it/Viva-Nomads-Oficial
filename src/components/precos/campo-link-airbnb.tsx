@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { meuLinkAirbnb, salvarLinkAirbnb, type MeuLinkAirbnb } from "@/lib/comparador-airbnb/link-actions";
 import { TEXTO_DIVERGENCIA } from "@/lib/comparador-airbnb/antifraude";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { formatBRL } from "@/lib/utils";
+import { DIAS_DADO_VALIDO } from "@/lib/comparador-airbnb/comparacao";
 
 export function CampoLinkAirbnb({ imovelId }: { imovelId: string }) {
   const [salvo, setSalvo] = useState<MeuLinkAirbnb | null | undefined>(undefined);
@@ -71,6 +73,27 @@ export function CampoLinkAirbnb({ imovelId }: { imovelId: string }) {
             </div>
           )}
           {salvo.conferencia === "pendente" && <p className="mt-1 text-muted">Conferindo cidade e quartos.</p>}
+          {/* Pacote 2: o resultado da comparação — o aviso de preço é só do dono, nunca público. */}
+          {salvo.decisao && salvo.conferencia === "confere" && (
+            <div className="mt-2" data-testid="preco-justo-resultado" data-estado={salvo.decisao.estado}>
+              <p className="text-xs text-muted">Valores do Airbnb simulados enquanto a consulta real não está ligada.</p>
+              {salvo.decisao.estado === "justo" && (
+                <p className="mt-1 text-forest">Selo &quot;Preço justo&quot;: o total por mês aqui fica abaixo de 30 noites do mesmo imóvel no Airbnb.</p>
+              )}
+              {salvo.decisao.avisoDono && (
+                <div className="mt-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-ink" data-testid="preco-justo-aviso-dono">
+                  <p>
+                    Sem o selo: no Airbnb, 30 noites deste imóvel saem por {formatBRL(salvo.decisao.avisoDono.valorAirbnb)}
+                    {salvo.totalViva ? `; aqui, o total por mês é ${formatBRL(salvo.totalViva)}` : ""}.
+                  </p>
+                  <p className="mt-1 font-semibold">Para ganhar o selo, o total por mês precisa ficar até {formatBRL(salvo.decisao.avisoDono.ate)}.</p>
+                  <p className="mt-1 text-xs text-muted">Só você vê este aviso.</p>
+                </div>
+              )}
+              {salvo.decisao.estado === "suspenso" && <p className="mt-1 text-muted">Selo suspenso: a última consulta ao Airbnb tem mais de {DIAS_DADO_VALIDO} dias. A Viva consulta de novo toda semana.</p>}
+              {salvo.decisao.estado === "sem_dado" && <p className="mt-1 text-muted">Ainda sem os preços do Airbnb para comparar (é preciso o valor mensal e 30 noites livres no calendário de lá).</p>}
+            </div>
+          )}
           <button type="button" className="mt-1 text-xs text-forest underline" disabled={pendente} onClick={() => salvar("")} data-testid="link-airbnb-remover">
             Tirar o link
           </button>
