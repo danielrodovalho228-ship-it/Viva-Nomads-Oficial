@@ -143,7 +143,8 @@
         "t286-esqueletos-vazios-48",
         "t339-varredura-bloco16",
         "t419-varredura-bloco36",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -200,7 +201,8 @@
         "t286-esqueletos-vazios-48",
         "t336-varredura-bloco14",
         "t407-varredura-bloco26",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/emails-teste": {
@@ -244,7 +246,8 @@
       "specs": [
         "t442-foto-perfil-revisao",
         "t408-varredura-bloco27",
-        "t655-observador-botoes-filas"
+        "t655-observador-botoes-filas",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/marketing": {
@@ -275,7 +278,8 @@
         "t419-varredura-bloco36",
         "t551-varredura-bloco40",
         "t655-observador-botoes-filas",
-        "t630-e227b-pendentes-fila-unica"
+        "t630-e227b-pendentes-fila-unica",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/pedidos": {
@@ -2070,7 +2074,8 @@
         "t48-varredura",
         "t231-admin-numeros-com-lista",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t867-filas-admin-sem-erro"
       ]
     },
     "/admin/candidaturas": {
