@@ -42,10 +42,12 @@ test("E309: nenhum título de página repete a marca (o template já põe ' · V
   assert.match(ler("src/app/(dashboard)/dashboard/ganhos/page.tsx"), /title: "Ganhos" \}/);
 });
 
-test("E310: mês em pt-BR com 'de' minúsculo — sem CSS capitalize (que punha 'Outubro De 2026')", () => {
-  assert.equal(tituloMesBR(2026, 9), "outubro de 2026");
+test("E310 (devolução): mês todo minúsculo em pt-BR ('novembro de 2026') — sem capitalize nem first-letter:uppercase", () => {
+  assert.equal(tituloMesBR(2026, 10), "novembro de 2026");
   const agenda = ler("src/app/(dashboard)/dashboard/agenda/agenda-client.tsx");
-  assert.match(agenda, /first-letter:uppercase" data-testid="agenda-mes-titulo"/);
+  assert.match(agenda, /className="font-title text-base font-semibold text-ink" data-testid="agenda-mes-titulo"/);
+  for (const f of ["src/app/(dashboard)/dashboard/agenda/agenda-client.tsx", "src/components/property/availability-calendar.tsx", "src/components/ui/calendario-br.tsx"])
+    assert.doesNotMatch(ler(f), /first-letter:uppercase/, f);
   for (const f of ["src/app/(dashboard)/dashboard/agenda/agenda-client.tsx", "src/components/property/availability-calendar.tsx", "src/app/(dashboard)/admin/marketing/admin-marketing-client.tsx"])
     assert.doesNotMatch(ler(f), /\bcapitalize\b/, f);
 });
