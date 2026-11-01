@@ -28,7 +28,7 @@ export async function EmailsTesteLista() {
   return (
     <div data-testid="emails-teste">
       <p className="mb-4 text-sm text-muted">Tudo o que o sistema enviou às contas de teste. Só texto puro, destinatário mascarado.</p>
-      <NumeroHeroi rotulo="E-mails de teste guardados" valor={total ?? linhas.length} href="#lista" nota={total !== null && total > linhas.length ? `A lista mostra os ${linhas.length} mais recentes.` : null} testId="emails-teste-total" />
+      <NumeroHeroi rotulo="E-mails de teste guardados" valor={total ?? "—"} href="#lista" nota={total !== null && total > linhas.length ? `A lista mostra os ${linhas.length} mais recentes.` : null} testId="emails-teste-total" />
       <ListaNumeros className="mb-6" itens={[{ rotulo: "Último recebido", valor: linhas[0] ? quando(linhas[0].criado_em) : "—", href: "#lista" }]} />
       <ListaEmailsTeste
         linhas={linhas}

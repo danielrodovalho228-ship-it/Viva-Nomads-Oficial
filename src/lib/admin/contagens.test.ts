@@ -86,7 +86,7 @@ test("E334: contas de teste por uma regra só — as de Usuários (proprietário
 test("E334: Retenção e caixa de e-mails contam os guardados pela mesma função, agora", async () => {
   const { readFileSync } = await import("node:fs");
   const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
-  assert.match(ler("lib/data/admin-contagens.ts"), /return \(await contarGuardados\(admin, "emails_teste"\)\) \?\? 0/);
+  assert.match(ler("lib/data/admin-contagens.ts"), /return contarGuardados\(admin, "emails_teste"\);/);
   assert.match(ler("lib/minimizacao/servidor.ts"), /contarGuardados\(admin, item\.origem\.slice\(7\)\)/);
   const ret = ler("app/(dashboard)/admin/retencao/page.tsx");
   assert.match(ret, /contarGuardados\(admin, origem\.slice\(7\)\)/);
@@ -95,4 +95,19 @@ test("E334: Retenção e caixa de e-mails contam os guardados pela mesma funçã
   assert.match(testes, /Contas de teste · \$\{textoContasTeste\(resumoTeste\)\}/);
   // A contagem de Usuários segue a mesma regra (proprietário/inquilino não anonimizado).
   assert.match(ler("lib/data/admin-contagens.ts"), /\.is\("anonymized_at", null\)\.in\("role", \[\.\.\.PAPEIS_USUARIOS\]\)/);
+});
+
+test("E334 (resíduo): uma fonte para a regra e para o total de e-mails", async () => {
+  const { readFileSync } = await import("node:fs");
+  const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
+  // A regra das contas de Usuários vem de PAPEIS_USUARIOS (a mesma de contarUsuarios), não de uma cópia à mão.
+  const c = ler("lib/admin/contagens.ts");
+  assert.match(c, /import \{ PAPEIS_USUARIOS \} from "\.\/usuarios-lista\.ts"/);
+  assert.doesNotMatch(c, /c\.role === "owner" \|\| c\.role === "tenant"/);
+  // Falha na contagem de e-mails: "—" na caixa (como na Retenção), nunca 0 nem o tamanho da lista.
+  const d = ler("lib/data/admin-contagens.ts");
+  assert.match(d, /export async function contarEmailsTeste\(admin: Admin\): Promise<number \| null> \{\n  return contarGuardados\(admin, "emails_teste"\);/);
+  const caixa = ler("components/admin/emails-teste-lista.tsx");
+  assert.match(caixa, /valor=\{total \?\? "—"\}/);
+  assert.doesNotMatch(caixa, /total \?\? linhas\.length/);
 });
