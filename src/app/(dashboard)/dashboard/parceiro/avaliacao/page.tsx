@@ -38,6 +38,10 @@ type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; 
  * e a agenda — para responder (contador das 24 h), visitas (as da semana marcadas) e o histórico de recusas e ausências.
  * O avaliador nunca é contratado direto: não há catálogo nem orçamento aqui.
  */
+/** Achado 30: a lista do avaliador não foi lida. */
+const MSG_AVALIACOES_FALHOU =
+  "Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de 24 h continuam valendo.";
+
 export default async function AvaliacaoParceiroPage() {
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -119,12 +123,12 @@ export default async function AvaliacaoParceiroPage() {
     );
   }
 
-  const { data: pedidos } = await admin
+  const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
     .select("id, cidade, porte, valor_tabela, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
-  const { data: designacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
+  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
   type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; vistoria_pedidos: { cidade: string; porte: Porte } | null };
   const des = (designacoes ?? []) as unknown as Des[];
   const resposta = new Map(des.map((d) => [d.pedido_id, d.resposta]));
@@ -137,6 +141,8 @@ export default async function AvaliacaoParceiroPage() {
     .sort((a, b) => (a.agendado_para ? Date.parse(a.agendado_para) : Infinity) - (b.agendado_para ? Date.parse(b.agendado_para) : Infinity));
   const encerradas = lista.filter((p) => ["laudo_emitido", "ausencia", "cancelada"].includes(p.status));
   const foraDaMinhaFila = des.filter((d) => d.resposta && d.resposta !== "aceita");
+  // Achado 30: leitura que falhou não vira "nenhuma avaliação" — o prazo de 24 h não pode passar sem o avaliador ver.
+  const leituraFalhou = Boolean(erroPedidos || erroDesignacoes);
 
   return (
     <div className="space-y-6">
@@ -154,49 +160,59 @@ export default async function AvaliacaoParceiroPage() {
         )}
         <p className="mt-3 text-xs text-muted">O proprietário paga a avaliação direto a você, pelo valor da tabela da Viva. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
       </Panel>
-      <Panel title="Para responder" data-testid="avaliacoes-designadas">
-        {paraResponder.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma avaliação esperando a sua resposta.</p>
-        ) : (
-          <ul className="grid gap-3">
-            {paraResponder.map((p) => (
-              <ItemPedido key={p.id} p={p} resposta={null} agora={agora} />
-            ))}
-          </ul>
-        )}
-      </Panel>
-      <Panel title="Visitas" data-testid="avaliacoes-visitas">
-        {visitas.length === 0 ? (
-          <p className="text-sm text-muted" data-testid="avaliacoes-visitas-vazio">
-            Nenhuma visita por enquanto. As avaliações que você aceitar aparecem aqui, para agendar a visita com o proprietário, e saem daqui quando o laudo sai ou a avaliação é encerrada.
+      {leituraFalhou ? (
+        <Panel title="Suas avaliações" data-testid="avaliacoes-erro">
+          <p role="alert" className="text-sm font-semibold text-red-700">
+            {MSG_AVALIACOES_FALHOU}
           </p>
-        ) : (
-          <ul className="grid gap-3">
-            {visitas.map((p) => (
-              <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
-            ))}
-          </ul>
-        )}
-      </Panel>
-      <Panel title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
-        {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
-          <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
-            Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas. Ainda não há nenhuma.
-          </p>
-        ) : (
-          <ul className="grid gap-3">
-            {encerradas.map((p) => (
-              <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
-            ))}
-            {foraDaMinhaFila.map((d) => (
-              <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
-                {ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
-                {d.respondido_em ? ` · ${dataBRT(d.respondido_em)}` : ""}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+        </Panel>
+      ) : (
+        <>
+          <Panel title="Para responder" data-testid="avaliacoes-designadas">
+            {paraResponder.length === 0 ? (
+              <p className="text-sm text-muted">Nenhuma avaliação esperando a sua resposta.</p>
+            ) : (
+              <ul className="grid gap-3">
+                {paraResponder.map((p) => (
+                  <ItemPedido key={p.id} p={p} resposta={null} agora={agora} />
+                ))}
+              </ul>
+            )}
+          </Panel>
+          <Panel title="Visitas" data-testid="avaliacoes-visitas">
+            {visitas.length === 0 ? (
+              <p className="text-sm text-muted" data-testid="avaliacoes-visitas-vazio">
+                Nenhuma visita por enquanto. As avaliações que você aceitar aparecem aqui, para agendar a visita com o proprietário, e saem daqui quando o laudo sai ou a avaliação é encerrada.
+              </p>
+            ) : (
+              <ul className="grid gap-3">
+                {visitas.map((p) => (
+                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
+                ))}
+              </ul>
+            )}
+          </Panel>
+          <Panel title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
+            {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
+              <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
+                Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas. Ainda não há nenhuma.
+              </p>
+            ) : (
+              <ul className="grid gap-3">
+                {encerradas.map((p) => (
+                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
+                ))}
+                {foraDaMinhaFila.map((d) => (
+                  <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
+                    {ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
+                    {d.respondido_em ? ` · ${dataBRT(d.respondido_em)}` : ""}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        </>
+      )}
     </div>
   );
 }
