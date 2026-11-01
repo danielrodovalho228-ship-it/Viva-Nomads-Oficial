@@ -589,13 +589,17 @@ export async function leadsDeTeste(admin: Admin, ids: string[]): Promise<Set<str
 /** "Pedidos expirando sem nenhuma resposta" (ativos, vencem em até 3 dias) — mesma regra da 0181. */
 export async function pedidosExpirandoSemResposta(admin: Admin): Promise<string[]> {
   const limite = new Date(Date.now() + 3 * 86_400_000).toISOString();
-  const [{ data }, teste] = await Promise.all([
+  // Achado 57: as duas leituras LANÇAM — antes a falha nos pedidos dava "0 expirando" e a falha nas respostas marcava
+  // TODOS como "sem resposta". Os chamadores já tratam a falha (ler()/catch → indisponível; a página → aviso de erro).
+  const [{ data, error }, teste] = await Promise.all([
     admin.from("pedidos_moradia").select("id, inquilino_id").eq("status", "ativo").lt("expira_em", limite).limit(2000),
     idsContasTeste(admin),
   ]);
+  if (error) throw new Error("Não foi possível ler os pedidos ativos agora.");
   const ativos = ((data ?? []) as { id: string; inquilino_id: string }[]).filter((p) => !teste.has(p.inquilino_id));
   if (!ativos.length) return [];
-  const { data: resp } = await admin.from("respostas_pedido").select("pedido_id").in("pedido_id", ativos.map((p) => p.id));
+  const { data: resp, error: eResp } = await admin.from("respostas_pedido").select("pedido_id").in("pedido_id", ativos.map((p) => p.id));
+  if (eResp) throw new Error("Não foi possível ler as respostas aos pedidos agora.");
   const com = new Set(((resp ?? []) as { pedido_id: string }[]).map((r) => r.pedido_id));
   return ativos.filter((p) => !com.has(p.id)).map((p) => p.id);
 }

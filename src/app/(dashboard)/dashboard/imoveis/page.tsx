@@ -21,7 +21,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
   // CADASTRO-MOLDURA: o "Sair" do assistente chega aqui com ?saiu=assistente e a linha do rascunho salvo.
   const saiuDoAssistente = (await searchParams).saiu === "assistente";
   // A lista e o usuário não dependem um do outro: busca os dois juntos (ordem 0f66a754, item 4).
-  const [properties, supabase, ajudas] = await Promise.all([listMyProperties({ exigir: true }), createClient(), meusPedidosDeAjuda()]);
+  const [properties, supabase, ajudas] = await Promise.all([listMyProperties({ exigir: true }), createClient(), meusPedidosDeAjuda().catch(() => null)]);
   const prontidao: Record<string, Prontidao> = {};
   // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva).
   const pausas: Record<string, string | null> = {};
@@ -52,7 +52,13 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
           {TEXTO_RASCUNHO_SALVO}
         </p>
       )}
-      {ajudas.length > 0 && (
+      {/* Achado 55: falhou a leitura → aviso (o pedido pode ter uma decisão sua esperando), sem derrubar a lista. */}
+      {ajudas === null && (
+        <p role="alert" className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-ink" data-testid="ajuda-andamento-falha">
+          Não foi possível carregar o andamento dos seus pedidos de ajuda para publicar agora. Recarregue a página para tentar de novo.
+        </p>
+      )}
+      {ajudas && ajudas.length > 0 && (
         <section className="mb-4 rounded-xl border border-sage-200 bg-sage-50 p-4 text-sm text-forest" data-testid="ajuda-andamento">
           <h2 className="font-medium text-ink">Publicamos para você</h2>
           <ul className="mt-1 space-y-1">
