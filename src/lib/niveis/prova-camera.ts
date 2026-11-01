@@ -19,6 +19,17 @@ export const AVISO_PROVA_NA_HORA =
   "Para provar o nível, a foto é feita na hora, pela câmera. Fotos da galeria não valem para comprovação, mas continuam valendo para as fotos do anúncio.";
 export const BOTAO_FOTOGRAFAR = "Fotografar agora";
 export const BOTAO_FOTOGRAFAR_CELULAR = "Fotografar pelo celular";
+/**
+ * E413: no computador COM câmera, a prova também sai pela câmera do próprio computador — foto ao vivo, na hora, com o
+ * mesmo token de uso único. Nunca arquivo nem galeria (a regra antifraude do FOTO-NA-HORA vale igual).
+ */
+export const BOTAO_CAMERA_COMPUTADOR = "Usar a câmera deste computador";
+export const TEXTO_CAMERA_COMPUTADOR = "Ou fotografe agora com a câmera deste computador, no imóvel.";
+
+/** O computador tem câmera? Só pela lista de aparelhos (sem pedir permissão); qualquer falha = não. */
+export function temCameraNaLista(aparelhos: readonly { kind: string }[] | null | undefined): boolean {
+  return !!aparelhos?.some((a) => a.kind === "videoinput");
+}
 export const DICA_CAMERA = "Mostre o item inteiro, sem pessoas, com boa luz.";
 export const ERRO_SEM_TOKEN = "Esta foto não foi feita na hora. Abra a câmera e fotografe o item agora.";
 export const ERRO_FOTO_REPETIDA = "Esta foto já foi usada. Fotografe o item agora.";

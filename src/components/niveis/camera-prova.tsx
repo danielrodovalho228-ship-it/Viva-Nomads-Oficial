@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { salvarItemNivel } from "@/lib/data/nivel-actions";
 import { abrirCapturaProva, pedirLinkCelular, provaDoItem } from "@/lib/data/prova-actions";
 import {
+  BOTAO_CAMERA_COMPUTADOR,
   BOTAO_FOTOGRAFAR,
   BOTAO_FOTOGRAFAR_CELULAR,
   CONTINUAR_NO_CELULAR,
@@ -18,6 +19,8 @@ import {
   PREPARANDO_CAMERA,
   modoDaProva,
   modoSemListaDeAparelhos,
+  TEXTO_CAMERA_COMPUTADOR,
+  temCameraNaLista,
   textoFotoRecebida,
   type ModoProva,
 } from "@/lib/niveis/prova-camera";
@@ -55,8 +58,10 @@ export function ProvaNaHora({
   const modo = useModoProva();
   const [aberto, setAberto] = useState(false);
   const [semCamera, setSemCamera] = useState(false);
+  // E413: no computador, a câmera do próprio computador (foto ao vivo) em vez do QR.
+  const [cameraComputador, setCameraComputador] = useState(false);
   const pediuAuto = useRef(false);
-  const celular = modo === "celular" && !semCamera;
+  const celular = (modo === "celular" || cameraComputador) && !semCamera;
 
   useEffect(() => {
     if (autoAbrir && modo && !pediuAuto.current) {
@@ -93,10 +98,17 @@ export function ProvaNaHora({
           propertyId={propertyId}
           chave={chave}
           rotulo={rotulo}
-          onFechar={() => setAberto(false)}
-          onSemCamera={() => setSemCamera(true)}
+          onFechar={() => {
+            setAberto(false);
+            setCameraComputador(false);
+          }}
+          onSemCamera={() => {
+            setSemCamera(true);
+            setCameraComputador(false);
+          }}
           onRecebida={(m) => {
             setAberto(false);
+            setCameraComputador(false);
             onRecebida(m);
           }}
         />
@@ -106,6 +118,7 @@ export function ProvaNaHora({
           propertyId={propertyId}
           chave={chave}
           rotulo={rotulo}
+          onUsarCameraDoComputador={semCamera ? undefined : () => setCameraComputador(true)}
           onFechar={() => setAberto(false)}
           onRecebida={(m) => {
             setAberto(false);
@@ -390,7 +403,33 @@ function CameraProva({
   );
 }
 
-function PeloCelular({ propertyId, chave, rotulo, onFechar, onRecebida }: { propertyId: string; chave: string; rotulo: string; onFechar: () => void; onRecebida: (mensagem: string) => void }) {
+function PeloCelular({
+  propertyId,
+  chave,
+  rotulo,
+  onFechar,
+  onRecebida,
+  onUsarCameraDoComputador,
+}: {
+  propertyId: string;
+  chave: string;
+  rotulo: string;
+  onFechar: () => void;
+  onRecebida: (mensagem: string) => void;
+  /** E413: abre a câmera deste computador (só aparece se a lista de aparelhos tiver uma câmera). */
+  onUsarCameraDoComputador?: () => void;
+}) {
+  const [temCamera, setTemCamera] = useState(false);
+  useEffect(() => {
+    let vivo = true;
+    Promise.resolve()
+      .then(() => navigator.mediaDevices?.enumerateDevices?.())
+      .then((d) => vivo && setTemCamera(!!navigator.mediaDevices?.getUserMedia && temCameraNaLista(d)))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, []);
   const [link, setLink] = useState<{ url: string; qr: string; expiraEm: string; emailEnviado: boolean } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [vencido, setVencido] = useState(false);
@@ -465,6 +504,15 @@ function PeloCelular({ propertyId, chave, rotulo, onFechar, onRecebida }: { prop
               Esta tela se atualiza sozinha quando a foto chegar.
             </p>
           </div>
+        </div>
+      )}
+      {temCamera && onUsarCameraDoComputador && (
+        <div className="mt-3 flex flex-col gap-2 border-t border-line pt-3 sm:flex-row sm:items-center" data-testid="prova-camera-computador">
+          <p className="text-muted">{TEXTO_CAMERA_COMPUTADOR}</p>
+          <Button type="button" size="sm" variant="secondary" onClick={onUsarCameraDoComputador} data-testid="prova-camera-computador-botao">
+            <Camera className="h-4 w-4" aria-hidden />
+            {BOTAO_CAMERA_COMPUTADOR}
+          </Button>
         </div>
       )}
       {vencido && (
