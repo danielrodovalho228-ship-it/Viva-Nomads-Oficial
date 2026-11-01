@@ -94,7 +94,8 @@ export function EtapaTipo({ tipo, onTipo, sugerido }: { tipo: string; onTipo: (v
                   {/* E259 (5): as 9 fotos são pequenas e a linha rola de lado — carregam já, sem esperar entrar na tela. */}
                   <Image src={FOTO_TIPO[t.valor]} alt={t.alt} fill sizes="192px" loading="eager" className="pointer-events-none object-cover" draggable={false} data-testid={`tipo-${t.valor}-foto`} />
                 </span>
-                <span className="block px-3 py-3 text-base font-semibold text-ink">{t.rotulo}</span>
+                {/* Conformidade fina (01/11, mockup cadastro-imovel-01): o nome do tipo centrado e um passo maior. */}
+                <span className="block px-3 py-3 text-center text-lg font-semibold text-ink">{t.rotulo}</span>
                 {on && <CheckCircle2 className="absolute right-2 top-2 h-7 w-7 fill-forest text-white" aria-hidden data-testid="tipo-marcado" />}
               </button>
             );
