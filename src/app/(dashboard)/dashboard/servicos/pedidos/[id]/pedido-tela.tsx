@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -463,10 +464,10 @@ function EnviarArquivos({
         })
       }
     >
-      <label className="text-sm font-semibold text-ink">
-        {rotulo}
-        <input type="file" name={nome} multiple={multiplo} className="mt-1 block w-full text-sm" data-testid={`${testid}-arquivo`} />
-      </label>
+      <div className="grid gap-1">
+        <p className="text-sm font-semibold text-ink">{rotulo}</p>
+        <SeletorArquivo name={nome} multiple={multiplo} rotulo={multiplo ? "Escolher arquivos" : "Escolher arquivo"} ariaLabel={rotulo} testid={`${testid}-arquivo`} />
+      </div>
       <Button type="submit" size="sm" variant="secondary" disabled={pendente}>
         Enviar
       </Button>

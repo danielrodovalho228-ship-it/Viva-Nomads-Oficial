@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { Button } from "@/components/ui/button";
 
 type Resposta = {
@@ -49,13 +50,11 @@ export function TestarLeituraIa() {
           <option value="matricula">Matrícula</option>
           <option value="documento">Documento</option>
         </select>
-        <input
-          type="file"
+        <SeletorArquivo
           accept="application/pdf,image/jpeg,image/png"
           onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
-          className="min-w-0 max-w-full text-sm"
-          aria-label="Arquivo fictício para testar a leitura"
-          data-testid="testar-leitura-arquivo"
+          ariaLabel="Arquivo fictício para testar a leitura"
+          testid="testar-leitura-arquivo"
         />
         <Button size="sm" variant="primary" disabled={!arquivo || ocupado} onClick={testar} data-testid="testar-leitura-enviar">
           {ocupado ? "Lendo..." : "Testar"}

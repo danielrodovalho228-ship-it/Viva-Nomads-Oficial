@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
@@ -142,7 +143,7 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
                     <FormAcao acao={enviarFotoCorrecao} className="mt-1 flex flex-wrap items-end gap-2" testid={`correcao-foto-${chave}`}>
                       <input type="hidden" name="laudoId" value={l.id} />
                       <input type="hidden" name="item" value={chave} />
-                      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp" required aria-label={`Foto da correção: ${itemChecklist(chave)?.rotulo ?? chave}`} className={campo} />
+                      <SeletorArquivo name="foto" accept="image/jpeg,image/png,image/webp" required rotulo="Escolher foto" ariaLabel={`Foto da correção: ${itemChecklist(chave)?.rotulo ?? chave}`} />
                       <Button type="submit" size="sm" variant="secondary">Enviar a foto da correção</Button>
                     </FormAcao>
                   )}

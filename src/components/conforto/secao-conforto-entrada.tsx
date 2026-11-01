@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -128,13 +129,12 @@ export function SecaoConfortoEntrada({
                     className="rounded-lg border border-line p-3 text-sm"
                     data-testid={`conforto-texto-${i.chave}`}
                   />
-                  <input
-                    type="file"
+                  <SeletorArquivo
+                    rotulo="Escolher foto (opcional)"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={(e) => muda(i.chave, { foto: e.target.files?.[0] ?? null })}
-                    aria-label={`Foto de ${i.rotulo} (opcional)`}
-                    data-testid={`conforto-foto-${i.chave}`}
-                    className="block w-full min-w-0 max-w-full text-sm"
+                    ariaLabel={`Foto de ${i.rotulo} (opcional)`}
+                    testid={`conforto-foto-${i.chave}`}
                   />
                 </div>
               )}
