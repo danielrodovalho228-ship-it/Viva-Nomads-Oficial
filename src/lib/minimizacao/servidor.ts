@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { INVENTARIO } from "@/config/retencao";
 import { LIMPEZA_MATRICULA_ELIMINADA } from "@/lib/documento/conferencia-matricula";
 import { planoDoItem, textoPrazo, type Candidato, type ItemInventario } from "@/lib/minimizacao/regras";
+import { diaBRT } from "@/lib/datas-brasilia";
 
 type Admin = SupabaseClient;
 const DOCS_INQUILINO = "inquilino-docs";
@@ -140,7 +141,8 @@ export interface ResultadoEliminacao {
  * chave `ELIMINACAO_ATIVA=1`. Grava o relatório do dia (eliminacoes_simulado) e, no real, o livro.
  */
 export async function rodarEliminacao(admin: Admin, agora: Date, simular: boolean): Promise<ResultadoEliminacao> {
-  const dia = agora.toISOString().slice(0, 10);
+  // E333: o dia do relatório é o do calendário de Brasília (uma rodada manual às 22h não cai no dia seguinte do UTC).
+  const dia = diaBRT(agora)!;
   const r: ResultadoEliminacao = { eliminados: 0, simulados: 0, falhas: 0 };
   for (const item of INVENTARIO) {
     try {
