@@ -190,7 +190,7 @@ export function PedidosClient({
                       <p className="mt-2 max-w-2xl text-sm text-ink">{p.apresentacao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted">
-                      {p.status === "expirado" ? "Expirou em" : "Fica no ar até"} {dataPedidoBR(p.expira_em)}
+                      {p.status === "expirado" ? "Expirou em" : "Fica no ar até o fim do dia"} {dataPedidoBR(p.expira_em)}
                     </p>
                   </div>
                   {/* Ações do pedido */}
