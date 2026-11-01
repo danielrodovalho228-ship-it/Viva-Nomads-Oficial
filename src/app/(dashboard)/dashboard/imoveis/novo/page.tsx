@@ -281,6 +281,8 @@ export default function NewPropertyPage() {
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [airbnbMensal, setAirbnbMensal] = useState("");
+  // E399-C: link do anúncio no Airbnb — só no rascunho (draft_data); não vai para o imóvel publicado.
+  const [linkAirbnb, setLinkAirbnb] = useState("");
   const [precoRegiao, setPrecoRegiao] = useState<{ valor: number; base: "bairro" | "cidade"; n: number } | null>(null);
   const [condoFee, setCondoFee] = useState("");
   const [street, setStreet] = useState("");
@@ -852,6 +854,7 @@ export default function NewPropertyPage() {
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
     if (s(d.airbnbMensal)) setAirbnbMensal(d.airbnbMensal as string);
+    if (s(d.linkAirbnb)) setLinkAirbnb(d.linkAirbnb as string);
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
@@ -1103,7 +1106,7 @@ export default function NewPropertyPage() {
   // Auto-save do rascunho + "Salvo ✓". Os limites PRIVADOS da negociação NÃO vão no JSON (salvos à parte).
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
-    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
+    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal, linkAirbnb,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
@@ -2056,6 +2059,8 @@ export default function NewPropertyPage() {
                 limites={limites}
                 setLimites={setLimites}
                 erros={erros}
+                linkAirbnb={linkAirbnb}
+                setLinkAirbnb={setLinkAirbnb}
               />
             )}
 

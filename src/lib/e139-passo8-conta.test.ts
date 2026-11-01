@@ -58,7 +58,14 @@ test("E139/E151: o Passo 8 usa a conta única, sem a 'linha comparativa' e sem a
 
 test("E292-bis: o comparador do Airbnb (E140) saiu do Passo 8 — sem componente, sem testids", () => {
   const preco = semComentarios(ler("../app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx"));
-  assert.doesNotMatch(preco, /PrecoSugerido|conta-airbnb|recebe-airbnb|Airbnb/);
+  // E399-C (ordem do Daniel): o único "Airbnb" permitido é o campo do link, atrás da chave PRECO_JUSTO_COMPARADOR
+  // (desligada) e com cotação simulada. A conta da Viva sobre a taxa do Airbnb (E140) segue proibida.
+  assert.doesNotMatch(preco, /PrecoSugerido|conta-airbnb|recebe-airbnb/);
+  const semCampoE399 = preco
+    .replace(/\{PRECO_JUSTO_COMPARADOR && p\.setLinkAirbnb && \(\s*<CampoLinkAirbnb[^/]*\/>\s*\)\}/, "")
+    .replace(/import \{ CampoLinkAirbnb \} from "@\/components\/precos\/campo-link-airbnb";/, "")
+    .replace(/linkAirbnb\?: string;|setLinkAirbnb\?: \(v: string\) => void;/g, "");
+  assert.doesNotMatch(semCampoE399, /Airbnb/);
   assert.equal(existsSync(new URL("../components/precos/preco-sugerido.tsx", import.meta.url)), false);
 });
 

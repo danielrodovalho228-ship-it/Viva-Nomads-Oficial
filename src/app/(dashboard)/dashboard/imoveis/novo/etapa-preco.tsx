@@ -7,7 +7,8 @@ import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { FAIXAS, GARANTIAS_CADASTRO } from "@/lib/faixas";
-import { SELO_NF_UI } from "@/lib/flags";
+import { PRECO_JUSTO_COMPARADOR, SELO_NF_UI } from "@/lib/flags";
+import { CampoLinkAirbnb } from "@/components/precos/campo-link-airbnb";
 import { TAXA_COMISSAO_PADRAO } from "@/lib/cobranca/regra";
 import { taxaDoMeuNovoAnuncio } from "@/lib/preco-justo-actions";
 import { SimuladorBolso } from "@/components/precos/simulador-bolso";
@@ -62,6 +63,9 @@ export function EtapaPreco(p: {
   limites: LimitesPrivados;
   setLimites: (l: LimitesPrivados) => void;
   erros: Record<string, string>;
+  /** E399-C: link do anúncio no Airbnb (só no rascunho; o campo só aparece com PRECO_JUSTO_COMPARADOR). */
+  linkAirbnb?: string;
+  setLinkAirbnb?: (v: string) => void;
 }) {
   const aluguel = Number(p.monthlyPrice) || 0;
   // E110: um horizonte só no Passo 8 — o exemplo do texto acompanha os meses do simulador.
@@ -167,6 +171,9 @@ export function EtapaPreco(p: {
           {/* E139/E151: o simulador explica a taxa da faixa, com os meses que o dono escolhe. E292-bis ("a Viva só conecta"):
               saiu o comparativo do Airbnb (a taxa dele e o "preço sugerido" de equivalência eram conta da Viva). */}
           <SimuladorBolso compacto valorMensal={aluguel} mesesIniciais={mesesExemplo} onMeses={setMesesExemplo} campos={campos} taxa={taxa} />
+          {PRECO_JUSTO_COMPARADOR && p.setLinkAirbnb && (
+            <CampoLinkAirbnb valor={p.linkAirbnb ?? ""} onChange={p.setLinkAirbnb} totalMensal={mes.total} />
+          )}
 
         </>
       )}

@@ -151,3 +151,10 @@ export const SELETOR_IDIOMA = process.env.NEXT_PUBLIC_SELETOR_IDIOMA === "on";
  * gerando o resumo SÓ para as contas de teste.
  */
 export const RESUMO_SEMANAL_ATIVO = process.env.RESUMO_SEMANAL_ATIVO === "1";
+
+/**
+ * E399-C — comparador do selo "Preço justo" pelo link do anúncio no Airbnb (PR 1). OFF: o campo do link não aparece.
+ * Ligada, a comparação ainda usa cotação SIMULADA; a chamada ao fornecedor de verdade depende do CNPJ e do item 24 da
+ * agenda da Dra. Beatriz.
+ */
+export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR === "on";
