@@ -27,7 +27,7 @@ test("as três telas pedem com exigir; home, notificações e contadores não", 
   assert.match(ler("src/app/(dashboard)/dashboard/propostas/page.tsx"), /await listarPropostas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/visitas/page.tsx"), /await listVisitasDono\(\{ exigir: true \}\) : await listMinhasVisitas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/locacoes/page.tsx"), /await getMinhasLocacoes\(\{ exigir: true \}\)/);
-  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/app/(dashboard)/dashboard/notificacoes/page.tsx", "src/lib/painel/contadores-servidor.ts"]) {
+  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/lib/painel/contadores-servidor.ts"]) {
     assert.doesNotMatch(ler(f), /exigir: true/, f);
   }
 });

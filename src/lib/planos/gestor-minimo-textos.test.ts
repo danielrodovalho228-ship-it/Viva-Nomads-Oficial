@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { GESTOR_PRECO } from "../../config/planos.ts";
+import { GESTOR_PRECO, PORTA_GESTOR_TEXTO } from "../../config/planos.ts";
 import { FAQ } from "../atendimento/faq.ts";
 import { EMPRESAS_E_GESTORES } from "../atendimento/parceiros-texto.ts";
 import { FAIXAS_COMISSAO_PADRAO } from "../cobranca/regra.ts";
@@ -66,10 +66,12 @@ test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => 
     "src/lib/atendimento/viva-prompt.ts",
     "src/lib/atendimento/parceiros-texto.ts",
   ])
-    assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis/, f);
-  assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor para quem tem \$\{GESTOR_PRECO\.minimoImoveis\} ou mais imóveis\./);
+    // E321: a porta inteira (N+ com documento aprovado OU administradora) sai de PORTA_GESTOR_TEXTO, que lê a constante.
+    assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis|PORTA_GESTOR_TEXTO/, f);
+  assert.match(ler("src/config/planos.ts"), /PORTA_GESTOR_TEXTO = `\$\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais com documento aprovado, ou conta de administradora`/);
+  assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor para \$\{PORTA_GESTOR_TEXTO\}\./);
   const form = ler("src/components/precos/plano-gestor-form.tsx");
-  assert.match(form, /title=\{`Plano Gestor: \$\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais`\}/);
+  assert.match(form, /title="Plano Gestor"/);
   assert.match(ler("src/app/api/plano-gestor/route.ts"), /subject: `Lead — Plano Gestor \(\$\{GESTOR_PRECO\.minimoImoveis\}\+ imóveis\)`/);
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/simulador/page.tsx"), /Gestor \(31\+\)/);
   // /modelodenegocio não lê @/config/planos (guarda dos planos antigos): usa o alias GESTOR_MIN_IMOVEIS_VALIDADOS = GESTOR_PRECO.minimoImoveis.
@@ -79,8 +81,9 @@ test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => 
 
 test("os textos prontos do Gestor saem da constante (mudam juntos com ela)", () => {
   const taxa = FAQ.map((q) => q.resposta).find((r) => r.includes("Plano Gestor"));
-  assert.ok(taxa?.includes(`O Plano Gestor vale a partir de ${N} imóveis`));
-  assert.ok(EMPRESAS_E_GESTORES.includes(`Plano Gestor para quem tem ${N} imóveis ou mais`));
+  assert.ok(taxa?.includes(`O Plano Gestor é outra regra: vale para ${PORTA_GESTOR_TEXTO}`));
+  assert.ok(PORTA_GESTOR_TEXTO.startsWith(`${N} imóveis ou mais`));
+  assert.ok(EMPRESAS_E_GESTORES.includes(`Plano Gestor para ${PORTA_GESTOR_TEXTO}`));
 });
 
 test("a faixa sem teto da taxa de serviço continua '31+' (outra regra)", () => {
@@ -114,5 +117,5 @@ test("E252-B: a faixa 31+ da tabela é 'taxa negociável', sem 'Plano Gestor'; o
     assert.doesNotMatch(t, /\bgestor\s*\?|\.gestor\b|ehPlanoGestor|estado === "gestor"/, f);
   }
   // O Plano Gestor aparece só pelo formulário (e pelo simulador do plano), com o número da constante.
-  assert.match(ler("src/components/precos/plano-gestor-form.tsx"), /\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais\? Plano Gestor/);
+  assert.match(ler("src/components/precos/plano-gestor-form.tsx"), /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas com o time da Viva\./);
 });

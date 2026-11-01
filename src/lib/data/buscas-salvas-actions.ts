@@ -63,15 +63,23 @@ export async function alternarBuscaSalva(qs: string): Promise<Res<{ salva: boole
   return { ok: true, salva: true, id: (nova?.id as string | undefined) ?? null, avisoEmail: notificacaoLigada(perfil?.notif_email as boolean | null | undefined) };
 }
 
-/** Buscas salvas da própria pessoa (mais recentes primeiro). */
-export async function listarBuscasSalvas(): Promise<BuscaSalva[]> {
+const MSG_BUSCAS_NAO_CARREGARAM = "Não foi possível carregar as suas buscas salvas agora.";
+
+/**
+ * Buscas salvas da própria pessoa (mais recentes primeiro). Achado nº 11 (erros e estados vazios): com `exigir` (a tela
+ * Buscas salvas), a falha do banco LANÇA em vez de dizer "nenhuma busca salva" — a pessoa salvaria de novo. A home segue
+ * sem `exigir` (com .catch).
+ */
+export async function listarBuscasSalvas(opcoes: { exigir?: boolean } = {}): Promise<BuscaSalva[]> {
   const s = await sessao();
   if (!s) return [];
   const consulta = (colunas: string) =>
     s.supabase.from("buscas_salvas").select(colunas).eq("usuario_id", s.user.id).order("criado_em", { ascending: false }).limit(LIMITE_BUSCAS_SALVAS);
   // `alerta_ativo` vem da 0137; sem ela (migração ainda não aplicada) a lista continua funcionando.
   const comAlerta = await consulta("id, parametros, resumo, criado_em, alerta_ativo");
-  const data = comAlerta.error ? (await consulta("id, parametros, resumo, criado_em")).data : comAlerta.data;
+  const semAlerta = comAlerta.error ? await consulta("id, parametros, resumo, criado_em") : null;
+  if (semAlerta?.error && opcoes.exigir) throw new Error(MSG_BUSCAS_NAO_CARREGARAM);
+  const data = semAlerta ? semAlerta.data : comAlerta.data;
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
     id: r.id as string,
     parametros: r.parametros as string,
