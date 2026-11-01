@@ -304,7 +304,9 @@ export async function getMeuPedido(pedidoId: string): Promise<Record<string, unk
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("pedidos_moradia").select("*").eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("pedidos_moradia").select("*").eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
+  // Achado 71: a falha de leitura não vira formulário vazio (que, salvo, gravaria por cima do pedido).
+  if (error) throw new Error("Não foi possível ler o pedido.");
   if (!data || ["excluido", "removido_admin"].includes(String(data.status))) return null;
   return data as Record<string, unknown>;
 }

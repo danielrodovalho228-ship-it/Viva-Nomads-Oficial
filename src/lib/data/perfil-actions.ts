@@ -346,13 +346,15 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
   const adminDoc = createAdminClient();
-  const [{ data }, { count }, fone, doc] = await Promise.all([
+  const [{ data, error }, { count, error: erroImoveis }, fone, doc] = await Promise.all([
     supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia, full_name").eq("id", user.id).maybeSingle(),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     getTelefoneEstado().catch(() => null),
     // Documento: lido pelo servidor (cliente de serviço); só o "tem/não tem" sai daqui.
     adminDoc ? lerDocumento(adminDoc, user.id).catch(() => null) : Promise.resolve(null),
   ]);
+  // Achado 70: a falha de leitura não vira bio, cidade e idiomas vazios (que, salvos, apagariam o perfil).
+  if (error || erroImoveis) throw new Error("Não foi possível ler o perfil público.");
   return {
     bio: (data?.bio as string | null) ?? "",
     idiomas: (data?.idiomas as string[] | null) ?? [],
