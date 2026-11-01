@@ -20,6 +20,7 @@ import { diasDoIntervalo, type MarcaDia } from "@/lib/calendario/grade";
 import { ImportarCalendario } from "@/components/property/importar-calendario";
 import { ExportarCalendario } from "@/components/property/exportar-calendario";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 function brDate(iso: string): string {
   const [y, m, d] = iso.split("-");
@@ -115,10 +116,11 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
     const fim = sel.fim ?? sel.ini;
     setBusy(true);
     setErro(null);
-    const r = await addBlock(propertyId, sel.ini, fim);
+    const r = await semQuedaDeRede(addBlock(propertyId, sel.ini, fim));
     if (r.ok) {
       // Atualiza otimista (demo) ou recarrega (real).
-      const novo = await getBlocks(propertyId);
+      // O bloqueio já foi gravado; sem conexão na releitura, fica a atualização otimista.
+      const novo = await getBlocks(propertyId).catch(() => []);
       setBlocks(
         novo.length
           ? novo
@@ -133,7 +135,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
 
   async function remover(id: string) {
     setBusy(true);
-    const r = await removeBlock(id);
+    const r = await semQuedaDeRede(removeBlock(id));
     if (r.ok) {
       setBlocks((b) => b.filter((x) => x.id !== id));
       setDiaBloqueado(null);

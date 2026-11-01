@@ -13,6 +13,7 @@ import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { formatBRL, hojeBR } from "@/lib/utils";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
@@ -53,7 +54,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
     setErro(null);
     if (problema) return setErro(problema);
     setEnviando(true);
-    const r = await enviarProposta({
+    const r = await semQuedaDeRede(enviarProposta({
       leadId: dados.leadId,
       valorBase: termos.valorBase,
       descontoPct: tipoDesconto === "pct" ? termos.descontoPct : 0,
@@ -70,7 +71,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
       pessoas: pessoasN,
       validadeDias: validade,
       mensagem: mensagem || undefined,
-    });
+    }));
     setEnviando(false);
     if (!r.ok) return setErro(r.error);
     router.push(`/dashboard/propostas/${r.id}`);

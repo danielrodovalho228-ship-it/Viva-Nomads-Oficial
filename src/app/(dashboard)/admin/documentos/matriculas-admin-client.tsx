@@ -12,6 +12,7 @@ import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import type { ContadoresMatricula } from "@/lib/documento/fila-matricula";
 import { MOTIVOS_RECUSA, comporMotivoRecusa } from "@/lib/moderacao-doc";
 import { cn } from "@/lib/utils";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Matrículas (prompt 19): a matrícula ao lado do resumo lido e do laudo CAF (só os booleanos). Em revisão e as
@@ -96,7 +97,7 @@ function MatriculaCard({ m, onDecidido, soLeitura = false }: { m: MatriculaNaFil
       texto = t;
     }
     setBusy(true);
-    const r = await decidirMatriculaAdmin(m.id, acao, texto);
+    const r = await semQuedaDeRede(decidirMatriculaAdmin(m.id, acao, texto));
     setBusy(false);
     if (!r.ok) return setErro(r.error ?? "Não foi possível salvar.");
     onDecidido();

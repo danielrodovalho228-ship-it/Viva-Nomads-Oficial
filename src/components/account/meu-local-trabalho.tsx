@@ -96,7 +96,7 @@ export function MeuLocalTrabalho() {
           temDados={!!salvo}
           textoConfirmar={textosToggle("local-trabalho").confirmar}
           onLimpar={async () => {
-            const r = await salvarLocalTrabalho(null);
+            const r = await semQuedaDeRede(salvarLocalTrabalho(null));
             if (r.ok) {
               setSalvo(null);
               setEstado(VAZIO);

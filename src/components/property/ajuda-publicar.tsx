@@ -5,6 +5,7 @@ import { useState } from "react";
 import { HandHelping, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { pedirAjudaParaPublicar } from "@/lib/data/ajuda-publicacao-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import {
   AVISO_APROVACAO,
   AVISO_SEM_CUSTO,
@@ -46,7 +47,7 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
   async function enviar() {
     setEnviando(true);
     setErro("");
-    const r = await pedirAjudaParaPublicar({ link, texto, observacao: obs, fotos: fotos.map((f) => f.path) });
+    const r = await semQuedaDeRede(pedirAjudaParaPublicar({ link, texto, observacao: obs, fotos: fotos.map((f) => f.path) }));
     setEnviando(false);
     if (!r.ok) return setErro(r.error ?? "Não foi possível enviar agora.");
     setEnviado(true);

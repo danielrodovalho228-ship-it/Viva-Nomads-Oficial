@@ -33,6 +33,7 @@ import {
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
 import { SecaoConfortoEntrada } from "@/components/conforto/secao-conforto-entrada";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_PARTE = { proprietario: "Proprietário", inquilino: "Inquilino" } as const;
@@ -123,7 +124,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         const fd = new FormData();
         fd.set("contratoId", contratoId);
         fd.set("arquivo", foto);
-        const up = await enviarFotoConferencia(fd);
+        const up = await semQuedaDeRede(enviarFotoConferencia(fd));
         if (!up.ok) return up;
         fotoPath = up.path ?? null;
       }

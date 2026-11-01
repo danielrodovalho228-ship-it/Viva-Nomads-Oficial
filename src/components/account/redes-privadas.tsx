@@ -6,6 +6,7 @@ import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { Button } from "@/components/ui/button";
 import { REDES_USUARIO_ATIVO } from "@/lib/flags";
 import { minhasRedes, salvarMinhasRedes, type MinhasRedes } from "@/lib/linkedin/actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * 63-B (decisão do Daniel, 23/10): Instagram, Facebook e TikTok da própria pessoa, opcionais e PRIVADOS — só a pessoa e
@@ -59,7 +60,7 @@ export function RedesPrivadas() {
         textoConfirmar={t.confirmar}
         onLimpar={async () => {
           const vazio = Object.fromEntries(Object.keys(redes).map((k) => [k, ""])) as unknown as MinhasRedes;
-          const r = await salvarMinhasRedes(vazio);
+          const r = await semQuedaDeRede(salvarMinhasRedes(vazio));
           if (r.ok) {
             setRedes(vazio);
             setTemSalvo(false);

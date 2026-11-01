@@ -86,3 +86,55 @@ test("nenhuma tela chama ação do servidor dentro de transição sem tratamento
   }
   assert.deepEqual(sem, [], "ação do servidor em transição sem try nem semQuedaDeRede");
 });
+
+/*
+  Segunda varredura (manipuladores async fora de transição): sem conexão a ação rejeita e, sem tratamento, o botão fica
+  preso em "Salvando…"/"Enviando…" e nada é dito. Toda chamada a ação do servidor dentro de uma função async de tela
+  client precisa de try, .catch, .then(ok, falha) ou semQuedaDeRede. Fora daqui: src/components/seguranca/ (2FA — a guarda
+  da Pista B é "nada de 2FA"; essas telas não foram tocadas).
+*/
+test("nenhum manipulador async chama ação do servidor sem tratamento (fora da 2FA)", () => {
+  const sem: string[] = [];
+  const corposAsync = (src: string) => {
+    const out: { ini: number; fim: number }[] = [];
+    for (const m of src.matchAll(/async (?:function\s*\w*\s*)?\([^)]*\)\s*(?::\s*[^={]+)?(?:=>)?\s*\{/g)) {
+      let d = 1;
+      let j = (m.index ?? 0) + m[0].length;
+      while (d && j < src.length) {
+        if (src[j] === "{") d++;
+        else if (src[j] === "}") d--;
+        j++;
+      }
+      out.push({ ini: (m.index ?? 0) + m[0].length, fim: j });
+    }
+    return out;
+  };
+  for (const f of arquivos(join(RAIZ, "src"), /\.tsx$/)) {
+    if (f.includes("/src/components/seguranca/")) continue;
+    const src = readFileSync(f, "utf8");
+    if (!/^\s*["']use client["']/.test(src)) continue;
+    const acoes = new Set<string>();
+    for (const m of src.matchAll(/import \{([^}]*)\} from "@\/(lib\/[^"]+)"/g)) {
+      if (!modulosDeAcao.has(m[2])) continue;
+      for (const n of m[1].split(",")) {
+        const nome = n.trim().split(/\s+as\s+/).pop() ?? "";
+        if (nome && !nome.startsWith("type ")) acoes.add(nome);
+      }
+    }
+    if (!acoes.size) continue;
+    const corpos = corposAsync(src);
+    for (const a of acoes) {
+      for (const m of src.matchAll(new RegExp(`await\\s+${a}\\(`, "g"))) {
+        const pos = m.index ?? 0;
+        const dentro = corpos.filter((c) => c.ini <= pos && pos < c.fim);
+        if (!dentro.length) continue;
+        const c = dentro.reduce((x, y) => (y.ini > x.ini ? y : x));
+        const corpo = src.slice(c.ini, c.fim);
+        const depois = src.slice(pos, pos + 400);
+        if (/\btry\s*\{/.test(src.slice(c.ini, pos)) || /\.catch\(/.test(corpo) || /^await\s+\w+\([^;]*\)\.then\([^;]*,/.test(depois)) continue;
+        sem.push(`${f.slice(RAIZ.length)} → ${a}`);
+      }
+    }
+  }
+  assert.deepEqual(sem, [], "ação do servidor em manipulador async sem tratamento");
+});

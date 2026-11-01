@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { mudarStatusAjudaPublicacao, type PedidoAjuda } from "@/lib/data/ajuda-publicacao-actions";
 import { proximosStatus, ROTULO_STATUS, type StatusAjuda } from "@/lib/ajuda-publicacao/ajuda";
 import { rotuloDoAdmin } from "@/config/menu-admin";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const TOM: Record<StatusAjuda, string> = {
   recebido: "border border-line bg-white text-amber-800",
@@ -38,7 +39,7 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
   async function mover(id: string, para: StatusAjuda) {
     setBusy(id);
     setErro((e) => ({ ...e, [id]: "" }));
-    const r = await mudarStatusAjudaPublicacao(id, para);
+    const r = await semQuedaDeRede(mudarStatusAjudaPublicacao(id, para));
     setBusy(null);
     if (!r.ok) setErro((e) => ({ ...e, [id]: r.error ?? "Não foi possível mudar a etapa." }));
     router.refresh();

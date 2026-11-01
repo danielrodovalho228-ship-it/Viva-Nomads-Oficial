@@ -20,6 +20,7 @@ import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -119,7 +120,7 @@ export function AvailabilityCalendar({
     if (!checkIn || !checkOut || !reserva?.ok) return;
     setEnviando(true);
     setErroEnvio(null);
-    const r = await solicitarReserva(property.id, checkIn, checkOut);
+    const r = await semQuedaDeRede(solicitarReserva(property.id, checkIn, checkOut));
     setEnviando(false);
     if (r.ok) setEnviado(true);
     else setErroEnvio(r.error ?? "Não foi possível enviar as datas.");

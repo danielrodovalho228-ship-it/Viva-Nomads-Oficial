@@ -7,6 +7,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { definirChaveSms } from "@/lib/data/pedidos-admin";
 import { dataPedidoBR } from "@/lib/pedidos/campos";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Chave SMS_ATIVO (Prompt 30, item 1). Desligada: o pedido chega aos donos com o e-mail confirmado dos dois lados.
@@ -22,7 +23,7 @@ export function ChaveSmsPainel({ ligada, ligadaEm, quem }: { ligada: boolean; li
   async function trocar() {
     setOcupado(true);
     setMsg(null);
-    const r = await definirChaveSms(!ligada);
+    const r = await semQuedaDeRede(definirChaveSms(!ligada));
     setOcupado(false);
     setConfirmando(false);
     if (!r.ok) {

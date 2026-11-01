@@ -6,6 +6,7 @@ import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { nasceLigado } from "@/lib/anuncio/bloco-opcional";
 import { lerChecklistEstrutura, salvarChecklistEstrutura } from "@/lib/data/estrutura-actions";
 import { GRUPOS_ESTRUTURA, ITENS_ESTRUTURA, NOTA_ESTRUTURA_INFORMADA, temEstruturaInformada, type ChecklistEstrutura, type ItemChecklist } from "@/lib/selos-estrutura";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** E258 (c): aqui não há botão — cada toque grava; a tela diz isso antes do primeiro toque. */
 export const COMO_SALVA_ESTRUTURA = "Cada toque salva na hora.";
@@ -41,7 +42,7 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
   async function gravar(novo: ChecklistEstrutura) {
     setChecklist(novo);
     setEstado("salvando");
-    const r = await salvarChecklistEstrutura(propertyId, novo);
+    const r = await semQuedaDeRede(salvarChecklistEstrutura(propertyId, novo));
     if (r.ok) {
       ultimo.current = novo;
       setEstado("salvo");
