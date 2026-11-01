@@ -11,6 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *     a abertura "o contrato de <título> foi assinado pelas duas partes, e o cartão do anúncio está pronto" e o título
  *     no bloco de dados; nada de "seu anúncio está pronto", nada de "undefined";
  *   • o inquilino não recebe esse e-mail (é do dono);
+ *   • L-86 (aberto): hoje o e-mail não sai — o caso acima está em test.fail até a correção;
  *   • o destino do aviso (/dashboard/imoveis/<id>/cartao) abre a 390 e 1280 com a prévia carregada (1080 px),
  *     sem painel-erro e sem rolagem lateral.
  */
@@ -110,6 +111,10 @@ test.describe("T941 — #2038 E267 resíduo: o cartão para compartilhar nomeia 
   });
 
   test("as duas assinaturas pela tela → o e-mail do cartão diz qual anúncio", async ({ browser }) => {
+    // L-86 (registro-defeitos.md): o notify de "anuncio_compartilhar" não leva o e-mail do dono e o evento não tem push na
+    // matriz — o aviso não sai por canal nenhum (lab do #2044, run 41339496800: 0 linhas em emails_teste). Quem corrigir
+    // tira este test.fail no mesmo PR.
+    test.fail(true, "L-86: aviso anuncio_compartilhar não é entregue (sem e-mail no notify, sem push na matriz)");
     test.setTimeout(240_000);
     await assinarPelaTela(browser, { email: inq.email, id: ids.inq! }, 390);
     expect(await emailsDoEvento(ids.dono!, "anuncio_compartilhar"), "com uma assinatura só, nada de cartão").toHaveLength(0);
