@@ -2190,7 +2190,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t911-achado35-parceiros-pedidos"
       ]
     },
     "/admin/parceiros/pedidos/[id]": {
