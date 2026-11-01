@@ -49,7 +49,9 @@ test("cada aba aponta para uma rota que JÁ existe (nenhuma tela nova)", () => {
   const painel = readFileSync(new URL("../app/(dashboard)/dashboard/parceiro/painel-parceiro.tsx", import.meta.url), "utf8");
   assert.match(pedidos, /<Panel id="pedidos"/);
   assert.match(pedidos, /<Panel id="ganhos"/);
-  assert.match(painel, /<Panel id="agenda"/);
+  assert.match(pedidos, /<Panel id="agenda"/);
+  // E340: a agenda das janelas (aba Atendimento) não repete o id da seção #agenda.
+  assert.doesNotMatch(painel, /<Panel id="agenda"/);
 });
 
 test("MENUS-5: Ganhos saiu da barra de baixo do dono (vira subaba de Contratos)", () => {

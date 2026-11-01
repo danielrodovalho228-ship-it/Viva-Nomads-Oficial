@@ -467,7 +467,7 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
         </Button>
       </Panel>
 
-      <Panel id="agenda" title="Agenda" className="scroll-mt-24">
+      <Panel id="atendimento-agenda" title="Agenda" className="scroll-mt-24">
         <p className="text-sm font-medium text-ink">Janelas da semana</p>
         <ul className="mt-2 space-y-1 text-sm" data-testid="parceiro-janelas">
           {/* Sem janela, a agenda não filtra: qualquer horário futuro fora dos bloqueios vale nos pedidos (horarioNaAgenda). */}
