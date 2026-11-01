@@ -12,6 +12,7 @@ import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { reaisParaCampo } from "@/lib/reais";
 import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
+import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
@@ -198,6 +199,7 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
   const avatarUrl = avatarLocal ?? p.avatarUrl;
   const bannerUrl = bannerLocal ?? p.bannerUrl;
   const galeria = [...p.galeria, ...novas.filter((n) => !p.galeria.some((g) => g.id === n.id))].filter((g) => !removidas.includes(g.id));
+  const capa = capaDoParceiro({ nomePublico: p.nomePublico, bannerUrl, galeriaCapaUrl: [...galeria].sort((a, b) => a.ordem - b.ordem)[0]?.url ?? null, avatarUrl, categorias: p.categorias });
   return (
     <>
       <Panel title="Foto e capa">
@@ -222,12 +224,14 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
           </div>
           <div>
             <p className="text-sm font-medium text-ink">Capa (faixa larga)</p>
-            {bannerUrl ? (
+            {/* E341: a prévia é a capa que VALE na página pública (capaDoParceiro: capa → 1ª da galeria → foto → categoria). */}
+            {capa && (
               // eslint-disable-next-line @next/next/no-img-element -- prévia da imagem enviada
-              <img src={bannerUrl} alt="Sua capa" className="my-2 aspect-[3/1] w-full rounded-xl object-cover" data-testid="parceiro-banner-previa" />
-            ) : (
-              <p className="my-2 text-sm text-muted">Sem capa ainda (opcional).</p>
+              <img src={capa.src} alt={capa.origem === "capa" ? "Sua capa" : "A capa que sua página usa agora"} className="my-2 aspect-[3/1] w-full rounded-xl object-cover" data-testid="parceiro-banner-previa" data-origem={capa.origem} />
             )}
+            <p className={capa?.origem === "capa" ? "my-2 text-sm text-muted" : "my-2 text-sm text-ink"} data-testid="parceiro-capa-aviso" data-origem={capa?.origem ?? "nenhuma"}>
+              {avisoCapaNoEditor(capa?.origem ?? null)}
+            </p>
             <EnviarImagemParceiro
               tipo="banner"
               rotulo={bannerUrl ? "Trocar capa" : "Enviar capa"}
