@@ -734,7 +734,8 @@
         "t302-varredura-logada-bloco6",
         "t362-perfil-avaliacoes-pix",
         "t352-varredura-bloco17",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/buscas": {
@@ -2011,7 +2012,8 @@
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
         "t613-varredura-bloco52",
-        "t626-varredura-bloco60"
+        "t626-varredura-bloco60",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/propostas": {
@@ -2422,7 +2424,8 @@
         "t302-varredura-logada-bloco6",
         "t310-vao-fim-de-pagina",
         "t418-varredura-bloco35",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/auth/intencao": {
