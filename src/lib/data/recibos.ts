@@ -90,11 +90,16 @@ function paraRecibo(l: Linha): Recibo {
 }
 
 /** Os documentos de locação da pessoa no papel pedido (dono: os que emitiu como locador; morador: os que recebeu). */
-export async function recibosDaPessoa(papel: PapelRecibos): Promise<RecibosDaPessoa | null> {
+const MSG_RECIBOS_NAO_CARREGARAM = "Não foi possível carregar os recibos agora.";
+
+/** Auditoria de erros e estados vazios, achado nº 9: com `exigir` (a tela Recibos), a falha do banco LANÇA — o painel mostra
+ * "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhum recibo". Sem `exigir` (o bloco do celular e a exportação), segue como antes. */
+export async function recibosDaPessoa(papel: PapelRecibos, opcoes: { exigir?: boolean } = {}): Promise<RecibosDaPessoa | null> {
   const s = await sessao();
   if (!s) return null;
   const lado = papel === "dono" ? "owner_id" : "tenant_id";
-  const { data } = await s.supabase.from("documentos_fiscais").select(COLUNAS).eq(lado, s.userId).in("tipo", TIPOS).order("criado_em", { ascending: false }).limit(2000);
+  const { data, error } = await s.supabase.from("documentos_fiscais").select(COLUNAS).eq(lado, s.userId).in("tipo", TIPOS).order("criado_em", { ascending: false }).limit(2000);
+  if (error && opcoes.exigir) throw new Error(MSG_RECIBOS_NAO_CARREGARAM);
   const linhas = (data ?? []) as unknown as Linha[];
   const outros = linhas.map((l) => (papel === "dono" ? l.tenant_id : l.owner_id)).filter((x): x is string => !!x);
   const teste = await contasDeTeste([s.userId, ...outros]);

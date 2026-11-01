@@ -21,10 +21,10 @@ Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linh
 | `admin-servicos` | /admin/servicos | A conferir | Telas do admin — confirmar a pista responsável antes de conferir. |
 | `admin-usuarios` | /admin/usuarios | A conferir | Telas do admin — confirmar a pista responsável antes de conferir. |
 | `admin-visao-geral` | /admin/visao-geral | A conferir | Telas do admin — confirmar a pista responsável antes de conferir. |
-| `ajuda-central` | /ajuda | Conforme | #1699 (vocabulário), E84; #1711 (FAQPage em português). |
+| `ajuda-central` | /ajuda | Conforme | #1699 (vocabulário), E84; #1711 (FAQPage em português). Passada fina 01/11: títulos dos temas e das seções em verde (mockup). |
 | `ajuda-privacidade` | /privacidade | Congelado | Texto aprovado — não mexer até o parecer jurídico. |
 | `ajuda-termos` | /termos | Congelado | Texto aprovado — não mexer até o parecer jurídico. |
-| `busca-card` | /buscar | Conforme | #1698 (bairro não espremido pelo selo). |
+| `busca-card` | /buscar | Conforme | #1698 (bairro não espremido pelo selo). Passada fina 01/11: o lugar da contagem em verde. Fica: chip selecionado em tinta (regra do Prompt 40, com teste) e o cartão sem caixa (PropertyCard único). |
 | `cabecalho-agenda` | cabeçalho de /dashboard/agenda | Decisão pendente | Passada 2 (31/10, 1280): o mockup tem barra lateral verde, fundo bege e foto grande no topo de cada tela do painel; o real segue o painel aprovado depois (topo com abas, fundo clean, sem foto). Pôr foto no topo de todas as telas do painel é decisão de desenho — com o Muse. Conteúdo de cada tela conferido sem defeito visual. |
 | `cabecalho-ajuda` | cabeçalho de /dashboard/conta/ajuda | Decisão pendente | Passada 2 (31/10, 1280): o mockup tem barra lateral verde, fundo bege e foto grande no topo de cada tela do painel; o real segue o painel aprovado depois (topo com abas, fundo clean, sem foto). Pôr foto no topo de todas as telas do painel é decisão de desenho — com o Muse. Conteúdo de cada tela conferido sem defeito visual. |
 | `cabecalho-anuncios` | cabeçalho de /dashboard/imoveis | Decisão pendente | Mockup antigo (barra lateral, foto no topo, grade de 3); real é a lista aprovada depois, cartões uniformes em #1724. Mesma decisão dos demais cabeçalhos. |

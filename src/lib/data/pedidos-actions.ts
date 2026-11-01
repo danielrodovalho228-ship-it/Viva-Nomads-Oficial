@@ -10,16 +10,13 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { listMyProperties } from "@/lib/data/properties";
 import { notify } from "@/lib/notifications";
-import { corpoPedidoEncerrado, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { avisarCompativeisDoPedido, paresCompat } from "@/lib/data/pedidos-compat";
 import { destinoParaDono, localDaEntrada } from "@/lib/data/local-trabalho";
 import { temposAte } from "@/lib/data/tempos";
 import { chaveDestino, ehModo, minutosArredondados } from "@/lib/rotas/tempo";
 import { explicarNota, melhorPor, porQueCombina, type ImovelCompativel, type ItemNota } from "@/lib/pedidos/compatibilidade";
-import {
-  detalheResposta,
-  detalheAceito,
-} from "@/lib/pedidos/notify-templates";
+import { detalheResposta, detalheAceito } from "@/lib/pedidos/notify-templates";
+import { corpoPedidoAceito, corpoPedidoEncerrado, corpoPedidoResposta, paraNotify, type CorpoResidual } from "@/lib/notifications/corpo-e267-residual";
 import { despacharProativos, enfileirarProativo } from "@/lib/notifications/proativos-servidor";
 import {
   contemContato,
@@ -60,17 +57,21 @@ const PUSH_URL: Record<PedidoEvent, string> = {
 async function notificar(
   event: PedidoEvent,
   r: Recip,
-  detalhe: { detailsHtml: string; detailsText: string }
+  detalhe: { detailsHtml: string; detailsText: string },
+  corpo: CorpoResidual,
 ) {
   if (!r?.email) return;
   try {
+    // E267 (resíduo): o corpo nomeia quem agiu e o imóvel; o bloco "Imóvel" vai antes do link da página.
+    const c = paraNotify(corpo);
     await notify({
       event,
       email: r.email,
       name: r.full_name ?? undefined,
       userId: r.id ?? undefined,
       pushUrl: PUSH_URL[event],
-      detailsHtml: detalhe.detailsHtml,
+      ...c,
+      detailsHtml: `${c.detailsHtml ?? ""}${detalhe.detailsHtml}`,
       detailsText: detalhe.detailsText,
     });
   } catch {
@@ -530,7 +531,19 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
       ? await admin.rpc("owner_notify_contact", { prop_id: imovelId })
       : { data: null };
     const o = Array.isArray(rpc) ? rpc[0] : rpc;
-    if (o?.email) await notificar("pedido_aceito", o as Recip, detalheAceito());
+    if (o?.email) {
+      const [{ data: im }, { data: eu }] = await Promise.all([
+        admin!.from("properties").select("title, address, city").eq("id", imovelId).maybeSingle(),
+        supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+      ]);
+      const imv = im as { title: string | null; address: string | null; city: string | null } | null;
+      await notificar(
+        "pedido_aceito",
+        o as Recip,
+        detalheAceito(),
+        corpoPedidoAceito({ imovel: { titulo: imv?.title, bairro: imv?.address, cidade: imv?.city }, quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined) }),
+      );
+    }
   } catch {
     /* best-effort */
   }
@@ -922,7 +935,7 @@ export async function responderPedido(
   // Pedido precisa estar ATIVO (lido pela view pública) — e traz os ocupantes.
   const { data: pedido } = await supabase
     .from("pedidos_publicos")
-    .select("id, qtd_ocupantes")
+    .select("id, qtd_ocupantes, cidade, data_inicio")
     .eq("id", pedidoId)
     .maybeSingle();
   if (!pedido) return { ok: false, error: "Pedido não está mais disponível." };
@@ -930,7 +943,7 @@ export async function responderPedido(
   // Imóvel precisa ser do dono e estar publicado; capacidade ≥ ocupantes.
   const { data: imovel } = await supabase
     .from("properties")
-    .select("id, owner_id, status, max_guests")
+    .select("id, owner_id, status, max_guests, title, address, city")
     .eq("id", imovelId)
     .maybeSingle();
   if (!imovel || imovel.owner_id !== user.id)
@@ -983,7 +996,18 @@ export async function responderPedido(
           .eq("id", inqId)
           .maybeSingle();
         if (inq?.email) {
-          await notificar("pedido_resposta", { ...(inq as Recip), id: inqId }, detalheResposta());
+          const { data: eu } = await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+          await notificar(
+            "pedido_resposta",
+            { ...(inq as Recip), id: inqId },
+            detalheResposta(),
+            corpoPedidoResposta({
+              imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null },
+              quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined),
+              cidade: pedido.cidade as string | null,
+              inicio: pedido.data_inicio as string | null,
+            }),
+          );
         }
       }
     }

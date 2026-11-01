@@ -117,7 +117,7 @@ test("avaliações: a leitura usa a sessão para as avaliações e só o nome cu
   assert.match(dados, /nomeCurto\(/);
   assert.match(dados, /signAvatarPath\(/);
   const pagina = ler("src/app/(dashboard)/dashboard/avaliacoes/page.tsx");
-  assert.match(pagina, /avaliacoesRecebidas\(\)/);
+  assert.match(pagina, /avaliacoesRecebidas\((\{ exigir: true \})?\)/);
   for (const t of ["avaliacao-autor", "avaliacao-contexto", "avaliacoes-aba-", "avaliacoes-busca"]) assert.ok(pagina.includes(t), t);
 });
 
