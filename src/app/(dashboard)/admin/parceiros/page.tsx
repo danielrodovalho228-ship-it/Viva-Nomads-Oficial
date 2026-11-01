@@ -61,6 +61,9 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     admin.from("chaves_plataforma").select("ligada, valor").eq("chave", "PARCEIRO_GERAL_FALLBACK").maybeSingle(),
     admin.from("interesse_fotografo_cidade").select("user_id, uf, chave, cidade, categoria, criado_em").is("avisado_em", null).order("criado_em", { ascending: false }).limit(2000),
   ]);
+  // Achado nº 18 (erros e estados vazios): a falha do banco nas filas LANÇA — o admin mostra "Não conseguimos abrir esta
+  // tela" com "Tentar de novo" (admin/error.tsx) — em vez de "Nada pendente" (a equipe perderia o pedido de parceria).
+  if ([sols, contagem, parceiros].some((r) => (r as { error?: unknown }).error)) throw new Error("Não foi possível carregar os pedidos de parceria agora.");
   // Fila vazia (Prompt 48): "Nada pendente" com a data da última decisão sobre um pedido de parceria.
   const ultimaDecisaoParceria =
     aba === "pendentes"
