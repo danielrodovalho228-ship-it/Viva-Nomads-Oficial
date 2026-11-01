@@ -79,7 +79,7 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
       <AbasDadosTeste ativa={aba} />
       <Panel title="Nova jornada de teste" className="min-w-0">
         {contas.length === 0 || anuncios.length === 0 ? (
-          <EmptyState icon={FlaskConical} title="Faltam dados de teste" text="É preciso ao menos uma conta de inquilino de teste e um anúncio [TESTE QA] de um proprietário de teste." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
+          <EmptyState icon={FlaskConical} title="Faltam dados de teste" text="É preciso ao menos uma conta de morador de teste e um anúncio [TESTE QA] de um proprietário de teste." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
         ) : (
           <NovaJornadaTeste
             inquilinos={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
@@ -109,7 +109,7 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
       </Panel>
       <Panel title="Carteira de teste (Análise da carteira)" className="mt-6">
         {contas.length < 2 ? (
-          <EmptyState icon={FlaskConical} title="Faltam contas de teste" text="É preciso um proprietário e um inquilino de teste (is_teste)." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
+          <EmptyState icon={FlaskConical} title="Faltam contas de teste" text="É preciso um proprietário e um morador de teste (is_teste)." action={<ButtonLink href="/admin/usuarios?teste=1" variant="secondary" size="sm">Ver contas de teste</ButtonLink>} />
         ) : (
           <SemearCarteiraTeste
             proprietarios={contas.filter((c) => c.role !== "admin").map((c) => ({ id: c.id, rotulo: c.email ?? c.full_name ?? c.id }))}
@@ -143,7 +143,7 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
                   {c.full_name?.trim() || c.email || "Sem nome"}
                   <SeloTeste />
                 </span>
-                <span className="block text-xs text-muted">{c.role === "owner" ? "Proprietário" : c.role === "tenant" ? "Inquilino" : c.role === "admin" ? "Admin" : c.role}</span>
+                <span className="block text-xs text-muted">{c.role === "owner" ? "Proprietário" : c.role === "tenant" ? "Morador" : c.role === "admin" ? "Admin" : c.role}</span>
                 <span className="mt-1 flex flex-wrap gap-3 text-xs">
                   <Link href={`/admin/usuarios?teste=sim&q=${encodeURIComponent(c.full_name?.trim() ?? "")}`} className="font-semibold text-forest underline">
                     Ver em Usuários

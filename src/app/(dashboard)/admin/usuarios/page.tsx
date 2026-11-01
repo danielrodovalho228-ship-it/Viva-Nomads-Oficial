@@ -24,7 +24,7 @@ import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 export const metadata = { title: tituloDoAdmin("/admin/usuarios"), robots: { index: false, follow: false } };
 
 const LIMITE = 200;
-const PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Inquilino", admin: "Admin" };
+const PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Morador", admin: "Admin" };
 
 type Linha = {
   id: string;
@@ -135,7 +135,7 @@ export default async function AdminUsuariosPage({
         className="mb-6"
         itens={[
           { rotulo: "Proprietários", valor: "Ver lista", href: hrefUsuarios({ papel: "proprietario" }) },
-          { rotulo: "Inquilinos", valor: "Ver lista", href: hrefUsuarios({ papel: "inquilino" }) },
+          { rotulo: "Moradores", valor: "Ver lista", href: hrefUsuarios({ papel: "inquilino" }) },
           { rotulo: "Admins", valor: "Ver lista", href: hrefUsuarios({ papel: "admin" }) },
         ]}
       />
@@ -157,9 +157,9 @@ export default async function AdminUsuariosPage({
             className="h-10 rounded-xl border border-line px-3 py-2 text-ink"
             data-testid="filtro-papel"
           >
-            <option value="">Proprietários e inquilinos</option>
+            <option value="">Proprietários e moradores</option>
             <option value="proprietario">Proprietário</option>
-            <option value="inquilino">Inquilino</option>
+            <option value="inquilino">Morador</option>
             <option value="admin">Admin</option>
           </select>
         </label>

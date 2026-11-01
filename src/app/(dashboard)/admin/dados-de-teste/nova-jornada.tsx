@@ -38,7 +38,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
   return (
     <div className="space-y-3" data-testid="nova-jornada-teste">
       <label className="flex flex-col gap-1 text-sm text-ink">
-        Inquilino de teste
+        Morador de teste
         <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full min-w-0 max-w-full rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="jornada-inquilino">
           {inquilinos.map((o) => (
             <option key={o.id} value={o.id}>
@@ -63,7 +63,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
       {confirmando && (
         <div className="rounded-lg border border-line bg-white p-3 text-sm text-amber-900" role="alertdialog" data-testid="jornada-confirmacao">
           <p>
-            Cria uma candidatura nova do inquilino de teste, já aceita e pronta para o Fechamento, no anúncio [TESTE QA] escolhido. A candidatura e
+            Cria uma candidatura nova do morador de teste, já aceita e pronta para o Fechamento, no anúncio [TESTE QA] escolhido. A candidatura e
             o contrato antigos ficam como histórico.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -103,7 +103,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
             </p>
           )}
           <p className="mt-1 break-words text-muted">
-            Anúncio: {r.anuncio} · Inquilino: {r.inquilino}
+            Anúncio: {r.anuncio} · Morador: {r.inquilino}
           </p>
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
             <li>
@@ -116,7 +116,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
               <Link href={r.links.candidaturas} className="font-semibold text-forest underline" data-testid="jornada-link-candidaturas">
                 Ver em Candidaturas
               </Link>{" "}
-              <span className="text-xs text-muted">(inquilino)</span>
+              <span className="text-xs text-muted">(morador)</span>
             </li>
             <li>
               <Link href={r.links.leads} className="font-semibold text-forest underline" data-testid="jornada-link-leads">

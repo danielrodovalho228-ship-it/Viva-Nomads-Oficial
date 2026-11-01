@@ -149,7 +149,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
         chamadoId={c.id}
         quemEh={
           pessoa
-            ? `${pessoa.papel === "owner" ? "Proprietário" : pessoa.papel === "tenant" ? "Inquilino" : pessoa.papel ?? "Cadastrado"} cadastrado${pessoa.criado_em ? ` desde ${dataBR(pessoa.criado_em)}` : ""} · ${historico.anuncios} anúncio(s) · ${historico.pedidos} pedido(s) · ${historico.chamadosAnteriores} chamado(s) anterior(es)`
+            ? `${pessoa.papel === "owner" ? "Proprietário" : pessoa.papel === "tenant" ? "Morador" : pessoa.papel ?? "Cadastrado"} cadastrado${pessoa.criado_em ? ` desde ${dataBR(pessoa.criado_em)}` : ""} · ${historico.anuncios} anúncio(s) · ${historico.pedidos} pedido(s) · ${historico.chamadosAnteriores} chamado(s) anterior(es)`
             : `Visitante sem cadastro · ${historico.chamadosAnteriores} chamado(s) anterior(es) com o mesmo e-mail`
         }
         sla={{ texto: r.texto, cor: r.cor, risco: c.sla_estado === "em_risco" ? "em risco" : c.sla_estado === "estourado" ? "estourado" : "" }}
@@ -336,7 +336,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
           <Panel title="Pessoa">
             {pessoa ? (
               <p className="text-sm text-ink">
-                {primeiroNome(pessoa.nome) || "—"} · {pessoa.papel === "owner" ? "proprietário" : pessoa.papel === "tenant" ? "inquilino" : pessoa.papel}
+                {primeiroNome(pessoa.nome) || "—"} · {pessoa.papel === "owner" ? "proprietário" : pessoa.papel === "tenant" ? "morador" : pessoa.papel}
                 <span className="block text-xs text-muted">conta desde {pessoa.criado_em ? dataBR(pessoa.criado_em) : "—"}</span>
               </p>
             ) : (

@@ -77,7 +77,7 @@ export function hrefUsuarios(f: {
 
 export function rotuloFiltroUsuarios(f: FiltrosUsuarios): string {
   const p = [
-    f.papel === "owner" ? "Proprietários" : f.papel === "tenant" ? "Inquilinos" : f.papel === "admin" ? "Admins" : null,
+    f.papel === "owner" ? "Proprietários" : f.papel === "tenant" ? "Moradores" : f.papel === "admin" ? "Admins" : null,
     f.fundador ? "Fundadores" : null,
     f.comAnuncio ? "Donos com anúncio ativo" : null,
   ]
