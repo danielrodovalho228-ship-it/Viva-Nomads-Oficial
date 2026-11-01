@@ -192,7 +192,7 @@ export function selosDoAnuncio(s: SinaisAnuncio): Selo[] {
   if (respondeRapido(s))
     out.push({ codigo: "responde_rapido", rotulo: "Responde rápido", motivo: `Respondeu ${Math.round((s.conversasRespondidas / s.conversas) * 100)}% das conversas, em média em ${s.respostaMediaMin} min.` });
   if (s.fotosDeParceiro) out.push({ codigo: "fotos_profissionais", rotulo: "Fotos profissionais", motivo: "Fotos feitas por fotógrafo parceiro da Viva." });
-  if (s.precoJusto) out.push({ codigo: "preco_justo", rotulo: "Preço justo", motivo: "Valor mensal abaixo do equivalente em estadias curtas informado pelo proprietário (critério em /como-funciona#preco-justo)." });
+  if (s.precoJusto) out.push({ codigo: "preco_justo", rotulo: "Preço justo", motivo: "Total por mês (com contas) não maior que o equivalente em estadias curtas informado pelo proprietário (critério em /como-funciona#preco-justo)." });
   return out;
 }
 
