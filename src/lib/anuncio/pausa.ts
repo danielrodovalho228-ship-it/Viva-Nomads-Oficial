@@ -56,3 +56,6 @@ export function textoEmAndamento(e: EmAndamento): string[] {
 /** Auditoria de erros (achados nº 2): a frase quando reativar ou pausar falha sem motivo nosso (banco ou conexão). */
 export const MSG_REATIVAR_FALHOU = "Não foi possível reativar agora. Tente de novo.";
 export const MSG_PAUSAR_FALHOU = "Não foi possível pausar agora. Tente de novo.";
+/** Achado nº 23: a conferência do que está em andamento falhou — a pausa segue possível, e nada em andamento muda. */
+export const MSG_ANDAMENTO_FALHOU =
+  "Não foi possível conferir o que está em andamento agora. Se você pausar, contratos, propostas aceitas, visitas marcadas e candidaturas abertas continuam valendo.";

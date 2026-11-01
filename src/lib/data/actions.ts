@@ -2134,7 +2134,12 @@ export async function emAndamentoDoAnuncio(id: string): Promise<EmAndamento | nu
   const a = await anuncioDoDono(id);
   const adm = createAdminClient();
   if (!a || !adm) return null;
-  const contar = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
+  // Achado nº 23: contagem que falha LANÇA (antes virava 0 e a tela de pausa omitia contratos, propostas e visitas).
+  const contar = async (q: PromiseLike<{ count: number | null; error: unknown }>) => {
+    const r = await q;
+    if (r.error) throw new Error("Não foi possível conferir o que está em andamento.");
+    return r.count ?? 0;
+  };
   const [candidaturasAbertas, propostasAceitas, visitasMarcadas, contratosVigentes] = await Promise.all([
     contar(adm.from("leads").select("id", { count: "exact", head: true }).eq("property_id", id).in("status", ["new", "accepted"])),
     contar(adm.from("propostas").select("id", { count: "exact", head: true }).eq("property_id", id).in("status", ["aceita", "em_contrato"])),
