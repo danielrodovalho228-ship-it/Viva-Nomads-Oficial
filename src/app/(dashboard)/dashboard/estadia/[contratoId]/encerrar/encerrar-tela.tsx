@@ -7,6 +7,7 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { pedirEncerramento } from "@/lib/data/estadia-actions";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { MOTIVOS_ENCERRAMENTO, TEXTO_REGRAS_DESLIGADAS, type MotivoEncerramento } from "@/lib/estadia/encerramento";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -55,7 +56,7 @@ export function EncerrarTela({ contratoId }: { contratoId: string }) {
               onConfirmar={() =>
                 iniciar(async () => {
                   setErro(null);
-                  const r = await pedirEncerramento(contratoId, motivo, texto);
+                  const r = await semQuedaDeRede(pedirEncerramento(contratoId, motivo, texto));
                   if (!r.ok) setErro(r.erro);
                   else window.location.assign(HREF_ESTADIA(contratoId)); // navegação completa: ver alteracao-tela
                 })

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ROTULO_URGENCIA_MANUTENCAO, type UrgenciaManutencao } from "@/config/atendimento";
 import { reclassificarOrdem } from "@/lib/data/manutencao-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Prompt 59 — o atendimento da Viva reclassifica a prioridade (com motivo). Os prazos recalculam da abertura. */
 export function ReclassificarOrdem({ id, atual }: { id: string; atual: UrgenciaManutencao }) {
@@ -38,7 +39,7 @@ export function ReclassificarOrdem({ id, atual }: { id: string; atual: UrgenciaM
         disabled={pendente || motivo.trim().length < 5}
         onClick={() =>
           iniciar(async () => {
-            const r = await reclassificarOrdem(id, nova, motivo);
+            const r = await semQuedaDeRede(reclassificarOrdem(id, nova, motivo));
             setMsg(r.ok ? { ok: true, t: "Reclassificada. Os prazos foram recalculados a partir da abertura." } : { ok: false, t: r.error });
             if (r.ok) router.refresh();
           })

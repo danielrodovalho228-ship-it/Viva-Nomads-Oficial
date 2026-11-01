@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { concordarVisita } from "@/lib/vistoria/actions";
 import { avaliacaoNaConversa, type AvaliacaoNaConversa } from "@/lib/vistoria/conversa-actions";
 import { ETIQUETA_BRASILIA } from "@/lib/datas-brasilia";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Prompt 62-A, Parte 1, item 5 — o cartão da visita de avaliação na conversa da estadia (só o morador do imóvel ocupado
@@ -53,7 +54,7 @@ export function AvaliacaoNaConversaCartao({ propertyId, onPreferirOutro }: { pro
                       setErro(null);
                       const f = new FormData();
                       f.set("pedidoId", a.pedidoId);
-                      const r = await concordarVisita(f);
+                      const r = await semQuedaDeRede(concordarVisita(f));
                       if (!r.ok) setErro(r.erro);
                       else setVersao((n) => n + 1);
                     })

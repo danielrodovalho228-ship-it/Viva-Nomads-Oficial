@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { rodarAutomacaoAgora } from "@/lib/automacao/acoes";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Admin: roda o passo diário do Prompt 38 na hora (de verdade só no laboratório ou com AUTOMACOES_ATIVO=1). */
 export function RodarAutomacao() {
@@ -12,7 +13,7 @@ export function RodarAutomacao() {
   const [pendente, iniciar] = useTransition();
   const rodar = () =>
     iniciar(async () => {
-      const r = await rodarAutomacaoAgora();
+      const r = await semQuedaDeRede(rodarAutomacaoAgora());
       if (!r.ok) return setMsg(r.erro);
       const v = r.valor;
       setMsg(`${v.simulado ? "Simulação" : "Feito"}: ${v.automaticos} pedido(s) automático(s), ${v.sugestoesMorador} sugestão(ões) ao morador, ${v.semResposta} aviso(s) de 24 h.`);

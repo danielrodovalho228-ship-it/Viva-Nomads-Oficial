@@ -9,6 +9,7 @@ import type { OcupanteView } from "@/lib/data/estadia";
 import { adicionarOcupante, removerOcupante } from "@/lib/data/estadia-actions";
 import { podeAdicionarOcupante, textoOcupantesVazio, textoTetoOcupantes } from "@/lib/estadia/ocupantes";
 import { ListaPortaria } from "../estadia-tela";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -39,7 +40,7 @@ export function OcupantesTela({
   const salvar = () =>
     iniciar(async () => {
       setErro(null);
-      const r = await adicionarOcupante(contratoId, { nome, documento, parentescoOuRelacao: relacao });
+      const r = await semQuedaDeRede(adicionarOcupante(contratoId, { nome, documento, parentescoOuRelacao: relacao }));
       if (!r.ok) setErro(r.erro);
       else {
         setOcupantes((l) => [...l, r.valor]);
@@ -64,7 +65,7 @@ export function OcupantesTela({
                   {o.relacao ? <span className="text-muted"> · {o.relacao}</span> : null}
                 </span>
                 {podeEditar && (
-                  <ConfirmarNaPagina aviso={`Tirar ${o.nome} da lista?`} confirmar="Tirar" size="sm" onConfirmar={() => iniciar(async () => { const r = await removerOcupante(contratoId, o.id); if (!r.ok) setErro(r.erro); else { setOcupantes((l) => l.filter((x) => x.id !== o.id)); router.refresh(); } })} testid="ocupante-remover">
+                  <ConfirmarNaPagina aviso={`Tirar ${o.nome} da lista?`} confirmar="Tirar" size="sm" onConfirmar={() => iniciar(async () => { const r = await semQuedaDeRede(removerOcupante(contratoId, o.id)); if (!r.ok) setErro(r.erro); else { setOcupantes((l) => l.filter((x) => x.id !== o.id)); router.refresh(); } })} testid="ocupante-remover">
                     Tirar
                   </ConfirmarNaPagina>
                 )}

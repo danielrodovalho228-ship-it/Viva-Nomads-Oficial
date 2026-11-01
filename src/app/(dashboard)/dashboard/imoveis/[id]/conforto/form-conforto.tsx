@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { confirmarConforto } from "@/lib/data/conforto-actions";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export function FormConforto({ propertyId, inicial }: { propertyId: string; inicial: string[] }) {
   // 59-C1: cada item marcado ou desmarcado grava na hora (a mesma ação do editor do anúncio).
@@ -32,7 +33,7 @@ export function FormConforto({ propertyId, inicial }: { propertyId: string; inic
           data-testid="conforto-salvar"
           onClick={() =>
             iniciar(async () => {
-              const r = await confirmarConforto(propertyId, conf.marcados);
+              const r = await semQuedaDeRede(confirmarConforto(propertyId, conf.marcados));
               setRes(r.ok ? { ok: true, texto: r.mensagem ?? "Salvo." } : { ok: false, texto: r.erro });
               if (r.ok) router.refresh();
             })

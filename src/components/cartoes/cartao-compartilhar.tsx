@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { definirNomeNoCartao, registrarCompartilhamento, trocarMeuCodigo } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
+import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
  * Compartilhar um cartão (Fase 1): prévia, formato (1080×1350 ou 1080×1080) e UM toque para o WhatsApp — com a
@@ -76,7 +77,7 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
 
   function trocarNome(mostrar: boolean) {
     iniciar(async () => {
-      const r = await definirNomeNoCartao(pacote.curto, mostrar);
+      const r = await semQuedaDeRede(definirNomeNoCartao(pacote.curto, mostrar));
       if (r.ok) {
         setPacote(r.valor);
         setVersao((v) => v + 1);
@@ -86,7 +87,7 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
 
   function trocarCodigo() {
     iniciar(async () => {
-      const r = await trocarMeuCodigo();
+      const r = await semQuedaDeRede(trocarMeuCodigo());
       if (r.ok) {
         setVersao((v) => v + 1);
         setMsg("Código trocado. O QR e o link antigos não contam mais para você.");
