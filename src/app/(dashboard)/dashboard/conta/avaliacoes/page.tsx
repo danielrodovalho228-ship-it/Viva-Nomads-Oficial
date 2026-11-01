@@ -23,7 +23,7 @@ const ROTA = "/dashboard/conta/avaliacoes";
  * avaliacoesRecebidas() e lib/conta/avaliacoes-recebidas. Responder e pedir revisão seguem os mesmos do painel.
  */
 export default async function ContaAvaliacoesPage({ searchParams }: { searchParams: Promise<{ aba?: string; q?: string }> }) {
-  const res = await avaliacoesRecebidas();
+  const res = await avaliacoesRecebidas({ exigir: true });
   if (!res) redirect(`/auth?next=${ROTA}`);
   const sp = await searchParams;
   const aba: AbaAvaliacoes = ABAS_AVALIACOES.some((a) => a.valor === sp.aba) ? (sp.aba as AbaAvaliacoes) : "todas";

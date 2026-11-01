@@ -21,7 +21,7 @@ const campo = "h-11 w-full rounded-xl border border-line bg-white px-3 text-sm t
  */
 export default async function RecibosPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const d = await recibosDaPessoa("dono");
+  const d = await recibosDaPessoa("dono", { exigir: true });
   const recibos = d?.recibos ?? [];
   const meses = mesesComDocumento(recibos);
   const mesAtual = hojeBR().slice(0, 7);
