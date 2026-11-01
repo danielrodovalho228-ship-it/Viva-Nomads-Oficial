@@ -11,6 +11,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *   3. a leitura falha (ação do servidor em 500): "Não deu para abrir o rascunho" (data-motivo=indisponivel);
  *   4. o próprio rascunho abre o assistente normalmente (sem o aviso);
  *   5. "Começar um anúncio novo" leva ao assistente sem ?draft= e sem o aviso.
+ * L-88 (aberto): hoje o aviso nunca aparece (página em branco) — os casos 1–3 e 5 estão em test.fail até a correção;
+ * o "nada nasce / o do outro não muda" e o caso 4 são teste normal.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -44,11 +46,31 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
     await apagarContas([ids.dona, ids.outro]);
   });
 
-  test("rascunho alheio, inexistente e malformado: o mesmo aviso; nada nasce; a falha tem o próprio aviso", async ({ browser }) => {
-    test.setTimeout(180_000);
+  test("abrir o rascunho de outra conta não cria nada nem muda o do outro", async ({ browser }) => {
+    test.setTimeout(120_000);
     const page = await entrar(browser, dona.email, senha);
     const antes = await imoveisDe(ids.dona!);
     const { data: alheioAntes } = await adm().from("properties").select("title, status, draft_data").eq("id", ids.rascunhoOutro!).single();
+    for (const largura of LARGURAS) {
+      await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunhoOutro}`, { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      expect(await page.content(), "o título do rascunho do outro não vaza").not.toContain(`Rascunho do Osmar t943 ${sufixo}`);
+    }
+    await page.waitForTimeout(3_000);
+    expect(await imoveisDe(ids.dona!), "nenhum rascunho novo na conta da Dalva").toBe(antes);
+    const { data: alheioDepois } = await adm().from("properties").select("title, status, draft_data").eq("id", ids.rascunhoOutro!).single();
+    expect(alheioDepois).toEqual(alheioAntes);
+    await page.context().close();
+  });
+
+  test("rascunho alheio, inexistente e malformado: o mesmo aviso; a falha tem o próprio aviso", async ({ browser }) => {
+    // L-88 (registro-defeitos.md): com ?draft= e o rascunho fechado, nada chama setApproved(true) e o "approved === null →
+    // return null" (page.tsx ~1668) vem antes do "if (rascunhoFechado)" (~1791): a página fica em branco e o aviso do E420
+    // nunca aparece (lab do #2052, run 41344262317, nas 2 tentativas). Quem corrigir tira este test.fail.
+    test.fail(true, "L-88: o aviso do E420 nunca aparece — a página fica em branco com ?draft= de rascunho fechado");
+    test.setTimeout(180_000);
+    const page = await entrar(browser, dona.email, senha);
     for (const largura of LARGURAS) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       for (const [caso, id] of [["de outra conta", ids.rascunhoOutro!], ["inexistente", INEXISTENTE], ["malformado", "nao-e-uuid"]] as const) {
@@ -64,12 +86,6 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
         await semRolagemLateral(page);
       }
     }
-    // Nada nasce na conta de quem abriu; o rascunho do outro não muda.
-    await page.waitForTimeout(3_000);
-    expect(await imoveisDe(ids.dona!), "nenhum rascunho novo na conta da Dalva").toBe(antes);
-    const { data: alheioDepois } = await adm().from("properties").select("title, status, draft_data").eq("id", ids.rascunhoOutro!).single();
-    expect(alheioDepois).toEqual(alheioAntes);
-
     // 3. A leitura falha: o aviso de indisponível (não o de "não encontrado").
     await page.route("**/dashboard/imoveis/novo**", (r) =>
       r.request().method() === "POST" && r.request().headers()["next-action"] ? r.fulfill({ status: 500, body: "falha simulada (t943)" }) : r.continue(),
@@ -82,8 +98,8 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
     await page.context().close();
   });
 
-  test("o próprio rascunho abre o assistente; 'Começar um anúncio novo' abre sem o aviso (390 e 1280)", async ({ browser }) => {
-    test.setTimeout(150_000);
+  test("o próprio rascunho abre o assistente, sem o aviso (390 e 1280)", async ({ browser }) => {
+    test.setTimeout(120_000);
     const page = await entrar(browser, dona.email, senha);
     for (const largura of LARGURAS) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
@@ -91,7 +107,18 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await expect(page.locator("main").first()).toBeVisible({ timeout: 30_000 });
       await expect(page.getByTestId("rascunho-fechado")).toHaveCount(0);
+      await semRolagemLateral(page);
+    }
+    await page.context().close();
+  });
 
+  test("'Começar um anúncio novo' do aviso abre o assistente sem ?draft= e sem o aviso (390 e 1280)", async ({ browser }) => {
+    // L-88: depende do aviso, que hoje não aparece (ver o teste acima). Quem corrigir tira este test.fail.
+    test.fail(true, "L-88: o aviso do E420 (e o link 'Começar um anúncio novo') não aparece");
+    test.setTimeout(120_000);
+    const page = await entrar(browser, dona.email, senha);
+    for (const largura of LARGURAS) {
+      await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto(`/dashboard/imoveis/novo?draft=${INEXISTENTE}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("rascunho-fechado")).toBeVisible({ timeout: 30_000 });
       await page.getByTestId("rascunho-fechado-novo").click();
