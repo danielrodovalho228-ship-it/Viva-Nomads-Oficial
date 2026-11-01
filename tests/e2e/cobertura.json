@@ -553,7 +553,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t922-varredura-0111-alvo-toque"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -565,7 +566,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t421-varredura-bloco38",
+        "t922-varredura-0111-alvo-toque"
       ]
     },
     "/como-funciona": {
@@ -1767,7 +1769,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t922-varredura-0111-alvo-toque"
       ]
     },
     "/parceiros/avaliadores": {
