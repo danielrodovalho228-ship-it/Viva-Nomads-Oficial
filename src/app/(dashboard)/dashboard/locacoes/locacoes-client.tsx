@@ -94,7 +94,7 @@ export function LocacoesClient({
                     <p
                       className="mt-1 inline-flex max-w-full items-center gap-2 text-xs font-medium text-forest"
                       data-testid="locacao-selo"
-                      aria-label={selos[l.id] ? `Anfitrião: ${selos[l.id].rotulo}` : "Sua estadia"}
+                      aria-label={selos[l.id] ? `Proprietário: ${selos[l.id].rotulo}` : "Sua estadia"}
                     >
                       <Avatar name={selos[l.id]?.rotulo ?? "Sua estadia"} size={20} photoUrl={selos[l.id]?.fotoUrl ?? undefined} />
                       <span className="min-w-0 truncate">{selos[l.id]?.rotulo ?? "Sua estadia"}</span>
