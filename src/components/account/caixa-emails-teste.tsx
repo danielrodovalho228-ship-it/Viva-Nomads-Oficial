@@ -3,6 +3,7 @@
 import { ButtonLink } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { Mail } from "lucide-react";
+import { imovelDoCorpo } from "@/lib/notifications/caixa-teste";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 
 interface Email {
@@ -45,7 +46,13 @@ export function CaixaEmailsTeste() {
             {emails.map((e) => (
               <li key={e.id} className="min-w-0 rounded-xl border border-sage-200 p-3">
                 <p className="text-xs text-muted">{quando(e.criado_em)}</p>
-                <p className="mt-1 break-words font-medium text-ink">{e.assunto}</p>
+                <p className="mt-1 break-words font-medium text-ink" data-testid="caixa-email-assunto">{e.assunto}</p>
+                {/* E322 (01/11): o assunto encurta o título do imóvel (regra do e-mail); aqui vai o nome inteiro, na linha. */}
+                {imovelDoCorpo(e.corpo) && (
+                  <p className="mt-1 break-words text-sm text-ink" data-testid="caixa-email-imovel">
+                    Imóvel: {imovelDoCorpo(e.corpo)}
+                  </p>
+                )}
                 <details className="mt-2">
                   <summary className="min-h-11 cursor-pointer py-2 text-sm font-medium text-forest">Ler o e-mail</summary>
                   <pre className="whitespace-pre-wrap break-words text-sm text-ink">{e.corpo}</pre>
