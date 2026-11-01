@@ -114,15 +114,20 @@ type LinhaCred = {
   parceiros: { user_id: string } | null;
 };
 
-/** A fila da cidade (todos os credenciamentos; a regra pura decide quem pode). */
+/**
+ * A fila da cidade (todos os credenciamentos; a regra pura decide quem pode). Achado 39: uma leitura que falha LANÇA —
+ * fila vazia por erro viraria "Nenhum avaliador elegível" (na designação) ou uma fila de rodízio vazia (no admin).
+ */
 export async function filaDaCidade(admin: Admin): Promise<AvaliadorFila[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("avaliadores_credenciamento")
     .select("id, cidade, status, criado_em, ativado_em, ultima_designacao_em, relacoes_donos, relacoes_imoveis, parceiros(user_id)")
     .in("status", ["em_teste", "ativo", "suspenso"]);
+  if (error) throw new Error(`[vistoria] fila da cidade: ${error.message}`);
   const linhas = (data ?? []) as unknown as LinhaCred[];
   const ids = linhas.map((l) => l.parceiros?.user_id).filter((x): x is string => !!x);
-  const { data: perfis } = ids.length ? await admin.from("profiles").select("id, is_teste").in("id", ids) : { data: [] };
+  const { data: perfis, error: erroPerfis } = ids.length ? await admin.from("profiles").select("id, is_teste").in("id", ids) : { data: [], error: null };
+  if (erroPerfis) throw new Error(`[vistoria] contas de teste da fila: ${erroPerfis.message}`);
   const teste = new Set(((perfis ?? []) as { id: string; is_teste: boolean | null }[]).filter((p) => p.is_teste).map((p) => p.id));
   return linhas
     .filter((l) => l.parceiros?.user_id)
@@ -150,6 +155,9 @@ export async function historicoDoPedido(admin: Admin, ownerId: string, propertyI
     admin.from("imovel_parceiros").select("criado_em, respondido_em, status, parceiros(user_id), properties!inner(owner_id)").eq("properties.owner_id", ownerId).in("status", ["ativo", "encerrado"]),
     admin.from("vistoria_pedidos").select("avaliador_id, criado_em, status").eq("property_id", propertyId).in("status", ["realizada", "laudo_emitido"]).not("avaliador_id", "is", null).order("criado_em", { ascending: true }),
   ]);
+  // Achado 39: histórico incompleto por erro apagaria um impedimento (quem já prestou serviço ao dono seria designado).
+  const falha = [pedidos, vinculos, avaliacoes].find((r) => r.error);
+  if (falha) throw new Error(`[vistoria] histórico do pedido: ${falha.error!.message}`);
   type P = { criado_em: string; respondido_em?: string | null; parceiros: { user_id: string } | null };
   const servicos = [...((pedidos.data ?? []) as unknown as P[]), ...((vinculos.data ?? []) as unknown as P[])]
     .filter((p) => p.parceiros?.user_id)
@@ -179,11 +187,23 @@ export async function designar(admin: Admin, pedidoId: string, agora = new Date(
   const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id").eq("id", pedidoId).maybeSingle();
   const p = data as LinhaPedido | null;
   if (!p || !["pedido", "designado"].includes(p.status)) return null;
-  const [{ data: ja }, fila, historico] = await Promise.all([
-    admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
-    filaDaCidade(admin),
-    historicoDoPedido(admin, p.owner_id, p.property_id),
-  ]);
+  // Achado 39: se alguma leitura falha, NÃO designa nem diz "Nenhum avaliador elegível" (o admin seria avisado à toa e
+  // os impedimentos/recusas poderiam ser ignorados). O pedido fica aguardando e a rotina do cron tenta de novo.
+  let leituras: [{ avaliador_id: string }[], AvaliadorFila[], HistoricoDesignacao];
+  try {
+    const [jaLeitura, filaLida, historicoLido] = await Promise.all([
+      admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
+      filaDaCidade(admin),
+      historicoDoPedido(admin, p.owner_id, p.property_id),
+    ]);
+    if (jaLeitura.error) throw new Error(`[vistoria] designações do pedido: ${jaLeitura.error.message}`);
+    leituras = [(jaLeitura.data ?? []) as { avaliador_id: string }[], filaLida, historicoLido];
+  } catch (e) {
+    console.error("[vistoria] designar: leitura falhou; o pedido fica para a próxima rotina:", e instanceof Error ? e.message : e);
+    await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, atualizado_em: agora.toISOString() }).eq("id", p.id).eq("status", "pedido");
+    return null;
+  }
+  const [ja, fila, historico] = leituras;
   let primeiro: string | null = null;
   if (p.tipo === "contestacao" && p.origem_pedido_id) {
     const { data: o } = await admin.from("vistoria_pedidos").select("avaliador_id").eq("id", p.origem_pedido_id).maybeSingle();
@@ -197,7 +217,7 @@ export async function designar(admin: Admin, pedidoId: string, agora = new Date(
     tipo: p.tipo,
     teste: p.teste,
     primeiroAvaliadorId: primeiro,
-    jaDesignados: ((ja ?? []) as { avaliador_id: string }[]).map((d) => d.avaliador_id),
+    jaDesignados: ja.map((d) => d.avaliador_id),
   };
   const r = proximoAvaliador(fila, pedido, historico, agora);
   const quando = agora.toISOString();
