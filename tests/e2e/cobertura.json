@@ -764,7 +764,8 @@
         "t297-varredura-logada-bloco3",
         "t336-varredura-bloco14",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/ganhos": {
@@ -930,7 +931,8 @@
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1391,7 +1393,8 @@
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
         "t559-varredura-bloco43",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1406,7 +1409,8 @@
         "t232-pedido-moradia-completo",
         "t298-varredura-logada-bloco4",
         "t416-varredura-bloco33",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t851-listas-vazias-sem-erro"
       ]
     },
     "/dashboard/propostas/[id]": {

@@ -2,14 +2,16 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T851 — LISTAS VAZIAS DE VERDADE CONTINUAM VAZIAS (Pista C, 01/11; merges #1833, #1834, #1835, "Erros, achados nº 4,
-  5 e 6"). As telas de lista passaram a chamar a busca com `exigir: true`: uma FALHA do banco agora lança e o painel
+  T851 — LISTAS VAZIAS DE VERDADE CONTINUAM VAZIAS (Pista C, 01/11; merges #1833, #1834, #1835, #1838 e #1839, "Erros,
+  achados nº 4 a 8"). As telas de lista passaram a chamar a busca com `exigir: true`: uma FALHA do banco agora lança e o painel
   mostra "Não conseguimos abrir esta tela" (painel-erro) em vez de "nenhum…". A falha do banco é do servidor (o
   navegador não a intercepta) e tem teste de unidade em cada merge. Aqui, o outro lado — o que a troca poderia quebrar:
   conta NOVA, sem nada, sem erro de banco, tem de ver o estado vazio de cada lista, nunca a tela de erro; e com um
   imóvel, "Meus imóveis" lista o imóvel.
-   - proprietário novo: Meus imóveis, Interessados, Mensagens, Propostas, Visitas;
-   - morador novo: Locações, Mensagens, Propostas, Visitas.
+   - proprietário novo: Meus imóveis, Interessados, Mensagens, Propostas, Visitas, Contratos;
+   - morador novo: Locações, Mensagens, Propostas, Visitas, Candidaturas, Contratos, Meus pedidos;
+   - com um imóvel: Pedidos na sua cidade abre (o estado vazio ou os pedidos da cidade, que outras specs podem ter
+     semeado), nunca a tela de erro.
   Contas do laboratório, criadas e apagadas aqui.
 */
 const senha = novaSenha();
@@ -26,12 +28,16 @@ const DO_DONO: Lista[] = [
   { rota: "/dashboard/mensagens", vazio: (p) => p.getByTestId("mensagens-vazio") },
   { rota: "/dashboard/propostas", vazio: titulo("Nenhuma proposta por enquanto") },
   { rota: "/dashboard/visitas", vazio: titulo("Nenhuma visita ainda") },
+  { rota: "/dashboard/contratos", vazio: titulo("Nenhum contrato ainda") },
 ];
 const DO_MORADOR: Lista[] = [
   { rota: "/dashboard/locacoes", vazio: titulo("Você ainda não tem estadias") },
   { rota: "/dashboard/mensagens", vazio: (p) => p.getByTestId("mensagens-vazio") },
   { rota: "/dashboard/propostas", vazio: titulo("Nenhuma proposta por enquanto") },
   { rota: "/dashboard/visitas", vazio: titulo("Nenhuma visita ainda") },
+  { rota: "/dashboard/candidaturas", vazio: titulo("Você ainda não se candidatou") },
+  { rota: "/dashboard/contratos", vazio: titulo("Nenhum contrato ainda") },
+  { rota: "/dashboard/pedidos", vazio: (p) => p.getByTestId("vazio-onboarding").first() },
 ];
 
 async function conferirVazias(page: Page, listas: Lista[], papel: string): Promise<void> {
@@ -45,7 +51,7 @@ async function conferirVazias(page: Page, listas: Lista[], papel: string): Promi
   }
 }
 
-test.describe("T851 — listas vazias de verdade continuam vazias, sem a tela de erro (#1833–#1835)", () => {
+test.describe("T851 — listas vazias de verdade continuam vazias, sem a tela de erro (#1833–#1835, #1838, #1839)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
@@ -74,7 +80,7 @@ test.describe("T851 — listas vazias de verdade continuam vazias, sem a tela de
     await page.context().close();
   });
 
-  test("com um imóvel, Meus imóveis lista o imóvel (sem estado vazio nem tela de erro)", async ({ browser }) => {
+  test("com um imóvel, Meus imóveis lista o imóvel e Pedidos na sua cidade abre (sem tela de erro)", async ({ browser }) => {
     test.setTimeout(120_000);
     await criarImovelPronto(ids.dono!, `Studio Listas t851 ${sufixo}`, { ativo: true });
     const page = await entrar(browser, dono.email, senha);
@@ -82,6 +88,12 @@ test.describe("T851 — listas vazias de verdade continuam vazias, sem a tela de
     await expect(page.locator('[data-testid="estado-anuncio"]')).toHaveCount(1, { timeout: 20_000 });
     await expect(page.getByText(`Studio Listas t851 ${sufixo}`).first()).toBeVisible();
     await expect(page.getByText("Você ainda não tem imóveis", { exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("painel-erro")).toHaveCount(0);
+
+    // #1839: Pedidos na sua cidade (só faz sentido com imóvel) abre — vazio ou com os pedidos da cidade —, sem a tela de erro.
+    const r = await page.goto("/dashboard/pedidos-cidade", { waitUntil: "domcontentloaded" });
+    expect(r?.status()).toBeLessThan(400);
+    await expect(page.getByTestId("pedidos-dono-vazio").or(page.getByTestId("pedido-dono-cartao").first())).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("painel-erro")).toHaveCount(0);
     await page.context().close();
   });
