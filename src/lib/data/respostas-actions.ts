@@ -41,10 +41,12 @@ async function sessao() {
   return user ? { supabase, admin, userId: user.id } : null;
 }
 
-export async function minhasRespostas(): Promise<RespostaRapida[]> {
+export async function minhasRespostas(opcoes: { exigir?: boolean } = {}): Promise<RespostaRapida[]> {
   const s = await sessao();
   if (!s) return [];
-  const { data } = await s.supabase.from("respostas_rapidas").select("id, titulo, texto").eq("owner_id", s.userId).order("criado_em").limit(LIMITE_RESPOSTAS);
+  const { data, error } = await s.supabase.from("respostas_rapidas").select("id, titulo, texto").eq("owner_id", s.userId).order("criado_em").limit(LIMITE_RESPOSTAS);
+  // Achado 37: com "exigir", a falha de leitura LANÇA (a tela não diz "Nenhuma resposta salva ainda").
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler as suas respostas rápidas.");
   return (data ?? []) as RespostaRapida[];
 }
 
