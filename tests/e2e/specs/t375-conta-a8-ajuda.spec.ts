@@ -90,7 +90,8 @@ test.describe("T375 — CONTA-A A8: Ajuda (perfil-08)", () => {
     await expect(avatar).toBeVisible({ timeout: 30_000 });
     await avatar.click();
     await p.getByRole("menuitem", { name: "Sair" }).click();
-    await p.waitForURL(/\/app\/boas-vindas/, { timeout: 30_000 });
+    // O "Sair" do menu da Conta encerra a sessão e sai do painel (vai para "/"; o guarda pode levar a /auth).
+    await p.waitForURL((u) => !u.pathname.startsWith("/dashboard"), { timeout: 30_000 });
     await p.goto("/dashboard/conta/ajuda", { waitUntil: "domcontentloaded" });
     await expect(p).toHaveURL(/\/auth/);
     await p.context().close();
