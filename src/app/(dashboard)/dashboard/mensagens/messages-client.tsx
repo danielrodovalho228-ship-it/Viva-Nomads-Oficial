@@ -316,13 +316,14 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">
               {active.foto && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={active.foto} alt="" loading="lazy" className="h-12 w-16 shrink-0 rounded-lg object-cover" />
+                <img src={active.foto} alt="" loading="lazy" className="h-16 w-20 shrink-0 rounded-lg object-cover" data-testid="conversa-contexto-foto" />
               )}
               <div className="min-w-0">
                 <p className="text-xs text-muted" data-testid="conversa-contexto-tipo">
                   {active.contratoId ? "Estadia" : active.pedidoParceiroId ? "Pedido de serviço" : "Imóvel"}
                 </p>
-                {active.property && <p className="truncate text-sm font-semibold text-ink">{active.property}</p>}
+                {/* Conformidade fina (01/11, mockup morador-mensagens): o imóvel da conversa em destaque (foto maior, título um passo acima). */}
+                {active.property && <p className="truncate font-title text-base font-semibold text-ink">{active.property}</p>}
                 {active.periodo && (
                   <p className="text-xs text-muted" data-testid="conversa-contexto-datas">
                     {active.periodo}
