@@ -45,9 +45,12 @@ test.describe("T103 — Selo Preço justo", () => {
       expect(sobra).toBeLessThanOrEqual(0);
 
       // Contas à parte: o equivalente cobre o valor mensal, mas não o total → sem selo (o bug do E399-B dava o selo).
+      // Conferido na coluna gerada (determinístico): a página pública revalida por ISR e a troca de "com selo" para
+      // "sem selo" é conferida logo abaixo, como antes do E399-B — uma troca só, para não depender do tempo do cache.
       if (total > mensal) {
         await adm.from("properties").update({ airbnb_monthly_price: mensal + (total - mensal) / 2 }).eq("id", id);
-        await confere(false);
+        const { data: linha } = await adm.from("properties").select("preco_justo").eq("id", id).single();
+        expect(linha!.preco_justo).toBe(false);
       }
 
       await adm.from("properties").update({ airbnb_monthly_price: Math.max(1, mensal - 1) }).eq("id", id);
