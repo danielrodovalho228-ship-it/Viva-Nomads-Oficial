@@ -145,7 +145,10 @@ for (const largura of LARGURAS) {
         const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 3 meses/, ""));
         expect(totalBarra).toBeGreaterThanOrEqual(mes * 3 - 0.5);
         expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, "")));
-        await expect(barra.getByTestId("barra-nao-segura")).toContainText("A Viva não segura dinheiro");
+        // Decisão do Muse (31/10): a barra não repete "A Viva não segura dinheiro"; a frase oficial sob o botão diz que o
+        // pagamento vai direto ao proprietário.
+        await expect(barra.getByTestId("barra-nao-segura")).toHaveCount(0);
+        await expect(barra.getByTestId("barra-cta-frase")).toContainText("o pagamento vai direto para ele");
         // O mesmo número do cartão de preço.
         expect(num(await page.getByTestId("total-por-mes").innerText())).toBe(mes);
       } else {

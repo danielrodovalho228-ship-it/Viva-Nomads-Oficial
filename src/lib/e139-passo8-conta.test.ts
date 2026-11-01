@@ -4,11 +4,10 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { calcularTudoIncluido, contaDoPeriodo, parcelasDoMes, type CamposTotalMes } from "./precos.ts";
 import { blocosBolsoPeriodo } from "./cobranca/bolso.ts";
 import { comissaoSobreContrato } from "./cobranca/regra.ts";
-import { precoSugerido, recebeAirbnb, recebeViva } from "./preco-justo.ts";
 
 const nbsp = (s: string) => s.replace(/ /g, " ");
 const E139 = { monthlyPrice: 3600, condoFee: 350, utilitiesMode: "fixed", utilitiesEstimate: 150 } as CamposTotalMes;
@@ -48,31 +47,19 @@ test("E139: entrada inválida não monta conta", () => {
   assert.equal(contaDoPeriodo(E139, Number.NaN, 0.12), null);
 });
 
-test("E140: com o mesmo período dos dois lados, o equivalente iguala (ou passa) o líquido do Airbnb no período", () => {
-  for (const meses of [2, 4, 6]) {
-    const p = precoSugerido(4500 * (meses / 2), meses, 0.12)!;
-    assert.ok(recebeViva(p, meses, 0.12) >= recebeAirbnb(4500 * (meses / 2)));
-    assert.ok(recebeViva(p - 1, meses, 0.12) < recebeAirbnb(4500 * (meses / 2)), "é o MENOR valor mensal equivalente");
-  }
-});
-
 test("E139/E151: o Passo 8 usa a conta única, sem a 'linha comparativa' e sem a regra pública repetida", () => {
   const preco = semComentarios(ler("../app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx"));
   assert.match(preco, /calcularTudoIncluido\(campos\)/);
-  assert.match(preco, /taxaDoMeuNovoAnuncio\(\)/, "a taxa da faixa do dono vale para o simulador e o comparador");
+  assert.match(preco, /taxaDoMeuNovoAnuncio\(\)/, "a taxa da faixa do dono vale para o simulador");
   assert.doesNotMatch(preco, /LinhaComparativoAnuncio|TEXTO_REGRA_CURTO|aluguel \+ condo \+ consumoFixo/);
   assert.doesNotMatch(preco, /Você recebe o valor mensal direto/, "o dono recebe o total do mês, não só o valor mensal");
   assert.doesNotMatch(ler("../components/precos/comparativo-precos.tsx"), /LinhaComparativoAnuncio/);
 });
 
-test("E140: o comparador usa os meses recebidos (sem período fixo), conta aberta e o sugerido rotulado como equivalência", () => {
-  const comp = semComentarios(ler("../components/precos/preco-sugerido.tsx"));
-  assert.doesNotMatch(comp, /const MESES = /);
-  assert.match(comp, /pelos mesmos \{periodo\}/);
-  assert.match(comp, /é uma equivalência/);
-  assert.match(comp, /data-testid="conta-airbnb"/);
-  assert.match(comp, /data-testid="conta-viva"/);
-  assert.doesNotMatch(comp, /valor total do contrato/, "a taxa é explicada pela base certa: valor mensal × meses");
+test("E292-bis: o comparador do Airbnb (E140) saiu do Passo 8 — sem componente, sem testids", () => {
+  const preco = semComentarios(ler("../app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx"));
+  assert.doesNotMatch(preco, /PrecoSugerido|conta-airbnb|recebe-airbnb|Airbnb/);
+  assert.equal(existsSync(new URL("../components/precos/preco-sugerido.tsx", import.meta.url)), false);
 });
 
 test("E139: a Revisão não mostra 'R$ X/mês no total' sem valor mensal (contas sozinhas não são o total)", () => {

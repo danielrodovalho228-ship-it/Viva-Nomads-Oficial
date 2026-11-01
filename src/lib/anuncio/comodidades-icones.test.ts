@@ -22,3 +22,20 @@ test("texto livre usa palavra-chave; sem par cai no ícone padrão", () => {
 test("as principais na página são em número par", () => {
   assert.equal(LIMITE_PRINCIPAIS % 2, 0);
 });
+
+test("conformidade 31/10: o Editar anúncio mostra as comodidades no cartão do cadastro, com o ícone de cada uma", async () => {
+  const { readFileSync } = await import("node:fs");
+  const c = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx", import.meta.url), "utf8");
+  const secao = c.slice(c.indexOf('testid="secao-comodidades"'), c.indexOf("<SugestoesDasFotos"));
+  assert.match(secao, /<CartaoEscolha[\s\S]*?icone=\{iconeDaComodidade\(it\.key\)\}/);
+  assert.match(secao, /className="grid gap-2 sm:grid-cols-2" data-testid="editar-comodidades-grade"/);
+  assert.doesNotMatch(secao, /rounded-full border px-3 py-2/, "a pílula sem ícone não volta");
+});
+
+test("conformidade (mockup cadastro-imovel-05): os cartões do Pronto para trabalhar também têm o ícone da comodidade", async () => {
+  const { readFileSync } = await import("node:fs");
+  const c = readFileSync(new URL("../../components/anuncio/blocos-cadastro.tsx", import.meta.url), "utf8");
+  assert.match(c, /testid=\{`trabalho-\$\{it\.chave\}`\}[\s\S]{0,200}icone=\{iconeDaComodidade\(it\.chave\)\}/);
+  const { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } = await import("./sugestoes-cadastro.ts");
+  for (const it of [...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO]) assert.ok(ICONE_POR_CHAVE[it.chave], `sem ícone: ${it.chave}`);
+});

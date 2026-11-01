@@ -30,8 +30,10 @@ export async function salvarNascimento(v: string): Promise<{ ok: boolean; demo?:
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para alterar seus dados." };
-  const { error } = await supabase.from("profiles").update({ data_nascimento: r.iso }).eq("id", user.id);
-  if (error) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
+  // L-54: sem permissão para a linha, o PostgREST devolve 0 linhas SEM erro; a tela dizia "Dados salvos." e nada gravava.
+  // Conferir a linha devolvida: zero linhas é falha, como o erro.
+  const { data: gravou, error } = await supabase.from("profiles").update({ data_nascimento: r.iso }).eq("id", user.id).select("id");
+  if (error || !gravou?.length) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
   if ((user.user_metadata as { data_nascimento?: unknown } | undefined)?.data_nascimento !== undefined) {
     await supabase.auth.updateUser({ data: { data_nascimento: null } }).catch(() => null);
   }

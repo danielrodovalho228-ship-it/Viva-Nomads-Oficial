@@ -118,6 +118,27 @@ export function validarCamposNovos(
 // ── Textos do cartão ──────────────────────────────────────────────────────────────────────────────────────────
 const brl = (v: number) => `R$ ${Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 
+/*
+  E317 (decisão do Muse, 01/11, opção b): o casamento pedido × imóvel aceita até 10% acima do teto como compatível
+  (compatibilidade_pedidos: total ≤ orçamento × 1,10; a faixa "quase", de 10% a 20%, não vira resposta). O morador é
+  avisado nos dois pontos: no formulário (a tolerância) e na resposta acima do teto (quanto acima, em reais).
+  Total por mês = o mesmo do banco: valor mensal + condomínio + consumo fixo estimado (totalMesDaLinha).
+*/
+export const TOLERANCIA_TETO_PCT = 10;
+export const TEXTO_TOLERANCIA_TETO = `Você também recebe imóveis até ${TOLERANCIA_TETO_PCT}% acima desse valor, marcados como acima do teto.`;
+
+/** Quanto o total por mês passa do teto do pedido, em reais inteiros; 0 dentro do teto ou sem teto. */
+export function valorAcimaDoTeto(totalMes: number, teto: number): number {
+  if (!Number.isFinite(totalMes) || !Number.isFinite(teto) || teto <= 0) return 0;
+  return Math.max(0, Math.round(totalMes - teto));
+}
+
+/** "R$ 200 acima do seu teto" — ou null dentro do teto. */
+export function textoAcimaDoTeto(totalMes: number, teto: number): string | null {
+  const acima = valorAcimaDoTeto(totalMes, teto);
+  return acima > 0 ? `${brl(acima)} acima do seu teto` : null;
+}
+
 /** "R$ 2.500 a R$ 3.500" ou "até R$ 3.500". */
 export function textoFaixaValor(min: number | null | undefined, max: number): string {
   return min && min > 0 ? `${brl(min)} a ${brl(max)}` : `até ${brl(max)}`;

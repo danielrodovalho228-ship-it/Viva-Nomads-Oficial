@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *     por prazo) vira a faixa de alerta e o bloco "Próximo passo", ambos levando a /dashboard/propostas/<id>;
  *  2. proprietário novo (sem imóvel): Início "Anuncie seu primeiro imóvel" e um único primário, "Anunciar meu imóvel";
  *  3. Conta sem capa de foto (título em texto);
- *  4. Ferramentas tem o simulador PF × PJ (/dashboard/tributacao);
+ *  4. Ferramentas não tem mais o simulador PF × PJ (E292-bis: /dashboard/tributacao leva a Ferramentas);
  *  5. navegar por 5 telas do painel NÃO dispara nenhuma server action (POST com next-action) — os números do menu vêm
  *     de GET /api/painel/contadores.
  */
@@ -169,8 +169,9 @@ test.describe("T266 — Painel do Prompt 42", () => {
 
       await page.goto("/dashboard/ferramentas", { waitUntil: "domcontentloaded" });
       await expect(page.locator('[data-testid="painel-capa"]')).toHaveCount(0);
-      const pfpj = page.locator('main a[href="/dashboard/tributacao"]').filter({ hasText: /PF × PJ/ });
-      await expect(pfpj).toBeVisible({ timeout: 25_000 });
+      // E292-bis: o simulador PF × PJ saiu do hub (a Viva não calcula imposto com regra própria).
+      await expect(page.locator('main a[href="/dashboard/simulador"]').first()).toBeVisible({ timeout: 25_000 });
+      await expect(page.locator('main a[href="/dashboard/tributacao"]')).toHaveCount(0);
       // Grades de caixas com número par em cada grupo.
       const porGrupo = await page.getByTestId("ferramentas-grupo").evaluateAll((gs) => gs.map((g) => g.querySelectorAll('[data-testid="ferramenta-card"]').length));
       for (const n of porGrupo) expect(n % 2).toBe(0);
@@ -198,8 +199,8 @@ test.describe("T266 — Painel do Prompt 42", () => {
       const rotas: [string, string][] = [
         ["ferramentas-todas", "/dashboard/ferramentas"],
         ["simulador", "/dashboard/simulador"],
-        ["roi", "/dashboard/roi-imovel"],
-        ["tributacao", "/dashboard/tributacao"],
+        // E294: a Calculadora de ROI está no simulador; E292-bis: Tributação saiu. Os cartões do hub hoje:
+        ["recibos", "/dashboard/recibos"],
         ["contratos-lista", "/dashboard/contratos"],
       ];
       // MENUS-5: o dono não tem mais gaveta nem "Ferramentas" no menu da Conta. Ferramentas se abre pelo link "Todas as

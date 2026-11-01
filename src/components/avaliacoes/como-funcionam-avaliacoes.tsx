@@ -21,7 +21,7 @@ export function ComoFuncionamAvaliacoes() {
         ref={gatilho}
         type="button"
         onClick={() => setAberto(true)}
-        className="text-sm text-forest underline underline-offset-2"
+        className="alvo-toque text-sm text-forest underline underline-offset-2"
         data-testid="avaliacoes-como-funcionam"
       >
         {TITULO_COMO_FUNCIONAM}

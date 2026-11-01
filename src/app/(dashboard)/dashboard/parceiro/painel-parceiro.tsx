@@ -464,7 +464,12 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
       <Panel id="agenda" title="Agenda" className="scroll-mt-24">
         <p className="text-sm font-medium text-ink">Janelas da semana</p>
         <ul className="mt-2 space-y-1 text-sm" data-testid="parceiro-janelas">
-          {janelas.length === 0 && <li className="text-muted">Nenhuma janela ainda.</li>}
+          {/* Sem janela, a agenda não filtra: qualquer horário futuro fora dos bloqueios vale nos pedidos (horarioNaAgenda). */}
+          {janelas.length === 0 && (
+            <li className="text-muted" data-testid="parceiro-janelas-vazio">
+              Nenhuma janela ainda: por enquanto, os pedidos aceitam qualquer horário futuro fora dos bloqueios. Adicione abaixo os dias e horários em que você atende, e só eles passam a valer.
+            </li>
+          )}
           {janelas.map((j) => (
             <li key={j.id} className="flex items-center justify-between gap-2">
               <span>
@@ -502,7 +507,11 @@ function AbaAtendimento({ p, rodar }: { p: PainelParceiro; rodar: Rodar }) {
 
         <p className="mt-6 text-sm font-medium text-ink">Bloqueios (férias, datas sem atender)</p>
         <ul className="mt-2 space-y-1 text-sm">
-          {bloqueios.length === 0 && <li className="text-muted">Nenhum bloqueio.</li>}
+          {bloqueios.length === 0 && (
+            <li className="text-muted" data-testid="parceiro-bloqueios-vazio">
+              Nenhum bloqueio. Bloqueie abaixo as datas em que você não atende (férias, por exemplo): nelas, nenhum pedido aceita horário.
+            </li>
+          )}
           {bloqueios.map((b) => (
             <li key={b.id} className="flex items-center justify-between gap-2">
               <span>

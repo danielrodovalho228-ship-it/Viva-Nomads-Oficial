@@ -620,3 +620,30 @@ body:has([data-testid="cogumelo"]) {
     padding-bottom: 0;
   }
 }
+
+/* Passada de celular (31/10): os botões + / − do mapa (Leaflet) eram 30 px; no celular, alvo de toque de 44 px. */
+@media (max-width: 767px) {
+  .leaflet-container.leaflet-touch .leaflet-bar a.leaflet-control-zoom-in,
+  .leaflet-container.leaflet-touch .leaflet-bar a.leaflet-control-zoom-out {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+  }
+}
+
+/* Passada de celular (31/10): link de texto solto (uma linha, ~20 px) ganha área de toque de 44 px de altura sem mudar
+   o visual — só em tela de toque. Não usar em link dentro de parágrafo (as áreas se sobreporiam). */
+@media (pointer: coarse) {
+  .alvo-toque {
+    position: relative;
+  }
+  .alvo-toque::after {
+    content: "";
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+}

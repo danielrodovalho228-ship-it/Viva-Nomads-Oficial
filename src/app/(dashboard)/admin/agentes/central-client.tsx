@@ -1029,7 +1029,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
           <div className="rounded-xl border border-line bg-white p-4">
             <h3 className="text-sm font-semibold text-ink">Ordens para {a.nome}</h3>
             {ordens.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">Nenhuma ordem ainda.</p>
+              <p className="mt-2 text-sm text-muted" data-testid="ordens-agente-vazio">Nenhuma ordem para {a.nome} ainda. Peça uma ação na conversa acima: o pedido vira ordem e aparece aqui, com o estado de cada uma.</p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {ordens.map((o) => {

@@ -34,6 +34,7 @@ import {
   DIAS_AVISO_RENOVAR,
   TEXTO_AVISO_RENOVAR,
   dataPedidoBR,
+  textoAcimaDoTeto,
   textoBairros,
   textoFaixaValor,
   textoNecessidades,
@@ -189,7 +190,7 @@ export function PedidosClient({
                       <p className="mt-2 max-w-2xl text-sm text-ink">{p.apresentacao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted">
-                      {p.status === "expirado" ? "Expirou em" : "Fica no ar até"} {dataPedidoBR(p.expira_em)}
+                      {p.status === "expirado" ? "Expirou em" : "Fica no ar até o fim do dia"} {dataPedidoBR(p.expira_em)}
                     </p>
                   </div>
                   {/* Ações do pedido */}
@@ -303,6 +304,12 @@ export function PedidosClient({
                                 {r.properties?.city}
                                 {r.properties ? ` · ${textoPreco(rotuloPreco({ mensal: totalMesDaLinha(r.properties), meses: p.prazo_meses }))}` : ""}
                               </p>
+                              {/* E317: resposta dentro da tolerância de 10% do casamento, mas acima do teto declarado. */}
+                              {r.properties && textoAcimaDoTeto(totalMesDaLinha(r.properties), p.orcamento_mensal) && (
+                                <p className="mt-1 text-xs font-semibold text-amber-800" data-testid="resposta-acima-teto">
+                                  {textoAcimaDoTeto(totalMesDaLinha(r.properties), p.orcamento_mensal)}
+                                </p>
+                              )}
                               {r.properties?.available_from && (
                                 <p className="text-xs text-muted" data-testid="resposta-disponivel">
                                   {rotuloPreco({ mensal: 0, disponivelEm: r.properties.available_from }).disponivel}

@@ -60,7 +60,7 @@ export default async function TemaAjudaPage({ params }: { params: Promise<{ tema
 
         <p className="text-center text-sm text-muted">
           Não achou a resposta?{" "}
-          <Link href={HREF_FALE_COM_A_VIVA} className="inline-flex items-center gap-1 font-semibold text-forest underline" data-testid="ajuda-tema-fale">
+          <Link href={HREF_FALE_COM_A_VIVA} className="alvo-toque inline-flex items-center gap-1 font-semibold text-forest underline" data-testid="ajuda-tema-fale">
             <MessageSquareText className="h-4 w-4" aria-hidden /> Fale com a Viva
           </Link>
         </p>

@@ -82,11 +82,11 @@ test.describe("T737 — E285: busca de parceiros — Todas com foto e selos; vaz
       await vazia.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t737-vazia-${largura}.png` });
 
-      // Sem cidade: o aviso continua, pedindo a cidade no formulário.
+      // Sem cidade (E304): o aviso tem botão — sem login, "Entrar ou criar conta"; logado, cidade e estado no cartão.
       await p.goto("/parceiros/buscar?categoria=montagem", { waitUntil: "domcontentloaded" });
       const semCidade = p.getByTestId("busca-parceiros-vazia").getByTestId("aviso-fotografo");
       await expect(semCidade).toContainText("Quero ser avisado");
-      await expect(semCidade.getByTestId("aviso-informar-cidade")).toHaveAttribute("href", "#bp-cidade");
+      await expect(semCidade.getByTestId("aviso-fotografo-entrar")).toBeEnabled();
       await expect(p.getByTestId("busca-parceiros-vazia").getByTestId("indique-profissional")).toBeVisible();
       await p.screenshot({ path: `${SAIDA}/t737-vazia-sem-cidade-${largura}.png` });
       await p.context().close();

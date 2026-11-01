@@ -91,7 +91,7 @@ test.describe("T537 — E165: assinaturas na lista e no detalhe do admin", () =>
     const noDetalhe = (await assinaturas.innerText()).trim();
     await page.screenshot({ path: "tests/laboratorio/saida/t537-detalhe-1280.png", fullPage: true });
     console.log(`t537 lista="${naLista}" detalhe="${noDetalhe.replace(/\s+/g, " ")}"`);
-    expect(noDetalhe, `lista: "${naLista}" × detalhe: "${noDetalhe}"`).not.toContain("Nenhuma assinatura ainda.");
+    expect(noDetalhe, `lista: "${naLista}" × detalhe: "${noDetalhe}"`).not.toContain("Nenhuma das partes assinou ainda.");
     await expect(assinaturas).toContainText("Proprietário assinou");
     await expect(assinaturas).toContainText("Inquilino assinou");
     await page.context().close();

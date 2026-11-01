@@ -19,6 +19,7 @@ import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, buscaNaoRespondeu, t
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
 import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
@@ -260,6 +261,8 @@ export function ProntoParaTrabalhar({
         on={on}
         onClick={() => onAlternar(it.chave)}
         testid={`trabalho-${it.chave}`}
+        // Conformidade (mockup cadastro-imovel-05): toda comodidade com o seu ícone, como os cartões do resto do passo.
+        icone={iconeDaComodidade(it.chave)}
         rotulo={
           <>
             {it.rotulo}

@@ -393,7 +393,7 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     // E267: a caixa não tem ordem e o parceiro também recebeu o aviso do contrato A: o de C é o que cita o imóvel C.
     const avisoC = (await caixa(ids.limpa, "pedido_auto_atualizado")).find((m) => m.corpo.includes(tituloDe("C")));
     expect(avisoC, "o aviso do imóvel C").toBeTruthy();
-    regua(avisoC!.corpo, `Lara Limpa ${sufixo}`, "C", ["foi renovada e a data do serviço de limpeza completa mudou", "O valor combinado continua o mesmo."]);
+    regua(avisoC!.corpo, `Lara Limpa ${sufixo}`, "C", ["foi renovada e a data do serviço de limpeza completa pedido por Dora mudou", "O valor combinado continua o mesmo."]);
 
     // O parceiro confirma pelo fluxo de horário que já existe.
     const pg = await abrirPedidoComoParceiro(browser, ids.pC);
@@ -414,7 +414,8 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     for (const [quem, nome] of [[ids.dono, "Dora"], [ids.limpa, `Lara Limpa ${sufixo}`]] as const) {
       await expect.poll(async () => (await caixa(quem, "parceiro_horario_confirmado")).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(1);
       const h = (await caixa(quem, "parceiro_horario_confirmado")).find((m) => m.corpo.includes(tituloDe("C")))!;
-      regua(h.corpo, nome, "C", [`está confirmado: ${confirmado}`, `Data: ${confirmado}`, "Valor: R$ 250"]);
+      // E267 (resíduo): cada cópia diz com quem — o parceiro para a Dora, a Dora para o parceiro.
+      regua(h.corpo, nome, "C", [`com ${nome === "Dora" ? `Lara Limpa ${sufixo}` : "Dora"} está confirmado: ${confirmado}`, `Data: ${confirmado}`, "Valor: R$ 250"]);
     }
   });
 

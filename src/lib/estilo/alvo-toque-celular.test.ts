@@ -1,0 +1,33 @@
+/* Passada de celular (31/10): alvos de toque de 44 px no celular — links do rodapé, ícone do Instagram, Compartilhar do
+   imóvel e o + / − do mapa. No computador o rodapé fica como era. Roda: node --test src/lib/estilo/alvo-toque-celular.test.ts */
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
+
+test("rodapé: link de 44 px no celular, como era no computador", () => {
+  const r = ler("components/layout/footer.tsx");
+  assert.match(r, /<Link href=\{href\} className="inline-flex min-h-11 items-center [^"]*md:inline md:min-h-0">/);
+  assert.match(r, /<ul className="text-sm md:space-y-3">/);
+});
+
+test("Instagram, Compartilhar e o zoom do mapa com 44 px", () => {
+  assert.match(ler("components/layout/redes-oficiais.tsx"), /inline-flex min-h-11 min-w-11 items-center/);
+  assert.match(ler("components/share-button.tsx"), /"grid h-11 w-11 place-items-center rounded-full/);
+  assert.match(ler("app/globals.css"), /\.leaflet-container\.leaflet-touch \.leaflet-bar a\.leaflet-control-zoom-in[\s\S]*?width: 44px;\s*height: 44px;/);
+});
+
+test("links de texto soltos: área de toque de 44 px (só em tela de toque), sem mudar o visual", () => {
+  const css = ler("app/globals.css");
+  assert.match(css, /@media \(pointer: coarse\) \{\s*\.alvo-toque \{\s*position: relative;[\s\S]*?\.alvo-toque::after \{[\s\S]*?height: 44px;/);
+  for (const [arq, marca] of [
+    ["app/(public)/imoveis/[id]/property-detail.tsx", 'data-testid="estrelas-titulo" className="alvo-toque'],
+    ["components/avaliacoes/como-funcionam-avaliacoes.tsx", 'className="alvo-toque text-sm text-forest'],
+    ["components/property/owner-card.tsx", 'className="alvo-toque mt-2 inline-flex'],
+    ["components/property/avaliacoes-exemplo.tsx", 'className="alvo-toque mt-1 text-sm'],
+    ["app/(public)/ajuda/[tema]/page.tsx", 'className="alvo-toque inline-flex'],
+    ["app/(public)/page.tsx", '<Link href="/precos" className="alvo-toque'],
+  ])
+    assert.ok(ler(arq).includes(marca), arq);
+});

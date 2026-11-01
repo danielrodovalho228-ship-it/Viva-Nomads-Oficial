@@ -72,7 +72,8 @@ export function ContaMenu() {
                     <span className={cn("block text-sm font-semibold", it.tom === "perigo" ? "text-red-700" : "text-ink")}>
                       {it.label}
                     </span>
-                    {it.descricao && <span className="block truncate text-xs text-muted">{it.descricao}</span>}
+                    {/* Varredura 31/10: a 390 a descrição cortava ("O que disseram de você depois de cada …"); vai em até 2 linhas. */}
+                    {it.descricao && <span className="line-clamp-2 text-xs text-muted" data-testid="conta-item-descricao">{it.descricao}</span>}
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted" />
                 </>

@@ -51,7 +51,7 @@ export function ShareButton({
         data-testid="compartilhar"
         className={
           className ??
-          "grid h-10 w-10 place-items-center rounded-full bg-white/90 text-ink transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
+          "grid h-11 w-11 place-items-center rounded-full bg-white/90 text-ink transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
         }
       >
         {copied ? <Check className="h-5 w-5 text-forest" aria-hidden /> : <Share2 className="h-5 w-5" aria-hidden />}

@@ -29,9 +29,9 @@ const PEDIDO: PedidoParaEmail = {
 
 /** O fato que cada evento tem de dizer (no corpo: abertura + bloco). */
 const CASOS_PEDIDO: { ev: EventoPedido; p?: Partial<PedidoParaEmail>; fato?: FatoDoPedido; diz: (string | RegExp)[] }[] = [
-  { ev: "parceiro_pedido_novo", diz: ["pedido de orçamento de limpeza completa"] },
-  { ev: "parceiro_orcamento_recebido", diz: ["R$ 250"] },
-  { ev: "parceiro_orcamento_aceito", diz: ["R$ 250", "Você recebe: R$ 225"] },
+  { ev: "parceiro_pedido_novo", diz: ["pedido de orçamento de limpeza completa para Studio Jardim, feito por Lara Limpa"] },
+  { ev: "parceiro_orcamento_recebido", diz: ["Lara Limpa enviou o orçamento de limpeza completa para Studio Jardim: R$ 250"] },
+  { ev: "parceiro_orcamento_aceito", diz: ["boa notícia: Lara Limpa aceitou o seu orçamento de limpeza completa para Studio Jardim (R$ 250)", "Você recebe: R$ 225"] },
   { ev: "parceiro_pedido_recusado", diz: ["Lara Limpa recusou o pedido de limpeza completa"] },
   { ev: "parceiro_pedido_recusado", fato: { novaDataRecusada: { cancelado: true } }, diz: ["Lara Limpa recusou a nova data", "O pedido foi cancelado"] },
   { ev: "parceiro_horario_confirmado", p: { horarioConfirmado: "2026-12-03T16:00:00Z" }, diz: ["está confirmado: 03/12/2026 às 13:00", "Data: 03/12/2026 às 13:00"] },
@@ -53,7 +53,8 @@ test("E267: todo evento do pedido de serviço nomeia a pessoa, o imóvel e o fat
   for (const c of CASOS_PEDIDO) {
     const p = { ...PEDIDO, ...c.p };
     const texto = corpo(aberturaDoPedido(c.ev, p, "Dora", c.fato), linhasDoPedido(c.ev, p, c.fato));
-    assert.match(texto, /^(Olá Dora,|Boa notícia, Dora!)/, `${c.ev}: saudação com o nome`);
+    // E267 (resíduo): uma saudação só, em todos ("Boa notícia, X!" saiu do orçamento aceito).
+    assert.match(texto, /^Olá Dora,/, `${c.ev}: saudação com o nome`);
     assert.ok(texto.includes("Studio Jardim"), `${c.ev}: o imóvel na abertura`);
     assert.ok(texto.includes(`Imóvel: ${IMOVEL}`), `${c.ev}: o imóvel por extenso no bloco`);
     for (const f of c.diz) assert.ok(typeof f === "string" ? texto.includes(f) : f.test(texto), `${c.ev}: ${f}\n${texto}`);
@@ -65,7 +66,9 @@ test("E267: todo evento do pedido de serviço nomeia a pessoa, o imóvel e o fat
 
 test("E267: 'Horário do serviço confirmado' diz QUAL horário (o caso do circuito de 30/10: 03/12 13h)", () => {
   const p = { ...PEDIDO, horarioConfirmado: "2026-12-03T16:00:00Z" };
-  assert.equal(aberturaDoPedido("parceiro_horario_confirmado", p, "Daniel"), "Olá Daniel, o horário do serviço de limpeza completa em Studio Jardim está confirmado: 03/12/2026 às 13:00 (horário de Brasília).");
+  assert.equal(aberturaDoPedido("parceiro_horario_confirmado", p, "Daniel"), "Olá Daniel, o horário do serviço de limpeza completa em Studio Jardim com Lara Limpa está confirmado: 03/12/2026 às 13:00 (horário de Brasília).");
+  // Sem a outra parte (perfil sem nome), a frase continua inteira.
+  assert.equal(aberturaDoPedido("parceiro_horario_confirmado", { ...p, outraParte: null }, "Daniel"), "Olá Daniel, o horário do serviço de limpeza completa em Studio Jardim está confirmado: 03/12/2026 às 13:00 (horário de Brasília).");
 });
 
 const ESTADIA: DadosEstadiaEmail = {

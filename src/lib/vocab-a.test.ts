@@ -115,9 +115,9 @@ test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () =
 test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os meses do simulador; sem seguro-fiança 'Em breve'", () => {
   const preco = ler("app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
   assert.match(preco, /useState\(MESES_EXEMPLO\)/);
-  // E139/E140: o simulador e o comparador do Airbnb usam os mesmos meses (mesesExemplo).
+  // E139/E140: o simulador usa os meses do exemplo (mesesExemplo). E292-bis: o comparador do Airbnb saiu da tela.
   assert.match(preco, /<SimuladorBolso compacto valorMensal=\{aluguel\} mesesIniciais=\{mesesExemplo\} onMeses=\{setMesesExemplo\} campos=\{campos\} taxa=\{taxa\} \/>/);
-  assert.match(preco, /<PrecoSugerido aluguel=\{aluguel\} meses=\{mesesExemplo\} taxa=\{taxa\}/);
+  assert.doesNotMatch(preco, /PrecoSugerido/);
   assert.match(ler("components/precos/simulador-bolso.tsx"), /p\.onMeses\?\.\(/);
   assert.doesNotMatch(ler("lib/faixas.ts").replace(/\/\*[\s\S]*?\*\//g, ""), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
 });
@@ -125,4 +125,14 @@ test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os mese
 test("E110: Passo 6 não repete 'Regras da casa' (já é o título do passo)", () => {
   const regras = textosVisiveis(ler("app/(dashboard)/dashboard/imoveis/novo/etapa-encontramos.tsx")).filter((t) => t.trim() === "Regras da casa");
   assert.equal(regras.length, 0);
+});
+
+/* Varredura visual 31/10: a FAQ mora em lib (fonte única da Central de Ajuda e da Viva) e a guarda de telas não a lia —
+   "O inquilino paga alguma taxa…" aparecia em /ajuda/morador. Pergunta e resposta são texto visível; os termos de
+   busca (`termos`) podem guardar "inquilino" para quem digita a palavra antiga. */
+test("varredura 31/10: perguntas e respostas da FAQ sem 'inquilino', 'comissão', temporada, hóspede, reserva nem check-in", () => {
+  const PROIBIDAS = /\binquilin[oa]s?\b|\bcomiss(?:ão|ões)\b|\btemporada\b|\bh[óo]spedes?\b|\breservas?\b|\bcheck-?(?:in|out)\b/i;
+  const achados = FAQ.filter((p) => PROIBIDAS.test(`${p.pergunta} ${p.resposta}`)).map((p) => p.id);
+  assert.deepEqual(achados, []);
+  assert.ok(FAQ.find((p) => p.id === "inquilino-paga")!.termos.includes("inquilino"), "a busca ainda acha pela palavra antiga");
 });

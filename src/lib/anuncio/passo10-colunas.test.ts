@@ -69,8 +69,9 @@ test("E251 (d): 'Estadia mínima (N meses)' na prévia e no cartão de Meus anú
   assert.equal(rotuloEstadiaMinima(1), "Estadia mínima (1 mês)");
   assert.equal(rotuloEstadiaMinima(4), "Estadia mínima (4 meses)");
   const cartao = ler("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
-  // E254-A: o cartão monta a linha pela função única (linhaEstadiaMinima usa rotuloEstadiaMinima).
-  assert.match(cartao, /linhaEstadiaMinima\(p, r\.meses\)/);
+  // E254-A + QA 31/10: o cartão monta a linha pela função única (estadiaDoCartaoDoDono → linhaEstadiaMinima /
+  // rotuloEstadiaMinima), sempre com a estadia mínima configurada.
+  assert.match(cartao, /estadiaDoCartaoDoDono\(p, r\.meses\)/);
   assert.doesNotMatch(cartao, /ROTULO_TOTAL_CONTRATO/);
   const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
   assert.doesNotMatch(revisar, /total-contrato|Total do contrato"/);
@@ -148,4 +149,11 @@ test("E251 (b): cada grupo feito da lista de conferência tem 'Editar' que volta
   const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
   assert.match(revisar, /\{i\.ok && \(\s*<button[\s\S]*?onClick=\{\(\) => p\.irPara\(ETAPA\[i\.id\]\)\}[\s\S]*?data-testid=\{`conferencia-editar-\$\{i\.id\}`\}/);
   assert.match(revisar, /data-testid=\{`conferencia-resolver-\$\{i\.id\}`\}/);
+});
+
+test("varredura 31/10: o motivo do Publicar travado aparece inteiro (quebra a linha, não corta com reticências)", () => {
+  const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
+  const botao = revisar.match(/<button[^>]*data-testid="publicar-motivo"/)![0];
+  assert.doesNotMatch(botao, /\btruncate\b|line-clamp/);
+  assert.match(botao, /text-balance/);
 });

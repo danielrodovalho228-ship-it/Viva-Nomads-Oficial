@@ -66,14 +66,17 @@ export function PropertyCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-1">
-        <div className="flex items-start justify-between gap-2">
+        {/* Varredura visual 31/10: o selo ao lado do bairro ("Anúncio de exemplo") espremia o bairro a "San…" no cartão
+            de 2 colunas do celular. Com flex-wrap, o selo desce para a linha de baixo quando os dois não cabem, e o
+            bairro só trunca se for maior que a linha inteira. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-2" data-testid="cartao-local-linha">
           {/* Bairro (com a cidade) + nota. Cartão 16/600. */}
-          <h3 className="min-w-0 truncate font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
+          <h3 className="min-w-0 max-w-full truncate font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
             {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </h3>
           {exemplo ? (
             // Anúncio de exemplo: nunca mostra nota (seria fictícia) — e fica marcado.
-            <span className="shrink-0 text-xs text-apoio">Anúncio de exemplo</span>
+            <span className="shrink-0 text-xs leading-6 text-apoio">Anúncio de exemplo</span>
           ) : property.reviewCount > 0 ? (
             <span className="inline-flex shrink-0 items-center gap-1 text-sm tabular-nums text-ink" data-testid="cartao-nota">
               <Star className="h-3.5 w-3.5 fill-ink text-ink" aria-hidden />

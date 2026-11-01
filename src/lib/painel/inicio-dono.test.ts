@@ -46,7 +46,7 @@ test("sem rascunho: a decisão vira 'Próximo passo'; sem nada, o caminho real; 
 test("Peça na Viva (um botão cheio) e os três atalhos do mockup", () => {
   assert.equal(PECA_NA_VIVA.principal.rotulo, "Publicar pedido de moradia");
   assert.equal(PECA_NA_VIVA.secundario.rotulo, "Pedir um serviço");
-  assert.deepEqual(ATALHOS_INICIO_DONO.map((a) => a.rotulo), ["Agenda", "Simulador de rentabilidade", "Recibos e notas"]);
+  assert.deepEqual(ATALHOS_INICIO_DONO.map((a) => a.rotulo), ["Agenda", "Simulador do imóvel", "Recibos e notas"]);
   const c = readFileSync("src/components/painel/inicio-dono.tsx", "utf8");
   assert.match(c, /href=\{PECA_NA_VIVA\.secundario\.href\} variant="outline"/);
   // Sem foto: nada de imagem inventada.

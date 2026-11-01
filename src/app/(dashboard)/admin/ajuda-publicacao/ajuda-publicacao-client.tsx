@@ -60,7 +60,7 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
       />
       <Panel data-testid="ajuda-fila" id="lista" className="scroll-mt-24">
         {fila.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">Nenhum pedido ainda.</p>
+          <p className="py-6 text-center text-sm text-muted" data-testid="ajuda-fila-vazia">Nenhum pedido de ajuda para publicar ainda. Quando um proprietário pedir ajuda em Meus imóveis, o pedido entra aqui para a equipe montar o rascunho e enviar ao dono.</p>
         ) : (
           <ul className="divide-y divide-sage-200">
             {fila.map((p) => (

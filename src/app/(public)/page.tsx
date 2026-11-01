@@ -298,7 +298,7 @@ export default async function HomePage() {
                 <ButtonLink href="/para-proprietarios" variant="accent" size="lg">
                   Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
-                <Link href="/precos" className="text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white">
+                <Link href="/precos" className="alvo-toque text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white">
                   Ver preços
                 </Link>
               </div>
@@ -319,7 +319,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/buscar"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest"
+              className="alvo-toque inline-flex items-center gap-2 text-sm font-semibold text-ink underline underline-offset-4 hover:text-forest"
             >
               Ver todos os imóveis <ArrowRight className="h-4 w-4" />
             </Link>

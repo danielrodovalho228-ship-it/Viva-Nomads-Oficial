@@ -11,7 +11,6 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { TAXA_COMISSAO_PADRAO } from "@/lib/cobranca/regra";
 import { taxaDoMeuNovoAnuncio } from "@/lib/preco-justo-actions";
 import { SimuladorBolso } from "@/components/precos/simulador-bolso";
-import { PrecoSugerido } from "@/components/precos/preco-sugerido";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
@@ -36,7 +35,6 @@ export function EtapaPreco(p: {
   monthlyPrice: string;
   setMonthlyPrice: (v: string) => void;
   precoRegiao: { valor: number; base: "bairro" | "cidade"; n: number } | null;
-  setAirbnbMensal: (v: string) => void;
   condoFee: string;
   setCondoFee: (v: string) => void;
   utilitiesMode: "fixed" | "real";
@@ -166,10 +164,9 @@ export function EtapaPreco(p: {
               </p>
             </div>
           )}
-          {/* E139/E140/E151: um período só (os meses do simulador) para a taxa e para o comparador; a taxa é explicada
-              uma vez, no simulador. */}
+          {/* E139/E151: o simulador explica a taxa da faixa, com os meses que o dono escolhe. E292-bis ("a Viva só conecta"):
+              saiu o comparativo do Airbnb (a taxa dele e o "preço sugerido" de equivalência eram conta da Viva). */}
           <SimuladorBolso compacto valorMensal={aluguel} mesesIniciais={mesesExemplo} onMeses={setMesesExemplo} campos={campos} taxa={taxa} />
-          <PrecoSugerido aluguel={aluguel} meses={mesesExemplo} taxa={taxa} onUsar={(v) => p.setMonthlyPrice(String(v))} onAirbnbMensal={(v) => p.setAirbnbMensal(v ? String(v) : "")} />
 
         </>
       )}

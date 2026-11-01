@@ -46,7 +46,7 @@ function CartaoAvaliacao({ a }: { a: AvaliacaoExemplo }) {
       <p className="mt-3 font-semibold text-ink">{a.titulo}</p>
       <p className="mt-1 text-sm text-muted">{longo && !aberto ? `${a.texto.slice(0, LIMITE).trimEnd()}…` : a.texto}</p>
       {longo && (
-        <button type="button" onClick={() => setAberto(!aberto)} aria-expanded={aberto} className="mt-1 text-sm font-semibold text-forest underline underline-offset-2">
+        <button type="button" onClick={() => setAberto(!aberto)} aria-expanded={aberto} className="alvo-toque mt-1 text-sm font-semibold text-forest underline underline-offset-2">
           {aberto ? "Ler menos" : "Ler mais"}
         </button>
       )}

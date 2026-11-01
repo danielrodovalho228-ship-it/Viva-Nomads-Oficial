@@ -47,3 +47,27 @@ export function situacaoCandidatura(
 
 /** Todos os rótulos (para legendas/estados vazios). */
 export const ROTULOS_CANDIDATURA = ROTULOS;
+
+/**
+ * E314 (QA 31/10): o cartão em aberto ("Enviada" e "Em análise") também diz o que acontece agora e o próximo passo do
+ * morador, no padrão do cartão "Aceita" (texto + link). "Em análise" quer dizer que o proprietário já mandou mensagem
+ * sobre o imóvel (é assim que a situação é derivada), então o passo é responder pela conversa. Sem prazos inventados.
+ */
+export interface ProximoPassoCandidatura {
+  agora: string;
+  proximo: string;
+  acao: { rotulo: string; href: string };
+}
+
+export const PROXIMO_PASSO_CANDIDATURA: Partial<Record<SituacaoCandidatura, ProximoPassoCandidatura>> = {
+  enviada: {
+    agora: "O proprietário recebeu a sua candidatura e ainda vai olhar.",
+    proximo: "Fique de olho nas mensagens: a resposta do proprietário chega pela plataforma.",
+    acao: { rotulo: "Ver mensagens", href: "/dashboard/mensagens" },
+  },
+  em_analise: {
+    agora: "O proprietário já viu a sua candidatura e está avaliando.",
+    proximo: "Responda pela conversa e tire as dúvidas do proprietário; com a candidatura aceita, você envia os documentos aqui.",
+    acao: { rotulo: "Abrir conversa", href: "/dashboard/mensagens" },
+  },
+};

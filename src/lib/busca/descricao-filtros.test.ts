@@ -106,3 +106,18 @@ test("L-49: a dica sem filtro só cita o que a descrição liga (nada de Wi-Fi n
   assert.deepEqual(f.comodidades, ["garagem"]);
   assert.match(DICA_SEM_FILTRO, /preço, quartos, cidade ou bairro, pets ou garagem/);
 });
+
+test("L-51: com menos de 3 letras o 'Aplicar nos filtros' responde com o motivo, nunca trava em silêncio", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { DICA_DESCRICAO_CURTA } = await import("./descricao-filtros.ts");
+  assert.equal(DICA_DESCRICAO_CURTA, "Escreva ao menos 3 letras para aplicar nos filtros.");
+  const tela = readFileSync(new URL("../../components/busca/descricao-busca.tsx", import.meta.url), "utf8");
+  // O botão só trava enquanto entende (carregando); o tamanho do texto não o desabilita mais.
+  assert.match(tela, /<Button type="submit" disabled=\{carregando\} data-testid="descricao-aplicar"/);
+  assert.doesNotMatch(tela, /disabled=\{[^}]*limparDescricao/);
+  // O clique curto mostra a dica, ligada ao campo por aria-describedby.
+  assert.match(tela, /aria-describedby=\{curto \? "descricao-busca-curta" : undefined\}/);
+  assert.match(tela, /<p id="descricao-busca-curta" role="status"[^>]*data-testid="descricao-curta">\s*\{DICA_DESCRICAO_CURTA\}/);
+  // Nada vai à API com menos de 3 letras.
+  assert.match(tela, /if \(descricao\.length < 3\) \{\s*setCurto\(true\);\s*return;\s*\}/);
+});

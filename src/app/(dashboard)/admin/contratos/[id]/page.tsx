@@ -77,7 +77,7 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
           </ul>
           <p className="mt-3 break-all text-xs text-muted">Hash do resumo atual: {c.hashAtual}</p>
           <ul className="mt-3 space-y-2 text-sm" data-testid="admin-contrato-assinaturas">
-            {c.assinaturas.length === 0 && <li className="text-muted">Nenhuma assinatura ainda.</li>}
+            {c.assinaturas.length === 0 && <li className="text-muted" data-testid="admin-contrato-sem-assinatura">Nenhuma das partes assinou ainda. O proprietário e o morador assinam pela página do contrato, cada um com o código que recebe por e-mail.</li>}
             {c.assinaturas.map((a) => (
               <li key={a.papel} className="break-words">
                 {PARTE[a.papel]} assinou em {dataHoraBRT(a.em)}
@@ -195,7 +195,7 @@ function ConferenciaBloco({ conf }: { conf: ConferenciaAdmin }) {
         );
       })}
       <ul className="mt-3 space-y-1 text-sm text-ink" data-testid={`admin-conferencia-${conf.tipo}-respostas`}>
-        {conf.respostas.length === 0 && <li className="text-muted">Nenhuma resposta ainda.</li>}
+        {conf.respostas.length === 0 && <li className="text-muted" data-testid={`admin-conferencia-${conf.tipo}-sem-resposta`}>Nenhuma das partes respondeu a esta conferência ainda.</li>}
         {conf.respostas.map((r) => (
           <li key={r.parte} className="break-words">
             {PARTE[r.parte]} {r.decisao === "confirmou" ? "confirmou" : "contestou"} em {dataHoraBRT(r.em, { semEtiqueta: true })}

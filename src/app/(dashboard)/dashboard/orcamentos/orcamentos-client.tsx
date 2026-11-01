@@ -12,13 +12,19 @@ import type { InteressadoParaProposta, PropostaResumo } from "@/lib/data/propost
 import { cn, dataBR, formatBRL } from "@/lib/utils";
 import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { StatusChip } from "@/components/propostas/status-chip";
+import { useAuthStore } from "@/lib/store";
+import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 
 export function OrcamentosClient({ propostas, interessados }: { propostas: PropostaResumo[]; interessados: InteressadoParaProposta[] }) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<"todas" | StatusProposta>("todas");
   const [escolhendo, setEscolhendo] = useState(false);
   const [escolhido, setEscolhido] = useState("");
-  const ehDono = interessados.length > 0 || propostas.some((p) => p.papel === "owner");
+  // E307 (QA 31/10): na área do dono (modo proprietário) a tela é do dono mesmo sem interessado nem proposta ainda —
+  // antes o papel vinha só dos dados e o dono novo via o texto do morador.
+  const modoDono = useAuthStore((s) => s.activeMode) === "owner";
+  const ehDono = modoDono || interessados.length > 0 || propostas.some((p) => p.papel === "owner");
+  const vazioDonoNovo = ehDono && propostas.length === 0 && interessados.length === 0;
   const visiveis = filtro === "todas" ? propostas : propostas.filter((p) => p.status === filtro);
   const livres = interessados.filter((i) => !i.temPropostaAberta);
 
@@ -100,9 +106,11 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
           title={propostas.length === 0 ? "Nenhuma proposta ainda" : "Nada neste filtro"}
           text={
             propostas.length === 0
-              ? ehDono
-                ? "Envie uma proposta a um interessado: ele aceita, recusa ou contrapropõe por aqui."
-                : "Quando um proprietário enviar uma proposta, ela aparece aqui e na conversa."
+              ? vazioDonoNovo
+                ? VAZIOS_ONBOARDING.orcamentosDono.frase
+                : ehDono
+                  ? "Envie uma proposta a um interessado: ele aceita, recusa ou contrapropõe por aqui."
+                  : "Quando um proprietário enviar uma proposta, ela aparece aqui e na conversa."
               : "Escolha outro status acima."
           }
           action={
@@ -111,8 +119,13 @@ export function OrcamentosClient({ propostas, interessados }: { propostas: Propo
                 Ver todas
               </Button>
             ) : (
-              <ButtonLink href={ehDono ? "/dashboard/leads" : "/buscar"} variant="secondary" size="sm">
-                {ehDono ? "Ver interessados" : "Buscar imóveis"}
+              <ButtonLink
+                href={vazioDonoNovo ? VAZIOS_ONBOARDING.orcamentosDono.acao.href : ehDono ? "/dashboard/leads" : "/buscar"}
+                variant="secondary"
+                size="sm"
+                data-testid="orcamentos-vazio-acao"
+              >
+                {vazioDonoNovo ? VAZIOS_ONBOARDING.orcamentosDono.acao.rotulo : ehDono ? "Ver interessados" : "Buscar imóveis"}
               </ButtonLink>
             )
           }

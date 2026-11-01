@@ -30,7 +30,7 @@ const TELAS: Tela[] = [
   { conta: "SOCIO", papel: "sócio", rota: () => "/modelodenegocio", nome: "Modelo de negócio" },
   { conta: "SOCIO", papel: "sócio", rota: () => "/roi", nome: "Retorno" },
   { conta: "SOCIO", papel: "sócio", rota: () => "/simulacao", nome: "Simulação" },
-  { conta: "SOCIO", papel: "sócio", rota: () => "/tributario", nome: "Tributário" },
+  // E292-bis: /tributario saiu (redireciona para /dashboard/ferramentas).
   { conta: "INQUILINA", papel: "morador", rota: (m) => `/dashboard/contratos/${m.contrato}`, nome: "Contrato (contrato completo)" },
   { conta: "DONO17", papel: "proprietário", rota: (m) => `/dashboard/contratos/${m.contrato}`, nome: "Contrato (contrato completo)" },
   { conta: "INQUILINA", papel: "morador", rota: (m) => `/dashboard/estadia/${m.contrato}/confirmada`, nome: "Estadia confirmada" },

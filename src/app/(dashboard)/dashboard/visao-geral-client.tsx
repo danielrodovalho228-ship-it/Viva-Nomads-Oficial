@@ -29,7 +29,7 @@ import {
 import { primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
-import { PropertyRow } from "@/components/dashboard/property-row";
+import { PropertyCard } from "@/components/property-card";
 import { ChecklistAtivacaoBloco } from "@/components/onboarding/checklist-ativacao";
 import type { ChecklistAtivacao } from "@/lib/onboarding/ativacao";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
@@ -49,7 +49,7 @@ import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 import type { EstadiaNaHome } from "@/lib/data/estadia";
 import { useViewMode } from "@/lib/roles";
 import { InicioDono } from "@/components/painel/inicio-dono";
-import type { BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
+import { PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 import { useFavoritos } from "@/lib/use-favoritos";
 
@@ -402,7 +402,15 @@ function PainelDoDono({
               <Activity text="3 novas visualizações" time="ontem" />
             </ul>
           ) : (
-            <p className="py-3 text-sm text-muted">Sem atividade recente ainda.</p>
+            // O painel ainda não tem feed próprio: fora da demonstração ele dizia sempre que não havia atividade, mesmo com
+            // interessados, propostas e visitas. Diz onde as novidades chegam e leva até lá.
+            <p className="py-3 text-sm text-muted" data-testid="atividade-recente-vazia">
+              As novidades dos seus imóveis (interessados, propostas, visitas e avisos) chegam em{" "}
+              <Link href="/dashboard/notificacoes" className="font-medium text-forest underline">
+                Notificações
+              </Link>
+              .
+            </p>
           )}
         </Panel>
       </div>
@@ -513,15 +521,35 @@ function TenantDashboard({
   ehDono: boolean;
 }) {
   const demo = useDashDemo();
-  const recommended = useProperties("/api/properties").properties.slice(0, 3);
+  // Conformidade morador-inicio (matriz, 31/10): os recomendados no MESMO cartão com foto da busca e dos favoritos, em
+  // grade par (2 no celular, 4 no computador) — antes eram linhas compactas.
+  const recommended = useProperties("/api/properties").properties.slice(0, 4);
   // E181: "Favoritos" conta a MESMA lista de /dashboard/favoritos (os favoritados que existem), nunca um número fixo.
   const { favoritos } = useFavoritos();
   void name;
   return (
     <>
+      {/* Conformidade morador-inicio: o "Peça na Viva" do mockup (os textos e destinos aprovados do Início do dono). */}
+      {!ehDono && (
+        <section className="mb-6 flex flex-col gap-4 rounded-lg border border-line bg-white p-4 sm:p-6 lg:flex-row lg:items-center" data-testid="inicio-morador-peca">
+          <div className="min-w-0 lg:flex-1">
+            <h2 className="font-title text-xl font-semibold text-ink">{PECA_NA_VIVA.titulo}</h2>
+            <p className="mt-1 text-sm text-muted">{PECA_NA_VIVA.texto}</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href={PECA_NA_VIVA.principal.href} variant="outline" data-testid="inicio-morador-pedido">
+              {PECA_NA_VIVA.principal.rotulo}
+            </ButtonLink>
+            <ButtonLink href={PECA_NA_VIVA.secundario.href} variant="outline" data-testid="inicio-morador-servico">
+              {PECA_NA_VIVA.secundario.rotulo}
+            </ButtonLink>
+          </div>
+        </section>
+      )}
+
       {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+      <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", !ehDono && "sm:grid-cols-4")} data-testid="inicio-morador-kpis">
         <StatCard label="Candidaturas" value={demo ? "2" : String(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : String(favoritos.length)} icon={Heart} href="/dashboard/favoritos" />
         {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : String(totalBuscasSalvas)} icon={Search} href="/dashboard/buscas" />}
@@ -529,35 +557,39 @@ function TenantDashboard({
         {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : String(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Panel title="Imóveis recomendados">
-          <div className="divide-y divide-sage-200">
+      {recommended.length > 0 && (
+        <section className="mt-6" aria-labelledby="recomendados-titulo" data-testid="inicio-recomendados">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 id="recomendados-titulo" className="font-title text-xl font-semibold text-ink">
+              Imóveis recomendados para você
+            </h2>
+            <Link href="/buscar" className="text-sm font-medium text-forest hover:underline" data-testid="inicio-recomendados-todos">
+              Ver todos
+            </Link>
+          </div>
+          <div className="mt-4 grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-6 lg:grid-cols-4">
             {recommended.map((p) => (
-              <PropertyRow
-                key={p.id}
-                id={p.id}
-                title={p.title}
-                monthlyPrice={p.monthlyPrice}
-                totalMes={calcularTudoIncluido(p).total}
-                minPeriodDays={p.minPeriodDays}
-                availableFrom={p.availableFrom}
-                neighborhood={p.neighborhood}
-                photos={p.photos}
-              />
+              <PropertyCard key={p.id} property={p} />
             ))}
           </div>
-        </Panel>
-        <EmptyState
-          icon={Heart}
-          title="Salve seus favoritos"
-          text="Conforme você navega, salve os imóveis que mais gostou para comparar depois."
-          action={
-            <ButtonLink href="/buscar" variant="secondary">
-              Explorar imóveis
-            </ButtonLink>
-          }
-        />
-      </div>
+        </section>
+      )}
+
+      {/* "Salve seus favoritos" só para quem ainda não salvou nenhum — antes aparecia mesmo com favoritos salvos. */}
+      {(demo ? 3 : favoritos.length) === 0 && (
+        <div className="mt-6">
+          <EmptyState
+            icon={Heart}
+            title="Salve seus favoritos"
+            text="Conforme você navega, salve os imóveis que mais gostou para comparar depois."
+            action={
+              <ButtonLink href="/buscar" variant="secondary">
+                Explorar imóveis
+              </ButtonLink>
+            }
+          />
+        </div>
+      )}
       {/* E284 (folha aprovada, Tela 1): os Serviços aparecem na home de TODO morador, com ou sem estadia e com ou sem
           cidade no perfil (sem cidade, a busca de parceiros abre sem ela). Quem é dono já vê a seção no bloco de
           proprietário — aqui ela não se repete. */}

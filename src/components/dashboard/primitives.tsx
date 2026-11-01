@@ -76,7 +76,9 @@ export function StatCard({
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-[11px] leading-tight text-muted sm:text-sm">
+        {/* Varredura 31/10: a 390 o rótulo cortava ("Manutenções em abe…", "Receita mensal em vigên…"); vai em até 2
+            linhas. */}
+        <span className="line-clamp-2 min-w-0 text-[11px] leading-tight text-muted sm:text-sm" data-testid="stat-rotulo">
           {label}
         </span>
         <Icon className="h-4 w-4 shrink-0 text-sage sm:h-5 sm:w-5" />
