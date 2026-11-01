@@ -2114,7 +2114,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t864-nao-encontrado-continua-404"
       ]
     },
     "/parceiros/[slug]": {
@@ -2228,7 +2229,8 @@
         "t597-e213b-limpeza-renovacao",
         "t600-e200-conversa-da-estadia",
         "t684-varredura-bloco71",
-        "t712-e267-transacionais-corpo"
+        "t712-e267-transacionais-corpo",
+        "t864-nao-encontrado-continua-404"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
