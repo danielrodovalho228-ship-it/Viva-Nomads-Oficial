@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, fotosReais, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T872 — CONFORMIDADE FINA DE MENSAGENS (Pista C, 01/11; merge #1887, F8/F9, mockup morador-mensagens). O merge trouxe só
@@ -28,6 +28,9 @@ test.describe("T872 — Mensagens: o imóvel da conversa em destaque (#1887)", (
     ids.dono = await criarConta(dono, senha);
     ids.morador = await criarConta(morador, senha);
     ids.imovel = await criarImovelPronto(ids.dono, TITULO, { ativo: true });
+    // As fotos do criarImovelPronto apontam para um host fictício (lab.vivanomads.test), que não carrega no navegador;
+    // fotosReais troca pelos endereços do Storage local, para a spec conferir o carregamento de verdade.
+    await fotosReais(ids.imovel, ids.dono);
     ids.lead = await criarLead(ids.dono, ids.morador, ids.imovel, true);
     await gravarMensagem(ids.morador, ids.dono, ids.imovel, "Oi! O imóvel ainda está disponível?", conversationId(ids.morador, ids.dono, ids.imovel));
   });
