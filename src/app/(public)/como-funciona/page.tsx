@@ -393,7 +393,7 @@ function Steps({
                   <div className="grid h-11 w-11 place-items-center rounded-xl bg-forest text-white">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="font-title text-2xl font-semibold text-sage-200">{i + 1}</span>
+                  <span className="font-title text-2xl font-semibold text-forest">{i + 1}</span>
                 </div>
                 <h3 className="mt-4 font-title text-lg font-semibold text-forest">{s.title}</h3>
                 <p className="mt-2 text-sm text-muted">{s.text}</p>
