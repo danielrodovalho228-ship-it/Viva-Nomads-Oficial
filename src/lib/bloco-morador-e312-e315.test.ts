@@ -5,13 +5,12 @@ import { PROXIMO_PASSO_CANDIDATURA, ROTULOS_CANDIDATURA } from "./candidaturas/s
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
-test("E313: toda grade de comodidades fecha par — o último item de lista ímpar ocupa as duas colunas", () => {
+test("E313 (devolução): item final ímpar na 1ª coluna, alinhado à esquerda — nunca centrado nem esticado", () => {
   const src = ler("components/property/amenities-grid.tsx");
-  assert.match(src, /const FECHA_GRADE = "odd:last:col-span-2 odd:last:justify-center";/);
-  // Os dois tipos de item (tem e não tem) levam a regra.
-  assert.equal((src.match(/\$\{FECHA_GRADE\}/g) ?? []).length >= 2, true);
-  // A grade "Para trabalhar" da mesma página segue a mesma regra.
-  assert.match(ler("components/property/workspace-section.tsx"), /odd:last:col-span-2/);
+  assert.doesNotMatch(src, /justify-center|col-span-2/);
+  assert.match(src, /const ITEM_DA_GRADE = "flex items-center gap-3 text-sm justify-start";/);
+  assert.equal((src.match(/\$\{ITEM_DA_GRADE\}/g) ?? []).length, 2);
+  assert.doesNotMatch(ler("components/property/workspace-section.tsx"), /odd:last:(col-span-2|justify-center)/);
 });
 
 test("E314: o cartão 'Em análise' (e o 'Enviada') diz o que acontece agora e o próximo passo, com link", () => {
