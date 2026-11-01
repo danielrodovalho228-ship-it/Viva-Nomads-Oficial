@@ -46,8 +46,10 @@ export function InicioDono({
       <section className="rounded-lg border border-line bg-white p-4 sm:p-6" data-testid="inicio-dono-principal" data-tipo={bloco.tipo} aria-labelledby="inicio-dono-titulo">
         <div className={cn("grid gap-6", bloco.foto && "lg:grid-cols-2 lg:items-center")}>
           {bloco.foto && (
+            // E308 (QA 31/10): a capa aparece INTEIRA — com object-cover ela era recortada nas bordas (texto cortado,
+            // "rlândia"). object-contain sobre o fundo neutro, na mesma moldura 16:10.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={bloco.foto} alt="" className="aspect-[16/10] w-full rounded-lg object-cover" data-testid="inicio-dono-foto" />
+            <img src={bloco.foto} alt="" className="aspect-[16/10] w-full rounded-lg bg-surface-2 object-contain" data-testid="inicio-dono-foto" />
           )}
           <div className="min-w-0">
             <h2 id="inicio-dono-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">

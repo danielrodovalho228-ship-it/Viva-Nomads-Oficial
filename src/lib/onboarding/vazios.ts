@@ -21,6 +21,12 @@ export const VAZIOS_ONBOARDING = {
     frase: "Aqui aparecem seus pedidos de moradia. Pedido não é contrato: nada é cobrado até vocês assinarem.",
     acao: { rotulo: "Fazer um pedido de moradia", href: "/pedidos/novo" },
   },
+  // E307 (QA 31/10): Orçamentos na área do dono fala com o dono (antes, sem interessado nem proposta, caía no texto do
+  // morador: "Propostas que você recebeu dos proprietários" + "Buscar imóveis").
+  orcamentosDono: {
+    frase: "Aqui aparecem as propostas que você enviar aos interessados. Publique seu anúncio para receber o primeiro.",
+    acao: { rotulo: "Ver meus anúncios", href: "/dashboard/imoveis" },
+  },
   pedidosParceiro: {
     frase: "Aqui aparecem os pedidos de orçamento. Publique sua página para receber o primeiro.",
     acao: { rotulo: "Abrir minha página", href: "/dashboard/parceiro" },
