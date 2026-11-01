@@ -193,7 +193,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   const ambos = assinadoPelasDuas(c);
   const ownerId = c.properties?.owner_id ?? "";
 
-  const [foto, { data: conf }, { data: ocup }, { data: nota }, { data: adit }, { data: enc }, { count: docs }, instr, { data: perfil }] = await Promise.all([
+  const [foto, lConf, lOcup, lNota, lAdit, lEnc, lDocs, instr, lPerfil] = await Promise.all([
     fotoDoImovel(admin, c.property_id),
     admin.from("conferencias").select("id, conferencia_respostas(parte, decisao, motivo)").eq("contrato_id", c.id).eq("tipo", "entrada").maybeSingle(),
     admin.from("contrato_ocupantes").select("id, nome, documento, parentesco_ou_relacao").eq("contrato_id", c.id).order("criado_em"),
@@ -208,6 +208,16 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     lerInstrucoes(admin, c),
     admin.from("profiles").select("full_name").eq("id", c.tenant_id).maybeSingle(),
   ]);
+  // Achado 44: uma leitura secundária que falha não pode sumir com o aditivo à espera de assinatura, o pedido de
+  // encerramento ou os ocupantes, nem dizer "Nenhum recibo emitido" — lança e a tela mostra "Tentar de novo".
+  if ([lConf, lOcup, lNota, lAdit, lEnc, lDocs, lPerfil].some((r) => r.error)) throw new Error(MSG_ESTADIA_NAO_CARREGOU);
+  const { data: conf } = lConf;
+  const { data: ocup } = lOcup;
+  const { data: nota } = lNota;
+  const { data: adit } = lAdit;
+  const { data: enc } = lEnc;
+  const { count: docs } = lDocs;
+  const { data: perfil } = lPerfil;
 
   const respostas = ((conf as { conferencia_respostas?: RespostaConferencia[] } | null)?.conferencia_respostas ?? []) as RespostaConferencia[];
   const ocupantes = ((ocup ?? []) as { id: string; nome: string; documento: string; parentesco_ou_relacao: string | null }[]).map((o) => ({
