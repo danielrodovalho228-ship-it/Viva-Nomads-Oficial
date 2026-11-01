@@ -1080,7 +1080,8 @@
         "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
         "t713-e261-avisos-titulo",
-        "t709-e263-pets-condicoes-ida-e-volta"
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t947-e414-medicao-sempre-termina"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -3190,7 +3191,8 @@
       ],
       "specs": [
         "t275-internet-medida",
-        "t410-niveis-medir-rascunho"
+        "t410-niveis-medir-rascunho",
+        "t947-e414-medicao-sempre-termina"
       ]
     },
     "/api/parceiros/pedidos/[id]": {
