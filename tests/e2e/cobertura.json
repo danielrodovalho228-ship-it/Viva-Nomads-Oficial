@@ -2228,7 +2228,8 @@
         "t597-e213b-limpeza-renovacao",
         "t600-e200-conversa-da-estadia",
         "t684-varredura-bloco71",
-        "t712-e267-transacionais-corpo"
+        "t712-e267-transacionais-corpo",
+        "t939-achado44-estadia-secundarias"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -2265,7 +2266,8 @@
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
         "t676-varredura-bloco69",
-        "t712-e267-transacionais-corpo"
+        "t712-e267-transacionais-corpo",
+        "t939-achado44-estadia-secundarias"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -2284,7 +2286,8 @@
       "specs": [
         "t256-pagina-da-estadia",
         "t329-varredura-bloco11",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t939-achado44-estadia-secundarias"
       ]
     },
     "/admin/destinos": {
@@ -2542,7 +2545,8 @@
         "t347-respostas-rapidas-55e2",
         "t335-varredura-bloco13",
         "t385-varredura-bloco21",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t939-achado44-estadia-secundarias"
       ]
     },
     "/dashboard/conta/excluir": {
