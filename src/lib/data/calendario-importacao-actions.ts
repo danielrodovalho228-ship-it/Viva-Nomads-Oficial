@@ -58,11 +58,13 @@ const depois = (propertyId: string) => {
 export async function listarImportacoes(propertyId: string): Promise<ImportacaoNaTela[]> {
   const d = await donoDoImovel(propertyId);
   if (!d) return [];
-  const { data } = await d.admin
+  // Achado 50: a falha de leitura LANÇA (a tela avisa) — antes a lista sumia e o limite de links deixava de contar.
+  const { data, error } = await d.admin
     .from("calendario_importacoes")
     .select("id, dominio, origem, ultima_leitura, ultimo_erro")
     .eq("property_id", propertyId)
     .order("criado_em");
+  if (error) throw new Error("Não foi possível ler os calendários importados agora.");
   return ((data ?? []) as { id: string; dominio: string; origem: OrigemLink; ultima_leitura: string | null; ultimo_erro: string | null }[]).map((r) => ({
     id: r.id,
     dominio: r.dominio,
