@@ -8,17 +8,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   DAQUELA estadia — o dono em /dashboard/contratos#avaliar-<contrato>, o morador em /dashboard/locacoes#avaliar-<contrato>
   — e não a lista genérica /dashboard/avaliacoes. Aqui: o link certo no texto do e-mail de cada parte e, abrindo o link,
   o bloco da âncora na tela.
-  L-84 (achado desta spec): o cron pede a avaliação de contrato ainda "ativo" (o select é status in ('ativo',
-  'encerrado') — "encerrado" nem existe no check de contratos.status), mas o formulário do morador em Locações (e com
-  ele a âncora do E346) só aparece com podeAvaliarLocacao(), que exige contrato concluído (concluido,
-  encerrado_sem_renovacao, encerrado_em_acerto) com encerrado_em; o banco (0089) também só aceita avaliação nesses
-  status. Nada no código encerra o contrato sozinho no fim do bloco. Resultado: o link do morador cai numa âncora que
-  não existe. Fica como test.fail ligado ao L-84; quando o produto alinhar as duas pontas, o teste passa a valer.
-  Massa: contrato assinado pelas duas partes, ainda "ativo" (o cron só lê contratos ativos), com o último bloco
-  terminado ONTEM (horário de Brasília) — o dia em que o cron pede a avaliação às duas partes.
-  Como a t597/t712: um 2º servidor do MESMO build do laboratório (porta 3189), com um CRON_SECRET só dele e
-  AUTOMACOES_ATIVO=1 só no processo dele — nenhuma configuração de ambiente muda. Contas do laboratório marcadas como de
-  teste: os e-mails caem em emails_teste (o texto do e-mail), lidos aqui.
+  Diagnóstico: o caso do morador registra no log o status e o encerrado_em do contrato no banco quando o link é
+  aberto (a leitura do código sugeria que o cron pede a avaliação de contrato ainda "ativo", sem a âncora do morador;
+  o primeiro lab-crítico mostrou a âncora presente — o log diz o porquê).
 */
 const SAIDA = "tests/laboratorio/saida";
 const PORTA = 3189;
@@ -139,22 +131,21 @@ test.describe("T889 — E346: Avaliar a estadia abre a avaliação daquela estad
       await page.context().close();
     });
 
-    test(`morador abre o link: o bloco da avaliação do contrato aparece na tela (${largura} px) — L-84`, async ({ browser }) => {
+    test(`morador abre o link: o bloco da avaliação do contrato aparece na tela (${largura} px)`, async ({ browser }) => {
       test.skip(!existsSync(".next/BUILD_ID"), "Precisa do build do laboratório (next start).");
-      // L-84: o cron pede a avaliação com o contrato ainda "ativo"; Locações só desenha o formulário (e a âncora) de
-      // contrato concluído. O link do morador cai numa âncora que não existe.
-      test.fail(true, "L-84: pedido de avaliação com o contrato ativo; a âncora do morador só existe em contrato concluído");
+      // Diagnóstico (L-84 em verificação): o estado do contrato no banco quando o morador abre o link.
+      const { data: c } = await adm().from("contratos").select("status, encerrado_em").eq("id", ids.contrato!).single();
+      console.log(`t889|contrato|${largura}|status=${c?.status}|encerrado_em=${c?.encerrado_em}`);
       const page = await entrar(browser, emails.inq, senha);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto(`/dashboard/locacoes#avaliar-${ids.contrato}`, { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      await page.screenshot({ path: `${SAIDA}/t889-morador-${largura}.png` });
       const bloco = page.locator(`[id="avaliar-${ids.contrato}"]`);
-      try {
-        await expect(bloco, "a âncora do contrato existe em Locações").toBeAttached({ timeout: 20_000 });
-      } finally {
-        await page.context().close();
-      }
+      await expect(bloco, "a âncora do contrato existe em Locações").toBeAttached({ timeout: 30_000 });
+      await bloco.scrollIntoViewIfNeeded();
+      await expect(bloco).toBeVisible();
+      console.log(`t889|morador|${largura}|form=${(await bloco.innerText()).replace(/\s+/g, " ").slice(0, 200)}`);
+      await page.screenshot({ path: `${SAIDA}/t889-morador-${largura}.png` });
+      await page.context().close();
     });
   }
 });
