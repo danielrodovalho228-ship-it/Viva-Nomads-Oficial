@@ -176,9 +176,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
             )}
             <Valores v={atual} />
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
-            {estaAberta(p.status) && (
-              <p className="mt-3 flex items-center gap-2 text-[13px] text-muted">
-                <Clock className="h-3.5 w-3.5" aria-hidden /> Válida até {dataBR(p.validaAte)}
+            {/* E315 (QA 31/10): a validade aparece sempre no detalhe, com o mesmo rótulo da lista ("Validade: dd/mm/aaaa"),
+                inclusive depois de aceita, recusada ou expirada — antes só aparecia com a proposta em aberto. */}
+            {p.validaAte && (
+              <p className="mt-3 flex items-center gap-2 text-[13px] text-muted" data-testid="proposta-validade">
+                <Clock className="h-3.5 w-3.5" aria-hidden /> Validade: {dataBR(p.validaAte)}
                 {p.vistoEm && p.papel === "owner" ? ` · vista em ${dataBR(p.vistoEm)}` : ""}
               </p>
             )}

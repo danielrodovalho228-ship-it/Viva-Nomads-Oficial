@@ -120,12 +120,8 @@ test.describe("T402 — Conta leva 2: E68, E69, E70, E71, E75, E76", () => {
       await expect(p.getByTestId("ajuda-desc-privacidade")).toHaveText("Seus dados, suas regras");
       // A foto só no cartão do contato.
       await expect(p.getByTestId("tela-ajuda").locator('[data-testid="cartao-foto"]')).toHaveCount(1);
-      // "Sair da conta" é a última linha do mesmo cartão dos links.
-      const mesmaLista = await p.getByTestId("ajuda-sair").evaluate((b) => {
-        const ul = b.closest("ul");
-        return !!ul && !!ul.querySelector('[data-testid="ajuda-link-privacidade"]') && ul.lastElementChild === b.closest("li");
-      });
-      expect(mesmaLista).toBe(true);
+      // E312 (31/10): o cartão dos links não tem mais o "Sair da conta" (o "Sair" é o do menu da Conta).
+      await expect(p.getByTestId("ajuda-sair")).toHaveCount(0);
       await semRolagemLateral(p);
       await fechaLimpo(p);
       await p.evaluate(() => document.querySelector("[data-painel-main]")?.scrollTo(0, 0));

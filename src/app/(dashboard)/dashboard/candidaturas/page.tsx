@@ -5,7 +5,7 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ButtonLink } from "@/components/ui/button";
 import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
-import type { RotuloCandidatura } from "@/lib/candidaturas/status";
+import { PROXIMO_PASSO_CANDIDATURA, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { VinculoMorador } from "@/components/triagem/vinculo-morador";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 
@@ -80,6 +80,20 @@ export default async function CandidaturasPage() {
                   )}
                 </div>
               </div>
+              {/* E314 (QA 31/10): em aberto, o cartão diz o que acontece agora e o próximo passo (padrão do "Aceita"). */}
+              {PROXIMO_PASSO_CANDIDATURA[c.situacao.chave] && (
+                <div className="mt-3 border-t border-sage-200 pt-3 text-sm" data-testid="candidatura-proximo-passo">
+                  <p className="text-ink">{PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.agora}</p>
+                  <p className="mt-1 text-muted">{PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.proximo}</p>
+                  <Link
+                    href={PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.acao.href}
+                    className="mt-2 inline-flex items-center gap-2 font-medium text-forest hover:underline"
+                    data-testid="candidatura-proximo-passo-acao"
+                  >
+                    <MessageSquare className="h-4 w-4" /> {PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.acao.rotulo}
+                  </Link>
+                </div>
+              )}
               {c.contrato && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="candidatura-contrato">
                   <span className="min-w-0">

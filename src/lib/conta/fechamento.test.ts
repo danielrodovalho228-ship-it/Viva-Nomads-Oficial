@@ -25,9 +25,9 @@ test("E71: Ajuda com o contato em destaque (foto + frase), descrições nas linh
   const tela = ler("src/components/account/tela-ajuda.tsx");
   assert.match(tela, /<CartaoComFoto foto=\{PHOTOS\.ajudaContato\}/);
   assert.equal((tela.match(/<CartaoComFoto /g) ?? []).length, 1, "foto só no cartão de contato");
-  // "Sair da conta" é a última linha do mesmo cartão: depois da lista e antes do fim da <ul>.
-  const i = tela.indexOf("LINHAS_AJUDA.map"), j = tela.indexOf('data-testid="ajuda-sair"'), k = tela.indexOf("</ul>");
-  assert.ok(i > 0 && i < j && j < k, "Sair dentro do cartão, por último");
+  // E312 (QA 31/10): sem "Sair da conta" na tela — o "Sair" é o do menu da Conta (uma vez no total).
+  assert.ok(tela.indexOf("LINHAS_AJUDA.map") > 0);
+  assert.doesNotMatch(tela, /ajuda-sair/);
   const { FAQ } = await import("../atendimento/faq.ts");
   const links = (id: string) => FAQ.find((p) => p.id === id)?.links?.map((l) => l.href) ?? [];
   assert.deepEqual(links("custo-anunciar"), ["/precos"]);

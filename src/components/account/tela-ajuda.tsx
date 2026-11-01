@@ -1,25 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, FileText, LogOut, MessageSquareText, ShieldCheck, BookOpenText } from "lucide-react";
+import { ChevronRight, FileText, MessageSquareText, ShieldCheck, BookOpenText } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { CaixaEmailsTeste } from "@/components/account/caixa-emails-teste";
 import { CartaoComFoto } from "@/components/account/cartao-com-foto";
 import { CONTATO_AJUDA, CONTATO_LINHA, LINHAS_AJUDA } from "@/lib/conta/ajuda";
 import { PHOTOS } from "@/lib/media";
-import { useSair } from "./use-sair";
 
 const ICONES = { BookOpenText, MessageSquareText, FileText, ShieldCheck } as const;
 
 /**
  * A8 — Conta › Ajuda (mockup perfil-08), com o E71 (QA 24/10): "Fale com a Viva" é o cartão em destaque, com a foto
  * (padrão dos Papéis) e a frase do atendimento; embaixo, um cartão com Central de ajuda, Termos de uso e Política de
- * privacidade, cada linha com a sua descrição curta e o ícone (foto só no contato), e "Sair da conta" como última
- * linha do mesmo cartão. "Sair da Viva" (pausar ou apagar a conta) tem a sua tela, aberta por "Excluir minha conta" em
+ * privacidade, cada linha com a sua descrição curta e o ícone (foto só no contato). E312 (QA 31/10): o "Sair" aparece
+ * UMA vez no total — o do menu da Conta (avatar), em todas as telas; a tela de Ajuda não repete o botão. "Sair da Viva" (pausar ou apagar a conta) tem a sua tela, aberta por "Excluir minha conta" em
  * Privacidade. A tela fecha na linha institucional da casca (E75).
  */
 export function TelaAjuda() {
-  const sair = useSair();
   return (
     <div className="grid gap-4" data-testid="tela-ajuda">
       <CartaoComFoto foto={PHOTOS.ajudaContato} testId="ajuda-contato" rotulo={CONTATO_AJUDA.rotulo}>
@@ -53,15 +51,6 @@ export function TelaAjuda() {
               </li>
             );
           })}
-          {/* E71: "Sair da conta" é a última linha do cartão (antes ficava sozinho, longe, sobre o fundo). */}
-          <li>
-            <button type="button" onClick={sair} className="flex min-h-16 w-full items-center gap-4 py-3 text-left text-red-700" data-testid="ajuda-sair">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50" aria-hidden>
-                <LogOut className="h-6 w-6" />
-              </span>
-              <span className="min-w-0 flex-1 text-base font-semibold">Sair da conta</span>
-            </button>
-          </li>
         </ul>
       </section>
 

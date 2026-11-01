@@ -4,8 +4,8 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 /*
   T745 — E185 (vigia, 31/10), pacote de menus aprovado (docs/e176-menus-spec.md), morador a 1280 e 390:
    1. "Ajuda" tem UM destino: o "Ajuda" do avatar abre a Ajuda da Conta (/dashboard/conta/ajuda), a mesma da Conta.
-   2. "Sair" uma vez por tela: na Ajuda da Conta a tela tem "Sair da conta" e o avatar não repete "Sair"; fora dela, o
-      avatar mantém os itens do D2 (Minha conta · Ajuda · Sair).
+   2. "Sair" uma vez no total (E312, QA 31/10): o do menu da Conta (avatar), em toda tela — inclusive a Ajuda, que não
+      tem mais o botão próprio. O avatar mantém os itens do D2 (Minha conta · Ajuda · Sair).
    3. "Notificações" é uma página só (/dashboard/notificacoes) e aparece UMA vez na tela da Conta (resíduo de 31/10).
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -46,11 +46,12 @@ test.describe("T745 — E185: Ajuda com um destino, Sair uma vez, Notificações
       await expect(menu.getByRole("menuitem", { name: "Ajuda" })).toHaveAttribute("href", "/dashboard/conta/ajuda");
       await menu.getByRole("menuitem", { name: "Ajuda" }).click();
       await expect(p).toHaveURL(/\/dashboard\/conta\/ajuda/, { timeout: 30_000 });
-      await expect(p.getByTestId("ajuda-sair")).toHaveText("Sair da conta");
+      await expect(p.getByTestId("tela-ajuda")).toBeVisible();
+      await expect(p.getByTestId("ajuda-sair")).toHaveCount(0);
 
-      // Na Ajuda: o avatar não repete o "Sair".
+      // Na Ajuda: o "Sair" é o do menu da Conta — uma vez só na tela.
       menu = await abrirAvatar(p, largura);
-      await expect(menu.getByRole("menuitem")).toHaveText(["Minha conta", "Ajuda"]);
+      await expect(menu.getByRole("menuitem")).toHaveText(["Minha conta", "Ajuda", "Sair"]);
       await expect(p.getByText(/^Sair( da conta)?$/).filter({ visible: true })).toHaveCount(1);
       await p.screenshot({ path: `${SAIDA}/t745-ajuda-avatar-${largura}.png` });
       await p.keyboard.press("Escape");

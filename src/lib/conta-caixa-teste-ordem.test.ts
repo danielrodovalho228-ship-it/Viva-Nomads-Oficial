@@ -8,7 +8,7 @@ test("Conta: a caixa de e-mails de teste vem por último na Ajuda, longe da zona
   const ajuda = readFileSync(new URL("../components/account/tela-ajuda.tsx", import.meta.url), "utf8");
   const caixa = ajuda.indexOf("<CaixaEmailsTeste />");
   assert.ok(caixa > 0);
-  for (const antes of ["ajuda-sair", "ajuda-rodape"]) assert.ok(ajuda.indexOf(antes) < caixa, antes);
+  for (const antes of ["LINHAS_AJUDA.map", "ajuda-rodape"]) assert.ok(ajuda.indexOf(antes) < caixa, antes);
   const excluir = readFileSync(new URL("../app/(dashboard)/dashboard/conta/excluir/page.tsx", import.meta.url), "utf8");
   assert.match(excluir, /<SairDaViva \/>/);
   assert.doesNotMatch(excluir, /CaixaEmailsTeste/);
