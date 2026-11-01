@@ -14,8 +14,9 @@ const cron = readFileSync(new URL("../../app/api/cron/automacoes/route.ts", impo
 test("o detalhe da proposta vencendo leva título · bairro, cidade (linhaImovel), como os outros e-mails do cron", () => {
   const i = cron.indexOf('tipo: "proposta_vencendo"');
   assert.ok(i > 0);
-  const bloco = cron.slice(i, cron.indexOf("decisao:", i));
-  assert.match(bloco, /detalheAutomacao\("proposta_vencendo", \{ imovel: \(pp \? linhaImovel\(\{ titulo: pp\.title, bairro: pp\.address, cidade: pp\.city \}\) : ""\) \|\| undefined/);
+  const bloco = cron.slice(cron.lastIndexOf("const pp =", i), cron.indexOf("decisao:", i));
+  assert.match(bloco, /const imovelProposta = pp \? linhaImovel\(\{ titulo: pp\.title, bairro: pp\.address, cidade: pp\.city \}\) : "";/);
+  assert.match(bloco, /detalheAutomacao\("proposta_vencendo", \{ imovel: imovelProposta \|\| undefined/);
   assert.doesNotMatch(bloco, /imovel: pp\?\.title \|\| undefined/);
   assert.equal(linhaImovel({ titulo: "[TESTE QA] Automações E289 R", bairro: "Santa Mônica", cidade: "Uberlândia" }), "[TESTE QA] Automações E289 R · Santa Mônica, Uberlândia");
 });
