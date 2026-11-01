@@ -1544,7 +1544,8 @@
       "specs": [
         "t593-e211-visita-do-dono",
         "t589-varredura-bloco47",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t945-e409-nome-apos-aceite"
       ]
     },
     "/decisao": {
@@ -5161,7 +5162,8 @@
         "proprietario"
       ],
       "specs": [
-        "t593-e211-visita-do-dono"
+        "t593-e211-visita-do-dono",
+        "t945-e409-nome-apos-aceite"
       ]
     },
     "src/lib/data/propostas-actions.ts#contarPropostasAguardando": {
