@@ -278,7 +278,8 @@ test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
   // E236: a faixa sem teto (31+) é negociada; o Plano Gestor vale a partir de GESTOR_PRECO.minimoImoveis.
   assert.match(t, /com 31 ou mais, condições negociadas \(sem percentual fixo público/);
-  assert.match(t, /O Plano Gestor vale a partir de \$\{GESTOR_PRECO\.minimoImoveis\} imóveis\./);
+  // E321: o Gestor é outra regra, com a porta inteira (N+ com documento aprovado ou administradora).
+  assert.match(t, /O Plano Gestor é outra regra, separada das faixas de taxa: vale para \$\{PORTA_GESTOR_TEXTO\}\./);
 });
 
 test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {

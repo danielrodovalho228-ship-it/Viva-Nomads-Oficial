@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { GESTOR_PRECO } from "@/config/planos";
+import { PORTA_GESTOR_TEXTO } from "@/config/planos";
 
 /**
  * "Falar sobre o Plano Gestor" (a partir de GESTOR_PRECO.minimoImoveis imóveis): botão secundário que abre o formulário numa janela à parte
@@ -49,14 +49,14 @@ export function PlanoGestorForm({ className }: { className?: string }) {
       <Button type="button" variant="secondary" size="lg" className={className} onClick={() => setAberto(true)} data-testid="plano-gestor-botao">
         Falar sobre o Plano Gestor
       </Button>
-      <BottomSheet open={aberto} onClose={() => setAberto(false)} title={`Plano Gestor: ${GESTOR_PRECO.minimoImoveis} imóveis ou mais`}>
+      <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Plano Gestor">
         {ok ? (
           <p className="flex items-start gap-2 text-sm text-ink" role="status" data-testid="plano-gestor-ok">
             <Check className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> Recebemos seu contato. Nosso time responde no e-mail informado.
           </p>
         ) : (
           <form onSubmit={enviar} className="grid gap-3" data-testid="plano-gestor-form">
-            <p className="text-sm text-muted">{GESTOR_PRECO.minimoImoveis} imóveis ou mais? Plano Gestor: condições negociadas, entre em contato.</p>
+            <p className="text-sm text-muted">Para {PORTA_GESTOR_TEXTO}: condições negociadas com o time da Viva. Entre em contato.</p>
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink">Nome</span>
               <input required maxLength={100} value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} autoComplete="name" />
