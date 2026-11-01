@@ -47,6 +47,8 @@ test.describe("T774 — visita pedida no anúncio", () => {
       const pedida = page.getByTestId("visita-video-pedida").first();
       await expect(pedida).toBeAttached({ timeout: 25_000 });
       await expect(pedida).toHaveText(/Visita por vídeo pedida/);
+      // E411: diz por que não dá para pedir outra e como mudar os horários.
+      await expect(page.getByTestId("visita-video-pedida-explica").first()).toHaveText(/cancele o pedido em Visitas e peça de novo/);
       await expect(pedida).toHaveAttribute("href", "/dashboard/visitas");
       await expect(page.getByTestId("visita-video-abrir")).toHaveCount(0);
       await expect(page.getByTestId("agendar-visita").first()).toBeAttached();

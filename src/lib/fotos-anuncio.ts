@@ -32,3 +32,8 @@ export function urlsDoRascunho(data: unknown): unknown[] {
   if (!Array.isArray(fotos)) return [];
   return fotos.map((f) => (f && typeof f === "object" ? (f as { url?: unknown }).url : f));
 }
+
+/** E308: a capa do rascunho pelo `draft_data` — a 1ª foto válida do dono (mesma regra de `property_photos`), ou null. */
+export function capaDoDraftData(data: unknown, ownerId: string): string | null {
+  return fotosDoDono(urlsDoRascunho(data), ownerId)[0] ?? null;
+}
