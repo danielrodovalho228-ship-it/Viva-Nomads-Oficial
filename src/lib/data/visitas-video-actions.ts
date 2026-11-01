@@ -16,7 +16,7 @@ import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type Endereco
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
 import { nomeComInicial, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
-import { corpoVisitaConfirmada, corpoVisitaPedida, type CorpoVisita } from "@/lib/visitas/emails-visita";
+import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
 import {
@@ -137,6 +137,16 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
     // E325: o e-mail diz de qual imóvel é o pedido (título + código).
     corpoVisitaPedida({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+  );
+  // E424: o morador também recebe a cópia do pedido (horários e próximos passos); antes ele não recebia nada.
+  avisarVisita(
+    admin,
+    user.id,
+    "visita_pedida_morador",
+    `Pedido de visita ${MODALIDADE_ROTULO[modalidade].toLowerCase()} enviado. Horários propostos: ${v.horarios.map(formatarHorarioBrasilia).join("; ")}.`,
+    undefined,
+    undefined,
+    corpoVisitaPedidaMorador({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");

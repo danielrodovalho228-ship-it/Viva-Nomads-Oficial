@@ -24,12 +24,18 @@ export function ImportarCalendario({ propertyId, onMudou }: { propertyId: string
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
   const [versao, setVersao] = useState(0);
+  // Achado 50: falhou a leitura → aviso com "Tentar de novo" (antes a lista sumia como se não houvesse link).
+  const [falhou, setFalhou] = useState(false);
 
   useEffect(() => {
     let vivo = true;
     listarImportacoes(propertyId)
-      .then((l) => vivo && setLista(l))
-      .catch(() => vivo && setLista([]));
+      .then((l) => {
+        if (!vivo) return;
+        setLista(l);
+        setFalhou(false);
+      })
+      .catch(() => vivo && setFalhou(true));
     return () => {
       vivo = false;
     };
@@ -54,6 +60,15 @@ export function ImportarCalendario({ propertyId, onMudou }: { propertyId: string
         Cole o link de exportação do calendário (.ics) do Airbnb ou do Booking. As datas ocupadas lá ficam bloqueadas aqui e são
         lidas de novo a cada 3 horas. Só as datas: preço e anúncio não mudam. Até {LIMITE_LINKS_POR_IMOVEL} links.
       </p>
+
+      {falhou && (
+        <p role="alert" className="mt-3 text-sm text-red-700" data-testid="importacoes-falha">
+          Não foi possível carregar os calendários importados agora.{" "}
+          <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setVersao((v) => v + 1)} data-testid="importacoes-tentar">
+            Tentar de novo
+          </button>
+        </p>
+      )}
 
       {lista && lista.length > 0 && (
         <ul className="mt-3 divide-y divide-sage-100" data-testid="importacoes-lista">

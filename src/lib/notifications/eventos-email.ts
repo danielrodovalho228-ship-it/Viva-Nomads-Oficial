@@ -67,6 +67,7 @@ export type NotificationEvent =
   | "proposta_vencendo" // 24 h antes de vencer → quem tem de responder (prompt 27, cron de automações)
   // Visitas (prompt 23): vídeo e presencial, sempre pela plataforma
   | "visita_pedida" // morador pediu → proprietário
+  | "visita_pedida_morador" // E424: morador pediu → cópia ao próprio morador (horários e próximos passos)
   | "visita_confirmada" // horário confirmado → a outra parte
   | "visita_remarcada" // proprietário propôs outro horário → morador
   | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
@@ -194,6 +195,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   renovacao_aviso: { subject: "Seu período termina em 15 dias: quer renovar?", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, cta: "Renovar a estadia", path: "/dashboard/contratos" },
   proposta_recebida: { subject: "Você recebeu uma proposta", body: (n) => `Olá${n ? " " + n : ""}, há uma proposta nova para você no Viva Nomads. Confira os valores e responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/orcamentos" },
   visita_pedida: { subject: "Pedido de visita no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um interessado pediu uma visita ao seu imóvel. Confirme um horário, proponha outro ou recuse pela plataforma.`, cta: "Responder o pedido", path: "/dashboard/visitas?de=dono" },
+  visita_pedida_morador: { subject: "Seu pedido de visita foi enviado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de visita foi enviado. O proprietário confirma um dos horários pela plataforma e você recebe um aviso.`, cta: "Ver minhas visitas", path: "/dashboard/visitas" },
   visita_confirmada: { subject: "Visita confirmada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi confirmada. O horário é sempre de Brasília.`, cta: "Ver a visita", path: "/dashboard/visitas" },
   visita_remarcada: { subject: "Proposta de novo horário para a visita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário propôs outro horário para a visita. Aceite ou cancele pela plataforma.`, cta: "Ver o horário", path: "/dashboard/visitas" },
   visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, cta: "Ver detalhes", path: "/dashboard/visitas" },

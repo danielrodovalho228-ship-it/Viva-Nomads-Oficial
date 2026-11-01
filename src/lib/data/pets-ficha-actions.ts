@@ -70,7 +70,9 @@ export async function meusPets(): Promise<PetSalvo[] | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("pets_inquilino").select(COLUNAS).eq("user_id", user.id).order("criado_em");
+  // Achado 51: a falha de leitura LANÇA (a ficha avisa) — antes a ficha aparecia vazia e o morador cadastrava de novo.
+  const { data, error } = await supabase.from("pets_inquilino").select(COLUNAS).eq("user_id", user.id).order("criado_em");
+  if (error) throw new Error("Não foi possível ler seus pets agora.");
   const linhas = (data ?? []) as Linha[];
   const caminhos = linhas.flatMap((l) => [...(l.fotos ?? []), ...(l.carteira_vacina ? [l.carteira_vacina] : [])]).filter((c) => caminhoFotoPetValido(c, user.id));
   const urls = new Map<string, string>();

@@ -20,7 +20,9 @@ export async function getCategoriasDesligadas(): Promise<CategoriaComInterruptor
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await admin.from("profiles").select("notif_categorias_desligadas").eq("id", user.id).maybeSingle();
+  // Achado 52: a falha de leitura LANÇA — antes virava "tudo ligado", e salvar religava o que a pessoa desligou.
+  const { data, error } = await admin.from("profiles").select("notif_categorias_desligadas").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler suas preferências de aviso agora.");
   return categoriasDesligadasValidas((data as { notif_categorias_desligadas?: unknown } | null)?.notif_categorias_desligadas);
 }
 

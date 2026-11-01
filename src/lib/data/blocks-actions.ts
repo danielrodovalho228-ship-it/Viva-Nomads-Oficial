@@ -19,15 +19,19 @@ type ActionResult = { ok: boolean; demo?: boolean; error?: string; id?: string }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Datas bloqueadas de um imóvel (leitura pública). [] em demo/sem backend. */
+/**
+ * Datas bloqueadas de um imóvel (leitura pública). [] em demo/sem backend.
+ * Achado 47: a falha de leitura LANÇA — antes virava "nenhum bloqueio" e o calendário do dono aparecia todo livre.
+ */
 export async function getBlocks(propertyId: string): Promise<BlocoDatas[]> {
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(propertyId)) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("property_blocks")
     .select("id, inicio, fim, origem")
     .eq("property_id", propertyId)
     .order("inicio", { ascending: true });
+  if (error) throw new Error("Não foi possível ler as datas bloqueadas.");
   return ((data ?? []) as { id: string; inicio: string; fim: string; origem?: string | null }[]).map((b) => ({
     id: String(b.id),
     inicio: String(b.inicio),
@@ -44,7 +48,8 @@ export async function getDatasIndisponiveis(propertyId: string): Promise<{ inici
   if (!UUID_RE.test(propertyId)) return [];
   const bloqueios = (await getBlocks(propertyId)).map((b) => ({ inicio: b.inicio, fim: b.fim }));
   const admin = createAdminClient();
-  const contratos = admin ? await periodosOcupados(admin, propertyId).catch(() => []) : [];
+  // Achado 48: falhou uma das leituras → LANÇA (o calendário público avisa), nunca "tudo livre".
+  const contratos = admin ? await periodosOcupados(admin, propertyId) : [];
   return [...bloqueios, ...contratos];
 }
 

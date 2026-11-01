@@ -25,7 +25,7 @@ test("servidor: o segundo pedido recusado diz a modalidade e o caminho", () => {
 
 test("anúncio: com pedido em aberto, o botão leva a Visitas e a explicação aparece logo abaixo", () => {
   const tela = ler("../../components/property/visita-video.tsx");
-  assert.match(tela, /href="\/dashboard\/visitas"[\s\S]*?data-testid=\{`\$\{t\.prefixo\}-\$\{estado\}-explica`\}[\s\S]*?explicacaoPedidoAberto\(modalidade, estado\)/);
+  assert.match(tela, /href="\/dashboard\/visitas"[\s\S]*?data-testid=\{`\$\{tBotao\.prefixo\}-\$\{estado\}-explica`\}[\s\S]*?explicacaoPedidoAberto\(modalidade, estado\)/);
   // A outra modalidade continua livre (o banco aceita uma em aberto por modalidade).
   assert.match(ler("../../../supabase/migrations/0165_visitas_presencial.sql"), /visitas_video_um_aberto_modalidade on public\.visitas_video \(tenant_id, property_id, modalidade\)/);
 });
