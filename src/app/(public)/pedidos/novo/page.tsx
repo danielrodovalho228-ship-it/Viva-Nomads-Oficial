@@ -10,7 +10,7 @@ import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { CampoData } from "@/components/ui/campo-data";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { MOTIVOS, isMotivo, contemContato, CONTATO_AVISO, PRAZO_MAX_MESES } from "@/lib/pedidos/pedidos";
-import { BAIRROS_MAX, NECESSIDADES, PORTES_PET_PEDIDO, QUALQUER_BAIRRO, QUARTOS_OPCOES, dataPedidoBR, expiraEmPedido, limparBairro } from "@/lib/pedidos/campos";
+import { BAIRROS_MAX, NECESSIDADES, PORTES_PET_PEDIDO, QUALQUER_BAIRRO, QUARTOS_OPCOES, dataPedidoBR, expiraEmPedido, limparBairro, TEXTO_TOLERANCIA_TETO } from "@/lib/pedidos/campos";
 import { CHAVE_ULTIMA_BUSCA, CHAVE_ULTIMO_MOTIVO, ultimaBuscaParaPedido, ultimoMotivoParaPedido } from "@/lib/marcas/regra";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
@@ -731,6 +731,10 @@ function PedidoForm() {
                 />
               </div>
               <span className="mt-1 block text-[13px] text-muted">Valor mensal total que cabe no seu bolso.</span>
+              {/* E317: a tolerância do casamento, dita a quem publica. */}
+              <span className="mt-1 block text-[13px] text-muted" data-testid="pedido-tolerancia-teto">
+                {TEXTO_TOLERANCIA_TETO}
+              </span>
             </div>
             <div className="sm:col-span-2">
               <Rotulo htmlFor="pedido-motivo">Motivo da estadia</Rotulo>
