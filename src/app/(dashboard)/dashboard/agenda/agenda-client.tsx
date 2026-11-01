@@ -153,7 +153,8 @@ export function AgendaClient({ itens, imoveis, hojeISO, imovelInicial = "" }: { 
             <button type="button" aria-label="Mês anterior" data-testid="agenda-anterior" onClick={() => setCursor(moverMes(cursor.ano, cursor.mes, -1))} className="grid h-9 w-9 place-items-center rounded-full hover:bg-surface-2">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <h2 className="font-title text-base font-semibold text-ink first-letter:uppercase" data-testid="agenda-mes-titulo">
+            {/* E310 (devolução 01/11): em português o mês é minúsculo ("novembro de 2026") — sem maiúscula de CSS. */}
+            <h2 className="font-title text-base font-semibold text-ink" data-testid="agenda-mes-titulo">
               {MESES[cursor.mes - 1]} de {cursor.ano}
             </h2>
             <button type="button" aria-label="Próximo mês" data-testid="agenda-proximo" onClick={() => setCursor(moverMes(cursor.ano, cursor.mes, 1))} className="grid h-9 w-9 place-items-center rounded-full hover:bg-surface-2">

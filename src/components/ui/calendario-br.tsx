@@ -99,7 +99,7 @@ export function CalendarioBR({
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </button>
-        <p className="text-sm font-semibold first-letter:uppercase" aria-live="polite" data-testid={tid("titulo")}>
+        <p className="text-sm font-semibold" aria-live="polite" data-testid={tid("titulo")}>
           {tituloMesBR(mes.ano, mes.mes0)}
         </p>
         <button
