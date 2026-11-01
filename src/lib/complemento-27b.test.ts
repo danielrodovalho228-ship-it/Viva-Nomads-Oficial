@@ -64,13 +64,11 @@ test("1. a contraproposta, o piso privado, o preço do anúncio, os simuladores 
   usa("../app/(dashboard)/dashboard/imoveis/[id]/editar/editar-client.tsx");
   usa("../components/simulador/ui.tsx");
   usa("../components/precos/simulador-bolso.tsx");
-  usa("../components/precos/preco-sugerido.tsx");
   usa("../app/(dashboard)/dashboard/orcamentos/nova/montagem-proposta.tsx");
   usa("../components/anuncio/limpeza-estadia-campos.tsx");
   usa("../components/anuncio/pets-regras-campos.tsx");
   usa("../app/(dashboard)/dashboard/contratos/contratos-client.tsx");
   usa("../app/(dashboard)/dashboard/reembolsos/page.tsx");
-  usa("../components/tax-simulator.tsx");
   // A causa do reteste: "3.300" virava 3,3.
   const detalhe = ler("../app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx");
   assert.doesNotMatch(detalhe, /replace\(",", "\."\)/);

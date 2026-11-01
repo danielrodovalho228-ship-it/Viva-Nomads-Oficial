@@ -6,6 +6,7 @@ import { AlertTriangle, Clock, Loader2, ShieldCheck, Upload } from "lucide-react
 import { buttonClasses } from "@/components/ui/button";
 import { CASOS_DONO, type AvisoMatricula, type CasoDono, type MotivoMatricula, type PreenchimentoMatricula, type ResultadoMatricula } from "@/lib/documento/conferencia-matricula";
 import { validarArquivoDoc } from "@/lib/upload-limits";
+import { textoDoErro } from "@/lib/erro-de-rede";
 import { cn } from "@/lib/utils";
 
 /** O que a conferência da matrícula devolve ao dono (nunca CPF, número da matrícula, cartório ou ônus). */
@@ -71,7 +72,7 @@ export function MatriculaResultado({
       if (!res.ok) throw new Error(r.error ?? "Não foi possível salvar agora.");
       setCasoEnviado(r.mensagem ?? "Documento recebido.");
     } catch (e) {
-      setErroCaso(e instanceof Error ? e.message : "Não foi possível enviar o documento agora.");
+      setErroCaso(textoDoErro(e, "Não foi possível enviar o documento agora."));
     } finally {
       setEnviando(false);
     }

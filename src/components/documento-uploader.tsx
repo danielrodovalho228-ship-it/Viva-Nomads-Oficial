@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FileText, Loader2, Upload, X } from "lucide-react";
 import { uploadPropertyDoc, removePropertyDoc } from "@/lib/data/storage";
 import { validarArquivoDoc } from "@/lib/upload-limits";
+import { textoDoErro } from "@/lib/erro-de-rede";
 import type { PhotoItem } from "@/components/photo-uploader";
 
 /**
@@ -36,7 +37,7 @@ export function DocumentoUploader({
       if (atual?.path) await removePropertyDoc(atual.path).catch(() => {});
       onChange([{ ...r, id: crypto.randomUUID(), name: file.name }]);
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível enviar o documento agora.");
+      setErro(textoDoErro(e, "Não foi possível enviar o documento agora."));
     } finally {
       setEnviando(false);
     }

@@ -84,11 +84,11 @@ test("condições: Locações, Solicitações/Serviços, Agenda, Orçamentos e A
   assert.ok(ids({ ...base, temImovel: true, imoveisAtivos: 3 }).includes("carteira"));
 });
 
-test("item 4: o simulador PF × PJ está em Ferramentas, para todos", () => {
-  const ferramentas = menuDoPainel(base).find((i) => i.id === "ferramentas")!;
-  const trib = folhas([ferramentas]).find((i) => i.id === "tributacao");
-  assert.equal(trib?.href, "/dashboard/tributacao");
-  assert.match(trib!.rotulo, /PF × PJ/);
+test("E292-bis: o simulador PF × PJ saiu do menu (a Viva não calcula imposto com regra própria)", () => {
+  for (const ctx of [base, tudo]) {
+    const itens = folhas(menuDoPainel(ctx));
+    assert.ok(!itens.some((i) => i.id === "tributacao" || i.href === "/dashboard/tributacao" || /PF × PJ/.test(i.rotulo)));
+  }
 });
 
 test("a montagem não leva a condição para o componente (só id, rótulo, ícone, href, filhos)", () => {

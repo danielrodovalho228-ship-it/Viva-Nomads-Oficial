@@ -179,11 +179,13 @@ export function aberturaDoPedido(ev: EventoPedido, p: PedidoParaEmail, nome?: st
       const porque = c.motivo === "nova_data_recusada" ? "você recusou a nova data" : "a saída do morador mudou";
       return `${ola}, ${porque}${nova ? ` (nova saída: ${nova})` : ""} e o pedido de ${servico}${dequem}${em} foi cancelado. O pedido volta a ser feito perto da nova data.`;
     }
+    // E267 (resíduo, 01/11): os três do orçamento também dizem com quem — quem pediu (para o parceiro, o 1º nome do
+    // cliente) e quem orçou (para o cliente, o nome público do parceiro) — e saúdam como os demais ("Olá <nome>,").
     case "parceiro_pedido_novo":
-      return `${ola}, você recebeu um pedido de orçamento de ${servico}${doImovel}. Veja os detalhes abaixo e responda pelo pedido.`;
+      return `${ola}, você recebeu um pedido de orçamento de ${servico}${doImovel}${outra ? `, feito por ${outra}` : ""}. Veja os detalhes abaixo e responda pelo pedido.`;
     case "parceiro_orcamento_recebido":
-      return `${ola}, o parceiro enviou o orçamento de ${servico}${doImovel}${p.valorCombinado ? `: ${brl(p.valorCombinado)}` : ""}. Aceite ou recuse pelo pedido.`;
+      return `${ola}, ${outra || "o parceiro"} enviou o orçamento de ${servico}${doImovel}${p.valorCombinado ? `: ${brl(p.valorCombinado)}` : ""}. Aceite ou recuse pelo pedido.`;
     case "parceiro_orcamento_aceito":
-      return `Boa notícia${nome ? ", " + nome : ""}! O cliente aceitou o seu orçamento de ${servico}${doImovel}${p.valorCombinado ? ` (${brl(p.valorCombinado)})` : ""}. Confirme o horário pelo pedido.`;
+      return `${ola}, boa notícia: ${outra || "o cliente"} aceitou o seu orçamento de ${servico}${doImovel}${p.valorCombinado ? ` (${brl(p.valorCombinado)})` : ""}. Confirme o horário pelo pedido.`;
   }
 }

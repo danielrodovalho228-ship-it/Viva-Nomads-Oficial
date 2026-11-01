@@ -154,7 +154,9 @@ test("QA 22/10: parceiro publicado de fotografia em Uberlândia/MG aparece na bu
 test("GUARDA: a busca decide 'ver parceiro de teste' pela sessão (conta de teste ou admin), nunca por parâmetro da URL", () => {
   const src = readFileSync(new URL("../data/parceiros-publico.ts", import.meta.url), "utf8");
   assert.match(src, /verTeste: await veParceirosDeTeste\(\)/);
-  assert.match(src, /p\?\.is_teste === true \|\| p\?\.role === "admin"/);
+  // E297: a leitura de quem olha virou quemOlha() (a página do parceiro também usa); a decisão é a mesma.
+  assert.match(src, /teste: p\?\.is_teste === true, admin: p\?\.role === "admin"/);
+  assert.match(src, /return q\.teste \|\| q\.admin;/);
   assert.doesNotMatch(src.slice(src.indexOf("export async function buscarParceiros")), /f\.verTeste|searchParams/);
 });
 

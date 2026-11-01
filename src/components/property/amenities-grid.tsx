@@ -8,9 +8,15 @@ import { agruparComodidades, comodidadesPrincipais } from "@/lib/anuncio/comodid
 import { comodidadesQueNaoTem } from "@/lib/anuncio/nao-tem";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA, iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 
+/**
+ * E313 (QA 31/10, regra da casa: grade par): nas grades de 2 colunas, com número ímpar de itens o último ocupa a linha
+ * inteira, centrado — nunca sobra uma casa vazia desemparelhada (ex.: "Cozinha" com 5 itens).
+ */
+const FECHA_GRADE = "odd:last:col-span-2 odd:last:justify-center";
+
 function ItemComodidade({ item }: { item: string }) {
   return (
-    <li className="flex items-center gap-3 text-sm text-ink" data-testid="comodidade-item">
+    <li className={`flex items-center gap-3 text-sm text-ink ${FECHA_GRADE}`} data-testid="comodidade-item">
       {createElement(iconeDaComodidade(item), { className: CLASSE_ICONE_LISTA, strokeWidth: TRACO_ICONE_LISTA, "aria-hidden": true })} {item}
     </li>
   );
@@ -58,7 +64,7 @@ export function AmenitiesGrid({ property }: { property: Property }) {
             <h3 className="text-sm font-semibold text-forest">Não tem</h3>
             <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
               {naoTem.map((item) => (
-                <li key={item} className="flex items-center gap-3 text-sm text-muted" data-testid="comodidade-nao-tem-item">
+                <li key={item} className={`flex items-center gap-3 text-sm text-muted ${FECHA_GRADE}`} data-testid="comodidade-nao-tem-item">
                   {createElement(iconeDaComodidade(item), { className: "h-5 w-5 shrink-0 text-muted", strokeWidth: TRACO_ICONE_LISTA, "aria-hidden": true })} {item}
                 </li>
               ))}

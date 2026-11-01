@@ -1979,7 +1979,6 @@ export default function NewPropertyPage() {
                 monthlyPrice={monthlyPrice}
                 setMonthlyPrice={setMonthlyPrice}
                 precoRegiao={precoRegiao}
-                setAirbnbMensal={setAirbnbMensal}
                 condoFee={condoFee}
                 setCondoFee={setCondoFee}
                 utilitiesMode={utilitiesMode}

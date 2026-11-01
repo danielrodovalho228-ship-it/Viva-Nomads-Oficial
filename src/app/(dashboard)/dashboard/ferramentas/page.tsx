@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   TrendingUp,
   Calculator,
-  Scale,
   FileText,
   FileSignature,
   Receipt,
@@ -67,10 +66,12 @@ const GRUPOS: Grupo[] = [
         icone: Calculator,
       },
       {
-        href: "/dashboard/tributacao",
-        titulo: "Tributação PF × PJ",
-        texto: "Estime o imposto das locações como pessoa física e como empresa.",
-        icone: Scale,
+        // E292-bis: o simulador de imposto saiu (a Viva não calcula imposto com regra própria). No lugar, o desempenho de
+        // cada anúncio (antes só um atalho de texto abaixo da grade), para a grade 2×2 seguir par.
+        href: "/dashboard/imoveis",
+        titulo: "Desempenho do anúncio",
+        texto: "Visitas, interessados e a nota de qualidade de cada anúncio, em Meus imóveis.",
+        icone: TrendingUp,
       },
       {
         // E294: com o simulador e o ROI num cartão só, a grade 2×2 ganha os recibos (o informe anual sai deles).
@@ -250,13 +251,6 @@ export default function FerramentasPage() {
                   ))}
                 </div>
               </div>
-              {/* Prompt 54: desempenho de cada anúncio (o atalho leva a Meus imóveis → Desempenho). */}
-              {g.id === "analise" && (
-                <Link href="/dashboard/imoveis" className="mt-3 mr-4 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-desempenho">
-                  Desempenho do anúncio
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
               {/* Prompt 53: importar o calendário do Airbnb/Booking fica no calendário de cada imóvel (editor). */}
               {g.id === "fechamento" && (
                 <Link href="/dashboard/imoveis" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-importar-calendario">

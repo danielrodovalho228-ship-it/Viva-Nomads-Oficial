@@ -69,8 +69,9 @@ test("E251 (d): 'Estadia mínima (N meses)' na prévia e no cartão de Meus anú
   assert.equal(rotuloEstadiaMinima(1), "Estadia mínima (1 mês)");
   assert.equal(rotuloEstadiaMinima(4), "Estadia mínima (4 meses)");
   const cartao = ler("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
-  // E254-A: o cartão monta a linha pela função única (linhaEstadiaMinima usa rotuloEstadiaMinima).
-  assert.match(cartao, /linhaEstadiaMinima\(p, r\.meses\)/);
+  // E254-A + QA 31/10: o cartão monta a linha pela função única (estadiaDoCartaoDoDono → linhaEstadiaMinima /
+  // rotuloEstadiaMinima), sempre com a estadia mínima configurada.
+  assert.match(cartao, /estadiaDoCartaoDoDono\(p, r\.meses\)/);
   assert.doesNotMatch(cartao, /ROTULO_TOTAL_CONTRATO/);
   const revisar = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx");
   assert.doesNotMatch(revisar, /total-contrato|Total do contrato"/);

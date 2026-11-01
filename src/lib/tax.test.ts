@@ -1,10 +1,8 @@
-/** Testes do simulador tributário PF × PJ — travam as saídas que a memória de
- *  cálculo (/tributario) documenta, e garantem PARIDADE (Conta e /tributario
- *  chamam a MESMA função → mesmo resultado). */
+/** Testes das regras puras de `tax.ts` (PF × PJ). E292-bis: nenhuma tela usa mais estas regras — o simulador do
+ *  dono e a memória de cálculo /tributario saíram; os testes ficam enquanto o módulo existir. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { simulateTax, irpfMensal, irpfMensalTabela, PF_CONTRIBUTOR_MIN_ANNUAL, AVISO_IBS_CBS_LIBERADO, AVISO_IBS_CBS_PF } from "./tax.ts";
-import { simulateTax as simulateTaxMemoria } from "./tributario.ts";
 
 test("PF de 1 imóvel a R$ 3.200/mês: redutor da Lei 15.270 zera o carnê-leão", () => {
   const r = simulateTax({ monthlyRent: 3200, propertyCount: 1 });
@@ -71,11 +69,6 @@ test("recomendação só vira PJ quando a economia supera o custo de manter a PJ
   assert.equal(r.recommendation, "pj");
   const quase = simulateTax({ monthlyRent: 10000, propertyCount: 1, monthlyDeductions: 3000 });
   assert.equal(quase.recommendation, quase.taxSavings > 0 ? "pj" : "pf");
-});
-
-test("PARIDADE: Conta e /tributario produzem resultado idêntico (mesma função)", () => {
-  const input = { monthlyRent: 4500, propertyCount: 2 };
-  assert.deepEqual(simulateTax(input), simulateTaxMemoria(input));
 });
 
 test("prompt 18 — outros rendimentos: o aluguel soma ao salário na tabela (o imposto do aluguel sobe)", () => {

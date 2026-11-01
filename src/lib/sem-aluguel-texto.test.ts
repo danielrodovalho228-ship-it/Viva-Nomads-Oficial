@@ -19,7 +19,6 @@ const GRUPOS: Record<string, string[]> = {
   ],
   "ferramentas do painel": [
     "src/components/simulador/ui.tsx",
-    "src/components/tax-simulator.tsx",
     "src/components/account/conta-secoes.tsx",
     "src/components/documentos/documentos-contrato.tsx",
   ],

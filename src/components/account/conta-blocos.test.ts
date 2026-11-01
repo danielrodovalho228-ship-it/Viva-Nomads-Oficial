@@ -40,25 +40,25 @@ test("Conta: sem repetições — cada assunto numa tela só; nada de página lo
   assert.doesNotMatch(CONTA, /<PageTitle|<ConfiancaLista|<ChangePassword/);
 });
 
-test("simulador tributário: fora da Conta e do cadastro; fica em Ferramentas (/dashboard/tributacao)", () => {
+test("E292-bis: simulador tributário aposentado — fora da Conta, do cadastro, do hub; /dashboard/tributacao leva a Ferramentas", () => {
   assert.doesNotMatch(ler("src/components/account/conta-secoes.tsx"), /TaxSimulator/);
   assert.doesNotMatch(ler("src/app/auth/page.tsx"), /TaxSimulator/);
-  assert.match(ler("src/app/(dashboard)/dashboard/tributacao/page.tsx"), /<TaxSimulator \/>/);
+  const tela = ler("src/app/(dashboard)/dashboard/tributacao/page.tsx");
+  assert.match(tela, /permanentRedirect\("\/dashboard\/ferramentas"\)/);
+  assert.doesNotMatch(tela, /TaxSimulator/);
   // O cadastro e Ferramentas não mandam o público para a página interna (/tributario fica atrás do acesso de sócios).
   assert.doesNotMatch(ler("src/app/auth/page.tsx"), /href="\/tributario"/);
-  assert.match(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /href: "\/dashboard\/tributacao"/);
-  assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /conta#tributacao/);
+  const hub = ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx");
+  assert.doesNotMatch(hub, /\/dashboard\/tributacao|conta#tributacao|PF × PJ/);
 });
 
 test("menu: 'Verificação' abre direto a tela de Verificação (E76: /dashboard/verificacao, não a Privacidade)", () => {
   assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/verificacao"/);
 });
 
-test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {
-  const sim = ler("src/components/tax-simulator.tsx");
-  assert.doesNotMatch(sim, /Lucro presumido \+ IBS\/CBS|ago\/2026/);
-  assert.match(sim, /custo de manter a empresa/);
-  assert.match(sim, /AVISO_IBS_CBS_LIBERADO && r\.ibsCbsAviso/);
+test("E292-bis: o simulador PF × PJ saiu de vez (nem a tela do dono, nem a memória dos sócios)", () => {
+  assert.equal(existsSync(new URL("../../../src/components/tax-simulator.tsx", import.meta.url)), false);
+  assert.match(ler("src/app/tributario/page.tsx"), /permanentRedirect\("\/dashboard\/ferramentas"\)/);
 });
 
 test("Conta: 'Ver como os outros veem' do proprietário só aparece com imóvel (sem perfil público a página dá 404)", () => {

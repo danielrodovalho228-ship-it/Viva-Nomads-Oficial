@@ -99,7 +99,8 @@ test.describe("T688 — E204: prova do disparo dos 3 e-mails de orçamento (marc
     expect(novo[0].usuario_id, "vai ao parceiro, não ao dono").toBe(ids.foto);
     expect(Date.parse(novo[0].criado_em) - marco1, "dentro da janela").toBeLessThan(JANELA_MS);
     expect(novo[0].assunto).toMatch(/Novo pedido de orçamento/);
-    expect(novo[0].corpo).toContain(`você recebeu um pedido de orçamento de ${SERVICO.toLowerCase()} para ${TITULO}`);
+    // E267 (resíduo): o pedido diz quem pediu (o 1º nome do cliente).
+    expect(novo[0].corpo).toContain(`você recebeu um pedido de orçamento de ${SERVICO.toLowerCase()} para ${TITULO}, feito por Dora`);
     expect(novo[0].corpo).toContain(`Serviço: ${SERVICO}`);
     expect(novo[0].corpo).toContain(`Imóvel: ${imovel}`);
     expect(novo[0].corpo).toMatch(/Data sugerida: \d{2}\/\d{2}\/\d{4} às 10:00/);
@@ -119,7 +120,8 @@ test.describe("T688 — E204: prova do disparo dos 3 e-mails de orçamento (marc
     expect(recebido, "exatamente 1 e-mail de orçamento recebido").toHaveLength(1);
     expect(recebido[0].usuario_id, "vai ao dono, não ao parceiro").toBe(ids.dono);
     expect(Date.parse(recebido[0].criado_em) - marco2).toBeLessThan(JANELA_MS);
-    expect(recebido[0].corpo).toContain(`o parceiro enviou o orçamento de ${SERVICO.toLowerCase()} para ${TITULO}: R$ 350`);
+    // E267 (resíduo): o orçamento diz quem orçou (o nome público do parceiro).
+    expect(recebido[0].corpo).toContain(`Fotos Prova ${sufixo} enviou o orçamento de ${SERVICO.toLowerCase()} para ${TITULO}: R$ 350`);
     expect(recebido[0].corpo).toContain("Valor: R$ 350");
     expect(recebido[0].corpo).toContain(`Imóvel: ${imovel}`);
     expect(recebido[0].corpo).toContain(`Pedido: ${ids.codigo}`);
@@ -135,7 +137,9 @@ test.describe("T688 — E204: prova do disparo dos 3 e-mails de orçamento (marc
     expect(aceito, "exatamente 1 e-mail de orçamento aceito").toHaveLength(1);
     expect(aceito[0].usuario_id, "vai ao parceiro, não ao dono").toBe(ids.foto);
     expect(Date.parse(aceito[0].criado_em) - marco3).toBeLessThan(JANELA_MS);
-    expect(aceito[0].corpo).toContain(`O cliente aceitou o seu orçamento de ${SERVICO.toLowerCase()} para ${TITULO} (R$ 350)`);
+    // E267 (resíduo): a mesma saudação dos demais ("Olá …, boa notícia:") e quem aceitou (o 1º nome do cliente).
+    expect(aceito[0].corpo).not.toContain("Boa notícia,");
+    expect(aceito[0].corpo).toContain(`boa notícia: Dora aceitou o seu orçamento de ${SERVICO.toLowerCase()} para ${TITULO} (R$ 350)`);
     expect(aceito[0].corpo).toContain("Valor: R$ 350");
     expect(aceito[0].corpo).toContain("Você recebe: R$ 315");
     expect(aceito[0].corpo).toContain(`Pedido: ${ids.codigo}`);

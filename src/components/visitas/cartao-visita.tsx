@@ -15,6 +15,7 @@ import {
   formatarHorarioBrasilia,
   instanteParaCampoBrasilia,
   statusAposAcao,
+  textoPedidaEm,
   CONFIRMAR_ATE_DIAS,
   TEXTO_CANCELAMENTO_MAX,
   motivosDoCancelamento,
@@ -54,6 +55,8 @@ export interface VisitaNaTela {
   regiao?: string | null;
   /** E211: para o dono, o 1º nome de quem vem (só depois do aceite). */
   pessoa?: string | null;
+  /** E318: quando a visita foi pedida (a cancelada mostra, para diferenciar pedidos parecidos). */
+  criadoEm?: string | null;
 }
 
 /**
@@ -100,6 +103,12 @@ export function CartaoVisita({
           {papel === "dono" && v.pessoa !== undefined && (
             <p className="text-xs text-muted" data-testid="visita-pessoa">
               Quem vem: {v.pessoa ?? "Interessado(a)"}
+            </p>
+          )}
+          {/* E318: a cancelada diz quando foi pedida (dois pedidos para o mesmo horário não ficam idênticos). */}
+          {textoPedidaEm({ status, criadoEm: v.criadoEm }) && (
+            <p className="text-xs text-muted" data-testid="visita-pedida-em">
+              {textoPedidaEm({ status, criadoEm: v.criadoEm })}
             </p>
           )}
         </div>
