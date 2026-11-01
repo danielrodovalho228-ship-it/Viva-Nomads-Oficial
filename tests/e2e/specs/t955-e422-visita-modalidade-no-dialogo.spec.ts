@@ -122,8 +122,12 @@ test.describe("T955 — E422/E423/E424: a modalidade da visita no próprio diál
         .toBeGreaterThan(0);
 
       // Ao fechar, o anúncio mostra "Visita pedida" com a explicação.
-      await page.getByTestId("visita-presencial-fechar").click();
-      await expect(page.getByTestId("visita-presencial-pedida").first()).toBeAttached({ timeout: 15_000 });
+      // O diálogo redesenha depois da confirmação (o botão "Fechar" pode sair do DOM no meio do clique): tenta até fechar.
+      await expect(async () => {
+        const fechar = page.getByTestId("visita-presencial-fechar");
+        if (await fechar.count()) await fechar.first().click({ timeout: 3_000 });
+        await expect(page.getByTestId("visita-presencial-pedida").first()).toBeAttached({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
       await expect(page.getByTestId("visita-presencial-pedida-explica").first()).toContainText("cancele o pedido em Visitas e peça de novo");
       await semRolagemLateral(page);
       await page.context().close();
