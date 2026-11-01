@@ -1387,7 +1387,8 @@
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
         "t559-varredura-bloco43",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t937-e402-pedido-confirmacao"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1828,7 +1829,8 @@
         "t310-vao-fim-de-pagina",
         "t368-varredura-bloco20",
         "t479-e136b-calendario-pt-br",
-        "t543-e166-fundo-clean-publico"
+        "t543-e166-fundo-clean-publico",
+        "t937-e402-pedido-confirmacao"
       ]
     },
     "/precos": {
