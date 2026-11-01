@@ -31,11 +31,16 @@ test("convite da candidatura: diz que a foto só aparece depois do aceite e não
   assert.doesNotMatch(CONVITE_FOTO_CANDIDATURA_TEXTO, /verific|obrigat/i);
 });
 test("convite do anúncio: opcional, fala do cartão do anfitrião e não promete verificação", () => {
-  assert.match(CONVITE_FOTO_ANUNCIO_TEXTO, /Anúncios com foto do anfitrião passam mais confiança/);
+  assert.match(CONVITE_FOTO_ANUNCIO_TEXTO, /Anúncios com foto do proprietário passam mais confiança/);
   assert.doesNotMatch(CONVITE_FOTO_ANUNCIO_TEXTO, /verific|obrigat/i);
 });
 test("convite do anúncio nunca bloqueia: a revisão não condiciona publicar à foto", () => {
   const fonte = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx", "utf8");
   assert.match(fonte, /<ConviteFotoCandidatura[^>]*CONVITE_FOTO_ANUNCIO_TEXTO/);
   assert.doesNotMatch(fonte, /podePublicar[^\n]*temFoto|temFoto[^\n]*podePublicar/);
+});
+
+test("vocabulário da casa: os convites de foto dizem proprietário, nunca anfitrião", () => {
+  for (const t of [CONVITE_FOTO_TEXTO, CONVITE_FOTO_CANDIDATURA_TEXTO, CONVITE_FOTO_ANUNCIO_TEXTO]) assert.doesNotMatch(t, /anfitri/i);
+  assert.match(CONVITE_FOTO_CANDIDATURA_TEXTO, /aparece para o proprietário depois do aceite/);
 });
