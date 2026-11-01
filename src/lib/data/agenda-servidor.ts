@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import { primeiroNome } from "@/lib/calendario-estadias";
 import type { ItemAgenda } from "@/lib/agenda";
+import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 
 /*
   Agenda do proprietário (prompt 23, item 5). Tudo filtrado pelo DONO logado no servidor: outro proprietário nunca
@@ -75,7 +76,9 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
   for (const c of (contratos ?? []) as { tenant_id: string; property_id: string }[]) aceito.add(`${c.tenant_id}_${c.property_id}`);
   const pessoasComAceite = aceito;
 
-  const tenantIds = [...new Set([...pessoasComAceite].map((k) => k.split("_")[0]))];
+  // E328: a visita CONFIRMADA (ou feita) também libera o 1º nome de quem vem — confirmar é o aceite prático.
+  const confirmadas = ((visitas ?? []) as LinhaVisita[]).filter((v) => nomeLiberadoNaVisita(v.status)).map((v) => v.tenant_id);
+  const tenantIds = [...new Set([...[...pessoasComAceite].map((k) => k.split("_")[0]), ...confirmadas])];
   const nomes = new Map<string, string>();
   if (tenantIds.length) {
     const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", tenantIds);
@@ -106,7 +109,7 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
       quando,
       modalidade: v.modalidade === "presencial" ? "presencial" : "video",
       status: v.status,
-      pessoa: pessoa(v.tenant_id, v.property_id),
+      pessoa: pessoa(v.tenant_id, v.property_id) ?? (nomeLiberadoNaVisita(v.status) ? { nome: nomes.get(v.tenant_id) ?? "Interessado(a)", fotoUrl: null } : null),
       // E211: o detalhe da visita (a lista /dashboard/visitas é a do morador; o dono abre ?de=dono).
       href: `/dashboard/visitas/${v.id}`,
     });
