@@ -4,7 +4,8 @@ import { test, expect, type Page } from "@playwright/test";
  * T112 — ordem 19b8abf5: imagens únicas no site. Em cada página pública, no computador e
  * no celular: toda imagem decorativa carrega (sem quebra) e nenhuma se repete na mesma
  * página nem entre páginas. Fotos de ANÚNCIO (cards e links de imóvel), logo, avatares e
- * mapa ficam de fora — a foto do imóvel acompanha o imóvel onde ele aparecer.
+ * mapa e o seletor de categorias do cadastro de parceiro (sp-categorias: usa de propósito as
+ * fotos provisórias de fotografia/montagem, as mesmas dos cartões da página) ficam de fora — a foto do imóvel acompanha o imóvel onde ele aparecer.
  */
 const PAGINAS = ["/", "/como-funciona", "/para-proprietarios", "/parceiros", "/empresas", "/precos", "/buscar"];
 /** Mesmo elemento/estado (não é repetição na tela). */
@@ -21,7 +22,7 @@ async function decorativas(page: Page): Promise<{ src: string; ok: boolean }[]> 
   });
   return page.$$eval("img", (imgs) =>
     imgs
-      .filter((img) => !img.closest('a[href^="/imoveis/"], [data-testid="card-resultado"], [data-testid="mapa-busca"], header, footer'))
+      .filter((img) => !img.closest('a[href^="/imoveis/"], [data-testid="card-resultado"], [data-testid="mapa-busca"], [data-testid="sp-categorias"], header, footer'))
       .map((img) => {
         const bruto = img.currentSrc || img.src;
         let src = bruto;
