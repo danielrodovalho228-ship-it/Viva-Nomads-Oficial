@@ -84,7 +84,14 @@ interface MsgRow {
  * exemplos; modo REAL nunca inventa conversas — sem sessão, erro ou banco vazio
  * devolve lista vazia (a página mostra o estado "sem mensagens").
  */
-export async function listConversations(): Promise<Conversation[]> {
+const MSG_MENSAGENS_NAO_CARREGARAM = "Não foi possível carregar as suas mensagens agora.";
+
+/**
+ * Auditoria de erros e estados vazios, achado nº 5: com `exigir` (a tela Mensagens), uma falha do banco LANÇA (o painel
+ * mostra "Não conseguimos abrir esta tela" com "Tentar de novo") em vez de mostrar "nenhuma conversa". A home, que só
+ * conta, segue sem `exigir` (e com .catch).
+ */
+export async function listConversations(opcoes: { exigir?: boolean } = {}): Promise<Conversation[]> {
   const supabase = await createClient();
   if (!supabase) return SAMPLE_CONVERSATIONS;
 
@@ -101,6 +108,7 @@ export async function listConversations(): Promise<Conversation[]> {
     )
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order("created_at", { ascending: true });
+  if (error && opcoes.exigir) throw new Error(MSG_MENSAGENS_NAO_CARREGARAM);
 
   const byConv = new Map<string, Conversation>();
   // Erro na leitura das mensagens: a lista segue só com as conversas de contrato (nunca inventa conversa).

@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { MOTIVOS_VERIFICACAO, motivoDaReprovacao, type LaudoParaMotivo } from "@/config/verificacao-motivos";
 import { chamadoForaDaPromessa, emSilencio, parceiroSemResposta, verificacaoParada } from "./regras";
+import { corpoVerificacaoParada, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 
 /*
   Prompt 50 — os lembretes com decisão ou prazo real, rodados pelo cron diário das automações. Cada aviso sai UMA vez
@@ -76,6 +77,8 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
       name: perfil?.full_name ?? undefined,
       userId,
       pushUrl: "/dashboard/verificacao",
+      // E267 (restante): o motivo e o próximo passo no corpo e no bloco do e-mail (antes, só na versão em texto).
+      ...paraNotify(corpoVerificacaoParada(m)),
       detailsText: `Última tentativa: ${m.titulo}. ${m.proximoPasso}`,
     }).catch(() => null);
     r.verificacaoParada++;

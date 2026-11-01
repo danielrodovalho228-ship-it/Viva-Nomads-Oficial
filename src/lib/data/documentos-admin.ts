@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { avisarDecisoesDoImovel } from "@/lib/data/aviso-decisao-documento";
 import { primeiroNome } from "@/lib/display-name";
 import { tipoVisualizacaoDoc, type VisualizacaoDoc } from "@/lib/moderacao-doc";
+import { lidoParaAdmin } from "@/lib/documento/conferencia";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { erroBancoPT } from "@/lib/erros-banco";
@@ -86,6 +87,8 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
   if (!c || typeof c !== "object") return null;
   const o = c as Record<string, unknown>;
   const l = (o.leitura && typeof o.leitura === "object" ? o.leitura : null) as Record<string, unknown> | null;
+  // E293 P2: a trilha nova guarda só o veredito da leitura (`lido`); a equipe lê o documento pelo link.
+  const lido = (o.lido && typeof o.lido === "object" ? o.lido : null) as Record<string, unknown> | null;
   const end = (l?.endereco && typeof l.endereco === "object" ? l.endereco : {}) as Record<string, unknown>;
   const txt = (v: unknown) => (typeof v === "string" && v ? v : null);
   return {
@@ -94,7 +97,9 @@ function resumoConferencia(c: unknown): ConferenciaResumo | null {
       ? o.motivos.map((m) => (m && typeof m === "object" ? txt((m as Record<string, unknown>).texto) : txt(m))).filter((m): m is string => !!m)
       : [],
     checklist: (o.checklist && typeof o.checklist === "object" ? o.checklist : {}) as Record<string, boolean>,
-    leitura: l
+    leitura: lido
+      ? lidoParaAdmin(lido)
+      : l
       ? {
           tipo: txt(l.tipo),
           titular: txt(l.titular),

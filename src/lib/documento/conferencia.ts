@@ -247,6 +247,36 @@ export function decidirConferencia(leitura: LeituraDocumento | null, c: Cadastro
   return { estado: "aprovado", checklist, motivos: [] };
 }
 
+/**
+ * O que é GRAVADO da leitura em qualification_checklists.conferencia (E293 P2): só sim/não e contagens. A leitura bruta
+ * do modelo (titular, trecho do CPF/CNPJ, endereço, data, nomes listados, texto dos sinais) NÃO vai para o banco: a
+ * equipe lê o próprio documento (bucket privado, URL curta), e o motivo para o dono já está em `motivos`.
+ */
+export function leituraParaGravar(leitura: LeituraDocumento | null, checklist: Record<ChecklistKey, boolean>) {
+  if (!leitura) return null;
+  return {
+    tipo: leitura.tipo,
+    legivel: leitura.legivel,
+    completo: leitura.completo,
+    titularConfere: checklist.titular,
+    enderecoConfere: checklist.imovel,
+    sinaisDeEdicao: leitura.sinaisDeEdicao.length,
+    baixaConfianca: leitura.baixaConfianca,
+  };
+}
+
+/** A trilha nova (`lido`) como a fila da equipe mostra: só o veredito, em palavras. */
+export function lidoParaAdmin(v: Record<string, unknown>) {
+  return {
+    tipo: typeof v.tipo === "string" && v.tipo ? v.tipo : null,
+    titular: v.titularConfere === true ? "titular confere" : "titular diferente",
+    endereco: v.enderecoConfere === true ? "endereço confere" : "endereço diferente",
+    data: v.legivel === true && v.completo === true ? "legível e completo" : "ilegível ou incompleto",
+    cpf: null,
+    sinais: typeof v.sinaisDeEdicao === "number" && v.sinaisDeEdicao > 0 ? [`${v.sinaisDeEdicao} sinal(is) de edição`] : [],
+  };
+}
+
 /** document_status do banco para cada estado (o portão de publicar segue exigindo 'approved' — 0120). */
 export function statusDoEstado(e: EstadoConferencia): "approved" | "rejected" | "pending" {
   return e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : "pending";

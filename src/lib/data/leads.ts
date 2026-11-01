@@ -45,7 +45,13 @@ interface VerificacaoRow {
  * mostra exemplos; no modo REAL nunca inventa leads — sem sessão, erro ou banco
  * vazio devolve lista vazia (a página mostra o estado "ainda sem leads").
  */
-export async function listLeads(): Promise<Lead[]> {
+const MSG_INTERESSADOS_NAO_CARREGARAM = "Não foi possível carregar os interessados agora.";
+
+/**
+ * Auditoria de erros e estados vazios, achado nº 5: com `exigir` (a tela Interessados), uma falha do banco LANÇA em vez
+ * de mostrar "nenhum interessado" — o dono acharia que ninguém se candidatou.
+ */
+export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead[]> {
   const supabase = await createClient();
   if (!supabase) return SAMPLE_LEADS;
 
@@ -63,6 +69,7 @@ export async function listLeads(): Promise<Lead[]> {
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
+  if (error && opcoes.exigir) throw new Error(MSG_INTERESSADOS_NAO_CARREGARAM);
   if (error || !data) return [];
   // PROP-3 (E118): uma pessoa por imóvel (a candidatura mais recente).
   const rows = umPorPessoaEImovel(data as unknown as LeadRow[]);

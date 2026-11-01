@@ -128,8 +128,11 @@ export function lerRespostaCaf(json: unknown, perfil: { name: string; cpf?: stri
         ? "yellow"
         : "green";
 
+  // E293 P5: os motivos da CAF viram FRASES FIXAS nossas (notaDoMotivoCaf). O texto livre do fornecedor não é gravado.
   const motivos = obj(d.risk)?.reasons;
-  const notes: string[] = Array.isArray(motivos) ? motivos.map(str).filter((x): x is string => !!x).slice(0, 8) : [];
+  const notes: string[] = Array.isArray(motivos)
+    ? [...new Set(motivos.map(str).filter((x): x is string => !!x).map(notaDoMotivoCaf))].slice(0, 8)
+    : [];
   if (pendente) notes.push("Verificação em análise na CAF.");
   if (ocrConfere === false) notes.push("O documento lido não é do titular da conta.");
   if (receitaConfere === false) notes.push("O nome na Receita é diferente do cadastro.");
@@ -145,6 +148,25 @@ export function lerRespostaCaf(json: unknown, perfil: { name: string; cpf?: stri
     receitaConfere,
     pendente,
   };
+}
+
+/** Frases fixas que podem ir para `notes` a partir dos motivos da CAF (nunca o texto do fornecedor). */
+export const NOTAS_MOTIVO_CAF = {
+  luz: "Foto escura ou com pouca luz.",
+  foco: "Documento ilegível ou fora de foco.",
+  rosto: "A selfie não confere com o documento.",
+  vida: "A prova de vida não completou.",
+  outro: "A CAF apontou um motivo de risco.",
+} as const;
+
+/** Classifica um motivo da CAF numa frase fixa (as frases mantêm as palavras que motivoDaReprovacao procura). */
+export function notaDoMotivoCaf(motivo: string): string {
+  const m = motivo.toLowerCase();
+  if (/escur|ilumina|\bluz\b|dark|low.?light|lighting|brightness/.test(m)) return NOTAS_MOTIVO_CAF.luz;
+  if (/ileg|legib|foco|borr|desfoc|blur|focus|unreadable|illegible/.test(m)) return NOTAS_MOTIVO_CAF.foco;
+  if (/face|rosto|selfie|facematch/.test(m)) return NOTAS_MOTIVO_CAF.rosto;
+  if (/liveness|prova.?de.?vida|vivacidade/.test(m)) return NOTAS_MOTIVO_CAF.vida;
+  return NOTAS_MOTIVO_CAF.outro;
 }
 
 /** A transação foi criada mas a resposta ainda não traz o resultado (só o id)? Então é preciso buscar por GET. */

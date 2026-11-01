@@ -2,6 +2,7 @@ import "server-only";
 import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
+import { corpoCalendarioConflito, corpoCalendarioFalha, paraNotify, type CorpoResidual } from "@/lib/notifications/corpo-e267-residual";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { periodosOcupados } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
@@ -122,17 +123,24 @@ export async function compromissosDaViva(admin: Admin, propertyId: string): Prom
   return out;
 }
 
-async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_conflito" | "calendario_falha", propertyId: string, detalhe?: string): Promise<void> {
+async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_conflito" | "calendario_falha", propertyId: string, corpo: (imovel: { titulo: string | null; bairro: string | null; cidade: string | null }) => CorpoResidual): Promise<void> {
   try {
-    const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", ownerId).maybeSingle();
+    const [{ data }, { data: im }] = await Promise.all([
+      admin.from("profiles").select("email, full_name, notif_email").eq("id", ownerId).maybeSingle(),
+      admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle(),
+    ]);
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
+    const p = im as { title: string | null; address: string | null; city: string | null } | null;
+    // E267 (restante): o imóvel e o fato no corpo e no bloco (antes, o fato ia só na versão em texto).
+    const c = corpo({ titulo: p?.title ?? null, bairro: p?.address ?? null, cidade: p?.city ?? null });
     await notify({
       event: evento,
       email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
       name: d?.full_name ?? undefined,
       userId: ownerId,
       pushUrl: `/dashboard/imoveis/${propertyId}/editar#calendario`,
-      detailsText: detalhe,
+      ...paraNotify(c),
+      detailsText: c.linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
     });
   } catch {
     /* aviso é complemento */
@@ -145,7 +153,6 @@ async function primeiraVez(admin: Admin, chave: string, tipo: string): Promise<b
   return !error;
 }
 
-const dataBR = (iso: string) => iso.split("-").reverse().join("/");
 
 export interface ResultadoSincronia {
   ok: boolean;
@@ -162,7 +169,7 @@ export async function sincronizarImportacao(admin: Admin, imp: Importacao, agora
     const falhas = (imp.falhas_seguidas ?? 0) + 1;
     const causa = causaDaFalha(leitura.erro, imp.origem);
     await admin.from("calendario_importacoes").update({ falhas_seguidas: falhas, ultimo_erro: causa.slice(0, 300) }).eq("id", imp.id);
-    if (avisarFalha(falhas)) await avisarDono(admin, imp.owner_id, "calendario_falha", imp.property_id, causa);
+    if (avisarFalha(falhas)) await avisarDono(admin, imp.owner_id, "calendario_falha", imp.property_id, (imovel) => corpoCalendarioFalha({ imovel, causa }));
     return { ok: false, inseridos: 0, removidos: 0, conflitos: 0, erro: causa };
   }
   const { data: atuais } = await admin.from("property_blocks").select("id, inicio, fim").eq("importacao_id", imp.id);
@@ -188,12 +195,8 @@ export async function sincronizarImportacao(admin: Admin, imp: Importacao, agora
     const chave = `cal_conflito:${imp.id}:${c.importado.inicio}:${c.importado.fim}:${c.compromisso.tipo}:${c.compromisso.inicio}`;
     if (await primeiraVez(admin, chave, "calendario_conflito")) {
       conflitos++;
-      await avisarDono(
-        admin,
-        imp.owner_id,
-        "calendario_conflito",
-        imp.property_id,
-        `Datas ocupadas no outro site: ${dataBR(c.importado.inicio)} a ${dataBR(c.importado.fim)}. Na Viva há ${c.compromisso.tipo === "contrato" ? "um contrato" : c.compromisso.tipo === "proposta" ? "uma proposta" : "uma candidatura"} de ${dataBR(c.compromisso.inicio)} a ${dataBR(c.compromisso.fim)}. Nada foi cancelado: decida qual vale.`,
+      await avisarDono(admin, imp.owner_id, "calendario_conflito", imp.property_id, (imovel) =>
+        corpoCalendarioConflito({ imovel, importado: c.importado, compromisso: c.compromisso }),
       );
     }
   }

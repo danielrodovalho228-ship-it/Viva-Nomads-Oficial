@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { INVENTARIO } from "@/config/retencao";
+import { LIMPEZA_MATRICULA_ELIMINADA } from "@/lib/documento/conferencia-matricula";
 import { planoDoItem, textoPrazo, type Candidato, type ItemInventario } from "@/lib/minimizacao/regras";
 
 type Admin = SupabaseClient;
@@ -103,7 +104,7 @@ const COLETORES: Record<string, Coletor> = {
       if (c.extra?.caso) await apagarArquivo(admin, DOCS_IMOVEL, c.extra.caso);
       const { error } = await admin
         .from("property_ownership_checks")
-        .update({ arquivo_path: null, caso_documento_path: null, arquivo_eliminado_em: agora.toISOString() })
+        .update({ ...LIMPEZA_MATRICULA_ELIMINADA, arquivo_path: null, caso_documento_path: null, arquivo_eliminado_em: agora.toISOString() })
         .eq("id", c.extra!.id);
       if (error) throw new Error(error.message);
     },

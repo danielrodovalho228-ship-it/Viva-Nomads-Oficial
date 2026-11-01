@@ -299,24 +299,34 @@ export function preenchimentoDaMatricula(l: LeituraMatricula): PreenchimentoMatr
   };
 }
 
-/** O que é GRAVADO em property_ownership_checks.campos_extraidos: sem CPF inteiro (só a comparação). */
+/**
+ * O que é GRAVADO em property_ownership_checks.campos_extraidos (E293 P1): só o VEREDITO de cada proprietário — se o
+ * nome e o CPF/CNPJ conferem com o perfil e a fração — e quantos são. Nome, final do documento, endereço, unidade,
+ * áreas e vaga NÃO são gravados: a equipe lê o próprio arquivo enquanto ele existe (bucket privado, URL curta), e o
+ * cadastro do imóvel recebe o que foi lido por outro caminho (preenchimentoDaMatricula, editável pelo dono).
+ */
 export function camposParaGravar(l: LeituraMatricula, comparacao: ComparacaoProprietario[]) {
   return {
-    endereco: l.endereco,
-    unidade: l.unidade,
-    area_privativa: l.areaPrivativa,
-    area_total: l.areaTotal,
-    vaga: l.vaga,
     data_ultimo_ato: l.dataUltimoAto,
+    proprietarios_qtd: comparacao.length,
     proprietarios: comparacao.map((c) => ({
-      nome: c.nome,
-      documento_final: c.documentoFinal,
       documento_confere: c.documentoConfere,
       nome_confere: c.nomeConfere,
       fracao: c.fracao,
     })),
   };
 }
+
+/** O que é GRAVADO em property_ownership_checks.onus (E293 P1): o tipo e se é em favor de terceiro — sem o credor. */
+export function onusParaGravar(onus: OnusLido[]) {
+  return onus.map((o) => ({ tipo: o.tipo, emFavorDeTerceiro: o.emFavorDeTerceiro }));
+}
+
+/**
+ * Na eliminação do arquivo da matrícula (rotina de prazos, minimizacao/servidor.ts), o que sai junto da linha
+ * (E293 P1): os campos lidos, os ônus, o número da matrícula e o cartório. Fica o veredito (resultado, motivo, caf_ok).
+ */
+export const LIMPEZA_MATRICULA_ELIMINADA = { campos_extraidos: {}, onus: [], matricula_numero: null, cartorio: null } as const;
 
 /* ── Laudo CAF → resumo ───────────────────────────────────────────────────── */
 
