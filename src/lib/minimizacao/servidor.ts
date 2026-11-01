@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { INVENTARIO } from "@/config/retencao";
+import { contarGuardados } from "@/lib/data/admin-contagens";
 import { LIMPEZA_MATRICULA_ELIMINADA } from "@/lib/documento/conferencia-matricula";
 import { planoDoItem, textoPrazo, type Candidato, type ItemInventario } from "@/lib/minimizacao/regras";
 import { diaBRT } from "@/lib/datas-brasilia";
@@ -125,9 +126,8 @@ const COLETORES: Record<string, Coletor> = {
 
 /** Quanto existe hoje numa tabela do inventário (para o relatório simulado). Bucket: não conta (null). */
 async function guardados(admin: Admin, item: ItemInventario): Promise<number | null> {
-  if (!item.origem.startsWith("public.")) return null;
-  const { count, error } = await admin.from(item.origem.slice(7)).select("*", { count: "exact", head: true });
-  return error ? null : (count ?? 0);
+  // E334: a mesma contagem da caixa de e-mails de teste e da coluna "Guardados agora" da Retenção.
+  return item.origem.startsWith("public.") ? contarGuardados(admin, item.origem.slice(7)) : null;
 }
 
 export interface ResultadoEliminacao {

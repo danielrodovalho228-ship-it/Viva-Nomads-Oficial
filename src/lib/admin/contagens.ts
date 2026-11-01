@@ -62,3 +62,19 @@ export function baseDoFunil(tipo: "percentual" | "horas", base: { de: number; to
   if (base.total <= 0) return "Base: —.";
   return tipo === "percentual" ? `${base.de} de ${base.total}.` : `${base.total} tempo(s).`;
 }
+
+/**
+ * E334: as contas de teste por uma regra só. "De usuários" é a mesma conta de /admin/usuarios (contarUsuarios:
+ * proprietário ou inquilino, não anonimizada); o resto (admin, parceiro, anonimizada) é contado à parte. Antes, Testes
+ * dizia 14 (todas as is_teste, com 1 admin) e Usuários "13 de teste", sem dizer por quê.
+ */
+export function resumoContasTeste(contas: readonly { role: string | null; anonymized_at?: string | null }[]): { total: number; usuarios: number; outras: number } {
+  const usuarios = contas.filter((c) => (c.role === "owner" || c.role === "tenant") && !c.anonymized_at).length;
+  return { total: contas.length, usuarios, outras: contas.length - usuarios };
+}
+
+/** "14 · 13 proprietários e inquilinos (os de Usuários) · 1 da equipe ou anonimizada". */
+export function textoContasTeste(r: { total: number; usuarios: number; outras: number }): string {
+  if (r.outras === 0) return `${r.total}`;
+  return `${r.total} · ${r.usuarios} ${r.usuarios === 1 ? "proprietário ou inquilino" : "proprietários e inquilinos"} (os de Usuários) · ${r.outras} da equipe ou ${r.outras === 1 ? "anonimizada" : "anonimizadas"}`;
+}
