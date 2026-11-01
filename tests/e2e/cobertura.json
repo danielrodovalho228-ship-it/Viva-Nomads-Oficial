@@ -2519,7 +2519,8 @@
       "specs": [
         "t345-desempenho-anuncio-54",
         "t334-varredura-bloco12",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t940-achado45-desempenho-falha"
       ]
     },
     "/dashboard/respostas-rapidas": {
