@@ -5,7 +5,7 @@ import Link from "next/link";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { Home, CircleDollarSign } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import type { SeloEstadia } from "@/lib/data/locacoes-selo";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
@@ -71,9 +71,9 @@ export function LocacoesClient({
           title="Você ainda não tem estadias"
           text="Quando você fechar uma estadia, ela aparece aqui, e você poderá avaliar o proprietário ao final. Comece buscando um imóvel mobiliado."
           action={
-            <Link href="/buscar">
-              <Button variant="gold">Buscar imóveis</Button>
-            </Link>
+            <ButtonLink href="/buscar" variant="gold">
+              Buscar imóveis
+            </ButtonLink>
           }
         />
       ) : (
@@ -130,17 +130,15 @@ export function LocacoesClient({
               )}
 
               {!demoOn && (
-                <Link href={`/dashboard/locacoes/${l.id}`} className="mt-4 inline-block" data-testid="locacao-ver-contrato">
-                  <Button variant="secondary">
-                    {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
-                  </Button>
-                </Link>
+                <ButtonLink href={`/dashboard/locacoes/${l.id}`} variant="secondary" className="mt-4" data-testid="locacao-ver-contrato">
+                  {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
+                </ButtonLink>
               )}
               {/* Prompt 32: a página da estadia (datas, checklist, ocupantes, instruções de chegada e alterações). */}
               {!demoOn && (
-                <Link href={HREF_ESTADIA(l.id)} className="ml-3 mt-4 inline-block" data-testid="locacao-abrir-estadia">
-                  <Button variant="outline">Abrir a página da estadia</Button>
-                </Link>
+                <ButtonLink href={HREF_ESTADIA(l.id)} variant="outline" className="ml-3 mt-4" data-testid="locacao-abrir-estadia">
+                  Abrir a página da estadia
+                </ButtonLink>
               )}
 
               {/* Inquilino avalia o proprietário — só na janela de avaliação (fim da estadia). */}
