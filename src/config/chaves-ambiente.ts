@@ -32,7 +32,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "ENQUADRAMENTO_REFORMA", rotulo: "Reforma tributária: \"Você entra na regra nova?\" (Ganhos do dono)", variavel: "NEXT_PUBLIC_ENQUADRAMENTO_REFORMA" },
   { nome: "RESUMO_SEMANAL_ATIVO", rotulo: "Resumo semanal de recomendações (e-mail às terças)", variavel: "RESUMO_SEMANAL_ATIVO" },
   { nome: "SELETOR_IDIOMA", rotulo: "Seletor de idioma (globo PT/EN) no topo público", variavel: "NEXT_PUBLIC_SELETOR_IDIOMA" },
-  { nome: "PRECO_JUSTO_COMPARADOR", rotulo: "Selo \"Preço justo\" pelo link do Airbnb (comparação simulada)", variavel: "NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR" },
+  { nome: "PRECO_JUSTO_COMPARADOR", rotulo: "Selo \"Preço justo\" pelo link do Airbnb (dados simulados)", variavel: "NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR" },
 ];
 
 export const ONDE_MUDA_AMBIENTE = "Muda na Vercel (Daniel)";

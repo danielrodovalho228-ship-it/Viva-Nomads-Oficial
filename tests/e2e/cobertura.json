@@ -7038,6 +7038,18 @@
         "publico"
       ],
       "specs": []
+    },
+    "src/lib/comparador-airbnb/link-actions.ts#meuLinkAirbnb": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/comparador-airbnb/link-actions.ts#salvarLinkAirbnb": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
     }
   }
 }

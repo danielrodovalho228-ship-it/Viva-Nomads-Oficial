@@ -114,6 +114,7 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   // 63-B: "Reconecte seu LinkedIn para manter o selo" (30 dias antes de vencer).
   linkedin_vencendo: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
+  preco_justo_acima: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   vistoria_vistoriado_expira: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   renovacao_aviso: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   avaliacao_pedido: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
