@@ -735,7 +735,9 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   if (error || !data) return [];
   const lista = (data as unknown as PropertyRow[]).map(rowToProperty);
   // As fotos vêm de property_photos (sem isso o card ficava sem capa).
-  await attachCoverPhotos(supabase, lista);
+  // E416 (retrabalho, 01/11): o nível (Essencial/Conforto/Premium) — Meus anúncios lê ESTA função; o #2064 tinha posto o
+  // nível só em listPropertiesDoProprietario, e o cartão daqui nunca recebia o dado.
+  await Promise.all([attachCoverPhotos(supabase, lista), attachNivel(supabase, lista)]);
   // E308 (causa raiz, 01/11): foto cujo arquivo já saiu do bucket não vira capa quebrada no card (rascunho ou anúncio).
   const existentes = await arquivosDoDono(createAdminClient(), user.id);
   for (const p of lista) if (p.photos?.length) p.photos = soFotosExistentes(p.photos, existentes);
