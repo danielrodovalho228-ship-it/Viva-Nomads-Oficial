@@ -250,6 +250,35 @@ export function corpoVerificacaoParada(d: { titulo: string; proximoPasso: string
   };
 }
 
+// ── Pedido de moradia: resposta e aceite (E267, resíduo de 01/11) ───────────────────────────────────────────────
+/** Ao morador: QUEM respondeu ao pedido de moradia, com QUAL imóvel (antes: "um proprietário respondeu"). */
+export function corpoPedidoResposta(d: { imovel: Imovel; quem?: string | null; cidade?: string | null; inicio?: string | null }): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  const quem = limpo(d.quem) || "um proprietário";
+  const cidade = limpo(d.cidade);
+  const inicio = dia(d.inicio);
+  const linhas = linhaImovel(d.imovel);
+  if (cidade || inicio) linhas.push({ rotulo: "Seu pedido", valor: [cidade, inicio ? `entrada em ${inicio}` : ""].filter(Boolean).join(", ") });
+  return {
+    subject: assuntoComTitulo("Resposta ao seu pedido: ", titulo),
+    body: (n) =>
+      `${ola(n)}, ${quem} respondeu ao seu pedido de moradia${cidade ? ` em ${cidade}` : ""} com ${titulo ? `o imóvel ${titulo}` : "um imóvel"}. Veja e aceite para conversar pela plataforma.`,
+    linhas,
+  };
+}
+
+/** Ao dono: QUEM aceitou a resposta e sobre QUAL imóvel a conversa abriu (antes: "um inquilino aceitou"). */
+export function corpoPedidoAceito(d: { imovel: Imovel; quem?: string | null }): CorpoResidual {
+  const titulo = limpo(d.imovel?.titulo);
+  const quem = limpo(d.quem) || "o morador";
+  return {
+    subject: assuntoComTitulo("Conversa aberta sobre ", titulo),
+    body: (n) =>
+      `${ola(n)}, ${quem} aceitou a sua resposta ao pedido de moradia${titulo ? ` com ${titulo}` : ""} e abriu a conversa. Responda pela plataforma.`,
+    linhas: linhaImovel(d.imovel),
+  };
+}
+
 /** O que vai ao notify(): assunto (se houver), abertura e o bloco "Imóvel / …" em HTML escapado. */
 export function paraNotify(c: CorpoResidual): { subject?: string; body: (nome?: string) => string; detailsHtml?: string } {
   return {
