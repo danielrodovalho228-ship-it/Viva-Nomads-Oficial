@@ -72,8 +72,8 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   }).toString();
   const voltarPara = `/parceiros/${slug}${consulta ? `?${consulta}` : ""}`;
   const redes = REDES.filter((r) => p.redes[r.chave]);
-  // E298: a capa nunca é uma área vazia (capa enviada → foto do parceiro → foto da categoria).
-  const capa = capaDoParceiro(p);
+  // E298 + E306: a capa nunca é uma área vazia (capa enviada → 1ª foto da galeria → foto do parceiro → categoria).
+  const capa = capaDoParceiro({ ...p, galeriaCapaUrl: galeria[0]?.url ?? null });
 
   return (
     <div data-testid="pagina-parceiro" data-slug={p.slug}>

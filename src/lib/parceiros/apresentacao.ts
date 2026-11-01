@@ -15,14 +15,16 @@ export function iniciaisDoParceiro(nome: string): string {
   return ini || "?";
 }
 
-export type CapaParceiro = { src: string; alt: string; origem: "capa" | "foto" | "categoria" } | null;
+export type CapaParceiro = { src: string; alt: string; origem: "capa" | "galeria" | "foto" | "categoria" } | null;
 
 /**
- * E298 + E306: a capa nunca é uma área vazia. Ordem: a capa que o parceiro enviou → a foto dele → a foto da categoria
- * principal. Sem nenhuma das três (categoria sem foto), null.
+ * E298 + E306: a capa nunca é uma área vazia e, havendo foto do PRÓPRIO parceiro, é ela. Ordem: a capa que o parceiro
+ * enviou → a 1ª foto da galeria dele (E306, 01/11) → a foto de perfil → a foto da categoria principal (só quando o
+ * parceiro não tem foto nenhuma). Sem nada (categoria sem foto), null.
  */
-export function capaDoParceiro(p: { nomePublico: string; bannerUrl: string | null; avatarUrl: string | null; categorias: readonly string[] }): CapaParceiro {
+export function capaDoParceiro(p: { nomePublico: string; bannerUrl: string | null; galeriaCapaUrl?: string | null; avatarUrl: string | null; categorias: readonly string[] }): CapaParceiro {
   if (p.bannerUrl) return { src: p.bannerUrl, alt: `Capa de ${p.nomePublico}`, origem: "capa" };
+  if (p.galeriaCapaUrl) return { src: p.galeriaCapaUrl, alt: `Trabalho de ${p.nomePublico}`, origem: "galeria" };
   if (p.avatarUrl) return { src: p.avatarUrl, alt: `Foto de ${p.nomePublico}`, origem: "foto" };
   for (const c of p.categorias) {
     const f = fotoDaCategoria(c);

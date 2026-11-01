@@ -20,15 +20,19 @@ test("E300: iniciais certas — nunca o '[' de um prefixo, nunca vazio", () => {
   assert.match(DETALHE, /\{iniciaisDoParceiro\(p\.nomePublico\)\}/);
 });
 
-test("E298/E306: a capa nunca é vazia — capa enviada → foto do parceiro → foto da categoria", () => {
+test("E298/E306: a capa nunca é vazia — capa enviada → 1ª foto da galeria → foto do parceiro → foto da categoria", () => {
   const base = { nomePublico: "X", bannerUrl: null, avatarUrl: null, categorias: ["limpeza"] };
-  assert.equal(capaDoParceiro({ ...base, bannerUrl: "https://b/capa.webp", avatarUrl: "https://b/a.webp" })?.origem, "capa");
+  assert.equal(capaDoParceiro({ ...base, bannerUrl: "https://b/capa.webp", galeriaCapaUrl: "https://b/g.webp", avatarUrl: "https://b/a.webp" })?.origem, "capa");
+  // E306 (01/11): sem capa enviada, a foto DO PRÓPRIO parceiro — a 1ª da galeria — antes da foto genérica da categoria.
+  const gal = capaDoParceiro({ ...base, galeriaCapaUrl: "https://b/g.webp", avatarUrl: "https://b/a.webp" })!;
+  assert.equal(gal.origem, "galeria");
+  assert.equal(gal.src, "https://b/g.webp");
   assert.equal(capaDoParceiro({ ...base, avatarUrl: "https://b/a.webp" })?.origem, "foto");
   const cat = capaDoParceiro(base)!;
   assert.equal(cat.origem, "categoria");
   assert.match(cat.src, /^\/images\//);
   assert.equal(capaDoParceiro({ ...base, categorias: ["nao-existe", "mudanca"] })?.origem, "categoria");
-  assert.match(DETALHE, /const capa = capaDoParceiro\(p\);/);
+  assert.match(DETALHE, /const capa = capaDoParceiro\(\{ \.\.\.p, galeriaCapaUrl: galeria\[0\]\?\.url \?\? null \}\);/);
   assert.match(CARTAO, /const capa = capaDoParceiro\(p\);/);
 });
 
