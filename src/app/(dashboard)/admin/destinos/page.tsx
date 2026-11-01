@@ -22,38 +22,43 @@ interface Linha extends DestinoEditavel {
 
 /** Contagem por destino e dia (tabela só do servidor: lida com o cliente de serviço, depois do portão do admin). */
 /** PERTO-B: avisos "Está errado" em aberto (lidos com o cliente de serviço, depois do portão do admin). */
-async function reportesAbertos(): Promise<{ id: string; nome: string; tipo: string | null; motivo: string; criado_em: string; properties: { title: string | null; city: string | null } | null }[]> {
+type ReporteAberto = { id: string; nome: string; tipo: string | null; motivo: string; criado_em: string; properties: { title: string | null; city: string | null } | null };
+// Achado nº 27: cada leitura desta tela devolve null quando FALHA (o painel diz que não leu), e [] só quando não há nada.
+async function reportesAbertos(): Promise<ReporteAberto[] | null> {
   const admin = createAdminClient();
   if (!admin) return [];
-  const { data } = await admin.from("proximidades_reportes").select("id, nome, tipo, motivo, criado_em, properties(title, city)").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100);
-  return (data ?? []) as unknown as Awaited<ReturnType<typeof reportesAbertos>>;
+  const { data, error } = await admin.from("proximidades_reportes").select("id, nome, tipo, motivo, criado_em, properties(title, city)").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100);
+  if (error) return null;
+  return (data ?? []) as unknown as ReporteAberto[];
 }
 
 /**
  * DESTINO-PESSOAL-B: os pontos que muita gente usa como "Outro local" — só o agregado do banco (célula de ~300 m com 5
  * pessoas distintas ou mais em 90 dias). O admin nunca lê destinos_pessoais: nem endereço, nem rótulo, nem quem.
  */
-async function pontosPessoais(): Promise<{ celula: string; lat: number; lng: number; pessoas: number }[]> {
+async function pontosPessoais(): Promise<{ celula: string; lat: number; lng: number; pessoas: number }[] | null> {
   const admin = createAdminClient();
   if (!admin) return [];
   const { data, error } = await admin.rpc("destinos_pessoais_agregado", { p_dias: JANELA_AGREGADO_DIAS, p_min: MIN_PESSOAS_AGREGADO });
-  if (error) return [];
+  if (error) return null;
   return ((data ?? []) as { celula: string; lat: number; lng: number; pessoas: number }[]).map((c) => ({ ...c, lat: Number(c.lat), lng: Number(c.lng) }));
 }
 
 /** DESTINO-PESSOAL-B: pedidos "Não achei meu local" em aberto (nome do lugar + cidade). */
-async function naoAchadosAbertos(): Promise<{ id: string; nome: string; cidade: string; criado_em: string }[]> {
+async function naoAchadosAbertos(): Promise<{ id: string; nome: string; cidade: string; criado_em: string }[] | null> {
   const admin = createAdminClient();
   if (!admin) return [];
-  const { data } = await admin.from("destinos_nao_achados").select("id, nome, cidade, criado_em").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100);
+  const { data, error } = await admin.from("destinos_nao_achados").select("id, nome, cidade, criado_em").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(100);
+  if (error) return null;
   return (data ?? []) as { id: string; nome: string; cidade: string; criado_em: string }[];
 }
 
-async function buscasDe30Dias(): Promise<{ destino_id: string; n: number }[]> {
+async function buscasDe30Dias(): Promise<{ destino_id: string; n: number }[] | null> {
   const admin = createAdminClient();
   if (!admin) return [];
   const desde = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
-  const { data } = await admin.from("destinos_buscas_dia").select("destino_id, n").gte("dia", desde);
+  const { data, error } = await admin.from("destinos_buscas_dia").select("destino_id, n").gte("dia", desde);
+  if (error) return null;
   return (data ?? []) as { destino_id: string; n: number }[];
 }
 
@@ -81,9 +86,13 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
   const leitor = createAdminClient() ?? supabase;
   const { data, error } = await leitor.from("destinos").select("id, slug, nome, artigo, tipo, cidade, uf, lat, lng, ativo").order("nome");
   const lista = (data ?? []) as Linha[];
-  const ranking = maisBuscados(await buscasDe30Dias(), new Map(lista.map((d) => [d.id, d.nome])));
-  const reportes = await reportesAbertos().catch(() => []);
-  const [pontos, naoAchados] = await Promise.all([pontosPessoais().catch(() => []), naoAchadosAbertos().catch(() => [])]);
+  const [buscas, reportes, pontos, naoAchados] = await Promise.all([
+    buscasDe30Dias().catch(() => null),
+    reportesAbertos().catch(() => null),
+    pontosPessoais().catch(() => null),
+    naoAchadosAbertos().catch(() => null),
+  ]);
+  const ranking = buscas ? maisBuscados(buscas, new Map(lista.map((d) => [d.id, d.nome]))) : null;
   const emEdicao = lista.find((d) => d.slug === editar);
   const tipo = (t: string) => TIPOS_DESTINO.find((x) => x.valor === t)?.rotulo ?? t;
 
@@ -111,8 +120,8 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
         className="mb-6"
         itens={[
           { rotulo: "Sem ponto conferido", valor: lista.filter((d) => d.lat == null).length, href: "#destinos" },
-          { rotulo: "Buscas em 30 dias", valor: ranking.reduce((n, r) => n + r.total, 0), href: "#mais-buscados" },
-          { rotulo: "Locais pedidos (não achados)", valor: naoAchados.length, href: "#nao-achados" },
+          { rotulo: "Buscas em 30 dias", valor: ranking ? ranking.reduce((n, r) => n + r.total, 0) : "—", href: "#mais-buscados" },
+          { rotulo: "Locais pedidos (não achados)", valor: naoAchados ? naoAchados.length : "—", href: "#nao-achados" },
         ]}
       />
 
@@ -152,7 +161,9 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
       </Panel>
 
       <Panel title="Destinos mais buscados (30 dias)" id="mais-buscados">
-        {ranking.length === 0 ? (
+        {ranking === null ? (
+          <NaoLeu oque="as buscas dos últimos 30 dias" />
+        ) : ranking.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma busca com destino nos últimos 30 dias.</p>
         ) : (
           <ol className="divide-y divide-sage-200 rounded-xl border border-sage-200" data-testid="destinos-mais-buscados">
@@ -168,7 +179,9 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
       </Panel>
 
       <Panel title={`Lugares que muita gente usa (${JANELA_AGREGADO_DIAS} dias)`} id="pontos-pessoais" className="mt-6">
-        {pontos.length === 0 ? (
+        {pontos === null ? (
+          <NaoLeu oque="os lugares mais usados" />
+        ) : pontos.length === 0 ? (
           <p className="text-sm text-muted" data-testid="pontos-pessoais-vazio">
             Nenhum ponto com {MIN_PESSOAS_AGREGADO} pessoas ou mais nos últimos {JANELA_AGREGADO_DIAS} dias.
           </p>
@@ -195,7 +208,9 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
       </Panel>
 
       <Panel title="Locais pedidos: “Não achei meu local”" id="nao-achados" className="mt-6">
-        {naoAchados.length === 0 ? (
+        {naoAchados === null ? (
+          <NaoLeu oque="os pedidos “Não achei meu local”" />
+        ) : naoAchados.length === 0 ? (
           <p className="text-sm text-muted">Nenhum pedido em aberto.</p>
         ) : (
           <ul className="divide-y divide-sage-200 rounded-xl border border-sage-200" data-testid="nao-achados">
@@ -220,7 +235,9 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
       </Panel>
 
       <Panel title="Lugares por perto marcados como errados" id="proximidades-erradas" className="mt-6">
-        {reportes.length === 0 ? (
+        {reportes === null ? (
+          <NaoLeu oque="os avisos de lugar errado" />
+        ) : reportes.length === 0 ? (
           <p className="text-sm text-muted">Nenhum aviso em aberto.</p>
         ) : (
           <ul className="divide-y divide-sage-200 rounded-xl border border-sage-200" data-testid="proximidades-reportes">
@@ -241,5 +258,14 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
         <p className="mt-2 text-xs text-muted">O dono marca um lugar achado pelo OpenStreetMap como errado. Confira e, se for o caso, corrija no OpenStreetMap.</p>
       </Panel>
     </>
+  );
+}
+
+/** Achado nº 27: o painel diz que não leu — nunca "nenhum" quando a leitura falhou. */
+function NaoLeu({ oque }: { oque: string }) {
+  return (
+    <p role="alert" data-testid="destinos-nao-leu" className="text-sm text-amber-800">
+      Não foi possível ler {oque} agora. Tente de novo em instantes.
+    </p>
   );
 }
