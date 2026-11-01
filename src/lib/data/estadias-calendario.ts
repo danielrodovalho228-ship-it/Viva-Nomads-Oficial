@@ -19,9 +19,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * Estadias com contrato do imóvel, para as pílulas do calendário do DONO (ordem 8195c772).
  * Autorização no servidor: só o dono do imóvel. Só entram contratos ATIVOS — o contrato só existe
  * depois do aceite, então candidatura pendente nunca chega aqui (nem nome, nem foto).
- * Sem sessão, sem permissão ou erro → [] (o calendário segue mostrando só os bloqueios).
+ * Sem sessão ou sem permissão → [] (o calendário segue mostrando só os bloqueios).
+ * Achado nº 20: com `exigir`, a falha de leitura LANÇA — a tela avisa em vez de mostrar os dias ocupados como livres.
  */
-export async function getEstadiasDoImovel(propertyId: string): Promise<EstadiaCalendario[]> {
+export async function getEstadiasDoImovel(propertyId: string, opcoes: { exigir?: boolean } = {}): Promise<EstadiaCalendario[]> {
   if (!UUID_RE.test(propertyId)) return [];
   const supabase = await createClient();
   if (!supabase) return [];
@@ -42,6 +43,7 @@ export async function getEstadiasDoImovel(propertyId: string): Promise<EstadiaCa
     .select("id, tenant_id, status, contrato_blocos(inicio, fim)")
     .eq("property_id", propertyId)
     .eq("status", "ativo");
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler as estadias deste imóvel.");
   if (error || !data) return [];
 
   const contratos = (data as Record<string, unknown>[])
