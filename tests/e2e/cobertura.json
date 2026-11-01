@@ -1472,7 +1472,8 @@
         "t183-telas-logadas-390",
         "t288-padrao-minimo-59a",
         "t339-varredura-bloco16",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t938-achado43-solicitacoes-falha"
       ]
     },
     "/dashboard/tributacao": {
@@ -4325,7 +4326,8 @@
       ],
       "specs": [
         "t53-conta-documento-solicitacoes",
-        "t55-manutencao-ciclo"
+        "t55-manutencao-ciclo",
+        "t938-achado43-solicitacoes-falha"
       ]
     },
     "src/lib/data/manutencao-actions.ts#mudarStatusSolicitacao": {
