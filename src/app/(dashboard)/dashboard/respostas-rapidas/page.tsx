@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 /** Prompt 55-E2 — respostas salvas do dono (até 20), inseridas na conversa com 1 toque. */
 export default async function RespostasRapidasPage() {
-  const respostas = await minhasRespostas();
+  // Achado 37: falha de leitura cai no aviso do painel ("Tentar de novo"), não em "Nenhuma resposta salva ainda".
+  const respostas = await minhasRespostas({ exigir: true });
   return (
     <div className="space-y-4" data-testid="pagina-respostas-rapidas">
       <PageTitle title="Respostas rápidas" subtitle={`Até ${LIMITE_RESPOSTAS} respostas para usar nas conversas com 1 toque.`} />
