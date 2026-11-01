@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calcularTotais, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
+import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
 
 /*
   Propostas (prompt 17) — leitura no servidor, usada pelas ações, pelo fechamento e pela rotina de automações.
@@ -167,7 +168,7 @@ export interface TermosDoAcordo {
 
 /** Proposta ACEITA de uma candidatura (a mais recente): o fechamento e o contrato abrem com estes valores. */
 export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: string): Promise<PropostaAcordada | null> {
-  const { data: p } = await admin
+  const { data: p, error: erroProposta } = await admin
     .from("propostas")
     .select("id, numero, versao_atual, taxa_congelada")
     .eq("lead_id", leadId)
@@ -175,13 +176,16 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
     .order("aceita_em", { ascending: false })
     .limit(1)
     .maybeSingle();
+  // Achado 73: a falha de leitura não vira "sem proposta" (o contrato nasceria com o preço do anúncio).
+  if (erroProposta) throw new Error(MSG_VALORES_SEM_CONFERIR);
   if (!p) return null;
-  const { data: v } = await admin
+  const { data: v, error: erroVersao } = await admin
     .from("proposta_versoes")
     .select("valor_mensal, meses, data_entrada, condominio, consumo, limpezas_mes, valor_limpeza, taxa_pet, limpeza_unica")
     .eq("proposta_id", p.id)
     .eq("versao", p.versao_atual)
     .maybeSingle();
+  if (erroVersao) throw new Error(MSG_VALORES_SEM_CONFERIR);
   if (!v) return null;
   return {
     id: p.id as string,
