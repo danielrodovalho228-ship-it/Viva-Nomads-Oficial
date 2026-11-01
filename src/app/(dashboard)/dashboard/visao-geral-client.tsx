@@ -52,6 +52,7 @@ import { InicioDono } from "@/components/painel/inicio-dono";
 import { PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 import { useFavoritos } from "@/lib/use-favoritos";
+import { valorContador } from "@/lib/painel/sem-leitura";
 
 /** Card de pendência "Anúncio em andamento" — o rascunho mais recente, lido no servidor (page.tsx). */
 export type RascunhoPendente = { id: string; pct: number; pronto: boolean; faltam: string[]; checklist: ChecklistAnuncio | null };
@@ -84,13 +85,13 @@ export function VisaoGeral({
   /** Prompt 43: checklist de ativação de cada papel que ainda não ativou (some sozinho). */
   checklists?: ChecklistAtivacao[];
   /** E72: quantas candidaturas a pessoa enviou — o tamanho da lista de /dashboard/candidaturas (listMinhasCandidaturas). */
-  totalCandidaturas?: number;
+  totalCandidaturas?: number | null;
   /** PROP-3 (E113): soma das visualizações dos imóveis do dono, pela mesma conta do painel de desempenho (30 dias). */
   visualizacoes?: number | null;
   /** PROP-3 (E113): quantas conversas a pessoa tem — o tamanho da lista de /dashboard/mensagens. */
-  totalConversas?: number;
+  totalConversas?: number | null;
   /** E181: o número de /dashboard/buscas (a mesma lista). */
-  totalBuscasSalvas?: number;
+  totalBuscasSalvas?: number | null;
   /** PROP-6: o Início do dono (faixa + bloco principal), montado no servidor; aparece no modo dono. */
   inicioDono?: { alerta: Decisao | null; bloco: BlocoPrincipalDono; hoje?: CartaoHoje[] } | null;
 }) {
@@ -199,7 +200,7 @@ function OwnerDashboard({
   cidade: string | null;
   semImovel: boolean;
   visualizacoes: number | null;
-  totalConversas: number;
+  totalConversas: number | null;
 }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
   // reais e o seed NUNCA se misturam — a fonte é uma ou outra.
@@ -266,7 +267,7 @@ function PainelDoDono({
   kpiLeads: ReturnType<typeof kpiInteressados>;
   cidade: string | null;
   visualizacoes: number | null;
-  totalConversas: number;
+  totalConversas: number | null;
 }) {
   return (
     <>
@@ -321,7 +322,7 @@ function PainelDoDono({
             icon={Users}
           />
         )}
-        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : String(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
+        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 
@@ -514,9 +515,9 @@ function TenantDashboard({
 }: {
   name: string;
   cidade: string | null;
-  totalCandidaturas: number;
-  totalConversas: number;
-  totalBuscasSalvas: number;
+  totalCandidaturas: number | null;
+  totalConversas: number | null;
+  totalBuscasSalvas: number | null;
   /** PROP-3 (E113): "Buscas salvas" é de morador — sai do Início de quem é dono. */
   ehDono: boolean;
 }) {
@@ -550,11 +551,11 @@ function TenantDashboard({
       {/* KPIs de acesso rápido: 2×2 no mobile, 4 em linha no desktop. Candidaturas
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
       <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", !ehDono && "sm:grid-cols-4")} data-testid="inicio-morador-kpis">
-        <StatCard label="Candidaturas" value={demo ? "2" : String(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
+        <StatCard label="Candidaturas" value={demo ? "2" : valorContador(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
         <StatCard label="Favoritos" value={demo ? "3" : String(favoritos.length)} icon={Heart} href="/dashboard/favoritos" />
-        {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : String(totalBuscasSalvas)} icon={Search} href="/dashboard/buscas" />}
+        {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : valorContador(totalBuscasSalvas)} icon={Search} href="/dashboard/buscas" />}
         {/* Dono: as Mensagens já estão no bloco de proprietário (o mesmo número). */}
-        {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : String(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
+        {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
       </div>
 
       {recommended.length > 0 && (

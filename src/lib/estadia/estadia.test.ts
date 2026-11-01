@@ -226,7 +226,7 @@ test("card 'Decisões' da home: só o que a própria pessoa decide; estadia ence
   // Prompt 42: as decisões da estadia entram na lista "Hoje você tem N decisões"; o card fica com o topo e as ações.
   assert.match(home, /<CartaoEstadias estadias=\{estadias\} \/>/);
   const pagina = readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8");
-  assert.match(pagina, /estadiasDaHome\(agora\)/);
+  assert.match(pagina, /estadiasDaHome\(agora, \{ exigir: true \}\)/);
   assert.match(pagina, /decisoes: e\.decisoes/);
 });
 

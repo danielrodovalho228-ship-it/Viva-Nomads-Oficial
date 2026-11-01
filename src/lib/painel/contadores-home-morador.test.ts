@@ -14,10 +14,10 @@ test("Favoritos e Buscas salvas contam as MESMAS listas das telas de destino (nu
   assert.match(home, /label="Favoritos" value=\{demo \? "3" : String\(favoritos\.length\)\}/);
   assert.match(ler("app/(dashboard)/dashboard/favoritos/page.tsx"), /useFavoritos\(\)/);
   // Buscas salvas: a lista de /dashboard/buscas (listarBuscasSalvas), lida no servidor.
-  assert.match(home, /label="Buscas salvas" value=\{demo \? "2" : String\(totalBuscasSalvas\)\}/);
+  assert.match(home, /label="Buscas salvas" value=\{demo \? "2" : valorContador\(totalBuscasSalvas\)\}/);
   const pagina = ler("app/(dashboard)/dashboard/page.tsx");
-  assert.match(pagina, /listarBuscasSalvas\(\)\.catch\(\(\) => \[\]\)/);
-  assert.match(pagina, /totalBuscasSalvas=\{buscasSalvas\.length\}/);
+  assert.match(pagina, /ou\("buscas", listarBuscasSalvas\(\{ exigir: true \}\), null\)/);
+  assert.match(pagina, /totalBuscasSalvas=\{buscasSalvas \? buscasSalvas\.length : null\}/);
   assert.match(ler("app/(dashboard)/dashboard/buscas/page.tsx"), /listarBuscasSalvas/);
 });
 
@@ -31,16 +31,16 @@ test("E181 (família inteira): Candidaturas e Mensagens da home também contam a
   const home = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
   const pagina = ler("app/(dashboard)/dashboard/page.tsx");
   // Candidaturas: listMinhasCandidaturas, na home e em /dashboard/candidaturas.
-  assert.match(pagina, /listMinhasCandidaturas\(\)\.catch\(\(\) => \[\]\)/);
-  assert.match(pagina, /totalCandidaturas=\{candidaturas\.length\}/);
+  assert.match(pagina, /ou\("candidaturas", listMinhasCandidaturas\(\{ exigir: true \}\), null\)/);
+  assert.match(pagina, /totalCandidaturas=\{candidaturas \? candidaturas\.length : null\}/);
   assert.match(ler("app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\((\{ exigir: true \})?\)/);
-  assert.match(home, /label="Candidaturas" value=\{demo \? "2" : String\(totalCandidaturas\)\}/);
+  assert.match(home, /label="Candidaturas" value=\{demo \? "2" : valorContador\(totalCandidaturas\)\}/);
   // Mensagens: listConversations, na home e em /dashboard/mensagens (a tela abre em "Todas").
-  assert.match(pagina, /listConversations\(\)\.catch\(\(\) => \[\]\)/);
-  assert.match(pagina, /totalConversas=\{conversas\.length\}/);
+  assert.match(pagina, /ou\("conversas", listConversations\(\{ exigir: true \}\), null\)/);
+  assert.match(pagina, /totalConversas=\{conversas \? conversas\.length : null\}/);
   assert.match(ler("app/(dashboard)/dashboard/mensagens/page.tsx"), /initial=\{await listConversations\(\{ exigir: true \}\)\}/);
   assert.match(ler("app/(dashboard)/dashboard/mensagens/messages-client.tsx"), /useState<Filtro>\("todas"\)/);
-  assert.match(home, /label="Mensagens" value=\{demo \? "1" : String\(totalConversas\)\}/);
+  assert.match(home, /label="Mensagens" value=\{demo \? "1" : valorContador\(totalConversas\)\}/);
   // Nenhum contador do morador com número fixo fora do modo demonstração.
   for (const rotulo of ["Candidaturas", "Favoritos", "Buscas salvas", "Mensagens"]) {
     assert.doesNotMatch(home, new RegExp(`label="${rotulo}" value=\\{demo \\? "\\d+" : "\\d+"\\}`), rotulo);

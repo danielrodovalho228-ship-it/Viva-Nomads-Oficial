@@ -351,7 +351,7 @@ export interface EstadiaNaHome {
  * vigor da pessoa (como morador ou como dono), o topo de cada uma, o que ela precisa decidir e a lista de ações da
  * folha "Ações desta estadia". Sem sessão ou sem estadia → lista vazia (o card não aparece).
  */
-export async function estadiasDaHome(agora: Date = new Date()): Promise<EstadiaNaHome[]> {
+export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?: boolean } = {}): Promise<EstadiaNaHome[]> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return [];
@@ -362,7 +362,9 @@ export async function estadiasDaHome(agora: Date = new Date()): Promise<EstadiaN
   const { data: meus } = await admin.from("properties").select("id").eq("owner_id", user.id).limit(500);
   const imoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);
   const filtro = imoveis.length ? `tenant_id.eq.${user.id},property_id.in.(${imoveis.join(",")})` : `tenant_id.eq.${user.id}`;
-  const { data } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("status", "ativo").or(filtro).order("created_at", { ascending: false }).limit(20);
+  const { data, error } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("status", "ativo").or(filtro).order("created_at", { ascending: false }).limit(20);
+  // Achado nº 24: com `exigir`, a falha LANÇA — o Início avisa em vez de esconder as decisões das estadias.
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler as suas estadias agora.");
   const contratos = (data ?? []) as unknown as LinhaContratoEstadia[];
   if (!contratos.length) return [];
   const ids = contratos.map((c) => c.id);

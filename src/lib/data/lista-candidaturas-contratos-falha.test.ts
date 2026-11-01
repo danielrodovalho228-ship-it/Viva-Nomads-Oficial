@@ -25,7 +25,8 @@ test("candidaturas e contratos lançam na falha do banco quando a tela pede com 
 test("as telas pedem com exigir; home não (Garantias e Ganhos passaram a exigir nos achados nº 11 e 12)", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/contratos/page.tsx"), /getMeusContratos\(\{ exigir: true \}\), getContratosDoInquilino\(\{ exigir: true \}\), listMyProperties\(\{ exigir: true \}\)/);
-  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/lib/data/carteira.ts"]) {
-    assert.doesNotMatch(ler(f), /exigir: true/, f);
-  }
+  assert.doesNotMatch(ler("src/lib/data/carteira.ts"), /exigir: true/);
+  // Achado nº 24: a home pede com exigir, mas SEMPRE dentro de ou(...) — a falha vira aviso no topo, nunca a página de erro.
+  const homeA24 = ler("src/app/(dashboard)/dashboard/page.tsx");
+  assert.equal((homeA24.match(/exigir: true/g) ?? []).length, (homeA24.match(/ou\("[a-z]+", [A-Za-z]+\([^)]*\{ exigir: true \}\)/g) ?? []).length);
 });
