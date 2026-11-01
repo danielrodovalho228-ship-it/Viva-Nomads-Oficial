@@ -16,6 +16,9 @@ import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 export const metadata = { title: tituloDoAdmin("/admin/solicitacoes"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
+// Achado 29: leitura que falhou não vira "nenhum proprietário".
+const MSG_TAXAS_FALHOU = "Não foi possível carregar a taxa de solução agora. Recarregue a página para tentar de novo.";
+
 const STATUS: Record<string, string> = { aberto: "Aberta", visto: "Vista", em_andamento: "Em andamento", resolvido: "Resolvida" };
 
 /**
@@ -44,7 +47,7 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
           ? await urgentesSemResposta4h(admin, { exigir: true })
           : await solicitacoesManutencao(admin, intervaloBRT(p.inicio, p.fim), cidade, { exigir: true })
     : [];
-  const taxas = admin ? await taxasDeSolucaoDosDonos(admin, agora).catch(() => []) : [];
+  const taxas = admin ? await taxasDeSolucaoDosDonos(admin, agora).catch(() => null) : [];
   const resolvidas = lista.filter((s) => s.resolved_at).length;
 
   return (
@@ -106,7 +109,11 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
           Chamados resolvidos no prazo ÷ chamados resolvidos, nos últimos 12 meses. Só aparece a partir de 3 chamados resolvidos. Prazos de solução:
           urgente 24 h (provisória) e 72 h (definitiva), média 72 h, baixa 7 dias, contados da abertura.
         </p>
-        {taxas.length === 0 ? (
+        {taxas === null ? (
+          <p role="alert" className="mt-2 text-sm font-semibold text-red-700" data-testid="taxa-solucao-erro">
+            {MSG_TAXAS_FALHOU}
+          </p>
+        ) : taxas.length === 0 ? (
           <p className="mt-2 text-sm text-muted">Nenhum proprietário com 3 ou mais chamados resolvidos ainda.</p>
         ) : (
           <ul className="mt-2 divide-y divide-sage-100 text-sm">
