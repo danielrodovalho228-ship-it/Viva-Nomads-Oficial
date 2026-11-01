@@ -29,7 +29,7 @@ import {
   type StatusAgente,
 } from "@/lib/agentes/central";
 import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
-import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, ultimaPorAgente } from "@/lib/agentes/painel";
+import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, rotuloRondas24h, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { buttonClasses } from "@/components/ui/button";
@@ -205,7 +205,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
   const agora = useAgora();
   const porSlug = useMemo(() => Object.fromEntries(dados.agentes.map((a) => [a.slug, a])), [dados.agentes]);
   // E74: sem acesso às tabelas, os números ficam "–" (não 0): zero seria afirmar que a equipe parou.
-  const kpi = useMemo(() => (agora && dados.acessoLiberado ? indicadores(dados.agentes, dados.rondas, agora) : null), [dados.agentes, dados.rondas, dados.acessoLiberado, agora]);
+  const kpi = useMemo(() => (agora && dados.acessoLiberado ? indicadores(dados.agentes, dados.rondas, agora, dados.rondas24h) : null), [dados.agentes, dados.rondas, dados.rondas24h, dados.acessoLiberado, agora]);
   const estado = useMemo(() => estadoDaCentral({ acessoLiberado: dados.acessoLiberado, agentes: dados.agentes, rondas: dados.rondas, agora: agora ?? new Date(0) }), [dados, agora]);
   const [lidoEm, setLidoEm] = useState<Date | null>(null);
 
@@ -314,7 +314,8 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
           <div className="grid grid-cols-4 gap-2" data-testid="kpis">
             {[
               [kpi?.ativos, "agentes ativos"],
-              [kpi?.rondas24h, "rondas em 24 h"],
+              // E335: a capa diz de quantos agentes vêm as rondas (89 em 24 h podem ser todas de um agente só).
+              [kpi?.rondas24h, kpi ? rotuloRondas24h(kpi.agentes24h) : "rondas em 24 h"],
               [kpi?.falhas, "falharam na última"],
               [kpi?.p1, "achados P1 (última ronda)"],
             ].map(([v, l]) => (

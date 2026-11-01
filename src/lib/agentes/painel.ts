@@ -51,18 +51,50 @@ export function achadosDaPrioridade(r: Pick<Ronda, "achados"> | undefined, ...pr
 export interface Indicadores {
   ativos: number;
   rondas24h: number;
+  /** E335: de quantos agentes são as rondas das 24 h (89 rondas podem ser todas de um agente só). */
+  agentes24h: number;
   falhas: number;
   p1: number;
 }
 
+/** E335: as rondas das últimas 24 h, lidas à parte (só o agente de cada uma) — não a janela das 200 mais recentes. */
+export interface Rondas24h {
+  total: number;
+  porAgente: Record<string, number>;
+}
+
+export function contarRondas24h(linhas: { agente_slug: string }[]): Rondas24h {
+  const porAgente: Record<string, number> = {};
+  for (const l of linhas) porAgente[l.agente_slug] = (porAgente[l.agente_slug] ?? 0) + 1;
+  return { total: linhas.length, porAgente };
+}
+
+/**
+ * E335: a lista das rondas mais recentes (janela de 200) + a última ronda de CADA agente, lida à parte. Um agente que
+ * roda de 15 em 15 min (o Renato: ~90 por dia) enchia a janela e os outros 13 viravam "Sem ronda ainda".
+ */
+export function juntarUltimas(recentes: Ronda[], ultimas: Ronda[]): Ronda[] {
+  const vistos = new Set(recentes.map((r) => r.id));
+  const extra = ultimas.filter((r) => r && !vistos.has(r.id));
+  return [...recentes, ...extra].sort((a, b) => new Date(b.iniciada_em).getTime() - new Date(a.iniciada_em).getTime());
+}
+
+/** "rondas em 24 h · 1 agente" / "· 3 agentes" — a capa diz de quantos agentes vem o número. */
+export function rotuloRondas24h(agentes24h: number): string {
+  return `rondas em 24 h · ${agentes24h} ${agentes24h === 1 ? "agente" : "agentes"}`;
+}
+
 /** Números do topo: ativos, rondas nas últimas 24 h, últimas rondas que falharam, P1 em aberto (últimas rondas). */
-export function indicadores(agentes: Agente[], rondas: Ronda[], agora: Date): Indicadores {
+export function indicadores(agentes: Agente[], rondas: Ronda[], agora: Date, lidas24h?: Rondas24h | null): Indicadores {
   const ultimas = ultimaPorAgente(rondas);
   const desde = agora.getTime() - 24 * 3600_000;
   const ativos = agentes.filter((a) => a.status === "ativo");
+  const da24h = rondas.filter((r) => new Date(r.iniciada_em).getTime() >= desde);
+  const c24 = lidas24h ?? contarRondas24h(da24h);
   return {
     ativos: ativos.length,
-    rondas24h: rondas.filter((r) => new Date(r.iniciada_em).getTime() >= desde).length,
+    rondas24h: c24.total,
+    agentes24h: Object.keys(c24.porAgente).length,
     falhas: ativos.filter((a) => ultimas[a.slug]?.status === "falhou").length,
     p1: ativos.reduce((n, a) => n + (ultimas[a.slug] ? prioridadesDe(ultimas[a.slug]).filter((p) => p === "P1").length : 0), 0),
   };

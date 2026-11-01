@@ -57,7 +57,7 @@ test("indicadores: ativos, rondas 24 h, falhas e P1 só das últimas rondas", ()
     ronda("bruno", 2000, "ok", "x", [{ prioridade: "P1", titulo: "velho" }]),
     ronda("otavio", 60),
   ];
-  assert.deepEqual(indicadores(agentes, rondas, agora), { ativos: 2, rondas24h: 2, falhas: 1, p1: 2 });
+  assert.deepEqual(indicadores(agentes, rondas, agora), { ativos: 2, rondas24h: 2, agentes24h: 2, falhas: 1, p1: 2 });
 });
 
 test("rede: o Renato recebe o pacote do Otávio e entrega PRs ao Daniel", () => {
@@ -136,4 +136,48 @@ test("rede: Rogério é nó de dono ao lado do Daniel e recebe o relatório do M
   const ids = nosDaRede([]).map((n) => n.id);
   assert.ok(ids.includes("daniel") && ids.includes("rogerio"));
   assert.ok(FLUXOS.some(([a, b]) => a === "moacir" && b === "rogerio"));
+});
+
+test("E335: a capa e os cartões leem a mesma fonte — última ronda de cada agente e rondas de 24 h lidas à parte", async () => {
+  const { juntarUltimas, contarRondas24h, rotuloRondas24h } = await import("./painel.ts");
+  const { duracao } = await import("./central.ts");
+  const agentes = [ag("renato", "Renato"), ag("bruno", "Bruno"), ag("otavio", "Otávio")];
+  // A janela das 200 mais recentes só tem o Renato (90 por dia); Bruno e Otávio rodaram há 2 semanas.
+  const janela = Array.from({ length: 5 }, (_, i) => ({ ...ronda("renato", 10 + i * 15), id: `r${i}` }));
+  const bruno = { ...ronda("bruno", 20_000), id: "b1" };
+  const otavio = { ...ronda("otavio", 20_100), id: "o1" };
+  const rondas = juntarUltimas(janela, [janela[0], bruno, otavio]);
+  assert.equal(rondas.length, 7, "sem repetir a do Renato");
+  const ult = ultimaPorAgente(rondas);
+  assert.deepEqual(Object.keys(ult).sort(), ["bruno", "otavio", "renato"], "ninguém fica 'Sem ronda ainda'");
+  const c24 = contarRondas24h(Array.from({ length: 89 }, () => ({ agente_slug: "renato" })));
+  const k = indicadores(agentes, rondas, agora, c24);
+  assert.equal(k.rondas24h, 89);
+  assert.equal(k.agentes24h, 1);
+  assert.equal(rotuloRondas24h(k.agentes24h), "rondas em 24 h · 1 agente");
+  assert.equal(rotuloRondas24h(3), "rondas em 24 h · 3 agentes");
+  // Ronda gravada só no fim (início = fim): sem duração, nunca "0 s".
+  assert.equal(duracao("2026-11-01T09:00:08Z", "2026-11-01T09:00:08Z"), null);
+  assert.equal(duracao("2026-11-01T09:00:00Z", "2026-11-01T09:00:42Z"), "42 s");
+});
+
+test("E335: carregarCentral lê a última ronda de cada agente e as 24 h à parte; a 0274 dá título real às ordens", async () => {
+  const { readFileSync } = await import("node:fs");
+  const acoes = readFileSync(new URL("../data/agentes-actions.ts", import.meta.url), "utf8");
+  assert.match(acoes, /\.eq\("agente_slug", ag\.slug\)\.order\("iniciada_em", \{ ascending: false \}\)\.limit\(1\)/);
+  assert.match(acoes, /\.gte\("iniciada_em", desde24h\)/);
+  assert.match(acoes, /juntarUltimas\(/);
+  const mig = readFileSync(new URL("../../../supabase/migrations/0274_agentes_titulo_achado.sql", import.meta.url), "utf8");
+  const apl = readFileSync(new URL("../../../supabase/producao/aplicar-0274.sql", import.meta.url), "utf8");
+  for (const sql of [mig, apl]) {
+    assert.match(sql, /p->>'assunto'/);
+    assert.match(sql, /public\.agente_achado_texto\(a\.achado\)/);
+    assert.match(sql, /insert into public\.agentes_ordens_titulo_0274/);
+    assert.doesNotMatch(sql, /\bdelete from\b|\bdrop table\b/i, "a 0274 não apaga nada");
+  }
+  assert.match(apl, /^begin;/m);
+  assert.match(apl, /'0274_agentes_titulo_achado'/);
+  assert.match(apl, /^commit;/m);
+  const rb = readFileSync(new URL("../../../supabase/producao/rollback/0274_rollback.sql", import.meta.url), "utf8");
+  assert.match(rb, /set texto = c\.texto_antes/);
 });

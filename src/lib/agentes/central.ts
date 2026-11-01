@@ -162,6 +162,8 @@ export function tempoRelativo(iso: string, agora: Date): string {
 export function duracao(inicio: string, fim: string | null): string | null {
   if (!fim) return null;
   const s = Math.max(0, Math.round((new Date(fim).getTime() - new Date(inicio).getTime()) / 1000));
+  // E335: início = fim é ronda gravada só no fim (sem a hora em que começou): não há duração para mostrar ("0 s").
+  if (s < 1) return null;
   if (s < 60) return `${s} s`;
   const m = Math.round(s / 60);
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
