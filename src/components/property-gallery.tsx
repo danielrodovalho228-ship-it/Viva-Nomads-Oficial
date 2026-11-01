@@ -336,24 +336,34 @@ function Lightbox({
     touchX.current = null;
   }
 
+  /** E408: só o próprio fundo fecha — clique na foto, no contador ou nos botões não. */
+  function fecharNoFundo(e: React.MouseEvent<HTMLElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
   return (
     <div
       data-testid="galeria-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Fotos de ${title}`}
       className="fixed inset-0 z-50 flex flex-col bg-night/95"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
+      // E408 (01/11): clicar no fundo escuro (fora da foto e dos botões) fecha, como nos outros diálogos do site.
+      onClick={fecharNoFundo}
     >
-      <div className="flex items-center justify-between p-4 text-white">
+      <div className="flex items-center justify-between p-4 text-white" onClick={fecharNoFundo}>
         <span className="text-sm" data-testid="galeria-contador">
           {index + 1} / {photos.length}
         </span>
         <IconButton onClick={onClose} label="Fechar" icon={X} iconClassName="h-6 w-6" className="h-10 w-10 text-white hover:bg-white/10" />
       </div>
-      <div className="relative flex flex-1 items-center justify-center px-4 pb-4">
+      <div className="relative flex flex-1 items-center justify-center px-4 pb-4" onClick={fecharNoFundo} data-testid="galeria-lightbox-fundo">
         {photos.length > 1 && (
           <IconButton onClick={prev} label="Foto anterior" icon={ChevronLeft} iconClassName="h-6 w-6" className="absolute left-4 z-10 h-11 w-11 bg-white/10 text-white hover:bg-white/20" />
         )}
-        <div className="w-full max-w-4xl">
+        <div className="w-full max-w-4xl" onClick={fecharNoFundo}>
           {isPhoto(photos[index]) ? (
             // E262 (a): na abertura fria o painel abria em branco até a versão grande chegar. Embaixo, a MESMA versão da
             // miniatura do mosaico/carrossel (mesmo `sizes` = mesma URL, já no cache) aparece na hora; por cima, a grande,

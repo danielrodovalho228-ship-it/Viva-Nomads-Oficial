@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import L from "leaflet";
@@ -50,13 +50,40 @@ interface PropertyMapProps {
  * ponto exato — o endereço exato só é liberado após o aceite (privacidade).
  */
 export function PropertyMap(props: PropertyMapProps) {
-  if (motorDoMapa(TOKEN) === "leaflet") return <PropertyMapLeaflet {...props} />;
-  return <PropertyMapbox {...props} />;
+  // E419 (01/11): falha ao carregar o mapa tem estado próprio — "Tentar de novo" remonta o mapa do zero.
+  const [tentativa, setTentativa] = useState(0);
+  const [falhou, setFalhou] = useState(false);
+  const aoFalhar = () => setFalhou(true);
+  if (falhou) return <MapaIndisponivel className={props.className} aoTentar={() => { setFalhou(false); setTentativa((t) => t + 1); }} />;
+  if (motorDoMapa(TOKEN) === "leaflet") return <PropertyMapLeaflet key={tentativa} {...props} aoFalhar={aoFalhar} />;
+  return <PropertyMapbox key={tentativa} {...props} aoFalhar={aoFalhar} />;
 }
 
-function PropertyMapbox({ markers, center, zoom = 13, approximate = false, className }: PropertyMapProps) {
+/** E419: o mapa não carregou (rede, bloqueio do provedor ou script) — dizer, e oferecer tentar de novo. */
+export const TEXTO_MAPA_INDISPONIVEL = "Não foi possível carregar o mapa agora.";
+export function MapaIndisponivel({ className, aoTentar }: { className?: string; aoTentar?: () => void }) {
+  return (
+    <div role="status" data-testid="mapa-indisponivel" className={cn("flex flex-col items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 p-4 text-center text-sm text-muted", className)}>
+      <p>{TEXTO_MAPA_INDISPONIVEL} A localização aproximada continua descrita nesta página.</p>
+      {aoTentar && (
+        <button type="button" onClick={aoTentar} className="inline-flex min-h-11 items-center rounded-lg border border-line bg-white px-4 font-medium text-ink hover:bg-surface-2" data-testid="mapa-tentar-de-novo">
+          Tentar de novo
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** E419: sem nenhum tile carregado em 12 s (ou com as novas tentativas esgotadas), o mapa é dado como indisponível. */
+const PRAZO_MAPA_MS = 12_000;
+
+function PropertyMapbox({ markers, center, zoom = 13, approximate = false, className, aoFalhar }: PropertyMapProps & { aoFalhar: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
+  const aoFalharRef = useRef(aoFalhar);
+  useEffect(() => {
+    aoFalharRef.current = aoFalhar;
+  });
 
   const raw = center ?? markers[0];
   // Em modo aproximado, embaralha levemente o centro e esconde o pino do imóvel.
@@ -79,6 +106,12 @@ function PropertyMapbox({ markers, center, zoom = 13, approximate = false, class
       center: [first.lng, first.lat],
       zoom: approximate ? Math.min(zoom, 13) : zoom,
     });
+    // E419: estilo/tiles que não carregam (token, rede) → estado de erro em vez da caixa vazia.
+    let carregou = false;
+    map.on("load", () => { carregou = true; });
+    map.on("error", () => { if (!carregou) aoFalharRef.current(); });
+    const prazo = window.setTimeout(() => { if (!carregou) aoFalharRef.current(); }, PRAZO_MAPA_MS);
+    map.on("remove", () => window.clearTimeout(prazo));
     mapRef.current = map;
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
@@ -109,8 +142,12 @@ function PropertyMapbox({ markers, center, zoom = 13, approximate = false, class
 }
 
 /** Leaflet + CARTO (sem token Mapbox): área aproximada de ~500 m e lugares próximos. */
-function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, className }: PropertyMapProps) {
+function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, className, aoFalhar }: PropertyMapProps & { aoFalhar: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const aoFalharRef = useRef(aoFalhar);
+  useEffect(() => {
+    aoFalharRef.current = aoFalhar;
+  });
   const raw = center ?? markers[0];
   const first = useMemo(
     () => (raw ? (approximate ? { lat: blur(raw.lat), lng: blur(raw.lng) } : raw) : undefined),
@@ -129,14 +166,24 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
     );
     // topleft: o canto direito é do botão "Ampliar mapa"
     L.control.zoom({ position: "topleft" }).addTo(map);
+    let prazoMapa = 0;
     if (TILES_CARTO) {
       const camada = L.tileLayer(TILES_CARTO, { maxZoom: 19, attribution: ATRIBUICAO_MAPA }).addTo(map);
       // Tile que falhou (rede oscilando) ganha uma nova tentativa, sem laço (ordem aad2b751).
+      // E419: nenhum tile carregou (provedor fora, rede bloqueada) → estado de erro, não a caixa cinza calada.
+      let algumCarregou = false;
+      let esgotados = 0;
+      camada.on("tileload", () => { algumCarregou = true; });
+      prazoMapa = window.setTimeout(() => { if (!algumCarregou) aoFalharRef.current(); }, PRAZO_MAPA_MS);
       camada.on("tileerror", (ev) => {
         const tile = ev.tile as HTMLImageElement;
         const tentativas = Number(tile.dataset.tentativas ?? "0");
         const nova = urlDeNovaTentativaTile(tile.src, tentativas);
-        if (!nova) return;
+        if (!nova) {
+          esgotados += 1;
+          if (!algumCarregou && esgotados >= 4) aoFalharRef.current();
+          return;
+        }
         tile.dataset.tentativas = String(tentativas + 1);
         window.setTimeout(() => { tile.src = nova; }, 600);
       });
@@ -169,6 +216,7 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
     const ro = new ResizeObserver(() => map.invalidateSize());
     ro.observe(containerRef.current);
     return () => {
+      window.clearTimeout(prazoMapa);
       ro.disconnect();
       map.remove();
     };
@@ -176,12 +224,21 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
 
   if (!first) return <div className={cn("rounded-xl border border-line bg-surface-2", className)} />;
   return (
-    <div
-      ref={containerRef}
-      data-testid="mapa-imovel"
-      data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
-      className={cn("z-0 overflow-hidden rounded-xl bg-surface-2", className)}
-    />
+    <div className={cn("relative", className)}>
+      <div
+        ref={containerRef}
+        data-testid="mapa-imovel"
+        data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
+        className="z-0 h-full w-full overflow-hidden rounded-xl bg-surface-2"
+      />
+      {/* E419: sem o mapa-base configurado neste build, a caixa não fica cinza e calada — diz que o mapa não está
+          disponível (sem "Tentar de novo": nada a tentar até o mapa-base ser ligado). */}
+      {!TILES_CARTO && (
+        <div className="absolute inset-0 z-[500]">
+          <MapaIndisponivel className="h-full w-full" />
+        </div>
+      )}
+    </div>
   );
 }
 

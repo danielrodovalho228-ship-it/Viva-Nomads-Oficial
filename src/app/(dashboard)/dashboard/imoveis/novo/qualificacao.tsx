@@ -12,13 +12,13 @@ import {
   contarRespondidas,
   criterioDe,
   faltamDoEssencial,
-  nivelDoResultado,
   rotuloAvancarQualificacao,
   tituloResultado,
   type IconeOpcao,
   type Pergunta,
   type Respostas,
 } from "@/lib/anuncio/qualificacao-conforto";
+import { nivelDaQualificacao, type ProvasDoRascunho } from "@/lib/anuncio/qualificacao-nivel";
 import { cn } from "@/lib/utils";
 import { progressoQualificacao, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
 import { RodapeAssistente } from "./rodape-assistente";
@@ -55,6 +55,8 @@ export function Qualificacao(p: {
   ocupado?: boolean;
   /** E180: o aviso "Você tem um anúncio em andamento" (Continuar de onde parei), logo abaixo do progresso. */
   aviso?: React.ReactNode;
+  /** E415: as provas do rascunho (foto na hora, internet medida, ruído) — o resultado as credita. */
+  provas?: ProvasDoRascunho | null;
 }) {
   const resultado = p.tela >= TOTAL_TELAS;
   // O "Sair" do topo (moldura do assistente) aqui salva as respostas antes de sair (decisão do Muse, 25/10).
@@ -87,7 +89,7 @@ export function Qualificacao(p: {
       </p>
       {p.aviso && <div className="mt-4">{p.aviso}</div>}
       {resultado ? (
-        <Resultado respostas={p.respostas} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
+        <Resultado respostas={p.respostas} provas={p.provas ?? null} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
         <Tela
           indice={p.tela}
@@ -255,12 +257,14 @@ function PerguntaQ({ q, valor, onResponder }: { q: Pergunta; valor: string | boo
   );
 }
 
-function Resultado({ respostas, onVer, onResponderDeNovo }: { respostas: Respostas; onVer: () => void; onResponderDeNovo: () => void }) {
+function Resultado({ respostas, provas, onVer, onResponderDeNovo }: { respostas: Respostas; provas: ProvasDoRascunho | null; onVer: () => void; onResponderDeNovo: () => void }) {
   const { conforto } = aplicarRespostas(respostas);
   const faltam = faltamDoEssencial(conforto);
   const { titulo, subtitulo } = tituloResultado(faltam.length);
   // E179: o que as respostas já mostram (ex.: micro-ondas na cozinha) sai do "Para subir a Conforto".
-  const { nivel, paraSubir } = nivelDoResultado(conforto, respostas);
+  // E415: com o rascunho salvo, o nível e a lista vêm do mesmo motor do Passo 5, com as provas já feitas.
+  const [agora] = useState(() => new Date());
+  const { nivel, proximo, paraSubir, provados } = nivelDaQualificacao(conforto, respostas, provas, agora);
   return (
     <div className="mt-6 space-y-4" data-testid="qualificacao-resultado" data-faltam={faltam.length}>
       <div className="rounded-xl border border-line bg-white p-6 sm:p-8">
@@ -289,13 +293,33 @@ function Resultado({ respostas, onVer, onResponderDeNovo }: { respostas: Respost
         </ul>
       </div>
       <div className="rounded-xl border border-line bg-white p-6" data-testid="qualificacao-nivel">
-        <h2 className="font-title text-lg font-semibold text-ink">{nivel ? `Nível: ${nivel}` : "Nível: ainda sem nível (falta o essencial)"}</h2>
-        <p className="mt-1 text-sm text-muted">Para subir a Conforto, no cadastro, com fotos tiradas na hora (e a medida da internet):</p>
-        <ul className="mt-3 grid gap-1 text-sm text-ink sm:grid-cols-2" data-testid="qualificacao-para-subir">
-          {paraSubir.map((s) => (
-            <li key={s}>· {s}</li>
-          ))}
-        </ul>
+        <h2 className="font-title text-lg font-semibold text-ink" data-testid="qualificacao-nivel-titulo" data-nivel={nivel ?? "sem"}>
+          {nivel ? `Nível: ${nivel}` : "Nível: ainda sem nível (falta o essencial)"}
+        </h2>
+        {provados.length > 0 && (
+          <div className="mt-3" data-testid="qualificacao-provados" data-quantos={provados.length}>
+            <p className="text-sm font-medium text-ink">Já provado com foto na hora:</p>
+            <ul className="mt-1 grid gap-1 text-sm text-ink sm:grid-cols-2">
+              {provados.map((s) => (
+                <li key={s} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-forest" aria-hidden /> {s}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {proximo && paraSubir.length > 0 ? (
+          <>
+            <p className="mt-3 text-sm text-muted">Para subir a {proximo}, no cadastro, com fotos tiradas na hora (e a medida da internet):</p>
+            <ul className="mt-3 grid gap-1 text-sm text-ink sm:grid-cols-2" data-testid="qualificacao-para-subir" data-quantos={paraSubir.length}>
+              {paraSubir.map((s) => (
+                <li key={s}>· {s}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          nivel && !proximo && <p className="mt-1 text-sm text-muted" data-testid="qualificacao-nivel-topo">É o nível mais alto.</p>
+        )}
       </div>
       <div className="flex flex-col items-center gap-3 pt-2">
         <button type="button" onClick={onResponderDeNovo} className="min-h-11 px-2 text-sm font-medium text-ink underline underline-offset-4" data-testid="qualificacao-de-novo">

@@ -23,19 +23,26 @@ export function TelaNotificacoes() {
   const [equipe, setEquipe] = useState<boolean | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  // Achados 52/53: sem ler as preferências gravadas, a tela não abre com valores padrão (todos ligados) — salvar isso
+  // religaria o que a pessoa desligou, inclusive "Sugestões e novidades". Mostra o aviso com "Tentar de novo".
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     let vivo = true;
-    Promise.all([getCategoriasDesligadas().catch((): CategoriaComInterruptor[] => []), getCanais().catch(() => null), getAlertasEquipe().catch(() => null)]).then(([desl, c, eq]) => {
-      if (!vivo) return;
-      setTipos({ mensagens: !desl.includes("mensagens"), lembretes: !desl.includes("lembretes"), outros: !desl.includes("outros"), sugestoes: !desl.includes("sugestoes") });
-      setCanaisUi(c ?? { email: true, push: true, whatsapp: true });
-      setEquipe(eq);
-    });
+    Promise.all([getCategoriasDesligadas(), getCanais(), getAlertasEquipe().catch(() => null)])
+      .then(([desl, c, eq]) => {
+        if (!vivo) return;
+        setFalhou(false);
+        setTipos({ mensagens: !desl.includes("mensagens"), lembretes: !desl.includes("lembretes"), outros: !desl.includes("outros"), sugestoes: !desl.includes("sugestoes") });
+        setCanaisUi(c);
+        setEquipe(eq);
+      })
+      .catch(() => vivo && setFalhou(true));
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tentativa]);
 
   async function salvar() {
     if (!tipos || !canais) return;
@@ -56,6 +63,15 @@ export function TelaNotificacoes() {
     if (!r.ok) setEquipe(antes);
   }
 
+  if (falhou && (!tipos || !canais))
+    return (
+      <p role="alert" className="rounded-xl bg-white p-4 text-sm text-red-700" data-testid="tela-notificacoes-falha">
+        Não foi possível carregar suas preferências de aviso agora. Nada foi alterado.{" "}
+        <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setTentativa((n) => n + 1)} data-testid="tela-notificacoes-tentar">
+          Tentar de novo
+        </button>
+      </p>
+    );
   if (!tipos || !canais)
     return (
       <div className="grid gap-4" aria-busy="true" data-testid="tela-notificacoes-carregando">

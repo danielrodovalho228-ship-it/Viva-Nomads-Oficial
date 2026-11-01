@@ -91,7 +91,10 @@ test("p23 — endereço exato só às partes da visita e só com a presencial CO
   const cartao = ler("../components/visitas/cartao-visita.tsx");
   assert.match(cartao, /data-testid="visita-endereco-oculto"/);
   const pedido = ler("../components/property/visita-video.tsx");
-  assert.match(pedido, /Pedido de visita enviado\. O proprietário confirma aqui na plataforma e você recebe um aviso\./);
+  // E424: a confirmação na tela mora em confirmacaoNaTela (modalidade, horários, endereço só depois da confirmação).
+  assert.match(pedido, /confirmacaoNaTela\(escolhida, horariosEnviados\)/);
+  assert.match(ler("./visitas/escolha-modalidade.ts"), /o endereço exato aparece depois da confirmação/);
+  assert.doesNotMatch(ler("./visitas/escolha-modalidade.ts"), /whatsapp/i);
   const detalhe = ler("../app/(public)/imoveis/[id]/property-detail.tsx");
   assert.doesNotMatch(detalhe, /e-mail\/WhatsApp\./);
   assert.match(detalhe, /<VisitaPresencial/);

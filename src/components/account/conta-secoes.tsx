@@ -535,6 +535,8 @@ const DICA_CATEGORIA: Record<"decisao" | "seguranca" | CategoriaComInterruptor, 
 };
 
 /** `titulo`: a Conta e a subtela já têm o título "Notificações" — lá o cartão não repete (CONTA-A, C3a). */
+const ERRO_LER_PREFERENCIAS = "Não foi possível carregar suas preferências de aviso agora. Recarregue a página para tentar de novo.";
+
 export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: string | null } = {}) {
   // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
   // no app; o canal da Viva é "Falar com a Viva").
@@ -549,15 +551,17 @@ export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: str
 
   useEffect(() => {
     let vivo = true;
+    // Achados 52/54: sem ler a preferência gravada, o interruptor fica desabilitado (null) e o painel avisa — nunca um
+    // valor padrão que um toque gravaria por cima (antes: e-mail "ligado" e categorias "[]", que religava as outras).
     getNotifPrefs()
       .then((p) => vivo && setPrefs(p))
-      .catch(() => vivo && setPrefs({ email: true }));
+      .catch(() => vivo && setErro(ERRO_LER_PREFERENCIAS));
     getAlertasEquipe()
       .then((v) => vivo && setAlertasEquipeUi(v))
       .catch(() => vivo && setAlertasEquipeUi(null));
     getCategoriasDesligadas()
       .then((v) => vivo && setDesligadas(v))
-      .catch(() => vivo && setDesligadas([]));
+      .catch(() => vivo && setErro(ERRO_LER_PREFERENCIAS));
     return () => {
       vivo = false;
     };

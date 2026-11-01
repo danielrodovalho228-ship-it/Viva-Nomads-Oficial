@@ -433,6 +433,10 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
     const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
     await attachCoverPhotos(supabase, mapped);
     await attachReviewAggregates(supabase, mapped);
+    // E416 (01/11): o cartão do anúncio é o mesmo da busca — nível (Essencial/Conforto/Premium) e selo Preço justo
+    // vinham só na vitrine (listProperties); na página pública do proprietário, o mesmo anúncio saía sem eles.
+    await attachPrecoJusto(supabase, mapped);
+    await attachNivel(supabase, mapped);
     return mapped;
   } catch {
     return [];
