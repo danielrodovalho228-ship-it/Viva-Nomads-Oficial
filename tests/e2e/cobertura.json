@@ -2102,7 +2102,8 @@
         "t235-cartoes-compartilhaveis",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t941-e267-cartao-compartilhar-imovel"
       ]
     },
     "/dashboard/parceiro": {
@@ -4080,7 +4081,8 @@
         "proprietario"
       ],
       "specs": [
-        "t57-contrato-assinar"
+        "t57-contrato-assinar",
+        "t941-e267-cartao-compartilhar-imovel"
       ]
     },
     "src/lib/data/contrato-assinar-actions.ts#getContratoParaAssinar": {
