@@ -106,6 +106,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   proposta_respondida: "proposta",
   proposta_vencendo: "proposta",
   visita_pedida: "visita",
+  visita_pedida_morador: "visita",
   visita_confirmada: "visita",
   visita_remarcada: "visita",
   visita_cancelada: "visita",
