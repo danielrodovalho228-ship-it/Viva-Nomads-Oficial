@@ -56,7 +56,9 @@ test("o cartão só mostra o link com a visita CONFIRMADA (nem pedida, nem em re
 
 test("e-mails: o da confirmação não leva o link; o da véspera vai só ao morador e ao dono da visita", () => {
   const confirma = corpoDe("responderVisita");
-  assert.match(confirma, /avisarVisita\(admin, outro, "visita_confirmada", `Visita \$\{tipo\} confirmada para \$\{formatarHorarioBrasilia\(campos\.horario_confirmado\)\}\.`, endereco\);/);
+  // E325: a chamada ganhou o corpo com o imóvel (título + código); continua sem o link da chamada.
+  assert.match(confirma, /avisarVisita\(\n\s*admin,\n\s*outro,\n\s*"visita_confirmada",\n\s*`Visita \$\{tipo\} confirmada para \$\{formatarHorarioBrasilia\(campos\.horario_confirmado\)\}\.`,\n\s*endereco,/);
+  assert.doesNotMatch(confirma.slice(confirma.indexOf('"visita_confirmada"'), confirma.indexOf("// E205-B: confirmada com menos")), /link/i);
   assert.doesNotMatch(confirma.slice(confirma.indexOf('"visita_confirmada"'), confirma.indexOf('"visita_confirmada"') + 200), /link/i);
   const avisos = ler("src/lib/visitas/avisos-servidor.ts");
   assert.match(avisos, /for \(const para of \[v\.tenant_id, v\.owner_id\]\) \{/);
