@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *     seus pets agora." com "Tentar de novo" (Conta › Perfil);
  *   • Achado 50 — os calendários importados sumiam na falha (e o limite de 3 links deixava de contar). Agora:
  *     "Não foi possível carregar os calendários importados agora." com "Tentar de novo" (editar o anúncio).
- * Pela tela real, 390 e 1280: as ações do servidor da tela respondem 500 (o efeito do "throw" novo) → o aviso, nunca a
+ * Pela tela real, 390 e 1280: a ação do servidor que lê os pets / os links responde 500 (o efeito do "throw" novo) → o aviso, nunca a
  * lista vazia; "Tentar de novo" com o servidor de volta → o pet / o link gravado volta. A falha do banco em si fica com
  * o teste de unidade do #2070 (achado49-51-vazios.test.ts); o achado 49 (interessados para proposta) é lido no servidor.
  */
@@ -19,6 +19,17 @@ const ids: { mor?: string; dono?: string; imovel?: string } = {};
 const PET = `Thor ${sufixo}`;
 const LINK = `https://www.airbnb.com.br/calendar/ical/t957-${sufixo}.ics?s=abc`;
 
+/** Só a ação que devolve `marca` (os pets do morador) responde 500 — as outras ações da tela (o próprio perfil) passam. */
+async function soAcaoComFalha(page: Page, padrao: string, marca: string, liga: boolean) {
+  if (!liga) return page.unroute(padrao);
+  await page.route(padrao, async (r) => {
+    if (r.request().method() !== "POST" || !r.request().headers()["next-action"]) return r.continue();
+    const resp = await r.fetch();
+    const corpo = await resp.text();
+    if (corpo.includes(marca)) return r.fulfill({ status: 500, body: "falha simulada (t957)" });
+    return r.fulfill({ response: resp, body: corpo });
+  });
+}
 async function acoesFalham(page: Page, padrao: string, liga: boolean) {
   if (!liga) return page.unroute(padrao);
   await page.route(padrao, (r) =>
@@ -51,14 +62,14 @@ test.describe("T957 — #2070 achados 50/51: pets e calendários importados avis
     const rota = "**/dashboard/conta/perfil**";
     for (const largura of [390, 1280] as const) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await acoesFalham(page, rota, true);
+      await soAcaoComFalha(page, rota, PET, true);
       await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
       const falha = page.getByTestId("pets-falha");
       await expect(falha).toBeVisible({ timeout: 30_000 });
       await expect(falha).toContainText("Não foi possível carregar seus pets agora.");
       await expect(falha).toHaveAttribute("role", "alert");
       await expect(page.getByTestId("pets-lista")).toHaveCount(0);
-      await acoesFalham(page, rota, false);
+      await soAcaoComFalha(page, rota, PET, false);
       await page.getByTestId("pets-tentar").click();
       await expect(page.getByTestId("pets-lista")).toContainText(PET, { timeout: 30_000 });
       await expect(page.getByTestId("pets-falha")).toHaveCount(0);
