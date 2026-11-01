@@ -22,3 +22,10 @@ test("carregarEstadia lança na falha (limite de erro do painel), e só devolve 
   const fn = src.slice(src.indexOf("export async function carregarEstadia"));
   assert.match(fn, /if \("erro" in ctx && ctx\.falhou\) throw new Error\(MSG_ESTADIA_NAO_CARREGOU\);\n\s*if \("erro" in ctx\) return null;/);
 });
+
+test("achado 44: leitura secundária que falha (aditivos, encerramento, ocupantes, recibos…) também lança", () => {
+  const fn = src.slice(src.indexOf("export async function carregarEstadia"));
+  assert.match(fn, /if \(\[lConf, lOcup, lNota, lAdit, lEnc, lDocs, lPerfil\]\.some\(\(r\) => r\.error\)\) throw new Error\(MSG_ESTADIA_NAO_CARREGOU\);/);
+  // A checagem vem antes de qualquer uso dos dados (nada de "Nenhum recibo emitido" com a leitura falhando).
+  assert.ok(fn.indexOf(".some((r) => r.error)") < fn.indexOf("const respostas ="));
+});
