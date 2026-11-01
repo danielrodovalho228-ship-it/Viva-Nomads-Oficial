@@ -92,7 +92,9 @@ export default async function AdminUsuariosPage({
     if (f.q) q = q.ilike("full_name", `%${f.q}%`);
     if (f.desde) q = q.gte("created_at", `${f.desde}T00:00:00-03:00`);
     if (f.ate) q = q.lt("created_at", new Date(new Date(`${f.ate}T00:00:00-03:00`).getTime() + 86_400_000).toISOString());
-    const [{ data }, confirmados, comAnuncio] = await Promise.all([q, emailsConfirmados(admin), f.comAnuncio ? donosComAnuncio(admin) : Promise.resolve(null)]);
+    const [{ data, error: erroLista }, confirmados, comAnuncio] = await Promise.all([q, emailsConfirmados(admin), f.comAnuncio ? donosComAnuncio(admin) : Promise.resolve(null)]);
+    // Achado 36: falha de leitura cai no aviso do admin ("Tentar de novo"), não em "Nenhum usuário nesta lista".
+    if (erroLista) throw new Error("Não foi possível ler os usuários.");
     let todas = ((data ?? []) as Linha[]).map((l) => {
       const d: DadosCadastro = { nome: l.full_name, emailConfirmado: confirmados.has(l.id), cpf: l.cpf, cnpj: l.cnpj, foto: !!l.avatar_url };
       return { ...l, completo: cadastroCompleto(d), falta: faltaNoCadastro(d) };
