@@ -57,7 +57,11 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
     supabase.from("service_orders").select(colunas).or(`tenant_id.eq.${user.id},owner_id.eq.${user.id}`).order("opened_at", { ascending: false }).limit(200);
   // Prompt 59: colunas do prazo de solução (sem a 0210 ainda, cai nas antigas).
   const nova = await consulta(COLUNAS_ORDEM);
-  const linhas = nova.error ? (await consulta(COLUNAS_ORDEM_ANTIGAS)).data : nova.data;
+  const leitura = nova.error ? await consulta(COLUNAS_ORDEM_ANTIGAS) : nova;
+  // Achado 43: leitura que falha LANÇA — a tela mostra "Não foi possível carregar" com "Tentar de novo", e não
+  // "Nenhuma solicitação ainda" (nem some o botão de pedir manutenção por falta dos contratos).
+  if (leitura.error) throw new Error(`[manutencao] solicitações: ${leitura.error.message}`);
+  const linhas = leitura.data;
   const todas = (linhas ?? []) as unknown as (LinhaOrdem & { tenant_id: string; owner_id: string })[];
 
   // Nome do inquilino só para o dono daquele imóvel (o contrato ativo já foi aceito).
@@ -83,12 +87,13 @@ export async function minhasSolicitacoes(): Promise<MinhasSolicitacoes | null> {
 
   let contratos: ContratoManutencao[] = [];
   if (admin) {
-    const { data: cts } = await admin
+    const { data: cts, error: erroContratos } = await admin
       .from("contratos")
       .select(`id, ${COLUNAS_VIGENCIA}, properties(title)`)
       .eq("tenant_id", user.id)
       .in("status", [...STATUS_CONTRATO_COM_MANUTENCAO])
       .limit(20);
+    if (erroContratos) throw new Error(`[manutencao] contratos: ${erroContratos.message}`);
     contratos = (cts ?? []).filter((c) => contratoPermiteManutencao(c)).map((c) => ({ id: c.id as string, titulo: (c.properties as unknown as { title?: string } | null)?.title?.trim() || "Meu imóvel" }));
   }
   return { comoInquilino, comoDono, contratos };
