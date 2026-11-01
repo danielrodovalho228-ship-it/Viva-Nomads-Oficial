@@ -471,7 +471,9 @@ export async function eventosDoPeriodoComFora(
   admin: Admin,
   periodo: { ini: string; fim: string },
   cidade: string | null | undefined,
-  tipos: readonly string[]
+  tipos: readonly string[],
+  /** Achado 38: com `exigir` (a página /admin/eventos), a falha em qualquer página da leitura LANÇA. */
+  opcoes: { exigir?: boolean } = {}
 ): Promise<{ reais: { tipo: string; criadoEm: string }[]; fora: number }> {
   const k = cidade ? chaveCidade(cidade) : null;
   const comTrafego = await colunaTrafego(admin);
@@ -489,7 +491,7 @@ export async function eventosDoPeriodoComFora(
     return q.order("id", { ascending: true }).range(de, ate);
   };
   const [linhas, teste] = await Promise.all([
-    todasAsPaginas<{ tipo: string; criado_em: string; usuario_id: string | null; trafego?: string | null }>(pagina),
+    todasAsPaginas<{ tipo: string; criado_em: string; usuario_id: string | null; trafego?: string | null }>(pagina, undefined, opcoes),
     idsContasTeste(admin),
   ]);
   const reais = linhas.filter((e) => eventoConta(e, teste));

@@ -12,14 +12,18 @@ const PAGINAS_MAX = 200;
 /**
  * E281 — lê TODAS as linhas de uma consulta, página a página (o banco corta cada resposta em 1.000 linhas). A
  * consulta precisa de ordem estável (ex.: por id). Para quando uma página volta incompleta, ou num erro.
+ * Achado 38: com `exigir`, um erro em QUALQUER página LANÇA — a tela avisa em vez de mostrar um número menor que o real
+ * (ou "Nenhum registro no período").
  */
 export async function todasAsPaginas<T>(
   pagina: (de: number, ate: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>,
   porPagina = LINHAS_POR_PAGINA,
+  opcoes: { exigir?: boolean } = {},
 ): Promise<T[]> {
   const todas: T[] = [];
   for (let i = 0; i < PAGINAS_MAX; i++) {
     const { data, error } = await pagina(i * porPagina, (i + 1) * porPagina - 1);
+    if ((error || !data) && opcoes.exigir) throw new Error("Não foi possível ler todas as páginas.");
     if (error || !data) break;
     todas.push(...(data as T[]));
     if (data.length < porPagina) break;

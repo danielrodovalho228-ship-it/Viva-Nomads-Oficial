@@ -59,7 +59,8 @@ export async function funilDaSemana(agora = new Date()): Promise<Funil | null> {
       .order("id", { ascending: true })
       .range(de, ate);
   const [linhasEv, perfis, leads, pedidos, imoveis, sols, verifs, revisoes] = await Promise.all([
-    todasAsPaginas<{ sessao: string; usuario_id: string | null; criado_em: string; tipo: string; trafego?: string | null }>(paginaEventos),
+    // Achado 38: erro em qualquer página lança; a tela já mostra "Não foi possível ler o funil agora" (sem número menor).
+    todasAsPaginas<{ sessao: string; usuario_id: string | null; criado_em: string; tipo: string; trafego?: string | null }>(paginaEventos, undefined, { exigir: true }),
     admin.from("profiles").select("id, created_at, intencao").gte("created_at", desde).limit(20000),
     admin.from("leads").select("tenant_id, created_at").gte("created_at", desde).limit(20000),
     admin.from("pedidos_moradia").select("inquilino_id, criado_em").gte("criado_em", desde).limit(20000),

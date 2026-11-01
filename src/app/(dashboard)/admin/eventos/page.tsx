@@ -27,7 +27,8 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
   const p = periodoDaLista({ de: um("de"), ate: um("ate") }) ?? { inicio: somarDias(hoje, -29), fim: hoje };
   const cidade = um("cidade") || null;
   const admin = await adminDaPagina();
-  const { reais: eventos, fora } = admin ? await eventosDoPeriodoComFora(admin, intervaloBRT(p.inicio, p.fim), cidade, [tipo]) : { reais: [], fora: 0 };
+  // Achado 38: com "exigir", a falha de leitura cai no aviso do admin ("Tentar de novo"), não em "Nenhum registro".
+  const { reais: eventos, fora } = admin ? await eventosDoPeriodoComFora(admin, intervaloBRT(p.inicio, p.fim), cidade, [tipo], { exigir: true }) : { reais: [], fora: 0 };
   const foraRotulo = rotuloForaDaContagem(fora);
   const porDia = new Map<string, number>();
   for (const e of eventos) {
