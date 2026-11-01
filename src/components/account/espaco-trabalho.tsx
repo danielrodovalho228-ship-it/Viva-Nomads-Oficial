@@ -19,6 +19,7 @@ export function EspacoTrabalho() {
   const [salvando, setSalvando] = useState(false);
   const [ok, setOk] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [falhouLeitura, setFalhouLeitura] = useState(false);
 
   useEffect(() => {
     let vivo = true;
@@ -28,7 +29,7 @@ export function EspacoTrabalho() {
         setOferta(v.oferta ?? "");
         setProcura(v.procura ?? "");
       })
-      .catch(() => {})
+      .catch(() => vivo && setFalhouLeitura(true))
       .finally(() => vivo && setCarregando(false));
     return () => {
       vivo = false;
@@ -50,6 +51,14 @@ export function EspacoTrabalho() {
       setSalvando(false);
     }
   }
+
+  // Achados 67–69: sem ler o que está gravado, o formulário não abre (salvar apagaria o valor salvo).
+  if (falhouLeitura)
+    return (
+      <p role="alert" className="rounded-xl border border-line bg-white p-4 text-sm text-red-700" data-testid="espaco-trabalho-falha">
+        Não foi possível carregar o que você já salvou. Recarregue a página para tentar de novo — nada foi alterado.
+      </p>
+    );
 
   return (
     <form onSubmit={salvar} className="mt-6 border-t border-sage-200 pt-4" data-testid="espaco-trabalho" aria-busy={carregando}>
