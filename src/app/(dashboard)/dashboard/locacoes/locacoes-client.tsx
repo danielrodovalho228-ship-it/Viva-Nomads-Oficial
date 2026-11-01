@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import type { SeloEstadia } from "@/lib/data/locacoes-selo";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
+import { ancoraAvaliacao } from "@/lib/avaliacoes";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import type { LocacaoView } from "@/lib/data/contratos-actions";
@@ -144,6 +145,8 @@ export function LocacoesClient({
 
               {/* Inquilino avalia o proprietário — só na janela de avaliação (fim da estadia). */}
               {(l.podeAvaliar || demoOn) && (
+              // E346: âncora do e-mail "Avaliar a estadia".
+              <div id={ancoraAvaliacao(l.id)} className="scroll-mt-24">
               <AvaliacaoForm
                 contratoId={l.id}
                 alvoId={l.ownerId}
@@ -154,6 +157,7 @@ export function LocacoesClient({
                 demo={demoOn}
                 encerradoEm={l.encerradoEm}
               />
+              </div>
               )}
             </Panel>
           ))}
