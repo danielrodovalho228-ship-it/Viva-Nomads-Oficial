@@ -18,9 +18,11 @@ test.describe("T764 — E319: data por extenso no pedido", () => {
 
   test.beforeAll(async () => {
     ids.morador = await criarConta(morador, senha);
-    // Expira às 23:59:59 de Brasília de 01/03/2027 (= 02:59:59Z de 02/03).
+    // Expira às 23:59:59 de Brasília de 01/03/2027 (= 02:59:59Z de 02/03). O gatilho do banco (0184,
+    // pedido_expira_calculado) recalcula expira_em no insert: o maior entre "agora + 30 dias" e o fim do dia de
+    // data_inicio. Por isso a data de início é a de 01/03/2027 (antes, 01/02 virava "1º de fevereiro" e a spec caía).
     const { error } = await adm().from("pedidos_moradia").insert({
-      inquilino_id: ids.morador, cidade: "Uberlândia", uf: "MG", data_inicio: "2027-02-01", prazo_meses: 2, orcamento_mensal: 3000,
+      inquilino_id: ids.morador, cidade: "Uberlândia", uf: "MG", data_inicio: "2027-03-01", prazo_meses: 2, orcamento_mensal: 3000,
       qtd_ocupantes: 1, motivo: "trabalho_remoto", expira_em: "2027-03-02T02:59:59Z",
     });
     expect(error).toBeNull();
