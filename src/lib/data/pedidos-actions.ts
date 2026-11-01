@@ -390,7 +390,11 @@ export async function renovarPedido(pedidoId: string): Promise<ActionResult & { 
 }
 
 /** Meus pedidos (inquilino). Best-effort: [] em demo/sem sessão. */
-export async function getMeusPedidos() {
+const MSG_PEDIDOS_NAO_CARREGARAM = "Não foi possível carregar os pedidos de moradia agora.";
+
+/** Achado nº 8 (morador): com `exigir`, a falha do banco LANÇA em vez de dizer "você ainda não tem pedido" — o que levava
+ * a publicar um pedido repetido. */
+export async function getMeusPedidos(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -403,12 +407,13 @@ export async function getMeusPedidos() {
   } catch {
     /* best-effort */
   }
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("pedidos_moradia")
     .select("*")
     .eq("inquilino_id", user.id)
     .neq("status", "excluido")
     .order("criado_em", { ascending: false });
+  if (error && opcoes.exigir) throw new Error(MSG_PEDIDOS_NAO_CARREGARAM);
   const pedidos = data ?? [];
 
   // (d) Aviso de renovação (Prompt 30): 5 dias antes de expirar, uma vez por ciclo ("Ainda procurando? Renove com um
@@ -690,7 +695,9 @@ export interface PedidoParaDono {
  * "Novos para você", "Respondidos" (com o status da conversa) e "Ignorados". Antes a lista vinha vazia até para
  * pedido ativo já respondido: a 0160 escondia todo pedido sem telefone confirmado.
  */
-export async function getPedidosParaProprietario(): Promise<{
+/** Auditoria de erros e estados vazios, achado nº 8: com `exigir` (a tela "Pedidos na sua cidade"), a falha do banco
+ * LANÇA — o painel mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer que não há pedido. */
+export async function getPedidosParaProprietario(opcoes: { exigir?: boolean } = {}): Promise<{
   pedidos: PedidoParaDono[];
   myProperties: PropriedadeMinima[];
 }> {
@@ -708,7 +715,7 @@ export async function getPedidosParaProprietario(): Promise<{
     /* best-effort */
   }
 
-  const props = (await listMyProperties()).filter((p) => p.status === "active");
+  const props = (await listMyProperties({ exigir: opcoes.exigir })).filter((p) => p.status === "active");
   const myProperties: PropriedadeMinima[] = props.map((p) => ({
     id: p.id,
     title: p.title,
@@ -718,7 +725,7 @@ export async function getPedidosParaProprietario(): Promise<{
   }));
   const cidades = new Set(props.map((p) => chaveCidade(p.city)));
 
-  const [{ data: mural }, { data: resps }, { data: ign }] = await Promise.all([
+  const [{ data: mural, error: erroMural }, { data: resps, error: erroResps }, { data: ign }] = await Promise.all([
     supabase.rpc("pedidos_mural"),
     supabase
       .from("respostas_pedido")
@@ -727,6 +734,7 @@ export async function getPedidosParaProprietario(): Promise<{
       .order("criado_em", { ascending: false }),
     supabase.from("pedidos_ignorados").select("pedido_id, motivo").eq("proprietario_id", user.id),
   ]);
+  if ((erroMural || erroResps) && opcoes.exigir) throw new Error(MSG_PEDIDOS_NAO_CARREGARAM);
   const todos = ((mural ?? []) as Record<string, unknown>[]).filter(
     (p) => cidades.size === 0 || cidades.has(chaveCidade(String(p.cidade ?? ""))),
   );
