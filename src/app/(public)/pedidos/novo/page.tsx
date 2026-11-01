@@ -498,7 +498,8 @@ function PedidoForm() {
 
   return (
     <div data-testid="pedido-formulario">
-      <h2 className="font-title text-2xl font-semibold text-ink md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
+      {/* Conformidade fina (01/11, mockup morador-pedir): o título do formulário em verde. */}
+      <h2 className="font-title text-2xl font-semibold text-forest md:text-[1.75rem]">{editarId ? "Editar seu pedido" : "Publique seu pedido"}</h2>
       <p className="mt-1 text-sm text-muted">
         {editarId ? "As mudanças valem na hora para os proprietários da cidade." : "Os proprietários da cidade veem seu pedido e respondem pela plataforma."}
       </p>

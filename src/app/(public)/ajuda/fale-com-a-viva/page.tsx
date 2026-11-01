@@ -43,10 +43,11 @@ export default function FaleComAVivaPage() {
             <CentralAjuda canal="site" />
           </div>
 
+          {/* Conformidade fina (01/11, mockup pagina-fale-com-a-viva): títulos dos cartões laterais em verde, um passo maior. */}
           <aside className="grid content-start gap-4" aria-label="Outros caminhos">
             <section className="rounded-xl border border-line bg-white p-4 sm:p-6">
-              <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
-                <CircleHelp className="h-5 w-5 text-forest" aria-hidden /> Antes de escrever
+              <h2 className="flex items-center gap-2 font-title text-xl font-semibold text-forest">
+                <CircleHelp className="h-6 w-6 text-forest" aria-hidden /> Antes de escrever
               </h2>
               <p className="mt-2 text-sm text-muted">As dúvidas mais comuns já têm resposta curta na Central de ajuda.</p>
               <Link href="/ajuda" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline" data-testid="fale-ir-central">
@@ -54,8 +55,8 @@ export default function FaleComAVivaPage() {
               </Link>
             </section>
             <section className="rounded-xl border border-line bg-white p-4 sm:p-6">
-              <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
-                <Mail className="h-5 w-5 text-forest" aria-hidden /> Outros assuntos
+              <h2 className="flex items-center gap-2 font-title text-xl font-semibold text-forest">
+                <Mail className="h-6 w-6 text-forest" aria-hidden /> Outros assuntos
               </h2>
               {/* MS-1/PUBLICO-A: Parceiros saiu do topo e aparece aqui. */}
               <p className="mt-2 text-sm text-muted">
