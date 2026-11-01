@@ -74,7 +74,10 @@ test("E199 (opção b): leitor de QA abre; admin vai para a aba E-mails do admin
   // Leitor de QA que também fosse admin continua abrindo a área de QA (a regra de leitura não muda).
   assert.deepEqual(destinoLeitorQa({ qa_leitor: true, is_teste: true, role: "admin" }), { tipo: "abre" });
   assert.deepEqual(destinoLeitorQa({ qa_leitor: false, is_teste: false, role: "admin" }), { tipo: "admin", href: "/admin/dados-de-teste?aba=emails" });
-  for (const p of [null, undefined, {}, { qa_leitor: false, is_teste: false, role: "owner" }, { qa_leitor: true, is_teste: false, role: "tenant" }, { qa_leitor: false, is_teste: true, role: null }]) {
+  // E354: conta de teste sem qa_leitor (inquilino1, proprietario1…) vai para a caixa dela, nunca 404.
+  assert.deepEqual(destinoLeitorQa({ qa_leitor: false, is_teste: true, role: null }), { tipo: "propria", href: "/dashboard/conta/ajuda#caixa-emails-teste" });
+  assert.deepEqual(destinoLeitorQa({ qa_leitor: false, is_teste: true, role: "tenant" }), { tipo: "propria", href: "/dashboard/conta/ajuda#caixa-emails-teste" });
+  for (const p of [null, undefined, {}, { qa_leitor: false, is_teste: false, role: "owner" }, { qa_leitor: true, is_teste: false, role: "tenant" }]) {
     assert.deepEqual(destinoLeitorQa(p), { tipo: "nao_encontrado" }, JSON.stringify(p));
   }
 });
@@ -118,4 +121,19 @@ test("2FA do admin intocado: ADMIN_2FA_OBRIGATORIA e is_admin() fora deste item"
   for (const p of ["src/app/(dashboard)/dashboard/qa/emails/page.tsx", "src/components/admin/lista-emails-teste.tsx"]) {
     assert.doesNotMatch(ler(p), /ADMIN_2FA_OBRIGATORIA|is_admin/);
   }
+});
+
+test("E354: conta de teste sem qa_leitor vai para a caixa dela (proxy e página), nunca 404; conta real segue 404", () => {
+  const proxy = ler("src/proxy.ts");
+  const i = proxy.indexOf("if (user && rotaLeitorQa(pathname))");
+  const bloco = proxy.slice(i, i + 1600);
+  assert.match(bloco, /if \(destino\.tipo === "admin" \|\| destino\.tipo === "propria"\) \{/);
+  assert.match(bloco, /alvo\.hash = ancora \? `#\$\{ancora\}` : "";/);
+  assert.match(bloco, /if \(destino\.tipo === "nao_encontrado"\)/);
+  const pagina = ler("src/app/(dashboard)/dashboard/qa/emails/page.tsx");
+  assert.match(pagina, /if \(destino\.tipo === "propria"\) redirect\(destino\.href\);/);
+  // O destino existe: a caixa da própria conta de teste em Conta → Ajuda, com a âncora.
+  assert.match(ler("src/components/account/caixa-emails-teste.tsx"), /id="caixa-emails-teste"/);
+  assert.match(ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx"), /case "ajuda":/);
+  assert.match(ler("src/components/account/tela-ajuda.tsx"), /<CaixaEmailsTeste \/>/);
 });

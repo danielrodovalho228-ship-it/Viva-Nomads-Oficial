@@ -37,7 +37,7 @@ export function CaixaEmailsTeste() {
   if (!emails) return null;
   return (
     <Panel title="Caixa de e-mails de teste" className="mt-6">
-      <div data-testid="caixa-emails-teste">
+      <div id="caixa-emails-teste" className="scroll-mt-24" data-testid="caixa-emails-teste">
         <p className="mb-3 text-sm text-muted">Os e-mails que o sistema enviou a esta conta de teste. Só você os vê.</p>
         {emails.length === 0 ? (
           <EmptyState icon={Mail} title="Nenhum e-mail ainda" text="Quando o sistema enviar um e-mail a esta conta, ele aparece aqui." action={<ButtonLink href="/dashboard/notificacoes" variant="secondary" size="sm">Ver as notificações</ButtonLink>} />

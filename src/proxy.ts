@@ -249,11 +249,14 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
   if (user && rotaLeitorQa(pathname)) {
     const { data: perfilQa } = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
     const destino = destinoLeitorQa(perfilQa);
-    if (destino.tipo === "admin") {
-      const [caminho, consulta] = destino.href.split("?");
+    // E354: a conta de teste sem qa_leitor vai para a caixa dela (Conta → Ajuda), como o admin vai para a dele.
+    if (destino.tipo === "admin" || destino.tipo === "propria") {
+      const [semAncora, ancora] = destino.href.split("#");
+      const [caminho, consulta] = semAncora.split("?");
       const alvo = request.nextUrl.clone();
       alvo.pathname = caminho;
       alvo.search = consulta ? `?${consulta}` : "";
+      alvo.hash = ancora ? `#${ancora}` : "";
       const resposta = NextResponse.redirect(alvo);
       response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
       return resposta;
