@@ -5,6 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T782 — E308 (devolução da noite de 01/11): as fotos do rascunho vivem no draft_data e só são copiadas para
   property_photos por uma sincronização "best-effort". Rascunho COM fotos só no draft_data (sincronização que falhou /
   rascunho antigo) saía no "Continue seu anúncio" sem foto. Agora a capa vem da 1ª foto do draft_data. 390 e 1280.
+  L-87 (Pista C, 01/11): no laboratório (Storage em http) a capa era descartada e esta spec nunca passou; corrigido no
+  #2065 (fotosDoDono aceita a origem do Supabase configurado) — esta spec verde no lab-crítico é a prova.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
