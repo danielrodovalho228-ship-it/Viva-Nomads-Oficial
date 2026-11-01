@@ -196,8 +196,8 @@ export default function ResetPasswordPage() {
                 onChange={setPassword}
                 required
                 autoComplete="new-password"
-                className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
-                inputClassName="text-sm"
+                className="rounded-xl border border-sage-200 bg-white px-4 focus-within:border-sage"
+                inputClassName="text-base sm:text-sm"
               />
               <PasswordInput
                 leadingIcon={Lock}
@@ -206,8 +206,8 @@ export default function ResetPasswordPage() {
                 onChange={setConfirm}
                 required
                 autoComplete="new-password"
-                className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
-                inputClassName="text-sm"
+                className="rounded-xl border border-sage-200 bg-white px-4 focus-within:border-sage"
+                inputClassName="text-base sm:text-sm"
               />
               {pedirCodigo && (
                 <input

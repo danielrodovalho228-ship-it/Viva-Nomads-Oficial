@@ -518,8 +518,8 @@ function PwdField({
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
-        className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
-        inputClassName="text-sm"
+        className="rounded-xl border border-sage-200 bg-white px-4 focus-within:border-sage"
+        inputClassName="text-base sm:text-sm"
       />
     </label>
   );
@@ -872,8 +872,8 @@ export function DangerZone() {
             onChange={setPassword}
             placeholder="Senha atual"
             autoComplete="current-password"
-            className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-2 focus-within:border-red-500"
-            inputClassName="text-sm"
+            className="mt-2 rounded-lg border border-red-300 bg-white px-3 focus-within:border-red-500"
+            inputClassName="text-base sm:text-sm"
           />
           {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
           {captcha.widget && <div className="mt-3">{captcha.widget}</div>}
