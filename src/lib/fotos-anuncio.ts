@@ -33,7 +33,20 @@ export function urlsDoRascunho(data: unknown): unknown[] {
   return fotos.map((f) => (f && typeof f === "object" ? (f as { url?: unknown }).url : f));
 }
 
-/** E308: a capa do rascunho pelo `draft_data` — a 1ª foto válida do dono (mesma regra de `property_photos`), ou null. */
+/**
+ * E308: a capa do rascunho pelo `draft_data` — a 1ª foto do bucket na pasta do próprio dono, ou null. Só para EXIBIR:
+ * aceita http e https (o Storage local do laboratório é http); gravar em `property_photos` segue `fotosDoDono` (https).
+ */
 export function capaDoDraftData(data: unknown, ownerId: string): string | null {
-  return fotosDoDono(urlsDoRascunho(data), ownerId)[0] ?? null;
+  const pasta = `/storage/v1/object/public/property-photos/${ownerId}/`;
+  for (const u of urlsDoRascunho(data)) {
+    if (typeof u !== "string") continue;
+    try {
+      const url = new URL(u);
+      if ((url.protocol === "https:" || url.protocol === "http:") && url.pathname.startsWith(pasta)) return u;
+    } catch {
+      /* não é URL: ignora */
+    }
+  }
+  return null;
 }
