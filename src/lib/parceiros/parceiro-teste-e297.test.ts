@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  FAIXA_PARCEIRO_TESTE_DONO,
   FAIXA_PARCEIRO_TESTE_EQUIPE,
   FAIXA_PARCEIRO_TESTE_VISITANTE,
   PEDIDO_PARCEIRO_TESTE_RECUSADO,
@@ -18,17 +19,19 @@ import {
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const ninguem = { dono: false, admin: false, teste: false };
 
-test("modoParceiroTeste: parceiro de verdade não muda nada; de teste, equipe × visitante", () => {
+test("modoParceiroTeste: parceiro de verdade não muda nada; de teste, dono × equipe × visitante (E339)", () => {
   assert.equal(modoParceiroTeste(false, ninguem), null);
   assert.equal(modoParceiroTeste(false, { dono: true, admin: true, teste: true }), null);
   assert.equal(modoParceiroTeste(true, ninguem), "visitante");
-  assert.equal(modoParceiroTeste(true, { ...ninguem, dono: true }), "equipe");
+  assert.equal(modoParceiroTeste(true, { ...ninguem, dono: true }), "dono");
+  assert.equal(modoParceiroTeste(true, { dono: true, admin: true, teste: true }), "dono");
   assert.equal(modoParceiroTeste(true, { ...ninguem, admin: true }), "equipe");
   assert.equal(modoParceiroTeste(true, { ...ninguem, teste: true }), "equipe");
 });
 
-test("os textos seguem os do anúncio de teste (E93)", () => {
-  assert.equal(FAIXA_PARCEIRO_TESTE_EQUIPE, "Parceiro de teste: fora da busca e das listagens");
+test("E339: a faixa diz a verdade conforme quem vê (conta de teste o vê; o dono lê que o público não o vê)", () => {
+  assert.equal(FAIXA_PARCEIRO_TESTE_EQUIPE, "Parceiro de teste: visível só para contas de teste");
+  assert.equal(FAIXA_PARCEIRO_TESTE_DONO, "Seu perfil de teste não aparece para o público");
   assert.equal(FAIXA_PARCEIRO_TESTE_VISITANTE, "Parceiro de teste da equipe Viva — não é um prestador disponível");
   assert.match(PEDIDO_PARCEIRO_TESTE_RECUSADO, /parceiro de teste/);
 });
@@ -59,7 +62,7 @@ test("página do parceiro: noindex do teste, faixa por modo e pedido desativado 
   assert.match(pagina, /robots: p\.teste \? \{ index: false, follow: false \} : undefined/);
   assert.match(pagina, /const modoTeste = await modoDaPaginaDoParceiro\(p\);/);
   assert.match(pagina, /data-testid="faixa-parceiro-teste"/);
-  assert.match(pagina, /modoTeste === "visitante" \? FAIXA_PARCEIRO_TESTE_VISITANTE : FAIXA_PARCEIRO_TESTE_EQUIPE/);
+  assert.match(pagina, /modoTeste === "visitante" \? FAIXA_PARCEIRO_TESTE_VISITANTE : modoTeste === "dono" \? FAIXA_PARCEIRO_TESTE_DONO : FAIXA_PARCEIRO_TESTE_EQUIPE/);
   // O visitante não recebe a folha de pedido (nem botão): só o aviso; a folha fica no outro ramo.
   const visitante = pagina.indexOf('modoTeste === "visitante" ? (');
   const folha = pagina.indexOf("<SolicitarOrcamento");
@@ -86,4 +89,11 @@ test("servidor: pedido a parceiro de conta de teste só da equipe, antes de grav
   assert.match(helper, /if \(dono\?\.is_teste !== true\) return true;/);
   assert.match(helper, /cliente\?\.is_teste === true \|\| cliente\?\.role === "admin"/);
   assert.match(helper, /if \(error \|\| !data\) return false;/);
+});
+
+test("E339: o painel do próprio parceiro de teste explica que o público não vê o perfil", () => {
+  const acoes = ler("src/lib/parceiros/painel-actions.ts");
+  assert.match(acoes, /teste: \(perfil as \{ is_teste\?: boolean \} \| null\)\?\.is_teste === true,/);
+  const painel = ler("src/app/(dashboard)/dashboard/parceiro/painel-parceiro.tsx");
+  assert.match(painel, /\{p\.teste && \([\s\S]{0,120}data-testid="parceiro-perfil-teste"[\s\S]{0,40}\{FAIXA_PARCEIRO_TESTE_DONO\}\./);
 });
