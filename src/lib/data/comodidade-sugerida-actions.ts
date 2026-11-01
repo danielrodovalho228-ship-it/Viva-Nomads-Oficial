@@ -25,7 +25,9 @@ async function meuImovel(propertyId: string) {
 export async function comodidadesDoMeuImovel(propertyId: string): Promise<string[]> {
   const supabase = await meuImovel(propertyId);
   if (!supabase) return [];
-  const { data } = await supabase.from("property_amenities").select("label").eq("property_id", propertyId);
+  // Achado 64: a falha de leitura LANÇA — antes a sugestão das fotos oferecia de novo o que o anúncio já tem.
+  const { data, error } = await supabase.from("property_amenities").select("label").eq("property_id", propertyId);
+  if (error) throw new Error("Não foi possível ler as comodidades do anúncio agora.");
   return amenityKeysFromLabels(((data as { label: string }[] | null) ?? []).map((r) => r.label));
 }
 
