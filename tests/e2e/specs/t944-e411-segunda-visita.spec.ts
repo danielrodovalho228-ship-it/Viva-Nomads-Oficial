@@ -6,7 +6,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  * modalidade). Antes a recusa era "Você já tem um pedido de visita em aberto para este imóvel." e o anúncio não dizia
  * por que nem como mudar. Pela tela real, 390 e 1280 (a t774 já confere o "pedida" da visita por VÍDEO):
  *   1. a página foi aberta ANTES do pedido existir (aba velha): o morador preenche o horário da visita presencial, o
- *      pedido nasce em outra aba, e o envio é recusado com a explicação nova, que diz o tipo e o caminho;
+ *      pedido nasce em outra aba, e o envio termina na recusa com a explicação nova (o tipo e o caminho) ou, quando o
+ *      anúncio já relê as visitas, em "Visita pedida" com a explicação — nunca "enviado" nem um segundo pedido;
  *   2. recarregada: "Visita pedida" com "Você já pediu uma visita presencial e o proprietário ainda vai responder. …";
  *   3. confirmada e por vir: "Visita agendada" com "Sua visita presencial já está marcada. Para mudar o horário, …";
  *   4. a mesma regra na visita por vídeo agendada.
@@ -74,22 +75,18 @@ test.describe("T944 — E411: segundo pedido de visita explica a regra e o camin
       const enviar = page.getByTestId("visita-presencial-enviar");
       await enviar.scrollIntoViewIfNeeded({ timeout: 5_000 });
       await enviar.click({ timeout: 6_000 }).catch(() => enviar.dispatchEvent("click"));
-      // Diagnóstico (vigia): se a recusa não aparecer, o erro traz o que a tela mostrou depois do envio.
-      try {
-        await expect(page.getByTestId("visita-presencial-erro")).toHaveText(ERRO, { timeout: 25_000 });
-      } catch (e) {
-        const texto = async (id: string) => ((await page.getByTestId(id).count()) ? await page.getByTestId(id).first().innerText().catch(() => "?") : "(ausente)");
-        const diag = {
-          url: page.url(),
-          erro: await texto("visita-presencial-erro"),
-          ok: await texto("visita-presencial-ok"),
-          passo: await page.getByTestId("visita-presencial-passo").count(),
-          pedida: await texto("visita-presencial-pedida"),
-          agendar: await page.getByTestId("agendar-visita").count(),
-          alertas: await page.getByRole("alert").allInnerTexts().catch(() => []),
-          noBanco: (await adm().from("visitas_video").select("status, modalidade").eq("tenant_id", inq.id).eq("property_id", imovel)).data,
-        };
-        throw new Error(`t944 diag: ${JSON.stringify(diag)}\n${(e as Error).message}`);
+      // A aba velha termina num de dois estados certos (lab do #2053, run 41345446656): a recusa do servidor com a explicação
+      // do E411, ou — quando o anúncio já relê as visitas e troca o formulário — "Visita pedida" com a explicação. Nunca
+      // "pedido enviado" e nunca um segundo pedido.
+      const recusa = page.getByTestId("visita-presencial-erro");
+      const explica = page.getByTestId("visita-presencial-pedida-explica").first();
+      await expect(recusa.or(explica)).toBeVisible({ timeout: 25_000 });
+      if (await recusa.isVisible()) {
+        await expect(recusa).toHaveText(ERRO);
+        test.info().annotations.push({ type: "aba-velha", description: `recusa do servidor @${largura}` });
+      } else {
+        await expect(explica).toHaveText(PEDIDA);
+        test.info().annotations.push({ type: "aba-velha", description: `"Visita pedida" com a explicação @${largura}` });
       }
       await expect(page.getByTestId("visita-presencial-ok")).toHaveCount(0);
       const { count } = await adm().from("visitas_video").select("id", { count: "exact", head: true }).eq("tenant_id", inq.id).eq("property_id", imovel);
