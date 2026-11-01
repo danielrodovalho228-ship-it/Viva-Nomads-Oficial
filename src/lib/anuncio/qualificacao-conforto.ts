@@ -125,6 +125,15 @@ export const TOTAL_TELAS = TELAS_QUALIFICACAO.length;
 /** Resposta de cada pergunta: toggle → true/false; cartões → id da opção; internet → Mbps (texto) ou "nao_tem". */
 export type Respostas = Record<string, string | boolean>;
 
+/** E390 (01/11): a Qualificação é opcional por desenho — a tela diz isso, em vez de deixar o "Continuar" pular calado. */
+export const SUBTITULO_QUALIFICACAO = "Opcional: responda tocando nas opções (leva menos de 1 minuto) ou pule — dá para responder depois.";
+
+/** E390: o botão da tela — "Continuar" com alguma resposta nela; "Pular" sem nenhuma (cabe no rodapé a 360 px). */
+export function rotuloAvancarQualificacao(tela: TelaQualificacao | undefined, r: Respostas): "Continuar" | "Pular" {
+  if (!tela) return "Continuar";
+  return tela.perguntas.some((q) => r[q.id] !== undefined && r[q.id] !== "") ? "Continuar" : "Pular";
+}
+
 /** E382: quantas perguntas da Qualificação já têm resposta (Sim/Não, uma opção ou a internet), de todas as telas. */
 export function contarRespondidas(r: Respostas, telas: readonly TelaQualificacao[] = TELAS_QUALIFICACAO): { feitas: number; total: number } {
   const perguntas = telas.flatMap((t) => t.perguntas);
