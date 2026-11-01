@@ -126,7 +126,8 @@
       ],
       "specs": [
         "t191-ajuda-publicacao",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/atendimento": {
@@ -244,7 +245,8 @@
       "specs": [
         "t442-foto-perfil-revisao",
         "t408-varredura-bloco27",
-        "t655-observador-botoes-filas"
+        "t655-observador-botoes-filas",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/marketing": {
@@ -253,7 +255,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/parceiros": {
@@ -300,7 +303,8 @@
         "t51-admin-padrao-caixa-socios",
         "t183-telas-logadas-390",
         "t301-varredura-logada-bloco5",
-        "t596-qa-login-direto"
+        "t596-qa-login-direto",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/usuarios": {
@@ -1989,7 +1993,8 @@
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
         "t212-ferramentas-proprietario",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t860-varredura-bloco161"
       ]
     },
     "/dashboard/agenda": {
@@ -2032,7 +2037,8 @@
         "admin"
       ],
       "specs": [
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/imoveis": {
@@ -2070,7 +2076,8 @@
         "t48-varredura",
         "t231-admin-numeros-com-lista",
         "t297-varredura-logada-bloco3",
-        "t388-varredura-bloco23"
+        "t388-varredura-bloco23",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/candidaturas": {
@@ -2190,7 +2197,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/parceiros/pedidos/[id]": {
@@ -2210,7 +2218,8 @@
         "t256-pagina-da-estadia",
         "t273-admin-decisoes",
         "t286-esqueletos-vazios-48",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t860-varredura-bloco161"
       ]
     },
     "/dashboard/estadia/[contratoId]": {
@@ -2339,7 +2348,8 @@
         "t301-varredura-logada-bloco5",
         "t419-varredura-bloco36",
         "t467-admin6-rotas",
-        "t420-varredura-bloco37"
+        "t420-varredura-bloco37",
+        "t860-varredura-bloco161"
       ]
     },
     "/admin/conforto": {
