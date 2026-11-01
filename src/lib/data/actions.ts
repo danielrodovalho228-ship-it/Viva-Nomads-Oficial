@@ -93,7 +93,7 @@ import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fot
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
-import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
+import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
@@ -1395,7 +1395,8 @@ export async function registrarContrato(
     .eq("id", lead.property_id)
     .maybeSingle();
   // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel?.monthly_price);
   if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
     return { ok: false, error: "Imóvel sem valor de aluguel." };
@@ -1412,7 +1413,8 @@ export async function registrarContrato(
   if (!inicio.ok) return { ok: false, error: inicio.error };
 
   // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
-  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string).catch(() => "falhou" as const);
+  if (taxaLead === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
   const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);

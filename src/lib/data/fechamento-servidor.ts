@@ -7,7 +7,7 @@ import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
-import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
+import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
 
 /**
@@ -65,13 +65,15 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   ]);
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
   // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel.monthly_price);
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
   // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
-  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string).catch(() => "falhou" as const);
+  if (taxaLead === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
   const comissaoRate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   // Cadastro confiável + F32: documento das DUAS partes e documentos do inquilino
   // (B2; null = sem a 0093 → não trava). A MESMA trava vale em registrarContrato.
