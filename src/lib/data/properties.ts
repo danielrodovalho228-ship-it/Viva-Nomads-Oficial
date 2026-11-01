@@ -10,7 +10,7 @@ import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { primeiroPerfilPublico, type PerfilPublicoDono } from "@/lib/data/perfil-publico-dono";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
-import { decidirSelo } from "@/lib/comparador-airbnb/comparacao";
+import { comparacaoParaFicha, decidirSelo } from "@/lib/comparador-airbnb/comparacao";
 import type { Conferencia } from "@/lib/comparador-airbnb/antifraude";
 import { COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
 import { soFotosExistentes } from "@/lib/fotos-anuncio";
@@ -617,20 +617,20 @@ async function attachPrecoJustoPeloMotor(reais: Property[]): Promise<void> {
   try {
     const { data, error } = await admin
       .from("preco_justo_airbnb")
-      .select(`property_id, conferencia, total_30_noites, consultado_em, properties!inner(${COLUNAS_IMOVEL_PRECO})`)
+      .select(`property_id, conferencia, total_30_noites, consultado_em, fonte, properties!inner(${COLUNAS_IMOVEL_PRECO})`)
       .in("property_id", reais.map((p) => p.id));
     if (error) return;
     const agora = new Date();
     const porId = new Map(
-      ((data ?? []) as unknown as { property_id: string; conferencia: Conferencia; total_30_noites: number | null; consultado_em: string | null; properties: ImovelParaPreco }[]).map((r) => [r.property_id, r]),
+      ((data ?? []) as unknown as { property_id: string; conferencia: Conferencia; total_30_noites: number | null; consultado_em: string | null; fonte: string | null; properties: ImovelParaPreco }[]).map((r) => [r.property_id, r]),
     );
     for (const p of reais) {
       const r = porId.get(p.id);
       if (!r) continue;
-      p.precoJusto = decidirSelo(
-        { totalViva: totalVivaDoImovel(r.properties), total30: r.total_30_noites == null ? null : Number(r.total_30_noites), consultadoEm: r.consultado_em, conferencia: r.conferencia },
-        agora,
-      ).selo;
+      const entrada = { totalViva: totalVivaDoImovel(r.properties), total30: r.total_30_noites == null ? null : Number(r.total_30_noites), consultadoEm: r.consultado_em, conferencia: r.conferencia };
+      p.precoJusto = decidirSelo(entrada, agora).selo;
+      // Pacote 3: o que a ficha mostra (só com selo; sem o número do anúncio).
+      p.comparacaoAirbnb = comparacaoParaFicha({ ...entrada, fonte: r.fonte }, agora);
     }
   } catch {
     /* sem a tabela, sem selo */

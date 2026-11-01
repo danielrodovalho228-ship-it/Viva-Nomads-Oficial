@@ -94,6 +94,8 @@ export interface Property {
   airbnbMonthlyPrice?: number;
   /** Selo "Preço justo": aluguel abaixo do Airbnb informado (coluna gerada da 0130). */
   precoJusto?: boolean;
+  /** E399-C (chave PRECO_JUSTO_COMPARADOR): a comparação mostrada na ficha — só quando há selo. */
+  comparacaoAirbnb?: { totalAirbnb30: number; diferenca: number; consultadoEm: string; simulado: boolean } | null;
   // Despesas de consumo (Atualização 6)
   utilitiesMode: UtilitiesMode;
   utilitiesEstimate: number; // R$/mês (regime fixo)
