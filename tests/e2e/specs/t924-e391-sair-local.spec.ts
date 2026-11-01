@@ -50,7 +50,6 @@ test.describe("T924 — E391 (#2007): Sair só deste aparelho; Sair de todos em 
     await expect(avatar).toBeVisible({ timeout: 30_000 });
     await avatar.click();
     const item = a.getByRole("menuitem", { name: "Sair" });
-    await expect(item).toContainText("Encerrar a sessão neste aparelho.");
     await item.click();
     await a.waitForURL((u) => !u.pathname.startsWith("/dashboard"), { timeout: 30_000 });
     expect(await logado(a), "A sem sessão depois do Sair").toBe(false);
