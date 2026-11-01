@@ -45,6 +45,11 @@ const TELAS: Tela[] = [
 
 /** Achados já registrados como defeito de produto (L-*) ou que são o desenho pedido: ficam anotados e não derrubam o teste. */
 const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string; classe?: Classe }[] = [
+  // D-V11 (registro-defeitos.md, achado neste bloco — lab-crítico do #2135, runs 41362439873 e 41363385806): a 1280 o
+  // aviso "Não foi possível carregar o mapa agora." do E419 (absolute inset-0 z-[500], num relative SEM z-index) passa
+  // por cima do cabeçalho sticky z-40. Intermitente no polo (depende de onde a rolagem para) e constante em "Imóveis
+  // perto de": anotado como item conhecido, não derruba o bloco; quem corrigir tira esta linha.
+  { rota: /^\/(cidades\/[^/]+\/[^/]+|imoveis-perto-de\/[^/]+)$/, classe: "fixo", achado: /coberto por div "Não foi possível carregar o mapa agora\. "$/, l: "D-V11" },
   // Desenho do E248 (#1536): o "›" sólido da fileira que rola senta sobre o item da borda (t662).
   { rota: /^\/dashboard(\/|\?|$)/, classe: "fixo", achado: /coberto por button "Ver mais itens"$/, l: "E248-desenho" },
 ];
@@ -82,10 +87,6 @@ test.describe("T975 — varredura da página inteira, bloco 196 (8ª volta, púb
   for (const t of TELAS) {
     test(`${t.papel} — ${t.nome}: as seis classes, rolando a página inteira`, async ({ browser }) => {
       test.setTimeout(180_000);
-      // D-V11 (registro-defeitos.md, novo neste bloco): a 1280 o aviso "Não foi possível carregar o mapa agora." do E419
-      // (absolute inset-0 z-[500], num contêiner relative SEM z-index) passa por cima do cabeçalho sticky z-40 (logo e
-      // menu cobertos) — lab-crítico do #2135, run 41362439873, nas 2 tentativas. Quem corrigir tira este test.fail.
-      test.fail(["Polo: Centro", "Imóveis perto de um destino"].includes(t.nome), "D-V11: o aviso do mapa (E419) cobre o cabeçalho a 1280");
       test.skip(t.conta !== "VISITANTE" && t.conta !== "SOCIO" && !temContaVarredura(t.conta), `sem a conta ${t.conta} na massa`);
       test.skip(t.conta === "SOCIO" && !CODIGO_SOCIOS, "SOCIOS_ACCESS_CODE não definido neste ambiente");
       const rota = t.rota(MASSA!);
