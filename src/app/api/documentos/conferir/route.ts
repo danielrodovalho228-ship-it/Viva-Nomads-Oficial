@@ -8,6 +8,7 @@ import { tipoRealPorMagicBytes, DOC_MIME } from "@/lib/upload-limits";
 import { lerDocumento, lerMatricula, matriculaDoLaboratorio } from "@/lib/documento/conferidor";
 import {
   camposParaGravar,
+  onusParaGravar,
   decidirMatricula,
   decisaoComFalhaDeLeitura,
   estadoTelaDaMatricula,
@@ -170,7 +171,7 @@ export async function POST(request: Request) {
         resultado: d.resultado,
         motivo: d.motivo,
         campos_extraidos: mat ? camposParaGravar(mat, d.comparacao) : {},
-        onus: mat?.onus ?? [],
+        onus: mat ? onusParaGravar(mat.onus) : [],
         caf_ok: caf.ok,
         caf_simulado: caf.ok && (laudo?.caf_result as Record<string, unknown> | null)?.simulado === true,
       })
