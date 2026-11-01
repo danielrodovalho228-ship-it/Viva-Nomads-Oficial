@@ -194,7 +194,7 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   const END = { texto: "Rua Modesta Maria, 120, apto 302 · Santa Mônica · Uberlândia", mapa: "https://www.google.com/maps/search/?api=1&query=Rua%20Modesta%20Maria%2C%20120" };
   comLinhas("visita:vespera:presencial-morador", "visita_vespera", vesperaTexto({ modalidade: "presencial", paraMorador: true, horario: HORA, imovel: IM.titulo, endereco: END }));
   comLinhas("visita:vespera:presencial-dono", "visita_vespera", vesperaTexto({ modalidade: "presencial", paraMorador: false, horario: HORA, imovel: IM.titulo, nomeMorador: "Ana Souza" }));
-  comLinhas("visita:vespera:video", "visita_vespera", vesperaTexto({ modalidade: "video", paraMorador: true, horario: HORA, imovel: IM.titulo, linkChamada: "https://meet.google.com/abc-defg-hij" }));
+  comLinhas("visita:vespera:video", "visita_vespera", vesperaTexto({ modalidade: "video", paraMorador: true, horario: HORA, imovel: IM.titulo }));
   const lc = linhasContrato({ imovel: IM, inicio: "2026-11-01", fim: "2027-02-28", meses: 4, valorMensal: 2700 });
   lista.push(doApp("contrato:pronto", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoPronto, body: (n) => aberturaContratoPronto({ nome: n, imovel: IM }), detailsHtml: quadro(lc, PROXIMO_PASSO_CONTRATO_PRONTO), ctaLabel: "Ler e assinar o contrato" })));
   lista.push(doApp("contrato:falta-voce", montarNotificacao({ siteUrl, event: "contract_status", ...nome, subject: ASSUNTOS.contratoFaltaVoce, body: (n) => aberturaAssinatura({ nome: n, imovel: IM, asDuas: false, quemAssinou: "tenant" }), detailsHtml: quadro(lc, proximoPassoAssinatura(false, "owner")) })));
