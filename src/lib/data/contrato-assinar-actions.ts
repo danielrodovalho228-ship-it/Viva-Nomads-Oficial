@@ -232,7 +232,9 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  const { data, error } = await supabase.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  // Achado 78: falha de leitura não vira "contrato não encontrado" (404): lança, e a página mostra o erro com "Tentar de novo".
+  if (error) throw new Error("Não foi possível ler o contrato agora.");
   if (!data) return null;
   // O RLS acima já provou que a pessoa é parte; o dono não lê a ficha do inquilino, então a contagem vem do servidor.
   const linha = data as unknown as LinhaContrato;
