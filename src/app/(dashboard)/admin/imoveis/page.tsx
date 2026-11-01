@@ -75,7 +75,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
       (!docRevisao || i.documento === "pending") &&
       (ini === null || (i.criadoEm && new Date(i.criadoEm).getTime() >= ini && new Date(i.criadoEm).getTime() < (fim as number)))
   );
-  const campo = "rounded-xl border border-line px-3 py-2 text-sm text-ink";
+  const campo = "h-10 rounded-xl border border-line px-3 py-2 text-sm text-ink";
 
   // Pendência 3 do QA-LOGIN-B v2: anúncio de dono real → o admin observador da QA não vê o "Pausar" (o servidor recusa).
   const pausaveis = lista.filter((i) => i.tipo !== "demonstracao" && i.status === "active");

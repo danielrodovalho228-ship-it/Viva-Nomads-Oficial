@@ -24,7 +24,9 @@ export const metadata: Metadata = {
 };
 
 const UFS = Object.keys(MUNICIPIOS).sort();
-const campo = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-base text-ink";
+// Varredura 01/11: a mesma altura para lista e campo de texto (antes 40 × 42 px, rótulos desalinhados) e o Buscar
+// na altura deles no computador.
+const campo = "mt-1 h-11 w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-base text-ink";
 
 export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string; descricao?: string; nota?: string }> }) {
   const sp = await searchParams;
@@ -108,7 +110,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
           <input type="checkbox" name="nota" value="1" defaultChecked={soNota} data-testid="busca-parceiros-nota-check" />
           {ROTULO_FILTRO_NOTA} ({r.comNota})
         </label>
-        <button type="submit" className={buttonClasses({ size: "md", className: "w-full sm:col-span-2 lg:col-span-1 lg:w-auto" })} data-testid="busca-parceiros-buscar">
+        <button type="submit" className={buttonClasses({ size: "md", className: "w-full sm:col-span-2 lg:col-span-1 lg:h-11 lg:w-auto" })} data-testid="busca-parceiros-buscar">
           <Search className="h-4 w-4" aria-hidden /> Buscar
         </button>
       </form>

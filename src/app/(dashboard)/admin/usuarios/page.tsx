@@ -145,14 +145,14 @@ export default async function AdminUsuariosPage({
         {f.ate && <input type="hidden" name="ate" value={f.ate} />}
         <label className="grid flex-1 gap-1 text-sm text-muted sm:max-w-xs">
           Buscar por nome
-          <input name="q" defaultValue={f.q ?? ""} maxLength={60} className="rounded-xl border border-line px-3 py-2 text-ink" />
+          <input name="q" defaultValue={f.q ?? ""} maxLength={60} className="h-10 rounded-xl border border-line px-3 py-2 text-ink" />
         </label>
         <label className="grid gap-1 text-sm text-muted">
           Papel
           <select
             name="papel"
             defaultValue={f.papel === "owner" ? "proprietario" : f.papel === "tenant" ? "inquilino" : f.papel === "admin" ? "admin" : ""}
-            className="rounded-xl border border-line px-3 py-2 text-ink"
+            className="h-10 rounded-xl border border-line px-3 py-2 text-ink"
             data-testid="filtro-papel"
           >
             <option value="">Proprietários e inquilinos</option>
@@ -163,7 +163,7 @@ export default async function AdminUsuariosPage({
         </label>
         <label className="grid gap-1 text-sm text-muted">
           Cadastro
-          <select name="cadastro" defaultValue={f.cadastro ?? ""} className="rounded-xl border border-line px-3 py-2 text-ink">
+          <select name="cadastro" defaultValue={f.cadastro ?? ""} className="h-10 rounded-xl border border-line px-3 py-2 text-ink">
             <option value="">Todos</option>
             <option value="completo">Completo</option>
             <option value="incompleto">Incompleto</option>
@@ -171,7 +171,7 @@ export default async function AdminUsuariosPage({
         </label>
         <label className="grid gap-1 text-sm text-muted">
           Mostrar contas de teste
-          <select name="teste" defaultValue={f.teste ? "sim" : ""} className="rounded-xl border border-line px-3 py-2 text-ink" data-testid="filtro-teste">
+          <select name="teste" defaultValue={f.teste ? "sim" : ""} className="h-10 rounded-xl border border-line px-3 py-2 text-ink" data-testid="filtro-teste">
             <option value="">Não</option>
             <option value="sim">Sim</option>
           </select>
