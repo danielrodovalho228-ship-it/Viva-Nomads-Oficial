@@ -30,11 +30,16 @@ async function parteDaCandidatura(leadId: string) {
   return parte ? { admin, lead } : null;
 }
 
-/** Tipo e data de cada documento enviado (nunca o caminho do arquivo). */
-export async function listarDocsInquilino(leadId: string): Promise<DocInquilinoResumo[]> {
+/**
+ * Tipo e data de cada documento enviado (nunca o caminho do arquivo).
+ * Achado nº 21: com `exigir`, a falha de leitura LANÇA — a tela avisa em vez de dizer "ainda não enviou" (ao dono) ou
+ * mostrar tudo "pendente" (ao morador, que reenviaria à toa).
+ */
+export async function listarDocsInquilino(leadId: string, opcoes: { exigir?: boolean } = {}): Promise<DocInquilinoResumo[]> {
   const ctx = await parteDaCandidatura(leadId);
   if (!ctx) return [];
   const { data, error } = await ctx.admin.from("documentos_inquilino").select("tipo, enviado_em").eq("lead_id", leadId).order("tipo");
+  if (error && opcoes.exigir) throw new Error("Não foi possível ler os documentos agora.");
   if (error) return [];
   return (data ?? []).map((d) => ({ tipo: d.tipo as TipoDocInquilino, enviadoEm: d.enviado_em as string }));
 }
