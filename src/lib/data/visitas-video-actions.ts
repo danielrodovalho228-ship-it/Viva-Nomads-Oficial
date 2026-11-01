@@ -14,6 +14,7 @@ import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import { primeiroNome } from "@/lib/calendario-estadias";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
+import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { corpoVisitaConfirmada, corpoVisitaPedida, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
@@ -408,7 +409,10 @@ export interface VisitaDetalhe extends MinhaVisita {
   papel: "dono" | "morador";
   /** Bairro e cidade do imóvel (sempre; o endereço exato segue a regra). */
   regiao: string | null;
-  /** Para o dono: o 1º nome de quem vem, só depois do aceite (candidatura aceita ou contrato), como na Agenda. */
+  /**
+   * E328: o 1º nome da OUTRA parte — para o dono, quem vem; para o morador, quem recebe. Aparece a partir da
+   * confirmação do horário (o aceite prático da visita) ou, para o dono, com candidatura aceita ou contrato.
+   */
   pessoa: string | null;
 }
 
@@ -436,16 +440,25 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
   const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
   const e = p && mostraEnderecoDaVisita(v, new Date()) ? enderecoDaVisita(p) : null;
   let pessoa: string | null = null;
+  const nomeDe = async (id: string) => {
+    const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", id).maybeSingle();
+    const nome = primeiroNome((perfil as { full_name?: string | null } | null)?.full_name ?? null);
+    return nome === "Inquilino" ? null : nome;
+  };
   if (papel === "dono") {
-    const [{ data: lead }, { data: contrato }] = await Promise.all([
-      admin.from("leads").select("id").eq("owner_id", user.id).eq("tenant_id", r.tenant_id).eq("property_id", r.property_id).eq("status", "accepted").limit(1).maybeSingle(),
-      admin.from("contratos").select("id").eq("tenant_id", r.tenant_id).eq("property_id", r.property_id).limit(1).maybeSingle(),
-    ]);
-    if (lead || contrato) {
-      const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", r.tenant_id).maybeSingle();
-      const nome = primeiroNome((perfil as { full_name?: string | null } | null)?.full_name ?? null);
-      pessoa = nome === "Inquilino" ? null : nome;
+    // E328: a confirmação do horário libera o nome; antes dela, só a candidatura aceita ou o contrato (como antes).
+    let aceite = false;
+    if (!nomeLiberadoNaVisita(r.status)) {
+      const [{ data: lead }, { data: contrato }] = await Promise.all([
+        admin.from("leads").select("id").eq("owner_id", user.id).eq("tenant_id", r.tenant_id).eq("property_id", r.property_id).eq("status", "accepted").limit(1).maybeSingle(),
+        admin.from("contratos").select("id").eq("tenant_id", r.tenant_id).eq("property_id", r.property_id).limit(1).maybeSingle(),
+      ]);
+      aceite = !!(lead || contrato);
     }
+    if (nomeLiberadoNaVisita(r.status, aceite)) pessoa = await nomeDe(r.tenant_id);
+  } else if (nomeLiberadoNaVisita(r.status)) {
+    // E328: o morador vê o 1º nome de quem recebe a partir da confirmação.
+    pessoa = await nomeDe(r.owner_id);
   }
   return { ...v, papel, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null, pessoa };
 }

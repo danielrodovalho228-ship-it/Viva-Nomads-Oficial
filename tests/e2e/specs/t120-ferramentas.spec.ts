@@ -25,9 +25,11 @@ for (const largura of [1440, 390]) {
       const cards = g.getByTestId("ferramenta-card");
       await expect(cards).toHaveCount(4);
       const alturas = await cards.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
-      expect(Math.max(...alturas) - Math.min(...alturas), `grupo ${i}: alturas ${alturas}`).toBeLessThanOrEqual(1);
       const cols = await cards.first().evaluate((el) => getComputedStyle(el.parentElement!).gridTemplateColumns.split(" ").length);
       expect(cols).toBe(largura > 500 ? 2 : 1);
+      // Mesma altura só na grade 2×2. Em 1 coluna (celular) cada cartão tem a altura do próprio texto:
+      // dv-pacote.test.ts proíbe esticar as linhas ali (auto-rows-fr só a partir de sm).
+      if (cols > 1) expect(Math.max(...alturas) - Math.min(...alturas), `grupo ${i}: alturas ${alturas}`).toBeLessThanOrEqual(1);
     }
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(sobra).toBeLessThanOrEqual(1);

@@ -108,6 +108,12 @@ export function CartaoVisita({
               Quem vem: {v.pessoa ?? "Interessado(a)"}
             </p>
           )}
+          {/* E328: a partir da confirmação, o morador vê o 1º nome de quem recebe (a promessa "depois do aceite"). */}
+          {papel !== "dono" && v.pessoa && (
+            <p className="text-xs text-muted" data-testid="visita-pessoa-dono">
+              Quem recebe: {v.pessoa}
+            </p>
+          )}
           {/* E318: a cancelada diz quando foi pedida (dois pedidos para o mesmo horário não ficam idênticos). */}
           {textoPedidaEm({ status, criadoEm: v.criadoEm }) && (
             <p className="text-xs text-muted" data-testid="visita-pedida-em">
