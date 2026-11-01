@@ -8,7 +8,6 @@ import { existsSync, readFileSync } from "node:fs";
 import { calcularTudoIncluido, contaDoPeriodo, parcelasDoMes, type CamposTotalMes } from "./precos.ts";
 import { blocosBolsoPeriodo } from "./cobranca/bolso.ts";
 import { comissaoSobreContrato } from "./cobranca/regra.ts";
-import { precoSugerido, recebeAirbnb, recebeViva } from "./preco-justo.ts";
 
 const nbsp = (s: string) => s.replace(/ /g, " ");
 const E139 = { monthlyPrice: 3600, condoFee: 350, utilitiesMode: "fixed", utilitiesEstimate: 150 } as CamposTotalMes;
@@ -46,14 +45,6 @@ test("E139: entrada inválida não monta conta", () => {
   assert.equal(contaDoPeriodo({ monthlyPrice: 0 } as CamposTotalMes, 4, 0.12), null);
   assert.equal(contaDoPeriodo(E139, 0, 0.12), null);
   assert.equal(contaDoPeriodo(E139, Number.NaN, 0.12), null);
-});
-
-test("E140: com o mesmo período dos dois lados, o equivalente iguala (ou passa) o líquido do Airbnb no período", () => {
-  for (const meses of [2, 4, 6]) {
-    const p = precoSugerido(4500 * (meses / 2), meses, 0.12)!;
-    assert.ok(recebeViva(p, meses, 0.12) >= recebeAirbnb(4500 * (meses / 2)));
-    assert.ok(recebeViva(p - 1, meses, 0.12) < recebeAirbnb(4500 * (meses / 2)), "é o MENOR valor mensal equivalente");
-  }
 });
 
 test("E139/E151: o Passo 8 usa a conta única, sem a 'linha comparativa' e sem a regra pública repetida", () => {

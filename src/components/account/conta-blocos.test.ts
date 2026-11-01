@@ -56,11 +56,9 @@ test("menu: 'Verificação' abre direto a tela de Verificação (E76: /dashboard
   assert.match(ler("src/config/menu-por-papel.ts"), /rotulo: "Verificação", icone: "verificacao", href: "\/dashboard\/verificacao"/);
 });
 
-test("simulador: PJ sem '+ IBS/CBS', sem aviso de ago/2026 e com o custo de manter a empresa", () => {
-  const sim = ler("src/components/tax-simulator.tsx");
-  assert.doesNotMatch(sim, /Lucro presumido \+ IBS\/CBS|ago\/2026/);
-  assert.match(sim, /custo de manter a empresa/);
-  assert.match(sim, /AVISO_IBS_CBS_LIBERADO && r\.ibsCbsAviso/);
+test("E292-bis: o simulador PF × PJ saiu de vez (nem a tela do dono, nem a memória dos sócios)", () => {
+  assert.equal(existsSync(new URL("../../../src/components/tax-simulator.tsx", import.meta.url)), false);
+  assert.match(ler("src/app/tributario/page.tsx"), /permanentRedirect\("\/dashboard\/ferramentas"\)/);
 });
 
 test("Conta: 'Ver como os outros veem' do proprietário só aparece com imóvel (sem perfil público a página dá 404)", () => {
