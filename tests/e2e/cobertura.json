@@ -1544,7 +1544,8 @@
       "specs": [
         "t593-e211-visita-do-dono",
         "t589-varredura-bloco47",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t878-e328-nome-na-visita"
       ]
     },
     "/decisao": {
