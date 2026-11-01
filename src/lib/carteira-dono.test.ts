@@ -93,7 +93,7 @@ test("guarda: a tela lê o banco; DEMO_PORTFOLIO só no modo demonstração; nen
   assert.equal((cliente.match(/DEMO_PORTFOLIO/g) ?? []).length, 2, "o import e o ramo do modo demo");
   assert.doesNotMatch(cliente, /\?\s*DEMO_PORTFOLIO\s*:\s*\[\]/);
   const pagina = ler("../app/(dashboard)/dashboard/carteira/page.tsx");
-  assert.match(pagina, /await getCarteiraDoDono\(\)/);
+  assert.match(pagina, /await getCarteiraDoDono\((undefined, \{ exigir: true \})?\)/);
   assert.match(pagina, /<CarteiraClient itens=\{itens\} \/>/);
   // Limpeza: o módulo de exemplo (SAMPLE_PORTFOLIO, "subleased") saiu.
   assert.equal(existsSync(fileURLToPath(new URL("./portfolio.ts", import.meta.url))), false);
