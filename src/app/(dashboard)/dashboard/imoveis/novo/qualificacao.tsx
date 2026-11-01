@@ -7,10 +7,12 @@ import {
   SEM_INTERNET_QUALIFICACAO,
   TELAS_QUALIFICACAO,
   TOTAL_TELAS,
+  SUBTITULO_QUALIFICACAO,
   aplicarRespostas,
   criterioDe,
   faltamDoEssencial,
   nivelDoResultado,
+  rotuloAvancarQualificacao,
   tituloResultado,
   type IconeOpcao,
   type Pergunta,
@@ -102,7 +104,8 @@ export function Qualificacao(p: {
         primario={
           resultado
             ? { rotulo: p.ocupado ? "Abrindo o cadastro…" : "Começar o cadastro", onClick: p.onComecar, disabled: p.ocupado, testid: "qualificacao-comecar", seta: true }
-            : { rotulo: "Continuar", onClick: () => p.onTela(p.tela + 1), testid: "qualificacao-continuar", seta: true }
+            : // E390: sem nenhuma resposta nesta tela, o botão diz o que faz ("Pular") — nunca avança em silêncio.
+              { rotulo: rotuloAvancarQualificacao(TELAS_QUALIFICACAO[p.tela], p.respostas), onClick: () => p.onTela(p.tela + 1), testid: "qualificacao-continuar", seta: true }
         }
       />
     </section>
@@ -116,7 +119,10 @@ function Tela(p: { indice: number; respostas: Respostas; onResponder: (id: strin
       <h1 className="mt-8 text-center font-title text-2xl font-semibold text-ink" data-testid="qualificacao-titulo">
         O imóvel tem o essencial?
       </h1>
-      <p className="mt-2 text-center text-sm text-muted sm:text-base">Responda tocando nas opções. Leva menos de 1 minuto.</p>
+      {/* E390 (01/11): a etapa é opcional por desenho (nada trava; "Responder depois" leva ao Passo 1) — agora a tela diz. */}
+      <p className="mt-2 text-center text-sm text-muted sm:text-base" data-testid="qualificacao-opcional">
+        {SUBTITULO_QUALIFICACAO}
+      </p>
       <h2 className="mt-6 text-center font-title text-lg font-semibold text-ink" data-testid="qualificacao-tela-titulo">
         {tela.titulo}
       </h2>

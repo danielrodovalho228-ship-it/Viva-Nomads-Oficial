@@ -52,7 +52,7 @@ export function RodapeAssistente(p: {
               </button>
             )}
             {/* No celular, ao lado do "Publicar anúncio", o passo cabe inteiro em texto menor (nunca cortado). */}
-            <p className="whitespace-nowrap text-xs text-muted sm:text-sm" aria-live="polite" data-testid="passo-texto">
+            <p className="whitespace-nowrap text-xs text-muted max-[374px]:whitespace-normal max-[374px]:leading-tight sm:text-sm" aria-live="polite" data-testid="passo-texto">
               {p.texto ?? textoPasso(p.pos, p.total)}
             </p>
           </div>
