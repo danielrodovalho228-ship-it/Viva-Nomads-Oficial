@@ -2327,7 +2327,8 @@
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
         "t596-qa-login-direto",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t928-achado40-sistema-chaves"
       ]
     },
     "/admin/retencao": {
