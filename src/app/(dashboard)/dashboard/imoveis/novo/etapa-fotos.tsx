@@ -14,6 +14,7 @@ import { ANCORA_VIDEO_ASSISTENTE } from "@/lib/anuncio/prontidao";
 import { Erro } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import type { ConteudoFoto, EstadoPassoFotos } from "@/lib/fotos/conteudo";
+import { avisoDaContagem } from "@/lib/fotos/contagem-passo";
 
 /** Mockup cadastro-imovel-02: a dica embaixo da galeria. */
 export const DICA_FOTOS = "Dica: use fotos com boa iluminação e ambiente organizado.";
@@ -83,6 +84,8 @@ export function EtapaFotos({
   const contadas = photos.length + enviadas;
   const faltam = Math.max(0, MIN_PHOTOS - contadas);
   const bloqueado = contadas < MIN_PHOTOS;
+  // E417 (D8): o aviso do cartão sai da MESMA conta do número — nunca "8 / 8 fotos" com "Faltam 8" embaixo.
+  const aviso = avisoDaContagem(passoFotos, contadas, MIN_PHOTOS);
   return (
     <div data-testid="etapa-fotos">
       {/* Mockup cadastro-imovel-02: a galeria logo abaixo do título (foto principal larga, miniaturas e o "+ Adicionar
@@ -107,7 +110,7 @@ export function EtapaFotos({
           <span className="font-medium text-ink">
             <span data-testid="fotos-contagem-numero">{contadas}</span> / {MIN_PHOTOS} fotos
             {/* Conformidade fina (01/11): o "Faltam N fotos" não se repete — quando a trava já diz embaixo, sai daqui. */}
-            {bloqueado && !(passoFotos && !passoFotos.podeContinuar && passoFotos.mensagem) && (
+            {bloqueado && !aviso.mensagem && (
               <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>
             )}
           </span>
@@ -120,9 +123,14 @@ export function EtapaFotos({
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2">
           <div className={cn("h-full rounded-full transition-all", bloqueado ? "bg-champagne" : "bg-forest")} style={{ width: `${Math.min(100, (contadas / 20) * 100)}%` }} />
         </div>
-        {passoFotos && !passoFotos.podeContinuar && passoFotos.mensagem && (
-          <p className="mt-2 text-sm font-semibold text-red-700" data-testid="fotos-trava" data-trava={passoFotos.trava ?? undefined}>
-            {passoFotos.mensagem}
+        {aviso.mensagem && (
+          <p
+            className={cn("mt-2 text-sm font-semibold", aviso.trava === "enviando" ? "text-ink" : "text-red-700")}
+            role={aviso.trava === "enviando" ? "status" : undefined}
+            data-testid="fotos-trava"
+            data-trava={aviso.trava ?? undefined}
+          >
+            {aviso.mensagem}
           </p>
         )}
         <p className="mt-2 text-xs text-muted">
