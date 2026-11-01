@@ -45,7 +45,14 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   const demos = showDemoProperties();
 
   const admin = await adminDaPagina();
-  const [doBanco, linksVideo] = await Promise.all([admin ? imoveisDoBanco(admin) : Promise.resolve([]), listarLinksDeVideoPendentes().catch(() => [])]);
+  // Achado nº 26: a lista de imóveis lança na falha (o limite de erro do /admin oferece "Tentar de novo"); a fila de
+  // links de vídeo, se falhar, vira aviso — nunca "nenhum link pendente" calado.
+  const [doBanco, linksLidos] = await Promise.all([
+    admin ? imoveisDoBanco(admin) : Promise.resolve([]),
+    listarLinksDeVideoPendentes().catch(() => null),
+  ]);
+  const linksFalharam = linksLidos === null;
+  const linksVideo = linksLidos ?? [];
   const exemplos: ImovelLinhaAdmin[] = SAMPLE_PROPERTIES.map((e) => ({
     id: e.id,
     titulo: e.title,
@@ -92,6 +99,11 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
         }
       />
       <NumeroDaFonte chave="anuncios" />
+      {linksFalharam && (
+        <p role="alert" data-testid="links-video-erro" className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
+          Não foi possível ler os links de vídeo pendentes agora. Tente de novo em instantes.
+        </p>
+      )}
       <LinksDeVideoPendentes links={linksVideo} />
       <form action="/admin/imoveis" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {p && <input type="hidden" name="de" value={p.inicio} />}

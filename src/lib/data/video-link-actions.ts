@@ -10,6 +10,7 @@ import { ACAO_APROVAR_VIDEO, ACAO_RECUSAR_VIDEO, ALVO_VIDEO, type ResultadoLink 
 import { verificarLinkVideo } from "./video-link";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MSG_LINKS_VIDEO_FALHOU = "Não foi possível ler os links de vídeo pendentes.";
 
 /** O dono cola o link: confere formato, existência e incorporação (com limite diário por pessoa). */
 export async function conferirLinkVideo(url: string): Promise<ResultadoLink> {
@@ -46,10 +47,13 @@ export async function listarLinksDeVideoPendentes(): Promise<LinkPendente[]> {
   const a = await adminComSessao();
   const admin = createAdminClient();
   if (!a || !admin) return [];
-  const { data: props } = await admin.from("properties").select("id, title, video_url").not("video_url", "is", null).neq("status", "draft").limit(200);
+  // Achado nº 26: as duas leituras LANÇAM na falha — sem as decisões, links já decididos voltariam como pendentes.
+  const { data: props, error: erroProps } = await admin.from("properties").select("id, title, video_url").not("video_url", "is", null).neq("status", "draft").limit(200);
+  if (erroProps) throw new Error(MSG_LINKS_VIDEO_FALHOU);
   const linhas = ((props ?? []) as { id: string; title: string | null; video_url: string | null }[]).filter((p) => p.video_url?.trim());
   if (!linhas.length) return [];
-  const { data: decisoes } = await admin.from("moderacao_log").select("alvo_id, acao, motivo, criado_em").eq("alvo_tipo", ALVO_VIDEO).in("alvo_id", linhas.map((l) => l.id));
+  const { data: decisoes, error: erroDecisoes } = await admin.from("moderacao_log").select("alvo_id, acao, motivo, criado_em").eq("alvo_tipo", ALVO_VIDEO).in("alvo_id", linhas.map((l) => l.id));
+  if (erroDecisoes) throw new Error(MSG_LINKS_VIDEO_FALHOU);
   const porImovel = new Map<string, { acao: string; motivo: string | null; criado_em: string }[]>();
   for (const d of (decisoes ?? []) as { alvo_id: string; acao: string; motivo: string | null; criado_em: string }[]) porImovel.set(d.alvo_id, [...(porImovel.get(d.alvo_id) ?? []), d]);
   return linhas
