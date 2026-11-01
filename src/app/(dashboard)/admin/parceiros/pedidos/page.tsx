@@ -38,7 +38,7 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
   const filtro = (sp.filtro && sp.filtro in FILTROS ? sp.filtro : null) as Filtro | null;
   const admin = createAdminClient();
   if (!admin) return <EmptyState icon={ClipboardList} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />;
-  const [{ data }, testes, { data: parcs }] = await Promise.all([
+  const [{ data, error }, testes, { data: parcs, error: erroParceiros }] = await Promise.all([
     admin
       .from("parceiro_pedidos")
       .select("id, codigo, status, categoria, cliente_id, parceiro_id, valor_combinado, valor_taxa, valor_parceiro, pagamento_status, origem, gatilho, ref_tipo, ref_codigo, criado_em")
@@ -47,6 +47,9 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
     idsContasTeste(admin),
     admin.from("parceiros").select("id, user_id, nome_publico").limit(5000),
   ]);
+  // Achado 35: falha de leitura cai no aviso do admin ("Tentar de novo"), não em "Nenhum pedido ainda" com números
+  // zerados. Sem os parceiros, os pedidos de contas de teste entrariam nos números: também lança.
+  if (error || erroParceiros) throw new Error("Não foi possível ler os pedidos dos parceiros.");
   const pedidos = (data ?? []) as (PedidoParaNumeros & { id: string; codigo: string; categoria: string; valor_combinado: number | string | null; valor_parceiro: number | string | null; origem: string; gatilho: Gatilho | null; ref_codigo: string | null; criado_em: string })[];
   const parceiros = (parcs ?? []) as { id: string; user_id: string; nome_publico: string }[];
   const dono = new Map(parceiros.map((p) => [p.id, p.user_id]));
