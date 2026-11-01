@@ -52,7 +52,8 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
   const inquilino = um("inquilino").toLowerCase();
 
   const admin = await adminDaPagina();
-  const todos = admin ? await contratosReais(admin, p ? intervaloBRT(p.inicio, p.fim) : undefined, cidade, tipo) : [];
+  // Achado 31: com "exigir", a falha de leitura cai no aviso do admin ("Tentar de novo"), não em "Nenhum contrato".
+  const todos = admin ? await contratosReais(admin, p ? intervaloBRT(p.inicio, p.fim) : undefined, cidade, tipo, { exigir: true }) : [];
   const nomes = admin ? await nomesCurtos(admin, todos.flatMap((c) => [c.ownerId, c.tenantId])) : new Map<string, string>();
   const lista = todos.filter(
     (c) =>
