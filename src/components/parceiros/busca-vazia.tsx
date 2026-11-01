@@ -1,12 +1,12 @@
 import Image from "next/image";
-import { BellRing, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { BRAND_BLUR } from "@/lib/media";
 import { ButtonLink } from "@/components/ui/button";
 import { AvisoFotografo } from "@/app/(public)/parceiros/fotografos/aviso-fotografo";
 import { mostrarParceiroGeral, rotuloCategoria, type ParceiroGeral } from "@/lib/parceiros/regras";
-import { MUNICIPIOS } from "@/lib/municipios";
-import { ufUnicaDaCidade } from "@/lib/parceiros/indicacao";
+import { MUNICIPIOS, UFS } from "@/lib/municipios";
+import { ufUnicaDaCidade, ufsDaCidade } from "@/lib/parceiros/indicacao";
 import { IndicarProfissional } from "@/components/parceiros/indicar-profissional";
 
 /**
@@ -39,6 +39,9 @@ export function BuscaVazia({
   // E304 (QA 31/10): cidade digitada sem a UF deixava o "Quero ser avisado" desligado. Com o nome único no Brasil, a UF
   // vem da lista do IBGE; ambígua (ex.: "Bom Jesus"), o aviso continua pedindo a UF.
   const ufEfetiva = uf || (cidade ? ufUnicaDaCidade(cidade, MUNICIPIOS)?.uf ?? "" : "");
+  // E304 (vigia 31/10): o "Quero ser avisado" fica ligado com cidade OU categoria. Cidade ambígua: escolhe-se o estado
+  // no cartão (só os estados que têm essa cidade; nome fora da lista: todos). Só categoria: cidade e estado no cartão.
+  const opcoesUf = ufEfetiva ? undefined : cidade ? (ufsDaCidade(cidade, MUNICIPIOS).length ? ufsDaCidade(cidade, MUNICIPIOS) : UFS) : UFS;
   return (
     <div className="mt-4 space-y-4" data-testid="busca-parceiros-vazia">
       <div className="grid overflow-hidden rounded-xl border border-line bg-white md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
@@ -53,19 +56,17 @@ export function BuscaVazia({
             {`Ainda não temos parceiro${categoria ? ` de ${rotuloCategoria(categoria).toLowerCase()}` : ""}${cidade ? ` em ${cidade}` : " nesta busca"}.`}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
-            {cidade ? (
-              <AvisoFotografo cidade={cidade} uf={ufEfetiva} logado={logado} voltarPara={voltarPara} autoAvisar={autoAvisar} categoria={categoria || "outro"} ladoALado />
-            ) : (
-              <div className="h-full rounded-xl border border-line bg-white p-4" data-testid="aviso-fotografo" data-sem-cidade="1">
-                <p className="flex items-center gap-2 font-semibold text-ink">
-                  <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> Quero ser avisado
-                </p>
-                <p className="mt-1 text-sm text-muted">Diga a cidade (ou o CEP) na busca acima: avisamos você quando houver um parceiro dela.</p>
-                <ButtonLink href="#bp-cidade" variant="secondary" size="sm" className="mt-3" data-testid="aviso-informar-cidade">
-                  Informar a cidade
-                </ButtonLink>
-              </div>
-            )}
+            <AvisoFotografo
+              cidade={cidade}
+              uf={ufEfetiva}
+              logado={logado}
+              voltarPara={voltarPara}
+              autoAvisar={autoAvisar}
+              categoria={categoria || "outro"}
+              ladoALado
+              opcoesUf={opcoesUf}
+              pedirCidade={!cidade}
+            />
             <div className="h-full rounded-xl border border-line bg-white p-4" data-testid="indique-profissional">
               <p className="flex items-center gap-2 font-semibold text-ink">
                 <UserPlus className="h-5 w-5 shrink-0 text-forest" aria-hidden /> Indique um profissional
