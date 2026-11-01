@@ -102,7 +102,8 @@ test.describe("T939 — #2036 achado 44: estadia com as leituras secundárias ch
         // Cada leitura secundária aparece na tela.
         await expect(page.getByTestId("estadia-ocupantes")).toContainText(OCUPANTE);
         await expect(page.getByTestId("estadia-encerramento")).toBeVisible();
-        await expect(page.getByTestId("estadia-moradores")).toContainText(morador.nome);
+        // O perfil do morador (profiles) aparece com o nome curto: "Ênio E." (privacidade; ver o lab de 41339481586).
+        await expect(page.getByTestId("estadia-moradores")).toContainText("Ênio E.");
         const nota = page.getByTestId("nota-texto");
         await expect(nota).toHaveValue(quem === "dono" ? NOTA.dono : NOTA.morador);
         await expect(nota).not.toHaveValue(quem === "dono" ? NOTA.morador : NOTA.dono);
