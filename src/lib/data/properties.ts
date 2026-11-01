@@ -701,7 +701,15 @@ export async function listPropertiesByCity(city: string): Promise<Property[]> {
  * Imóveis do proprietário logado (todos os status — inclui rascunhos), para o
  * painel "Meus imóveis". No modo demonstração, devolve alguns exemplos.
  */
-export async function listMyProperties(): Promise<Property[]> {
+const MSG_IMOVEIS_NAO_CARREGARAM = "Não foi possível carregar os seus imóveis agora.";
+
+/**
+ * Auditoria de erros e estados vazios, achado nº 4: com `exigir`, uma falha do banco LANÇA (a tela mostra "Não
+ * conseguimos abrir esta tela" com "Tentar de novo") em vez de virar lista vazia — na tela "Meus imóveis", a lista
+ * vazia dizia "você ainda não tem imóveis" e levava o dono a cadastrar de novo. Sem `exigir` (contadores, outras
+ * telas), segue devolvendo [] como antes.
+ */
+export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promise<Property[]> {
   const supabase = await createClient();
   // Modo demonstração (sem Supabase): exemplos para a UI ganhar vida.
   if (!supabase) return SAMPLE_PROPERTIES.slice(0, 3);
@@ -717,6 +725,7 @@ export async function listMyProperties(): Promise<Property[]> {
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
+  if (error && opcoes.exigir) throw new Error(MSG_IMOVEIS_NAO_CARREGARAM);
   if (error || !data) return [];
   const lista = (data as unknown as PropertyRow[]).map(rowToProperty);
   // As fotos vêm de property_photos (sem isso o card ficava sem capa).
