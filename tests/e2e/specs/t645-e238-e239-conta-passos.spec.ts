@@ -55,7 +55,7 @@ test.describe("T645 — E238 (Conta uma vez) e E239 (ícones dos próximos passo
       const estados = await passos.locator("li").evaluateAll((lis) =>
         lis.map((li) => {
           const ic = li.querySelector("[data-passo-icone]") as HTMLElement | null;
-          return { estado: ic?.dataset.passoIcone ?? null, fundo: ic ? getComputedStyle(ic).backgroundColor : "", texto: (li as HTMLElement).innerText.includes("Concluído") ? "feito" : "pendente" };
+          return { estado: ic?.dataset.passoIcone ?? null, fundo: ic ? getComputedStyle(ic).backgroundColor : "", texto: (li as HTMLElement).innerText.includes("Concluído") ? "feito" : "pendente", rotulo: ((li as HTMLElement).innerText.match(/— (Concluído|Em andamento|Pendente)/) ?? [])[1] ?? "" };
         }),
       );
       console.log(`t645|${largura}|${JSON.stringify(estados)}`);
@@ -67,6 +67,8 @@ test.describe("T645 — E238 (Conta uma vez) e E239 (ícones dos próximos passo
           expect(e.estado).toBe("feito");
           expect(e.fundo).not.toBe("rgba(0, 0, 0, 0)");
         } else expect(e.estado).toBe(i === primeiroPendente ? "agora" : "depois");
+        // Conformidade painel-proprietario (01/11): o passo atual diz "Em andamento"; os seguintes, "Pendente".
+        expect(e.rotulo).toBe(e.texto === "feito" ? "Concluído" : i === primeiroPendente ? "Em andamento" : "Pendente");
       });
       await p.getByTestId("inicio-dono-principal").screenshot({ path: `${SAIDA}/t645-passos-${largura}.png` });
       await p.context().close();
