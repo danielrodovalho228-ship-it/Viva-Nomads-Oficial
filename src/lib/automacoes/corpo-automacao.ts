@@ -8,6 +8,7 @@
 import { dataHoraBRT } from "../datas-brasilia.ts";
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
 import { assuntoComTitulo, diaHoraNoAssunto, diaNoAssunto } from "../notifications/assuntos.ts";
+import { FRASE_AVALIACAO } from "./regras.ts";
 
 export type TipoCorpoAutomacao = "saida_lembrete" | "avaliacao_pedido" | "renovacao_aviso" | "proposta_vencendo" | "estadia_instrucoes_pendentes";
 
@@ -81,7 +82,7 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
       return {
         subject: assuntoComTitulo("Como foi a estadia em ", titulo, "?"),
         body: (n) =>
-          `${ola(n)}, a estadia${titulo ? ` em ${titulo}` : ""} terminou${data ? ` em ${data}` : ""}. Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.`,
+          `${ola(n)}, a estadia${titulo ? ` em ${titulo}` : ""} terminou${data ? ` em ${data}` : ""}. ${FRASE_AVALIACAO}`,
         linhas,
       };
     }
