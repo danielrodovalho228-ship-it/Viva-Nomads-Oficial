@@ -36,9 +36,8 @@ export function TopoPainel(p: {
   return (
     <header className="web-only hidden border-b border-line bg-white lg:block print:hidden" data-testid={`topo-${px}`} data-papel={p.papel}>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-8">
-        <Link href="/dashboard" aria-label="Início do painel" className="shrink-0">
-          <Logo />
-        </Link>
+        {/* Varredura 01/11: o Logo já é um link — antes ficava dentro de outro <Link> (<a> dentro de <a>: erro de hidratação). */}
+        <Logo href="/dashboard" rotulo="VivaNomads — início do painel" className="shrink-0" />
         <nav aria-label={AREA[p.papel]} className="flex h-full min-w-0 flex-1 items-stretch gap-6" data-testid={`abas-${px}`}>
           {p.abas.map((a) => {
             const on = ativa?.id === a.id;
