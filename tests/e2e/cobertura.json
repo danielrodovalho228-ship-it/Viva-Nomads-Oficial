@@ -2210,7 +2210,8 @@
         "t256-pagina-da-estadia",
         "t273-admin-decisoes",
         "t286-esqueletos-vazios-48",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t910-achado34-encerramentos"
       ]
     },
     "/dashboard/estadia/[contratoId]": {
