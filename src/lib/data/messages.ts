@@ -50,6 +50,9 @@ export const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: "1",
     name: "Ana Carvalho",
     property: "Apto Santa Mônica",
+    // Varredura 01/11: as conversas de exemplo têm o papel (interessados escrevendo ao proprietário) — sem ele, "Todas 2"
+    // aparecia com "Como proprietário 0" e "Como morador 0".
+    papel: "proprietario",
     preview: "O imóvel está disponível em agosto?",
     messages: [
       { id: "a1", from: "them", text: "Olá! O imóvel está disponível a partir de agosto?" },
@@ -61,6 +64,7 @@ export const SAMPLE_CONVERSATIONS: Conversation[] = [
     id: "2",
     name: "Rafael Lima",
     property: "Studio Centro",
+    papel: "proprietario",
     preview: "Posso agendar uma visita?",
     messages: [{ id: "b1", from: "them", text: "Bom dia! Posso agendar uma visita esta semana?" }],
   },
