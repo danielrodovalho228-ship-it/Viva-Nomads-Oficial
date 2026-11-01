@@ -135,9 +135,6 @@ test.describe("T784 — merges de 31/10: vazios do admin e da conta, cartões de
       await p.context().close();
     });
   }
-      await p.context().close();
-    });
-  }
 
   test("E. 390 px, tela de toque: rodapé, Instagram e Compartilhar com 44 px; links de texto soltos com área de 44 px (#1725, #1731)", async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
