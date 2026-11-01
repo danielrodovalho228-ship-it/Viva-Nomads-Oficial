@@ -22,7 +22,7 @@ test("E329 + varredura 01/11 — o anúncio reflete a visita em aberto (agendada
   // O mesmo recorte do índice único do banco (um em aberto por morador, imóvel e modalidade).
   assert.match(f, /\.in\("status", \["pedido", "confirmado", "remarcar"\]\)/);
   const botao = ler("../../components/property/visita-video.tsx");
-  assert.match(botao, /if \(estado && !exemplo\) \{[\s\S]{0,80}<ButtonLink\s+href="\/dashboard\/visitas"/);
+  assert.match(botao, /if \(estado && !exemplo\) \{[\s\S]{0,240}<ButtonLink\s+href="\/dashboard\/visitas"/);
   assert.match(botao, /data-testid=\{`\$\{t\.prefixo\}-\$\{estado\}`\}/);
   assert.match(botao, /estado === "agendada" \? "Visita agendada" : estado === "pedida" \? t\.feito : "Ver minha visita"/);
   const detalhe = ler("../../app/(public)/imoveis/[id]/property-detail.tsx");

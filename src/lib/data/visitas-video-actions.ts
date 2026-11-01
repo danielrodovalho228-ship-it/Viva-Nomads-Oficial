@@ -1,5 +1,6 @@
 "use server";
 
+import { erroPedidoAberto } from "@/lib/visitas/um-pedido-aberto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isExemplo, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
@@ -113,7 +114,8 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     modalidade,
   });
   if (error) {
-    if (error.code === "23505") return { ok: false, error: "Você já tem um pedido de visita em aberto para este imóvel." };
+    // E411: diz o porquê e o caminho (cancelar em Visitas e pedir de novo).
+    if (error.code === "23505") return { ok: false, error: erroPedidoAberto(modalidade) };
     return { ok: false, error: erroBancoPT(error) };
   }
   // Abre (ou continua) a conversa com o proprietário: o cartão da visita aparece no topo dela, com as ações.
