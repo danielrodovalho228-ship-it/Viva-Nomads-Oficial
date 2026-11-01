@@ -36,6 +36,11 @@ test.describe("T782 — E308: capa do rascunho pelo draft_data", () => {
 
   for (const largura of [1280, 390] as const) {
     test(`fotos só no draft_data (${largura} px): a 1ª em capa no "Continue seu anúncio"`, async ({ browser }) => {
+      // L-87 (registro-defeitos.md, Pista C): fotosDoDono() (src/lib/fotos-anuncio.ts) só aceita URL https:, e o Storage do
+      // laboratório serve em http://127.0.0.1:54321 — no lab a capa do draft_data é sempre descartada ("inicio-dono-foto"
+      // não aparece; vermelho já no lab-crítico do próprio #2040, run 41338950493). Em produção (https) a regra vale.
+      // Quem corrigir (aceitar o host do Supabase configurado, ou a spec gravar com a origem certa) tira este test.fail.
+      test.fail(true, "L-87: fotosDoDono exige https e o Storage do laboratório é http — capa do draft_data descartada no lab");
       expect(ids.capa, "o laboratório gravou fotos reais").toBeTruthy();
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
