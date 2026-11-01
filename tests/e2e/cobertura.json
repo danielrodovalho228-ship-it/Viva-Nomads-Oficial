@@ -930,7 +930,8 @@
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t923-varredura-0111-sem-botao-em-link"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1272,7 +1273,8 @@
         "t491-e182-estadias-com-nome",
         "t557-varredura-bloco42",
         "t489-e176-menus",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t923-varredura-0111-sem-botao-em-link"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1387,7 +1389,8 @@
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
         "t559-varredura-bloco43",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t923-varredura-0111-sem-botao-em-link"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1402,7 +1405,8 @@
         "t232-pedido-moradia-completo",
         "t298-varredura-logada-bloco4",
         "t416-varredura-bloco33",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t923-varredura-0111-sem-botao-em-link"
       ]
     },
     "/dashboard/propostas/[id]": {
