@@ -85,7 +85,11 @@ export function useSecaoAncora(rota: string, ids: readonly string[], pathname: s
       const a = (e.target as Element | null)?.closest?.("a[href]");
       const href = a?.getAttribute("href") ?? "";
       const [caminho, id] = href.split("#");
-      if (id && lista.includes(id) && (caminho === "" || caminho === rota)) pediu(id);
+      if (id && lista.includes(id) && (caminho === "" || caminho === rota)) {
+        pediu(id);
+        // Link para o mesmo #âncora que já está na URL: o navegador não rola — a seção é levada à vista aqui (t776 a 390).
+        requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+      }
     };
     const aoMudarHash = () => pediu(daUrl());
     medir();
