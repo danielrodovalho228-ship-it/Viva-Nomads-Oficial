@@ -33,7 +33,10 @@ type LinhaChave = { chave: string; ligada: boolean; ligada_em: string | null; al
  */
 export default async function AdminSistemaPage() {
   const admin = createAdminClient();
-  const { data } = admin ? await admin.from("chaves_plataforma").select("chave, ligada, ligada_em, alterada_em, alterada_por, valor").in("chave", ["SMS_ATIVO", "PARCEIRO_GERAL_FALLBACK"]) : { data: null };
+  const { data, error } = admin ? await admin.from("chaves_plataforma").select("chave, ligada, ligada_em, alterada_em, alterada_por, valor").in("chave", ["SMS_ATIVO", "PARCEIRO_GERAL_FALLBACK"]) : { data: null, error: null };
+  // Achado 40: sem a leitura, a tela mostraria "desligada" e abriria o formulário do parceiro geral VAZIO — salvar ali
+  // apagaria a configuração real. A falha sobe para o aviso do admin ("Tentar de novo").
+  if (error) throw new Error(`Falha ao ler as chaves da plataforma: ${error.message}`);
   const linhas = (data ?? []) as LinhaChave[];
   const ids = [...new Set(linhas.map((l) => l.alterada_por).filter((x): x is string => !!x))];
   const { data: perfis } = admin && ids.length ? await admin.from("profiles").select("id, full_name").in("id", ids) : { data: null };
