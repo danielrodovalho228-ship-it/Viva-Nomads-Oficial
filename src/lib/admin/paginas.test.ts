@@ -45,6 +45,23 @@ test("E281: /admin/eventos e /admin/funil contam pela MESMA leitura paginada, em
   assert.match(fn, /todasAsPaginas</);
   assert.doesNotMatch(fn.slice(0, fn.indexOf("\n}\n")), /\.limit\(/);
   // As duas telas passam pela mesma leitura (a lista por dia, com os de teste contados à parte — E288-B — e os x_ev_* do funil).
-  assert.match(readFileSync("src/app/(dashboard)/admin/eventos/page.tsx", "utf8"), /eventosDoPeriodoComFora\(admin, intervaloBRT\(p\.inicio, p\.fim\), cidade, \[tipo\]\)/);
+  assert.match(readFileSync("src/app/(dashboard)/admin/eventos/page.tsx", "utf8"), /eventosDoPeriodoComFora\(admin, intervaloBRT\(p\.inicio, p\.fim\), cidade, \[tipo\](, \{ exigir: true \})?\)/);
   assert.match(ind, /eventosDoPeriodo\(admin, periodo, cidade, Object\.keys\(EVENTOS_HOME\)\)/);
+});
+
+test("Achado 38: com exigir, erro em qualquer página lança (sem número menor que o real)", async () => {
+  let n = 0;
+  const comErro = async () => (n++ === 0 ? { data: Array.from({ length: 1000 }, (_, i) => i), error: null } : { data: null, error: { message: "x" } });
+  await assert.rejects(() => todasAsPaginas(comErro, undefined, { exigir: true }), /Não foi possível ler todas as páginas/);
+  await assert.rejects(() => todasAsPaginas(async () => ({ data: null, error: { message: "x" } }), undefined, { exigir: true }));
+  // Sem erro, exigir não muda nada.
+  assert.equal((await todasAsPaginas(bancoFalso(2500).pagina, undefined, { exigir: true })).length, 2500);
+});
+
+test("Achado 38: /admin/eventos e /admin/funil leem com exigir", () => {
+  assert.match(readFileSync("src/app/(dashboard)/admin/eventos/page.tsx", "utf8"), /eventosDoPeriodoComFora\(admin, intervaloBRT\(p\.inicio, p\.fim\), cidade, \[tipo\], \{ exigir: true \}\)/);
+  assert.match(readFileSync("src/lib/data/funil.ts", "utf8"), /todasAsPaginas<[^>]+>\(paginaEventos, undefined, \{ exigir: true \}\)/);
+  assert.match(readFileSync("src/app/(dashboard)/admin/funil/page.tsx", "utf8"), /funilDaSemana\(\)\.catch\(\(\) => null\)/);
+  const ind = readFileSync("src/lib/data/admin-indicadores.ts", "utf8");
+  assert.match(ind, /todasAsPaginas<[^>]+>\(pagina, undefined, opcoes\)/);
 });
