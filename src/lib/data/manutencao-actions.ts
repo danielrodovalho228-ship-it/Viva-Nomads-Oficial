@@ -277,15 +277,18 @@ export interface AvisoRecente {
 }
 
 /** /dashboard/notificacoes: últimas atualizações das ordens da pessoa (histórico + mensagens da outra parte). */
-export async function avisosRecentes(): Promise<{ abertas: number; avisos: AvisoRecente[] } | null> {
+/** Auditoria de erros e estados vazios, achado nº 13: `falhou` quando a leitura das ordens não veio — a tela diz que não
+ * carregou, em vez de "nenhuma atualização" e "0 em aberto". */
+export async function avisosRecentes(): Promise<{ abertas: number; avisos: AvisoRecente[]; falhou?: boolean } | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data: ordens } = await s.supabase
+  const { data: ordens, error: erroOrdens } = await s.supabase
     .from("service_orders")
     .select("id, status, tenant_id, owner_id, properties(title)")
     .or(`tenant_id.eq.${s.uid},owner_id.eq.${s.uid}`)
     .order("opened_at", { ascending: false })
     .limit(50);
+  if (erroOrdens) return { abertas: 0, avisos: [], falhou: true };
   const lista = (ordens ?? []) as unknown as { id: string; status: string; properties: { title?: string } | null }[];
   if (!lista.length) return { abertas: 0, avisos: [] };
   const ids = lista.map((o) => o.id);
