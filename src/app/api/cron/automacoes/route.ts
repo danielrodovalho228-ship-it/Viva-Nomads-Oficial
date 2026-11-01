@@ -217,7 +217,8 @@ export async function GET(request: Request) {
       refId: p.id as string,
       variante: String(p.versao_atual),
       url: `/dashboard/propostas/${p.id}`,
-      detalhe: detalheAutomacao("proposta_vencendo", { imovel: pp?.title || undefined, numero: p.numero as string }),
+      // E344: a linha do imóvel com bairro e cidade, como nos outros e-mails do cron (linhaImovel), não só o título.
+      detalhe: detalheAutomacao("proposta_vencendo", { imovel: (pp ? linhaImovel({ titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "") || undefined, numero: p.numero as string }),
       ...comFatos("proposta_vencendo", { imovel: pp ? { titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, prazo: p.valida_ate as string }),
       // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
       decisao: { imovel: pp?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
