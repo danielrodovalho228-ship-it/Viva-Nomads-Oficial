@@ -5,6 +5,12 @@
   Roda: node --test src/lib/automacoes/regras.test.ts
 */
 
+/**
+ * E345: a frase do pedido de avaliação é UMA só — o corpo do e-mail, o bloco do detalhe e o modelo genérico diziam
+ * "moradores e proprietários" num lugar e só "moradores" no outro, no mesmo e-mail. Os dois lados avaliam.
+ */
+export const FRASE_AVALIACAO = "Sua avaliação leva 2 minutos e ajuda os próximos moradores e proprietários.";
+
 export type TipoAutomacao =
   | "anuncio_incompleto"
   | "saida_lembrete"
@@ -83,7 +89,7 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
     case "saida_lembrete":
       return `${imovel} Saída em ${ctx.fim ? dataBr(ctx.fim) : "3 dias"}. Combine a conferência de saída pela plataforma.`.trim();
     case "avaliacao_pedido":
-      return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. Sua avaliação leva 2 minutos e ajuda os próximos moradores.`.trim();
+      return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. ${FRASE_AVALIACAO}`.trim();
     case "renovacao_aviso":
       return `${imovel} O bloco termina em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
     case "proposta_vencendo":
