@@ -134,7 +134,7 @@ const imovel = (id: string, extra: Record<string, unknown> = {}) => ({
   cidade: "Uberlândia",
   uf: "MG",
   totalMes: 3350,
-  fotoCapa: `https://abc.supabase.co/storage/v1/object/public/property-photos/x/${id}.webp`,
+  fotoCapa: `https://abc.supabase.co/storage/v1/object/public/property-photos/7216d0e9-6246-482a-a1de-524fd5231dc2/${`${id}`.padStart(8, "0")}-efe6-497d-af45-885f854e3ddf.webp`,
   areaM2: 62,
   quartos: 2,
   vagas: 1,
@@ -160,7 +160,7 @@ test("e-mail: 2 seções, 3 cartões cada, 'ver os N', ficha completa, motivo, d
   assert.match(m.detailsHtml, /href="https:\/\/vivanomads\.com\.br\/dashboard\/pedidos"/);
   assert.match(m.detailsHtml, /62 m² · 2 quartos · 1 vaga/);
   assert.match(m.detailsHtml, /Total por mês \(com contas\)/);
-  assert.match(m.detailsHtml, /_next\/image\?url=/);
+  assert.match(m.detailsHtml, /\/api\/email\/foto\?p=/);
   assert.match(m.detailsHtml, /Santa Mônica, Uberlândia/);
   assert.match(m.detailsHtml, />Ver o imóvel</);
   assert.match(m.detailsHtml, /data-motivo[^>]*>Baixou de R\$ 3\.550 para R\$ 3\.350 por mês\.</);

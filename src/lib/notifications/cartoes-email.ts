@@ -1,7 +1,7 @@
 /*
   E264-B — CARTÕES dos e-mails proativos: o cartão do imóvel e o cartão do pedido de moradia. PURO.
   Componente único do modelo de e-mail (tabela + estilo inline, modo escuro pelas classes do modelo-email.ts).
-    • Imóvel: foto de capa REAL do anúncio público (redimensionada pelo otimizador de imagens do site), título, bairro e
+    • Imóvel: foto de capa REAL do anúncio público (em JPEG 640 px pela rota /api/email/foto), título, bairro e
       cidade, o total do mês pela função de preço única com o rótulo da casa, e o botão "Ver o imóvel".
       Nunca o endereço exato nem dado do proprietário: só o que a página pública mostra.
     • Pedido: cidade, entrada e duração, orçamento, pessoas e pets. Nunca nome, contato ou outro dado pessoal.
@@ -65,16 +65,29 @@ const dataBR = (iso: string) => {
 const limpo = (s: string | null | undefined, max = 120) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
 /**
- * Largura e qualidade do otimizador para a foto do cartão. E274: o Next 16 só aceita as qualidades da lista
- * `images.qualities` (padrão [75]) e as larguras de `deviceSizes`/`imageSizes` (640 está no padrão); fora delas a
- * produção responde 400 (INVALID_IMAGE_OPTIMIZE_REQUEST) e o e-mail sai sem a foto — era o q=70.
+ * Largura e qualidade da foto do cartão (640 px, q 75). E274: eram os valores que o otimizador do Next 16 aceita; o
+ * e-mail agora usa a rota própria (/api/email/foto), que segue o mesmo tamanho.
  */
 export const FOTO_CARTAO = { largura: 640, qualidade: 75 } as const;
 
-/** Foto de capa redimensionada (640 px) pelo otimizador do site; só fotos do Storage público. */
+/** Caminho da capa dentro do bucket público property-photos (`<uuid>/<uuid>.<ext>`), ou null se não for uma capa nossa. */
+const CAPA_RE = /^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/property-photos\/([0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:webp|jpe?g|png))$/i;
+export const CAMINHO_FOTO_EMAIL_RE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:webp|jpe?g|png)$/i;
+
+export function caminhoDaCapa(foto: string | null | undefined): string | null {
+  return CAPA_RE.exec(String(foto ?? ""))?.[1] ?? null;
+}
+
+/**
+ * Foto de capa do cartão do e-mail. E264-B (01/11): a foto não aparecia no corpo do e-mail. As capas são WebP, e o
+ * otimizador do site (/_next/image) responde por negociação (`Vary: Accept`: AVIF/WebP a quem aceita), como ANEXO
+ * (`Content-Disposition: attachment`) e com CSP `sandbox` — leitores de e-mail que não mostram AVIF/WebP, ou o proxy
+ * de imagens que guarda uma variante só, ficavam sem a foto. A rota própria /api/email/foto devolve SEMPRE JPEG, inline,
+ * 640 px, sem variar por cliente. Só capas do bucket property-photos (nunca uma URL qualquer).
+ */
 export function fotoDoCartao(siteUrl: string, foto: string | null | undefined): string | null {
-  if (!foto || !/^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(foto)) return null;
-  return `${siteUrl}/_next/image?url=${encodeURIComponent(foto)}&w=${FOTO_CARTAO.largura}&q=${FOTO_CARTAO.qualidade}`;
+  const caminho = caminhoDaCapa(foto);
+  return caminho ? `${siteUrl}/api/email/foto?p=${caminho}` : null;
 }
 
 export function urlDoImovel(siteUrl: string, id: string): string {

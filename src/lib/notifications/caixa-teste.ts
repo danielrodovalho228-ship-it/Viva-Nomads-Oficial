@@ -90,8 +90,11 @@ export interface EmailParaCaixa {
 /** No máximo 3 fotos por e-mail na caixa (o e-mail agrupado mostra até 3 cartões). */
 export const FOTOS_CAIXA_MAX = 3;
 export const ROTULO_FOTO_CARTAO = "Foto do cartão";
-/** Só a foto do cartão do imóvel: a capa do Storage público, servida pelo otimizador de imagens do próprio site. */
-const FOTO_DO_CARTAO_RE = /^https:\/\/[a-z0-9.-]+(?::\d+)?\/_next\/image\?url=https%3A%2F%2F[a-z0-9-]+\.supabase\.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2F[^\s"'<>]+$/i;
+/**
+ * Só a foto do cartão do imóvel: a capa do Storage público pela rota do e-mail (/api/email/foto, E264-B) ou, nos
+ * e-mails antigos da caixa, pelo otimizador de imagens do próprio site.
+ */
+const FOTO_DO_CARTAO_RE = /^https:\/\/[a-z0-9.-]+(?::\d+)?\/(?:api\/email\/foto\?p=[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:webp|jpe?g|png)|_next\/image\?url=https%3A%2F%2F[a-z0-9-]+\.supabase\.co%2Fstorage%2Fv1%2Fobject%2Fpublic%2F[^\s"'<>]+)$/i;
 
 /** Uma URL de foto de cartão que a caixa aceita guardar e a tela aceita mostrar como imagem. */
 export function fotoDeCartaoValida(url: string): boolean {
