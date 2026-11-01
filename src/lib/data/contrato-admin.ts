@@ -48,27 +48,40 @@ export interface ContratoAdminView {
   provas: DadosProvas;
 }
 
+/**
+ * Achado 41: a tela do contrato no admin e o PACOTE DE PROVAS (PDF registrado) saem daqui. Uma leitura que falha não pode
+ * virar "Nenhuma das partes assinou" / "Nenhum pagamento marcado" — muito menos num documento oficial. Qualquer erro lança.
+ */
+function semFalhaDeLeitura(leituras: readonly { error: { message: string } | null }[]): void {
+  const falha = leituras.find((r) => r.error);
+  if (falha) throw new Error(`Falha ao ler as provas do contrato: ${falha.error!.message}`);
+}
+
 export async function carregarContratoAdmin(contratoId: string): Promise<ContratoAdminView | null> {
   const base = await getContratoParaEquipe(contratoId); // ehAdmin no servidor; null para quem não é admin
   if (!base) return null;
   const admin = createAdminClient();
   if (!admin) return null;
 
-  const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = await Promise.all([
+  const rodada1 = await Promise.all([
     admin.from("contratos").select("property_id, assinado_proprietario_em, assinado_inquilino_em, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, leads(accepted_at), properties(checkin_after, checkout_before), contrato_blocos(inicio, fim)").eq("id", contratoId).maybeSingle(),
     admin.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     admin.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId).order("data_pagamento"),
     admin.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
     admin.from("contrato_aditivos").select(COLUNAS_PROVAS.aditivos).eq("contrato_id", contratoId),
   ]);
+  semFalhaDeLeitura(rodada1);
+  const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = rodada1;
   const ids = (confs ?? []).map((c) => c.id as string);
-  const [{ data: itens }, { data: respostas }, { data: laudos }] = ids.length
+  const rodada2 = ids.length
     ? await Promise.all([
         admin.from("conferencia_itens").select(`id, criado_em, ${COLUNAS_PROVAS.itens}`).in("conferencia_id", ids).order("criado_em"),
         admin.from("conferencia_respostas").select(COLUNAS_PROVAS.respostas).in("conferencia_id", ids),
         admin.from("conferencia_laudos").select(COLUNAS_PROVAS.laudos).in("conferencia_id", ids),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [], error: null }, { data: [], error: null }, { data: [], error: null }];
+  semFalhaDeLeitura(rodada2);
+  const [{ data: itens }, { data: respostas }, { data: laudos }] = rodada2;
 
   const v = base.visao;
   const provas = montarDadosProvas({

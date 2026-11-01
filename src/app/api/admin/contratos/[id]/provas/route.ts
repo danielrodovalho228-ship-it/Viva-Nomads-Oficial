@@ -21,7 +21,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
-  const c = await carregarContratoAdmin(id);
+  // Achado 41: leitura incompleta não vira pacote registrado — a falha responde 503, sem gerar o PDF.
+  const c = await carregarContratoAdmin(id).catch((e: unknown) => {
+    console.error("[provas] leitura do contrato:", e instanceof Error ? e.message : e);
+    return "falha" as const;
+  });
+  if (c === "falha") return NextResponse.json({ error: "Não foi possível gerar o pacote agora." }, { status: 503 });
   if (!c) return NextResponse.json({ error: "Contrato não encontrado." }, { status: 404 });
   const pdf = await gerarPacoteProvasRegistrado({ ...c.provas, geradoPelaEquipeEm: new Date().toISOString() }, user.id).catch(() => null);
   if (!pdf) return NextResponse.json({ error: "Não foi possível gerar o pacote agora." }, { status: 503 });
