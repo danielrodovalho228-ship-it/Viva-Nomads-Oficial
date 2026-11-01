@@ -18,9 +18,12 @@ export function BlocoOpcional({
   onLigar,
   onDesligar,
   children,
+  icone: Icone,
 }: {
   id: string;
   titulo: string;
+  /** Conformidade do cadastro (mockup 06, 01/11): ícone da regra ao lado do título (opcional). */
+  icone?: React.ComponentType<{ className?: string }>;
   descricao?: string;
   ligado: boolean;
   /** O grupo tem algo preenchido agora (decide se desligar pede confirmação). */
@@ -40,11 +43,14 @@ export function BlocoOpcional({
   return (
     <div className="rounded-xl border border-line bg-white" data-testid={`bloco-${id}`} data-ligado={ligado ? "sim" : "nao"}>
       <div className="flex items-start justify-between gap-3 p-4">
-        <div className="min-w-0">
-          <h3 id={`bloco-${id}-titulo`} className="text-sm font-semibold text-ink">
-            {titulo}
-          </h3>
-          {descricao && <p className="mt-1 text-xs text-muted">{descricao}</p>}
+        <div className="flex min-w-0 items-start gap-3">
+          {Icone && <Icone className={cn("mt-1 h-5 w-5 shrink-0", ligado ? "text-forest" : "text-muted")} aria-hidden data-testid={`bloco-${id}-icone`} />}
+          <div className="min-w-0">
+            <h3 id={`bloco-${id}-titulo`} className="text-sm font-semibold text-ink">
+              {titulo}
+            </h3>
+            {descricao && <p className="mt-1 text-xs text-muted">{descricao}</p>}
+          </div>
         </div>
         <button
           type="button"

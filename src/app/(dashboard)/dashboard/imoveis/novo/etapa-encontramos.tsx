@@ -2,7 +2,7 @@
 
 import { PetsRegrasCampos, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
-import { Sparkles } from "lucide-react";
+import { Baby, Cigarette, PawPrint, Sofa, Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { comodidadeValeParaTipo, comodidadesDoTipo, type GrupoDoTipo } from "@/lib/amenities";
@@ -130,12 +130,13 @@ export function EtapaEncontramos(p: {
             p.tirarSugestao("mobiliado");
           }}
           label="Mobiliado e equipado"
+          icone={Sofa}
           hint="Pré-requisito das estadias de 30 a 180 dias da Viva Nomads."
           sugerido={p.sugerido("mobiliado")}
         />
-        <Toggle checked={p.petsOk} onChange={() => p.setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." />
-        <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." />
-        <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." />
+        <Toggle checked={p.petsOk} onChange={() => p.setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." icone={PawPrint} />
+        <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." icone={Baby} />
+        <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." icone={Cigarette} />
       </div>
       {/* E263-A: ligado, "Aceita pets" abre as condições do dono — tudo opcional; desligado, nenhuma condição vai junto. */}
       {p.petsOk && <PetsRegrasCampos value={p.petsRegras} onChange={p.setPetsRegras} />}
