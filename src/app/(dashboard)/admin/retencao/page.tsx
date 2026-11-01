@@ -5,12 +5,15 @@ import { ButtonLink } from "@/components/ui/button";
 import { AvisoAdmin, ListaNumeros, NumeroHeroi, SeloEstado } from "@/components/admin/numeros";
 import { INVENTARIO } from "@/config/retencao";
 import { eliminaDeVerdade, motivoSimulado, textoPrazo } from "@/lib/minimizacao/regras";
-import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
-import { resumoDaSemana, rotuloMotivo, type LinhaLivro } from "@/lib/minimizacao/painel";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { cabecalhoRelatorioHoje, resumoDaSemana, rotuloMotivo, type LinhaLivro } from "@/lib/minimizacao/painel";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { textoRealTeste } from "@/lib/admin/contagens";
+import { contarGuardados } from "@/lib/data/admin-contagens";
 
 export const metadata = { title: tituloDoAdmin("/admin/retencao"), robots: { index: false, follow: false } };
+// E333: a data de "hoje" é a do dia da leitura — a página nunca sai de um cache montado no dia anterior.
+export const dynamic = "force-dynamic";
 
 interface Simulado {
   dia: string;
@@ -49,14 +52,24 @@ export default async function AdminRetencaoPage() {
   const agora = new Date();
   const desde = new Date(agora.getTime() - 7 * 86_400_000).toISOString();
   const [{ data: ultimo }, { data: livro, error: erroLivro }, { data: alertas }] = await Promise.all([
-    admin.from("eliminacoes_simulado").select("dia").order("dia", { ascending: false }).limit(1).maybeSingle(),
+    admin.from("eliminacoes_simulado").select("dia, gerado_em").order("dia", { ascending: false }).limit(1).maybeSingle(),
     admin.from("eliminacoes_registro").select("tipo, motivo, teste, eliminado_em").gte("eliminado_em", desde).limit(10000),
     admin.from("eliminacoes_alertas").select("id, item, erro, criado_em").is("resolvido_em", null).order("criado_em", { ascending: false }).limit(50),
   ]);
   const dia = (ultimo?.dia as string | undefined) ?? null;
+  const cabecalho = cabecalhoRelatorioHoje(dia, (ultimo?.gerado_em as string | null | undefined) ?? null, agora);
   const { data: relatorio } = dia ? await admin.from("eliminacoes_simulado").select("dia, item, guardados, vencidos, vencidos_teste, real, prazo, base").eq("dia", dia).order("item") : { data: [] };
   const semana = resumoDaSemana((livro ?? []) as LinhaLivro[], agora);
-  const linhas = (relatorio ?? []) as Simulado[];
+  const linhasDaRodada = (relatorio ?? []) as Simulado[];
+  // E334: "Guardados" é AGORA, pela mesma contagem da caixa de e-mails de teste (contarGuardados). O retrato da rodada
+  // das 10h ficava atrás (188 na Retenção × 190 na caixa); sem leitura agora, fica o número da rodada.
+  const agoraGuardados = await Promise.all(
+    linhasDaRodada.map((l) => {
+      const origem = POR_ID.get(l.item)?.origem;
+      return origem?.startsWith("public.") ? contarGuardados(admin, origem.slice(7)).catch(() => null) : Promise.resolve(null);
+    }),
+  );
+  const linhas = linhasDaRodada.map((l, i) => ({ ...l, guardados: agoraGuardados[i] ?? l.guardados }));
   const abertos = (alertas ?? []) as { id: string; item: string; erro: string; criado_em: string }[];
 
   return (
@@ -93,7 +106,12 @@ export default async function AdminRetencaoPage() {
         )}
       </Panel>
 
-      <Panel title={dia ? `O que seria apagado hoje (${dataBRT(`${dia}T12:00:00Z`)})` : "O que seria apagado hoje"} className="mb-6 scroll-mt-24" id="hoje">
+      <Panel title={cabecalho.titulo} className="mb-6 scroll-mt-24" id="hoje">
+        {cabecalho.nota && (
+          <p className="mb-3 text-xs text-muted" data-testid="retencao-rodada">
+            {cabecalho.nota}
+          </p>
+        )}
         {linhas.length === 0 ? (
           <p className="text-sm text-muted">O relatório sai depois da primeira rodada da rotina diária.</p>
         ) : (
@@ -102,7 +120,7 @@ export default async function AdminRetencaoPage() {
               <thead className="text-xs text-muted">
                 <tr>
                   <th className="py-2 pr-3">Item</th>
-                  <th className="py-2 pr-3">Guardados</th>
+                  <th className="py-2 pr-3">Guardados agora</th>
                   <th className="py-2 pr-3">Vencidos</th>
                   <th className="py-2 pr-3">Teste</th>
                   <th className="py-2 pr-3">Prazo</th>

@@ -109,15 +109,17 @@ test("(d) véspera: confirmada, não passada, até 24 h; textos por lado e modal
 
   const end = { texto: "Rua A, 10 · Centro · Uberlândia", mapa: "https://www.google.com/maps/search/?api=1&query=Rua%20A" };
   const morador = vesperaTexto({ modalidade: "presencial", paraMorador: true, horario: "qui., 05/11 às 10:00 (horário de Brasília)", endereco: end, nomeMorador: "Ana" });
-  assert.equal(morador.cta, "Abrir no mapa");
-  assert.equal(morador.url, end.mapa);
+  // E326: o botão leva à página da visita (endereço e estado), não ao mapa direto.
+  assert.equal(morador.cta, "Ver a visita");
+  assert.equal(morador.url, "/dashboard/visitas");
   assert.ok(morador.linhas.some((l) => l.rotulo === "Endereço" && l.valor === end.texto));
   const dono = vesperaTexto({ modalidade: "presencial", paraMorador: false, horario: "x", endereco: end, nomeMorador: "Ana Souza" });
   assert.ok(!dono.linhas.some((l) => l.rotulo === "Endereço"), "o dono não recebe endereço");
   assert.ok(dono.linhas.some((l) => l.rotulo === "Morador" && l.valor === "Ana"));
-  const video = vesperaTexto({ modalidade: "video", paraMorador: false, horario: "x", linkChamada: "https://meet.google.com/abc" });
+  // E326: "Entrar na chamada" leva à página autenticada; o link cru nunca vai no e-mail.
+  const video = vesperaTexto({ modalidade: "video", paraMorador: false, horario: "x" });
   assert.equal(video.cta, "Entrar na chamada");
-  assert.equal(video.url, "https://meet.google.com/abc");
+  assert.equal(video.url, "/dashboard/visitas");
 });
 
 test("detalhes: link externo vira o ÚNICO botão; interno fica com o botão padrão; tudo escapado", () => {

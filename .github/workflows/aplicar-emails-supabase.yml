@@ -1,6 +1,6 @@
-# "Aplicar e-mails de conta no Supabase" (rota rápida dos e-mails, item 4): manual. Envia os 6 modelos de
-# supabase/templates (assunto + corpo) e o remetente "Viva Nomads Brasil" <suporte@vivanomads.com.br> pela API de
-# gestão do Supabase e lê de volta para conferir. Segredo: SUPABASE_ACCESS_TOKEN (criado pelo Daniel; nunca impresso).
+# "Aplicar e-mails de conta no Supabase" (rota rápida dos e-mails, item 4): manual. Envia SÓ os 6 modelos de
+# supabase/templates (assunto + corpo) pela API de gestão do Supabase e lê de volta para conferir. E336: remetente e
+# validade do código NÃO são gravados (só lidos e comparados, com aviso no resumo se diferirem). Segredo: SUPABASE_ACCESS_TOKEN (criado pelo Daniel; nunca impresso).
 # Sem o segredo, falha com "Cole os 6 modelos pelo LEIA-ME".
 name: Aplicar e-mails de conta no Supabase
 

@@ -6,8 +6,9 @@ mude `src/lib/notifications/templates-supabase.ts` e gere de novo.
 ## Caminho automático (recomendado)
 
 No GitHub, aba **Actions** → **"Aplicar e-mails de conta no Supabase"** → **Run workflow**. Ela envia o assunto e o
-corpo dos 6 modelos, o remetente (**Viva Nomads Brasil** · suporte@vivanomads.com.br) e a validade do código (10 minutos) pela API de gestão do
-Supabase e lê de volta para conferir. Precisa do segredo **`SUPABASE_ACCESS_TOKEN`** no repositório (criado pelo
+corpo dos 6 modelos — **só os modelos** — pela API de gestão do Supabase e lê de volta para conferir. O remetente
+(**Viva Nomads Brasil** · suporte@vivanomads.com.br) e a validade do código (10 minutos) **não** são gravados pela Action
+(E336): ela só os lê e avisa no resumo se diferirem do repositório; mudam pelo painel, com decisão do Daniel. Precisa do segredo **`SUPABASE_ACCESS_TOKEN`** no repositório (criado pelo
 Daniel em Settings → Secrets and variables → Actions; o token vem de supabase.com → Account → Access Tokens).
 Sem o segredo, a Action para com "Cole os 6 modelos pelo LEIA-ME" — aí vale o passo a passo abaixo.
 

@@ -229,9 +229,12 @@ test.describe("T195 — matrícula + CAF", () => {
       const c = await ultimaConferencia(contas[chave].id);
       expect(c).toMatchObject({ resultado: "em_revisao", motivo: "dono_diferente", caso: "conjuge" });
       expect(c.caso_documento_path).toMatch(new RegExp(`^${contas[chave].id}/`));
-      // CPF do outro proprietário: só os 3 últimos dígitos.
-      expect(JSON.stringify(c.campos_extraidos)).toContain('"documento_final":"191"');
-      expect(JSON.stringify(c.campos_extraidos)).not.toContain("00000000191");
+      // Minimização (retencao-matricula): do outro proprietário fica só o resultado da comparação —
+      // nem o CPF inteiro nem os 3 últimos dígitos são gravados.
+      const extraidos = JSON.stringify(c.campos_extraidos);
+      expect(extraidos).toContain('"documento_confere":false');
+      expect(extraidos).not.toContain("documento_final");
+      expect(extraidos).not.toContain("00000000191");
       await page.context().close();
     });
   }

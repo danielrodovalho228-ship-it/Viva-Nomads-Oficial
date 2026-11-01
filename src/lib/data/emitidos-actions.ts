@@ -53,6 +53,8 @@ export interface DocumentoEmitido {
   envio: SituacaoEnvio;
   reenvios: number;
   teste: boolean;
+  /** E331: nº único do registro (registro_seq) — distingue duas emissões de contratos diferentes com o mesmo número. */
+  registroSeq: number;
 }
 
 export async function listarEmitidos(f: FiltrosEmitidos): Promise<DocumentoEmitido[]> {
@@ -60,7 +62,7 @@ export async function listarEmitidos(f: FiltrosEmitidos): Promise<DocumentoEmiti
   if (!c) return [];
   let q = c.admin
     .from("documentos_registro")
-    .select("id, prefixo, numero, versao, tipo, ref_tabela, ref_id, status, emitido_em, partes, is_teste")
+    .select("id, prefixo, numero, versao, tipo, ref_tabela, ref_id, status, emitido_em, partes, is_teste, registro_seq")
     .order("emitido_em", { ascending: false })
     .limit(EMITIDOS_MAX);
   if (f.tipo) q = q.eq("prefixo", f.tipo);
@@ -68,7 +70,7 @@ export async function listarEmitidos(f: FiltrosEmitidos): Promise<DocumentoEmiti
   if (desde) q = q.gte("emitido_em", desde);
   if (antes) q = q.lt("emitido_em", antes);
   const { data } = await q;
-  const linhas = (data ?? []) as { id: string; prefixo: string; numero: string; versao: number; tipo: string; ref_tabela: string; ref_id: string; status: string; emitido_em: string; partes: string[] | null; is_teste: boolean }[];
+  const linhas = (data ?? []) as { id: string; prefixo: string; numero: string; versao: number; tipo: string; ref_tabela: string; ref_id: string; status: string; emitido_em: string; partes: string[] | null; is_teste: boolean; registro_seq: number }[];
   if (!linhas.length) return [];
   const fiscais = linhas.filter((l) => l.ref_tabela === "documentos_fiscais").map((l) => l.ref_id);
   const pessoas = [...new Set(linhas.flatMap((l) => l.partes ?? []))];
@@ -93,6 +95,7 @@ export async function listarEmitidos(f: FiltrosEmitidos): Promise<DocumentoEmiti
     envio: situacaoEnvio(l.ref_tabela, envioPorDoc.get(l.ref_id) ?? null, l.status),
     reenvios: contagem.get(l.id) ?? 0,
     teste: l.is_teste,
+    registroSeq: l.registro_seq,
   }));
 }
 

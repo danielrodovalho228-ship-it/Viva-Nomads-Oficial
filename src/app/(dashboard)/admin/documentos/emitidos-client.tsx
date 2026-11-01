@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
+import { CampoDataFormulario } from "@/components/ui/campo-data";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { AVISO_REENVIO, type FiltrosEmitidos } from "@/lib/fiscal/emitidos";
@@ -36,11 +37,11 @@ export function EmitidosAdmin({ itens, filtros, tipos }: { itens: DocumentoEmiti
         </label>
         <label className="grid gap-1 text-xs text-muted">
           De
-          <input type="date" name="de" defaultValue={filtros.de ?? ""} className={campo} data-testid="emitidos-de" />
+          <CampoDataFormulario name="de" defaultValue={filtros.de ?? ""} className={campo} data-testid="emitidos-de" />
         </label>
         <label className="grid gap-1 text-xs text-muted">
           Até
-          <input type="date" name="ate" defaultValue={filtros.ate ?? ""} className={campo} data-testid="emitidos-ate" />
+          <CampoDataFormulario name="ate" defaultValue={filtros.ate ?? ""} className={campo} data-testid="emitidos-ate" />
         </label>
         <Button type="submit" size="sm" variant="secondary" data-testid="emitidos-filtrar">
           Filtrar
@@ -65,6 +66,10 @@ export function EmitidosAdmin({ itens, filtros, tipos }: { itens: DocumentoEmiti
                   {d.versao > 1 ? ` · versão ${d.versao}` : ""} · {d.tipoRotulo}
                   {d.status !== "valido" ? ` · ${d.status}` : ""}
                   {d.teste ? " · teste" : ""}
+                </span>
+                {/* E331: o nº do registro é único — dois contratos com o mesmo número público não parecem a mesma emissão. */}
+                <span className="block text-xs text-muted" data-testid="emitido-registro">
+                  Registro nº {d.registroSeq}
                 </span>
                 <span className="block text-xs text-muted">
                   {dataHoraBRT(d.emitidoEm)} · para <span data-testid="emitido-destinatarios">{d.destinatarios.join(", ") || "—"}</span>

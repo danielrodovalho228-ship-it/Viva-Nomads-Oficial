@@ -312,7 +312,6 @@ export function vesperaTexto(o: {
   imovel?: string | null;
   nomeMorador?: string | null;
   endereco?: { texto: string; mapa: string } | null;
-  linkChamada?: string | null;
   /** E270: hoje ou amanhã (diaDaVisita); sem isso, o texto antigo "amanhã ou nas próximas horas". */
   quando?: "hoje" | "amanhã";
 }): { abertura: (n?: string) => string; linhas: { rotulo: string; valor: string }[]; cta: string; url: string } {
@@ -320,18 +319,21 @@ export function vesperaTexto(o: {
   const linhas = [...(o.imovel ? [{ rotulo: "Imóvel", valor: o.imovel }] : []), { rotulo: "Horário", valor: o.horario }];
   if (o.modalidade === "video") {
     return {
-      abertura: (n) => `${ola(n)}, a visita por vídeo é ${quando}. Na hora, entre pela chamada.`,
+      // E326: o botão leva à página AUTENTICADA da visita; o link cru da chamada nunca vai no e-mail (vive na
+      // plataforma e some depois do uso — revisão do #1786).
+      abertura: (n) => `${ola(n)}, a visita por vídeo é ${quando}. Na hora, entre pela página da visita na plataforma.`,
       linhas,
       cta: "Entrar na chamada",
-      url: o.linkChamada || "/dashboard/visitas",
+      url: "/dashboard/visitas",
     };
   }
   if (o.paraMorador) {
     return {
-      abertura: (n) => `${ola(n)}, a visita presencial é ${quando}. O endereço está abaixo.`,
+      // E326: o botão leva à página da visita (endereço, mapa e estado atualizados), não ao mapa direto.
+      abertura: (n) => `${ola(n)}, a visita presencial é ${quando}. O endereço está abaixo e na página da visita.`,
       linhas: [...linhas, ...(o.endereco ? [{ rotulo: "Endereço", valor: o.endereco.texto }] : [])],
-      cta: "Abrir no mapa",
-      url: o.endereco?.mapa || "/dashboard/visitas",
+      cta: "Ver a visita",
+      url: "/dashboard/visitas",
     };
   }
   const pn = primeiroNome(o.nomeMorador);

@@ -5,14 +5,13 @@ import { ButtonLink } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { centralDePendencias } from "@/lib/data/central-pendencias";
 import { FILTROS_CENTRAL, ehFiltroCentral, hrefCentral, idadeHoras, textoPrazo, type FiltroCentral, type LinhaCentral } from "@/lib/admin/central-pendencias";
-import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
+import { avisoSemLeitura, decisoesForaDaCentral, haQuantoTempo, tituloCentral, type DecisoesAdmin, type LinhaDecisaoAdmin } from "@/lib/admin/decisoes-admin";
 import { DecidirContestacao } from "@/components/admin/decidir-contestacao";
 import { DecidirRevisaoAvaliacao } from "@/components/admin/decidir-revisao-avaliacao";
 import { AnalisarFotoNivel } from "@/components/admin/analisar-foto-nivel";
 import { RodarPrazos } from "@/components/conforto/rodar-prazos";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
-import { DecisoesHoje } from "@/components/admin/numeros";
 import { decisoesDoAdmin } from "@/lib/data/admin-decisoes";
 
 export const metadata = { title: tituloDoAdmin("/admin/pendencias"), robots: { index: false, follow: false } };
@@ -43,6 +42,9 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
     admin ? centralDePendencias(admin, agora, filtro).catch(() => null) : null,
     filtro ? null : decisoesDoAdmin(agora).catch(() => null),
   ]);
+  // E330: uma fila só — as decisões de outras telas (backup, parcerias, chamados…) entram na fila como itens, e o título
+  // conta a fila inteira. Antes o topo dizia "Hoje você tem 5 decisões" e a fila logo abaixo "Nada pendente agora".
+  const outras = filtro ? null : decisoesForaDaCentral(decisoes);
   return (
     <div data-testid="central-pendencias">
       <PageTitle
@@ -54,7 +56,6 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
           </Link>
         }
       />
-      {!filtro && <DecisoesHoje decisoes={decisoes} nivel="h2" />}
       {!central && (
         <p role="alert" className="mb-4 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Não foi possível ler as pendências agora. Tente de novo em instantes.
@@ -62,9 +63,9 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
       )}
       {central && (
         <>
-          <DecisoesDaCentral contagens={central.contagens} total={central.total} filtro={filtro} />
+          <DecisoesDaCentral contagens={central.contagens} total={central.total} filtro={filtro} outras={outras} />
           <Panel title={filtro ? FILTROS_CENTRAL.find((f) => f.chave === filtro)!.rotulo : "Todas as pendências"}>
-            {central.linhas.length === 0 ? (
+            {central.linhas.length === 0 && !outras?.linhas.length ? (
               <EmptyState
                 icon={ClipboardList}
                 title="Nada pendente aqui"
@@ -73,6 +74,9 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
               />
             ) : (
               <ul className="divide-y divide-sage-100">
+                {outras?.linhas.map((l) => (
+                  <LinhaDecisao key={`d-${l.chave}`} l={l} />
+                ))}
                 {central.linhas.map((l) => (
                   <Linha key={`${l.filtro}-${l.id}`} l={l} agora={agora} />
                 ))}
@@ -103,19 +107,43 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
  * a contagem e o botão que abre a fila. A equipe decide primeiro; depois o que espera o proprietário e o morador.
  * As filas do 59-A (manutenção fora do prazo e contestações) são filtros daqui.
  */
-function DecisoesDaCentral({ contagens, total, filtro }: { contagens: Record<FiltroCentral, number>; total: number; filtro: FiltroCentral | null }) {
+function DecisoesDaCentral({
+  contagens,
+  total: totalCentral,
+  filtro,
+  outras,
+}: {
+  contagens: Record<FiltroCentral, number>;
+  total: number;
+  filtro: FiltroCentral | null;
+  outras: DecisoesAdmin | null;
+}) {
+  // E330: o título conta o mesmo que a fila mostra — os itens da Central e as decisões das outras telas.
+  const total = totalCentral + (outras?.total ?? 0);
+  const aviso = !filtro ? (outras ? avisoSemLeitura(outras.semLeitura) : "Não deu para ler as decisões das outras telas (backup, parcerias, chamados): ficam fora da conta.") : null;
   return (
     <section aria-labelledby="central-decisoes-titulo" className="mb-8" data-testid="central-decisoes" data-total={total}>
       <h2 id="central-decisoes-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
-        {total === 0 ? "Nada pendente agora" : total === 1 ? "1 pendência esperando ação" : `${total} pendências esperando ação`}
+        {tituloCentral(total)}
       </h2>
       {LADOS.map(({ lado, titulo }) => {
         const filas = FILTROS_CENTRAL.filter((f) => f.lado === lado && contagens[f.chave] > 0);
-        if (!filas.length) return null;
+        const extras = lado === "equipe" ? (outras?.linhas ?? []) : [];
+        if (!filas.length && !extras.length) return null;
         return (
           <div key={lado} className="mt-4" data-testid={`central-lado-${lado}`}>
             <p className="text-xs font-semibold text-muted">{titulo}</p>
             <ul className="mt-1 divide-y divide-line border-y border-line">
+              {extras.map((l) => (
+                <li key={`d-${l.chave}`} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={l.chave} data-ativo="0">
+                  <span className="min-w-0 font-semibold text-ink">
+                    <span className="tabular-nums">{l.n}</span> · {l.texto.replace(/^\d+\s+/, "")}
+                  </span>
+                  <ButtonLink href={l.href} variant="secondary" size="sm" data-testid={`central-decisao-${l.chave}`} data-n={l.n}>
+                    {l.acao}
+                  </ButtonLink>
+                </li>
+              ))}
               {filas.map((f) => (
                 <li key={f.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={f.chave} data-ativo={filtro === f.chave ? "1" : "0"}>
                   <span className={`min-w-0 ${filtro === f.chave ? "font-semibold text-forest" : "font-semibold text-ink"}`}>
@@ -130,12 +158,32 @@ function DecisoesDaCentral({ contagens, total, filtro }: { contagens: Record<Fil
           </div>
         );
       })}
+      {aviso && (
+        <p className="mt-2 text-xs text-muted" data-testid="central-decisoes-sem-leitura">
+          {aviso}
+        </p>
+      )}
       {filtro && (
         <Link href="/admin/pendencias" className="mt-3 inline-block text-sm text-forest underline" data-testid="central-filtro-todos" data-n={total}>
           Ver todas as pendências
         </Link>
       )}
     </section>
+  );
+}
+
+/** E330: decisão de outra tela como item da fila — o que é, o contexto e o botão que leva à decisão. */
+function LinhaDecisao({ l }: { l: LinhaDecisaoAdmin }) {
+  return (
+    <li className="space-y-1 py-3 text-sm" data-testid="central-linha-decisao" data-decisao={l.chave}>
+      <p className="min-w-0 font-semibold text-ink">{l.texto}</p>
+      {l.detalhe && <p className="break-words text-muted">{l.detalhe}</p>}
+      <p className="text-xs text-muted">
+        <Link href={l.href} className="text-forest underline">
+          {l.acao}
+        </Link>
+      </p>
+    </li>
   );
 }
 

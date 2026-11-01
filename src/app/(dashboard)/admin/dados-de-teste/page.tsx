@@ -13,6 +13,7 @@ import { SemearCarteiraTeste } from "./semear-carteira";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { ABAS_DADOS_TESTE, HREF_EMAILS_TESTE, abaDadosTeste, type AbaDadosTeste } from "@/lib/admin/dados-teste-abas";
 import { EmailsTesteLista } from "@/components/admin/emails-teste-lista";
+import { resumoContasTeste, textoContasTeste } from "@/lib/admin/contagens";
 
 export const metadata = { title: tituloDoAdmin("/admin/dados-de-teste") };
 export const dynamic = "force-dynamic";
@@ -36,9 +37,11 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
   }
   const admin = createAdminClient();
   const { data: perfis } = admin
-    ? await admin.from("profiles").select("id, full_name, email, role").eq("is_teste", true).order("email")
+    ? await admin.from("profiles").select("id, full_name, email, role, anonymized_at").eq("is_teste", true).order("email")
     : { data: null };
-  const contas = (perfis ?? []) as { id: string; full_name: string | null; email: string | null; role: string | null }[];
+  const contas = (perfis ?? []) as { id: string; full_name: string | null; email: string | null; role: string | null; anonymized_at: string | null }[];
+  // E334: a mesma regra da contagem de Usuários (proprietários e inquilinos não anonimizados); o resto vem à parte.
+  const resumoTeste = resumoContasTeste(contas);
   const idsTeste = contas.map((c) => c.id);
   const { data: props } =
     admin && idsTeste.length
@@ -129,7 +132,7 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
           </ul>
         )}
       </Panel>
-      <Panel title={`Contas de teste (${contas.length})`} className="mt-6" data-testid="contas-teste">
+      <Panel title={`Contas de teste · ${textoContasTeste(resumoTeste)}`} className="mt-6" data-testid="contas-teste">
         {contas.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma conta marcada como teste (is_teste).</p>
         ) : (

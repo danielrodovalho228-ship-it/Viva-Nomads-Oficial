@@ -180,3 +180,16 @@ export function CampoData({
     </span>
   );
 }
+
+/**
+ * E332 (01/11): `CampoData` para formulário simples (GET ou ação de servidor) — guarda o próprio valor e envia em ISO
+ * pelo `name`. O admin usava `type="date"` nativo, que no computador com navegador em inglês sai em mm/dd/yyyy.
+ */
+export function CampoDataFormulario({
+  name,
+  defaultValue = "",
+  ...resto
+}: Omit<Parameters<typeof CampoData>[0], "value" | "onChange" | "defaultValue" | "name"> & { name: string; defaultValue?: string }) {
+  const [valor, setValor] = useState(defaultValue);
+  return <CampoData {...resto} name={name} value={valor} onChange={(e) => setValor(e.target.value)} />;
+}

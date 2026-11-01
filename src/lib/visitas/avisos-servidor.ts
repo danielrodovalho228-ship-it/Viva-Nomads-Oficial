@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
+import { emSilencio } from "@/lib/notifications/silencio";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { formatarHorarioBrasilia, MODALIDADE_ROTULO, ehModalidade, type ModalidadeVisita } from "@/lib/visitas-video";
 import { enderecoDaVisita } from "./endereco-visita";
@@ -34,11 +35,10 @@ interface LinhaVisita {
   status: string;
   horarios: string[] | null;
   horario_confirmado: string | null;
-  link_chamada: string | null;
   motivo_recusa: string | null;
 }
 
-const COLUNAS = "id, property_id, owner_id, tenant_id, modalidade, status, horarios, horario_confirmado, link_chamada, motivo_recusa";
+const COLUNAS = "id, property_id, owner_id, tenant_id, modalidade, status, horarios, horario_confirmado, motivo_recusa";
 
 async function perfil(admin: Admin, id: string) {
   const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", id).maybeSingle();
@@ -169,6 +169,9 @@ export async function vesperaDaVisitaSeFor(admin: Admin, visitaId: string, agora
 }
 
 async function enviarVespera(admin: Admin, v: LinhaVisita, agora: Date): Promise<number> {
+  // E326: régua dos proativos — nada sai entre 22h e 7h (Brasília). A chave só é gravada quando sai, então o
+  // disparo diário (10h) ainda pega a visita.
+  if (emSilencio(agora)) return 0;
   const modalidade: ModalidadeVisita = ehModalidade(v.modalidade) ? v.modalidade : "video";
   const horario = formatarHorarioBrasilia(v.horario_confirmado!);
   // E270: hoje ou amanhã (Brasília) — o assunto e o corpo acompanham o caso.
@@ -183,18 +186,18 @@ async function enviarVespera(admin: Admin, v: LinhaVisita, agora: Date): Promise
     if (error) continue; // já saiu
     // Endereço exato: só presencial, confirmada, não passada, só ao morador (regra de endereco-visita.ts).
     const endereco = modalidade === "presencial" && paraMorador ? await enderecoExato(admin, v.property_id) : null;
-    const t = vesperaTexto({ modalidade, paraMorador, horario, imovel: im?.title, nomeMorador: morador?.full_name, endereco, linkChamada: v.link_chamada, quando });
-    const externo = /^https:\/\//.test(t.url) ? { label: t.cta, url: t.url } : null;
-    const d = detalhes({ linhas: t.linhas, externo });
+    // E326: sem link cru da chamada; o botão é a página autenticada da visita.
+    const t = vesperaTexto({ modalidade, paraMorador, horario, imovel: im?.title, nomeMorador: morador?.full_name, endereco, quando });
+    const d = detalhes({ linhas: t.linhas, externo: null });
     await notify({
       event: "visita_vespera",
       email: p.email,
       name: p.full_name ?? undefined,
       userId: para,
       subject: assuntoVespera(quando),
-      pushUrl: externo ? "/dashboard/visitas" : t.url,
+      pushUrl: t.url,
       body: t.abertura,
-      ctaLabel: externo ? undefined : t.cta,
+      ctaLabel: t.cta,
       detailsHtml: d.html,
       detailsText: d.texto,
     }).catch(() => null);
