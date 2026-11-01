@@ -6,6 +6,8 @@
   Roda: node --test src/lib/visitas/nome-visita.test.ts
 */
 
+import { nomeCurto } from "../perfil/perfil-publico.ts";
+
 /** O 1º nome da outra parte aparece nesta visita? */
 export function nomeLiberadoNaVisita(status: string | null | undefined, aceiteFora = false): boolean {
   return aceiteFora || status === "confirmado" || status === "feito";
@@ -17,12 +19,6 @@ export function nomeLiberadoNaVisita(status: string | null | undefined, aceiteFo
  * lugar do nome), null — a tela mostra "Interessado(a)". A foto segue a regra do avatar (relação aceita).
  */
 export function nomeComInicial(nomeCompleto: string | null | undefined): string | null {
-  const limpo = String(nomeCompleto ?? "").replace(/\s+/g, " ").trim();
-  if (!limpo || limpo.includes("@")) return null;
-  const partes = limpo.split(" ").filter((p) => /\p{L}/u.test(p));
-  if (!partes.length) return null;
-  const primeiro = partes[0];
-  if (partes.length === 1) return primeiro;
-  const ultimo = partes[partes.length - 1];
-  return `${primeiro} ${ultimo.charAt(0).toLocaleUpperCase("pt-BR")}.`;
+  // E427 (01/11): a MESMA regra da página pública (nomeCurto) — antes cada tela abreviava de um jeito.
+  return nomeCurto(String(nomeCompleto ?? "").replace(/\s+/g, " "));
 }
