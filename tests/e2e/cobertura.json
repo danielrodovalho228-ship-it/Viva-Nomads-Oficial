@@ -2531,7 +2531,8 @@
         "t335-varredura-bloco13",
         "t379-55e2-filtro-contato-um-toque",
         "t385-varredura-bloco21",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t847-acoes-sem-queda-de-rede"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
