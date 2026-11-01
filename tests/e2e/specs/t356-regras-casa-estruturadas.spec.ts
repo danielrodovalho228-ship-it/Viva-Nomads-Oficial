@@ -134,7 +134,7 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
     const secao = await abrirSecaoRegras(d);
     const outras = secao.getByTestId("regras-casa-outras");
     await outras.fill("  Tirar os sapatos   na sala ");
-    await expect(secao.getByTestId("regras-casa-outras-contador")).toContainText("de 280 caracteres");
+    await expect(secao.getByTestId("regras-casa-outras-contador")).toHaveText(/^\d+\/280$/); // conformidade 01/11: "N/MÁX", como os outros contadores do Passo 6
     await secao.getByTestId("regras-casa").screenshot({ path: `${SAIDA}/t356-outras-regras-editor-390.png` });
     await secao.getByRole("button", { name: "Salvar seção" }).click();
     await expect.poll(async () => ((await regrasNoBanco())?.regras_casa as { outras?: string } | null)?.outras ?? null, { timeout: 20_000 }).toBe("Tirar os sapatos na sala");
