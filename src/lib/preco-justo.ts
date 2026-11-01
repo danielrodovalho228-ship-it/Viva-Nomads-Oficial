@@ -37,13 +37,15 @@ export function taxaDoNovoAnuncio(imoveisAtivos: number): number {
 export const IMPULSO_PRECO_JUSTO = 0.5;
 
 /**
- * Selo "Preço justo" (ordem 4c74ac38, item 2): o aluguel mensal fica ABAIXO do equivalente mensal que o
- * dono informou ter no Airbnb. Sem o campo (opcional) ou com valor inválido, não há selo. Espelha a coluna
- * gerada `preco_justo` da migração 0130.
+ * Selo "Preço justo" (E399-B parte 1, corrige a ordem 4c74ac38 item 2): o TOTAL POR MÊS do anúncio — a mesma conta
+ * do cartão (calcularTudoIncluido: valor mensal + condomínio + contas fixas + limpeza) — NÃO é maior que o valor
+ * mensal que o dono declarou ter no Airbnb (que já inclui tudo). Antes comparava o valor mensal SEM as contas e com
+ * "<": um imóvel com contas à parte ganhava o selo saindo mais caro para o morador. Sem o campo (opcional) ou com
+ * valor inválido, não há selo; a Viva não lê o Airbnb. Espelha a coluna gerada `preco_justo` da migração 0277.
  */
-export function temSeloPrecoJusto(aluguelMensal: number, airbnbMensal: number | null | undefined): boolean {
-  if (airbnbMensal == null || !positivo(airbnbMensal) || !positivo(aluguelMensal)) return false;
-  return aluguelMensal < airbnbMensal;
+export function temSeloPrecoJusto(totalMensal: number, airbnbMensal: number | null | undefined): boolean {
+  if (airbnbMensal == null || !positivo(airbnbMensal) || !positivo(totalMensal)) return false;
+  return totalMensal <= airbnbMensal;
 }
 
 /** Prioridade na busca: degrau de qualidade do anúncio + pequeno impulso do selo. */

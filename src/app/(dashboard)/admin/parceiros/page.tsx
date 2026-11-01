@@ -29,7 +29,7 @@ const ABAS = [
 ] as const;
 type Aba = (typeof ABAS)[number]["valor"];
 
-const ROTULO_PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Inquilino", admin: "Admin" };
+const ROTULO_PAPEL: Record<string, string> = { owner: "Proprietário", tenant: "Morador", admin: "Admin" };
 
 /**
  * Admin → Parceiros (Prompt 31a, item 3): pedidos de parceria em abas (Pendentes · Aprovadas · Ativas · Recusadas),

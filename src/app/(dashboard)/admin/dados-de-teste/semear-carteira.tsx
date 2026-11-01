@@ -57,7 +57,7 @@ export function SemearCarteiraTeste({ proprietarios, inquilinos }: { proprietari
           </select>
         </label>
         <label className="flex flex-col gap-1 text-sm text-ink">
-          Inquilino dos contratos simulados
+          Morador dos contratos simulados
           <select value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full min-w-0 max-w-full rounded-lg border border-sage-200 bg-white px-2 py-2" data-testid="carteira-inquilino">
             {inquilinos.map((o) => (
               <option key={o.id} value={o.id}>

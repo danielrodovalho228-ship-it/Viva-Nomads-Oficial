@@ -154,7 +154,7 @@ test("item 6: exemplos somem com imóvel real; menos de 3 reais → cartão do p
 
 test("item 7: admin com nome curto, entrada, faixa, bairros, selos e nº de respostas; fórmulas escritas", () => {
   const cli = ler("src/app/(dashboard)/admin/pedidos/admin-pedidos-client.tsx");
-  for (const r of [/Inquilino · motivo · cidade/, />Entrada</, /Faixa · bairros/, />Selos</, />Respostas</, /data-testid="formulas-pedidos"/, /Com compatível ao publicar = /])
+  for (const r of [/Morador · motivo · cidade/, />Entrada</, /Faixa · bairros/, />Selos</, />Respostas</, /data-testid="formulas-pedidos"/, /Com compatível ao publicar = /])
     assert.match(cli, r);
   assert.match(ler("src/app/(dashboard)/admin/pedidos/page.tsx"), /colunasPedidosAdmin\(admin/);
 });

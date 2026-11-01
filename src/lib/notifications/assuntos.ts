@@ -151,11 +151,15 @@ export function assuntoComTitulo(
   antes: string,
   titulo: string | null | undefined,
   depois = "",
-  /** E342: forma curta do mesmo fato (fato primeiro, imóvel depois), tentada quando o título não cabe inteiro. */
-  compacto?: { antes: string; depois?: string },
+  /**
+   * E342: formas curtas do mesmo fato, tentadas EM ORDEM quando o título não cabe inteiro na anterior. A última pode
+   * deixar a data só no corpo: o nome inteiro do imóvel vale mais no assunto que a data (que o corpo sempre traz).
+   */
+  compacto?: { antes: string; depois?: string } | readonly { antes: string; depois?: string }[],
 ): string | null {
   if (!String(titulo ?? "").trim()) return null;
-  const formas = [{ antes, depois }, ...(compacto ? [{ antes: compacto.antes, depois: compacto.depois ?? "" }] : [])];
+  const curtas = compacto ? (Array.isArray(compacto) ? compacto : [compacto]) : [];
+  const formas = [{ antes, depois }, ...curtas.map((c: { antes: string; depois?: string }) => ({ antes: c.antes, depois: c.depois ?? "" }))];
   const montar = (f: { antes: string; depois: string }, t: string) => {
     const a = `${f.antes}${t}${f.depois}`;
     return `${a.charAt(0).toLocaleUpperCase("pt-BR")}${a.slice(1)}`;

@@ -5168,6 +5168,12 @@
         "t212-ferramentas-proprietario"
       ]
     },
+    "src/lib/data/resumo-semanal-qa-actions.ts#gerarResumoSemanalDeTeste": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "src/lib/data/servicos-morador-actions.ts#pedidosServicoAdmin": {
       "personas": [
         "admin"

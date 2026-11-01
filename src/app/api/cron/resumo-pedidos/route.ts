@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { enviarResumosDiarios, recalcularPedidosSemCalculo } from "@/lib/data/pedidos-compat";
 import { enviarResumosAlertaBusca } from "@/lib/data/alerta-busca-servidor";
+import { RESUMO_SEMANAL_ATIVO } from "@/lib/flags";
+import { resumoRodaHoje } from "@/lib/notifications/resumo-semanal";
+import { enviarResumosSemanais } from "@/lib/notifications/resumo-semanal-servidor";
 
 /**
  * Resumo diário dos pedidos compatíveis que passaram do limite de 5 e-mails
@@ -16,8 +19,14 @@ export async function GET(request: Request) {
   }
   // Pedidos anteriores ao cálculo de compatibilidade: recalcula uma vez e avisa (ordem cfeb4105).
   const recalculo = await recalcularPedidosSemCalculo().catch(() => ({ pedidos: 0 }));
+  // E375-B: às terças (Brasília), com a chave ligada, o resumo semanal sai ANTES do despacho da fila: os pendentes do
+  // E264-B que couberem vão nele (marcados com o envio do resumo) e o teto do dia fica com o resumo. Sem cron novo.
+  const agora = new Date();
+  const resumoSemanal = resumoRodaHoje(agora, RESUMO_SEMANAL_ATIVO)
+    ? await enviarResumosSemanais(agora).catch(() => ({ pessoas: 0, enviados: 0, porResultado: {} }))
+    : null;
   const r = await enviarResumosDiarios();
   // Mesmo disparo diário: resumo dos alertas de busca salva que passaram do limite de 1/dia (ordem cb9a09e9).
   const alertas = await enviarResumosAlertaBusca().catch(() => ({ buscas: 0, enviados: 0 }));
-  return NextResponse.json({ ok: true, ...r, alertasBusca: alertas, recalculo });
+  return NextResponse.json({ ok: true, ...r, alertasBusca: alertas, recalculo, resumoSemanal });
 }

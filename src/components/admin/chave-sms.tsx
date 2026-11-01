@@ -30,7 +30,7 @@ export function ChaveSmsPainel({ ligada, ligadaEm, quem }: { ligada: boolean; li
       setMsg(r.error ?? "Não foi possível mudar a chave.");
       return;
     }
-    setMsg(!ligada ? `Chave ligada. ${r.avisados ?? 0} ${(r.avisados ?? 0) === 1 ? "inquilino avisado" : "inquilinos avisados"} para confirmar o telefone em 7 dias.` : "Chave desligada.");
+    setMsg(!ligada ? `Chave ligada. ${r.avisados ?? 0} ${(r.avisados ?? 0) === 1 ? "morador avisado" : "moradores avisados"} para confirmar o telefone em 7 dias.` : "Chave desligada.");
     router.refresh();
   }
   return (
@@ -43,7 +43,7 @@ export function ChaveSmsPainel({ ligada, ligadaEm, quem }: { ligada: boolean; li
       </p>
       <p className="mt-1 text-xs text-muted">
         Ligar só depois de o provedor de SMS estar configurado no Supabase. Os pedidos já publicados ganham 7 dias para o telefone ser confirmado,
-        com aviso por e-mail ao inquilino.
+        com aviso por e-mail ao morador.
       </p>
       {confirmando ? (
         <div className="border border-line mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-white p-3 text-sm text-amber-900" data-testid="chave-sms-confirmacao">

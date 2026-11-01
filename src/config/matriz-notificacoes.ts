@@ -144,6 +144,7 @@ export const MATRIZ_NOTIFICACOES = {
   pedido_compativel: { categoria: "sugestoes", papeis: ["proprietario"], canais: SEM_PUSH },
   pedido_resumo: { categoria: "sugestoes", papeis: ["proprietario"], canais: SEM_PUSH },
   pedido_imovel_novo: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
+  resumo_semanal: { categoria: "sugestoes", papeis: ["morador"], canais: SEM_PUSH },
   pedido_moderado: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   pedido_encerrado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   documento_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },

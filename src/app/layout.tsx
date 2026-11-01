@@ -11,6 +11,7 @@ import { VivaChatFlutuante } from "@/components/ajuda/viva-chat";
 import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
 import { descricaoHome } from "@/lib/seo/meta-descricao";
 import { AnalyticsVercel } from "@/components/analytics/analytics-vercel";
+import { ValidacaoPtBr } from "@/components/forms/validacao-ptbr";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
 // variando apenas o peso. Desenhada para telas — sem corte de descidas/acentos.
@@ -79,6 +80,8 @@ export default function RootLayout({
           <OrigemVisita />
           <VivaChatFlutuante />
           <LinksDoApp />
+          {/* E384: mensagens da validação nativa em português em todas as telas. */}
+          <ValidacaoPtBr />
           {children}
         </AuthProvider>
         {/* E282: Vercel Web Analytics — só a medição padrão (visitantes, páginas, origens), sem cookies próprios e sem

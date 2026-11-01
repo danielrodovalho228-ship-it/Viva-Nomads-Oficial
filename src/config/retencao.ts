@@ -267,6 +267,7 @@ export const SEM_DADO_PESSOAL: Record<string, string> = {
   asaas_eventos: "chave de idempotência do webhook",
   automacoes_envios: "chave de idempotência do envio",
   emails_proativos: "fila dos e-mails de sugestões (E264-B): evento, id do imóvel ou do pedido, chave de idempotência e quando saiu; sem conteúdo do e-mail nem contato; sai em cascata com a conta",
+  quedas_preco: "queda do total por mês de um anúncio publicado (E375-B): id do imóvel, total antigo, total novo e data; sem dado de pessoa; sai em cascata com o anúncio",
   avisos_daniel: "texto dos avisos internos ao fundador (sem dado de usuário)",
   backups_execucoes: "motivo da falha do backup",
   chamado_macros: "texto-modelo das respostas",

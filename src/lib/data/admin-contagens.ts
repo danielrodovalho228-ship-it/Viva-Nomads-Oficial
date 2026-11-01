@@ -61,9 +61,12 @@ export async function contarGuardados(admin: Admin, tabela: string): Promise<num
   return error ? null : (count ?? 0);
 }
 
-/** E-mails de teste guardados: o total exato (não o tamanho da lista mostrada). */
-export async function contarEmailsTeste(admin: Admin): Promise<number> {
-  return (await contarGuardados(admin, "emails_teste")) ?? 0;
+/**
+ * E-mails de teste guardados: o total exato (não o tamanho da lista mostrada). null = não deu para ler — a caixa mostra
+ * "—", como a coluna "Guardados agora" da Retenção (E334, resíduo: antes virava 0 aqui e "—" lá).
+ */
+export async function contarEmailsTeste(admin: Admin): Promise<number | null> {
+  return contarGuardados(admin, "emails_teste");
 }
 
 /** Os 4 números da inicial, em paralelo, com UMA leitura das contas de teste. */
