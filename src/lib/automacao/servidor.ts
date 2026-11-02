@@ -248,7 +248,9 @@ export async function cancelarPorRemarcacao(admin: Admin, p: PedidoComChave, ago
  * reagendamento: volta a "aceito" com os horários da janela nova e o parceiro confirma ou recusa a nova data.
  */
 async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atualizar" }>, saida: string, agora: Date): Promise<boolean> {
-  const { data } = await admin.from("parceiro_pedidos").select(COLS_AUTO).eq("chave_automacao", acao.chave).maybeSingle();
+  // Varredura ampliada: a leitura que falha LANÇA (aoEventoDaEstadia avisa a equipe); nunca "nada a fazer" calado.
+  const { data, error: erroPedido } = await admin.from("parceiro_pedidos").select(COLS_AUTO).eq("chave_automacao", acao.chave).maybeSingle();
+  if (erroPedido) throw new Error("Não foi possível ler o pedido automático para remarcar.");
   const p = data as unknown as PedidoComChave | null;
   if (!p) return false;
   const decisao = decidirRemarcacao(p.status, saida, hojeEmBrasilia(agora));
@@ -283,13 +285,14 @@ async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atuali
  * na conferência de saída continua: é do imóvel, não da estadia.
  */
 async function cancelarAutomaticos(admin: Admin, contratoId: string, agora: Date): Promise<number> {
-  const { data } = await admin
+  const { data, error: erroPedidos } = await admin
     .from("parceiro_pedidos")
     .select(COLS_AUTO)
     .eq("contrato_id", contratoId)
     .eq("origem", "automatico")
     .in("gatilho", ["saida_limpeza", "saida_lavanderia"])
     .in("status", STATUS_NAO_ACEITOS as unknown as string[]);
+  if (erroPedidos) throw new Error("Não foi possível ler os pedidos automáticos para cancelar.");
   let n = 0;
   for (const p of (data ?? []) as unknown as PedidoAuto[]) {
     const { data: ok } = await admin.from("parceiro_pedidos").update({ status: "cancelado", atualizado_em: agora.toISOString() }).eq("id", p.id).eq("status", p.status).select("id");
@@ -354,6 +357,15 @@ export async function aoEventoDaEstadia(admin: Admin, contratoId: string, ev: Ev
     return await executarAcoes(admin, ctx, pedidosDoEvento(ev, vinculos, ctx), agora);
   } catch (e) {
     console.error("[automação] evento:", ev.tipo, e instanceof Error ? e.message : e);
+    // O evento é único (sem nova tentativa): a equipe fica sabendo para conferir os pedidos do parceiro à mão.
+    await admin
+      .from("avisos_daniel")
+      .insert({
+        assunto: `Automação da estadia falhou (${ev.tipo})`,
+        corpo: `Os pedidos automáticos de parceiro do contrato ${contratoId} podem não ter sido atualizados ou cancelados. Confira em Admin → Serviços.`,
+        prioridade: "P2",
+      })
+      .then(undefined, () => {});
     return null;
   }
 }
