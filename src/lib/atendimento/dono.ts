@@ -20,7 +20,7 @@ export function ehDonoDoChamado(c: ChamadoDono | null | undefined, userId: strin
 /** O mínimo do cliente Supabase que a busca usa (o real, ou um falso nos testes). */
 interface ConsultaChamado {
   eq(coluna: string, valor: string): ConsultaChamado;
-  maybeSingle(): PromiseLike<{ data: unknown }>;
+  maybeSingle(): PromiseLike<{ data: unknown; error?: unknown }>;
 }
 export interface ClienteChamados {
   from(tabela: "chamados"): { select(colunas: string): ConsultaChamado };
