@@ -27,8 +27,10 @@ async function umaVez(admin: Admin, chave: string, tipo: string, usuarioId: stri
   return !error;
 }
 
-async function teste(admin: Admin): Promise<Set<string>> {
-  const { data } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
+/** null = leitura falhou (nunca "nenhuma conta de teste": a conta de teste receberia os lembretes reais). */
+async function teste(admin: Admin): Promise<Set<string> | null> {
+  const { data, error } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
+  if (error) return null;
   return new Set(((data ?? []) as { id: string }[]).map((p) => p.id));
 }
 
@@ -44,6 +46,8 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
   const r: ResumoLembretes50 = { silencio: emSilencio(agora), verificacaoParada: 0, parceiroSemResposta: 0, chamadoForaDaPromessa: 0 };
   if (r.silencio) return r;
   const contasTeste = await teste(admin);
+  // Sem saber quem é conta de teste, a rodada não sai (o cron tenta de novo; as chaves de envio seguram repetições).
+  if (!contasTeste) return r;
   const desde = new Date(agora.getTime() - 14 * 86_400_000).toISOString();
 
   // 1) Verificação parada: a última tentativa não passou, sem confirmação depois, há 24 h ou mais.
@@ -56,8 +60,11 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
     if (ok) confirmada.add(t.tenant_id);
     ultima.set(t.tenant_id, { id: t.id, em: t.created_at, laudo, ok });
   }
-  const { data: emRevisao } = await admin.from("verificacao_revisoes").select("user_id").is("decidido_em", null);
+  const { data: emRevisao, error: erroRevisao } = await admin.from("verificacao_revisoes").select("user_id").is("decidido_em", null);
   const naFila = new Set(((emRevisao ?? []) as { user_id: string }[]).map((x) => x.user_id));
+  // Fila de revisão ilegível: quem já está com a equipe receberia "verificação parada" (chave única gasta). Pula a
+  // seção nesta rodada.
+  if (erroRevisao) ultima.clear();
   for (const [userId, t] of ultima) {
     if (contasTeste.has(userId) || naFila.has(userId) || !verificacaoParada({ em: t.em, ok: t.ok }, confirmada.has(userId), agora)) continue;
     const motivo = motivoDaReprovacao(t.laudo);
