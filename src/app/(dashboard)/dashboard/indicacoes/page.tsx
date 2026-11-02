@@ -76,7 +76,7 @@ export default function ReferralsPage() {
           <Gift className="h-5 w-5 text-champagne" />
           <h2 className="font-title text-lg font-semibold">Seu link de indicação</h2>
         </div>
-        <p className="mt-1 text-sm text-white/70">
+        <p className="mt-1 text-sm text-white/85">
           Seu código: <strong className="text-green-300">{code}</strong>
         </p>
 

@@ -408,7 +408,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               chave fazem o React duplicar nós a cada nova renderização: "Denunciar" aparecia 2, 3, 4 vezes). */}
           {active.papel !== "suporte" && <DenunciarConversa key={`denuncia-${active.id}`} conversationId={active.id} demo={demo} />}
           {/* Prompt 58: aviso fixo — documento não circula pelo chat. */}
-          <p className="border-t border-sage-200 px-4 pt-2 text-xs text-ink/60" data-testid="mensagens-aviso-documentos">
+          <p className="border-t border-sage-200 px-4 pt-2 text-xs text-muted" data-testid="mensagens-aviso-documentos">
             {AVISO_DOCUMENTOS}
           </p>
           {rapidaBloqueada && (

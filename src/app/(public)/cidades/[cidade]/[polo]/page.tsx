@@ -109,7 +109,7 @@ export default async function PoloPage({ params }: Params) {
       <JsonLd dados={dados} />
       <section className="bg-forest section-y text-white">
         <div className="container-page">
-          <nav className="text-sm text-white/60">
+          <nav className="text-sm text-white/85">
             <Link href="/" className="alvo-toque hover:text-champagne">Início</Link> /{" "}
             <Link href={`/cidades/${cidade}`} className="hover:text-champagne">{c.name}</Link> /{" "}
             <span className="text-white/80">{p.nome}</span>
@@ -118,7 +118,7 @@ export default async function PoloPage({ params }: Params) {
             Imóveis mobiliados {tituloDoPolo(p.nome)}
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-white/80">{p.intro}</p>
-          <p className="mt-3 max-w-2xl text-sm text-white/70">{p.publico}</p>
+          <p className="mt-3 max-w-2xl text-sm text-white/85">{p.publico}</p>
         </div>
       </section>
 

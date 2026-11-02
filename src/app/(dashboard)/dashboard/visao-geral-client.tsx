@@ -278,7 +278,8 @@ function PainelDoDono({
             <h2 className="font-title text-lg font-semibold">
               {demo ? "Verificação do perfil: 60%" : "Verifique seu perfil"}
             </h2>
-            <p className="text-sm text-white/70">
+            {/* Contraste (02/11): branco a 70% sobre o verde dava 4,1:1 (abaixo de 4,5); a 85%, 5,2:1. */}
+            <p className="text-sm text-white/85">
               Complete a verificação para gerar mais confiança nos moradores.
             </p>
           </div>
