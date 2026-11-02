@@ -16,6 +16,7 @@ import {
   NOTA_MORADOR,
   NOTA_PARCEIRO,
   NOTA_RECEBE,
+  AVISO_PIX_FALHOU,
   SEM_CARTAO,
   TITULO_MORADOR,
   TITULO_PARCEIRO,
@@ -45,6 +46,9 @@ export function PagamentosConta() {
   const papeis = usePapeisDaConta();
   const dono = !!papeis?.includes("proprietario");
   const [pix, setPix] = useState<MinhaChavePix | null>(null);
+  // Estados vazios: a leitura que falha não vira "sem chave" (o formulário vazio levaria a cadastrar de novo).
+  const [leituraFalhou, setLeituraFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   const [editando, setEditando] = useState(false);
   const [tipo, setTipo] = useState<TipoChavePix>("cpf");
   const [chave, setChave] = useState("");
@@ -61,12 +65,16 @@ export function PagamentosConta() {
     if (!dono) return;
     let vivo = true;
     minhaChavePix()
-      .then((c) => vivo && setPix(c))
-      .catch(() => {});
+      .then((c) => {
+        if (!vivo) return;
+        setPix(c);
+        setLeituraFalhou(false);
+      })
+      .catch(() => vivo && setLeituraFalhou(true));
     return () => {
       vivo = false;
     };
-  }, [dono]);
+  }, [dono, tentativa]);
 
   const salvar = () =>
     comecar(async () => {
@@ -103,7 +111,18 @@ export function PagamentosConta() {
           <h2 id="pag-recebe-titulo" className="font-title text-2xl font-semibold text-ink">
             {TITULO_RECEBE}
           </h2>
-          {pix && !editando ? (
+          {leituraFalhou && !pix && !editando ? (
+            <div className="mt-4 grid gap-2" data-testid="conta-pix-falhou">
+              <p className="text-sm text-red-700" role="alert">
+                {AVISO_PIX_FALHOU}
+              </p>
+              <div>
+                <Button type="button" variant="secondary" size="sm" onClick={() => setTentativa((t) => t + 1)} data-testid="conta-pix-tentar">
+                  Tentar de novo
+                </Button>
+              </div>
+            </div>
+          ) : pix && !editando ? (
             <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3">
               <div className="flex min-h-14 min-w-0 items-center gap-3 rounded-lg border border-line px-4">
                 <p className="min-w-0 flex-1 truncate text-base text-ink">
