@@ -614,6 +614,8 @@ async function registrarEncerramento(
   }
 }
 
+const MSG_ENCERRAMENTO_SEM_LEITURA = "Não foi possível atualizar o pedido agora. Tente de novo em instantes.";
+
 export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_conducao" | "concluido"): Promise<Res> {
   if (!UUID_RE.test(String(pedidoId))) return { ok: false, erro: "Pedido inválido." };
   const supabase = await createClient();
@@ -623,10 +625,16 @@ export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só a equipe." };
-  const { data: p } = await admin.from("contrato_encerramento_pedidos").select("id, contrato_id, status, papel, motivo, texto, criado_em").eq("id", pedidoId).maybeSingle();
+  // Resíduo da varredura: a leitura que falha não vira "não encontrado".
+  const { data: p, error: erroPedido } = await admin.from("contrato_encerramento_pedidos").select("id, contrato_id, status, papel, motivo, texto, criado_em").eq("id", pedidoId).maybeSingle();
+  if (erroPedido) return { ok: false, erro: MSG_ENCERRAMENTO_SEM_LEITURA };
   const pedido = p as { id: string; contrato_id: string; status: string; papel: string; motivo: string; texto: string | null; criado_em: string } | null;
   if (!pedido || pedido.status === "concluido") return { ok: false, erro: "Pedido não encontrado ou já concluído." };
-  await admin.from("contrato_encerramento_pedidos").update({ status, atualizado_em: new Date().toISOString() }).eq("id", pedido.id).neq("status", "concluido");
+  // A troca de status vale UMA vez: sem a linha trocada (falha ou outra conclusão no meio), nada mais acontece —
+  // nunca o contrato encerrado, o documento de encerramento e os cancelamentos em dobro.
+  const { data: trocou, error: erroTroca } = await admin.from("contrato_encerramento_pedidos").update({ status, atualizado_em: new Date().toISOString() }).eq("id", pedido.id).neq("status", "concluido").select("id");
+  if (erroTroca) return { ok: false, erro: MSG_ENCERRAMENTO_SEM_LEITURA };
+  if (!trocou?.length) return { ok: false, erro: "Pedido não encontrado ou já concluído." };
   if (status === "concluido") {
     await admin.from("contratos").update({ status: "encerrado_em_acerto", encerrado_em: new Date().toISOString() }).eq("id", pedido.contrato_id).eq("status", "ativo");
     await evento(admin, pedido.contrato_id, user.id, "contrato_encerrado", { pedido: pedido.id });
