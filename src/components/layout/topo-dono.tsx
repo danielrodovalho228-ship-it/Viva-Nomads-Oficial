@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { secaoDaRota } from "@/lib/conta/secoes";
 import Link from "next/link";
-import { Bell, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
-import { HREF_SINO, abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
+import { SinoAvisos } from "@/components/painel/sino-avisos";
+import { abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
 
 /**
  * Topo do painel no computador. PROP-1 (dono, mockup painel-proprietario-desktop) e MENUS-5/MORADOR-NAV (morador e
@@ -72,18 +73,10 @@ export function TopoPainel(p: {
   );
 }
 
-export function Sino({ px, notificacoes }: { px: string; notificacoes?: number }) {
-  return (
-    <Link
-      href={HREF_SINO}
-      aria-label={notificacoes ? `Notificações: ${notificacoes} novas` : "Notificações"}
-      className="relative grid h-11 w-11 place-items-center rounded-lg text-ink hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest"
-      data-testid={`sino-${px}`}
-    >
-      <Bell className="h-5 w-5" aria-hidden />
-      {!!notificacoes && <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-600" aria-hidden />}
-    </Link>
-  );
+export function Sino({ px }: { px: string; notificacoes?: number }) {
+  // E444 item 3: o sino abre o painel dos avisos (últimos 8 + "Ver todas"), com o número de não lidas na cor da maior
+  // prioridade. Antes era um link direto para /dashboard/notificacoes com um ponto vermelho.
+  return <SinoAvisos px={px} />;
 }
 
 /**

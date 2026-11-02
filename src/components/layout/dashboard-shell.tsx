@@ -39,6 +39,7 @@ import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/comp
 import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
+import { FaixaCritico } from "@/components/painel/sino-avisos";
 import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
 
 /**
@@ -427,6 +428,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
+          {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
+          {papelTopo && <FaixaCritico pathname={pathname} />}
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
