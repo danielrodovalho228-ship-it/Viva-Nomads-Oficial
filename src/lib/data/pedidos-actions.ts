@@ -246,11 +246,13 @@ export async function criarPedido(
     };
 
   // Limite anti-abuso: no máximo 2 pedidos ativos por inquilino.
-  const { count } = await supabase
+  const { count, error: erroContagem } = await supabase
     .from("pedidos_moradia")
     .select("id", { count: "exact", head: true })
     .eq("inquilino_id", user.id)
     .eq("status", "ativo");
+  // Contagem ilegível não vira 0: o limite vale sempre.
+  if (erroContagem) return { ok: false, error: "Não foi possível conferir o limite agora. Tente de novo." };
   if ((count ?? 0) >= MAX_PEDIDOS_ATIVOS)
     return {
       ok: false,
