@@ -887,7 +887,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t983-r18-telefone-falha-leitura"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -4829,7 +4830,8 @@
         "proprietario"
       ],
       "specs": [
-        "t178-telefone-sms"
+        "t178-telefone-sms",
+        "t983-r18-telefone-falha-leitura"
       ]
     },
     "src/lib/data/visitas-video-actions.ts#listMinhasVisitas": {
