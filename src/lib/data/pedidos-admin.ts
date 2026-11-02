@@ -155,11 +155,13 @@ export async function definirChaveSms(ligar: boolean): Promise<ActionResult & { 
   let avisados = 0;
   for (const [inqId, ids] of porInquilino) {
     try {
-      const [{ data: u }, { data: tv }, { data: perfil }] = await Promise.all([
+      const [{ data: u, error: erroU }, { data: tv, error: erroTv }, { data: perfil }] = await Promise.all([
         admin.auth.admin.getUserById(inqId),
         admin.from("telefone_verificacao").select("verificado_em").eq("user_id", inqId).maybeSingle(),
         admin.from("profiles").select("email, full_name").eq("id", inqId).maybeSingle(),
       ]);
+      // Sem saber se o telefone já foi confirmado, não avisa: "confirme em 7 dias" a quem já confirmou é aviso errado.
+      if (erroU || erroTv) continue;
       const ok = telefoneConfirmado({
         emailConfirmadoEm: u?.user?.email_confirmed_at,
         telefoneConfirmadoEm: u?.user?.phone_confirmed_at,
