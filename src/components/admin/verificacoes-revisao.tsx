@@ -15,7 +15,8 @@ import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 export async function VerificacoesRevisao() {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("verificacao_revisoes").select("id, user_id, motivo, reprovacoes, criado_em").is("decidido_em", null).order("criado_em", { ascending: true }).limit(100);
+  // Achado 131: a falha da leitura avisa na seção; nunca "nenhuma verificação esperando" com gente na fila.
+  const { data, error: erroFila } = await admin.from("verificacao_revisoes").select("id, user_id, motivo, reprovacoes, criado_em").is("decidido_em", null).order("criado_em", { ascending: true }).limit(100);
   const linhas = (data ?? []) as { id: string; user_id: string; motivo: MotivoVerificacao; reprovacoes: number; criado_em: string }[];
   const ids = linhas.map((l) => l.user_id);
   const { data: perfis } = ids.length ? await admin.from("profiles").select("id, full_name").in("id", ids) : { data: [] };
@@ -25,7 +26,11 @@ export async function VerificacoesRevisao() {
   return (
     <section id="verificacao" className="mt-8 scroll-mt-24">
       <Panel title="Verificação de identidade — análise de uma pessoa" data-testid="verificacao-revisoes">
-        {linhas.length === 0 ? (
+        {erroFila ? (
+          <p className="text-sm text-red-700" role="alert" data-testid="verificacao-revisoes-falhou">
+            Não foi possível ler a fila de verificações agora. Recarregue a página; nada foi decidido.
+          </p>
+        ) : linhas.length === 0 ? (
           <p className="text-sm text-muted">Nenhuma verificação esperando análise.</p>
         ) : (
           <ul className="grid gap-3">
