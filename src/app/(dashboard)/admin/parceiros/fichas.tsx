@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { checklistCompleto, ITENS_CHECKLIST, MOTIVOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarDocumento } from "@/lib/documento-pessoa";
+import { estadoDaFicha, type EstadoFicha } from "@/lib/parceiros/fila-pendentes";
+import { cn } from "@/lib/utils";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
   algumSalvando,
@@ -90,12 +92,27 @@ function useAcao() {
   return { rodar, pendente, aviso };
 }
 
+/** E351 (c): cores do estado do pedido na fila (selo no topo e borda à esquerda da ficha). */
+const SELO_ESTADO: Record<EstadoFicha["tipo"], string> = {
+  aguardando: "border-line bg-white text-amber-800",
+  incompleto: "border-red-200 bg-red-50 text-red-700",
+  checklist: "border-amber-200 bg-amber-50 text-amber-800",
+  pronto: "border-forest/30 bg-sage-50 text-forest",
+};
+const BORDA_ESTADO: Record<EstadoFicha["tipo"], string> = {
+  aguardando: "border-l-line",
+  incompleto: "border-l-red-500",
+  checklist: "border-l-amber-500",
+  pronto: "border-l-forest",
+};
+
 export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura?: boolean }) {
   const { rodar, pendente, aviso } = useAcao();
   const [check, setCheck] = useState<Record<string, unknown>>(f.checklist);
   const [motivo, setMotivo] = useState("");
   const completo = checklistCompleto(check);
   const aguardando = f.status === "aguardando_email";
+  const estado = estadoDaFicha({ status: f.status, email: f.email, categorias: f.categorias, cidades: f.cidades, documento: f.documento, checklist: check });
   // Prompt 36, item 4: cada item mostra "Salvando…", "Salvo" ou o erro com "Tentar de novo".
   const router = useRouter();
   const [, iniciarRefresh] = useTransition();
@@ -113,7 +130,13 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
   const marcado = (chave: string) => valorExibido(estados, chave, check[chave] === true);
 
   return (
-    <Panel data-testid="ficha-parceria" data-email={f.email ?? ""}>
+    <Panel
+      data-testid="ficha-parceria"
+      data-email={f.email ?? ""}
+      data-estado={estado.tipo}
+      // E351 (c): o estado à vista na fila — borda à esquerda âmbar (não aprovável), vermelha (incompleto), verde (pronto).
+      className={cn("border-l-4", BORDA_ESTADO[estado.tipo])}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="font-title text-lg font-semibold text-ink">
@@ -126,7 +149,9 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
             </span>
           </p>
         </div>
-        {aguardando && <span className="border border-line rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800">Aguardando a pessoa confirmar</span>}
+        <span className={cn("rounded-full border px-3 py-1 text-xs font-semibold", SELO_ESTADO[estado.tipo])} data-testid="ficha-estado" data-estado={estado.tipo}>
+          {estado.rotulo}
+        </span>
       </div>
 
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
