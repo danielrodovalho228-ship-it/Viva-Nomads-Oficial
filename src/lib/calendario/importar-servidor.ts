@@ -107,18 +107,22 @@ export async function lerLink(url: string): Promise<Leitura> {
 /** Compromissos da Viva no imóvel (datas): contrato vigente, proposta em andamento/aceita e candidatura com entrada. */
 export async function compromissosDaViva(admin: Admin, propertyId: string): Promise<{ inicio: string; fim: string; tipo: string }[]> {
   const out: { inicio: string; fim: string; tipo: string }[] = [];
-  for (const p of await periodosOcupados(admin, propertyId).catch(() => [])) out.push({ ...p, tipo: "contrato" });
-  const { data: props } = await admin
+  // Resíduo da varredura: tudo ou nada — uma leitura que falha LANÇA (nunca uma lista parcial tratada como completa).
+  for (const p of await periodosOcupados(admin, propertyId)) out.push({ ...p, tipo: "contrato" });
+  const { data: props, error: erroProps } = await admin
     .from("propostas")
     .select("id, versao_atual, status")
     .eq("property_id", propertyId)
     .in("status", ["enviada", "vista", "contraproposta", "aceita", "em_contrato"]);
+  if (erroProps) throw new Error("Não foi possível ler as propostas do imóvel.");
   for (const p of (props ?? []) as { id: string; versao_atual: number }[]) {
-    const { data: v } = await admin.from("proposta_versoes").select("data_entrada, meses").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+    const { data: v, error: erroVersao } = await admin.from("proposta_versoes").select("data_entrada, meses").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+    if (erroVersao) throw new Error("Não foi possível ler a versão da proposta.");
     const versao = v as { data_entrada: string | null; meses: number | null } | null;
     if (versao?.data_entrada && versao.meses) out.push({ ...periodoDaEstadia(versao.data_entrada, versao.meses), tipo: "proposta" });
   }
-  const { data: leads } = await admin.from("leads").select("inicio_desejado").eq("property_id", propertyId).in("status", ["new", "accepted"]).not("inicio_desejado", "is", null);
+  const { data: leads, error: erroLeads } = await admin.from("leads").select("inicio_desejado").eq("property_id", propertyId).in("status", ["new", "accepted"]).not("inicio_desejado", "is", null);
+  if (erroLeads) throw new Error("Não foi possível ler as candidaturas do imóvel.");
   for (const l of (leads ?? []) as { inicio_desejado: string }[]) out.push({ ...periodoDaEstadia(l.inicio_desejado, 1), tipo: "candidatura" });
   return out;
 }
@@ -193,7 +197,9 @@ export async function sincronizarImportacao(admin: Admin, imp: Importacao, agora
   let conflitos = 0;
   const { data: vigentes } = await admin.from("property_blocks").select("inicio, fim").eq("importacao_id", imp.id);
   const importados = ((vigentes ?? []) as { inicio: string; fim: string }[]).map((b) => ({ inicio: String(b.inicio), fim: String(b.fim) }));
-  const lista = conflitosComViva(importados, await compromissosDaViva(admin, imp.property_id).catch(() => []));
+  // Sem os compromissos lidos por inteiro, os avisos de conflito ficam para a próxima rodada (3 h).
+  const compromissos = await compromissosDaViva(admin, imp.property_id).catch(() => null);
+  const lista = compromissos ? conflitosComViva(importados, compromissos) : [];
   for (const c of lista) {
     const chave = `cal_conflito:${imp.id}:${c.importado.inicio}:${c.importado.fim}:${c.compromisso.tipo}:${c.compromisso.inicio}`;
     if (await primeiraVez(admin, chave, "calendario_conflito")) {
