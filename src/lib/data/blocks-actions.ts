@@ -70,7 +70,7 @@ export async function addBlock(
     return { ok: false, error: "Intervalo de datas inválido." };
 
   // E137: idempotente — o mesmo período já bloqueado (toque duplo, dois envios) devolve o bloqueio que existe.
-  const { data: igual } = await supabase
+  const { data: igual, error: erroIgual } = await supabase
     .from("property_blocks")
     .select("id")
     .eq("property_id", propertyId)
@@ -78,6 +78,8 @@ export async function addBlock(
     .eq("fim", fim)
     .limit(1)
     .maybeSingle();
+  // Leitura falha não vira "período novo": sem índice único, o mesmo bloqueio entraria duas vezes.
+  if (erroIgual) return { ok: false, error: "Não foi possível bloquear as datas agora. Tente de novo." };
   if (igual?.id) return { ok: true, id: String(igual.id) };
 
   const { data, error } = await supabase
