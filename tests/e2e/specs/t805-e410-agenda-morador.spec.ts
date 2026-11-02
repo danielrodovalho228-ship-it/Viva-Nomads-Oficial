@@ -15,7 +15,8 @@ for (const largura of [390, 1280] as const) {
     await page.goto("/dashboard/agenda", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const main = page.locator("main");
-    await expect(main.getByRole("heading", { name: "Agenda" })).toBeVisible({ timeout: 20_000 });
+    // "Agenda" exato: o vazio "Nenhuma visita na agenda" também é um título e o nome parcial casava com os dois.
+    await expect(main.getByRole("heading", { name: "Agenda", exact: true })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("agenda-morador")).toBeVisible();
     await expect(main).not.toContainText(/todos os seus imóveis|Quando você anunciar|Anunciar imóvel/);
     await expect(main.getByRole("link", { name: "Ver minhas visitas" })).toHaveAttribute("href", "/dashboard/visitas");
