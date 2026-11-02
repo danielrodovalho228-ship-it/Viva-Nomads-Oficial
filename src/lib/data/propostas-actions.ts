@@ -796,12 +796,13 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   if (papel === "owner") {
     // Antes do aceite: a taxa DO ENVIO (com a base) e, se a faixa de hoje for menor, "Se aceita hoje: X%".
     // Depois do aceite: a congelada e, se ela ficou abaixo da do envio, "Sua taxa caiu para X%…".
-    const tx = await lerTaxaDaProposta(s.admin, p.id);
-    const congelada = tx.taxa_congelada != null;
+    // Leitura falha: a taxa não aparece (nunca a de hoje no lugar da do envio).
+    const tx = await lerTaxaDaProposta(s.admin, p.id).catch(() => null);
+    const congelada = tx?.taxa_congelada != null;
     // Achado 83: sem ler a taxa de hoje, nada de "Se aceita hoje" (e, sem a do envio, a taxa não aparece).
     const hoje = congelada ? null : await taxaDoDonoAgora(s.admin, s.user.id).then((t) => t.taxa).catch(() => null);
-    const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
-    if (pct != null) taxa = {
+    const pct = !tx ? null : congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
+    if (tx && pct != null) taxa = {
       pct,
       valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
       congelada,
@@ -927,7 +928,9 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   if (erro) return { ok: false, error: erro };
 
   if (papel === "tenant") {
-    const { data: lim } = await s.admin.from("property_negociacao_limites").select("valor_minimo, limpezas_max").eq("property_id", im.id).maybeSingle();
+    const { data: lim, error: erroLim } = await s.admin.from("property_negociacao_limites").select("valor_minimo, limpezas_max").eq("property_id", im.id).maybeSingle();
+    // Leitura falha não vira "o proprietário não tem mínimo": a contraproposta abaixo do limite não sai sem o aviso.
+    if (erroLim) return { ok: false, error: "Não foi possível conferir os limites do proprietário agora. Tente de novo." };
     // Limite PRIVADO: o número exato nunca sai do servidor (só a próxima centena acima).
     const abaixo = avisoAbaixoDoMinimo(calcularTotais(nova).valorMensal, lim?.valor_minimo == null ? null : Number(lim.valor_minimo));
     if (abaixo && !r.mesmoAbaixoDoMinimo)
@@ -974,7 +977,9 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   const agora = new Date();
   // A menor entre a taxa do envio e a do dono agora (faixa, queda de 30 dias, fixação do admin): nunca sobe depois
   // de enviada (complemento do prompt 27, parte B; especificação da taxa, R5).
-  const tx = await lerTaxaDaProposta(admin, p.id);
+  // Sem a taxa do envio, o aceite congelaria a de hoje (que pode ser maior): não aceita.
+  const tx = await lerTaxaDaProposta(admin, p.id).catch(() => null);
+  if (!tx) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   // Achado 83: o aceite congela a taxa; sem lê-la, não aceita.
   const hoje = await taxaDoDonoAgora(admin, p.owner_id, agora).catch(() => null);
   if (!hoje) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
