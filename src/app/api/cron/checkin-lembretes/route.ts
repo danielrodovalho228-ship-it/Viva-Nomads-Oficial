@@ -75,6 +75,7 @@ export async function GET(request: Request) {
           name: (p?.full_name as string) ?? undefined,
           userId: uid,
           pushUrl: `/dashboard/contratos/${c.id}`,
+          imovelId: c.property_id as string,
           detailsText: corpo.texto,
           detailsHtml: corpo.html,
         }).catch(() => null);

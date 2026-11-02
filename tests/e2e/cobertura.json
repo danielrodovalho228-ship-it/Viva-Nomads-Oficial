@@ -237,6 +237,12 @@
         "t419-varredura-bloco36"
       ]
     },
+    "/admin/moderacao/ofensas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "/admin/fotos-perfil": {
       "personas": [
         "admin"
@@ -2608,6 +2614,12 @@
         "t695-e264b-proativos",
         "t711-e264b-proativos-corpo"
       ]
+    },
+    "/dashboard/imoveis/[id]/publicar": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
     }
   },
   "rotas": {
@@ -3115,6 +3127,12 @@
       ],
       "specs": []
     },
+    "/api/email/avatar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
     "/api/cartoes/visita": {
       "personas": [
         "publico"
@@ -3173,6 +3191,15 @@
       ],
       "specs": [
         "t266-painel-42"
+      ]
+    },
+    "/api/painel/avisos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t830-e444-sino-faixa"
       ]
     },
     "/api/automacao/pedidos/[id]": {
@@ -3653,6 +3680,46 @@
       "specs": [
         "t191-ajuda-publicacao"
       ]
+    },
+    "src/lib/data/conversa-aberta-actions.ts#mensagensNaoLidas": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#marcarAvisoLido": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#marcarTodosAvisosLidos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#meusAvisos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#resumoDoSino": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
     },
     "src/lib/data/atendimento-actions.ts#abrirChamado": {
       "personas": [
@@ -4417,6 +4484,18 @@
       "personas": [
         "inquilino",
         "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ofensas-admin-actions.ts#filaDeOfensas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ofensas-admin-actions.ts#marcarOfensaRevisada": {
+      "personas": [
+        "admin"
       ],
       "specs": []
     },

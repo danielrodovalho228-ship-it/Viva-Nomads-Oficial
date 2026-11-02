@@ -1,5 +1,7 @@
 "use server";
 
+import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
+import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
@@ -255,7 +257,7 @@ async function copiaDaRecusa(admin: Admin, p: Pick<LinhaProposta, "id" | "owner_
       paraQuemRecusou: true,
       nomeDaOutraParte: (ele as { full_name?: string | null } | null)?.full_name ?? null,
     });
-    await notify({ event: "proposta_recusada", email: d.email, name: d.full_name ?? undefined, userId: quem, pushUrl: e.url, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, semPush: true });
+    await notify({ event: "proposta_recusada", email: d.email, name: d.full_name ?? undefined, userId: quem, pushUrl: e.url, imovelId: p.property_id, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, semPush: true });
   } catch {
     /* notificação nunca quebra o fluxo */
   }
@@ -311,8 +313,15 @@ async function avisarOutraParte(
     const imovel = { titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
     const papelDestino = destino === p.owner_id ? "owner" : "tenant";
     const dados = contexto ? dadosDoEmailDaProposta(p.numero, imovel, contexto, papelDestino) : null;
+    // E441: proposta (orçamento) do MORADOR ao dono — a foto (ou as iniciais) e o nome dele, clicáveis para o detalhe.
+    const pessoa =
+      papelDestino === "owner" && de === "tenant"
+        ? await moradorNoEmail({ donoId: p.owner_id, moradorId: p.tenant_id, caminho: proprio?.url ?? `/dashboard/propostas/${p.id}`, rotuloLink: "Ver a proposta" }).catch(() => null)
+        : null;
     await notify({
       event: proprio?.event ?? evento,
+      // E444: o objeto do aviso (resolvido quando quem recebe responder).
+      refId: p.id,
       // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
       decisao: decisao
         ? { imovel: (im as { title?: string | null } | null)?.title ?? null, valor: decisao.valorMensal, prazo: decisao.validaAte, destinatarioEhParte: true }
@@ -321,13 +330,15 @@ async function avisarOutraParte(
       name: (d?.full_name as string | undefined) ?? undefined,
       userId: destino,
       pushUrl: proprio?.url ?? `/dashboard/propostas/${p.id}`,
+      imovelId: p.property_id,
       // O número da proposta vai no corpo, nunca no assunto (rota rápida dos e-mails, item 2).
       subject: proprio?.assunto ?? (evento === "proposta_recebida" ? ASSUNTOS.propostaRecebida : ASSUNTOS.propostaRespondida),
       ...(proprio ? { body: proprio.abertura, ctaLabel: proprio.cta } : dados ? { body: (nome?: string) => dados.abertura(nome) } : {}),
       detailsHtml:
+        (pessoa?.html ?? "") +
         (dados ? dados.html : blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }])) +
         (detalhesSoDono && destino === p.owner_id ? `<p>${escaparHtml(detalhesSoDono)}</p>` : ""),
-      detailsText: dados ? dados.texto : `Proposta ${p.numero}`,
+      detailsText: [pessoa?.texto ?? "", dados ? dados.texto : `Proposta ${p.numero}`].filter(Boolean).join("\n"),
     });
   } catch {
     /* notificação nunca quebra o fluxo */
@@ -368,6 +379,7 @@ async function emailsDoAceite(
       name: d.full_name ?? undefined,
       userId: p.owner_id,
       pushUrl: paraDono.url,
+      imovelId: p.property_id,
       subject: paraDono.assunto,
       body: paraDono.abertura,
       ctaLabel: paraDono.cta,
@@ -383,6 +395,7 @@ async function emailsDoAceite(
       name: m.full_name ?? undefined,
       userId: p.tenant_id,
       pushUrl: paraMorador.url,
+      imovelId: p.property_id,
       subject: paraMorador.assunto,
       body: paraMorador.abertura,
       ctaLabel: paraMorador.cta,
@@ -863,6 +876,9 @@ async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof se
   return { p, v: v as LinhaVersao, papel: (p.owner_id === s.user.id ? "owner" : "tenant") as Autor };
 }
 
+/** E444: responder (aceitar, recusar ou contrapropor) resolve estes avisos críticos da proposta. */
+const EVENTOS_RESPONDER: NotificationEvent[] = ["proposta_recebida", "proposta_vencendo"];
+
 export async function responderProposta(id: string, r: Resposta): Promise<Resultado<{ fechamentoUrl?: string | null; versao?: number }>> {
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para responder." };
@@ -903,10 +919,16 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     );
     // E269: a cópia de quem recusou (os dois lados recebem, 1 cada) — a moradora que recusa vê imóveis parecidos.
     await copiaDaRecusa(s.admin, p, papel, motivo, texto);
+    await resolverAvisos({ usuarioId: s.user.id, eventos: EVENTOS_RESPONDER, refId: p.id });
     return { ok: true };
   }
 
-  if (r.acao === "aceitar") return aceitar(s.admin, p, v, papel);
+  if (r.acao === "aceitar") {
+    const res = await aceitar(s.admin, p, v, papel);
+    // E444: respondeu (aceitou) → o aviso crítico "responder a proposta" fica resolvido.
+    if (res.ok) await resolverAvisos({ usuarioId: s.user.id, eventos: EVENTOS_RESPONDER, refId: p.id });
+    return res;
+  }
 
   // Contraproposta.
   const im = await lerImovel(s.admin, p.property_id);
@@ -968,6 +990,7 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
     { desfecho: "contraproposta", termos: nova, responderAte: validaAteDe(p.validade_dias, agora) },
   );
+  await resolverAvisos({ usuarioId: s.user.id, eventos: EVENTOS_RESPONDER, refId: p.id });
   return { ok: true, versao };
 }
 

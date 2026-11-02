@@ -12,7 +12,7 @@ import { estadoSolucao, type AvisoSolucao, type OrdemSolucao } from "@/lib/manut
 
 type Db = SupabaseClient;
 
-const COLUNAS = "id, priority, status, opened_at, provisoria_em, solucao_marcada_em, resolved_at, solucao_confirmada_em, reaberta_em, tenant_id, owner_id, properties(title)";
+const COLUNAS = "id, priority, status, opened_at, provisoria_em, solucao_marcada_em, resolved_at, solucao_confirmada_em, reaberta_em, tenant_id, owner_id, property_id, properties(title)";
 
 async function perfil(db: Db, id: string) {
   const { data } = await db.from("profiles").select("email, full_name, notif_email").eq("id", id).maybeSingle();
@@ -56,6 +56,7 @@ export async function avisarPrazoManutencao(db: Db, ordemId: string, tipo: Aviso
       name: (dono.full_name as string) ?? undefined,
       userId: o.owner_id as string,
       pushUrl: `/dashboard/solicitacoes?ordem=${ordemId}`,
+      imovelId: o.property_id as string | null,
       body: (n) => `Olá${n ? " " + n : ""}, ${textoDono[tipo]}`,
       ctaLabel: tipo === "vencido" ? "Ver a ordem e chamar um parceiro" : "Ver a ordem",
       prazoHoje,
@@ -70,6 +71,7 @@ export async function avisarPrazoManutencao(db: Db, ordemId: string, tipo: Aviso
         name: (morador.full_name as string) ?? undefined,
         userId: o.tenant_id as string,
         pushUrl: `/dashboard/solicitacoes?ordem=${ordemId}`,
+        imovelId: o.property_id as string | null,
         body: (n) => `Olá${n ? " " + n : ""}, o prazo de solução da sua manutenção venceu. O proprietário foi avisado em ${dataHoraBrasilia(agora)} (horário de Brasília).`,
         ctaLabel: "Ver a ordem",
         prazoHoje,

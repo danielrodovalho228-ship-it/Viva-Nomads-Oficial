@@ -4,6 +4,7 @@ import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacar
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
 import { rotuloItem } from "@/config/niveis";
 import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
+import { statusPorImovel } from "@/lib/documento/vigente";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -78,10 +79,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   }
   const fotosPor = new Map<string, number>();
   for (const f of (fotos ?? []) as { property_id: string }[]) fotosPor.set(f.property_id, (fotosPor.get(f.property_id) ?? 0) + 1);
-  const docPor = new Map<string, StatusDocumento>();
-  for (const d of (docs ?? []) as { property_id: string; document_status: string | null }[]) {
-    if (!docPor.has(d.property_id)) docPor.set(d.property_id, ((d.document_status as StatusDocumento) ?? "none") || "none");
-  }
+  // E-DOC-VIGENTE (Relay 47): vale o APROVADO mais recente; um envio novo em análise (ou recusado) não o rebaixa.
+  const docPor: Map<string, StatusDocumento> = statusPorImovel((docs ?? []) as { property_id: string | null; document_status: string | null }[]);
   // E233-A: sem vaga no plano (o limite de anúncios do modelo antigo saiu); só os requisitos reais.
   for (const p of lista) {
     const f = fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none");

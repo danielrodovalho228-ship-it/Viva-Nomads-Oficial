@@ -17,6 +17,8 @@ export interface ChatMessage {
   text: string;
   /** Prompt 17: mensagem que é o cartão de uma proposta (link para /dashboard/propostas/<id>). */
   propostaId?: string;
+  /** E445 (item 4): mensagem minha já lida pelo destinatário ("visto"). */
+  visto?: boolean;
 }
 
 export interface Conversation {
@@ -41,6 +43,8 @@ export interface Conversation {
   linkedinConectado?: boolean;
   /** E174-B: domínio do vínculo profissional confirmado da outra parte (só o domínio). */
   vinculoDominio?: string | null;
+  /** E445 (item 4): mensagens recebidas ainda não lidas nesta conversa. */
+  naoLidas?: number;
   messages: ChatMessage[];
 }
 
@@ -80,6 +84,8 @@ interface MsgRow {
   created_at: string;
   proposta_id?: string | null;
   parceiro_pedido_id?: string | null;
+  /** E445 (0287): quando o destinatário leu. Ausente antes da migração. */
+  lido_em?: string | null;
   property: { title: string | null; owner_id: string | null } | null;
 }
 
@@ -104,14 +110,14 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data, error } = await supabase
-    .from("messages")
-    .select(
-      `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id, parceiro_pedido_id,
-       property:properties!messages_property_id_fkey ( title, owner_id )`
-    )
-    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-    .order("created_at", { ascending: true });
+  const colunas = (comLeitura: boolean) =>
+    `id, conversation_id, sender_id, receiver_id, property_id, body, created_at, proposta_id, parceiro_pedido_id,${comLeitura ? " lido_em," : ""}
+       property:properties!messages_property_id_fkey ( title, owner_id )`;
+  const ler = (comLeitura: boolean) =>
+    supabase.from("messages").select(colunas(comLeitura)).or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order("created_at", { ascending: true });
+  let { data, error } = await ler(true);
+  // E445: antes da 0287 (sem a coluna lido_em), lê como antes — a lista nunca some por causa do "visto".
+  if (error && (error.code === "42703" || /lido_em/.test(error.message))) ({ data, error } = await ler(false));
   if (error && opcoes.exigir) throw new Error(MSG_MENSAGENS_NAO_CARREGARAM);
 
   const byConv = new Map<string, Conversation>();
@@ -138,7 +144,9 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     const conv = byConv.get(m.conversation_id)!;
     // Mesmo filtro do envio: mensagem antiga com CPF/RG ou contato nunca aparece crua (nem na prévia da caixa).
     const texto = guardContactInfo(m.body).text;
-    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}) });
+    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}) });
+    // E445: não lidas da conversa (recebidas sem lido_em; sem a coluna, não conta).
+    if (!mine && m.lido_em === null) conv.naoLidas = (conv.naoLidas ?? 0) + 1;
     conv.preview = texto;
   }
 

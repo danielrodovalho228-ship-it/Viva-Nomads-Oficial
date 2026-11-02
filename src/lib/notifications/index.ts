@@ -9,6 +9,35 @@ import { textoEmail, textoPlano } from "./texto-seguro";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
 import { CATEGORIAS_COM_INTERRUPTOR, eventoDesligadoPelaPessoa } from "@/config/matriz-notificacoes";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { DestaqueEmail } from "./destaque-email";
+import { gravarAviso } from "./avisos-servidor";
+import type { PapelAviso, PrioridadeAviso } from "./avisos";
+
+const UUID_DESTAQUE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * E438: o imóvel e/ou o parceiro do e-mail, lidos do banco (a capa real do anúncio, a foto do parceiro). Best-effort:
+ * sem banco, sem id válido ou com erro de leitura, nada — o e-mail sai com o banner genérico do tema.
+ */
+async function destaqueDoEmail(imovelId?: string | null, parceiroId?: string | null): Promise<DestaqueEmail | null> {
+  const im = imovelId && UUID_DESTAQUE.test(imovelId) ? imovelId : null;
+  const pc = parceiroId && UUID_DESTAQUE.test(parceiroId) ? parceiroId : null;
+  if (!im && !pc) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const [prop, fotos, parc] = await Promise.all([
+    im ? admin.from("properties").select("id, title, status").eq("id", im).maybeSingle() : null,
+    im ? admin.from("property_photos").select("url").eq("property_id", im).order("sort_order", { ascending: true }).limit(1) : null,
+    pc ? admin.from("parceiros").select("slug, nome_publico, avatar_path, status").eq("id", pc).maybeSingle() : null,
+  ]);
+  const p = prop && !prop.error ? (prop.data as { id: string; title: string | null; status: string | null } | null) : null;
+  const f = fotos && !fotos.error ? ((fotos.data ?? []) as { url: string | null }[])[0] : undefined;
+  const c = parc && !parc.error ? (parc.data as { slug: string | null; nome_publico: string | null; avatar_path: string | null; status: string | null } | null) : null;
+  return {
+    imovel: p ? { id: p.id, titulo: p.title ?? "", fotoCapa: f?.url ?? null, publicado: p.status === "active" } : null,
+    parceiro: c ? { slug: c.slug, nome: c.nome_publico ?? "", avatarPath: c.avatar_path, publicado: c.status === "publicado" } : null,
+  };
+}
 
 export { isEmailConfigured, isWhatsappConfigured };
 export type { NotificationEvent };
@@ -101,6 +130,16 @@ export async function notify(params: {
   decisao?: DadosDaDecisao;
   /** E264-B: e-mail proativo — URL assinada do descadastro de um clique (List-Unsubscribe-Post). */
   descadastroUmCliqueUrl?: string;
+  /** E438: o imóvel do e-mail — a capa real do anúncio no topo, clicável para a página dele. */
+  imovelId?: string | null;
+  /** E438: o parceiro do e-mail — a foto real dele (no topo, ou junto aos dados quando há imóvel), clicável. */
+  parceiroId?: string | null;
+  /** E444: papel de quem recebe (a prioridade do aviso no sino pode mudar por papel). */
+  papelAviso?: PapelAviso | null;
+  /** E444: o objeto do aviso (proposta, contrato, visita…) — permite marcar "resolvido" quando a ação for feita. */
+  refId?: string | null;
+  /** E444: prioridade explícita quando o mesmo evento é só informativo (ex.: "contrato assinado pelas duas partes"). */
+  prioridadeAviso?: PrioridadeAviso | null;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -141,9 +180,16 @@ export async function notify(params: {
       )
     : null;
 
+  // E444: o aviso no sino do site, do MESMO evento (fonte única), em paralelo. Título do catálogo, nunca texto do usuário.
+  const avisoPromise =
+    params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)
+      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso }))
+      : null;
+
   if (params.email) {
     try {
       const interno = !!params.interno || EVENTOS_INTERNOS.has(params.event);
+      const destaque = interno ? null : await destaqueDoEmail(params.imovelId, params.parceiroId).catch(() => null);
       // Mesma montagem do teste de auditoria (montar-email.ts): assunto com a marca, imagem do tema, um botão.
       const m = montarNotificacao({
         siteUrl: SITE_URL,
@@ -156,6 +202,7 @@ export async function notify(params: {
         pushUrl: params.pushUrl,
         detailsHtml: params.detailsHtml,
         detailsText: params.detailsText,
+        destaque,
         // Só depois que a versão do app com links diretos estiver nas lojas.
         outro: process.env.APP_LINKS_ATIVO === "on" ? "Se você tem o app Viva Nomads, ele abre direto no app." : undefined,
       });
@@ -192,6 +239,8 @@ export async function notify(params: {
       result.whatsapp = false;
     }
   }
+
+  if (avisoPromise) await avisoPromise;
 
   if (pushPromise) {
     const pr = await pushPromise; // já estava rodando em paralelo

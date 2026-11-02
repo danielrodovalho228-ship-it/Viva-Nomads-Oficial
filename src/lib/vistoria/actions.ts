@@ -417,7 +417,7 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
   const designado = await designar(s.admin, p.id, agora);
-  if (designado) await avisar(s.admin, s.userId, "vistoria_designado_dono", rotaDono(im.id), { pedidoId: p.id });
+  if (designado) await avisar(s.admin, s.userId, "vistoria_designado_dono", rotaDono(im.id), { pedidoId: p.id, propertyId: im.id });
   revalidatePath(`/dashboard/imoveis/${im.id}/nivel`);
   return { ok: true, mensagem: designado ? "Pedido registrado. A Viva designou o avaliador credenciado." : "Pedido registrado. A Viva está designando o avaliador." };
 }
@@ -444,7 +444,7 @@ export async function responderDesignacao(form: FormData): Promise<Res> {
   if (aceitar) {
     const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora.toISOString() }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
     if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
-    await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id });
+    await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   } else {
     await passarAoProximo(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
   }
@@ -491,10 +491,10 @@ export async function agendarVisita(form: FormData): Promise<Res> {
       ...(reagendando ? (parte === "dono" ? { reagendou_dono: true } : { reagendou_avaliador: true }) : {}),
     })
     .eq("id", p.id);
-  if (p.ocupado) await avisar(s.admin, p.morador_id, "vistoria_concordancia", rotaMorador(p.id), { pedidoId: p.id });
+  if (p.ocupado) await avisar(s.admin, p.morador_id, "vistoria_concordancia", rotaMorador(p.id), { pedidoId: p.id, propertyId: p.property_id });
   else {
-    await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id });
-    await avisar(s.admin, avaliadorUser, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id });
+    await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
+    await avisar(s.admin, avaliadorUser, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
   }
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
@@ -509,8 +509,8 @@ export async function concordarVisita(form: FormData): Promise<Res> {
   const { data: p } = await s.admin.from("vistoria_pedidos").select("id, property_id, owner_id, morador_id, ocupado, agendado_para, status, avaliadores_credenciamento(parceiros(user_id))").eq("id", String(form.get("pedidoId") ?? "")).maybeSingle();
   if (!p || p.morador_id !== s.userId || !p.ocupado || !p.agendado_para || p.status !== "designado") return SEM_ACESSO;
   await s.admin.from("vistoria_pedidos").update({ concordancia_em: new Date().toISOString(), status: "agendado", atualizado_em: new Date().toISOString() }).eq("id", p.id);
-  await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id });
-  await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id });
+  await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
+  await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(rotaMorador(p.id));
   return { ok: true, mensagem: "Obrigado. A visita está confirmada." };
 }
@@ -532,15 +532,15 @@ export async function registrarAusencia(form: FormData): Promise<Res> {
   const c = consequenciaAusencia(quem);
   if (quem === "avaliador") {
     if (!(s.userId === p.owner_id || ehAdmin)) return SEM_ACESSO;
-    await avisar(s.admin, avaliadorUser, "vistoria_ausencia", ROTA_AVALIADOR, { pedidoId: p.id });
-    await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id });
+    await avisar(s.admin, avaliadorUser, "vistoria_ausencia", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
+    await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
     await passarAoProximo(s.admin, p.id, p.avaliador_id!, "ausencia", new Date());
     revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
     return { ok: true, mensagem: c.redesignarComPrioridade ? "Ausência do avaliador registrada. A Viva designa outro avaliador, sem custo para você." : undefined };
   }
   if (!(s.userId === avaliadorUser || ehAdmin)) return SEM_ACESSO;
   await s.admin.from("vistoria_pedidos").update({ status: "ausencia", atualizado_em: new Date().toISOString() }).eq("id", p.id);
-  await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id });
+  await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Ausência registrada. Uma nova visita é um novo pedido pela tabela." };
 }

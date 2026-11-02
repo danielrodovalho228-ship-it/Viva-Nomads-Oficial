@@ -33,3 +33,16 @@ export function destinoPendencia(imovel: { id: string; status: string | null | u
   const secao = typeof etapa === "number" ? SECAO_DO_PASSO[etapa] : undefined;
   return `/dashboard/imoveis/${encodeURIComponent(imovel.id)}/editar${secao ? `#${secao}` : ""}`;
 }
+
+/**
+ * E433 (02/11): o botão "Publicar meu anúncio" tem UM destino em todos os e-mails — esta rota, que decide no clique
+ * (o status pode ter mudado desde o envio) e leva ao lugar onde o botão Publicar está, com o menor caminho.
+ */
+export function hrefPublicarAnuncio(propertyId: string): string {
+  return `/dashboard/imoveis/${encodeURIComponent(propertyId)}/publicar`;
+}
+
+/** Para onde a rota /publicar leva: rascunho → Revisão do assistente (Publicar ali); fora do cadastro → o editor (Publicar no topo). */
+export function destinoPublicar(imovel: { id: string; status: string | null | undefined }): string {
+  return emCadastro(imovel.status) ? hrefPassoDoRascunho(imovel.id, ETAPA.revisao) : `/dashboard/imoveis/${encodeURIComponent(imovel.id)}/editar`;
+}

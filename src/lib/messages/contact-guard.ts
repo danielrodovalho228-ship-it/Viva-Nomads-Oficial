@@ -12,6 +12,8 @@
  */
 
 const MASK = "[contato protegido]";
+/** E445 (item 1): todo link externo vira este marcador; só o site da Viva passa. */
+export const MASK_LINK = "[link protegido]";
 const MASK_DOC = "[documento protegido]";
 
 /**
@@ -52,6 +54,23 @@ const MESSENGER_RE = /(https?:\/\/)?(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.c
 /** Perfis de rede social (instagram/facebook/tiktok) por URL. */
 const SOCIAL_URL_RE = /(?:https?:\/\/)?(?:www\.)?(?:instagram|facebook|fb|tiktok)\.com\/\S+/gi;
 
+/**
+ * E445 (item 1): TODO link externo — http(s)://…, www.…, encurtadores (bit.ly, goo.gl, t.co…) e domínio sem "www"
+ * com terminação comum (airbnb.com, booking.com.br, meusite.net…). Só vivanomads.com.br (e subdomínios) passa.
+ * Domínio "solto" só com terminação da lista, para não pegar fim de frase ("Uberlândia.Até") nem valores ("3.200").
+ */
+const TLDS = "com\\.br|net\\.br|org\\.br|com|net|org|br|io|me|ly|co|app|link|site|info|biz|xyz|gl|gd|to|tv|online|store|page|ws|cc";
+const LINK_RE = new RegExp(
+  `(?:https?:\\/\\/[^\\s<>"']+|\\bwww\\.[^\\s<>"']+|\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:${TLDS})\\b(?:[/?#][^\\s<>"']*)?)`,
+  "gi",
+);
+const DOMINIO_VIVA_RE = /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)*vivanomads\.com\.br(?:[/?#:]|[.,;!)]*$)/i;
+
+/** O link é do próprio site (pode ficar no chat)? */
+export function linkDaViva(link: string): boolean {
+  return DOMINIO_VIVA_RE.test(link.replace(/^www\./i, ""));
+}
+
 /** @handle solto (ex.: @maria.silva) — típico "me chama no insta @...". Captura
  *  o char anterior para não colidir com e-mails (já mascarados antes). */
 const HANDLE_RE = /(^|[^\w@])@([a-zA-Z0-9._]{2,30})/g;
@@ -85,6 +104,18 @@ export function guardContactInfo(input: string): GuardResult {
   text = text.replace(EMAIL_RE, () => {
     masked = true;
     return MASK;
+  });
+  // E445: links externos (antes do telefone, para o número dentro de um link não virar "telefone" pela metade).
+  // Perfis de rede social seguem com o marcador de contato (regra abaixo), por isso ficam de fora aqui.
+  text = text.replace(LINK_RE, (m) => {
+    if (linkDaViva(m)) return m;
+    if (SOCIAL_URL_RE.test(m)) {
+      SOCIAL_URL_RE.lastIndex = 0;
+      return m;
+    }
+    SOCIAL_URL_RE.lastIndex = 0;
+    masked = true;
+    return MASK_LINK;
   });
   // Documentos antes do telefone: um CPF de 11 dígitos com DV válido não vira "telefone".
   text = text.replace(RG_ROTULO_RE, () => {
@@ -125,7 +156,7 @@ export function guardContactInfo(input: string): GuardResult {
 
 /** Aviso curto exibido quando algo foi mascarado. */
 export const GUARD_NOTICE =
-  "Para sua segurança, telefones e e-mails são protegidos no chat. A negociação segue toda pela plataforma — o contato direto não é trocado.";
+  "Para sua segurança, telefones, e-mails e links externos são protegidos no chat. A negociação segue toda pela plataforma — o contato direto não é trocado.";
 
 /** Envio bloqueado quando a mensagem traz CPF ou RG (Prompt 32): o link leva ao campo Ocupantes da estadia. */
 export const DOCUMENTO_BLOQUEADO = "Para dados de documento, use o campo Ocupantes da estadia";

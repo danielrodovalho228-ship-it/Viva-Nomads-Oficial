@@ -6,6 +6,8 @@ import { ehTipoChavePix, mascararChavePix, normalizarChavePix, rotuloTipoChavePi
 
 type Resultado = { ok: boolean; error?: string };
 
+const MSG_PIX_SEM_LEITURA = "Não foi possível ler a chave Pix agora.";
+
 /** O que a tela mostra: o tipo e a chave MASCARADA. A chave inteira só volta para o próprio dono ao copiar. */
 export interface MinhaChavePix {
   tipo: ChavePix["tipo"];
@@ -18,7 +20,7 @@ export interface MinhaChavePix {
 /**
  * PERFIL-B (mockup perfil-07-pagamentos, "Como você recebe"): a chave Pix em que o proprietário recebe o valor mensal
  * direto do morador. Tudo pelo cliente da SESSÃO: a RLS da 0236 só deixa a própria pessoa ler e gravar a sua linha.
- * Sem a tabela (0236 ainda não aplicada) a leitura volta null e a tela segue só com o texto.
+ * Leitura que falha LANÇA (nunca vira "sem chave"): a tela mostra a falha em vez do formulário vazio.
  */
 export async function minhaChavePix(): Promise<MinhaChavePix | null> {
   const supabase = await createClient();
@@ -28,7 +30,8 @@ export async function minhaChavePix(): Promise<MinhaChavePix | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data, error } = await supabase.from("recebimento_pix").select("tipo, chave, atualizado_em").eq("user_id", user.id).maybeSingle();
-  if (error || !data) return null;
+  if (error) throw new Error(MSG_PIX_SEM_LEITURA);
+  if (!data) return null;
   const linha = data as { tipo: string; chave: string; atualizado_em: string };
   if (!ehTipoChavePix(linha.tipo)) return null;
   const c: ChavePix = { tipo: linha.tipo, chave: linha.chave };

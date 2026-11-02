@@ -197,7 +197,7 @@ export async function denunciaNotaProcedente(chamadoId: string): Promise<Res> {
   try {
     const { data: d } = await a.admin.from("profiles").select("email, full_name, notif_email").eq("id", p.user_id).maybeSingle();
     const dest = d as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: "parceiro_selo_nota_removido", email: dest?.notif_email === false ? undefined : (dest?.email ?? undefined), name: dest?.full_name ?? undefined, userId: p.user_id as string, pushUrl: "/dashboard/parceiro" });
+    await notify({ event: "parceiro_selo_nota_removido", email: dest?.notif_email === false ? undefined : (dest?.email ?? undefined), name: dest?.full_name ?? undefined, userId: p.user_id as string, pushUrl: "/dashboard/parceiro", parceiroId: p.id as string });
   } catch {
     /* o aviso é complemento: o selo já saiu */
   }

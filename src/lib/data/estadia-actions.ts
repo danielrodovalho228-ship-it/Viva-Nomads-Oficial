@@ -88,7 +88,7 @@ async function evento(admin: SupabaseClient, contratoId: string, autorId: string
  * Avisa a pessoa (e-mail + central + push), depois da resposta. Best-effort.
  * E267: o corpo nomeia a pessoa, o imóvel (título · bairro, cidade) e o fato (quem agiu, o que muda, prazo, datas).
  */
-function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent, contratoId: string, dados?: DadosEstadiaEmail) {
+function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent, contratoId: string, dados?: DadosEstadiaEmail, imovelId?: string) {
   after(async () => {
     try {
       const [{ data }, { data: perfil }] = await Promise.all([admin.auth.admin.getUserById(userId), admin.from("profiles").select("full_name").eq("id", userId).maybeSingle()]);
@@ -99,6 +99,7 @@ function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent,
         name: (perfil as { full_name: string | null } | null)?.full_name ?? undefined,
         userId,
         pushUrl: HREF_ESTADIA(contratoId),
+        imovelId,
         ...(dados
           ? {
               body: (nome?: string) => aberturaEstadia(event as EventoEstadia, dados, nome),
@@ -301,7 +302,7 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
     numeroAditivo: numero,
     mudancas: resumoDasMudancas(v.valor),
     prazo: expiraEm,
-  });
+  }, ctx.c.property_id);
   revalidar(ctx.c.id);
   return { ok: true, valor: { id: data.id as string } };
 }
@@ -389,7 +390,7 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
     numeroAditivo: a.numero,
     mudancas: a.resumo,
     resposta: resposta === "recusar" ? "recusada" : "aceita",
-  });
+  }, ctx.c.property_id);
   revalidar(a.contrato_id);
   return { ok: true, valor: { taxaBase } };
 }
@@ -500,7 +501,7 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
       numeroAditivo: a.numero,
       mudancas: a.resumo,
       resposta: "assinada",
-    });
+    }, ctx.c.property_id);
   }
   revalidar(a.contrato_id);
   return { ok: true, valor: { completo } };
@@ -562,7 +563,7 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
     mudancas: a.resumo,
     ...(blocosNovos.length ? { entrada: blocosNovos.map((b) => b.inicio).sort()[0], saida: blocosNovos.map((b) => b.fim).sort().at(-1) } : {}),
   };
-  for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id, remarcada);
+  for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id, remarcada, ctx.c.property_id);
   // E205-B2: o aditivo assinado aceita os blocos novos pelas duas partes — se um deles começa em até 3 dias sem
   // pagamento, o lembrete sai agora (a chave segura o cron).
   after(() => lembreteDeBlocoNoAceite(ctx.admin, a.contrato_id).catch(() => 0));
@@ -590,7 +591,7 @@ export async function pedirEncerramento(contratoId: string, motivo: string, text
     ...dadosDaEstadia(ctx.c),
     quem: await primeiroNomeDe(ctx.admin, ctx.userId),
     motivo: rotuloMotivo(v.motivo),
-  });
+  }, ctx.c.property_id);
   after(async () => {
     try {
       const { data: admins } = await ctx.admin.from("profiles").select("id").eq("role", "admin");

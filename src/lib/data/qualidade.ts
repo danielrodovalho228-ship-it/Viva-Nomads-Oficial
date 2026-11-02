@@ -180,16 +180,21 @@ export interface ItemContexto {
 }
 
 /** O que o motivo de UMA saída abre: os chamados da pessoa, os contratos e pedidos de parceiro, ou o anúncio. */
+export const MSG_CONTEXTO_SEM_LEITURA = "Não foi possível ler o contexto desta saída agora. Recarregue a página.";
+
 export async function contextoDaSaida(id: string): Promise<{ contexto: ContextoMotivo; itens: ItemContexto[] } | null> {
   const admin = createAdminClient();
   if (!admin || !/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { data: s } = await admin.from("saidas_motivos").select("user_id, motivo").eq("id", id).maybeSingle();
+  const { data: s, error: eSaida } = await admin.from("saidas_motivos").select("user_id, motivo").eq("id", id).maybeSingle();
+  // Estados vazios: leitura que falha LANÇA — a tela não pode dizer "Nada encontrado para esta pessoa" sem ter lido.
+  if (eSaida) throw new Error(MSG_CONTEXTO_SEM_LEITURA);
   const contexto = contextoDoMotivo((s?.motivo as string | null) ?? null);
   if (!s?.user_id || !contexto) return null;
   const uid = s.user_id as string;
 
   if (contexto === "chamados") {
-    const { data } = await admin.from("chamados").select("id, numero_publico, assunto, status").eq("usuario_id", uid).order("criado_em", { ascending: false }).limit(20);
+    const { data, error } = await admin.from("chamados").select("id, numero_publico, assunto, status").eq("usuario_id", uid).order("criado_em", { ascending: false }).limit(20);
+    if (error) throw new Error(MSG_CONTEXTO_SEM_LEITURA);
     return { contexto, itens: ((data ?? []) as { id: string; numero_publico: string; assunto: string; status: string }[]).map((c) => ({ rotulo: `${c.numero_publico} · ${c.assunto} · ${c.status}`, href: `/admin/atendimento/${c.id}` })) };
   }
   if (contexto === "pagamentos") {
@@ -198,6 +203,7 @@ export async function contextoDaSaida(id: string): Promise<{ contexto: ContextoM
       admin.from("contratos").select("id, status, properties!inner(title, owner_id)").eq("properties.owner_id", uid).order("created_at", { ascending: false }).limit(10),
       admin.from("parceiro_pedidos").select("id, status").eq("cliente_id", uid).order("criado_em", { ascending: false }).limit(10),
     ]);
+    if (comoMorador.error || comoDono.error || pedidos.error) throw new Error(MSG_CONTEXTO_SEM_LEITURA);
     const contratos = [...((comoMorador.data ?? []) as unknown[]), ...((comoDono.data ?? []) as unknown[])] as { id: string; status: string; properties: { title: string | null } | null }[];
     return {
       contexto,
@@ -207,6 +213,7 @@ export async function contextoDaSaida(id: string): Promise<{ contexto: ContextoM
       ],
     };
   }
-  const { data } = await admin.from("contratos").select("property_id, properties(title)").eq("tenant_id", uid).order("created_at", { ascending: false }).limit(3);
+  const { data, error } = await admin.from("contratos").select("property_id, properties(title)").eq("tenant_id", uid).order("created_at", { ascending: false }).limit(3);
+  if (error) throw new Error(MSG_CONTEXTO_SEM_LEITURA);
   return { contexto, itens: ((data ?? []) as unknown as { property_id: string; properties: { title: string | null } | null }[]).map((c) => ({ rotulo: c.properties?.title ?? "Anúncio", href: `/imoveis/${c.property_id}` })) };
 }

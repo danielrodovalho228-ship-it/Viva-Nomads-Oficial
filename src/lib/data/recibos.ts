@@ -61,11 +61,14 @@ async function sessao() {
 }
 
 /** Conjunto das contas de teste entre os ids pedidos (lido pelo servidor; is_teste não é exposto ao cliente). */
+// Estados vazios: falha ao ler is_teste LANÇA — um conjunto vazio poria recibos de conta de teste no resumo
+// (carnê-leão, informe) de quem é real.
 async function contasDeTeste(ids: string[]): Promise<Set<string>> {
   const admin = createAdminClient();
   const unicos = [...new Set(ids.filter(Boolean))];
   if (!admin || !unicos.length) return new Set();
-  const { data } = await admin.from("profiles").select("id, is_teste").in("id", unicos);
+  const { data, error } = await admin.from("profiles").select("id, is_teste").in("id", unicos);
+  if (error) throw new Error(MSG_RECIBOS_NAO_CARREGARAM);
   return new Set(((data ?? []) as { id: string; is_teste: boolean | null }[]).filter((p) => p.is_teste === true).map((p) => p.id));
 }
 
@@ -100,9 +103,15 @@ export async function recibosDaPessoa(papel: PapelRecibos, opcoes: { exigir?: bo
   const lado = papel === "dono" ? "owner_id" : "tenant_id";
   const { data, error } = await s.supabase.from("documentos_fiscais").select(COLUNAS).eq(lado, s.userId).in("tipo", TIPOS).order("criado_em", { ascending: false }).limit(2000);
   if (error && opcoes.exigir) throw new Error(MSG_RECIBOS_NAO_CARREGARAM);
+  // Sem `exigir` (o bloco do celular): falha não vira "R$ 0 recebido" — o bloco some.
+  if (error) return null;
   const linhas = (data ?? []) as unknown as Linha[];
   const outros = linhas.map((l) => (papel === "dono" ? l.tenant_id : l.owner_id)).filter((x): x is string => !!x);
-  const teste = await contasDeTeste([s.userId, ...outros]);
+  const teste = await contasDeTeste([s.userId, ...outros]).catch((e) => {
+    if (opcoes.exigir) throw e;
+    return null;
+  });
+  if (!teste) return null;
   const souTeste = teste.has(s.userId);
   const validas = souTeste ? linhas : linhas.filter((l) => !teste.has((papel === "dono" ? l.tenant_id : l.owner_id) ?? ""));
   const recibos = validas.map(paraRecibo);
@@ -125,11 +134,15 @@ async function nomeDoPerfil(userId: string): Promise<string | null> {
   return ((data as { full_name?: string | null } | null)?.full_name ?? null) || null;
 }
 
+export const MSG_PDFS_SEM_LEITURA = "Não foi possível montar o pacote dos recibos agora. Tente de novo em instantes.";
+
 /** Caminho do PDF de um documento da pessoa (o RLS decide; outra pessoa recebe null). */
 export async function pdfsDosDocumentos(ids: string[]): Promise<{ id: string; numero: string; pdf_path: string }[]> {
   const s = await sessao();
   if (!s || !ids.length) return [];
-  const { data } = await s.supabase.from("documentos_fiscais").select("id, numero, pdf_path").in("id", ids);
+  const { data, error } = await s.supabase.from("documentos_fiscais").select("id, numero, pdf_path").in("id", ids);
+  // Estados vazios: falha ao ler não vira "nenhum PDF" — o pacote do ano sairia sem os recibos, sem aviso.
+  if (error) throw new Error(MSG_PDFS_SEM_LEITURA);
   return (data ?? []) as { id: string; numero: string; pdf_path: string }[];
 }
 

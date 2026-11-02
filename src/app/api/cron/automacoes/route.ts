@@ -79,6 +79,9 @@ type Alvo = {
   /** E209: corpo próprio (abertura) e detalhes em HTML (imóvel, datas, instruções). */
   body?: (nome?: string) => string;
   detailsHtml?: string;
+  /** E438: o imóvel e/ou o parceiro do aviso (foto real no topo do e-mail). */
+  imovelId?: string | null;
+  parceiroId?: string | null;
 };
 
 /** E289: assunto, corpo e bloco de dados com os fatos do caso (imóvel, datas, número/prazo), no padrão do E267. */
@@ -136,6 +139,7 @@ export async function GET(request: Request) {
       tipo: "anuncio_incompleto",
       usuarioId: principal.ownerId,
       refId: principal.id,
+      imovelId: principal.id,
       variante: String(dias),
       url: lista?.proximo?.href ?? `/dashboard/imoveis/novo?draft=${encodeURIComponent(principal.id)}`,
       subject: faltam.length ? textoRascunho(faltam.length, principal.titulo) : undefined,
@@ -153,7 +157,7 @@ export async function GET(request: Request) {
   // 2-4) Contratos ativos assinados pelas duas partes: saída, avaliação e renovação.
   const { data: contratos } = await admin
     .from("contratos")
-    .select("id, tenant_id, properties(owner_id, title, address, city, checkout_before), contrato_blocos(id, fim, status, renovacao_notificada_em)")
+    .select("id, tenant_id, property_id, properties(owner_id, title, address, city, checkout_before), contrato_blocos(id, fim, status, renovacao_notificada_em)")
     .in("status", ["ativo", "encerrado"])
     .not("assinado_proprietario_em", "is", null)
     .not("assinado_inquilino_em", "is", null)
@@ -173,12 +177,12 @@ export async function GET(request: Request) {
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
     if (lembreteDeSaida(fimFinal, hoje)) {
       // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
-      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: fimFinal, horario: prop?.checkout_before }) });
+      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: fimFinal, horario: prop?.checkout_before }) });
     }
     if (pedirAvaliacao(fimFinal, hoje)) {
       for (const u of partes) {
         if (jaAvaliaram.has(`${c.id}:${u}`)) continue;
-        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: fimFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: fimFinal }) });
+        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), imovelId: c.property_id as string | null, detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: fimFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: fimFinal }) });
       }
     }
     for (const b of blocos) {
@@ -190,6 +194,7 @@ export async function GET(request: Request) {
           refId: b.id,
           // E222-B: o e-mail abre o fluxo da renovação (o aditivo de prorrogação já preenchido).
           url: HREF_RENOVAR(c.id as string),
+          imovelId: c.property_id as string | null,
           detalhe: detalheAutomacao("renovacao_aviso", { imovel, fim: b.fim }),
           ...comFatos("renovacao_aviso", { imovel: imovelEmail, data: b.fim }),
           // Marca o bloco só depois do último destinatário.
@@ -204,7 +209,7 @@ export async function GET(request: Request) {
   const { data: abertas } = await admin
     .from("propostas")
     // E343: a versão inteira (valores), para o e-mail dizer o valor mensal e o total do que o dono decide.
-    .select(`id, numero, owner_id, tenant_id, versao_atual, valida_ate, properties(title, address, city), proposta_versoes(${COLUNAS_VERSAO})`)
+    .select(`id, numero, owner_id, tenant_id, property_id, versao_atual, valida_ate, properties(title, address, city), proposta_versoes(${COLUNAS_VERSAO})`)
     .in("status", STATUS_ABERTOS as string[])
     .gt("valida_ate", agora.toISOString())
     .lte("valida_ate", new Date(agora.getTime() + 86_400_000).toISOString())
@@ -232,6 +237,7 @@ export async function GET(request: Request) {
       ...comFatos("proposta_vencendo", { imovel: pp ? { titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, ...valoresProposta, prazo: p.valida_ate as string }),
       // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
       decisao: { imovel: pp?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
+      imovelId: p.property_id as string | null,
     });
   }
 
@@ -239,7 +245,7 @@ export async function GET(request: Request) {
   // confirmação do cliente (só aviso: nada conclui sozinho).
   const { data: pedidosParceiro } = await admin
     .from("parceiro_pedidos")
-    .select("id, codigo, categoria, status, cliente_id, horario_confirmado, entregue_em, valor_combinado, parceiros(user_id, nome_publico), parceiro_servicos(titulo), properties(title, address, city)")
+    .select("id, codigo, categoria, status, cliente_id, parceiro_id, property_id, horario_confirmado, entregue_em, valor_combinado, parceiros(user_id, nome_publico), parceiro_servicos(titulo), properties(title, address, city)")
     .in("status", ["agendado", "entregue"])
     .limit(1000);
   for (const p of pedidosParceiro ?? []) {
@@ -270,11 +276,11 @@ export async function GET(request: Request) {
     if (precisaLembrete24h(p.status as string, p.horario_confirmado as string | null, agora)) {
       const quando = dataHoraBRT(p.horario_confirmado as string, { semEtiqueta: true });
       for (const quem of [p.cliente_id as string, parceiroUser].filter((x): x is string => !!x)) {
-        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_lembrete", quem === p.cliente_id) });
+        alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, imovelId: p.property_id as string | null, parceiroId: quem === p.cliente_id ? (p.parceiro_id as string) : null, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_lembrete", quem === p.cliente_id) });
       }
     }
     if (precisaAvisoConclusao(p.status as string, p.entregue_em as string | null, agora)) {
-      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_conclusao_pendente", true) });
+      alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, parceiroId: p.parceiro_id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_conclusao_pendente", true) });
     }
   }
 
@@ -318,6 +324,7 @@ export async function GET(request: Request) {
         tipo: "estadia_instrucoes_liberadas",
         usuarioId: c.tenant_id as string,
         refId: c.id as string,
+        imovelId: c.property_id as string,
         url: `${url}#instrucoes`,
         detalhe: corpo.texto,
         detailsHtml: corpo.html,
@@ -332,7 +339,7 @@ export async function GET(request: Request) {
       ]);
       const efetivas = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, (ck as { instrucoes?: string } | null)?.instrucoes);
       if (!erroIm && !erroCk && lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
-        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
+        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, imovelId: c.property_id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
       }
     }
   }
@@ -360,6 +367,10 @@ export async function GET(request: Request) {
       ...(a.subject ? { subject: a.subject } : {}),
       ...(a.ctaLabel ? { ctaLabel: a.ctaLabel } : {}),
       ...(a.decisao ? { decisao: a.decisao } : {}),
+      imovelId: a.imovelId,
+      parceiroId: a.parceiroId,
+      // E444: o objeto do aviso no sino (a proposta, o contrato…), para marcar "resolvido" quando a ação for feita.
+      refId: a.refId,
     }).catch(() => null);
     if (a.depois) await a.depois().catch(() => null);
     contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;

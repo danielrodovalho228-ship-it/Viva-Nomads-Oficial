@@ -72,6 +72,7 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
       name: d?.full_name ?? undefined,
       userId: destino,
       pushUrl: url,
+      imovelId: ref?.propertyId,
       ...(corpo
         ? {
             ...(corpo.subject ? { subject: corpo.subject } : {}),
@@ -284,9 +285,9 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     if (!v.agendado_para || !visitaAmanha(v.agendado_para, hoje)) continue;
     const { data: marcou } = await admin.from("vistoria_pedidos").update({ lembrete_d1_em: agora.toISOString() }).eq("id", v.id).is("lembrete_d1_em", null).select("id");
     if (!marcou?.length) continue;
-    await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id), { pedidoId: v.id });
-    await avisar(admin, v.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_lembrete", ROTA_AVALIADOR, { pedidoId: v.id });
-    await avisar(admin, v.morador_id, "vistoria_lembrete", rotaMorador(v.id), { pedidoId: v.id });
+    await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id), { pedidoId: v.id, propertyId: v.property_id });
+    await avisar(admin, v.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_lembrete", ROTA_AVALIADOR, { pedidoId: v.id, propertyId: v.property_id });
+    await avisar(admin, v.morador_id, "vistoria_lembrete", rotaMorador(v.id), { pedidoId: v.id, propertyId: v.property_id });
     lembretes++;
   }
   const { data: emitidos } = await admin.from("vistoria_pedidos").select("id, avaliador_id, teste").eq("status", "laudo_emitido").not("avaliador_id", "is", null);

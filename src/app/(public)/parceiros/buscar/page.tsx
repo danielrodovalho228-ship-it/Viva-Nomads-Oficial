@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Search } from "lucide-react";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -70,6 +71,13 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
         />
       )}
     <div className="container-page py-8">
+      {/* E458: para o profissional que chegou à busca — a porta de quem quer ser parceiro. */}
+      <p className="text-sm text-muted" data-testid="buscar-seja-parceiro">
+        É profissional?{" "}
+        <Link href="/parceiros" className="alvo-toque font-semibold text-forest underline underline-offset-2 hover:text-blue-700">
+          Seja parceiro da Viva
+        </Link>
+      </p>
 
       {/* E286: a faixa de categorias navega no cliente e o React reaproveita os campos (defaultValue não muda campo já
           montado) — o seletor ficava em "Todas" com a categoria aberta. A key remonta o formulário a cada busca. */}

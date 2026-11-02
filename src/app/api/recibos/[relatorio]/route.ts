@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUCKET_DOCUMENTOS } from "@/lib/fiscal/emitir";
 import { gerarPdf } from "@/lib/fiscal/pdf";
-import { pdfsDosDocumentos, recibosDaPessoa, servicosConcluidosDoParceiro } from "@/lib/data/recibos";
+import { MSG_PDFS_SEM_LEITURA, pdfsDosDocumentos, recibosDaPessoa, servicosConcluidosDoParceiro } from "@/lib/data/recibos";
 import { ehAno, ehMes, filtrarRecibos, informeAnual, informeCsv, resumoAnualParceiro, resumoCarneLeao, resumoReembolso } from "@/lib/recibos/regras";
 import { conteudoInforme, conteudoParceiroAnual, conteudoReembolso, conteudoResumoMes } from "@/lib/recibos/relatorios";
 import { montarZip, type ArquivoZip } from "@/lib/recibos/zip";
@@ -52,7 +52,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ rela
   }
 
   const papel = relatorio === "reembolso" || q.get("papel") === "morador" ? "morador" : "dono";
-  const d = await recibosDaPessoa(papel);
+  // Estados vazios: leitura que falha → 503, nunca um resumo/informe/reembolso com zero recibos.
+  const d = await recibosDaPessoa(papel, { exigir: true }).catch(() => "falhou" as const);
+  if (d === "falhou") return erro(503, "Não foi possível gerar o relatório agora. Tente de novo em instantes.");
   if (!d) return erro(401, "Entre na sua conta.");
 
   if (relatorio === "resumo") {
@@ -86,13 +88,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ rela
   if (relatorio === "ano") {
     if (!ehAno(anoParam)) return erro(400, "Ano inválido.");
     const doAno = d.recibos.filter((r) => r.data.slice(0, 4) === String(anoParam));
-    const caminhos = await pdfsDosDocumentos(doAno.map((r) => r.id));
+    // Estados vazios: o pacote do ano nunca sai INCOMPLETO em silêncio (é o que vai para o IR). Falhou um recibo, 503.
+    const caminhos = await pdfsDosDocumentos(doAno.map((r) => r.id)).catch(() => null);
+    if (!caminhos) return erro(503, MSG_PDFS_SEM_LEITURA);
     const admin = createAdminClient();
     if (!admin) return erro(503, "Indisponível agora.");
     const arquivos: ArquivoZip[] = [];
     for (const c of caminhos) {
       const { data } = await admin.storage.from(BUCKET_DOCUMENTOS).download(c.pdf_path);
-      if (data) arquivos.push({ nome: `${c.numero}.pdf`, dados: new Uint8Array(await data.arrayBuffer()) });
+      if (!data) return erro(503, MSG_PDFS_SEM_LEITURA);
+      arquivos.push({ nome: `${c.numero}.pdf`, dados: new Uint8Array(await data.arrayBuffer()) });
     }
     const inf = informeAnual(d.recibos, anoParam, "pagador");
     arquivos.push({ nome: `informe-anual-${anoParam}.pdf`, dados: await gerarPdf(conteudoInforme(inf, d.eu, agora)) });

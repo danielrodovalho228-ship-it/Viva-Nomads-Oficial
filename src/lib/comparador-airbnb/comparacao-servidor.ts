@@ -87,6 +87,7 @@ async function avisarDono(admin: SupabaseClient, imovel: ImovelParaPreco, totalV
     name: d?.full_name ?? undefined,
     userId: imovel.owner_id,
     pushUrl: `/dashboard/imoveis/${imovel.id}/editar`,
+    imovelId: imovel.id,
     detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
     detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
   }).catch(() => {});

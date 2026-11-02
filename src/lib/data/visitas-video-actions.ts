@@ -1,5 +1,6 @@
 "use server";
 
+import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
 import { erroPedidoAberto } from "@/lib/visitas/um-pedido-aberto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -50,7 +51,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  */
 /** `decisao` (44-SITE, item 2): o push de visita pedida/remarcada diz o imóvel e até quando responder. */
 /** `corpo` (E325): assunto, abertura e bloco com o imóvel (título + código) — no lugar do texto genérico do modelo. */
-function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao, corpo?: CorpoVisita) {
+function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao, corpo?: CorpoVisita, imovelId?: string, refId?: string | null) {
   after(async () => {
     try {
       const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", para).maybeSingle();
@@ -61,6 +62,9 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
         name: ((p.full_name as string | null) ?? "").split(" ")[0] || undefined,
         userId: para,
         pushUrl: "/dashboard/visitas",
+        imovelId,
+        // E444: o pedido de visita é crítico para o dono e fica resolvido quando ele responde.
+        refId: refId ?? null,
         ...(decisao ? { decisao } : {}),
         ...(corpo ? { ...(corpo.subject ? { subject: corpo.subject } : {}), body: corpo.body } : {}),
         // Visita presencial confirmada: o endereço exato e "Abrir no mapa" vão SÓ para o morador (complemento do prompt 23).
@@ -105,14 +109,14 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
 
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
-  const { error } = await admin.from("visitas_video").insert({
+  const { data: novaVisita, error } = await admin.from("visitas_video").insert({
     property_id: propertyId,
     owner_id: ownerId,
     tenant_id: user.id,
     horarios: v.horarios,
     motivo: motivo && isMotivo(motivo) ? motivo : null,
     modalidade,
-  });
+  }).select("id").maybeSingle();
   if (error) {
     // E411: diz o porquê e o caminho (cancelar em Visitas e pedir de novo).
     if (error.code === "23505") return { ok: false, error: erroPedidoAberto(modalidade) };
@@ -137,6 +141,8 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
     // E325: o e-mail diz de qual imóvel é o pedido (título + código).
     corpoVisitaPedida({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+    propertyId,
+    (novaVisita?.id as string | undefined) ?? null,
   );
   // E424: o morador também recebe a cópia do pedido (horários e próximos passos); antes ele não recebia nada.
   avisarVisita(
@@ -147,6 +153,7 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     undefined,
     undefined,
     corpoVisitaPedidaMorador({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+    propertyId,
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");
@@ -335,6 +342,8 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   if (error) return { ok: false, error: erroBancoPT(error) };
   if (!gravou?.length) return { ok: false, error: "Este pedido mudou enquanto você respondia. Atualize a página." };
 
+  // E444: o dono respondeu ao pedido (confirmou, propôs outro horário ou recusou) → o aviso crítico fica resolvido.
+  if (quem === "dono") after(() => resolverAvisos({ usuarioId: user.id, eventos: ["visita_pedida"], refId: v.id as string }));
   // Aviso à OUTRA parte (prompt 23, item 6).
   const outro = (quem === "dono" ? v.tenant_id : v.owner_id) as string;
   const tipo = MODALIDADE_ROTULO[modalidade].toLowerCase();
@@ -360,6 +369,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
         horario: campos.horario_confirmado,
         quemConfirmou: quem === "dono" ? "proprietario" : "morador",
       }),
+      v.property_id as string,
     );
     // E205-B: confirmada com menos de 24 h de antecedência → a véspera sai na hora (a chave segura o cron).
     after(() => vesperaDaVisitaSeFor(admin, v.id as string, new Date()).catch(() => 0));
@@ -369,7 +379,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
       imovel: (imovel?.title as string | null) ?? null,
       prazo: campos.horario_proposto,
       destinatarioEhParte: true,
-    });
+    }, undefined, v.property_id as string);
   } else if (campos.status === "cancelado") {
     // E205-B: quem cancelou, o motivo e o horário; ao morador, "Pedir outro horário".
     after(() => avisarVisitaCancelada(admin, v.id as string, quem));

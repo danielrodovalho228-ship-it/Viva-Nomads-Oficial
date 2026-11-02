@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { statusPorImovel } from "@/lib/documento/vigente";
 import { linhaQuemRespondeuHtml } from "@/lib/atendimento/quem-respondeu";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
@@ -175,11 +176,16 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       if (!uid) return SEM_CONTA;
       const { data: qs } = await admin
         .from("qualification_checklists")
-        .select("document_status, document_review_reason, document_reviewed_at, document_uploaded_at, properties(title)")
+        .select("property_id, document_status, document_review_reason, document_reviewed_at, document_uploaded_at, properties(title)")
         .eq("owner_id", uid)
         .order("created_at", { ascending: false })
         .limit(10);
+      // E-DOC-VIGENTE (Relay 47): o envio novo não rebaixa o aprovado — a Viva diz qual documento vale.
+      const vigentePor = statusPorImovel((qs ?? []) as { property_id: string | null; document_status: string | null }[]);
       const lista = (qs ?? []).map((q) => ({
+        vale: q.property_id && vigentePor.get(q.property_id as string) === "approved" && q.document_status !== "approved"
+          ? "o documento aprovado deste imóvel continua valendo"
+          : undefined,
         imovel: (q.properties as unknown as { title?: string } | null)?.title ?? "(anúncio ainda sem título)",
         documento: ({ none: "não enviado", pending: "em análise", approved: "aprovado", rejected: "reprovado" } as Record<string, string>)[q.document_status as string] ?? q.document_status,
         motivo: q.document_review_reason,
@@ -267,7 +273,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       if (assunto === "manutencao") {
         const { data: so } = await admin
           .from("service_orders")
-          .select("id, owner_id, priority, properties(title)")
+          .select("id, owner_id, property_id, priority, properties(title)")
           .eq("tenant_id", uid)
           .in("status", ["aberto", "visto"])
           .order("opened_at", { ascending: false })
@@ -277,7 +283,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
         // 1 lembrete a cada 24h POR ORDEM de serviço.
         if (!(await consumirLimite(`viva:lembrete:os:${so.id}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário desta manutenção nas últimas 24 horas.", erro: true };
         await avisarProprietarioManutencao(
-          { serviceOrderId: so.id as string, ownerId: so.owner_id as string, urgencia: so.priority as UrgenciaManutencao, propertyTitle: (so.properties as unknown as { title?: string } | null)?.title ?? "seu imóvel" },
+          { serviceOrderId: so.id as string, ownerId: so.owner_id as string, urgencia: so.priority as UrgenciaManutencao, propertyTitle: (so.properties as unknown as { title?: string } | null)?.title ?? "seu imóvel", propertyId: so.property_id as string | null },
           agora,
           true
         );
@@ -287,7 +293,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       if (!(await consumirLimite(`viva:lembrete:candidatura:${uid}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário nas últimas 24 horas.", erro: true };
       const { data: lead } = await admin
         .from("leads")
-        .select("owner_id, created_at, properties(title, address, city)")
+        .select("owner_id, property_id, created_at, properties(title, address, city)")
         .eq("tenant_id", uid)
         .eq("status", "new")
         .order("created_at", { ascending: false })
@@ -302,6 +308,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           name: (dono.full_name as string) ?? undefined,
           userId: lead.owner_id as string,
           pushUrl: "/dashboard/leads",
+          imovelId: lead.property_id as string | null,
           subject: ASSUNTOS.lembreteInteressado,
           // E267: o lembrete diz quem aguarda (primeiro nome), sobre qual imóvel e desde quando.
           ...paraNotify(corpoLembreteInteressado({ imovel: imovelDoLead(lead), interessado: await primeiroNomeDe(admin, uid), desde: lead.created_at as string })),

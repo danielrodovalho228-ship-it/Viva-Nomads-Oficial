@@ -39,6 +39,8 @@ import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/comp
 import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
+import { FaixaCritico } from "@/components/painel/sino-avisos";
+import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -136,6 +138,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const contadoresIniciais = useContadoresIniciais();
   const [contadores, setContadores] = useState<ContadoresPainel>(contadoresIniciais ?? CONTADORES_VAZIOS);
   const [releitura, setReleitura] = useState(0);
+  // E445 item 6: o som só compara leituras REAIS (a do servidor na 1ª pintura ou a da rota) — nunca o vazio inicial.
+  const [lido, setLido] = useState(contadoresIniciais !== null);
+  useSomDeMensagemNova(lido ? contadores.mensagensRecebidas : null);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {
     if (!displayUser?.id) return;
@@ -143,7 +148,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (json) setContadores(normalizarContadores(json));
+        if (!json) return;
+        setContadores(normalizarContadores(json));
+        setLido(true);
       })
       .catch(() => {});
     return () => controle.abort();
@@ -421,6 +428,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
+          {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
+          {papelTopo && <FaixaCritico pathname={pathname} />}
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />

@@ -1,5 +1,6 @@
 "use server";
 
+import { MSG_CONTRATOS_SEM_LEITURA } from "@/lib/atendimento/contratos-aviso";
 import { linhaQuemRespondeuHtml } from "@/lib/atendimento/quem-respondeu";
 import crypto from "node:crypto";
 import { headers } from "next/headers";
@@ -484,12 +485,14 @@ export async function meusContratosAtivos(): Promise<{ id: string; titulo: strin
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select(`id, ${COLUNAS_VIGENCIA}, properties(title)`)
     .eq("tenant_id", user.id)
     .in("status", ["ativo", "encerrado_em_acerto"])
     .limit(20);
+  // Estados vazios: falha ao ler NÃO vira "sem contrato" — a Central esconderia "Manutenção" de quem mora no imóvel.
+  if (error) throw new Error(MSG_CONTRATOS_SEM_LEITURA);
   return (data ?? []).filter((c) => contratoPermiteManutencao(c)).map((c) => ({
     id: c.id as string,
     titulo: ((c.properties as { title?: string } | null)?.title as string) ?? "Imóvel",

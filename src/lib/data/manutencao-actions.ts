@@ -143,6 +143,7 @@ async function avisarOutraParte(ordem: OrdemDaParte, papel: PapelOrdem, evento: 
     name: (p?.full_name as string) ?? undefined,
     userId: destino,
     pushUrl: "/dashboard/solicitacoes",
+    imovelId: ordem.property_id,
     ...paraNotify(corpoManutencao(dadosDoEmail(ordem, papel), fato)),
   }).catch(() => null);
 }

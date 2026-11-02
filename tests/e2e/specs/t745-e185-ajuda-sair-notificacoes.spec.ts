@@ -58,10 +58,16 @@ test.describe("T745 — E185: Ajuda com um destino, Sair uma vez, Notificações
 
       // Notificações: uma página só, e UMA entrada visível na tela da Conta (E185 resíduo, 31/10): no celular o sino;
       // no computador o item do menu lateral da Conta (o topo não repete o sino nas telas da Conta).
+      // E444 item 3: no celular o sino virou BOTÃO (abre o painel dos avisos, com "Ver todas" para esta página).
       const notif = p.locator('a[href="/dashboard/notificacoes"]').filter({ visible: true });
-      await expect(notif).toHaveCount(1);
-      if (largura === 1280) await expect(notif).toHaveAttribute("data-testid", "conta-menu-notificacoes");
-      else await expect(notif).toHaveAttribute("data-testid", "sino-morador-celular");
+      if (largura === 1280) {
+        await expect(notif).toHaveCount(1);
+        await expect(notif).toHaveAttribute("data-testid", "conta-menu-notificacoes");
+        await expect(p.getByTestId("sino-morador")).toHaveCount(0);
+      } else {
+        await expect(notif).toHaveCount(0);
+        await expect(p.getByTestId("topo-celular").getByTestId("sino-morador-celular")).toBeVisible();
+      }
       await p.context().close();
     });
   }

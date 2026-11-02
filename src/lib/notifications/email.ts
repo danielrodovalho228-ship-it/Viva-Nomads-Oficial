@@ -150,6 +150,8 @@ export async function sendEmail(params: {
         imagem: params.imagem,
         usuarioId: params.usuarioId,
         anexos: params.attachments?.map((a) => a.filename),
+        // E435: a versão HTML também vai para a caixa (sem links com token de acesso).
+        html: params.html,
       });
       return { demo: false, id: data.id };
     }

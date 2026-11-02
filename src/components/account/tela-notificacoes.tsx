@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { InterruptorSomMensagem } from "@/components/painel/som-mensagem";
 import { getCanais, setCanais } from "@/lib/data/canais-actions";
 import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
 import { getAlertasEquipe, setAlertasEquipe } from "@/lib/data/pedidos-actions";
@@ -112,6 +113,15 @@ export function TelaNotificacoes() {
             {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Salvar preferências
           </Button>
         </div>
+      </section>
+
+      {/* E445 item 6: o som de mensagem nova é deste aparelho (grava na hora, fora do "Salvar preferências"). */}
+      <section className="rounded-xl bg-white px-4 sm:px-6" aria-label="Neste aparelho" data-testid="notif-neste-aparelho">
+        <ul>
+          <Linha titulo="Som de mensagem nova" texto="Um toque discreto quando chega mensagem com o site aberto. Vale para este aparelho.">
+            <InterruptorSomMensagem />
+          </Linha>
+        </ul>
       </section>
 
       {equipe !== null && (

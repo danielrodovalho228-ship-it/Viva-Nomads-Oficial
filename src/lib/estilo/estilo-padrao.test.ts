@@ -285,6 +285,7 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/layout/seletor-idioma.tsx", // menu suspenso do globo PT/EN do topo público (PUBLICO-A)
     "components/layout/topo-dono.tsx", // menu suspenso "Conta ▾" do topo do dono (PROP-1)
     "components/location-search.tsx", // menu suspenso de sugestões
+    "components/painel/sino-avisos.tsx", // painel suspenso do sino (E444 item 3)
     "components/property/barra-fixa-celular.tsx", // barra fixa do celular
     "components/property/places-picker.tsx", // menu suspenso de sugestões (Prompt 45)
     "components/search-map.tsx", // botões (pinos) do mapa

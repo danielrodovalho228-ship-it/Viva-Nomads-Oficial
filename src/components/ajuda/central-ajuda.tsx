@@ -1,5 +1,6 @@
 "use client";
 
+import { AVISO_CONTRATOS_INDISPONIVEIS } from "@/lib/atendimento/contratos-aviso";
 import { ROTULO_QUEM_RESPONDEU } from "@/lib/atendimento/quem-respondeu";
 import { ROTULO_ESTADO_CHAMADO, estadoDoChamado } from "@/lib/atendimento/estado-chamado";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -63,10 +64,21 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   // Achado nº 22: falha ao ler não vira "nenhum chamado" (a pessoa abriria outro igual).
   const [listaFalhou, setListaFalhou] = useState(false);
   const [contratos, setContratos] = useState<{ id: string; titulo: string }[]>([]);
+  // Estados vazios: a leitura dos contratos falhou — avisa (e deixa tentar de novo) em vez de sumir com "Manutenção".
+  const [contratosFalhou, setContratosFalhou] = useState(false);
+  const carregarContratos = useCallback(() => {
+    if (!user) return;
+    meusContratosAtivos()
+      .then((c) => {
+        setContratosFalhou(false);
+        setContratos(c);
+      })
+      .catch(() => setContratosFalhou(true));
+  }, [user]);
 
   useEffect(() => {
-    if (user) meusContratosAtivos().then(setContratos).catch(() => setContratos([]));
-  }, [user]);
+    carregarContratos();
+  }, [carregarContratos]);
 
   const recarregar = useCallback(() => {
     if (user)
@@ -146,6 +158,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
           logado={!!user}
           emailConta={user?.email ?? null}
           contratos={contratos}
+          contratosFalhou={contratosFalhou}
+          onTentarContratos={carregarContratos}
           onCancelar={() => {
             setContexto(null);
             setAba("inicio");
@@ -312,6 +326,8 @@ function NovoChamado({
   logado,
   emailConta,
   contratos,
+  contratosFalhou = false,
+  onTentarContratos,
   onCancelar,
   onAberto,
 }: {
@@ -321,6 +337,8 @@ function NovoChamado({
   logado: boolean;
   emailConta?: string | null;
   contratos: { id: string; titulo: string }[];
+  contratosFalhou?: boolean;
+  onTentarContratos?: () => void;
   onCancelar: () => void;
   onAberto: (numero: string) => void;
 }) {
@@ -379,6 +397,17 @@ function NovoChamado({
       {contexto && <p className="mt-1 text-sm text-muted">Sobre {CONTEXTO_ROTULO[contexto.tipo]} — a equipe já recebe o link.</p>}
 
       <AvisoEmergencia texto={mensagem} />
+
+      {contratosFalhou && (
+        <p role="alert" data-testid="contratos-indisponiveis" className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {AVISO_CONTRATOS_INDISPONIVEIS}
+          {onTentarContratos && (
+            <button type="button" onClick={onTentarContratos} className="font-semibold underline">
+              Tentar de novo
+            </button>
+          )}
+        </p>
+      )}
 
       <div className="mt-4 grid gap-4">
         <label className="block text-sm">

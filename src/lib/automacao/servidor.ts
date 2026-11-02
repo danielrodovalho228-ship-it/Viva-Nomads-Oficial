@@ -107,7 +107,7 @@ export async function vinculosDoImovelAdmin(admin: Admin, propertyId: string): P
  * Aviso ao dono ou ao morador. O silêncio (22h–7h) é decidido no notify() pela regra única do Prompt 44.
  * E267: com `dados`, o corpo nomeia o imóvel e a data (aberturaEstadia + bloco).
  */
-async function aviso(admin: Admin, destino: string, ev: EventoEstadia, url: string, dados: DadosEstadiaEmail) {
+async function aviso(admin: Admin, destino: string, ev: EventoEstadia, url: string, dados: DadosEstadiaEmail, imovelId?: string) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
@@ -118,6 +118,7 @@ async function aviso(admin: Admin, destino: string, ev: EventoEstadia, url: stri
       name: d?.full_name ?? undefined,
       userId: destino,
       pushUrl: url,
+      imovelId,
       body: (nome?: string) => aberturaEstadia(ev, dados, nome),
       detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))),
       detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
@@ -128,10 +129,10 @@ async function aviso(admin: Admin, destino: string, ev: EventoEstadia, url: stri
 }
 
 /** Um aviso por chave (automacoes_envios): o cron pode rodar de novo sem repetir. */
-async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: string, ev: EventoEstadia, url: string, dados: DadosEstadiaEmail): Promise<boolean> {
+async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: string, ev: EventoEstadia, url: string, dados: DadosEstadiaEmail, imovelId?: string): Promise<boolean> {
   const { error } = await admin.from("automacoes_envios").insert({ chave, tipo, usuario_id: destino });
   if (error) return false;
-  await aviso(admin, destino, ev, url, dados);
+  await aviso(admin, destino, ev, url, dados, imovelId);
   return true;
 }
 
@@ -346,12 +347,12 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
           break;
         case "avisar_dono_sem_vinculo": {
           const dados = { imovel: await imovelParaEmail(admin, ctx.propertyId), saida: ctx.saida };
-          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.saida), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza", dados)) r.avisos += 1;
+          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.saida), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza", dados, ctx.propertyId)) r.avisos += 1;
           break;
         }
         case "sugerir_morador": {
           const dados = { imovel: await imovelParaEmail(admin, ctx.propertyId), entrada: ctx.inicio, saida: ctx.saida, momento: a.momento };
-          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.saida : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`, dados))
+          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.saida : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`, dados, ctx.propertyId))
             r.avisos += 1;
           break;
         }

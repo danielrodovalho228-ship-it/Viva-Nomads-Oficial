@@ -63,6 +63,16 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
   return (
     <div>
       <JsonLd dados={trilha(SITE_URL, [{ nome: "Parceiros", caminho: "/parceiros" }])} />
+      {/* E458 (Relay 58): a porta com os dois caminhos, antes do conteúdo de sempre. Lado a lado no computador,
+          empilhados no celular; os dois de contorno (o mesmo peso — nenhum preenchido a mais na tela). */}
+      <nav aria-label="Caminhos dos parceiros" className="container-page flex flex-col gap-3 py-4 sm:flex-row sm:justify-center" data-testid="parceiros-porta">
+        <ButtonLink href="/parceiros/buscar" variant="secondary" size="lg" className="w-full sm:w-auto" data-testid="porta-encontrar-parceiro">
+          Encontrar um parceiro
+        </ButtonLink>
+        <ButtonLink href="#quero-ser-parceiro" variant="secondary" size="lg" className="w-full sm:w-auto" data-testid="porta-quero-ser-parceiro">
+          Quero ser parceiro
+        </ButtonLink>
+      </nav>
       <BannerTopo
         foto="/images/unicas/parceiros-banner.webp"
         alt="Fotógrafo registrando uma sala mobiliada"

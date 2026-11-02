@@ -128,3 +128,4 @@ export function salvarNaMesmaLinha(
 
 /** O que o "Salvar qualificação" NUNCA muda na linha que já está na fila: o documento, o dono e o imóvel. */
 export const CAMPOS_FIXOS_DA_FILA = ["document_path", "document_hash_sha256", "document_uploaded_at", "document_status", "owner_id", "property_id"] as const;
+

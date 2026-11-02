@@ -1,11 +1,14 @@
 "use server";
 
+import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
+import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
+import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
-import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
+import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO, MSG_PERFIL_SEM_LEITURA } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
@@ -110,8 +113,9 @@ import {
   salvarNaMesmaLinha,
   CAMPOS_FIXOS_DA_FILA,
 } from "@/lib/documento/fila-envio";
+import { estadoDocumentos, linhasParaLigar } from "@/lib/documento/vigente";
 
-type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
+type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string; /** E445: termo ofensivo — a tela pede confirmação. */ ofensa?: boolean };
 
 /** Persiste o checklist de qualificação (Fase 4). */
 /** Nome do titular digitado pelo dono (só texto, até 150 caracteres). */
@@ -157,6 +161,8 @@ export async function saveQualification(
     : { data: null, error: null };
   // Leitura falha não vira "arquivo novo": o mesmo documento entraria de novo na fila (e a equipe seria avisada outra vez).
   if (erroUltimo) return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente de novo." };
+  // E-DOC-VIGENTE (Relay 47): arquivo novo com documento aprovado entra em análise numa linha nova; o aprovado segue
+  // vigente (linha própria, intocada) até o novo ser aprovado. Nada a barrar aqui.
   const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
   const docGravado = doc.gravarPath;
 
@@ -286,6 +292,8 @@ export async function enviarDocumentoParaConferencia(
   // Leitura falha não vira "sem qualificação anterior": duplicaria o item na fila (e o aviso à equipe) e a linha nova
   // perderia as respostas já dadas.
   if (erroAnterior) return { ok: false, error: "Não foi possível enviar o documento agora. Tente de novo." };
+  // E-DOC-VIGENTE (Relay 47): com documento aprovado, o novo entra em análise numa linha nova e o aprovado segue
+  // vigente até o novo ser aprovado (a decisão do admin só mexe nas linhas pendentes do arquivo novo).
   if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
     return { ok: true, id: anterior.id as string };
   }
@@ -317,19 +325,22 @@ export type DocumentStatus = "none" | "pending" | "approved" | "rejected";
  */
 export async function getMyDocumentStatus(
   propertyId?: string | null
-): Promise<{ status: DocumentStatus; reason: string | null }> {
+): Promise<{ status: DocumentStatus; reason: string | null; novo: "pending" | "rejected" | null; motivoNovo: string | null }> {
   const supabase = await createClient();
-  if (!supabase) return { status: "approved", reason: null };
+  if (!supabase) return { status: "approved", reason: null, novo: null, motivoNovo: null };
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { status: "none", reason: null };
+  if (!user) return { status: "none", reason: null, novo: null, motivoNovo: null };
   // Por IMÓVEL: a qualificação dele; imóvel novo: a qualificação à espera
   // (ainda sem imóvel), que será ligada a ele ao criar.
   const q = await qualificacaoDoImovel(supabase, user.id, propertyId ?? null);
   return {
-    status: ((q?.document_status as DocumentStatus) ?? "none"),
-    reason: (q?.document_review_reason as string) ?? null,
+    status: q.status,
+    reason: q.status === "approved" ? null : (q.linha?.document_review_reason ?? null),
+    // E-DOC-VIGENTE: com aprovado vigente, o envio mais novo (em análise ou recusado) aparece à parte.
+    novo: q.emAnalise ? "pending" : q.novoRecusado ? "rejected" : null,
+    motivoNovo: q.novoRecusado?.document_review_reason ?? null,
   };
 }
 
@@ -398,23 +409,25 @@ export async function resumoImovelDoDono(
   };
 }
 
+type LinhaQualificacaoDoc = { id: string; document_status: string | null; document_review_reason: string | null };
+
 /**
- * Qualificação que vale para um imóvel: a mais recente LIGADA a ele; para um
- * imóvel ainda não criado (propertyId null), a mais recente do dono ainda sem
- * imóvel. Nunca a de outro imóvel (antes valia "a última do dono").
+ * Documento que vale para um imóvel (qualificações LIGADAS a ele; imóvel ainda não criado: as do dono ainda sem
+ * imóvel). Nunca a de outro imóvel. E-DOC-VIGENTE (Relay 47): vale a APROVADA mais recente (vigente); um envio
+ * mais novo fica em análise (ou recusado) sem rebaixar o vigente. Sem aprovada, vale a mais recente.
  */
 async function qualificacaoDoImovel(
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
   ownerId: string,
   propertyId: string | null
-): Promise<{ id: string; document_status: string | null; document_review_reason: string | null } | null> {
+) {
   let q = supabase
     .from("qualification_checklists")
     .select("id, document_status, document_review_reason")
     .eq("owner_id", ownerId);
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
-  const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-  return (data as { id: string; document_status: string | null; document_review_reason: string | null } | null) ?? null;
+  const { data } = await q.order("created_at", { ascending: false }).limit(200);
+  return estadoDocumentos((data ?? []) as LinhaQualificacaoDoc[]);
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
@@ -755,7 +768,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
   if (!input.asDraft) {
-    const { data: perfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    // Estados vazios: falha ao ler o perfil não vira "complete seu perfil" (o dono com perfil completo ia procurar o que falta).
+    const { data: perfil, error: ePerfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    if (ePerfil) return { ok: false, error: MSG_PERFIL_SEM_LEITURA };
     if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
       return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
     }
@@ -771,7 +786,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   // Qualificação POR IMÓVEL: a que está à espera (sem imóvel) é ligada a este
   // imóvel novo. Publicar exige que ELA tenha o documento aprovado.
   const qualificacao = await qualificacaoDoImovel(supabase, user.id, null);
-  if (!input.asDraft && (qualificacao?.document_status ?? "none") !== "approved") {
+  if (!input.asDraft && qualificacao.status !== "approved") {
     return {
       ok: false,
       error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
@@ -953,11 +968,14 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
 
   // Liga a qualificação à espera a ESTE imóvel e aplica o status pedido (o
   // trigger copia selos/etiquetas dela e confere o documento ao publicar).
-  if (qualificacao) {
+  // E-DOC-VIGENTE: liga também o documento APROVADO vigente (se não for a mais recente), senão o imóvel novo
+  // nasceria só com o envio em análise e o portão (0285) não acharia o aprovado.
+  const ligar = linhasParaLigar(qualificacao);
+  if (ligar.length) {
     await supabase
       .from("qualification_checklists")
       .update({ property_id: data.id })
-      .eq("id", qualificacao.id)
+      .in("id", ligar)
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
@@ -1042,7 +1060,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
   if (input.asDraft === false) {
-    const { data: perfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    // Estados vazios: falha ao ler o perfil não vira "complete seu perfil" (o dono com perfil completo ia procurar o que falta).
+    const { data: perfil, error: ePerfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    if (ePerfil) return { ok: false, error: MSG_PERFIL_SEM_LEITURA };
     if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
       return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
     }
@@ -1053,7 +1073,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if (input.asDraft === false) {
     // Documento DESTE imóvel (não o último do dono).
     const q = await qualificacaoDoImovel(supabase, user.id, id);
-    if ((q?.document_status ?? "none") !== "approved") {
+    if (q.status !== "approved") {
       return {
         ok: false,
         error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
@@ -1499,6 +1519,10 @@ export async function registrarContrato(
         email: pessoa?.user?.email ?? undefined,
         userId: lead.tenant_id as string,
         pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
+        imovelId: lead.property_id as string,
+        // E444: crítico (assinar), resolvido quando o morador assinar.
+        refId: contratoNovoId,
+        papelAviso: "morador",
         subject: ASSUNTOS.contratoPronto,
         body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
         detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
@@ -1732,6 +1756,11 @@ export async function requestLead(
     const { detailsHtml, detailsText } = corpo ?? buildLeadNotification(kind, propertyTitle, {
       name: tenantName,
     });
+    // E441: candidatura (pedido) do MORADOR ao dono — a foto (ou as iniciais) e o nome dele, clicáveis para o detalhe.
+    const pessoa =
+      corpo && leadId && ownerId
+        ? await moradorNoEmail({ donoId: ownerId, moradorId: user.id, caminho: linkCandidaturaDono(leadId), rotuloLink: "Ver a candidatura" }).catch(() => null)
+        : null;
     await notify({
       // Prompt 23: candidatura tem e-mail próprio ("Nova candidatura no seu imóvel"); dúvida/visita seguem como interessado.
       event: kind === "candidatura" ? "candidatura_nova" : "new_lead",
@@ -1740,9 +1769,10 @@ export async function requestLead(
       name: ownerName ?? undefined,
       userId: ownerId ?? undefined,
       pushUrl: corpo && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
+      imovelId: propertyId,
       ...(corpo ? { body: corpo.body } : {}),
-      detailsHtml,
-      detailsText,
+      detailsHtml: pessoa ? pessoa.html + (detailsHtml ?? "") : detailsHtml,
+      detailsText: pessoa ? [pessoa.texto, detailsText ?? ""].filter(Boolean).join("\n") : detailsText,
     });
     // E202 (candidatura): a confirmação de envio ao morador, com os mesmos dados (antes: nenhum e-mail).
     if (adm && leadId) {
@@ -1754,6 +1784,7 @@ export async function requestLead(
           name: me?.full_name && !String(me.full_name).includes("@") ? String(me.full_name).trim().split(/\s+/)[0] : undefined,
           userId: user.id,
           pushUrl: linkCandidaturaMorador(leadId),
+          imovelId: propertyId,
           body: meu.body,
           detailsHtml: meu.detailsHtml,
           detailsText: meu.detailsText,
@@ -1773,6 +1804,8 @@ export async function sendMessage(input: {
   body: string;
   /** Prompt 55-E2: texto vindo de uma resposta rápida — com contato direto, BLOQUEIA (não mascara). */
   respostaRapida?: boolean;
+  /** E445: a pessoa viu o aviso de termo ofensivo e enviou mesmo assim (vai para a fila de moderação). */
+  enviarMesmoAssim?: boolean;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true, id: input.conversationId };
@@ -1793,6 +1826,9 @@ export async function sendMessage(input: {
   const { text: safeBody, documento } = guardContactInfo(input.body);
   // Prompt 32: CPF/RG não vai pelo chat (nem mascarado) — vai no campo Ocupantes da estadia.
   if (documento) return { ok: false, error: `${DOCUMENTO_BLOQUEADO}.` };
+  // E445 (item 3): termo de ódio/xingamento grave → aviso ANTES de enviar; só segue com a confirmação da pessoa.
+  const ofensa = termoOfensivo(safeBody);
+  if (ofensa && !input.enviarMesmoAssim) return { ok: false, ofensa: true, error: AVISO_OFENSA };
 
   const { data: gravada, error } = await supabase
     .from("messages")
@@ -1803,7 +1839,7 @@ export async function sendMessage(input: {
       property_id: input.propertyId ?? null,
       body: safeBody,
     })
-    .select("receiver_id")
+    .select("id, receiver_id")
     .single();
   if (error || !gravada) {
     console.error("[sendMessage] falha ao gravar:", error?.code, error?.message);
@@ -1811,6 +1847,11 @@ export async function sendMessage(input: {
   }
   // Destinatário pela LINHA GRAVADA (que passou na RLS), não pelo parâmetro.
   const destinatarioId = gravada.receiver_id as string;
+  // E445: enviada mesmo com o aviso → fila de moderação (quem, conversa, termo); no 3º registro, a equipe é avisada.
+  if (ofensa) {
+    const adm = createAdminClient();
+    if (adm) await registrarOfensa(adm, { autorId: user.id, conversationId, messageId: (gravada.id as string) ?? null, termo: ofensa }).catch(() => null);
+  }
 
   // Notifica o destinatário por e-mail com o LINK para responder NO SITE
   // (nunca por e-mail — mantém o registro). Best-effort: falha de notificação
@@ -1858,6 +1899,7 @@ export async function sendMessage(input: {
         name: contact?.full_name ?? undefined,
         userId: destinatarioId,
         pushUrl: "/dashboard/mensagens",
+        imovelId: input.propertyId,
         conversationId,
         remetenteNome: senderName,
         detailsHtml:

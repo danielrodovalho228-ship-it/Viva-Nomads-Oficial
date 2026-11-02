@@ -5,6 +5,8 @@
 */
 import { normalizarTelefone, validarNome } from "../conta-validacao.ts";
 
+/** Estados vazios: a leitura do perfil falhou — não é "perfil incompleto". */
+export const MSG_PERFIL_SEM_LEITURA = "Não foi possível conferir seu perfil agora. Tente de novo em instantes.";
 export const MSG_PERFIL_DONO_INCOMPLETO =
   "Complete seu perfil de proprietário (nome e telefone) em Conta antes de publicar. Você pode salvar como rascunho.";
 

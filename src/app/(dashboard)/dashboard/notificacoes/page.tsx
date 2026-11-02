@@ -8,6 +8,9 @@ import { dataHoraBrasilia } from "@/config/atendimento";
 import { listarPropostas } from "@/lib/data/propostas-actions";
 import { textoVencimento } from "@/lib/propostas/regras";
 import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
+import { meusAvisos } from "@/lib/data/avisos-actions";
+import { ListaAvisos } from "@/components/account/lista-avisos";
+import { FILTROS_AVISOS, type FiltroAvisos } from "@/lib/notifications/sino";
 
 const MSG_AVISOS_NAO_CARREGARAM = "Não conseguimos carregar os avisos agora. Recarregue a página em instantes.";
 
@@ -16,12 +19,17 @@ const MSG_AVISOS_NAO_CARREGARAM = "Não conseguimos carregar os avisos agora. Re
  * do mockup perfil-06 (tipos de aviso e canais, LIGADOS por padrão); embaixo, os avisos (#avisos): propostas, pedidos
  * de moradia e manutenção. O sino e os e-mails continuam chegando aqui.
  */
-export default async function NotificacoesPage() {
-  const [r, todas, pedidosNovos] = await Promise.all([
+export default async function NotificacoesPage({ searchParams }: { searchParams: Promise<{ prioridade?: string | string[] }> }) {
+  const pedido = (await searchParams).prioridade;
+  // E444 item 3: "e mais N avisos críticos" (faixa) abre já filtrado.
+  const filtroInicial: FiltroAvisos = FILTROS_AVISOS.find((f) => f.id === pedido)?.id ?? "todos";
+  const [r, todas, pedidosNovos, caixa] = await Promise.all([
     avisosRecentes(),
     // Achado nº 13: a falha das propostas não pode virar "nada para responder" calado.
     listarPropostas({ exigir: true }).catch(() => null),
     pedidosNovosCompativeis().catch(() => ({ total: 0, recentes: [] })),
+    // E444 item 3: a lista da tabela de avisos (Pista B, 0286). Falha de leitura ≠ "nenhum aviso".
+    meusAvisos(100).catch(() => "falhou" as const),
   ]);
   const avisos = r?.avisos ?? [];
   // Propostas esperando a SUA resposta (prompt 27, item 7): o aviso no site, junto do push e do e-mail.
@@ -44,6 +52,7 @@ export default async function NotificacoesPage() {
         >
           Avisos recentes
         </h2>
+        <ListaAvisos avisos={caixa === "falhou" ? [] : (caixa ?? [])} falhou={caixa === "falhou"} filtroInicial={filtroInicial} />
         {naoCarregou && (
           <p role="alert" data-testid="avisos-falha" className="mb-4 rounded-lg border border-line bg-white px-3 py-2 text-sm text-amber-900">
             {MSG_AVISOS_NAO_CARREGARAM}
