@@ -54,14 +54,20 @@ test.describe("T1065 — Conta: a leitura que falha não vira chave Pix nem data
   });
 
   for (const w of [390, 1280] as const) {
-    test(`Pagamentos: falha → aviso sem formulário; Tentar de novo → a chave; controle direto (${w})`, async ({ browser }) => {
+    test(`Pagamentos: controle direto; falha → aviso sem formulário; Tentar de novo → a chave (${w})`, async ({ browser }) => {
       const p = await entrar(browser, dona.email, senha);
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       const falhou = p.getByTestId("conta-pix-falhou");
       const salva = p.getByTestId("conta-pix-salva");
 
-      await falharAcaoCom(p, "/dashboard/conta/pagamentos", CHAVE);
+      // Controle primeiro: sem falha, a chave aparece direto (e a conta nova já tem o papel de proprietária carregado,
+      // que é o que faz a tela pedir a chave).
       await p.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
+      await expect(salva).toContainText(MASCARADA, { timeout: 30_000 });
+      await expect(falhou).toHaveCount(0);
+
+      await falharAcaoCom(p, "/dashboard/conta/pagamentos", CHAVE);
+      await p.reload({ waitUntil: "domcontentloaded" });
       await expect(falhou).toBeVisible({ timeout: 30_000 });
       await expect(falhou).toContainText(AVISO_PIX);
       await expect(salva).toHaveCount(0);
@@ -70,10 +76,6 @@ test.describe("T1065 — Conta: a leitura que falha não vira chave Pix nem data
 
       await p.unrouteAll({ behavior: "wait" });
       await p.getByTestId("conta-pix-tentar").click();
-      await expect(salva).toContainText(MASCARADA, { timeout: 30_000 });
-      await expect(falhou).toHaveCount(0);
-
-      await p.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
       await expect(salva).toContainText(MASCARADA, { timeout: 30_000 });
       await expect(falhou).toHaveCount(0);
       await p.context().close();
