@@ -26,9 +26,13 @@ export interface TaxaDaProposta {
   taxa_origem: string | null;
 }
 
-/** As colunas de taxa da proposta, pelo cliente admin. */
+/**
+ * As colunas de taxa da proposta, pelo cliente admin. Leitura falha LANÇA: "sem taxa do envio" (null) faria o aceite
+ * congelar a taxa de hoje, que pode ser maior que a prometida no envio (a taxa nunca sobe depois de enviada).
+ */
 export async function lerTaxaDaProposta(admin: SupabaseClient, propostaId: string): Promise<TaxaDaProposta> {
-  const { data } = await admin.from("propostas").select(COLUNAS_TAXA_PROPOSTA).eq("id", propostaId).maybeSingle();
+  const { data, error } = await admin.from("propostas").select(COLUNAS_TAXA_PROPOSTA).eq("id", propostaId).maybeSingle();
+  if (error) throw new Error(MSG_VALORES_SEM_CONFERIR);
   const d = (data ?? {}) as Partial<Record<keyof TaxaDaProposta, number | string | null>>;
   return {
     taxa_congelada: d.taxa_congelada == null ? null : Number(d.taxa_congelada),
