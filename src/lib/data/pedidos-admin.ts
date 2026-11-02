@@ -22,11 +22,13 @@ type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 export async function adminListPedidos(): Promise<Record<string, unknown>[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("pedidos_moradia")
     .select("*")
     .order("criado_em", { ascending: false })
     .limit(500);
+  // Achado 111: a falha LANÇA (admin/error.tsx) — nunca "nenhum pedido de moradia" na lista da equipe.
+  if (error) throw new Error("Não foi possível ler os pedidos de moradia.");
   return data ?? [];
 }
 
