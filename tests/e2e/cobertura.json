@@ -1416,7 +1416,8 @@
         "t212-ferramentas-proprietario",
         "t216-taxa-matriz",
         "t487-e178-primeiro-pagamento",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t979-varredura-bloco200"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1544,7 +1545,8 @@
       "specs": [
         "t593-e211-visita-do-dono",
         "t589-varredura-bloco47",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t979-varredura-bloco200"
       ]
     },
     "/decisao": {
