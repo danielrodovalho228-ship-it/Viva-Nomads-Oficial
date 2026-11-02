@@ -53,7 +53,8 @@ export default async function VisitasPage({ searchParams }: { searchParams: Prom
         />
       ) : (
         <section aria-label={dono ? "Pedidos nos meus imóveis" : "Meus pedidos de visita"} data-testid={dono ? "visitas-recebidas" : "visitas-minhas"}>
-          <div className="grid gap-3 lg:grid-cols-2">
+          {/* Grade par (regra da casa): com número ímpar de visitas, a última ocupa a linha inteira no computador. */}
+          <div className="grade-par grid gap-3 lg:grid-cols-2">
             {visitas.map((v) => (
               <Panel key={v.id}>
                 <CartaoVisita v={v} papel={dono ? "dono" : "morador"} hrefDetalhe={`/dashboard/visitas/${v.id}`} />
