@@ -10,6 +10,8 @@ import { TEMPLATES, type NotificationEvent } from "./eventos-email";
 import { CATEGORIAS_COM_INTERRUPTOR, eventoDesligadoPelaPessoa } from "@/config/matriz-notificacoes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { DestaqueEmail } from "./destaque-email";
+import { gravarAviso } from "./avisos-servidor";
+import type { PapelAviso, PrioridadeAviso } from "./avisos";
 
 const UUID_DESTAQUE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -132,6 +134,12 @@ export async function notify(params: {
   imovelId?: string | null;
   /** E438: o parceiro do e-mail — a foto real dele (no topo, ou junto aos dados quando há imóvel), clicável. */
   parceiroId?: string | null;
+  /** E444: papel de quem recebe (a prioridade do aviso no sino pode mudar por papel). */
+  papelAviso?: PapelAviso | null;
+  /** E444: o objeto do aviso (proposta, contrato, visita…) — permite marcar "resolvido" quando a ação for feita. */
+  refId?: string | null;
+  /** E444: prioridade explícita quando o mesmo evento é só informativo (ex.: "contrato assinado pelas duas partes"). */
+  prioridadeAviso?: PrioridadeAviso | null;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -171,6 +179,12 @@ export async function notify(params: {
         })
       )
     : null;
+
+  // E444: o aviso no sino do site, do MESMO evento (fonte única), em paralelo. Título do catálogo, nunca texto do usuário.
+  const avisoPromise =
+    params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)
+      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso }))
+      : null;
 
   if (params.email) {
     try {
@@ -225,6 +239,8 @@ export async function notify(params: {
       result.whatsapp = false;
     }
   }
+
+  if (avisoPromise) await avisoPromise;
 
   if (pushPromise) {
     const pr = await pushPromise; // já estava rodando em paralelo
