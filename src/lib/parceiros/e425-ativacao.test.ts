@@ -149,6 +149,10 @@ test("telas: o link e o painel usam o mesmo núcleo; ativada, o parceiro entra n
   assert.match(painel, /sol\?\.status === "aprovada" \?[\s\S]{0,700}<AtivarNoPainel \/>/);
   assert.match(painel, /const painel = await meuPainelParceiro\(\{ exigir: true \}\);\s*if \(painel\)/);
   assert.match(painel, /data-testid="parceiro-ativada"/);
+  // Resíduo: em /parceiros (formulário "Seja parceiro"), o aprovado vê o mesmo botão — nunca só "veja o e-mail".
+  const form = ler("src/components/parceiros/seja-parceiro-form.tsx");
+  assert.match(form, /\{!enviado && sol\?\.status === "aprovada" && <AtivarNoPainel \/>\}/);
+  assert.doesNotMatch(form, /Veja o e-mail com o link para ativar/);
   const botao = ler("src/app/(dashboard)/dashboard/parceiro/ativar-no-painel.tsx");
   assert.match(botao, /router\.push\("\/dashboard\/parceiro\?ativada=1"\);\s*router\.refresh\(\);/);
   // A página do link: sem sessão, "Entrar" volta para o mesmo link; com a conta certa, ativa e abre o painel.
