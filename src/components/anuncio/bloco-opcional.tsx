@@ -60,7 +60,8 @@ export function BlocoOpcional({
           onClick={tocar}
           data-testid={`bloco-${id}-toggle`}
           className={cn(
-            "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors",
+            // Varredura 02/11: o trilho tem 28 px; no toque, alvo de 44 px (.alvo-toque), sem mudar o desenho.
+            "alvo-toque relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors",
             ligado ? "bg-forest" : "bg-sage-200"
           )}
         >
