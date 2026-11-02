@@ -36,3 +36,11 @@ test("as cinco telas usam a cor que passa", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/mensagens/messages-client.tsx"), /text-xs text-muted" data-testid="mensagens-aviso-documentos"/);
   assert.match(ler("src/app/(public)/parceiros/fotografos/page.tsx"), /text-xs text-muted" data-testid="fotografos-contato-aceite"/);
 });
+
+test("Indicações: código em branco e 'Copiar' branco com texto verde (nada de verde claro nem do lima de selo)", () => {
+  const src = ler("src/app/(dashboard)/dashboard/indicacoes/page.tsx");
+  assert.match(src, /<strong className="text-white" data-testid="indicacao-codigo">\{code\}<\/strong>/);
+  assert.match(src, /className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-forest"\n\s*data-testid="indicacao-copiar"/);
+  assert.doesNotMatch(src, /text-green-300|bg-champagne/);
+  assert.ok(razao(BRANCO, FOREST) >= 4.5 && razao(FOREST, BRANCO) >= 4.5);
+});

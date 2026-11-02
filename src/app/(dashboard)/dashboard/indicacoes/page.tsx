@@ -77,7 +77,7 @@ export default function ReferralsPage() {
           <h2 className="font-title text-lg font-semibold">Seu link de indicação</h2>
         </div>
         <p className="mt-1 text-sm text-white/85">
-          Seu código: <strong className="text-green-300">{code}</strong>
+          Seu código: <strong className="text-white" data-testid="indicacao-codigo">{code}</strong>
         </p>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -88,9 +88,12 @@ export default function ReferralsPage() {
             className="flex-1 rounded-xl bg-white/10 px-4 py-3 text-sm text-white outline-none"
           />
           <div className="flex gap-2">
+            {/* Contraste (02/11): o verde-lima (champagne, token só de selo) com texto verde dava 2,8:1; o código em verde
+                claro, 3,7:1. Agora o "Copiar" é igual ao "WhatsApp" (branco com texto verde, 6,3:1) e o código, branco. */}
             <button
               onClick={copy}
-              className="inline-flex items-center gap-2 rounded-xl bg-champagne px-4 py-3 text-sm font-semibold text-forest"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-forest"
+              data-testid="indicacao-copiar"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? "Copiado" : "Copiar"}
