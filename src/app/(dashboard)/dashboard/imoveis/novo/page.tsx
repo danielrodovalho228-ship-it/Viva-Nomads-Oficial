@@ -176,7 +176,14 @@ export default function NewPropertyPage() {
   // E149-A: "Comece pela matrícula" no Passo 1 (a folha) e se o documento já foi enviado lá (o Passo 10 não pede de novo).
   const [matriculaInicioAberta, setMatriculaInicioAberta] = useState(false);
   const [documentoNoInicio, setDocumentoNoInicio] = useState(false);
-  const [step, setStep] = useState<number>(ORDEM_ETAPAS[0]);
+  // Estabilidade (02/11): um link que já diz o passo (`?etapa=`, ex.: "Continuar de onde parou", "Resolver") abre NELE
+  // desde o 1º desenho. Antes a tela nascia no Passo 1 e só trocava depois de ler o rascunho — no celular, um salto de
+  // layout de até 0,78 (e o Passo 1 aparecia por um instante). Edição (`?id=`) segue abrindo no Passo 1, como antes.
+  const paramsIniciais = useSearchParams();
+  const [step, setStep] = useState<number>(() => {
+    const e = etapaDaUrl(paramsIniciais.get("etapa"));
+    return e !== null && !paramsIniciais.get("id") ? e : ORDEM_ETAPAS[0];
+  });
   const pos = step;
   // Etapa mais avançada já visitada (bug 13 da L2): guardada no rascunho.
   const [etapaMax, setEtapaMax] = useState(0);
@@ -1000,6 +1007,8 @@ export default function NewPropertyPage() {
         if (d) {
           setExistingDraft({ id: d.id, pct: d.prontidao?.pct ?? 0 });
           setEntradaVerificada(true);
+          // Com outro rascunho no servidor (e sem `?draft=`), o caminho de sempre: Passo 1 com a oferta de retomar.
+          if (etapaParam !== null) setStep(ORDEM_ETAPAS[0]);
         } else aplicarLocal();
       })
       .catch(aplicarLocal);
