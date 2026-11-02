@@ -369,6 +369,8 @@ export async function GET(request: Request) {
       ...(a.decisao ? { decisao: a.decisao } : {}),
       imovelId: a.imovelId,
       parceiroId: a.parceiroId,
+      // E444: o objeto do aviso no sino (a proposta, o contrato…), para marcar "resolvido" quando a ação for feita.
+      refId: a.refId,
     }).catch(() => null);
     if (a.depois) await a.depois().catch(() => null);
     contagem[a.tipo] = (contagem[a.tipo] ?? 0) + 1;

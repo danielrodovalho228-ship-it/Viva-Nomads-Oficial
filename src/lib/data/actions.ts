@@ -1516,6 +1516,9 @@ export async function registrarContrato(
         userId: lead.tenant_id as string,
         pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
         imovelId: lead.property_id as string,
+        // E444: crítico (assinar), resolvido quando o morador assinar.
+        refId: contratoNovoId,
+        papelAviso: "morador",
         subject: ASSUNTOS.contratoPronto,
         body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
         detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,

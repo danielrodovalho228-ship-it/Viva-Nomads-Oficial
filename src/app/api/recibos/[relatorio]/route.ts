@@ -52,7 +52,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ rela
   }
 
   const papel = relatorio === "reembolso" || q.get("papel") === "morador" ? "morador" : "dono";
-  const d = await recibosDaPessoa(papel);
+  // Estados vazios: leitura que falha → 503, nunca um resumo/informe/reembolso com zero recibos.
+  const d = await recibosDaPessoa(papel, { exigir: true }).catch(() => "falhou" as const);
+  if (d === "falhou") return erro(503, "Não foi possível gerar o relatório agora. Tente de novo em instantes.");
   if (!d) return erro(401, "Entre na sua conta.");
 
   if (relatorio === "resumo") {
