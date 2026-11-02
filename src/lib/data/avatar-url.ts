@@ -105,10 +105,12 @@ export async function getAvatarPath(userId: string): Promise<string | null> {
   if (!userId) return null;
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("profiles")
     .select("avatar_url")
     .eq("id", userId)
     .maybeSingle();
+  // Achado 98: a falha LANÇA — "sem foto" faria o "Remover foto" zerar o perfil e deixar o arquivo no Storage.
+  if (error) throw new Error("Não foi possível ler a foto do perfil.");
   return (data?.avatar_url as string | null) ?? null;
 }

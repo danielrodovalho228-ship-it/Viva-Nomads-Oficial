@@ -59,7 +59,7 @@ export async function recusarNovaData(pedidoId: string): Promise<Res> {
   if (p.origem !== "automatico" || !p.chave_automacao || !p.contrato_id || !reagendamentoPendente(p.status, tipos)) {
     return { ok: false, erro: "Esta ação não está disponível agora. Atualize a página." };
   }
-  const ctx = await contratoDoEvento(admin, p.contrato_id);
+  const ctx = await contratoDoEvento(admin, p.contrato_id).catch(() => null);
   if (!ctx) return { ok: false, erro: "Não foi possível ler a estadia agora. Tente de novo." };
   const agora = new Date();
   const pedido = { ...p, chave_automacao: p.chave_automacao };
