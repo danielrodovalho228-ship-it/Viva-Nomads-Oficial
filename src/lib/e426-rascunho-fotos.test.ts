@@ -18,10 +18,11 @@ test("tira só as fotos cujo arquivo saiu do bucket; o resto do rascunho fica ig
   assert.equal(rascunhoSemFotosApagadas(null, new Set()), null);
 });
 
-test("as três leituras do rascunho (abrir, carregar, último) passam pelo filtro", () => {
+// "carregar" (loadDraftData) era código morto e saiu: ficam as duas leituras em uso (abrir e último).
+test("as leituras do rascunho (abrir, último) passam pelo filtro", () => {
   const a = readFileSync(new URL("./data/actions.ts", import.meta.url), "utf8");
   assert.match(a, /return \{ ok: true, draft: await semFotosApagadas\(row\.draft_data \?\? null, user\.id\) \};/);
-  assert.match(a, /return semFotosApagadas\(\(row as \{ draft_data\?: unknown \} \| null\)\?\.draft_data \?\? null, user\.id\);/);
+  assert.doesNotMatch(a, /loadDraftData/);
   assert.match(a, /data: await semFotosApagadas\(\(row as \{ draft_data\?: unknown \} \| null\)\?\.draft_data \?\? null, user\.id\),/);
   assert.match(a, /rascunhoSemFotosApagadas\(draft, await arquivosDoDono\(createAdminClient\(\), ownerId\)\)/);
 });

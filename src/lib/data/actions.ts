@@ -2032,20 +2032,6 @@ async function semFotosApagadas(draft: unknown, ownerId: string): Promise<unknow
   return rascunhoSemFotosApagadas(draft, await arquivosDoDono(createAdminClient(), ownerId));
 }
 
-/** Carrega o estado salvo (draft_data) de um rascunho do dono, para retomar. */
-export async function loadDraftData(id: string): Promise<unknown | null> {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  // C4: draft_data saiu do SELECT por coluna; o dono lê pela RPC (checa owner).
-  const { data } = await supabase.rpc("property_private_details", { prop_id: id });
-  const row = Array.isArray(data) ? data[0] : data;
-  return semFotosApagadas((row as { draft_data?: unknown } | null)?.draft_data ?? null, user.id);
-}
-
 /**
  * L1-1 (D-V3): o endereço já GRAVADO do imóvel do dono, para o "Enviar documento" do passo Onde fica não travar quando
  * a tela chega vazia ou em outro formato (rascunho retomado). Vem do rascunho (draft_data: CEP, rua, número) e, sem ele,
