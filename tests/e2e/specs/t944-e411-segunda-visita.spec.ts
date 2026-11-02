@@ -10,7 +10,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *      anúncio já relê as visitas, em "Visita pedida" com a explicação — nunca "enviado" nem um segundo pedido;
  *   2. recarregada: "Visita pedida" com "Você já pediu uma visita presencial e o proprietário ainda vai responder. …";
  *   3. confirmada e por vir: "Visita agendada" com "Sua visita presencial já está marcada. Para mudar o horário, …";
- *   4. a mesma regra na visita por vídeo agendada.
+ *   4. a mesma regra na visita por vídeo agendada;
+ *   5. (resíduo, #2187) confirmada e JÁ PASSADA do horário: "Ver minha visita" com "Sua visita presencial já passou do
+ *      horário. Um novo pedido fica liberado quando o proprietário marcar esta visita como feita; combine pela conversa."
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -18,6 +20,7 @@ const LARGURAS = [390, 1280] as const;
 const ids: string[] = [];
 const ERRO = "Você já tem um pedido de visita presencial em aberto para este imóvel. Para mudar os horários, cancele esse pedido em Visitas e peça de novo.";
 const PEDIDA = "Você já pediu uma visita presencial e o proprietário ainda vai responder. Para mudar os horários, cancele o pedido em Visitas e peça de novo.";
+const PASSADA = "Sua visita presencial já passou do horário. Um novo pedido fica liberado quando o proprietário marcar esta visita como feita; combine pela conversa.";
 const AGENDADA = (tipo: string) => `Sua visita ${tipo} já está marcada. Para mudar o horário, cancele em Visitas e peça de novo.`;
 
 async function conta(papel: "owner" | "tenant", nome: string, largura: number) {
@@ -119,6 +122,31 @@ test.describe("T944 — E411: segundo pedido de visita explica a regra e o camin
       await expect(page.getByTestId("visita-video-agendada-explica").first()).toHaveText(AGENDADA("por vídeo"));
       await expect(page.getByTestId("agendar-visita")).toHaveCount(0);
       await expect(page.getByTestId("visita-video-abrir")).toHaveCount(0);
+      await semRolagemLateral(page);
+      await page.context().close();
+    });
+
+    test(`confirmada e já passada: "Ver minha visita" explica por que não dá para pedir outra (${largura})`, async ({ browser }) => {
+      test.setTimeout(120_000);
+      const dono = await conta("owner", `Dona Passada${largura} Visita`, largura);
+      const inq = await conta("tenant", `Ivo Passada${largura} Visita`, largura);
+      const imovel = await criarImovelPronto(dono.id, `Studio Visita Passada ${largura} ${sufixo}`, { ativo: true, preco: 3100 });
+      const quando = new Date(Date.now() - 2 * 86_400_000);
+      quando.setUTCHours(17, 0, 0, 0);
+      const { error } = await adm()
+        .from("visitas_video")
+        .insert({ property_id: imovel, owner_id: dono.id, tenant_id: inq.id, horarios: [quando.toISOString()], modalidade: "presencial", status: "confirmado", horario_confirmado: quando.toISOString() });
+      if (error) throw error;
+
+      const page = await entrar(browser, inq.email, senha);
+      await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await page.goto(`/imoveis/${imovel}`, { waitUntil: "domcontentloaded" });
+      const ver = page.getByTestId("visita-presencial-ver").first();
+      await expect(ver).toBeAttached({ timeout: 25_000 });
+      await expect(ver).toHaveText(/Ver minha visita/);
+      await expect(ver).toHaveAttribute("href", "/dashboard/visitas");
+      await expect(page.getByTestId("visita-presencial-ver-explica").first()).toHaveText(PASSADA);
+      await expect(page.getByTestId("agendar-visita")).toHaveCount(0);
       await semRolagemLateral(page);
       await page.context().close();
     });
