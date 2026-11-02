@@ -106,12 +106,11 @@ import {
   documentoNoSalvar,
   hashValido,
   limparTitularDocumento,
-  MSG_DOCUMENTO_JA_CONFERIDO,
-  novoDocumentoBloqueado,
   linhaDoEnvio,
   salvarNaMesmaLinha,
   CAMPOS_FIXOS_DA_FILA,
 } from "@/lib/documento/fila-envio";
+import { estadoDocumentos, linhasParaLigar } from "@/lib/documento/vigente";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
 
@@ -159,10 +158,8 @@ export async function saveQualification(
     : { data: null, error: null };
   // Leitura falha não vira "arquivo novo": o mesmo documento entraria de novo na fila (e a equipe seria avisada outra vez).
   if (erroUltimo) return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente de novo." };
-  // Documento conferido nunca é rebaixado por um arquivo novo (a troca é com a equipe).
-  if (novoDocumentoBloqueado(ultimo?.document_status as string | null | undefined, ultimo?.document_path as string | null | undefined, documentPath ?? null)) {
-    return { ok: false, error: MSG_DOCUMENTO_JA_CONFERIDO };
-  }
+  // E-DOC-VIGENTE (Relay 47): arquivo novo com documento aprovado entra em análise numa linha nova; o aprovado segue
+  // vigente (linha própria, intocada) até o novo ser aprovado. Nada a barrar aqui.
   const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
   const docGravado = doc.gravarPath;
 
@@ -292,10 +289,8 @@ export async function enviarDocumentoParaConferencia(
   // Leitura falha não vira "sem qualificação anterior": duplicaria o item na fila (e o aviso à equipe) e a linha nova
   // perderia as respostas já dadas.
   if (erroAnterior) return { ok: false, error: "Não foi possível enviar o documento agora. Tente de novo." };
-  // Documento conferido nunca é rebaixado por um arquivo novo (a troca é com a equipe).
-  if (novoDocumentoBloqueado(anterior?.document_status as string | null | undefined, anterior?.document_path as string | null | undefined, path)) {
-    return { ok: false, error: MSG_DOCUMENTO_JA_CONFERIDO };
-  }
+  // E-DOC-VIGENTE (Relay 47): com documento aprovado, o novo entra em análise numa linha nova e o aprovado segue
+  // vigente até o novo ser aprovado (a decisão do admin só mexe nas linhas pendentes do arquivo novo).
   if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
     return { ok: true, id: anterior.id as string };
   }
@@ -327,19 +322,22 @@ export type DocumentStatus = "none" | "pending" | "approved" | "rejected";
  */
 export async function getMyDocumentStatus(
   propertyId?: string | null
-): Promise<{ status: DocumentStatus; reason: string | null }> {
+): Promise<{ status: DocumentStatus; reason: string | null; novo: "pending" | "rejected" | null; motivoNovo: string | null }> {
   const supabase = await createClient();
-  if (!supabase) return { status: "approved", reason: null };
+  if (!supabase) return { status: "approved", reason: null, novo: null, motivoNovo: null };
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { status: "none", reason: null };
+  if (!user) return { status: "none", reason: null, novo: null, motivoNovo: null };
   // Por IMÓVEL: a qualificação dele; imóvel novo: a qualificação à espera
   // (ainda sem imóvel), que será ligada a ele ao criar.
   const q = await qualificacaoDoImovel(supabase, user.id, propertyId ?? null);
   return {
-    status: ((q?.document_status as DocumentStatus) ?? "none"),
-    reason: (q?.document_review_reason as string) ?? null,
+    status: q.status,
+    reason: q.status === "approved" ? null : (q.linha?.document_review_reason ?? null),
+    // E-DOC-VIGENTE: com aprovado vigente, o envio mais novo (em análise ou recusado) aparece à parte.
+    novo: q.emAnalise ? "pending" : q.novoRecusado ? "rejected" : null,
+    motivoNovo: q.novoRecusado?.document_review_reason ?? null,
   };
 }
 
@@ -408,23 +406,25 @@ export async function resumoImovelDoDono(
   };
 }
 
+type LinhaQualificacaoDoc = { id: string; document_status: string | null; document_review_reason: string | null };
+
 /**
- * Qualificação que vale para um imóvel: a mais recente LIGADA a ele; para um
- * imóvel ainda não criado (propertyId null), a mais recente do dono ainda sem
- * imóvel. Nunca a de outro imóvel (antes valia "a última do dono").
+ * Documento que vale para um imóvel (qualificações LIGADAS a ele; imóvel ainda não criado: as do dono ainda sem
+ * imóvel). Nunca a de outro imóvel. E-DOC-VIGENTE (Relay 47): vale a APROVADA mais recente (vigente); um envio
+ * mais novo fica em análise (ou recusado) sem rebaixar o vigente. Sem aprovada, vale a mais recente.
  */
 async function qualificacaoDoImovel(
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
   ownerId: string,
   propertyId: string | null
-): Promise<{ id: string; document_status: string | null; document_review_reason: string | null } | null> {
+) {
   let q = supabase
     .from("qualification_checklists")
     .select("id, document_status, document_review_reason")
     .eq("owner_id", ownerId);
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
-  const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-  return (data as { id: string; document_status: string | null; document_review_reason: string | null } | null) ?? null;
+  const { data } = await q.order("created_at", { ascending: false }).limit(200);
+  return estadoDocumentos((data ?? []) as LinhaQualificacaoDoc[]);
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
@@ -781,7 +781,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   // Qualificação POR IMÓVEL: a que está à espera (sem imóvel) é ligada a este
   // imóvel novo. Publicar exige que ELA tenha o documento aprovado.
   const qualificacao = await qualificacaoDoImovel(supabase, user.id, null);
-  if (!input.asDraft && (qualificacao?.document_status ?? "none") !== "approved") {
+  if (!input.asDraft && qualificacao.status !== "approved") {
     return {
       ok: false,
       error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",
@@ -963,11 +963,14 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
 
   // Liga a qualificação à espera a ESTE imóvel e aplica o status pedido (o
   // trigger copia selos/etiquetas dela e confere o documento ao publicar).
-  if (qualificacao) {
+  // E-DOC-VIGENTE: liga também o documento APROVADO vigente (se não for a mais recente), senão o imóvel novo
+  // nasceria só com o envio em análise e o portão (0285) não acharia o aprovado.
+  const ligar = linhasParaLigar(qualificacao);
+  if (ligar.length) {
     await supabase
       .from("qualification_checklists")
       .update({ property_id: data.id })
-      .eq("id", qualificacao.id)
+      .in("id", ligar)
       .eq("owner_id", user.id)
       .is("property_id", null);
   }
@@ -1063,7 +1066,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if (input.asDraft === false) {
     // Documento DESTE imóvel (não o último do dono).
     const q = await qualificacaoDoImovel(supabase, user.id, id);
-    if ((q?.document_status ?? "none") !== "approved") {
+    if (q.status !== "approved") {
       return {
         ok: false,
         error: "Documentação do imóvel ainda não aprovada. Salve como rascunho — a publicação libera após a verificação.",

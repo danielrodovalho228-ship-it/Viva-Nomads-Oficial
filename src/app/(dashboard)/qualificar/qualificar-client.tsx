@@ -42,7 +42,7 @@ import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
 import { saveQualification, enviarDocumentoParaConferencia, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
-import { MSG_DOCUMENTO_JA_CONFERIDO } from "@/lib/documento/fila-envio";
+import { TEXTO_NOVO_EM_ANALISE, TEXTO_NOVO_RECUSADO } from "@/lib/documento/vigente";
 import { cn, numBR } from "@/lib/utils";
 import { rotaVoltarAoAnuncio } from "@/lib/qualificar-link";
 
@@ -106,6 +106,10 @@ export default function QualificationChecklistPage({
   // ADENDO elegibilidade item 3). "none" até enviar; após salvar vira "pending".
   const [docStatus, setDocStatus] = useState<DocumentStatus>("none");
   const [docReason, setDocReason] = useState<string | null>(null);
+  // E-DOC-VIGENTE (Relay 47): com documento APROVADO, um envio novo fica à parte (em análise ou recusado) e o
+  // aprovado segue valendo até o novo ser aprovado.
+  const [docNovo, setDocNovo] = useState<"pending" | "rejected" | null>(null);
+  const [docMotivoNovo, setDocMotivoNovo] = useState<string | null>(null);
   // Qualificação POR IMÓVEL: `?imovel=<id>` diz qual imóvel está sendo
   // qualificado (mostrado no topo). Sem ele, é o imóvel que será anunciado em
   // seguida (a qualificação fica à espera e é ligada a ele ao criar).
@@ -143,6 +147,8 @@ export default function QualificationChecklistPage({
       if (!r) return;
       setDocStatus(r.status);
       setDocReason(r.reason);
+      setDocNovo(r.novo ?? null);
+      setDocMotivoNovo(r.motivoNovo ?? null);
     })();
     return () => {
       alive = false;
@@ -257,8 +263,14 @@ export default function QualificationChecklistPage({
     setDocName(d.nome);
     setDocPath(d.path);
     setDocHash(d.hash);
-    setDocStatus("pending");
-    setDocReason(null);
+    // Com aprovado vigente, o novo entra em análise À PARTE: o aprovado não é rebaixado (Relay 47).
+    if (docStatus === "approved") {
+      setDocNovo("pending");
+      setDocMotivoNovo(null);
+    } else {
+      setDocStatus("pending");
+      setDocReason(null);
+    }
     setElig((s) => ({ ...s, hasDocument: true }));
   }
 
@@ -363,12 +375,18 @@ export default function QualificationChecklistPage({
               />
             ))}
 
-          {/* Documento conferido nunca é rebaixado por um arquivo novo: a troca é com a equipe (o servidor também recusa). */}
-          {docStatus === "approved" ? (
-            <p className="rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-forest" data-testid="documento-conferido-mantido">
-              {MSG_DOCUMENTO_JA_CONFERIDO}
+          {/* E-DOC-VIGENTE (Relay 47): o aprovado segue valendo; um envio novo entra em análise sem rebaixá-lo. */}
+          {docStatus === "approved" && docNovo === "pending" && (
+            <p className="rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-forest" data-testid="documento-novo-em-analise">
+              {TEXTO_NOVO_EM_ANALISE}
             </p>
-          ) : (
+          )}
+          {docStatus === "approved" && docNovo === "rejected" && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="documento-novo-recusado">
+              {TEXTO_NOVO_RECUSADO}
+              {docMotivoNovo ? ` Motivo: ${docMotivoNovo}.` : ""}
+            </p>
+          )}
           <label
             className={cn(
               "flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
@@ -402,7 +420,7 @@ export default function QualificationChecklistPage({
                   docName ? "bg-sage-100 text-forest" : "bg-amber-100 text-amber-800"
                 )}
               >
-                {docName ? "Enviado para conferência" : docSemFila ? "Não enviado" : "Pendente"}
+                {docStatus === "approved" && docNovo !== "pending" ? "Aprovado" : docName ? "Enviado para conferência" : docSemFila ? "Não enviado" : "Pendente"}
               </span>
               <span className="rounded-full bg-forest px-3 py-2 text-xs font-medium text-white">
                 {docBusy ? "Enviando…" : docName ? "Trocar" : "Enviar"}
@@ -458,7 +476,6 @@ export default function QualificationChecklistPage({
               }}
             />
           </label>
-          )}
           {docErro && (
             <div role="alert" data-testid="doc-erro" className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-red-600">{docErro}</p>
