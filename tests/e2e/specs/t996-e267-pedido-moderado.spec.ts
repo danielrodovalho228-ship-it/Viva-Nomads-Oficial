@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
 
 /**
  * T996 — E267 resíduo (#2209): quando a moderação oculta um pedido de moradia, o e-mail ao morador diz QUAL pedido
- * (cidade e entrada) e o motivo — antes era só "seu pedido foi ocultado". Pela tela real do admin (/admin/pedidos,
+ * (cidade e entrada) e o motivo — antes era só "seu pedido foi ocultado". Pela tela real do admin (/admin/pedidos no recorte Teste,
  * botão "Ocultar" e o diálogo do motivo, 1280) e pela caixa de testes (conta is_teste → emails_teste):
  *   1. o pedido vira removido_admin com o motivo; a linha do admin mostra "Motivo: …" (1280 e 390, sem rolagem lateral);
  *   2. o e-mail "pedido_moderado" chega com o assunto "Seu pedido em Uberlândia foi ocultado" e o corpo com a cidade, a
@@ -16,6 +16,8 @@ const inq = { email: `inq.t996.${sufixo}@lab.vivanomads.test`, nome: "Telma Mode
 const ids: { inq?: string; pedido?: string } = {};
 const ENTRADA = new Date(Date.now() - 3 * 3_600_000 + 25 * 86_400_000).toISOString().slice(0, 10);
 const ENTRADA_BR = ENTRADA.split("-").reverse().join("/");
+// O recorte padrão de /admin/pedidos é "Real" (contas de teste fora); a moradora é conta de teste (a caixa emails_teste).
+const LISTA = "/admin/pedidos?tipo=teste";
 const MOTIVO = `Texto com contato direto, contra as regras (t996 ${sufixo})`;
 
 test.describe("T996 — E267 resíduo: o pedido ocultado pela moderação diz qual pedido e o motivo", () => {
@@ -45,7 +47,7 @@ test.describe("T996 — E267 resíduo: o pedido ocultado pela moderação diz qu
   test("1. o admin oculta com motivo; a linha mostra o motivo (1280 e 390)", async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
     const page = await ctx.newPage();
-    await page.goto("/admin/pedidos", { waitUntil: "domcontentloaded" });
+    await page.goto(LISTA, { waitUntil: "domcontentloaded" });
     const linha = page.locator(`[data-testid="admin-pedido-linha"][data-pedido="${ids.pedido}"]`);
     await expect(linha).toBeVisible({ timeout: 30_000 });
     await page.locator("tr", { has: linha }).getByRole("button", { name: "Ocultar" }).click();
@@ -58,7 +60,7 @@ test.describe("T996 — E267 resíduo: o pedido ocultado pela moderação diz qu
       .toEqual({ status: "removido_admin", removido_motivo: MOTIVO });
     for (const w of [1280, 390] as const) {
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
-      await page.goto("/admin/pedidos", { waitUntil: "domcontentloaded" });
+      await page.goto(LISTA, { waitUntil: "domcontentloaded" });
       const tr = page.locator("tr", { has: page.locator(`[data-testid="admin-pedido-linha"][data-pedido="${ids.pedido}"]`) });
       await expect(tr).toContainText(`Motivo: ${MOTIVO}`, { timeout: 30_000 });
       await expect(tr.getByRole("button", { name: "Reativar" })).toBeVisible();
