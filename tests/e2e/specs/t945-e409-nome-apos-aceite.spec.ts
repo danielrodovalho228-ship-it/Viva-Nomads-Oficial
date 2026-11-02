@@ -2,11 +2,12 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 
 /**
- * T945 — E409 (#2050): depois do aceite, a outra parte vê o 1º nome + a inicial do sobrenome ("Lia V.") e a foto pela
- * regra do avatar — antes, só o 1º nome. Pela tela real (/dashboard/visitas/<id>), 390 e 1280:
- *   1. dono, visita CONFIRMADA: "Quem vem: Lia V." — nunca o sobrenome inteiro;
+ * T945 — E409 (#2050), atualizada pelo E427 (#2184): depois do aceite, a outra parte vê o nome COMPLETO (o mesmo de
+ * Mensagens, proposta e estadia; antes do E427 era "Lia V.") e a foto pela regra do avatar. Pela tela real
+ * (/dashboard/visitas/<id>), 390 e 1280:
+ *   1. dono, visita CONFIRMADA: "Quem vem: Lia Maria Visitante";
  *   2. dono, visita só PEDIDA: "Quem vem: Interessado(a)" — nem nome, nem foto (o aceite ainda não houve);
- *   3. morador, visita confirmada: "Quem recebe: Dora A." com a foto da dona (pública no contexto do imóvel dela), e a
+ *   3. morador, visita confirmada: "Quem recebe: Dora Agenda Albuquerque" com a foto da dona (pública no contexto do imóvel dela), e a
  *      foto CARREGA de fato;
  *   4. dono, visita confirmada: a foto da moradora não aparece (sem relação aceita a regra do avatar não libera).
  */
@@ -57,16 +58,14 @@ test.describe("T945 — E409: nome com a inicial do sobrenome depois do aceite",
     await apagarContas([ids.mor, ids.dona]);
   });
 
-  test("dono: confirmada mostra 'Lia V.' (sem sobrenome, sem foto da moradora); pedida mostra 'Interessado(a)'", async ({ browser }) => {
+  test("dono: confirmada mostra o nome completo (sem foto da moradora); pedida mostra 'Interessado(a)'", async ({ browser }) => {
     const p = await entrar(browser, dona.email, senha);
     for (const largura of LARGURAS) {
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto(`/dashboard/visitas/${ids.confirmada}`, { waitUntil: "domcontentloaded" });
       const d = p.getByTestId("visita-detalhe");
       await expect(d).toHaveAttribute("data-papel", "dono", { timeout: 30_000 });
-      await expect(d.getByTestId("visita-pessoa")).toHaveText("Quem vem: Lia V.");
-      await expect(d.getByTestId("visita-pessoa")).not.toContainText("Visitante");
-      await expect(d.getByTestId("visita-pessoa")).not.toContainText("Maria");
+      await expect(d.getByTestId("visita-pessoa")).toHaveText("Quem vem: Lia Maria Visitante");
       await expect(d.getByTestId("visita-pessoa-foto")).toHaveCount(0);
       await semRolagemLateral(p);
 
@@ -74,19 +73,19 @@ test.describe("T945 — E409: nome com a inicial do sobrenome depois do aceite",
       const pd = p.getByTestId("visita-detalhe");
       await expect(pd.getByTestId("visita-pessoa")).toHaveText("Quem vem: Interessado(a)", { timeout: 30_000 });
       await expect(pd.getByTestId("visita-pessoa-foto")).toHaveCount(0);
+      expect(await p.content()).not.toContain("Lia Maria Visitante");
       expect(await p.content()).not.toContain("Lia V.");
     }
     await p.context().close();
   });
 
-  test("morador: confirmada mostra 'Quem recebe: Dora A.' com a foto da dona carregada", async ({ browser }) => {
+  test("morador: confirmada mostra 'Quem recebe: Dora Agenda Albuquerque' com a foto da dona carregada", async ({ browser }) => {
     const m = await entrar(browser, mor.email, senha);
     for (const largura of LARGURAS) {
       await m.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await m.goto(`/dashboard/visitas/${ids.confirmada}`, { waitUntil: "domcontentloaded" });
       const d = m.getByTestId("visita-detalhe");
-      await expect(d.getByTestId("visita-pessoa-dono")).toHaveText("Quem recebe: Dora A.", { timeout: 30_000 });
-      await expect(d.getByTestId("visita-pessoa-dono")).not.toContainText("Albuquerque");
+      await expect(d.getByTestId("visita-pessoa-dono")).toHaveText("Quem recebe: Dora Agenda Albuquerque", { timeout: 30_000 });
       const foto = d.getByTestId("visita-pessoa-dono-foto");
       await expect(foto).toBeVisible();
       await expect.poll(() => foto.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { timeout: 20_000 }).toBe(true);
