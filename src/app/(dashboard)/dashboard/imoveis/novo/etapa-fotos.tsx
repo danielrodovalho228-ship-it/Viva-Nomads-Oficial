@@ -150,7 +150,7 @@ export function EtapaFotos({
             ))}
           </div>
           <div className="mt-3">
-            <GuiaFotos comCta={false} />
+            <GuiaFotos comCta={false} nivelTitulo={2} />
           </div>
         </div>
       </details>
@@ -166,7 +166,7 @@ export function EtapaFotos({
 
       {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}
       <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6 scroll-mt-24" data-testid="bloco-video">
-        <h3 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h3>
+        <h2 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h2>
         <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={setVideoConteudo} />
       </section>
 

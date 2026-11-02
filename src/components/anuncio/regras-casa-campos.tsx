@@ -108,7 +108,7 @@ export function RegrasCasaCampos({
   return (
     <div className="grid gap-3" data-testid="regras-casa">
       <div>
-        <h3 className="text-sm font-semibold text-ink">Convivência</h3>
+        <h2 className="text-sm font-semibold text-ink">Convivência</h2>
         <p className="mt-1 text-xs text-muted">Ligue só as regras que valem na sua casa. O que ficar desligado não aparece no anúncio.</p>
       </div>
       {REGRAS_CONVIVENCIA.map(({ chave, titulo, descricao }) => omitir.includes(chave) ? null : (

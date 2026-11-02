@@ -51,7 +51,7 @@ export function CamposChacara({
 
   return (
     <section className="rounded-xl border border-sage-200 p-4" data-testid="campos-chacara" data-falta={falta.join(",")}>
-      <h3 className="text-base font-semibold text-ink">Chácara/Sítio</h3>
+      <h2 className="text-base font-semibold text-ink">Chácara/Sítio</h2>
       <p className="mt-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink" data-testid="chacara-linha-fixa">
         {LINHA_FIXA_CHACARA}
       </p>
