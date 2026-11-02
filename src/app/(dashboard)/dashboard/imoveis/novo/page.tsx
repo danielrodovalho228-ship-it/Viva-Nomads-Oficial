@@ -59,7 +59,7 @@ import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoD
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
-import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
+import { avisoDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
@@ -469,12 +469,9 @@ export default function NewPropertyPage() {
       // E104: quem opera e o documento da operação ficaram na Revisão; a prontidão ("sublocacao") segura a publicação.
       if (!street.trim()) e.rua = "Informe a rua.";
       if (!numero.trim()) e.numero = "Informe o número (ou s/n).";
+      // E429: o nome do bairro nunca barra o avanço ("Minas Gerais" é bairro de Uberlândia). Só o vazio barra; o aviso de
+      // divergência com o CEP aparece no campo (avisoDoBairro) e não entra aqui.
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
-      else {
-        // E147: "Minas Gerais" (ou outro estado, a sigla ou a própria cidade) não é bairro.
-        const problema = problemaDoBairro(neighborhood, city);
-        if (problema) e.bairro = problema;
-      }
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
     if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
@@ -1224,8 +1221,8 @@ export default function NewPropertyPage() {
 
   function aplicarNoFormulario(a: ReturnType<typeof aplicarResultadoCep>) {
     if (a.rua !== undefined) setStreet(a.rua);
-    // E147: bairro que é o estado/UF/cidade nunca entra (o campo fica para a pessoa preencher).
-    if (a.bairro !== undefined) setNeighborhood(bairroAceitavel(a.bairro, a.cidade ?? city));
+    // E429: o bairro do CEP é AUTORITATIVO — entra como veio (antes "Minas Gerais", bairro oficial de Uberlândia, era apagado).
+    if (a.bairro !== undefined) setNeighborhood(a.bairro.trim());
     if (a.cidade !== undefined) setCity(a.cidade);
     if (a.uf) setUf(a.uf);
     if (a.perguntarBairro) setBairroDoCep(a.perguntarBairro);
@@ -1278,7 +1275,7 @@ export default function NewPropertyPage() {
       if (e.cep) setCep(formatarCep(e.cep));
       if (e.rua) setStreet(e.rua);
       if (e.numero) setNumero(e.numero.slice(0, 20));
-      if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
+      if (e.bairro?.trim()) setNeighborhood(e.bairro.trim());
       if (e.cidade) setCity(e.cidade);
       if (e.uf) setUf(e.uf.slice(0, 2));
       marcados.add("endereco");
@@ -1306,7 +1303,7 @@ export default function NewPropertyPage() {
     if (e.cep) setCep(formatarCep(e.cep));
     if (e.rua) setStreet(e.rua);
     if (e.numero) setNumero(e.numero.slice(0, 20));
-    if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
+    if (e.bairro?.trim()) setNeighborhood(e.bairro.trim());
     if (e.cidade) setCity(e.cidade);
     if (e.uf) setUf(e.uf.slice(0, 2));
     setDaMatricula((atual) => new Set(atual).add("endereco"));
@@ -1921,6 +1918,7 @@ export default function NewPropertyPage() {
             {step === ETAPA.endereco && (
               <EtapaOndeFica
                 cepResultado={cepResultado}
+                avisoBairro={avisoDoBairro(neighborhood, { bairroDoCep: cepResultado?.tipo === "rua" ? cepResultado.bairro : null, cidade: city })}
                 onEscolherEndereco={escolherEndereco}
                 cep={cep}
                 setCep={(v) => {

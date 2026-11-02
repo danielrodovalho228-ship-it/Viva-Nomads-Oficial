@@ -60,6 +60,8 @@ export function EtapaOndeFica(p: {
   neighborhood: string;
   setNeighborhood: (v: string) => void;
   bairroDoCep: string | null;
+  /** E429: aviso (não bloqueia) — bairro digitado diverge do CEP e tem nome de estado/sigla/país/cidade. */
+  avisoBairro?: string | null;
   setBairroDoCep: (v: string | null) => void;
   city: string;
   setCity: (v: string) => void;
@@ -238,6 +240,11 @@ export function EtapaOndeFica(p: {
           />
           <LocationDatalist id="novo-bairros" />
           <Erro msg={p.erros.bairro} />
+          {!p.bairroDoCep && p.avisoBairro && (
+            <span className="mt-1 block text-xs text-amber-800" role="status" data-testid="aviso-bairro">
+              {p.avisoBairro}
+            </span>
+          )}
           {p.bairroDoCep && (
             <span className="mt-1 block rounded-lg bg-amber-50 px-2 py-2 text-xs text-amber-900" role="status">
               O CEP indica <strong>{p.bairroDoCep}</strong> — confirmar?{" "}

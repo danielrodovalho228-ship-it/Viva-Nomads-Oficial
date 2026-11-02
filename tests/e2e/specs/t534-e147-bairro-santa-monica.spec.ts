@@ -8,8 +8,8 @@ import { abrirNoEndereco, noPasso } from "../fixtures/cadastro";
   CEP de Uberlândia com as consultas de CEP simuladas (ViaCEP e BrasilAPI, como na t195):
    1. o CEP devolve bairro "Santa Mônica": o campo e o rascunho gravado (draft_data.neighborhood) ficam "Santa Mônica",
       nunca "Minas Gerais"; e o valor continua lá depois de ir ao Passo 4 e voltar, e depois de recarregar;
-   2. o CEP devolve o ESTADO no bairro ("Minas Gerais"): o campo fica vazio para a pessoa preencher e nada grava
-      "Minas Gerais".
+   2. (E429, 02/11) o CEP devolve "Minas Gerais" no bairro — bairro oficial de Uberlândia: o campo e o rascunho ficam
+      "Minas Gerais", sem erro nem aviso.
   A 390 e 1280 px.
 */
 const senha = novaSenha();
@@ -74,18 +74,20 @@ test.describe("T534 — E147: bairro Santa Mônica pelo CEP, nunca o estado", ()
     });
   }
 
-  test("2. a 390 px: o CEP que devolve o estado no bairro não grava 'Minas Gerais'", async ({ browser }) => {
+  // E429 (02/11) substitui o caso 2 do E147: o bairro do CEP é autoritativo — "Minas Gerais" é bairro de Uberlândia.
+  test("2. a 390 px: o CEP que devolve 'Minas Gerais' no bairro grava 'Minas Gerais' e não trava", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 390, height: 844 });
     await simularCep(page, "Minas Gerais");
     await abrirNoEndereco(page);
     await page.getByTestId("cadastro-cep").fill("38408100");
     await expect(page.getByTestId("cadastro-cidade")).toHaveValue("Uberlândia", { timeout: 15_000 });
-    await expect(page.getByTestId("cadastro-bairro")).not.toHaveValue("Minas Gerais");
+    await expect(page.getByTestId("cadastro-bairro")).toHaveValue("Minas Gerais");
+    await expect(page.getByTestId("aviso-bairro")).toHaveCount(0);
     await page.getByTestId("cadastro-numero").fill("2121");
     await page.waitForTimeout(2_500);
     await expect(page.getByText(/Salvo/).first()).toBeVisible({ timeout: 15_000 });
-    expect((await rascunhoGravado())?.neighborhood ?? "").not.toBe("Minas Gerais");
+    await expect.poll(async () => (await rascunhoGravado())?.neighborhood ?? null, { timeout: 15_000 }).toBe("Minas Gerais");
     await page.context().close();
   });
 });

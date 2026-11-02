@@ -5,7 +5,7 @@ import { noPasso, type PassoCadastro } from "../fixtures/cadastro";
 
 /*
   T471 — levantamento do Daniel (25/10), Passos 3 e 9:
-   E147. Bairro "Minas Gerais" (o estado) é recusado no Passo 3 com a mensagem no próprio passo.
+   E147 → E429 (02/11): bairro "Minas Gerais" (bairro oficial de Uberlândia, mesmo nome do estado) NÃO é recusado no Passo 3.
    E136. No celular, as datas do Passo 9 aparecem em pt-BR (25/10/2026), nunca "Oct 25, 2026".
    E137. Janela 25/10→18/11 (24 dias) com mínimo de 30: aviso e o Continuar não avança; com 30 dias, avança.
    E138. Calendário: bloquear o mesmo período duas vezes mostra UM bloqueio; tocar no dia bloqueado oferece Desbloquear.
@@ -40,13 +40,15 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await apagarContas([ids.dono]);
   });
 
-  test("E147: bairro = estado é recusado no Passo 3", async ({ browser }) => {
+  // E429 (02/11) substitui a regra do E147: "Minas Gerais" é bairro oficial de Uberlândia — o nome do bairro nunca é erro.
+  test("E429: bairro com nome de estado NÃO é recusado no Passo 3", async ({ browser }) => {
     const p = await entrarNaPagina(await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage(), dono.email, senha);
     await abrir(p, "endereco");
     await p.getByTestId("cadastro-bairro").fill("Minas Gerais");
     await p.getByTestId("cadastro-continuar").click();
-    await noPasso(p, "endereco");
-    await expect(p.getByTestId("passo-erros")).toContainText("“Minas Gerais” é um estado, não um bairro. Informe o bairro do imóvel.");
+    // Rua e número vazios ainda seguram o passo; o bairro, não.
+    await expect(p.getByTestId("passo-erros")).toBeVisible();
+    await expect(p.getByTestId("passo-erros")).not.toContainText(/é um estado|bairro/i);
     await p.screenshot({ path: `${SAIDA}/t476-bairro-estado-390.png` });
     await p.context().close();
   });
