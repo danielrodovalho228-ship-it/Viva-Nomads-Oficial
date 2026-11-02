@@ -621,8 +621,10 @@ export async function acolherNaEquipe(chamadoId: string): Promise<void> {
  * dispara a rotina dele na hora (encaminhamento urgente).
  */
 async function encaminharErroTecnico(admin: Admin, c: ChamadoViva, mensagem: string): Promise<void> {
-  const { count } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "erro_tecnico");
-  if ((count ?? 0) > 0) return;
+  const { count, error: erroJa } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "erro_tecnico");
+  // Sem saber se já encaminhou, não encaminha de novo: ordens em dobro ao Renato (P1, dispara na hora) e ao Otávio.
+  // O chamado continua com a equipe (o erro técnico já tira a resposta automática).
+  if (erroJa || (count ?? 0) > 0) return;
   const url = urlDoErro(mensagem) ?? (c.contexto_tipo && c.contexto_id ? `${c.contexto_tipo} ${c.contexto_id}` : null);
   for (const [para, prioridade] of [["renato", "P1"], ["otavio", "P2"]] as const) {
     const texto = textoOrdemErro({ numero: c.numero_publico, url, mensagem, para });
