@@ -30,21 +30,20 @@ export async function entradaNivelDoCadastro(propertyId: string): Promise<Entrad
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: dono } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data: dono, error: erroDono } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (erroDono) throw new Error("Não foi possível ler o nível do imóvel agora.");
   if (dono?.owner_id !== user.id) return null;
-  try {
-    const [e, fotos] = await Promise.all([
-      entradaDoNivel(admin, propertyId),
-      admin.from("nivel_itens").select("chave, foto_status, motivo_recusa").eq("property_id", propertyId),
-    ]);
-    return {
-      itens: e.itens,
-      medidas: e.medidas,
-      ruido: e.ruido,
-      bloqueadas: e.bloqueadas,
-      fotos: ((fotos.data ?? []) as { chave: string; foto_status: StatusFoto; motivo_recusa: string | null }[]).map((f) => ({ chave: f.chave, status: f.foto_status, motivo: f.motivo_recusa })),
-    };
-  } catch {
-    return null;
-  }
+  // Achado 76: a falha de leitura LANÇA (antes virava null = "nada declarado", e o bloco abria vazio).
+  const [e, fotos] = await Promise.all([
+    entradaDoNivel(admin, propertyId),
+    admin.from("nivel_itens").select("chave, foto_status, motivo_recusa").eq("property_id", propertyId),
+  ]);
+  if (fotos.error) throw new Error("Não foi possível ler o nível do imóvel agora.");
+  return {
+    itens: e.itens,
+    medidas: e.medidas,
+    ruido: e.ruido,
+    bloqueadas: e.bloqueadas,
+    fotos: ((fotos.data ?? []) as { chave: string; foto_status: StatusFoto; motivo_recusa: string | null }[]).map((f) => ({ chave: f.chave, status: f.foto_status, motivo: f.motivo_recusa })),
+  };
 }

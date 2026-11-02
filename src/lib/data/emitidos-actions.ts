@@ -69,7 +69,10 @@ export async function listarEmitidos(f: FiltrosEmitidos): Promise<DocumentoEmiti
   const { desde, antes } = periodoEmInstantes(f);
   if (desde) q = q.gte("emitido_em", desde);
   if (antes) q = q.lt("emitido_em", antes);
-  const { data } = await q;
+  // Achado 60: a falha de leitura LANÇA (a página cai no aviso de erro do admin) — antes "nenhum documento emitido",
+  // e a equipe podia reemitir ou reenviar o que já saiu.
+  const { data, error } = await q;
+  if (error) throw new Error("Não foi possível ler os documentos emitidos agora.");
   const linhas = (data ?? []) as { id: string; prefixo: string; numero: string; versao: number; tipo: string; ref_tabela: string; ref_id: string; status: string; emitido_em: string; partes: string[] | null; is_teste: boolean; registro_seq: number }[];
   if (!linhas.length) return [];
   const fiscais = linhas.filter((l) => l.ref_tabela === "documentos_fiscais").map((l) => l.ref_id);

@@ -32,11 +32,12 @@ function comBackup<T extends { chave: string }>(primeiras: T[], todas: readonly 
 export default async function AdminPage() {
   const admin = (await adminDaPagina()) ? createAdminClient() : null;
   const agora = new Date();
-  const teste = admin ? await idsContasTeste(admin).catch(() => new Set<string>()) : new Set<string>();
+  // Achado 93: sem a lista das contas de teste, os números e a atividade ficam fora (nunca contando teste como real).
+  const teste = admin ? await idsContasTeste(admin).catch(() => null) : null;
   const [numeros, decisoes, atividade, espaco] = await Promise.all([
-    admin ? numerosDaInicial(admin, teste).catch(() => null) : null,
+    admin && teste ? numerosDaInicial(admin, teste).catch(() => null) : null,
     admin ? decisoesDoAdmin(agora).catch(() => null) : null,
-    admin ? atividadeRecente(admin, teste).catch(() => []) : [],
+    admin && teste ? atividadeRecente(admin, teste).catch(() => []) : [],
     admin ? interesseEspacoTrabalho(admin).catch(() => null) : null,
   ]);
   // As filas de Pendências (a mesma leitura do topo de /admin/pendencias), as 5 primeiras; duas filas que levam ao mesmo

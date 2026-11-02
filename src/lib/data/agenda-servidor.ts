@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { ItemAgenda } from "@/lib/agenda";
-import { nomeComInicial, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { nomeDepoisDoAceite, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 
 /*
   Agenda do proprietário (prompt 23, item 5). Tudo filtrado pelo DONO logado no servidor: outro proprietário nunca
   vê nada daqui. Visitas (vídeo e presencial, sem as canceladas), entradas e saídas dos contratos ativos e as datas
-  bloqueadas, de todos os imóveis. Nome curto e foto do inquilino SÓ depois do aceite (contrato ou candidatura
+  bloqueadas, de todos os imóveis. Nome (completo, E427) e foto do inquilino SÓ depois do aceite (contrato ou candidatura
   aceita); antes disso a visita mostra só "Interessado(a)".
 */
 
@@ -81,9 +81,9 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
   const nomes = new Map<string, string>();
   if (tenantIds.length) {
     const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", tenantIds);
-    // E409: "Ana C." (1º nome + inicial do sobrenome), como o desenho promete depois do aceite.
+    // E427: depois do aceite, o nome completo (igual em todas as telas).
     for (const p of (perfis ?? []) as { id: string; full_name: string | null }[]) {
-      const nome = nomeComInicial(p.full_name);
+      const nome = nomeDepoisDoAceite(p.full_name);
       if (nome) nomes.set(p.id, nome);
     }
   }

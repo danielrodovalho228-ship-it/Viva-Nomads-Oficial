@@ -29,7 +29,7 @@ export default async function CompararPage({
       {imoveis.length < MIN_COMPARAR ? (
         <div className="mt-4 rounded-xl border border-line bg-white p-4" data-testid="comparar-vazio">
           <p className="text-ink">Escolha de 2 a 3 imóveis na busca para ver os dados lado a lado.</p>
-          <Link href="/buscar" className="mt-3 inline-block font-semibold text-forest underline underline-offset-2">
+          <Link href="/buscar" className="alvo-toque mt-3 inline-block font-semibold text-forest underline underline-offset-2">
             Voltar à busca
           </Link>
         </div>
@@ -79,7 +79,7 @@ export default async function CompararPage({
               </tbody>
             </table>
           </div>
-          <Link href="/buscar" className="mt-4 inline-block font-semibold text-forest underline underline-offset-2">
+          <Link href="/buscar" className="alvo-toque mt-4 inline-block font-semibold text-forest underline underline-offset-2">
             Voltar à busca
           </Link>
         </>

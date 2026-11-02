@@ -1,7 +1,6 @@
 "use server";
 
 import { idDeRascunhoValido, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -43,7 +42,7 @@ import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
 import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications/dados-candidatura";
 import { amenityRows } from "@/lib/amenities";
-import { fotosDoDono, urlsDoRascunho } from "@/lib/fotos-anuncio";
+import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
@@ -89,11 +88,11 @@ import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regr
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
-import { apagarFotosDoAnuncio, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
+import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
-import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
+import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
@@ -388,8 +387,8 @@ export async function resumoImovelDoDono(
   return {
     id: data.id as string,
     titulo: (data.title as string) || "Imóvel sem título",
-    // E147: "Minas Gerais" gravado como bairro (rascunhos antigos) não aparece como se fosse o bairro.
-    local: [bairroAceitavel(data.address as string | null, data.city as string | null), data.city].filter(Boolean).join(", "),
+    // E429: o bairro como gravado ("Minas Gerais" é bairro de Uberlândia).
+    local: [((data.address as string | null) ?? "").trim(), data.city].filter(Boolean).join(", "),
     rascunho: data.status === "draft",
   };
 }
@@ -727,9 +726,7 @@ export async function carregarLimitesNegociacao(id: string): Promise<{ valorMini
 export async function createProperty(entrada: PropertyInput): Promise<ActionResult> {
   // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
   const input = aplicarPontoChacara(entrada);
-  // E147: o bairro nunca é o estado, a sigla ou a cidade.
-  const bairroRuim = problemaDoBairro(input.neighborhood, input.city);
-  if (bairroRuim) return { ok: false, error: bairroRuim };
+  // E429: o nome do bairro não é recusado no servidor ("Minas Gerais" é bairro oficial de Uberlândia).
   // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
   const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
   if (janelaCurta) return { ok: false, error: janelaCurta };
@@ -1016,9 +1013,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if (!periodoDisponivelValido(input.availableFrom, input.availableUntil)) {
     return { ok: false, error: MSG_DISPONIVEL_ATE_ANTES };
   }
-  // E147: o bairro nunca é o estado, a sigla ou a cidade.
-  const bairroRuim = problemaDoBairro(input.neighborhood, input.city);
-  if (bairroRuim) return { ok: false, error: bairroRuim };
+  // E429: o nome do bairro não é recusado no servidor ("Minas Gerais" é bairro oficial de Uberlândia).
   // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
   const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
   if (janelaCurta) return { ok: false, error: janelaCurta };
@@ -1395,7 +1390,8 @@ export async function registrarContrato(
     .eq("id", lead.property_id)
     .maybeSingle();
   // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel?.monthly_price);
   if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
     return { ok: false, error: "Imóvel sem valor de aluguel." };
@@ -1412,7 +1408,8 @@ export async function registrarContrato(
   if (!inicio.ok) return { ok: false, error: inicio.error };
 
   // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
-  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string).catch(() => "falhou" as const);
+  if (taxaLead === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
   const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
@@ -2026,21 +2023,13 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
-  return { ok: true, draft: row.draft_data ?? null };
+  return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
 }
 
-/** Carrega o estado salvo (draft_data) de um rascunho do dono, para retomar. */
-export async function loadDraftData(id: string): Promise<unknown | null> {
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  // C4: draft_data saiu do SELECT por coluna; o dono lê pela RPC (checa owner).
-  const { data } = await supabase.rpc("property_private_details", { prop_id: id });
-  const row = Array.isArray(data) ? data[0] : data;
-  return (row as { draft_data?: unknown } | null)?.draft_data ?? null;
+/** E426: o draft_data sem as fotos cujo arquivo já saiu do bucket (nada de miniatura quebrada ao retomar). */
+async function semFotosApagadas(draft: unknown, ownerId: string): Promise<unknown> {
+  if (!draft || typeof draft !== "object" || !Array.isArray((draft as { photos?: unknown }).photos)) return draft;
+  return rascunhoSemFotosApagadas(draft, await arquivosDoDono(createAdminClient(), ownerId));
 }
 
 /**
@@ -2098,7 +2087,7 @@ export async function getLatestDraft(): Promise<{
   return {
     id: data.id as string,
     title: (data.title as string) || "Rascunho de anúncio",
-    data: (row as { draft_data?: unknown } | null)?.draft_data ?? null,
+    data: await semFotosApagadas((row as { draft_data?: unknown } | null)?.draft_data ?? null, user.id),
     prontidao,
   };
 }

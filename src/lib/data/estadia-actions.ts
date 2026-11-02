@@ -28,7 +28,7 @@ import { linhaConferir, numeroAditivo } from "@/lib/fiscal/prefixos";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { cancelarProgramadas, reagendarProgramadas } from "@/lib/respostas/servidor";
 import { aoEventoDaEstadia } from "@/lib/automacao/servidor";
-import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
+import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import {
@@ -359,7 +359,9 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
   } else {
     // Aceito: a taxa sobre a parte alterada fica registrada com a faixa do dono AGORA (decisão (a)).
     const ownerId = String(ctx.c.properties?.owner_id ?? "");
-    const faixa = await taxaDoDonoAgora(ctx.admin, ownerId);
+    // Achado 83: a taxa do aditivo fica registrada; sem lê-la, o aceite não segue.
+    const faixa = await taxaDoDonoAgora(ctx.admin, ownerId).catch(() => null);
+    if (!faixa) return { ok: false, erro: MSG_TAXA_SEM_LEITURA };
     const t = taxaDoAditivo(a.mudancas, {
       valorMensal: Number(ctx.c.aluguel_mensal) || 0,
       mesesNaoIniciados: mesesFuturos(ctx.c, hojeEmBrasilia()),

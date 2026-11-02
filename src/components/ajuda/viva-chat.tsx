@@ -301,7 +301,7 @@ function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; 
                 }
               }}
               placeholder="Escreva sua dúvida…"
-              className="max-h-28 min-h-[40px] flex-1 resize-none rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-sage"
+              className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-sage"
             />
             <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-forest text-white disabled:opacity-40">
               <Send className="h-4 w-4" />
@@ -311,11 +311,11 @@ function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; 
             <button
               type="button"
               onClick={() => setPessoa(true)}
-              className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold", sugerePessoa ? "border-forest bg-forest/5 text-forest" : "border-line text-muted hover:text-ink")}
+              className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-semibold", sugerePessoa ? "border-forest bg-forest/5 text-forest" : "border-line text-muted hover:text-ink")}
             >
               <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
             </button>
-            <Link href="/ajuda" className="inline-flex items-center gap-1 text-muted hover:text-ink">
+            <Link href="/ajuda" className="inline-flex min-h-11 items-center gap-1 text-muted hover:text-ink">
               <LifeBuoy className="h-3.5 w-3.5" /> Central de Ajuda
             </Link>
           </div>

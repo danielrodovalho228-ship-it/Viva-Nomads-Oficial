@@ -168,8 +168,9 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     const categorias = [...new Set([...((parc.categorias as string[]) ?? []), CATEGORIA_AVALIADOR])];
     await s.admin.from("parceiros").update({ categorias }).eq("id", parc.id);
   }
-  const identidade = await estadoIdentidade(s.admin, s.userId);
-  const pend = pendenciasDoCredenciamento({ identidadeVerificada: identidade.estado === "confirmada" });
+  // O registro já foi gravado: sem a leitura, a lista de pendências mostra a identidade como a confirmar (a tela relê).
+  const identidade = await estadoIdentidade(s.admin, s.userId).catch(() => null);
+  const pend = pendenciasDoCredenciamento({ identidadeVerificada: identidade?.estado === "confirmada" });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(ROTA_ADMIN);
   return {
@@ -205,7 +206,12 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   // E30 + E35-B: ativar é a SEGUNDA aprovação — exige a avaliação de teste registrada (laudo emitido num pedido de
   // teste) E a identidade confirmada (fonte única estadoIdentidade).
   if (para === "ativo") {
-    const [feitos, ident] = await Promise.all([comTesteConcluido(a.admin, [id]), c.user_id ? estadoIdentidade(a.admin, c.user_id as string) : Promise.resolve(null)]);
+    const [feitos, ident] = await Promise.all([
+      comTesteConcluido(a.admin, [id]),
+      c.user_id ? estadoIdentidade(a.admin, c.user_id as string).catch(() => "falhou" as const) : Promise.resolve(null),
+    ]);
+    // Sem a leitura, não decide: nunca recusa dizendo "identidade não confirmada" de quem pode estar confirmado.
+    if (ident === "falhou") return { ok: false, erro: "Não foi possível conferir a identidade agora. Tente de novo." };
     const pode = podeAtivar({ status: c.status as string, testeConcluido: feitos.has(id), identidadeConfirmada: ident?.estado === "confirmada" });
     if (!pode.ok) return { ok: false, erro: pode.motivo };
   }

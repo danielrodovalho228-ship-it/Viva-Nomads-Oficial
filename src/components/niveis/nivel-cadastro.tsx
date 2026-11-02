@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { ROTULO_AREA, ROTULO_NIVEL, rotuloItem } from "@/config/niveis";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
@@ -43,10 +44,13 @@ export function NivelNoCadastro({
   const [tela, setTela] = useState<NivelDoImovelTela | null>(null);
   const [abertos, setAbertos] = useState<{ ruido?: boolean; extras?: boolean }>({});
 
+  // Achado 76: a leitura do nível falhou → aviso com "Tentar de novo", nunca o bloco vazio (nível mais baixo e ruído em branco).
+  const [falhou, setFalhou] = useState(false);
   const carregar = useCallback(async () => {
     if (!propertyId) return;
-    const [e, t] = await Promise.all([entradaNivelDoCadastro(propertyId).catch(() => null), nivelDoMeuImovel(propertyId).catch(() => null)]);
-    setEntrada(e);
+    const [e, t] = await Promise.all([entradaNivelDoCadastro(propertyId).catch(() => "falhou" as const), nivelDoMeuImovel(propertyId).catch(() => null)]);
+    setFalhou(e === "falhou");
+    setEntrada(e === "falhou" ? null : e);
     setTela(t);
     setCarregou(true);
   }, [propertyId]);
@@ -54,9 +58,10 @@ export function NivelNoCadastro({
   useEffect(() => {
     if (!propertyId) return;
     let vivo = true;
-    Promise.all([entradaNivelDoCadastro(propertyId).catch(() => null), nivelDoMeuImovel(propertyId).catch(() => null)]).then(([e, t]) => {
+    Promise.all([entradaNivelDoCadastro(propertyId).catch(() => "falhou" as const), nivelDoMeuImovel(propertyId).catch(() => null)]).then(([e, t]) => {
       if (!vivo) return;
-      setEntrada(e);
+      setFalhou(e === "falhou");
+      setEntrada(e === "falhou" ? null : e);
       setTela(t);
       setCarregou(true);
     });
@@ -78,6 +83,24 @@ export function NivelNoCadastro({
     );
   }
   if (!carregou) return null;
+  if (falhou)
+    return (
+      <section id={ANCORA_NIVEL_CADASTRO} className="scroll-mt-24 rounded-xl border border-line bg-white p-4" role="alert" data-testid="nivel-cadastro-falha">
+        <p className="text-sm text-ink">Não foi possível ler o nível do anúncio agora. Nada foi alterado.</p>
+        <Button
+          type="button"
+          variant="secondary"
+          className="mt-3"
+          onClick={() => {
+            setCarregou(false);
+            void carregar().catch(() => undefined);
+          }}
+          data-testid="nivel-cadastro-tentar"
+        >
+          Tentar de novo
+        </Button>
+      </section>
+    );
 
   const base = entrada ?? { itens: [], medidas: [], ruido: null, bloqueadas: [], fotos: [] };
   const { nivel, proximo, falta: faltaTudo } = nivelAgoraEFalta({

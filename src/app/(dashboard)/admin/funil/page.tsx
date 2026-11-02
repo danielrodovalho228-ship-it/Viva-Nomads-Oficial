@@ -50,7 +50,8 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
   const [f, indicadores, cidades] = await Promise.all([
     funilDaSemana().catch(() => null),
     getVisaoGeral(periodo.inicio, periodo.fim, cidade),
-    cidadesComAnuncio(),
+    // Achado 65: falhou → o filtro de cidade avisa (null), sem derrubar o funil.
+    cidadesComAnuncio().catch(() => null),
   ]);
   const avisoIndicadores = indicadores.ok
     ? null
@@ -139,7 +140,12 @@ export default async function AdminFunilPage({ searchParams }: { searchParams: P
           destaque={!mesmaJanela}
           testid="funil-indicadores-janela"
         />
-        <VisaoGeralClient dados={indicadores.ok ? indicadores.dados : null} aviso={avisoIndicadores} periodo={periodo} cidade={cidade} cidades={cidades} base="/admin/funil" />
+        {cidades === null && (
+          <p role="alert" className="mb-2 text-sm text-red-700" data-testid="filtro-cidades-falha">
+            Não foi possível carregar a lista de cidades do filtro agora. Recarregue a página para tentar de novo.
+          </p>
+        )}
+        <VisaoGeralClient dados={indicadores.ok ? indicadores.dados : null} aviso={avisoIndicadores} periodo={periodo} cidade={cidade} cidades={cidades ?? []} base="/admin/funil" />
       </section>
     </div>
   );

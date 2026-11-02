@@ -47,6 +47,7 @@ export function DadosPessoais() {
   const [nascimento, setNascimento] = useState("");
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [dadosFalharam, setDadosFalharam] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
@@ -61,7 +62,12 @@ export function DadosPessoais() {
         setEmail(d.email);
         setEmailConfirmado(d.emailConfirmado);
       })
-      .catch(() => {});
+      // Achado 66: falhou a leitura → avisa e trava o salvar (nome/telefone vazios apagariam o que está gravado).
+      .catch(() => {
+        if (!vivo) return;
+        setDadosFalharam(true);
+        setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
+      });
     getNascimento()
       .then((n) => vivo && setNascimento(n))
       .catch(() => {});
@@ -75,6 +81,7 @@ export function DadosPessoais() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
+    if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
     setErro(null);
     setOk(false);
     const nasc = validarNascimento(nascimento);
@@ -518,8 +525,8 @@ function PwdField({
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
-        className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
-        inputClassName="text-sm"
+        className="rounded-xl border border-sage-200 bg-white px-4 focus-within:border-sage"
+        inputClassName="text-base sm:text-sm"
       />
     </label>
   );
@@ -535,6 +542,8 @@ const DICA_CATEGORIA: Record<"decisao" | "seguranca" | CategoriaComInterruptor, 
 };
 
 /** `titulo`: a Conta e a subtela já têm o título "Notificações" — lá o cartão não repete (CONTA-A, C3a). */
+const ERRO_LER_PREFERENCIAS = "Não foi possível carregar suas preferências de aviso agora. Recarregue a página para tentar de novo.";
+
 export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: string | null } = {}) {
   // Preferência GRAVADA no perfil (notif_email). Prompt 30, item 8: sem aviso por WhatsApp (ficam e-mail e o aviso
   // no app; o canal da Viva é "Falar com a Viva").
@@ -549,15 +558,17 @@ export function NotificationsPanel({ titulo = "Notificações" }: { titulo?: str
 
   useEffect(() => {
     let vivo = true;
+    // Achados 52/54: sem ler a preferência gravada, o interruptor fica desabilitado (null) e o painel avisa — nunca um
+    // valor padrão que um toque gravaria por cima (antes: e-mail "ligado" e categorias "[]", que religava as outras).
     getNotifPrefs()
       .then((p) => vivo && setPrefs(p))
-      .catch(() => vivo && setPrefs({ email: true }));
+      .catch(() => vivo && setErro(ERRO_LER_PREFERENCIAS));
     getAlertasEquipe()
       .then((v) => vivo && setAlertasEquipeUi(v))
       .catch(() => vivo && setAlertasEquipeUi(null));
     getCategoriasDesligadas()
       .then((v) => vivo && setDesligadas(v))
-      .catch(() => vivo && setDesligadas([]));
+      .catch(() => vivo && setErro(ERRO_LER_PREFERENCIAS));
     return () => {
       vivo = false;
     };
@@ -868,8 +879,8 @@ export function DangerZone() {
             onChange={setPassword}
             placeholder="Senha atual"
             autoComplete="current-password"
-            className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-2 focus-within:border-red-500"
-            inputClassName="text-sm"
+            className="mt-2 rounded-lg border border-red-300 bg-white px-3 focus-within:border-red-500"
+            inputClassName="text-base sm:text-sm"
           />
           {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
           {captcha.widget && <div className="mt-3">{captcha.widget}</div>}

@@ -67,6 +67,7 @@ export type NotificationEvent =
   | "proposta_vencendo" // 24 h antes de vencer → quem tem de responder (prompt 27, cron de automações)
   // Visitas (prompt 23): vídeo e presencial, sempre pela plataforma
   | "visita_pedida" // morador pediu → proprietário
+  | "visita_pedida_morador" // E424: morador pediu → cópia ao próprio morador (horários e próximos passos)
   | "visita_confirmada" // horário confirmado → a outra parte
   | "visita_remarcada" // proprietário propôs outro horário → morador
   | "visita_cancelada" // cancelada ou recusada (com motivo) → a outra parte
@@ -125,6 +126,7 @@ export type NotificationEvent =
   | "vistoria_sem_avaliador" // nenhum avaliador elegível → admins
   // 63-B: selo "LinkedIn conectado" (atrás de LINKEDIN_CONECTAR_ATIVO)
   | "linkedin_vencendo" // o selo vence em 30 dias → a própria pessoa (reconectar)
+  | "preco_justo_acima" // E399-C: o total por mês ficou igual ou acima do Airbnb → só o dono (valor lá e "até R$ Y")
   | "linkedin_ja_conectado" // alguém tentou conectar um LinkedIn que já está em outra conta → admins (sem expor quem)
   // Prompt 62-B2: laudo, resultado, ressalvas, "· vistoriado", strikes e contestação.
   | "vistoria_laudo_emitido" // laudo VIS emitido → dono (resultado, o que corrigir, prazo e próximo passo)
@@ -194,6 +196,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   renovacao_aviso: { subject: "Seu período termina em 15 dias: quer renovar?", body: (n) => `Olá${n ? " " + n : ""}, o bloco do seu contrato termina em 15 dias. Se quiserem seguir, combinem a renovação pela plataforma.`, cta: "Renovar a estadia", path: "/dashboard/contratos" },
   proposta_recebida: { subject: "Você recebeu uma proposta", body: (n) => `Olá${n ? " " + n : ""}, há uma proposta nova para você no Viva Nomads. Confira os valores e responda pela plataforma.`, cta: "Ver a proposta", path: "/dashboard/orcamentos" },
   visita_pedida: { subject: "Pedido de visita no seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um interessado pediu uma visita ao seu imóvel. Confirme um horário, proponha outro ou recuse pela plataforma.`, cta: "Responder o pedido", path: "/dashboard/visitas?de=dono" },
+  visita_pedida_morador: { subject: "Seu pedido de visita foi enviado", body: (n) => `Olá${n ? " " + n : ""}, seu pedido de visita foi enviado. O proprietário confirma um dos horários pela plataforma e você recebe um aviso.`, cta: "Ver minhas visitas", path: "/dashboard/visitas" },
   visita_confirmada: { subject: "Visita confirmada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi confirmada. O horário é sempre de Brasília.`, cta: "Ver a visita", path: "/dashboard/visitas" },
   visita_remarcada: { subject: "Proposta de novo horário para a visita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário propôs outro horário para a visita. Aceite ou cancele pela plataforma.`, cta: "Ver o horário", path: "/dashboard/visitas" },
   visita_cancelada: { subject: "Visita cancelada", body: (n) => `Olá${n ? " " + n : ""}, a visita foi cancelada. Veja os detalhes pela plataforma.`, cta: "Ver detalhes", path: "/dashboard/visitas" },
@@ -246,6 +249,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   calendario_conflito: { subject: "Datas do outro site cruzam um compromisso na Viva", body: (n) => `Olá${n ? " " + n : ""}, o calendário importado marcou como ocupadas datas em que o seu imóvel tem um compromisso na Viva. Nada foi cancelado: confira as datas e decida qual vale.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },
   calendario_falha: { subject: "Não conseguimos ler o calendário importado", body: (n) => `Olá${n ? " " + n : ""}, tentamos ler o link do calendário do outro site 3 vezes seguidas, sem sucesso. Enquanto isso, as datas de lá não chegam aqui.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },
   linkedin_vencendo: { subject: "Reconecte seu LinkedIn para manter o selo", body: (n) => `Olá${n ? " " + n : ""}, o selo "LinkedIn conectado" da sua conta vence em 30 dias. Para manter o selo, reconecte o LinkedIn em Conta.`, cta: "Reconectar", path: "/dashboard/conta" },
+  preco_justo_acima: { subject: "Seu anúncio está sem o selo Preço justo", body: (n) => `Olá${n ? " " + n : ""}, o total por mês do seu anúncio na Viva ficou igual ou acima do mesmo imóvel no Airbnb (30 noites, com descontos, limpeza e taxas). Por isso o anúncio está sem o selo "Preço justo". Os valores estão abaixo. Só você recebe este aviso.`, cta: "Ver o preço", path: "/dashboard/imoveis" },
   linkedin_ja_conectado: { subject: "LinkedIn já conectado a outra conta", body: () => "Uma conta tentou conectar um LinkedIn que já está ligado a outra conta da Viva. A tentativa foi recusada; vale conferir se é a mesma pessoa com duas contas.", cta: "Abrir o atendimento", path: "/admin/atendimento" },
   vistoria_sem_avaliador: { subject: "Avaliação sem avaliador elegível", body: () => "Um pedido de avaliação de imóvel está aguardando avaliador: ninguém da fila da cidade está elegível agora.", cta: "Abrir a fila", path: "/admin/avaliadores" },
   vistoria_laudo_emitido: { subject: "O laudo de avaliação do seu imóvel saiu", body: (n) => `Olá${n ? " " + n : ""}, o laudo de avaliação do seu imóvel foi emitido pela Viva. Veja o resultado, o que corrigir (se houver), o prazo e o próximo passo.`, cta: "Ver o laudo", path: "/dashboard/imoveis" },

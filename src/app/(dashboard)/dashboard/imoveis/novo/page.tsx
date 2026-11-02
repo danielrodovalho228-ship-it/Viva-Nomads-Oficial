@@ -36,6 +36,8 @@ import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
 import { NivelNoCadastro } from "@/components/niveis/nivel-cadastro";
+import { entradaNivelDoCadastro } from "@/lib/data/nivel-cadastro-actions";
+import type { ProvasDoRascunho } from "@/lib/anuncio/qualificacao-nivel";
 import { EstruturaAcessibilidade } from "@/components/anuncio/estrutura-acessibilidade";
 import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
@@ -57,13 +59,13 @@ import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoD
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
-import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
+import { avisoDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
-import { cn, dataBR } from "@/lib/utils";
+import { cn, dataBR, hojeBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { isEligible } from "@/lib/qualification";
 import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
@@ -118,7 +120,7 @@ import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { useTelaLarga } from "@/components/ui/use-tela-larga";
 import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
-import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
+import { TELAS_ASSISTENTE, resumoDisponibilidadePrevia } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
 /**
@@ -467,12 +469,9 @@ export default function NewPropertyPage() {
       // E104: quem opera e o documento da operação ficaram na Revisão; a prontidão ("sublocacao") segura a publicação.
       if (!street.trim()) e.rua = "Informe a rua.";
       if (!numero.trim()) e.numero = "Informe o número (ou s/n).";
+      // E429: o nome do bairro nunca barra o avanço ("Minas Gerais" é bairro de Uberlândia). Só o vazio barra; o aviso de
+      // divergência com o CEP aparece no campo (avisoDoBairro) e não entra aqui.
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
-      else {
-        // E147: "Minas Gerais" (ou outro estado, a sigla ou a própria cidade) não é bairro.
-        const problema = problemaDoBairro(neighborhood, city);
-        if (problema) e.bairro = problema;
-      }
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
     if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
@@ -1222,8 +1221,8 @@ export default function NewPropertyPage() {
 
   function aplicarNoFormulario(a: ReturnType<typeof aplicarResultadoCep>) {
     if (a.rua !== undefined) setStreet(a.rua);
-    // E147: bairro que é o estado/UF/cidade nunca entra (o campo fica para a pessoa preencher).
-    if (a.bairro !== undefined) setNeighborhood(bairroAceitavel(a.bairro, a.cidade ?? city));
+    // E429: o bairro do CEP é AUTORITATIVO — entra como veio (antes "Minas Gerais", bairro oficial de Uberlândia, era apagado).
+    if (a.bairro !== undefined) setNeighborhood(a.bairro.trim());
     if (a.cidade !== undefined) setCity(a.cidade);
     if (a.uf) setUf(a.uf);
     if (a.perguntarBairro) setBairroDoCep(a.perguntarBairro);
@@ -1276,7 +1275,7 @@ export default function NewPropertyPage() {
       if (e.cep) setCep(formatarCep(e.cep));
       if (e.rua) setStreet(e.rua);
       if (e.numero) setNumero(e.numero.slice(0, 20));
-      if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
+      if (e.bairro?.trim()) setNeighborhood(e.bairro.trim());
       if (e.cidade) setCity(e.cidade);
       if (e.uf) setUf(e.uf.slice(0, 2));
       marcados.add("endereco");
@@ -1304,7 +1303,7 @@ export default function NewPropertyPage() {
     if (e.cep) setCep(formatarCep(e.cep));
     if (e.rua) setStreet(e.rua);
     if (e.numero) setNumero(e.numero.slice(0, 20));
-    if (e.bairro && bairroAceitavel(e.bairro, e.cidade ?? city)) setNeighborhood(bairroAceitavel(e.bairro, e.cidade ?? city));
+    if (e.bairro?.trim()) setNeighborhood(e.bairro.trim());
     if (e.cidade) setCity(e.cidade);
     if (e.uf) setUf(e.uf.slice(0, 2));
     setDaMatricula((atual) => new Set(atual).add("endereco"));
@@ -1566,6 +1565,21 @@ export default function NewPropertyPage() {
   const mostrarQualificacao =
     (approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente") ||
     (approved === true && !editId && qualDoRascunho && !!draftParam && draftServerId === draftParam);
+  // E415: com rascunho salvo, o resultado da Qualificação credita as provas já feitas (foto na hora, internet medida,
+  // ruído) — antes calculava só pelas respostas e o item fotografado seguia como "falta".
+  const [provasQual, setProvasQual] = useState<{ id: string; provas: ProvasDoRascunho | null } | null>(null);
+  const idProvasQual = mostrarQualificacao ? imovelId : null;
+  useEffect(() => {
+    if (!idProvasQual) return;
+    let vivo = true;
+    entradaNivelDoCadastro(idProvasQual)
+      .then((e) => vivo && setProvasQual({ id: idProvasQual, provas: e }))
+      .catch(() => vivo && setProvasQual({ id: idProvasQual, provas: null }));
+    return () => {
+      vivo = false;
+    };
+  }, [idProvasQual, telaQual]);
+  const provasDaQualificacao = provasQual && provasQual.id === idProvasQual ? provasQual.provas : null;
 
   /** Responder: as MESMAS confirmações de conforto e comodidades do Passo 5 (fonte única), e a velocidade da internet. */
   function responderQualificacao(id: string, valor: string | boolean) {
@@ -1665,6 +1679,26 @@ export default function NewPropertyPage() {
       </div>
     ) : null;
 
+  // E420 / L-88 (t943): o aviso vem ANTES da espera do "approved". Rascunho que não abre não libera o formulário
+  // (approved segue null, nada é gravado), e antes disso o return null deixava a página em branco.
+  if (rascunhoFechado) {
+    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
+    return (
+      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
+        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
+        <p className="mt-2 text-sm text-ink">{t.texto}</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
+            Ver meus imóveis
+          </Link>
+          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
+            Começar um anúncio novo
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (approved === null) return null;
 
   if (mostrarQualificacao) {
@@ -1673,6 +1707,7 @@ export default function NewPropertyPage() {
         aviso={avisoRascunho}
         tela={telaQual}
         respostas={qualConf.respostas}
+        provas={provasDaQualificacao}
         onResponder={responderQualificacao}
         onTela={(t) => {
           setTelaQual(t);
@@ -1788,24 +1823,6 @@ export default function NewPropertyPage() {
   };
   const meta = STEP_META[step];
 
-  if (rascunhoFechado) {
-    const t = TEXTO_RASCUNHO_FECHADO[rascunhoFechado];
-    return (
-      <div className="w-full rounded-xl border border-line bg-white p-6" role="alert" data-testid="rascunho-fechado" data-motivo={rascunhoFechado}>
-        <h2 className="font-title text-xl font-semibold text-ink">{t.titulo}</h2>
-        <p className="mt-2 text-sm text-ink">{t.texto}</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/dashboard/imoveis" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-meus">
-            Ver meus imóveis
-          </Link>
-          <Link href="/dashboard/imoveis/novo" className="font-semibold text-forest underline underline-offset-2" data-testid="rascunho-fechado-novo">
-            Começar um anúncio novo
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
       {avisoRascunho}
@@ -1901,6 +1918,7 @@ export default function NewPropertyPage() {
             {step === ETAPA.endereco && (
               <EtapaOndeFica
                 cepResultado={cepResultado}
+                avisoBairro={avisoDoBairro(neighborhood, { bairroDoCep: cepResultado?.tipo === "rua" ? cepResultado.bairro : null, cidade: city })}
                 onEscolherEndereco={escolherEndereco}
                 cep={cep}
                 setCep={(v) => {
@@ -2152,6 +2170,7 @@ export default function NewPropertyPage() {
             uf={uf}
             publicado={!!editingId}
             tamanhoReal={<BotaoTamanhoReal imovel={previewProperty} className="mt-2" />}
+            resumo={step === ETAPA.disponibilidade ? resumoDisponibilidadePrevia(availableFrom, minPeriod, hojeBR()) : null}
           />
         </aside>
         )}

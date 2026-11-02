@@ -59,12 +59,23 @@ export function AvailabilityCalendar({
   const user = useAuthStore((s) => s.user);
   const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
+  // Achado 48: a leitura das datas ocupadas falhou → o calendário avisa (antes ficava todo livre, em silêncio).
+  const [datasFalharam, setDatasFalharam] = useState(false);
+  const [tentativaDatas, setTentativaDatas] = useState(0);
   useEffect(() => {
     // Dias fechados pelo proprietário e períodos com contrato (só as datas). [] sem backend.
+    let vivo = true;
     getDatasIndisponiveis(property.id)
-      .then((r) => setBlockDays(expandirBloqueios(r as Bloqueio[])))
-      .catch(() => {});
-  }, [property.id]);
+      .then((r) => {
+        if (!vivo) return;
+        setBlockDays(expandirBloqueios(r as Bloqueio[]));
+        setDatasFalharam(false);
+      })
+      .catch(() => vivo && setDatasFalharam(true));
+    return () => {
+      vivo = false;
+    };
+  }, [property.id, tentativaDatas]);
 
   const checkIn = selecao.entrada || null;
   const checkOut = selecao.saida || null;
@@ -154,6 +165,15 @@ export function AvailabilityCalendar({
         Toque na <strong>entrada</strong> e depois na <strong>saída</strong> para escolher o
         período e enviá-lo ao proprietário.
       </p>
+
+      {datasFalharam && (
+        <div role="alert" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-ink" data-testid="calendario-datas-falha">
+          Não foi possível conferir as datas já ocupadas agora. O proprietário confirma as datas antes de aceitar.{" "}
+          <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setTentativaDatas((n) => n + 1)} data-testid="calendario-datas-tentar">
+            Tentar de novo
+          </button>
+        </div>
+      )}
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {meses.map((mes) => {

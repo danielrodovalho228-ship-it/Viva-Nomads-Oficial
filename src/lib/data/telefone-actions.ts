@@ -62,10 +62,12 @@ export async function getTelefoneEstado(): Promise<EstadoTelefone | null> {
   const disp = await smsDisponivel();
   const admin = createAdminClient();
   if (!admin) return { ...disp, verificado: false, pendente: false };
-  const [{ data: u }, { data: tv }] = await Promise.all([
+  const [{ data: u, error: e1 }, { data: tv, error: e2 }] = await Promise.all([
     admin.auth.admin.getUserById(s.user.id),
     admin.from("telefone_verificacao").select("verificado_em, pedido_em").eq("user_id", s.user.id).maybeSingle(),
   ]);
+  // Achado 91: a falha não vira "não verificado" — o formulário voltaria e pedir o código zera o selo de verdade.
+  if (e1 || e2) throw new Error("Não foi possível ler a verificação do celular agora.");
   const verificado = seloTelefone({ phoneConfirmedAt: u?.user?.phone_confirmed_at, verificadoEm: tv?.verificado_em as string | null });
   return { ...disp, verificado, pendente: !verificado && !!tv?.pedido_em };
 }

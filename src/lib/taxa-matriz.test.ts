@@ -228,7 +228,7 @@ test("4. antes do aceite: a tela do dono mostra a taxa DO ENVIO e, se a faixa me
   assert.equal(textoSeAceitaHoje(0.12, 0.1), "Se aceita hoje: 10% (sua faixa melhorou)");
   assert.equal(textoSeAceitaHoje(0.1, 0.12), null, "a taxa nunca sobe: nada a anunciar");
   const acoes = ler("./data/propostas-actions.ts");
-  assert.match(acoes, /const pct = congelada \? \(tx\.taxa_congelada as number\) : \(tx\.taxa_no_envio \?\? \(hoje as number\)\);/);
+  assert.match(acoes, /const pct = congelada \? \(tx\.taxa_congelada as number\) : \(tx\.taxa_no_envio \?\? hoje\);/ /* achado 83: hoje pode faltar (leitura falhou) */);
   const tela = ler("../app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx");
   assert.match(tela, /data-testid="proposta-taxa-se-aceita-hoje"/);
   assert.match(tela, /rotuloTaxaServico\(p\.taxa\.pct, p\.taxa\.valorMensal, p\.taxa\.meses, p\.taxa\.valor\)/);
@@ -258,7 +258,7 @@ test("7/8. contraproposta (do morador ou do dono, v2/v3) nunca muda taxa_no_envi
   const acoes = ler("./data/propostas-actions.ts");
   assert.equal((acoes.match(/taxa_no_envio:/g) ?? []).length, 1);
   const envio = acoes.slice(acoes.indexOf("export async function enviarProposta"), acoes.indexOf("export async function enviarProposta") + 4000);
-  assert.match(envio, /taxa_no_envio: \(await taxaDoDonoAgora\(s\.admin, s\.user\.id\)\)\.taxa/);
+  assert.match(envio, /const taxaEnvio = await taxaDoDonoAgora\(s\.admin, s\.user\.id\)\.catch\(\(\) => null\);[\s\S]{0,900}taxa_no_envio: taxaEnvio\.taxa/ /* achado 83: lida antes de numerar; sem ela, não envia */);
 });
 
 test("9. contraproposta muda valor/meses: a % fica a do envio e o valor é recalculado (12% de R$ 3.300 × 4 = R$ 1.584)", () => {
@@ -303,7 +303,7 @@ test("14. imóvel pausado/despublicado entre o envio e o aceite: a contagem muda
 
 test("R6. contrato sem proposta: o aceite da candidatura congela a taxa da regra única (não mais a do plano)", () => {
   const leads = ler("./data/leads-actions.ts");
-  assert.match(leads, /const t = await taxaDoDonoAgora\(admin, user\.id\);\n\s+const comissao = t\.taxa;/);
+  assert.match(leads, /const t = await taxaDoDonoAgora\(admin, user\.id\)\.catch\(\(\) => null\);\s*if \(!t\) return \{ ok: false, error: MSG_TAXA_SEM_LEITURA \};\s*const comissao = t\.taxa;/ /* achado 83 */);
   assert.doesNotMatch(leads, /const comissao = COMISSAO_POR_PLANO/);
 });
 

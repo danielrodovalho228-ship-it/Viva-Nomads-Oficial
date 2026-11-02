@@ -37,7 +37,9 @@ export function intervaloBRT(inicio: string, fim: string): { ini: string; fim: s
 
 /** Ids das contas de teste (para tirar dos números). */
 export async function idsContasTeste(admin: Admin): Promise<Set<string>> {
-  const { data } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
+  const { data, error } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
+  // Achado 93: a falha LANÇA — sem a lista, as contas de teste entrariam nos números (e abririam Correções).
+  if (error) throw new Error("Não foi possível ler as contas de teste.");
   return new Set(((data ?? []) as { id: string }[]).map((p) => p.id));
 }
 
@@ -363,7 +365,9 @@ export function nomeCurtoAdmin(nome: string | null | undefined): string {
 /** Nomes curtos por id (partes de contrato, donos). */
 export async function nomesCurtos(admin: Admin, ids: string[]): Promise<Map<string, string>> {
   if (!ids.length) return new Map();
-  const { data } = await admin.from("profiles").select("id, full_name").in("id", [...new Set(ids)]);
+  const { data, error } = await admin.from("profiles").select("id, full_name").in("id", [...new Set(ids)]);
+  // Achado 107: a falha LANÇA (admin/error.tsx) — nunca nomes em branco nas listas da equipe.
+  if (error) throw new Error("Não foi possível ler os nomes.");
   return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
 }
 
@@ -558,7 +562,8 @@ export async function taxasVencidas(admin: Admin, tipo: "real" | "teste" | "todo
 export async function imovelDosLeads(admin: Admin, ids: string[]): Promise<Map<string, string>> {
   const u = [...new Set(ids.filter(Boolean))];
   if (!u.length) return new Map();
-  const { data } = await admin.from("leads").select("id, properties!inner(title)").in("id", u);
+  const { data, error } = await admin.from("leads").select("id, properties!inner(title)").in("id", u);
+  if (error) throw new Error("Não foi possível ler os imóveis das candidaturas.");
   return new Map(((data ?? []) as unknown as { id: string; properties: { title: string | null } }[]).map((l) => [l.id, l.properties.title ?? "Imóvel"]));
 }
 
@@ -575,10 +580,11 @@ export async function cobrancasTaxa(admin: Admin, leadIds: string[]): Promise<Ma
 /** Candidaturas (leads) que são de teste: conta de teste em qualquer lado ou anúncio [TESTE…]. */
 export async function leadsDeTeste(admin: Admin, ids: string[]): Promise<Set<string>> {
   if (!ids.length) return new Set();
-  const [{ data }, teste] = await Promise.all([
+  const [{ data, error }, teste] = await Promise.all([
     admin.from("leads").select("id, tenant_id, properties!inner(owner_id, title)").in("id", [...new Set(ids)]),
     idsContasTeste(admin),
   ]);
+  if (error) throw new Error("Não foi possível ler as candidaturas de teste.");
   return new Set(
     ((data ?? []) as unknown as { id: string; tenant_id: string; properties: { owner_id: string; title: string | null } }[])
       .filter((l) => teste.has(l.tenant_id) || teste.has(l.properties.owner_id) || MARCA_TESTE.test(l.properties.title ?? ""))
@@ -589,13 +595,17 @@ export async function leadsDeTeste(admin: Admin, ids: string[]): Promise<Set<str
 /** "Pedidos expirando sem nenhuma resposta" (ativos, vencem em até 3 dias) — mesma regra da 0181. */
 export async function pedidosExpirandoSemResposta(admin: Admin): Promise<string[]> {
   const limite = new Date(Date.now() + 3 * 86_400_000).toISOString();
-  const [{ data }, teste] = await Promise.all([
+  // Achado 57: as duas leituras LANÇAM — antes a falha nos pedidos dava "0 expirando" e a falha nas respostas marcava
+  // TODOS como "sem resposta". Os chamadores já tratam a falha (ler()/catch → indisponível; a página → aviso de erro).
+  const [{ data, error }, teste] = await Promise.all([
     admin.from("pedidos_moradia").select("id, inquilino_id").eq("status", "ativo").lt("expira_em", limite).limit(2000),
     idsContasTeste(admin),
   ]);
+  if (error) throw new Error("Não foi possível ler os pedidos ativos agora.");
   const ativos = ((data ?? []) as { id: string; inquilino_id: string }[]).filter((p) => !teste.has(p.inquilino_id));
   if (!ativos.length) return [];
-  const { data: resp } = await admin.from("respostas_pedido").select("pedido_id").in("pedido_id", ativos.map((p) => p.id));
+  const { data: resp, error: eResp } = await admin.from("respostas_pedido").select("pedido_id").in("pedido_id", ativos.map((p) => p.id));
+  if (eResp) throw new Error("Não foi possível ler as respostas aos pedidos agora.");
   const com = new Set(((resp ?? []) as { pedido_id: string }[]).map((r) => r.pedido_id));
   return ativos.filter((p) => !com.has(p.id)).map((p) => p.id);
 }

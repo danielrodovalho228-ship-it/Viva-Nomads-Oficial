@@ -213,11 +213,17 @@ export function rotaLeitorQa(pathname: string): boolean {
  * ADMIN vai para a lista dele, a aba "E-mails" de /admin/dados-de-teste (lá valem o papel e o 2FA do admin); os demais
  * recebem 404. A regra de quem LÊ a área de QA não muda (a RLS segue a trava real).
  */
-export type DestinoLeitorQa = { tipo: "abre" } | { tipo: "admin"; href: string } | { tipo: "nao_encontrado" };
+export type DestinoLeitorQa = { tipo: "abre" } | { tipo: "admin"; href: string } | { tipo: "propria"; href: string } | { tipo: "nao_encontrado" };
+
+/** E354: a caixa da PRÓPRIA conta de teste (Conta → Ajuda), para quem é de teste mas não é leitor de QA. */
+export const HREF_CAIXA_PROPRIA = "/dashboard/conta/ajuda#caixa-emails-teste";
 
 export function destinoLeitorQa(perfil: { qa_leitor?: boolean | null; is_teste?: boolean | null; role?: string | null } | null | undefined): DestinoLeitorQa {
   if (podeLerCaixasQa(perfil)) return { tipo: "abre" };
   if (perfil?.role === "admin") return { tipo: "admin", href: HREF_EMAILS_TESTE };
+  // E354: conta de teste da jornada (ex.: inquilino1) sem qa_leitor recebia 404 — vai para a caixa dela (mesmo desenho do
+  // E199). Conta real continua com 404: a área segue restrita às contas de teste.
+  if (perfil?.is_teste === true) return { tipo: "propria", href: HREF_CAIXA_PROPRIA };
   return { tipo: "nao_encontrado" };
 }
 

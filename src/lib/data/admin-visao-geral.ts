@@ -127,7 +127,9 @@ export async function cidadesComAnuncio(): Promise<string[]> {
   if (!user || !(await ehAdmin(supabase, user.id))) return [];
   const admin = createAdminClient();
   if (!admin) return [];
-  const { data } = await admin.from("properties").select("city").not("city", "is", null).limit(2000);
+  // Achado 65: a falha de leitura LANÇA — as páginas avisam que o filtro de cidade não carregou (antes: filtro vazio).
+  const { data, error } = await admin.from("properties").select("city").not("city", "is", null).limit(2000);
+  if (error) throw new Error("Não foi possível ler as cidades agora.");
   const vistas = new Map<string, string>();
   for (const r of data ?? []) {
     const c = String(r.city ?? "").trim();

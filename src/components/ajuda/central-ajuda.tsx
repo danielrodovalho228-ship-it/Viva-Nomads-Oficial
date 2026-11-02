@@ -647,7 +647,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                         type="button"
                         disabled={enviando}
                         onClick={() => acao(pedirPessoa)}
-                        className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-2 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-forest px-4 text-xs font-semibold text-forest hover:bg-sage-100 disabled:opacity-50"
                       >
                         <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
                       </button>
@@ -659,7 +659,7 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
                         type="button"
                         disabled={enviando}
                         onClick={() => acao(marcarResolvido)}
-                        className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-2 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line px-4 text-xs font-semibold text-ink hover:bg-surface-2 disabled:opacity-50"
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" /> Sim, resolveu
                       </button>

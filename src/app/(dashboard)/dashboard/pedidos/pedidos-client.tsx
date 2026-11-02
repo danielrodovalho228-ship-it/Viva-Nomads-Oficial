@@ -90,7 +90,7 @@ export function PedidosClient({
 }: {
   pedidos: Pedido[];
   respostas: Resposta[];
-  prefs: { email: boolean };
+  prefs: { email: boolean } | null;
 }) {
   const router = useRouter();
   const editado = useSearchParams().get("editado") === "1";
@@ -374,7 +374,19 @@ export function PedidosClient({
   );
 }
 
-function NotifPrefs({ inicial }: { inicial: { email: boolean } }) {
+function NotifPrefs({ inicial }: { inicial: { email: boolean } | null }) {
+  // Achado 54: sem a preferência gravada, nada de interruptor com valor padrão (um toque gravaria por cima).
+  if (!inicial)
+    return (
+      <div className="mt-6 rounded-xl border border-line bg-white p-4 text-sm" data-testid="pedidos-notif-falha">
+        <p className="font-medium text-ink">Notificações</p>
+        <p role="alert" className="mt-1 text-xs text-red-700">Não foi possível carregar sua preferência de e-mail agora. Recarregue a página para tentar de novo.</p>
+      </div>
+    );
+  return <NotifPrefsCarregada inicial={inicial} />;
+}
+
+function NotifPrefsCarregada({ inicial }: { inicial: { email: boolean } }) {
   const [email, setEmail] = useState(inicial.email);
   const [salvo, setSalvo] = useState(false);
 

@@ -16,11 +16,13 @@ export interface TaxaDoContrato {
 export async function taxaDosContratosDoDono(admin: SupabaseClient, ownerId: string, contratoIds: string[]): Promise<Map<string, TaxaDoContrato>> {
   const mapa = new Map<string, TaxaDoContrato>();
   if (!ownerId || contratoIds.length === 0) return mapa;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("contratos")
     .select("id, comissao_valor, comissao_percent, properties!inner(owner_id)")
     .in("id", contratoIds)
     .eq("properties.owner_id", ownerId);
+  // Achado 80: falha de leitura não vira "taxa R$ 0 / 0%" nos contratos do dono.
+  if (error) throw new Error("Não foi possível ler a taxa dos contratos.");
   for (const c of (data ?? []) as { id: string; comissao_valor: number | string | null; comissao_percent: number | string | null }[]) {
     mapa.set(c.id, { comissaoValor: Number(c.comissao_valor ?? 0), comissaoPercent: Number(c.comissao_percent ?? 0) });
   }
@@ -32,10 +34,15 @@ export interface TaxaDoLead {
   acceptedCommissionRate: number | null;
 }
 
+/** Achados 72/73: a leitura da taxa ou da proposta aceita falhou — o contrato não nasce com valor de outra fonte. */
+export const MSG_VALORES_SEM_CONFERIR = "Não foi possível conferir os valores acordados agora. Tente de novo em instantes.";
+
 /** Plano e taxa congelados no aceite de uma candidatura DO dono; null se a candidatura não é dele. */
 export async function taxaDoLeadDoDono(admin: SupabaseClient, ownerId: string, leadId: string): Promise<TaxaDoLead | null> {
   if (!ownerId || !leadId) return null;
-  const { data } = await admin.from("leads").select("accepted_plan, accepted_commission_rate").eq("id", leadId).eq("owner_id", ownerId).maybeSingle();
+  const { data, error } = await admin.from("leads").select("accepted_plan, accepted_commission_rate").eq("id", leadId).eq("owner_id", ownerId).maybeSingle();
+  // Achado 72: a falha de leitura não vira "sem taxa congelada" (o contrato nasceria com a taxa padrão).
+  if (error) throw new Error(MSG_VALORES_SEM_CONFERIR);
   if (!data) return null;
   const rate = data.accepted_commission_rate;
   return {

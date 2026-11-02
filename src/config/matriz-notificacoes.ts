@@ -114,6 +114,7 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   // 63-B: "Reconecte seu LinkedIn para manter o selo" (30 dias antes de vencer).
   linkedin_vencendo: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
+  preco_justo_acima: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   vistoria_vistoriado_expira: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   renovacao_aviso: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   avaliacao_pedido: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
@@ -148,6 +149,8 @@ export const MATRIZ_NOTIFICACOES = {
   pedido_moderado: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   // E402: confirmação ao próprio morador ao publicar ou editar o pedido (sem push: foi ele mesmo que agiu).
   pedido_confirmado: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  // E424: a cópia do pedido de visita ao próprio morador (e-mail e sino; sem push: ele acabou de agir).
+  visita_pedida_morador: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   pedido_encerrado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   documento_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   checklist_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },

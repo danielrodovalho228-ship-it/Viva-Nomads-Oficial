@@ -20,7 +20,8 @@ export async function salvarLocalTrabalho(entrada: { destinoSlug?: string; lat?:
   const admin = createAdminClient();
   if (!admin) return { ok: false, erro: "Não foi possível salvar agora. Tente de novo em instantes." };
 
-  const local = await localDaEntrada(admin, entrada);
+  const local = await localDaEntrada(admin, entrada).catch(() => "falhou" as const);
+  if (local === "falhou") return { ok: false, erro: "Não foi possível salvar agora. Tente de novo em instantes." };
   if (local === "invalido") return { ok: false, erro: "Escolha o local na lista de sugestões." };
   const { error } = await admin.from("profiles").update({ local_trabalho: local }).eq("id", user.id);
   if (error) return { ok: false, erro: "Não foi possível salvar agora. Tente de novo em instantes." };

@@ -92,10 +92,11 @@ async function pedirPresencial(page: Page, imovelId: string, campo: string) {
   const enviar = page.getByTestId("visita-presencial-enviar");
   await enviar.scrollIntoViewIfNeeded({ timeout: 5_000 });
   await enviar.click({ timeout: 6_000 }).catch(() => enviar.dispatchEvent("click"));
-  await expect(page.getByTestId("visita-presencial-ok")).toHaveText(
-    "Pedido de visita enviado. O proprietário confirma aqui na plataforma e você recebe um aviso.",
-    { timeout: 25_000 },
-  );
+  // E424: a confirmação diz a modalidade, os horários e o próximo passo, e leva a Visitas.
+  const ok = page.getByTestId("visita-presencial-ok");
+  await expect(ok).toContainText("Pedido de visita presencial enviado. Horários propostos:", { timeout: 25_000 });
+  await expect(ok).toContainText("acompanha tudo em Visitas");
+  await expect(page.getByTestId("visita-presencial-ver-visitas")).toBeVisible();
 }
 
 const visitaDe = async (tenantId: string) =>
@@ -321,9 +322,9 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
       await d.getByTestId("agenda-vista-lista").click();
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="visita"]').first()).toBeVisible({ timeout: 25_000 });
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="entrada"]').first()).toBeVisible();
-      // Locação (depois do aceite): nome curto; visitas antes do aceite: só "Interessado(a)".
+      // Locação (depois do aceite): nome completo (E427); visitas antes do aceite: só "Interessado(a)"; contato nunca.
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="entrada"]').first()).toContainText("Ana");
-      await expect(d.getByText("Saopaulo Sobrenome")).toHaveCount(0);
+      await expect(d.getByText(inqB.email)).toHaveCount(0);
       await semRolagemLateral(d);
       await d.screenshot({ path: `${SAIDA}/t209-agenda-lista-${largura}.png`, fullPage: true });
       await d.getByTestId("agenda-vista-mes").click();

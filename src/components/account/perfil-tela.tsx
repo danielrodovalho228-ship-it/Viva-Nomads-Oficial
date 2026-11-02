@@ -47,6 +47,9 @@ export function PerfilTela() {
   // E55: o espelho segue o papel em uso (a mesma fonte da barra: o modo da conta).
   const papelEspelho = mode === "owner" ? "proprietario" : "morador";
   const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
+  // Achado 70: leitura falhou → aviso com "Tentar de novo", nunca o formulário vazio (salvar apagaria o perfil).
+  const [leituraFalhou, setLeituraFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [bio, setBio] = useState("");
@@ -86,7 +89,9 @@ export function PerfilTela() {
         setTelefone(dados?.phone ?? "");
         setSalvo(retrato(dados?.fullName ?? d?.nome ?? "", d?.bio ?? "", d?.cidade ?? "", d && d.idiomas.length > 0 ? d.idiomas : []));
       })
-      .catch(() => vivo && setP(null));
+      .catch(() => {
+        if (vivo) setLeituraFalhou(true);
+      });
     // O medidor e o espelho andam: foto nova, profissão ou documento salvos em outra tela releem na hora.
     const reler = () =>
       getMeuPerfilPublico()
@@ -99,8 +104,26 @@ export function PerfilTela() {
       window.removeEventListener(PERFIL_ATUALIZADO, reler);
       window.removeEventListener(FOTO_ATUALIZADA, reler);
     };
-  }, []);
+  }, [tentativa]);
 
+  if (leituraFalhou)
+    return (
+      <div className="rounded-xl border border-line p-4" role="alert" data-testid="perfil-leitura-falha">
+        <p className="text-sm text-ink">Não foi possível abrir o seu perfil agora. Nada foi alterado.</p>
+        <Button
+          type="button"
+          className="mt-3"
+          onClick={() => {
+            setLeituraFalhou(false);
+            setP(undefined);
+            setTentativa((t) => t + 1);
+          }}
+          data-testid="perfil-leitura-tentar"
+        >
+          Tentar de novo
+        </Button>
+      </div>
+    );
   if (p === undefined) return <EsqueletoPerfil />;
   if (p === null) return null;
 
@@ -141,7 +164,11 @@ export function PerfilTela() {
   async function removerFoto() {
     setRemovendo(true);
     try {
-      await clearMyAvatar();
+      const r = await clearMyAvatar();
+      if (!r.ok) {
+        setMsg({ ok: false, texto: "Não foi possível remover a foto agora. Tente de novo." });
+        return;
+      }
       avisarFotoAtualizada(null);
     } finally {
       setRemovendo(false);

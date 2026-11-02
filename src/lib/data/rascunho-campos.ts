@@ -1,4 +1,3 @@
-import { bairroAceitavel } from "../cep/bairro.ts";
 /*
   Colunas do imóvel que o autosave do rascunho mantém em dia (PURO).
 
@@ -27,8 +26,8 @@ export function camposDeConteudoDoRascunho(snap: InstantaneoRascunho): {
   description: string;
 } {
   return {
-    // E147: bairro que é o estado/sigla nunca vai para a coluna (o rascunho guarda; a tela pede o bairro certo).
-    address: bairroAceitavel(snap.neighborhood).slice(0, 200),
+    // E429: o bairro vai para a coluna como está ("Minas Gerais" é bairro oficial de Uberlândia).
+    address: (snap.neighborhood ?? "").trim().slice(0, 200),
     bathrooms: Math.min(inteiro(snap.bathrooms), 50),
     area_m2: inteiro(snap.areaM2),
     description: (snap.description ?? "").trim().slice(0, 5000),

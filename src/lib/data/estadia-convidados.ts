@@ -84,6 +84,8 @@ async function conviteAtivo(admin: SupabaseClient, contratoId: string, userId: s
   return id;
 }
 
+const MSG_CONVIDADO_SEM_LEITURA = "Não foi possível ler a estadia agora.";
+
 /** A visão de leitura do convidado. null = sem convite ativo (quem não foi convidado não descobre que o contrato existe). */
 export async function carregarVisaoConvidado(contratoId: string, agora: Date = new Date()): Promise<VisaoConvidado | null> {
   if (!UUID_RE.test(String(contratoId))) return null;
@@ -97,7 +99,9 @@ export async function carregarVisaoConvidado(contratoId: string, agora: Date = n
   const convite = await conviteAtivo(admin, contratoId, user.id, user.email ?? null);
   if (!convite) return null;
 
-  const { data } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("id", contratoId).maybeSingle();
+  const { data, error } = await admin.from("contratos").select(COLUNAS_ESTADIA).eq("id", contratoId).maybeSingle();
+  // Achado 108: a falha LANÇA (error.tsx com "Tentar de novo") — nunca 404 para o convidado nem endereço em branco.
+  if (error) throw new Error(MSG_CONVIDADO_SEM_LEITURA);
   const c = data as unknown as LinhaContratoEstadia | null;
   if (!c) return null;
   const periodo = periodoDoContrato(c);
@@ -105,10 +109,11 @@ export async function carregarVisaoConvidado(contratoId: string, agora: Date = n
   const primeiro = primeiroPagamentoConfirmado(c.pagamentos_bloco ?? []);
   const cond = { inicio: periodo.inicio, assinadoPelasDuas: ambos, primeiroPagamento: primeiro };
   const liberadas = instrucoesLiberadas(cond, agora);
-  const [instr, { data: im }] = await Promise.all([
+  const [instr, { data: im, error: erroIm }] = await Promise.all([
     liberadas ? lerInstrucoes(admin, c) : Promise.resolve(null),
     admin.from("properties").select("title, address, exact_address, city, state").eq("id", c.property_id).maybeSingle(), // consistency-ignore: 61-B — o convidado ativo de estadia assinada vê o endereço, como o morador
   ]);
+  if (erroIm) throw new Error(MSG_CONVIDADO_SEM_LEITURA);
   const p = im as { title: string | null; address: string | null; exact_address: string | null; city: string | null; state: string | null } | null;
   return {
     contratoId: c.id,

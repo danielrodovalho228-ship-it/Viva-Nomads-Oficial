@@ -85,11 +85,13 @@ export async function parceirosDoImovel(propertyId: string): Promise<ParceirosDo
   if ("erro" in s) return null;
   const im = await imovelDoDono(s.admin, propertyId, s.userId);
   if (!im) return null;
-  const { data } = await s.admin
+  const { data, error } = await s.admin
     .from("imovel_parceiros")
     .select("id, categoria, status, modo, instrucoes, parceiro_id, servico_id, parceiros(id, nome_publico, slug), parceiro_servicos(id, titulo, preco_base, unidade)")
     .eq("property_id", im.id)
     .in("status", ["pendente", "ativo"]);
+  // Achado 99: a falha LANÇA (error.tsx) — "nenhum parceiro" levaria o dono a convidar de novo quem já está ligado.
+  if (error) throw new Error("Não foi possível ler os parceiros do imóvel.");
   type L = {
     id: string;
     categoria: CategoriaVinculo;
@@ -246,19 +248,24 @@ export interface ImovelFixo {
   servico: string | null;
 }
 
+const MSG_FIXOS_SEM_LEITURA = "Não foi possível ler os seus imóveis fixos agora.";
+
 /** Convites e vínculos ativos do parceiro logado. Endereço exato nunca: só bairro e cidade. */
 export async function meusImoveisFixos(): Promise<ImovelFixo[]> {
   const s = await sessao();
   if ("erro" in s) return [];
-  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data: parc, error: e1 } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  // Achado 100: a falha LANÇA — "nenhum imóvel fixo" esconderia convites a responder e vínculos ativos.
+  if (e1) throw new Error(MSG_FIXOS_SEM_LEITURA);
   if (!parc) return [];
-  const { data } = await s.admin
+  const { data, error: e2 } = await s.admin
     .from("imovel_parceiros")
     .select("id, categoria, status, modo, instrucoes, properties(address, city), parceiro_servicos(titulo)")
     .eq("parceiro_id", (parc as { id: string }).id)
     .in("status", ["pendente", "ativo"])
     .order("criado_em", { ascending: false })
     .limit(100);
+  if (e2) throw new Error(MSG_FIXOS_SEM_LEITURA);
   return ((data ?? []) as unknown as { id: string; categoria: string; status: "pendente" | "ativo"; modo: ModoVinculo; instrucoes: string | null; properties: { address: string | null; city: string | null } | null; parceiro_servicos: { titulo: string } | null }[]).map(
     (v) => ({ id: v.id, categoria: v.categoria, status: v.status, modo: v.modo, instrucoes: v.instrucoes, imovel: { bairro: v.properties?.address ?? null, cidade: v.properties?.city ?? null }, servico: v.parceiro_servicos?.titulo ?? null }),
   );

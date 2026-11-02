@@ -191,7 +191,7 @@ function colunasDoPedido(input: PedidoInput, v: CamposValidados) {
 /** Prompt 37: destino do pedido validado no servidor (slug ativo ou endereço escolhido); sem admin, sem destino. */
 async function destinoDoPedido(input: PedidoInput) {
   const admin = createAdminClient();
-  return admin ? localDaEntrada(admin, input.destino ?? null) : null;
+  return admin ? localDaEntrada(admin, input.destino ?? null).catch(() => "falhou" as const) : null;
 }
 
 /**
@@ -258,6 +258,7 @@ export async function criarPedido(
     };
 
   const destino = await destinoDoPedido(input);
+  if (destino === "falhou") return { ok: false, error: "Não foi possível ler o local de trabalho agora. Tente de novo." };
   if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
 
   const { data, error } = await supabase
@@ -304,7 +305,9 @@ export async function getMeuPedido(pedidoId: string): Promise<Record<string, unk
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("pedidos_moradia").select("*").eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("pedidos_moradia").select("*").eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
+  // Achado 71: a falha de leitura não vira formulário vazio (que, salvo, gravaria por cima do pedido).
+  if (error) throw new Error("Não foi possível ler o pedido.");
   if (!data || ["excluido", "removido_admin"].includes(String(data.status))) return null;
   return data as Record<string, unknown>;
 }
@@ -323,6 +326,7 @@ export async function editarPedido(pedidoId: string, input: PedidoInput): Promis
   const val = validarPedido(input);
   if (!val.ok) return { ok: false, error: val.error };
   const destino = await destinoDoPedido(input);
+  if (destino === "falhou") return { ok: false, error: "Não foi possível ler o local de trabalho agora. Tente de novo." };
   if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
   // E402: a versão anterior, para o e-mail dizer o que mudou (ex.: orçamento R$ 2.500 → R$ 2.600).
   const { data: anterior } = await supabase.from("pedidos_moradia").select(COLUNAS_PEDIDO_EMAIL).eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
@@ -636,7 +640,9 @@ export async function getNotifPrefs(): Promise<{ email: boolean }> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { email: true };
-  const { data } = await supabase.from("profiles").select("notif_email").eq("id", user.id).maybeSingle();
+  // Achado 54: a falha de leitura LANÇA (o painel avisa) — "sem preferência salva = ligado" vale só quando a leitura deu certo.
+  const { data, error } = await supabase.from("profiles").select("notif_email").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler sua preferência de e-mail agora.");
   // Critério 5: sem preferência salva = ligado.
   return { email: notificacaoLigada(data?.notif_email) };
 }

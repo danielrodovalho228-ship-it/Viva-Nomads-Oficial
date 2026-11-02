@@ -22,7 +22,7 @@ test("uma mensagem só para 'não existe' e 'é de outra conta' (não revela o a
 
 test("servidor: abrirRascunho só devolve o rascunho do dono; sem linha = não encontrado; erro = indisponível", () => {
   const src = ler("../data/actions.ts");
-  const fn = src.slice(src.indexOf("export async function abrirRascunho"), src.indexOf("export async function loadDraftData"));
+  const fn = src.slice(src.indexOf("export async function abrirRascunho"), src.indexOf("async function semFotosApagadas"));
   assert.match(fn, /if \(!idDeRascunhoValido\(id\)\) return \{ ok: false, motivo: "nao_encontrado" \};/);
   assert.match(fn, /property_private_details/);
   assert.match(fn, /if \(error\) return \{ ok: false, motivo: "indisponivel" \};/);
@@ -40,4 +40,20 @@ test("página: rascunho fechado mostra o aviso e NÃO adota o id nem libera o fo
   assert.match(pagina, /if \(rascunhoFechado\) \{[\s\S]*?data-testid="rascunho-fechado"[\s\S]*?Ver meus imóveis[\s\S]*?Começar um anúncio novo/);
   assert.match(pagina, /const rascunhoFechado = fechado && fechado\.id === draftParam \? fechado\.motivo : null;/);
   assert.doesNotMatch(pagina, /loadDraftData\(/);
+  // Código morto removido: o rascunho só abre por abrirRascunho (que distingue "não encontrado" de "indisponível").
+  assert.doesNotMatch(ler("../data/actions.ts"), /loadDraftData/);
+});
+
+test("L-88 (t943): o aviso vem ANTES do 'approved === null → return null' — senão a página fica em branco", () => {
+  const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
+  const aviso = pagina.indexOf("  if (rascunhoFechado) {");
+  const espera = pagina.indexOf("  if (approved === null) return null;");
+  assert.ok(aviso > 0 && espera > 0, "os dois trechos existem");
+  assert.ok(aviso < espera, "o aviso do rascunho fechado é desenhado antes da espera do approved");
+  // Rascunho que não abre NÃO libera o formulário (approved segue null; nada é gravado por cima nem nasce rascunho novo).
+  const efeito = pagina.slice(pagina.indexOf("const r = await abrirRascunho(draftParam)"), pagina.indexOf("const d = r.draft;"));
+  assert.match(efeito, /if \(!r\.ok\) \{[\s\S]*?setFechado\(\{ id: draftParam, motivo: r\.motivo \}\);\s*return;\s*\}/);
+  assert.doesNotMatch(efeito, /setApproved/);
+  // "Começar um anúncio novo" (mesma rota, sem ?draft=) libera o assistente: o efeito depende do draftParam.
+  assert.match(pagina, /if \(editId \|\| draftParam\) return;[\s\S]*?setApproved\(true\);[\s\S]*?\}, \[editId, draftParam, userId\]\);/);
 });

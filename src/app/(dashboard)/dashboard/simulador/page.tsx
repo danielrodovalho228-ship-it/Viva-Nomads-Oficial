@@ -117,7 +117,7 @@ export default function SimuladorPage() {
                       type="button"
                       aria-pressed={e.prazoMedioMeses === m}
                       onClick={() => muda("prazoMedioMeses")(e.prazoMedioMeses === m ? 0 : m)}
-                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${e.prazoMedioMeses === m ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"}`}
+                      className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${e.prazoMedioMeses === m ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"}`}
                     >
                       {m} meses
                     </button>
@@ -147,7 +147,7 @@ export default function SimuladorPage() {
                   max={FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1].minImoveis}
                   value={imoveisAtivos}
                   onChange={(ev) => setImoveisAtivos(Number(ev.target.value))}
-                  className="w-full accent-forest"
+                  className="h-11 w-full accent-forest"
                 />
               </div>
             </div>

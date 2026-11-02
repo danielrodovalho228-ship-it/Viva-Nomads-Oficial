@@ -14,9 +14,9 @@ import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
-import { nomeComInicial, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { nomeDepoisDoAceite, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
-import { corpoVisitaConfirmada, corpoVisitaPedida, type CorpoVisita } from "@/lib/visitas/emails-visita";
+import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
 import {
@@ -137,6 +137,16 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
     // E325: o e-mail diz de qual imóvel é o pedido (título + código).
     corpoVisitaPedida({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+  );
+  // E424: o morador também recebe a cópia do pedido (horários e próximos passos); antes ele não recebia nada.
+  avisarVisita(
+    admin,
+    user.id,
+    "visita_pedida_morador",
+    `Pedido de visita ${MODALIDADE_ROTULO[modalidade].toLowerCase()} enviado. Horários propostos: ${v.horarios.map(formatarHorarioBrasilia).join("; ")}.`,
+    undefined,
+    undefined,
+    corpoVisitaPedidaMorador({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");
@@ -437,21 +447,24 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
   if (!user) return null;
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("visitas_video").select(`${COLUNAS}, owner_id, tenant_id`).eq("id", id).maybeSingle();
+  const { data, error } = await admin.from("visitas_video").select(`${COLUNAS}, owner_id, tenant_id`).eq("id", id).maybeSingle();
+  // Achado 113: a falha LANÇA (error.tsx) — nunca 404 para a visita, nem endereço da presencial sumindo na hora.
+  if (error) throw new Error("Não foi possível ler a visita.");
   if (!data) return null;
   const r = data as unknown as Linha & { owner_id: string; tenant_id: string };
   const papel = r.owner_id === user.id ? "dono" : r.tenant_id === user.id ? "morador" : null;
   if (!papel) return null;
   const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
-  const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
+  const { data: p, error: erroImovel } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
+  if (erroImovel) throw new Error("Não foi possível ler o endereço da visita.");
   const e = p && mostraEnderecoDaVisita(v, new Date()) ? enderecoDaVisita(p) : null;
   let pessoa: string | null = null;
   let fotoPessoa: string | null = null;
-  // E409: "Ana C." (1º nome + inicial do sobrenome), como o desenho promete depois do aceite; a foto pela regra do avatar.
+  // E427: depois do aceite, o nome completo (igual em todas as telas); a foto pela regra do avatar.
   const nomeDe = async (id: string) => {
     const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", id).maybeSingle();
     fotoPessoa = (await getAvatarUrl({ targetId: id, propertyId: r.property_id }).catch(() => ({ url: null }))).url ?? null;
-    return nomeComInicial((perfil as { full_name?: string | null } | null)?.full_name ?? null);
+    return nomeDepoisDoAceite((perfil as { full_name?: string | null } | null)?.full_name ?? null);
   };
   if (papel === "dono") {
     // E328: a confirmação do horário libera o nome; antes dela, só a candidatura aceita ou o contrato (como antes).

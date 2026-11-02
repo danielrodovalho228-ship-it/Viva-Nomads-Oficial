@@ -209,9 +209,11 @@ test("ações: admin com 2FA (sessaoAal2) e registro de moderação; ativação 
   assert.match(admin, /if \(!checklistCompleto\(/);
   const at = ler("src/lib/parceiros/ativacao-actions.ts");
   assert.match(at, /if \(!mesmoEmail\(user\.email, sol\.email as string\)\)/);
-  assert.match(at, /\.eq\("status", "aprovada"\)\s*\.select\("id"\)/);
-  // O e-mail de ativação nunca leva o link no texto puro.
-  assert.match(ler("src/lib/notifications/montar-email.ts"), /Use o botão "Ativar minha página" na versão completa deste e-mail/);
+  // E425: o uso único mora no núcleo comum ao link e ao painel (ativacao-nucleo.ts).
+  assert.match(ler("src/lib/parceiros/ativacao-nucleo.ts"), /\.eq\("status", "aprovada"\)\s*\.select\("id"\)/);
+  // E425 (ordem do Daniel, 01/11): o texto puro passa a levar a URL completa de ativação — sem ela, quem lia o texto
+  // não ativava. Na caixa de QA o link com token continua fora (E163, semLinksComToken).
+  assert.match(ler("src/lib/notifications/montar-email.ts"), /cta: \{ label: "Ativar minha página", url: o\.url \} \}\)/);
 });
 
 function arquivos(dir: string): string[] {

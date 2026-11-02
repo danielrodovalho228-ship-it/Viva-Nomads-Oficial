@@ -87,13 +87,16 @@ export async function depsDecidirReais(): Promise<DepsDecidir> {
  * quem não é admin recebe lista vazia, sem erro que revele a tabela.
  */
 export async function listarPendentesAdmin(sessao: NonNullable<Awaited<ReturnType<typeof createClient>>>): Promise<CartaoAprovacao[]> {
-  const { data } = await sessao
+  const { data, error } = await sessao
     .from("aprovacoes")
     .select("id, tipo, referencia, resumo, risco, expira_em")
     .eq("status", "pendente")
     .gt("expira_em", new Date().toISOString())
     .order("criado_em", { ascending: false })
     .limit(20);
+  // Achado 102: a falha LANÇA — "nenhum cartão pendente" esconderia aprovações à espera do Daniel (o motor já
+  // responde a recusa segura quando não consegue ler; a rota responde 503).
+  if (error) throw new Error("Não foi possível ler as aprovações pendentes.");
   return (data ?? []).map((d) => {
     const r = d as { id: string; tipo: TipoAprovacao; referencia: string; resumo: string; risco: CartaoAprovacao["risco"]; expira_em: string };
     return { id: r.id, tipo: r.tipo, referencia: r.referencia, resumo: r.resumo, risco: r.risco, expiraEm: r.expira_em };
