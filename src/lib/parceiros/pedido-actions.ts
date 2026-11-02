@@ -191,13 +191,15 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
 
   // Teto: até 3 orçamentos abertos por categoria (compara sem disparar para todos). Só pedido manual conta: o
   // automático do dono (Prompt 38) não trava a limpeza de quem tem vários imóveis.
-  const { count } = await admin
+  const { count, error: erroContagem } = await admin
     .from("parceiro_pedidos")
     .select("id", { count: "exact", head: true })
     .eq("cliente_id", userId)
     .eq("categoria", e.categoria)
     .eq("origem", "manual")
     .in("status", STATUS_ABERTOS as string[]);
+  // Contagem ilegível não vira 0: o limite vale sempre.
+  if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
   if (tetoAtingido(count ?? 0)) return { ok: false, erro: textoTeto(rotuloCategoria(e.categoria).toLowerCase()) };
 
   const jar = await cookies();
