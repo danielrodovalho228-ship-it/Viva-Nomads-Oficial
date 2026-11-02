@@ -2597,7 +2597,8 @@
         "publico"
       ],
       "specs": [
-        "t596-qa-login-direto"
+        "t596-qa-login-direto",
+        "t1003-e361-porta-qa-mensagens"
       ]
     },
     "/avisos/desligar": {
