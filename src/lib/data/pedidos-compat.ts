@@ -111,11 +111,14 @@ async function pedidoChegaAosDonos(admin: Admin, pedido: PedidoResumo, sms: Chav
  * nenhum, sem e-mail ou com as notificações desligadas). Registra em pedido_avisos.
  */
 async function avisarDono(admin: Admin, pedido: PedidoResumo, par: ParCompat): Promise<"resumo" | "nenhum" | "ja_avisado"> {
-  const { data: perfil } = await admin
+  const { data: perfil, error: erroPerfil } = await admin
     .from("profiles")
     .select("email, full_name, notif_email, pausada_em")
     .eq("id", par.dono_id)
     .maybeSingle();
+  // Leitura falha não vira "sem e-mail": a linha de pedido_avisos é única por (pedido, dono) e gravaria para sempre
+  // canal "nenhum". Sem gravar, o próximo aviso deste pedido ao dono ainda pode sair.
+  if (erroPerfil) return "nenhum";
 
   let canal: "resumo" | "nenhum" = "resumo";
   let motivoNaoEnvio: string | null = null;
