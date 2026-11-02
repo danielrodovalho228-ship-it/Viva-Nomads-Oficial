@@ -1058,7 +1058,10 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
   // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
-  const { data: antes } = await supabase.from("properties").select("status, owner_id, video_url").eq("id", id).maybeSingle();
+  const { data: antes, error: erroAntes } = await supabase.from("properties").select("status, owner_id, video_url").eq("id", id).maybeSingle();
+  // Sem o estado anterior, a edição não sabe se é publicação (avisaria os pedidos de novo) nem grava o conforto:
+  // para antes de qualquer gravação.
+  if (erroAntes) return { ok: false, error: "Não foi possível salvar o anúncio agora. Tente de novo em instantes." };
 
   // E133 (d): link de vídeo NOVO (ou trocado) só da plataforma, existente e incorporável; o já gravado não é refeito.
   const linkVideo = input.videoUrl?.trim() || null;
@@ -1186,7 +1189,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if ("detalhesAnuncio" in input) {
     try {
       // TIPO-CHACARA-B: o grupo do tipo não vem do formulário de detalhes (não tem toggle): mantém o gravado.
-      const { data: det } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      const { data: det, error: erroDet } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      // Leitura falha: regravar a coluna apagaria o grupo da chácara (que este formulário não traz). Mantém o gravado.
+      if (erroDet) throw new Error(`detalhes não lidos (${erroDet.message})`);
       const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
       // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
       const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
@@ -1196,8 +1201,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
         .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
         .eq("id", id)
         .eq("owner_id", user.id);
-    } catch {
-      /* migração 0235 ausente — segue sem os detalhes */
+    } catch (e) {
+      /* migração 0235 ausente (ou leitura falha) — segue sem regravar os detalhes */
+      if (e instanceof Error) console.error("[updateProperty] detalhes:", e.message);
     }
   }
   await gravarChacara(supabase, user.id, id, input);
