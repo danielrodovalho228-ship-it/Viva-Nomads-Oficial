@@ -320,6 +320,15 @@ input.foco-na-barra:focus-visible {
   .tag-earned-pop { animation: tagPop 0.45s ease-out; }
 }
 
+/* Movimento reduzido (varredura 02/11): os blocos de carregamento que "pulsam" (animate-pulse: esqueletos, espera do
+   mapa, campos que a IA está escrevendo) ficam parados para quem pediu menos movimento no aparelho. Os giradores
+   (animate-spin) continuam: dizem que algo está em andamento. Fora de @layer para vencer o utilitário. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse {
+    animation: none;
+  }
+}
+
 /*
   MODO APP (Android/iPhone) — <html data-app="1"> é marcado antes da 1ª pintura
   (src/lib/app-mode.ts). No app: some o "site" (menu de cima, rodapé, barras do
