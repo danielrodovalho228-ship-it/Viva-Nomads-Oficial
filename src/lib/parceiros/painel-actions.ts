@@ -387,7 +387,9 @@ export async function adicionarAgenda(e: { tipo: "janela"; diaSemana: number; in
     if (!data.test(e.dataInicio) || !data.test(e.dataFim) || e.dataFim < e.dataInicio) return { ok: false, erro: "Escolha as datas do bloqueio (a final depois da inicial)." };
     linha = { tipo: "bloqueio", data_inicio: e.dataInicio, data_fim: e.dataFim };
   }
-  const { count } = await m.admin.from("parceiro_agenda").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+  const { count, error: erroContagem } = await m.admin.from("parceiro_agenda").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+  // Contagem ilegível não vira 0: o limite vale sempre.
+  if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
   if ((count ?? 0) >= 60) return { ok: false, erro: "Agenda cheia (até 60 itens)." };
   const { error } = await m.admin.from("parceiro_agenda").insert({ ...linha, parceiro_id: m.p.id });
   if (error) return { ok: false, erro: "Não foi possível salvar." };
