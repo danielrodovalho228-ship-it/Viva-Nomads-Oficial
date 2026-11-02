@@ -19,6 +19,15 @@ export const TEXTO_RASCUNHO_FECHADO: Record<MotivoRascunhoFechado, { titulo: str
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * E420 (resíduo): o rascunho é desta conta? Só o DONO abre. A leitura privada (property_private_details) devolve a linha
+ * também ao admin e a quem tem candidatura no imóvel — com o draft_data nulo —, e a página abria um cadastro vazio em
+ * cima do anúncio de outra pessoa. Agora: linha que não existe ou é de outra conta → "Rascunho não encontrado".
+ */
+export function rascunhoDaConta(linha: { owner_id?: string | null } | null | undefined, userId: string | null | undefined): boolean {
+  return !!linha && !!userId && linha.owner_id === userId;
+}
+
 /** O id do rascunho na URL tem o formato certo? Sem ele, nem pergunta ao servidor. */
 export function idDeRascunhoValido(id: string | null | undefined): boolean {
   return UUID.test(String(id ?? ""));
