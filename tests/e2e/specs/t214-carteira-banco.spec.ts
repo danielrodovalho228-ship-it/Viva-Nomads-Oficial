@@ -133,7 +133,7 @@ test.describe("T214 — Análise da carteira ligada ao banco (complemento do pro
       await expect(p.locator('[data-testid="carteira-linha"][data-situacao="vago"]')).toHaveCount(2);
       const ocupada = p.locator('[data-testid="carteira-linha"][data-situacao="ocupado"]');
       await expect(ocupada).toContainText(TITULO_VIGENTE);
-      await expect(ocupada).toContainText("Iara S.");
+      await expect(ocupada).toContainText("Iara Morada Sobrenome");
       await expect(p.locator('[data-testid="carteira-linha"][data-situacao="reservado"]')).toContainText("[TESTE QA] Carteira 3");
       await expect(p.getByTestId("carteira-vago")).toHaveCount(2);
       await expect(p.getByTestId("carteira-pedidos-compativeis").first()).toHaveAttribute("href", /\/dashboard\/pedidos-cidade\?imovel=/);
