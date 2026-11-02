@@ -66,7 +66,9 @@ async function contaPausadaEm(): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("pausada_em").eq("id", user.id).maybeSingle();
+  // Achado 132: a falha LANÇA (entra no aviso do topo); nunca "conta ativa" por engano.
+  const { data, error } = await supabase.from("profiles").select("pausada_em").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler o estado da conta agora.");
   return (data?.pausada_em as string | null) ?? null;
 }
 
@@ -146,7 +148,7 @@ export default async function DashboardPage() {
     // E181: "Buscas salvas" conta a MESMA lista de /dashboard/buscas (um número, uma fonte).
     ou("buscas", listarBuscasSalvas({ exigir: true }), null),
   ]);
-  const [pausadaEm, capaRascunho] = await Promise.all([contaPausadaEm(), capaDoRascunho(draft?.id ?? null, draft?.data ?? null)]);
+  const [pausadaEm, capaRascunho] = await Promise.all([ou("conta", contaPausadaEm(), null), capaDoRascunho(draft?.id ?? null, draft?.data ?? null)]);
   const rascunho = rascunhoDoDraft(draft);
   // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
   const fatos = await fatosDaConta(draft).catch(() => null);
