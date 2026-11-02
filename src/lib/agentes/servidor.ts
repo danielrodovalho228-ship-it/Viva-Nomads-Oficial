@@ -92,8 +92,9 @@ export async function depsReais(): Promise<Deps | null> {
       return error ? [] : ((data ?? []) as Memoria[]);
     },
     async lembrar(slug, fatos) {
-      const { count } = await supabase.from("agentes_memoria").select("id", { count: "exact", head: true }).eq("agente_slug", slug);
-      if ((count ?? 0) + fatos.length > MAX_MEMORIAS_POR_AGENTE) return;
+      const { count, error } = await supabase.from("agentes_memoria").select("id", { count: "exact", head: true }).eq("agente_slug", slug);
+      // Contagem ilegível não vira 0: o teto de memórias por agente vale sempre (sem gravar nesta rodada).
+      if (error || (count ?? 0) + fatos.length > MAX_MEMORIAS_POR_AGENTE) return;
       await supabase.from("agentes_memoria").insert(fatos.map((fato) => ({ agente_slug: slug, fato })));
     },
     async gravar(linhas) {
