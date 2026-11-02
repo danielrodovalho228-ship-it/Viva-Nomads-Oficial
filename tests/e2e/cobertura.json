@@ -1533,7 +1533,8 @@
         "t489-e176-menus",
         "t566-e184-visitas-passadas",
         "t589-varredura-bloco47",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t993-visitas-grade-par"
       ]
     },
     "/dashboard/visitas/[id]": {
