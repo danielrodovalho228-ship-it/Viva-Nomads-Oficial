@@ -30,8 +30,7 @@ test("aceitar: sem a taxa do envio não aceita, antes de gravar o aceite", () =>
 
 test("lerProposta: taxa ilegível não aparece (nunca a de hoje no lugar da do envio)", () => {
   assert.match(acoes, /const tx = await lerTaxaDaProposta\(s\.admin, p\.id\)\.catch\(\(\) => null\);/);
-  assert.match(acoes, /const pct = !tx \? null : congelada/);
-  assert.match(acoes, /if \(tx && pct != null\) taxa = \{/);
+  assert.match(acoes, /\.catch\(\(\) => null\);\s*if \(tx\) \{\s*const congelada = tx\.taxa_congelada != null;/);
 });
 
 test("contraproposta do morador: limite do dono ilegível para antes de gravar a versão", () => {

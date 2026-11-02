@@ -798,19 +798,21 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     // Depois do aceite: a congelada e, se ela ficou abaixo da do envio, "Sua taxa caiu para X%…".
     // Leitura falha: a taxa não aparece (nunca a de hoje no lugar da do envio).
     const tx = await lerTaxaDaProposta(s.admin, p.id).catch(() => null);
-    const congelada = tx?.taxa_congelada != null;
-    // Achado 83: sem ler a taxa de hoje, nada de "Se aceita hoje" (e, sem a do envio, a taxa não aparece).
-    const hoje = congelada ? null : await taxaDoDonoAgora(s.admin, s.user.id).then((t) => t.taxa).catch(() => null);
-    const pct = !tx ? null : congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
-    if (tx && pct != null) taxa = {
-      pct,
-      valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
-      congelada,
-      valorMensal: atual.totais.valorMensal,
-      meses: atual.termos.meses,
-      seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
-      caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
-    };
+    if (tx) {
+      const congelada = tx.taxa_congelada != null;
+      // Achado 83: sem ler a taxa de hoje, nada de "Se aceita hoje" (e, sem a do envio, a taxa não aparece).
+      const hoje = congelada ? null : await taxaDoDonoAgora(s.admin, s.user.id).then((t) => t.taxa).catch(() => null);
+      const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
+      if (pct != null) taxa = {
+        pct,
+        valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
+        congelada,
+        valorMensal: atual.totais.valorMensal,
+        meses: atual.termos.meses,
+        seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
+        caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
+      };
+    }
   }
   return {
     id: p.id,
