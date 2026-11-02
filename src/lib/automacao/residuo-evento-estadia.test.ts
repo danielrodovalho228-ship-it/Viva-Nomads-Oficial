@@ -26,9 +26,12 @@ test("atualizarPedido e cancelarAutomaticos lançam na falha da leitura (nunca '
 test("aoEventoDaEstadia: a falha avisa a equipe (avisos_daniel P2, sem dado pessoal) além do log", () => {
   const ev = trecho("export async function aoEventoDaEstadia");
   const c = ev.slice(ev.indexOf("} catch (e) {"));
-  assert.match(c, /\.from\("avisos_daniel"\)\s*\.insert\(\{/);
-  assert.match(c, /prioridade: "P2"/);
-  assert.match(c, /contrato \$\{contratoId\}/);
-  assert.match(c, /\.then\(undefined, \(\) => \{\}\)/, "o aviso é best-effort");
+  // O aviso mora em avisarFalhaAutomacao (o mesmo de executarAcoes, residuo-aviso-acao.test.ts).
+  assert.match(c, /await avisarFalhaAutomacao\(admin, ev\.tipo, contratoId\);/);
   assert.match(c, /return null;/);
+  const av = trecho("async function avisarFalhaAutomacao");
+  assert.match(av, /\.from\("avisos_daniel"\)\s*\.insert\(\{/);
+  assert.match(av, /prioridade: "P2"/);
+  assert.match(av, /contrato \$\{contratoId\}/);
+  assert.match(av, /\.then\(undefined, \(\) => \{\}\)/, "o aviso é best-effort");
 });

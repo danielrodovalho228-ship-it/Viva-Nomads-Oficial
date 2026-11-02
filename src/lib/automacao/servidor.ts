@@ -315,6 +315,18 @@ export interface Resultado {
 }
 
 /** Grava o que a regra pura decidiu. */
+/** Aviso P2 ao Daniel (sem dado pessoal): a automação de um evento único falhou; a equipe confere à mão. */
+async function avisarFalhaAutomacao(admin: Admin, tipo: string, contratoId: string): Promise<void> {
+  await admin
+    .from("avisos_daniel")
+    .insert({
+      assunto: `Automação da estadia falhou (${tipo})`,
+      corpo: `Os pedidos automáticos de parceiro do contrato ${contratoId} podem não ter sido atualizados ou cancelados. Confira em Admin → Serviços.`,
+      prioridade: "P2",
+    })
+    .then(undefined, () => {});
+}
+
 export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes: Acao[], agora: Date): Promise<Resultado> {
   const r: Resultado = { criados: 0, atualizados: 0, cancelados: 0, avisos: 0 };
   for (const a of acoes) {
@@ -343,6 +355,9 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
       }
     } catch (e) {
       console.error("[automação]", a.tipo, e instanceof Error ? e.message : e);
+      // Correção do #2261: remarcar e cancelar são de evento único (sem nova tentativa) → a equipe fica sabendo.
+      // Criar não avisa: o cron diário tenta de novo e a chave da automação torna a criação idempotente.
+      if (a.tipo === "atualizar" || a.tipo === "cancelar_automaticos") await avisarFalhaAutomacao(admin, a.tipo, ctx.id);
     }
   }
   return r;
@@ -358,14 +373,7 @@ export async function aoEventoDaEstadia(admin: Admin, contratoId: string, ev: Ev
   } catch (e) {
     console.error("[automação] evento:", ev.tipo, e instanceof Error ? e.message : e);
     // O evento é único (sem nova tentativa): a equipe fica sabendo para conferir os pedidos do parceiro à mão.
-    await admin
-      .from("avisos_daniel")
-      .insert({
-        assunto: `Automação da estadia falhou (${ev.tipo})`,
-        corpo: `Os pedidos automáticos de parceiro do contrato ${contratoId} podem não ter sido atualizados ou cancelados. Confira em Admin → Serviços.`,
-        prioridade: "P2",
-      })
-      .then(undefined, () => {});
+    await avisarFalhaAutomacao(admin, ev.tipo, contratoId);
     return null;
   }
 }
