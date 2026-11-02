@@ -280,7 +280,10 @@ export async function enviarDocumentoParaConferencia(
   // Respostas da qualificação anterior do MESMO imóvel (ou da que está à espera): a linha nova só troca o documento.
   let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
-  const { data: anterior } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: anterior, error: erroAnterior } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  // Leitura falha não vira "sem qualificação anterior": duplicaria o item na fila (e o aviso à equipe) e a linha nova
+  // perderia as respostas já dadas.
+  if (erroAnterior) return { ok: false, error: "Não foi possível enviar o documento agora. Tente de novo." };
   if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
     return { ok: true, id: anterior.id as string };
   }
