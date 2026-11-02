@@ -9,6 +9,8 @@ import { boaParaVideochamada, sinalMorador, type Rodada } from "@/lib/internet-m
 import { procedentes12m, pendenciaVencida, type PendenciaConforto } from "@/lib/conforto/regras";
 import { foraDoPrazo90d, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import { considerarPreenchido } from "@/lib/anuncio/chegada-e-pedido";
+import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
+import { selosDoMotor } from "@/lib/comparador-airbnb/comparacao-servidor";
 
 /*
   Servidor da ordem dos imóveis (Prompt 33, itens 4 e 5). Nunca importe em componente client:
@@ -34,13 +36,15 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
   }
   const linhas = data as LinhaRankingSinais[];
   const donos = [...new Set(linhas.map((l) => l.dono_id))];
-  const [identidades, internet, prazos, niveis, vistoriados, considerar] = await Promise.all([
+  const [identidades, internet, prazos, niveis, vistoriados, considerar, selosMotor] = await Promise.all([
     estadosIdentidade(admin, donos),
     internetDosAnuncios(admin, reais),
     prazos59(admin, reais, donos),
     niveisDosImoveis(admin, reais).catch(() => new Map()), // sem a 0211, a nota segue sem o nível
     vistoriadosDosImoveis(admin, reais).catch(() => new Set<string>()),
     considerarDosAnuncios(admin, reais),
+    // E399-C: com a chave, o selo do ranking é o do motor (o mesmo do cartão e da ficha); sem leitura, ninguém ganha.
+    PRECO_JUSTO_COMPARADOR ? selosDoMotor(admin, reais, new Date()).catch(() => new Set<string>()) : Promise.resolve(null),
   ]);
   return linhas.map((l) =>
     sinaisDaLinha(l, {
@@ -52,6 +56,7 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
       nivel: niveis.get(l.id) ?? null,
       vistoriado: vistoriados.has(l.id),
       considerarAntes: considerar.has(l.id),
+      ...(selosMotor ? { precoJustoMotor: selosMotor.has(l.id) } : {}),
     }),
   );
 }

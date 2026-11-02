@@ -41,6 +41,8 @@ export interface SinaisAnuncio {
   cancelamentosDono12m: number;
   // Preço
   precoJusto: boolean;
+  /** E399-C: o selo veio do motor (link conferido + 30 noites no Airbnb), com a chave PRECO_JUSTO_COMPARADOR. */
+  precoJustoMotor?: boolean;
   // Internet (Prompt 57): "Para trabalhar de casa" com internet MEDIDA vale mais que a versão informada.
   homeOffice?: "medido" | "informado" | null;
   /** A última medição do morador ficou abaixo de 50% da do dono (sinal no painel; não tira ponto). */
@@ -192,7 +194,14 @@ export function selosDoAnuncio(s: SinaisAnuncio): Selo[] {
   if (respondeRapido(s))
     out.push({ codigo: "responde_rapido", rotulo: "Responde rápido", motivo: `Respondeu ${Math.round((s.conversasRespondidas / s.conversas) * 100)}% das conversas, em média em ${s.respostaMediaMin} min.` });
   if (s.fotosDeParceiro) out.push({ codigo: "fotos_profissionais", rotulo: "Fotos profissionais", motivo: "Fotos feitas por fotógrafo parceiro da Viva." });
-  if (s.precoJusto) out.push({ codigo: "preco_justo", rotulo: "Preço justo", motivo: "Total por mês (com contas) não maior que o equivalente em estadias curtas informado pelo proprietário (critério em /como-funciona#preco-justo)." });
+  if (s.precoJusto)
+    out.push({
+      codigo: "preco_justo",
+      rotulo: "Preço justo",
+      motivo: s.precoJustoMotor
+        ? "Total por mês (com contas) menor que 30 noites do mesmo imóvel no Airbnb, com descontos e limpeza (critério em /como-funciona#preco-justo)."
+        : "Total por mês (com contas) não maior que o equivalente em estadias curtas informado pelo proprietário (critério em /como-funciona#preco-justo).",
+    });
   return out;
 }
 
