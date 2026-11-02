@@ -128,7 +128,9 @@ test("prontidão: item pendente 'Refaça a foto … até …' (não barra), com 
 test("GUARDA: salvarItemNivel recusa foto sem token válido (qualquer chamador) e consome o token antes de gravar", () => {
   const a = ler("src/lib/data/nivel-actions.ts");
   const corpo = a.slice(a.indexOf("export async function salvarItemNivel"), a.indexOf("/** As 4 perguntas de ruído"));
-  const iToken = corpo.indexOf("const lida = await capturaPeloToken(c.admin, tokenCaptura);");
+  // Achado 85: a leitura que falha responde "tente de novo" (nunca "sem token"), antes da conferência.
+  const iToken = corpo.indexOf('const lida = await capturaPeloToken(c.admin, tokenCaptura).catch(() => "falhou" as const);');
+  assert.match(corpo, /if \(lida === "falhou"\) return \{ ok: false, erro: MSG_PROVA_SEM_LEITURA \};/);
   const iRecusa = corpo.indexOf("if (!lida || !v.ok) return { ok: false, erro: ERRO_SEM_TOKEN };");
   const iConsome = corpo.indexOf('.update({ usado_em: new Date().toISOString() }).eq("id", lida.id).is("usado_em", null)');
   const iGrava = corpo.indexOf('.from("nivel_itens").upsert(');
@@ -144,11 +146,15 @@ test("GUARDA: salvarItemNivel recusa foto sem token válido (qualquer chamador) 
   assert.doesNotMatch(ler("src/lib/data/conforto-actions.ts"), /from\("nivel_itens"\)\.update\(\{ foto_path/);
 });
 
+const s0 = () => ler("src/lib/niveis/prova-servidor.ts");
+
 test("GUARDA: o envio da prova confere o token antes do arquivo, compara o hash e prende a foto ao token", () => {
   const r = ler("src/app/api/upload/prova/route.ts");
   assert.ok(r.indexOf("capturaPeloToken(admin") < r.indexOf('form?.get("file")'), "token antes do arquivo");
   assert.match(r, /return NextResponse\.json\(\{ error: ERRO_SEM_TOKEN, motivo: ok && !ok\.ok \? ok\.motivo : "sem_token" \}, \{ status: 403 \}\)/);
-  assert.match(r, /fotoJaUsada\(admin, hash, \{ propertyId: captura\.property_id, ownerId: user\.id, capturaId: captura\.id \}\)[\s\S]{0,80}ERRO_FOTO_REPETIDA/);
+  // Achado 84: sem conferir as três fontes, 503 — nunca "foto nova".
+  assert.match(r, /fotoJaUsada\(admin, hash, \{ propertyId: captura\.property_id, ownerId: user\.id, capturaId: captura\.id \}\)\.catch\(\(\) => "falhou" as const\);\s*if \(repetida === "falhou"\) return NextResponse\.json\(\{ error: MSG_PROVA_SEM_LEITURA \}, \{ status: 503 \}\);\s*if \(repetida\) \{\s*return NextResponse\.json\(\{ error: ERRO_FOTO_REPETIDA \}/);
+  assert.match(s0(), /if \(galeria\.error \|\| provas\.error \|\| capturas\.error\) throw new Error\(MSG_PROVA_SEM_LEITURA\);/);
   assert.match(r, /\.is\("foto_path", null\)\s*\.is\("usado_em", null\)/);
   const s = ler("src/lib/niveis/prova-servidor.ts");
   assert.match(s, /from\("fotos_anuncio_hash"\)\.select\("id"\)\.eq\("hash", hash\)\.or\(`property_id\.eq\.\$\{ctx\.propertyId\},owner_id\.eq\.\$\{ctx\.ownerId\}`\)/);

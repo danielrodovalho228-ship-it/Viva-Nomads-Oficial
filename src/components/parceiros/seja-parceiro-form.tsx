@@ -11,6 +11,7 @@ import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitac
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
 import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
+import { AtivarNoPainel } from "@/app/(dashboard)/dashboard/parceiro/ativar-no-painel";
 
 /**
  * "Seja parceiro" (Prompt 31a, item 2). Exige conta com e-mail confirmado: quem não entrou preenche, vai criar a
@@ -23,7 +24,7 @@ const VOLTA = "/parceiros?seja=1#quero-ser-parceiro";
 const STATUS_TEXTO: Record<string, string> = {
   aguardando_email: "A equipe começou um pedido em seu nome. Confira os dados abaixo e confirme o envio.",
   pendente: "Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.",
-  aprovada: "Sua parceria foi aprovada. Veja o e-mail com o link para ativar a sua página.",
+  aprovada: "Sua parceria foi aprovada. Ative a sua página aqui ou pelo link do e-mail.",
 };
 
 interface Campos {
@@ -104,6 +105,8 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
           <p className="font-semibold text-ink">{enviado ? STATUS_TEXTO.pendente : STATUS_TEXTO[sol!.status]}</p>
           <p className="mt-1 text-sm text-muted">Mandamos a confirmação para {estado.email}. Você acompanha pela sua conta.</p>
           <p className="mt-2 text-sm text-ink" data-testid="seja-parceiro-regra">{TEXTO_REGRA_90_10}</p>
+          {/* E425 (resíduo): em /parceiros, o aprovado também ativa aqui — mesmo botão e mesmo núcleo do painel. */}
+          {!enviado && sol?.status === "aprovada" && <AtivarNoPainel />}
         </div>
       </div>
     );

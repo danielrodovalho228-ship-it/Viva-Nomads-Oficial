@@ -41,18 +41,25 @@ export type LinhaProximidade = {
   oculto: boolean;
 };
 
+const MSG_PROXIMIDADES_SEM_LEITURA = "Não foi possível ler as proximidades do anúncio agora.";
 const chave = (tipo: string | null | undefined, nome: string) => `${tipo ?? ""}|${nome.trim().toLowerCase()}`;
 const chaveManual = (nome: string, endereco: string) => `${nome.trim().toLowerCase()}|${endereco.trim().toLowerCase()}`;
 
 export async function proximidadesParaGravar(admin: SupabaseClient | null, propertyId: string, lista: Proximity[], end: EnderecoDoAnuncio | undefined): Promise<LinhaProximidade[]> {
   // Sem o CEP do formulário (editor por seção, publicado), vale o CEP guardado na 0238.
-  const cepGuardado = !cepValido(end?.cep) && admin ? ((await admin.from("properties").select("cep_proximidades").eq("id", propertyId).maybeSingle()).data as { cep_proximidades: string | null } | null)?.cep_proximidades : null; // consistency-ignore: PERTO-B — só o servidor lê o CEP privado do PRÓPRIO anúncio (a ação já conferiu o dono)
+  // Achado 92: qualquer leitura que falha LANÇA — quem chama pula as proximidades e as gravadas ficam como estão
+  // (sem isso, a regravação perdia as distâncias calculadas e refazia a geocodificação).
+  const lido = !cepValido(end?.cep) && admin ? await admin.from("properties").select("cep_proximidades").eq("id", propertyId).maybeSingle() : null; // consistency-ignore: PERTO-B — só o servidor lê o CEP privado do PRÓPRIO anúncio (a ação já conferiu o dono)
+  if (lido?.error) throw new Error(MSG_PROXIMIDADES_SEM_LEITURA);
+  const cepGuardado = (lido?.data as { cep_proximidades: string | null } | null | undefined)?.cep_proximidades ?? null;
   const cep = cepValido(end?.cep) ?? cepValido(cepGuardado);
-  const cache = admin && cep ? ((await admin.from("proximidades_cep").select("lat, lng, itens").eq("cep", cep).maybeSingle()).data as { lat: number | null; lng: number | null; itens: LugarProximo[] | null } | null) : null;
+  const lidoCep = admin && cep ? await admin.from("proximidades_cep").select("lat, lng, itens").eq("cep", cep).maybeSingle() : null;
+  if (lidoCep?.error) throw new Error(MSG_PROXIMIDADES_SEM_LEITURA);
+  const cache = (lidoCep?.data as { lat: number | null; lng: number | null; itens: LugarProximo[] | null } | null | undefined) ?? null;
   const doCep = new Map((cache?.itens ?? []).map((l) => [chave(l.tipo, l.nome), l]));
-  const antigas = admin
-    ? (((await admin.from("property_proximities").select("name, tipo, origem, endereco, distancia_m, lat, lng").eq("property_id", propertyId)).data ?? []) as { name: string; tipo: string | null; origem: string | null; endereco: string | null; distancia_m: number | null; lat: number | null; lng: number | null }[])
-    : [];
+  const lidasAntigas = admin ? await admin.from("property_proximities").select("name, tipo, origem, endereco, distancia_m, lat, lng").eq("property_id", propertyId) : null;
+  if (lidasAntigas?.error) throw new Error(MSG_PROXIMIDADES_SEM_LEITURA);
+  const antigas = (lidasAntigas?.data ?? []) as { name: string; tipo: string | null; origem: string | null; endereco: string | null; distancia_m: number | null; lat: number | null; lng: number | null }[];
   // Lugar do OSM já gravado (com a distância calculada antes) continua válido mesmo sem a busca do CEP à mão.
   for (const a of antigas) {
     if (a.origem === "osm" && a.distancia_m != null && !doCep.has(chave(a.tipo, a.name))) {
@@ -120,6 +127,8 @@ export async function gravarProximidades(supabase: SupabaseClient, propertyId: s
   const c = cepValido(cep);
   if (admin && c) await admin.from("properties").update({ cep_proximidades: c }).eq("id", propertyId).then(undefined, () => null);
   const teste = await supabase.from("property_proximities").select("oculto").eq("property_id", propertyId).limit(1);
+  // Achado 92: só "coluna não existe" (42703, banco sem a 0238) grava no formato antigo; outra falha não apaga nada.
+  if (teste.error && teste.error.code !== "42703") throw new Error(MSG_PROXIMIDADES_SEM_LEITURA);
   const comColunasNovas = !teste.error;
   await supabase.from("property_proximities").delete().eq("property_id", propertyId);
   if (!linhas.length) return;

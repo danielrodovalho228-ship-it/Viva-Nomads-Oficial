@@ -65,12 +65,14 @@ async function emitir(
 ): Promise<Resultado> {
   // Idempotente: já emitido para esta origem → devolve o existente.
   const coluna = origem.pagamentoId ? "pagamento_id" : "acerto_id";
-  const { data: existente } = await admin
+  const { data: existente, error: erroExistente } = await admin
     .from("documentos_fiscais")
     .select("id, numero")
     .eq("tipo", tipo)
     .eq(coluna, (origem.pagamentoId ?? origem.acertoId) as string)
     .maybeSingle();
+  // Achado 96: sem saber se já existe, não emite — senão sai um 2º recibo, com número novo, para o mesmo pagamento.
+  if (erroExistente) return { ok: false, motivo: "não foi possível conferir se o documento já existe" };
   if (existente) return { ok: true, id: existente.id as string, numero: existente.numero as string };
 
   const agora = new Date();
@@ -267,11 +269,12 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   const admin = createAdminClient();
   if (!admin) return { ok: false, motivo: "sem servidor" };
   try {
-    const { data: pg } = await admin
+    const { data: pg, error: erroPg } = await admin
       .from("pagamentos_bloco")
       .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .eq("id", pagamentoId)
       .maybeSingle();
+    if (erroPg) return { ok: false, motivo: "não foi possível ler o pagamento" };
     if (!pg || !pg.confirmado_pelo_inquilino) return { ok: false, motivo: "pagamento não confirmado pelo inquilino" };
     // Registro anulado (duplicidade, 0182): não gera documento nem volta para a fila.
     if (pg.anulado_em) return { ok: false, motivo: "pagamento anulado" };
@@ -367,16 +370,19 @@ export async function emitirTermoDevolucaoComRegistro(acertoId: string): Promise
  * O admin dispara pelo botão "Emitir os pendentes" da fila; cada um passa pela mesma emissão idempotente.
  */
 export async function pagamentosConfirmadosSemDocumento(admin: Admin, limite = 50): Promise<string[]> {
-  const { data: pgs } = await admin
+  const { data: pgs, error: e1 } = await admin
     .from("pagamentos_bloco")
     .select("id")
     .eq("confirmado_pelo_inquilino", true)
     .is("anulado_em", null)
     .order("confirmado_em", { ascending: true })
     .limit(500);
+  // Achado 96: a falha LANÇA — sem os documentos, todo pagamento pareceria "sem documento" (a fila do admin inflaria).
+  if (e1) throw new Error("Não foi possível ler os pagamentos confirmados.");
   const ids = ((pgs ?? []) as { id: string }[]).map((p) => p.id);
   if (!ids.length) return [];
-  const { data: docs } = await admin.from("documentos_fiscais").select("pagamento_id").in("pagamento_id", ids);
+  const { data: docs, error: e2 } = await admin.from("documentos_fiscais").select("pagamento_id").in("pagamento_id", ids);
+  if (e2) throw new Error("Não foi possível ler os documentos emitidos.");
   const com = new Set(((docs ?? []) as { pagamento_id: string | null }[]).map((d) => d.pagamento_id));
   return ids.filter((id) => !com.has(id)).slice(0, limite);
 }

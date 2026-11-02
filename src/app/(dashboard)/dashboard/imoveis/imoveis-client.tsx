@@ -5,7 +5,9 @@ import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { Plus, Award, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { ROTULO_NIVEL } from "@/config/niveis";
+import { textoNivelCartao } from "@/lib/cartao-sintese";
 import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -97,6 +99,8 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
               <div
                 key={p.id}
                 className="flex flex-col gap-4 rounded-xl border border-sage-200 bg-white p-4 sm:flex-row"
+                data-testid="meu-anuncio"
+                data-imovel={p.id}
               >
                 {hasPhoto(p.photos[0]) ? (
                   <BrandImage
@@ -131,6 +135,12 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                       )}
                     </span>
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
+                    {/* E416 (retrabalho): o selo de nível do anúncio, com o mesmo texto do cartão da vitrine. */}
+                    {p.nivel && p.nivel !== "em_adequacao" && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-50 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
+                        <Award className="h-3.5 w-3.5" aria-hidden /> {textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado)}
+                      </span>
+                    )}
                     {demoItem && <DemoBadge />}
                     {duplicados.has(p.id) && (
                       <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700" data-testid="rascunho-duplicado">
@@ -231,6 +241,13 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                         {ROTULO_TOTAL_MES} · {ROTULO_MENSAL} {formatBRL(precoDoImovel(p).mensal)}
                       </p>
                       <PrecoComContexto rotulo={rotuloDoCartaoDoDono(p)} destaque="lg" />
+                      {/* E399-C pacote 5: só o dono vê — por que o anúncio está sem o selo "Preço justo". */}
+                      {p.avisoPrecoJusto && (
+                        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-ink" data-testid="anuncio-preco-justo-aviso">
+                          Sem o selo &quot;Preço justo&quot;: 30 noites no Airbnb saem por {formatBRL(p.avisoPrecoJusto.valorAirbnb)}. Para ganhar o selo, o
+                          total por mês precisa ficar até {formatBRL(p.avisoPrecoJusto.ate)}.
+                        </p>
+                      )}
                     </div>
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (

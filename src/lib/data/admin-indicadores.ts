@@ -37,7 +37,9 @@ export function intervaloBRT(inicio: string, fim: string): { ini: string; fim: s
 
 /** Ids das contas de teste (para tirar dos números). */
 export async function idsContasTeste(admin: Admin): Promise<Set<string>> {
-  const { data } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
+  const { data, error } = await admin.from("profiles").select("id").eq("is_teste", true).limit(5000);
+  // Achado 93: a falha LANÇA — sem a lista, as contas de teste entrariam nos números (e abririam Correções).
+  if (error) throw new Error("Não foi possível ler as contas de teste.");
   return new Set(((data ?? []) as { id: string }[]).map((p) => p.id));
 }
 
@@ -575,10 +577,11 @@ export async function cobrancasTaxa(admin: Admin, leadIds: string[]): Promise<Ma
 /** Candidaturas (leads) que são de teste: conta de teste em qualquer lado ou anúncio [TESTE…]. */
 export async function leadsDeTeste(admin: Admin, ids: string[]): Promise<Set<string>> {
   if (!ids.length) return new Set();
-  const [{ data }, teste] = await Promise.all([
+  const [{ data, error }, teste] = await Promise.all([
     admin.from("leads").select("id, tenant_id, properties!inner(owner_id, title)").in("id", [...new Set(ids)]),
     idsContasTeste(admin),
   ]);
+  if (error) throw new Error("Não foi possível ler as candidaturas de teste.");
   return new Set(
     ((data ?? []) as unknown as { id: string; tenant_id: string; properties: { owner_id: string; title: string | null } }[])
       .filter((l) => teste.has(l.tenant_id) || teste.has(l.properties.owner_id) || MARCA_TESTE.test(l.properties.title ?? ""))

@@ -15,7 +15,7 @@ import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 import { textoParaDono, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { donoVeFichaPet, petsVaoNaCandidatura, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
 import { umPorPessoaEImovel } from "@/lib/painel/interessados-unicos";
-import { identidadeParaOutraParte } from "@/lib/identidade/estado";
+import { IDENTIDADE_INDISPONIVEL, identidadeParaOutraParte, type EstadoIdentidade } from "@/lib/identidade/estado";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
 export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
@@ -146,12 +146,17 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   }
 
   // Identidade do candidato pela fonte única (complemento do prompt 23): o mesmo texto que ele vê na Conta.
-  const identidades = admin && tenantIds.length > 0 ? await estadosIdentidade(admin, tenantIds) : new Map();
+  // Leitura que falha: o cartão diz "não conferida agora" (nunca "pendente" para quem é verificado) e o selo da triagem
+  // fica de fora até a próxima leitura.
+  const lidas = admin && tenantIds.length > 0 ? await estadosIdentidade(admin, tenantIds).catch(() => null) : new Map<string, EstadoIdentidade>();
+  const identidadeFalhou = lidas === null;
+  const identidades = lidas ?? new Map<string, EstadoIdentidade>();
+  const identidadeDe = (id: string): EstadoIdentidade | null => (identidadeFalhou ? IDENTIDADE_INDISPONIVEL : (identidades.get(id) ?? null));
 
   // Prompt 52 (chave TRIAGEM_VINCULO_ATIVA): o selo "Morador verificado" (identidade + vínculo, 12 meses). O dono recebe
   // SÓ o texto do selo com o tipo do vínculo — nunca o arquivo, o caminho ou valores.
   const seloTriagem = new Map<string, string>();
-  if (admin && tenantIds.length > 0 && (await triagemVinculoAtiva())) {
+  if (admin && tenantIds.length > 0 && !identidadeFalhou && (await triagemVinculoAtiva())) {
     const { data: vs } = await admin.from("triagem_vinculos").select("user_id, tipo, status, motivo, decidido_em, valido_ate, enviado_em").in("user_id", tenantIds).order("enviado_em", { ascending: false });
     const recente = new Map<string, LinhaVinculo>();
     for (const v of (vs ?? []) as (LinhaVinculo & { user_id: string })[]) if (!recente.has(v.user_id)) recente.set(v.user_id, v);
@@ -237,8 +242,8 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       riskCategories: v?.risk_categories ?? [],
       light: v?.traffic_light ?? "yellow",
       // PROP-3 (E118): verificada/pendente pela MESMA função do Fechamento (identidadeParaOutraParte).
-      verified: identidadeParaOutraParte(identidades.get(r.tenant_id)).verificada,
-      identidade: identidades.get(r.tenant_id) ?? null,
+      verified: identidadeParaOutraParte(identidadeDe(r.tenant_id)).verificada,
+      identidade: identidadeDe(r.tenant_id),
       moradorVerificado: seloTriagem.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
       fichaPet,

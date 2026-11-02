@@ -3471,13 +3471,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/actions.ts#loadDraftData": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/actions.ts#loadPropertyForEdit": {
       "personas": [
         "inquilino",
@@ -7039,6 +7032,18 @@
     "src/app/(public)/avisos/desligar/acao.ts#desligarSugestoes": {
       "personas": [
         "publico"
+      ],
+      "specs": []
+    },
+    "src/lib/comparador-airbnb/link-actions.ts#meuLinkAirbnb": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/comparador-airbnb/link-actions.ts#salvarLinkAirbnb": {
+      "personas": [
+        "proprietario"
       ],
       "specs": []
     }

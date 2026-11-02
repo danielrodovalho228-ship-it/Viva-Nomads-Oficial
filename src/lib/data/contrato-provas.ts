@@ -9,6 +9,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * quem não é parte do contrato recebe null (a rota responde 404, sem dizer se o contrato existe).
  * A montagem (pagamentos anulados, conferência, situação pelo selo) é a mesma do admin: montarDadosProvas.
  */
+const MSG_PROVAS_SEM_LEITURA = "Não foi possível ler o contrato para o pacote de provas.";
+
 export async function carregarProvas(contratoId: string): Promise<DadosProvas | null> {
   if (!UUID_RE.test(contratoId)) return null;
   const supabase = await createClient();
@@ -16,21 +18,25 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
   const visao = await getContratoParaAssinar(contratoId);
   if (!visao) return null;
 
-  const [{ data: contrato }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = await Promise.all([
+  const [{ data: contrato, error: e1 }, { data: ass, error: e2 }, { data: pags, error: e3 }, { data: confs, error: e4 }, { data: aditivos, error: e5 }] = await Promise.all([
     supabase.from("contratos").select("created_at").eq("id", contratoId).maybeSingle(),
     supabase.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     supabase.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId),
     supabase.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
     supabase.from("contrato_aditivos").select(COLUNAS_PROVAS.aditivos).eq("contrato_id", contratoId),
   ]);
+  // Achado 77: o pacote de provas é DOCUMENTO registrado (PRV). Leitura que falha não pode virar "sem assinaturas",
+  // "sem pagamentos" ou "sem conferência" no PDF: lança, e a rota responde "não foi possível gerar" (nada é registrado).
+  if (e1 || e2 || e3 || e4 || e5) throw new Error(MSG_PROVAS_SEM_LEITURA);
   const ids = (confs ?? []).map((c) => c.id as string);
-  const [{ data: itens }, { data: respostas }, { data: laudos }] = ids.length
+  const [{ data: itens, error: e6 }, { data: respostas, error: e7 }, { data: laudos, error: e8 }] = ids.length
     ? await Promise.all([
         supabase.from("conferencia_itens").select(COLUNAS_PROVAS.itens).in("conferencia_id", ids),
         supabase.from("conferencia_respostas").select(COLUNAS_PROVAS.respostas).in("conferencia_id", ids),
         supabase.from("conferencia_laudos").select(COLUNAS_PROVAS.laudos).in("conferencia_id", ids),
       ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+    : [{ data: [], error: null }, { data: [], error: null }, { data: [], error: null }];
+  if (e6 || e7 || e8) throw new Error(MSG_PROVAS_SEM_LEITURA);
 
   return montarDadosProvas({
     contratoId,

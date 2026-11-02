@@ -164,7 +164,11 @@ export function PerfilTela() {
   async function removerFoto() {
     setRemovendo(true);
     try {
-      await clearMyAvatar();
+      const r = await clearMyAvatar();
+      if (!r.ok) {
+        setMsg({ ok: false, texto: "Não foi possível remover a foto agora. Tente de novo." });
+        return;
+      }
       avisarFotoAtualizada(null);
     } finally {
       setRemovendo(false);

@@ -136,8 +136,9 @@ export function RegrasCasaCampos({
           onChange={(e) => muda({ outras: e.target.value })}
           data-testid="regras-casa-outras"
         />
-        <span className="text-xs font-normal text-muted" data-testid="regras-casa-outras-contador">
-          {value.outras.length} de {MAX_OUTRAS_REGRAS} caracteres
+        {/* Conformidade do cadastro (01/11): o mesmo contador "N/MÁX" dos outros campos do Passo 6 (antes "N de 280 caracteres"). */}
+        <span className="text-right text-xs font-normal text-muted" data-testid="regras-casa-outras-contador">
+          {value.outras.length}/{MAX_OUTRAS_REGRAS}
         </span>
       </label>
     </div>

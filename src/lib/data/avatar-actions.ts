@@ -49,9 +49,12 @@ export async function clearMyAvatar(): Promise<{ ok: boolean }> {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false };
 
-  const path = await getAvatarPath(user.id);
+  // Achado 98: sem saber qual é o arquivo (ou sem conseguir apagá-lo), não zera o perfil — nada de foto órfã no Storage.
+  const path = await getAvatarPath(user.id).catch(() => "falhou" as const);
+  if (path === "falhou") return { ok: false };
   if (path) {
-    await supabase.storage.from(AVATARS_BUCKET).remove([path]);
+    const { error } = await supabase.storage.from(AVATARS_BUCKET).remove([path]);
+    if (error) return { ok: false };
   }
   await (createAdminClient() ?? supabase)
     .from("profiles")
@@ -73,7 +76,7 @@ export async function getMyAvatarUrl(): Promise<UrlResult> {
   if (!user) return { url: null };
   // O dono lê o próprio arquivo pela RLS — mas assinamos via admin para não
   // depender de a policy de leitura estar exatamente assim; é a MINHA foto.
-  const path = await getAvatarPath(user.id);
+  const path = await getAvatarPath(user.id).catch(() => null); // fail-closed: iniciais
   return { url: await signAvatarPath(path, user.id) };
 }
 
@@ -99,7 +102,7 @@ export async function getAvatarUrl(params: {
   } = await supabase.auth.getUser();
 
   const viewerId = user?.id ?? "";
-  const targetPath = await getAvatarPath(targetId);
+  const targetPath = await getAvatarPath(targetId).catch(() => null); // fail-closed: iniciais
   if (!targetPath) return { url: null };
 
   // Eu mesmo.

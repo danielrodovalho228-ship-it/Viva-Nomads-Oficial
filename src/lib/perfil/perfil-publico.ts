@@ -7,14 +7,18 @@
 import { guardContactInfo } from "../messages/contact-guard.ts";
 import { seloVinculoPublico } from "../vinculo/textos.ts";
 
-/** "Maria Souza Lima" → "Maria L."; um nome só → ele mesmo; vazio → null. */
+/**
+ * "Maria Souza Lima" → "Maria L."; um nome só → ele mesmo; vazio → null. FONTE ÚNICA do nome abreviado (página pública,
+ * visita, agenda, interessados): E427 (01/11) — pedaço sem letra ("1", "2º", "-") não é sobrenome. Antes a página
+ * pública mostrava "Daniel 1." e a visita "Daniel P." para a MESMA pessoa.
+ */
 export function nomeCurto(nome: string | null | undefined): string | null {
   // PROP-3 (E118): nome que é um e-mail não é nome (nunca mostra o e-mail; cai no rótulo neutro de quem chama).
   if ((nome ?? "").includes("@")) return null;
-  const partes = (nome ?? "").trim().split(/\s+/).filter(Boolean);
+  const partes = (nome ?? "").trim().split(/\s+/).filter((p) => /\p{L}/u.test(p));
   if (partes.length === 0) return null;
   if (partes.length === 1) return partes[0];
-  return `${partes[0]} ${partes[partes.length - 1].charAt(0).toUpperCase()}.`;
+  return `${partes[0]} ${partes[partes.length - 1].charAt(0).toLocaleUpperCase("pt-BR")}.`;
 }
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];

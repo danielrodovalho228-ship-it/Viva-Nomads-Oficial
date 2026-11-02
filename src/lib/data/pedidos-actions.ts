@@ -191,7 +191,7 @@ function colunasDoPedido(input: PedidoInput, v: CamposValidados) {
 /** Prompt 37: destino do pedido validado no servidor (slug ativo ou endereço escolhido); sem admin, sem destino. */
 async function destinoDoPedido(input: PedidoInput) {
   const admin = createAdminClient();
-  return admin ? localDaEntrada(admin, input.destino ?? null) : null;
+  return admin ? localDaEntrada(admin, input.destino ?? null).catch(() => "falhou" as const) : null;
 }
 
 /**
@@ -258,6 +258,7 @@ export async function criarPedido(
     };
 
   const destino = await destinoDoPedido(input);
+  if (destino === "falhou") return { ok: false, error: "Não foi possível ler o local de trabalho agora. Tente de novo." };
   if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
 
   const { data, error } = await supabase
@@ -325,6 +326,7 @@ export async function editarPedido(pedidoId: string, input: PedidoInput): Promis
   const val = validarPedido(input);
   if (!val.ok) return { ok: false, error: val.error };
   const destino = await destinoDoPedido(input);
+  if (destino === "falhou") return { ok: false, error: "Não foi possível ler o local de trabalho agora. Tente de novo." };
   if (destino === "invalido") return { ok: false, error: "Escolha o local de trabalho na lista de sugestões." };
   // E402: a versão anterior, para o e-mail dizer o que mudou (ex.: orçamento R$ 2.500 → R$ 2.600).
   const { data: anterior } = await supabase.from("pedidos_moradia").select(COLUNAS_PEDIDO_EMAIL).eq("id", pedidoId).eq("inquilino_id", user.id).maybeSingle();
