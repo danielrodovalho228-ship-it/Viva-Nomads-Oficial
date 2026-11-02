@@ -100,7 +100,9 @@ async function medidasDoPedido(admin: Admin, pedidoId: string, visitaEm: string)
 
 /** O laudo de referência do imóvel: a última versão do último laudo emitido. */
 export async function laudoAtual(admin: Admin, propertyId: string): Promise<LinhaLaudo | null> {
-  const { data } = await admin.from("vistoria_laudos").select("*").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await admin.from("vistoria_laudos").select("*").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1).maybeSingle();
+  // Achado 115: a falha LANÇA (quem mostra o "· vistoriado" já trata) — nunca "sem laudo" por engano.
+  if (error) throw new Error("Não foi possível ler o laudo do imóvel.");
   return (data as LinhaLaudo | null) ?? null;
 }
 
