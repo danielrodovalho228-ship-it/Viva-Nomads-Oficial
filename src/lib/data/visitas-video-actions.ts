@@ -447,13 +447,16 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
   if (!user) return null;
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("visitas_video").select(`${COLUNAS}, owner_id, tenant_id`).eq("id", id).maybeSingle();
+  const { data, error } = await admin.from("visitas_video").select(`${COLUNAS}, owner_id, tenant_id`).eq("id", id).maybeSingle();
+  // Achado 113: a falha LANÇA (error.tsx) — nunca 404 para a visita, nem endereço da presencial sumindo na hora.
+  if (error) throw new Error("Não foi possível ler a visita.");
   if (!data) return null;
   const r = data as unknown as Linha & { owner_id: string; tenant_id: string };
   const papel = r.owner_id === user.id ? "dono" : r.tenant_id === user.id ? "morador" : null;
   if (!papel) return null;
   const v = mapear(r, (m) => (papel === "dono" ? motivoParaDono(m) : m && isMotivo(m) ? motivoLabel(m) : ""));
-  const { data: p } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
+  const { data: p, error: erroImovel } = await admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", r.property_id).maybeSingle(); // consistency-ignore: E211 — endereço exato só às partes da visita presencial CONFIRMADA (regra de endereco-visita.ts)
+  if (erroImovel) throw new Error("Não foi possível ler o endereço da visita.");
   const e = p && mostraEnderecoDaVisita(v, new Date()) ? enderecoDaVisita(p) : null;
   let pessoa: string | null = null;
   let fotoPessoa: string | null = null;
