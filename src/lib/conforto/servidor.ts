@@ -72,9 +72,12 @@ export interface PendenciaParaTela extends PendenciaConforto {
 const COLUNAS_PENDENCIA =
   "id, property_id, contrato_id, chave, status, aberta_em, prazo_ate, texto_morador, foto_morador, corrigida_em, foto_dono, confirmada_em, reaberta_em, contestada_em, motivo_contestacao, decidido_em";
 
-/** pendenciasConforto(contrato) — com "fechada" e "vencida" já decididas pela regra pura. */
-export async function pendenciasConforto(db: Db, contratoId: string, agora = new Date()): Promise<PendenciaParaTela[]> {
+/**
+ * pendenciasConforto(contrato) — com "fechada" e "vencida" já decididas pela regra pura. Leitura falha → null (nunca
+ * "sem pendências": o painel com prazo de 72 h sumiria da tela do dono e do morador sem aviso).
+ */
+export async function pendenciasConforto(db: Db, contratoId: string, agora = new Date()): Promise<PendenciaParaTela[] | null> {
   const { data, error } = await db.from("conforto_pendencias").select(COLUNAS_PENDENCIA).eq("contrato_id", contratoId).order("aberta_em");
-  if (error) return [];
+  if (error) return null;
   return ((data ?? []) as unknown as Omit<PendenciaParaTela, "fechada" | "vencida">[]).map((p) => ({ ...p, fechada: pendenciaFechada(p, agora), vencida: pendenciaVencida(p, agora) }));
 }
