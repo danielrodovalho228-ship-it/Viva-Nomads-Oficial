@@ -17,7 +17,9 @@ export async function getNascimento(): Promise<string> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return "";
-  const { data } = await supabase.from("profiles").select("data_nascimento").eq("id", user.id).maybeSingle();
+  // Estados vazios: leitura que falha LANÇA. Devolver "" deixava o campo vazio, e salvar os dados apagava a data gravada.
+  const { data, error } = await supabase.from("profiles").select("data_nascimento").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler a data de nascimento agora.");
   return nascimentoParaTela((data as { data_nascimento?: string | null } | null)?.data_nascimento);
 }
 

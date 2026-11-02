@@ -25,7 +25,7 @@ import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 import { getNascimento, salvarNascimento } from "@/lib/data/nascimento-actions";
-import { mascararNascimento, validarNascimento } from "@/lib/conta/nascimento";
+import { AVISO_NASCIMENTO_FALHOU, mascararNascimento, validarNascimento } from "@/lib/conta/nascimento";
 import { PILULA_EMAIL } from "@/lib/perfil/espelho";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { removerTodosPushTokens } from "@/lib/data/push-actions";
@@ -45,6 +45,8 @@ export function DadosPessoais() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [emailConfirmado, setEmailConfirmado] = useState(false);
   const [nascimento, setNascimento] = useState("");
+  // Estados vazios: a data não carregou → o campo fica travado e salvar não mexe nela (vazio apagaria a gravada).
+  const [nascFalhou, setNascFalhou] = useState(false);
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [dadosFalharam, setDadosFalharam] = useState(false);
@@ -70,7 +72,7 @@ export function DadosPessoais() {
       });
     getNascimento()
       .then((n) => vivo && setNascimento(n))
-      .catch(() => {});
+      .catch(() => vivo && setNascFalhou(true));
     getMeuDocumento()
       .then((d) => vivo && setDocumento(d))
       .catch(() => {});
@@ -84,7 +86,7 @@ export function DadosPessoais() {
     if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
     setErro(null);
     setOk(false);
-    const nasc = validarNascimento(nascimento);
+    const nasc = nascFalhou ? ({ ok: true } as const) : validarNascimento(nascimento);
     if (!nasc.ok) {
       setErro(nasc.erro);
       return;
@@ -95,7 +97,9 @@ export function DadosPessoais() {
         fullName: nome,
         phone: telefone,
       }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", dados: undefined })),
-      salvarNascimento(nascimento).catch(() => ({ ok: false, error: "Sem conexão. Tente de novo." })),
+      nascFalhou
+        ? Promise.resolve({ ok: true, error: undefined })
+        : salvarNascimento(nascimento).catch(() => ({ ok: false, error: "Sem conexão. Tente de novo." })),
     ]);
     setSalvando(false);
     if (!r.ok || !r.dados) {
@@ -145,7 +149,8 @@ export function DadosPessoais() {
           label="Data de nascimento"
           value={nascimento}
           onChange={(e) => setNascimento(mascararNascimento(e.target.value))}
-          placeholder="dd/mm/aaaa"
+          placeholder={nascFalhou ? AVISO_NASCIMENTO_FALHOU : "dd/mm/aaaa"}
+          disabled={nascFalhou}
           inputMode="numeric"
           autoComplete="bday"
           data-testid="dados-nascimento"
