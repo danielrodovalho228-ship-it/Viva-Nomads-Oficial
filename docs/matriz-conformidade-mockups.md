@@ -4,7 +4,7 @@ Fonte dos mockups: branch `mockups` (`docs/mockups/<tela>-desktop.webp` e `-mobi
 
 Estados: **Conforme** · **Corrigido** (PR mesclado) · **Corrigido — PR aberto** · **Parcial** · **Decisão pendente** · **Congelado** · **A conferir**.
 
-Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linha a linha a cada passada. Passada 2 (31/10, noite): cabeçalhos do painel, morador, perfil, conta, toggles e qualificação.
+Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linha a linha a cada passada. Passada 2 (31/10, noite): cabeçalhos do painel, morador, perfil, conta, toggles e qualificação. Passada 3 (01/11–02/11, 390 e 1280): as 10 telas do cadastro elemento por elemento, as telas recentes (Meus anúncios, rascunho reaberto, página do proprietário, Agenda, Meus imóveis — #2146) e varredura de fundo bege, grade ímpar e cartões desiguais em 45 rotas públicas e do painel (sem achado novo; /buscar com 3 colunas ao lado do mapa fica para decisão de desenho).
 
 | Tela (mockup) | Rota real | Estado | Prova / observação |
 |---|---|---|---|
@@ -40,16 +40,16 @@ Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linh
 | `cabecalho-roi` | cabeçalho de /dashboard/roi-imovel | Decisão pendente | Como os demais cabeçalhos; além disso, /dashboard/roi-imovel leva ao Simulador do imóvel (E294 juntou simulador e ROI num cálculo só, #1715). |
 | `cabecalho-simulador` | cabeçalho de /dashboard/simulador | Decisão pendente | Passada 2 (31/10, 1280): o mockup tem barra lateral verde, fundo bege e foto grande no topo de cada tela do painel; o real segue o painel aprovado depois (topo com abas, fundo clean, sem foto). Pôr foto no topo de todas as telas do painel é decisão de desenho — com o Muse. Conteúdo de cada tela conferido sem defeito visual. |
 | `cabecalho-tributacao` | cabeçalho de /dashboard/tributacao | Decisão pendente | Passada 2 (31/10, 1280): o mockup tem barra lateral verde, fundo bege e foto grande no topo de cada tela do painel; o real segue o painel aprovado depois (topo com abas, fundo clean, sem foto). Pôr foto no topo de todas as telas do painel é decisão de desenho — com o Muse. Conteúdo de cada tela conferido sem defeito visual. |
-| `cadastro-imovel-01-tipo` | /dashboard/imoveis/novo?etapa=tipo | Conforme | Segue E87 (9 tipos em carrossel). |
+| `cadastro-imovel-01-tipo` | /dashboard/imoveis/novo?etapa=tipo | Conforme | Segue E87 (9 tipos em carrossel). Passada 3 (01/11, 390 e 1280): subtítulo nos cartões de tipo (mockup do celular) fica de fora — o mockup traz 2 de 9 e escrever os outros seria texto inventado; decisão de texto com o Muse. |
 | `cadastro-imovel-02-fotos` | /dashboard/imoveis/novo?etapa=fotos | Conforme | Exige 8 fotos (MIN_FOTOS); vídeo e IA além do mockup. |
-| `cadastro-imovel-03-endereco` | /dashboard/imoveis/novo?etapa=endereco | Conforme | Mapa do bairro aparece com o endereço preenchido. |
-| `cadastro-imovel-04-detalhes` | /dashboard/imoveis/novo?etapa=detalhes | Decisão pendente | Mockup tem "Comodidades principais" (atalho para o Passo 5) e ícone por contador no celular — não implementados; esperar decisão. |
-| `cadastro-imovel-05-comodidades` | /dashboard/imoveis/novo?etapa=comodidades | Corrigido | #1717 (ícone nos cartões do Pronto para trabalhar). |
-| `cadastro-imovel-06-regras` | /dashboard/imoveis/novo?etapa=regras | Corrigido | #1716 (silêncio, visitas, festas e outras regras no passo). |
-| `cadastro-imovel-07-descricao` | /dashboard/imoveis/novo?etapa=descricao | Conforme |  |
-| `cadastro-imovel-08-preco` | /dashboard/imoveis/novo?etapa=preco | Conforme | Total do mês aparece com valor (calcularTudoIncluido). |
-| `cadastro-imovel-09-disponibilidade` | /dashboard/imoveis/novo?etapa=disponibilidade | Conforme | Calendário aparece com o rascunho salvo. |
-| `cadastro-imovel-10-revisao` | /dashboard/imoveis/novo?etapa=revisao | Corrigido | #1718 (motivo do Publicar inteiro). |
+| `cadastro-imovel-03-endereco` | /dashboard/imoveis/novo?etapa=endereco | Corrigido — PR aberto | Mapa do bairro aparece com o endereço preenchido. E429 (#2147, 02/11): bairro com nome de estado ("Minas Gerais", bairro oficial de Uberlândia) não é erro; o bairro do CEP é autoritativo. Fica como está: endereço em campos (CEP, rua, número, bairro) em vez do campo único do mockup — preenchido pelo CEP, decisão anterior. |
+| `cadastro-imovel-04-detalhes` | /dashboard/imoveis/novo?etapa=detalhes | Corrigido; resto em decisão | #2118 (título "Características do imóvel" e o lembrete "Você pode revisar e editar depois"). Segue em decisão: "Comodidades principais" (atalho para o Passo 5) e ícone por contador no celular. |
+| `cadastro-imovel-05-comodidades` | /dashboard/imoveis/novo?etapa=comodidades | Corrigido | #1717 (ícone nos cartões do Pronto para trabalhar); #2115 (um ícone por comodidade — 3 pares repetidos). Fica como está: grade par da casa (o ímpar ocupa a linha) e lista de 1 coluna no celular. |
+| `cadastro-imovel-06-regras` | /dashboard/imoveis/novo?etapa=regras | Corrigido | #1716 (silêncio, visitas, festas e outras regras no passo); #2116 (ícone em cada regra, como no mockup); #2123/#2126 (contador "N/280" igual aos outros). |
+| `cadastro-imovel-07-descricao` | /dashboard/imoveis/novo?etapa=descricao | Decisão pendente | Passada 3 (01/11): o mockup tem a linha de chips "Destaques" abaixo da descrição — funcionalidade nova, decisão com o Muse. Resto conforme. |
+| `cadastro-imovel-08-preco` | /dashboard/imoveis/novo?etapa=preco | Conforme | Total do mês aparece com valor (calcularTudoIncluido). Passada 3 (01/11): chips selecionados em verde cheio ficam (padrão E193 do assistente inteiro; não são botão de ação). |
+| `cadastro-imovel-09-disponibilidade` | /dashboard/imoveis/novo?etapa=disponibilidade | Corrigido; resto em decisão | Calendário aparece com o rascunho salvo. #2121 ("Resumo: Disponível … · Mínimo N dias" na prévia). Em decisão: estadia mínima em +/− (o real usa chips 30/60/90/180 dias). |
+| `cadastro-imovel-10-revisao` | /dashboard/imoveis/novo?etapa=revisao | Corrigido | #1718 (motivo do Publicar inteiro); #2114 ("proprietário", nunca "anfitrião", no convite de foto). Em decisão: no celular, o mockup põe a prévia do anúncio acima do checklist. |
 | `conta-seguranca` | /dashboard/conta/seguranca | Conferido sem achado | Varredura 31/10 (1280). |
 | `conta-verificacao` | /dashboard/verificacao | Conforme | Passada 2 (390): título, frase e o fluxo de verificação. |
 | `imovel-cta` | /imoveis/[id] | Conforme, com observação | #1668/#1688. Observação para decisão: a 1280, logado, o flutuante "Fale com a Viva" fica à esquerda e passa sobre o texto da coluna ao rolar (regra do CSS para não cobrir o cartão de preço). |
