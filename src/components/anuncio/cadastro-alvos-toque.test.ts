@@ -31,3 +31,9 @@ test("links de texto do cadastro com alvo de 44 px", () => {
 test("revisão: o motivo de não publicar (abre o que falta) com alvo de 44 px", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /onClick=\{onMotivo\} className="alvo-toque block w-full text-balance text-center/);
 });
+
+test("contadores: o miolo (o número) é um <label> da altura da pílula — tocar nele foca o campo", () => {
+  const c = ler("src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx");
+  assert.match(c, /<label className="-my-1 flex w-20 cursor-text items-center justify-center self-stretch" data-testid="contador-miolo">/);
+  assert.match(c, /\{sufixo && <span className="shrink-0 text-xs text-muted">\{sufixo\}<\/span>\}\n\s*<\/label>/);
+});

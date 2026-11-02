@@ -4,7 +4,7 @@ import { noPasso } from "../fixtures/cadastro";
 
 /*
   T817 — varredura 02/11 (Pista A): no cadastro do anúncio, num aparelho de toque (390 e 768 px), os controles pequenos
-  têm alvo de 44 px — interruptores dos blocos opcionais (Regras), "−"/"+" dos contadores (Detalhes), "Ver fotógrafos
+  têm alvo de 44 px — interruptores dos blocos opcionais (Regras), "−"/"+" e o número dos contadores (Detalhes), "Ver fotógrafos
   na cidade do imóvel" (Fotos), "Adicionar faixa de desconto" (Preço) e "Faltam N itens…" (Revisão). Sem rolagem lateral.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -32,6 +32,7 @@ test.describe("T817 — cadastro: alvos de toque de 44 px", () => {
       const p = await entrarNaPagina(await ctx.newPage(), dono.email, senha);
       const passos: [string, string][] = [
         ["detalhes", '[data-testid="contador"] button'],
+        ["detalhes", '[data-testid="contador-miolo"]'],
         ["regras", '[data-testid$="-toggle"][role="switch"]'],
         ["fotos", '[data-testid="porta-fotografo-link"]'],
         ["preco", '[data-testid="adicionar-faixa"]'],
