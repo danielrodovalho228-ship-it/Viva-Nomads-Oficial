@@ -143,6 +143,7 @@ async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_con
       name: d?.full_name ?? undefined,
       userId: ownerId,
       pushUrl: `/dashboard/imoveis/${propertyId}/editar#calendario`,
+      imovelId: propertyId,
       ...paraNotify(c),
       detailsText: c.linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
     });

@@ -190,6 +190,8 @@ export interface OrdemCriada {
   urgencia: UrgenciaManutencao;
   ownerId: string;
   propertyTitle: string;
+  /** E438: o imóvel da ordem (capa real no e-mail ao dono). */
+  propertyId?: string | null;
 }
 
 /**
@@ -250,7 +252,7 @@ export async function criarOrdemManutencao(input: {
     .from("service_order_eventos")
     .insert({ service_order_id: so.id, ator_id: input.tenantId, papel: "inquilino", tipo: "aberto", status_para: "aberto" });
   if (eHist) console.error("[atendimento] histórico da ordem:", eHist.code);
-  return { ok: true, ordem: { serviceOrderId: so.id as string, urgencia, ownerId: prop.owner_id, propertyTitle: prop.title ?? "seu imóvel" } };
+  return { ok: true, ordem: { serviceOrderId: so.id as string, urgencia, ownerId: prop.owner_id, propertyTitle: prop.title ?? "seu imóvel", propertyId: ct.property_id as string | null } };
 }
 
 /** E-mail ao proprietário: manutenção nova (ou lembrete), com o prazo. */
@@ -265,6 +267,7 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
     name: (dono.full_name as string) ?? undefined,
     userId: ordem.ownerId,
     pushUrl: "/dashboard/solicitacoes",
+    imovelId: ordem.propertyId,
     subject: assuntoManutencao({ urgente: ordem.urgencia === "urgente", lembrete }),
     // 44-SITE (item 2): o push diz o imóvel e até quando responder.
     decisao: { imovel: ordem.propertyTitle === "seu imóvel" ? null : ordem.propertyTitle, prazo: prazoManutencao(ordem.urgencia, agora).toISOString(), destinatarioEhParte: true },

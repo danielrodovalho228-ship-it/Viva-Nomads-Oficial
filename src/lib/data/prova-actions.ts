@@ -98,6 +98,7 @@ export async function pedirLinkCelular(propertyId: string, chave: string): Promi
         name: (perfil?.full_name as string | null) ?? undefined,
         userId: c.uid,
         pushUrl: caminho,
+        imovelId: propertyId,
         semPush: true,
         ...paraNotify(corpoProvaCelular({ imovel, item: ehChaveNivel(chave) ? itemNivel(chave).rotulo : null, expiraEm })),
       });

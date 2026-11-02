@@ -273,7 +273,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       if (assunto === "manutencao") {
         const { data: so } = await admin
           .from("service_orders")
-          .select("id, owner_id, priority, properties(title)")
+          .select("id, owner_id, property_id, priority, properties(title)")
           .eq("tenant_id", uid)
           .in("status", ["aberto", "visto"])
           .order("opened_at", { ascending: false })
@@ -283,7 +283,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
         // 1 lembrete a cada 24h POR ORDEM de serviço.
         if (!(await consumirLimite(`viva:lembrete:os:${so.id}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário desta manutenção nas últimas 24 horas.", erro: true };
         await avisarProprietarioManutencao(
-          { serviceOrderId: so.id as string, ownerId: so.owner_id as string, urgencia: so.priority as UrgenciaManutencao, propertyTitle: (so.properties as unknown as { title?: string } | null)?.title ?? "seu imóvel" },
+          { serviceOrderId: so.id as string, ownerId: so.owner_id as string, urgencia: so.priority as UrgenciaManutencao, propertyTitle: (so.properties as unknown as { title?: string } | null)?.title ?? "seu imóvel", propertyId: so.property_id as string | null },
           agora,
           true
         );
@@ -293,7 +293,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       if (!(await consumirLimite(`viva:lembrete:candidatura:${uid}`, LIMITE_ACOES_VIVA.lembrete, DIA))) return { conteudo: "Já lembrei o proprietário nas últimas 24 horas.", erro: true };
       const { data: lead } = await admin
         .from("leads")
-        .select("owner_id, created_at, properties(title, address, city)")
+        .select("owner_id, property_id, created_at, properties(title, address, city)")
         .eq("tenant_id", uid)
         .eq("status", "new")
         .order("created_at", { ascending: false })
@@ -308,6 +308,7 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
           name: (dono.full_name as string) ?? undefined,
           userId: lead.owner_id as string,
           pushUrl: "/dashboard/leads",
+          imovelId: lead.property_id as string | null,
           subject: ASSUNTOS.lembreteInteressado,
           // E267: o lembrete diz quem aguarda (primeiro nome), sobre qual imóvel e desde quando.
           ...paraNotify(corpoLembreteInteressado({ imovel: imovelDoLead(lead), interessado: await primeiroNomeDe(admin, uid), desde: lead.created_at as string })),

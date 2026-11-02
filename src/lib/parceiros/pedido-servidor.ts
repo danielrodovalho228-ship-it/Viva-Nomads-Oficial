@@ -51,7 +51,7 @@ export async function mensagem(admin: Admin, p: { id: string; cliente_id: string
 export async function pedidoParaEmail(admin: Admin, pedidoId: string, destino?: string): Promise<PedidoParaEmail | null> {
   const { data } = await admin
     .from("parceiro_pedidos")
-    .select("codigo, categoria, cliente_id, horarios_propostos, horario_confirmado, janela_inicio, janela_fim, valor_combinado, valor_parceiro, parceiro_servicos(titulo), properties(title, address, city), parceiros(user_id, nome_publico)")
+    .select("codigo, categoria, cliente_id, parceiro_id, property_id, horarios_propostos, horario_confirmado, janela_inicio, janela_fim, valor_combinado, valor_parceiro, parceiro_servicos(titulo), properties(title, address, city), parceiros(user_id, nome_publico)")
     .eq("id", pedidoId)
     .maybeSingle();
   if (!data) return null;
@@ -59,6 +59,8 @@ export async function pedidoParaEmail(admin: Admin, pedidoId: string, destino?: 
     codigo: string;
     categoria: string;
     cliente_id: string;
+    parceiro_id: string | null;
+    property_id: string | null;
     horarios_propostos: string[] | null;
     horario_confirmado: string | null;
     janela_inicio: string | null;
@@ -85,6 +87,8 @@ export async function pedidoParaEmail(admin: Admin, pedidoId: string, destino?: 
     valorCombinado: d.valor_combinado == null ? null : Number(d.valor_combinado),
     valorParceiro: d.valor_parceiro == null ? null : Number(d.valor_parceiro),
     outraParte,
+    imovelId: d.property_id,
+    parceiroId: destino && destino === d.cliente_id ? d.parceiro_id : null,
   };
 }
 
@@ -117,6 +121,7 @@ export async function avisar(
       userId: destino,
       pushUrl: opcoes.url ?? rota(pedidoId),
       semPush: opcoes.semPush,
+      ...(ped ? { imovelId: ped.imovelId, parceiroId: ped.parceiroId } : {}),
       ...(ped ? { body: (nome?: string) => aberturaDoPedido(ev as EventoPedido, ped, nome, opcoes.fato) } : {}),
       // E270: o orçamento recebido traz o valor e o serviço no assunto.
       ...(ped && assuntoDoPedido(ev as EventoPedido, ped) ? { subject: assuntoDoPedido(ev as EventoPedido, ped)! } : {}),

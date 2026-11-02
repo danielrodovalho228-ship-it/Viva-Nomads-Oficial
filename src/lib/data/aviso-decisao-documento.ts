@@ -44,6 +44,7 @@ export async function avisarDecisoesDoImovel(admin: SupabaseClient, ownerId: str
       name: (prof?.full_name as string | undefined) ?? undefined,
       userId: ownerId,
       pushUrl: email.cta.path,
+      imovelId: propertyId,
       subject: email.assunto,
       body: email.intro,
       ctaLabel: email.cta.label,

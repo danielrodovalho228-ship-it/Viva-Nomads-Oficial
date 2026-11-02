@@ -85,7 +85,7 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
     });
     const d = detalhes({ linhas: t.linhas });
     if (destino?.email && destino.notif_email !== false)
-      await notify({ event: "visita_cancelada", email: destino.email, name: destino.full_name ?? undefined, userId: para, pushUrl: t.url, body: t.abertura, ctaLabel: t.cta, detailsHtml: d.html, detailsText: d.texto });
+      await notify({ event: "visita_cancelada", email: destino.email, name: destino.full_name ?? undefined, userId: para, pushUrl: t.url, imovelId: v.property_id, body: t.abertura, ctaLabel: t.cta, detailsHtml: d.html, detailsText: d.texto });
     // E269: a cópia de quem cancelou (os dois lados, 1 cada).
     if (autor?.email && autor.notif_email !== false) {
       // E269-B: o motivo vai só à outra parte; quem cancelou não o recebe de volta.
@@ -100,7 +100,7 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
         paraQuemCancelou: true,
       });
       const dc = detalhes({ linhas: c.linhas });
-      await notify({ event: "visita_cancelada", email: autor.email, name: autor.full_name ?? undefined, userId: de, pushUrl: c.url, subject: ASSUNTOS.visitaCanceladaPorVoce, body: c.abertura, ctaLabel: c.cta, detailsHtml: dc.html, detailsText: dc.texto, semPush: true });
+      await notify({ event: "visita_cancelada", email: autor.email, name: autor.full_name ?? undefined, userId: de, pushUrl: c.url, imovelId: v.property_id, subject: ASSUNTOS.visitaCanceladaPorVoce, body: c.abertura, ctaLabel: c.cta, detailsHtml: dc.html, detailsText: dc.texto, semPush: true });
     }
   } catch {
     /* best-effort */
@@ -150,6 +150,7 @@ async function avisarExpirada(admin: Admin, v: LinhaVisita): Promise<void> {
       name: p.full_name ?? undefined,
       userId: para,
       pushUrl: url,
+      imovelId: v.property_id,
       body: (n?: string) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`,
       ctaLabel: cta,
       detailsHtml: d.html,
@@ -196,6 +197,7 @@ async function enviarVespera(admin: Admin, v: LinhaVisita, agora: Date): Promise
       userId: para,
       subject: assuntoVespera(quando),
       pushUrl: t.url,
+      imovelId: v.property_id,
       body: t.abertura,
       ctaLabel: t.cta,
       detailsHtml: d.html,

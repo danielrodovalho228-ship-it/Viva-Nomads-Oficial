@@ -19,6 +19,7 @@ type Admin = SupabaseClient;
 interface LinhaContrato {
   id: string;
   tenant_id: string;
+  property_id: string | null;
   aluguel_mensal: number | string | null;
   properties: { title: string | null } | null;
   contrato_blocos: { id: string; numero_bloco: number; inicio: string; fim: string; meses: number; valor: number | string; status: string; aceite_proprietario_em: string | null; aceite_inquilino_em: string | null }[] | null;
@@ -26,7 +27,7 @@ interface LinhaContrato {
 }
 
 const COLUNAS =
-  "id, tenant_id, aluguel_mensal, properties(title), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, status, aceite_proprietario_em, aceite_inquilino_em), pagamentos_bloco(bloco_id, anulado_em)";
+  "id, tenant_id, property_id, aluguel_mensal, properties(title), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, status, aceite_proprietario_em, aceite_inquilino_em), pagamentos_bloco(bloco_id, anulado_em)";
 
 /** Os blocos de um contrato que precisam do lembrete hoje. */
 function pendentes(c: LinhaContrato, hoje: string): BlocoParaLembrete[] {
@@ -64,6 +65,7 @@ async function enviar(admin: Admin, c: LinhaContrato, b: BlocoParaLembrete): Pro
     name: perfil.full_name ?? undefined,
     userId: c.tenant_id,
     pushUrl: HREF_ESTADIA(c.id),
+    imovelId: c.property_id,
     subject: e.assunto,
     body: e.abertura,
     ctaLabel: e.cta,

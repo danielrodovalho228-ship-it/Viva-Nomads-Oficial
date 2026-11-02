@@ -50,7 +50,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  */
 /** `decisao` (44-SITE, item 2): o push de visita pedida/remarcada diz o imóvel e até quando responder. */
 /** `corpo` (E325): assunto, abertura e bloco com o imóvel (título + código) — no lugar do texto genérico do modelo. */
-function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao, corpo?: CorpoVisita) {
+function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, detalhe: string, endereco?: EnderecoVisita | null, decisao?: DadosDaDecisao, corpo?: CorpoVisita, imovelId?: string) {
   after(async () => {
     try {
       const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", para).maybeSingle();
@@ -61,6 +61,7 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
         name: ((p.full_name as string | null) ?? "").split(" ")[0] || undefined,
         userId: para,
         pushUrl: "/dashboard/visitas",
+        imovelId,
         ...(decisao ? { decisao } : {}),
         ...(corpo ? { ...(corpo.subject ? { subject: corpo.subject } : {}), body: corpo.body } : {}),
         // Visita presencial confirmada: o endereço exato e "Abrir no mapa" vão SÓ para o morador (complemento do prompt 23).
@@ -137,6 +138,7 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     { imovel: (prop?.title as string | null) ?? null, prazo: [...v.horarios].sort()[0] ?? null, destinatarioEhParte: true },
     // E325: o e-mail diz de qual imóvel é o pedido (título + código).
     corpoVisitaPedida({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+    propertyId,
   );
   // E424: o morador também recebe a cópia do pedido (horários e próximos passos); antes ele não recebia nada.
   avisarVisita(
@@ -147,6 +149,7 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
     undefined,
     undefined,
     corpoVisitaPedidaMorador({ imovel: { id: propertyId, titulo: (prop?.title as string | null) ?? null }, modalidade, horarios: v.horarios }),
+    propertyId,
   );
   revalidatePath("/dashboard/visitas");
   revalidatePath("/dashboard/agenda");
@@ -360,6 +363,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
         horario: campos.horario_confirmado,
         quemConfirmou: quem === "dono" ? "proprietario" : "morador",
       }),
+      v.property_id as string,
     );
     // E205-B: confirmada com menos de 24 h de antecedência → a véspera sai na hora (a chave segura o cron).
     after(() => vesperaDaVisitaSeFor(admin, v.id as string, new Date()).catch(() => 0));
@@ -369,7 +373,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
       imovel: (imovel?.title as string | null) ?? null,
       prazo: campos.horario_proposto,
       destinatarioEhParte: true,
-    });
+    }, undefined, v.property_id as string);
   } else if (campos.status === "cancelado") {
     // E205-B: quem cancelou, o motivo e o horário; ao morador, "Pedir outro horário".
     after(() => avisarVisitaCancelada(admin, v.id as string, quem));

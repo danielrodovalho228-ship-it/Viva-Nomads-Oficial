@@ -79,3 +79,16 @@ test("servidor: notify lê o destaque (best-effort) e a rota da foto só aceita 
   const rota = readFileSync(new URL("../../app/api/email/foto/route.ts", import.meta.url), "utf8");
   assert.match(rota, /CAMINHO_FOTO_EMAIL_RE\.test\(p\) \? `property-photos\/\$\{p\}` : CAMINHO_PARCEIRO_EMAIL_RE\.test\(pc\) \? `parceiros\/\$\{pc\}` : null/);
 });
+
+test("chamadores: os e-mails de imóvel e de parceiro passam o id (amostra das famílias principais)", () => {
+  const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
+  for (const [arquivo, re] of [
+    ["../data/propostas-actions.ts", /imovelId:/],
+    ["../visitas/avisos-servidor.ts", /imovelId:/],
+    ["../data/estadia-actions.ts", /imovelId,\n/],
+    ["../parceiros/pedido-servidor.ts", /imovelId: ped\.imovelId, parceiroId: ped\.parceiroId/],
+    ["../automacao/acoes.ts", /parceiroId: v\.parceiro_id/],
+    ["../parceiros/admin-actions.ts", /parceiroId: p\.id/],
+    ["../../app/api/cron/automacoes/route.ts", /imovelId:/],
+  ] as const) assert.match(ler(arquivo), re, arquivo);
+});

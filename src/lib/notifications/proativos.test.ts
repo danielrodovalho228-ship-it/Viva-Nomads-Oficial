@@ -231,10 +231,12 @@ test("E264-B: a foto do cartão sai pela rota própria do e-mail, só para capas
   assert.equal(CAMINHO_FOTO_EMAIL_RE.test("../bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp"), false);
   // A rota devolve JPEG inline, sem negociar formato por cliente.
   const rota = readFileSync(new URL("../../app/api/email/foto/route.ts", import.meta.url), "utf8");
-  assert.match(rota, /if \(!CAMINHO_FOTO_EMAIL_RE\.test\(p\)/);
+  // E438: aceita também a foto do parceiro, mas só nos dois formatos nossos; fora deles, 404.
+  assert.match(rota, /CAMINHO_FOTO_EMAIL_RE\.test\(p\) \? `property-photos\/\$\{p\}` : CAMINHO_PARCEIRO_EMAIL_RE\.test\(pc\) \? `parceiros\/\$\{pc\}` : null/);
+  assert.match(rota, /if \(!caminho \|\| !base\) return new Response\("Não encontrado\.", \{ status: 404 \}\)/);
   assert.match(rota, /\.jpeg\(\{ quality: FOTO_CARTAO\.qualidade/);
   assert.match(rota, /"content-type": "image\/jpeg"/);
   assert.match(rota, /"content-disposition": "inline"/);
   assert.doesNotMatch(rota, /"vary"/i);
-  assert.match(rota, /storage\/v1\/object\/public\/property-photos\/\$\{p\}/);
+  assert.match(rota, /storage\/v1\/object\/public\/\$\{caminho\}/);
 });

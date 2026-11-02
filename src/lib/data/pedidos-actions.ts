@@ -61,6 +61,7 @@ async function notificar(
   r: Recip,
   detalhe: { detailsHtml: string; detailsText: string },
   corpo: CorpoResidual,
+  imovelId?: string | null,
 ) {
   if (!r?.email) return;
   try {
@@ -72,6 +73,7 @@ async function notificar(
       name: r.full_name ?? undefined,
       userId: r.id ?? undefined,
       pushUrl: PUSH_URL[event],
+      imovelId,
       ...c,
       detailsHtml: `${c.detailsHtml ?? ""}${detalhe.detailsHtml}`,
       detailsText: detalhe.detailsText,
@@ -399,6 +401,7 @@ export async function excluirPedido(pedidoId: string): Promise<ActionResult & { 
           name: (perfil.full_name as string) ?? undefined,
           userId: donoId,
           pushUrl: "/dashboard/pedidos-cidade",
+          imovelId: linhasResp.find((r) => r.proprietario_id === donoId && r.imovel_id)?.imovel_id,
           ...paraNotify(
             corpoPedidoEncerrado({
               cidade: (ped as { cidade?: string | null } | null)?.cidade ?? null,
@@ -588,6 +591,7 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
         o as Recip,
         detalheAceito(),
         corpoPedidoAceito({ imovel: { titulo: imv?.title, bairro: imv?.address, cidade: imv?.city }, quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined) }),
+        imovelId,
       );
     }
   } catch {
@@ -1055,6 +1059,7 @@ export async function responderPedido(
               cidade: pedido.cidade as string | null,
               inicio: pedido.data_inicio as string | null,
             }),
+            imovelId,
           );
         }
       }
