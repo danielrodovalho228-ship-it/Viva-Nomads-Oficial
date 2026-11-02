@@ -652,6 +652,8 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
       ? admin.from("parceiro_pedido_eventos").select("tipo").eq("pedido_id", p.id).in("tipo", EVENTOS_DE_HORARIO as unknown as string[]).order("criado_em", { ascending: false }).limit(1)
       : Promise.resolve({ data: [] }),
   ]);
+  // Achado 87: conversa, entregas, avaliações ou horário não lidos não viram "vazio" (avaliar/mandar de novo): lança.
+  if ([cli, imo, ent, msgs, avs, propostaParceiro, horarioEv].some((r) => (r as { error?: unknown }).error)) throw new Error("Não foi possível abrir o pedido agora.");
   const { count: versoesOrcamento } = await admin.from("parceiro_pedido_eventos").select("id", { count: "exact", head: true }).eq("pedido_id", p.id).eq("tipo", "orcar");
   const im = imo.data as { title: string | null; address: string | null; city: string | null; area_m2: number | null; bedrooms: number | null; owner_id: string } | null;
   const nomeCliente = (cli.data as { full_name: string | null } | null)?.full_name ?? null;
