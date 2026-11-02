@@ -42,6 +42,7 @@ import { INTERNET_TIERS, INTERNET_META, type InternetTier } from "@/lib/internet
 import { Button } from "@/components/ui/button";
 import { ReadyToLiveBadge, DocConferidaBadge } from "@/components/ui/badge";
 import { saveQualification, enviarDocumentoParaConferencia, getMyDocumentStatus, resumoImovelDoDono, carregarQualificacao, type DocumentStatus } from "@/lib/data/actions";
+import { MSG_DOCUMENTO_JA_CONFERIDO } from "@/lib/documento/fila-envio";
 import { cn, numBR } from "@/lib/utils";
 import { rotaVoltarAoAnuncio } from "@/lib/qualificar-link";
 
@@ -362,6 +363,12 @@ export default function QualificationChecklistPage({
               />
             ))}
 
+          {/* Documento conferido nunca é rebaixado por um arquivo novo: a troca é com a equipe (o servidor também recusa). */}
+          {docStatus === "approved" ? (
+            <p className="rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-forest" data-testid="documento-conferido-mantido">
+              {MSG_DOCUMENTO_JA_CONFERIDO}
+            </p>
+          ) : (
           <label
             className={cn(
               "flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed px-4 py-3 transition-colors",
@@ -451,6 +458,7 @@ export default function QualificationChecklistPage({
               }}
             />
           </label>
+          )}
           {docErro && (
             <div role="alert" data-testid="doc-erro" className="flex flex-wrap items-center gap-3">
               <p className="text-sm text-red-600">{docErro}</p>
