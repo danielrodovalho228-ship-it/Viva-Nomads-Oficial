@@ -267,7 +267,9 @@ export async function getContratoParaEquipe(contratoId: string): Promise<Contrat
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  const { data, error } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  // Achado 86: falha de leitura não vira "contrato não encontrado" (404) para a equipe — lança (admin/error.tsx).
+  if (error) throw new Error("Não foi possível ler o contrato agora.");
   if (!data) return null;
   const linha = data as unknown as LinhaContrato;
   await completarPets(linha);
