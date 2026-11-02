@@ -25,7 +25,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
 
   const admin = await ehAdmin(supabase, user.id).catch(() => false);
   const zero = () => Promise.resolve(0);
-  const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes, observadorQa] =
+  const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes, observadorQa, mensagensRecebidas] =
     await Promise.all([
       contarContratosParaAssinar().catch(() => 0),
       contarPropostasAguardando().catch(() => 0),
@@ -37,6 +37,10 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
       getMinhasLocacoes().catch(() => []),
       // E216: só faz sentido para admin (o observador da QA é admin).
       admin ? ehObservadorQa(user.id).catch(() => false) : Promise.resolve(false),
+      // E445 item 6: só a contagem (head), nunca o conteúdo; a RLS já limita às mensagens da conta.
+      Promise.resolve(supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id))
+        .then((r) => (r.error ? 0 : (r.count ?? 0)))
+        .catch(() => 0),
     ]);
   const c: ContadoresPainel = {
     contratosParaAssinar,
@@ -48,6 +52,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
     parceiro,
     estadiaAtiva: locacoes.some((l) => l.status === "ativo"),
     observadorQa,
+    mensagensRecebidas,
   };
   return contadoresVisiveis(c, admin);
 }

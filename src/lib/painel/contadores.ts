@@ -37,6 +37,8 @@ export interface ContadoresPainel {
   estadiaAtiva: boolean;
   /** E216: admin observador da QA (profiles.qa_admin) — a barra do admin não mostra o que ele não pode abrir. */
   observadorQa: boolean;
+  /** E445 item 6: mensagens recebidas pela conta (a casca toca o som discreto quando o número sobe). */
+  mensagensRecebidas: number;
 }
 
 export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
@@ -49,6 +51,7 @@ export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
   parceiro: false,
   estadiaAtiva: false,
   observadorQa: false,
+  mensagensRecebidas: 0,
 });
 
 function contagem(v: unknown): number {
@@ -69,6 +72,7 @@ export function normalizarContadores(json: unknown): ContadoresPainel {
     parceiro: o.parceiro === true,
     estadiaAtiva: o.estadiaAtiva === true,
     observadorQa: o.observadorQa === true,
+    mensagensRecebidas: contagem(o.mensagensRecebidas),
   };
 }
 
