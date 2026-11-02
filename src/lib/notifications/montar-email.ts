@@ -52,7 +52,9 @@ export function montarNotificacao(p: {
   const img = imagemDoEvento(p.event);
   // Detalhes que já trazem um link (ex.: "Responder pela plataforma") ficam com ele; os demais ganham UM botão para a
   // tela EXATA do evento (a mesma do push) — nunca a home. Com o app instalado, o link abre o app.
-  const cta = p.detailsHtml && /<a\s/i.test(p.detailsHtml) ? undefined : { label: p.ctaLabel ?? base.cta, url: `${p.siteUrl}${urlInterna(p.pushUrl, base.path)}` };
+  // E441: os links do bloco da pessoa (foto e nome, data-morador-email) não contam — o botão do evento continua.
+  const detalhesComLink = (p.detailsHtml ?? "").replace(/<table[^>]*data-morador-email[\s\S]*?<\/table>/gi, "");
+  const cta = /<a\s/i.test(detalhesComLink) ? undefined : { label: p.ctaLabel ?? base.cta, url: `${p.siteUrl}${urlInterna(p.pushUrl, base.path)}` };
   return {
     evento: p.event,
     assunto: comMarca(titulo),

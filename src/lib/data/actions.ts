@@ -1,5 +1,6 @@
 "use server";
 
+import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
@@ -1745,6 +1746,11 @@ export async function requestLead(
     const { detailsHtml, detailsText } = corpo ?? buildLeadNotification(kind, propertyTitle, {
       name: tenantName,
     });
+    // E441: candidatura (pedido) do MORADOR ao dono — a foto (ou as iniciais) e o nome dele, clicáveis para o detalhe.
+    const pessoa =
+      corpo && leadId && ownerId
+        ? await moradorNoEmail({ donoId: ownerId, moradorId: user.id, caminho: linkCandidaturaDono(leadId), rotuloLink: "Ver a candidatura" }).catch(() => null)
+        : null;
     await notify({
       // Prompt 23: candidatura tem e-mail próprio ("Nova candidatura no seu imóvel"); dúvida/visita seguem como interessado.
       event: kind === "candidatura" ? "candidatura_nova" : "new_lead",
@@ -1754,8 +1760,8 @@ export async function requestLead(
       userId: ownerId ?? undefined,
       pushUrl: corpo && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
       ...(corpo ? { body: corpo.body } : {}),
-      detailsHtml,
-      detailsText,
+      detailsHtml: pessoa ? pessoa.html + (detailsHtml ?? "") : detailsHtml,
+      detailsText: pessoa ? [pessoa.texto, detailsText ?? ""].filter(Boolean).join("\n") : detailsText,
     });
     // E202 (candidatura): a confirmação de envio ao morador, com os mesmos dados (antes: nenhum e-mail).
     if (adm && leadId) {

@@ -3121,6 +3121,12 @@
       ],
       "specs": []
     },
+    "/api/email/avatar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": []
+    },
     "/api/cartoes/visita": {
       "personas": [
         "publico"

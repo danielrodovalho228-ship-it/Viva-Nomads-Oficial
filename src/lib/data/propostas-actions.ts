@@ -1,5 +1,6 @@
 "use server";
 
+import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
@@ -311,6 +312,11 @@ async function avisarOutraParte(
     const imovel = { titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
     const papelDestino = destino === p.owner_id ? "owner" : "tenant";
     const dados = contexto ? dadosDoEmailDaProposta(p.numero, imovel, contexto, papelDestino) : null;
+    // E441: proposta (orçamento) do MORADOR ao dono — a foto (ou as iniciais) e o nome dele, clicáveis para o detalhe.
+    const pessoa =
+      papelDestino === "owner" && de === "tenant"
+        ? await moradorNoEmail({ donoId: p.owner_id, moradorId: p.tenant_id, caminho: proprio?.url ?? `/dashboard/propostas/${p.id}`, rotuloLink: "Ver a proposta" }).catch(() => null)
+        : null;
     await notify({
       event: proprio?.event ?? evento,
       // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
@@ -325,9 +331,10 @@ async function avisarOutraParte(
       subject: proprio?.assunto ?? (evento === "proposta_recebida" ? ASSUNTOS.propostaRecebida : ASSUNTOS.propostaRespondida),
       ...(proprio ? { body: proprio.abertura, ctaLabel: proprio.cta } : dados ? { body: (nome?: string) => dados.abertura(nome) } : {}),
       detailsHtml:
+        (pessoa?.html ?? "") +
         (dados ? dados.html : blocoDados([{ rotulo: "Proposta", valor: escaparHtml(String(p.numero)) }])) +
         (detalhesSoDono && destino === p.owner_id ? `<p>${escaparHtml(detalhesSoDono)}</p>` : ""),
-      detailsText: dados ? dados.texto : `Proposta ${p.numero}`,
+      detailsText: [pessoa?.texto ?? "", dados ? dados.texto : `Proposta ${p.numero}`].filter(Boolean).join("\n"),
     });
   } catch {
     /* notificação nunca quebra o fluxo */
