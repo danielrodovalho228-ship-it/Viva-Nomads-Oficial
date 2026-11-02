@@ -162,10 +162,13 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     // O contrato precisa ser deste imóvel (e o imóvel, do dono, conferido acima).
     const { data: k } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
     if (!k) return { ok: false, erro: "Contrato não encontrado." };
-    const [{ data: ck }, { data: atual }] = await Promise.all([
+    const [{ data: ck, error: erroCk }, { data: atual, error: erroAtual }] = await Promise.all([
       admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", contratoId).maybeSingle(),
       supabase.from("imovel_instrucoes_chegada").select("*").eq("property_id", propertyId).maybeSingle(),
     ]);
+    // Leitura falha nunca decide o destino: "sem texto do contrato" levaria o "Como entrar" DESTE contrato (códigos de
+    // porta) para as instruções do imóvel; "sem instruções do imóvel" apagaria o "Como entrar" do imóvel.
+    if (erroCk || erroAtual) return { ok: false, erro: "Não foi possível salvar as instruções agora. Tente de novo." };
     const temTexto = !!((ck as { instrucoes?: string | null } | null)?.instrucoes ?? "").trim();
     const destino = separarSalvamento(normalizadas, atual ? normalizarInstrucoes(atual as Record<string, unknown>) : null, temTexto);
     if (temTexto) {
