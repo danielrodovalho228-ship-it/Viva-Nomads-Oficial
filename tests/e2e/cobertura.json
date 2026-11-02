@@ -2613,7 +2613,9 @@
       "personas": [
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t1041-e433-publicar-destino"
+      ]
     }
   },
   "rotas": {
