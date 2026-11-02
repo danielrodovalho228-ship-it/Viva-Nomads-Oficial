@@ -317,7 +317,8 @@ function ProtegidoPor() {
 /**
  * Sub-navegação ancorada (logo abaixo do hero): atalhos para as três partes da
  * história única. Rola suave (scroll-smooth no <html>) até âncoras com
- * scroll-margin. No mobile, as pílulas ficam em linha rolável (sem quebrar).
+ * scroll-margin. No mobile, as pílulas ficam em linha rolável (sem quebrar) e, varredura 02/11, com área de toque de
+ * 44 px (.alvo-toque) sem mudar o desenho de 38 px.
  */
 function SubNav() {
   const links = [
@@ -332,7 +333,7 @@ function SubNav() {
           <a
             key={l.href}
             href={l.href}
-            className="whitespace-nowrap rounded-full border border-sage-200 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
+            className="alvo-toque whitespace-nowrap rounded-full border border-sage-200 px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-sage hover:bg-surface-2"
           >
             {l.label}
           </a>
