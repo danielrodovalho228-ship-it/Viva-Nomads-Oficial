@@ -44,11 +44,13 @@ const validos = (bs: Bloco[] | null | undefined) => (bs ?? []).filter((b) => b.s
 
 /** Contrato com a saída (maior fim dos blocos válidos), os horários do anúncio e a próxima entrada no mesmo imóvel. */
 export async function contratoDoEvento(admin: Admin, contratoId: string): Promise<ContextoAutomacao | null> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("contratos")
     .select("id, property_id, tenant_id, status, properties(owner_id, checkout_before, checkin_after), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Achado 97: a falha LANÇA (quem chama registra) — nunca "sem contrato" nem "sem próxima entrada" por engano.
+  if (error) throw new Error("Não foi possível ler o contrato da automação.");
   const c = data as unknown as {
     id: string;
     property_id: string;
@@ -61,13 +63,15 @@ export async function contratoDoEvento(admin: Admin, contratoId: string): Promis
   const blocos = validos(c.contrato_blocos);
   const saida = blocos.map((b) => b.fim).sort().at(-1);
   if (!saida) return null;
-  const { data: outros } = await admin
+  const { data: outros, error: erroOutros } = await admin
     .from("contratos")
     .select("id, contrato_blocos(inicio, fim, status)")
     .eq("property_id", c.property_id)
     .eq("status", "ativo")
     .neq("id", c.id)
     .limit(20);
+  // Sem os outros contratos, a próxima entrada sumiria e a janela da limpeza passaria do check-in do próximo morador.
+  if (erroOutros) throw new Error("Não foi possível ler a próxima entrada do imóvel.");
   const entradas = ((outros ?? []) as unknown as { contrato_blocos: Bloco[] | null }[])
     .map((o) => validos(o.contrato_blocos).map((b) => b.inicio).sort()[0])
     .filter((d): d is string => !!d && d >= saida)

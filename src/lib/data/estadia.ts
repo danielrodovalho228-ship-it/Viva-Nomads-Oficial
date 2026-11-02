@@ -260,7 +260,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   );
   const liberadas = papel === "proprietario" || instrucoesLiberadas({ inicio: periodo.inicio, assinadoPelasDuas: ambos, primeiroPagamento: primeiro }, agora);
   const nomeMorador = nomeCurto((((perfil as { full_name?: string | null } | null)?.full_name ?? "") as string).replace(/\S+@\S+/g, "").trim()) ?? "Morador";
-  const fotoMorador = await signAvatarPath(await getAvatarPath(c.tenant_id), c.tenant_id);
+  const fotoMorador = await signAvatarPath(await getAvatarPath(c.tenant_id).catch(() => null), c.tenant_id);
 
   type LinhaAditivo = {
     id: string;
