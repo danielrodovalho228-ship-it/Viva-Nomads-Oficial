@@ -45,7 +45,9 @@ export async function GET(request: Request) {
       const pago = primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]);
       if (!lembreteDeChegadaPermitido({ assinadoPelasDuas: !!c.assinado_proprietario_em && !!c.assinado_inquilino_em, primeiroPagamento: pago })) continue;
       const coluna = lembrete === "48h" ? "lembrete_48h_em" : "lembrete_24h_em";
-      const { data: k } = await admin.from("contratos_checkin").select(`horario, instrucoes, ${coluna}`).eq("contrato_id", c.id).maybeSingle();
+      // Varredura ampliada: esta leitura é a trava "já enviado" — sem ela, pula (melhor perder um lembrete que mandar dois).
+      const { data: k, error: erroTrava } = await admin.from("contratos_checkin").select(`horario, instrucoes, ${coluna}`).eq("contrato_id", c.id).maybeSingle();
+      if (erroTrava) continue;
       const linha = k as unknown as Record<string, string | null> | null;
       if (linha?.[coluna]) continue;
       // Marca ANTES de enviar: se o envio falhar, melhor perder um lembrete do que mandar duas vezes.
@@ -54,8 +56,8 @@ export async function GET(request: Request) {
       const prop = c.properties as unknown as { owner_id?: string; title?: string | null; address?: string | null; city?: string | null; checkin_after?: string | null; checkout_before?: string | null } | null;
       const donoId = prop?.owner_id;
       const texto = textoLembrete(lembrete, inicio, linha?.horario ?? null);
-      const { data: im } = await admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle();
-      const instrucoes = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, linha?.instrucoes);
+      const { data: im, error: erroIm } = await admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle();
+      const instrucoes = erroIm ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, linha?.instrucoes);
       const estadia = {
         imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
