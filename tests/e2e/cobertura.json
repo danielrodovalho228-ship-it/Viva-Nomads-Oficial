@@ -237,6 +237,12 @@
         "t419-varredura-bloco36"
       ]
     },
+    "/admin/moderacao/ofensas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "/admin/fotos-perfil": {
       "personas": [
         "admin"
@@ -3675,6 +3681,14 @@
         "t191-ajuda-publicacao"
       ]
     },
+    "src/lib/data/conversa-aberta-actions.ts#mensagensNaoLidas": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
     "src/lib/data/avisos-actions.ts#marcarAvisoLido": {
       "personas": [
         "inquilino",
@@ -4470,6 +4484,18 @@
       "personas": [
         "inquilino",
         "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ofensas-admin-actions.ts#filaDeOfensas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ofensas-admin-actions.ts#marcarOfensaRevisada": {
+      "personas": [
+        "admin"
       ],
       "specs": []
     },

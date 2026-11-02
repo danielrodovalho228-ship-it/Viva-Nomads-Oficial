@@ -65,6 +65,8 @@ test.describe("T43 — Notificações", () => {
     await page.getByRole("button", { name: /Studio das notificações/ }).first().click();
     await page.getByPlaceholder("Escreva uma mensagem...").fill("Posso visitar amanhã? Meu número é 31 91234-5678.");
     await page.getByRole("button", { name: "Enviar" }).click();
+    // E445 item 2: com telefone no texto, o aviso vem antes; "Enviar mesmo assim" envia a versão mascarada.
+    await page.getByRole("button", { name: "Enviar mesmo assim" }).click();
     await expect
       .poll(async () => (await lerSaida()).filter((l) => l.servico === "email" && l.para === dono.email).length, { timeout: 30_000 })
       .toBeGreaterThan(0);

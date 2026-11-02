@@ -40,6 +40,7 @@ import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-p
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { FaixaCritico } from "@/components/painel/sino-avisos";
+import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -137,6 +138,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const contadoresIniciais = useContadoresIniciais();
   const [contadores, setContadores] = useState<ContadoresPainel>(contadoresIniciais ?? CONTADORES_VAZIOS);
   const [releitura, setReleitura] = useState(0);
+  // E445 item 6: o som só compara leituras REAIS (a do servidor na 1ª pintura ou a da rota) — nunca o vazio inicial.
+  const [lido, setLido] = useState(contadoresIniciais !== null);
+  useSomDeMensagemNova(lido ? contadores.mensagensRecebidas : null);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
   useEffect(() => {
     if (!displayUser?.id) return;
@@ -144,7 +148,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (json) setContadores(normalizarContadores(json));
+        if (!json) return;
+        setContadores(normalizarContadores(json));
+        setLido(true);
       })
       .catch(() => {});
     return () => controle.abort();

@@ -76,6 +76,8 @@ export function problemasDoAssunto(assunto: string): string[] {
 
 // ── Assuntos fixos (sem marca; o envio põe "· Viva Nomads") ─────────────────────────────────────────────────────
 export const ASSUNTOS = {
+  /** E445: aviso interno — 3 ofensas da mesma pessoa no chat em 30 dias. */
+  ofensasNoChat: "Ofensas no chat: 3 registros da mesma pessoa em 30 dias",
   codigoAssinatura: "Seu código para assinar o contrato",
   codigo2fa: "Seu código de segurança",
   codigoVinculo: "Seu código do vínculo profissional",

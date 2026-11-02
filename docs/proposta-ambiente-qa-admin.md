@@ -66,6 +66,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/avaliadores` | Credenciar um avaliador de teste (em teste → ativo), salvar a tabela de preço da cidade e ver a fila | As 3 condições da chave VISTORIA_ATIVA com o estado de cada uma; "tabela sem valor" sem preço; histórico de preço; ativar exige duas etapas |
 | `/admin/fotografos` | Ver parceiros fotógrafos | Lista e contagens carregam |
 | `/admin/fotos-perfil` | Revisar fotos de perfil (Aprovar / Remover com motivo) | Denunciadas no topo, depois a mais antiga; remover exige motivo da lista |
+| `/admin/moderacao/ofensas` | Revisar a fila de ofensas no chat (Marcar como revisada) | Quem, termo e conversa (nunca o texto); 3 registros em 30 dias já avisaram a equipe |
 | `/admin/imoveis` | Moderar anúncio (publicar e despublicar) | Publicação exige documento aprovado; despublicar tira da busca |
 | `/admin/marketing` | Abrir a área de marketing | Carrega sem enviar nada |
 | `/admin/parceiros` | Aprovar um parceiro | Status muda; conta `is_teste` marcada |

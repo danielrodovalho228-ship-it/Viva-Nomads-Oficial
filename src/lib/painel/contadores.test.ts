@@ -35,6 +35,7 @@ test("resposta completa vira os contadores; o formato é fechado (sem campo a ma
     parceiro: true,
     estadiaAtiva: true,
     observadorQa: true,
+    mensagensRecebidas: 5,
     extra: "não passa",
   });
   assert.deepEqual(c, {
@@ -47,6 +48,7 @@ test("resposta completa vira os contadores; o formato é fechado (sem campo a ma
     parceiro: true,
     estadiaAtiva: true,
     observadorQa: true,
+    mensagensRecebidas: 5,
   });
 });
 

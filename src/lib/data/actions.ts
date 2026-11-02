@@ -1,5 +1,7 @@
 "use server";
 
+import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
+import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { verificarLinkVideo } from "@/lib/data/video-link";
@@ -113,7 +115,7 @@ import {
 } from "@/lib/documento/fila-envio";
 import { estadoDocumentos, linhasParaLigar } from "@/lib/documento/vigente";
 
-type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string };
+type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string; /** E445: termo ofensivo — a tela pede confirmação. */ ofensa?: boolean };
 
 /** Persiste o checklist de qualificação (Fase 4). */
 /** Nome do titular digitado pelo dono (só texto, até 150 caracteres). */
@@ -1798,6 +1800,8 @@ export async function sendMessage(input: {
   body: string;
   /** Prompt 55-E2: texto vindo de uma resposta rápida — com contato direto, BLOQUEIA (não mascara). */
   respostaRapida?: boolean;
+  /** E445: a pessoa viu o aviso de termo ofensivo e enviou mesmo assim (vai para a fila de moderação). */
+  enviarMesmoAssim?: boolean;
 }): Promise<ActionResult> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true, id: input.conversationId };
@@ -1818,6 +1822,9 @@ export async function sendMessage(input: {
   const { text: safeBody, documento } = guardContactInfo(input.body);
   // Prompt 32: CPF/RG não vai pelo chat (nem mascarado) — vai no campo Ocupantes da estadia.
   if (documento) return { ok: false, error: `${DOCUMENTO_BLOQUEADO}.` };
+  // E445 (item 3): termo de ódio/xingamento grave → aviso ANTES de enviar; só segue com a confirmação da pessoa.
+  const ofensa = termoOfensivo(safeBody);
+  if (ofensa && !input.enviarMesmoAssim) return { ok: false, ofensa: true, error: AVISO_OFENSA };
 
   const { data: gravada, error } = await supabase
     .from("messages")
@@ -1828,7 +1835,7 @@ export async function sendMessage(input: {
       property_id: input.propertyId ?? null,
       body: safeBody,
     })
-    .select("receiver_id")
+    .select("id, receiver_id")
     .single();
   if (error || !gravada) {
     console.error("[sendMessage] falha ao gravar:", error?.code, error?.message);
@@ -1836,6 +1843,11 @@ export async function sendMessage(input: {
   }
   // Destinatário pela LINHA GRAVADA (que passou na RLS), não pelo parâmetro.
   const destinatarioId = gravada.receiver_id as string;
+  // E445: enviada mesmo com o aviso → fila de moderação (quem, conversa, termo); no 3º registro, a equipe é avisada.
+  if (ofensa) {
+    const adm = createAdminClient();
+    if (adm) await registrarOfensa(adm, { autorId: user.id, conversationId, messageId: (gravada.id as string) ?? null, termo: ofensa }).catch(() => null);
+  }
 
   // Notifica o destinatário por e-mail com o LINK para responder NO SITE
   // (nunca por e-mail — mantém o registro). Best-effort: falha de notificação

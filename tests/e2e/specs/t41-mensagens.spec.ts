@@ -45,7 +45,9 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
 
     await paginaDono.getByPlaceholder("Escreva uma mensagem...").fill("Claro! Me chama no (34) 99999-8888 ou em dora@exemplo.com");
     await paginaDono.getByRole("button", { name: "Enviar" }).click();
-    await expect(paginaDono.getByText(/telefones e e-mails são protegidos/)).toBeVisible();
+    // E445 item 2: o aviso e a prévia mascarada vêm ANTES; "Enviar mesmo assim" envia a versão mascarada.
+    await expect(paginaDono.getByTestId("aviso-antes-de-enviar")).toContainText(/telefones e e-mails são protegidos/);
+    await paginaDono.getByRole("button", { name: "Enviar mesmo assim" }).click();
 
     // O banco guardou a resposta SEM número nem e-mail.
     await expect
@@ -76,6 +78,7 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await pagina.getByRole("button", { name: /Studio das mensagens/ }).first().click();
     await pagina.getByPlaceholder("Escreva uma mensagem...").fill("Meu zap é 11 98888-7777, pode chamar.");
     await pagina.getByRole("button", { name: "Enviar" }).click();
+    await pagina.getByRole("button", { name: "Enviar mesmo assim" }).click();
     await expect.poll(async () => (await adm().from("messages").select("id").eq("sender_id", ids.inq!).eq("property_id", ids.imovel!)).data?.length ?? 0).toBe(2);
     const { data } = await adm().from("messages").select("body").eq("sender_id", ids.inq!).eq("property_id", ids.imovel!);
     for (const m of data ?? []) expect(m.body as string).not.toMatch(/98888|7777/);
@@ -101,7 +104,7 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await pagina.getByRole("button", { name: /Studio das mensagens/ }).first().click();
     await pagina.getByPlaceholder("Escreva uma mensagem...").fill("Ligue para 21 97777-6666");
     await pagina.getByRole("button", { name: "Enviar" }).click();
-    await expect(pagina.getByText(/telefones e e-mails são protegidos/)).toBeVisible();
+    await expect(pagina.getByTestId("aviso-antes-de-enviar")).toContainText(/telefones e e-mails são protegidos/);
     await pagina.context().close();
   });
 });
