@@ -90,11 +90,14 @@ export async function contratoDoEvento(admin: Admin, contratoId: string): Promis
 }
 
 export async function vinculosDoImovelAdmin(admin: Admin, propertyId: string): Promise<Vinculo[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("imovel_parceiros")
     .select("id, categoria, parceiro_id, servico_id, modo, status, instrucoes")
     .eq("property_id", propertyId)
     .in("status", ["pendente", "ativo"]);
+  // Leitura falha não vira "sem parceiro": avisaria o dono "saída sem parceiro" (chave única gasta) e deixaria a
+  // remarcação e o reparo da conferência sem pedido. Lança: aoEventoDaEstadia avisa a equipe (P2).
+  if (error) throw new Error(`vínculos do imóvel não lidos (${error.message})`);
   return ((data ?? []) as { id: string; categoria: Vinculo["categoria"]; parceiro_id: string; servico_id: string | null; modo: Vinculo["modo"]; status: Vinculo["status"]; instrucoes: string | null }[]).map(
     (v) => ({ id: v.id, categoria: v.categoria, parceiroId: v.parceiro_id, servicoId: v.servico_id, modo: v.modo, status: v.status, instrucoes: v.instrucoes }),
   );
