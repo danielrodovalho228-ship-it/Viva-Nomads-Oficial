@@ -1,9 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T1065 — Estados vazios da Conta (#2374 e #2375, 02/11): a leitura que falha não vira "dado vazio". Pela tela real,
- * 390 e 1280, proprietária com chave Pix e data de nascimento gravadas:
+ * 390 e 1280, proprietária (com um anúncio) com chave Pix e data de nascimento gravadas:
  *   1. #2374, Conta › Pagamentos: a leitura da chave Pix falha (simulada: a resposta da server action que traz a chave
  *      vira 500) → "Não conseguimos ler a sua chave Pix agora…" com "Tentar de novo", SEM o formulário vazio de
  *      cadastrar; a leitura volta e "Tentar de novo" mostra a chave salva (mascarada);
@@ -42,6 +42,8 @@ test.describe("T1065 — Conta: a leitura que falha não vira chave Pix nem data
 
   test.beforeAll(async () => {
     id = await criarConta(dona, senha);
+    // "Como você recebe" só aparece para proprietária: conta com anúncio em qualquer status (a mesma regra da barra).
+    await criarImovelPronto(id, `Studio da chave t1065 ${sufixo}`);
     const pix = await adm().from("recebimento_pix").upsert({ user_id: id, tipo: "email", chave: CHAVE });
     if (pix.error) throw pix.error;
     const nasc = await adm().from("profiles").update({ data_nascimento: DATA_BANCO }).eq("id", id);
@@ -60,8 +62,7 @@ test.describe("T1065 — Conta: a leitura que falha não vira chave Pix nem data
       const falhou = p.getByTestId("conta-pix-falhou");
       const salva = p.getByTestId("conta-pix-salva");
 
-      // Controle primeiro: sem falha, a chave aparece direto (e a conta nova já tem o papel de proprietária carregado,
-      // que é o que faz a tela pedir a chave).
+      // Controle primeiro: sem falha, a chave aparece direto.
       await p.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
       await expect(salva).toContainText(MASCARADA, { timeout: 30_000 });
       await expect(falhou).toHaveCount(0);
