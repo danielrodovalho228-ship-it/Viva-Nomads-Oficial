@@ -121,6 +121,8 @@ export async function removerPet(id: string): Promise<{ ok: boolean; error?: str
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
   const dono = await donoDoPet(supabase, id);
+  // Sem saber quais arquivos o pet tem, não apaga a linha (os arquivos ficariam órfãos no Storage).
+  if (dono === "falhou") return { ok: false, error: MSG_PET_SEM_LEITURA };
   const { error } = await supabase.from("pets_inquilino").delete().eq("id", id).eq("user_id", user.id);
   if (!error && dono) {
     const arquivos = [...dono.fotos, ...(dono.carteira ? [dono.carteira] : [])].filter((c) => caminhoFotoPetValido(c, user.id));
@@ -129,12 +131,17 @@ export async function removerPet(id: string): Promise<{ ok: boolean; error?: str
   return error ? { ok: false, error: "Não foi possível remover." } : { ok: true };
 }
 
-async function donoDoPet(supabase: Cliente, petId: string): Promise<{ uid: string; fotos: string[]; carteira: string | null } | null> {
+// Achado 118: leitura que falha devolve "falhou" (nunca "pet não encontrado"): sem ela, remover o pet apagava a linha e
+// deixava as fotos e a carteira de vacina no Storage.
+const MSG_PET_SEM_LEITURA = "Não foi possível ler o pet agora. Tente de novo.";
+
+async function donoDoPet(supabase: Cliente, petId: string): Promise<{ uid: string; fotos: string[]; carteira: string | null } | null | "falhou"> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("pets_inquilino").select("fotos, carteira_vacina").eq("id", petId).eq("user_id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("pets_inquilino").select("fotos, carteira_vacina").eq("id", petId).eq("user_id", user.id).maybeSingle();
+  if (error) return "falhou";
   if (!data) return null;
   return { uid: user.id, fotos: (data.fotos as string[] | null) ?? [], carteira: (data.carteira_vacina as string | null) ?? null };
 }
@@ -146,6 +153,7 @@ export async function enviarImagemPet(form: FormData): Promise<{ ok: true; pets:
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "Sem conexão com o banco." };
   const dono = await donoDoPet(supabase, v.petId);
+  if (dono === "falhou") return { ok: false, error: MSG_PET_SEM_LEITURA };
   if (!dono) return { ok: false, error: "Pet não encontrado na sua conta." };
   if (!podeAdicionarFotoPet(v.tipo, v.tipo === "foto" ? dono.fotos.length : dono.carteira ? 1 : 0)) {
     return { ok: false, error: v.tipo === "foto" ? "Cada pet tem até 3 fotos. Remova uma para enviar outra." : "A carteira de vacina já foi enviada. Remova para trocar." };
@@ -177,6 +185,7 @@ export async function removerImagemPet(petId: string, caminho: string): Promise<
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "Sem conexão com o banco." };
   const dono = await donoDoPet(supabase, petId);
+  if (dono === "falhou") return { ok: false, error: MSG_PET_SEM_LEITURA };
   if (!dono || !caminhoFotoPetValido(caminho, dono.uid)) return { ok: false, error: "Imagem não encontrada." };
   const ehCarteira = dono.carteira === caminho;
   if (!ehCarteira && !dono.fotos.includes(caminho)) return { ok: false, error: "Imagem não encontrada." };
