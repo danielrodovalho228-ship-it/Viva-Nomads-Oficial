@@ -904,7 +904,8 @@
         "t391-conta-conformidade",
         "t392-varredura-bloco24",
         "t588-varredura-bloco46",
-        "t608-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela",
+        "t1036-vinculo-preservar"
       ]
     },
     "/dashboard/contratos": {
@@ -6472,7 +6473,8 @@
         "proprietario"
       ],
       "specs": [
-        "t608-e174-vinculo-pela-tela"
+        "t608-e174-vinculo-pela-tela",
+        "t1036-vinculo-preservar"
       ]
     },
     "src/lib/vinculo/actions.ts#confirmarVinculo": {
