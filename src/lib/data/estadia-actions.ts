@@ -391,6 +391,19 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
   return { ok: true, valor: { taxaBase } };
 }
 
+/**
+ * Aditivo com a assinatura gravada mas sem conseguir conferir/aplicar por LEITURA falha: a pessoa não pode refazer
+ * (o código foi consumido e a assinatura já existe), então a equipe recebe o aviso P2 para aplicar.
+ */
+const MSG_ADITIVO_PARADO = "Sua assinatura foi registrada, mas não conseguimos concluir o aditivo agora. A Viva vai conferir e te avisa.";
+async function avisarAditivoParado(admin: SupabaseClient, a: LinhaAditivo, etapa: string, detalhe: string): Promise<void> {
+  console.error(`[aditivo] ${etapa}:`, detalhe);
+  await admin
+    .from("avisos_daniel")
+    .insert({ assunto: `Aditivo ${a.numero} parado (${etapa})`, corpo: `Contrato ${numeroPublicoContrato(a.contrato_id)}, aditivo ${a.id}: ${detalhe}. Confira as assinaturas e aplique.`, prioridade: "P2" })
+    .then(undefined, () => {});
+}
+
 /** Código de 6 dígitos por e-mail, como na assinatura do contrato (15 min, uso único). */
 export async function pedirCodigoAditivo(aditivoId: string): Promise<Res> {
   const r = await carregarAditivo(aditivoId);
@@ -401,7 +414,9 @@ export async function pedirCodigoAditivo(aditivoId: string): Promise<Res> {
   const { data: ja } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
   if (ja) return { ok: false, erro: "Você já assinou este aditivo." };
   const agora = Date.now();
-  const { data: atual } = await ctx.admin.from("contrato_aditivo_codigos").select("enviado_em").eq("aditivo_id", a.id).eq("user_id", ctx.userId).maybeSingle();
+  const { data: atual, error: erroAtual } = await ctx.admin.from("contrato_aditivo_codigos").select("enviado_em").eq("aditivo_id", a.id).eq("user_id", ctx.userId).maybeSingle();
+  // Leitura falha não vira "nunca enviou": o limite de 1 minuto entre códigos vale sempre.
+  if (erroAtual) return { ok: false, erro: "Não foi possível gerar o código. Tente de novo." };
   if (!podeReenviar(atual as { enviado_em: string } | null, agora)) return { ok: false, erro: "Espere 1 minuto para pedir outro código." };
   const codigo = gerarCodigoAssinatura();
   const { error } = await ctx.admin.from("contrato_aditivo_codigos").upsert(
@@ -454,7 +469,12 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
   const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]?.trim().slice(0, 64) || null;
   const { error } = await ctx.admin.from("contrato_aditivo_assinaturas").insert({ aditivo_id: a.id, papel: ctx.papel, user_id: ctx.userId, ip, hash_documento: a.hash_documento });
   if (error) return { ok: false, erro: error.code === "23505" ? "Você já assinou este aditivo." : "Não foi possível registrar a assinatura." };
-  const { data: assinaturas } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id);
+  const { data: assinaturas, error: erroAssinaturas } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id);
+  // Leitura falha não vira "falta a outra parte": com as duas assinaturas, o aditivo ficaria sem aplicar para sempre.
+  if (erroAssinaturas) {
+    await avisarAditivoParado(ctx.admin, a, "assinaturas", erroAssinaturas.message);
+    return { ok: false, erro: MSG_ADITIVO_PARADO };
+  }
   const completo = new Set(((assinaturas ?? []) as { papel: string }[]).map((x) => x.papel)).size >= 2;
   if (completo) {
     const aplicado = await aplicarAditivo(ctx, a);
@@ -488,11 +508,16 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
  * nada, na função aplicar_aditivo (0198), que nunca apaga um bloco com pagamento registrado.
  */
 async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ completo: boolean }>> {
-  const { data } = await ctx.admin
+  const { data, error: erroContrato } = await ctx.admin
     .from("contratos")
     .select("id, aluguel_mensal, qtd_ocupantes, capacidade_snapshot, tamanho_bloco_meses, garantia, properties(max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status)")
     .eq("id", a.contrato_id)
     .single();
+  // Sem o contrato e os blocos não há o que recalcular: antes, a leitura falha quebrava aqui (null) sem aviso.
+  if (erroContrato || !data) {
+    await avisarAditivoParado(ctx.admin, a, "contrato", erroContrato?.message ?? "contrato não lido");
+    return { ok: false, erro: MSG_ADITIVO_PARADO };
+  }
   const atual = data as unknown as LinhaContratoEstadia;
   const hoje = hojeEmBrasilia();
   const depois = blocosDepoisDoAditivo(paraAditivo(atual), a.mudancas, hoje);
