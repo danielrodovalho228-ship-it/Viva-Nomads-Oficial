@@ -10,7 +10,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *   3. anúncio pausado → editor;
  *   4. RASCUNHO de outra conta (a RLS não devolve a linha) → Meus anúncios (/dashboard/imoveis), sem revelar o imóvel;
  *   5. anúncio PUBLICADO de outra conta: a leitura pública devolve a linha e a rota leva ao /editar dele, que mostra
- *      "Imóvel não encontrado" (nada vaza: o editor confere o dono) — mas a promessa do E433 era Meus anúncios: L-90,
+ *      "Imóvel não encontrado" (o editor não abre: confere o dono) — mas a promessa do E433 era Meus anúncios: L-90,
  *      test.fail até a rota conferir o dono (ver registro-defeitos).
  * O link de cada modelo de e-mail (catálogo e envio real) fica com o e433-publicar-destino.test.ts.
  */
@@ -60,12 +60,15 @@ test.describe("T1041 — E433: 'Publicar meu anúncio' com um destino só, que d
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       expect(await p.content(), "o rascunho de outra conta não aparece").not.toContain(`Alheio rascunho t1041 ${sufixo}`);
 
-      // 5. Publicado de outra conta: onde quer que a rota leve, nada do anúncio vaza (o editor confere o dono).
+      // 5. Publicado de outra conta: o editor não abre para quem não é dona ("Imóvel não encontrado", sem o formulário).
+      // O título de um anúncio PUBLICADO é público (a ficha mostra a qualquer um), então não é ele que se confere aqui.
       await p.goto(`/dashboard/imoveis/${ids.alheio}/publicar`, { waitUntil: "domcontentloaded" });
       await expect(p).not.toHaveURL(/\/publicar$/, { timeout: 30_000 });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      if (/\/editar$/.test(new URL(p.url()).pathname)) await expect(p.getByRole("heading", { name: "Imóvel não encontrado" })).toBeVisible({ timeout: 30_000 });
-      expect(await p.content(), "o anúncio de outra conta não abre para edição").not.toContain(`Alheio publicar t1041 ${sufixo}`);
+      if (/\/editar$/.test(new URL(p.url()).pathname)) {
+        await expect(p.getByRole("heading", { name: "Imóvel não encontrado" })).toBeVisible({ timeout: 30_000 });
+        await expect(p.locator("form")).toHaveCount(0);
+      }
       await p.context().close();
     });
 
