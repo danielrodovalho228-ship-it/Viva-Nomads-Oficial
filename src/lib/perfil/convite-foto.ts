@@ -25,8 +25,9 @@ export function deveMostrarConviteFoto(opts: {
   return agora - quando >= CONVITE_FOTO_DIAS * DIA_MS;
 }
 
-/** Peça 2: convite discreto no passo "Confirmar candidatura". A foto só chega ao anfitrião depois do aceite. */
-export const CONVITE_FOTO_CANDIDATURA_TEXTO = "Adicione uma foto, ela aparece para o anfitrião depois do aceite";
+/** Peça 2: convite discreto no passo "Confirmar candidatura". A foto só chega ao proprietário depois do aceite. */
+export const CONVITE_FOTO_CANDIDATURA_TEXTO = "Adicione uma foto, ela aparece para o proprietário depois do aceite";
 
-/** Peça 3: convite opcional na revisão do novo anúncio; a foto aparece no cartão "Seu anfitrião" da página do imóvel. */
-export const CONVITE_FOTO_ANUNCIO_TEXTO = "Anúncios com foto do anfitrião passam mais confiança";
+/** Peça 3: convite opcional na revisão do novo anúncio; a foto aparece no cartão do proprietário da página do imóvel.
+ * Varredura de conformidade do cadastro (01/11): "proprietário", nunca "anfitrião" (vocabulário da casa). */
+export const CONVITE_FOTO_ANUNCIO_TEXTO = "Anúncios com foto do proprietário passam mais confiança";

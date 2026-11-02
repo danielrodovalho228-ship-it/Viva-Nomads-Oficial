@@ -37,6 +37,7 @@ import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir
 import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
+import { ComparacaoAirbnbFicha } from "@/components/precos/comparacao-airbnb-ficha";
 import { SELO_NF_UI } from "@/lib/flags";
 import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
 import { PropertyGallery } from "@/components/property-gallery";
@@ -889,6 +890,8 @@ export function PropertyDetail({
               {property.acceptsInsurance && <InsuranceBadge />}
               {property.precoJusto && <PrecoJustoBadge />}
             </div>
+            {/* E399-C pacote 3: com a chave ligada e o selo, a comparação com 30 noites no Airbnb (nunca o link). */}
+            {property.precoJusto && property.comparacaoAirbnb && <ComparacaoAirbnbFicha comparacao={property.comparacaoAirbnb} />}
 
             <div className="mt-3">
               <PropertyTags property={property} />

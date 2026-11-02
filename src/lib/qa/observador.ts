@@ -16,21 +16,28 @@ import { chaveDono, linhasSoLeitura, MSG_OBSERVADOR, recusaComDeps, type AlvoObs
 
 export { MSG_OBSERVADOR };
 
+const MSG_PERMISSAO_SEM_LEITURA = "Não foi possível conferir a permissão agora. Tente de novo.";
+
 const COLUNA_DONO = { properties: "owner_id", pedidos_moradia: "inquilino_id", qualification_checklists: "owner_id" } as const;
 
 function deps(admin: NonNullable<ReturnType<typeof createAdminClient>>): DepsObservador {
   return {
+    // Achado 114: cada leitura LANÇA na falha — "não é observador" ou "conta de teste" por engano liberaria a ação,
+    // a Caixa dos Sócios ou as chaves ao admin observador da QA. Quem chama falha FECHADO.
     async qaAdmin(userId) {
-      const { data } = await admin.from("profiles").select("qa_admin").eq("id", userId).maybeSingle();
+      const { data, error } = await admin.from("profiles").select("qa_admin").eq("id", userId).maybeSingle();
+      if (error) throw new Error(MSG_PERMISSAO_SEM_LEITURA);
       return (data as { qa_admin?: boolean } | null)?.qa_admin === true;
     },
     async donos(tabela, ids) {
       const col = COLUNA_DONO[tabela];
-      const { data } = await admin.from(tabela).select(`id, ${col}`).in("id", ids);
+      const { data, error } = await admin.from(tabela).select(`id, ${col}`).in("id", ids);
+      if (error) throw new Error(MSG_PERMISSAO_SEM_LEITURA);
       return ((data ?? []) as unknown as Record<string, unknown>[]).map((l) => l[col]).filter((x): x is string => typeof x === "string");
     },
     async perfisTeste(ids) {
-      const { data } = await admin.from("profiles").select("id, is_teste").in("id", ids);
+      const { data, error } = await admin.from("profiles").select("id, is_teste").in("id", ids);
+      if (error) throw new Error(MSG_PERMISSAO_SEM_LEITURA);
       return new Set(((data ?? []) as { id: string; is_teste: boolean | null }[]).filter((p) => p.is_teste === true).map((p) => p.id));
     },
   };
@@ -49,7 +56,8 @@ export async function recusaObservador(userId: string | null | undefined, alvo?:
   const admin = createAdminClient();
   // Sem o cliente de serviço não há como ler qa_admin; as ações do admin também não gravam sem ele.
   if (!admin) return null;
-  return recusaComDeps(deps(admin), userId, alvo);
+  // Falha fechada: sem conferir, a ação não segue (vale para todo admin enquanto a leitura falha).
+  return recusaComDeps(deps(admin), userId, alvo).catch(() => MSG_PERMISSAO_SEM_LEITURA);
 }
 
 /**
@@ -57,6 +65,11 @@ export async function recusaObservador(userId: string | null | undefined, alvo?:
  * a ação. Quem não é observador: [] (uma leitura só, sem tocar nas linhas). Os botões dessas linhas saem da tela.
  */
 export async function soLeituraNaTela(linhas: readonly LinhaDaTela[]): Promise<string[]> {
+  // Achado 114: leitura que falha → todas as linhas só leitura (falha fechada; a tela relê no próximo acesso).
+  return soLeituraNaTelaOuFalha(linhas).catch(() => linhas.map((l) => l.id));
+}
+
+async function soLeituraNaTelaOuFalha(linhas: readonly LinhaDaTela[]): Promise<string[]> {
   const admin = createAdminClient();
   const supabase = await createClient();
   if (!admin || !supabase || !linhas.length) return [];
@@ -71,7 +84,8 @@ export async function soLeituraNaTela(linhas: readonly LinhaDaTela[]): Promise<s
     const ids = [...new Set(linhas.flatMap((l) => l.alvo?.[chave] ?? []).filter((x): x is string => !!x))];
     if (!ids.length) continue;
     const col = COLUNA_DONO[tabela];
-    const { data } = await admin.from(tabela).select(`id, ${col}`).in("id", ids);
+    const { data, error } = await admin.from(tabela).select(`id, ${col}`).in("id", ids);
+    if (error) throw new Error(MSG_PERMISSAO_SEM_LEITURA);
     for (const l of (data ?? []) as unknown as Record<string, unknown>[]) {
       if (typeof l[col] === "string") donoDe.set(chaveDono(tabela, String(l.id)), l[col] as string);
     }

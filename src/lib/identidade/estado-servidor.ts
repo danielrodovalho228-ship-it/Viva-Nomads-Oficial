@@ -7,8 +7,11 @@ import { estadoIdentidadeDe, type EstadoIdentidade } from "@/lib/identidade/esta
  * Estado da identidade de uma pessoa, lido no SERVIDOR (cliente admin): o laudo mais recente + se a conta é de teste.
  * Fonte única (complemento do prompt 23). Sem "use server": função interna, nunca chamada do navegador.
  */
+/** A leitura que falha LANÇA: "sem laudo" viraria "pendente"/"não verificada" por engano. Quem chama decide o que mostrar. */
+export const MSG_IDENTIDADE_SEM_LEITURA = "Não foi possível conferir a identidade agora.";
+
 export async function estadoIdentidade(admin: SupabaseClient, userId: string, agora = new Date()): Promise<EstadoIdentidade> {
-  const [{ data: perfil }, { data: laudo }] = await Promise.all([
+  const [{ data: perfil, error: e1 }, { data: laudo, error: e2 }] = await Promise.all([
     admin.from("profiles").select("is_teste").eq("id", userId).maybeSingle(),
     admin
       .from("tenant_verifications")
@@ -18,6 +21,7 @@ export async function estadoIdentidade(admin: SupabaseClient, userId: string, ag
       .limit(1)
       .maybeSingle(),
   ]);
+  if (e1 || e2) throw new Error(MSG_IDENTIDADE_SEM_LEITURA);
   return estadoIdentidadeDe((laudo as LaudoCafGravado | null) ?? null, perfil?.is_teste === true || integracoesSimuladas(), agora);
 }
 
@@ -25,7 +29,7 @@ export async function estadoIdentidade(admin: SupabaseClient, userId: string, ag
 export async function estadosIdentidade(admin: SupabaseClient, ids: string[], agora = new Date()): Promise<Map<string, EstadoIdentidade>> {
   const out = new Map<string, EstadoIdentidade>();
   if (!ids.length) return out;
-  const [{ data: perfis }, { data: laudos }] = await Promise.all([
+  const [{ data: perfis, error: e1 }, { data: laudos, error: e2 }] = await Promise.all([
     admin.from("profiles").select("id, is_teste").in("id", ids),
     admin
       .from("tenant_verifications")
@@ -33,6 +37,7 @@ export async function estadosIdentidade(admin: SupabaseClient, ids: string[], ag
       .in("tenant_id", ids)
       .order("created_at", { ascending: false }),
   ]);
+  if (e1 || e2) throw new Error(MSG_IDENTIDADE_SEM_LEITURA);
   const teste = new Map(((perfis ?? []) as { id: string; is_teste: boolean | null }[]).map((p) => [p.id, p.is_teste === true]));
   const recente = new Map<string, LaudoCafGravado>();
   for (const l of (laudos ?? []) as (LaudoCafGravado & { tenant_id: string })[]) if (!recente.has(l.tenant_id)) recente.set(l.tenant_id, l);

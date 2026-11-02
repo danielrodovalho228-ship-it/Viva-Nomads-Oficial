@@ -5,7 +5,8 @@ import { adm, apagarContas, CHAVE_ANON, criarConta, entrar, NO_LABORATORIO, nova
 
 /**
  * T470 — QA-CAIXA-B: leitor de QA de TODAS as caixas de teste, fora de /admin (sem admin e sem 2FA).
- * - conta comum e conta de teste SEM qa_leitor: /dashboard/qa/emails = 404 e a RLS devolve 0 linhas de emails_teste;
+ * - conta comum: /dashboard/qa/emails = 404; conta de teste SEM qa_leitor (E354): vai para a caixa DELA em Conta → Ajuda
+ *   (não 404); as duas: a RLS devolve 0 linhas de emails_teste;
  * - conta de teste COM qa_leitor: lê todas as linhas de emails_teste e NADA a mais de outra tabela (mesmas contagens
  *   com e sem a marca); filtro por conta e por evento; nenhum e-mail completo na tela (só mascarado);
  * - ninguém se marca sozinho: o update do próprio perfil não liga qa_leitor (migração 0246);
@@ -75,12 +76,13 @@ test.describe("T470 — QA-CAIXA-B: leitor de QA das caixas de teste", () => {
     await apagarContas([ids.comum, ids.semFlag, ids.leitor, ids.alvo, ids.admin]);
   });
 
-  test("1. conta comum e conta de teste sem a marca: 404 e RLS vazio", async ({ browser }) => {
+  test("1. conta comum: 404; conta de teste sem a marca: a caixa dela (E354); RLS vazio nas duas", async ({ browser }) => {
     test.skip(!NO_LABORATORIO, "Precisa do banco do laboratório.");
     for (const c of [comum, semFlag]) {
       const p = await abrir(browser, c.email);
       const r = await p.goto("/dashboard/qa/emails", { waitUntil: "domcontentloaded" });
-      expect(r?.status(), c.email).toBe(404);
+      if (c === comum) expect(r?.status(), c.email).toBe(404);
+      else expect(new URL(p.url()).pathname, c.email).toBe("/dashboard/conta/ajuda");
       await expect(p.getByTestId("qa-emails")).toHaveCount(0);
       await p.context().close();
       const cli = await sessao(c.email);

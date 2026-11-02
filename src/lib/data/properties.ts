@@ -9,6 +9,12 @@ import type { Property, AmenityGroup } from "@/lib/types";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { primeiroPerfilPublico, type PerfilPublicoDono } from "@/lib/data/perfil-publico-dono";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
+import { comparacaoParaFicha, decidirSelo } from "@/lib/comparador-airbnb/comparacao";
+import type { Conferencia } from "@/lib/comparador-airbnb/antifraude";
+import { avisosDoMotor, COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
+import { capaDoDraftData, ehUrlDeImagem, soFotosExistentes } from "@/lib/fotos-anuncio";
+import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
@@ -578,6 +584,12 @@ async function attachComodidadesFiltro(supabase: SupabaseLike, list: Property[])
 async function attachPrecoJusto(supabase: SupabaseLike, list: Property[]): Promise<void> {
   const reais = list.filter((p) => !isExemplo(p.id));
   if (reais.length === 0) return;
+  // E399-C (chave PRECO_JUSTO_COMPARADOR): o selo sai do motor — link conferido, dado de até 14 dias e Total por mês
+  // ESTRITAMENTE menor que 30 noites no Airbnb. Desligada (produção), vale a regra de hoje (0277).
+  if (PRECO_JUSTO_COMPARADOR) {
+    await attachPrecoJustoPeloMotor(reais);
+    return;
+  }
   try {
     const { data, error } = await supabase
       .from("properties")
@@ -594,6 +606,34 @@ async function attachPrecoJusto(supabase: SupabaseLike, list: Property[]): Promi
     }
   } catch {
     /* sem a coluna, sem selo */
+  }
+}
+
+/** E399-C: o selo pelo motor (tabela fechada 0279/0280, lida pelo servidor). Sem leitura, ninguém ganha selo. */
+async function attachPrecoJustoPeloMotor(reais: Property[]): Promise<void> {
+  for (const p of reais) p.precoJusto = false;
+  const admin = createAdminClient();
+  if (!admin) return;
+  try {
+    const { data, error } = await admin
+      .from("preco_justo_airbnb")
+      .select(`property_id, conferencia, total_30_noites, consultado_em, fonte, properties!inner(${COLUNAS_IMOVEL_PRECO})`)
+      .in("property_id", reais.map((p) => p.id));
+    if (error) return;
+    const agora = new Date();
+    const porId = new Map(
+      ((data ?? []) as unknown as { property_id: string; conferencia: Conferencia; total_30_noites: number | null; consultado_em: string | null; fonte: string | null; properties: ImovelParaPreco }[]).map((r) => [r.property_id, r]),
+    );
+    for (const p of reais) {
+      const r = porId.get(p.id);
+      if (!r) continue;
+      const entrada = { totalViva: totalVivaDoImovel(r.properties), total30: r.total_30_noites == null ? null : Number(r.total_30_noites), consultadoEm: r.consultado_em, conferencia: r.conferencia };
+      p.precoJusto = decidirSelo(entrada, agora).selo;
+      // Pacote 3: o que a ficha mostra (só com selo; sem o número do anúncio).
+      p.comparacaoAirbnb = comparacaoParaFicha({ ...entrada, fonte: r.fonte }, agora);
+    }
+  } catch {
+    /* sem a tabela, sem selo */
   }
 }
 
@@ -733,12 +773,35 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   if (error || !data) return [];
   const lista = (data as unknown as PropertyRow[]).map(rowToProperty);
   // As fotos vêm de property_photos (sem isso o card ficava sem capa).
-  await attachCoverPhotos(supabase, lista);
+  // E416 (retrabalho, 01/11): o nível (Essencial/Conforto/Premium) — Meus anúncios lê ESTA função; o #2064 tinha posto o
+  // nível só em listPropertiesDoProprietario, e o cartão daqui nunca recebia o dado.
+  await Promise.all([attachCoverPhotos(supabase, lista), attachNivel(supabase, lista)]);
+  // E308 (causa raiz, 01/11): foto cujo arquivo já saiu do bucket não vira capa quebrada no card (rascunho ou anúncio).
+  const existentes = await arquivosDoDono(createAdminClient(), user.id);
+  for (const p of lista) if (p.photos?.length) p.photos = soFotosExistentes(p.photos, existentes);
+  // E426 (02/11): rascunho com fotos SÓ no draft_data (sincronização "best-effort" que não gravou property_photos) mostrava
+  // o espaço vazio em Meus anúncios, embora tivesse foto real — o Início já caía no draft_data (E308). Mesma regra aqui:
+  // a 1ª foto do draft_data cujo arquivo existe. O draft_data vem pela RPC do dono (coluna sensível fora do SELECT).
+  const semCapa = lista.filter((p) => p.status === "draft" && !(p.photos ?? []).some(ehUrlDeImagem));
+  await Promise.all(
+    semCapa.map(async (p) => {
+      const { data: priv } = await supabase.rpc("property_private_details", { prop_id: p.id });
+      const row = (Array.isArray(priv) ? priv[0] : priv) as { draft_data?: unknown } | null;
+      const capa = capaDoDraftData(row?.draft_data ?? null, user.id, existentes);
+      if (capa) p.photos = [capa];
+    }),
+  );
   // PROP-2: o pacote de limpeza entra no total do mês (sem ele, o Anúncios mostrava menos que a página do imóvel).
   if (lista.length) {
     const { data: limpezas } = await supabase.from("properties").select("id, limpeza_estadia").in("id", lista.map((p) => p.id));
     const porId = new Map(((limpezas ?? []) as { id: string; limpeza_estadia: unknown }[]).map((l) => [l.id, l.limpeza_estadia]));
     for (const p of lista) p.limpezaEstadia = normalizarLimpezaEstadia(porId.get(p.id)) ?? undefined;
+  }
+  // E399-C pacote 5: o aviso do Preço justo, só para o dono (chave ligada). Sem leitura, nenhum aviso (a lista segue).
+  const adminPj = PRECO_JUSTO_COMPARADOR && lista.length ? createAdminClient() : null;
+  if (adminPj) {
+    const avisos = await avisosDoMotor(adminPj, lista.map((p) => p.id), new Date()).catch(() => null);
+    for (const p of lista) p.avisoPrecoJusto = avisos?.get(p.id) ?? null;
   }
   return lista;
 }

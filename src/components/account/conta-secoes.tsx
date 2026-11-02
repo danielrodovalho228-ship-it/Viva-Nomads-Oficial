@@ -47,6 +47,7 @@ export function DadosPessoais() {
   const [nascimento, setNascimento] = useState("");
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [dadosFalharam, setDadosFalharam] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
@@ -61,7 +62,12 @@ export function DadosPessoais() {
         setEmail(d.email);
         setEmailConfirmado(d.emailConfirmado);
       })
-      .catch(() => {});
+      // Achado 66: falhou a leitura → avisa e trava o salvar (nome/telefone vazios apagariam o que está gravado).
+      .catch(() => {
+        if (!vivo) return;
+        setDadosFalharam(true);
+        setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
+      });
     getNascimento()
       .then((n) => vivo && setNascimento(n))
       .catch(() => {});
@@ -75,6 +81,7 @@ export function DadosPessoais() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
+    if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
     setErro(null);
     setOk(false);
     const nasc = validarNascimento(nascimento);
@@ -518,8 +525,8 @@ function PwdField({
         value={value}
         onChange={onChange}
         autoComplete={autoComplete}
-        className="rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage"
-        inputClassName="text-sm"
+        className="rounded-xl border border-sage-200 bg-white px-4 focus-within:border-sage"
+        inputClassName="text-base sm:text-sm"
       />
     </label>
   );
@@ -872,8 +879,8 @@ export function DangerZone() {
             onChange={setPassword}
             placeholder="Senha atual"
             autoComplete="current-password"
-            className="mt-2 rounded-lg border border-red-300 bg-white px-3 py-2 focus-within:border-red-500"
-            inputClassName="text-sm"
+            className="mt-2 rounded-lg border border-red-300 bg-white px-3 focus-within:border-red-500"
+            inputClassName="text-base sm:text-sm"
           />
           {error && <p className="mt-2 text-sm font-medium text-red-700">{error}</p>}
           {captcha.widget && <div className="mt-3">{captcha.widget}</div>}

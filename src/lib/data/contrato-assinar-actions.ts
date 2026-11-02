@@ -31,7 +31,7 @@ import { qtdPetsCongelada } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { motivoFaltamInstrucoes } from "@/lib/checkin";
 import { instrucoesPreenchidas } from "@/lib/checkin-servidor";
-import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/lib/contrato-estado";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
@@ -232,7 +232,9 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  const { data, error } = await supabase.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  // Achado 78: falha de leitura não vira "contrato não encontrado" (404): lança, e a página mostra o erro com "Tentar de novo".
+  if (error) throw new Error("Não foi possível ler o contrato agora.");
   if (!data) return null;
   // O RLS acima já provou que a pessoa é parte; o dono não lê a ficha do inquilino, então a contagem vem do servidor.
   const linha = data as unknown as LinhaContrato;
@@ -265,7 +267,9 @@ export async function getContratoParaEquipe(contratoId: string): Promise<Contrat
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  const { data, error } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  // Achado 86: falha de leitura não vira "contrato não encontrado" (404) para a equipe — lança (admin/error.tsx).
+  if (error) throw new Error("Não foi possível ler o contrato agora.");
   if (!data) return null;
   const linha = data as unknown as LinhaContrato;
   await completarPets(linha);
@@ -277,12 +281,13 @@ export async function getContratoParaEquipe(contratoId: string): Promise<Contrat
   return { visao, selo: seloParaEquipe(linha), ownerId, tenantId: linha.tenant_id, nomes, criadoEm: linha.created_at };
 }
 
-/** Nome curto das duas partes (só o nome: nunca contato nem documento) — para "Ana S. (proprietário) assinou em…". */
+/** Nome completo das duas partes (só o nome: nunca contato nem documento) — para "Ana Souza (proprietário) assinou em…". */
 async function nomesDasPartes(ownerId: string, tenantId: string): Promise<{ proprietario: string | null; inquilino: string | null }> {
   const admin = createAdminClient();
   if (!admin) return { proprietario: null, inquilino: null };
   const { data } = await admin.from("profiles").select("id, full_name").in("id", [ownerId, tenantId].filter(Boolean));
-  const nome = (id: string) => nomeCurto((((data ?? []) as { id: string; full_name: string | null }[]).find((p) => p.id === id)?.full_name ?? "").replace(/\S+@\S+/g, "").trim());
+  // E427: no contrato (depois do aceite), o nome completo das partes — o mesmo das outras telas.
+  const nome = (id: string) => nomeCompleto(((data ?? []) as { id: string; full_name: string | null }[]).find((p) => p.id === id)?.full_name ?? null);
   return { proprietario: nome(ownerId), inquilino: nome(tenantId) };
 }
 

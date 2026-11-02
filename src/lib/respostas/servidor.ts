@@ -33,11 +33,13 @@ type Contrato = {
 };
 
 export async function contratoDaProgramada(admin: Admin, contratoId: string): Promise<Contrato | null> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("contratos")
     .select("id, property_id, tenant_id, status, properties(owner_id), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Achado 90: a falha não vira "sem contrato" — no envio, isso cancelaria a mensagem do dono para sempre.
+  if (error) throw new Error("Não foi possível ler o contrato da mensagem programada.");
   return (data as unknown as Contrato | null) ?? null;
 }
 

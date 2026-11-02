@@ -304,7 +304,9 @@ test.describe("T195 — matrícula + CAF", () => {
       await expect(secao.getByTestId("matricula-card").filter({ hasText: "Alice" })).toHaveCount(0);
       const card = secao.getByTestId("matricula-card").filter({ hasText: "Diana" }).first();
       await expect(card).toBeVisible();
-      await expect(card.getByTestId("matricula-resumo")).toContainText("Unidade: Apartamento 302");
+      // E293 P1: unidade, áreas e vaga NÃO são gravados (minimização); a fila guarda só o veredito e a data do último ato.
+      await expect(card.getByTestId("matricula-resumo")).toContainText("Último ato:");
+      await expect(card.getByTestId("matricula-resumo")).not.toContainText("Unidade:");
       await expect(card.getByTestId("matricula-proprietarios")).toContainText("final 191 · não confere");
       await expect(card.getByTestId("matricula-caf-laudo")).toContainText("Ainda não feita");
       await expect(card.getByTestId("matricula-caso-admin")).toContainText("Sou cônjuge do proprietário");

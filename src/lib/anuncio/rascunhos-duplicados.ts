@@ -28,3 +28,18 @@ export function idsRascunhosDuplicados(lista: Rascunho[]): Set<string> {
   for (const g of grupos.values()) if (g.length > 1) g.forEach((id) => ids.add(id));
   return ids;
 }
+
+/**
+ * E383 (02/11): os rascunhos repetidos em GRUPOS, na ordem da lista (o 1º de cada grupo é o mais recente, porque a lista
+ * vem do mais novo para o mais antigo). Meus imóveis mostra só o 1º de cada grupo e esconde as cópias atrás de "ver".
+ */
+export function gruposRascunhosDuplicados(lista: Rascunho[]): string[][] {
+  const ids = idsRascunhosDuplicados(lista);
+  const grupos = new Map<string, string[]>();
+  for (const p of lista) {
+    if (!ids.has(p.id)) continue;
+    const chave = [normaliza(p.title), normaliza(p.city), normaliza(p.neighborhood), p.bedrooms ?? ""].join("|");
+    grupos.set(chave, [...(grupos.get(chave) ?? []), p.id]);
+  }
+  return [...grupos.values()];
+}

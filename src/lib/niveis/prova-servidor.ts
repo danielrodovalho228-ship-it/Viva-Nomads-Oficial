@@ -23,13 +23,18 @@ export interface CapturaLida extends CapturaGravada {
   capturada_em: string | null;
 }
 
+/** Achados 84/85: a leitura da prova falhou — quem chama responde "tente de novo", nunca "foto nova" nem "link inválido". */
+export const MSG_PROVA_SEM_LEITURA = "Não foi possível conferir a foto agora. Tente de novo em instantes.";
+
 export async function capturaPeloToken(admin: Admin, token: unknown): Promise<CapturaLida | null> {
   if (typeof token !== "string" || !TOKEN_FORMATO.test(token)) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("prova_capturas")
     .select("id, owner_id, property_id, chave, expira_em, usado_em, foto_path, foto_hash, capturada_em")
     .eq("token_hash", hashDoToken(token))
     .maybeSingle();
+  // Achado 85: falha de leitura não vira "foto não feita na hora / link inválido".
+  if (error) throw new Error(MSG_PROVA_SEM_LEITURA);
   return (data as CapturaLida | null) ?? null;
 }
 
@@ -45,5 +50,7 @@ export async function fotoJaUsada(admin: Admin, hash: string | null, ctx: { prop
     admin.from("nivel_itens").select("chave").eq("foto_hash", hash).limit(1),
     admin.from("prova_capturas").select("id").eq("foto_hash", hash).neq("id", ctx.capturaId).limit(1),
   ]);
+  // Achado 84: a trava antifraude não diz "foto nova" sem ter conferido as três fontes.
+  if (galeria.error || provas.error || capturas.error) throw new Error(MSG_PROVA_SEM_LEITURA);
   return !!(galeria.data?.length || provas.data?.length || capturas.data?.length);
 }

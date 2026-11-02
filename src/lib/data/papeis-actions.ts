@@ -59,7 +59,9 @@ export async function meuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     };
   }
   // Morador: o que o dono vê no cartão de quem pede (nome curto, foto, cidade, frase e idiomas).
-  const { data } = await supabase.from("profiles").select("full_name, avatar_url, cidade, bio, idiomas, created_at").eq("id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("profiles").select("full_name, avatar_url, cidade, bio, idiomas, created_at").eq("id", user.id).maybeSingle();
+  // Achado 110: a falha LANÇA — a tela avisa "Não foi possível ler seu perfil" (nunca um perfil "Você" vazio).
+  if (error) throw new Error("Não foi possível ler o seu perfil.");
   const p = (data ?? {}) as { full_name?: string | null; avatar_url?: string | null; cidade?: string | null; bio?: string | null; idiomas?: string[] | null; created_at?: string | null };
   return {
     nome: nomeCurto(p.full_name) ?? "Você",
@@ -84,7 +86,9 @@ export async function meusDegraus(): Promise<Degrau[] | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("full_name, avatar_url, phone").eq("id", user.id).maybeSingle();
+  // Achado 61: a falha de leitura LANÇA — antes nome, foto e telefone apareciam "pendentes" e a pessoa refazia.
+  const { data, error } = await supabase.from("profiles").select("full_name, avatar_url, phone").eq("id", user.id).maybeSingle();
+  if (error) throw new Error("Não foi possível ler seu perfil agora.");
   const p = (data ?? {}) as { full_name?: string | null; avatar_url?: string | null; phone?: string | null };
   const admin = createAdminClient();
   const identidade = admin ? await estadoIdentidade(admin, user.id).catch(() => null) : null;

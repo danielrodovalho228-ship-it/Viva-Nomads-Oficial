@@ -12,13 +12,14 @@ import type { RespostaRapida } from "@/lib/respostas/regras";
  */
 export function RespostasRapidasConversa({ propertyId, onEscolher }: { propertyId: string; onEscolher: (r: RespostaRapida) => void }) {
   const [aberta, setAberta] = useState(false);
-  const [lista, setLista] = useState<{ propertyId: string; itens: RespostaRapida[] } | null>(null);
+  const [lista, setLista] = useState<{ propertyId: string; itens: RespostaRapida[] | "falhou" } | null>(null);
   useEffect(() => {
     if (!aberta || lista?.propertyId === propertyId) return;
     let vivo = true;
     respostasDaConversaDoImovel(propertyId)
       .then((itens) => vivo && setLista({ propertyId, itens }))
-      .catch(() => vivo && setLista({ propertyId, itens: [] }));
+      // Achado 62: falhou → aviso com "Tentar de novo" (nunca "nenhuma resposta salva").
+      .catch(() => vivo && setLista({ propertyId, itens: "falhou" }));
     return () => {
       vivo = false;
     };
@@ -41,6 +42,13 @@ export function RespostasRapidasConversa({ propertyId, onEscolher }: { propertyI
         <div className="pb-2">
           {itens === null ? (
             <p className="text-xs text-muted">Carregando…</p>
+          ) : itens === "falhou" ? (
+            <p role="alert" className="text-xs text-red-700" data-testid="respostas-rapidas-falha">
+              Não foi possível carregar suas respostas rápidas agora.{" "}
+              <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setLista(null)} data-testid="respostas-rapidas-tentar">
+                Tentar de novo
+              </button>
+            </p>
           ) : itens.length === 0 ? (
             <p className="text-xs text-muted" data-testid="respostas-rapidas-vazio">
               Nenhuma resposta salva.{" "}

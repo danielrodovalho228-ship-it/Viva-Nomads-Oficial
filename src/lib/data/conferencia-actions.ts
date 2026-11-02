@@ -155,7 +155,10 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (janelaEncerrada("entrada", ctx.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
   const admin = createAdminClient()!;
   // Adendo 59.1: a seção confere também os itens do nível atual e o ruído (mesma lista da tela).
-  const v = validarSecaoConforto(input.respostas, await adicionaisDaConferencia(admin, ctx.propertyId));
+  // Achado 89: sem a lista completa (nível e ruído), não valida com a lista menor — pede para tentar de novo.
+  const adicionais = await adicionaisDaConferencia(admin, ctx.propertyId).catch(() => null);
+  if (!adicionais) return erro("Não foi possível carregar a lista da conferência agora. Tente de novo.");
+  const v = validarSecaoConforto(input.respostas, adicionais);
   if (!v.ok) return erro(v.erro);
   if (v.respostas.some((r) => r.foto && !r.foto.startsWith(`${ctx.uid}/`))) return erro("Foto inválida.");
   if (!(await consumirLimite(`conferencia-conforto:${ctx.uid}`, 20, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");

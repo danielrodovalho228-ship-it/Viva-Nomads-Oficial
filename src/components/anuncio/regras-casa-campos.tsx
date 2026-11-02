@@ -1,10 +1,19 @@
 "use client";
 
+import { Cigarette, Moon, PartyPopper, UsersRound } from "lucide-react";
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
 import { MAX_OUTRAS_REGRAS, OPCOES_FESTAS, OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { REGRAS_CONVIVENCIA, desligarRegra, regraTemDados, type RegraConvivencia, type RegrasCasaForm } from "@/lib/anuncio/regras-casa-form";
 
 export { estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/lib/anuncio/regras-casa-form";
+
+/** Conformidade do cadastro (mockup 06, 01/11): um ícone por regra de convivência. */
+const ICONE_REGRA: Record<RegraConvivencia, React.ComponentType<{ className?: string }>> = {
+  silencio: Moon,
+  fumo: Cigarette,
+  festas: PartyPopper,
+  visitas: UsersRound,
+};
 
 const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
 
@@ -108,6 +117,7 @@ export function RegrasCasaCampos({
           id={chave}
           titulo={titulo}
           descricao={descricao}
+          icone={ICONE_REGRA[chave]}
           ligado={value.ligados[chave]}
           temDados={regraTemDados(value, chave)}
           onLigar={() => onChange({ ...value, ligados: { ...value.ligados, [chave]: true } })}
@@ -126,8 +136,9 @@ export function RegrasCasaCampos({
           onChange={(e) => muda({ outras: e.target.value })}
           data-testid="regras-casa-outras"
         />
-        <span className="text-xs font-normal text-muted" data-testid="regras-casa-outras-contador">
-          {value.outras.length} de {MAX_OUTRAS_REGRAS} caracteres
+        {/* Conformidade do cadastro (01/11): o mesmo contador "N/MÁX" dos outros campos do Passo 6 (antes "N de 280 caracteres"). */}
+        <span className="text-right text-xs font-normal text-muted" data-testid="regras-casa-outras-contador">
+          {value.outras.length}/{MAX_OUTRAS_REGRAS}
         </span>
       </label>
     </div>

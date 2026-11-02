@@ -46,8 +46,10 @@ export function ExcluirContaForm() {
       <label htmlFor="email-exclusao" className="block text-sm font-medium text-ink">
         E-mail da conta
       </label>
-      <div className="flex items-center gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 focus-within:border-sage">
-        <Mail className="h-4 w-4 text-sage" />
+      {/* Varredura 01/11: o campo ocupa a caixa inteira (alvo de 48 px, não só a linha do texto) e usa 16 px no celular
+          (abaixo disso o iPhone dá zoom ao tocar); o erro é anunciado e ligado ao campo. */}
+      <div className="flex items-center gap-3 rounded-xl border border-sage-200 bg-white px-4 focus-within:border-sage">
+        <Mail className="h-4 w-4 shrink-0 text-sage" aria-hidden />
         <input
           id="email-exclusao"
           type="email"
@@ -57,10 +59,17 @@ export function ExcluirContaForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="voce@exemplo.com"
-          className="w-full bg-transparent text-sm outline-none placeholder:text-muted"
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={erro ? "email-exclusao-erro" : undefined}
+          data-testid="excluir-conta-email"
+          className="min-h-12 w-full bg-transparent text-base outline-none placeholder:text-muted sm:text-sm"
         />
       </div>
-      {erro && <p className="text-sm text-red-600">{erro}</p>}
+      {erro && (
+        <p id="email-exclusao-erro" role="alert" className="text-sm text-red-600">
+          {erro}
+        </p>
+      )}
       <button
         type="submit"
         disabled={loading}

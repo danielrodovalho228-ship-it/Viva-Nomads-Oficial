@@ -369,13 +369,16 @@ export async function listConferidosAutomaticamente(limite = 30): Promise<Confer
   if (!user || !(await ehAdmin(supabase, user.id))) return [];
   const adm = createAdminClient();
   if (!adm) return [];
-  const { data } = await adm
+  // Achado 63: a falha de leitura LANÇA — antes a aba "Conferidos automaticamente" dizia "Nenhum ainda" e a amostragem
+  // da equipe parava sem ninguém saber.
+  const { data, error } = await adm
     .from("qualification_checklists")
     .select("id, owner_id, property_id, document_path, created_at, conferencia")
     .eq("document_status", "approved")
     .eq("conferido_por", "automatico")
     .order("created_at", { ascending: false })
     .limit(Math.min(100, Math.max(1, limite)));
+  if (error) throw new Error("Não foi possível ler os conferidos automaticamente agora.");
   const out: ConferidoAutomatico[] = [];
   for (const r of data ?? []) {
     const [{ data: perfil }, prop, signed] = await Promise.all([

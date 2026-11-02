@@ -8,6 +8,7 @@ import {
   conferenciaPetComRegras,
   conferenciaQuantidade,
   donoVeFichaPet,
+  petsVaoNaCandidatura,
   PORTE_CURTO,
   PRAZO_LINK_FICHA_PET_S,
   resumoPetsCandidatura,
@@ -92,6 +93,9 @@ async function petsDoInquilino(admin: Admin, tenantId: string): Promise<LinhaPet
 export async function resumoFichaPets(alvo: { leadId: string } | { propertyId: string; tenantId: string }): Promise<{ leadId: string; resumo: string } | null> {
   const c = await candidaturaDoDono(alvo);
   if (!c) return null;
+  // E397: imóvel que não aceita animais → a candidatura não leva pet (nem o resumo).
+  const { data: imovel } = await c.admin.from("properties").select("pets_allowed").eq("id", c.lead.propertyId).maybeSingle();
+  if (!petsVaoNaCandidatura((imovel as { pets_allowed?: boolean | null } | null)?.pets_allowed)) return null;
   const resumo = resumoPetsCandidatura(await petsDoInquilino(c.admin, c.lead.tenantId));
   return resumo ? { leadId: c.lead.id, resumo } : null;
 }
@@ -110,8 +114,9 @@ export async function fichaPetsDaCandidatura(leadId: string): Promise<FichaPetsC
     petsDoInquilino(admin, lead.tenantId),
     admin.from("properties").select("pets_allowed, pets_regras").eq("id", lead.propertyId).maybeSingle(),
   ]);
-  if (linhas.length === 0) return vazio;
   const petsAllowed = (imovel as { pets_allowed?: boolean | null } | null)?.pets_allowed ?? null;
+  // E397: imóvel que não aceita animais → nenhuma ficha de pet na candidatura.
+  if (linhas.length === 0 || !petsVaoNaCandidatura(petsAllowed)) return vazio;
   const regras = normalizarRegrasPets((imovel as { pets_regras?: unknown } | null)?.pets_regras);
 
   // Só caminhos da pasta do PRÓPRIO inquilino desta candidatura (nada de caminho de outra conta).

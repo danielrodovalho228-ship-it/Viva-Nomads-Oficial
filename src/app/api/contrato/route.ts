@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
 import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
-import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento } from "@/lib/data/fechamento-servidor";
+import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA } from "@/lib/data/fechamento-servidor";
 
 /**
  * Contrato no ZapSign. A5: recebe o id da candidatura aceita + escolhas do
@@ -42,10 +42,13 @@ export async function POST(request: Request) {
   // Qualquer das partes sendo conta de teste (is_teste): contrato SIMULADO, nada vai ao ZapSign (ordem ee7d27b8).
   const admin = createAdminClient();
   const teste = (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId));
+  // Achado 82: sem ler a reserva, não decide (nem "em andamento" nem gerar de novo).
+  const reserva = await lerReservaFechamento(f.leadId, "contrato").catch(() => "falhou" as const);
+  if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   const d = decidirGeracaoContrato({
     teste,
     assinaturaLigada: isZapsignConfigured(),
-    reserva: await lerReservaFechamento(f.leadId, "contrato"),
+    reserva,
     agora: Date.now(),
   });
   if (d.acao === "inativa") {

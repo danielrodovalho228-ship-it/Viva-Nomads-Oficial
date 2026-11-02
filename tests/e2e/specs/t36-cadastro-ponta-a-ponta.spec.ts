@@ -27,7 +27,7 @@ import {
  *  3. Admin: pré-conferência "Parece OK" → checklist → Aprovar.
  *  4. Dono publica pelo editor.
  *  5. Inquilina se candidata; o dono vê só o primeiro nome (identidade oculta).
- *  6. Dono aceita: nome curto aparece (prompt 6: antes do aceite, "Candidato(a)"), taxa da faixa do proprietário (1–2 imóveis: 12%) congelada
+ *  6. Dono aceita: nome completo aparece (E427) (prompt 6: antes do aceite, "Candidato(a)"), taxa da faixa do proprietário (1–2 imóveis: 12%) congelada
  *     no aceite — continua 8% depois de o dono subir para o Profissional.
  *  7. Inquilina envia os documentos (identidade e vínculo) depois do aceite.
  *  8. Fechamento: documentos completos, sem aviso pendente; contrato com contas reais e sem assinatura digital
@@ -135,7 +135,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     expect(antes).not.toContain(inquilina.email);
     await donoPage.screenshot({ path: "tests/laboratorio/saida/t36-4-dono-ve-primeiro-nome.png", fullPage: true });
 
-    // 6) Aceite: nome curto aparece (prompt 6); a taxa da faixa do proprietário (regra única de regra.ts, sem assinatura) fica congelada.
+    // 6) Aceite: nome completo aparece (E427; antes do aceite, "Candidato(a)"); a taxa da faixa do proprietário (regra única de regra.ts, sem assinatura) fica congelada.
     await donoPage.getByRole("button", { name: /Aprovar e responder/i }).first().click();
     await expect.poll(async () => (await adm().from("leads").select("status").eq("id", ids.lead!).single()).data?.status, { timeout: 20_000 }).toBe("accepted");
     await expect(donoPage.getByTestId("aceite-erro")).toHaveCount(0);
@@ -143,7 +143,7 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     const aceito = (await adm().from("leads").select("accepted_commission_rate, accepted_plan").eq("id", ids.lead!).single()).data!;
     expect(Number(aceito.accepted_commission_rate)).toBe(taxaFaixa);
     await donoPage.reload({ waitUntil: "networkidle" });
-    expect(await donoPage.locator("body").innerText()).toContain("Iara S.");
+    expect(await donoPage.locator("body").innerText()).toContain("Iara Sobrenomeoculto");
     expect(await donoPage.content()).not.toContain(inquilina.email);
 
     // Subir de plano depois do aceite NÃO muda a comissão deste contrato.

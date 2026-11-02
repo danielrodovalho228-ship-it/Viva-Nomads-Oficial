@@ -17,7 +17,9 @@ import { AvisoStrikePainel } from "@/components/vistoria/aviso-strike-painel";
 import { visualizacoesDoDono } from "@/lib/data/desempenho-anuncio";
 import { listConversations } from "@/lib/data/messages";
 import { alertaDoTopo, blocoPrincipalDono } from "@/lib/painel/inicio-dono";
-import { capaDoDraftData } from "@/lib/fotos-anuncio";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { capaDoDraftData, ehUrlDeImagem, soFotosExistentes } from "@/lib/fotos-anuncio";
+import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { carregarAgendaDoDono } from "@/lib/data/agenda-servidor";
 import { cartoesDeHoje } from "@/lib/painel/hoje-dono";
 import { hojeEmBrasilia } from "@/lib/checkin";
@@ -79,13 +81,20 @@ async function capaDoRascunho(id: string | null, draftData: unknown): Promise<st
   if (!id) return null;
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data } = await supabase.from("property_photos").select("url").eq("property_id", id).order("sort_order", { ascending: true }).limit(1).maybeSingle();
-  const daTabela = (data?.url as string | undefined) ?? null;
-  if (daTabela) return daTabela;
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user ? capaDoDraftData(draftData, user.id) : null;
+  if (!user) return null;
+  // E308 (causa raiz, 01/11): a 1ª foto cujo ARQUIVO EXISTE no bucket — antes, uma linha que apontava para um arquivo já
+  // apagado virava imagem quebrada. Ordem: property_photos (sort_order) → draft_data; sem nenhuma, o placeholder.
+  const [{ data }, existentes] = await Promise.all([
+    supabase.from("property_photos").select("url").eq("property_id", id).order("sort_order", { ascending: true }).limit(40),
+    arquivosDoDono(createAdminClient(), user.id),
+  ]);
+  // E405 (02/11): só URL de imagem vira capa — "Foto QA Premium 1 - Sala" (nome de foto de teste) virava caixa cinza.
+  const daTabela = soFotosExistentes(((data ?? []) as { url: string }[]).map((r) => r.url).filter(ehUrlDeImagem), existentes)[0];
+  if (daTabela) return daTabela;
+  return capaDoDraftData(draftData, user.id, existentes);
 }
 
 /** Rascunho mais recente → card "Anúncio em andamento" (antes lido no navegador por server action). */

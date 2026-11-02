@@ -10,12 +10,19 @@ import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 /** Perfil em 4 degraus (Prompt 43): lista com o estado de cada um, sem barra de progresso. */
 export function DegrausPerfil() {
   const [degraus, setDegraus] = useState<Degrau[] | null>(null);
+  // Achado 61: falhou a leitura → aviso com "Tentar de novo" (nunca os degraus como "pendentes").
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   useEffect(() => {
     let vivo = true;
     const ler = () =>
       meusDegraus()
-        .then((d) => vivo && setDegraus(d))
-        .catch(() => {});
+        .then((d) => {
+          if (!vivo) return;
+          setFalhou(false);
+          setDegraus(d);
+        })
+        .catch(() => vivo && setFalhou(true));
     ler();
     // CONTA-A, item 5: o progresso anda — nome, foto ou telefone salvos refazem a lista na hora.
     window.addEventListener(PERFIL_ATUALIZADO, ler);
@@ -23,7 +30,16 @@ export function DegrausPerfil() {
       vivo = false;
       window.removeEventListener(PERFIL_ATUALIZADO, ler);
     };
-  }, []);
+  }, [tentativa]);
+  if (falhou && !degraus)
+    return (
+      <p role="alert" className="rounded-xl border border-line bg-white p-4 text-sm text-red-700" data-testid="degraus-perfil-falha">
+        Não foi possível carregar o estado do seu perfil agora.{" "}
+        <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={() => setTentativa((n) => n + 1)} data-testid="degraus-perfil-tentar">
+          Tentar de novo
+        </button>
+      </p>
+    );
   if (!degraus) return null;
   return (
     <section className="rounded-xl border border-line bg-white p-4" data-testid="degraus-perfil" aria-labelledby="degraus-titulo">

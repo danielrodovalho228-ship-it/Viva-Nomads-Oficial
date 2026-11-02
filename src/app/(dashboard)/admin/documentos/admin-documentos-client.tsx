@@ -47,6 +47,7 @@ import { semQuedaDeRede } from "@/lib/erro-de-rede";
 export function AdminDocumentosClient({
   docs,
   auto = [],
+  autoFalhou = false,
   contadores = { automaticos: 0, corrija: 0, revisao: 0 },
   filaAgora = null,
   ultimaDecisao = null,
@@ -54,6 +55,8 @@ export function AdminDocumentosClient({
 }: {
   docs: DocumentoPendente[];
   auto?: ConferidoAutomatico[];
+  /** Achado 63: a leitura dos conferidos falhou — a aba avisa em vez de "Nenhum ainda". */
+  autoFalhou?: boolean;
   contadores?: { automaticos: number; corrija: number; revisao: number };
   /** "Na fila agora" (Prompt 29, item 9): documentos + matrículas — a mesma função da home e do selo da barra lateral. */
   filaAgora?: { documentos: number; matriculas: number; total: number; maisAntigoEm: string | null } | null;
@@ -136,7 +139,11 @@ export function AdminDocumentosClient({
       </div>
 
       {aba === "automaticos" ? (
-        autos.length === 0 ? (
+        autoFalhou ? (
+          <p role="alert" className="rounded-xl border border-line bg-white p-4 text-sm text-red-700" data-testid="conferidos-automaticamente-falha">
+            Não foi possível carregar os conferidos automaticamente agora. Recarregue a página para tentar de novo.
+          </p>
+        ) : autos.length === 0 ? (
           <EmptyState icon={ShieldCheck} title="Nenhum ainda" text="Os documentos aprovados pela conferência automática aparecem aqui para amostragem." action={<Button variant="secondary" size="sm" onClick={() => setAba("revisao")}>Ver a fila de revisão</Button>} />
         ) : (
           <div className="space-y-4" data-testid="conferidos-automaticamente">

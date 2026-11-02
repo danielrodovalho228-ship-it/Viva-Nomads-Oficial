@@ -58,8 +58,9 @@ test("telas: cartão, aviso do tipo de entrada, reativar e e-mail do documento u
   assert.match(cartao, /data-testid=\{`pendencia-\$\{o\.key\}`\}/);
   // Rascunho: "Continuar editando" segue no assistente.
   assert.match(cartao, /p\.status === "draft"\s*\?\s*`\/dashboard\/imoveis\/novo\?draft=\$\{p\.id\}`/);
+  // E418 (02/11): o link do tipo de entrada saiu da caixa do topo e foi para o cartão de cada anúncio — mesmo destino único.
   const painel = ler("src/app/(dashboard)/dashboard/imoveis/page.tsx");
-  assert.match(painel, /destinoPendencia\(i, ETAPA\.regras\)/);
+  assert.match(cartao, /destinoPendencia\(p, ETAPA\.regras\)/);
   assert.doesNotMatch(painel, /\/editar`/);
   const actions = ler("src/lib/data/actions.ts");
   assert.match(actions, /href: destinoPendencia\(\{ id, status: p\.status \}, i\.etapa\)/);

@@ -16,7 +16,7 @@ import { classeRuido, medidaPorPonto, nivelDoImovel, validarExtras, validarRespo
 import { entradaDoNivel, recalcularNivel } from "@/lib/niveis/servidor";
 import { avisarFotoRecusada } from "@/lib/niveis/avisos";
 import { ERRO_SEM_TOKEN, conferirCaptura, textoFotoRecebida, type OrigemFoto } from "@/lib/niveis/prova-camera";
-import { capturaPeloToken } from "@/lib/niveis/prova-servidor";
+import { capturaPeloToken, MSG_PROVA_SEM_LEITURA } from "@/lib/niveis/prova-servidor";
 
 export type ResultadoNivelAcao = { ok: true; mensagem?: string } | { ok: false; erro: string };
 
@@ -77,6 +77,8 @@ export async function nivelDoMeuImovel(propertyId: string): Promise<NivelDoImove
     c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, motivo_recusa, foto_origem, refazer_ate").eq("property_id", propertyId),
     c.admin.from("imovel_extras").select("chave").eq("property_id", propertyId),
   ]);
+  // Achado 74: itens e extras que não foram lidos não viram "não declarado" na tela do dono.
+  if (itens.error || extras.error) throw new Error("Não foi possível ler o nível do imóvel agora.");
   const rec = await recalcularNivel(c.admin, propertyId, agora);
   const porChave = new Map(
     ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: StatusFoto; motivo_recusa: string | null; foto_origem: OrigemFoto | null; refazer_ate: string | null }[]).map((i) => [i.chave, i]),
@@ -117,7 +119,8 @@ export async function salvarItemNivel(propertyId: string, chave: string, declara
   if (novaFoto && (!FOTO_PATH.test(novaFoto) || !novaFoto.startsWith(`${c.uid}/`))) return { ok: false, erro: "Foto inválida." };
   let captura: { capturada_em: string | null; foto_hash: string | null } | null = null;
   if (novaFoto) {
-    const lida = await capturaPeloToken(c.admin, tokenCaptura);
+    const lida = await capturaPeloToken(c.admin, tokenCaptura).catch(() => "falhou" as const);
+    if (lida === "falhou") return { ok: false, erro: MSG_PROVA_SEM_LEITURA };
     const v = conferirCaptura(lida, { ownerId: c.uid, propertyId, chave }, new Date(), novaFoto);
     if (!lida || !v.ok) return { ok: false, erro: ERRO_SEM_TOKEN };
     // Uso único, atômico: só um salvar consome o token.

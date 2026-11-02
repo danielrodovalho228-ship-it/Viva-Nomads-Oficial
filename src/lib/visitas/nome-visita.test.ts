@@ -37,19 +37,21 @@ test("agenda do dono: a visita confirmada mostra o 1º nome de quem vem (sem fot
   assert.match(src, /pessoa: pessoa\(v\.tenant_id, v\.property_id\) \?\? \(nomeLiberadoNaVisita\(v\.status\) \? \{ nome: nomes\.get\(v\.tenant_id\) \?\? "Interessado\(a\)", fotoUrl: null \} : null\)/);
 });
 
-test("E409: depois do aceite, '1º nome + inicial do sobrenome' (o que a Conta promete), não só o 1º nome", async () => {
-  const { nomeComInicial } = await import("./nome-visita.ts");
-  assert.equal(nomeComInicial("Ana Carolina de Souza"), "Ana S.");
-  assert.equal(nomeComInicial("  rogério   lima "), "rogério L.");
-  assert.equal(nomeComInicial("Ana"), "Ana");
-  assert.equal(nomeComInicial("Élio Ávila"), "Élio Á.");
-  for (const vazio of ["", null, undefined, "ana@email.com", "  "]) assert.equal(nomeComInicial(vazio), null, String(vazio));
-  // A promessa da Conta que a visita passa a cumprir.
-  assert.match(ler("src/components/account/conta-blocos.tsx"), /primeiro nome, a inicial do sobrenome e a foto/);
-  // Detalhe da visita e agenda usam o nome com inicial; a foto só pela regra do avatar (relação aceita / dono público).
+test("E427: depois do aceite, o nome COMPLETO na visita (detalhe e agenda), igual às outras telas; e a Conta diz isso", async () => {
+  const { nomeDepoisDoAceite } = await import("./nome-visita.ts");
+  assert.equal(nomeDepoisDoAceite("Ana Carolina de Souza"), "Ana Carolina de Souza");
+  assert.equal(nomeDepoisDoAceite("  rogério   lima "), "rogério lima");
+  assert.equal(nomeDepoisDoAceite("Ana"), "Ana");
+  for (const vazio of ["", null, undefined, "ana@email.com", "  ", "123"]) assert.equal(nomeDepoisDoAceite(vazio), null, String(vazio));
+  // A frase da Conta corresponde ao comportamento: nome completo, não mais "primeiro nome + inicial".
+  const conta = ler("src/components/account/conta-blocos.tsx");
+  assert.match(conta, /<strong>Depois do aceite<\/strong>, ele vê o seu nome completo e a foto\. Telefone e e-mail nunca aparecem\./);
+  assert.doesNotMatch(conta, /inicial do sobrenome/);
+  // Antes do aceite, a Conta segue prometendo "Candidato(a)" sem nome nem foto.
+  assert.match(conta, /<strong>Antes do aceite<\/strong>, o proprietário vê &quot;Candidato\(a\)&quot;, sem nome nem foto/);
   const acoes = ler("src/lib/data/visitas-video-actions.ts");
-  assert.match(acoes, /return nomeComInicial\(\(perfil as/);
+  assert.match(acoes, /return nomeDepoisDoAceite\(\(perfil as/);
   assert.match(acoes, /fotoPessoa = \(await getAvatarUrl\(\{ targetId: id, propertyId: r\.property_id \}\)/);
-  assert.match(ler("src/lib/data/agenda-servidor.ts"), /const nome = nomeComInicial\(p\.full_name\);/);
+  assert.match(ler("src/lib/data/agenda-servidor.ts"), /const nome = nomeDepoisDoAceite\(p\.full_name\);/);
   assert.match(ler("src/components/visitas/cartao-visita.tsx"), /data-testid="visita-pessoa-foto"/);
 });

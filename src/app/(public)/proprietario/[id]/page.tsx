@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Building2, Clock, Handshake, Languages, MapPin, Star, UserRound } from "lucide-react";
-import { getAvaliacoesRecebidas, getPerfilProprietario } from "@/lib/data/perfil-proprietario";
+import { getAvaliacoesRecebidas, getPerfilProprietario, nomeCompletoParaQuemTemAceite } from "@/lib/data/perfil-proprietario";
 import { listPropertiesDoProprietario } from "@/lib/data/properties";
 import { desdeLabel, robotsDoProprietario } from "@/lib/perfil/perfil-publico";
 import { corAvatar, iniciais } from "@/lib/avatar";
@@ -44,9 +44,16 @@ export default async function ProprietarioPage({ params }: Params) {
   const { id } = await params;
   const ex = proprietarioExemploPorId(id);
   if (ex) return <PerfilExemplo p={ex} />;
-  const p = await getPerfilProprietario(id);
-  if (!p) notFound();
-  const [imoveis, avaliacoes] = await Promise.all([listPropertiesDoProprietario(id), getAvaliacoesRecebidas(id)]);
+  const perfil = await getPerfilProprietario(id);
+  if (!perfil) notFound();
+  // E427: quem já tem o aceite com este proprietário vê o nome completo (o mesmo da visita e de Mensagens); o resto, o
+  // nome curto de sempre. O título da aba e a descrição (metadados, indexáveis) seguem sempre com o nome curto.
+  const [imoveis, avaliacoes, nomeAceite] = await Promise.all([
+    listPropertiesDoProprietario(id),
+    getAvaliacoesRecebidas(id).catch(() => null),
+    nomeCompletoParaQuemTemAceite(id),
+  ]);
+  const p = { ...perfil, nome: nomeAceite ?? perfil.nome };
   const desde = desdeLabel(p.desde);
 
   const fatos = [
@@ -81,7 +88,7 @@ export default async function ProprietarioPage({ params }: Params) {
           )}
           <div className="min-w-0">
             <p className="text-sm font-medium text-sage">Proprietário</p>
-            <h1 className="font-title text-[28px] font-semibold text-ink">{p.nome}</h1>
+            <h1 className="font-title text-[28px] font-semibold text-ink" data-nome={nomeAceite ? "completo" : "curto"}>{p.nome}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {p.selos.map((s) =>
                 ehSeloLinkedin(s) ? (
@@ -142,7 +149,12 @@ export default async function ProprietarioPage({ params }: Params) {
         <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
           Avaliações recebidas
         </h2>
-        {avaliacoes.length === 0 ? (
+        {/* Achado 59: falhou a leitura → aviso honesto, nunca "Ainda sem avaliações publicadas". */}
+        {avaliacoes === null ? (
+          <p role="alert" className="mt-3 text-muted" data-testid="avaliacoes-falha">
+            Não foi possível carregar as avaliações agora. Recarregue a página para ver.
+          </p>
+        ) : avaliacoes.length === 0 ? (
           <p className="mt-3 text-muted">Ainda sem avaliações publicadas.</p>
         ) : (
           <ul className="mt-4 grid gap-4">

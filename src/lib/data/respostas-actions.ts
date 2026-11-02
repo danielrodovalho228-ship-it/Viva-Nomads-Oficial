@@ -30,6 +30,7 @@ import { contratoDaProgramada, type LinhaProgramada } from "@/lib/respostas/serv
 type Res<T = undefined> = { ok: true; valor: T } | { ok: false; erro: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ROTA = "/dashboard/respostas-rapidas";
+const MSG_PROGRAMADAS_SEM_LEITURA = "Não foi possível ler as mensagens programadas agora. Tente de novo.";
 
 async function sessao() {
   const supabase = await createClient();
@@ -87,9 +88,11 @@ export async function apagarResposta(id: string): Promise<Res> {
 export async function respostasDaConversaDoImovel(propertyId: string): Promise<RespostaRapida[]> {
   const s = await sessao();
   if (!s || !UUID.test(String(propertyId))) return [];
-  const { data: im } = await s.supabase.from("properties").select("owner_id, mensagem_para_pedido").eq("id", propertyId).maybeSingle();
+  // Achado 62: as duas leituras LANÇAM — antes "nenhuma resposta salva", e o dono recriava (duplicava) as que já tem.
+  const { data: im, error } = await s.supabase.from("properties").select("owner_id, mensagem_para_pedido").eq("id", propertyId).maybeSingle();
+  if (error) throw new Error("Não foi possível ler o anúncio agora.");
   if (!im || im.owner_id !== s.userId) return [];
-  return respostasDaConversa(await minhasRespostas(), im.mensagem_para_pedido as string | null);
+  return respostasDaConversa(await minhasRespostas({ exigir: true }), im.mensagem_para_pedido as string | null);
 }
 
 // ── Mensagens programadas ──────────────────────────────────────────────────────────────────────────────────────
@@ -114,11 +117,13 @@ export async function programadasDaEstadia(contratoId: string): Promise<PainelPr
   if (!r) return null;
   const { s, c } = r;
   const datas = datasDaEstadia(c.contrato_blocos ?? []);
-  const { data } = await s.admin
+  const { data, error } = await s.admin
     .from("mensagens_programadas")
     .select("id, contrato_id, owner_id, quando, texto, enviar_em, enviada_em, cancelada_em, motivo_cancelamento")
     .eq("contrato_id", contratoId)
     .order("criado_em", { ascending: false });
+  // Achado 90: a falha não vira "nada programado" (salvar o modelo sobrescreveria o texto do dono). Vai ao error.tsx.
+  if (error) throw new Error("Não foi possível ler as mensagens programadas.");
   const linhas = (data ?? []) as LinhaProgramada[];
   return {
     contratoId,
@@ -136,7 +141,8 @@ export async function programadasDaEstadia(contratoId: string): Promise<PainelPr
 }
 
 export async function programarMensagem(contratoId: string, quando: string, texto: string): Promise<Res> {
-  const r = await contratoDoDono(contratoId);
+  const r = await contratoDoDono(contratoId).catch(() => "falhou" as const);
+  if (r === "falhou") return { ok: false, erro: MSG_PROGRAMADAS_SEM_LEITURA };
   if (!r) return { ok: false, erro: "Estadia não encontrada." };
   const { s, c } = r;
   if (c.status !== "ativo") return { ok: false, erro: "Esta estadia já foi encerrada." };
@@ -148,7 +154,8 @@ export async function programarMensagem(contratoId: string, quando: string, text
   const datas = datasDaEstadia(c.contrato_blocos ?? []);
   if (!datas) return { ok: false, erro: "A estadia ainda não tem datas." };
   const quandoSai = enviarEm(quando, datas);
-  const { data: atual } = await s.admin.from("mensagens_programadas").select("id, enviada_em").eq("contrato_id", contratoId).eq("quando", quando).is("cancelada_em", null).maybeSingle();
+  const { data: atual, error: erroAtual } = await s.admin.from("mensagens_programadas").select("id, enviada_em").eq("contrato_id", contratoId).eq("quando", quando).is("cancelada_em", null).maybeSingle();
+  if (erroAtual) return { ok: false, erro: MSG_PROGRAMADAS_SEM_LEITURA };
   if (atual?.enviada_em) return { ok: false, erro: "Esta mensagem já foi enviada." };
   if (!atual && quandoSai.getTime() < Date.now()) return { ok: false, erro: "A data desta mensagem já passou." };
   const agora = new Date().toISOString();
@@ -161,7 +168,8 @@ export async function programarMensagem(contratoId: string, quando: string, text
 }
 
 export async function cancelarMensagemProgramada(contratoId: string, quando: string): Promise<Res> {
-  const r = await contratoDoDono(contratoId);
+  const r = await contratoDoDono(contratoId).catch(() => "falhou" as const);
+  if (r === "falhou") return { ok: false, erro: MSG_PROGRAMADAS_SEM_LEITURA };
   if (!r || !ehQuando(quando)) return { ok: false, erro: "Mensagem não encontrada." };
   const { data } = await r.s.admin
     .from("mensagens_programadas")

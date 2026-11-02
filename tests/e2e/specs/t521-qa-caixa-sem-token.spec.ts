@@ -11,7 +11,8 @@ import { adm, apagarContas, criarConta, entrar, NO_LABORATORIO, novaSenha, novoS
   1. Conta de teste COM qa_leitor: vê a linha, destinatário mascarado, e nenhum token=/code= no HTML (nem em texto nem
      em href); nenhum <a> no corpo.
   1b. O mesmo para o token_hash= do /auth/confirm (corrigido no #1385, E163; antes passava — run 40204172450).
-  2. Conta de teste SEM a marca: 404 na mesma URL.
+  2. Conta de teste SEM a marca: E354 — não abre o leitor de QA; vai para a caixa DELA em Conta → Ajuda (a caixa da
+     própria conta mostra os e-mails da própria conta; a limpeza do E163 é a do leitor compartilhado).
   A 390 e 1280 px.
 */
 const sufixo = novoSufixo();
@@ -87,12 +88,11 @@ test.describe("T521 — QA-CAIXA-B: corpo sem link com token", () => {
     await p.context().close();
   });
 
-  test("2. conta de teste sem a marca: 404", async ({ browser }) => {
+  test("2. conta de teste sem a marca: E354 — a caixa dela, nunca o leitor de QA", async ({ browser }) => {
     const p = await abrir(browser, semFlag.email, 1280);
-    const r = await p.goto(`/dashboard/qa/emails?evento=${EVENTO}`, { waitUntil: "domcontentloaded" });
-    expect(r?.status()).toBe(404);
+    await p.goto(`/dashboard/qa/emails?evento=${EVENTO}`, { waitUntil: "domcontentloaded" });
+    expect(new URL(p.url()).pathname).toBe("/dashboard/conta/ajuda");
     await expect(p.getByTestId("qa-emails")).toHaveCount(0);
-    expect(await p.content()).not.toContain(SEGREDOS.verify);
     await p.context().close();
   });
 });

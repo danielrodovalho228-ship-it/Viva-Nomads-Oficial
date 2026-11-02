@@ -7,7 +7,7 @@ import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
-import { taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
+import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
 
 /**
@@ -65,13 +65,15 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   ]);
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
   // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel.monthly_price);
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
   // Taxa congelada no aceite; NULL cai para a do plano no aceite (nunca 0).
   // Plano e taxa do aceite pelo servidor (a sessão não lê mais essas colunas — 0177); o dono já foi conferido acima.
-  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string);
+  const taxaLead = await taxaDoLeadDoDono(admin, user.id, lead.id as string).catch(() => "falhou" as const);
+  if (taxaLead === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
   const comissaoRate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   // Cadastro confiável + F32: documento das DUAS partes e documentos do inquilino
   // (B2; null = sem a 0093 → não trava). A MESMA trava vale em registrarContrato.
@@ -99,16 +101,21 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   };
 }
 
+/** Achados 81/82: leitura do fechamento que falha — a rota responde 503, nunca uma resposta enganosa. */
+export const MSG_FECHAMENTO_SEM_LEITURA = "Não foi possível conferir o fechamento agora. Tente de novo em instantes.";
+
 /** Reserva atual da cobrança/contrato desta candidatura (null = nenhuma). */
 export async function lerReservaFechamento(leadId: string, tipo: "comissao" | "contrato"): Promise<ReservaLida | null> {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("cobrancas_fechamento")
     .select("externo_id, criado_em")
     .eq("lead_id", leadId)
     .eq("tipo", tipo)
     .maybeSingle();
+  // Achado 82: falha de leitura não vira "nenhuma reserva" (a tela dizia "em andamento" ou tentava reservar de novo).
+  if (error) throw new Error(MSG_FECHAMENTO_SEM_LEITURA);
   return data ? { externoId: (data.externo_id as string | null) ?? null, criadoEm: String(data.criado_em) } : null;
 }
 
@@ -157,11 +164,13 @@ export interface ComissaoDoContrato {
 export async function comissaoDoContrato(leadId: string): Promise<ComissaoDoContrato | null> {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("contratos")
     .select("aluguel_mensal, prazo_total_dias, comissao_percent")
     .eq("lead_id", leadId)
     .maybeSingle();
+  // Achado 81: falha de leitura não vira "registre o contrato antes" (409) — lança; a rota responde 503.
+  if (error) throw new Error(MSG_FECHAMENTO_SEM_LEITURA);
   if (!data) return null;
   return {
     aluguelMensal: Number(data.aluguel_mensal),

@@ -12,6 +12,8 @@ export const FILTROS_CENTRAL = [
   { chave: "documentos_pendentes", rotulo: "Documentos para conferir", lado: "equipe" },
   // ADMIN-2: os pedidos de revisão de avaliação (a antiga /admin/avaliacoes) viram filtro daqui.
   { chave: "avaliacoes_contestadas", rotulo: "Avaliações contestadas", lado: "equipe" },
+  // E399-C: o link do Airbnb não confere com o imóvel (cidade ou quartos) — o selo fica bloqueado.
+  { chave: "preco_justo_divergencia", rotulo: "Link do Airbnb não confere", lado: "equipe" },
   { chave: "conforto_abertas", rotulo: "\"Não confere\" abertos", lado: "proprietario" },
   { chave: "adequacoes", rotulo: "Adequações vencendo ou vencidas", lado: "proprietario" },
   { chave: "confirmacoes_48h", rotulo: "Confirmações de 48 h do morador", lado: "morador" },

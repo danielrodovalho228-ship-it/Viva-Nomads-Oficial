@@ -89,11 +89,11 @@ test("candidato ANTES do aceite: 'Candidato(a)', sem nome, sem foto; só sinais"
   assert.deepEqual(c.reputacao, { media: 4.8, n: 3 });
 });
 
-test("candidato DEPOIS do aceite: nome curto e foto — nunca o sobrenome completo nem contato", () => {
+test("candidato DEPOIS do aceite: nome completo (E427) e foto — nunca contato", () => {
   const c = cartaoCandidato(base, true);
-  assert.equal(c.titulo, "Iara I.");
+  assert.equal(c.titulo, "Iara Inquilinasobrenome");
   assert.equal(c.fotoUrl, "https://exemplo/foto.webp");
-  assert.doesNotMatch(JSON.stringify(c), /Inquilinasobrenome|@|\d{4,}-\d{4}/);
+  assert.doesNotMatch(JSON.stringify(c), /@|\d{4,}-\d{4}/);
   assert.equal(cartaoCandidato({ ...base, reputacao: { media: 0, n: 0 } }, true).reputacao, null, "sem avaliação, sem nota");
 });
 
@@ -126,12 +126,13 @@ test("barra 'Complete seu perfil': celular é item opcional só quando a verific
   assert.equal(progressoPerfil({ ...vazio, foto: true, bio: "Oi", idiomas: ["Português"], cidade: "X" }, { anuncia: true, telefone: true }).pct, 100);
 });
 
-test("nomeNaConversa: proprietário vê 'Candidato(a)' até o aceite; inquilino vê o nome curto do proprietário", () => {
+test("nomeNaConversa: proprietário vê 'Candidato(a)' até o aceite e o nome completo depois; inquilino vê o nome curto do proprietário até o aceite e o completo depois", () => {
   const nome = "Iara Perfilinq Sobrenomeoculto";
   assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: nome, aceito: false, primeiroNome: "Iara" }), "Candidato(a)");
-  assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: nome, aceito: true }), "Iara S.");
+  assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: nome, aceito: true }), "Iara Perfilinq Sobrenomeoculto");
   assert.equal(nomeNaConversa({ papel: "proprietario", nomeCompleto: null, aceito: true }), "Candidato(a)");
   assert.equal(nomeNaConversa({ papel: "inquilino", nomeCompleto: "Túlio Perfildono Sobrenomedono", aceito: false }), "Túlio S.");
+  assert.equal(nomeNaConversa({ papel: "inquilino", nomeCompleto: "Túlio Perfildono Sobrenomedono", aceito: true }), "Túlio Perfildono Sobrenomedono");
   assert.equal(nomeNaConversa({ papel: "inquilino", nomeCompleto: null, aceito: false, primeiroNome: "Túlio" }), "Túlio");
   assert.equal(nomeNaConversa({ papel: "suporte", nomeCompleto: nome, aceito: false, primeiroNome: "Iara" }), "Iara");
   assert.equal(nomeNaConversa({ papel: "suporte", nomeCompleto: null, aceito: false }), "Conversa");

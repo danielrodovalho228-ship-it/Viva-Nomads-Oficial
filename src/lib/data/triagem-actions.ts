@@ -56,10 +56,12 @@ export async function meuVinculo(): Promise<MeuVinculo | null> {
   if (!(await triagemVinculoAtiva())) return null;
   const s = await sessao();
   if (!s) return null;
-  const [{ data }, { data: aceitas }] = await Promise.all([
+  const [{ data, error: e1 }, { data: aceitas, error: e2 }] = await Promise.all([
     s.admin.from("triagem_vinculos").select(COLUNAS).eq("user_id", s.userId).order("enviado_em", { ascending: false }).limit(1).maybeSingle(),
     s.admin.from("leads").select("id").eq("tenant_id", s.userId).eq("status", "accepted").limit(1),
   ]);
+  // Achado 88: falha de leitura não vira "comprovante não enviado" (pedindo o envio de novo): lança; a tela esconde o bloco.
+  if (e1 || e2) throw new Error("Não foi possível ler o comprovante agora.");
   const l = (data as Linha | null) ?? null;
   return {
     estado: estadoVinculo(l, new Date()),

@@ -97,7 +97,8 @@ test("onde aparece: cartão do interessado, conversa, proposta (dono) e fechamen
   assert.match(c, /fichaPetsDaCandidatura\(leadId!\)/);
   // o cartão do interessado: "Com 1 pet · Totó (cão, porte médio)" no lugar do "Com 1 pet"
   const l = ler("../data/leads.ts");
-  assert.match(l, /pets: fichaPet \? 0 : \(pets\.get\(r\.tenant_id\) \?\? 0\)/);
+  // E397: e em imóvel que não aceita animais, nenhum pet ("!comPets" zera a contagem).
+  assert.match(l, /pets: fichaPet \|\| !comPets \? 0 : \(pets\.get\(r\.tenant_id\) \?\? 0\)/);
 });
 
 test("retoques do inquilino: 3 de 3 fotos, pet novo na hora, raça e observações com 'ver mais'", () => {

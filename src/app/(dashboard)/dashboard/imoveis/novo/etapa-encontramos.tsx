@@ -2,7 +2,7 @@
 
 import { PetsRegrasCampos, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
-import { Sparkles } from "lucide-react";
+import { Baby, Cigarette, PawPrint, Sofa, Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
 import { comodidadeValeParaTipo, comodidadesDoTipo, type GrupoDoTipo } from "@/lib/amenities";
@@ -16,6 +16,10 @@ import { cn } from "@/lib/utils";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
+
+/** Conformidade do cadastro (mockup cadastro-imovel-04, 01/11): título do cartão dos números e o lembrete do mockup. */
+export const TITULO_CARACTERISTICAS = "Características do imóvel";
+export const ESPACO_EDITAR_DEPOIS = "Você pode revisar e editar depois, a qualquer momento.";
 
 const CHAVES_BLOCO_TRABALHO = new Set<string>([...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO].map((i) => i.chave));
 
@@ -130,12 +134,13 @@ export function EtapaEncontramos(p: {
             p.tirarSugestao("mobiliado");
           }}
           label="Mobiliado e equipado"
+          icone={Sofa}
           hint="Pré-requisito das estadias de 30 a 180 dias da Viva Nomads."
           sugerido={p.sugerido("mobiliado")}
         />
-        <Toggle checked={p.petsOk} onChange={() => p.setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." />
-        <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." />
-        <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." />
+        <Toggle checked={p.petsOk} onChange={() => p.setPetsOk((v) => !v)} label="Aceita pets" hint="Amplia o público interessado." icone={PawPrint} />
+        <Toggle checked={p.childrenAllowed} onChange={() => p.setChildrenAllowed((v) => !v)} label="Aceita crianças" hint="Famílias com filhos podem pedir." icone={Baby} />
+        <Toggle checked={p.smokingAllowed} onChange={() => p.setSmokingAllowed((v) => !v)} label="Permite fumar" hint="Aparece nas regras da estadia, no anúncio." icone={Cigarette} />
       </div>
       {/* E263-A: ligado, "Aceita pets" abre as condições do dono — tudo opcional; desligado, nenhuma condição vai junto. */}
       {p.petsOk && <PetsRegrasCampos value={p.petsRegras} onChange={p.setPetsRegras} />}
@@ -211,13 +216,21 @@ export function EtapaEncontramos(p: {
       <div className="space-y-4" data-testid="etapa-espaco">
         {/* E134: cartão de linhas iguais (mockup cadastro-imovel-04) — rótulo e dica à esquerda, contador à direita;
             nenhuma dica desloca a caixa e não sobra buraco de grade ímpar. */}
-        <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros">
+        {/* Conformidade do cadastro (mockup 04, 01/11): o cartão dos números tem o título do mockup. */}
+        <h2 className="text-base font-semibold text-ink" id="caracteristicas-titulo">
+          {TITULO_CARACTERISTICAS}
+        </h2>
+        <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros" aria-labelledby="caracteristicas-titulo">
           <LinhaNumero label="Quartos" dica="Número de quartos" valor={p.bedrooms} onChange={(v) => { p.setBedrooms(v); p.tirarSugestao("quartos"); }} sugerido={p.sugerido("quartos")} testid="cadastro-quartos" />
           <LinhaNumero label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
           <LinhaNumero label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
           <LinhaNumero label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
           <LinhaNumero label="Vagas" dica="Vagas de garagem" valor={p.parkingSpots} onChange={p.setParkingSpots} daMatricula={p.daMatricula?.has("vagas")} testid="cadastro-vagas" />
         </div>
+        {/* Mockup 04: o lembrete de que nada é definitivo (o mesmo papel do "reorganizar depois" do Passo 2). */}
+        <p className="text-sm text-muted" data-testid="espaco-editar-depois">
+          {ESPACO_EDITAR_DEPOIS}
+        </p>
       </div>
     );
   }

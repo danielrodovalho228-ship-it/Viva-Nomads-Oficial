@@ -10,10 +10,15 @@ import { RespostaConvite } from "./resposta-convite";
  * vínculos ativos. Só bairro e cidade: o endereço aparece no pedido, depois do aceite, como no 31b.
  */
 export async function ImoveisFixos() {
-  const lista = await meusImoveisFixos();
+  // Achado 100: a falha avisa no bloco (o resto do painel do parceiro segue), nunca "Nenhum imóvel fixo".
+  const lista = await meusImoveisFixos().catch(() => null);
   return (
     <Panel id="imoveis-fixos" title="Imóveis fixos" className="mb-6 scroll-mt-24" data-testid="imoveis-fixos">
-      {lista.length === 0 ? (
+      {lista === null ? (
+        <p className="text-sm text-ink" role="status" data-testid="imoveis-fixos-falhou">
+          Não foi possível carregar os seus imóveis fixos agora. Atualize a página em instantes.
+        </p>
+      ) : lista.length === 0 ? (
         <EmptyState icon={Building2} title="Nenhum imóvel fixo" text="Quando um proprietário convidar você como parceiro fixo de um imóvel, o convite aparece aqui." action={<ButtonLink href="/dashboard/parceiro" variant="secondary" size="sm">Abrir minha página</ButtonLink>} />
       ) : (
         <ul className="divide-y divide-line">
