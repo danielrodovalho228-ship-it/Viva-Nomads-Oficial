@@ -154,8 +154,9 @@ export async function postarRetornosDoMoacir(): Promise<number> {
   let n = 0;
   for (const o of ordens ?? []) {
     const marca = `(ordem ${o.id})`;
-    const { count } = await supabase.from("agentes_conversas").select("id", { count: "exact", head: true }).eq("agente_slug", "moacir").like("texto", `%${marca}%`);
-    if ((count ?? 0) > 0) continue;
+    // Achado 128: sem saber se o retorno já foi postado, não posta (antes a falha repetia o retorno a cada abertura).
+    const { count, error: erroJa } = await supabase.from("agentes_conversas").select("id", { count: "exact", head: true }).eq("agente_slug", "moacir").like("texto", `%${marca}%`);
+    if (erroJa || (count ?? 0) > 0) continue;
     const { data: r } = await supabase.from("agentes_rondas").select("resumo, link_sessao, status").contains("ordens_atendidas", [o.id]).order("iniciada_em", { ascending: false }).limit(1).maybeSingle();
     const { data: ag } = await supabase.from("agentes").select("nome").eq("slug", o.agente_slug).maybeSingle();
     const nome = (ag?.nome as string) ?? o.agente_slug;
