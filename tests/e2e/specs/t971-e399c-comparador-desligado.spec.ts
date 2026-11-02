@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /**
@@ -11,7 +11,10 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
  *      nem de chamada ao Airbnb;
  *   2. Admin › Sistema lista a chave PRECO_JUSTO_COMPARADOR (NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR) como "Desligada";
  *   3. (pacote 3, #2132) a ficha pública do anúncio NÃO mostra a comparação com 30 noites no Airbnb
- *      (ficha-comparacao-airbnb) — nem num anúncio ativo do laboratório.
+ *      (ficha-comparacao-airbnb) — nem num anúncio ativo do laboratório;
+ *   4. (pacote 5, #2140 → main por #2149) "Meus imóveis" do dono: o cartão do anúncio publicado aparece SEM o aviso
+ *      "Sem o selo 'Preço justo'" (anuncio-preco-justo-aviso). O pacote 4 (ranking pelo selo do motor) é só servidor:
+ *      com a chave desligada a ordem não muda, e fica com o pacote4.test.ts.
  * A comparação com a chave ligada (cotação simulada, link inválido) fica com os testes de unidade do #2105; quando a
  * chave ligar, esta spec muda junto (o caso 1 passa a conferir o campo).
  */
@@ -55,6 +58,18 @@ test.describe("T971 — E399-C: o comparador do Preço justo fica desligado atr�
       await expect(page.getByTestId("ficha-comparacao-airbnb")).toHaveCount(0);
       await expect(page.getByTestId("ficha-comparacao-simulada")).toHaveCount(0);
       await ctx.close();
+    });
+
+    test(`Meus imóveis sem o aviso do Preço justo (${w})`, async ({ browser }) => {
+      const page = await entrar(browser, dono.email, senha);
+      await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+      const cartao = page.getByTestId("meu-anuncio").filter({ hasText: `Studio Preço Justo publicado ${sufixo}` });
+      await expect(cartao).toBeVisible({ timeout: 30_000 });
+      await expect(cartao.getByTestId("anuncio-rodape")).toBeVisible();
+      await expect(page.getByTestId("anuncio-preco-justo-aviso")).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      await page.context().close();
     });
 
     test(`Admin › Sistema: PRECO_JUSTO_COMPARADOR "Desligada" (${w})`, async ({ browser }) => {
