@@ -8,7 +8,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   T1061 — VARREDURA DA PÁGINA INTEIRA, BLOCO 266 (Pista C, 02/11), 12ª volta do ciclo (repete o grupo do bloco 249, t1035). O protocolo do bloco 21 (t385):
   seis classes (imagem pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
-  régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 248 (registro de cobertura: última
+  régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 265 (registro de cobertura: última
   varredura no bloco 232, t1017): as COMPARTILHADAS sem id, pelas contas da massa da varredura — como proprietário
   (DONO17): pedidos da cidade, nova solicitação de orçamento, painel de parceiro, qualificar com o imóvel da massa, conta
   (perfil, papéis, meus dados) e o aviso da prova pelo celular; como parceiro (PARCEIRO): o painel de parceiro e a
