@@ -114,7 +114,9 @@ export async function salvarItemNivel(propertyId: string, chave: string, declara
   const c = await donoDoImovel(propertyId);
   if (!c) return { ok: false, erro: "Sem permissão." };
   if (!ehChaveNivel(chave) || itemNivel(chave).prova !== "foto") return { ok: false, erro: "Item inválido." };
-  const { data: atual } = await c.admin.from("nivel_itens").select("foto_path").eq("property_id", propertyId).eq("chave", chave).maybeSingle();
+  const { data: atual, error: erroAtual } = await c.admin.from("nivel_itens").select("foto_path").eq("property_id", propertyId).eq("chave", chave).maybeSingle();
+  // Leitura falha não vira "sem foto gravada": o upsert apagaria a foto da câmera já guardada do item.
+  if (erroAtual) return { ok: false, erro: "Não foi possível salvar o item agora. Tente de novo." };
   const novaFoto = typeof fotoPath === "string" && fotoPath ? fotoPath : null;
   if (novaFoto && (!FOTO_PATH.test(novaFoto) || !novaFoto.startsWith(`${c.uid}/`))) return { ok: false, erro: "Foto inválida." };
   let captura: { capturada_em: string | null; foto_hash: string | null } | null = null;
