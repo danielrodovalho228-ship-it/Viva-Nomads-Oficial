@@ -58,6 +58,9 @@ export function lembreteDeChegadaPermitido(c: { assinadoPelasDuas: boolean; prim
   return c.assinadoPelasDuas && c.primeiroPagamento;
 }
 
+/** Varredura ampliada: instruções que não foram lidas (falha) — nunca "não preencheu"; o botão leva à página. */
+export const INSTRUCOES_NA_PAGINA = "As instruções de chegada estão na página da estadia (botão abaixo).";
+
 export const SEM_INSTRUCOES = "O proprietário ainda não preencheu as instruções de chegada. Assim que preencher, elas aparecem na página da estadia.";
 
 /**
@@ -65,7 +68,7 @@ export const SEM_INSTRUCOES = "O proprietário ainda não preencheu as instruç�
  * DD/MM/AAAA."), o quadro da estadia e, para o morador, as instruções. Tudo escapado; quebras de linha das
  * instruções viram <br>.
  */
-export function corpoDaChegada(e: EstadiaParaEmail, instrucoes: Instrucoes | null | undefined, paraMorador: boolean, frase?: string): { html: string; texto: string } {
+export function corpoDaChegada(e: EstadiaParaEmail, instrucoes: Instrucoes | null | undefined | "sem_leitura", paraMorador: boolean, frase?: string): { html: string; texto: string } {
   const linhas = linhasDaEstadia(e);
   const html: string[] = [];
   const texto: string[] = [];
@@ -75,8 +78,11 @@ export function corpoDaChegada(e: EstadiaParaEmail, instrucoes: Instrucoes | nul
   }
   html.push(blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))));
   texto.push(...linhas.map((l) => `${l.rotulo}: ${l.valor}`));
-  if (paraMorador) {
-    const itens = instrucoesNoEmail(instrucoes);
+  if (paraMorador && instrucoes === "sem_leitura") {
+    html.push(`<p style="margin:0 0 8px;font-weight:700;">Instruções de chegada</p>`, `<p style="margin:0 0 10px;">${escaparHtml(INSTRUCOES_NA_PAGINA)}</p>`);
+    texto.push("", "Instruções de chegada", INSTRUCOES_NA_PAGINA);
+  } else if (paraMorador) {
+    const itens = instrucoesNoEmail(instrucoes === "sem_leitura" ? null : instrucoes);
     html.push(`<p style="margin:0 0 8px;font-weight:700;">Instruções de chegada</p>`);
     texto.push("", "Instruções de chegada");
     if (itens.length) {

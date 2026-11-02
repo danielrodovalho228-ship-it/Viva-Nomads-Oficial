@@ -299,12 +299,13 @@ export async function GET(request: Request) {
     };
     if (liberaHoje(condicao, agora)) {
       // E209: o e-mail leva o imóvel, as datas da estadia e as instruções de chegada no corpo (não só atrás do link).
-      const [{ data: im }, { data: ck }] = await Promise.all([
+      // Varredura ampliada: instruções não lidas → o e-mail aponta a página (nunca "o proprietário não preencheu").
+      const [{ data: im, error: erroIm }, { data: ck, error: erroCk }] = await Promise.all([
         admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle(),
         admin.from("contratos_checkin").select("instrucoes, horario").eq("contrato_id", c.id as string).maybeSingle(),
       ]);
       const ckl = ck as { instrucoes?: string | null; horario?: string | null } | null;
-      const instrucoes = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, ckl?.instrucoes);
+      const instrucoes = erroIm || erroCk ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, ckl?.instrucoes);
       const estadia = {
         imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
@@ -324,12 +325,13 @@ export async function GET(request: Request) {
       });
     }
     if (prop?.owner_id && diasEntre(hoje, inicio) === LEMBRETE_DONO_DIAS) {
-      const [{ data: im }, { data: ck }] = await Promise.all([
+      // Varredura ampliada: sem ler as instruções, o lembrete não sai (nunca cobrar o que já foi preenchido).
+      const [{ data: im, error: erroIm }, { data: ck, error: erroCk }] = await Promise.all([
         admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle(),
         admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id as string).maybeSingle(),
       ]);
       const efetivas = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, (ck as { instrucoes?: string } | null)?.instrucoes);
-      if (lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
+      if (!erroIm && !erroCk && lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
         alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
       }
     }
