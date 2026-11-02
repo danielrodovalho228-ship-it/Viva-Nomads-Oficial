@@ -3125,7 +3125,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t1047-e441-avatar-email"
+      ]
     },
     "/api/cartoes/visita": {
       "personas": [
