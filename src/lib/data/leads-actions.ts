@@ -22,7 +22,7 @@ import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
 import { propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
-import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
+import { conflitoNoImovel, MSG_DATAS_SEM_CONFERIR } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
@@ -72,7 +72,9 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (!(await temDocumento(admin, user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
   // Disponibilidade por datas (0176): a entrada desejada (estadia mínima de 1 mês) não pode cair em outro contrato ativo.
   // (O dono não lê inicio_desejado pelo RLS/grant de colunas: a leitura é do servidor, depois de provar que ele é o dono.)
-  const { data: datas } = await admin.from("leads").select("property_id, inicio_desejado").eq("id", leadId).maybeSingle();
+  const { data: datas, error: erroDatas } = await admin.from("leads").select("property_id, inicio_desejado").eq("id", leadId).maybeSingle();
+  // Achado 46: sem conseguir ler a entrada desejada, a checagem de datas não roda — não aceita em data talvez ocupada.
+  if (erroDatas) return { ok: false, error: MSG_DATAS_SEM_CONFERIR };
   if (datas?.inicio_desejado) {
     const conflito = await conflitoNoImovel(admin, datas.property_id as string, periodoDaEstadia(String(datas.inicio_desejado).slice(0, 10), 1));
     if (conflito) return { ok: false, error: conflito };
@@ -89,7 +91,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   if (!t) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const comissao = t.taxa;
 
-  const { error: uErr } = await admin
+  const { data: aceitou, error: uErr } = await admin
     .from("leads")
     .update({
       status: "accepted",
@@ -102,8 +104,11 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
     })
     .eq("id", leadId)
     .eq("owner_id", user.id)
-    .eq("status", "new");
+    .eq("status", "new")
+    .select("id");
   if (uErr) return { ok: false, error: erroBancoPT(uErr) };
+  // Dois cliques (ou a proposta aceita ao mesmo tempo): só quem mudou o status avisa o morador — nunca dois e-mails.
+  if (!aceitou?.length) return { ok: false, error: "Esta candidatura já foi decidida." };
 
   // E-mail ao inquilino (só para notificação; contato do inquilino é lido via
   // service role, nunca devolvido ao cliente). Best-effort — nunca quebra.
