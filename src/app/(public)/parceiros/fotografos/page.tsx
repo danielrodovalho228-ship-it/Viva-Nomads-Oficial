@@ -105,7 +105,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
         <RegrasParceiros pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </section>
       <div className="mt-4"><ButtonLink href="/parceiros?categoria=fotografia#quero-ser-parceiro" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
-      <p className="mt-4 text-xs text-ink/60" data-testid="fotografos-contato-aceite">{CONTATO_APOS_ACEITE}</p>
+      <p className="mt-4 text-xs text-muted" data-testid="fotografos-contato-aceite">{CONTATO_APOS_ACEITE}</p>
     </div>
   );
 }
