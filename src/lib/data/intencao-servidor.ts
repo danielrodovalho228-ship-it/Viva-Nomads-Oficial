@@ -50,7 +50,9 @@ export async function gravarIntencao(
  */
 export async function registrarIntencaoDeAnunciar(supabase: SupabaseClient, userId: string): Promise<void> {
   try {
-    const { data } = await supabase.from("profiles").select("intencao").eq("id", userId).maybeSingle();
+    const { data, error } = await supabase.from("profiles").select("intencao").eq("id", userId).maybeSingle();
+    // Leitura falha não vira "intenção vazia": ["anunciar"] substituiria a intenção inteira (perderia "morar").
+    if (error) return;
     const bruto = (data as { intencao?: unknown } | null)?.intencao;
     const nova = intencaoAoAnunciar(bruto == null ? null : normalizarIntencoes(bruto));
     if (nova) await gravarIntencao(supabase, userId, nova, "owner");
