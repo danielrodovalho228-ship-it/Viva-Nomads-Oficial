@@ -1,7 +1,7 @@
 "use server";
 
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
-import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
+import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
@@ -84,7 +84,9 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   const plano = await planoDoProprietario(admin, user.id);
   // R6 (especificação da taxa, 19/10): contrato sem proposta congela a taxa da regra única de regra.ts no aceite —
   // faixa pelos imóveis ativos, queda de 30 dias e fixação do admin. Antes saía do plano (COMISSAO_POR_PLANO).
-  const t = await taxaDoDonoAgora(admin, user.id);
+  // Achado 83: sem a taxa lida, o aceite não congela um valor de outra fonte.
+  const t = await taxaDoDonoAgora(admin, user.id).catch(() => null);
+  if (!t) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const comissao = t.taxa;
 
   const { error: uErr } = await admin

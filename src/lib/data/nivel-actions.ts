@@ -16,7 +16,7 @@ import { classeRuido, medidaPorPonto, nivelDoImovel, validarExtras, validarRespo
 import { entradaDoNivel, recalcularNivel } from "@/lib/niveis/servidor";
 import { avisarFotoRecusada } from "@/lib/niveis/avisos";
 import { ERRO_SEM_TOKEN, conferirCaptura, textoFotoRecebida, type OrigemFoto } from "@/lib/niveis/prova-camera";
-import { capturaPeloToken } from "@/lib/niveis/prova-servidor";
+import { capturaPeloToken, MSG_PROVA_SEM_LEITURA } from "@/lib/niveis/prova-servidor";
 
 export type ResultadoNivelAcao = { ok: true; mensagem?: string } | { ok: false; erro: string };
 
@@ -119,7 +119,8 @@ export async function salvarItemNivel(propertyId: string, chave: string, declara
   if (novaFoto && (!FOTO_PATH.test(novaFoto) || !novaFoto.startsWith(`${c.uid}/`))) return { ok: false, erro: "Foto inválida." };
   let captura: { capturada_em: string | null; foto_hash: string | null } | null = null;
   if (novaFoto) {
-    const lida = await capturaPeloToken(c.admin, tokenCaptura);
+    const lida = await capturaPeloToken(c.admin, tokenCaptura).catch(() => "falhou" as const);
+    if (lida === "falhou") return { ok: false, erro: MSG_PROVA_SEM_LEITURA };
     const v = conferirCaptura(lida, { ownerId: c.uid, propertyId, chave }, new Date(), novaFoto);
     if (!lida || !v.ok) return { ok: false, erro: ERRO_SEM_TOKEN };
     // Uso único, atômico: só um salvar consome o token.
