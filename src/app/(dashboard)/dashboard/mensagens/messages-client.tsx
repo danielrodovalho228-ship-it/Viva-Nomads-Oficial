@@ -4,7 +4,7 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
-import { guardContactInfo, GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
+import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
+import { avisoAntesDeEnviar } from "@/lib/messages/aviso-envio";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
@@ -93,6 +94,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [guardNotice, setGuardNotice] = useState(false);
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
+  // E445 item 2: com contato/link no texto, o aviso e a prévia mascarada aparecem ANTES do envio (Editar / Enviar mesmo
+  // assim). Guarda a prévia do rascunho atual; mexer no campo fecha o aviso.
+  const [confirmarEnvio, setConfirmarEnvio] = useState<string | null>(null);
+  const campoRef = useRef<HTMLInputElement>(null);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">(existe ? "chat" : "list");
 
@@ -121,6 +126,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
 
   function openConversation(id: string) {
     setNaoEncontrada(false);
+    setConfirmarEnvio(null);
     setActiveId(id);
     setMobileView("chat");
     if (!demo) {
@@ -137,9 +143,17 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     if (deRapida && temContato(draft)) return setRapidaBloqueada(true);
     // Mesma máscara do servidor: o eco otimista mostra exatamente o que será
     // gravado (telefones/e-mails sempre protegidos — a conversa fica na plataforma).
-    const { text, masked, documento } = guardContactInfo(draft);
-    setDocBloqueado(documento);
-    if (documento) return;
+    const aviso = avisoAntesDeEnviar(draft);
+    setDocBloqueado(aviso.tipo === "documento");
+    if (aviso.tipo === "documento") return;
+    // E445 item 2: primeiro o aviso com a prévia; só o botão "Enviar mesmo assim" envia (Enter de novo não confirma).
+    if (aviso.tipo === "confirmar") return setConfirmarEnvio(aviso.previa);
+    await enviar(aviso.texto, false);
+  }
+
+  async function enviar(text: string, masked: boolean) {
+    if (!active) return;
+    setConfirmarEnvio(null);
     setGuardNotice(masked);
     setDraft("");
     const usouRapida = deRapida;
@@ -463,11 +477,41 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               }}
             />
           )}
+          {confirmarEnvio !== null && (
+            <div role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" data-testid="aviso-antes-de-enviar">
+              <p>{GUARD_NOTICE}</p>
+              <p className="mt-2 font-semibold">Vai assim:</p>
+              <p className="mt-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-ink [overflow-wrap:anywhere]" data-testid="aviso-previa">
+                {confirmarEnvio}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmarEnvio(null);
+                    campoRef.current?.focus();
+                  }}
+                  className="min-h-11 rounded-full border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-forest"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void enviar(confirmarEnvio, true)}
+                  className="min-h-11 rounded-full border border-forest bg-white px-4 text-sm font-semibold text-forest hover:bg-sage-100"
+                >
+                  Enviar mesmo assim
+                </button>
+              </div>
+            </div>
+          )}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             <input
               value={draft}
+              ref={campoRef}
               onChange={(e) => {
                 setDraft(e.target.value);
+                setConfirmarEnvio(null);
                 if (!e.target.value) setDeRapida(false);
               }}
               data-testid="mensagem-campo"

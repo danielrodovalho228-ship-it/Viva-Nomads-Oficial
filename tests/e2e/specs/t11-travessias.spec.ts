@@ -252,6 +252,9 @@ test.describe("T-TRAV-F — Chat mascara telefone, e-mail e @rede social @critic
     const texto = "liga (34) 99999-0001, e-mail joao@teste.com ou me segue @joao.nomad";
     await campo.fill(texto);
     await page.getByRole("button", { name: /^Enviar$/i }).click();
+    // E445 item 2: primeiro o aviso com a prévia mascarada; o envio só sai no "Enviar mesmo assim".
+    await expect(page.getByTestId("aviso-previa")).toContainText(MASK);
+    await page.getByRole("button", { name: "Enviar mesmo assim" }).click();
 
     // O eco otimista já deve vir mascarado (mesma função do servidor).
     await expect(page.getByText(MASK).last()).toBeVisible({ timeout: 10_000 });
