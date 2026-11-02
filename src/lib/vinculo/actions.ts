@@ -62,11 +62,13 @@ export async function confirmarVinculo(codigoBruto: string): Promise<Res<{ domin
   const s = await sessao();
   const admin = createAdminClient();
   if (!s || !admin) return { ok: false, error: "Entre na sua conta para continuar." };
-  const { data: p } = await admin
+  // Resíduo da varredura: a falha da leitura não vira "Peça um código" (pedir outro troca o código que a pessoa tem).
+  const { data: p, error: erroLeitura } = await admin
     .from("vinculo_profissional")
     .select("dominio, codigo_hash, expira_em, tentativas")
     .eq("user_id", s.user.id)
     .maybeSingle();
+  if (erroLeitura) return { ok: false, error: ERRO_GERAL };
   if (!p) return { ok: false, error: "Peça um código primeiro." };
   const tentativas = Number(p.tentativas);
   const r = conferirCodigo(s.user.id, typeof codigoBruto === "string" ? codigoBruto.slice(0, 16) : "", {
