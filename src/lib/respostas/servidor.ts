@@ -51,14 +51,22 @@ export async function reagendarProgramadas(admin: Admin, contratoId: string): Pr
     const c = await contratoDaProgramada(admin, contratoId);
     const datas = c ? datasDaEstadia(c.contrato_blocos ?? []) : null;
     if (!datas) return 0;
-    const { data } = await admin.from("mensagens_programadas").select(COLUNAS).eq("contrato_id", contratoId).is("enviada_em", null).is("cancelada_em", null);
+    const { data, error } = await admin.from("mensagens_programadas").select(COLUNAS).eq("contrato_id", contratoId).is("enviada_em", null).is("cancelada_em", null);
+    // Leitura falha não vira "nada a reagendar": o aditivo é evento único e as mensagens sairiam nas datas antigas.
+    if (error) throw new Error(`mensagens programadas não lidas (${error.message})`);
     const mudar = reagendar((data ?? []) as LinhaProgramada[], datas);
     for (const u of mudar) {
       await admin.from("mensagens_programadas").update({ enviar_em: u.enviar_em, atualizado_em: new Date().toISOString() }).eq("id", u.id).is("enviada_em", null);
     }
     return mudar.length;
   } catch (e) {
-    console.error("[programadas] reagendar:", e instanceof Error ? e.message : e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[programadas] reagendar:", msg);
+    // Evento único (aditivo assinado): sem nova tentativa automática, a equipe confere as mensagens à mão.
+    await admin
+      .from("avisos_daniel")
+      .insert({ assunto: "Mensagens programadas não reagendadas", corpo: `Contrato ${contratoId}: ${msg}. As mensagens que ainda não saíram podem estar nas datas antigas.`, prioridade: "P2" })
+      .then(undefined, () => {});
     return 0;
   }
 }
