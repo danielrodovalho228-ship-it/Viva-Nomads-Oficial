@@ -45,13 +45,16 @@ export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?
   // ── A. Padrão mínimo ─────────────────────────────────────────────────────────────────────────────────────────────
   let qAdq = admin.from("conforto_adequacao").select("property_id, prazo_ate, lembretes, pausado_em, properties!inner(status)").limit(5000);
   if (soImoveis) qAdq = qAdq.in("property_id", soImoveis);
-  const { data: adq } = await qAdq;
-  const linhas = (adq ?? []) as unknown as { property_id: string; prazo_ate: string; lembretes: number[] | null; pausado_em: string | null; properties: { status: string } }[];
+  const { data: adq, error: erroAdq } = await qAdq;
+  // Achado 123: sem as declarações, todo imóvel parecia incompleto e, com o prazo vencido, SAÍA DA BUSCA (pausado) por
+  // engano. Leitura que falha pula a parte A inteira nesta rodada (a próxima tenta de novo).
+  const linhas = (erroAdq ? [] : (adq ?? [])) as unknown as { property_id: string; prazo_ate: string; lembretes: number[] | null; pausado_em: string | null; properties: { status: string } }[];
   if (linhas.length) {
-    const { data: decl } = await admin.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", linhas.map((l) => l.property_id));
+    const { data: decl, error: erroDecl } = await admin.from("conforto_declaracoes").select("property_id, chave, confirmado, versao_lista").in("property_id", linhas.map((l) => l.property_id));
+    if (erroDecl) console.error("[prazos59] declarações não lidas: parte A pulada nesta rodada");
     const porImovel = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
     for (const d of (decl ?? []) as { property_id: string; chave: string; confirmado: boolean; versao_lista?: number | null }[]) porImovel.set(d.property_id, [...(porImovel.get(d.property_id) ?? []), d]);
-    for (const l of linhas) {
+    for (const l of erroDecl ? [] : linhas) {
       const completo = itensFaltantes(porImovel.get(l.property_id) ?? []).length === 0;
       if (completo) {
         if (l.pausado_em && (await voltarSeCompleto(admin, l.property_id))) r.voltaram++;
@@ -98,11 +101,17 @@ export async function rodarPrazos59(admin: Admin, agora = new Date(), soImoveis?
   const lista = ((ordens ?? []) as { id: string; priority: OrdemSolucao["priority"]; status: string; opened_at: string; provisoria_em: string | null; solucao_marcada_em: string | null; solucao_confirmada_em: string | null; resolved_at: string | null; simulacao: boolean | null }[]).filter((o) => !o.simulacao);
   const abertas = lista.filter((o) => o.status !== "resolvido");
   const enviados = new Map<string, AvisoSolucao[]>();
+  let pularC = false;
   if (abertas.length) {
-    const { data: evs } = await admin.from("service_order_eventos").select("service_order_id, status_para").eq("tipo", "aviso").in("service_order_id", abertas.map((o) => o.id));
+    const { data: evs, error: erroEvs } = await admin.from("service_order_eventos").select("service_order_id, status_para").eq("tipo", "aviso").in("service_order_id", abertas.map((o) => o.id));
+    // Sem saber os avisos já enviados, a parte C não roda nesta rodada (senão reenviaria os mesmos avisos).
+    if (erroEvs) {
+      console.error("[prazos59] avisos de manutenção não lidos: parte C pulada nesta rodada");
+      pularC = true;
+    }
     for (const e of (evs ?? []) as { service_order_id: string; status_para: AvisoSolucao }[]) enviados.set(e.service_order_id, [...(enviados.get(e.service_order_id) ?? []), e.status_para]);
   }
-  for (const o of lista) {
+  for (const o of pularC ? [] : lista) {
     const ordem: OrdemSolucao = { priority: o.priority, openedAt: o.opened_at, provisoriaEm: o.provisoria_em, solucaoMarcadaEm: o.solucao_marcada_em, solucaoConfirmadaEm: o.solucao_confirmada_em, resolvedAt: o.resolved_at, status: o.status };
     if (o.status === "resolvido") {
       if (confirmacaoVencida(ordem, agora)) {
