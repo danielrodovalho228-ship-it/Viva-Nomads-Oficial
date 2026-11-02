@@ -764,7 +764,8 @@
         "t297-varredura-logada-bloco3",
         "t336-varredura-bloco14",
         "t602-e181-familia-contadores",
-        "t607-varredura-bloco51"
+        "t607-varredura-bloco51",
+        "t981-r17-triagem-falha-leitura"
       ]
     },
     "/dashboard/ganhos": {
@@ -6655,7 +6656,8 @@
         "inquilino"
       ],
       "specs": [
-        "t348-triagem-vinculo-52"
+        "t348-triagem-vinculo-52",
+        "t981-r17-triagem-falha-leitura"
       ]
     },
     "src/lib/data/triagem-actions.ts#linkMeuVinculo": {
