@@ -24,11 +24,13 @@ test("agenda, recibos e avaliações lançam na falha do banco quando a tela ped
   assert.match(av, /if \(error && opcoes\.exigir\) throw new Error\(MSG_AVALIACOES_NAO_CARREGARAM\);/);
 });
 
-test("as telas pedem com exigir; home, bloco do celular e exportação não", () => {
+test("as telas pedem com exigir; home e bloco do celular não (a exportação exige desde o E-vazio dos relatórios: falha → 503)", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/agenda/page.tsx"), /await carregarAgendaDoDono\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/recibos/page.tsx"), /await recibosDaPessoa\("dono", \{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/avaliacoes/page.tsx"), /await avaliacoesRecebidas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /await avaliacoesRecebidas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /carregarAgendaDoDono\(\)\.catch\(\(\) => null\)/);
-  for (const f of ["src/components/recibos/blocos-recibos.tsx", "src/app/api/recibos/[relatorio]/route.ts"]) assert.doesNotMatch(ler(f), /exigir: true/, f);
+  assert.doesNotMatch(ler("src/components/recibos/blocos-recibos.tsx"), /exigir: true/);
+  // Exportação (PDF do carnê-leão, informe, reembolso): falha nunca vira relatório com zero — exige e responde 503.
+  assert.match(ler("src/app/api/recibos/[relatorio]/route.ts"), /recibosDaPessoa\(papel, \{ exigir: true \}\)\.catch\(\(\) => "falhou" as const\)/);
 });
