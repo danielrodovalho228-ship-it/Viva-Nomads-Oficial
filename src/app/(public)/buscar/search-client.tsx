@@ -793,7 +793,10 @@ export function SearchClient({
       )}
 
       <div className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
-        <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", comMapa && verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+        {/* Estabilidade (02/11): a coluna do mapa é reservada pelo CSS (lg:), não pelo matchMedia — antes, no 1º desenho
+            comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
+            O componente do mapa continua carregando só no computador (comMapa). */}
+        <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
@@ -955,7 +958,7 @@ export function SearchClient({
           data-testid="busca-mapa"
           className={cn(
             "lg:sticky lg:top-18 lg:-mr-6 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
-            mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : comMapa && verMapa ? "hidden lg:block" : "hidden",
+            mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : verMapa ? "hidden lg:block lg:bg-surface-2" : "hidden",
           )}
         >
           {((comMapa && verMapa) || mapaNoCelular) && (
