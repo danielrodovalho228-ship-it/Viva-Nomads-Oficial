@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -10,7 +11,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *   2. UUID que não existe e id que nem é UUID: a MESMA mensagem (indistinguível do caso 1);
  *   3. a leitura falha (ação do servidor em 500): "Não deu para abrir o rascunho" (data-motivo=indisponivel);
  *   4. o próprio rascunho abre o assistente normalmente (sem o aviso);
- *   5. "Começar um anúncio novo" leva ao assistente sem ?draft= e sem o aviso.
+ *   5. "Começar um anúncio novo" leva ao assistente sem ?draft= e sem o aviso;
+ *   6. (resíduo, #2188) a leitura privada também devolve a linha ao ADMIN (com o draft_data nulo) e a página abria um
+ *      cadastro vazio por cima do anúncio da outra pessoa: agora o admin vê o mesmo "Rascunho não encontrado".
  * L-88 (achado aqui: o aviso não aparecia, página em branco) foi corrigido no #2061 — todos os casos são teste normal.
  */
 const senha = novaSenha();
@@ -121,5 +124,25 @@ test.describe("T943 — E420: rascunho desconhecido ou de outra conta avisa", ()
       await semRolagemLateral(page);
     }
     await page.context().close();
+  });
+
+  test("admin abrindo o rascunho de outra conta: 'Rascunho não encontrado', nunca o cadastro vazio (390 e 1280)", async ({ browser }) => {
+    test.setTimeout(120_000);
+    const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const { data: antes } = await adm().from("properties").select("title, status, draft_data").eq("id", ids.rascunhoOutro!).single();
+    for (const largura of LARGURAS) {
+      await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await page.goto(`/dashboard/imoveis/novo?draft=${ids.rascunhoOutro}`, { waitUntil: "domcontentloaded" });
+      const aviso = page.getByTestId("rascunho-fechado");
+      await expect(aviso, `admin @${largura}`).toBeVisible({ timeout: 30_000 });
+      await expect(aviso).toHaveAttribute("data-motivo", "nao_encontrado");
+      await expect(aviso).toContainText("Rascunho não encontrado");
+      expect(await page.content(), "o título do rascunho do outro não vaza").not.toContain(`Rascunho do Osmar t943 ${sufixo}`);
+      await semRolagemLateral(page);
+    }
+    const { data: depois } = await adm().from("properties").select("title, status, draft_data").eq("id", ids.rascunhoOutro!).single();
+    expect(depois, "o rascunho do outro fica intacto").toEqual(antes);
+    await ctx.close();
   });
 });
