@@ -239,8 +239,13 @@ export async function abrirChamado(
   const contratoCamera = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
   const anuncioPausado = cat.key === "camera" ? await pausarAnuncioPorCamera(c.id, user?.id ?? null, contratoCamera) : false;
   // FOTO-PERFIL-B: denúncia da foto de alguém → a foto atual volta para 'em_revisao', no topo da fila.
-  if (cat.key === "foto_perfil" && contextoTipo === "perfil" && contextoId && (await reabrirFotoPorDenuncia(admin, contextoId).catch(() => false))) {
-    await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "foto_reaberta", para: "em_revisao" });
+  if (cat.key === "foto_perfil" && contextoTipo === "perfil" && contextoId) {
+    const reaberta = await reabrirFotoPorDenuncia(admin, contextoId).catch(() => "falhou" as const);
+    if (reaberta === true) await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "foto_reaberta", para: "em_revisao" });
+    // Resíduo da varredura: a leitura falhou → a foto NÃO voltou para a revisão; a equipe fica sabendo pelo chamado.
+    if (reaberta === "falhou") {
+      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", interno: true, corpo: NOTA_FOTO_NAO_REABERTA });
+    }
   }
 
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
@@ -979,6 +984,8 @@ export async function sugerirResposta(
  * "Resumo e ações" (topo da tela do chamado): devolve o guardado; gera na
  * primeira abertura ou com "Atualizar resumo". Guardado como nota interna.
  */
+const NOTA_FOTO_NAO_REABERTA = "A foto denunciada não voltou sozinha para a revisão (falha ao ler o perfil). Reabra pela fila de fotos de perfil.";
+
 const MSG_RESUMO_SEM_LEITURA = "Não foi possível ler o chamado agora. Tente de novo.";
 
 export async function resumoDoChamado(chamadoId: string, refazer = false): Promise<Res<{ resumo: ResumoChamado }>> {
