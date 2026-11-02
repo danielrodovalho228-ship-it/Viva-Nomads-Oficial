@@ -121,12 +121,12 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
       const topo = page.getByTestId("topo-publico");
       await expect(topo).toBeVisible({ timeout: 30_000 });
       if (largura === 1280) {
-        await expect(topo.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas"]);
+        await expect(topo.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
         await expect(topo.getByTestId("nav-fale-com-a-viva")).toBeVisible();
         await expect(topo.getByTestId("nav-entrar")).toHaveText("Entrar");
       } else {
         await topo.getByTestId("nav-menu").click();
-        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Fale com a Viva", "Entrar"]);
+        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Fale com a Viva", "Entrar"]);
       }
       await page.screenshot({ path: `${SAIDA}/t489-topo-buscar-${largura}.png` });
       await page.goto("/auth", { waitUntil: "domcontentloaded" });
