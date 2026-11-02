@@ -29,3 +29,6 @@ export function validarNascimento(v: string, hoje: Date = new Date()): { ok: tru
   if (ano < 1900 || data.getTime() > Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())) return { ok: false, erro: "Data de nascimento inválida." };
   return { ok: true, iso: `${m[3]}-${m[2]}-${m[1]}` };
 }
+
+/** Estados vazios: a data não carregou. O campo fica travado e salvar os dados não mexe nela. */
+export const AVISO_NASCIMENTO_FALHOU = "Não carregou agora — recarregue a página para alterar";
