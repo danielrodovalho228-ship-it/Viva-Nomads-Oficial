@@ -5,6 +5,10 @@ import Link from "next/link";
 import { PawPrint } from "lucide-react";
 import { meusPets, type PetSalvo } from "@/lib/data/pets-ficha-actions";
 import { linhaCompatibilidadePets, linhaValorPetCandidatura, ROTULO_ESPECIE, type RegrasPets } from "@/lib/anuncio/pets-regras";
+import { petsVaoNaCandidatura } from "@/lib/anuncio/ficha-pet-dono";
+
+/** E397: o aviso ao morador quando o imóvel não aceita animais — os pets da ficha NÃO vão na candidatura. */
+export const AVISO_PETS_NAO_VAO = "Este imóvel não aceita animais. Seus pets não vão na candidatura.";
 
 /**
  * Antes de enviar a candidatura (ordem 022afabb, itens 1 e 4): mostra os pets da ficha que irão junto. E263-A: a
@@ -35,6 +39,16 @@ export function AvisoPetCandidatura({
   }, [exemplo]);
 
   if (pets.length === 0) return null;
+  // E397: imóvel que não aceita animais → nada de "Seus pets vão na candidatura"; diz que não vão.
+  if (!petsVaoNaCandidatura(petsAllowed))
+    return (
+      <div data-testid="pet-candidatura-nao-vai" role="note" className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-3 text-xs text-ink">
+        <p className="flex items-center gap-2 font-semibold">
+          <PawPrint className="h-4 w-4 shrink-0" aria-hidden />
+          {AVISO_PETS_NAO_VAO}
+        </p>
+      </div>
+    );
   const compat = linhaCompatibilidadePets(petsAllowed, regras, pets);
   const valorPet = linhaValorPetCandidatura(petsAllowed, regras, pets.length);
   return (

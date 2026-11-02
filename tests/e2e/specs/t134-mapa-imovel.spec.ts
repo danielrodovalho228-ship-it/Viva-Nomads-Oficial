@@ -12,6 +12,12 @@ for (const largura of [390, 1280]) {
     const mapa = page.getByTestId("mapa-imovel").first();
     await mapa.scrollIntoViewIfNeeded();
     await expect(mapa).toBeVisible();
+    // Varredura 01/11: sem base de mapa (build sem chave) o quadro mostra o aviso do E419 e não há "Ampliar mapa".
+    if ((await mapa.getAttribute("data-mapa-base")) === "sem-chave") {
+      await expect(page.getByTestId("mapa-indisponivel").first()).toBeVisible();
+      await expect(page.getByTestId("ampliar-mapa")).toHaveCount(0);
+      return;
+    }
     // Leaflet montou (não é o placeholder antigo)
     await expect(page.locator(".leaflet-container").first()).toBeVisible();
     // área aproximada desenhada

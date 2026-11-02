@@ -2,10 +2,12 @@
 
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { imovelPublicado } from "@/lib/anuncio/publicados";
-import { idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
+import { gruposRascunhosDuplicados, idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { Plus, Award, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { ROTULO_NIVEL } from "@/config/niveis";
+import { textoNivelCartao } from "@/lib/cartao-sintese";
 import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -17,6 +19,7 @@ import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
 import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
+import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
@@ -38,7 +41,18 @@ const hasPhoto = (s?: string) =>
  * Lista "Meus imóveis". Em modo demonstração (admin) a fonte vira o seed em
  * memória (8 imóveis fictícios); desligado, volta à lista real do servidor.
  */
-export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = {} }: { properties: Property[]; prontidao?: Record<string, Prontidao>; pausas?: Record<string, string | null> }) {
+export function MyPropertiesClient({
+  properties: real,
+  prontidao = {},
+  pausas = {},
+  semTipoEntrada = [],
+}: {
+  properties: Property[];
+  prontidao?: Record<string, Prontidao>;
+  pausas?: Record<string, string | null>;
+  /** E418: anúncios publicados sem o tipo de entrada — o link vai no cartão de cada um (não numa caixa no topo). */
+  semTipoEntrada?: string[];
+}) {
   const { on: demoOn } = useDemoMode();
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
@@ -47,6 +61,14 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
   const properties = (demoOn ? DEMO_PROPERTIES : real).filter((p) => !removidos.has(p.id));
 
   const duplicados = idsRascunhosDuplicados(properties);
+  // E383: de cada grupo de rascunhos repetidos, só o mais recente aparece; as cópias ficam atrás de "ver cópias".
+  const grupos = gruposRascunhosDuplicados(properties);
+  const copiasDe = new Map(grupos.map((g) => [g[0], g.slice(1)] as const));
+  const copias = new Set(grupos.flatMap((g) => g.slice(1)));
+  const [copiasAbertas, setCopiasAbertas] = useState<Set<string>>(new Set());
+  const grupoAberto = (id: string) => grupos.some((g) => g.includes(id) && copiasAbertas.has(g[0]));
+  const semEntrada = new Set(semTipoEntrada);
+  const visiveis = properties.filter((p) => !copias.has(p.id) || grupoAberto(p.id));
 
   async function excluirRascunho(id: string) {
     setErroExcluir(null);
@@ -89,7 +111,7 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
         />
       ) : (
         <div className="grid gap-4">
-          {properties.map((p) => {
+          {visiveis.map((p) => {
             const demoItem = demoOn;
             const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
             const comp = prontidao[p.id];
@@ -97,6 +119,8 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
               <div
                 key={p.id}
                 className="flex flex-col gap-4 rounded-xl border border-sage-200 bg-white p-4 sm:flex-row"
+                data-testid="meu-anuncio"
+                data-imovel={p.id}
               >
                 {hasPhoto(p.photos[0]) ? (
                   <BrandImage
@@ -106,10 +130,8 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                     className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
                   />
                 ) : (
-                  <PhotoPlaceholder
-                    label={p.photos[0]}
-                    className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start"
-                  />
+                  // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
+                  <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
                 )}
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
@@ -131,8 +153,27 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                       )}
                     </span>
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
+                    {/* E416 (retrabalho): o selo de nível do anúncio, com o mesmo texto do cartão da vitrine. */}
+                    {p.nivel && p.nivel !== "em_adequacao" && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-50 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
+                        <Award className="h-3.5 w-3.5" aria-hidden /> {textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado)}
+                      </span>
+                    )}
                     {demoItem && <DemoBadge />}
-                    {duplicados.has(p.id) && (
+                    {/* E383: o mais recente do grupo diz quantas cópias há e abre/fecha as cópias; cada cópia aberta se
+                        marca para o dono decidir excluir. */}
+                    {(copiasDe.get(p.id)?.length ?? 0) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCopiasAbertas((s) => { const n = new Set(s); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n; })}
+                        aria-expanded={copiasAbertas.has(p.id)}
+                        className="inline-flex min-h-8 items-center rounded-full border border-amber-200 bg-white px-3 text-xs font-medium text-amber-800"
+                        data-testid="rascunho-copias"
+                      >
+                        {copiasDe.get(p.id)!.length === 1 ? "1 cópia deste rascunho" : `${copiasDe.get(p.id)!.length} cópias deste rascunho`} · {copiasAbertas.has(p.id) ? "ocultar" : "ver"}
+                      </button>
+                    )}
+                    {copias.has(p.id) && duplicados.has(p.id) && (
                       <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700" data-testid="rascunho-duplicado">
                         Rascunho duplicado — excluir?
                       </span>
@@ -160,6 +201,17 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                       </span>
                     )}
                   </div>
+                  {/* E418: o anúncio publicado sem o tipo de entrada leva o link no próprio cartão (antes: uma caixa de
+                      largura total no topo, com um link por anúncio). */}
+                  {!demoItem && semEntrada.has(p.id) && (
+                    <Link
+                      href={destinoPendencia(p, ETAPA.regras)}
+                      className="mt-2 inline-flex min-h-11 items-center gap-1 self-start text-sm font-medium text-forest underline"
+                      data-testid="card-tipo-entrada"
+                    >
+                      Informar o tipo de entrada
+                    </Link>
+                  )}
                   {/* Prontidão (fonte única: lib/anuncio/prontidao). "Falta" só tem
                       obrigatórios; selo/vídeo aparecem à parte, como melhoria. */}
                   {!demoItem && comp && (() => {
@@ -231,6 +283,13 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                         {ROTULO_TOTAL_MES} · {ROTULO_MENSAL} {formatBRL(precoDoImovel(p).mensal)}
                       </p>
                       <PrecoComContexto rotulo={rotuloDoCartaoDoDono(p)} destaque="lg" />
+                      {/* E399-C pacote 5: só o dono vê — por que o anúncio está sem o selo "Preço justo". */}
+                      {p.avisoPrecoJusto && (
+                        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-ink" data-testid="anuncio-preco-justo-aviso">
+                          Sem o selo &quot;Preço justo&quot;: 30 noites no Airbnb saem por {formatBRL(p.avisoPrecoJusto.valorAirbnb)}. Para ganhar o selo, o
+                          total por mês precisa ficar até {formatBRL(p.avisoPrecoJusto.ate)}.
+                        </p>
+                      )}
                     </div>
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (

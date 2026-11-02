@@ -22,7 +22,7 @@ import { temDocumento } from "@/lib/data/documento-servidor";
 import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
-import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
+import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { comissaoSobreContrato } from "@/lib/cobranca/regra";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
@@ -456,7 +456,9 @@ export interface DadosMontagem {
 export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data: lead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado").eq("id", leadId).maybeSingle();
+  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado").eq("id", leadId).maybeSingle();
+  // Achado 112: a falha LANÇA (error.tsx) — nunca "Escolha um interessado" quando o interessado existe.
+  if (erroLead) throw new Error("Não foi possível ler o interessado.");
   if (!lead || lead.owner_id !== s.user.id || !["new", "accepted"].includes(lead.status as string)) return null;
   const im = await lerImovel(s.admin, lead.property_id as string);
   if (!im) return null;
@@ -534,6 +536,9 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   const erro = validarTermos(termos, limitesDoImovel(im), hojeBR(), pessoas);
   if (erro) return { ok: false, error: erro };
 
+  // Achado 83: a taxa do envio congela o teto desta proposta; sem lê-la, a proposta não sai (antes de numerar: a falha não gasta um ORC).
+  const taxaEnvio = await taxaDoDonoAgora(s.admin, s.user.id).catch(() => null);
+  if (!taxaEnvio) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const { data: numero, error: eNum } = await s.admin.rpc("next_document_number", { p_type: "orcamento", p_year: new Date().getFullYear() });
   if (eNum || typeof numero !== "string") return { ok: false, error: "Não foi possível numerar a proposta. Tente de novo." };
   const validade = Number(e.validadeDias);
@@ -550,7 +555,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
       validade_dias: validade,
       valida_ate: validaAteDe(validade, new Date()),
       // A faixa do dono AGORA: a taxa desta proposta nunca sobe depois do envio (complemento do prompt 27, parte B).
-      taxa_no_envio: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
+      taxa_no_envio: taxaEnvio.taxa,
     })
     .select(COLUNAS_PROPOSTA)
     .single();
@@ -793,9 +798,10 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     // Depois do aceite: a congelada e, se ela ficou abaixo da do envio, "Sua taxa caiu para X%…".
     const tx = await lerTaxaDaProposta(s.admin, p.id);
     const congelada = tx.taxa_congelada != null;
-    const hoje = congelada ? null : (await taxaDoDonoAgora(s.admin, s.user.id)).taxa;
-    const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? (hoje as number));
-    taxa = {
+    // Achado 83: sem ler a taxa de hoje, nada de "Se aceita hoje" (e, sem a do envio, a taxa não aparece).
+    const hoje = congelada ? null : await taxaDoDonoAgora(s.admin, s.user.id).then((t) => t.taxa).catch(() => null);
+    const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
+    if (pct != null) taxa = {
       pct,
       valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
       congelada,
@@ -969,7 +975,9 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   // A menor entre a taxa do envio e a do dono agora (faixa, queda de 30 dias, fixação do admin): nunca sobe depois
   // de enviada (complemento do prompt 27, parte B; especificação da taxa, R5).
   const tx = await lerTaxaDaProposta(admin, p.id);
-  const hoje = await taxaDoDonoAgora(admin, p.owner_id, agora);
+  // Achado 83: o aceite congela a taxa; sem lê-la, não aceita.
+  const hoje = await taxaDoDonoAgora(admin, p.owner_id, agora).catch(() => null);
+  if (!hoje) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const taxa = taxaEfetivaDaProposta(tx.taxa_no_envio, hoje.taxa);
   const origem = origemDaTaxaDaProposta(tx.taxa_no_envio, hoje);
   const { data: lead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();

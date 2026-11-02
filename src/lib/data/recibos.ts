@@ -139,14 +139,18 @@ export interface ServicosDoParceiro {
   servicos: ServicoConcluido[];
 }
 
+const MSG_SERVICOS_SEM_LEITURA = "Não foi possível ler os serviços concluídos agora.";
+
 /** Serviços CONCLUÍDOS do parceiro logado, do mais recente ao mais antigo. Sem parceria → null. */
 export async function servicosConcluidosDoParceiro(): Promise<ServicosDoParceiro | null> {
   const s = await sessao();
   const admin = createAdminClient();
   if (!s || !admin) return null;
-  const { data: parc } = await admin.from("parceiros").select("id, nome_publico").eq("user_id", s.userId).maybeSingle();
+  const { data: parc, error: erroParc } = await admin.from("parceiros").select("id, nome_publico").eq("user_id", s.userId).maybeSingle();
+  // Achado 79: falha de leitura não vira "nenhum serviço" no resumo anual (PDF fiscal) nem "entre como parceiro".
+  if (erroParc) throw new Error(MSG_SERVICOS_SEM_LEITURA);
   if (!parc) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("parceiro_pedidos")
     .select("id, codigo, categoria, cliente_id, status, valor_combinado, valor_taxa, valor_parceiro, concluido_em, documento_parceiro_path")
     .eq("parceiro_id", (parc as { id: string }).id)
@@ -154,6 +158,7 @@ export async function servicosConcluidosDoParceiro(): Promise<ServicosDoParceiro
     .not("concluido_em", "is", null)
     .order("concluido_em", { ascending: false })
     .limit(1000);
+  if (error) throw new Error(MSG_SERVICOS_SEM_LEITURA);
   const rows = (data ?? []) as {
     id: string;
     codigo: string;

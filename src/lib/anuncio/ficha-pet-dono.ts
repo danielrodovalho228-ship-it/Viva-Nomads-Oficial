@@ -46,6 +46,15 @@ export function resumoPetsCandidatura(pets: PetResumo[]): string | null {
  * "Dentro das regras: aceita cão de porte médio" ou "Fora das regras: o anúncio aceita até porte pequeno".
  * A regra é a mesma de compatibilidadePets (pets-regras.ts); a quantidade é conferida em conferenciaQuantidade.
  */
+/**
+ * E397 (grave): a candidatura SÓ leva os pets da ficha do morador quando o anúncio aceita animais. Antes, o pet (ex.:
+ * Totó) ia junto em qualquer candidatura, mesmo em imóvel que não aceita. "Aceita pets" desmarcado ou não informado
+ * (null) = não aceita — a mesma leitura de linhaValorPetCandidatura e linhaCompatibilidadePets (!petsAllowed).
+ */
+export function petsVaoNaCandidatura(petsAllowed: boolean | null | undefined): boolean {
+  return petsAllowed === true;
+}
+
 export function conferenciaPetComRegras(petsAllowed: boolean | null | undefined, regras: RegrasPets | null, pet: PetResumo): { ok: boolean; texto: string } {
   const especie = ROTULO_ESPECIE[pet.especie];
   if (petsAllowed === false) return { ok: false, texto: "Fora das regras: o anúncio não aceita animais" };

@@ -9,6 +9,7 @@ import { PropertyMap } from "@/components/property-map-lazy";
 import { ORDEM_CATEGORIAS_PAGINA, proximidadesDoImovel, proximidadesVisiveis } from "@/lib/anuncio/proximidades";
 import { ServicosPorPerto } from "@/components/property/servicos-por-perto";
 import { TempoAte } from "@/components/property/tempo-ate";
+import { mapaSemBase } from "@/lib/mapa-base";
 import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades-icones";
 
 const PROXIMITY_META: Record<ProximityCategory, { label: string; icon: LucideIcon }> = {
@@ -42,6 +43,7 @@ export function LocationNearby({ property }: { property: Property }) {
   const hasProximities = proximities.length > 0;
   // Mapa em tela cheia (ordem d943f893): mesma área aproximada, maior; Esc ou × fecha.
   const [cheio, setCheio] = useState(false);
+  const semBase = mapaSemBase();
   useEffect(() => {
     if (!cheio) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setCheio(false);
@@ -67,14 +69,17 @@ export function LocationNearby({ property }: { property: Property }) {
           markers={[marker]}
           approximate
         />
-        <button
-          type="button"
-          onClick={() => setCheio(true)}
-          data-testid="ampliar-mapa"
-          className="absolute right-3 top-3 z-[5] inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs font-semibold text-ink hover:bg-white"
-        >
-          <Maximize2 className="h-3.5 w-3.5" /> Ampliar mapa
-        </button>
+        {/* Varredura 01/11: sem base de mapa o aviso do E419 cobre o quadro — "Ampliar mapa" ficava por baixo, sem uso. */}
+        {!semBase && (
+          <button
+            type="button"
+            onClick={() => setCheio(true)}
+            data-testid="ampliar-mapa"
+            className="absolute right-3 top-3 z-[5] inline-flex min-h-11 items-center gap-2 rounded-full bg-white/95 px-4 text-xs font-semibold text-ink hover:bg-white"
+          >
+            <Maximize2 className="h-3.5 w-3.5" /> Ampliar mapa
+          </button>
+        )}
       </div>
       {cheio && (
         <div

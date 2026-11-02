@@ -15,7 +15,7 @@ export default async function PropostaPage({ params }: { params: Promise<{ id: s
   const p = await lerProposta(id);
   if (!p) notFound();
   // Prompt 52 (chave TRIAGEM_VINCULO_ATIVA): só o dono vê o selo do interessado — nunca arquivo nem valores.
-  const selo = p.papel === "owner" && p.leadId ? await seloDoCandidato(p.leadId) : null;
+  const selo = p.papel === "owner" && p.leadId ? await seloDoCandidato(p.leadId).catch(() => null) : null; // selo só positivo: sem leitura, fica de fora
   return (
     <>
       {selo && (

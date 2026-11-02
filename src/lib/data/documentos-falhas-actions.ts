@@ -149,7 +149,8 @@ export async function reenviarEmail(falhaId: string): Promise<Res<{ numero: stri
 export async function emitirPendentes(): Promise<Res<{ emitidos: number; falharam: number }>> {
   const c = await contexto();
   if (!c) return { ok: false, error: "Só admin." };
-  const ids = await pagamentosConfirmadosSemDocumento(c.admin);
+  const ids = await pagamentosConfirmadosSemDocumento(c.admin).catch(() => null);
+  if (!ids) return { ok: false, error: "Não foi possível ler os pagamentos pendentes agora. Tente de novo." };
   let emitidos = 0;
   let falharam = 0;
   for (const id of ids) {

@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, C
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { ehUrlDeImagem } from "@/lib/fotos-anuncio";
 import type { Decisao } from "@/lib/painel/decisoes";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
@@ -26,6 +27,8 @@ export function InicioDono({
   hoje?: CartaoHoje[];
 }) {
   // E218-A: o guia de ativação do dono mora nos "Próximos passos" do bloco principal (um guia só na tela).
+  // E405 (02/11): só URL de imagem vira foto; o "nome" de uma foto de teste cai no espaço desenhado, nunca numa caixa cinza.
+  const foto = bloco.foto && ehUrlDeImagem(bloco.foto) ? bloco.foto : null;
   return (
     <div className="space-y-6" data-testid="inicio-dono">
       <h1 className="sr-only">Início</h1>
@@ -47,13 +50,13 @@ export function InicioDono({
       {hoje.length > 0 && <HojeNoInicio cartoes={hoje} />}
 
       <section className="rounded-lg border border-line bg-white p-4 sm:p-6" data-testid="inicio-dono-principal" data-tipo={bloco.tipo} aria-labelledby="inicio-dono-titulo">
-        <div className={cn("grid gap-6", (bloco.foto || bloco.tipo === "rascunho") && "lg:grid-cols-2 lg:items-center")}>
-          {bloco.foto ? (
+        <div className={cn("grid gap-6", (foto || bloco.tipo === "rascunho") && "lg:grid-cols-2 lg:items-center")}>
+          {foto ? (
             // E308 (devolução 01/11): no "Continue seu anúncio", a FOTO REAL do rascunho (a primeira, por sort_order) em
             // encaixe de capa (object-cover), na moldura 16:10. Nas demais variações, a capa do anúncio inteira (contain).
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={bloco.foto}
+              src={foto}
               alt=""
               className={cn("aspect-[16/10] w-full rounded-lg bg-surface-2", bloco.tipo === "rascunho" ? "object-cover" : "object-contain")}
               data-testid="inicio-dono-foto"

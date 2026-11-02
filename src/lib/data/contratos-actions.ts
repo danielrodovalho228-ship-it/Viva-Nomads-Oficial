@@ -156,11 +156,13 @@ export async function lerEstadoDoContrato(contratoId: string, papel: "inquilino"
   if (!/^[0-9a-f-]{36}$/i.test(String(contratoId))) return null;
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select("id, status, created_at, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(*)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Achado 106: a falha LANÇA (o Fechamento já trata) — nunca "contrato não existe" logo depois de registrá-lo.
+  if (error) throw new Error("Não foi possível ler o estado do contrato.");
   if (!data) return null;
   const e = estadoDaLinha(data as Record<string, unknown>, papel);
   return { id: String(data.id), chave: e.chave, texto: e.selo, assinando: e.etapa === "aguardando_assinatura", criadoEm: String(data.created_at) };
@@ -343,7 +345,14 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
   const contratos = (data ?? []) as unknown as Record<string, unknown>[];
   // A taxa de cada contrato, lida com o cliente de serviço só para imóveis DESTE dono.
   const admin = createAdminClient();
-  const taxas = admin ? await taxaDosContratosDoDono(admin, user.id, contratos.map((c) => String(c.id))) : new Map();
+  // Achado 80: com `exigir` (telas Contratos, Garantias, Carteira), a taxa que não foi lida derruba a tela com o aviso
+  // de "Tentar de novo" — nunca "taxa R$ 0".
+  const taxas = admin
+    ? await taxaDosContratosDoDono(admin, user.id, contratos.map((c) => String(c.id))).catch((e: unknown) => {
+        if (opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM, { cause: e });
+        return new Map<string, { comissaoValor: number; comissaoPercent: number }>();
+      })
+    : new Map();
   // Data do aceite de cada candidatura (o RLS deixa o dono ler as próprias).
   const leadIds = [...new Set(contratos.map((c) => c.lead_id).filter((x): x is string => typeof x === "string"))];
   const { data: leads } = leadIds.length

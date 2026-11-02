@@ -20,6 +20,7 @@ test("E308 — capa pelo draft_data: a 1ª foto do bucket do próprio dono; fora
 test("E308 — o Início usa property_photos e, sem linha ali, o draft_data", () => {
   const p = readFileSync(new URL("../app/(dashboard)/dashboard/page.tsx", import.meta.url), "utf8");
   assert.match(p, /async function capaDoRascunho\(id: string \| null, draftData: unknown\)/);
-  assert.match(p, /if \(daTabela\) return daTabela;[\s\S]{0,160}capaDoDraftData\(draftData, user\.id\)/);
+  // E308 (causa raiz): a 1ª foto da tabela cujo arquivo existe; senão, o draft_data (também só arquivo existente).
+  assert.match(p, /if \(daTabela\) return daTabela;[\s\S]{0,160}capaDoDraftData\(draftData, user\.id, existentes\)/);
   assert.match(p, /capaDoRascunho\(draft\?\.id \?\? null, draft\?\.data \?\? null\)/);
 });

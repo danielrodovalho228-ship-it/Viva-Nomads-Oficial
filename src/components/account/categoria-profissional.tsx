@@ -30,6 +30,7 @@ export function CategoriaProfissional() {
   const [saving, setSaving] = useState(false);
   const [ok, setOk] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [falhouLeitura, setFalhouLeitura] = useState(false);
 
   // Hidrata a escolha salva. "outro:<texto>" abre o campo livre preenchido.
   useEffect(() => {
@@ -44,7 +45,7 @@ export function CategoriaProfissional() {
           setSel(v);
         }
       })
-      .catch(() => {})
+      .catch(() => alive && setFalhouLeitura(true))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
@@ -85,6 +86,14 @@ export function CategoriaProfissional() {
         <div className="h-[46px] rounded-xl border border-sage-200 bg-surface-2" />
         <div className="mt-4 h-13 w-40 rounded-lg bg-surface-2 lg:h-14" />
       </div>
+    );
+
+  // Achados 67–69: sem ler o que está gravado, o formulário não abre (salvar apagaria o valor salvo).
+  if (falhouLeitura)
+    return (
+      <p role="alert" className="rounded-xl border border-line bg-white p-4 text-sm text-red-700" data-testid="categoria-profissional-falha">
+        Não foi possível carregar o que você já salvou. Recarregue a página para tentar de novo — nada foi alterado.
+      </p>
     );
 
   return (

@@ -120,6 +120,13 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
   const cabecalhos = new Headers(request.headers);
   cabecalhos.set("x-vn-destino", destinoAposLogin(pathname, request.nextUrl.search));
   const response = NextResponse.next({ request: { headers: cabecalhos } });
+  // E428: TODA resposta que não é `response` (redirect ou rewrite) leva os cookies que o getUser() renovou. Sem isso, o
+  // navegador ficava com o refresh token antigo (já gasto na renovação) e a próxima renovação derrubava a sessão: a
+  // conta caía em /auth depois de um 404 do painel ou de um redirecionamento.
+  const comCookies = (r: NextResponse) => {
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    return r;
+  };
   const supabase = createServerClient(supaUrl, supaKey, {
     cookies: {
       getAll() {
@@ -174,7 +181,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     redirectUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
     // Prompt 49: anunciar é momento de valor — a entrada diz por que pede a conta.
     if (pathname.startsWith("/dashboard/imoveis/novo") || pathname.startsWith("/qualificar")) redirectUrl.searchParams.set("motivo", "anunciar");
-    return NextResponse.redirect(redirectUrl);
+    return comCookies(NextResponse.redirect(redirectUrl));
   }
 
   // Admin parado há mais de 30 min: encerra a sessão e pede login de novo.
@@ -195,9 +202,8 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
       loginUrl.pathname = "/auth";
       loginUrl.search = "";
       loginUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
-      const resposta = NextResponse.redirect(loginUrl);
       // signOut escreveu a limpeza dos cookies de sessão em `response`: repassa.
-      response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
+      const resposta = comCookies(NextResponse.redirect(loginUrl));
       resposta.cookies.delete(COOKIE_ADMIN_ATIVO);
       return resposta;
     }
@@ -221,7 +227,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
       const notFoundUrl = request.nextUrl.clone();
       notFoundUrl.pathname = "/nao-encontrado-admin";
       notFoundUrl.search = "";
-      return NextResponse.rewrite(notFoundUrl, { status: 404 });
+      return comCookies(NextResponse.rewrite(notFoundUrl, { status: 404 }));
     }
 
     // Verificação em duas etapas obrigatória (ordem f7817f00): admin precisa de AAL2.
@@ -236,9 +242,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
         const [caminho, consulta] = (portao === "verificar" ? urlVerificarCodigo(destino) : urlAtivar2fa(destino)).split("?");
         alvo.pathname = caminho;
         alvo.search = consulta ? `?${consulta}` : "";
-        const resposta = NextResponse.redirect(alvo);
-        response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
-        return resposta;
+        return comCookies(NextResponse.redirect(alvo));
       }
     }
   }
@@ -249,20 +253,21 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
   if (user && rotaLeitorQa(pathname)) {
     const { data: perfilQa } = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
     const destino = destinoLeitorQa(perfilQa);
-    if (destino.tipo === "admin") {
-      const [caminho, consulta] = destino.href.split("?");
+    // E354: a conta de teste sem qa_leitor vai para a caixa dela (Conta → Ajuda), como o admin vai para a dele.
+    if (destino.tipo === "admin" || destino.tipo === "propria") {
+      const [semAncora, ancora] = destino.href.split("#");
+      const [caminho, consulta] = semAncora.split("?");
       const alvo = request.nextUrl.clone();
       alvo.pathname = caminho;
       alvo.search = consulta ? `?${consulta}` : "";
-      const resposta = NextResponse.redirect(alvo);
-      response.cookies.getAll().forEach((c) => resposta.cookies.set(c));
-      return resposta;
+      alvo.hash = ancora ? `#${ancora}` : "";
+      return comCookies(NextResponse.redirect(alvo));
     }
     if (destino.tipo === "nao_encontrado") {
       const naoEncontrado = request.nextUrl.clone();
       naoEncontrado.pathname = "/nao-encontrado-admin";
       naoEncontrado.search = "";
-      return NextResponse.rewrite(naoEncontrado, { status: 404 });
+      return comCookies(NextResponse.rewrite(naoEncontrado, { status: 404 }));
     }
   }
 
@@ -279,7 +284,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
       const naoEncontrado = request.nextUrl.clone();
       naoEncontrado.pathname = "/nao-encontrado-admin";
       naoEncontrado.search = "";
-      return NextResponse.rewrite(naoEncontrado, { status: 404 });
+      return comCookies(NextResponse.rewrite(naoEncontrado, { status: 404 }));
     }
   }
 

@@ -6,7 +6,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
   T173 — Perfis do proprietário e do inquilino (prompt 6, 17/10), a 390 e 1280 px.
   1. Anúncio real: "Sobre o proprietário" com nome curto, cidade, desde, contagens, "Novo na Viva" (menos de 3
      conversas), idiomas, bio, selo REAL (e-mail confirmado) e os botões; página pública /proprietario/[id] certa.
-  2. Candidato ANTES do aceite: "Candidato(a)", sem nome, foto ou contato; DEPOIS: nome curto e foto.
+  2. Candidato ANTES do aceite: "Candidato(a)", sem nome, foto ou contato; DEPOIS: nome completo (E427) e foto.
   3. Nenhum selo sem base (telefone/identidade) e nenhum telefone/e-mail na tela.
   4. Anúncio de exemplo: bloco ilustrativo, sempre com "Exemplo ilustrativo" (prompt 9), sem contato.
 */
@@ -69,7 +69,9 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
       await card.getByRole("link", { name: "Ver perfil completo" }).click();
       await expect(page).toHaveURL(new RegExp(`/proprietario/${ids.dono}$`));
       const perfil = page.getByTestId("pagina-proprietario");
+      // Visitante sem aceite: o nome curto de sempre (E427).
       await expect(perfil.getByRole("heading", { level: 1 })).toHaveText("Túlio S.");
+      await expect(perfil.getByRole("heading", { level: 1 })).toHaveAttribute("data-nome", "curto");
       await expect(perfil).toContainText(`Studio do perfil ${sufixo}`);
       await expect(perfil).toContainText("Avaliações recebidas");
       await expect(perfil).not.toContainText(dono.email);
@@ -86,7 +88,7 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
     });
   }
 
-  test("candidato: antes do aceite sem nome, foto ou contato; depois, nome curto e foto (390 e 1280)", async ({ browser }) => {
+  test("candidato: antes do aceite sem nome, foto ou contato; depois, nome completo e foto (390 e 1280)", async ({ browser }) => {
     test.setTimeout(120_000);
     const page = await entrar(browser, dono.email, senha);
     for (const largura of [390, 1280]) {
@@ -109,10 +111,9 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/dashboard/leads", { waitUntil: "networkidle" });
       const cartao = page.getByTestId("cartao-candidato").first();
-      await expect(cartao.getByTestId("candidato-nome")).toHaveText("Iara S.");
+      await expect(cartao.getByTestId("candidato-nome")).toHaveText("Iara Perfilinq Sobrenomeoculto");
       await expect(cartao.getByTestId("candidato-foto")).toBeVisible();
       const corpo = await page.locator("main").innerText();
-      expect(corpo).not.toMatch(/Sobrenomeoculto|Perfilinq/);
       expect(corpo).not.toContain(inq.email);
       expect(corpo).not.toMatch(/Telefone verificado|Identidade verificada/);
       await page.screenshot({ path: `${SAIDA}/t173-candidato-depois-${largura}.png`, fullPage: false });

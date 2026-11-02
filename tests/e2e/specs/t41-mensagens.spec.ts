@@ -82,7 +82,7 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await pagina.context().close();
   });
 
-  test("dono: 'Candidato(a)' antes do aceite; nome curto depois — e o chat segue mascarado", async ({ browser }) => {
+  test("dono: 'Candidato(a)' antes do aceite; nome completo depois (E427) — e o chat segue mascarado", async ({ browser }) => {
     test.setTimeout(90_000);
     const pagina = await entrar(browser, dono.email, senha);
     await pagina.goto("/dashboard/leads", { waitUntil: "networkidle" });
@@ -93,8 +93,8 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     const { error } = await adm().from("leads").update({ status: "accepted" }).eq("id", ids.lead!);
     expect(error).toBeNull();
     await pagina.reload({ waitUntil: "networkidle" });
-    await expect(pagina.getByTestId("candidato-nome").first()).toHaveText("Iara I.");
-    await expect(pagina.locator("main")).not.toContainText("Inquilinasobrenome");
+    await expect(pagina.getByTestId("candidato-nome").first()).toHaveText("Iara Inquilinasobrenome");
+    await expect(pagina.locator("main")).not.toContainText(inq.email);
 
     // Depois do aceite o chat continua protegido: o contato não é trocado pela conversa.
     await pagina.goto("/dashboard/mensagens", { waitUntil: "networkidle" });

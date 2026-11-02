@@ -11,7 +11,7 @@ import { hrefAvaliador } from "@/lib/vistoria/telas-exibicao";
 import { ROTULO_RESULTADO, podeContestar, type Resultado } from "@/lib/vistoria/laudo";
 import { proximoPasso } from "@/lib/vistoria/laudo-documento";
 import { degrauDoProprietario } from "@/lib/vistoria/strikes";
-import { strikesDoDono } from "@/lib/vistoria/laudo-servidor";
+import { MSG_STRIKES_SEM_LEITURA, strikesDoDono } from "@/lib/vistoria/laudo-servidor";
 import { confirmarDevolucao, contestarLaudo, enviarFotoCorrecao } from "@/lib/vistoria/laudo-actions";
 import { ROTULO_ACAO, acoesDoResultado, avisoStrike, linhaResumoGrupo, prefixoAvaliadoEm } from "@/lib/vistoria/telas-laudo";
 
@@ -53,11 +53,13 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
     admin.from("vistoria_laudos").select("id, pedido_id, avaliador_id, resumo, numero, versao, resultado, nivel_sustentado, ressalvas, graves, emitido_em, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, vistoriado_em, contestado_em, documento_id").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_bloqueios").select("motivo").eq("property_id", propertyId).is("resolvido_em", null),
     admin.from("vistoria_devolucoes").select("id, valor, prazo_ate").eq("owner_id", ownerId).is("recebido_confirmado_em", null),
-    strikesDoDono(admin, ownerId),
+    // Leitura que falha: aviso na tela, nunca "sem strike" (degrau 0) por engano.
+    strikesDoDono(admin, ownerId).catch(() => null),
     admin.from("properties").select("id").eq("owner_id", ownerId).in("status", ["active", "paused"]),
   ]);
   const l = ((ls ?? [])[0] ?? null) as Laudo | null;
-  const degrau = degrauDoProprietario({ strikes, carteira: (imoveis ?? []).length, imoveisReprovados12m: 0, agora });
+  const strikesFalhou = strikes === null;
+  const degrau = strikesFalhou ? 0 : degrauDoProprietario({ strikes, carteira: (imoveis ?? []).length, imoveisReprovados12m: 0, agora });
   const [{ data: doc }, { data: cred }, { data: fotos }] = await Promise.all([
     l?.documento_id ? admin.from("documentos_registro").select("codigo_verificacao").eq("id", l.documento_id).maybeSingle() : Promise.resolve({ data: null }),
     l?.avaliador_id ? admin.from("avaliadores_credenciamento").select("numero_credenciado").eq("id", l.avaliador_id).maybeSingle() : Promise.resolve({ data: null }),
@@ -67,7 +69,7 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
   const listaFotos = (fotos ?? []) as { item_chave: string; path: string }[];
   const assinadas = listaFotos.length ? ((await admin.storage.from(BUCKET_FOTOS).createSignedUrls(listaFotos.map((f) => f.path), 600)).data ?? []) : [];
   const fotoDoItem = new Map(listaFotos.map((f, i) => [f.item_chave, assinadas[i]?.signedUrl ?? null]));
-  if (!l && !(bloqueios ?? []).length && !(devolucoes ?? []).length && degrau === 0) return null;
+  if (!l && !(bloqueios ?? []).length && !(devolucoes ?? []).length && degrau === 0 && !strikesFalhou) return null;
   const aberta = !!l && !l.corrigido_em && !l.ressalva_vencida_em && !l.contestado_em;
   const itensCorrigir = l ? [...new Set([...l.ressalvas.map((r) => r.chave), ...l.graves])] : [];
   const contestar = l ? podeContestar(l.emitido_em, agora, !!l.contestado_em) : null;
@@ -168,6 +170,11 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
       {(bloqueios ?? []).map((b) => (
         <p key={b.motivo as string} className="text-amber-700" data-testid="laudo-bloqueio" data-motivo={b.motivo as string}>{ROTULO_BLOQUEIO[b.motivo as string]}</p>
       ))}
+      {strikesFalhou && (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-ink" data-testid="laudo-degrau-falhou">
+          {MSG_STRIKES_SEM_LEITURA}
+        </p>
+      )}
       {aviso && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3" data-testid="laudo-degrau" data-degrau={degrau}>
           <p className="font-semibold text-ink">{aviso.titulo}</p>

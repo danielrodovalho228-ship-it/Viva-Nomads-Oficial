@@ -9,7 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       e-mail chega nas DUAS caixas de teste com o PDF e o link de verificação → "Baixar recibo (PDF)" dos dois lados;
       antes de sair, "Recibo em preparação" (nunca a promessa vazia); o retroativo do admin emite o que ficou para trás;
    2. o pagamento aparece como "Bloco 1 (2 meses: …) — R$ 6.400 (2 × R$ 3.200)", nunca "Valor mensal de";
-   3. o contrato mostra quem assinou: nome curto + papel + data e hora;
+   3. o contrato mostra quem assinou: nome completo (E427) + papel + data e hora;
    4. "Li e concordo" continua marcado depois de recarregar a página.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -188,13 +188,13 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
   });
 
   for (const largura of [390, 1280]) {
-    test(`3. ${largura} — o contrato mostra quem assinou: nome curto + papel + data e hora`, async ({ browser }) => {
+    test(`3. ${largura} — o contrato mostra quem assinou: nome completo + papel + data e hora`, async ({ browser }) => {
       test.setTimeout(90_000);
       const t = await abrir(browser, inq.email, largura);
       await t.goto(`/dashboard/locacoes/${ids.contrato}`, { waitUntil: "domcontentloaded" });
       const aviso = t.getByTestId("contrato-aviso-assinatura");
-      await expect(aviso).toContainText(/Ana S\. \(proprietário\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/);
-      await expect(aviso).toContainText(/Iara J\. \(inquilino\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/);
+      await expect(aviso).toContainText(/Ana Recibo Souza \(proprietário\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/);
+      await expect(aviso).toContainText(/Iara Recibo Jornada \(inquilino\) assinou em \d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/);
       expect(await aviso.innerText()).not.toMatch(/@|\d{3}\.\d{3}\.\d{3}-\d{2}/);
       await semRolagemLateral(t);
       await t.context().close();
@@ -208,7 +208,7 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
       await adm().from("contratos").update({ assinado_proprietario_em: new Date().toISOString() }).eq("id", id);
       const t = await abrir(browser, inq.email, largura);
       await t.goto(`/dashboard/locacoes/${id}`, { waitUntil: "domcontentloaded" });
-      await expect(t.getByTestId("contrato-aviso-assinatura")).toContainText(/Ana S\. \(proprietário\) assinou em .+ · falta você/);
+      await expect(t.getByTestId("contrato-aviso-assinatura")).toContainText(/Ana Recibo Souza \(proprietário\) assinou em .+ · falta você/);
       const aceite = t.getByTestId("assinar-aceite");
       await aceite.check();
       await t.reload({ waitUntil: "domcontentloaded" });

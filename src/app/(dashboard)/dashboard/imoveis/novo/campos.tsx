@@ -175,6 +175,7 @@ export function Toggle({
   hint,
   sugerido = false,
   testid,
+  icone,
 }: {
   checked: boolean;
   onChange: () => void;
@@ -182,6 +183,8 @@ export function Toggle({
   hint?: string;
   sugerido?: boolean;
   testid?: string;
+  /** Conformidade do cadastro (mockup 06, 01/11): ícone da regra no cartão (opcional). */
+  icone?: React.ComponentType<{ className?: string }>;
 }) {
   // E193: sim/não é o cartão grande da Qualificação (✓ redondo), não mais o cartão com caixinha quadrada.
   return (
@@ -190,6 +193,7 @@ export function Toggle({
       on={checked}
       onClick={onChange}
       testid={testid}
+      icone={icone}
       rotulo={
         <>
           {label}

@@ -100,12 +100,18 @@ async function medidasDoPedido(admin: Admin, pedidoId: string, visitaEm: string)
 
 /** O laudo de referência do imóvel: a última versão do último laudo emitido. */
 export async function laudoAtual(admin: Admin, propertyId: string): Promise<LinhaLaudo | null> {
-  const { data } = await admin.from("vistoria_laudos").select("*").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1).maybeSingle();
+  const { data, error } = await admin.from("vistoria_laudos").select("*").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1).maybeSingle();
+  // Achado 115: a falha LANÇA (quem mostra o "· vistoriado" já trata) — nunca "sem laudo" por engano.
+  if (error) throw new Error("Não foi possível ler o laudo do imóvel.");
   return (data as LinhaLaudo | null) ?? null;
 }
 
+/** Leitura que falha lança: "sem strikes" nunca vale por engano (o 2º/3º strike viraria 1º e a escada não pesaria). */
+export const MSG_STRIKES_SEM_LEITURA = "Não foi possível ler a escada de strikes agora. Tente de novo.";
+
 export async function strikesDoDono(admin: Admin, ownerId: string): Promise<(Strike & { id: string })[]> {
-  const { data } = await admin.from("proprietario_strikes").select("id, property_id, ordem, criado_em, suspenso_ate, expira_em").eq("owner_id", ownerId);
+  const { data, error } = await admin.from("proprietario_strikes").select("id, property_id, ordem, criado_em, suspenso_ate, expira_em").eq("owner_id", ownerId);
+  if (error) throw new Error(MSG_STRIKES_SEM_LEITURA);
   return ((data ?? []) as { id: string; property_id: string; ordem: 1 | 2 | 3; criado_em: string; suspenso_ate: string | null; expira_em: string }[]).map((s) => ({
     id: s.id,
     propertyId: s.property_id,
@@ -171,11 +177,13 @@ export async function liberar(admin: Admin, propertyId: string, motivos: MotivoB
 
 /** Reaplica a escada do proprietário: 2º = republicar só com laudo; 3º = todos os anúncios fora da busca. */
 export async function aplicarEscada(admin: Admin, ownerId: string, agora = new Date()): Promise<number> {
-  const [strikes, { data: imoveis }, { data: reprov }] = await Promise.all([
+  const [strikes, { data: imoveis, error: e1 }, { data: reprov, error: e2 }] = await Promise.all([
     strikesDoDono(admin, ownerId),
     admin.from("properties").select("id, status").eq("owner_id", ownerId).in("status", ["active", "paused"]),
     admin.from("vistoria_laudos").select("property_id").eq("owner_id", ownerId).eq("resultado", "reprovado").gte("emitido_em", new Date(agora.getTime() - 365 * DIA).toISOString()),
   ]);
+  // Sem a carteira ou as reprovações, o degrau sairia menor: não decide nada (quem chama tenta de novo).
+  if (e1 || e2) throw new Error(MSG_STRIKES_SEM_LEITURA);
   const carteira = (imoveis ?? []) as { id: string; status: string }[];
   const degrau = degrauDoProprietario({ strikes, carteira: carteira.length, imoveisReprovados12m: new Set(((reprov ?? []) as { property_id: string }[]).map((r) => r.property_id)).size, agora });
   const c = consequencias(degrau);
@@ -186,14 +194,36 @@ export async function aplicarEscada(admin: Admin, ownerId: string, agora = new D
   return degrau;
 }
 
-async function registrarStrike(admin: Admin, ownerId: string, propertyId: string, pedidoId: string, origem: "verificacao_reprovada" | "ressalva_vencida", agora: Date): Promise<void> {
-  const antes = degrauDoProprietario({ strikes: await strikesDoDono(admin, ownerId), carteira: 1, imoveisReprovados12m: 0, agora });
+/**
+ * Reaplica a escada sem derrubar quem chamou: a leitura que falha tenta de novo uma vez; falhou de novo, fica no log.
+ * (Sem reaplicação diária para todos: o strike vale 12 meses e ela tiraria da busca quem já foi liberado por laudo aprovado.)
+ */
+async function aplicarEscadaComRetentativa(admin: Admin, ownerId: string, agora: Date): Promise<void> {
+  try {
+    await aplicarEscada(admin, ownerId, agora);
+  } catch {
+    await aplicarEscada(admin, ownerId, agora).catch((e) => console.error("[escada] não aplicada", ownerId, (e as Error).message));
+  }
+}
+
+/**
+ * Grava o strike com a ordem certa. Os strikes de antes chegam LIDOS por quem chama, antes de qualquer efeito (laudo
+ * gravado, ressalva marcada): se a leitura falha, nada é gravado e a operação é repetida — nunca um 2º/3º vira 1º.
+ */
+async function registrarStrike(admin: Admin, strikesAntes: Strike[], ownerId: string, propertyId: string, pedidoId: string, origem: "verificacao_reprovada" | "ressalva_vencida", agora: Date): Promise<void> {
+  const antes = degrauDoProprietario({ strikes: strikesAntes, carteira: 1, imoveisReprovados12m: 0, agora });
   const criado = agora.toISOString();
-  await admin.from("proprietario_strikes").insert({ owner_id: ownerId, property_id: propertyId, pedido_id: pedidoId, ordem: proximaOrdem(antes), origem, criado_em: criado, expira_em: expiraEm(criado) });
-  await aplicarEscada(admin, ownerId, agora);
-  await avisar(admin, ownerId, "vistoria_strike", rotaDono(propertyId), { propertyId });
-  // O nível do imóvel perde o "· vistoriado".
-  await recalcularNivel(admin, propertyId, agora);
+  const { error } = await admin.from("proprietario_strikes").insert({ owner_id: ownerId, property_id: propertyId, pedido_id: pedidoId, ordem: proximaOrdem(antes), origem, criado_em: criado, expira_em: expiraEm(criado) });
+  if (error) throw new Error("Não foi possível gravar o strike.");
+  // Daqui em diante o strike está gravado: nada abaixo pode fazer quem chama achar que ele falhou (e gravar de novo).
+  try {
+    await aplicarEscadaComRetentativa(admin, ownerId, agora);
+    await avisar(admin, ownerId, "vistoria_strike", rotaDono(propertyId), { propertyId });
+    // O nível do imóvel perde o "· vistoriado".
+    await recalcularNivel(admin, propertyId, agora);
+  } catch (e) {
+    console.error("[strike] gravado; aviso/nível falhou", propertyId, (e as Error).message);
+  }
 }
 
 // ── Emissão do laudo VIS ─────────────────────────────────────────────────────────────────────────────────────────
@@ -235,6 +265,16 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const comFoto = new Set(((fotos ?? []) as { item_chave: string }[]).map((f) => f.item_chave));
   const prazo = r.resultado === "com_ressalvas" ? prazoRessalva(agora.toISOString()).toISOString() : null;
   const ehVerificacao = p.tipo === "verificacao";
+  // Strike: os strikes de antes são lidos ANTES de registrar o laudo. Se a leitura falha, nada é gravado (tente de novo).
+  const comStrike = r.resultado === "reprovado" && geraStrike({ origem: "verificacao_reprovada", primeiraPedidaPeloDono: !ehVerificacao });
+  let strikesAntes: Strike[] = [];
+  if (comStrike) {
+    try {
+      strikesAntes = await strikesDoDono(admin, p.owner_id);
+    } catch {
+      return { ok: false, erro: MSG_STRIKES_SEM_LEITURA };
+    }
+  }
 
   let reg;
   try {
@@ -330,8 +370,9 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   }
 
   // Strike: só em verificação reprovada (a 1ª avaliação pedida pelo dono nunca gera).
-  if (r.resultado === "reprovado" && geraStrike({ origem: "verificacao_reprovada", primeiraPedidaPeloDono: !ehVerificacao })) {
-    await registrarStrike(admin, p.owner_id, p.property_id, p.id, "verificacao_reprovada", agora);
+  if (comStrike) {
+    // O laudo já está gravado: a falha da gravação do strike fica no log e não esconde o laudo emitido.
+    await registrarStrike(admin, strikesAntes, p.owner_id, p.property_id, p.id, "verificacao_reprovada", agora).catch((e) => console.error("[emitirLaudo] strike", p.id, (e as Error).message));
   }
 
   // Contestação resolvida: o strike suspenso volta (dono perdeu) ou cai (dono venceu); "quem perde paga".
@@ -351,7 +392,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
       const { data: c1 } = anterior.avaliador_id ? await admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", anterior.avaliador_id).maybeSingle() : { data: null };
       await avisar(admin, (c1?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_devolucao", ROTA_AVALIADOR, { propertyId: p.property_id });
     }
-    await aplicarEscada(admin, p.owner_id, agora);
+    await aplicarEscadaComRetentativa(admin, p.owner_id, agora);
   }
 
   await recalcularNivel(admin, p.property_id, agora);
@@ -393,7 +434,7 @@ export async function abrirContestacao(admin: Admin, laudo: LinhaLaudo, motivo: 
   if (error || !novo) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
   await admin.from("vistoria_laudos").update({ contestado_em: agora.toISOString(), contestacao_motivo: motivo }).eq("id", laudo.id);
   await admin.from("proprietario_strikes").update({ suspenso_ate: "infinity" }).eq("pedido_id", laudo.pedido_versao_id);
-  await aplicarEscada(admin, laudo.owner_id, agora);
+  await aplicarEscadaComRetentativa(admin, laudo.owner_id, agora);
   await designar(admin, novo.id as string, agora);
   return { ok: true, pedidoId: novo.id as string };
 }
@@ -427,12 +468,23 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
   const { data: comRessalva } = await admin.from("vistoria_laudos").select("id, pedido_id, pedido_versao_id, property_id, owner_id, emitido_em, corrigido_em, contestado_em").eq("resultado", "com_ressalvas").is("corrigido_em", null).is("ressalva_vencida_em", null);
   for (const l of (comRessalva ?? []) as { id: string; pedido_id: string; pedido_versao_id: string; property_id: string; owner_id: string; emitido_em: string; corrigido_em: string | null; contestado_em: string | null }[]) {
     if (l.contestado_em || !ressalvaVencida(l.emitido_em, l.corrigido_em, agora)) continue;
+    // Os strikes de antes são lidos ANTES de marcar a ressalva: se a leitura falha, a ressalva fica para amanhã.
+    const strikesAntes = await strikesDoDono(admin, l.owner_id).catch(() => null);
+    if (!strikesAntes) continue;
     const { data: marcou } = await admin.from("vistoria_laudos").update({ ressalva_vencida_em: quando }).eq("id", l.id).is("ressalva_vencida_em", null).select("id");
     if (!marcou?.length) continue;
     // Laudo superado por versão mais nova não conta.
     const { data: tipo } = await admin.from("vistoria_pedidos").select("tipo").eq("id", l.pedido_versao_id).maybeSingle();
     if (geraStrike({ origem: "ressalva_vencida", primeiraPedidaPeloDono: tipo?.tipo !== "verificacao" })) {
-      await registrarStrike(admin, l.owner_id, l.property_id, l.pedido_versao_id, "ressalva_vencida", agora);
+      const gravou = await registrarStrike(admin, strikesAntes, l.owner_id, l.property_id, l.pedido_versao_id, "ressalva_vencida", agora).then(
+        () => true,
+        () => false,
+      );
+      if (!gravou) {
+        // Sem o strike, a ressalva volta a valer para a rotina de amanhã (nunca fica vencida sem strike).
+        await admin.from("vistoria_laudos").update({ ressalva_vencida_em: null }).eq("id", l.id);
+        continue;
+      }
     } else {
       await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: "Ressalva não corrigida em 15 dias: avaliar abrir verificação." });
     }

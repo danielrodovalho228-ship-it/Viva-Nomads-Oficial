@@ -1,7 +1,7 @@
 "use server";
 
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
-import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
+import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
@@ -26,7 +26,7 @@ import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
-import type { EstadoIdentidade } from "@/lib/identidade/estado";
+import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
 
 interface ActionResult {
   ok: boolean;
@@ -84,7 +84,9 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
   const plano = await planoDoProprietario(admin, user.id);
   // R6 (especificação da taxa, 19/10): contrato sem proposta congela a taxa da regra única de regra.ts no aceite —
   // faixa pelos imóveis ativos, queda de 30 dias e fixação do admin. Antes saía do plano (COMISSAO_POR_PLANO).
-  const t = await taxaDoDonoAgora(admin, user.id);
+  // Achado 83: sem a taxa lida, o aceite não congela um valor de outra fonte.
+  const t = await taxaDoDonoAgora(admin, user.id).catch(() => null);
+  if (!t) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const comissao = t.taxa;
 
   const { error: uErr } = await admin
@@ -306,7 +308,9 @@ export async function getFechamentoContext(
     .order("accepted_at", { ascending: false })
     .limit(1);
   if (leadId) q = q.eq("id", leadId);
-  const { data: lead } = await q.maybeSingle();
+  const { data: lead, error: erroLead } = await q.maybeSingle();
+  // Achado 109: a falha LANÇA (error.tsx) — nunca "nenhuma candidatura aceita" no Fechamento por engano.
+  if (erroLead) throw new Error("Não foi possível ler a candidatura aceita.");
   if (!lead) return null;
 
   // Imóvel (escopo do dono) — fonte real do card, valores e tipo.
@@ -346,7 +350,9 @@ export async function getFechamentoContext(
         .eq("id", lead.tenant_id)
         .maybeSingle();
       if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
-      identidadeInquilino = (await estadosIdentidade(admin, [lead.tenant_id as string])).get(lead.tenant_id as string) ?? null;
+      // Leitura que falha: "não conferida agora" no Fechamento (nunca "pendente" para quem é verificado).
+      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string]).catch(() => null);
+      identidadeInquilino = lidas ? (lidas.get(lead.tenant_id as string) ?? null) : IDENTIDADE_INDISPONIVEL;
     }
   } catch {
     /* mantém o neutro */

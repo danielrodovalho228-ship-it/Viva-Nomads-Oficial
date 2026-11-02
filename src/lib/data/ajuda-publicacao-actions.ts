@@ -75,13 +75,16 @@ export async function meusPedidosDeAjuda(): Promise<PedidoAjuda[]> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await supabase
+  // Achado 55: a falha de leitura LANÇA — antes o andamento (e a decisão do rascunho montado pela equipe) sumia em
+  // silêncio e o dono pedia de novo.
+  const { data, error } = await supabase
     .from("pedidos_ajuda_publicacao")
     .select("id, status, criado_em, atualizado_em")
     .eq("owner_id", user.id)
     .neq("status", "cancelado")
     .order("criado_em", { ascending: false })
     .limit(5);
+  if (error) throw new Error("Não foi possível ler seus pedidos de ajuda agora.");
   return (data ?? []).filter((p) => ehStatusAjuda(p.status)) as PedidoAjuda[];
 }
 
@@ -93,11 +96,13 @@ export async function filaAjudaPublicacaoAdmin(): Promise<PedidoAjuda[]> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return [];
-  const { data } = await supabase
+  // Achado 56: a falha de leitura LANÇA (a página cai no aviso de erro do admin) — antes a fila aparecia vazia.
+  const { data, error } = await supabase
     .from("pedidos_ajuda_publicacao")
     .select("id, status, criado_em, atualizado_em, link_anuncio, texto_anuncio, observacao, fotos, owner_id")
     .order("criado_em", { ascending: false })
     .limit(200);
+  if (error) throw new Error("Não foi possível ler a fila de ajuda para publicar agora.");
   const linhas = data ?? [];
   const ids = [...new Set(linhas.map((l) => l.owner_id as string))];
   const nomes = new Map<string, string>();

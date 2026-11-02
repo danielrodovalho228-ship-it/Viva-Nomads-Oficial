@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { removerFotoDoCadastro } from "@/lib/data/fotos-cadastro-actions";
 import { stripImageExif } from "@/lib/image/strip-exif";
 
 export const PROPERTY_PHOTOS_BUCKET = "property-photos";
@@ -38,12 +39,14 @@ export async function uploadPropertyPhoto(file: File, ownerId?: string): Promise
   return { url: data.url, path: data.path, demo: false };
 }
 
-/** Remove uma foto do Storage (quando não é preview local). */
+/**
+ * Remove uma foto do Storage (quando não é preview local). E308 (causa raiz): pelo servidor, que só apaga o arquivo se
+ * nenhum outro imóvel ou rascunho ainda o usa — apagar direto daqui quebrava a capa de outros rascunhos.
+ */
 export async function removePropertyPhoto(path: string | null): Promise<void> {
   if (!path) return;
-  const supabase = createClient();
-  if (!supabase) return;
-  await supabase.storage.from(PROPERTY_PHOTOS_BUCKET).remove([path]);
+  if (!createClient()) return;
+  await removerFotoDoCadastro(path).catch(() => undefined);
 }
 
 /** Bucket privado dos documentos. */

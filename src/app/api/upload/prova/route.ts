@@ -5,7 +5,7 @@ import { consumirLimite, DIA } from "@/lib/limites";
 import { PHOTO_MAX_BYTES, tipoRealFotoPorMagicBytes } from "@/lib/upload-limits";
 import { hashPerceptual, reconverterFotoParaWebp } from "@/lib/foto-reconversao";
 import { ERRO_FOTO_REPETIDA, ERRO_SEM_TOKEN, conferirCaptura } from "@/lib/niveis/prova-camera";
-import { capturaPeloToken, fotoJaUsada } from "@/lib/niveis/prova-servidor";
+import { capturaPeloToken, fotoJaUsada, MSG_PROVA_SEM_LEITURA } from "@/lib/niveis/prova-servidor";
 
 const BUCKET = "property-photos";
 
@@ -31,7 +31,8 @@ export async function POST(request: Request) {
   }
 
   const form = await request.formData().catch(() => null);
-  const captura = await capturaPeloToken(admin, form?.get("token"));
+  const captura = await capturaPeloToken(admin, form?.get("token")).catch(() => "falhou" as const);
+  if (captura === "falhou") return NextResponse.json({ error: MSG_PROVA_SEM_LEITURA }, { status: 503 });
   const ok = captura && conferirCaptura(captura, { ownerId: user.id, propertyId: captura.property_id, chave: captura.chave }, new Date());
   if (!captura || !ok || !ok.ok) return NextResponse.json({ error: ERRO_SEM_TOKEN, motivo: ok && !ok.ok ? ok.motivo : "sem_token" }, { status: 403 });
 
@@ -45,7 +46,9 @@ export async function POST(request: Request) {
   if (!webp) return NextResponse.json({ error: "A foto não abriu. Fotografe de novo." }, { status: 415 });
 
   const hash = await hashPerceptual(webp);
-  if (await fotoJaUsada(admin, hash, { propertyId: captura.property_id, ownerId: user.id, capturaId: captura.id })) {
+  const repetida = await fotoJaUsada(admin, hash, { propertyId: captura.property_id, ownerId: user.id, capturaId: captura.id }).catch(() => "falhou" as const);
+  if (repetida === "falhou") return NextResponse.json({ error: MSG_PROVA_SEM_LEITURA }, { status: 503 });
+  if (repetida) {
     return NextResponse.json({ error: ERRO_FOTO_REPETIDA }, { status: 409 });
   }
 
