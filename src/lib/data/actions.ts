@@ -152,9 +152,11 @@ export async function saveQualification(
   // aviso. Arquivo que ainda não está na fila segue o caminho de antes (entra "em análise" e avisa).
   let ultimoQ = supabase.from("qualification_checklists").select("id, document_path, document_status").eq("owner_id", user.id);
   ultimoQ = propertyId ? ultimoQ.eq("property_id", propertyId) : ultimoQ.is("property_id", null);
-  const { data: ultimo } = documentPath
+  const { data: ultimo, error: erroUltimo } = documentPath
     ? await ultimoQ.order("created_at", { ascending: false }).limit(1).maybeSingle()
-    : { data: null };
+    : { data: null, error: null };
+  // Leitura falha não vira "arquivo novo": o mesmo documento entraria de novo na fila (e a equipe seria avisada outra vez).
+  if (erroUltimo) return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente de novo." };
   const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
   const docGravado = doc.gravarPath;
 
