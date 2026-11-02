@@ -408,7 +408,7 @@ export function BlocoNegociacao({
           <button
             type="button"
             onClick={() => onValor({ ...valor, descontos: [...faixas, { mesesMin: faixas.length ? Math.min(12, faixas[faixas.length - 1].mesesMin + 3) : 3, pct: faixas.length ? faixas[faixas.length - 1].pct + 3 : 3 }] })}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-forest underline"
+            className="alvo-toque mt-2 inline-flex items-center gap-1 text-sm font-medium text-forest underline"
             data-testid="adicionar-faixa"
           >
             <Plus className="h-4 w-4" aria-hidden /> Adicionar faixa de desconto
