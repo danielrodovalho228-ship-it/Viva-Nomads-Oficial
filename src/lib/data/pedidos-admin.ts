@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notify } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
+import { corpoPedidoModerado, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { metricasPedidos, type MetricasPedidos } from "@/lib/data/pedidos-compat";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -65,7 +66,7 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
     .from("pedidos_moradia")
     .update({ status: "removido_admin", removido_motivo: motivoLimpo })
     .eq("id", pedidoId)
-    .select("id, inquilino_id")
+    .select("id, inquilino_id, cidade, data_inicio")
     .maybeSingle();
   if (error) return { ok: false, error: erroBancoPT(error) };
   if (!pedido) return { ok: false, error: "Pedido não encontrado (ou sem permissão)." };
@@ -85,8 +86,8 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
         email: inq.email as string,
         name: (inq.full_name as string) ?? undefined,
         phone: inq.notif_whatsapp === false ? undefined : ((inq.phone as string) ?? undefined),
-        detailsHtml: `<p style="margin:12px 0 0;color:#334155;">Motivo: ${textoEmail(motivoLimpo, 500)}</p>
-          <p style="margin:12px 0 0;"><a href="${SITE_URL}/dashboard/pedidos" style="color:#0f3d2e;font-weight:700;">Ver meus pedidos →</a></p>`,
+        // E267: o corpo diz QUAL pedido (cidade e entrada) e o motivo no bloco (antes: "seu pedido foi ocultado").
+        ...paraNotify(corpoPedidoModerado({ cidade: pedido.cidade as string | null, inicio: pedido.data_inicio as string | null, motivo: motivoLimpo })),
         detailsText: `Motivo: ${motivoLimpo}\n\nResponda pela plataforma: ${SITE_URL}/dashboard/pedidos`,
       });
     }

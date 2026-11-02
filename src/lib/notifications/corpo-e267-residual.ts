@@ -281,6 +281,26 @@ export function corpoPedidoResposta(d: { imovel: Imovel; quem?: string | null; c
   };
 }
 
+/**
+ * Ao morador: a moderação ocultou QUAL pedido (cidade e entrada) e por quê (antes: "seu pedido foi ocultado", sem
+ * dizer qual). O pedido removido não volta pela conta do morador: a frase não promete isso.
+ */
+export function corpoPedidoModerado(d: { cidade?: string | null; inicio?: string | null; motivo?: string | null }): CorpoResidual {
+  const cidade = limpo(d.cidade);
+  const inicio = dia(d.inicio);
+  const motivo = limpo(d.motivo).slice(0, 500);
+  const linhas: LinhaEmail[] = [];
+  if (cidade || inicio) linhas.push({ rotulo: "Seu pedido", valor: [cidade, inicio ? `entrada em ${inicio}` : ""].filter(Boolean).join(", ") });
+  if (motivo) linhas.push({ rotulo: "Motivo", valor: motivo });
+  const qual = `${cidade ? ` em ${cidade}` : ""}${inicio ? ` (entrada em ${inicio})` : ""}`;
+  return {
+    subject: cidade ? `Seu pedido em ${cidade} foi ocultado` : null,
+    body: (n) =>
+      `${ola(n)}, a moderação ocultou o seu pedido de moradia${qual}. Ele não aparece mais aos proprietários. O motivo está abaixo; se tiver dúvida, fale com a Viva pela Central de Ajuda.`,
+    linhas,
+  };
+}
+
 /** Ao dono: QUEM aceitou a resposta e sobre QUAL imóvel a conversa abriu (antes: "um inquilino aceitou"). */
 export function corpoPedidoAceito(d: { imovel: Imovel; quem?: string | null }): CorpoResidual {
   const titulo = limpo(d.imovel?.titulo);

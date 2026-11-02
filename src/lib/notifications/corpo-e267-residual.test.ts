@@ -226,3 +226,21 @@ test("E267 (resíduo): o cartão para compartilhar diz QUAL anúncio, no assunto
   const acoes = readFileSync(new URL("../data/contrato-assinar-actions.ts", import.meta.url), "utf8");
   assert.match(acoes, /event: "anuncio_compartilhar",[\s\S]{0,200}\.\.\.paraNotify\(corpoAnuncioCompartilhar\(/);
 });
+
+test("E267 (resíduo de 02/11): o pedido ocultado pela moderação diz QUAL pedido (cidade e entrada) e o motivo", async () => {
+  const { corpoPedidoModerado } = await import("./corpo-e267-residual.ts");
+  const c = corpoPedidoModerado({ cidade: "Uberlândia", inicio: "2026-12-01", motivo: "Telefone no texto do pedido" });
+  assert.equal(c.subject, "Seu pedido em Uberlândia foi ocultado");
+  assert.equal(c.body("Lara"), "Olá Lara, a moderação ocultou o seu pedido de moradia em Uberlândia (entrada em 01/12/2026). Ele não aparece mais aos proprietários. O motivo está abaixo; se tiver dúvida, fale com a Viva pela Central de Ajuda.");
+  assert.deepEqual(c.linhas, [
+    { rotulo: "Seu pedido", valor: "Uberlândia, entrada em 01/12/2026" },
+    { rotulo: "Motivo", valor: "Telefone no texto do pedido" },
+  ]);
+  // Sem cidade/data (pedido antigo): a frase continua inteira e vale o assunto do modelo.
+  const v = corpoPedidoModerado({ motivo: "x" });
+  assert.equal(v.subject, null);
+  assert.match(v.body(), /^Olá, a moderação ocultou o seu pedido de moradia\. Ele não aparece mais/);
+  const srv = readFileSync("src/lib/data/pedidos-admin.ts", "utf8");
+  assert.match(srv, /\.select\("id, inquilino_id, cidade, data_inicio"\)/);
+  assert.match(srv, /corpoPedidoModerado\(\{/);
+});
