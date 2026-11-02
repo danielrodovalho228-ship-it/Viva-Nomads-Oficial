@@ -27,6 +27,46 @@ export interface RegistroEmailTeste {
   corpo: string;
   destinatario_mascarado: string;
   usuario_id: string | null;
+  /** E435 (0284): versão HTML (sem links com token de acesso), destinatário por extenso e link de descadastro. */
+  html?: string | null;
+  destinatario?: string | null;
+  descadastro_url?: string | null;
+}
+
+/** E435: quantos e-mails por página na caixa de QA. */
+export const POR_PAGINA = 100;
+/** E435: teto da versão HTML guardada (os e-mails do sistema têm poucas dezenas de KB). */
+export const HTML_MAX = 200_000;
+
+/** E435: a página pedida na URL (?pagina=N, a partir de 1); qualquer outra coisa é a 1. */
+export function paginaDaUrl(v: string | string[] | undefined): number {
+  const n = Number(Array.isArray(v) ? v[0] : v);
+  return Number.isInteger(n) && n >= 1 && n <= 10_000 ? n : 1;
+}
+
+/** E435: o intervalo da página para o .range() do Supabase (inclusivo). */
+export function faixaDaPagina(pagina: number, porPagina = POR_PAGINA): { de: number; ate: number } {
+  const de = (Math.max(1, pagina) - 1) * porPagina;
+  return { de, ate: de + porPagina - 1 };
+}
+
+/** E435: quantas páginas para `total` e-mails (mínimo 1). */
+export function totalDePaginas(total: number | null | undefined, porPagina = POR_PAGINA): number {
+  return Math.max(1, Math.ceil(Math.max(0, Number(total) || 0) / porPagina));
+}
+
+const DESCADASTRO_RE = /https?:\/\/[a-z0-9.-]+(?::\d+)?\/avisos\/desligar\?u=[0-9a-f-]{36}&(?:amp;)?t=[A-Za-z0-9_-]+/i;
+
+/** E435: o link de descadastro (página /avisos/desligar com u e t) do e-mail, com o token; sem ele, null. */
+export function descadastroDoEmail(texto: string | null | undefined, html?: string | null): string | null {
+  const m = DESCADASTRO_RE.exec(String(texto ?? "")) ?? DESCADASTRO_RE.exec(String(html ?? ""));
+  return m ? m[0].replace(/&amp;/g, "&") : null;
+}
+
+/** E435: a versão HTML que a caixa guarda — sem links com token de ACESSO (E163), no máximo HTML_MAX. */
+export function htmlParaCaixa(html: string | null | undefined): string | null {
+  if (!html) return null;
+  return semLinksComToken(String(html).replace(/&amp;/g, "&")).slice(0, HTML_MAX);
 }
 
 /**
@@ -47,6 +87,8 @@ export function montarRegistroEmailTeste(p: {
   texto: string;
   para: string;
   usuarioId?: string | null;
+  html?: string | null;
+  descadastroUrl?: string | null;
 }): RegistroEmailTeste {
   const limpo = (s: string, max: number) => s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, max);
   return {
@@ -55,6 +97,9 @@ export function montarRegistroEmailTeste(p: {
     corpo: limpo(p.texto, CORPO_MAX),
     destinatario_mascarado: mascararDestinatario(p.para),
     usuario_id: p.usuarioId && UUID_RE.test(p.usuarioId) ? p.usuarioId : null,
+    html: htmlParaCaixa(p.html),
+    destinatario: limpo(String(p.para ?? "").toLowerCase(), 254) || null,
+    descadastro_url: p.descadastroUrl ?? null,
   };
 }
 
@@ -83,6 +128,8 @@ export interface EmailParaCaixa {
   imagem?: string;
   /** Só os NOMES dos anexos (ex.: "REC-2026-000004.pdf"); o conteúdo nunca é guardado. */
   anexos?: string[];
+  /** E435: a versão HTML enviada (a caixa guarda sem links com token de acesso). */
+  html?: string;
   /** E274: a URL da foto de capa de cada cartão de imóvel do HTML (fotosDosCartoes), para o QA ver a foto que saiu. */
   fotos?: string[];
 }
@@ -182,7 +229,7 @@ export async function guardarNaCaixaTeste(admin: ClienteCaixaTeste, p: EmailPara
     const { data } = await (p.usuarioId ? q.eq("id", p.usuarioId) : q.eq("email", p.para.trim().toLowerCase()));
     const conta = (data ?? [])[0] as { id: string } | undefined;
     if (!conta) return false;
-    const { error } = await admin.from("emails_teste").insert(montarRegistroEmailTeste({ ...p, texto: corpoComCabecalho(corpoComAnexos(semLinksComToken(p.texto), p.anexos), p), usuarioId: conta.id }));
+    const { error } = await admin.from("emails_teste").insert(montarRegistroEmailTeste({ ...p, texto: corpoComCabecalho(corpoComAnexos(semLinksComToken(p.texto), p.anexos), p), usuarioId: conta.id, descadastroUrl: descadastroDoEmail(p.texto, p.html) }));
     return !error;
   } catch {
     return false;
@@ -234,6 +281,10 @@ export interface LinhaEmailTeste {
   assunto: string;
   corpo: string;
   destinatario_mascarado: string;
+  /** E435: só na tela do leitor de QA (selecionadas lá); a lista do admin não lê estas colunas. */
+  html?: string | null;
+  destinatario?: string | null;
+  descadastro_url?: string | null;
 }
 
 /** A linha como a tela mostra: e-mails mascarados e links com token removidos de novo (defesa em profundidade). */
