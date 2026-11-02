@@ -114,3 +114,37 @@ export async function rotinaPrecoJusto(admin: SupabaseClient, agora: Date): Prom
   }
   return { precoJusto: { consultados, falhas } };
 }
+
+/** Pacote 4: os anúncios (entre `ids`) com o selo pelo motor — a mesma regra do cartão, da ficha e do ranking. */
+export async function selosDoMotor(admin: SupabaseClient, ids: string[], agora: Date): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (!ids.length) return out;
+  const { data, error } = await admin
+    .from("preco_justo_airbnb")
+    .select(`property_id, conferencia, total_30_noites, consultado_em, properties!inner(${COLUNAS_IMOVEL_PRECO})`)
+    .in("property_id", ids);
+  if (error) throw new Error("Não foi possível ler os selos do Preço justo.");
+  for (const r of (data ?? []) as unknown as { property_id: string; conferencia: Conferencia; total_30_noites: number | null; consultado_em: string | null; properties: ImovelParaPreco }[]) {
+    const total30 = r.total_30_noites == null ? null : Number(r.total_30_noites);
+    if (decidirSelo({ totalViva: totalVivaDoImovel(r.properties), total30, consultadoEm: r.consultado_em, conferencia: r.conferencia }, agora).selo) out.add(r.property_id);
+  }
+  return out;
+}
+
+/** Pacote 5: o aviso do dono ("sem selo: no Airbnb R$ X; até R$ Y") para a lista de anúncios dele. Nunca público. */
+export async function avisosDoMotor(admin: SupabaseClient, ids: string[], agora: Date): Promise<Map<string, { valorAirbnb: number; ate: number }>> {
+  const out = new Map<string, { valorAirbnb: number; ate: number }>();
+  if (!ids.length) return out;
+  const { data, error } = await admin
+    .from("preco_justo_airbnb")
+    .select(`property_id, conferencia, total_30_noites, consultado_em, properties!inner(${COLUNAS_IMOVEL_PRECO})`)
+    .in("property_id", ids);
+  if (error) throw new Error("Não foi possível ler o Preço justo dos anúncios.");
+  for (const r of (data ?? []) as unknown as { property_id: string; conferencia: Conferencia; total_30_noites: number | null; consultado_em: string | null; properties: ImovelParaPreco }[]) {
+    const total30 = r.total_30_noites == null ? null : Number(r.total_30_noites);
+    const d = decidirSelo({ totalViva: totalVivaDoImovel(r.properties), total30, consultadoEm: r.consultado_em, conferencia: r.conferencia }, agora);
+    if (d.avisoDono) out.set(r.property_id, d.avisoDono);
+  }
+  return out;
+}
+
