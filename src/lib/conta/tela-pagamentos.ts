@@ -5,6 +5,8 @@
   (decisão de 24/10: Pagamentos segue o mockup, nenhuma cobrança é ativada).
 */
 export const TITULO_RECEBE = "Como você recebe (proprietário)";
+/** Estados vazios: a leitura da chave falhou — nunca mostrar o formulário vazio como se não houvesse chave. */
+export const AVISO_PIX_FALHOU = "Não conseguimos ler a sua chave Pix agora. Tente de novo em instantes.";
 export const NOTA_RECEBE = "O pagamento do morador vai direto para você — a Viva não fica com o seu dinheiro.";
 export const TITULO_MORADOR = "Para suas estadias (morador)";
 export const SEM_CARTAO = "Nenhum cartão cadastrado";
