@@ -77,7 +77,8 @@ test.describe("T996 — E267 resíduo: o pedido ocultado pela moderação diz qu
         return (data ?? []).length;
       }, { timeout: 45_000, message: "o e-mail pedido_moderado precisa chegar à caixa de testes" })
       .toBe(1);
-    expect(m!.assunto).toBe("Seu pedido em Uberlândia foi ocultado");
+    // O envio acrescenta " · Viva Nomads" a todo assunto.
+    expect(m!.assunto).toMatch(/^Seu pedido em Uberlândia foi ocultado( · Viva Nomads)?$/);
     expect(m!.corpo).toContain(`a moderação ocultou o seu pedido de moradia em Uberlândia (entrada em ${ENTRADA_BR})`);
     expect(m!.corpo).toContain("Ele não aparece mais aos proprietários.");
     expect(m!.corpo).toContain(MOTIVO);
