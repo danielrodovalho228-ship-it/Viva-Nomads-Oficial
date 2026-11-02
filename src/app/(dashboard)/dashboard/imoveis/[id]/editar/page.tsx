@@ -59,7 +59,9 @@ export default async function EditarImovelPage({
         const { data: m } = await supabase.from("properties").select("pausa_motivo").eq("id", id).maybeSingle();
         pausaMotivo = (m as { pausa_motivo?: string | null } | null)?.pausa_motivo ?? null;
       }
-      const { data: priv } = await supabase.rpc("property_private_details", { prop_id: id });
+      // Achado 130: sem o endereço exato, o editor não abre com a rua vazia (a falha cai no error.tsx: "Tente de novo").
+      const { data: priv, error: erroPriv } = await supabase.rpc("property_private_details", { prop_id: id });
+      if (erroPriv) throw new Error("Não foi possível ler o endereço do anúncio agora.");
       const linha = (Array.isArray(priv) ? priv[0] : priv) as { exact_address?: string | null } | null;
       enderecoExato = linha?.exact_address ?? "";
     }
