@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { CAMINHO_FOTO_EMAIL_RE, FOTO_CARTAO } from "@/lib/notifications/cartoes-email";
+import { CAMINHO_PARCEIRO_EMAIL_RE } from "@/lib/notifications/destaque-email";
 
 /**
  * E264-B — a foto de capa do cartão do e-mail, SEMPRE em JPEG (640 px), inline e igual para todo cliente.
@@ -12,11 +13,15 @@ export const runtime = "nodejs";
 const MAX_BYTES = 8_000_000;
 
 export async function GET(request: Request) {
-  const p = new URL(request.url).searchParams.get("p") ?? "";
+  const q = new URL(request.url).searchParams;
+  const p = q.get("p") ?? "";
+  // E438: a foto do parceiro (bucket público "parceiros", só o formato que o painel grava).
+  const pc = q.get("pc") ?? "";
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!CAMINHO_FOTO_EMAIL_RE.test(p) || !base) return new Response("Não encontrado.", { status: 404 });
+  const caminho = CAMINHO_FOTO_EMAIL_RE.test(p) ? `property-photos/${p}` : CAMINHO_PARCEIRO_EMAIL_RE.test(pc) ? `parceiros/${pc}` : null;
+  if (!caminho || !base) return new Response("Não encontrado.", { status: 404 });
 
-  const origem = await fetch(`${base}/storage/v1/object/public/property-photos/${p}`, { cache: "no-store" }).catch(() => null);
+  const origem = await fetch(`${base}/storage/v1/object/public/${caminho}`, { cache: "no-store" }).catch(() => null);
   if (!origem?.ok) return new Response("Não encontrado.", { status: 404 });
   const bytes = new Uint8Array(await origem.arrayBuffer());
   if (!bytes.length || bytes.length > MAX_BYTES) return new Response("Não encontrado.", { status: 404 });
