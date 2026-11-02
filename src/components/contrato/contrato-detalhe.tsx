@@ -176,7 +176,13 @@ export async function ContratoDetalhe({
           </div>
         </Panel>
       )}
-      {pendencias && pendencias.pendencias.length > 0 && (
+      {/* Leitura falha: aviso no lugar do painel (nunca "sem pendências" por engano). */}
+      {pendencias && pendencias.pendencias === null && (
+        <p className="mt-4 rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink" role="status" data-testid="pendencias-conforto-indisponivel">
+          Não foi possível carregar as pendências do padrão mínimo agora. Recarregue a página em instantes.
+        </p>
+      )}
+      {pendencias?.pendencias && pendencias.pendencias.length > 0 && (
         <Panel className="mt-4 scroll-mt-24 p-4" id="pendencias-conforto">
           <h2 className="font-title text-base font-semibold text-ink">Pendências do padrão mínimo</h2>
           <p className="mt-1 text-sm text-muted">
