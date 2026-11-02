@@ -256,7 +256,7 @@ async function copiaDaRecusa(admin: Admin, p: Pick<LinhaProposta, "id" | "owner_
       paraQuemRecusou: true,
       nomeDaOutraParte: (ele as { full_name?: string | null } | null)?.full_name ?? null,
     });
-    await notify({ event: "proposta_recusada", email: d.email, name: d.full_name ?? undefined, userId: quem, pushUrl: e.url, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, semPush: true });
+    await notify({ event: "proposta_recusada", email: d.email, name: d.full_name ?? undefined, userId: quem, pushUrl: e.url, imovelId: p.property_id, subject: e.assunto, body: e.abertura, ctaLabel: e.cta, semPush: true });
   } catch {
     /* notificação nunca quebra o fluxo */
   }
@@ -327,6 +327,7 @@ async function avisarOutraParte(
       name: (d?.full_name as string | undefined) ?? undefined,
       userId: destino,
       pushUrl: proprio?.url ?? `/dashboard/propostas/${p.id}`,
+      imovelId: p.property_id,
       // O número da proposta vai no corpo, nunca no assunto (rota rápida dos e-mails, item 2).
       subject: proprio?.assunto ?? (evento === "proposta_recebida" ? ASSUNTOS.propostaRecebida : ASSUNTOS.propostaRespondida),
       ...(proprio ? { body: proprio.abertura, ctaLabel: proprio.cta } : dados ? { body: (nome?: string) => dados.abertura(nome) } : {}),
@@ -375,6 +376,7 @@ async function emailsDoAceite(
       name: d.full_name ?? undefined,
       userId: p.owner_id,
       pushUrl: paraDono.url,
+      imovelId: p.property_id,
       subject: paraDono.assunto,
       body: paraDono.abertura,
       ctaLabel: paraDono.cta,
@@ -390,6 +392,7 @@ async function emailsDoAceite(
       name: m.full_name ?? undefined,
       userId: p.tenant_id,
       pushUrl: paraMorador.url,
+      imovelId: p.property_id,
       subject: paraMorador.assunto,
       body: paraMorador.abertura,
       ctaLabel: paraMorador.cta,

@@ -130,6 +130,7 @@ export async function aceitarCandidatura(leadId: string): Promise<ActionResult> 
           userId: lead.tenant_id,
           // E228: "Abrir a conversa" abre a conversa desta candidatura em Mensagens (o mesmo id que o pedido gravou).
           pushUrl: `/dashboard/mensagens?conversa=${conversationId(lead.tenant_id, user.id, lead.property_id)}`,
+          imovelId: lead.property_id,
           ...(corpo ? { body: corpo.body, detailsHtml: corpo.detailsHtml, detailsText: corpo.detailsText } : {}),
         });
       }

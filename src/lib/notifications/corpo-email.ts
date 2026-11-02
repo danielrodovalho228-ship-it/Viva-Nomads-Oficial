@@ -4,7 +4,7 @@
 */
 import { botaoEmail, layoutEmail, rodapeTexto } from "./modelo-email.ts";
 
-export type Hero = { src: string; alt: string };
+export type Hero = { src: string; alt: string; href?: string };
 
 /** Pré-cabeçalho (a linha cinza depois do assunto na caixa de entrada): o começo do texto, sem tags. */
 export function preheaderDe(intro: string): string {

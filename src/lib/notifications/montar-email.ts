@@ -7,6 +7,7 @@ import { ASSUNTOS, comMarca } from "./assuntos.ts";
 import { corpoCodigo, corpoNotificacao, imagemEmail, textoNotificacao } from "./corpo-email.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
 import { imagemDoEvento } from "./imagens-email.ts";
+import { blocoParceiroHtml, heroDoDestaque, linhasTextoDoDestaque, type DestaqueEmail } from "./destaque-email.ts";
 import { blocoDados, rodapeTexto } from "./modelo-email.ts";
 import { textoEmail } from "./texto-seguro.ts";
 import { escaparHtml } from "../escapar-html.ts";
@@ -45,11 +46,18 @@ export function montarNotificacao(p: {
   detailsHtml?: string;
   detailsText?: string;
   outro?: string;
+  /** E438: o imóvel e/ou o parceiro do e-mail (a imagem real deles no lugar do banner genérico). */
+  destaque?: DestaqueEmail | null;
 }): EmailMontado {
   const base = TEMPLATES[p.event];
   const titulo = p.subject ?? base.subject;
   const body = p.body ?? base.body;
   const img = imagemDoEvento(p.event);
+  const hero = heroDoDestaque(p.siteUrl, p.destaque);
+  const blocoParceiro = blocoParceiroHtml(p.siteUrl, p.destaque);
+  const detailsHtml = blocoParceiro || p.detailsHtml ? `${blocoParceiro}${p.detailsHtml ?? ""}` : undefined;
+  const linhasDestaque = linhasTextoDoDestaque(p.siteUrl, p.destaque);
+  const detailsText = [p.detailsText ?? "", linhasDestaque].filter(Boolean).join("\n") || undefined;
   // Detalhes que já trazem um link (ex.: "Responder pela plataforma") ficam com ele; os demais ganham UM botão para a
   // tela EXATA do evento (a mesma do push) — nunca a home. Com o app instalado, o link abre o app.
   // E441: os links do bloco da pessoa (foto e nome, data-morador-email) não contam — o botão do evento continua.
@@ -63,13 +71,14 @@ export function montarNotificacao(p: {
       // O assunto pode trazer texto do usuário (título do imóvel): no HTML vai escapado.
       title: escaparHtml(titulo),
       intro: body(p.nomeHtml),
-      detailsHtml: p.detailsHtml,
+      detailsHtml,
       cta,
       outro: p.outro,
-      image: imagemEmail(p.siteUrl, img.arquivo, img.alt),
+      // E438: a capa real do anúncio (ou a foto do parceiro), clicável; sem ela, o banner do tema.
+      image: hero ?? imagemEmail(p.siteUrl, img.arquivo, img.alt),
     }),
-    text: textoNotificacao(p.siteUrl, { title: titulo, intro: body(p.nomeTexto), detailsText: p.detailsText, cta }),
-    imagem: `${img.arquivo}.jpg`,
+    text: textoNotificacao(p.siteUrl, { title: titulo, intro: body(p.nomeTexto), detailsText, cta }),
+    imagem: hero ? (p.destaque?.imovel && hero.href?.includes("/imoveis/") ? "capa-do-anuncio" : "foto-do-parceiro") : `${img.arquivo}.jpg`,
     botao: cta?.label ?? null,
   };
 }

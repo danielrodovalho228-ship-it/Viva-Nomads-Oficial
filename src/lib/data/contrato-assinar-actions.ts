@@ -583,6 +583,7 @@ export async function assinarContrato(input: {
         // Prompt 61-A: com as duas assinaturas, o aviso de quem assinou antes abre a tela "Estadia confirmada".
         pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
+        imovelId: c.property_id,
         ...corpo(outroId),
       });
       // Prompt 24: com as duas assinaturas, quem assinou por último também recebe o "contrato assinado" (os dois lados).
@@ -592,6 +593,7 @@ export async function assinarContrato(input: {
           email: user.email ?? undefined,
           userId: user.id,
           pushUrl: HREF_CONFIRMADA(c.id),
+          imovelId: c.property_id,
           subject: assuntoAvisoOutraParte(true),
           body: (nome?: string) => aberturaAssinatura({ nome, imovel: imovelEmail, asDuas: true, quemAssinou }),
           detailsHtml: corpo(user.id).detailsHtml,
@@ -611,6 +613,7 @@ export async function assinarContrato(input: {
             email: emailDono ?? undefined,
             userId: ownerId,
             pushUrl: `/dashboard/imoveis/${imovelId}/cartao`,
+            imovelId,
             ...paraNotify(corpoAnuncioCompartilhar({ imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),
           });
         }

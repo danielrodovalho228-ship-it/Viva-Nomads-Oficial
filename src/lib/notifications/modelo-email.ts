@@ -8,7 +8,8 @@
 import { AVISO_ANTIGOLPE, rodapeAntigolpeHtml } from "./aviso-antigolpe.ts";
 import { REDES_OFICIAIS } from "../../config/redes.ts";
 
-export type ImagemEmail = { src: string; alt: string };
+/** `href` (E438): a imagem real do assunto (capa do anúncio, foto do parceiro) é clicável para a página dele. */
+export type ImagemEmail = { src: string; alt: string; href?: string };
 
 /**
  * Blocos do rodapé que ficam PRONTOS mas DESLIGADOS: só ligam depois do CNPJ e
@@ -81,7 +82,7 @@ export function layoutEmail(
 ): string {
   const site = o.siteUrl;
   const hero = o.image
-    ? `<tr><td style="padding:0;font-size:0;line-height:0;"><img src="${o.image.src}" alt="${o.image.alt}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></td></tr>`
+    ? `<tr><td style="padding:0;font-size:0;line-height:0;">${o.image.href ? `<a href="${o.image.href}">` : ""}<img src="${o.image.src}" alt="${o.image.alt}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />${o.image.href ? "</a>" : ""}</td></tr>`
     : "";
   const pre = o.preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;font-size:1px;line-height:1px;">${o.preheader}</div>`

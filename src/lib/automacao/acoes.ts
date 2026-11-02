@@ -37,11 +37,11 @@ async function sessao(): Promise<{ admin: Admin; userId: string } | { erro: stri
   return { admin, userId: user.id };
 }
 
-async function avisoSimples(admin: Admin, destino: string, ev: NotificationEvent, url: string, texto?: { subject: string; body: (n?: string) => string }) {
+async function avisoSimples(admin: Admin, destino: string, ev: NotificationEvent, url: string, texto?: { subject: string; body: (n?: string) => string }, destaque?: { imovelId?: string; parceiroId?: string }) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, ...texto });
+    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, ...texto, ...destaque });
   } catch {
     /* aviso é complemento */
   }
@@ -186,6 +186,7 @@ export async function convidarParceiroFixo(e: EntradaVinculo): Promise<Res<{ id:
     "vinculo_parceiro_convite",
     "/dashboard/parceiro#imoveis-fixos",
     textoConvite({ categoria: e.categoria, tituloImovel: im.title, cidade: im.city, nomeDono: (dono as { full_name: string | null } | null)?.full_name ?? null, nomeParceiro: p.nome_publico }),
+    { imovelId: im.id },
   );
   revalidatePath(rotaParceiros(im.id));
   return { ok: true, valor: { id: (data as { id: string }).id } };
@@ -285,7 +286,7 @@ export async function responderConviteFixo(vinculoId: string, aceitar: boolean):
   if (!data?.length) return { ok: false, erro: "O convite mudou. Atualize a página." };
   if (v.properties?.owner_id) {
     const dados = { categoria: v.categoria, tituloImovel: v.properties.title, cidade: v.properties.city, nomeDono: null, nomeParceiro: v.parceiros?.nome_publico ?? null };
-    await avisoSimples(s.admin, v.properties.owner_id, "vinculo_parceiro_resposta", rotaParceiros(v.property_id), textoResposta(dados, aceitar));
+    await avisoSimples(s.admin, v.properties.owner_id, "vinculo_parceiro_resposta", rotaParceiros(v.property_id), textoResposta(dados, aceitar), { imovelId: v.property_id, parceiroId: v.parceiro_id });
   }
   revalidatePath("/dashboard/parceiro");
   return { ok: true, valor: null };

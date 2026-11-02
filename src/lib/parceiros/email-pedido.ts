@@ -24,6 +24,10 @@ export interface PedidoParaEmail {
   valorParceiro?: number | null;
   /** E267: a outra parte — o primeiro nome do cliente (para o parceiro) ou o nome público do parceiro (para o cliente). */
   outraParte?: string | null;
+  /** E438: o imóvel do pedido (capa real no topo do e-mail). */
+  imovelId?: string | null;
+  /** E438: o parceiro do pedido — só no e-mail do cliente (a foto do parceiro). */
+  parceiroId?: string | null;
 }
 
 /** E267: o fato que o evento conta e que o pedido sozinho não guarda. */
