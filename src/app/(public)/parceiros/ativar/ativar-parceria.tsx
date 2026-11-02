@@ -26,14 +26,22 @@ export function AtivarParceria({ token, estado }: { token: string; estado: Estad
           </ButtonLink>
         ) : (
           <>
-            <p className="mt-1 text-sm text-muted">Peça um novo link: a equipe recebe o aviso e manda outro e-mail.</p>
+            {/* E425 (resíduo 2): o painel ativa o pedido aprovado pela conta, sem o link — não precisa esperar a equipe. */}
+            <p className="mt-1 text-sm text-muted">
+              Com a conta do e-mail do pedido, dá para ativar agora pelo painel de parceiro, sem o link.
+            </p>
+            <ButtonLink href="/dashboard/parceiro" className="mt-3" data-testid="ativar-pelo-painel">
+              Ativar pelo painel
+            </ButtonLink>
+            <p className="mt-4 text-sm text-muted">Ou peça um novo link: a equipe recebe o aviso e manda outro e-mail.</p>
             {msg?.ok ? (
               <p className="mt-4 text-sm text-forest" role="status" data-testid="ativar-novo-link-ok">
                 {msg.texto}
               </p>
             ) : (
               <Button
-                className="mt-4"
+                className="mt-3"
+                variant="secondary"
                 disabled={pendente || estado.situacao === "invalido"}
                 data-testid="ativar-novo-link"
                 onClick={() =>
