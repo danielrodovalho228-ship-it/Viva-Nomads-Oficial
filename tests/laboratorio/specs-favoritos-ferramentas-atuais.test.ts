@@ -9,7 +9,7 @@ const spec = (f: string) => ler(`tests/e2e/specs/${f}`);
 
 test("t160: o topo público não tem Favoritos, então a spec não cobra o link", () => {
   const nav = ler("src/lib/constants.ts").match(/export const PUBLIC_NAV = \[([\s\S]*?)\]/)?.[1] ?? "";
-  assert.deepEqual([...nav.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]), ["Imóveis", "Anunciar", "Empresas"]);
+  assert.deepEqual([...nav.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]), ["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
   const t160 = spec("t160-favoritos-pagina.spec.ts");
   assert.doesNotMatch(t160, /const link = page\.getByRole\("link", \{ name: \/Favoritos\/ \}\)/);
   assert.match(t160, /getByRole\("link", \{ name: \/Favoritos\/ \}\)\)\.toHaveCount\(0\)/);
