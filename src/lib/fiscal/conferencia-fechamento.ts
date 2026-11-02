@@ -7,6 +7,8 @@ import { registrarDocumento } from "@/lib/fiscal/registro";
 import { aoFecharConferencia } from "@/lib/automacao/servidor";
 
 const BUCKET_CONFERENCIA = "conferencia";
+/** Postgres: relação inexistente (banco sem a 0210). */
+const TABELA_AUSENTE = "42P01";
 
 /**
  * Fecha a conferência (Prompt 56, D5): lê itens, respostas e laudo, calcula o hash de cada foto e do laudo, grava o
@@ -15,19 +17,25 @@ const BUCKET_CONFERENCIA = "conferencia";
  */
 export async function fecharConferencia(admin: SupabaseClient, conferenciaId: string, motivo: MotivoFechamento): Promise<{ fechou: boolean; numero?: string }> {
   try {
-    const { data: c } = await admin
+    const { data: c, error: erroConferencia } = await admin
       .from("conferencias")
       .select("id, tipo, contrato_id, fechada_em, contratos(tenant_id, properties(owner_id))")
       .eq("id", conferenciaId)
       .maybeSingle();
+    if (erroConferencia) throw new Error(`conferência não lida (${erroConferencia.message})`);
     if (!c || c.fechada_em) return { fechou: false };
-    const [{ data: itens }, { data: respostas }, { data: laudo }, { data: conforto }] = await Promise.all([
+    const [{ data: itens, error: erroItens }, { data: respostas, error: erroRespostas }, { data: laudo, error: erroLaudo }, { data: conforto, error: erroConforto }] = await Promise.all([
       admin.from("conferencia_itens").select("parte, comodo, descricao, foto_path, criado_em, precisa_reparo").eq("conferencia_id", conferenciaId),
       admin.from("conferencia_respostas").select("parte, decisao, motivo, decidido_em").eq("conferencia_id", conferenciaId),
       admin.from("conferencia_laudos").select("path, parte, criado_em").eq("conferencia_id", conferenciaId).maybeSingle(),
       // Prompt 59: seção "Padrão mínimo" do morador (sem a 0210, erro → seção vazia).
       admin.from("conferencia_conforto").select("chave, confere, texto, foto_path").eq("conferencia_id", conferenciaId),
     ]);
+    // O fechamento é gravado UMA vez e não muda: leitura falha nunca vira retrato vazio (itens, respostas ou laudo
+    // sumidos do CND). Fica aberta; o cron das automações tenta de novo. Só a tabela do conforto ausente (sem a 0210)
+    // segue como seção vazia.
+    const falha = erroItens ?? erroRespostas ?? erroLaudo ?? (erroConforto && erroConforto.code !== TABELA_AUSENTE ? erroConforto : null);
+    if (falha) throw new Error(`leitura do fechamento falhou (${falha.message})`);
     const estado: EstadoParaFechar = {
       conferenciaId,
       contrato: numeroPublicoContrato(c.contrato_id as string),
@@ -78,7 +86,12 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
     await aoFecharConferencia(admin, conferenciaId);
     return { fechou: true, numero: reg.numero };
   } catch (e) {
-    console.error("[conferência] fechamento:", e instanceof Error ? e.message : e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[conferência] fechamento:", msg);
+    await admin
+      .from("avisos_daniel")
+      .insert({ assunto: "Fechamento de conferência falhou", corpo: `A conferência ${conferenciaId} não fechou (${motivo}): ${msg}. Ela segue aberta e o cron tenta de novo.`, prioridade: "P2" })
+      .then(undefined, () => {});
     return { fechou: false };
   }
 }
@@ -87,9 +100,11 @@ export async function fecharConferencia(admin: SupabaseClient, conferenciaId: st
 export async function corrigirConferenciaFechada(admin: SupabaseClient, conferenciaId: string, motivo: string, texto: string, autorId: string): Promise<{ ok: true; versao: number } | { ok: false; erro: string }> {
   if (motivo.trim().length < 5) return { ok: false, erro: "Escreva o motivo da correção." };
   if (!texto.trim()) return { ok: false, erro: "Escreva a correção." };
-  const { data: c } = await admin.from("conferencias").select("fechamento_hash, contratos(tenant_id, properties(owner_id))").eq("id", conferenciaId).maybeSingle();
+  const { data: c, error: erroConferencia } = await admin.from("conferencias").select("fechamento_hash, contratos(tenant_id, properties(owner_id))").eq("id", conferenciaId).maybeSingle();
+  if (erroConferencia) return { ok: false, erro: "Não foi possível registrar a correção. Tente de novo." };
   if (!c?.fechamento_hash) return { ok: false, erro: "A conferência ainda não foi fechada: corrija direto nela." };
-  const { data: ultima } = await admin.from("conferencia_correcoes").select("versao").eq("conferencia_id", conferenciaId).order("versao", { ascending: false }).limit(1).maybeSingle();
+  const { data: ultima, error: erroUltima } = await admin.from("conferencia_correcoes").select("versao").eq("conferencia_id", conferenciaId).order("versao", { ascending: false }).limit(1).maybeSingle();
+  if (erroUltima) return { ok: false, erro: "Não foi possível registrar a correção. Tente de novo." };
   const versao = Number(ultima?.versao ?? 1) + 1;
   const conteudo = conteudoCorrecao({ fechamentoHash: c.fechamento_hash as string, versao, motivo, texto });
   const hash = sha256(new TextEncoder().encode(conteudo));
