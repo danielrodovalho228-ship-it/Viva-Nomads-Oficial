@@ -509,8 +509,10 @@ export async function responderNaEquipe(chamadoId: string, momento: "abertura" |
     const ultimaMsg = publicas[ultimaPessoa].corpo;
 
     // Pediu PESSOA (na abertura ou agora): nunca resposta da IA; prioridade +1 (uma vez).
-    const { count: jaPediu } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "pediu_humano");
-    let pediuPessoa = (jaPediu ?? 0) > 0;
+    const { count: jaPediu, error: erroPediu } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "pediu_humano");
+    // Leitura falha conta como "pediu": na dúvida, a Viva nunca responde sozinha a quem pode ter pedido uma pessoa
+    // (e a prioridade não sobe de novo).
+    let pediuPessoa = erroPediu ? true : (jaPediu ?? 0) > 0;
     let pediuAgora = false;
     if (momento === "mensagem" && !pediuPessoa && pedePessoaNoTexto(ultimaMsg)) {
       pediuPessoa = true;
