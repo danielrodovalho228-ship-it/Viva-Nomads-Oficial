@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /**
  * T993 — #2193 (Pista A, varredura 02/11): a lista de Visitas usa 2 colunas no computador e, com número ÍMPAR de
  * visitas, sobrava um buraco ao lado da última. Agora é grade par (utilidade grade-par): a última ímpar ocupa a linha
- * inteira. Pela tela real (/dashboard/visitas da dona, 3 visitas pedidas em 3 imóveis), 390 e 1280:
+ * inteira. Pela tela real (/dashboard/visitas?de=dono, as visitas recebidas pela dona: 3 pedidas em 3 imóveis), 390 e 1280:
  *   1. 1280: as duas primeiras dividem a linha (cada uma com cerca de metade da grade) e a 3ª ocupa a linha inteira;
  *   2. 390: uma coluna — as três com a largura da grade;
  *   3. sem rolagem lateral nos dois tamanhos.
@@ -40,8 +40,9 @@ test.describe("T993 — #2193: Visitas em grade par (a última ímpar ocupa a li
     test(`3 visitas: ${w === 1280 ? "a 3ª ocupa a linha inteira" : "uma coluna"} (${w})`, async ({ browser }) => {
       const page = await entrar(browser, dona.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
-      await page.goto("/dashboard/visitas", { waitUntil: "domcontentloaded" });
-      const grade = page.locator(".grade-par").first();
+      // E176: os pedidos recebidos nos imóveis do dono abrem por ?de=dono (sem ele, a aba mostra os pedidos que a conta fez).
+      await page.goto("/dashboard/visitas?de=dono", { waitUntil: "domcontentloaded" });
+      const grade = page.getByTestId("visitas-recebidas").locator(".grade-par");
       await expect(grade).toBeVisible({ timeout: 30_000 });
       await expect(grade.locator(":scope > *")).toHaveCount(3, { timeout: 30_000 });
       const medidas = await grade.evaluate((g) => {
