@@ -227,7 +227,9 @@ export async function enviarImagemParceiro(form: FormData): Promise<Res<{ url: s
   if (!ehWebp(bytes)) return { ok: false, erro: "Formato não aceito. Use JPG, PNG ou WebP." };
   const id = m.p.id as string;
   if (tipo === "galeria") {
-    const { count } = await m.admin.from("parceiro_galeria").select("id", { count: "exact", head: true }).eq("parceiro_id", id);
+    const { count, error: erroContagem } = await m.admin.from("parceiro_galeria").select("id", { count: "exact", head: true }).eq("parceiro_id", id);
+    // Contagem ilegível não vira 0: o limite vale sempre.
+    if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
     if ((count ?? 0) >= GALERIA_MAX) return { ok: false, erro: `A galeria aceita até ${GALERIA_MAX} fotos.` };
   }
   const path = `${id}/${tipo}-${randomBytes(8).toString("hex")}.webp`;
