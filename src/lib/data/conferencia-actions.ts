@@ -169,7 +169,9 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
     .upsert({ contrato_id: input.contratoId, tipo: "entrada", aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", "entrada").maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
-  const { data: respostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id);
+  const { data: respostas, error: erroRespostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id);
+  // Leitura falha não vira "ainda não respondeu": o padrão mínimo depois da resposta abriria tarefas ao dono e mudaria o nível.
+  if (erroRespostas) return erro("Não foi possível conferir a sua resposta agora. Tente de novo.");
   if (!podeEditarItens((respostas ?? []) as RespostaConferencia[], ctx.parte)) return erro("Você já respondeu esta conferência e ela não pode mais ser alterada.");
   const { count } = await admin.from("conferencia_conforto").select("chave", { count: "exact", head: true }).eq("conferencia_id", conf.id);
   if ((count ?? 0) > 0) return erro("O padrão mínimo desta entrada já foi respondido.");
