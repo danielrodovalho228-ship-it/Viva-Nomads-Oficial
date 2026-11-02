@@ -514,17 +514,24 @@ export async function linkArquivoDoPedido(pedidoId: string, alvo: { entregaId: s
  * Fotógrafo com imóvel vinculado: o cliente (dono do imóvel) copia as fotos entregues para as fotos do anúncio,
  * DEPOIS das que já existem (nada é apagado). Só imagens; o bucket do anúncio é o de sempre (property-photos).
  */
+const MSG_FOTOS_SEM_LEITURA = "Não foi possível ler as fotos agora. Tente de novo.";
+
 export async function usarFotosNoAnuncio(pedidoId: string): Promise<Res<{ copiadas: number }>> {
   const c = await carregar(pedidoId);
   if ("erro" in c) return { ok: false, erro: c.erro };
   if (c.papel !== "cliente" || c.p.categoria !== "fotografia" || !c.p.property_id || !["entregue", "concluido"].includes(c.p.status))
     return { ok: false, erro: "Esta ação não está disponível." };
-  const { data: imovel } = await c.admin.from("properties").select("id").eq("id", c.p.property_id).eq("owner_id", c.userId).maybeSingle();
+  // Achado 117: cada leitura que falha recusa ("Tente de novo") — sem as fotos atuais, as da entrega entravam em dobro e
+  // com a ordem a partir de 0 (passando à frente da foto principal); sem as entregas, dizia "A entrega não tem fotos".
+  const { data: imovel, error: e1 } = await c.admin.from("properties").select("id").eq("id", c.p.property_id).eq("owner_id", c.userId).maybeSingle();
+  if (e1) return { ok: false, erro: MSG_FOTOS_SEM_LEITURA };
   if (!imovel) return { ok: false, erro: "Só o dono do imóvel usa as fotos no anúncio." };
-  const { data: entregas } = await c.admin.from("parceiro_entregas").select("path").eq("pedido_id", c.p.id).order("criado_em");
+  const { data: entregas, error: e2 } = await c.admin.from("parceiro_entregas").select("path").eq("pedido_id", c.p.id).order("criado_em");
+  if (e2) return { ok: false, erro: MSG_FOTOS_SEM_LEITURA };
   const imagens = ((entregas ?? []) as { path: string }[]).filter((e) => /\.(jpe?g|png|webp)$/i.test(e.path));
   if (imagens.length === 0) return { ok: false, erro: "A entrega não tem fotos." };
-  const { data: atuais } = await c.admin.from("property_photos").select("url, sort_order").eq("property_id", c.p.property_id);
+  const { data: atuais, error: e3 } = await c.admin.from("property_photos").select("url, sort_order").eq("property_id", c.p.property_id);
+  if (e3) return { ok: false, erro: MSG_FOTOS_SEM_LEITURA };
   const ja = new Set(((atuais ?? []) as { url: string }[]).map((f) => f.url));
   let ordem = Math.max(-1, ...((atuais ?? []) as { sort_order: number | null }[]).map((f) => f.sort_order ?? 0)) + 1;
   let copiadas = 0;
