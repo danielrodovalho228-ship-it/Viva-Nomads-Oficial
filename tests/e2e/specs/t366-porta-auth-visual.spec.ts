@@ -72,7 +72,8 @@ for (const w of [1280, 390]) {
           els.filter((e) => !e.querySelector("img") && e.tagName !== "IMG" && /rgba?\(/.test(getComputedStyle(e).backgroundColor) && getComputedStyle(e).backgroundColor !== "rgba(0, 0, 0, 0)").length,
         );
         expect(cheios, "nenhuma camada escura cobrindo a foto inteira").toBe(0);
-        const titulo = page.getByRole("heading", { level: 1 });
+        // O h1 da página é o título do formulário (todas as larguras); a frase branca sobre a foto é texto (#auth-h1-celular).
+        const titulo = page.getByTestId("porta-titulo-foto");
         await expect(titulo).toBeVisible();
         expect(await titulo.evaluate((el) => getComputedStyle(el).color)).toBe("rgb(255, 255, 255)");
       } else {

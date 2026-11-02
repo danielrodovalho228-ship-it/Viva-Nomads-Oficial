@@ -245,7 +245,7 @@ export function LoginPorCodigo({
           <ArrowLeft className="h-4 w-4" /> Voltar
         </button>
       )}
-      <h2 className="mt-6 font-title text-2xl font-semibold text-ink">{enviado ? "Digite o código" : "Entre ou crie sua conta"}</h2>
+      <h1 className="mt-6 font-title text-2xl font-semibold text-ink">{enviado ? "Digite o código" : "Entre ou crie sua conta"}</h1>
       {motivo && !enviado && (
         <p className="mt-2 text-sm font-medium text-ink" data-testid="entrada-motivo">
           {motivo}

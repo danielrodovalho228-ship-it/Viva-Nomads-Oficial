@@ -370,9 +370,11 @@ export default function AuthPage() {
             <Logo href="/" light />
           </div>
           <div className={VEU_BASE_PORTA} data-testid="porta-veu-base">
-            <h1 className="font-title text-[28px] font-semibold leading-tight">
+            {/* Títulos (02/11): o cartaz da foto só existe do lg para cima — o h1 da página é o título do formulário, que
+                aparece em todas as larguras (no celular a página ficava sem h1). A frase aqui é texto, com o mesmo desenho. */}
+            <p className="font-title text-[28px] font-semibold leading-tight" data-testid="porta-titulo-foto">
               {mode === "entrada" ? "Sua nova fase começa aqui." : "Bem-vindo de volta."}
-            </h1>
+            </p>
             <p className="mt-4 max-w-md text-white/90">
               Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição. Estadia de
               meses, com contrato de verdade e conversa registrada.
@@ -451,7 +453,7 @@ export default function AuthPage() {
               <button type="button" onClick={() => switchMode("senha")} className={linkTexto}>
                 <ArrowLeft className="h-4 w-4" /> Voltar para entrar com senha
               </button>
-              <h2 className="mt-6 font-title text-2xl font-semibold text-ink">Recuperar senha</h2>
+              <h1 className="mt-6 font-title text-2xl font-semibold text-ink">Recuperar senha</h1>
               <p className="mt-2 text-sm text-muted">
                 Informe seu e-mail e enviaremos um link seguro para criar uma nova senha.
               </p>
@@ -480,7 +482,7 @@ export default function AuthPage() {
               <button type="button" onClick={() => switchMode("entrada")} className={linkTexto}>
                 <ArrowLeft className="h-4 w-4" /> Entrar com código por e-mail
               </button>
-              <h2 className="mt-6 font-title text-2xl font-semibold text-ink">Entrar com senha</h2>
+              <h1 className="mt-6 font-title text-2xl font-semibold text-ink">Entrar com senha</h1>
               <form onSubmit={handleSenha} method="post" className="mt-6 space-y-4">
                 <Input icon={Mail} type="email" placeholder="E-mail" value={email} onChange={setEmail} required name="email" autoComplete="email" />
                 <Input icon={Lock} type="password" placeholder="Senha" value={password} onChange={setPassword} required name="password" autoComplete="current-password" />
