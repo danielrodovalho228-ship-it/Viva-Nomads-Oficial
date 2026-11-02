@@ -106,6 +106,8 @@ import {
   documentoNoSalvar,
   hashValido,
   limparTitularDocumento,
+  MSG_DOCUMENTO_JA_CONFERIDO,
+  novoDocumentoBloqueado,
   linhaDoEnvio,
   salvarNaMesmaLinha,
   CAMPOS_FIXOS_DA_FILA,
@@ -157,6 +159,10 @@ export async function saveQualification(
     : { data: null, error: null };
   // Leitura falha não vira "arquivo novo": o mesmo documento entraria de novo na fila (e a equipe seria avisada outra vez).
   if (erroUltimo) return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente de novo." };
+  // Documento conferido nunca é rebaixado por um arquivo novo (a troca é com a equipe).
+  if (novoDocumentoBloqueado(ultimo?.document_status as string | null | undefined, ultimo?.document_path as string | null | undefined, documentPath ?? null)) {
+    return { ok: false, error: MSG_DOCUMENTO_JA_CONFERIDO };
+  }
   const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
   const docGravado = doc.gravarPath;
 
@@ -286,6 +292,10 @@ export async function enviarDocumentoParaConferencia(
   // Leitura falha não vira "sem qualificação anterior": duplicaria o item na fila (e o aviso à equipe) e a linha nova
   // perderia as respostas já dadas.
   if (erroAnterior) return { ok: false, error: "Não foi possível enviar o documento agora. Tente de novo." };
+  // Documento conferido nunca é rebaixado por um arquivo novo (a troca é com a equipe).
+  if (novoDocumentoBloqueado(anterior?.document_status as string | null | undefined, anterior?.document_path as string | null | undefined, path)) {
+    return { ok: false, error: MSG_DOCUMENTO_JA_CONFERIDO };
+  }
   if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
     return { ok: true, id: anterior.id as string };
   }
