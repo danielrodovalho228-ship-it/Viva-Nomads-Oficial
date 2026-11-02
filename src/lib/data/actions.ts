@@ -8,7 +8,7 @@ import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
 import { gravarMarca } from "@/lib/marcas/servidor";
-import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO } from "@/lib/anuncio/perfil-dono";
+import { perfilDonoCompleto, MSG_PERFIL_DONO_INCOMPLETO, MSG_PERFIL_SEM_LEITURA } from "@/lib/anuncio/perfil-dono";
 import { atualizarRascunhoDoDono, rascunhoVazioRecente } from "@/lib/data/rascunho-dono";
 import { camposDeConteudoDoRascunho } from "@/lib/data/rascunho-campos";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
@@ -768,7 +768,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
   if (!input.asDraft) {
-    const { data: perfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    // Estados vazios: falha ao ler o perfil não vira "complete seu perfil" (o dono com perfil completo ia procurar o que falta).
+    const { data: perfil, error: ePerfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    if (ePerfil) return { ok: false, error: MSG_PERFIL_SEM_LEITURA };
     if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
       return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
     }
@@ -1058,7 +1060,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
   if (input.asDraft === false) {
-    const { data: perfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    // Estados vazios: falha ao ler o perfil não vira "complete seu perfil" (o dono com perfil completo ia procurar o que falta).
+    const { data: perfil, error: ePerfil } = await supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle();
+    if (ePerfil) return { ok: false, error: MSG_PERFIL_SEM_LEITURA };
     if (!perfilDonoCompleto(perfil as { full_name: string | null; phone: string | null } | null)) {
       return { ok: false, error: MSG_PERFIL_DONO_INCOMPLETO };
     }
