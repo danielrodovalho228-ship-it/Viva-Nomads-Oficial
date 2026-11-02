@@ -322,9 +322,9 @@ test.describe("T209 — jornada dos dois lados (prompt 23)", () => {
       await d.getByTestId("agenda-vista-lista").click();
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="visita"]').first()).toBeVisible({ timeout: 25_000 });
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="entrada"]').first()).toBeVisible();
-      // Locação (depois do aceite): nome curto; visitas antes do aceite: só "Interessado(a)".
+      // Locação (depois do aceite): nome completo (E427); visitas antes do aceite: só "Interessado(a)"; contato nunca.
       await expect(d.locator('[data-testid="agenda-item"][data-tipo="entrada"]').first()).toContainText("Ana");
-      await expect(d.getByText("Saopaulo Sobrenome")).toHaveCount(0);
+      await expect(d.getByText(inqB.email)).toHaveCount(0);
       await semRolagemLateral(d);
       await d.screenshot({ path: `${SAIDA}/t209-agenda-lista-${largura}.png`, fullPage: true });
       await d.getByTestId("agenda-vista-mes").click();

@@ -14,7 +14,7 @@ import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
-import { nomeComInicial, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { nomeDepoisDoAceite, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import { blocoDados } from "@/lib/notifications/modelo-email";
@@ -460,11 +460,11 @@ export async function visitaDetalhe(id: string): Promise<VisitaDetalhe | null> {
   const e = p && mostraEnderecoDaVisita(v, new Date()) ? enderecoDaVisita(p) : null;
   let pessoa: string | null = null;
   let fotoPessoa: string | null = null;
-  // E409: "Ana C." (1º nome + inicial do sobrenome), como o desenho promete depois do aceite; a foto pela regra do avatar.
+  // E427: depois do aceite, o nome completo (igual em todas as telas); a foto pela regra do avatar.
   const nomeDe = async (id: string) => {
     const { data: perfil } = await admin.from("profiles").select("full_name").eq("id", id).maybeSingle();
     fotoPessoa = (await getAvatarUrl({ targetId: id, propertyId: r.property_id }).catch(() => ({ url: null }))).url ?? null;
-    return nomeComInicial((perfil as { full_name?: string | null } | null)?.full_name ?? null);
+    return nomeDepoisDoAceite((perfil as { full_name?: string | null } | null)?.full_name ?? null);
   };
   if (papel === "dono") {
     // E328: a confirmação do horário libera o nome; antes dela, só a candidatura aceita ou o contrato (como antes).

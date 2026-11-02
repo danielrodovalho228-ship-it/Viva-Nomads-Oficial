@@ -13,7 +13,7 @@ const dataBR = (iso: string) => iso.split("-").reverse().join("/");
   Contas NOVAS (dono e inquilina) e um anúncio ativo com fotos reais (fixtures). Inquilina a 390 px, dono a 1280 px;
   cada etapa também fotografada na outra largura.
    1. Inquilina acha o anúncio na /buscar e envia a candidatura pela página do imóvel (tela).
-   2. Dono vê "Candidato(a)" em Interessados (sem nome), clica "Aprovar e responder" (tela): aparece o nome curto.
+   2. Dono vê "Candidato(a)" em Interessados (sem nome), clica "Aprovar e responder" (tela): aparece o nome completo (E427).
    3. Mensagens: o dono abre a conversa que a candidatura criou e responde; a inquilina lê (tela).
    4. Fechamento pela tela: verificação (portão suave), garantia, "Li e entendi", serviços, patrimonial e
       "Gerar contrato para assinatura". No laboratório não há assinatura digital ativa e as contas são reais: a
@@ -132,7 +132,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await page.context().close();
   });
 
-  test("2. o dono vê 'Candidato(a)', aprova pela tela e passa a ver o nome curto (1280 px)", async ({ browser }) => {
+  test("2. o dono vê 'Candidato(a)', aprova pela tela e passa a ver o nome completo (1280 px)", async ({ browser }) => {
     test.setTimeout(120_000);
     const page = await comoDono(browser);
     await abrir(page, "/dashboard/leads");
@@ -147,8 +147,8 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await expect.poll(async () => (await adm().from("leads").select("status").eq("id", ids.lead!).single()).data?.status, { timeout: 20_000 }).toBe("accepted");
     await expect(page.getByTestId("aceite-erro")).toHaveCount(0);
     await abrir(page, "/dashboard/leads");
-    await expect(page.getByTestId("cartao-candidato").first().getByTestId("candidato-nome")).toHaveText("Lia S.", { timeout: 20_000 });
-    expect(await page.locator("main").innerText()).not.toContain("Sobrenomeoculto");
+    await expect(page.getByTestId("cartao-candidato").first().getByTestId("candidato-nome")).toHaveText("Lia Jornada Sobrenomeoculto", { timeout: 20_000 });
+    expect(await page.locator("main").innerText()).not.toContain(inq.email);
     await foto(page, "2-candidato-aceito", [1280, 390]);
     await page.context().close();
   });
@@ -161,7 +161,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await pd.getByRole("link", { name: /Responder pela plataforma/ }).first().click();
     await expect(pd).toHaveURL(/\/dashboard\/mensagens/);
     await pd.getByRole("button", { name: new RegExp(titulo) }).first().click();
-    await expect(pd.getByTestId("conversa-nome")).toHaveText("Lia S.");
+    await expect(pd.getByTestId("conversa-nome")).toHaveText("Lia Jornada Sobrenomeoculto");
     await pd.getByPlaceholder("Escreva uma mensagem...").fill(resposta);
     await pd.getByRole("button", { name: "Enviar" }).click();
     await expect(pd.getByText(resposta).last()).toBeVisible({ timeout: 15_000 });
@@ -176,9 +176,9 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     const pi = await entrar(browser, inq.email, senha);
     await abrir(pi, "/dashboard/mensagens");
     await pi.getByRole("button", { name: new RegExp(titulo) }).first().click();
-    await expect(pi.getByTestId("conversa-nome")).toHaveText("Otávio S.");
+    await expect(pi.getByTestId("conversa-nome")).toHaveText("Otávio Jornada Sobrenomedono");
     await expect(pi.getByText(resposta).last()).toBeVisible({ timeout: 15_000 });
-    expect(await pi.locator("main").innerText()).not.toMatch(/Sobrenomedono/);
+    expect(await pi.locator("main").innerText()).not.toContain(dono.email);
     await foto(pi, "3-mensagens-inquilina");
     await pi.context().close();
   });

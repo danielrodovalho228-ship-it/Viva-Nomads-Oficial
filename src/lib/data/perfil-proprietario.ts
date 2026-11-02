@@ -4,7 +4,10 @@ import { signAvatarPath } from "@/lib/data/avatar-url";
 import type { Reputacao } from "@/lib/data/avaliacoes-actions";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
-import { metricaResposta, nomeCurto, selosReais, type MetricaResposta } from "@/lib/perfil/perfil-publico";
+import { createClient } from "@/lib/supabase/server";
+import { relacaoAceitaEntreServidor } from "@/lib/data/avatar-url";
+import { metricaResposta, nomeCompleto, nomeCurto, selosReais, type MetricaResposta } from "@/lib/perfil/perfil-publico";
+import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -83,6 +86,35 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
         vinculoDominio: (await vinculosConfirmados([donoId])).get(donoId) ?? null,
       }),
     };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * E427 (01/11, vigia): a página pública mostra o nome COMPLETO do proprietário só a quem já tem o aceite com ele
+ * (contrato, candidatura aceita, resposta de Pedido de Moradia aceita ou visita confirmada/feita) — o mesmo nome da
+ * visita e de Mensagens. Para todo o resto (visitante anônimo, outra conta, o próprio dono) segue o nome curto de
+ * sempre: antes do aceite, a privacidade atual. FAIL-CLOSED: sem sessão, sem chave de serviço ou erro → null.
+ */
+export async function nomeCompletoParaQuemTemAceite(donoId: string): Promise<string | null> {
+  if (!UUID_RE.test(donoId)) return null;
+  try {
+    const supabase = await createClient();
+    const admin = createAdminClient();
+    if (!supabase || !admin) return null;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || user.id === donoId) return null;
+    let aceite = await relacaoAceitaEntreServidor(donoId, user.id);
+    if (!aceite) {
+      const { data: visitas } = await admin.from("visitas_video").select("status").eq("owner_id", donoId).eq("tenant_id", user.id);
+      aceite = ((visitas ?? []) as { status: string | null }[]).some((v) => nomeLiberadoNaVisita(v.status));
+    }
+    if (!aceite) return null;
+    const { data } = await admin.from("profiles").select("full_name").eq("id", donoId).maybeSingle();
+    return nomeCompleto((data as { full_name?: string | null } | null)?.full_name ?? null);
   } catch {
     return null;
   }
