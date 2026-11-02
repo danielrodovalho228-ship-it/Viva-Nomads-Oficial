@@ -12,13 +12,15 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *   3. uso único: de volta ao painel, o botão não aparece mais e a ativação não cria uma segunda página;
  *   4. (resíduo, #2168) em /parceiros, o formulário "Seja parceiro" do aprovado diz "Ative a sua página aqui ou pelo
  *      link do e-mail." (nunca só "veja o e-mail") com o mesmo "Ativar minha página", que ativa e leva ao painel;
- *   5. o mesmo /parceiros sem rolagem lateral — a 390 px é o D-V12 (e-mail longo sem quebra), test.fail até a correção.
+ *   5. o mesmo /parceiros sem rolagem lateral — a 390 px é o D-V12 (e-mail longo sem quebra), test.fail até a correção;
+ *   6. (resíduo 2, #2217) link de ativação VENCIDO (e o inválido, de visitante): "Este link venceu…" com "Ativar pelo
+ *      painel" (→ /dashboard/parceiro, onde o botão do painel ativa sem o token) e, como segunda opção, "Peça um novo link".
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const ids: string[] = [];
 
-async function pedidoAprovado(uid: string, conta: { email: string; nome: string }) {
+async function pedidoAprovado(uid: string, conta: { email: string; nome: string }, link: { token?: string; expiraEm?: Date } = {}) {
   const { error } = await adm().from("parceiro_solicitacoes").insert({
     user_id: uid,
     email: conta.email,
@@ -30,8 +32,8 @@ async function pedidoAprovado(uid: string, conta: { email: string; nome: string 
     status: "aprovada",
     origem: "site",
     // Pedido aprovado sempre tem o token do link do e-mail (parceiro_solicitacoes_aprovada_token); o painel ativa sem ele.
-    token_ativacao_hash: createHash("sha256").update(randomBytes(32).toString("base64url")).digest("hex"),
-    token_expira_em: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+    token_ativacao_hash: createHash("sha256").update(link.token ?? randomBytes(32).toString("base64url")).digest("hex"),
+    token_expira_em: (link.expiraEm ?? new Date(Date.now() + 7 * 86_400_000)).toISOString(),
   });
   if (error) throw error;
 }
@@ -163,6 +165,37 @@ test.describe("T969 — E425: o parceiro aprovado ativa a página pelo painel", 
         return { sobra: document.documentElement.scrollWidth - W, fora: fora.slice(0, 6) };
       });
       expect(largos.sobra, `rolagem lateral em /parceiros (aprovado): ${largos.fora.join(" | ")}`).toBeLessThanOrEqual(1);
+      await page.context().close();
+    });
+
+    test(`link vencido ou inválido: "Ativar pelo painel" leva ao painel, sem esperar a equipe (${largura})`, async ({ browser }) => {
+      // Inválido, como visitante: o mesmo caminho pelo painel.
+      const vis = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
+      const v = await vis.newPage();
+      await v.goto(`/parceiros/ativar?t=${randomBytes(24).toString("base64url")}`, { waitUntil: "domcontentloaded" });
+      const inv = v.getByTestId("ativar-invalido");
+      await expect(inv).toHaveAttribute("data-situacao", "invalido", { timeout: 30_000 });
+      await expect(inv).toContainText("Este link não é válido.");
+      await expect(inv.getByTestId("ativar-pelo-painel")).toHaveAttribute("href", "/dashboard/parceiro");
+      await vis.close();
+
+      // Vencido, com a conta do pedido: o texto do vencido, o caminho pelo painel e o "novo link" como segunda opção.
+      const conta = { email: `parc4.t969.${largura}.${sufixo}@lab.vivanomads.test`, nome: `Paola Parceira ${largura}`, role: "tenant" as const };
+      const uid = await criarConta(conta, senha);
+      ids.push(uid);
+      const token = randomBytes(32).toString("base64url");
+      await pedidoAprovado(uid, conta, { token, expiraEm: new Date(Date.now() - 86_400_000) });
+      const page = await entrar(browser, conta.email, senha);
+      await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await page.goto(`/parceiros/ativar?t=${token}`, { waitUntil: "domcontentloaded" });
+      const venc = page.getByTestId("ativar-invalido");
+      await expect(venc).toHaveAttribute("data-situacao", "vencido", { timeout: 30_000 });
+      await expect(venc).toContainText("Este link venceu (vale por 7 dias).");
+      await expect(venc).toContainText("Com a conta do e-mail do pedido, dá para ativar agora pelo painel de parceiro, sem o link.");
+      await expect(venc.getByTestId("ativar-novo-link")).toBeVisible();
+      await venc.getByTestId("ativar-pelo-painel").click();
+      await expect(page).toHaveURL(/\/dashboard\/parceiro$/, { timeout: 30_000 });
+      await expect(page.getByTestId("parceiro-ativar-painel")).toHaveText(/Ativar minha página/, { timeout: 30_000 });
       await page.context().close();
     });
   }

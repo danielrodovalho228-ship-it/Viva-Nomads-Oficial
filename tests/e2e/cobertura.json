@@ -2140,7 +2140,8 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t969-e425-ativar-no-painel"
       ]
     },
     "/parceiros/buscar": {
