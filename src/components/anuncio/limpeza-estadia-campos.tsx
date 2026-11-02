@@ -21,7 +21,7 @@ export function LimpezaEstadiaCampos({ value, onChange }: { value: LimpezaEstadi
   return (
     <div className="grid gap-4 rounded-xl border border-line bg-white p-4" data-testid="limpeza-estadia">
       <div>
-        <h3 className="text-sm font-semibold text-ink">Limpeza durante a estadia</h3>
+        <h2 className="text-sm font-semibold text-ink">Limpeza durante a estadia</h2>
         <p className="mt-1 text-xs text-muted">Opcional. Aparece no anúncio, na proposta e no resumo do contrato, com a quantidade por mês.</p>
       </div>
       <fieldset>

@@ -37,13 +37,18 @@ function Exemplo({ src, ambiente, bom }: { src: string; ambiente: string; bom: b
   );
 }
 
-/** Guia "Como tirar boas fotos": pares Evite × Assim (empilhados no celular) e dicas curtas. */
-export function GuiaFotos({ comCta = true }: { comCta?: boolean }) {
+/**
+ * Guia "Como tirar boas fotos": pares Evite × Assim (empilhados no celular) e dicas curtas.
+ * nivelTitulo (02/11): na página /guia-fotos os ambientes ficam sob um h2 (h3); no cadastro, direto sob o h1 da etapa — lá
+ * entram como h2, para a hierarquia de títulos não pular um nível.
+ */
+export function GuiaFotos({ comCta = true, nivelTitulo = 3 }: { comCta?: boolean; nivelTitulo?: 2 | 3 }) {
+  const Titulo = nivelTitulo === 2 ? "h2" : "h3";
   return (
     <div className="space-y-6">
       {PARES_EXEMPLO.map((p) => (
         <section key={p.ambiente} aria-labelledby={`guia-${p.ambiente}`}>
-          <h3 id={`guia-${p.ambiente}`} className="mb-2 font-display text-lg font-semibold text-ink">{p.ambiente}</h3>
+          <Titulo id={`guia-${p.ambiente}`} className="mb-2 font-display text-lg font-semibold text-ink">{p.ambiente}</Titulo>
           <div className="grid gap-3 sm:grid-cols-2">
             <Exemplo src={p.ruim} ambiente={p.ambiente} bom={false} />
             <Exemplo src={p.bom} ambiente={p.ambiente} bom />
@@ -51,7 +56,7 @@ export function GuiaFotos({ comCta = true }: { comCta?: boolean }) {
         </section>
       ))}
       <section aria-labelledby="guia-dicas">
-        <h3 id="guia-dicas" className="mb-2 font-display text-lg font-semibold text-ink">Dicas rápidas</h3>
+        <Titulo id="guia-dicas" className="mb-2 font-display text-lg font-semibold text-ink">Dicas rápidas</Titulo>
         <ol className="list-decimal space-y-2 pl-4 text-sm text-ink/80">
           {DICAS_FOTO.map((d) => <li key={d}>{d}</li>)}
         </ol>
