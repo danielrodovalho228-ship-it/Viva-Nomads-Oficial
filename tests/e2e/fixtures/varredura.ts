@@ -10,7 +10,7 @@ import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
  * nos destaques do painel e da busca, o Next devolve 400 em /_next/image e a imagem não carrega. Não é defeito do site:
  * a t48 já ignora pela mesma regra. Lab de 22/10: a, d e o D-V4 da t249 caíam com isso em execuções diferentes.
  */
-export const MOTIVO_FOTO_FICTICIA = "foto fictícia semeada por outra spec (lab.vivanomads.test; 400 em /_next/image)";
+export const MOTIVO_FOTO_FICTICIA = "foto fictícia semeada por outra spec (lab.vivanomads.test; 400 em /_next/image e, desde o E323, a nova tentativa direta do Storage)";
 
 /**
  * Apoio da VARREDURA VISUAL (t249): os critérios por tela e tamanho, rodáveis em qualquer rota.
@@ -83,13 +83,28 @@ export async function abrirRota(page: Page, rota: string): Promise<string[]> {
   return problemas;
 }
 
+/**
+ * Foto fictícia do laboratório (host lab.vivanomads.test, sem DNS) pedida pelo otimizador OU direto do Storage. Desde o
+ * E323 (#2111), a foto que falha no /_next/image tenta de novo direto do Storage; com a foto fictícia, essa segunda
+ * tentativa também falha (net::ERR_NAME_NOT_RESOLVED / ERR_ABORTED). É a mesma foto fictícia: não é defeito do site.
+ */
+function fotoFicticiaDoLab(url: string | null | undefined): boolean {
+  if (recursoFicticioDoLab(url)) return true;
+  try {
+    const u = new URL(url ?? "");
+    return u.hostname === "lab.vivanomads.test" && u.pathname.startsWith("/storage/v1/object/public/");
+  } catch {
+    return false;
+  }
+}
+
 /** (d) Liga a escuta ANTES de abrir a rota; `lista()` devolve só o que não é exceção de terceiro. */
 export function escutarErros(page: Page): { lista: () => string[]; ignorados: () => string[] } {
   const brutos: string[] = [];
   let fotoFicticia = false;
   page.on("console", (m) => {
     if (m.type() !== "error") return;
-    if (/Failed to load resource/i.test(m.text()) && recursoFicticioDoLab(m.location().url)) {
+    if (/Failed to load resource/i.test(m.text()) && fotoFicticiaDoLab(m.location().url)) {
       fotoFicticia = true;
       return;
     }
@@ -100,7 +115,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
   let arquivoCancelado = false;
   let leituraCancelada = false;
   page.on("requestfailed", (r) => {
-    if (recursoFicticioDoLab(r.url())) {
+    if (fotoFicticiaDoLab(r.url())) {
       fotoFicticia = true;
       return;
     }
