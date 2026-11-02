@@ -36,9 +36,12 @@ export async function gravarComodidadeConfirmada(propertyId: string, chave: stri
   const supabase = await meuImovel(propertyId);
   const label = AMENITY_LABEL[chave];
   if (!supabase || !label) return { ok: false };
-  const { data } = await supabase.from("property_amenities").select("label").eq("property_id", propertyId).eq("label", label).maybeSingle();
+  // Achado 127: sem saber se já existe, não grava (antes a falha da leitura gravava a comodidade em dobro).
+  const { data, error: erroJa } = await supabase.from("property_amenities").select("label").eq("property_id", propertyId).eq("label", label).maybeSingle();
+  if (erroJa) return { ok: false };
   if (data) return { ok: true };
-  const { count } = await supabase.from("property_amenities").select("label", { count: "exact", head: true }).eq("property_id", propertyId);
+  const { count, error: erroConta } = await supabase.from("property_amenities").select("label", { count: "exact", head: true }).eq("property_id", propertyId);
+  if (erroConta) return { ok: false };
   const { error } = await supabase.from("property_amenities").insert({ property_id: propertyId, category: AMENITY_CATEGORY[chave], label, sort_order: count ?? 0 });
   return { ok: !error };
 }
