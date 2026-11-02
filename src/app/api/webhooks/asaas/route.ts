@@ -67,19 +67,23 @@ export async function POST(request: Request) {
       let plano: string | null = null;
       let lead_id: string | null = null;
       if (r.tipo === "assinatura" && r.subscriptionId) {
-        const { data } = await admin
+        // Varredura ampliada: a leitura que falha LANÇA — o aviso volta com 500 e o Asaas reenvia. Gravar sem dono
+        // seria para sempre (o upsert ignora o payment_id repetido).
+        const { data, error: erroAssinatura } = await admin
           .from("subscriptions")
           .select("owner_id, plan")
           .eq("gateway_subscription_id", r.subscriptionId)
           .maybeSingle();
+        if (erroAssinatura) throw new Error("Não foi possível ler a assinatura do recebimento.");
         owner_id = (data?.owner_id as string | undefined) ?? null;
         plano = (data?.plan as string | undefined) ?? null;
       } else if (r.tipo === "comissao") {
-        const { data } = await admin
+        const { data, error: erroCobranca } = await admin
           .from("cobrancas_fechamento")
           .select("lead_id")
           .eq("externo_id", r.paymentId)
           .maybeSingle();
+        if (erroCobranca) throw new Error("Não foi possível ler a cobrança do recebimento.");
         lead_id = (data?.lead_id as string | undefined) ?? null;
       }
       const { error } = await admin.from("recebimentos").upsert(
