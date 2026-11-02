@@ -12,7 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *   3. uso único: de volta ao painel, o botão não aparece mais e a ativação não cria uma segunda página;
  *   4. (resíduo, #2168) em /parceiros, o formulário "Seja parceiro" do aprovado diz "Ative a sua página aqui ou pelo
  *      link do e-mail." (nunca só "veja o e-mail") com o mesmo "Ativar minha página", que ativa e leva ao painel;
- *   5. o mesmo /parceiros sem rolagem lateral — a 390 px é o D-V12 (e-mail longo sem quebra), test.fail até a correção;
+ *   5. o mesmo /parceiros sem rolagem lateral (o D-V12, e-mail longo sem quebra a 390 px, foi corrigido no E430, #2334);
  *   6. (resíduo 2, #2217) link de ativação VENCIDO (e o inválido, de visitante): "Este link venceu…" com "Ativar pelo
  *      painel" (→ /dashboard/parceiro, onde o botão do painel ativa sem o token) e, como segunda opção, "Peça um novo link".
  */
@@ -137,9 +137,7 @@ test.describe("T969 — E425: o parceiro aprovado ativa a página pelo painel", 
     });
 
     test(`D-V12: sem rolagem lateral em /parceiros com o pedido aprovado (${largura})`, async ({ browser }) => {
-      // D-V12 (registro-defeitos): a 390 px o e-mail longo da linha "Mandamos a confirmação para …" não quebra e alarga
-      // a coluna "Seja parceiro" (10–16 px). Quem corrigir tira este test.fail.
-      test.fail(largura === 390, "D-V12: /parceiros passa da borda a 390 px com o pedido aprovado (e-mail longo sem quebra)");
+      // D-V12 (registro-defeitos): corrigido no E430 (#2334, overflow-wrap no e-mail da confirmação) — teste normal.
       const conta = { email: `parc3.t969.${largura}.${sufixo}@lab.vivanomads.test`, nome: `Priscila Parceira ${largura}`, role: "tenant" as const };
       const uid = await criarConta(conta, senha);
       ids.push(uid);
