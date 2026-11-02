@@ -378,6 +378,8 @@ export async function chamadoDeOutraConta(numero: string): Promise<{ adminUrl: s
 }
 
 /** A pessoa responde no próprio chamado (reabre se estava resolvido). */
+const MSG_CHAMADO_SEM_LEITURA = "Não foi possível ler o seu chamado agora. Tente de novo em instantes.";
+
 export async function responderMeuChamado(chamadoId: string, texto: string): Promise<Res> {
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -397,7 +399,8 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
     user.id,
     { id: chamadoId },
     "id, numero_publico, assunto, status, prioridade, responsavel_tipo"
-  );
+  ).catch(() => "falhou" as const);
+  if (c === "falhou") return { ok: false, error: MSG_CHAMADO_SEM_LEITURA };
   if (!c) return { ok: false, error: "Chamado não encontrado nesta conta." };
   if (c.status === "encerrado") return { ok: false, error: "Este chamado foi encerrado. Abra um novo, se precisar." };
 
@@ -435,7 +438,8 @@ export async function pedirPessoa(chamadoId: string): Promise<Res> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
-  const c = await chamadoDoDono(supabase as unknown as ClienteChamados, user.id, { id: chamadoId }, "id");
+  const c = await chamadoDoDono(supabase as unknown as ClienteChamados, user.id, { id: chamadoId }, "id").catch(() => "falhou" as const);
+  if (c === "falhou") return { ok: false, error: MSG_CHAMADO_SEM_LEITURA };
   if (!c) return { ok: false, error: "Chamado não encontrado nesta conta." };
   return (await escalarParaPessoa(chamadoId, "a pessoa pediu", "usuario", user.id)) ? { ok: true } : { ok: false, error: "Este chamado já foi encerrado." };
 }
@@ -461,7 +465,8 @@ export async function marcarResolvido(chamadoId: string): Promise<Res> {
     user.id,
     { id: chamadoId },
     "id, numero_publico, assunto, prioridade, status, responsavel_tipo, visitante_email, visitante_nome"
-  );
+  ).catch(() => "falhou" as const);
+  if (c === "falhou") return { ok: false, error: MSG_CHAMADO_SEM_LEITURA };
   if (!c || !podeMarcarResolvido(c.status, c.responsavel_tipo)) return { ok: false, error: "Este chamado não está aguardando você." };
   const agora = new Date().toISOString();
   await admin.from("chamados").update({ status: "resolvido", resolvido_em: agora, atualizado_em: agora }).eq("id", c.id);
