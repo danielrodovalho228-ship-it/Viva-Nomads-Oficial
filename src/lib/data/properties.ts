@@ -13,7 +13,7 @@ import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { comparacaoParaFicha, decidirSelo } from "@/lib/comparador-airbnb/comparacao";
 import type { Conferencia } from "@/lib/comparador-airbnb/antifraude";
 import { avisosDoMotor, COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
-import { soFotosExistentes } from "@/lib/fotos-anuncio";
+import { capaDoDraftData, ehUrlDeImagem, soFotosExistentes } from "@/lib/fotos-anuncio";
 import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
@@ -779,6 +779,18 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // E308 (causa raiz, 01/11): foto cujo arquivo já saiu do bucket não vira capa quebrada no card (rascunho ou anúncio).
   const existentes = await arquivosDoDono(createAdminClient(), user.id);
   for (const p of lista) if (p.photos?.length) p.photos = soFotosExistentes(p.photos, existentes);
+  // E426 (02/11): rascunho com fotos SÓ no draft_data (sincronização "best-effort" que não gravou property_photos) mostrava
+  // o espaço vazio em Meus anúncios, embora tivesse foto real — o Início já caía no draft_data (E308). Mesma regra aqui:
+  // a 1ª foto do draft_data cujo arquivo existe. O draft_data vem pela RPC do dono (coluna sensível fora do SELECT).
+  const semCapa = lista.filter((p) => p.status === "draft" && !(p.photos ?? []).some(ehUrlDeImagem));
+  await Promise.all(
+    semCapa.map(async (p) => {
+      const { data: priv } = await supabase.rpc("property_private_details", { prop_id: p.id });
+      const row = (Array.isArray(priv) ? priv[0] : priv) as { draft_data?: unknown } | null;
+      const capa = capaDoDraftData(row?.draft_data ?? null, user.id, existentes);
+      if (capa) p.photos = [capa];
+    }),
+  );
   // PROP-2: o pacote de limpeza entra no total do mês (sem ele, o Anúncios mostrava menos que a página do imóvel).
   if (lista.length) {
     const { data: limpezas } = await supabase.from("properties").select("id, limpeza_estadia").in("id", lista.map((p) => p.id));
