@@ -19,6 +19,8 @@ export function RedesPrivadas() {
   // C9/E56: atrás do toggle; com alguma rede salva nasce ligado.
   const [ligado, setLigado] = useState(false);
   const [temSalvo, setTemSalvo] = useState(false);
+  // Estados vazios: a leitura falhou → aviso, nunca o formulário vazio (salvar apagaria as redes gravadas).
+  const [falhou, setFalhou] = useState(false);
   useEffect(() => {
     if (!REDES_USUARIO_ATIVO) return;
     let vivo = true;
@@ -30,11 +32,17 @@ export function RedesPrivadas() {
         setTemSalvo(tem);
         setLigado(toggleInicial(tem));
       })
-      .catch(() => {});
+      .catch(() => vivo && setFalhou(true));
     return () => {
       vivo = false;
     };
   }, []);
+  if (REDES_USUARIO_ATIVO && falhou && !redes)
+    return (
+      <p className="mt-4 text-sm text-red-700" role="alert" data-testid="redes-falhou">
+        Não conseguimos carregar suas redes sociais agora. Recarregue a página para ver ou alterar.
+      </p>
+    );
   if (!REDES_USUARIO_ATIVO || !redes) return null;
   const campo = (chave: keyof MinhasRedes, rotulo: string, exemplo: string) => (
     <label className="block text-sm font-medium text-ink">
