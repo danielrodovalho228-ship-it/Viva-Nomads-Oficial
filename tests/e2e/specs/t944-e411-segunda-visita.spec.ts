@@ -23,8 +23,9 @@ const PEDIDA = "Você já pediu uma visita presencial e o proprietário ainda va
 const PASSADA = "Sua visita presencial já passou do horário. Um novo pedido fica liberado quando o proprietário marcar esta visita como feita; combine pela conversa.";
 const AGENDADA = (tipo: string) => `Sua visita ${tipo} já está marcada. Para mudar o horário, cancele em Visitas e peça de novo.`;
 
-async function conta(papel: "owner" | "tenant", nome: string, largura: number) {
-  const email = `${papel}.t944.${largura}.${sufixo}@lab.vivanomads.test`;
+async function conta(papel: "owner" | "tenant", nome: string, largura: number, caso = "") {
+  // `caso` separa as contas de cada teste na mesma largura (o e-mail precisa ser único na rodada).
+  const email = `${papel}${caso}.t944.${largura}.${sufixo}@lab.vivanomads.test`;
   const id = await criarConta({ email, nome, role: papel }, senha);
   ids.push(id);
   await adm().from("profiles").update({ is_teste: true }).eq("id", id);
@@ -128,8 +129,8 @@ test.describe("T944 — E411: segundo pedido de visita explica a regra e o camin
 
     test(`confirmada e já passada: "Ver minha visita" explica por que não dá para pedir outra (${largura})`, async ({ browser }) => {
       test.setTimeout(120_000);
-      const dono = await conta("owner", `Dona Passada${largura} Visita`, largura);
-      const inq = await conta("tenant", `Ivo Passada${largura} Visita`, largura);
+      const dono = await conta("owner", `Dona Passada${largura} Visita`, largura, "-passada");
+      const inq = await conta("tenant", `Ivo Passada${largura} Visita`, largura, "-passada");
       const imovel = await criarImovelPronto(dono.id, `Studio Visita Passada ${largura} ${sufixo}`, { ativo: true, preco: 3100 });
       const quando = new Date(Date.now() - 2 * 86_400_000);
       quando.setUTCHours(17, 0, 0, 0);
