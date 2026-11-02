@@ -1,7 +1,6 @@
 "use server";
 
 import { idDeRascunhoValido, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { bairroAceitavel, problemaDoBairro } from "@/lib/cep/bairro";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -388,8 +387,8 @@ export async function resumoImovelDoDono(
   return {
     id: data.id as string,
     titulo: (data.title as string) || "Imóvel sem título",
-    // E147: "Minas Gerais" gravado como bairro (rascunhos antigos) não aparece como se fosse o bairro.
-    local: [bairroAceitavel(data.address as string | null, data.city as string | null), data.city].filter(Boolean).join(", "),
+    // E429: o bairro como gravado ("Minas Gerais" é bairro de Uberlândia).
+    local: [((data.address as string | null) ?? "").trim(), data.city].filter(Boolean).join(", "),
     rascunho: data.status === "draft",
   };
 }
@@ -727,9 +726,7 @@ export async function carregarLimitesNegociacao(id: string): Promise<{ valorMini
 export async function createProperty(entrada: PropertyInput): Promise<ActionResult> {
   // TIPO-CHACARA-B: o ponto marcado pelo dono vale no lugar da geocodificação do endereço.
   const input = aplicarPontoChacara(entrada);
-  // E147: o bairro nunca é o estado, a sigla ou a cidade.
-  const bairroRuim = problemaDoBairro(input.neighborhood, input.city);
-  if (bairroRuim) return { ok: false, error: bairroRuim };
+  // E429: o nome do bairro não é recusado no servidor ("Minas Gerais" é bairro oficial de Uberlândia).
   // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
   const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
   if (janelaCurta) return { ok: false, error: janelaCurta };
@@ -1016,9 +1013,7 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if (!periodoDisponivelValido(input.availableFrom, input.availableUntil)) {
     return { ok: false, error: MSG_DISPONIVEL_ATE_ANTES };
   }
-  // E147: o bairro nunca é o estado, a sigla ou a cidade.
-  const bairroRuim = problemaDoBairro(input.neighborhood, input.city);
-  if (bairroRuim) return { ok: false, error: bairroRuim };
+  // E429: o nome do bairro não é recusado no servidor ("Minas Gerais" é bairro oficial de Uberlândia).
   // E137: janela de datas menor que a duração mínima = imóvel impossível de alugar.
   const janelaCurta = erroJanelaDisponivel(input.availableFrom, input.availableUntil, input.minPeriodDays);
   if (janelaCurta) return { ok: false, error: janelaCurta };
