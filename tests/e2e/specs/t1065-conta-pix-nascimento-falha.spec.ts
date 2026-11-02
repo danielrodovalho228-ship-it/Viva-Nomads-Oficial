@@ -96,7 +96,8 @@ test.describe("T1065 — Conta: a leitura que falha não vira chave Pix nem data
       expect(await sobra(p)).toBeLessThanOrEqual(1);
 
       await p.unrouteAll({ behavior: "wait" });
-      const novoNome = `Paula Pixdata ${w} Souza`;
+      // Sem número no nome: o validador barra 4 dígitos seguidos (telefone no nome), e "1280" cairia nele.
+      const novoNome = `Paula Pixdata ${w === 390 ? "Estreita" : "Larga"} Souza`;
       await expect(nome).not.toHaveValue("", { timeout: 30_000 });
       await nome.fill(novoNome);
       await p.getByTestId("dados-salvar").click();
