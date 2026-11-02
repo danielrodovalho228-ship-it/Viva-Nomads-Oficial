@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { statusPorImovel } from "@/lib/documento/vigente";
 import { linhaQuemRespondeuHtml } from "@/lib/atendimento/quem-respondeu";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA, situacaoLimite } from "@/lib/limites";
@@ -175,11 +176,16 @@ export function ferramentasReais(admin: Admin, c: ChamadoViva, agora: Date): Fer
       if (!uid) return SEM_CONTA;
       const { data: qs } = await admin
         .from("qualification_checklists")
-        .select("document_status, document_review_reason, document_reviewed_at, document_uploaded_at, properties(title)")
+        .select("property_id, document_status, document_review_reason, document_reviewed_at, document_uploaded_at, properties(title)")
         .eq("owner_id", uid)
         .order("created_at", { ascending: false })
         .limit(10);
+      // E-DOC-VIGENTE (Relay 47): o envio novo não rebaixa o aprovado — a Viva diz qual documento vale.
+      const vigentePor = statusPorImovel((qs ?? []) as { property_id: string | null; document_status: string | null }[]);
       const lista = (qs ?? []).map((q) => ({
+        vale: q.property_id && vigentePor.get(q.property_id as string) === "approved" && q.document_status !== "approved"
+          ? "o documento aprovado deste imóvel continua valendo"
+          : undefined,
         imovel: (q.properties as unknown as { title?: string } | null)?.title ?? "(anúncio ainda sem título)",
         documento: ({ none: "não enviado", pending: "em análise", approved: "aprovado", rejected: "reprovado" } as Record<string, string>)[q.document_status as string] ?? q.document_status,
         motivo: q.document_review_reason,
