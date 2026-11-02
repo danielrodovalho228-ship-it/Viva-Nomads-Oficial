@@ -42,14 +42,20 @@ async function descartar(admin: Admin, ids: string[], motivo: string): Promise<v
 }
 
 /** Quando saiu cada e-mail proativo da pessoa nos últimos 8 dias (um por envio_id). E375-B: o resumo semanal usa a mesma. */
+// Achado 119: as leituras do despacho LANÇAM na falha (o try do despachar devolve "vazio" e nada é descartado; a próxima
+// rodada tenta de novo). Antes: perfil não lido → a fila inteira descartada como "desligado"; imóveis/pedidos/buscas não
+// lidos → itens descartados como "indisponível"; envios recentes não lidos → o teto de e-mails era ignorado.
+const MSG_PROATIVOS_SEM_LEITURA = "Leitura do despacho de e-mails proativos falhou.";
+
 export async function enviosRecentes(admin: Admin, usuarioId: string, agora: Date): Promise<string[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("emails_proativos")
     .select("envio_id, enviado_em")
     .eq("usuario_id", usuarioId)
     .not("enviado_em", "is", null)
     .gte("enviado_em", new Date(agora.getTime() - 8 * 86_400_000).toISOString())
     .limit(500);
+  if (error) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
   const porEnvio = new Map<string, string>();
   for (const r of (data ?? []) as { envio_id: string | null; enviado_em: string }[]) porEnvio.set(r.envio_id ?? r.enviado_em, r.enviado_em);
   return [...porEnvio.values()];
@@ -61,13 +67,15 @@ async function itensDoLote(admin: Admin, usuarioId: string, evento: EventoNaFila
   const itens: { linha: Linha; item: ItemProativo }[] = [];
   const descartes: string[] = [];
   if (evento === "pedido_imovel_novo" || evento === "saved_search_match") {
-    const [{ data: props }, { data: fotos }] = await Promise.all([
+    const [{ data: props, error: e1 }, { data: fotos, error: e2 }] = await Promise.all([
       admin.from("properties").select("id, title, address, city, state, status, monthly_price, condo_fee, utilities_mode, utilities_estimate").in("id", ids),
       admin.from("property_photos").select("property_id, url, sort_order").in("property_id", ids).order("sort_order", { ascending: true }),
     ]);
+    if (e1 || e2) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
     let buscasAtivas: Set<string> | null = null;
     if (evento === "saved_search_match") {
-      const { data: b } = await admin.from("buscas_salvas").select("id").eq("usuario_id", usuarioId).eq("alerta_ativo", true);
+      const { data: b, error: e3 } = await admin.from("buscas_salvas").select("id").eq("usuario_id", usuarioId).eq("alerta_ativo", true);
+      if (e3) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
       buscasAtivas = new Set(((b ?? []) as { id: string }[]).map((x) => x.id));
     }
     const capa = new Map<string, string>();
@@ -99,10 +107,11 @@ async function itensDoLote(admin: Admin, usuarioId: string, evento: EventoNaFila
     }
     return { itens, descartes };
   }
-  const { data: peds } = await admin
+  const { data: peds, error: e4 } = await admin
     .from("pedidos_moradia")
     .select("id, status, cidade, uf, data_inicio, prazo_meses, qtd_ocupantes, orcamento_mensal, pets, expira_em")
     .in("id", ids);
+  if (e4) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
   const porId = new Map(((peds ?? []) as Record<string, unknown>[]).map((r) => [r.id as string, r]));
   let dias: number | null = null;
   for (const l of linhas) {
@@ -134,7 +143,8 @@ async function itensDoLote(admin: Admin, usuarioId: string, evento: EventoNaFila
     }
     // pedido_compativel: só se ainda combina com um imóvel do dono (a mesma função do banco do aviso).
     const imovelId = String(l.extra?.imovel_id ?? "");
-    const { data: pares } = await admin.rpc("compatibilidade_pedidos", { p_pedido: l.ref_id, p_imovel: null, p_dono: usuarioId });
+    const { data: pares, error: e5 } = await admin.rpc("compatibilidade_pedidos", { p_pedido: l.ref_id, p_imovel: null, p_dono: usuarioId });
+    if (e5) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
     const compat = ((pares ?? []) as { imovel_id: string; situacao: string; titulo: string | null }[]).filter((x) => x.situacao === "compativel");
     const par = compat.find((x) => x.imovel_id === imovelId) ?? compat[0];
     if (!par) {
@@ -174,7 +184,7 @@ export type ResultadoDespacho = "enviado" | "vazio" | "desligado" | "ocupado" | 
  */
 export async function despacharProativos(admin: Admin, usuarioId: string, agora = new Date()): Promise<ResultadoDespacho> {
   try {
-    const { data: pend } = await admin
+    const { data: pend, error: erroPend } = await admin
       .from("emails_proativos")
       .select("id, evento, ref_id, extra, criado_em")
       .eq("usuario_id", usuarioId)
@@ -182,14 +192,17 @@ export async function despacharProativos(admin: Admin, usuarioId: string, agora 
       .is("descartado_em", null)
       .order("criado_em", { ascending: true })
       .limit(200);
+    if (erroPend) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
     let pendentes = (pend ?? []) as Linha[];
     if (!pendentes.length) return "vazio";
 
-    const { data: perfil } = await admin
+    const { data: perfil, error: erroPerfil } = await admin
       .from("profiles")
       .select("email, full_name, notif_email, pausada_em, notif_categorias_desligadas")
       .eq("id", usuarioId)
       .maybeSingle();
+    // Sem o perfil, NÃO descarta a fila como "desligado" (seria perder os avisos de quem quer recebê-los).
+    if (erroPerfil) throw new Error(MSG_PROATIVOS_SEM_LEITURA);
     const p = perfil as { email?: string | null; full_name?: string | null; notif_email?: boolean | null; pausada_em?: string | null; notif_categorias_desligadas?: string[] | null } | null;
     // Sem e-mail, avisos desligados, conta pausada ou "Sugestões e novidades" desligada: nada acumula para depois.
     if (!p?.email || !recebeAvisoComum(p) || (p.notif_categorias_desligadas ?? []).includes(CATEGORIA_PROATIVOS)) {
