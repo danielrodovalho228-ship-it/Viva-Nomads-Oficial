@@ -147,3 +147,26 @@ aplicar idempotente e rollback.
 - **Fora (não é deleção ou depende de outra decisão):** P4 (opção a/b), coluna `caf_transacao_id`, `destinos` refeitos
   pelo OSM e os prazos do item 13.
 
+
+## 8. Relatório numerado de retenção (02/11/2026)
+
+Conferido em produção só com leitura, em 02/11/2026, 02h (horário de Brasília). Nada foi apagado. A rotina da `0281` roda
+às 04h17 UTC e só apaga o que a §7 lista.
+
+| # | Item (inventário) | Prazo declarado | Quem cumpre | Linhas | Vencidas hoje | Situação |
+|---|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | `pg_cron` da 0067 | 14.367 (desde 05/10/2026) | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | fase 2: o relatório só conta | 257 (desde 18/10/2026) | 0 | **as primeiras vencem em 16/01/2027**; passar à fase 1 antes disso é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | rotina do atendimento (`corteRetencaoPushEnvios`) | 0 | 0 | em dia |
+| 4 | `saidas_motivos` | 365 dias (anonimizar) | fase 2: só conta | 0 | 0 | sem dados |
+| 5 | `denuncias_anuncio` | 365 dias da decisão | fase 2: só conta | 0 | 0 | sem dados |
+| 6 | `proprietario_strikes` | 365 dias | rotina da avaliação | 0 | 0 | sem dados (`VISTORIA_ATIVA` desligada) |
+| 7 | `estadia_convidados` | 30 dias do fim da estadia | rotina da estadia | 0 | 0 | sem dados |
+| 8 | `contrato_ocupantes` | 90 dias do fim da estadia | rotina do Prompt 32 | 0 | 0 | sem dados |
+| 9 | Medições de internet, tempos de deslocamento e vizinhança (P6) | 1 dia / última válida / 30 dias | `0281` (`e293-limpeza-retencao`) | — | 0 | em dia |
+| 10 | Verificação CAF vencida (P5) | validade do laudo | `0281` | — | 0 | em dia |
+| 11 | `property_workspaces` (Google Places, P4) | — | — | 0 | — | decisão a/b pendente (Daniel) |
+| 12 | `destinos` | — | — | 4 (polos públicos) | — | refazer pelo OSM: pendente (Daniel) |
+
+**Decisões em aberto (não executadas):** item 2 (passar `ia_chamadas` à fase 1 antes de 16/01/2027), P4 (item 11),
+`destinos` pelo OSM (item 12), coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
