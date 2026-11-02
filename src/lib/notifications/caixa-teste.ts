@@ -130,8 +130,6 @@ export interface EmailParaCaixa {
   anexos?: string[];
   /** E435: a versão HTML enviada (a caixa guarda sem links com token de acesso). */
   html?: string;
-  /** E274: a URL da foto de capa de cada cartão de imóvel do HTML (fotosDosCartoes), para o QA ver a foto que saiu. */
-  fotos?: string[];
 }
 
 /** No máximo 3 fotos por e-mail na caixa (o e-mail agrupado mostra até 3 cartões). */
@@ -176,11 +174,18 @@ export function corpoComAnexos(texto: string, anexos: string[] | undefined): str
   return `${texto}\n\n${nomes.length === 1 ? "Anexo" : "Anexos"}: ${nomes.join(", ")}`;
 }
 
-/** "Remetente: …", "Imagem: …" e (E274) "Foto do cartão: …" no topo do corpo guardado. */
-export function corpoComCabecalho(texto: string, p: { remetente?: string; imagem?: string; fotos?: string[] }): string {
-  const fotos = (p.fotos ?? []).filter(fotoDeCartaoValida).slice(0, FOTOS_CAIXA_MAX).map((f) => `${ROTULO_FOTO_CARTAO}: ${f}`);
-  const linhas = [p.remetente ? `Remetente: ${p.remetente}` : "", p.imagem ? `Imagem: ${p.imagem}` : "", ...fotos].filter(Boolean);
+/**
+ * "Remetente: …" e "Imagem: …" no topo do corpo guardado. E434 (02/11): a URL crua da foto do cartão ("Foto do cartão:
+ * …/_next/image…") NUNCA vai para o corpo — o corpo traz a foto embutida (versão HTML, E435) ou nada.
+ */
+export function corpoComCabecalho(texto: string, p: { remetente?: string; imagem?: string }): string {
+  const linhas = [p.remetente ? `Remetente: ${p.remetente}` : "", p.imagem ? `Imagem: ${p.imagem}` : ""].filter(Boolean);
   return linhas.length ? `${linhas.join("\n")}\n\n${texto}` : texto;
+}
+
+/** E434: tira as linhas "Foto do cartão: <URL>" (e-mails guardados antes do E434) do corpo que a tela/QA lê. */
+export function corpoSemUrlDeFoto(corpo: string): string {
+  return corpo.replace(new RegExp(`^${ROTULO_FOTO_CARTAO}: .*(?:\\r?\\n)?`, "gm"), "");
 }
 
 /** Links absolutos (http/https) ou caminhos do site ("/auth/confirm?…") que trazem query ou fragmento. */
@@ -288,9 +293,10 @@ export interface LinhaEmailTeste {
 }
 
 /** A linha como a tela mostra: e-mails mascarados e links com token removidos de novo (defesa em profundidade). */
-export function linhaParaTela<T extends LinhaEmailTeste>(l: T): T {
+export function linhaParaTela<T extends LinhaEmailTeste>(l: T): T & { fotos: string[] } {
   const limpa = (s: string) => mascararEmailsNoTexto(semLinksComToken(s));
-  return { ...l, assunto: limpa(l.assunto), corpo: limpa(l.corpo), destinatario_mascarado: mascararEmailsNoTexto(l.destinatario_mascarado) };
+  // E434: as fotos dos e-mails antigos viram imagem embutida (`fotos`); a URL crua sai do texto.
+  return { ...l, fotos: fotosNoCorpo(l.corpo), assunto: limpa(l.assunto), corpo: limpa(corpoSemUrlDeFoto(l.corpo)), destinatario_mascarado: mascararEmailsNoTexto(l.destinatario_mascarado) };
 }
 
 export interface OpcoesFiltroQa {

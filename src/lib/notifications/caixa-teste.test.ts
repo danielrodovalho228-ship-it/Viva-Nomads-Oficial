@@ -109,35 +109,38 @@ test("E163: a tela (linhaParaTela) aplica a mesma limpeza no assunto e no corpo,
   assert.match(l.corpo, /Redefinir: \[link com token removido\]\nPara: a•••@lab\.vivanomads\.test/);
 });
 
-test("E274: a foto de capa do cartão do imóvel vai para a caixa de QA (o texto puro não a tem) e só ela", async () => {
+test("E274/E434: a foto do cartão aparece EMBUTIDA na caixa de QA; a URL crua nunca fica no corpo", async () => {
   const { cartaoImovel } = await import("./cartoes-email.ts");
-  const { corpoComCabecalho, fotosDosCartoes, fotosNoCorpo, fotoDeCartaoValida } = await import("./caixa-teste.ts");
+  const { corpoComCabecalho, corpoSemUrlDeFoto, fotosDosCartoes, fotosNoCorpo, fotoDeCartaoValida } = await import("./caixa-teste.ts");
   const SITE = "https://vivanomads.com.br";
   const CAPA = "https://esezeutgtycekfosxplk.supabase.co/storage/v1/object/public/property-photos/7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp";
   const cartao = (id: string, foto: string | null) => cartaoImovel(SITE, { id, titulo: `Apto ${id}`, bairro: "Santa Mônica", cidade: "Uberlândia", totalMes: 3350, fotoCapa: foto });
   const a = cartao("a", CAPA);
-  // O texto puro do cartão (o que a caixa guardava) não tem foto: era por isso que o QA via só o cabeçalho.
-  assert.doesNotMatch(a.text, /_next\/image|supabase/);
+  // O texto puro do cartão (o que o e-mail real leva) não tem a URL da foto.
+  assert.doesNotMatch(a.text, /_next\/image|supabase|api\/email\/foto/);
   const html = `<img src="${SITE}/emails/transacional.jpg">${a.html}${cartao("b", null).html}${cartao("c", CAPA).html}`;
-  const fotos = fotosDosCartoes(html);
-  // A capa do cartão "a" (a mesma URL que o cliente de e-mail carrega); o cabeçalho e o cartão sem foto ficam de fora;
-  // a mesma capa repetida entra uma vez.
-  assert.deepEqual(fotos, [`${SITE}/api/email/foto?p=7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp`]);
-  const corpo = corpoComCabecalho("Olá Ana", { remetente: "Viva Nomads", imagem: "transacional.jpg", fotos });
-  assert.match(corpo, /^Remetente: Viva Nomads\nImagem: transacional\.jpg\nFoto do cartão: https:\/\/vivanomads\.com\.br\/api\/email\/foto\?p=/);
-  assert.deepEqual(fotosNoCorpo(corpo), fotos);
-  // A tela só mostra como imagem a foto do otimizador com a capa do Storage público; nada de URL qualquer.
+  assert.deepEqual(fotosDosCartoes(html), [`${SITE}/api/email/foto?p=7216d0e9-6246-482a-a1de-524fd5231dc2/bcc6ad2b-efe6-497d-af45-885f854e3ddf.webp`]);
+  // E434: o corpo guardado não leva mais a linha "Foto do cartão: <URL>".
+  const corpo = corpoComCabecalho("Olá Ana", { remetente: "Viva Nomads", imagem: "transacional.jpg" });
+  assert.equal(corpo, "Remetente: Viva Nomads\nImagem: transacional.jpg\n\nOlá Ana");
+  // E-mail ANTIGO (guardado com a linha): a tela mostra a foto embutida e tira a URL crua do texto.
+  const LONGA = `${SITE}/_next/image?url=${encodeURIComponent(CAPA)}&w=640&q=75`;
+  const antigo = `Remetente: Viva Nomads\nFoto do cartão: ${LONGA}\n\nOlá Ana`;
+  const t = linhaParaTela({ id: "1", criado_em: "", evento: "e", assunto: "a", corpo: antigo, destinatario_mascarado: "a•••@x" });
+  assert.deepEqual(t.fotos, [LONGA]);
+  assert.doesNotMatch(t.corpo, /Foto do cartão|_next\/image|supabase/);
+  assert.equal(corpoSemUrlDeFoto(antigo), "Remetente: Viva Nomads\n\nOlá Ana");
+  // URL qualquer nunca vira imagem, e também sai do texto.
   assert.equal(fotoDeCartaoValida("https://evil.example/x.jpg"), false);
-  assert.equal(fotoDeCartaoValida(`${SITE}/_next/image?url=${encodeURIComponent("https://evil.example/x.jpg")}&w=640&q=75`), false);
   assert.deepEqual(fotosNoCorpo("Foto do cartão: https://evil.example/x.jpg"), []);
-  // A linha da foto sobrevive à limpeza de links com token (url, w e q não são credencial).
-  assert.equal(linhaParaTela({ id: "1", criado_em: "", evento: "e", assunto: "a", corpo, destinatario_mascarado: "a•••@x" }).corpo, corpo);
+  assert.equal(corpoSemUrlDeFoto("Foto do cartão: https://evil.example/x.jpg\nOi"), "Oi");
 });
 
-test("E274: o envio grava as fotos dos cartões na caixa, e as duas listas de QA as mostram como imagem", () => {
+test("E434: o envio não grava a URL da foto; as listas mostram a imagem e a caixa da conta devolve o corpo sem a URL", () => {
   const email = readFileSync(new URL("./email.ts", import.meta.url), "utf8");
-  assert.match(email, /fotos: fotosDosCartoes\(params\.html\)/);
+  assert.doesNotMatch(email, /fotos: fotosDosCartoes/);
   const lista = readFileSync(new URL("../../components/admin/lista-emails-teste.tsx", import.meta.url), "utf8");
-  assert.equal((lista.match(/<FotosDoCartao corpo=\{l\.corpo\} \/>/g) ?? []).length, 2, "celular e computador");
-  assert.match(lista, /const fotos = fotosNoCorpo\(corpo\);/);
+  assert.equal((lista.match(/<FotosDoCartao fotos=\{l\.fotos\} \/>/g) ?? []).length, 2, "celular e computador");
+  const rota = readFileSync(new URL("../../app/api/conta/caixa-teste/route.ts", import.meta.url), "utf8");
+  assert.match(rota, /corpo: corpoSemUrlDeFoto\(/);
 });

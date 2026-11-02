@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contaEhDeTeste } from "@/lib/contas-de-teste";
-import { LISTA_MAX } from "@/lib/notifications/caixa-teste";
+import { LISTA_MAX, corpoSemUrlDeFoto } from "@/lib/notifications/caixa-teste";
 
 export const dynamic = "force-dynamic";
 
@@ -26,5 +26,7 @@ export async function GET() {
     .eq("usuario_id", user.id)
     .order("criado_em", { ascending: false })
     .limit(LISTA_MAX);
-  return NextResponse.json({ emails: data ?? [] }, { headers: { "Cache-Control": "no-store" } });
+  // E434: a URL crua da foto do cartão (e-mails guardados antes) nunca vai no corpo devolvido.
+  const emails = (data ?? []).map((e) => ({ ...e, corpo: corpoSemUrlDeFoto(String(e.corpo ?? "")) }));
+  return NextResponse.json({ emails }, { headers: { "Cache-Control": "no-store" } });
 }

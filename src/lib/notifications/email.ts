@@ -3,7 +3,7 @@
   (apenas registra no console/retorno). Docs: https://resend.com/docs
 */
 import { integracoesSimuladas, registrarSimulado } from "../integracoes.ts";
-import { fotosDosCartoes, type EmailParaCaixa } from "./caixa-teste.ts";
+import { type EmailParaCaixa } from "./caixa-teste.ts";
 import { comMarca } from "./assuntos.ts";
 import { remetenteDoEnvio } from "./remetente.ts";
 
@@ -152,8 +152,6 @@ export async function sendEmail(params: {
         anexos: params.attachments?.map((a) => a.filename),
         // E435: a versão HTML também vai para a caixa (sem links com token de acesso).
         html: params.html,
-        // E274: a foto de capa de cada cartão de imóvel (o texto puro não a tem), para o QA conferir na caixa.
-        fotos: fotosDosCartoes(params.html),
       });
       return { demo: false, id: data.id };
     }

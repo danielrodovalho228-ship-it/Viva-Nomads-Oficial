@@ -2,13 +2,12 @@ import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
-import { fotosNoCorpo, imovelDoCorpo, linhaParaTela, type LinhaEmailTeste } from "@/lib/notifications/caixa-teste";
+import { imovelDoCorpo, linhaParaTela, type LinhaEmailTeste } from "@/lib/notifications/caixa-teste";
 
 const quando = (iso: string) => dataHoraBRT(iso, { tabela: true });
 
-/** E274: a foto de capa de cada cartão de imóvel que o e-mail levou, como o cliente de e-mail a carrega. */
-function FotosDoCartao({ corpo }: { corpo: string }) {
-  const fotos = fotosNoCorpo(corpo);
+/** E274/E434: a foto de capa de cada cartão de imóvel, EMBUTIDA como imagem — a URL crua nunca aparece no texto. */
+function FotosDoCartao({ fotos }: { fotos: string[] }) {
   if (!fotos.length) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2" data-testid="emails-teste-fotos">
@@ -73,7 +72,7 @@ export function ListaEmailsTeste({ linhas, titulo = "Mais recentes primeiro", va
                 <ImovelPorExtenso corpo={l.corpo} />
                 <details className="mt-2">
                   <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-forest">Ler o e-mail</summary>
-                  <FotosDoCartao corpo={l.corpo} />
+                  <FotosDoCartao fotos={l.fotos} />
                   <pre className="whitespace-pre-wrap break-words text-sm text-ink">{l.corpo}</pre>
                   {qa && <ExtrasQa l={l} />}
                 </details>
@@ -99,7 +98,7 @@ export function ListaEmailsTeste({ linhas, titulo = "Mais recentes primeiro", va
                       <details>
                         <summary className="cursor-pointer break-words font-semibold text-ink">{l.assunto}</summary>
                         <ImovelPorExtenso corpo={l.corpo} />
-                        <FotosDoCartao corpo={l.corpo} />
+                        <FotosDoCartao fotos={l.fotos} />
                         <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{l.corpo}</pre>
                         {qa && <ExtrasQa l={l} />}
                       </details>
