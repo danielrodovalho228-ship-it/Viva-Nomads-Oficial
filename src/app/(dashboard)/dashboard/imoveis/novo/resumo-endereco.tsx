@@ -58,7 +58,7 @@ export function ResumoEndereco(p: {
       </div>
       <div>
         <span className="mb-2 block text-sm font-medium text-ink">Mapa do bairro</span>
-        <div className="relative overflow-hidden rounded-xl border border-line" data-testid="mapa-bairro">
+        <div className="relative isolate overflow-hidden rounded-xl border border-line" data-testid="mapa-bairro">
           <PropertyMap markers={[{ id: "bairro", lat: centro.lat, lng: centro.lng, kind: "property" }]} center={centro} zoom={14} approximate className="aspect-[16/9] w-full" />
           <span className="pointer-events-none absolute right-3 top-3 z-[400] rounded-lg bg-forest px-3 py-1 text-sm font-semibold text-white" data-testid="mapa-bairro-nome">
             {p.bairro.trim()}
