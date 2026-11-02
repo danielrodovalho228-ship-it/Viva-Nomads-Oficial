@@ -85,11 +85,13 @@ export async function parceirosDoImovel(propertyId: string): Promise<ParceirosDo
   if ("erro" in s) return null;
   const im = await imovelDoDono(s.admin, propertyId, s.userId);
   if (!im) return null;
-  const { data } = await s.admin
+  const { data, error } = await s.admin
     .from("imovel_parceiros")
     .select("id, categoria, status, modo, instrucoes, parceiro_id, servico_id, parceiros(id, nome_publico, slug), parceiro_servicos(id, titulo, preco_base, unidade)")
     .eq("property_id", im.id)
     .in("status", ["pendente", "ativo"]);
+  // Achado 99: a falha LANÇA (error.tsx) — "nenhum parceiro" levaria o dono a convidar de novo quem já está ligado.
+  if (error) throw new Error("Não foi possível ler os parceiros do imóvel.");
   type L = {
     id: string;
     categoria: CategoriaVinculo;
@@ -246,19 +248,24 @@ export interface ImovelFixo {
   servico: string | null;
 }
 
+const MSG_FIXOS_SEM_LEITURA = "Não foi possível ler os seus imóveis fixos agora.";
+
 /** Convites e vínculos ativos do parceiro logado. Endereço exato nunca: só bairro e cidade. */
 export async function meusImoveisFixos(): Promise<ImovelFixo[]> {
   const s = await sessao();
   if ("erro" in s) return [];
-  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data: parc, error: e1 } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  // Achado 100: a falha LANÇA — "nenhum imóvel fixo" esconderia convites a responder e vínculos ativos.
+  if (e1) throw new Error(MSG_FIXOS_SEM_LEITURA);
   if (!parc) return [];
-  const { data } = await s.admin
+  const { data, error: e2 } = await s.admin
     .from("imovel_parceiros")
     .select("id, categoria, status, modo, instrucoes, properties(address, city), parceiro_servicos(titulo)")
     .eq("parceiro_id", (parc as { id: string }).id)
     .in("status", ["pendente", "ativo"])
     .order("criado_em", { ascending: false })
     .limit(100);
+  if (e2) throw new Error(MSG_FIXOS_SEM_LEITURA);
   return ((data ?? []) as unknown as { id: string; categoria: string; status: "pendente" | "ativo"; modo: ModoVinculo; instrucoes: string | null; properties: { address: string | null; city: string | null } | null; parceiro_servicos: { titulo: string } | null }[]).map(
     (v) => ({ id: v.id, categoria: v.categoria, status: v.status, modo: v.modo, instrucoes: v.instrucoes, imovel: { bairro: v.properties?.address ?? null, cidade: v.properties?.city ?? null }, servico: v.parceiro_servicos?.titulo ?? null }),
   );
@@ -345,8 +352,11 @@ export async function trocarParceiro(pedidoId: string): Promise<Res<{ id: string
   if ("erro" in s) return { ok: false, erro: s.erro };
   const p = await pedidoDoDono(s.admin, pedidoId, s.userId);
   if (!p || !p.chave_automacao || !p.gatilho || p.status !== "solicitado" || !p.property_id || !p.contrato_id) return { ok: false, erro: "Este pedido não pode trocar de parceiro agora." };
-  const { data: im } = await s.admin.from("properties").select("city").eq("id", p.property_id).maybeSingle();
-  const { data: tentados } = await s.admin.from("parceiro_pedidos").select("parceiro_id").like("chave_automacao", `${p.chave_automacao}%`);
+  // Achado 121: as duas leituras recusam na falha, ANTES de cancelar o pedido atual. Sem a cidade, a busca ia sem cidade
+  // (parceiro de outra cidade); sem os já tentados, o pedido podia voltar a quem já recusou.
+  const { data: im, error: e1 } = await s.admin.from("properties").select("city").eq("id", p.property_id).maybeSingle();
+  const { data: tentados, error: e2 } = await s.admin.from("parceiro_pedidos").select("parceiro_id").like("chave_automacao", `${p.chave_automacao}%`);
+  if (e1 || e2) return { ok: false, erro: "Não foi possível trocar o parceiro agora. Tente de novo." };
   const excluir = new Set([p.parceiro_id, ...((tentados ?? []) as { parceiro_id: string }[]).map((x) => x.parceiro_id)]);
   const { lista } = await buscarParceiros({ categoria: p.categoria, cidade: (im as { city: string | null } | null)?.city ?? null });
   const proximo = lista.find((x) => !excluir.has(x.id));

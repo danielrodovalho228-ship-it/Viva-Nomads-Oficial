@@ -9,7 +9,7 @@ export interface Lead {
   id: string;
   /** Status cru persistido (leads.status): 'new' | 'accepted' | 'rejected'. */
   status?: string;
-  name: string; // "Candidato(a)" antes do aceite; nome curto (Maria S.) depois. Nunca contato.
+  name: string; // "Candidato(a)" antes do aceite; nome completo (E427) depois. Nunca contato.
   /** Foto só depois do aceite. */
   fotoUrl?: string | null;
   /** Sinais do candidato (início desejado, pets, "Na Viva desde"). */

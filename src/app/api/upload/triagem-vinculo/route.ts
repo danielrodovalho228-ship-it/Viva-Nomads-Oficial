@@ -6,6 +6,8 @@ import { DOC_MAX_BYTES, DOC_MIN_BYTES, DOC_MIME, tipoRealPorMagicBytes } from "@
 import { BUCKET_TRIAGEM, caminhoVinculo, ehTipoVinculo, estadoVinculo, podeEnviar, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 
+const MSG_SEM_LEITURA = "Não foi possível conferir o seu comprovante agora. Tente de novo.";
+
 /**
  * Prompt 52 — o comprovante de VÍNCULO do morador (carta da residência/programa, carta do empregador ou contracheque).
  * Só com a chave TRIAGEM_VINCULO_ATIVA; só no degrau da transação (candidatura aceita, antes do contrato). Tipo real por
@@ -29,10 +31,15 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) return NextResponse.json({ error: "Arquivo ausente." }, { status: 400 });
 
   // Degrau da transação: pelo menos uma candidatura ACEITA deste morador.
-  const { data: aceitas } = await admin.from("leads").select("id").eq("tenant_id", user.id).eq("status", "accepted").limit(1);
+  // Achado 125: as leituras recusam com 503 antes de gravar qualquer arquivo. Sem o último comprovante, o pendente anterior
+  // não era achado: ficavam dois pendentes e o arquivo antigo (documento pessoal) órfão no Storage, e a trava de "vínculo
+  // já confirmado" não valia.
+  const { data: aceitas, error: e1 } = await admin.from("leads").select("id").eq("tenant_id", user.id).eq("status", "accepted").limit(1);
+  if (e1) return NextResponse.json({ error: MSG_SEM_LEITURA }, { status: 503 });
   if (!aceitas?.length) return NextResponse.json({ error: "O comprovante é pedido depois que um proprietário aceita a sua candidatura." }, { status: 409 });
 
-  const { data: ultima } = await admin.from("triagem_vinculos").select("id, tipo, status, motivo, decidido_em, valido_ate, enviado_em, path").eq("user_id", user.id).order("enviado_em", { ascending: false }).limit(1).maybeSingle();
+  const { data: ultima, error: e2 } = await admin.from("triagem_vinculos").select("id, tipo, status, motivo, decidido_em, valido_ate, enviado_em, path").eq("user_id", user.id).order("enviado_em", { ascending: false }).limit(1).maybeSingle();
+  if (e2) return NextResponse.json({ error: MSG_SEM_LEITURA }, { status: 503 });
   if (!podeEnviar(estadoVinculo((ultima as LinhaVinculo | null) ?? null, new Date()))) {
     return NextResponse.json({ error: "Seu vínculo já está confirmado." }, { status: 409 });
   }

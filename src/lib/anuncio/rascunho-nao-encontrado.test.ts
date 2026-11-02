@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { TEXTO_RASCUNHO_FECHADO, idDeRascunhoValido } from "./rascunho-nao-encontrado.ts";
+import { TEXTO_RASCUNHO_FECHADO, idDeRascunhoValido, rascunhoDaConta } from "./rascunho-nao-encontrado.ts";
 
 const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
@@ -56,4 +56,22 @@ test("L-88 (t943): o aviso vem ANTES do 'approved === null → return null' — 
   assert.doesNotMatch(efeito, /setApproved/);
   // "Começar um anúncio novo" (mesma rota, sem ?draft=) libera o assistente: o efeito depende do draftParam.
   assert.match(pagina, /if \(editId \|\| draftParam\) return;[\s\S]*?setApproved\(true\);[\s\S]*?\}, \[editId, draftParam, userId\]\);/);
+});
+
+test("E420 (resíduo): rascunho de OUTRA conta → 'não encontrado' (nunca o cadastro vazio em cima do anúncio alheio)", () => {
+  const eu = "11111111-1111-4111-8111-111111111111";
+  const outra = "22222222-2222-4222-8222-222222222222";
+  assert.equal(rascunhoDaConta({ owner_id: eu }, eu), true);
+  // A leitura privada devolve a linha ao admin e a quem tem candidatura (draft_data nulo): mesmo assim, não é desta conta.
+  assert.equal(rascunhoDaConta({ owner_id: outra }, eu), false);
+  assert.equal(rascunhoDaConta(null, eu), false);
+  assert.equal(rascunhoDaConta({ owner_id: eu }, null), false);
+  const src = ler("../data/actions.ts");
+  const fn = src.slice(src.indexOf("export async function abrirRascunho"), src.indexOf("async function semFotosApagadas"));
+  const dono = fn.indexOf('.from("properties").select("owner_id").eq("id", id).maybeSingle()');
+  assert.ok(dono > 0 && dono < fn.indexOf("property_private_details"), "confere o dono antes de ler o rascunho");
+  assert.match(fn, /if \(erroDono\) return \{ ok: false, motivo: "indisponivel" \};/);
+  assert.match(fn, /if \(!rascunhoDaConta\(dono as \{ owner_id\?: string \| null \} \| null, user\.id\)\) return \{ ok: false, motivo: "nao_encontrado" \};/);
+  // A RPC continua devolvendo a linha ao admin e a quem tem candidatura — é por isso que a conferência do dono existe.
+  assert.match(ler("../../../supabase/migrations/0052_p0_seguranca_compativel.sql"), /or public\.is_admin\(\)/);
 });

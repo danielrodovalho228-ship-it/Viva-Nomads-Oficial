@@ -109,33 +109,8 @@ export async function ultimaMedidaDoDono(admin: Admin, imovelId: string, agora: 
   return data ? medicaoDaLinha(data as Linha) : null;
 }
 
-/** Leitura pública (página do imóvel publicado): a view só devolve a última validada do dono, vigente. */
-export async function medidaPublica(imovelId: string): Promise<Medicao | null> {
-  if (!UUID.test(imovelId)) return null;
-  const supabase = await createClient();
-  if (!supabase) return null;
-  const { data } = await supabase
-    .from("internet_medida_publica")
-    .select("download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate")
-    .eq("property_id", imovelId)
-    .maybeSingle();
-  return data ? medicaoDaLinha(data as Linha) : null;
-}
-
-/** Para a busca/qualificação: a medição pública de vários imóveis de uma vez. */
-export async function medidasPublicas(ids: string[]): Promise<Map<string, Medicao>> {
-  const m = new Map<string, Medicao>();
-  const validos = ids.filter((id) => UUID.test(id));
-  if (!validos.length) return m;
-  const supabase = await createClient();
-  if (!supabase) return m;
-  const { data } = await supabase
-    .from("internet_medida_publica")
-    .select("property_id, download_mbps, upload_mbps, latencia_ms, medido_em, valido_ate")
-    .in("property_id", validos);
-  for (const l of (data ?? []) as (Linha & { property_id: string })[]) m.set(l.property_id, medicaoDaLinha(l));
-  return m;
-}
+// Código morto removido (varredura, rodada 22): medidaPublica e medidasPublicas não tinham chamador. A página do imóvel
+// e a busca leem a view internet_medida_publica direto em src/lib/data/properties.ts.
 
 async function avisarUsuario(admin: Admin, destino: string, ev: NotificationEvent, url: string, corpo?: CorpoResidual) {
   try {

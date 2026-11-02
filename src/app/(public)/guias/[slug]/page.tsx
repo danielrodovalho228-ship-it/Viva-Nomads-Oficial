@@ -39,9 +39,10 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
           ))}
         </section>
       ))}
-      <div className="mt-12 flex flex-col gap-3 rounded-xl border border-line bg-white p-4 sm:flex-row">
-        <Link href="/buscar" className="font-semibold text-forest underline">Buscar imóveis mobiliados</Link>
-        <Link href="/para-proprietarios" className="font-semibold text-forest underline">Anunciar o meu imóvel</Link>
+      <div className="mt-12 flex flex-col gap-1 rounded-xl border border-line bg-white px-4 py-2 sm:flex-row sm:gap-6">
+        {/* Varredura 02/11: no celular os dois links tinham 24 px e ficavam a 12 px um do outro — agora 44 px cada. */}
+        <Link href="/buscar" className="inline-flex min-h-11 items-center font-semibold text-forest underline" data-testid="guia-cta-buscar">Buscar imóveis mobiliados</Link>
+        <Link href="/para-proprietarios" className="inline-flex min-h-11 items-center font-semibold text-forest underline" data-testid="guia-cta-anunciar">Anunciar o meu imóvel</Link>
       </div>
       <h2 className="mt-12 font-title text-lg font-semibold text-ink">Outros guias</h2>
       <ul className="mt-2 list-disc pl-4">

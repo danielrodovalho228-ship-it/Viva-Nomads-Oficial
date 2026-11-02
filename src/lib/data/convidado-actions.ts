@@ -42,7 +42,10 @@ export async function mesclarBuscasConvidado(bruto: unknown): Promise<{ ok: bool
   const s = await sessao();
   if (!s) return { ok: false, salvas: 0 };
   const locais = [...new Set((Array.isArray(bruto) ? bruto : []).filter((x): x is string => typeof x === "string").map(normalizarBusca).filter(Boolean))];
-  const { data } = await s.supabase.from("buscas_salvas").select("parametros").eq("usuario_id", s.user.id);
+  const { data, error } = await s.supabase.from("buscas_salvas").select("parametros").eq("usuario_id", s.user.id);
+  // Achado 124: sem as buscas da conta, a mescla gravava as do aparelho em dobro e passava do limite. A falha não grava;
+  // as buscas do aparelho continuam lá para a próxima mescla.
+  if (error) return { ok: false, salvas: 0 };
   const daConta = (data ?? []).map((r) => r.parametros as string);
   const { novos } = mesclarSemDuplicar(locais, daConta);
   const cabem = novos.slice(0, Math.max(0, LIMITE_BUSCAS_SALVAS - daConta.length));

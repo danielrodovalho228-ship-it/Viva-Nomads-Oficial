@@ -188,11 +188,13 @@ export async function enviarResumoDaPessoa(
 ): Promise<ResultadoResumo> {
   const { agora, novosNoAr, opcoes } = contexto;
   try {
-    const { data: perfil } = await admin
+    const { data: perfil, error: erroPerfil } = await admin
       .from("profiles")
       .select("email, full_name, notif_email, pausada_em, notif_categorias_desligadas, is_teste")
       .eq("id", usuarioId)
       .maybeSingle();
+    // Achado 119: leitura que falha → "falhou" (o catch abaixo), nunca "desligado" nem reenvio do que já saiu.
+    if (erroPerfil) throw new Error("Não foi possível ler o perfil do resumo.");
     const p = perfil as { email?: string | null; full_name?: string | null; notif_email?: boolean | null; pausada_em?: string | null; notif_categorias_desligadas?: string[] | null; is_teste?: boolean | null } | null;
     if (opcoes.soTeste && p?.is_teste !== true) return "desligado";
     if (!p?.email || !recebeAvisoComum(p) || (p.notif_categorias_desligadas ?? []).includes(CATEGORIA_PROATIVOS)) return "desligado";
@@ -203,7 +205,8 @@ export async function enviarResumoDaPessoa(
 
     const { candidatos, pendentes } = await candidatosDaPessoa(admin, usuarioId, novosNoAr);
     // O que já saiu para a pessoa (qualquer proativo) e as quedas que já saíram no resumo.
-    const { data: saidos } = await admin.from("emails_proativos").select("evento, ref_id, extra").eq("usuario_id", usuarioId).not("enviado_em", "is", null).limit(5000);
+    const { data: saidos, error: erroSaidos } = await admin.from("emails_proativos").select("evento, ref_id, extra").eq("usuario_id", usuarioId).not("enviado_em", "is", null).limit(5000);
+    if (erroSaidos) throw new Error("Não foi possível ler os e-mails já enviados.");
     const jaEnviados = new Set<string>();
     const quedasJaEnviadas = new Set<string>();
     for (const r of (saidos ?? []) as { evento: string; ref_id: string; extra: Record<string, unknown> | null }[]) {
@@ -211,7 +214,8 @@ export async function enviarResumoDaPessoa(
       else jaEnviados.add(r.ref_id);
     }
     // (b) favoritos que baixaram de valor na semana.
-    const { data: favs } = await admin.from("favorites").select("property_id").eq("tenant_id", usuarioId).limit(500);
+    const { data: favs, error: erroFavs } = await admin.from("favorites").select("property_id").eq("tenant_id", usuarioId).limit(500);
+    if (erroFavs) throw new Error("Não foi possível ler os favoritos do resumo.");
     const favoritos = ((favs ?? []) as { property_id: string }[]).map((f) => f.property_id);
     const { data: qs } = favoritos.length
       ? await admin.from("quedas_preco").select("id, property_id, total_antigo, total_novo, registrada_em").in("property_id", favoritos).gte("registrada_em", inicioDaJanela(agora))

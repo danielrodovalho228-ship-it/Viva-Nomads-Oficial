@@ -18,8 +18,13 @@ export function SugestoesNoNivel({ propertyId, comodidades }: { propertyId: stri
       propertyId={propertyId}
       comodidadesMarcadas={marcadas}
       onComodidade={(chave) => {
+        const jaTinha = marcadas.includes(chave);
         setMarcadas((m) => (m.includes(chave) ? m : [...m, chave]));
-        void gravarComodidadeConfirmada(propertyId, chave);
+        // Achado 127: não gravou (falha de leitura ou de gravação) → a marca sai: a tela não mostra como salva a
+        // comodidade que não está no anúncio (o dono marca no editor do anúncio).
+        void gravarComodidadeConfirmada(propertyId, chave).then((r) => {
+          if (!r.ok && !jaTinha) setMarcadas((m) => m.filter((k) => k !== chave));
+        });
       }}
       onNivelMudou={() => router.refresh()}
     />

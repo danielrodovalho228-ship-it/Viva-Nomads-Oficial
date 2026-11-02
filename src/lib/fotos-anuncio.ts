@@ -95,3 +95,8 @@ export function rascunhoSemFotosApagadas<T>(data: T, existentes: ReadonlySet<str
   });
   return ficam.length === fotos.length ? data : ({ ...(data as object), photos: ficam } as T);
 }
+
+/** E405 (02/11): é endereço de imagem (http/https ou caminho do próprio site), e não o "nome" de uma foto de teste. */
+export function ehUrlDeImagem(u: unknown): u is string {
+  return typeof u === "string" && /^(https?:\/\/|\/(?!\/))/.test(u.trim());
+}

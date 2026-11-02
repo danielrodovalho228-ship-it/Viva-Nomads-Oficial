@@ -160,7 +160,8 @@ export default async function CityLandingPage({ params }: Params) {
         {bairros.length > 0 && (
           <div className="mt-12" data-testid="bairros-grade">
             <h2 className="font-title text-2xl font-semibold text-ink">Bairros de {name}</h2>
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Grade par (varredura 02/11, tablet): em 2 colunas, o último bairro ímpar ocupa a linha inteira; em 1 e 3 colunas, nada muda. */}
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:max-lg:[&>:last-child:nth-child(odd)]:col-span-full lg:grid-cols-3" data-testid="bairros-lista">
               {bairros.map((b) => (
                 <li key={b.slug}>
                   <Link

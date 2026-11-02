@@ -156,6 +156,12 @@ textarea:focus-visible,
   /* Sem border-radius aqui: o contorno segue o raio do próprio elemento (pill continua pill). */
 }
 
+/* Varredura pública 02/11: campo que ocupa uma barra em pílula (busca da home) — o foco aparece na BARRA inteira
+   (focus-within no contêiner), não como um retângulo dentro da pílula. Vem depois da regra geral e a substitui. */
+input.foco-na-barra:focus-visible {
+  outline: none;
+}
+
 /* Utilitários de marca */
 @layer components {
   .container-page {

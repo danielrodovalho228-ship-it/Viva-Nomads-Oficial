@@ -96,7 +96,7 @@ export function VerComoOutrosVeem() {
             estadia e os selos de confiança.
           </p>
           <p className="mt-2">
-            <strong>Depois do aceite</strong>, ele vê o seu primeiro nome, a inicial do sobrenome e a foto. Telefone e e-mail nunca aparecem.
+            <strong>Depois do aceite</strong>, ele vê o seu nome completo e a foto. Telefone e e-mail nunca aparecem.
           </p>
         </div>
       )}

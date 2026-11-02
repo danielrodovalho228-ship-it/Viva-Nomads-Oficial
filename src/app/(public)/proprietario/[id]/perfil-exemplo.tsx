@@ -55,7 +55,7 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
               ))}
               {avaliacoes.length > 0 && (
                 <li>
-                  <a href="#avaliacoes" className="inline-flex items-center gap-1 font-medium hover:text-forest">
+                  <a href="#avaliacoes" className="alvo-toque inline-flex items-center gap-1 font-medium hover:text-forest" data-testid="perfil-link-avaliacoes">
                     <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
                     {numBR(media, 1)} · {avaliacoes.length} avaliações
                   </a>

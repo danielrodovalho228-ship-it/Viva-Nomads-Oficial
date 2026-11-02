@@ -12,6 +12,8 @@ A QA (Muse) entra direto nas **contas de teste** e numa conta de **admin observa
 3. **Conta de teste:** a página abre o destino já logada.
    **Admin observador:** a sessão sai da porta só com a primeira etapa. Ao abrir o `/admin`, o site pede o **código do app autenticador** da conta, como para qualquer admin. Depois do código, o admin abre.
 
+**Uma sessão por navegador (E428).** A sessão fica nos cookies do navegador, que valem para todas as abas. Entrar pela porta numa conta troca a conta de **todas** as abas daquele navegador. Na reprova de 01/11, a porta registrou entradas alternadas, a cada 2 a 3 minutos e no mesmo IP, entre "Daniel Proprietario 1" e "Conta de teste QA" (admin observador). A aba do proprietário "virou" a conta de QA na navegação seguinte. Para usar duas contas ao mesmo tempo, abra cada uma num perfil de navegador separado (ou numa janela anônima).
+
 **A chave nunca vai na URL.** Uma URL com `?chave=` ou `?key=` dá 404 de propósito: a chave já teria ido para o histórico do navegador. Se isso acontecer, troque a chave (passo b abaixo).
 
 Pelo terminal ou por um teste automatizado: `POST /api/qa/entrar` com o corpo JSON `{ "email": "...", "chave": "...", "papel": "tenant" | "owner", "destino": "/..." }`. A resposta grava os cookies da sessão. `papel` só vale para conta nova (sem ele, morador).

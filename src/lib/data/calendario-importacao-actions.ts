@@ -37,6 +37,8 @@ async function donoDoImovel(propertyId: string) {
   return data ? { admin, userId: user.id } : null;
 }
 
+const MSG_CALENDARIO_SEM_LEITURA = "Não foi possível ler o calendário agora. Tente de novo.";
+
 async function donoDaImportacao(id: string) {
   if (!UUID.test(id)) return null;
   const supabase = await createClient();
@@ -46,7 +48,8 @@ async function donoDaImportacao(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const imp = await importacaoPorId(admin, id);
+  const imp = await importacaoPorId(admin, id).catch(() => "falhou" as const);
+  if (imp === "falhou") return "falhou" as const;
   return imp && imp.owner_id === user.id ? { admin, imp } : null;
 }
 
@@ -91,7 +94,7 @@ export async function adicionarImportacao(propertyId: string, link: string): Pro
     .select("id")
     .single();
   if (error || !data) return { ok: false, erro: error?.code === "23505" ? "Esse link já está importado." : "Não foi possível salvar agora. Tente de novo." };
-  const imp = await importacaoPorId(d.admin, data.id as string);
+  const imp = await importacaoPorId(d.admin, data.id as string).catch(() => null); // salvo; a rotina lê de novo em 3 h
   const r = imp ? await sincronizarImportacao(d.admin, imp) : null;
   depois(propertyId);
   return { ok: true, mensagem: r?.ok ? `Calendário importado: ${r.inseridos} ${r.inseridos === 1 ? "período ocupado" : "períodos ocupados"}.` : "Link salvo. A primeira leitura falhou; tentamos de novo em 3 horas." };
@@ -100,6 +103,7 @@ export async function adicionarImportacao(propertyId: string, link: string): Pro
 /** "Atualizar agora" (no máximo 6 por hora por importação). */
 export async function atualizarImportacao(id: string): Promise<Res> {
   const d = await donoDaImportacao(id);
+  if (d === "falhou") return { ok: false, erro: MSG_CALENDARIO_SEM_LEITURA };
   if (!d) return { ok: false, erro: "Calendário não encontrado." };
   if (!(await consumirLimite(`calendario:atualizar:${id}`, 6, 3600))) return { ok: false, erro: "Já atualizado há pouco. Tente de novo em alguns minutos." };
   const r = await sincronizarImportacao(d.admin, d.imp);
@@ -112,6 +116,7 @@ export async function atualizarImportacao(id: string): Promise<Res> {
 /** Remove o link e as datas que vieram dele (os bloqueios manuais ficam). */
 export async function removerImportacao(id: string): Promise<Res> {
   const d = await donoDaImportacao(id);
+  if (d === "falhou") return { ok: false, erro: MSG_CALENDARIO_SEM_LEITURA };
   if (!d) return { ok: false, erro: "Calendário não encontrado." };
   const { error } = await d.admin.from("calendario_importacoes").delete().eq("id", id).eq("owner_id", d.imp.owner_id);
   if (error) return { ok: false, erro: "Não foi possível remover agora." };

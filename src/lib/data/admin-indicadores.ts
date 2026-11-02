@@ -365,7 +365,9 @@ export function nomeCurtoAdmin(nome: string | null | undefined): string {
 /** Nomes curtos por id (partes de contrato, donos). */
 export async function nomesCurtos(admin: Admin, ids: string[]): Promise<Map<string, string>> {
   if (!ids.length) return new Map();
-  const { data } = await admin.from("profiles").select("id, full_name").in("id", [...new Set(ids)]);
+  const { data, error } = await admin.from("profiles").select("id, full_name").in("id", [...new Set(ids)]);
+  // Achado 107: a falha LANÇA (admin/error.tsx) — nunca nomes em branco nas listas da equipe.
+  if (error) throw new Error("Não foi possível ler os nomes.");
   return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
 }
 
@@ -560,7 +562,8 @@ export async function taxasVencidas(admin: Admin, tipo: "real" | "teste" | "todo
 export async function imovelDosLeads(admin: Admin, ids: string[]): Promise<Map<string, string>> {
   const u = [...new Set(ids.filter(Boolean))];
   if (!u.length) return new Map();
-  const { data } = await admin.from("leads").select("id, properties!inner(title)").in("id", u);
+  const { data, error } = await admin.from("leads").select("id, properties!inner(title)").in("id", u);
+  if (error) throw new Error("Não foi possível ler os imóveis das candidaturas.");
   return new Map(((data ?? []) as unknown as { id: string; properties: { title: string | null } }[]).map((l) => [l.id, l.properties.title ?? "Imóvel"]));
 }
 

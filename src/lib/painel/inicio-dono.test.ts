@@ -50,7 +50,8 @@ test("Peça na Viva (um botão cheio) e os três atalhos do mockup", () => {
   const c = readFileSync("src/components/painel/inicio-dono.tsx", "utf8");
   assert.match(c, /href=\{PECA_NA_VIVA\.secundario\.href\} variant="outline"/);
   // Sem foto: nada de imagem inventada — a foto só vem de bloco.foto; no rascunho sem foto, o placeholder desenhado (E308).
-  assert.match(c, /\{bloco\.foto \? \(/);
+  // E405 (02/11): a foto do bloco passa pelo filtro de URL (const foto) antes de virar imagem.
+  assert.match(c, /\{foto \? \(/);
   assert.match(c, /bloco\.tipo === "rascunho" && \(/);
   const v = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
   assert.match(v, /if \(mode === "owner" && !demo && inicioDono\)/);

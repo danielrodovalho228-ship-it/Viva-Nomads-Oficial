@@ -172,7 +172,10 @@ export async function sincronizarImportacao(admin: Admin, imp: Importacao, agora
     if (avisarFalha(falhas)) await avisarDono(admin, imp.owner_id, "calendario_falha", imp.property_id, (imovel) => corpoCalendarioFalha({ imovel, causa }));
     return { ok: false, inseridos: 0, removidos: 0, conflitos: 0, erro: causa };
   }
-  const { data: atuais } = await admin.from("property_blocks").select("id, inicio, fim").eq("importacao_id", imp.id);
+  const { data: atuais, error: erroAtuais } = await admin.from("property_blocks").select("id, inicio, fim").eq("importacao_id", imp.id);
+  // Achado 122: sem as datas já importadas, o plano trataria o calendário como vazio e inseriria tudo de novo (datas em
+  // dobro a cada leitura). A leitura que falha não mexe em nada; a próxima rodada tenta de novo.
+  if (erroAtuais) return { ok: false, inseridos: 0, removidos: 0, conflitos: 0, erro: "Não foi possível ler as datas já importadas." };
   const plano = planoDeSincronia(
     ((atuais ?? []) as { id: string; inicio: string; fim: string }[]).map((a) => ({ id: a.id, inicio: String(a.inicio), fim: String(a.fim) })),
     leitura.bloqueios,
@@ -223,6 +226,8 @@ export async function sincronizarTodas(admin: Admin, agora: Date = new Date()): 
 }
 
 export async function importacaoPorId(admin: Admin, id: string): Promise<Importacao | null> {
-  const { data } = await admin.from("calendario_importacoes").select(COLUNAS).eq("id", id).maybeSingle();
+  const { data, error } = await admin.from("calendario_importacoes").select(COLUNAS).eq("id", id).maybeSingle();
+  // Achado 104: a falha LANÇA — nunca "Calendário não encontrado" para um link que existe.
+  if (error) throw new Error("Não foi possível ler o calendário importado.");
   return (data as Importacao | null) ?? null;
 }

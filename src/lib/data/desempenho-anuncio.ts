@@ -171,17 +171,20 @@ export async function visualizacoesDoDono(agora: Date = new Date()): Promise<num
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: ims } = await admin.from("properties").select("id").eq("owner_id", user.id);
+  const { data: ims, error: e1 } = await admin.from("properties").select("id").eq("owner_id", user.id);
+  // Achado 105: a falha LANÇA (o Início já esconde o número) — nunca "0 visualizações" por engano.
+  if (e1) throw new Error("Não foi possível ler os anúncios.");
   const ids = ((ims ?? []) as { id: string }[]).map((i) => i.id);
   if (!ids.length) return 0;
   const j = janelas(agora);
-  const { data: evs } = await admin
+  const { data: evs, error: e2 } = await admin
     .from("eventos")
     .select("tipo, criado_em, usuario_id")
     .in("imovel_id", ids)
     .eq("tipo", "ver_anuncio")
     .gte("criado_em", new Date(j.atual[0]).toISOString())
     .limit(20000);
+  if (e2) throw new Error("Não foi possível ler as visualizações.");
   const eventos = (evs ?? []) as Evento[];
   const fora = { donoId: user.id, contasTeste: await contasDeTeste(admin, eventos.map((e) => e.usuario_id ?? "")) };
   return contar(eventos, j.atual, fora).visualizacoes;

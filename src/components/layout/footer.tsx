@@ -41,7 +41,7 @@ export function Footer() {
         <FooterCol title="Cidades">
           {CITIES.map((c) => (
             <FooterLink key={c.slug} href={`/cidades/${c.slug}`}>
-              Imóveis em {c.name}
+              {`Imóveis em ${c.name}`}
             </FooterLink>
           ))}
         </FooterCol>
@@ -58,7 +58,8 @@ export function Footer() {
 
       <div className="border-t border-white/10">
         <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-white/50 md:flex-row">
-          <p>© {new Date().getFullYear()} Viva Nomads · Estadias de 30 a 180 dias</p>
+          {/* E369 (02/11): cada frase é UM texto só — em nós separados, leitores de texto liam "emUberlândia" e "©2026Viva". */}
+          <p>{`© ${new Date().getFullYear()} Viva Nomads · Estadias de 30 a 180 dias`}</p>
           <p>A plataforma conecta proprietários e moradores — não é parte do contrato.</p>
         </div>
       </div>

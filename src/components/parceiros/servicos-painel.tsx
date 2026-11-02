@@ -25,7 +25,8 @@ export function ServicosPainel({ cidade }: { cidade?: string | null }) {
   return (
     <Panel title="Serviços" className="mt-6" data-testid="painel-servicos-parceiros">
       <p className="flex items-center gap-2 text-sm text-muted">
-        <Wrench className="h-4 w-4 shrink-0" aria-hidden /> Parceiros aprovados pela Viva{cidade ? ` em ${cidade}` : ""}. Você combina tudo pelas mensagens da Viva.
+        {/* E405 (02/11): a frase é UM texto só — em nós separados, leitores de texto liam "Vivaem Uberlândia". */}
+        <Wrench className="h-4 w-4 shrink-0" aria-hidden /> <span>{`Parceiros aprovados pela Viva${cidade ? ` em ${cidade}` : ""}. Você combina tudo pelas mensagens da Viva.`}</span>
       </p>
       <ul className="mt-4 grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4" data-testid="servicos-grade">
         {lista.map((c) => {

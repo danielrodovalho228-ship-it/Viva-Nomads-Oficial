@@ -66,8 +66,9 @@ export async function GET(request: Request) {
     for (const nivel of [2, 6] as const) {
       if (c.nivel < nivel) continue;
       const acao = `escalado_${nivel}h`;
-      const { data: ja } = await admin.from("chamado_eventos").select("id").eq("chamado_id", c.id).eq("acao", acao).limit(1);
-      if (ja && ja.length) continue;
+      const { data: ja, error: erroJa } = await admin.from("chamado_eventos").select("id").eq("chamado_id", c.id).eq("acao", acao).limit(1);
+      // Achado 126: sem conferir se já avisou, não avisa (senão o aviso saía a cada 15 min e a prioridade subia de novo).
+      if (erroJa || (ja && ja.length)) continue;
       await avisarEquipe(c as unknown as ChamadoResumo, nivel === 6 ? `${c.horas} h SEM RESPOSTA da equipe (vermelho na Central)` : `${c.horas} h sem resposta da equipe`);
       await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao, detalhe: `${c.horas} h sem resposta humana` });
       escalados++;
@@ -97,8 +98,9 @@ export async function GET(request: Request) {
     if (!so || so.first_response_at || so.status === "resolvido") continue;
     const venceu = new Date(so.opened_at).getTime() + (PRAZO_MANUTENCAO_H[so.priority] ?? 24) * 3600_000 < Date.now();
     if (!venceu) continue;
-    const { data: ja } = await admin.from("chamado_eventos").select("id").eq("chamado_id", ch.id).eq("acao", "manutencao_atrasada").limit(1);
-    if (ja && ja.length) continue;
+    const { data: ja, error: erroJa } = await admin.from("chamado_eventos").select("id").eq("chamado_id", ch.id).eq("acao", "manutencao_atrasada").limit(1);
+    // Achado 126: idem — sem conferir, o dono receberia o mesmo aviso de manutenção atrasada a cada rodada.
+    if (erroJa || (ja && ja.length)) continue;
     atrasadas++;
     await admin.from("chamado_eventos").insert({ chamado_id: ch.id, ator_tipo: "sistema", acao: "manutencao_atrasada", para: so.priority });
     const { data: dono } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", so.owner_id).maybeSingle();

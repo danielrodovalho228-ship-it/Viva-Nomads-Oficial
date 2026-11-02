@@ -940,7 +940,8 @@ export async function sugerirResposta(
     const { data: ms } = await ctx.admin.from("chamado_mensagens").select("corpo").eq("chamado_id", chamadoId).eq("autor", "usuario").order("criado_em");
     texto = sugestaoPorRegra((ms ?? []).map((m) => m.corpo as string).join("\n"), primeiroNome(c.visitante_nome as string | null), !c.usuario_id);
   } else {
-    const s = await sugerirRascunho(chamadoId);
+    const s = await sugerirRascunho(chamadoId).catch(() => "falhou" as const);
+    if (s === "falhou") return { ok: false, error: "Não foi possível ler o chamado agora. Tente de novo." };
     if (!s) return { ok: false, error: "Chamado não encontrado." };
     fontes = s.fontes.map((f) => ({ rotulo: rotuloFerramenta(f.ferramenta), resumo: f.resumo, erro: f.erro }));
     const usd = custoUsd(modeloViva(), s.uso);

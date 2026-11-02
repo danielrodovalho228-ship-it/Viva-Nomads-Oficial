@@ -158,8 +158,8 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
   }));
 
   // Nome do outro lado (prompt 6, mesma regra do cartão do candidato): o proprietário vê
-  // "Candidato(a)" até aceitar e o nome curto depois; o inquilino vê o nome curto do
-  // proprietário. Nome completo e aceite vêm do servidor (service role); sem ele, o
+  // "Candidato(a)" até aceitar e o nome completo depois (E427); o inquilino vê o nome curto do
+  // proprietário até o aceite e o nome completo depois. Nome completo e aceite vêm do servidor (service role); sem ele, o
   // proprietário continua vendo "Candidato(a)". Suporte segue com o primeiro nome (RPC 0057).
   const conversas = [...doContrato, ...byConv.values()];
   const outros = [...new Set(conversas.map((c) => c.otherId).filter(Boolean))] as string[];
@@ -170,6 +170,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     );
     const completo = new Map<string, string | null>();
     const aceito = new Map<string, boolean>();
+    const aceitoPeloDono = new Map<string, boolean>();
     const admin = createAdminClient();
     if (admin) {
       const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", outros);
@@ -180,6 +181,9 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
       for (const c of conversas) if (c.otherId && comVinculo.has(c.otherId)) c.vinculoDominio = comVinculo.get(c.otherId)!;
       const candidatos = [...new Set(conversas.filter((c) => c.papel === "proprietario" && c.otherId).map((c) => c.otherId!))];
       await Promise.all(candidatos.map(async (id) => aceito.set(id, await relacaoAceitaEntreServidor(user.id, id))));
+      // E427: o morador vê o nome completo do proprietário depois do aceite (antes, o nome curto público).
+      const donos = [...new Set(conversas.filter((c) => c.papel === "inquilino" && c.otherId).map((c) => c.otherId!))];
+      await Promise.all(donos.map(async (id) => aceitoPeloDono.set(id, await relacaoAceitaEntreServidor(id, user.id))));
     }
     for (const conv of conversas) {
       const id = conv.otherId ?? "";
@@ -187,7 +191,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
         // Conversa de pedido de serviço (Parceiros): o nome curto da outra parte, como na conversa do morador.
         papel: conv.papel === "parceiros" ? "inquilino" : (conv.papel ?? "suporte"),
         nomeCompleto: completo.get(id) ?? null,
-        aceito: aceito.get(id) === true,
+        aceito: conv.papel === "inquilino" ? aceitoPeloDono.get(id) === true : aceito.get(id) === true,
         primeiroNome: primeiro.get(id) ?? null,
       });
     }

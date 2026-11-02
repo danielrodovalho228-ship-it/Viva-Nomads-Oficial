@@ -1,7 +1,7 @@
 /*
   PERFIS PÚBLICOS (prompt 6, 17/10) — regras puras, sem Supabase.
   Proprietário: nome curto, cidade, "Na Viva desde", contagens, resposta no chat, idiomas, bio e selos REAIS.
-  Inquilino visto pelo proprietário: sem nome, foto e contato antes do aceite; depois, nome curto e foto.
+  Inquilino visto pelo proprietário: sem nome, foto e contato antes do aceite; depois, nome completo (E427) e foto.
   Contato (telefone/e-mail) nunca aparece em nenhum dos dois, em fase alguma.
 */
 import { guardContactInfo } from "../messages/contact-guard.ts";
@@ -19,6 +19,17 @@ export function nomeCurto(nome: string | null | undefined): string | null {
   if (partes.length === 0) return null;
   if (partes.length === 1) return partes[0];
   return `${partes[0]} ${partes[partes.length - 1].charAt(0).toLocaleUpperCase("pt-BR")}.`;
+}
+
+/**
+ * E427 (01/11, vigia): DEPOIS DO ACEITE, o nome completo — o MESMO em todas as telas (visita, agenda, interessados,
+ * Mensagens, proposta, estadia, contrato e página pública vista por quem tem o aceite). Espaços colapsados; e-mail no
+ * lugar do nome nunca aparece; sem letra nenhuma → null (a tela cai no rótulo neutro). Antes do aceite segue o nomeCurto
+ * (ou "Candidato(a)"), como sempre.
+ */
+export function nomeCompleto(nome: string | null | undefined): string | null {
+  const limpo = String(nome ?? "").replace(/\S+@\S+/g, " ").replace(/\s+/g, " ").trim();
+  return /\p{L}/u.test(limpo) ? limpo : null;
 }
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -139,7 +150,7 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
   const desde = desdeLabel(c.desde);
   if (desde) sinais.push(desde);
   return {
-    titulo: aceito ? (nomeCurto(c.nome) ?? "Candidato(a)") : "Candidato(a)",
+    titulo: aceito ? (nomeCompleto(c.nome) ?? "Candidato(a)") : "Candidato(a)",
     fotoUrl: aceito ? c.fotoUrl : null,
     sinais,
     selos: selosReais({ emailConfirmado: c.emailConfirmado, telefoneVerificado: c.telefoneVerificado, linkedinConectado: c.linkedinConectado, vinculoDominio: c.vinculoDominio }),
@@ -149,8 +160,8 @@ export function cartaoCandidato(c: CandidatoBase, aceito: boolean): CartaoCandid
 
 /**
  * Nome do outro lado em Mensagens (mesma regra do cartão do candidato):
- * - eu sou o proprietário do imóvel → "Candidato(a)" até o aceite; depois, nome curto;
- * - eu sou o inquilino → nome curto do proprietário (público, como no anúncio);
+ * - eu sou o proprietário do imóvel → "Candidato(a)" até o aceite; depois, nome completo (E427);
+ * - eu sou o inquilino → nome curto do proprietário (público, como no anúncio) até o aceite; depois, nome completo;
  * - conversa sem imóvel (suporte) → primeiro nome, como antes.
  */
 export function nomeNaConversa(p: {
@@ -159,8 +170,9 @@ export function nomeNaConversa(p: {
   aceito: boolean;
   primeiroNome?: string | null;
 }): string {
-  if (p.papel === "proprietario") return p.aceito ? (nomeCurto(p.nomeCompleto) ?? "Candidato(a)") : "Candidato(a)";
-  if (p.papel === "inquilino") return nomeCurto(p.nomeCompleto) ?? (p.primeiroNome || "Proprietário");
+  if (p.papel === "proprietario") return p.aceito ? (nomeCompleto(p.nomeCompleto) ?? "Candidato(a)") : "Candidato(a)";
+  // E427: o morador vê o nome curto (público) do proprietário até o aceite; depois, o nome completo.
+  if (p.papel === "inquilino") return (p.aceito ? nomeCompleto(p.nomeCompleto) : nomeCurto(p.nomeCompleto)) ?? (p.primeiroNome || "Proprietário");
   return p.primeiroNome || "Conversa";
 }
 
@@ -169,7 +181,7 @@ export function nomeNaConversa(p: {
  * sem CPF/CNPJ. O interessado continua "Candidato(a)" para o proprietário até o aceite da candidatura (prompt 6).
  */
 export function nomeNaProposta(p: { quemVe: "owner" | "tenant"; nomeCompleto: string | null; aceito: boolean }): string {
-  const nome = (p.nomeCompleto ?? "").replace(/\s+/g, " ").trim() || null;
+  const nome = nomeCompleto(p.nomeCompleto);
   if (p.quemVe === "owner") return p.aceito && nome ? nome : "Candidato(a)";
   return nome ?? "Proprietário";
 }

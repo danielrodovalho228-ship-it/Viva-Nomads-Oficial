@@ -2,7 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { listMyProperties } from "@/lib/data/properties";
 import { getMeusContratos } from "@/lib/data/contratos-actions";
 import { montarCarteira, type ItemCarteira } from "@/lib/carteira-dono";
-import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { hojeBR } from "@/lib/utils";
 
 /**
@@ -24,7 +24,7 @@ export async function getCarteiraDoDono(hojeISO = hojeBR(), opcoes: { exigir?: b
   const admin = createAdminClient();
   const { data: perfis } =
     admin && idsInquilinos.length ? await admin.from("profiles").select("id, full_name").in("id", idsInquilinos) : { data: null };
-  const nomes = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurto(p.full_name)]));
+  const nomes = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCompleto(p.full_name)]));
   return montarCarteira(
     ativos.map((p) => ({ id: p.id, titulo: p.title, bairro: p.neighborhood })),
     contratos.map((c) => ({

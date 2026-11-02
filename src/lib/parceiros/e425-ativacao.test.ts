@@ -160,3 +160,17 @@ test("telas: o link e o painel usam o mesmo núcleo; ativada, o parceiro entra n
   assert.match(link, /href=\{`\/auth\?redirect=\$\{encodeURIComponent\(volta\)\}`\}/);
   assert.match(link, /if \(r\.ok\) router\.push\("\/dashboard\/parceiro\?ativada=1"\);/);
 });
+
+test("E425 (resíduo 2): link vencido ou inválido não é beco sem saída — ativar pelo painel, sem esperar a equipe", () => {
+  const t = ler("src/app/(public)/parceiros/ativar/ativar-parceria.tsx");
+  const invalido = t.slice(t.indexOf('if (estado.situacao !== "valido")'), t.indexOf("if (!estado.logado)"));
+  // Caminho na hora: o painel ativa o pedido aprovado sem o token (o servidor confere conta e status).
+  assert.match(invalido, /data-testid="ativar-pelo-painel"/);
+  assert.match(invalido, /href="\/dashboard\/parceiro"/);
+  // E segue o "Peça um novo link" (a equipe manda outro e-mail).
+  assert.match(invalido, /data-testid="ativar-novo-link"/);
+  // O painel ativa pela conta, não pelo token: um link vencido não impede.
+  const acoes = ler("src/lib/parceiros/ativacao-actions.ts");
+  const painel = acoes.slice(acoes.indexOf("export async function ativarPeloPainel"));
+  assert.doesNotMatch(painel, /situacaoToken|token_expira_em/);
+});

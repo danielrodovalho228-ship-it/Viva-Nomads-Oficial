@@ -18,7 +18,7 @@ import { visualizacoesDoDono } from "@/lib/data/desempenho-anuncio";
 import { listConversations } from "@/lib/data/messages";
 import { alertaDoTopo, blocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { capaDoDraftData, soFotosExistentes } from "@/lib/fotos-anuncio";
+import { capaDoDraftData, ehUrlDeImagem, soFotosExistentes } from "@/lib/fotos-anuncio";
 import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { carregarAgendaDoDono } from "@/lib/data/agenda-servidor";
 import { cartoesDeHoje } from "@/lib/painel/hoje-dono";
@@ -91,7 +91,8 @@ async function capaDoRascunho(id: string | null, draftData: unknown): Promise<st
     supabase.from("property_photos").select("url").eq("property_id", id).order("sort_order", { ascending: true }).limit(40),
     arquivosDoDono(createAdminClient(), user.id),
   ]);
-  const daTabela = soFotosExistentes(((data ?? []) as { url: string }[]).map((r) => r.url), existentes)[0];
+  // E405 (02/11): só URL de imagem vira capa — "Foto QA Premium 1 - Sala" (nome de foto de teste) virava caixa cinza.
+  const daTabela = soFotosExistentes(((data ?? []) as { url: string }[]).map((r) => r.url).filter(ehUrlDeImagem), existentes)[0];
   if (daTabela) return daTabela;
   return capaDoDraftData(draftData, user.id, existentes);
 }

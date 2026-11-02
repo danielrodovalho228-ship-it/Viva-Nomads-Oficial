@@ -5,8 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 /*
   T175 — Mensagens com a mesma regra do cartão do candidato (prompt 6), a 390 e 1280 px.
   1. Antes do aceite o proprietário vê "Candidato(a)": sem nome, sem foto e sem contato.
-  2. Depois do aceite: nome curto ("Iara S.") e a foto.
-  3. O inquilino vê o nome curto do proprietário, nunca o sobrenome completo.
+  2. Depois do aceite: nome completo (E427) e a foto.
+  3. Depois do aceite, o inquilino também vê o nome completo do proprietário.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -20,7 +20,7 @@ async function abrirConversa(page: Page) {
   await page.getByRole("button", { name: new RegExp(`Studio do chat ${sufixo}`) }).first().click();
 }
 
-test.describe("T175 — Mensagens: Candidato(a) antes do aceite, nome curto e foto depois", () => {
+test.describe("T175 — Mensagens: Candidato(a) antes do aceite, nome completo e foto depois", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
 
@@ -60,24 +60,22 @@ test.describe("T175 — Mensagens: Candidato(a) antes do aceite, nome curto e fo
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
       await abrirConversa(page);
-      await expect(page.getByTestId("conversa-nome")).toHaveText("Iara S.");
+      await expect(page.getByTestId("conversa-nome")).toHaveText("Iara Inquilinamsg Sobrenomeoculto");
       await expect(page.getByTestId("conversa-avatar").locator("img")).toBeVisible({ timeout: 15_000 });
       const corpo = await page.locator("main").innerText();
-      expect(corpo).not.toMatch(/Inquilinamsg|Sobrenomeoculto/);
       expect(corpo).not.toContain(inq.email);
       await page.screenshot({ path: `${SAIDA}/t175-mensagens-depois-${largura}.png`, fullPage: false });
     }
     await page.context().close();
   });
 
-  test("inquilina: vê o nome curto do proprietário (390 e 1280)", async ({ browser }) => {
+  test("inquilina (candidatura aceita): vê o nome completo do proprietário (390 e 1280)", async ({ browser }) => {
     const page = await entrar(browser, inq.email, senha);
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: 900 });
       await abrirConversa(page);
-      await expect(page.getByTestId("conversa-nome")).toHaveText("Dora S.");
+      await expect(page.getByTestId("conversa-nome")).toHaveText("Dora Donamensagem Sobrenomedona");
       const corpo = await page.locator("main").innerText();
-      expect(corpo).not.toMatch(/Donamensagem|Sobrenomedona/);
       expect(corpo).not.toContain(dono.email);
     }
     await page.context().close();

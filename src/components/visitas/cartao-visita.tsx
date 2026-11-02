@@ -57,7 +57,7 @@ export interface VisitaNaTela {
   enderecoMapa?: string | null;
   /** E211: bairro · cidade (o que se mostra fora da janela do endereço exato). */
   regiao?: string | null;
-  /** E211 + E409: o nome da outra parte depois do aceite ("Ana C.": 1º nome e inicial do sobrenome). */
+  /** E211 + E427: o nome da outra parte depois do aceite (nome completo, o mesmo das outras telas). */
   pessoa?: string | null;
   /** E409: a foto da outra parte, quando a regra do avatar libera. */
   fotoPessoa?: string | null;

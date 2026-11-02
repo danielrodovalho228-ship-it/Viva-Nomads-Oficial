@@ -78,11 +78,14 @@ export async function avisarBuscasDoImovel(imovelId: string): Promise<{ combinam
 export async function enviarResumosAlertaBusca(): Promise<{ buscas: number; enviados: number }> {
   const admin = createAdminClient();
   if (!admin) return { buscas: 0, enviados: 0 };
-  const { data: linhas } = await admin.from("alertas_busca_envios").select("busca_id, imovel_id").is("enviado_em", null).limit(1000);
-  const pend = (linhas ?? []) as { busca_id: string; imovel_id: string }[];
+  // Achado 120: leitura que falha não decide nada. Antes, sem as buscas, cada pendência parecia de busca apagada/desligada
+  // e era marcada como enviada ("descartada") — os alertas se perdiam. Agora a rodada só segue para o despacho.
+  const { data: linhas, error: erroLinhas } = await admin.from("alertas_busca_envios").select("busca_id, imovel_id").is("enviado_em", null).limit(1000);
+  const pend = erroLinhas ? [] : ((linhas ?? []) as { busca_id: string; imovel_id: string }[]);
   const ids = [...new Set(pend.map((l) => l.busca_id))];
-  if (ids.length) {
-    const { data: bs } = await admin.from("buscas_salvas").select("id, usuario_id, alerta_ativo").in("id", ids);
+  const { data: bs, error: erroBuscas } = ids.length ? await admin.from("buscas_salvas").select("id, usuario_id, alerta_ativo").in("id", ids) : { data: [], error: null };
+  if (erroLinhas || erroBuscas) console.error("[alerta-busca] leitura falhou; as pendências ficam para a próxima rodada");
+  if (ids.length && !erroBuscas) {
     const busca = new Map(((bs ?? []) as { id: string; usuario_id: string; alerta_ativo: boolean | null }[]).map((b) => [b.id, b]));
     for (const l of pend) {
       const b = busca.get(l.busca_id);

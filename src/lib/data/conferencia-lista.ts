@@ -13,7 +13,9 @@ export async function estadosConferenciaEntradaDaPessoa(contratoIds: string[]): 
   if (!supabase || contratoIds.length === 0) return out;
   for (let i = 0; i < contratoIds.length; i += 200) {
     const lote = contratoIds.slice(i, i + 200);
-    const { data } = await supabase.from("conferencias").select("contrato_id, conferencia_respostas(parte, decisao, motivo)").eq("tipo", "entrada").in("contrato_id", lote);
+    const { data, error } = await supabase.from("conferencias").select("contrato_id, conferencia_respostas(parte, decisao, motivo)").eq("tipo", "entrada").in("contrato_id", lote);
+    // Achado 101: a falha LANÇA (error.tsx) — senão todo contrato apareceria "Não aberta".
+    if (error) throw new Error("Não foi possível ler as conferências de entrada.");
     for (const c of (data ?? []) as unknown as { contrato_id: string; conferencia_respostas: RespostaConferencia[] | null }[]) {
       out.set(c.contrato_id, estadoConferenciaLista(true, c.conferencia_respostas ?? []));
     }

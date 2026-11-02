@@ -456,7 +456,9 @@ export interface DadosMontagem {
 export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data: lead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado").eq("id", leadId).maybeSingle();
+  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado").eq("id", leadId).maybeSingle();
+  // Achado 112: a falha LANÇA (error.tsx) — nunca "Escolha um interessado" quando o interessado existe.
+  if (erroLead) throw new Error("Não foi possível ler o interessado.");
   if (!lead || lead.owner_id !== s.user.id || !["new", "accepted"].includes(lead.status as string)) return null;
   const im = await lerImovel(s.admin, lead.property_id as string);
   if (!im) return null;

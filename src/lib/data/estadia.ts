@@ -9,7 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { primeiroPagamentoConfirmado } from "@/lib/contrato-estado";
 import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
-import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { diaBRT } from "@/lib/datas-brasilia";
 import { conversationId } from "@/lib/messages/conversation-id";
@@ -259,7 +259,8 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
     papel,
   );
   const liberadas = papel === "proprietario" || instrucoesLiberadas({ inicio: periodo.inicio, assinadoPelasDuas: ambos, primeiroPagamento: primeiro }, agora);
-  const nomeMorador = nomeCurto((((perfil as { full_name?: string | null } | null)?.full_name ?? "") as string).replace(/\S+@\S+/g, "").trim()) ?? "Morador";
+  // E427: na estadia (depois do aceite), o nome completo do morador — o mesmo das outras telas.
+  const nomeMorador = nomeCompleto((perfil as { full_name?: string | null } | null)?.full_name ?? null) ?? "Morador";
   const fotoMorador = await signAvatarPath(await getAvatarPath(c.tenant_id).catch(() => null), c.tenant_id);
 
   type LinhaAditivo = {

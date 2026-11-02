@@ -6,10 +6,8 @@ import { meusPedidosDeAjuda } from "@/lib/data/ajuda-publicacao-actions";
 import { donoPodeDecidir, ROTULO_STATUS } from "@/lib/ajuda-publicacao/ajuda";
 import { DecisaoRascunho } from "@/components/property/decisao-rascunho";
 import { MyPropertiesClient } from "./imoveis-client";
-import { avisoTipoEntradaNoPainel } from "@/lib/anuncio/chegada-e-pedido";
-import Link from "next/link";
-import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
-import { ETAPA } from "@/lib/anuncio/etapas-ids";
+import { avisoTipoEntradaNoPainel, textoAvisoTipoEntrada } from "@/lib/anuncio/chegada-e-pedido";
+import { DoorOpen } from "lucide-react";
 import { TEXTO_RASCUNHO_SALVO } from "@/components/layout/moldura-assistente";
 
 /**
@@ -72,21 +70,15 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
           <p className="mt-1 text-xs text-muted">Nada vai ao ar sem a sua aprovação.</p>
         </section>
       )}
+      {/* E418 (02/11): um aviso único e discreto (antes: caixa de largura total com um link por anúncio, empurrando a
+          lista). O link de cada anúncio fica no cartão dele. */}
       {semTipoEntrada.length > 0 && (
-        <section className="mb-4 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="aviso-tipo-entrada">
-          <p>{avisoTipoEntradaNoPainel({ tipoEntrada: null, status: "active" })}</p>
-          <ul className="mt-2 space-y-1">
-            {semTipoEntrada.map((i) => (
-              <li key={i.id}>
-                <Link href={destinoPendencia(i, ETAPA.regras)} className="inline-flex min-h-[44px] items-center font-medium text-forest underline">
-                  {i.title}: informar o tipo de entrada
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <p className="mb-4 flex items-start gap-2 text-sm text-muted" role="status" data-testid="aviso-tipo-entrada">
+          <DoorOpen className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden />
+          <span>{textoAvisoTipoEntrada(semTipoEntrada.length)}</span>
+        </p>
       )}
-      <MyPropertiesClient properties={properties} prontidao={prontidao} pausas={pausas} />
+      <MyPropertiesClient properties={properties} prontidao={prontidao} pausas={pausas} semTipoEntrada={semTipoEntrada.map((i) => i.id)} />
     </>
   );
 }

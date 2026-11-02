@@ -191,3 +191,12 @@ export function chegadaEPedidoDaLinha(l: LinhaChegadaEPedido | null): ChegadaEPe
 export function rotuloConsiderar(chave: string): string {
   return CONSIDERAR_OPCOES.find((o) => o.chave === chave)?.rotulo ?? chave;
 }
+
+/**
+ * E418 (02/11): Meus imóveis mostra UM aviso discreto (o texto aprovado + a contagem), e o link de cada anúncio fica no
+ * cartão dele — antes, uma caixa de largura total com um link quase idêntico por anúncio empurrava a lista para baixo.
+ */
+export function textoAvisoTipoEntrada(n: number): string {
+  const onde = n === 1 ? "Falta em 1 anúncio publicado — o link está no cartão dele." : `Falta em ${n} anúncios publicados — o link está no cartão de cada um.`;
+  return `${AVISO_SEM_TIPO_ENTRADA} ${onde}`;
+}

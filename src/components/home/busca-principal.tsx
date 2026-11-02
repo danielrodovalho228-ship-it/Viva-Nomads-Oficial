@@ -25,7 +25,7 @@ export function BuscaPrincipal() {
         Para onde você vai?
       </label>
       {/* Barra de busca em pill com ícone (Prompt 40): campo + botão redondo de buscar. */}
-      <div className="flex items-center gap-2 rounded-full border border-line bg-white py-2 pl-4 pr-2" data-testid="barra-busca-home">
+      <div className="flex items-center gap-2 rounded-full border border-line bg-white py-2 pl-4 pr-2 has-[input:focus-visible]:outline has-[input:focus-visible]:outline-2 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-blue-500" data-testid="barra-busca-home">
         <Search className="h-5 w-5 shrink-0 text-ink" aria-hidden />
         <div className="min-w-0 flex-1">
           <CityAutocomplete
@@ -35,7 +35,8 @@ export function BuscaPrincipal() {
             placeholder="Cidade, bairro ou endereço"
             semIcone
             pillClassName="flex h-12 items-center"
-            inputClassName="w-full bg-transparent text-base text-ink outline-none placeholder:text-muted"
+            // Varredura pública 02/11: o campo ocupa a altura inteira da barra (48 px), não só a linha do texto (24 px).
+            inputClassName="foco-na-barra h-12 w-full bg-transparent text-base text-ink outline-none placeholder:text-muted"
           />
         </div>
         <button

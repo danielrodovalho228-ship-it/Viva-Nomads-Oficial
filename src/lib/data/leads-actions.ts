@@ -308,7 +308,9 @@ export async function getFechamentoContext(
     .order("accepted_at", { ascending: false })
     .limit(1);
   if (leadId) q = q.eq("id", leadId);
-  const { data: lead } = await q.maybeSingle();
+  const { data: lead, error: erroLead } = await q.maybeSingle();
+  // Achado 109: a falha LANÇA (error.tsx) — nunca "nenhuma candidatura aceita" no Fechamento por engano.
+  if (erroLead) throw new Error("Não foi possível ler a candidatura aceita.");
   if (!lead) return null;
 
   // Imóvel (escopo do dono) — fonte real do card, valores e tipo.

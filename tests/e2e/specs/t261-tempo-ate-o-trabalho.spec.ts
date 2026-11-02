@@ -264,7 +264,7 @@ test.describe("T261 — Tempo até o trabalho (Prompt 37)", () => {
     await expect(page.getByTestId("destino-lng")).toHaveValue(/^-48\.19/);
     await form.getByLabel("Nome").fill(`Clínica Lab — Centro ${sufixo}`);
     await page.getByTestId("salvar-destino").click();
-    await expect(form.getByRole("status")).toContainText("salvo.");
+    await expect(form.locator('p[role="status"]')).toContainText("salvo.");
     const { data } = await adm().from("destinos").select("nome, lat, lng, ativo").eq("id", ids.vazio!).single();
     expect(data).toMatchObject({ nome: `Clínica Lab — Centro ${sufixo}`, ativo: true });
     expect(Number(data!.lat)).toBeCloseTo(-18.64, 4);

@@ -11,5 +11,7 @@ export async function GET() {
     data: { user },
   } = await sessao.auth.getUser();
   if (!user || !(await ehAdmin(sessao, user.id))) return NextResponse.json({ erro: "Só admin." }, { status: 403 });
-  return NextResponse.json({ cartoes: await listarPendentesAdmin(sessao) }, { headers: { "Cache-Control": "no-store" } });
+  const cartoes = await listarPendentesAdmin(sessao).catch(() => null);
+  if (!cartoes) return NextResponse.json({ erro: "Não foi possível ler as aprovações agora." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ cartoes }, { headers: { "Cache-Control": "no-store" } });
 }
