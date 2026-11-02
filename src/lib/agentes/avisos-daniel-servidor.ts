@@ -57,10 +57,13 @@ export function depsAvisos(admin: Admin, segredo: string): Deps {
       return (data?.length ?? 0) === 1;
     },
     async falhou(id, erro, contar) {
-      const { data } = await admin.from("avisos_daniel").select("tentativas").eq("id", id).maybeSingle();
+      const { data, error: erroLeitura } = await admin.from("avisos_daniel").select("tentativas").eq("id", id).maybeSingle();
+      // Sem ler as tentativas, não as regrava: zerar o contador faria o aviso com defeito ser tentado para sempre
+      // (passando do MAX_TENTATIVAS). Solta a reserva e guarda o erro; o contador fica como estava.
+      const tentativas = erroLeitura ? {} : { tentativas: (data?.tentativas ?? 0) + (contar ? 1 : 0) };
       await admin
         .from("avisos_daniel")
-        .update({ enviado_em: null, via: null, erro: erro.slice(0, 300), tentativas: (data?.tentativas ?? 0) + (contar ? 1 : 0) })
+        .update({ enviado_em: null, via: null, erro: erro.slice(0, 300), ...tentativas })
         .eq("id", id);
     },
     async push(a) {
