@@ -352,8 +352,11 @@ export async function trocarParceiro(pedidoId: string): Promise<Res<{ id: string
   if ("erro" in s) return { ok: false, erro: s.erro };
   const p = await pedidoDoDono(s.admin, pedidoId, s.userId);
   if (!p || !p.chave_automacao || !p.gatilho || p.status !== "solicitado" || !p.property_id || !p.contrato_id) return { ok: false, erro: "Este pedido não pode trocar de parceiro agora." };
-  const { data: im } = await s.admin.from("properties").select("city").eq("id", p.property_id).maybeSingle();
-  const { data: tentados } = await s.admin.from("parceiro_pedidos").select("parceiro_id").like("chave_automacao", `${p.chave_automacao}%`);
+  // Achado 121: as duas leituras recusam na falha, ANTES de cancelar o pedido atual. Sem a cidade, a busca ia sem cidade
+  // (parceiro de outra cidade); sem os já tentados, o pedido podia voltar a quem já recusou.
+  const { data: im, error: e1 } = await s.admin.from("properties").select("city").eq("id", p.property_id).maybeSingle();
+  const { data: tentados, error: e2 } = await s.admin.from("parceiro_pedidos").select("parceiro_id").like("chave_automacao", `${p.chave_automacao}%`);
+  if (e1 || e2) return { ok: false, erro: "Não foi possível trocar o parceiro agora. Tente de novo." };
   const excluir = new Set([p.parceiro_id, ...((tentados ?? []) as { parceiro_id: string }[]).map((x) => x.parceiro_id)]);
   const { lista } = await buscarParceiros({ categoria: p.categoria, cidade: (im as { city: string | null } | null)?.city ?? null });
   const proximo = lista.find((x) => !excluir.has(x.id));
