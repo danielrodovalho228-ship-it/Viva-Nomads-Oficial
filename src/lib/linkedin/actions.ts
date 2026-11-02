@@ -60,7 +60,9 @@ export async function minhasRedes(): Promise<MinhasRedes | null> {
   if (!REDES_USUARIO_ATIVO) return null;
   const s = await eu();
   if (!s) return null;
-  const { data } = await s.supabase.from("perfil_redes").select("instagram, facebook, tiktok").eq("user_id", s.uid).maybeSingle();
+  // Estados vazios: leitura que falha LANÇA. Campos vazios na falha fariam o "Salvar redes" apagar as outras redes gravadas.
+  const { data, error } = await s.supabase.from("perfil_redes").select("instagram, facebook, tiktok").eq("user_id", s.uid).maybeSingle();
+  if (error) throw new Error("Não foi possível ler as redes agora.");
   const r = (data ?? {}) as Partial<Record<keyof MinhasRedes, string | null>>;
   return { instagram: r.instagram ?? "", facebook: r.facebook ?? "", tiktok: r.tiktok ?? "" };
 }
