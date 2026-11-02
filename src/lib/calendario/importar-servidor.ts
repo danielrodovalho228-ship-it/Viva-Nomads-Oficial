@@ -223,6 +223,8 @@ export async function sincronizarTodas(admin: Admin, agora: Date = new Date()): 
 }
 
 export async function importacaoPorId(admin: Admin, id: string): Promise<Importacao | null> {
-  const { data } = await admin.from("calendario_importacoes").select(COLUNAS).eq("id", id).maybeSingle();
+  const { data, error } = await admin.from("calendario_importacoes").select(COLUNAS).eq("id", id).maybeSingle();
+  // Achado 104: a falha LANÇA — nunca "Calendário não encontrado" para um link que existe.
+  if (error) throw new Error("Não foi possível ler o calendário importado.");
   return (data as Importacao | null) ?? null;
 }
