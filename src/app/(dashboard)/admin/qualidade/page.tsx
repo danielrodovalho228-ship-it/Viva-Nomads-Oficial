@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CampoDataFormulario } from "@/components/ui/campo-data";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { contextoDaSaida, painelQualidade } from "@/lib/data/qualidade";
+import { MSG_CONTEXTO_SEM_LEITURA, contextoDaSaida, painelQualidade } from "@/lib/data/qualidade";
 import { adminDefinirCorrecao, adminEstadoDenuncia, adminFecharCorrecao } from "@/lib/saida/acoes";
 import { ESTADOS_DENUNCIA, MOTIVOS_DENUNCIA, ROTULO_ESTADO_DENUNCIA, ROTULO_NIVEL_SAIDA, ROTULO_PAPEL_SAIDA, prioridadeDenuncia, rotuloMotivo, type EstadoDenuncia, type NivelSaida, type PapelSaida } from "@/lib/saida/regras";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
@@ -26,7 +26,7 @@ const ROTULO_CONTEXTO = { chamados: "Chamados da pessoa", pagamentos: "Contratos
 export default async function AdminQualidadePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const saidaAberta = typeof sp.saida === "string" ? sp.saida : null;
-  const [p, ctx] = await Promise.all([painelQualidade().catch(() => null), saidaAberta ? contextoDaSaida(saidaAberta).catch(() => null) : Promise.resolve(null)]);
+  const [p, ctx] = await Promise.all([painelQualidade().catch(() => null), saidaAberta ? contextoDaSaida(saidaAberta).catch(() => "falhou" as const) : Promise.resolve(null)]);
   if (!p) return <EmptyState icon={LifeBuoy} title="Sem dados" text="Não foi possível ler o painel de qualidade agora." action={null} />;
 
   const abertas = p.correcoes.filter((c) => !c.fechadaEm);
@@ -185,7 +185,12 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                 <Link href={`/admin/qualidade?saida=${s.id}#contexto`} className="underline underline-offset-4">
                   {dataBRT(s.criadoEm)} · {ROTULO_PAPEL_SAIDA[s.papel]} · {motivo(s.papel, s.motivo)} · {ROTULO_NIVEL_SAIDA[s.nivel as NivelSaida] ?? s.nivel}
                 </Link>
-                {saidaAberta === s.id && ctx && (
+                {saidaAberta === s.id && ctx === "falhou" && (
+                  <p role="alert" data-testid="saida-contexto-falhou" className="mt-2 rounded-lg border border-line bg-white p-3 text-red-700">
+                    {MSG_CONTEXTO_SEM_LEITURA}
+                  </p>
+                )}
+                {saidaAberta === s.id && ctx && ctx !== "falhou" && (
                   <div className="mt-2 rounded-lg border border-sage-200 p-3" data-testid="saida-contexto-aberto">
                     <p className="font-semibold text-ink">{ROTULO_CONTEXTO[ctx.contexto]}</p>
                     {ctx.itens.length === 0 ? (
