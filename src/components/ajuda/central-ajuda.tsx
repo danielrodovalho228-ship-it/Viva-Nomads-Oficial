@@ -543,14 +543,17 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [voltas, setVoltas] = useState(0);
+  // Resíduo da varredura: a leitura que falha não vira "Chamado não encontrado" (fica o que já estava na tela).
+  const [falhaLeitura, setFalhaLeitura] = useState(false);
 
   const carregar = useCallback(() => {
     meuChamado(numero)
       .then((d) => {
+        setFalhaLeitura(false);
         setDados(d);
         if (d === null) chamadoDeOutraConta(numero).then(setOutraConta).catch(() => {});
       })
-      .catch(() => setDados(null));
+      .catch(() => setFalhaLeitura(true));
   }, [numero]);
   useEffect(() => {
     carregar();
@@ -605,7 +608,13 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
         <ArrowLeft className="h-4 w-4" /> Meus chamados
       </button>
       {dados === undefined ? (
-        <p className="text-sm text-muted">Carregando…</p>
+        falhaLeitura ? (
+          <p className="text-sm text-red-700" role="alert" data-testid="chamado-sem-leitura">
+            Não foi possível carregar o chamado agora. Recarregue a página em instantes.
+          </p>
+        ) : (
+          <p className="text-sm text-muted">Carregando…</p>
+        )
       ) : dados === null && outraConta ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" data-testid="chamado-outra-conta">
           <p className="font-semibold">Este chamado é de outra conta.</p>
