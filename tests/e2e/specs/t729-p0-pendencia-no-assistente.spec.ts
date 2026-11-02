@@ -57,9 +57,9 @@ test.describe("T729 — P0: pendência do rascunho abre o passo no assistente", 
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    const aviso = p.getByTestId("aviso-tipo-entrada");
-    await expect(aviso).toBeVisible({ timeout: 30_000 });
-    const link = aviso.getByRole("link", { name: new RegExp(`Publicado sem entrada t729 ${sufixo}`) });
+    // E418 (02/11): um aviso único no topo; o link do anúncio fica no cartão dele.
+    await expect(p.getByTestId("aviso-tipo-entrada")).toBeVisible({ timeout: 30_000 });
+    const link = p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.ativo}"]`).getByTestId("card-tipo-entrada");
     await expect(link).toHaveAttribute("href", `/dashboard/imoveis/${ids.ativo}/editar#secao-regras`);
     await link.click();
     await expect(p.getByTestId("secao-regras")).toHaveAttribute("data-aberta", "true", { timeout: 30_000 });
