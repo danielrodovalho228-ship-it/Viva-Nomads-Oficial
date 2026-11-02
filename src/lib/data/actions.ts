@@ -1519,6 +1519,8 @@ export async function registrarContrato(
 // vários imóveis — e corta scripts de spam de notificação ao proprietário.
 const LEAD_LIMITE_HORA = 20;
 
+const MSG_CONTATO_SEM_LEITURA = "Não foi possível enviar agora. Tente de novo em instantes.";
+
 export async function requestLead(
   propertyId: string,
   // Ignorado: o título vem do BANCO. O que o navegador manda não entra no
@@ -1605,11 +1607,13 @@ export async function requestLead(
   // teto mira a largura — muitos imóveis distintos em pouco tempo.
   {
     const desdeUmaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count } = await supabase
+    const { count, error: erroContagem } = await supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", user.id)
       .gte("created_at", desdeUmaHora);
+    // Contagem ilegível não vira "0 contatos": o teto por hora vale sempre.
+    if (erroContagem) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
     if ((count ?? 0) >= LEAD_LIMITE_HORA) {
       return {
         ok: false,
@@ -1631,12 +1635,15 @@ export async function requestLead(
   // Imóvel real: grava lead + abre conversa. Dedup por (imóvel, interessado)
   // para que cliques repetidos não criem leads/mensagens duplicados.
   {
-    const { data: existing } = await supabase
+    const { data: existing, error: erroExistente } = await supabase
       .from("leads")
       .select("id")
       .eq("property_id", propertyId)
       .eq("tenant_id", user.id)
       .maybeSingle();
+    // Leitura falha não vira "contato novo": sem índice único em (imóvel, interessado), seria outro lead, outra
+    // mensagem e outro e-mail ao dono — e, com dois leads, o maybeSingle falharia sempre e somaria mais.
+    if (erroExistente) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
     novoContato = !existing;
     leadId = (existing?.id as string | undefined) ?? null;
     if (!existing) {
