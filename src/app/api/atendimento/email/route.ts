@@ -67,17 +67,21 @@ export async function POST(request: Request) {
   if (!(await consumirLimite(`chamado-email:${remetente.email}`, 20, HORA))) return NextResponse.json({ ok: true, ignorado: "limite" });
 
   const corpo = guardContactInfo(texto).text;
-  const { data: perfil } = await admin.from("profiles").select("id").ilike("email", remetente.email).maybeSingle();
+  const { data: perfil, error: erroPerfil } = await admin.from("profiles").select("id").ilike("email", remetente.email).maybeSingle();
+  // Leituras com erro não decidem "é chamado novo": a resposta viraria outro chamado (anônimo), com confirmação por
+  // e-mail e alerta à equipe. 503: o provedor do e-mail tenta de novo.
+  if (erroPerfil) return NextResponse.json({ error: "Indisponível agora." }, { status: 503 });
   const usuarioId = (perfil?.id as string | undefined) ?? null;
 
   // Resposta a um chamado existente (mesma thread).
   const num = assunto.toUpperCase().match(/VN-\d{6,}/)?.[0];
   if (num) {
-    const { data: c } = await admin
+    const { data: c, error: erroChamado } = await admin
       .from("chamados")
       .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome, responsavel_tipo")
       .eq("numero_publico", num)
       .maybeSingle();
+    if (erroChamado) return NextResponse.json({ error: "Indisponível agora." }, { status: 503 });
     const dono = c && ((usuarioId && c.usuario_id === usuarioId) || (c.visitante_email && c.visitante_email === remetente.email));
     if (c && dono && c.status !== "encerrado") {
       await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "usuario", autor_id: usuarioId, corpo });
