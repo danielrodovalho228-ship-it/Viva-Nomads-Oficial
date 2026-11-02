@@ -1,5 +1,6 @@
 "use client";
 
+import { statusDepoisDoEnvio } from "@/lib/documento/vigente";
 import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
@@ -169,6 +170,8 @@ export default function NewPropertyPage() {
   // Documento do imóvel (prompt 11): conferido na etapa 1. Só "approved" libera Publicar (0120).
   const [docStatus, setDocStatus] = useState<DocumentStatus>("approved");
   const [docEstado, setDocEstado] = useState<EstadoDocumentoTela>("nenhum");
+  // E-DOC-VIGENTE (Relay 47): já há documento APROVADO deste imóvel? Um envio novo não o rebaixa na tela.
+  const [vigenteAprovado, setVigenteAprovado] = useState(false);
   const [docMotivos, setDocMotivos] = useState<string[]>([]);
   // Prompt 19: campos preenchidos pela matrícula (etiqueta "veio da matrícula") e o endereço dela, quando ≠ do CEP.
   const [daMatricula, setDaMatricula] = useState<Set<string>>(() => new Set());
@@ -600,6 +603,7 @@ export default function NewPropertyPage() {
       .then((r) => {
         if (!alive) return;
         setDocStatus(r.status);
+        setVigenteAprovado(r.status === "approved");
         setDocEstado(estadoDoStatus(r.status));
         setDocMotivos(r.reason ? r.reason.split(" · ") : []);
       })
@@ -1912,7 +1916,7 @@ export default function NewPropertyPage() {
                     onResultado={(e, m) => {
                       setDocEstado(e);
                       setDocMotivos(m);
-                      setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                      setDocStatus(statusDepoisDoEnvio(vigenteAprovado, e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none"));
                       if (e !== "nenhum") setDocumentoNoInicio(true);
                     }}
                     onMatricula={aplicarMatriculaNoInicio}
@@ -2094,7 +2098,7 @@ export default function NewPropertyPage() {
                     onDocumento={(e, m) => {
                       setDocEstado(e);
                       setDocMotivos(m);
-                      setDocStatus(e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none");
+                      setDocStatus(statusDepoisDoEnvio(vigenteAprovado, e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none"));
                     }}
                     onMatricula={aplicarMatricula}
                     enderecoSalvo={enderecoSalvo}

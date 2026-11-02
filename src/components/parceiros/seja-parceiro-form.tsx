@@ -103,7 +103,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-forest" aria-hidden />
         <div>
           <p className="font-semibold text-ink">{enviado ? STATUS_TEXTO.pendente : STATUS_TEXTO[sol!.status]}</p>
-          <p className="mt-1 text-sm text-muted">Mandamos a confirmação para {estado.email}. Você acompanha pela sua conta.</p>
+          {/* E430 (D-V12): o e-mail da conta é uma "palavra" longa sem espaço — a 390 px alargava o cartão e a página rolava
+              para o lado. overflow-wrap: anywhere deixa o e-mail quebrar (e reduz a largura mínima da coluna). */}
+          <p className="mt-1 text-sm text-muted [overflow-wrap:anywhere]" data-testid="seja-parceiro-confirmacao">Mandamos a confirmação para {estado.email}. Você acompanha pela sua conta.</p>
           <p className="mt-2 text-sm text-ink" data-testid="seja-parceiro-regra">{TEXTO_REGRA_90_10}</p>
           {/* E425 (resíduo): em /parceiros, o aprovado também ativa aqui — mesmo botão e mesmo núcleo do painel. */}
           {!enviado && sol?.status === "aprovada" && <AtivarNoPainel />}
@@ -156,7 +158,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         </p>
       )}
       {estado.logado && !estado.emailConfirmado && (
-        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-ink" role="alert" data-testid="seja-parceiro-confirmar-email">
+        <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-ink [overflow-wrap:anywhere]" role="alert" data-testid="seja-parceiro-confirmar-email">
           Confirme o seu e-mail ({estado.email}) pelo link que enviamos e depois volte aqui para enviar o pedido.
         </p>
       )}

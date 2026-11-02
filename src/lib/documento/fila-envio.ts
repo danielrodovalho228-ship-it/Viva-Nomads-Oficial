@@ -129,17 +129,3 @@ export function salvarNaMesmaLinha(
 /** O que o "Salvar qualificação" NUNCA muda na linha que já está na fila: o documento, o dono e o imóvel. */
 export const CAMPOS_FIXOS_DA_FILA = ["document_path", "document_hash_sha256", "document_uploaded_at", "document_status", "owner_id", "property_id"] as const;
 
-/**
- * Preservar o documento conferido (ordem do Daniel, 02/11 — "nunca apagar, nunca rebaixar"): com a documentação do
- * imóvel APROVADA na linha mais recente, um arquivo NOVO não entra na fila — a linha nova ("em análise") passaria a ser a
- * mais recente e rebaixaria o imóvel. A troca do documento conferido é com a equipe (pedido explícito). O mesmo arquivo
- * (resposta perdida, "Tentar de novo") segue liberado: não grava nada novo.
- */
-export const MSG_DOCUMENTO_JA_CONFERIDO =
-  "A documentação deste imóvel já foi conferida. Para trocar o documento, fale com a equipe: o conferido continua valendo até lá.";
-
-export function novoDocumentoBloqueado(ultimoStatus: string | null | undefined, ultimoPath: string | null | undefined, novoPath: string | null | undefined): boolean {
-  if (!novoPath) return false;
-  if (documentoJaNaFila(ultimoPath, novoPath)) return false;
-  return ultimoStatus === "approved";
-}

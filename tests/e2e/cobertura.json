@@ -2609,6 +2609,12 @@
         "t695-e264b-proativos",
         "t711-e264b-proativos-corpo"
       ]
+    },
+    "/dashboard/imoveis/[id]/publicar": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
     }
   },
   "rotas": {

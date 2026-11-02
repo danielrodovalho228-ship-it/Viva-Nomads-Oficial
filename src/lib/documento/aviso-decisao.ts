@@ -4,7 +4,7 @@
   motivo) e UM botão para aquele imóvel. Quem decide QUANDO avisar é o banco (decisoes_documento_para_avisar, 0185).
 */
 import { assuntoDecisaoDocumento } from "../notifications/assuntos.ts";
-import { destinoPendencia, emCadastro } from "../anuncio/destino-pendencia.ts";
+import { destinoPendencia, emCadastro, hrefPublicarAnuncio } from "../anuncio/destino-pendencia.ts";
 import { ETAPA } from "../anuncio/etapas-ids.ts";
 import { blocoDados } from "../notifications/modelo-email.ts";
 import { textoEmail, textoPlano } from "../notifications/texto-seguro.ts";
@@ -73,10 +73,12 @@ export interface EmailDecisao {
   cta: { label: string; path: string };
 }
 
+export const BOTAO_PUBLICAR = "Publicar meu anúncio";
+
 /** Botão: recusa no grupo → Reenviar documento; tudo aprovado → Publicar (pronto) ou Ver o que falta. */
 export function botaoDecisao(linhas: LinhaAviso[], prontoParaPublicar: boolean): string {
   if (linhas.some((l) => !l.aprovado)) return "Reenviar documento";
-  return prontoParaPublicar ? "Publicar meu anúncio" : "Ver o que falta";
+  return prontoParaPublicar ? BOTAO_PUBLICAR : "Ver o que falta";
 }
 
 export function emailDecisaoDocumento(o: {
@@ -113,12 +115,20 @@ export function emailDecisaoDocumento(o: {
     um
       ? `${ola(n)}a equipe Viva Nomads conferiu um documento do seu imóvel. ${recusa ? "Ele precisa de um ajuste: veja o motivo e reenvie." : "Ele foi aprovado."}`
       : `${ola(n)}a equipe Viva Nomads terminou de conferir os documentos do seu imóvel. ${recusa ? "Algum precisa de ajuste: veja o motivo de cada um e reenvie." : "Todos foram aprovados."}`;
+  // E433: "Publicar meu anúncio" tem UM destino em todos os modelos (a rota /publicar decide no clique). Os outros
+  // botões seguem para a pendência (passo do rascunho ou editor).
+  const botao = botaoDecisao(o.linhas, o.prontoParaPublicar);
+  const caminho = !o.propertyId
+    ? "/dashboard/imoveis"
+    : botao === BOTAO_PUBLICAR
+      ? hrefPublicarAnuncio(o.propertyId)
+      : destinoPendencia({ id: o.propertyId, status: o.status }, emCadastro(o.status) && o.prontoParaPublicar ? ETAPA.revisao : null);
   return {
     evento: recusa ? "documento_recusado" : "documento_aprovado",
     assunto: assuntoDecisaoDocumento({ titulo: o.titulo, linhas: o.linhas }),
     intro,
     detailsHtml: dados,
     detailsText: texto,
-    cta: { label: botaoDecisao(o.linhas, o.prontoParaPublicar), path: o.propertyId ? destinoPendencia({ id: o.propertyId, status: o.status }, emCadastro(o.status) && o.prontoParaPublicar ? ETAPA.revisao : null) : "/dashboard/imoveis" },
+    cta: { label: botao, path: caminho },
   };
 }

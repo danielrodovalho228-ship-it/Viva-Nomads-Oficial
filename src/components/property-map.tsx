@@ -224,7 +224,9 @@ function PropertyMapLeaflet({ markers, center, zoom = 13, approximate = false, c
 
   if (!first) return <div className={cn("rounded-xl border border-line bg-surface-2", className)} />;
   return (
-    <div className={cn("relative", className)}>
+    // E436 (D-V11): `isolate` fecha as camadas do mapa neste quadro. O aviso do E419 usa z-[500] para ficar acima dos
+    // painéis do Leaflet (z 400); sem o isolamento, esse z valia na PÁGINA e passava por cima do cabeçalho fixo (z-40).
+    <div className={cn("relative isolate", className)} data-testid="mapa-quadro">
       <div
         ref={containerRef}
         data-testid="mapa-imovel"

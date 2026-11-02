@@ -67,7 +67,7 @@ export async function confirmarConforto(propertyId: string, marcados: string[]):
 
 // ── Pendências ───────────────────────────────────────────────────────────────────────────────────────────────────
 /** Pendências do contrato, para quem é parte dele (ou admin). */
-export async function pendenciasDoContrato(contratoId: string): Promise<{ papel: PapelPendencia; pendencias: PendenciaParaTela[] } | null> {
+export async function pendenciasDoContrato(contratoId: string): Promise<{ papel: PapelPendencia; pendencias: PendenciaParaTela[] | null } | null> {
   const s = await sessao();
   if (!s || !/^[0-9a-f-]{36}$/i.test(contratoId)) return null;
   const papel = await papelNoContrato(s, contratoId);

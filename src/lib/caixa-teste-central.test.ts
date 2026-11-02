@@ -93,7 +93,9 @@ test("1. sendEmail para conta de teste → 1 linha; conta real → 0; anexo só 
       assert.match(gravadas[0].corpo, /Anexo: REC-2026-000004\.pdf$/);
       assert.ok(!gravadas[0].corpo.includes(pdf) && !gravadas[0].corpo.includes("conteudo-secreto"), "o PDF não vai para a tabela");
       assert.equal(gravadas[0].usuario_id, TESTE.id);
-      assert.ok(!JSON.stringify(gravadas[0]).includes(TESTE.email), "destinatário mascarado");
+      // E435 (02/11): o endereço inteiro fica SÓ na coluna `destinatario` (conta de teste, leitor de QA); o resto mascarado.
+      assert.equal(gravadas[0].destinatario, TESTE.email.toLowerCase());
+      assert.ok(!JSON.stringify({ ...gravadas[0], destinatario: undefined }).includes(TESTE.email), "destinatário mascarado nas outras colunas");
 
       // conta real: nada gravado
       await sendEmail({ to: "pessoa.real@gmail.com", subject: "Recibo", html: "<p>x</p>", attachments: [{ filename: "a.pdf", content: pdf }] });
