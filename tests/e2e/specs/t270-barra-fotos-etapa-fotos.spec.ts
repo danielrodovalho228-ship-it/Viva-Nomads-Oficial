@@ -97,7 +97,7 @@ test.describe("T270 — etapa de Fotos a 390 px sem a faixa fixa (QA do Muse, #1
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     for (const n of [0, 1, 8]) {
-      // O cadastro abre o rascunho pelo draft_data (loadDraftData), não por property_photos: as fotos vão no JSON,
+      // O cadastro abre o rascunho pelo draft_data (abrirRascunho), não por property_photos: as fotos vão no JSON,
       // no mesmo formato que a tela grava (t186). As 8 imagens já estão no Storage local (criarImovelPronto).
       const titulo = `Studio Fotos ${n} de 8 ${sufixo}`;
       const id = await criarImovelPronto(ids.dono, titulo);

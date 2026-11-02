@@ -3470,13 +3470,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/actions.ts#loadDraftData": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/actions.ts#loadPropertyForEdit": {
       "personas": [
         "inquilino",
