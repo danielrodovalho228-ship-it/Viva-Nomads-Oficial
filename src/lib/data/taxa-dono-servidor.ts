@@ -16,11 +16,13 @@ export interface TaxaDoContrato {
 export async function taxaDosContratosDoDono(admin: SupabaseClient, ownerId: string, contratoIds: string[]): Promise<Map<string, TaxaDoContrato>> {
   const mapa = new Map<string, TaxaDoContrato>();
   if (!ownerId || contratoIds.length === 0) return mapa;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("contratos")
     .select("id, comissao_valor, comissao_percent, properties!inner(owner_id)")
     .in("id", contratoIds)
     .eq("properties.owner_id", ownerId);
+  // Achado 80: falha de leitura não vira "taxa R$ 0 / 0%" nos contratos do dono.
+  if (error) throw new Error("Não foi possível ler a taxa dos contratos.");
   for (const c of (data ?? []) as { id: string; comissao_valor: number | string | null; comissao_percent: number | string | null }[]) {
     mapa.set(c.id, { comissaoValor: Number(c.comissao_valor ?? 0), comissaoPercent: Number(c.comissao_percent ?? 0) });
   }

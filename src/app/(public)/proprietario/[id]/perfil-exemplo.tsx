@@ -93,7 +93,8 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
           </h2>
           <SeloExemplo />
         </div>
-        <ul className="mt-4 grid gap-4 lg:grid-cols-2">
+        {/* Conformidade (02/11): grade par — com número ímpar de avaliações, a última ocupa a linha inteira (sem buraco). */}
+        <ul className="grade-par mt-4 grid gap-4 lg:grid-cols-2" data-testid="avaliacoes-exemplo">
           {avaliacoes.map((a) => (
             <li key={`${a.imovelId}-${a.autor}`} className="rounded-xl border border-sage-200 bg-white p-4" data-testid="avaliacao-exemplo">
               <div className="flex items-center gap-3">

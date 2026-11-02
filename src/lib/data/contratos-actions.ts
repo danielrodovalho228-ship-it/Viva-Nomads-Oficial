@@ -343,7 +343,14 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
   const contratos = (data ?? []) as unknown as Record<string, unknown>[];
   // A taxa de cada contrato, lida com o cliente de serviço só para imóveis DESTE dono.
   const admin = createAdminClient();
-  const taxas = admin ? await taxaDosContratosDoDono(admin, user.id, contratos.map((c) => String(c.id))) : new Map();
+  // Achado 80: com `exigir` (telas Contratos, Garantias, Carteira), a taxa que não foi lida derruba a tela com o aviso
+  // de "Tentar de novo" — nunca "taxa R$ 0".
+  const taxas = admin
+    ? await taxaDosContratosDoDono(admin, user.id, contratos.map((c) => String(c.id))).catch((e: unknown) => {
+        if (opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM, { cause: e });
+        return new Map<string, { comissaoValor: number; comissaoPercent: number }>();
+      })
+    : new Map();
   // Data do aceite de cada candidatura (o RLS deixa o dono ler as próprias).
   const leadIds = [...new Set(contratos.map((c) => c.lead_id).filter((x): x is string => typeof x === "string"))];
   const { data: leads } = leadIds.length
