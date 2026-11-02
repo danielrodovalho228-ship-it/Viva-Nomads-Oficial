@@ -12,7 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { comparacaoParaFicha, decidirSelo } from "@/lib/comparador-airbnb/comparacao";
 import type { Conferencia } from "@/lib/comparador-airbnb/antifraude";
-import { COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
+import { avisosDoMotor, COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelParaPreco } from "@/lib/comparador-airbnb/comparacao-servidor";
 import { soFotosExistentes } from "@/lib/fotos-anuncio";
 import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { signAvatarPath } from "@/lib/data/avatar-url";
@@ -782,6 +782,12 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
     const { data: limpezas } = await supabase.from("properties").select("id, limpeza_estadia").in("id", lista.map((p) => p.id));
     const porId = new Map(((limpezas ?? []) as { id: string; limpeza_estadia: unknown }[]).map((l) => [l.id, l.limpeza_estadia]));
     for (const p of lista) p.limpezaEstadia = normalizarLimpezaEstadia(porId.get(p.id)) ?? undefined;
+  }
+  // E399-C pacote 5: o aviso do Preço justo, só para o dono (chave ligada). Sem leitura, nenhum aviso (a lista segue).
+  const adminPj = PRECO_JUSTO_COMPARADOR && lista.length ? createAdminClient() : null;
+  if (adminPj) {
+    const avisos = await avisosDoMotor(adminPj, lista.map((p) => p.id), new Date()).catch(() => null);
+    for (const p of lista) p.avisoPrecoJusto = avisos?.get(p.id) ?? null;
   }
   return lista;
 }

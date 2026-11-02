@@ -231,6 +231,13 @@ export function MyPropertiesClient({ properties: real, prontidao = {}, pausas = 
                         {ROTULO_TOTAL_MES} · {ROTULO_MENSAL} {formatBRL(precoDoImovel(p).mensal)}
                       </p>
                       <PrecoComContexto rotulo={rotuloDoCartaoDoDono(p)} destaque="lg" />
+                      {/* E399-C pacote 5: só o dono vê — por que o anúncio está sem o selo "Preço justo". */}
+                      {p.avisoPrecoJusto && (
+                        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-ink" data-testid="anuncio-preco-justo-aviso">
+                          Sem o selo &quot;Preço justo&quot;: 30 noites no Airbnb saem por {formatBRL(p.avisoPrecoJusto.valorAirbnb)}. Para ganhar o selo, o
+                          total por mês precisa ficar até {formatBRL(p.avisoPrecoJusto.ate)}.
+                        </p>
+                      )}
                     </div>
                     {/* Itens fictícios não têm página/edição real — sem links. */}
                     {!demoItem && (
