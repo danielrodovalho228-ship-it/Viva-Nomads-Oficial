@@ -289,7 +289,8 @@
         "t232-pedido-moradia-completo",
         "t255-admin-f15-f16-f18-f20",
         "t301-varredura-logada-bloco5",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t996-e267-pedido-moderado"
       ]
     },
     "/admin/socios": {
@@ -4559,7 +4560,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t996-e267-pedido-moderado"
+      ]
     },
     "src/lib/data/pedidos-admin.ts#reativarPedido": {
       "personas": [
