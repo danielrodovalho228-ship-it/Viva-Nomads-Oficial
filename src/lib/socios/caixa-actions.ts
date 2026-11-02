@@ -189,13 +189,16 @@ export async function relerArquivo(id: string): Promise<{ ok: boolean; erro?: st
   const s = await sessaoAdmin();
   if (!s) return { ok: false, erro: "Sem permissão." };
   if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, erro: "Item inválido." };
-  const { data: r } = await s.supabase.from("caixa_socios").select("arquivo_path, arquivo_nome").eq("id", id).maybeSingle();
+  const { data: r, error: erroItem } = await s.supabase.from("caixa_socios").select("arquivo_path, arquivo_nome").eq("id", id).maybeSingle();
+  if (erroItem) return { ok: false, erro: "Não foi possível ler o item agora. Tente de novo." };
   if (!r?.arquivo_path) return { ok: false, erro: "Item sem arquivo." };
   const { mimeAceito } = await import("./caixa");
   const mime = mimeAceito(null, r.arquivo_nome ?? r.arquivo_path);
   if (!mime) return { ok: false, erro: "Tipo de arquivo não aceito." };
-  const { data: blob } = await s.supabase.storage.from(BUCKET_CAIXA).download(r.arquivo_path);
-  const x = blob ? await extrair(blob, mime, r.arquivo_nome ?? "arquivo") : { status: "falhou" as const, texto: null };
+  // Resíduo da varredura: o download que falha não grava nada (antes apagava o texto já extraído).
+  const { data: blob, error: erroDownload } = await s.supabase.storage.from(BUCKET_CAIXA).download(r.arquivo_path);
+  if (erroDownload || !blob) return { ok: false, erro: "Não foi possível baixar o arquivo agora. Tente de novo; o texto já lido continua." };
+  const x = await extrair(blob, mime, r.arquivo_nome ?? "arquivo");
   await s.supabase.from("caixa_socios").update({ extracao_status: x.status, texto_extraido: x.texto }).eq("id", id);
   revalidatePath("/admin/socios");
   return { ok: x.status === "ok", erro: x.status === "ok" ? undefined : "Ainda não foi possível ler este arquivo." };
