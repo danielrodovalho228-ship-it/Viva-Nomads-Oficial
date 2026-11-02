@@ -63,7 +63,7 @@ test.describe("T971 — E399-C: o comparador do Preço justo fica desligado atr�
       await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
       const chave = page.locator('[data-testid="chave-ambiente"][data-nome="PRECO_JUSTO_COMPARADOR"]');
       await expect(chave).toBeVisible({ timeout: 30_000 });
-      await expect(chave).toContainText('Selo "Preço justo" pelo link do Airbnb (comparação simulada)');
+      await expect(chave).toContainText('Selo "Preço justo" pelo link do Airbnb'); // o fim do rótulo mudou no pacote 1 ("dados simulados")
       await expect(chave).toContainText("NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR");
       await expect(chave.locator("[data-ligada]")).toHaveAttribute("data-ligada", "0");
       await expect(chave.locator("[data-ligada]")).toHaveText("Desligada");
