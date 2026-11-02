@@ -543,7 +543,7 @@ export async function responderNaEquipe(chamadoId: string, momento: "abertura" |
     let aviso: string | null = null;
     let simulacao = false;
     if (vivaAtiva() && (await consumirLimite("viva:dia", limiteDia(), DIA))) {
-      const s = await sugerirRascunho(c.id);
+      const s = await sugerirRascunho(c.id).catch(() => null); // sem leitura: sem rascunho (a equipe responde)
       if (s?.ok && s.texto) {
         texto = s.texto;
         fontes = s.fontes.map((f) => rotuloFerramenta(f.ferramenta));
@@ -671,23 +671,30 @@ export async function escalarParaPessoa(chamadoId: string, motivo: string, ator:
  * as ferramentas de ação nem chegam ao modelo. Não grava mensagem nenhuma —
  * quem envia é a pessoa da equipe, depois de ver o texto e as fontes.
  */
+const MSG_RASCUNHO_SEM_LEITURA = "Não foi possível ler o chamado para o rascunho.";
+
 export async function sugerirRascunho(chamadoId: string): Promise<Sugestao | null> {
   if (!vivaAtiva()) return null;
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  // Achado 103: qualquer leitura que falha LANÇA — a IA nunca escreve o rascunho sem a conversa, o perfil ou o contrato
+  // (sem eles, responderia "não há contrato ativo" ou ignoraria o que a pessoa já disse).
+  const { data, error } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  if (error) throw new Error(MSG_RASCUNHO_SEM_LEITURA);
   const c = data as ChamadoViva | null;
   if (!c) return null;
-  const { data: msgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).order("criado_em", { ascending: true });
+  const { data: msgs, error: erroMsgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).order("criado_em", { ascending: true });
+  if (erroMsgs) throw new Error(MSG_RASCUNHO_SEM_LEITURA);
   const agora = new Date();
   let nome: string | null = primeiroNome(c.visitante_nome);
   let papel: string | null = null;
   let temContratoAtivo = false;
   if (c.usuario_id) {
-    const [{ data: perfil }, { data: contratos }] = await Promise.all([
+    const [{ data: perfil, error: e1 }, { data: contratos, error: e2 }] = await Promise.all([
       admin.from("profiles").select("full_name, role").eq("id", c.usuario_id).maybeSingle(),
       admin.from("contratos").select(COLUNAS_VIGENCIA).eq("tenant_id", c.usuario_id).in("status", ["ativo", "encerrado_em_acerto"]).limit(20),
     ]);
+    if (e1 || e2) throw new Error(MSG_RASCUNHO_SEM_LEITURA);
     nome = primeiroNome(perfil?.full_name as string | null);
     papel = ({ owner: "proprietário", tenant: "inquilino", admin: "equipe" } as Record<string, string>)[perfil?.role as string] ?? null;
     temContratoAtivo = (contratos ?? []).some((ct) => contratoPermiteManutencao(ct));

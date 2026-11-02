@@ -156,11 +156,13 @@ export async function lerEstadoDoContrato(contratoId: string, papel: "inquilino"
   if (!/^[0-9a-f-]{36}$/i.test(String(contratoId))) return null;
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select("id, status, created_at, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(*)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Achado 106: a falha LANÇA (o Fechamento já trata) — nunca "contrato não existe" logo depois de registrá-lo.
+  if (error) throw new Error("Não foi possível ler o estado do contrato.");
   if (!data) return null;
   const e = estadoDaLinha(data as Record<string, unknown>, papel);
   return { id: String(data.id), chave: e.chave, texto: e.selo, assinando: e.etapa === "aguardando_assinatura", criadoEm: String(data.created_at) };
