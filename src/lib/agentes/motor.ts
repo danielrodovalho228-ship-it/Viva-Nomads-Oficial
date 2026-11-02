@@ -290,7 +290,12 @@ export async function executarAgora(d: DepsExecutar, entrada: unknown): Promise<
     return { status: 409, body: { erro: `${agente.nome} não é disparado por ordem. Use "Deixar ordem".` } };
   }
   // Mesmo agente + mesmo assunto em 2 h: não cria outra (nem gasta disparo); cita a que já existe.
-  const repetida = d.ordensRecentes ? ordemDuplicada(texto, await d.ordensRecentes(slug).catch(() => []), new Date()) : null;
+  // Achado 129: sem as ordens recentes, não cria nem dispara (antes a falha virava [] e a ordem repetida saía de novo).
+  const recentes = d.ordensRecentes ? await d.ordensRecentes(slug).catch(() => "falhou" as const) : [];
+  if (recentes === "falhou") {
+    return { status: 503, body: { erro: "Não consegui conferir as ordens recentes do agente agora. Tente de novo." } };
+  }
+  const repetida = recentes.length ? ordemDuplicada(texto, recentes, new Date()) : null;
   if (repetida) {
     return { status: 200, body: { ordemId: repetida, aviso: `Já há uma ordem igual para ${agente.nome} nas últimas 2 h (ordem ${repetida}); não criei outra.` } };
   }

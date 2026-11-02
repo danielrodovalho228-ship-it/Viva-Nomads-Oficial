@@ -344,7 +344,9 @@ export async function depsExecutarReais(): Promise<DepsExecutar | null> {
     },
     async ordensRecentes(slug) {
       const desde = new Date(Date.now() - JANELA_DEDUPE_ORDEM_MS).toISOString();
-      const { data } = await supabase.from("agentes_ordens").select("id, texto, criada_em").eq("agente_slug", slug).gte("criada_em", desde).neq("status", "cancelada").limit(30);
+      const { data, error } = await supabase.from("agentes_ordens").select("id, texto, criada_em").eq("agente_slug", slug).gte("criada_em", desde).neq("status", "cancelada").limit(30);
+      // Achado 129: a falha LANÇA (nunca "nenhuma ordem recente", que deixaria a repetida passar).
+      if (error) throw new Error("Não foi possível ler as ordens recentes.");
       return (data ?? []) as { id: string; texto: string; criada_em: string }[];
     },
     async registrarDisparo(ordemId, r) {
