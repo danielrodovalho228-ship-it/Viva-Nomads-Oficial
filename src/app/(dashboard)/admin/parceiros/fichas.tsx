@@ -92,12 +92,12 @@ function useAcao() {
   return { rodar, pendente, aviso };
 }
 
-/** E351 (c): cores do estado do pedido na fila (selo no topo e borda à esquerda da ficha). */
+/** E351 (c): cores do estado do pedido na fila (selo no topo e borda à esquerda da ficha). Admin: pílula branca com texto colorido. */
 const SELO_ESTADO: Record<EstadoFicha["tipo"], string> = {
   aguardando: "border-line bg-white text-amber-800",
-  incompleto: "border-red-200 bg-red-50 text-red-700",
-  checklist: "border-amber-200 bg-amber-50 text-amber-800",
-  pronto: "border-forest/30 bg-sage-50 text-forest",
+  incompleto: "border-red-200 bg-white text-red-700",
+  checklist: "border-amber-200 bg-white text-amber-800",
+  pronto: "border-forest/30 bg-white text-forest",
 };
 const BORDA_ESTADO: Record<EstadoFicha["tipo"], string> = {
   aguardando: "border-l-line",
