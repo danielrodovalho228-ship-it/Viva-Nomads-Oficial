@@ -20,7 +20,9 @@ export async function gravarIntencao(
   intencao: Intencao[],
   modo: "owner" | "tenant" | null,
 ): Promise<{ ok: boolean; papelAplicado: "owner" | "tenant" | null }> {
-  const { data: antes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", userId).maybeSingle();
+  const { data: antes, error: erroAntes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", userId).maybeSingle();
+  // Leitura falha não vira "primeiro acesso": trocaria o papel ativo e o modo de uma conta que já tem os seus.
+  if (erroAntes) return { ok: false, papelAplicado: null };
   const a = antes as { intencao?: unknown; papel_ativo?: unknown } | null;
   const primeiroAcesso = contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo);
   const { error } = await supabase.from("profiles").update({ intencao }).eq("id", userId);
