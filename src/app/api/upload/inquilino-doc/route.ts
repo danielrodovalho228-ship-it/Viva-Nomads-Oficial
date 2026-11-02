@@ -62,7 +62,13 @@ export async function POST(request: Request) {
   if (eUp) return NextResponse.json({ error: "Não foi possível salvar o documento." }, { status: 500 });
 
   // Um por tipo: guarda o novo e apaga o arquivo anterior do mesmo tipo.
-  const { data: anterior } = await admin.from("documentos_inquilino").select("caminho").eq("lead_id", leadId).eq("tipo", tipo).maybeSingle();
+  const { data: anterior, error: erroAnterior } = await admin.from("documentos_inquilino").select("caminho").eq("lead_id", leadId).eq("tipo", tipo).maybeSingle();
+  // Leitura falha não vira "sem documento anterior": o arquivo substituído (documento pessoal) ficaria no bucket sem
+  // registro que aponte para ele. Desfaz o envio e pede para tentar de novo.
+  if (erroAnterior) {
+    await admin.storage.from(BUCKET_DOCS_INQUILINO).remove([caminho]);
+    return NextResponse.json({ error: "Não foi possível registrar o documento agora." }, { status: 500 });
+  }
   const { error: eReg } = await admin
     .from("documentos_inquilino")
     .upsert({ lead_id: leadId, tenant_id: user.id, tipo, caminho, hash_sha256: hash, enviado_em: new Date().toISOString() }, { onConflict: "lead_id,tipo" });

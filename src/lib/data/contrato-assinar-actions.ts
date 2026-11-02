@@ -113,28 +113,42 @@ function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 }
 
-async function contarPetsDoInquilino(tenantId: string): Promise<number> {
+/**
+ * Leitura falhou num caminho que ASSINA (congela regras ou calcula o hash): o padrão "falha = 0 / null" serve para
+ * mostrar a tela, nunca para gravar no contrato. `estrito` lança isto; assinarContrato devolve "tente de novo".
+ */
+class LeituraDaAssinaturaFalhou extends Error {}
+const MSG_ASSINATURA_SEM_LEITURA = "Não foi possível conferir o contrato agora. Tente de novo.";
+/** Postgres: coluna inexistente (banco sem a 0144) — a limpeza segue como "sem pacote", como antes. */
+const COLUNA_AUSENTE = "42703";
+
+async function contarPetsDoInquilino(tenantId: string, estrito = false): Promise<number> {
   const admin = createAdminClient();
-  if (!admin) return 0;
-  const { count } = await admin.from("pets_inquilino").select("id", { count: "exact", head: true }).eq("user_id", tenantId);
+  if (!admin) {
+    if (estrito) throw new LeituraDaAssinaturaFalhou("sem cliente");
+    return 0;
+  }
+  const { count, error } = await admin.from("pets_inquilino").select("id", { count: "exact", head: true }).eq("user_id", tenantId);
+  if (error && estrito) throw new LeituraDaAssinaturaFalhou(`pets: ${error.message}`);
   return count ?? 0;
 }
 
 /** Depois da 1ª assinatura vale o número congelado; antes, o da ficha do inquilino agora. */
-async function completarPets(c: LinhaContrato): Promise<void> {
+async function completarPets(c: LinhaContrato, estrito = false): Promise<void> {
   if (!c.assinado_proprietario_em && !c.assinado_inquilino_em) {
-    c.qtd_pets_vivos = await contarPetsDoInquilino(c.tenant_id);
-    c.limpeza_viva = await lerLimpezaViva(c.property_id);
-    c.outros_custos_vivos = await lerOutrosCustosVivos(c.property_id);
+    c.qtd_pets_vivos = await contarPetsDoInquilino(c.tenant_id, estrito);
+    c.limpeza_viva = await lerLimpezaViva(c.property_id, estrito);
+    c.outros_custos_vivos = await lerOutrosCustosVivos(c.property_id, estrito);
   }
 }
 
 /** Condomínio + contas fixas do anúncio (R$ por mês); contas medidas não entram. Falha de leitura = 0. */
-async function lerOutrosCustosVivos(propertyId: string | undefined): Promise<number> {
+async function lerOutrosCustosVivos(propertyId: string | undefined, estrito = false): Promise<number> {
   const admin = createAdminClient();
   if (!admin || !propertyId) return 0;
   try {
-    const { data } = await admin.from("properties").select("condo_fee, utilities_mode, utilities_estimate").eq("id", propertyId).maybeSingle();
+    const { data, error } = await admin.from("properties").select("condo_fee, utilities_mode, utilities_estimate").eq("id", propertyId).maybeSingle();
+    if (error) throw new LeituraDaAssinaturaFalhou(`custos: ${error.message}`);
     const p = data as { condo_fee?: number | null; utilities_mode?: string | null; utilities_estimate?: number | null } | null;
     if (!p) return 0;
     return outrosCustosDoContrato({
@@ -142,19 +156,22 @@ async function lerOutrosCustosVivos(propertyId: string | undefined): Promise<num
       vivo: Number(p.condo_fee ?? 0) + (p.utilities_mode === "fixed" ? Number(p.utilities_estimate ?? 0) : 0),
       congeladas: null,
     });
-  } catch {
+  } catch (e) {
+    if (estrito) throw e instanceof LeituraDaAssinaturaFalhou ? e : new LeituraDaAssinaturaFalhou("custos");
     return 0;
   }
 }
 
 /** Pacote de limpeza do anúncio (0144). Leitura à parte: sem a migração, o contrato abre igual, sem a linha. */
-async function lerLimpezaViva(propertyId: string | undefined): Promise<unknown> {
+async function lerLimpezaViva(propertyId: string | undefined, estrito = false): Promise<unknown> {
   const admin = createAdminClient();
   if (!admin || !propertyId) return null;
   try {
-    const { data } = await admin.from("properties").select("limpeza_estadia").eq("id", propertyId).maybeSingle();
+    const { data, error } = await admin.from("properties").select("limpeza_estadia").eq("id", propertyId).maybeSingle();
+    if (error && error.code !== COLUNA_AUSENTE) throw new LeituraDaAssinaturaFalhou(`limpeza: ${error.message}`);
     return (data as { limpeza_estadia?: unknown } | null)?.limpeza_estadia ?? null;
-  } catch {
+  } catch (e) {
+    if (estrito) throw e instanceof LeituraDaAssinaturaFalhou ? e : new LeituraDaAssinaturaFalhou("limpeza");
     return null;
   }
 }
@@ -312,12 +329,14 @@ export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: b
   if (faltam) return { ok: false, error: faltam };
 
   const agora = Date.now();
-  const { data: atual } = await admin
+  const { data: atual, error: erroAtual } = await admin
     .from("contrato_assinatura_codigos")
     .select("enviado_em")
     .eq("contrato_id", c.id)
     .eq("user_id", user.id)
     .maybeSingle();
+  // Leitura falha não vira "nunca enviou": o limite de 1 minuto entre códigos vale sempre.
+  if (erroAtual) return { ok: false, error: "Não foi possível gerar o código. Tente de novo." };
   if (!podeReenviar(atual as { enviado_em: string } | null, agora)) {
     return { ok: false, error: "Espere 1 minuto para pedir outro código." };
   }
@@ -350,6 +369,55 @@ export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: b
   return { ok: true };
 }
 
+type AdminAssinatura = NonNullable<ReturnType<typeof createAdminClient>>;
+
+async function lerContrato(admin: AdminAssinatura, contratoId: string): Promise<LinhaContrato | null> {
+  const { data, error } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  if (error) throw new LeituraDaAssinaturaFalhou(`contrato: ${error.message}`);
+  return data as unknown as LinhaContrato | null;
+}
+
+/**
+ * Lê o contrato para ASSINAR: congela as regras na 1ª assinatura e completa os valores vivos — tudo estrito (lança
+ * LeituraDaAssinaturaFalhou), porque o que sai daqui vai para o hash e para o contrato.
+ */
+async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): Promise<LinhaContrato | null> {
+  let c = await lerContrato(admin, contratoId);
+  // Primeira assinatura: congela as regras de pets do anúncio no contrato (uma vez só), para a outra parte
+  // assinar o mesmo resumo/hash mesmo que o dono mude o anúncio depois.
+  if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas == null) {
+    const { error: erroCongela } = await admin
+      .from("contratos")
+      .update({
+        pets_regras_congeladas: {
+          ...(objetoOuVazio(c.properties?.pets_regras)),
+          qtdPetsCandidatura: await contarPetsDoInquilino(c.tenant_id, true),
+          limpezaEstadia: normalizarLimpezaEstadia(await lerLimpezaViva(c.property_id, true)),
+          outrosCustosMes: await lerOutrosCustosVivos(c.property_id, true),
+        },
+      })
+      .eq("id", c.id)
+      .is("pets_regras_congeladas", null);
+    if (erroCongela) throw new LeituraDaAssinaturaFalhou(`congelar: ${erroCongela.message}`);
+    c = await lerContrato(admin, contratoId);
+  }
+  // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
+  // antes desta regra; a chave limpezaEstadia presente (mesmo null) marca "já congelado".
+  if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas != null && !("limpezaEstadia" in objetoOuVazio(c.pets_regras_congeladas))) {
+    const pacote = normalizarLimpezaEstadia(await lerLimpezaViva(c.property_id, true));
+    const { error: erroPacote } = await admin
+      .from("contratos")
+      .update({ pets_regras_congeladas: { ...objetoOuVazio(c.pets_regras_congeladas), limpezaEstadia: pacote, outrosCustosMes: await lerOutrosCustosVivos(c.property_id, true) } })
+      .eq("id", c.id)
+      .is("assinado_proprietario_em", null)
+      .is("assinado_inquilino_em", null);
+    if (erroPacote) throw new LeituraDaAssinaturaFalhou(`congelar limpeza: ${erroPacote.message}`);
+    c = await lerContrato(admin, contratoId);
+  }
+  if (c) await completarPets(c, true);
+  return c;
+}
+
 export async function assinarContrato(input: {
   contratoId: string;
   aceite: boolean;
@@ -371,40 +439,14 @@ export async function assinarContrato(input: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para assinar." };
 
-  let { data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle();
-  let c = data as unknown as LinhaContrato | null;
-  // Primeira assinatura: congela as regras de pets do anúncio no contrato (uma vez só), para a outra parte
-  // assinar o mesmo resumo/hash mesmo que o dono mude o anúncio depois.
-  if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas == null) {
-    await admin
-      .from("contratos")
-      .update({
-        pets_regras_congeladas: {
-          ...(objetoOuVazio(c.properties?.pets_regras)),
-          qtdPetsCandidatura: await contarPetsDoInquilino(c.tenant_id),
-          limpezaEstadia: normalizarLimpezaEstadia(await lerLimpezaViva(c.property_id)),
-          outrosCustosMes: await lerOutrosCustosVivos(c.property_id),
-        },
-      })
-      .eq("id", c.id)
-      .is("pets_regras_congeladas", null);
-    ({ data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle());
-    c = data as unknown as LinhaContrato | null;
+  let c: LinhaContrato | null;
+  try {
+    c = await prepararParaAssinar(admin, input.contratoId);
+  } catch (e) {
+    if (!(e instanceof LeituraDaAssinaturaFalhou)) throw e;
+    console.error("[assinatura] leitura:", e.message);
+    return { ok: false, error: MSG_ASSINATURA_SEM_LEITURA };
   }
-  // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
-  // antes desta regra; a chave limpezaEstadia presente (mesmo null) marca "já congelado".
-  if (c && !c.assinado_proprietario_em && !c.assinado_inquilino_em && c.pets_regras_congeladas != null && !("limpezaEstadia" in objetoOuVazio(c.pets_regras_congeladas))) {
-    const pacote = normalizarLimpezaEstadia(await lerLimpezaViva(c.property_id));
-    await admin
-      .from("contratos")
-      .update({ pets_regras_congeladas: { ...objetoOuVazio(c.pets_regras_congeladas), limpezaEstadia: pacote, outrosCustosMes: await lerOutrosCustosVivos(c.property_id) } })
-      .eq("id", c.id)
-      .is("assinado_proprietario_em", null)
-      .is("assinado_inquilino_em", null);
-    ({ data } = await admin.from("contratos").select(COLUNAS).eq("id", input.contratoId).maybeSingle());
-    c = data as unknown as LinhaContrato | null;
-  }
-  if (c) await completarPets(c);
   const visao = c ? montar(c, user.id) : null;
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 
@@ -457,6 +499,17 @@ export async function assinarContrato(input: {
     }
     return { ok: false, error: conf.erro };
   }
+  // O hash da outra parte entra no hash desta assinatura (a cadeia): lido ANTES de consumir o código, e leitura falha
+  // nunca vira "a outra parte ainda não assinou".
+  const { data: assOutra, error: erroOutra } = await admin
+    .from("contrato_assinaturas")
+    .select("hash_documento")
+    .eq("contrato_id", c.id)
+    .neq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+  if (erroOutra) return { ok: false, error: MSG_ASSINATURA_SEM_LEITURA };
+  const hashDaOutraParte = (assOutra as { hash_documento?: string | null } | null)?.hash_documento ?? null;
   // Consome o código antes de gravar: só uma assinatura por código, mesmo com dois cliques ao mesmo tempo.
   const { data: consumido } = await admin
     .from("contrato_assinatura_codigos")
@@ -471,15 +524,6 @@ export async function assinarContrato(input: {
   const h = await headers();
   const ip = (h.get("x-forwarded-for") ?? "").split(",")[0]?.trim().slice(0, 64) || null;
   const agora = new Date().toISOString();
-
-  const { data: assOutra } = await admin
-    .from("contrato_assinaturas")
-    .select("hash_documento")
-    .eq("contrato_id", c.id)
-    .neq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-  const hashDaOutraParte = (assOutra as { hash_documento?: string | null } | null)?.hash_documento ?? null;
 
   const { error: errReg } = await admin.from("contrato_assinaturas").insert({
     contrato_id: c.id,

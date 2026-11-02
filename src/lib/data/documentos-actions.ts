@@ -147,10 +147,12 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
   if (!ctx) return { ok: false, error: "Contrato não encontrado." };
   if (ctx.papel !== "dono") return { ok: false, error: "Só o proprietário registra a devolução." };
   const { admin } = ctx;
-  const [{ data: caucoes }, { data: abertos }] = await Promise.all([
+  const [{ data: caucoes, error: erroCaucoes }, { data: abertos, error: erroAbertos }] = await Promise.all([
     admin.from("pagamentos_bloco").select("valor").eq("contrato_id", input.contratoId).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     admin.from("caucao_acertos").select("id, status").eq("contrato_id", input.contratoId).in("status", ["aguardando_confirmacao", "devolvida_integral", "desconto_confirmado"]),
   ]);
+  // Leitura falhou → nada é gravado: caução zerada ou um segundo acerto em aberto sairiam de uma lista vazia por erro.
+  if (erroCaucoes || erroAbertos) return { ok: false, error: "Não foi possível registrar agora. Tente de novo." };
   const caucaoTotal = Math.round((caucoes ?? []).reduce((s, c) => s + Number(c.valor), 0) * 100) / 100;
   const regra = regraDevolucao({ statusContrato: ctx.status, caucaoTotal, valorDevolvido: input.valorDevolvido, dataDevolucao: input.dataDevolucao, meio: input.meio, jaTemAcerto: (abertos ?? []).length > 0 });
   if (!regra.ok) return { ok: false, error: regra.error };
@@ -176,18 +178,22 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
 export async function responderDevolucaoCaucao(acertoId: string, resposta: "confirmar" | "contestar"): Promise<Res> {
   const admin = createAdminClient();
   if (!admin || !UUID_RE.test(acertoId)) return { ok: false, error: "Devolução não encontrada." };
-  const { data: a } = await admin.from("caucao_acertos").select("id, contrato_id, tipo, status").eq("id", acertoId).maybeSingle();
+  const { data: a, error: erroAcerto } = await admin.from("caucao_acertos").select("id, contrato_id, tipo, status").eq("id", acertoId).maybeSingle();
+  if (erroAcerto) return { ok: false, error: "Não foi possível registrar agora. Tente de novo." };
   if (!a) return { ok: false, error: "Devolução não encontrada." };
   const ctx = await papelNoContrato(a.contrato_id as string);
   if (!ctx || ctx.papel !== "inquilino") return { ok: false, error: "Só o inquilino confirma a devolução." };
   if (a.status !== "aguardando_confirmacao") return { ok: false, error: "Esta devolução já foi respondida." };
   const status = resposta === "contestar" ? "desconto_contestado" : a.tipo === "devolucao_integral" ? "devolvida_integral" : "desconto_confirmado";
-  const { error } = await admin
+  const { data: mudou, error } = await admin
     .from("caucao_acertos")
     .update({ status, confirmado_em: resposta === "confirmar" ? new Date().toISOString() : null })
     .eq("id", acertoId)
-    .eq("status", "aguardando_confirmacao");
+    .eq("status", "aguardando_confirmacao")
+    .select("id");
   if (error) return { ok: false, error: "Não foi possível registrar agora." };
+  // Duas respostas ao mesmo tempo: só a que mudou o status emite o termo (nunca dois termos da mesma devolução).
+  if (!mudou?.length) return { ok: false, error: "Esta devolução já foi respondida." };
   if (resposta === "confirmar") after(() => emitirTermoDevolucaoComRegistro(acertoId));
   return { ok: true };
 }

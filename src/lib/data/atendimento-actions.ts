@@ -239,8 +239,13 @@ export async function abrirChamado(
   const contratoCamera = input.contratoId ?? (contextoTipo === "contrato" ? contextoId : null);
   const anuncioPausado = cat.key === "camera" ? await pausarAnuncioPorCamera(c.id, user?.id ?? null, contratoCamera) : false;
   // FOTO-PERFIL-B: denúncia da foto de alguém → a foto atual volta para 'em_revisao', no topo da fila.
-  if (cat.key === "foto_perfil" && contextoTipo === "perfil" && contextoId && (await reabrirFotoPorDenuncia(admin, contextoId).catch(() => false))) {
-    await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "foto_reaberta", para: "em_revisao" });
+  if (cat.key === "foto_perfil" && contextoTipo === "perfil" && contextoId) {
+    const reaberta = await reabrirFotoPorDenuncia(admin, contextoId).catch(() => "falhou" as const);
+    if (reaberta === true) await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "sistema", acao: "foto_reaberta", para: "em_revisao" });
+    // Resíduo da varredura: a leitura falhou → a foto NÃO voltou para a revisão; a equipe fica sabendo pelo chamado.
+    if (reaberta === "falhou") {
+      await admin.from("chamado_mensagens").insert({ chamado_id: c.id, autor: "sistema", interno: true, corpo: NOTA_FOTO_NAO_REABERTA });
+    }
   }
 
   // Mensagem da pessoa + resposta automática (emergência primeiro; prazo).
@@ -373,6 +378,8 @@ export async function chamadoDeOutraConta(numero: string): Promise<{ adminUrl: s
 }
 
 /** A pessoa responde no próprio chamado (reabre se estava resolvido). */
+const MSG_CHAMADO_SEM_LEITURA = "Não foi possível ler o seu chamado agora. Tente de novo em instantes.";
+
 export async function responderMeuChamado(chamadoId: string, texto: string): Promise<Res> {
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -392,7 +399,8 @@ export async function responderMeuChamado(chamadoId: string, texto: string): Pro
     user.id,
     { id: chamadoId },
     "id, numero_publico, assunto, status, prioridade, responsavel_tipo"
-  );
+  ).catch(() => "falhou" as const);
+  if (c === "falhou") return { ok: false, error: MSG_CHAMADO_SEM_LEITURA };
   if (!c) return { ok: false, error: "Chamado não encontrado nesta conta." };
   if (c.status === "encerrado") return { ok: false, error: "Este chamado foi encerrado. Abra um novo, se precisar." };
 
@@ -430,7 +438,8 @@ export async function pedirPessoa(chamadoId: string): Promise<Res> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
-  const c = await chamadoDoDono(supabase as unknown as ClienteChamados, user.id, { id: chamadoId }, "id");
+  const c = await chamadoDoDono(supabase as unknown as ClienteChamados, user.id, { id: chamadoId }, "id").catch(() => "falhou" as const);
+  if (c === "falhou") return { ok: false, error: MSG_CHAMADO_SEM_LEITURA };
   if (!c) return { ok: false, error: "Chamado não encontrado nesta conta." };
   return (await escalarParaPessoa(chamadoId, "a pessoa pediu", "usuario", user.id)) ? { ok: true } : { ok: false, error: "Este chamado já foi encerrado." };
 }
@@ -456,7 +465,8 @@ export async function marcarResolvido(chamadoId: string): Promise<Res> {
     user.id,
     { id: chamadoId },
     "id, numero_publico, assunto, prioridade, status, responsavel_tipo, visitante_email, visitante_nome"
-  );
+  ).catch(() => "falhou" as const);
+  if (c === "falhou") return { ok: false, error: MSG_CHAMADO_SEM_LEITURA };
   if (!c || !podeMarcarResolvido(c.status, c.responsavel_tipo)) return { ok: false, error: "Este chamado não está aguardando você." };
   const agora = new Date().toISOString();
   await admin.from("chamados").update({ status: "resolvido", resolvido_em: agora, atualizado_em: agora }).eq("id", c.id);
@@ -856,11 +866,15 @@ export async function metricasAtendimento(dias = 30): Promise<Record<string, unk
  * telefone, e-mail mascarado. CADA consulta fica no histórico do chamado
  * (quem viu, quando).
  */
+const MSG_PESSOA_SEM_LEITURA = "Não foi possível ler os dados da pessoa agora. Tente de novo.";
+
 export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: PessoaResumo }>> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
   const { admin } = ctx;
-  const { data: c } = await admin.from("chamados").select("id, usuario_id, visitante_email, visitante_nome").eq("id", chamadoId).maybeSingle();
+  // Resíduo da varredura: leitura que falha → "tente de novo"; nunca um perfil incompleto ("conta nova", "sem contratos").
+  const { data: c, error: erroChamado } = await admin.from("chamados").select("id, usuario_id, visitante_email, visitante_nome").eq("id", chamadoId).maybeSingle();
+  if (erroChamado) return { ok: false, error: MSG_PESSOA_SEM_LEITURA };
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "admin", ator_id: ctx.userId, acao: "consulta_pessoa", detalhe: "painel Quem é a pessoa" });
 
@@ -872,7 +886,7 @@ export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: Pes
   }
   const uid = c.usuario_id as string;
   const camposContrato = "id, status, properties!inner(title, owner_id), contrato_blocos(inicio, fim)";
-  const [{ data: perfil }, { data: props }, { data: comoInquilino }, { data: comoDono }, { data: pedidos }, { data: anteriores }] = await Promise.all([
+  const leituras = await Promise.all([
     admin.from("profiles").select("full_name, email, role, created_at").eq("id", uid).maybeSingle(),
     admin.from("properties").select("id, title, status").eq("owner_id", uid).order("created_at", { ascending: false }).limit(10),
     admin.from("contratos").select(camposContrato).eq("tenant_id", uid).order("created_at", { ascending: false }).limit(5),
@@ -880,6 +894,8 @@ export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: Pes
     admin.from("pedidos_moradia").select("status").eq("inquilino_id", uid).limit(50),
     admin.from("chamados").select("numero_publico, assunto, status, criado_em").eq("usuario_id", uid).neq("id", c.id).eq("simulacao", false).order("criado_em", { ascending: false }).limit(5),
   ]);
+  if (leituras.some((l) => l.error)) return { ok: false, error: MSG_PESSOA_SEM_LEITURA };
+  const [{ data: perfil }, { data: props }, { data: comoInquilino }, { data: comoDono }, { data: pedidos }, { data: anteriores }] = leituras;
   const prontidao = props?.length ? await prontidaoDosImoveis(admin, uid, props.map((p) => p.id as string)) : new Map();
   type LinhaContrato = { status: string; properties: { title?: string } | null; contrato_blocos: { inicio: string | null; fim: string | null }[] | null };
   const contrato = (k: LinhaContrato, papel: "inquilino" | "proprietário") => {
@@ -973,11 +989,16 @@ export async function sugerirResposta(
  * "Resumo e ações" (topo da tela do chamado): devolve o guardado; gera na
  * primeira abertura ou com "Atualizar resumo". Guardado como nota interna.
  */
+const NOTA_FOTO_NAO_REABERTA = "A foto denunciada não voltou sozinha para a revisão (falha ao ler o perfil). Reabra pela fila de fotos de perfil.";
+
+const MSG_RESUMO_SEM_LEITURA = "Não foi possível ler o chamado agora. Tente de novo.";
+
 export async function resumoDoChamado(chamadoId: string, refazer = false): Promise<Res<{ resumo: ResumoChamado }>> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
   if (!refazer) {
-    const { data: notas } = await ctx.admin
+    // Resíduo da varredura: sem saber se já há resumo salvo, não gera outro (IA, nota em dobro e limite).
+    const { data: notas, error: erroNota } = await ctx.admin
       .from("chamado_mensagens")
       .select("corpo")
       .eq("chamado_id", chamadoId)
@@ -985,11 +1006,13 @@ export async function resumoDoChamado(chamadoId: string, refazer = false): Promi
       .like("corpo", "[resumo-e-acoes]%")
       .order("criado_em", { ascending: false })
       .limit(1);
+    if (erroNota) return { ok: false, error: MSG_RESUMO_SEM_LEITURA };
     const salvo = notas?.[0] ? resumoDaNota(notas[0].corpo as string) : null;
     if (salvo) return { ok: true, resumo: salvo };
   }
   if ((await situacaoLimite(`resumo:${ctx.userId}`, 30, HORA)) === "estourou") return { ok: false, error: "Muitos resumos em pouco tempo. Aguarde um pouco." };
-  const g = await gerarResumo(chamadoId);
+  const g = await gerarResumo(chamadoId).catch(() => "falhou" as const);
+  if (g === "falhou") return { ok: false, error: MSG_RESUMO_SEM_LEITURA };
   if (!g) return { ok: false, error: "Chamado não encontrado." };
   await ctx.admin.from("chamado_mensagens").insert({ chamado_id: chamadoId, autor: "ia", interno: true, simulacao: g.simulacao, corpo: notaResumo(g.resumo) });
   await ctx.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: ctx.userId, acao: "resumo_ia", detalhe: refazer ? "atualizado" : "gerado ao abrir" });

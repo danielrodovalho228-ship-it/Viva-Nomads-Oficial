@@ -227,7 +227,9 @@ export async function enviarImagemParceiro(form: FormData): Promise<Res<{ url: s
   if (!ehWebp(bytes)) return { ok: false, erro: "Formato não aceito. Use JPG, PNG ou WebP." };
   const id = m.p.id as string;
   if (tipo === "galeria") {
-    const { count } = await m.admin.from("parceiro_galeria").select("id", { count: "exact", head: true }).eq("parceiro_id", id);
+    const { count, error: erroContagem } = await m.admin.from("parceiro_galeria").select("id", { count: "exact", head: true }).eq("parceiro_id", id);
+    // Contagem ilegível não vira 0: o limite vale sempre.
+    if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
     if ((count ?? 0) >= GALERIA_MAX) return { ok: false, erro: `A galeria aceita até ${GALERIA_MAX} fotos.` };
   }
   const path = `${id}/${tipo}-${randomBytes(8).toString("hex")}.webp`;
@@ -319,7 +321,9 @@ export async function salvarServico(e: { id?: string | null; categoria: string; 
     const { error } = await m.admin.from("parceiro_servicos").update(linha).eq("id", e.id).eq("parceiro_id", m.p.id);
     if (error) return { ok: false, erro: "Não foi possível salvar." };
   } else {
-    const { count } = await m.admin.from("parceiro_servicos").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+    const { count, error: erroContagem } = await m.admin.from("parceiro_servicos").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+    // Contagem ilegível não vira 0: o limite vale sempre.
+    if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
     if ((count ?? 0) >= 20) return { ok: false, erro: "Até 20 serviços." };
     const { error } = await m.admin.from("parceiro_servicos").insert({ ...linha, parceiro_id: m.p.id });
     if (error) return { ok: false, erro: "Não foi possível salvar." };
@@ -387,7 +391,9 @@ export async function adicionarAgenda(e: { tipo: "janela"; diaSemana: number; in
     if (!data.test(e.dataInicio) || !data.test(e.dataFim) || e.dataFim < e.dataInicio) return { ok: false, erro: "Escolha as datas do bloqueio (a final depois da inicial)." };
     linha = { tipo: "bloqueio", data_inicio: e.dataInicio, data_fim: e.dataFim };
   }
-  const { count } = await m.admin.from("parceiro_agenda").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+  const { count, error: erroContagem } = await m.admin.from("parceiro_agenda").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+  // Contagem ilegível não vira 0: o limite vale sempre.
+  if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
   if ((count ?? 0) >= 60) return { ok: false, erro: "Agenda cheia (até 60 itens)." };
   const { error } = await m.admin.from("parceiro_agenda").insert({ ...linha, parceiro_id: m.p.id });
   if (error) return { ok: false, erro: "Não foi possível salvar." };

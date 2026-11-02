@@ -116,6 +116,7 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
   "/dashboard/imoveis/[id]/nivel": [],
   "/dashboard/imoveis/[id]/desempenho": [],
   "/dashboard/imoveis/[id]/editar": [],
+  "/dashboard/imoveis/[id]/publicar": [],
   "/dashboard/locacoes/[id]": [],
   "/dashboard/propostas/[id]": [],
   "/dashboard/servicos/pedidos/[id]": [],

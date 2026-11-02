@@ -85,12 +85,14 @@ export async function coordenadasParaMedir(admin: Admin, sessao: SupabaseClient,
   return coordenadasDoImovel(admin, imovelId);
 }
 
-async function medicoesHoje(admin: Admin, imovelId: string, agora: Date): Promise<number> {
-  const { count } = await admin
+/** null = contagem ilegível (nunca 0: o limite diário valeria por uma leitura que falhou). */
+async function medicoesHoje(admin: Admin, imovelId: string, agora: Date): Promise<number | null> {
+  const { count, error } = await admin
     .from("internet_medicoes")
     .select("id", { count: "exact", head: true })
     .eq("property_id", imovelId)
     .gte("medido_em", new Date(agora.getTime() - DIA).toISOString());
+  if (error) return null;
   return count ?? 0;
 }
 
@@ -143,7 +145,8 @@ export async function estadoParaMedir(imovelId: string, origem: Origem): Promise
     ok: true,
     papel,
     simulado: integracoesSimuladas(),
-    restantesHoje: Math.max(0, INTERNET.limitePorDia - (await medicoesHoje(admin, imovelId, agora))),
+    // Contagem ilegível: 0 restantes na tela (o registro confere de novo e pede para tentar depois).
+    restantesHoje: Math.max(0, INTERNET.limitePorDia - ((await medicoesHoje(admin, imovelId, agora)) ?? INTERNET.limitePorDia)),
     ultima: papel === "dono" ? await ultimaMedidaDoDono(admin, imovelId, agora) : null,
     temCoordenadas: !!(await coordenadasParaMedir(admin, supabase, imovelId)),
   };
@@ -184,7 +187,9 @@ export async function registrarMedicao(entrada: {
   const papel = await papelNoImovel(admin, user.id, imovelId, origem);
   if (!papel) return { ok: false, erro: "Só o proprietário do imóvel (ou o morador, na conferência de entrada) mede a internet." };
   const agora = new Date();
-  if (!dentroDoLimite(await medicoesHoje(admin, imovelId, agora))) return { ok: false, erro: `Limite de ${INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.` };
+  const feitasHoje = await medicoesHoje(admin, imovelId, agora);
+  if (feitasHoje === null) return { ok: false, erro: "Não foi possível conferir o limite de medições agora. Tente de novo." };
+  if (!dentroDoLimite(feitasHoje)) return { ok: false, erro: `Limite de ${INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.` };
 
   const l = entrada.local as { lat?: unknown; lng?: unknown } | null;
   const aparelho = l && typeof l.lat === "number" && typeof l.lng === "number" ? { lat: l.lat, lng: l.lng } : null;

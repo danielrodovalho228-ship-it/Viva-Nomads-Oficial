@@ -46,11 +46,13 @@ export async function pedirAjudaParaPublicar(entrada: EntradaAjuda): Promise<Res
   if (!(await dentroDoLimite(`ajuda-publicacao:${user.id}`, PEDIDOS_POR_DIA, DIA))) {
     return { ok: false, error: "Você já enviou vários pedidos hoje. Tente novamente amanhã." };
   }
-  const { count } = await supabase
+  const { count, error: erroContagem } = await supabase
     .from("pedidos_ajuda_publicacao")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", user.id)
     .in("status", ["recebido", "em_montagem", "ajustes_pedidos"]);
+  // Contagem ilegível não vira 0: o limite vale sempre.
+  if (erroContagem) return { ok: false, error: "Não foi possível conferir o limite agora. Tente de novo." };
   if ((count ?? 0) >= MAX_ABERTOS_POR_DONO) {
     return { ok: false, error: "Você já tem pedidos em andamento. Aguarde a equipe concluir." };
   }

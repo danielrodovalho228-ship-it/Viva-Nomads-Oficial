@@ -122,7 +122,9 @@ export async function enviarSolicitacao(entrada: SolicitacaoEntrada & { armadilh
   if (!v.ok) return { ok: false, erro: v.erro };
   const email = s.user.email.trim().toLowerCase();
 
-  const { data: jaParceiro } = await s.admin.from("parceiros").select("id").eq("user_id", s.user.id).maybeSingle();
+  const { data: jaParceiro, error: erroJaParceiro } = await s.admin.from("parceiros").select("id").eq("user_id", s.user.id).maybeSingle();
+  // Leitura falha não vira "ainda não é parceira": abriria um pedido pendente (e o e-mail à equipe) para quem já é.
+  if (erroJaParceiro) return { ok: false, erro: "Não foi possível enviar o pedido agora. Tente de novo." };
   if (jaParceiro) return { ok: false, erro: "Esta conta já é parceira. Edite a sua página em Painel › Parceiro." };
 
   const dados = {

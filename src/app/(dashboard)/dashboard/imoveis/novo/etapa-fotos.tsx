@@ -150,7 +150,7 @@ export function EtapaFotos({
             ))}
           </div>
           <div className="mt-3">
-            <GuiaFotos comCta={false} />
+            <GuiaFotos comCta={false} nivelTitulo={2} />
           </div>
         </div>
       </details>
@@ -159,14 +159,14 @@ export function EtapaFotos({
       <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="porta-fotografo">
         <p className="font-semibold text-ink">Quer um fotógrafo profissional?</p>
         <p className="mt-1 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
-        <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="mt-1 inline-block font-medium text-forest underline">
+        <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="alvo-toque mt-1 inline-block font-medium text-forest underline" data-testid="porta-fotografo-link">
           Ver fotógrafos na cidade do imóvel
         </a>
       </div>
 
       {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}
       <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6 scroll-mt-24" data-testid="bloco-video">
-        <h3 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h3>
+        <h2 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h2>
         <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={setVideoConteudo} />
       </section>
 

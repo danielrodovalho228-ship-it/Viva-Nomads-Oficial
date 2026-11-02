@@ -12,6 +12,8 @@ type Passo = "carregando" | "inicio" | "email" | "codigo" | "ok";
 export function VinculoProfissional() {
   const [passo, setPasso] = useState<Passo>("carregando");
   const [dominio, setDominio] = useState<string | null>(null);
+  // O selo ATIVO (confirmado). Um pedido novo nunca o tira: ele só troca quando o código novo é confirmado.
+  const [ativo, setAtivo] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [codigo, setCodigo] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -23,6 +25,7 @@ export function VinculoProfissional() {
       .then((v) => {
         if (!vivo) return;
         setDominio(v?.dominio ?? null);
+        setAtivo(v?.dominio ?? null);
         setPasso(v ? "ok" : "inicio");
       })
       .catch(() => vivo && setPasso("inicio"));
@@ -57,6 +60,7 @@ export function VinculoProfissional() {
       const r = await confirmarVinculo(codigo);
       if (r.ok) {
         setDominio(r.dominio);
+        setAtivo(r.dominio);
         setPasso("ok");
       } else setErro(r.error);
     } catch {
@@ -66,7 +70,8 @@ export function VinculoProfissional() {
     }
   };
 
-  const ok = passo === "ok" && dominio;
+  // O selo aparece sempre que houver um ativo, também enquanto um pedido novo está em andamento.
+  const ok = passo === "ok" ? dominio : ativo;
   const campo = "min-h-11 w-full rounded-lg border border-line px-3 text-sm text-ink";
   const botao = "inline-flex min-h-11 items-center justify-center rounded-lg bg-forest px-4 text-sm font-semibold text-white disabled:opacity-60";
 
@@ -81,7 +86,7 @@ export function VinculoProfissional() {
           ) : (
             <p className={cn("flex items-center gap-1 break-words text-xs", ok ? "text-forest" : "text-muted")} data-testid="vinculo-detalhe">
               {ok ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <Circle className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-              {ok ? detalheVinculo(dominio) : TEXTO_OPCIONAL_VINCULO}
+              {ok ? detalheVinculo(ok) : TEXTO_OPCIONAL_VINCULO}
             </p>
           )}
           {passo !== "carregando" && <p className="mt-1 text-xs text-muted">{TEXTO_O_QUE_E_VINCULO}</p>}
@@ -120,6 +125,25 @@ export function VinculoProfissional() {
           <button type="submit" disabled={ocupado} className={botao}>
             {ocupado ? "Conferindo…" : "Confirmar código"}
           </button>
+          {ativo && ativo !== dominio && (
+            <>
+              <p className="text-xs text-muted" data-testid="vinculo-mantem-atual">
+                Seu vínculo atual ({ativo}) continua até você confirmar este código. Se o código vencer ou for recusado, nada muda.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setErro(null);
+                  setDominio(ativo);
+                  setPasso("ok");
+                }}
+                className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-forest underline underline-offset-2"
+                data-testid="vinculo-manter-atual"
+              >
+                Manter o atual
+              </button>
+            </>
+          )}
         </form>
       )}
       {erro && (

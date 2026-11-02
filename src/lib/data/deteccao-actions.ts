@@ -138,7 +138,9 @@ export async function analisarFotosDoAnuncio(propertyId: string): Promise<Estado
       ligada: true,
       fotos: () => galeria(c, propertyId),
       analisadas: async () => {
-        const { data } = await c.admin.from("deteccao_fotos_analises").select("caminho, foto_hash").eq("property_id", propertyId);
+        const { data, error } = await c.admin.from("deteccao_fotos_analises").select("caminho, foto_hash").eq("property_id", propertyId);
+        // Leitura falha não vira "nenhuma foto analisada": todas iriam ao modelo de novo (gasto) nesta rodada.
+        if (error) throw new Error(`análises não lidas (${error.message})`);
         const linhas = (data ?? []) as { caminho: string; foto_hash: string }[];
         return { caminhos: new Set(linhas.map((l) => l.caminho)), hashes: new Set(linhas.map((l) => l.foto_hash)) };
       },

@@ -83,7 +83,9 @@ export async function adicionarImportacao(propertyId: string, link: string): Pro
   if (!d) return { ok: false, erro: "Anúncio não encontrado." };
   const v = urlIcalPermitida(link);
   if (!v.ok) return { ok: false, erro: v.erro };
-  const { count } = await d.admin.from("calendario_importacoes").select("id", { count: "exact", head: true }).eq("property_id", propertyId);
+  const { count, error: erroContagem } = await d.admin.from("calendario_importacoes").select("id", { count: "exact", head: true }).eq("property_id", propertyId);
+  // Contagem ilegível não vira 0: o limite vale sempre.
+  if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
   if ((count ?? 0) >= LIMITE_LINKS_POR_IMOVEL) return { ok: false, erro: `Até ${LIMITE_LINKS_POR_IMOVEL} calendários por imóvel. Remova um para colar outro.` };
   if (!(await consumirLimite(`calendario:add:${d.userId}`, 20, 3600))) return { ok: false, erro: "Muitas tentativas. Tente de novo em alguns minutos." };
   const teste = await lerLink(v.url);

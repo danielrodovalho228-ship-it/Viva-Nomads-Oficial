@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
+import { mensagemPortaQa } from "@/lib/qa/mensagens-porta";
 
 /** Nada a assinar: no servidor (e no HTML antes do JavaScript) vale false; no navegador hidratado, true. */
 const semAssinatura = () => () => {};
@@ -36,7 +37,8 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
       return;
     }
     setEnviando(false);
-    setErro(r?.status === 429 ? "Muitas entradas nesta hora. Tente mais tarde." : "Não foi possível entrar.");
+    // E361: a causa (limite com prazo, falha da conferência, causas possíveis do 404) em vez do genérico.
+    setErro(mensagemPortaQa(r ? r.status : null));
   }
 
   return (

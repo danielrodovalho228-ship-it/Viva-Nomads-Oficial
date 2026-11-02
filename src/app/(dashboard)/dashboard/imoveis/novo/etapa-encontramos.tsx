@@ -263,7 +263,7 @@ export function EtapaEncontramos(p: {
       )}
 
       <section className="space-y-3 border-t border-line pt-4" data-testid="seguranca-imovel">
-        <h3 className="text-base font-semibold text-ink">Segurança e imóvel</h3>
+        <h2 className="text-base font-semibold text-ink">Segurança e imóvel</h2>
         {grupos.filter((g) => g.category === "seguranca").map((g) => (
           <GrupoComodidades key={g.category} grupo={g} titulo={g.titulo} marcadas={p.amenityKeys} sugeridas={sugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
         ))}

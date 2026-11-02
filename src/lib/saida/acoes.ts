@@ -121,7 +121,8 @@ export async function registrarMotivoSaida(form: FormData): Promise<{ ok: true; 
   const detalhe = motivo && VALORES_SURPRESA.some((v) => v.chave === det) ? det : null;
   const texto = String(form.get("texto") ?? "").replace(/\s+/g, " ").trim().slice(0, 1000) || null;
   const ajuda = ajudaDoMotivo(papel, motivo);
-  const { data: perfil } = await s.admin.from("profiles").select("is_teste").eq("id", s.uid).maybeSingle();
+  // Varredura ampliada: sem a marca de teste, a saída segue (o motivo é gravado), mas não abre Correção.
+  const { data: perfil, error: erroPerfil } = await s.admin.from("profiles").select("is_teste").eq("id", s.uid).maybeSingle();
   const { data, error } = await s.admin
     .from("saidas_motivos")
     .insert({ user_id: s.uid, papel, nivel, motivo, detalhe, texto_livre: texto, ajuda_oferecida: ajuda?.chave ?? null, teste: perfil?.is_teste === true })
@@ -130,7 +131,7 @@ export async function registrarMotivoSaida(form: FormData): Promise<{ ok: true; 
   // Falhar ao gravar o motivo nunca impede a saída.
   if (error) console.error("[registrarMotivoSaida]", error.code, error.message);
   // Loop fechado: com mais de 3 saídas pelo mesmo motivo em 30 dias, a Correção aparece no painel de qualidade.
-  else if (motivo && perfil?.is_teste !== true) await abrirCorrecoesDevidas(s.admin).catch(() => null);
+  else if (motivo && !erroPerfil && perfil?.is_teste !== true) await abrirCorrecoesDevidas(s.admin).catch(() => null);
   return { ok: true, id: (data?.id as string | undefined) ?? null, ajuda };
 }
 
@@ -144,6 +145,8 @@ export async function aceitarAjudaSaida(id: string): Promise<Res> {
 
 // ── Denunciar anúncio ──────────────────────────────────────────────────────────────────────────────────────────
 /** Uma por conta por anúncio; vai à fila do atendimento (P1 para pagamento/contato fora, P2 o resto). Não tira da busca. */
+const MSG_DENUNCIA_SEM_LEITURA = "Não foi possível enviar a denúncia agora. Tente de novo.";
+
 export async function denunciarAnuncio(form: FormData): Promise<Res> {
   const s = await sessao();
   if (!s) return { ok: false, erro: "Entre com seu e-mail para denunciar o anúncio." };
@@ -152,10 +155,13 @@ export async function denunciarAnuncio(form: FormData): Promise<Res> {
   if (!/^[0-9a-f-]{36}$/i.test(propertyId)) return { ok: false, erro: "Anúncio não encontrado." };
   if (!motivoDenunciaValido(motivo)) return { ok: false, erro: "Escolha o motivo da denúncia." };
   const texto = String(form.get("texto") ?? "").replace(/\s+/g, " ").trim().slice(0, 1000) || null;
-  const { data: im } = await s.admin.from("properties").select("id, title, owner_id").eq("id", propertyId).maybeSingle();
+  // Varredura ampliada: anúncio ou perfil não lidos → "tente de novo" (nunca "não encontrado" nem denúncia mal marcada).
+  const { data: im, error: erroIm } = await s.admin.from("properties").select("id, title, owner_id").eq("id", propertyId).maybeSingle();
+  if (erroIm) return { ok: false, erro: MSG_DENUNCIA_SEM_LEITURA };
   if (!im) return { ok: false, erro: "Anúncio não encontrado." };
   if (im.owner_id === s.uid) return { ok: false, erro: "Este anúncio é seu." };
-  const { data: perfil } = await s.admin.from("profiles").select("is_teste").eq("id", s.uid).maybeSingle();
+  const { data: perfil, error: erroPerfil } = await s.admin.from("profiles").select("is_teste").eq("id", s.uid).maybeSingle();
+  if (erroPerfil) return { ok: false, erro: MSG_DENUNCIA_SEM_LEITURA };
   const { data: d, error } = await s.admin.from("denuncias_anuncio").insert({ property_id: propertyId, user_id: s.uid, motivo, texto, teste: perfil?.is_teste === true }).select("id").single();
   if (error?.code === "23505") return { ok: false, erro: "Você já denunciou este anúncio. Acompanhe o estado aqui mesmo." };
   if (error || !d) return { ok: false, erro: "Não foi possível enviar a denúncia agora. Tente de novo." };

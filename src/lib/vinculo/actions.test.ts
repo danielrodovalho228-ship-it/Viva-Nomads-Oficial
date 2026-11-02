@@ -17,13 +17,15 @@ test("as duas ações exigem sessão e usam o id da sessão, nunca um id vindo d
 test("o pedido recusa e-mail gratuito ANTES de gravar ou enviar, e tem limite por pessoa", () => {
   const c = corpo("pedirVinculo");
   assert.ok(c.indexOf("dominioCorporativo(") < c.indexOf("consumirLimite("));
-  assert.ok(c.indexOf("consumirLimite(") < c.indexOf(".upsert("));
-  assert.ok(c.indexOf(".upsert(") < c.indexOf("sendEmail("));
+  // 0283 (preservar o vínculo atual): o pedido grava por camposDoPedido (update/insert), nunca por upsert da linha toda.
+  assert.ok(c.indexOf("consumirLimite(") < c.indexOf("camposDoPedido("));
+  assert.ok(c.indexOf("camposDoPedido(") < c.indexOf("sendEmail("));
+  assert.doesNotMatch(c, /\.upsert\(/);
 });
 
 test("o código e o e-mail inteiro nunca vão para o banco nem voltam na resposta", () => {
   const c = corpo("pedirVinculo");
-  assert.match(c, /codigo_hash: hashDoCodigo\(/);
+  assert.match(c, /camposDoPedido\([\s\S]*?hashDoCodigo\(s\.user\.id, codigo\)/);
   assert.doesNotMatch(c, /codigo:\s*codigo|return \{ ok: true[^}]*codigo/);
   assert.doesNotMatch(c, /email:\s*emailBruto/);
   assert.match(c, /return \{ ok: true, dominio: d\.dominio \}/);
@@ -31,8 +33,8 @@ test("o código e o e-mail inteiro nunca vão para o banco nem voltam na respost
 
 test("palpite errado conta tentativa e a confirmação é de uso único", () => {
   const c = corpo("confirmarVinculo");
-  assert.match(c, /\.update\(\{ tentativas: tentativas \+ 1 \}\)[\s\S]*\.eq\("tentativas", tentativas\)/);
-  assert.match(c, /confirmado_em: new Date\(\)\.toISOString\(\), tentativas: MAX_TENTATIVAS/);
+  assert.match(c, /\.update\(camposDaRecusa\(tentativas\)\)[\s\S]*\.eq\("tentativas", tentativas\)/);
+  assert.match(c, /\.update\(camposDaConfirmacao\(p as LinhaVinculo, new Date\(\)\)\)/);
   assert.match(c, /\.eq\("codigo_hash"/);
 });
 
@@ -49,7 +51,8 @@ test("meuVinculo lê só a linha da sessão e só devolve o domínio quando conf
   const c = corpo("meuVinculo");
   assert.match(c, /await sessao\(\)/);
   assert.match(c, /\.eq\("user_id", s\.user\.id\)/);
-  assert.match(c, /data\?\.confirmado_em \? \{ dominio/);
+  assert.match(c, /const selo = seloAtivo\(/);
+  assert.match(c, /return selo \? \{ dominio: selo \} : null;/);
   assert.doesNotMatch(c, /codigo_hash/);
 });
 

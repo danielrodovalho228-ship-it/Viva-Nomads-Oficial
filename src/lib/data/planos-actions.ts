@@ -95,11 +95,13 @@ export async function definirAccountType(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: antes } = await admin
+  const { data: antes, error: erroAntes } = await admin
     .from("profiles")
     .select("account_type")
     .eq("id", profileId)
     .maybeSingle();
+  // Sem o tipo anterior, a trilha account_type_audit gravaria "individual" no lugar do valor real: não troca.
+  if (erroAntes) return { ok: false, error: "Não foi possível ler o tipo atual da conta. Tente de novo." };
   const old = (antes?.account_type as string) ?? "individual";
 
   const { error: uErr } = await admin

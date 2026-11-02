@@ -72,21 +72,19 @@ export function TelaNotificacoes() {
         </button>
       </p>
     );
-  if (!tipos || !canais)
-    return (
-      <div className="grid gap-4" aria-busy="true" data-testid="tela-notificacoes-carregando">
-        <span className="block h-56 rounded-xl bg-white" aria-hidden />
-        <span className="block h-56 rounded-xl bg-white" aria-hidden />
-      </div>
-    );
+  // Estabilidade (02/11): carregando, a MESMA tela (títulos e textos são fixos) com um trilho neutro no lugar de cada
+  // interruptor — nunca um estado ligado/desligado ainda não lido. Antes, dois blocos de 224 px viravam cartões de
+  // ~420 px e empurravam "Avisos recentes" (salto de layout 0,13 no celular).
+  const carregando = !tipos || !canais;
+  const trilho = <span className="block h-6 w-11 shrink-0 rounded-full bg-surface-2" aria-hidden data-testid="notif-trilho-carregando" />;
 
   return (
-    <div className="grid gap-4" data-testid="tela-notificacoes">
+    <div className="grid gap-4" aria-busy={carregando || undefined} data-testid={carregando ? "tela-notificacoes-carregando" : "tela-notificacoes"}>
       <section className="rounded-xl bg-white px-4 sm:px-6" aria-label="Tipos de aviso">
         <ul className="divide-y divide-line">
           {TIPOS_AVISO.map((t) => (
             <Linha key={t.categoria} titulo={t.titulo} texto={t.texto}>
-              <Switch checked={tipos[t.categoria]} onChange={(v) => setTipos({ ...tipos, [t.categoria]: v })} label={t.titulo} testId={`notif-tipo-${t.categoria}`} />
+              {tipos ? <Switch checked={tipos[t.categoria]} onChange={(v) => setTipos({ ...tipos, [t.categoria]: v })} label={t.titulo} testId={`notif-tipo-${t.categoria}`} /> : trilho}
             </Linha>
           ))}
         </ul>
@@ -100,7 +98,7 @@ export function TelaNotificacoes() {
         <ul className="divide-y divide-line">
           {CANAIS_AVISO.map((c) => (
             <Linha key={c.canal} titulo={c.titulo} texto={c.texto}>
-              <Switch checked={canais[c.canal]} onChange={(v) => setCanaisUi({ ...canais, [c.canal]: v })} label={c.titulo} testId={`notif-canal-${c.canal}`} />
+              {canais ? <Switch checked={canais[c.canal]} onChange={(v) => setCanaisUi({ ...canais, [c.canal]: v })} label={c.titulo} testId={`notif-canal-${c.canal}`} /> : trilho}
             </Linha>
           ))}
         </ul>
@@ -110,7 +108,7 @@ export function TelaNotificacoes() {
               {msg.texto}
             </p>
           )}
-          <Button type="button" size="lg" onClick={salvar} disabled={salvando} data-testid="notif-salvar">
+          <Button type="button" size="lg" onClick={salvar} disabled={salvando || carregando} data-testid="notif-salvar">
             {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Salvar preferências
           </Button>
         </div>

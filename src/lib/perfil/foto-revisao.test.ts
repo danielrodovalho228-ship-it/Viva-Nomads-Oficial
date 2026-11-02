@@ -75,7 +75,7 @@ test("denúncia: motivo próprio só pelo contexto 'perfil'; a foto volta para o
   assert.equal(cat.soContexto, "perfil");
   assert.equal(filaDaCategoria("foto_perfil"), "suporte");
   const at = ler("lib/data/atendimento-actions.ts");
-  assert.match(at, /if \(cat\.key === "foto_perfil" && contextoTipo === "perfil" && contextoId && \(await reabrirFotoPorDenuncia\(admin, contextoId\)/);
+  assert.match(at, /if \(cat\.key === "foto_perfil" && contextoTipo === "perfil" && contextoId\) \{\n    const reaberta = await reabrirFotoPorDenuncia\(admin, contextoId\)/);
   assert.match(at, /if \(id === userId\) return false;/);
   const srv = ler("lib/data/fotos-perfil-servidor.ts");
   assert.match(srv, /update\(\{ denunciada_em: agora \}\)\.eq\("user_id", userId\)\.eq\("status", "em_revisao"\)/);

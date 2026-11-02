@@ -20,7 +20,7 @@ export function ehDonoDoChamado(c: ChamadoDono | null | undefined, userId: strin
 /** O mínimo do cliente Supabase que a busca usa (o real, ou um falso nos testes). */
 interface ConsultaChamado {
   eq(coluna: string, valor: string): ConsultaChamado;
-  maybeSingle(): PromiseLike<{ data: unknown }>;
+  maybeSingle(): PromiseLike<{ data: unknown; error?: unknown }>;
 }
 export interface ClienteChamados {
   from(tabela: "chamados"): { select(colunas: string): ConsultaChamado };
@@ -40,7 +40,9 @@ export async function chamadoDoDono<T extends ChamadoDono>(
 ): Promise<T | null> {
   let q = cliente.from("chamados").select(`usuario_id, ${colunas}`).eq("usuario_id", userId);
   q = "id" in filtro ? q.eq("id", filtro.id) : q.eq("numero_publico", filtro.numero);
-  const { data } = await q.maybeSingle();
+  // Resíduo da varredura: a falha da leitura LANÇA (quem chama diz "tente de novo"); nunca "não encontrado".
+  const { data, error } = await q.maybeSingle();
+  if (error) throw new Error("Não foi possível ler o chamado.");
   const c = data as T | null;
   return ehDonoDoChamado(c, userId) ? c : null;
 }

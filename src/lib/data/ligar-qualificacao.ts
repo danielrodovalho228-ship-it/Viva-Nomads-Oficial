@@ -13,14 +13,15 @@ type Cliente = any;
 
 export async function ligarQualificacaoAoImovel(cliente: Cliente, ownerId: string, propertyId: string): Promise<boolean> {
   try {
-    const { data: jaTem } = await cliente
+    const { data: jaTem, error: erroJaTem } = await cliente
       .from("qualification_checklists")
       .select("id")
       .eq("owner_id", ownerId)
       .eq("property_id", propertyId)
       .limit(1)
       .maybeSingle();
-    if (jaTem) return false;
+    // Leitura falha não vira "o imóvel não tem qualificação": ligaria outra à espera a um imóvel que já tem a sua.
+    if (erroJaTem || jaTem) return false;
     const { data: espera } = await cliente
       .from("qualification_checklists")
       .select("id, document_path")

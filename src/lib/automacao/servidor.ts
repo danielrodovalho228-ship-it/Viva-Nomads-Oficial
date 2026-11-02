@@ -90,11 +90,14 @@ export async function contratoDoEvento(admin: Admin, contratoId: string): Promis
 }
 
 export async function vinculosDoImovelAdmin(admin: Admin, propertyId: string): Promise<Vinculo[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("imovel_parceiros")
     .select("id, categoria, parceiro_id, servico_id, modo, status, instrucoes")
     .eq("property_id", propertyId)
     .in("status", ["pendente", "ativo"]);
+  // Leitura falha não vira "sem parceiro": avisaria o dono "saída sem parceiro" (chave única gasta) e deixaria a
+  // remarcação e o reparo da conferência sem pedido. Lança: aoEventoDaEstadia avisa a equipe (P2).
+  if (error) throw new Error(`vínculos do imóvel não lidos (${error.message})`);
   return ((data ?? []) as { id: string; categoria: Vinculo["categoria"]; parceiro_id: string; servico_id: string | null; modo: Vinculo["modo"]; status: Vinculo["status"]; instrucoes: string | null }[]).map(
     (v) => ({ id: v.id, categoria: v.categoria, parceiroId: v.parceiro_id, servicoId: v.servico_id, modo: v.modo, status: v.status, instrucoes: v.instrucoes }),
   );
@@ -248,7 +251,9 @@ export async function cancelarPorRemarcacao(admin: Admin, p: PedidoComChave, ago
  * reagendamento: volta a "aceito" com os horários da janela nova e o parceiro confirma ou recusa a nova data.
  */
 async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atualizar" }>, saida: string, agora: Date): Promise<boolean> {
-  const { data } = await admin.from("parceiro_pedidos").select(COLS_AUTO).eq("chave_automacao", acao.chave).maybeSingle();
+  // Varredura ampliada: a leitura que falha LANÇA (aoEventoDaEstadia avisa a equipe); nunca "nada a fazer" calado.
+  const { data, error: erroPedido } = await admin.from("parceiro_pedidos").select(COLS_AUTO).eq("chave_automacao", acao.chave).maybeSingle();
+  if (erroPedido) throw new Error("Não foi possível ler o pedido automático para remarcar.");
   const p = data as unknown as PedidoComChave | null;
   if (!p) return false;
   const decisao = decidirRemarcacao(p.status, saida, hojeEmBrasilia(agora));
@@ -283,13 +288,14 @@ async function atualizarPedido(admin: Admin, acao: Extract<Acao, { tipo: "atuali
  * na conferência de saída continua: é do imóvel, não da estadia.
  */
 async function cancelarAutomaticos(admin: Admin, contratoId: string, agora: Date): Promise<number> {
-  const { data } = await admin
+  const { data, error: erroPedidos } = await admin
     .from("parceiro_pedidos")
     .select(COLS_AUTO)
     .eq("contrato_id", contratoId)
     .eq("origem", "automatico")
     .in("gatilho", ["saida_limpeza", "saida_lavanderia"])
     .in("status", STATUS_NAO_ACEITOS as unknown as string[]);
+  if (erroPedidos) throw new Error("Não foi possível ler os pedidos automáticos para cancelar.");
   let n = 0;
   for (const p of (data ?? []) as unknown as PedidoAuto[]) {
     const { data: ok } = await admin.from("parceiro_pedidos").update({ status: "cancelado", atualizado_em: agora.toISOString() }).eq("id", p.id).eq("status", p.status).select("id");
@@ -312,6 +318,18 @@ export interface Resultado {
 }
 
 /** Grava o que a regra pura decidiu. */
+/** Aviso P2 ao Daniel (sem dado pessoal): a automação de um evento único falhou; a equipe confere à mão. */
+async function avisarFalhaAutomacao(admin: Admin, tipo: string, contratoId: string): Promise<void> {
+  await admin
+    .from("avisos_daniel")
+    .insert({
+      assunto: `Automação da estadia falhou (${tipo})`,
+      corpo: `Os pedidos automáticos de parceiro do contrato ${contratoId} podem não ter sido atualizados ou cancelados. Confira em Admin → Serviços.`,
+      prioridade: "P2",
+    })
+    .then(undefined, () => {});
+}
+
 export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes: Acao[], agora: Date): Promise<Resultado> {
   const r: Resultado = { criados: 0, atualizados: 0, cancelados: 0, avisos: 0 };
   for (const a of acoes) {
@@ -340,6 +358,9 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
       }
     } catch (e) {
       console.error("[automação]", a.tipo, e instanceof Error ? e.message : e);
+      // Correção do #2261: remarcar e cancelar são de evento único (sem nova tentativa) → a equipe fica sabendo.
+      // Criar não avisa: o cron diário tenta de novo e a chave da automação torna a criação idempotente.
+      if (a.tipo === "atualizar" || a.tipo === "cancelar_automaticos") await avisarFalhaAutomacao(admin, a.tipo, ctx.id);
     }
   }
   return r;
@@ -354,6 +375,8 @@ export async function aoEventoDaEstadia(admin: Admin, contratoId: string, ev: Ev
     return await executarAcoes(admin, ctx, pedidosDoEvento(ev, vinculos, ctx), agora);
   } catch (e) {
     console.error("[automação] evento:", ev.tipo, e instanceof Error ? e.message : e);
+    // O evento é único (sem nova tentativa): a equipe fica sabendo para conferir os pedidos do parceiro à mão.
+    await avisarFalhaAutomacao(admin, ev.tipo, contratoId);
     return null;
   }
 }

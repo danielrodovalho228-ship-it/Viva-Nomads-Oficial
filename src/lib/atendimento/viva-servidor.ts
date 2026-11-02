@@ -509,8 +509,10 @@ export async function responderNaEquipe(chamadoId: string, momento: "abertura" |
     const ultimaMsg = publicas[ultimaPessoa].corpo;
 
     // Pediu PESSOA (na abertura ou agora): nunca resposta da IA; prioridade +1 (uma vez).
-    const { count: jaPediu } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "pediu_humano");
-    let pediuPessoa = (jaPediu ?? 0) > 0;
+    const { count: jaPediu, error: erroPediu } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "pediu_humano");
+    // Leitura falha conta como "pediu": na dúvida, a Viva nunca responde sozinha a quem pode ter pedido uma pessoa
+    // (e a prioridade não sobe de novo).
+    let pediuPessoa = erroPediu ? true : (jaPediu ?? 0) > 0;
     let pediuAgora = false;
     if (momento === "mensagem" && !pediuPessoa && pedePessoaNoTexto(ultimaMsg)) {
       pediuPessoa = true;
@@ -621,8 +623,10 @@ export async function acolherNaEquipe(chamadoId: string): Promise<void> {
  * dispara a rotina dele na hora (encaminhamento urgente).
  */
 async function encaminharErroTecnico(admin: Admin, c: ChamadoViva, mensagem: string): Promise<void> {
-  const { count } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "erro_tecnico");
-  if ((count ?? 0) > 0) return;
+  const { count, error: erroJa } = await admin.from("chamado_eventos").select("id", { count: "exact", head: true }).eq("chamado_id", c.id).eq("acao", "erro_tecnico");
+  // Sem saber se já encaminhou, não encaminha de novo: ordens em dobro ao Renato (P1, dispara na hora) e ao Otávio.
+  // O chamado continua com a equipe (o erro técnico já tira a resposta automática).
+  if (erroJa || (count ?? 0) > 0) return;
   const url = urlDoErro(mensagem) ?? (c.contexto_tipo && c.contexto_id ? `${c.contexto_tipo} ${c.contexto_id}` : null);
   for (const [para, prioridade] of [["renato", "P1"], ["otavio", "P2"]] as const) {
     const texto = textoOrdemErro({ numero: c.numero_publico, url, mensagem, para });
@@ -727,7 +731,10 @@ export async function devolverChamadoParaViva(chamadoId: string, adminId: string
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   const pode = podeDevolverParaViva(c.prioridade, c.status);
   if (!pode.ok) return { ok: false, error: pode.motivo ?? "Não pode voltar para a Viva." };
-  const { data: msgs } = await admin.from("chamado_mensagens").select("autor").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  const { data: msgs, error: erroMsgs } = await admin.from("chamado_mensagens").select("autor").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  // Sem as mensagens, não dá para saber se a pessoa espera resposta: devolver assim deixaria a última mensagem sem a
+  // resposta da Viva (e o status errado).
+  if (erroMsgs) return { ok: false, error: "Não foi possível ler as mensagens do chamado agora. Tente de novo." };
   const autores = ((msgs ?? []) as { autor: string }[]).map((m) => m.autor);
   const ultimaPessoa = autores.lastIndexOf("usuario");
   const respondeAgora = ultimaPessoa >= 0 && !autores.slice(ultimaPessoa + 1).some((a) => a === "ia" || a === "admin");
@@ -747,10 +754,13 @@ export async function devolverChamadoParaViva(chamadoId: string, adminId: string
 export async function gerarResumo(chamadoId: string): Promise<{ resumo: ResumoChamado; simulacao: boolean } | null> {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  // Resíduo da varredura: a falha da leitura LANÇA (nunca resumo de uma conversa vazia gravado como nota).
+  const { data, error: erroChamado } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  if (erroChamado) throw new Error("Não foi possível ler o chamado.");
   const c = data as ChamadoViva | null;
   if (!c) return null;
-  const { data: msgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  const { data: msgs, error: erroMsgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  if (erroMsgs) throw new Error("Não foi possível ler as mensagens do chamado.");
   const lista = (msgs ?? []) as { autor: "usuario" | "ia" | "admin" | "sistema"; corpo: string; interno: boolean }[];
   const textoPessoa = lista.filter((m) => m.autor === "usuario").map((m) => m.corpo).join("\n");
   const regras = () => resumoPorRegra(textoPessoa, !c.usuario_id);

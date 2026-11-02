@@ -30,6 +30,8 @@ import {
 import { hojeBR } from "@/lib/utils";
 
 const BUCKET = "property-docs";
+/** Varredura ampliada: o que decide (duplicado, perfil, laudo) ou o que a linha herda não foi lido → "tente de novo". */
+const MSG_CONFERIR_SEM_LEITURA = "Não foi possível conferir o documento agora. Tente de novo em instantes.";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -88,13 +90,15 @@ export async function POST(request: Request) {
   const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  const { count: duplicado } = await admin
+  const { count: duplicado, error: erroDuplicado } = await admin
     .from("qualification_checklists")
     .select("id", { count: "exact", head: true })
     .eq("document_hash_sha256", hash)
     .neq("owner_id", user.id);
 
-  const { data: perfil } = await admin.from("profiles").select("full_name, cpf, cnpj, is_teste").eq("id", user.id).maybeSingle();
+  const { data: perfil, error: erroPerfil } = await admin.from("profiles").select("full_name, cpf, cnpj, is_teste").eq("id", user.id).maybeSingle();
+  // Sem saber se o documento já foi usado por outra conta (antifraude) ou sem o perfil, não decide nem lê o documento.
+  if (erroDuplicado || erroPerfil) return NextResponse.json({ error: MSG_CONFERIR_SEM_LEITURA }, { status: 503 });
   const cadastro: CadastroComparado = {
     nomeConta: (perfil?.full_name as string | null) ?? null,
     endereco: { cep: s(end.cep, 9), rua: s(end.rua, 150), numero: s(end.numero, 20), bairro: s(end.bairro, 100), cidade: s(end.cidade, 100) },
@@ -117,10 +121,14 @@ export async function POST(request: Request) {
   const ultima = async (doImovel: string | null) => {
     let q = admin.from("qualification_checklists").select("*").eq("owner_id", user.id);
     q = doImovel ? q.eq("property_id", doImovel) : q.is("property_id", null);
-    return (await q.order("created_at", { ascending: false }).limit(1).maybeSingle()).data;
+    const { data, error } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+    // Varredura ampliada: sem a qualificação anterior, a linha nova nasceria sem as respostas do dono.
+    if (error) throw new Error("Não foi possível ler a qualificação anterior.");
+    return data;
   };
   // Imóvel já com rascunho: a dele; sem nenhuma ainda, a que estava à espera (respondida antes do rascunho existir).
-  const anterior = (imovelId ? await ultima(imovelId) : null) ?? (await ultima(null));
+  const anterior = await (async () => ((imovelId ? await ultima(imovelId) : null) ?? (await ultima(null))))().catch(() => "falhou" as const);
+  if (anterior === "falhou") return NextResponse.json({ error: MSG_CONFERIR_SEM_LEITURA }, { status: 503 });
   const herdado: Record<string, unknown> = { ...(anterior ?? {}) };
   for (const k of [
     "id", "created_at", "document_path", "document_hash_sha256", "document_uploaded_at", "document_status",
@@ -145,13 +153,14 @@ export async function POST(request: Request) {
       ? { leitura: null, conferidor: lida!.conferidor, modelo: lida!.modelo, falha: falhaLeitura }
       : await lerMatricula(arquivo, { perfil: perfilDono, endereco: cadastro.endereco, hoje: cadastro.hoje });
     // Laudo CAF mais recente da pessoa (12 meses). O simulado só vale no laboratório ou em conta de teste.
-    const { data: laudo } = await admin
+    const { data: laudo, error: erroLaudo } = await admin
       .from("tenant_verifications")
       .select("caf_result, traffic_light, valid_until, created_at")
       .eq("tenant_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (erroLaudo) return NextResponse.json({ error: MSG_CONFERIR_SEM_LEITURA }, { status: 503 });
     const caf = resumoDoLaudo((laudo as LaudoCafGravado | null) ?? null, agora, integracoesSimuladas() || perfil?.is_teste === true);
     const d = decisaoComFalhaDeLeitura(
       decidirMatricula(mat, { perfil: perfilDono, caf, enderecoCadastro: cadastro.endereco, duplicado: cadastro.duplicado, hoje: cadastro.hoje }),

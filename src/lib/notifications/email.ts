@@ -150,6 +150,8 @@ export async function sendEmail(params: {
         imagem: params.imagem,
         usuarioId: params.usuarioId,
         anexos: params.attachments?.map((a) => a.filename),
+        // E435: a versão HTML também vai para a caixa (sem links com token de acesso).
+        html: params.html,
         // E274: a foto de capa de cada cartão de imóvel (o texto puro não a tem), para o QA conferir na caixa.
         fotos: fotosDosCartoes(params.html),
       });

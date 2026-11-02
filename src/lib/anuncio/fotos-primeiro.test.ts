@@ -17,7 +17,8 @@ const pagina = lerCadastro();
 const uploader = ler("components/photo-uploader.tsx");
 
 test("o cadastro abre pela primeira etapa da ordem (Onde fica, prompt 10)", () => {
-  assert.match(pagina, /useState<number>\(ORDEM_ETAPAS\[0\]\)/);
+  // Estabilidade (02/11): sem ?etapa= na URL (ou na edição), a primeira etapa da ordem; com ?etapa=, o passo pedido.
+  assert.match(pagina, /return e !== null && !paramsIniciais\.get\("id"\) \? e : ORDEM_ETAPAS\[0\];/);
 });
 
 test("a qualificação não é mais um portão que esconde o cadastro", () => {

@@ -20,7 +20,9 @@ export async function gravarIntencao(
   intencao: Intencao[],
   modo: "owner" | "tenant" | null,
 ): Promise<{ ok: boolean; papelAplicado: "owner" | "tenant" | null }> {
-  const { data: antes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", userId).maybeSingle();
+  const { data: antes, error: erroAntes } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", userId).maybeSingle();
+  // Leitura falha não vira "primeiro acesso": trocaria o papel ativo e o modo de uma conta que já tem os seus.
+  if (erroAntes) return { ok: false, papelAplicado: null };
   const a = antes as { intencao?: unknown; papel_ativo?: unknown } | null;
   const primeiroAcesso = contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo);
   const { error } = await supabase.from("profiles").update({ intencao }).eq("id", userId);
@@ -50,7 +52,9 @@ export async function gravarIntencao(
  */
 export async function registrarIntencaoDeAnunciar(supabase: SupabaseClient, userId: string): Promise<void> {
   try {
-    const { data } = await supabase.from("profiles").select("intencao").eq("id", userId).maybeSingle();
+    const { data, error } = await supabase.from("profiles").select("intencao").eq("id", userId).maybeSingle();
+    // Leitura falha não vira "intenção vazia": ["anunciar"] substituiria a intenção inteira (perderia "morar").
+    if (error) return;
     const bruto = (data as { intencao?: unknown } | null)?.intencao;
     const nova = intencaoAoAnunciar(bruto == null ? null : normalizarIntencoes(bruto));
     if (nova) await gravarIntencao(supabase, userId, nova, "owner");

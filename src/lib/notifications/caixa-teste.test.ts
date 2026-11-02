@@ -17,7 +17,9 @@ test("registro: corta tamanhos, tira controle e só aceita uuid válido", () => 
   assert.equal(r.corpo.length, CORPO_MAX);
   assert.equal(r.usuario_id, null);
   assert.equal(r.destinatario_mascarado, "a•••@b.com");
-  assert.ok(!JSON.stringify(r).includes("a@b.com"));
+  // E435 (02/11): o endereço inteiro fica SÓ na coluna `destinatario` (conta de teste, leitor de QA); o resto continua mascarado.
+  assert.equal(r.destinatario, "a@b.com");
+  assert.ok(!JSON.stringify({ ...r, destinatario: undefined }).includes("a@b.com"));
   const ok = montarRegistroEmailTeste({ evento: "e", assunto: "a", texto: "t", para: "x@y.com", usuarioId: "11111111-1111-4111-8111-111111111111" });
   assert.equal(ok.usuario_id, "11111111-1111-4111-8111-111111111111");
 });

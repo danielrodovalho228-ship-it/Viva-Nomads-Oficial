@@ -64,7 +64,8 @@ export async function registrarDocumento(admin: Admin, e: EntradaRegistro): Prom
   let numero = e.numero ?? null;
   let versao = 1;
   if (e.novaVersao) {
-    const { data: anterior } = await admin
+    // Varredura ampliada: sem ler a anterior, lança — nunca um número novo do contador para a nova versão.
+    const { data: anterior, error: erroAnterior } = await admin
       .from("documentos_registro")
       .select("numero, versao")
       .eq("prefixo", e.prefixo)
@@ -73,6 +74,7 @@ export async function registrarDocumento(admin: Admin, e: EntradaRegistro): Prom
       .order("versao", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (erroAnterior) throw new ErroRegistro(`registro: versão anterior não lida (${erroAnterior.message})`);
     if (anterior) {
       numero = anterior.numero as string;
       versao = Math.max(Number(anterior.versao) + 1, e.versao ?? 0);
@@ -87,7 +89,9 @@ export async function registrarDocumento(admin: Admin, e: EntradaRegistro): Prom
   const bytes = await e.conteudo({ numero, versao, codigo });
   const hash = sha256(typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes);
 
-  const { data: perfis } = partes.length ? await admin.from("profiles").select("is_teste").in("id", partes) : { data: [] };
+  const { data: perfis, error: erroPerfis } = partes.length ? await admin.from("profiles").select("is_teste").in("id", partes) : { data: [], error: null };
+  // Sem saber se as partes são de teste, não registra (nunca um documento de teste contado como real).
+  if (erroPerfis) throw new ErroRegistro(`registro: marca de teste das partes não lida (${erroPerfis.message})`);
   const isTeste = ((perfis ?? []) as { is_teste: boolean | null }[]).some((p) => p.is_teste === true);
 
   const { data, error } = await admin.rpc("registrar_documento", {

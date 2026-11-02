@@ -106,6 +106,8 @@ import {
   documentoNoSalvar,
   hashValido,
   limparTitularDocumento,
+  MSG_DOCUMENTO_JA_CONFERIDO,
+  novoDocumentoBloqueado,
   linhaDoEnvio,
   salvarNaMesmaLinha,
   CAMPOS_FIXOS_DA_FILA,
@@ -152,9 +154,15 @@ export async function saveQualification(
   // aviso. Arquivo que ainda não está na fila segue o caminho de antes (entra "em análise" e avisa).
   let ultimoQ = supabase.from("qualification_checklists").select("id, document_path, document_status").eq("owner_id", user.id);
   ultimoQ = propertyId ? ultimoQ.eq("property_id", propertyId) : ultimoQ.is("property_id", null);
-  const { data: ultimo } = documentPath
+  const { data: ultimo, error: erroUltimo } = documentPath
     ? await ultimoQ.order("created_at", { ascending: false }).limit(1).maybeSingle()
-    : { data: null };
+    : { data: null, error: null };
+  // Leitura falha não vira "arquivo novo": o mesmo documento entraria de novo na fila (e a equipe seria avisada outra vez).
+  if (erroUltimo) return { ok: false, error: "Não foi possível salvar a qualificação agora. Tente de novo." };
+  // Documento conferido nunca é rebaixado por um arquivo novo (a troca é com a equipe).
+  if (novoDocumentoBloqueado(ultimo?.document_status as string | null | undefined, ultimo?.document_path as string | null | undefined, documentPath ?? null)) {
+    return { ok: false, error: MSG_DOCUMENTO_JA_CONFERIDO };
+  }
   const doc = documentoNoSalvar((ultimo?.document_path as string | null | undefined) ?? null, documentPath ?? null);
   const docGravado = doc.gravarPath;
 
@@ -280,7 +288,14 @@ export async function enviarDocumentoParaConferencia(
   // Respostas da qualificação anterior do MESMO imóvel (ou da que está à espera): a linha nova só troca o documento.
   let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
-  const { data: anterior } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: anterior, error: erroAnterior } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+  // Leitura falha não vira "sem qualificação anterior": duplicaria o item na fila (e o aviso à equipe) e a linha nova
+  // perderia as respostas já dadas.
+  if (erroAnterior) return { ok: false, error: "Não foi possível enviar o documento agora. Tente de novo." };
+  // Documento conferido nunca é rebaixado por um arquivo novo (a troca é com a equipe).
+  if (novoDocumentoBloqueado(anterior?.document_status as string | null | undefined, anterior?.document_path as string | null | undefined, path)) {
+    return { ok: false, error: MSG_DOCUMENTO_JA_CONFERIDO };
+  }
   if (anterior && documentoJaNaFila(anterior.document_path as string | null, path)) {
     return { ok: true, id: anterior.id as string };
   }
@@ -1058,7 +1073,10 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
 
   // Status ANTES da edição: só a PUBLICAÇÃO (rascunho/pausado → ativo) avisa
   // os pedidos compatíveis — editar um anúncio já ativo não reenvia avisos.
-  const { data: antes } = await supabase.from("properties").select("status, owner_id, video_url").eq("id", id).maybeSingle();
+  const { data: antes, error: erroAntes } = await supabase.from("properties").select("status, owner_id, video_url").eq("id", id).maybeSingle();
+  // Sem o estado anterior, a edição não sabe se é publicação (avisaria os pedidos de novo) nem grava o conforto:
+  // para antes de qualquer gravação.
+  if (erroAntes) return { ok: false, error: "Não foi possível salvar o anúncio agora. Tente de novo em instantes." };
 
   // E133 (d): link de vídeo NOVO (ou trocado) só da plataforma, existente e incorporável; o já gravado não é refeito.
   const linkVideo = input.videoUrl?.trim() || null;
@@ -1186,7 +1204,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   if ("detalhesAnuncio" in input) {
     try {
       // TIPO-CHACARA-B: o grupo do tipo não vem do formulário de detalhes (não tem toggle): mantém o gravado.
-      const { data: det } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      const { data: det, error: erroDet } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
+      // Leitura falha: regravar a coluna apagaria o grupo da chácara (que este formulário não traz). Mantém o gravado.
+      if (erroDet) throw new Error(`detalhes não lidos (${erroDet.message})`);
       const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
       // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
       const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
@@ -1196,8 +1216,9 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
         .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
         .eq("id", id)
         .eq("owner_id", user.id);
-    } catch {
-      /* migração 0235 ausente — segue sem os detalhes */
+    } catch (e) {
+      /* migração 0235 ausente (ou leitura falha) — segue sem regravar os detalhes */
+      if (e instanceof Error) console.error("[updateProperty] detalhes:", e.message);
     }
   }
   await gravarChacara(supabase, user.id, id, input);
@@ -1519,6 +1540,8 @@ export async function registrarContrato(
 // vários imóveis — e corta scripts de spam de notificação ao proprietário.
 const LEAD_LIMITE_HORA = 20;
 
+const MSG_CONTATO_SEM_LEITURA = "Não foi possível enviar agora. Tente de novo em instantes.";
+
 export async function requestLead(
   propertyId: string,
   // Ignorado: o título vem do BANCO. O que o navegador manda não entra no
@@ -1605,11 +1628,13 @@ export async function requestLead(
   // teto mira a largura — muitos imóveis distintos em pouco tempo.
   {
     const desdeUmaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count } = await supabase
+    const { count, error: erroContagem } = await supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", user.id)
       .gte("created_at", desdeUmaHora);
+    // Contagem ilegível não vira "0 contatos": o teto por hora vale sempre.
+    if (erroContagem) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
     if ((count ?? 0) >= LEAD_LIMITE_HORA) {
       return {
         ok: false,
@@ -1631,12 +1656,15 @@ export async function requestLead(
   // Imóvel real: grava lead + abre conversa. Dedup por (imóvel, interessado)
   // para que cliques repetidos não criem leads/mensagens duplicados.
   {
-    const { data: existing } = await supabase
+    const { data: existing, error: erroExistente } = await supabase
       .from("leads")
       .select("id")
       .eq("property_id", propertyId)
       .eq("tenant_id", user.id)
       .maybeSingle();
+    // Leitura falha não vira "contato novo": sem índice único em (imóvel, interessado), seria outro lead, outra
+    // mensagem e outro e-mail ao dono — e, com dois leads, o maybeSingle falharia sempre e somaria mais.
+    if (erroExistente) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
     novoContato = !existing;
     leadId = (existing?.id as string | undefined) ?? null;
     if (!existing) {
@@ -1871,8 +1899,10 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
-  const { data: fotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null };
+  const { data: dono, error: erroDono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
+  // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
+  if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
   for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
     try {
       await supabase.from(table).delete().eq("property_id", id);

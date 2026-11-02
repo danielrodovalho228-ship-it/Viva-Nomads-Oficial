@@ -88,12 +88,14 @@ export function LinhaNumero({
             onClick={() => mudar(-passo)}
             disabled={atual !== null && atual <= min}
             aria-label={`Diminuir ${label}`}
-            className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2 disabled:opacity-40"
+            className="alvo-toque grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2 disabled:opacity-40"
           >
             <Minus className="h-4 w-4" aria-hidden />
           </button>
-          {/* Miolo de largura fixa: o sufixo (m²) cabe dentro, e todos os contadores têm a mesma largura (E134). */}
-          <span className="flex w-20 items-center justify-center">
+          {/* Miolo de largura fixa: o sufixo (m²) cabe dentro, e todos os contadores têm a mesma largura (E134).
+              Varredura 02/11: o miolo é um <label> que ocupa a altura inteira da pílula (44 px, -my-1 sobre o p-1) — tocar
+              em qualquer ponto dele foca o número; antes, só a linha de 36 px do campo. */}
+          <label className="-my-1 flex w-20 cursor-text items-center justify-center self-stretch" data-testid="contador-miolo">
             <input
               type="number"
               inputMode="numeric"
@@ -108,12 +110,12 @@ export function LinhaNumero({
               data-testid={testid}
             />
             {sufixo && <span className="shrink-0 text-xs text-muted">{sufixo}</span>}
-          </span>
+          </label>
           <button
             type="button"
             onClick={() => mudar(passo)}
             aria-label={`Aumentar ${label}`}
-            className="grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2"
+            className="alvo-toque grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2"
           >
             <Plus className="h-4 w-4" aria-hidden />
           </button>

@@ -300,7 +300,7 @@ export function EtapaRevisar(p: {
 function MotivoTravado({ motivo, onMotivo }: { motivo: string | null; onMotivo: () => void }) {
   if (!motivo) return null;
   return (
-    <button type="button" onClick={onMotivo} className="block w-full text-balance text-center text-sm font-medium text-red-700 underline-offset-2 hover:underline" data-testid="publicar-motivo">
+    <button type="button" onClick={onMotivo} className="alvo-toque block w-full text-balance text-center text-sm font-medium text-red-700 underline-offset-2 hover:underline" data-testid="publicar-motivo">
       {motivo}
     </button>
   );
