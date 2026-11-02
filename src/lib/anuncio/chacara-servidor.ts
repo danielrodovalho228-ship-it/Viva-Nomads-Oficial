@@ -42,8 +42,14 @@ export async function centroDaCidade(cidade: string, uf: string): Promise<PontoM
  */
 export async function gravarChacara(supabase: SupabaseClient, ownerId: string, id: string, input: EntradaChacara): Promise<void> {
   try {
-    const { data } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", ownerId).maybeSingle();
-    const atual = normalizarDetalhes(data?.detalhes_anuncio) ?? {};
+    const { data, error } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", ownerId).maybeSingle();
+    // Achado 116: sem ler os detalhes, não grava — senão o "atual" vazio apagaria os outros grupos de detalhes_anuncio
+    // (o update reescreve o jsonb inteiro). Sem linha (não é do dono), também não há o que gravar.
+    if (error || !data) {
+      if (error) console.error("[gravarChacara] leitura", error.code);
+      return;
+    }
+    const atual = normalizarDetalhes(data.detalhes_anuncio) ?? {};
     const anterior = normalizarChacara(atual.chacara);
     let novo = { ...atual };
     if (!ehChacara(input.propertyType)) {
