@@ -3187,6 +3187,15 @@
         "t266-painel-42"
       ]
     },
+    "/api/painel/avisos": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t830-e444-sino-faixa"
+      ]
+    },
     "/api/automacao/pedidos/[id]": {
       "personas": [
         "proprietario"
