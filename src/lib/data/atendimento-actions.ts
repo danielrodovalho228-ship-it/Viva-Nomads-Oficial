@@ -856,11 +856,15 @@ export async function metricasAtendimento(dias = 30): Promise<Record<string, unk
  * telefone, e-mail mascarado. CADA consulta fica no histórico do chamado
  * (quem viu, quando).
  */
+const MSG_PESSOA_SEM_LEITURA = "Não foi possível ler os dados da pessoa agora. Tente de novo.";
+
 export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: PessoaResumo }>> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
   const { admin } = ctx;
-  const { data: c } = await admin.from("chamados").select("id, usuario_id, visitante_email, visitante_nome").eq("id", chamadoId).maybeSingle();
+  // Resíduo da varredura: leitura que falha → "tente de novo"; nunca um perfil incompleto ("conta nova", "sem contratos").
+  const { data: c, error: erroChamado } = await admin.from("chamados").select("id, usuario_id, visitante_email, visitante_nome").eq("id", chamadoId).maybeSingle();
+  if (erroChamado) return { ok: false, error: MSG_PESSOA_SEM_LEITURA };
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   await admin.from("chamado_eventos").insert({ chamado_id: c.id, ator_tipo: "admin", ator_id: ctx.userId, acao: "consulta_pessoa", detalhe: "painel Quem é a pessoa" });
 
@@ -872,7 +876,7 @@ export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: Pes
   }
   const uid = c.usuario_id as string;
   const camposContrato = "id, status, properties!inner(title, owner_id), contrato_blocos(inicio, fim)";
-  const [{ data: perfil }, { data: props }, { data: comoInquilino }, { data: comoDono }, { data: pedidos }, { data: anteriores }] = await Promise.all([
+  const leituras = await Promise.all([
     admin.from("profiles").select("full_name, email, role, created_at").eq("id", uid).maybeSingle(),
     admin.from("properties").select("id, title, status").eq("owner_id", uid).order("created_at", { ascending: false }).limit(10),
     admin.from("contratos").select(camposContrato).eq("tenant_id", uid).order("created_at", { ascending: false }).limit(5),
@@ -880,6 +884,8 @@ export async function quemEAPessoa(chamadoId: string): Promise<Res<{ pessoa: Pes
     admin.from("pedidos_moradia").select("status").eq("inquilino_id", uid).limit(50),
     admin.from("chamados").select("numero_publico, assunto, status, criado_em").eq("usuario_id", uid).neq("id", c.id).eq("simulacao", false).order("criado_em", { ascending: false }).limit(5),
   ]);
+  if (leituras.some((l) => l.error)) return { ok: false, error: MSG_PESSOA_SEM_LEITURA };
+  const [{ data: perfil }, { data: props }, { data: comoInquilino }, { data: comoDono }, { data: pedidos }, { data: anteriores }] = leituras;
   const prontidao = props?.length ? await prontidaoDosImoveis(admin, uid, props.map((p) => p.id as string)) : new Map();
   type LinhaContrato = { status: string; properties: { title?: string } | null; contrato_blocos: { inicio: string | null; fim: string | null }[] | null };
   const contrato = (k: LinhaContrato, papel: "inquilino" | "proprietário") => {
