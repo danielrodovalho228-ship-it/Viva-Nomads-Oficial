@@ -92,7 +92,8 @@ test.describe("T1043 — E435: a caixa do QA com versão HTML, destinatário, de
       const quadro = html.locator("iframe");
       await expect(quadro).toBeVisible();
       await expect(quadro, "sandbox sem allow-scripts").toHaveAttribute("sandbox", "");
-      await expect(p.frameLocator('[data-testid="emails-teste-html"] iframe').first().getByRole("heading", { name: MARCA_HTML })).toBeVisible();
+      // O quadro da própria lista (cartões e tabela estão os dois no DOM; um frameLocator da página pegaria o escondido).
+      await expect(quadro.contentFrame().getByRole("heading", { name: MARCA_HTML })).toBeVisible();
 
       const sobra = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(sobra, "sem estouro horizontal").toBeLessThanOrEqual(0);
