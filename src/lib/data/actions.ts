@@ -1,6 +1,6 @@
 "use server";
 
-import { idDeRascunhoValido, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
+import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -2019,6 +2019,10 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, motivo: "nao_encontrado" };
+  // E420 (resíduo): só o dono abre. Admin e quem tem candidatura também recebem a linha privada (com draft_data nulo).
+  const { data: dono, error: erroDono } = await supabase.from("properties").select("owner_id").eq("id", id).maybeSingle();
+  if (erroDono) return { ok: false, motivo: "indisponivel" };
+  if (!rascunhoDaConta(dono as { owner_id?: string | null } | null, user.id)) return { ok: false, motivo: "nao_encontrado" };
   const { data, error } = await supabase.rpc("property_private_details", { prop_id: id });
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
