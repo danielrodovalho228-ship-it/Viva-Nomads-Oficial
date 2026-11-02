@@ -3119,7 +3119,9 @@
       "personas": [
         "publico"
       ],
-      "specs": []
+      "specs": [
+        "t1048-e438-foto-parceiro-email"
+      ]
     },
     "/api/email/avatar": {
       "personas": [
