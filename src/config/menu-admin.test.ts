@@ -27,7 +27,7 @@ test("ordem da barra (instantâneo): Visão geral, Pendências e os sete grupos"
   assert.deepEqual(forma, [
     "Visão geral",
     "Pendências",
-    "Anúncios e pessoas: Anúncios · Publicamos para você · Pedidos de moradia · Usuários · Documentos · Fotos de perfil",
+    "Anúncios e pessoas: Anúncios · Publicamos para você · Pedidos de moradia · Usuários · Documentos · Fotos de perfil · Ofensas no chat",
     "Estadias: Contratos · Candidaturas · Manutenção · Serviços do morador · Atendimento",
     "Rede: Parceiros · Avaliações do imóvel",
     "Cidades e marketing: Cidades · Destinos · Marketing",

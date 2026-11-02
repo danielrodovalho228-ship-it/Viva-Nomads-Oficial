@@ -21,6 +21,7 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
     folha("admin-usuarios", "Usuários", "/admin/usuarios", "conta"),
     folha("admin-documentos", "Documentos", "/admin/documentos", "documentos"),
     folha("admin-fotos-perfil", "Fotos de perfil", "/admin/fotos-perfil", "fotografos"),
+    folha("admin-moderacao-ofensas", "Ofensas no chat", "/admin/moderacao/ofensas", "atendimento"),
   ]),
   grupo("admin-estadias", "Estadias", "estadias", [
     folha("admin-contratos", "Contratos", "/admin/contratos", "contratos"),

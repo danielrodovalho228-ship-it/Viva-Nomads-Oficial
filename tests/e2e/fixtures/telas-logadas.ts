@@ -66,6 +66,7 @@ export const TELAS_ADMIN = [
   "/admin/fotografos",
   "/admin/fotos-perfil",
   "/admin/marketing",
+  "/admin/moderacao/ofensas",
   "/admin/parceiros",
   "/admin/parceiros/pedidos",
   "/admin/servicos",

@@ -26,4 +26,22 @@ export async function marcarConversaAberta(conversationId: string): Promise<void
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
   if (!count) return;
   await registrarAberturaDaConversa(user.id, conversationId, admin);
+  // E445 (item 4): abrir a conversa marca como lidas as mensagens RECEBIDAS nela (só lido_em; a RLS da 0287 só deixa o
+  // destinatário marcar). Best-effort: antes da 0287, falha em silêncio.
+  await supabase.from("messages").update({ lido_em: new Date().toISOString() }).eq("conversation_id", conversationId).eq("receiver_id", user.id).is("lido_em", null);
+}
+
+/** E445 (item 4): não lidas por conversa e o total — alimenta o sino (E444) como prioridade "urgente". */
+export async function mensagensNaoLidas(): Promise<{ total: number; porConversa: Record<string, number>; prioridade: "urgente" } | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.rpc("mensagens_nao_lidas");
+  if (error) throw new Error("Não foi possível contar as mensagens não lidas agora.");
+  const porConversa: Record<string, number> = {};
+  for (const r of (data ?? []) as { conversation_id: string; nao_lidas: number }[]) porConversa[r.conversation_id] = Number(r.nao_lidas) || 0;
+  return { total: Object.values(porConversa).reduce((a, b) => a + b, 0), porConversa, prioridade: "urgente" };
 }
