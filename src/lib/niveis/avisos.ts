@@ -24,6 +24,7 @@ async function avisarDono(db: Db, propertyId: string, texto: (titulo: string) =>
     userId: p.owner_id as string,
     // E143: rascunho → Passo 5 do assistente; publicado → a seção do nível na edição.
     pushUrl: destinoNivel(propertyId, p.status as string | null),
+    imovelId: propertyId,
     body: (n) => `Olá${n ? " " + n : ""}, ${texto(titulo)}`,
     ctaLabel: cta,
   }).catch(() => null);

@@ -114,11 +114,11 @@ export async function ultimaMedidaDoDono(admin: Admin, imovelId: string, agora: 
 // Código morto removido (varredura, rodada 22): medidaPublica e medidasPublicas não tinham chamador. A página do imóvel
 // e a busca leem a view internet_medida_publica direto em src/lib/data/properties.ts.
 
-async function avisarUsuario(admin: Admin, destino: string, ev: NotificationEvent, url: string, corpo?: CorpoResidual) {
+async function avisarUsuario(admin: Admin, destino: string, ev: NotificationEvent, url: string, corpo?: CorpoResidual, imovelId?: string) {
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, ...(corpo ? paraNotify(corpo) : {}) });
+    await notify({ event: ev, email: d?.notif_email === false ? undefined : (d?.email ?? undefined), name: d?.full_name ?? undefined, userId: destino, pushUrl: url, imovelId, ...(corpo ? paraNotify(corpo) : {}) });
   } catch {
     /* aviso é complemento */
   }
@@ -234,7 +234,8 @@ export async function registrarMedicao(entrada: {
             imovel: { titulo: pp.title, bairro: pp.address, cidade: pp.city },
             morador: { download: junta.downloadMbps, upload: junta.uploadMbps },
             dono: dono ? { download: dono.downloadMbps, upload: dono.uploadMbps } : null,
-          })
+          }),
+          imovelId
         );
     }
   }
@@ -289,7 +290,8 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date, simular = fal
       l.properties.owner_id,
       "internet_remedir",
       `/dashboard/imoveis/${l.property_id}/editar#internet`,
-      corpoInternetRemedir({ imovel: { titulo: l.properties.title, bairro: l.properties.address, cidade: l.properties.city }, validoAte: l.valido_ate })
+      corpoInternetRemedir({ imovel: { titulo: l.properties.title, bairro: l.properties.address, cidade: l.properties.city }, validoAte: l.valido_ate }),
+      l.property_id
     );
     avisos += 1;
   }

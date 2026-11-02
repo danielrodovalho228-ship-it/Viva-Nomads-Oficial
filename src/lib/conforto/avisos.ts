@@ -12,7 +12,7 @@ import { AVISO_SELO_CONFORTO, procedentes12m, seloPeloConforto, type AcaoPendenc
 
 type Db = SupabaseClient;
 
-async function avisar(db: Db, userId: string | null | undefined, p: { event: "conforto_prazo" | "conforto_pendencia"; pushUrl: string; texto: string; cta: string }) {
+async function avisar(db: Db, userId: string | null | undefined, p: { event: "conforto_prazo" | "conforto_pendencia"; pushUrl: string; texto: string; cta: string; imovelId?: string }) {
   if (!userId) return;
   const { data: perfil } = await db.from("profiles").select("email, full_name, notif_email").eq("id", userId).maybeSingle();
   if (!perfil?.email || !notificacaoLigada(perfil.notif_email as boolean | null)) return;
@@ -22,6 +22,7 @@ async function avisar(db: Db, userId: string | null | undefined, p: { event: "co
     name: (perfil.full_name as string) ?? undefined,
     userId,
     pushUrl: p.pushUrl,
+    imovelId: p.imovelId,
     body: (n) => `Olá${n ? " " + n : ""}, ${p.texto}`,
     ctaLabel: p.cta,
   }).catch(() => null);
@@ -39,7 +40,7 @@ export async function avisarConfortoPrazo(db: Db, propertyId: string, tipo: 15 |
     tipo === "pausado"
       ? `o anúncio ${titulo} saiu da busca porque o padrão mínimo de conforto não foi confirmado. Confirme os itens e ele volta na hora.`
       : `confirme o padrão mínimo de conforto de ${titulo} até ${data}. Faltam ${tipo} dias; depois disso o anúncio sai da busca até a confirmação.`;
-  await avisar(db, p.owner_id as string, { event: "conforto_prazo", pushUrl: `/dashboard/imoveis/${propertyId}/conforto`, texto, cta: "Confirmar o padrão mínimo" });
+  await avisar(db, p.owner_id as string, { event: "conforto_prazo", pushUrl: `/dashboard/imoveis/${propertyId}/conforto`, texto, cta: "Confirmar o padrão mínimo", imovelId: propertyId });
 }
 
 /** Aviso de cada passo da pendência: aberta (dono), corrigida (morador), reaberta/contestada/decidida. */
@@ -62,13 +63,14 @@ export async function avisarPendenciaConforto(db: Db, pendenciaId: string, acao:
     const texto = acao === "aberta"
       ? `o morador marcou "${item}" como não confere na entrada de ${titulo}. Corrija até ${prazo} (horário de Brasília) ou conteste pela plataforma.`
       : `o morador reabriu a pendência "${item}" de ${titulo}. O prazo continua: até ${prazo} (horário de Brasília).`;
-    await avisar(db, dono, { event: "conforto_pendencia", pushUrl: dono_url, texto, cta: "Ver a pendência" });
+    await avisar(db, dono, { event: "conforto_pendencia", pushUrl: dono_url, texto, cta: "Ver a pendência", imovelId: p.property_id as string });
   } else if (acao === "corrigir") {
     await avisar(db, morador, {
       event: "conforto_pendencia",
       pushUrl: morador_url,
       texto: `o proprietário marcou "${item}" como corrigido. Confirme ou reabra em até 48 horas; sem resposta, conta como corrigido.`,
       cta: "Confirmar ou reabrir",
+      imovelId: p.property_id as string,
     });
   } else if (acao === "decidir") {
     const procedente = p.status === "procedente";
@@ -77,6 +79,7 @@ export async function avisarPendenciaConforto(db: Db, pendenciaId: string, acao:
       pushUrl: morador_url,
       texto: `o atendimento da Viva decidiu a contestação sobre "${item}": ${procedente ? "a pendência é procedente" : "o item estava conforme"}.`,
       cta: "Ver a decisão",
+      imovelId: p.property_id as string,
     });
     let extra = "";
     if (procedente && dono) {
@@ -89,6 +92,7 @@ export async function avisarPendenciaConforto(db: Db, pendenciaId: string, acao:
       pushUrl: dono_url,
       texto: `o atendimento da Viva decidiu a contestação sobre "${item}": ${procedente ? "a pendência é procedente." : "o item estava conforme."}${extra}`,
       cta: "Ver a decisão",
+      imovelId: p.property_id as string,
     });
   }
 }
