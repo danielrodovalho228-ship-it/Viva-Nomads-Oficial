@@ -54,7 +54,9 @@ export async function localDaEntrada(
 ): Promise<LocalTrabalho | null | "invalido"> {
   if (!e) return null;
   if (e.destinoSlug) {
-    const { data: d } = await admin.from("destinos").select("id, nome, lat, lng").eq("slug", e.destinoSlug).eq("ativo", true).maybeSingle();
+    const { data: d, error } = await admin.from("destinos").select("id, nome, lat, lng").eq("slug", e.destinoSlug).eq("ativo", true).maybeSingle();
+    // Achado 94: a falha não vira "local inválido" (a pessoa trocaria um local certo); quem chama pede para tentar de novo.
+    if (error) throw new Error("Não foi possível ler os locais de trabalho.");
     if (!d) return "invalido";
     return normalizarLocal({ destino_id: d.id, rotulo: d.nome, lat: d.lat, lng: d.lng, modo_preferido: e.modo, ate: e.ate }) ?? "invalido";
   }
