@@ -374,7 +374,8 @@
         "t80-camera-chamado",
         "t607-varredura-bloco51",
         "t669-ms1-topo-publico",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t1019-chamado-sem-leitura"
       ]
     },
     "/alerta-busca/desligar": {
@@ -3756,7 +3757,9 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t1019-chamado-sem-leitura"
+      ]
     },
     "src/lib/data/atendimento-actions.ts#meusChamados": {
       "personas": [
