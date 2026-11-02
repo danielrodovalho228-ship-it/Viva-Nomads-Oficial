@@ -122,7 +122,23 @@ test.describe("T969 — E425: o parceiro aprovado ativa a página pelo painel", 
       const ativar = recebido.getByTestId("parceiro-ativar-painel");
       await ativar.scrollIntoViewIfNeeded();
       await expect(ativar).toHaveText(/Ativar minha página/);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      // Diagnóstico: quais elementos passam da borda direita (o que causa a rolagem lateral).
+      const largos = await page.evaluate(() => {
+        const W = window.innerWidth;
+        const fora: string[] = [];
+        for (const el of Array.from(document.querySelectorAll("body *"))) {
+          const r = (el as HTMLElement).getBoundingClientRect();
+          if (r.width === 0 || r.right <= W + 1) continue;
+          const pai = el.parentElement?.getBoundingClientRect();
+          if (pai && pai.right > W + 1) continue; // só o mais externo de cada ramo
+          const id = (el as HTMLElement).dataset.testid ? `[data-testid=${(el as HTMLElement).dataset.testid}]` : "";
+          const cls = typeof (el as HTMLElement).className === "string" ? `.${(el as HTMLElement).className.split(/\s+/).slice(0, 4).join(".")}` : "";
+          fora.push(`${el.tagName.toLowerCase()}${id}${cls} → ${Math.round(r.right - W)}px "${(el.textContent ?? "").trim().slice(0, 40)}"`);
+        }
+        return { sobra: document.documentElement.scrollWidth - W, fora: fora.slice(0, 6) };
+      });
+      expect(largos.sobra, `rolagem lateral em /parceiros (aprovado): ${largos.fora.join(" | ")}`).toBeLessThanOrEqual(1);
 
       await ativar.click();
       await expect(page).toHaveURL(/\/dashboard\/parceiro\?ativada=1$/, { timeout: 30_000 });
