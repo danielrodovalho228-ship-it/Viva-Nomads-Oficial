@@ -51,7 +51,9 @@ export async function entradaDoNivel(admin: Admin, propertyId: string, agora = n
 }
 
 export async function nivelGravado(admin: Admin, propertyId: string): Promise<NivelOuAdequacao | null> {
-  const { data } = await admin.from("imovel_nivel").select("nivel").eq("property_id", propertyId).maybeSingle();
+  const { data, error } = await admin.from("imovel_nivel").select("nivel").eq("property_id", propertyId).maybeSingle();
+  // Achado 89: sem o nível, a conferência cairia na lista "essencial" (menos itens a conferir).
+  if (error) throw new Error(MSG_NIVEL_SEM_LEITURA);
   return (data?.nivel as NivelOuAdequacao | undefined) ?? null;
 }
 
@@ -98,7 +100,8 @@ export async function recalcularNivel(admin: Admin, propertyId: string, agora = 
     const calculado = nivelDoImovel(entrada);
     const laudo = await laudoQuePrevalece(admin, propertyId, agora);
     const resultado: ResultadoNivel = laudo ? { ...calculado, nivel: laudo.nivel } : calculado;
-    const antes = await nivelGravado(admin, propertyId);
+    // O "antes" só serve ao aviso de queda: a falha da leitura não impede gravar o nível novo.
+    const antes = await nivelGravado(admin, propertyId).catch(() => null);
     const { error } = await admin.from("imovel_nivel").upsert(
       {
         property_id: propertyId,
@@ -159,6 +162,7 @@ export async function adicionaisDaConferencia(admin: Admin, propertyId: string |
     nivelGravado(admin, propertyId),
     admin.from("imovel_ruido").select("classe").eq("property_id", propertyId).maybeSingle(),
   ]);
+  if (ruido.error) throw new Error(MSG_NIVEL_SEM_LEITURA);
   const itens = itensDaConferencia(nivel ?? "essencial").map((chave) => ({ chave: chave as string, rotulo: rotuloItem(chave) }));
   const classe = ruido.data?.classe as ClasseRuido | undefined;
   return classe ? [...itens, { chave: CHAVE_RUIDO_CONFERENCIA, rotulo: `${ROTULO_RUIDO_CONFERENCIA} (${ROTULO_RUIDO[classe]})` }] : itens;
