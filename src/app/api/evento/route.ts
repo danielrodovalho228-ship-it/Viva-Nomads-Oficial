@@ -50,7 +50,9 @@ export async function POST(request: Request) {
       usuarioId = user?.id ?? null;
     }
     if (usuarioId) {
-      const { data: perfil } = await admin.from("profiles").select("is_teste").eq("id", usuarioId).maybeSingle();
+      // Varredura ampliada: sem a marca de teste, o evento é descartado (nunca uma sessão de teste contada como real).
+      const { data: perfil, error: erroPerfil } = await admin.from("profiles").select("is_teste").eq("id", usuarioId).maybeSingle();
+      if (erroPerfil) return vazio();
       contaTeste = perfil?.is_teste === true;
     }
   } catch {
