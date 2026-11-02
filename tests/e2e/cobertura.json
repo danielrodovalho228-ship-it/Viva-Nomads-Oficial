@@ -3666,6 +3666,38 @@
         "t191-ajuda-publicacao"
       ]
     },
+    "src/lib/data/avisos-actions.ts#marcarAvisoLido": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#marcarTodosAvisosLidos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#meusAvisos": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
+    "src/lib/data/avisos-actions.ts#resumoDoSino": {
+      "personas": [
+        "inquilino",
+        "proprietario",
+        "parceiro"
+      ],
+      "specs": []
+    },
     "src/lib/data/atendimento-actions.ts#abrirChamado": {
       "personas": [
         "inquilino",

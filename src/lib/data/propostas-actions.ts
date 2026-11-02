@@ -1,5 +1,6 @@
 "use server";
 
+import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -319,6 +320,8 @@ async function avisarOutraParte(
         : null;
     await notify({
       event: proprio?.event ?? evento,
+      // E444: o objeto do aviso (resolvido quando quem recebe responder).
+      refId: p.id,
       // Quem recebe é parte da proposta (dono ou morador do lead): o valor pode ir no push.
       decisao: decisao
         ? { imovel: (im as { title?: string | null } | null)?.title ?? null, valor: decisao.valorMensal, prazo: decisao.validaAte, destinatarioEhParte: true }
@@ -873,6 +876,9 @@ async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof se
   return { p, v: v as LinhaVersao, papel: (p.owner_id === s.user.id ? "owner" : "tenant") as Autor };
 }
 
+/** E444: responder (aceitar, recusar ou contrapropor) resolve estes avisos críticos da proposta. */
+const EVENTOS_RESPONDER: NotificationEvent[] = ["proposta_recebida", "proposta_vencendo"];
+
 export async function responderProposta(id: string, r: Resposta): Promise<Resultado<{ fechamentoUrl?: string | null; versao?: number }>> {
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para responder." };
@@ -913,10 +919,16 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     );
     // E269: a cópia de quem recusou (os dois lados recebem, 1 cada) — a moradora que recusa vê imóveis parecidos.
     await copiaDaRecusa(s.admin, p, papel, motivo, texto);
+    await resolverAvisos({ usuarioId: s.user.id, eventos: EVENTOS_RESPONDER, refId: p.id });
     return { ok: true };
   }
 
-  if (r.acao === "aceitar") return aceitar(s.admin, p, v, papel);
+  if (r.acao === "aceitar") {
+    const res = await aceitar(s.admin, p, v, papel);
+    // E444: respondeu (aceitou) → o aviso crítico "responder a proposta" fica resolvido.
+    if (res.ok) await resolverAvisos({ usuarioId: s.user.id, eventos: EVENTOS_RESPONDER, refId: p.id });
+    return res;
+  }
 
   // Contraproposta.
   const im = await lerImovel(s.admin, p.property_id);
@@ -978,6 +990,7 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
     { valorMensal: tot.valorMensal, validaAte: validaAteDe(p.validade_dias, agora) },
     { desfecho: "contraproposta", termos: nova, responderAte: validaAteDe(p.validade_dias, agora) },
   );
+  await resolverAvisos({ usuarioId: s.user.id, eventos: EVENTOS_RESPONDER, refId: p.id });
   return { ok: true, versao };
 }
 

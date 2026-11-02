@@ -1,5 +1,6 @@
 "use server";
 
+import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
 import { corpoAnuncioCompartilhar, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 import { after } from "next/server";
 import { headers } from "next/headers";
@@ -544,6 +545,8 @@ export async function assinarContrato(input: {
   revalidatePath("/dashboard/contratos");
   revalidatePath("/dashboard/locacoes");
 
+  // E444: quem assinou resolve o aviso crítico "assinar o contrato" no sino.
+  after(() => resolverAvisos({ usuarioId: user.id, eventos: ["contract_status"], refId: c.id }));
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
   const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
@@ -584,6 +587,9 @@ export async function assinarContrato(input: {
         pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
         subject: assuntoAvisoOutraParte(outraJaAssinou),
         imovelId: c.property_id,
+        // E444: "falta você assinar" é crítico (resolvido quando a pessoa assinar); com as duas assinaturas, só informa.
+        refId: c.id,
+        ...(outraJaAssinou ? { prioridadeAviso: "normal" as const } : {}),
         ...corpo(outroId),
       });
       // Prompt 24: com as duas assinaturas, quem assinou por último também recebe o "contrato assinado" (os dois lados).
@@ -594,6 +600,8 @@ export async function assinarContrato(input: {
           userId: user.id,
           pushUrl: HREF_CONFIRMADA(c.id),
           imovelId: c.property_id,
+          refId: c.id,
+          prioridadeAviso: "normal",
           subject: assuntoAvisoOutraParte(true),
           body: (nome?: string) => aberturaAssinatura({ nome, imovel: imovelEmail, asDuas: true, quemAssinou }),
           detailsHtml: corpo(user.id).detailsHtml,
