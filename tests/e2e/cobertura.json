@@ -887,7 +887,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t988-r22-perfil-publico-falha-leitura"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -6057,7 +6058,8 @@
         "proprietario"
       ],
       "specs": [
-        "t280-conta-unica-43"
+        "t280-conta-unica-43",
+        "t988-r22-perfil-publico-falha-leitura"
       ]
     },
     "src/lib/data/papeis-actions.ts#meusDegraus": {
