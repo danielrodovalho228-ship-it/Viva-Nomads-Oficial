@@ -125,11 +125,15 @@ async function nomeDoPerfil(userId: string): Promise<string | null> {
   return ((data as { full_name?: string | null } | null)?.full_name ?? null) || null;
 }
 
+export const MSG_PDFS_SEM_LEITURA = "Não foi possível montar o pacote dos recibos agora. Tente de novo em instantes.";
+
 /** Caminho do PDF de um documento da pessoa (o RLS decide; outra pessoa recebe null). */
 export async function pdfsDosDocumentos(ids: string[]): Promise<{ id: string; numero: string; pdf_path: string }[]> {
   const s = await sessao();
   if (!s || !ids.length) return [];
-  const { data } = await s.supabase.from("documentos_fiscais").select("id, numero, pdf_path").in("id", ids);
+  const { data, error } = await s.supabase.from("documentos_fiscais").select("id, numero, pdf_path").in("id", ids);
+  // Estados vazios: falha ao ler não vira "nenhum PDF" — o pacote do ano sairia sem os recibos, sem aviso.
+  if (error) throw new Error(MSG_PDFS_SEM_LEITURA);
   return (data ?? []) as { id: string; numero: string; pdf_path: string }[];
 }
 
