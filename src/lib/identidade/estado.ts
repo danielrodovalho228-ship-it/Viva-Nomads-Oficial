@@ -5,6 +5,7 @@
    2. vencida     → "Identidade vencida em dd/mm/aaaa · Confirmar de novo"
    3. simulavel   → "Verificar identidade (simulado — conta de teste)"  (conta is_teste sem laudo válido)
    4. em_breve    → "Conferida pela equipe da Viva"                       (conta real, CAF ainda não ativa)
+   5. indisponivel → "Identidade não conferida agora"                     (a leitura falhou; só para a outra parte)
   E152: nada de prometer função futura ("em breve, com um parceiro"): o texto diz o caminho de HOJE.
   Nenhuma tela escreve o próprio texto: Conta › Confiança e segurança, /dashboard/verificacao, a etapa de identidade
   do anúncio, o cartão da Visão geral do inquilino, o cartão do candidato e a coluna "Identidade" do admin usam esta
@@ -12,7 +13,8 @@
 */
 import { resumoDoLaudo, type LaudoCafGravado } from "../documento/conferencia-matricula.ts";
 
-export type ChaveIdentidade = "confirmada" | "vencida" | "simulavel" | "em_breve";
+/** "indisponivel": a leitura falhou — só para a OUTRA PARTE (nunca vira "pendente" nem "não verificada" por engano). */
+export type ChaveIdentidade = "confirmada" | "vencida" | "simulavel" | "em_breve" | "indisponivel";
 
 export interface EstadoIdentidade {
   estado: ChaveIdentidade;
@@ -67,6 +69,15 @@ export function estadoIdentidadeDe(laudoGravado: LaudoCafGravado | null, simulav
  * Só dois estados: verificada (laudo válido) ou pendente. Os textos "para mim" (simulado, em breve, confirmar de novo)
  * nunca aparecem como status de outra pessoa.
  */
+export const IDENTIDADE_INDISPONIVEL: EstadoIdentidade = {
+  estado: "indisponivel",
+  texto: "Identidade não conferida agora",
+  validoAte: null,
+  vencidaEm: null,
+  acao: null,
+};
+
 export function identidadeParaOutraParte(e: EstadoIdentidade | null | undefined): { verificada: boolean; rotulo: string } {
+  if (e?.estado === "indisponivel") return { verificada: false, rotulo: IDENTIDADE_INDISPONIVEL.texto };
   return e?.estado === "confirmada" ? { verificada: true, rotulo: "Identidade verificada" } : { verificada: false, rotulo: "Identidade pendente" };
 }
