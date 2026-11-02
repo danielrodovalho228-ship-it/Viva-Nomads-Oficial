@@ -731,7 +731,10 @@ export async function devolverChamadoParaViva(chamadoId: string, adminId: string
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   const pode = podeDevolverParaViva(c.prioridade, c.status);
   if (!pode.ok) return { ok: false, error: pode.motivo ?? "Não pode voltar para a Viva." };
-  const { data: msgs } = await admin.from("chamado_mensagens").select("autor").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  const { data: msgs, error: erroMsgs } = await admin.from("chamado_mensagens").select("autor").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  // Sem as mensagens, não dá para saber se a pessoa espera resposta: devolver assim deixaria a última mensagem sem a
+  // resposta da Viva (e o status errado).
+  if (erroMsgs) return { ok: false, error: "Não foi possível ler as mensagens do chamado agora. Tente de novo." };
   const autores = ((msgs ?? []) as { autor: string }[]).map((m) => m.autor);
   const ultimaPessoa = autores.lastIndexOf("usuario");
   const respondeAgora = ultimaPessoa >= 0 && !autores.slice(ultimaPessoa + 1).some((a) => a === "ia" || a === "admin");
