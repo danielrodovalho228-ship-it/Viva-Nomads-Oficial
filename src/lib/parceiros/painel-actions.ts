@@ -319,7 +319,9 @@ export async function salvarServico(e: { id?: string | null; categoria: string; 
     const { error } = await m.admin.from("parceiro_servicos").update(linha).eq("id", e.id).eq("parceiro_id", m.p.id);
     if (error) return { ok: false, erro: "Não foi possível salvar." };
   } else {
-    const { count } = await m.admin.from("parceiro_servicos").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+    const { count, error: erroContagem } = await m.admin.from("parceiro_servicos").select("id", { count: "exact", head: true }).eq("parceiro_id", m.p.id);
+    // Contagem ilegível não vira 0: o limite vale sempre.
+    if (erroContagem) return { ok: false, erro: "Não foi possível conferir o limite agora. Tente de novo." };
     if ((count ?? 0) >= 20) return { ok: false, erro: "Até 20 serviços." };
     const { error } = await m.admin.from("parceiro_servicos").insert({ ...linha, parceiro_id: m.p.id });
     if (error) return { ok: false, erro: "Não foi possível salvar." };
