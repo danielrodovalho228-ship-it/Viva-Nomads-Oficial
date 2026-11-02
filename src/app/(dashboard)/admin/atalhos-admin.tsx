@@ -19,6 +19,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/candidaturas", label: "Candidaturas", icon: FileSignature },
   { href: "/admin/usuarios", label: "Usuários", icon: Users },
   { href: "/admin/fotos-perfil", label: "Fotos de perfil", icon: UserRound },
+  { href: "/admin/moderacao/ofensas", label: "Ofensas no chat", icon: ShieldCheck },
   { href: "/admin/pendencias", label: "Central de pendências", icon: Wrench },
   { href: "/admin/solicitacoes", label: "Solicitações de manutenção", icon: Wrench },
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },

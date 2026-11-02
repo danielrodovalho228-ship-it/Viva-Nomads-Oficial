@@ -57,6 +57,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // E200: conversa pedida que não está na lista não abre nenhuma — nunca a primeira da lista (de outra pessoa).
   const [activeId, setActiveId] = useState<string>(conversaInicial(pedida, initial.map((c) => c.id)) ?? "");
   const [naoEncontrada, setNaoEncontrada] = useState(!demo && !!pedida && !existe);
+  // E445 (item 3): aviso de termo ofensivo — a pessoa revisa ou envia mesmo assim (vai para a fila de moderação).
+  const [ofensaPendente, setOfensaPendente] = useState<{ envio: Parameters<typeof sendMessage>[0]; aviso: string } | null>(null);
   const [draft, setDraft] = useState("");
   // Prompt 55-E2: o texto do campo veio de uma resposta rápida? Então contato direto BLOQUEIA (não mascara).
   const [deRapida, setDeRapida] = useState(false);
@@ -156,15 +158,22 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
       // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
       if (active.pedidoParceiroId) await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
       else
-        await semQuedaDeRede(sendMessage({
-          conversationId: active.id,
-          receiverId: active.otherId,
-          propertyId: active.propertyId,
-          body: text,
-          respostaRapida: usouRapida,
-        }));
+      {
+        const envio = { conversationId: active.id, receiverId: active.otherId, propertyId: active.propertyId, body: text, respostaRapida: usouRapida };
+        const r = await semQuedaDeRede(sendMessage(envio));
+        // E445 (item 3): termo ofensivo — o servidor avisa ANTES de gravar; só envia com a confirmação da pessoa.
+        if (r && typeof r === "object" && "ofensa" in r && r.ofensa) {
+          // Não gravou: tira o eco otimista, devolve o texto ao campo e mostra o aviso com "Enviar mesmo assim".
+          setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== text) } : c)));
+          setDraft(text);
+          setOfensaPendente({ envio, aviso: r.error ?? "" });
+        }
+      }
     }
   }
+
+  // E445: a última mensagem minha que o destinatário já leu (o "Visto" aparece só nela).
+  const ultimaMinhaVista = active ? [...active.messages].reverse().find((m) => m.from === "me" && m.visto)?.id : undefined;
 
   if (conversations.length === 0) {
     return (
@@ -380,9 +389,36 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                     <Link href="/seguranca" className="font-semibold underline">Ver dicas</Link>
                   </span>
                 )}
+                {/* E445 (item 4): "Visto" só na última mensagem minha já lida pelo destinatário. */}
+                {m.from === "me" && m.visto && m.id === ultimaMinhaVista && (
+                  <span className="text-[11px] text-muted" data-testid="mensagem-vista">
+                    Visto
+                  </span>
+                )}
               </div>
             ))}
           </div>
+          {ofensaPendente && (
+            <div role="alert" data-testid="aviso-ofensa" className="flex flex-wrap items-center gap-2 border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+              <span className="flex-1">{ofensaPendente.aviso}</span>
+              <button type="button" className="min-h-11 font-semibold underline" onClick={() => setOfensaPendente(null)}>
+                Revisar a mensagem
+              </button>
+              <button
+                type="button"
+                className="min-h-11 font-semibold underline"
+                onClick={async () => {
+                  const envio = ofensaPendente.envio;
+                  setOfensaPendente(null);
+                  setDraft("");
+                  const r = await semQuedaDeRede(sendMessage({ ...envio, enviarMesmoAssim: true }));
+                  if (r.ok) setConversations((prev) => prev.map((c) => (c.id === envio.conversationId ? { ...c, preview: envio.body, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text: envio.body }] } : c)));
+                }}
+              >
+                Enviar mesmo assim
+              </button>
+            </div>
+          )}
           {guardNotice && (
             <p className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800">
               {GUARD_NOTICE}
