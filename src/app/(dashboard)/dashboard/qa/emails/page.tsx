@@ -27,6 +27,8 @@ export default async function QaEmailsPage({ searchParams }: { searchParams: Pro
   // E199: o admin vai para a lista dele (aba E-mails de /admin/dados-de-teste); quem não é leitor de QA recebe 404.
   const destino = destinoLeitorQa(perfil);
   if (destino.tipo === "admin") redirect(destino.href);
+  // E354: conta de teste sem qa_leitor → a caixa dela; conta real → 404.
+  if (destino.tipo === "propria") redirect(destino.href);
   if (destino.tipo !== "abre") notFound();
 
   const { data: leves } = await supabase.from("emails_teste").select("usuario_id, destinatario_mascarado, evento").order("criado_em", { ascending: false }).limit(OPCOES_MAX);

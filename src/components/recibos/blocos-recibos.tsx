@@ -94,7 +94,16 @@ export async function BlocoRecibosMorador() {
  * pela plataforma ligado (PAGAMENTO_PARCEIROS_ATIVO); desligado, a parte nem aparece.
  */
 export async function BlocoRecibosParceiro({ pagamentoAtivo }: { pagamentoAtivo: boolean }) {
-  const p = await servicosConcluidosDoParceiro();
+  // Achado 79: na falha de leitura, o bloco avisa (sem "nenhum serviço" nem pendências falsas); o resto do painel segue.
+  const p = await servicosConcluidosDoParceiro().catch(() => "falhou" as const);
+  if (p === "falhou")
+    return (
+      <Panel id="recibos-notas" title="Recibos e notas" className="mb-6 scroll-mt-24" data-testid="bloco-recibos-parceiro">
+        <p className="text-sm text-ink" role="alert" data-testid="recibos-parceiro-falha">
+          Não foi possível ler os seus serviços concluídos agora. Recarregue a página em instantes.
+        </p>
+      </Panel>
+    );
   if (!p) return null;
   const pendencias = pendenciasDeNota(p.servicos);
   const anos = [...new Set([Number(hojeBR().slice(0, 4)), ...p.servicos.map((s) => Number(s.concluidoEm.slice(0, 4)))])].sort((a, b) => b - a);

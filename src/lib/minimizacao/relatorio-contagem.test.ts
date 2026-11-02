@@ -13,6 +13,7 @@ const servidor = readFileSync(new URL("./servidor.ts", import.meta.url), "utf8")
 /** Itens com prazo declarado que NÃO precisam de contagem própria — e por quê. */
 const SEM_CONTAGEM: Record<string, string> = {
   "internet_medicoes/dono": "sai com o anúncio (on delete cascade); não há linha órfã para contar",
+  preco_justo_airbnb: "E399-C: sai com o anúncio (on delete cascade); não há linha órfã para contar",
   "anuncio-videos": "bucket: sai com o anúncio",
   "property-photos": "bucket: sai com o anúncio",
   contrato_ocupantes: "o cron do Prompt 32 já apaga aos 90 dias do fim da estadia",

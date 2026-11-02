@@ -126,6 +126,7 @@ export type NotificationEvent =
   | "vistoria_sem_avaliador" // nenhum avaliador elegível → admins
   // 63-B: selo "LinkedIn conectado" (atrás de LINKEDIN_CONECTAR_ATIVO)
   | "linkedin_vencendo" // o selo vence em 30 dias → a própria pessoa (reconectar)
+  | "preco_justo_acima" // E399-C: o total por mês ficou igual ou acima do Airbnb → só o dono (valor lá e "até R$ Y")
   | "linkedin_ja_conectado" // alguém tentou conectar um LinkedIn que já está em outra conta → admins (sem expor quem)
   // Prompt 62-B2: laudo, resultado, ressalvas, "· vistoriado", strikes e contestação.
   | "vistoria_laudo_emitido" // laudo VIS emitido → dono (resultado, o que corrigir, prazo e próximo passo)
@@ -248,6 +249,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   calendario_conflito: { subject: "Datas do outro site cruzam um compromisso na Viva", body: (n) => `Olá${n ? " " + n : ""}, o calendário importado marcou como ocupadas datas em que o seu imóvel tem um compromisso na Viva. Nada foi cancelado: confira as datas e decida qual vale.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },
   calendario_falha: { subject: "Não conseguimos ler o calendário importado", body: (n) => `Olá${n ? " " + n : ""}, tentamos ler o link do calendário do outro site 3 vezes seguidas, sem sucesso. Enquanto isso, as datas de lá não chegam aqui.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },
   linkedin_vencendo: { subject: "Reconecte seu LinkedIn para manter o selo", body: (n) => `Olá${n ? " " + n : ""}, o selo "LinkedIn conectado" da sua conta vence em 30 dias. Para manter o selo, reconecte o LinkedIn em Conta.`, cta: "Reconectar", path: "/dashboard/conta" },
+  preco_justo_acima: { subject: "Seu anúncio está sem o selo Preço justo", body: (n) => `Olá${n ? " " + n : ""}, o total por mês do seu anúncio na Viva ficou igual ou acima do mesmo imóvel no Airbnb (30 noites, com descontos, limpeza e taxas). Por isso o anúncio está sem o selo "Preço justo". Os valores estão abaixo. Só você recebe este aviso.`, cta: "Ver o preço", path: "/dashboard/imoveis" },
   linkedin_ja_conectado: { subject: "LinkedIn já conectado a outra conta", body: () => "Uma conta tentou conectar um LinkedIn que já está ligado a outra conta da Viva. A tentativa foi recusada; vale conferir se é a mesma pessoa com duas contas.", cta: "Abrir o atendimento", path: "/admin/atendimento" },
   vistoria_sem_avaliador: { subject: "Avaliação sem avaliador elegível", body: () => "Um pedido de avaliação de imóvel está aguardando avaliador: ninguém da fila da cidade está elegível agora.", cta: "Abrir a fila", path: "/admin/avaliadores" },
   vistoria_laudo_emitido: { subject: "O laudo de avaliação do seu imóvel saiu", body: (n) => `Olá${n ? " " + n : ""}, o laudo de avaliação do seu imóvel foi emitido pela Viva. Veja o resultado, o que corrigir (se houver), o prazo e o próximo passo.`, cta: "Ver o laudo", path: "/dashboard/imoveis" },

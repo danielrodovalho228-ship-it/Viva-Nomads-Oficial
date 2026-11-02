@@ -65,7 +65,7 @@ import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
 import type { Property, Proximity } from "@/lib/types";
-import { cn, dataBR } from "@/lib/utils";
+import { cn, dataBR, hojeBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { isEligible } from "@/lib/qualification";
 import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
@@ -120,7 +120,7 @@ import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { useTelaLarga } from "@/components/ui/use-tela-larga";
 import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
-import { TELAS_ASSISTENTE } from "@/lib/anuncio/assistente-telas";
+import { TELAS_ASSISTENTE, resumoDisponibilidadePrevia } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
 /**
@@ -281,8 +281,6 @@ export default function NewPropertyPage() {
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
   const [monthlyPrice, setMonthlyPrice] = useState("");
   const [airbnbMensal, setAirbnbMensal] = useState("");
-  // E399-C: link do anúncio no Airbnb — só no rascunho (draft_data); não vai para o imóvel publicado.
-  const [linkAirbnb, setLinkAirbnb] = useState("");
   const [precoRegiao, setPrecoRegiao] = useState<{ valor: number; base: "bairro" | "cidade"; n: number } | null>(null);
   const [condoFee, setCondoFee] = useState("");
   const [street, setStreet] = useState("");
@@ -854,7 +852,6 @@ export default function NewPropertyPage() {
     if (s(d.availableUntil)) setAvailableUntil(d.availableUntil as string);
     if (s(d.monthlyPrice)) setMonthlyPrice(d.monthlyPrice as string);
     if (s(d.airbnbMensal)) setAirbnbMensal(d.airbnbMensal as string);
-    if (s(d.linkAirbnb)) setLinkAirbnb(d.linkAirbnb as string);
     if (s(d.condoFee)) setCondoFee(d.condoFee as string);
     if (typeof d.descricaoGeradaPorIa === "boolean") setDescricaoGeradaPorIa(d.descricaoGeradaPorIa);
     if (s(d.street)) setStreet(d.street as string);
@@ -1106,7 +1103,7 @@ export default function NewPropertyPage() {
   // Auto-save do rascunho + "Salvo ✓". Os limites PRIVADOS da negociação NÃO vão no JSON (salvos à parte).
   const draftJson = JSON.stringify({
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
-    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal, linkAirbnb,
+    minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
@@ -2059,8 +2056,6 @@ export default function NewPropertyPage() {
                 limites={limites}
                 setLimites={setLimites}
                 erros={erros}
-                linkAirbnb={linkAirbnb}
-                setLinkAirbnb={setLinkAirbnb}
               />
             )}
 
@@ -2177,6 +2172,7 @@ export default function NewPropertyPage() {
             uf={uf}
             publicado={!!editingId}
             tamanhoReal={<BotaoTamanhoReal imovel={previewProperty} className="mt-2" />}
+            resumo={step === ETAPA.disponibilidade ? resumoDisponibilidadePrevia(availableFrom, minPeriod, hojeBR()) : null}
           />
         </aside>
         )}
