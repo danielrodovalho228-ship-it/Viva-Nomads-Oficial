@@ -59,7 +59,9 @@ export async function meuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     };
   }
   // Morador: o que o dono vê no cartão de quem pede (nome curto, foto, cidade, frase e idiomas).
-  const { data } = await supabase.from("profiles").select("full_name, avatar_url, cidade, bio, idiomas, created_at").eq("id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("profiles").select("full_name, avatar_url, cidade, bio, idiomas, created_at").eq("id", user.id).maybeSingle();
+  // Achado 110: a falha LANÇA — a tela avisa "Não foi possível ler seu perfil" (nunca um perfil "Você" vazio).
+  if (error) throw new Error("Não foi possível ler o seu perfil.");
   const p = (data ?? {}) as { full_name?: string | null; avatar_url?: string | null; cidade?: string | null; bio?: string | null; idiomas?: string[] | null; created_at?: string | null };
   return {
     nome: nomeCurto(p.full_name) ?? "Você",
