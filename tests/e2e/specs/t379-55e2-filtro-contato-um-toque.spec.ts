@@ -108,6 +108,8 @@ test.describe("T379 — 55-E2: filtro de contato bloqueando de verdade e o 1 toq
       const antes = (await mensagensDoDono()).length;
       await p.getByTestId("mensagem-campo").fill(texto);
       await p.getByRole("button", { name: "Enviar" }).click();
+      // E445 item 2: o aviso vem antes; a medição segue pelo "Enviar mesmo assim" (o servidor mascara).
+      await p.getByRole("button", { name: "Enviar mesmo assim" }).click();
       await p.waitForTimeout(4_000);
       const depois = await mensagensDoDono();
       const novas = depois.slice(antes);
