@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /*
-  T669 — MS-1/PUBLICO-A: topo público simples (Imóveis · Anunciar · Empresas + "Fale com a Viva" em texto + Entrar
+  T669 — MS-1/PUBLICO-A: topo público simples (Imóveis · Anunciar · Empresas · Parceiros [E458] + "Fale com a Viva" em texto + Entrar
   como único botão cheio), sem globo e sem menu "Mais". Publicar pedido, Como funciona, Preços e Parceiros no rodapé;
   Parceiros também dentro do Fale com a Viva. 1280 e 390, com prints.
 */
@@ -16,14 +16,14 @@ for (const largura of [1280, 390] as const) {
       const topo = page.getByTestId("topo-publico");
       await expect(topo).toBeVisible({ timeout: 30_000 });
       if (largura === 1280) {
-        await expect(page.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas"]);
+        await expect(page.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
         await expect(page.getByTestId("nav-fale-com-a-viva")).toHaveText("Fale com a Viva");
         await expect(page.getByTestId("nav-entrar")).toHaveText("Entrar");
       } else {
         await page.getByTestId("nav-menu").click();
-        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Fale com a Viva", "Entrar"]);
+        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Fale com a Viva", "Entrar"]);
       }
-      for (const fora of ["Publicar pedido", "Como funciona", "Preços", "Parceiros", "Mais"]) await expect(topo.getByText(fora, { exact: true })).toHaveCount(0);
+      for (const fora of ["Publicar pedido", "Como funciona", "Preços", "Mais"]) await expect(topo.getByText(fora, { exact: true })).toHaveCount(0);
       await expect(topo.locator('[aria-label*="idioma" i], [data-testid*="idioma"]')).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t669-topo-${largura}.png` });
 

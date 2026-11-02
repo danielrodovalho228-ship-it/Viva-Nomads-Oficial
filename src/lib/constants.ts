@@ -42,6 +42,8 @@ export const PUBLIC_NAV = [
   { href: "/buscar", label: "Imóveis" },
   { href: "/dashboard/imoveis/novo", label: "Anunciar" },
   { href: "/empresas", label: "Empresas" },
+  // E458 (Relay 58): "Parceiros" no menu público — a porta com os dois caminhos (encontrar / ser parceiro).
+  { href: "/parceiros", label: "Parceiros" },
 ] as { href: string; label: string }[];
 
 /** "Fale com a Viva" em texto no topo público (a mesma página de ajuda do link da /buscar). */

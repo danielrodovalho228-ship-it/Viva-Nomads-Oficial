@@ -64,7 +64,7 @@ test.describe("T69 — header e botões padronizados", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
     const header = page.locator("header").first();
-    await expect(header.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas"]);
+    await expect(header.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
     await expect(header.getByTestId("nav-fale-com-a-viva")).toHaveText("Fale com a Viva");
     await expect(header.getByTestId("nav-entrar")).toHaveText("Entrar");
     await expect(header.getByRole("button", { name: "Mais" })).toHaveCount(0);

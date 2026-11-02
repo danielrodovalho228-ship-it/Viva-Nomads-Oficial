@@ -21,8 +21,8 @@ test.describe("T742 — PUBLICO-A: topo público e o globo PT/EN atrás da chave
       const topo = p.getByTestId("topo-publico");
       if (largura === 390) await topo.getByTestId("nav-menu").click();
       const area = largura === 390 ? topo.getByTestId("nav-menu-lista") : topo;
-      for (const nome of ["Imóveis", "Anunciar", "Empresas", "Fale com a Viva"]) await expect(area.getByRole("link", { name: nome, exact: true })).toBeVisible();
-      for (const fora of ["Para proprietários", "Para parceiros", "Parceiros"]) await expect(area.getByRole("link", { name: fora, exact: true })).toHaveCount(0);
+      for (const nome of ["Imóveis", "Anunciar", "Empresas", "Parceiros", "Fale com a Viva"]) await expect(area.getByRole("link", { name: nome, exact: true })).toBeVisible();
+      for (const fora of ["Para proprietários", "Para parceiros"]) await expect(area.getByRole("link", { name: fora, exact: true })).toHaveCount(0);
       await expect(area.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
 
       const globo = topo.getByTestId(largura === 390 ? "seletor-idioma-celular" : "seletor-idioma");
