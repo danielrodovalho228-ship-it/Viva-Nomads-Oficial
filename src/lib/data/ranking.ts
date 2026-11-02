@@ -37,7 +37,11 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
   const linhas = data as LinhaRankingSinais[];
   const donos = [...new Set(linhas.map((l) => l.dono_id))];
   const [identidades, internet, prazos, niveis, vistoriados, considerar, selosMotor] = await Promise.all([
-    estadosIdentidade(admin, donos),
+    // Leitura que falha: null → a lista inteira volta à ordem antiga (nunca todos os donos "sem identidade" na nota).
+    estadosIdentidade(admin, donos).catch((e: unknown) => {
+      console.error("[ranking] identidade", (e as Error).message);
+      return null;
+    }),
     internetDosAnuncios(admin, reais),
     prazos59(admin, reais, donos),
     niveisDosImoveis(admin, reais).catch(() => new Map()), // sem a 0211, a nota segue sem o nível
@@ -46,6 +50,7 @@ export async function sinaisDosAnuncios(ids: string[], admin: Admin | null = cre
     // E399-C: com a chave, o selo do ranking é o do motor (o mesmo do cartão e da ficha); sem leitura, ninguém ganha.
     PRECO_JUSTO_COMPARADOR ? selosDoMotor(admin, reais, new Date()).catch(() => new Set<string>()) : Promise.resolve(null),
   ]);
+  if (!identidades) return [];
   return linhas.map((l) =>
     sinaisDaLinha(l, {
       identidadeConfirmada: identidades.get(l.dono_id)?.estado === "confirmada",

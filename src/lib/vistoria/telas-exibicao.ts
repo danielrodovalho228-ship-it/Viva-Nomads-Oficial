@@ -181,8 +181,9 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
  * ainda desligado ("em breve"), avisa que o passo é da ativação e que a verificação abre perto do lançamento.
  */
 export const TEXTO_IDENTIDADE_EM_BREVE = "Na ativação · a verificação abre perto do lançamento";
-export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve"): string | null {
+export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve" | "indisponivel"): string | null {
   if (estado === "confirmada") return null;
+  if (estado === "indisponivel") return "não conferida agora";
   return estado === "em_breve" ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
 }
 

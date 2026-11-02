@@ -106,10 +106,11 @@ export default async function AdminUsuariosPage({
     linhas = todas.slice(0, LIMITE);
     if (linhas.length > 0) {
       const ids = linhas.map((l) => l.id);
-      const [{ data: fs, error }, ests] = await Promise.all([admin.rpc("telefones_verificados", { p_ids: ids }), estadosIdentidade(admin, ids)]);
+      const [{ data: fs, error }, ests] = await Promise.all([admin.rpc("telefones_verificados", { p_ids: ids }), estadosIdentidade(admin, ids).catch(() => null)]);
       // Telefone verificado (0150): só sim/não, pelo servidor; o número nunca sai daqui.
       if (!error) for (const x of (fs ?? []) as { id: string; verificado: boolean }[]) foneVerificado.set(x.id, x.verificado);
-      identidade = new Map([...ests].map(([id, e]) => [id, { texto: e.estado === "confirmada" ? "Confirmada" : e.estado === "vencida" ? "Vencida" : "Não verificada", validoAte: e.validoAte }]));
+      // Leitura que falha: a coluna mostra "—" (nunca "Não verificada" por engano).
+      if (ests) identidade = new Map([...ests].map(([id, e]) => [id, { texto: e.estado === "confirmada" ? "Confirmada" : e.estado === "vencida" ? "Vencida" : "Não verificada", validoAte: e.validoAte }]));
     }
   }
   const idText = (id: string) => {

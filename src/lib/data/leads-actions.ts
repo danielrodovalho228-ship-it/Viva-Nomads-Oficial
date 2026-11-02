@@ -26,7 +26,7 @@ import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
-import type { EstadoIdentidade } from "@/lib/identidade/estado";
+import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
 
 interface ActionResult {
   ok: boolean;
@@ -348,7 +348,9 @@ export async function getFechamentoContext(
         .eq("id", lead.tenant_id)
         .maybeSingle();
       if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
-      identidadeInquilino = (await estadosIdentidade(admin, [lead.tenant_id as string])).get(lead.tenant_id as string) ?? null;
+      // Leitura que falha: "não conferida agora" no Fechamento (nunca "pendente" para quem é verificado).
+      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string]).catch(() => null);
+      identidadeInquilino = lidas ? (lidas.get(lead.tenant_id as string) ?? null) : IDENTIDADE_INDISPONIVEL;
     }
   } catch {
     /* mantém o neutro */
