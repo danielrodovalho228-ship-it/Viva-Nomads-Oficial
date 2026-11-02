@@ -9,7 +9,9 @@ type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
 /** Reabre a revisão da foto atual de `userId`. Sem foto, nada a fazer (false). */
 export async function reabrirFotoPorDenuncia(admin: Admin, userId: string): Promise<boolean> {
-  const { data: p } = await admin.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
+  // Resíduo da varredura: a falha da leitura LANÇA (quem chama avisa a equipe); nunca o "sem foto" silencioso.
+  const { data: p, error: erroPerfil } = await admin.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
+  if (erroPerfil) throw new Error("Não foi possível ler a foto do perfil.");
   const caminho = (p as { avatar_url: string | null } | null)?.avatar_url ?? null;
   if (caminho !== avatarPath(userId)) return false;
   const agora = new Date().toISOString();
