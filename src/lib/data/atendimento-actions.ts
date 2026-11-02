@@ -979,11 +979,14 @@ export async function sugerirResposta(
  * "Resumo e ações" (topo da tela do chamado): devolve o guardado; gera na
  * primeira abertura ou com "Atualizar resumo". Guardado como nota interna.
  */
+const MSG_RESUMO_SEM_LEITURA = "Não foi possível ler o chamado agora. Tente de novo.";
+
 export async function resumoDoChamado(chamadoId: string, refazer = false): Promise<Res<{ resumo: ResumoChamado }>> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
   if (!refazer) {
-    const { data: notas } = await ctx.admin
+    // Resíduo da varredura: sem saber se já há resumo salvo, não gera outro (IA, nota em dobro e limite).
+    const { data: notas, error: erroNota } = await ctx.admin
       .from("chamado_mensagens")
       .select("corpo")
       .eq("chamado_id", chamadoId)
@@ -991,11 +994,13 @@ export async function resumoDoChamado(chamadoId: string, refazer = false): Promi
       .like("corpo", "[resumo-e-acoes]%")
       .order("criado_em", { ascending: false })
       .limit(1);
+    if (erroNota) return { ok: false, error: MSG_RESUMO_SEM_LEITURA };
     const salvo = notas?.[0] ? resumoDaNota(notas[0].corpo as string) : null;
     if (salvo) return { ok: true, resumo: salvo };
   }
   if ((await situacaoLimite(`resumo:${ctx.userId}`, 30, HORA)) === "estourou") return { ok: false, error: "Muitos resumos em pouco tempo. Aguarde um pouco." };
-  const g = await gerarResumo(chamadoId);
+  const g = await gerarResumo(chamadoId).catch(() => "falhou" as const);
+  if (g === "falhou") return { ok: false, error: MSG_RESUMO_SEM_LEITURA };
   if (!g) return { ok: false, error: "Chamado não encontrado." };
   await ctx.admin.from("chamado_mensagens").insert({ chamado_id: chamadoId, autor: "ia", interno: true, simulacao: g.simulacao, corpo: notaResumo(g.resumo) });
   await ctx.admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "admin", ator_id: ctx.userId, acao: "resumo_ia", detalhe: refazer ? "atualizado" : "gerado ao abrir" });

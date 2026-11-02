@@ -747,10 +747,13 @@ export async function devolverChamadoParaViva(chamadoId: string, adminId: string
 export async function gerarResumo(chamadoId: string): Promise<{ resumo: ResumoChamado; simulacao: boolean } | null> {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  // Resíduo da varredura: a falha da leitura LANÇA (nunca resumo de uma conversa vazia gravado como nota).
+  const { data, error: erroChamado } = await admin.from("chamados").select(CAMPOS).eq("id", chamadoId).maybeSingle();
+  if (erroChamado) throw new Error("Não foi possível ler o chamado.");
   const c = data as ChamadoViva | null;
   if (!c) return null;
-  const { data: msgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  const { data: msgs, error: erroMsgs } = await admin.from("chamado_mensagens").select("autor, corpo, interno").eq("chamado_id", c.id).eq("interno", false).order("criado_em", { ascending: true });
+  if (erroMsgs) throw new Error("Não foi possível ler as mensagens do chamado.");
   const lista = (msgs ?? []) as { autor: "usuario" | "ia" | "admin" | "sistema"; corpo: string; interno: boolean }[];
   const textoPessoa = lista.filter((m) => m.autor === "usuario").map((m) => m.corpo).join("\n");
   const regras = () => resumoPorRegra(textoPessoa, !c.usuario_id);
