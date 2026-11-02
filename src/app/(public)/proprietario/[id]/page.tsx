@@ -102,7 +102,7 @@ export default async function ProprietarioPage({ params }: Params) {
                 ),
               )}
               {p.reputacao.n > 0 && (
-                <a href="#avaliacoes" className="inline-flex items-center gap-1 text-sm font-medium text-ink hover:text-forest">
+                <a href="#avaliacoes" className="alvo-toque inline-flex items-center gap-1 text-sm font-medium text-ink hover:text-forest" data-testid="perfil-link-avaliacoes">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
                   {p.reputacao.media.toLocaleString("pt-BR", { minimumFractionDigits: 1 })} · {p.reputacao.n}{" "}
                   {p.reputacao.n === 1 ? "avaliação" : "avaliações"}

@@ -21,7 +21,8 @@ export default async function NotFound() {
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
       <header className="container-page py-6">
-        <Logo href="/" />
+        {/* Varredura 02/11: o logo (32 px) ganha alvo de 44 px no toque. */}
+        <Logo href="/" className="alvo-toque" />
       </header>
 
       <main className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center">
@@ -43,7 +44,8 @@ export default async function NotFound() {
         {featured.length > 0 && (
           <section className="mt-12 w-full" aria-label="Imóveis em destaque">
             <h2 className="mb-4 font-title text-lg font-semibold text-ink">Imóveis em destaque</h2>
-            <div className="grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
+            {/* Grade par: em 2 colunas (tablet) aparecem 2 destaques — um 3º esticado viraria uma foto enorme; em 1 e 3 colunas, os três. */}
+            <div className="grid gap-6 text-left sm:grid-cols-2 sm:max-lg:[&>:nth-child(3)]:hidden lg:grid-cols-3" data-testid="nao-encontrada-destaques">
               {featured.map((p) => (
                 <PropertyCard key={p.id} property={p} />
               ))}
@@ -53,7 +55,8 @@ export default async function NotFound() {
 
         <Link
           href="/para-proprietarios"
-          className="mt-12 text-sm text-muted hover:text-blue-500"
+          className="alvo-toque mt-12 text-sm text-muted hover:text-blue-500"
+          data-testid="nao-encontrada-anunciar"
         >
           É proprietário? Anuncie seu imóvel →
         </Link>
