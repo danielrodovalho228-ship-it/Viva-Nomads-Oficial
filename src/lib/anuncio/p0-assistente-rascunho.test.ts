@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { destinoPendencia, emCadastro, hrefPassoDoRascunho } from "./destino-pendencia.ts";
+import { destinoPendencia, destinoPublicar, emCadastro, hrefPassoDoRascunho, hrefPublicarAnuncio } from "./destino-pendencia.ts";
 import { ETAPA } from "./etapas-ids.ts";
 import { prontidaoAnuncio } from "./prontidao.ts";
 import { emailDecisaoDocumento } from "../documento/aviso-decisao.ts";
@@ -73,8 +73,12 @@ test("e-mail da decisão do documento: rascunho → assistente (Revisão se já 
   const linhas = [{ documento: "Comprovante de propriedade do imóvel", aprovado: true, motivo: null }] as Parameters<typeof emailDecisaoDocumento>[0]["linhas"];
   const base = { propertyId: ID, titulo: "Apto", bairro: "Centro", linhas };
   assert.equal(emailDecisaoDocumento({ ...base, prontoParaPublicar: false, status: "draft" }).cta.path, `/dashboard/imoveis/novo?draft=${ID}`);
-  assert.equal(emailDecisaoDocumento({ ...base, prontoParaPublicar: true, status: "draft" }).cta.path, `/dashboard/imoveis/novo?draft=${ID}&etapa=${ETAPA.revisao}`);
-  assert.equal(emailDecisaoDocumento({ ...base, prontoParaPublicar: true, status: "active" }).cta.path, `/dashboard/imoveis/${ID}/editar`);
+  // E433 (02/11): "Publicar meu anúncio" tem um destino só (a rota /publicar), que decide no clique — o P0 continua:
+  // rascunho → Revisão do assistente; publicado → editor.
+  assert.equal(emailDecisaoDocumento({ ...base, prontoParaPublicar: true, status: "draft" }).cta.path, hrefPublicarAnuncio(ID));
+  assert.equal(emailDecisaoDocumento({ ...base, prontoParaPublicar: true, status: "active" }).cta.path, hrefPublicarAnuncio(ID));
+  assert.equal(destinoPublicar({ id: ID, status: "draft" }), `/dashboard/imoveis/novo?draft=${ID}&etapa=${ETAPA.revisao}`);
+  assert.equal(destinoPublicar({ id: ID, status: "active" }), `/dashboard/imoveis/${ID}/editar`);
   assert.match(ler("src/lib/data/aviso-decisao-documento.ts"), /select\("title, address, status"\)[\s\S]*status: im\?\.status \?\? null/);
 });
 
