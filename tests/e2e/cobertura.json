@@ -26,7 +26,8 @@
         "t543-e166-fundo-clean-publico",
         "t669-ms1-topo-publico",
         "t671-varredura-bloco66",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t1072-varredura-bloco272"
       ]
     },
     "/acesso-socios": {
@@ -349,7 +350,8 @@
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
         "t671-varredura-bloco66",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t1072-varredura-bloco272"
       ]
     },
     "/ajuda/[tema]": {
@@ -362,7 +364,8 @@
         "t438-vocab-a",
         "t20-p1-agentes",
         "t673-varredura-bloco67",
-        "t694-varredura-bloco73"
+        "t694-varredura-bloco73",
+        "t1072-varredura-bloco272"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -380,7 +383,8 @@
         "t80-camera-chamado",
         "t607-varredura-bloco51",
         "t669-ms1-topo-publico",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t1072-varredura-bloco272"
       ]
     },
     "/alerta-busca/desligar": {
@@ -532,7 +536,8 @@
         "t543-e166-fundo-clean-publico",
         "t489-e176-menus",
         "t588-varredura-bloco46",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t1072-varredura-bloco272"
       ]
     },
     "/cidades": {
@@ -851,7 +856,8 @@
         "t645-e238-e239-conta-passos",
         "t661-varredura-bloco62",
         "t672-e190-troca-de-modo",
-        "t694-varredura-bloco73"
+        "t694-varredura-bloco73",
+        "t1072-varredura-bloco272"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1055,7 +1061,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t1072-varredura-bloco272"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1086,7 +1093,8 @@
         "t696-varredura-bloco74",
         "t698-e259-entrada-grava-e-limite",
         "t713-e261-avisos-titulo",
-        "t709-e263-pets-condicoes-ida-e-volta"
+        "t709-e263-pets-condicoes-ida-e-volta",
+        "t1072-varredura-bloco272"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1221,7 +1229,8 @@
         "t713-e261-avisos-titulo",
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t1072-varredura-bloco272"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1257,7 +1266,8 @@
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1072-varredura-bloco272"
       ]
     },
     "/dashboard/locacoes": {
@@ -1347,7 +1357,8 @@
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
         "t672-e190-troca-de-modo",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1072-varredura-bloco272"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1723,7 +1734,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t1072-varredura-bloco272"
       ]
     },
     "/modelodenegocio": {
