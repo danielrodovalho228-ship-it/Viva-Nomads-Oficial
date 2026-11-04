@@ -18,6 +18,12 @@ import { solicitarReserva } from "@/lib/data/reservas-actions";
 import { getDatasIndisponiveis } from "@/lib/data/blocks-actions";
 import { useAuthStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+
+/**
+ * E527 (D13): cor do dia no calendário — a MESMA na grade e na legenda. Antes, Disponível (sage-100) e Indisponível
+ * (sage-200/60) eram dois verdes-pálidos quase iguais. Indisponível passa ao cinza da linha (outra cor, não outro tom).
+ */
+export const COR_DIA = { disponivel: "bg-sage-100", indisponivel: "bg-line" } as const;
 import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -219,9 +225,9 @@ export function AvailabilityCalendar({
                       className={cn(
                         "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
                         estado === "passado" && "cursor-not-allowed text-muted/40",
-                        estado === "indisponivel" && "cursor-not-allowed bg-sage-200/60 text-muted line-through",
+                        estado === "indisponivel" && cn("cursor-not-allowed text-muted line-through", COR_DIA.indisponivel),
                         podeSelecionar && "text-forest hover:bg-sage-200",
-                        podeSelecionar && !isIn && !isOut && !noIntervalo && "bg-sage-100 font-medium",
+                        podeSelecionar && !isIn && !isOut && !noIntervalo && cn(COR_DIA.disponivel, "font-medium"),
                         noIntervalo && "bg-sage-200 font-medium",
                         (isIn || isOut) && "bg-forest font-semibold text-white",
                         isHoje && !isIn && !isOut && "ring-2 ring-champagne"
@@ -237,15 +243,16 @@ export function AvailabilityCalendar({
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted">
+      {/* E527 (D13): amostras com a cor dos dias (COR_DIA) e sem risco na palavra "Indisponível". */}
+      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted" data-testid="calendario-legenda">
         <span className="inline-flex items-center gap-2">
-          <span className="h-3 w-3 rounded-lg bg-sage-100" /> Disponível
+          <span className={cn("h-3 w-3 rounded-lg ring-1 ring-sage-200", COR_DIA.disponivel)} aria-hidden /> Disponível
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-lg bg-forest" /> Selecionado
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-3 w-3 rounded-lg bg-sage-200/60" /> <span className="line-through">Indisponível</span>
+          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.indisponivel)} aria-hidden /> Indisponível
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-lg ring-2 ring-champagne" /> Hoje
