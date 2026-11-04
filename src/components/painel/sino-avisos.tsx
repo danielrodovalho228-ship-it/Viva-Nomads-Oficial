@@ -145,15 +145,15 @@ export function marcarTodosLidos(): Promise<boolean> {
  * título em peso normal. Vale no sino e em "Ver todas".
  */
 export function classeDoAviso(lido: boolean): string {
-  return lido ? "bg-white" : "bg-sage-100 shadow-[inset_3px_0_0_var(--color-forest)]";
+  return lido ? "border-l-4 border-transparent bg-white" : "border-l-4 border-forest bg-sage-100";
 }
 
 /** O ponto do não lido (com "Não lido" para leitor de tela); no lido, o mesmo espaço vazio para o texto não pular. */
 export function MarcaLeitura({ lido }: { lido: boolean }) {
-  if (lido) return <span className="mt-1.5 h-2.5 w-2.5 shrink-0" aria-hidden />;
+  if (lido) return <span className="mt-1 h-2.5 w-2.5 shrink-0" aria-hidden />;
   return (
     <>
-      <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-forest" aria-hidden data-testid="aviso-ponto-nao-lido" />
+      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-forest" aria-hidden data-testid="aviso-ponto-nao-lido" />
       <span className="sr-only">Não lido. </span>
     </>
   );

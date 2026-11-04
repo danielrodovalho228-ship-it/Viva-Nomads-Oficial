@@ -20,7 +20,8 @@ test("E502: o tema não tem sage-50 — o estilo dos avisos usa só cores que ex
 test("E502: não lido = fundo sage-100 + barra + ponto + 'Não lido'; lido = branco e título normal", () => {
   const c = ler("components/painel/sino-avisos.tsx");
   assert.match(c, /export function classeDoAviso\(lido: boolean\)/);
-  assert.match(c, /lido \? "bg-white" : "bg-sage-100 shadow-\[inset_3px_0_0_var\(--color-forest\)\]"/);
+  // barra à esquerda por borda (o padrão da casa não aceita sombra solta); no lido, a borda é transparente (sem pulo)
+  assert.match(c, /lido \? "border-l-4 border-transparent bg-white" : "border-l-4 border-forest bg-sage-100"/);
   assert.match(c, /export function MarcaLeitura\(\{ lido \}: \{ lido: boolean \}\)/);
   assert.match(c, /data-testid="aviso-ponto-nao-lido"/);
   assert.match(c, /<span className="sr-only">Não lido\. <\/span>/);
