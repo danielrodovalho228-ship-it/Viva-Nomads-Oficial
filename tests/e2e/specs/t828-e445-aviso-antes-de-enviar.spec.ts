@@ -56,7 +56,7 @@ test.describe("T828 — E445 item 2: aviso antes de enviar", () => {
       await p.getByRole("button", { name: "Enviar", exact: true }).click();
       const aviso = p.getByTestId("aviso-antes-de-enviar");
       await expect(aviso).toBeVisible();
-      await expect(aviso).toContainText("telefones e e-mails são protegidos");
+      await expect(aviso).toContainText("telefones, e-mails e links externos são protegidos");
       await expect(p.getByTestId("aviso-previa")).toContainText(MASK);
       await expect(p.getByTestId("aviso-previa")).not.toContainText("99876");
       // E483: o "(" do DDD sai junto com o número — a prévia não mostra parêntese aberto sem fechar.
