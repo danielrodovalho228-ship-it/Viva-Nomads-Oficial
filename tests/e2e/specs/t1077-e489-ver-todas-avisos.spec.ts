@@ -6,12 +6,13 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  * é o <main> do painel e a âncora sozinha deixava a pessoa nas preferências (no topo de /dashboard/notificacoes). Pela
  * tela real, morador com 12 avisos, 390 e 1280:
  *   1. controle: /dashboard/notificacoes sem âncora abre no topo (preferências) e o foco NÃO vai para "Avisos recentes";
- *   2. com a página já aberta, sino → "Ver todas": a URL ganha #avisos e "Avisos recentes" fica na vista (o foco neste
- *      caminho é o L-91, abaixo);
+ *   2. com a página já aberta, sino → "Ver todas" (só no celular: no computador as telas da Conta não têm o sino no
+ *      topo, desenho do E185): a URL ganha #avisos e "Avisos recentes" fica na vista (o foco neste caminho é o L-91);
  *   3. vindo de outra tela (/dashboard), sino → "Ver todas": chega já na lista, com o título na vista e com foco.
  * A regra pura (deveIrParaAvisos) fica com o e489-ver-todas.test.ts; o sino e a faixa de crítico, com a t830.
  *
- * L-91 (defeito de produto, achado nesta spec, 04/11): com /dashboard/notificacoes JÁ ABERTA, "Ver todas" leva a lista
+ * L-91 (defeito de produto, achado nesta spec, 04/11; no celular, o único tamanho com o sino nas telas da Conta): com
+ * /dashboard/notificacoes JÁ ABERTA, "Ver todas" leva a lista
  * à vista (o Next rola pela âncora), mas o foco NÃO vai para "Avisos recentes". O Link para a mesma página com #avisos
  * navega por history.pushState, que não dispara "hashchange" — e é esse evento que o IrParaAvisos escuta (o comentário
  * dele promete o caso). Fica no teste 2b, test.fail ligado ao L-91: quando o foco chegar, ele vira e acusa.
@@ -67,12 +68,17 @@ test.describe("T1077 — E489: 'Ver todas' do sino leva à lista de avisos", () 
       const longe = !(await titulo.evaluate((el) => el.getBoundingClientRect().top < window.innerHeight));
       test.info().annotations.push({ type: "controle", description: `@${w}: "Avisos recentes" ${longe ? "abaixo da dobra" : "já na vista"} sem a âncora` });
 
-      // 2. Com a página já aberta: sino → Ver todas (hashchange).
-      await verTodasPeloSino(p, w);
-      await expect(p).toHaveURL(/\/dashboard\/notificacoes#avisos$/);
-      await expect(titulo).toBeInViewport({ timeout: 15_000 });
-      await expect(p.locator("#avisos")).toContainText("Aviso t1077 número 1");
-      // O foco neste caminho é o L-91 (teste 2b abaixo).
+      // 2. Com a página já aberta: sino → Ver todas. Só no celular: no computador, nas telas da Conta o topo não repete o
+      //    sino (E185 — o menu lateral já tem "Notificações"), então o caminho não existe ali.
+      if (w === 1280) {
+        await expect(topo(p, w).getByTestId(`sino-${px(w)}`), "E185: sem sino no topo das telas da Conta").toHaveCount(0);
+      } else {
+        await verTodasPeloSino(p, w);
+        await expect(p).toHaveURL(/\/dashboard\/notificacoes#avisos$/);
+        await expect(titulo).toBeInViewport({ timeout: 15_000 });
+        await expect(p.locator("#avisos")).toContainText("Aviso t1077 número 1");
+        // O foco neste caminho é o L-91 (teste 2b abaixo).
+      }
 
       // 3. Vindo de outra tela: chega já na lista.
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
@@ -87,6 +93,7 @@ test.describe("T1077 — E489: 'Ver todas' do sino leva à lista de avisos", () 
     });
 
     test(`2b. L-91: com a página aberta, Ver todas também leva o FOCO a "Avisos recentes" (${w})`, async ({ browser }) => {
+      test.skip(w === 1280, "E185: no computador o topo das telas da Conta não tem sino — o caminho só existe no celular");
       test.fail(true, "L-91: o Link para a mesma página com #avisos usa pushState e não dispara hashchange; o IrParaAvisos não roda e o foco fica onde estava");
       const p = await entrar(browser, morador.email, senha);
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
