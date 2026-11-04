@@ -3,6 +3,14 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * A foto do cabeçalho do painel. Desde o MENUS-5 (25/10) toda conta com papel tem o topo do painel: a foto mora no
+ * botão da Conta ("conta-<papel>" no computador, "conta-<papel>-celular" no celular), não no selo "papel-ativo" (que
+ * segue só sem papel/Equipe). Qualquer um deles, o que estiver visível.
+ */
+const CABECALHO_FOTO =
+  ':is([data-testid="papel-ativo"],[data-testid="conta-dono"],[data-testid="conta-morador"],[data-testid="conta-parceiro"],[data-testid="conta-dono-celular"],[data-testid="conta-morador-celular"],[data-testid="conta-parceiro-celular"]):visible img';
+
+/**
  * T391 — Conformidade CONTA-A (QA do Muse, 24/10, conta sem avaliações) contra os mockups perfil-01/02/04/05. 390 e 1280.
  *   E63. Avaliações: as abas Todas/Recentes/Positivas e a busca aparecem sempre — também sem nenhuma avaliação.
  *   E64. Meus dados: sem o endereço do LinkedIn e sem o motivo da estadia.
@@ -109,13 +117,13 @@ test.describe("T391 — Conta: E55, E63, E64, E66, E67", () => {
     test(`E55. a ${w} px: no Perfil as miniaturas de navegação mostram iniciais`, async ({ browser }) => {
       const p = await abrir(browser, w, "/dashboard/conta/perfil");
       await p.getByTestId("perfil-tela").waitFor({ timeout: 20_000 });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
+      await expect(p.locator(CABECALHO_FOTO)).toHaveCount(0);
       await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
       // O herói editável mostra a foto (uma vez); fora do Perfil, o cabeçalho volta a mostrá-la.
       await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1, { timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t391-perfil-${w}.png` });
       await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1, { timeout: 20_000 });
+      await expect(p.locator(CABECALHO_FOTO)).toHaveCount(1, { timeout: 20_000 });
       await p.context().close();
     });
   }

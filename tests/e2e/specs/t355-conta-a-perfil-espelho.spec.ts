@@ -3,6 +3,15 @@ import sharp from "sharp";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * A foto do cabeçalho do painel. Desde o MENUS-5 (25/10) toda conta com papel tem o topo do painel: a foto mora no
+ * botão da Conta ("conta-<papel>" no computador, "conta-<papel>-celular" no celular), não no selo "papel-ativo" (que
+ * segue só sem papel/Equipe). Qualquer um deles, o que estiver visível.
+ */
+const CABECALHO =
+  ':is([data-testid="papel-ativo"],[data-testid="conta-dono"],[data-testid="conta-morador"],[data-testid="conta-parceiro"],[data-testid="conta-dono-celular"],[data-testid="conta-morador-celular"],[data-testid="conta-parceiro-celular"]):visible';
+const CABECALHO_FOTO = `${CABECALHO} img`;
+
+/**
  * L-43 (vigia, 24/10): a Conta e o atendimento não assentam em "networkidle"; espera até 10 s e segue para o elemento.
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * T355 — CONTA-A, entrega 1 (Perfil): topo único, foto que envia de verdade, avatar sem nome, o espelho e o progresso.
@@ -66,7 +75,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await expect(topo.locator('[data-rosto="silhueta"]')).toHaveCount(1);
       await expect(topo).not.toContainText("?");
       // O selo do cabeçalho também mostra a silhueta (não o "P"/"M" do papel, nem "?").
-      await expect(p.locator('[data-testid="papel-ativo"]:visible [data-rosto="silhueta"]')).toHaveCount(1);
+      await expect(p.locator(`${CABECALHO} [data-rosto="silhueta"]`)).toHaveCount(1);
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t355-sem-nome-${w}.png` });
       await p.context().close();
@@ -119,14 +128,14 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     await expect(p.getByTestId("topo-foto")).toHaveAccessibleName("Trocar foto");
     // A foto no topo e (menor) no espelho; E55 (QA 24/10): no Perfil o cabeçalho mostra as iniciais, não a foto.
     await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
-    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
+    await expect(p.locator(CABECALHO_FOTO)).toHaveCount(0);
     // O medidor andou sem recarregar: "Foto de perfil" saiu da linha de faltas.
     await expect(p.getByTestId("perfil-falta")).not.toContainText("Foto de perfil", { timeout: 15_000 });
     const caminho = (await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single()).data?.avatar_url as string;
     expect(caminho).toBe(`${ids.dono}/avatar.webp`);
     // Fora da Conta, o cabeçalho mostra a foto nova.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+    await expect(p.locator(CABECALHO_FOTO)).toHaveCount(1);
     await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);

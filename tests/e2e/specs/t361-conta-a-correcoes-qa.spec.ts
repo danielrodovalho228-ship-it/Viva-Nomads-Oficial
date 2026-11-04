@@ -3,6 +3,14 @@ import sharp from "sharp";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
+ * A foto do cabeçalho do painel. Desde o MENUS-5 (25/10) toda conta com papel tem o topo do painel: a foto mora no
+ * botão da Conta ("conta-<papel>" no computador, "conta-<papel>-celular" no celular), não no selo "papel-ativo" (que
+ * segue só sem papel/Equipe). Qualquer um deles, o que estiver visível.
+ */
+const CABECALHO_FOTO =
+  ':is([data-testid="papel-ativo"],[data-testid="conta-dono"],[data-testid="conta-morador"],[data-testid="conta-parceiro"],[data-testid="conta-dono-celular"],[data-testid="conta-morador-celular"],[data-testid="conta-parceiro-celular"]):visible img';
+
+/**
  * Rodada da vigia 24/10 (Pista C): re-teste dos instáveis do #1230 (run 40072532185) e do #1232 (run 40075189536).
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
  * L-43 (vigia, 24/10): a Conta não assenta em "networkidle" (C9 a 1280 estourou 30 s no reload); espera até 10 s e segue.
@@ -130,7 +138,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
         await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
         // E55 (QA 24/10): na tela Perfil a foto fica só no herói e no espelho; cabeçalho e barra lateral mostram iniciais.
-        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
+        await expect(p.locator(CABECALHO_FOTO)).toHaveCount(0);
         await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
       };
       await comFoto();
@@ -148,7 +156,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       await comFoto();
       // Fora da Conta, o cabeçalho mostra a foto nova.
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+      await expect(p.locator(CABECALHO_FOTO)).toHaveCount(1);
       await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // Volta ao estado sem foto para o próximo tamanho começar igual.
