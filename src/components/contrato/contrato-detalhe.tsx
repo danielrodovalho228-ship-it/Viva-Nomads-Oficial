@@ -164,7 +164,7 @@ export async function ContratoDetalhe({
           <a
             href={`/api/contrato/${c.id}/provas`}
             data-testid="baixar-provas"
-            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-sage-300 bg-white px-4 text-sm font-medium text-forest hover:bg-sage-50 sm:w-auto"
+            className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-sage-200 bg-white px-4 text-sm font-medium text-forest hover:bg-sage-100 sm:w-auto"
           >
             Baixar pacote de provas (PDF)
           </a>
@@ -176,7 +176,7 @@ export async function ContratoDetalhe({
           <h2 className="font-title text-base font-semibold text-ink">Conferência de entrada e saída</h2>
           <p className="mt-1 text-sm text-muted">Fotos e itens por cômodo, confirmados ou contestados pelas duas partes. É a base para conversar sobre a Caução.</p>
           {mostrarChecklistCameras({ papel: c.papel, status: c.status }) && (
-            <div className="mt-4 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="checklist-cameras">
+            <div className="mt-4 rounded-lg bg-sage-100 p-3 text-sm text-ink" data-testid="checklist-cameras">
               <p className="font-medium">{ITEM_CONFERENCIA_CAMERAS}</p>
               <ul className="mt-1 list-disc space-y-1 pl-4 text-muted">
                 {DICAS_CONFERENCIA_CAMERAS.map((d) => (

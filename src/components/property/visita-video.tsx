@@ -233,7 +233,7 @@ function PedidoVisita({
               <h3 id={`${t.prefixo}-titulo`} className="font-title text-lg font-semibold text-ink">
                 {t.titulo}
               </h3>
-              <IconButton onClick={fechar} label="Fechar" icon={X} iconClassName="h-6 w-6" className="-mr-2 -mt-2 h-10 w-10 shrink-0 text-ink hover:bg-sage-50" data-testid={`${t.prefixo}-fechar`} />
+              <IconButton onClick={fechar} label="Fechar" icon={X} iconClassName="h-6 w-6" className="-mr-2 -mt-2 h-10 w-10 shrink-0 text-ink hover:bg-sage-100" data-testid={`${t.prefixo}-fechar`} />
             </div>
             {enviado ? (
               <>

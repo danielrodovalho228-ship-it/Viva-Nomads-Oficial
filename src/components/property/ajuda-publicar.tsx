@@ -56,7 +56,7 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
 
   if (enviado) {
     return (
-      <div className="rounded-xl border border-sage-200 bg-sage-50 p-4 text-sm text-forest" role="status" data-testid="ajuda-publicar-enviado">
+      <div className="rounded-xl border border-sage-200 bg-sage-100 p-4 text-sm text-forest" role="status" data-testid="ajuda-publicar-enviado">
         Pedido recebido. Acompanhe o andamento em <strong>Meus imóveis</strong>. {AVISO_APROVACAO}
       </div>
     );
@@ -67,7 +67,7 @@ export function AjudaPublicar({ abertoInicial = false }: { /** Prompt 20: aberto
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-dashed border-sage-300 px-4 py-3 text-left text-sm text-forest hover:bg-sage-50"
+        className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-dashed border-sage-200 px-4 py-3 text-left text-sm text-forest hover:bg-sage-100"
         data-testid="ajuda-publicar-abrir"
       >
         <HandHelping className="h-4 w-4 shrink-0" />

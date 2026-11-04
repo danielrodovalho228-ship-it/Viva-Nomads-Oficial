@@ -36,7 +36,7 @@ export function PainelQualificacao({
           <p id="painel-qualificacao-titulo" className="font-title text-base font-semibold text-ink">
             Antes de anunciar
           </p>
-          <button type="button" onClick={onFechar} className="grid h-9 w-9 place-items-center rounded-full hover:bg-sage-50" aria-label="Fechar" data-testid="painel-qualificacao-fechar">
+          <button type="button" onClick={onFechar} className="grid h-9 w-9 place-items-center rounded-full hover:bg-sage-100" aria-label="Fechar" data-testid="painel-qualificacao-fechar">
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>

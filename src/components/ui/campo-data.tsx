@@ -87,7 +87,7 @@ export function CampoDataTexto({
         aria-label={nome ? `Abrir calendário: ${nome}` : "Abrir calendário"}
         aria-expanded={aberto}
         aria-haspopup="dialog"
-        className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-forest hover:bg-sage-50"
+        className="absolute right-1 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-forest hover:bg-sage-100"
         data-testid={testid ? `${testid}-calendario` : undefined}
       >
         <CalendarDays className="h-5 w-5" aria-hidden />

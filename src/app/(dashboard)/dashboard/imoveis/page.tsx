@@ -46,7 +46,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
   return (
     <>
       {saiuDoAssistente && (
-        <p role="status" className="mb-4 rounded-xl border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-forest" data-testid="rascunho-fica-salvo">
+        <p role="status" className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-forest" data-testid="rascunho-fica-salvo">
           {TEXTO_RASCUNHO_SALVO}
         </p>
       )}
@@ -57,7 +57,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
         </p>
       )}
       {ajudas && ajudas.length > 0 && (
-        <section className="mb-4 rounded-xl border border-sage-200 bg-sage-50 p-4 text-sm text-forest" data-testid="ajuda-andamento">
+        <section className="mb-4 rounded-xl border border-sage-200 bg-sage-100 p-4 text-sm text-forest" data-testid="ajuda-andamento">
           <h2 className="font-medium text-ink">Publicamos para você</h2>
           <ul className="mt-1 space-y-1">
             {ajudas.map((a) => (

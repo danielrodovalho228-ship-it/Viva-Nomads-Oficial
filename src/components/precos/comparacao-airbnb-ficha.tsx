@@ -8,7 +8,7 @@ import { textoComparacaoFicha, type ComparacaoFicha } from "@/lib/comparador-air
 export function ComparacaoAirbnbFicha({ comparacao }: { comparacao: ComparacaoFicha }) {
   const t = textoComparacaoFicha(comparacao);
   return (
-    <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="ficha-comparacao-airbnb" data-simulado={comparacao.simulado ? "1" : undefined}>
+    <div className="mt-3 rounded-xl border border-sage-200 bg-sage-100 p-3 text-sm" data-testid="ficha-comparacao-airbnb" data-simulado={comparacao.simulado ? "1" : undefined}>
       <p className="flex items-start gap-2 font-semibold text-forest">
         <BadgePercent className="mt-1 h-4 w-4 shrink-0" aria-hidden /> Preço justo: {t.principal}
       </p>

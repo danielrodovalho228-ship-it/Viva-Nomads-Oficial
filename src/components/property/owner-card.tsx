@@ -240,7 +240,7 @@ export function OwnerCard({
             </div>
           )}
           {avisoDemo && (
-            <p role="status" data-testid="mensagem-demo" className="mt-3 rounded-xl bg-sage-50 p-3 text-sm text-ink">
+            <p role="status" data-testid="mensagem-demo" className="mt-3 rounded-xl bg-sage-100 p-3 text-sm text-ink">
               Este é um anúncio de demonstração: nenhuma mensagem é enviada. Nos anúncios reais, a conversa acontece
               pelo chat da Viva, com o contato protegido até o aceite.
             </p>

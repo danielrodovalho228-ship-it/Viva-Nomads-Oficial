@@ -20,7 +20,7 @@ export function IndiceLegal() {
     <ol className="mt-3 grid gap-1 text-sm">
       {itens.map((i, n) => (
         <li key={i.id}>
-          <a href={`#${i.id}`} className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-ink hover:bg-sage-50 hover:text-forest">
+          <a href={`#${i.id}`} className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-ink hover:bg-sage-100 hover:text-forest">
             <span className="w-5 shrink-0 text-muted">{n + 1}</span>
             <span>{i.rotulo}</span>
           </a>

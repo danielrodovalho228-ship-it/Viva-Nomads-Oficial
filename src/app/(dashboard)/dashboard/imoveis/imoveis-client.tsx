@@ -155,7 +155,7 @@ export function MyPropertiesClient({
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
                     {/* E416 (retrabalho): o selo de nível do anúncio, com o mesmo texto do cartão da vitrine. */}
                     {p.nivel && p.nivel !== "em_adequacao" && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-50 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-100 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
                         <Award className="h-3.5 w-3.5" aria-hidden /> {textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado)}
                       </span>
                     )}

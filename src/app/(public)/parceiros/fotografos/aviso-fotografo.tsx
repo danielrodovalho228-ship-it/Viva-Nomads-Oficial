@@ -71,7 +71,7 @@ export function AvisoFotografo({
   }
 
   return (
-    <div className={ladoALado ? "h-full rounded-xl border border-line bg-white p-4" : "mt-4 rounded-xl border border-sage-200 bg-sage-50 p-4"} data-testid="aviso-fotografo">
+    <div className={ladoALado ? "h-full rounded-xl border border-line bg-white p-4" : "mt-4 rounded-xl border border-sage-200 bg-sage-100 p-4"} data-testid="aviso-fotografo">
       {ladoALado ? (
         <>
           <p className="flex items-center gap-2 font-semibold text-ink">

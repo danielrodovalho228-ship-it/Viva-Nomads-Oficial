@@ -156,7 +156,7 @@ export function EtapaFotos({
       </details>
 
       {/* Prompt 31a: porta para os fotógrafos parceiros da cidade do imóvel (o CEP do cadastro vira a cidade). */}
-      <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="porta-fotografo">
+      <div className="mt-3 rounded-xl border border-sage-200 bg-sage-100 p-3 text-sm" data-testid="porta-fotografo">
         <p className="font-semibold text-ink">Quer um fotógrafo profissional?</p>
         <p className="mt-1 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
         <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="alvo-toque mt-1 inline-block font-medium text-forest underline" data-testid="porta-fotografo-link">
@@ -224,7 +224,7 @@ export function FalhaIa({ falha, onTentarDeNovo }: { falha: FalhaIaFotos; onTent
         <button
           type="button"
           onClick={onTentarDeNovo}
-          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-forest px-3 py-2 text-sm font-semibold text-forest hover:bg-sage-50"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-forest px-3 py-2 text-sm font-semibold text-forest hover:bg-sage-100"
           data-testid="ia-fotos-tentar-de-novo"
         >
           <RotateCcw className="h-4 w-4" aria-hidden /> Tentar de novo

@@ -378,7 +378,7 @@ function EstadoDoItem({ chave, estado, aoTentar }: { chave: string; estado: Esta
   if (estado.fase === "salvando")
     return (
       <span className="ml-6 inline-flex items-center gap-2 text-xs text-muted" role="status" data-testid={`check-estado-${chave}`} data-fase="salvando">
-        <span className="h-3 w-3 animate-spin rounded-full border-2 border-sage-300 border-t-forest" aria-hidden />
+        <span className="h-3 w-3 animate-spin rounded-full border-2 border-sage-200 border-t-forest" aria-hidden />
         {TEXTO_SALVANDO}
       </span>
     );

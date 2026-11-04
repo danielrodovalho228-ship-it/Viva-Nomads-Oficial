@@ -9,7 +9,7 @@ import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/ca
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { confirmarRefazer, pedirCodigoRefazer } from "@/lib/seguranca/recuperacao-actions";
 
-const CAMPO = "h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-ink focus:border-forest focus:outline-none";
+const CAMPO = "h-12 w-full rounded-xl border border-sage-200 bg-white px-4 text-ink focus:border-forest focus:outline-none";
 
 /** Passo 1: senha (confere de verdade no Supabase). Passo 2: código de 6 dígitos que chegou por e-mail. */
 export function RefazerDuasEtapasForm({ email }: { email: string }) {
