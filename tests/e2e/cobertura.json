@@ -2595,7 +2595,8 @@
       ],
       "specs": [
         "t470-qa-leitor-caixas",
-        "t521-qa-caixa-sem-token"
+        "t521-qa-caixa-sem-token",
+        "t1066-e434-caixa-foto-embutida"
       ]
     },
     "/qa/entrar": {
