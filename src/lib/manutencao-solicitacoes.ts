@@ -171,6 +171,9 @@ export function textoEvento(e: EventoOrdem): string {
   return `${dataHoraBrasilia(new Date(e.criadoEm))} — ${descricaoEvento(e)}`;
 }
 
+/** E485: o motivo curto ao lado do botão "Abrir solicitação" quando ele está desligado. */
+export const MSG_BOTAO_SEM_CONTRATO = "Disponível a partir de um contrato ativo.";
+
 /** Texto do estado vazio do inquilino sem contrato ativo. */
 export const MSG_SEM_CONTRATO_MANUTENCAO =
   "A manutenção abre a partir de um contrato ativo. Quando o seu contrato começar, você pede por aqui. Antes disso, a Central de Ajuda responde.";

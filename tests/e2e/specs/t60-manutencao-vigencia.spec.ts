@@ -64,6 +64,9 @@ test.describe("T60 — Manutenção só com contrato em vigência (F27)", () => 
     await page.goto("/dashboard/solicitacoes", { waitUntil: "networkidle" });
     await expect(page.getByRole("heading", { name: "Minhas solicitações" })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("manutencao-sem-contrato")).toBeVisible();
+    // E485: o botão desligado diz por quê, ali do lado.
+    await expect(page.getByRole("button", { name: /Abrir solicitação/ })).toBeDisabled();
+    await expect(page.getByTestId("abrir-solicitacao-motivo")).toHaveText("Disponível a partir de um contrato ativo.");
     await expect(page.getByPlaceholder("Descreva o problema...")).toHaveCount(0);
     const { count } = await adm().from("service_orders").select("id", { count: "exact", head: true }).eq("tenant_id", ids.inquilino!);
     expect(count).toBe(0);
