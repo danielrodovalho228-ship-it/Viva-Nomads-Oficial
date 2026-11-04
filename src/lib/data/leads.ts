@@ -131,7 +131,8 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       tenantIds.map(async (id) => {
         const [u, rep] = await Promise.all([admin.auth.admin.getUserById(id).catch(() => null), getReputacao(id).catch(() => null)]);
         emailOk.set(id, !!u?.data?.user?.email_confirmed_at);
-        if (rep) reputacoes.set(id, rep);
+        // Estados vazios: sem avaliação (ou com a leitura falha → null), nada de "0,0 · 0 avaliações" no cartão.
+        if (rep && rep.n > 0) reputacoes.set(id, rep);
       }),
     );
   }
