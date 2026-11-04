@@ -43,6 +43,8 @@ export interface FiltrosPainel {
   seguroOnly?: boolean;
   /** Só imóveis com gestor profissional (sublocação autorizada). */
   gestorOnly: boolean;
+  /** E439: só quem aceita negociar (properties.negociacao.aceita; `?negocia=1`). */
+  negociaOnly?: boolean;
   /** Prompt 57, fase 2: download MEDIDO mínimo (50 | 100 | 300); 0 = desligado. */
   internetMin: number;
   /** "Só com internet medida" (dentro de "Para trabalhar de casa"). */
@@ -68,6 +70,7 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   garantia: "",
   notaOnly: false,
   gestorOnly: false,
+  negociaOnly: false,
   internetMin: 0,
   soInternetMedida: false,
   entrada: "",
@@ -150,6 +153,8 @@ type ImovelFiltravel = ImovelComInternet & {
   subleaseAuthorized?: boolean;
   /** Adendo 59.1: nível gravado pelo servidor (elo mais fraco). */
   nivel?: NivelOuAdequacao | null;
+  /** E439: negociação pública do dono (só o `aceita` pesa no filtro). Sem dado = não negocia. */
+  negociacao?: { aceita: boolean } | null;
 };
 
 /** Rótulo curto das garantias do filtro (resumo do topo). */
@@ -212,6 +217,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   // Apelido legado da garantia "Seguro-fiança" (ver seguroOnly): o MESMO critério, nunca um segundo filtro.
   if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
+  if (f.negociaOnly && p.negociacao?.aceita !== true) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;
   return true;
@@ -250,7 +256,7 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     (f.entrada && f.datasFlexiveis ? 1 : 0) +
     (f.nivelMin ? 1 : 0) +
     // Adendo 3 (E43): "Pronto para Morar" é um estado só (readyToLiveOnly) — atalho e chip contam 1.
-    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly].filter(Boolean).length +
+    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly].filter(Boolean).length +
     comodidadesValidas(f.comodidades).length
   );
 }
@@ -282,5 +288,6 @@ export function resumoFiltros(f: FiltrosPainel): string {
   else if (f.seguroOnly) partes.push(ROTULO_GARANTIA.seguro_fianca);
   if (f.notaOnly) partes.push("Nota Fiscal");
   if (f.gestorOnly) partes.push("Gestor profissional");
+  if (f.negociaOnly) partes.push("Aceita negociação");
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
 }

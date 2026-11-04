@@ -193,6 +193,10 @@ export function FolhaFiltros({
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "gestorOnly")} ativo={rascunho.gestorOnly} onClick={() => muda("gestorOnly", !rascunho.gestorOnly)} testId="faceta-gestor">
             Gestor profissional
           </ChipFaceta>
+          {/* E439: o dono aceita negociar (properties.negociacao), o mesmo dado do selo do anúncio. */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "negociaOnly")} ativo={!!rascunho.negociaOnly} onClick={() => muda("negociaOnly", !rascunho.negociaOnly)} testId="faceta-negocia">
+            Aceita negociação
+          </ChipFaceta>
           {comNotaFiscal && (
             <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">
               Com Nota Fiscal

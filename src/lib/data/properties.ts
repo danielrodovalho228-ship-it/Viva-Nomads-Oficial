@@ -416,6 +416,7 @@ export async function listProperties(): Promise<Property[]> {
     await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
     await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
     await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
+    await attachNegociacao(supabase, mapped); // "Aceita negociação": selo do cartão e filtro da busca (E439; best-effort)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -654,6 +655,25 @@ async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise
     }
   } catch {
     /* sem a view ou a coluna, o filtro de internet não acha medição: ninguém passa como medido */
+  }
+}
+
+/**
+ * E439: negociação pública (properties.negociacao) de cada imóvel da lista, para o selo do cartão e o filtro
+ * "Aceita negociação". Sem a leitura, ninguém ganha o selo nem passa no filtro (nunca um "aceita" inventado).
+ */
+async function attachNegociacao(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const { data, error } = await supabase.from("properties").select("id, negociacao").in("id", list.map((p) => p.id));
+    if (error) return;
+    const porId = new Map(((data as { id: string; negociacao: unknown }[] | null) ?? []).map((r) => [r.id, r.negociacao]));
+    for (const p of list) {
+      const n = porId.get(p.id);
+      if (n) p.negociacao = normalizarNegociacao(n);
+    }
+  } catch {
+    /* sem a coluna: nenhum selo, e o filtro não acha ninguém */
   }
 }
 
