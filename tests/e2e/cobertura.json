@@ -3006,14 +3006,18 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t1071-e445-anexos-chat"
+      ]
     },
     "/api/mensagens/anexo/[id]": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t1071-e445-anexos-chat"
+      ]
     },
     "/api/upload/inquilino-doc": {
       "personas": [
