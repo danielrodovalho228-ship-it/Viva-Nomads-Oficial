@@ -6,14 +6,17 @@
   estado por estadoDoContratoUnico, a partir da linha do banco. Nenhuma tela monta a etapa sozinha.
 */
 import { etapaContrato, type EtapaContrato } from "./contrato-etapas.ts";
+import { lerDaterange } from "./contrato-periodo.ts";
 
 export type Papel = "inquilino" | "proprietario";
 
 /** Colunas de `contratos` que o estado precisa (use no select, junto de `id`). */
-export const COLUNAS_ESTADO_CONTRATO = "status, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
+export const COLUNAS_ESTADO_CONTRATO = "status, periodo, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaEstadoContrato {
   status?: string | null;
+  /** E543: o daterange do contrato ("[2026-09-30,2026-10-31)"). Ausente = a regra de sempre, sem o período. */
+  periodo?: string | null;
   assinado_proprietario_em?: string | null;
   assinado_inquilino_em?: string | null;
   pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null; anulado_em?: string | null }[] | null;
@@ -28,6 +31,7 @@ export type ChaveEstado =
   | "em_acerto"
   | "concluido"
   | "encerrado_sem_renovacao"
+  | "encerrado_periodo"
   | "cancelado";
 
 export interface EstadoContrato {
@@ -57,12 +61,24 @@ const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {
   encerrado_em_acerto: { chave: "em_acerto", selo: "Em acerto de saída" },
 };
 
+/** Hoje no calendário de Brasília (AAAA-MM-DD). */
+function hojeBRT(agora: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(agora);
+}
+
 /** A função única. `papel` muda só o "falta você / falta o inquilino" da assinatura. */
-export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel): EstadoContrato {
+export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel, agora: Date = new Date()): EstadoContrato {
   const status = c.status ?? "ativo";
   if (status !== "ativo") {
     const e = ENCERRADOS[status] ?? { chave: "concluido" as const, selo: "Concluído" };
     return { ...e, etapa: null, faltaVoce: false, ativo: false };
+  }
+  // E543: o período já terminou (o último dia passou, no calendário de Brasília) → encerrado em toda tela, com a mesma
+  // data da página da estadia — nunca "Aguardando 1º pagamento" de um contrato que já acabou.
+  const p = lerDaterange(c.periodo);
+  if (p && p.fim < hojeBRT(agora)) {
+    const [a, m, d] = p.fim.split("-");
+    return { chave: "encerrado_periodo", selo: `Encerrado em ${d}/${m}/${a}`, etapa: null, faltaVoce: false, ativo: false };
   }
   const etapa = etapaContrato({
     assinadoProprietarioEm: c.assinado_proprietario_em ?? null,
