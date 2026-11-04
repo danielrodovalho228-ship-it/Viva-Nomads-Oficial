@@ -82,7 +82,9 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       const topo = page.getByTestId("assistente-rodape");
       await expect(page.getByTestId("passo-texto")).toHaveText("Passo 3 de 10");
       expect(await page.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
-      await expect(topo.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "30");
+      // E498: a barra é o "N% pronto" da prontidão (o mesmo do Início), não a posição do passo (antes, 30).
+      const pronto = parseInt((await topo.getByTestId("passo-detalhe").textContent()) ?? "", 10);
+      await expect(topo.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(pronto));
       await expect(page.getByTestId("barra-fotos")).toHaveCount(0);
       if (largura === 1280) await expect(page.getByTestId("novo-resumo").getByTestId("previa-sem-foto")).toBeVisible();
 

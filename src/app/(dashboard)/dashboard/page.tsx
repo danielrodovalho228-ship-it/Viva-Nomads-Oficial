@@ -7,7 +7,7 @@ import { estadiasDaHome } from "@/lib/data/estadia";
 import { getLatestDraft } from "@/lib/data/actions";
 import { dadosDasDecisoes } from "@/lib/data/painel-decisoes";
 import { decisoesDoMorador, decisoesDoProprietario, type EstadiaParaDecisao } from "@/lib/painel/decisoes";
-import { checklistAnuncio } from "@/lib/anuncio/prontidao";
+import { checklistAnuncio, hrefRetomarRascunho } from "@/lib/anuncio/prontidao";
 import { fatosDaConta } from "@/lib/data/ativacao";
 import { checklistsDoInicio } from "@/lib/onboarding/ativacao";
 import { ativacoesDaSessao } from "@/lib/data/ativacao";
@@ -188,7 +188,17 @@ export default async function DashboardPage() {
   const inicioDono = {
     alerta: alertaDoTopo(decisoesDono),
     bloco: blocoPrincipalDono({
-      rascunho: rascunho ? { id: rascunho.id, pct: rascunho.pct, pronto: rascunho.pronto, itens: rascunho.checklist?.itens ?? [], foto: capaRascunho } : null,
+      rascunho: rascunho
+        ? {
+            id: rascunho.id,
+            pct: rascunho.pct,
+            pronto: rascunho.pronto,
+            itens: rascunho.checklist?.itens ?? [],
+            foto: capaRascunho,
+            // E507: o mesmo destino de retomada de Meus imóveis.
+            retomar: hrefRetomarRascunho(draft?.prontidao, rascunho.id),
+          }
+        : null,
       decisoes: decisoesDono,
       temAnuncio: imoveisDono.length > 0,
       fotoAnuncio: capaAnuncio,

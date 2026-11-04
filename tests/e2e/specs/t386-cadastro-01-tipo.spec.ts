@@ -48,7 +48,10 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
       await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
       await expect(p.getByTestId("passo-texto")).toHaveText("Passo 1 de 10");
-      await expect(p.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "10");
+      // E498: a barra é o "N% pronto" da prontidão (o mesmo do Início), não a posição do passo.
+      await expect(p.getByTestId("passo-detalhe")).toHaveText(/^\d+% pronto$/);
+      const pronto = parseInt((await p.getByTestId("passo-detalhe").textContent()) ?? "", 10);
+      await expect(p.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(pronto));
       await expect(p.locator("h1")).toHaveCount(1);
       await expect(p.locator("h1")).toHaveText("Qual é o tipo do seu imóvel?");
       for (const t of ["casa", "apartamento", "quarto"]) await expect(p.getByTestId(`tipo-${t}`)).toBeVisible();

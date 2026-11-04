@@ -40,7 +40,8 @@ export function alertaDoTopo(decisoes: readonly Decisao[]): Decisao | null {
 }
 
 export function blocoPrincipalDono(p: {
-  rascunho: { id: string; pct: number; pronto: boolean; itens: { label: string; ok: boolean; href: string }[]; foto: string | null } | null;
+  /** E507: `retomar` é o destino único de retomada (hrefRetomarRascunho) — o mesmo do "Continuar editando" de Meus imóveis. */
+  rascunho: { id: string; pct: number; pronto: boolean; itens: { label: string; ok: boolean; href: string }[]; foto: string | null; retomar?: string } | null;
   decisoes: readonly Decisao[];
   temAnuncio: boolean;
   fotoAnuncio: string | null;
@@ -60,7 +61,7 @@ export function blocoPrincipalDono(p: {
       titulo: "Continue seu anúncio",
       pct: Math.max(0, Math.min(100, Math.round(r.pct))),
       linha: falta ? `Próximo passo: ${falta.label.charAt(0).toLowerCase()}${falta.label.slice(1)}` : "Falta revisar e publicar",
-      botao: { rotulo: "Continuar de onde parou", href: falta?.href ?? `/dashboard/imoveis/novo?draft=${r.id}` },
+      botao: { rotulo: "Continuar de onde parou", href: r.retomar ?? falta?.href ?? `/dashboard/imoveis/novo?draft=${r.id}` },
       passos,
       foto: r.foto,
     };

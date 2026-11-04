@@ -31,7 +31,8 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
     } = await supabase.auth.getUser();
     if (user) {
       const [mapa, { data: motivos }, entrada] = await Promise.all([
-        prontidaoDosImoveis(supabase, user.id, properties.map((p) => p.id)),
+        // E498: rascunho conta a qualificação, como a barra do assistente e o Início.
+        prontidaoDosImoveis(supabase, user.id, properties.map((p) => p.id), { qualificacaoDoRascunho: true }),
         supabase.from("properties").select("id, pausa_motivo").eq("owner_id", user.id).eq("status", "paused"),
         // Sem a 0225, erro → nenhum aviso.
         supabase.from("properties").select("id, title, status, tipo_entrada").eq("owner_id", user.id).neq("status", "draft"),

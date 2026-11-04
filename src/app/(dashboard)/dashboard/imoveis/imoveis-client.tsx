@@ -17,7 +17,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
-import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
+import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
 import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { cn, formatBRL } from "@/lib/utils";
@@ -304,7 +304,8 @@ export function MyPropertiesClient({
                         <ButtonLink
                           href={
                             p.status === "draft"
-                              ? `/dashboard/imoveis/novo?draft=${p.id}`
+                              ? // E507 — o mesmo destino de retomada do Início (o 1º passo que falta), não o passo guardado.
+                                hrefRetomarRascunho(prontidao[p.id], p.id)
                               : `/dashboard/imoveis/${p.id}/editar`
                           }
                           variant={p.status === "draft" ? "secondary" : "ghost"}

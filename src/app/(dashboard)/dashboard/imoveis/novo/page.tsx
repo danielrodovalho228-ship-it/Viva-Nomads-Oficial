@@ -31,7 +31,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
+import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
@@ -2197,6 +2197,10 @@ export default function NewPropertyPage() {
         pos={pos}
         total={ORDEM_ETAPAS.length}
         onVoltar={pos > 0 ? voltarEtapa : null}
+        // E498: a barra e a linha "N% pronto" são o pct da prontidão (o mesmo do cartão do Início e de Meus imóveis), em
+        // todos os passos — antes a barra era a posição do passo (30% no Passo 3, 70% no Passo 7).
+        pct={prontidao.pct}
+        detalhe={textoPronto(prontidao)}
         primario={
           pos < ULTIMA_ETAPA
             ? {
