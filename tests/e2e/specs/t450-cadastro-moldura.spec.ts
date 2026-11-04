@@ -62,7 +62,10 @@ test.describe("T450 — CADASTRO-MOLDURA: o assistente fora da casca do painel",
         const rodape = page.getByTestId("assistente-rodape");
         await expect(rodape.getByTestId("passo-texto")).toHaveText(`Passo ${n} de 10`);
         expect(await rodape.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "o passo não é cortado").toBe(true);
-        await expect(rodape.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(n * 10));
+        // E498: a barra é o "N% pronto" da prontidão em todos os passos (antes, n × 10).
+        await expect(rodape.getByTestId("passo-detalhe")).toHaveText(/^\d+% pronto$/);
+        const pronto = parseInt((await rodape.getByTestId("passo-detalhe").textContent()) ?? "", 10);
+        await expect(rodape.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(pronto));
         await expect(rodape.getByTestId("cadastro-voltar")).toHaveCount(n === 1 ? 0 : 1);
         if (n < 10) await expect(rodape.getByTestId("cadastro-continuar")).toContainText("Continuar");
         else await expect(rodape.getByTestId("publicar-anuncio")).toHaveText("Publicar anúncio");
