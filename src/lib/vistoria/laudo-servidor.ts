@@ -167,12 +167,24 @@ export async function bloquear(admin: Admin, propertyId: string, ownerId: string
   return true;
 }
 
+/** O laudo já foi gravado: sem conseguir liberar, o bloqueio fica aberto (lado seguro) e a equipe resolve no admin. */
+const semLiberar = (e: unknown) => console.error("[emitirLaudo] bloqueio não liberado:", e instanceof Error ? e.message : e);
+
 /** Resolve o bloqueio; se a plataforma tirou da busca e nenhum outro bloqueio segura, o anúncio volta. */
 export async function liberar(admin: Admin, propertyId: string, motivos: MotivoBloqueio[], agora = new Date()): Promise<void> {
+  // Estados vazios: ANTES de escrever, confere se outro bloqueio (ex.: segurança grave) ainda segura o anúncio. Sem essa
+  // leitura, não resolve nada (quem chama mostra o erro e tenta de novo): o anúncio nunca volta à busca por engano.
+  const { data: outros, error: erroOutros } = await admin
+    .from("vistoria_bloqueios")
+    .select("id")
+    .eq("property_id", propertyId)
+    .is("resolvido_em", null)
+    .not("motivo", "in", `(${motivos.join(",")})`)
+    .limit(1);
+  if (erroOutros) throw new Error("Não foi possível conferir os bloqueios do anúncio agora.");
   const { data } = await admin.from("vistoria_bloqueios").update({ resolvido_em: agora.toISOString() }).eq("property_id", propertyId).in("motivo", motivos).is("resolvido_em", null).select("pausou");
   const pausou = ((data ?? []) as { pausou: boolean }[]).some((b) => b.pausou);
-  const { data: resta } = await admin.from("vistoria_bloqueios").select("id").eq("property_id", propertyId).is("resolvido_em", null).limit(1);
-  if (pausou && !resta?.length) await admin.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused").eq("pausa_motivo", "avaliacao");
+  if (pausou && !outros?.length) await admin.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused").eq("pausa_motivo", "avaliacao");
 }
 
 /** Reaplica a escada do proprietário: 2º = republicar só com laudo; 3º = todos os anúncios fora da busca. */
@@ -359,14 +371,14 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
     await bloquear(admin, p.property_id, p.owner_id, "seguranca_grave", p.id, true);
     await avisar(admin, p.owner_id, "vistoria_fora_da_busca", rotaDono(p.property_id), { propertyId: p.property_id });
   } else {
-    await liberar(admin, p.property_id, ["seguranca_grave"], agora);
+    await liberar(admin, p.property_id, ["seguranca_grave"], agora).catch(semLiberar);
   }
 
   // Aprovado (nova avaliação aprovada): sai dos bloqueios de strike deste imóvel; o 3º strike libera a carteira toda.
   if (r.resultado === "aprovado") {
-    await liberar(admin, p.property_id, ["strike_2"], agora);
+    await liberar(admin, p.property_id, ["strike_2"], agora).catch(semLiberar);
     const { data: b3 } = await admin.from("vistoria_bloqueios").select("property_id").eq("owner_id", p.owner_id).eq("motivo", "strike_3").is("resolvido_em", null);
-    for (const b of (b3 ?? []) as { property_id: string }[]) await liberar(admin, b.property_id, ["strike_3"], agora);
+    for (const b of (b3 ?? []) as { property_id: string }[]) await liberar(admin, b.property_id, ["strike_3"], agora).catch(semLiberar);
   }
 
   // Strike: só em verificação reprovada (a 1ª avaliação pedida pelo dono nunca gera).

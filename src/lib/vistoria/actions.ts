@@ -36,6 +36,8 @@ import {
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, comTesteConcluido, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
 
+const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
+
 /*
   Prompt 62-B1 — ações da avaliação do imóvel. Cada ação confere QUEM é (dono do imóvel, avaliador designado, morador
   do imóvel ou admin com duas etapas) e grava com o cliente de serviço. O dono NUNCA escolhe o avaliador: nenhuma ação
@@ -388,14 +390,17 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   if (!pode.ok) return { ok: false, erro: pode.motivo };
   // Imóvel ocupado agora: a visita só acontece com a concordância do morador.
   const hoje = agora.toISOString().slice(0, 10);
-  const { data: contratos } = await s.admin.from("contratos").select("tenant_id, contrato_blocos(inicio, fim, status)").eq("property_id", im.id).eq("status", "ativo");
+  const { data: contratos, error: erroContratos } = await s.admin.from("contratos").select("tenant_id, contrato_blocos(inicio, fim, status)").eq("property_id", im.id).eq("status", "ativo");
   const ocupante = ((contratos ?? []) as { tenant_id: string; contrato_blocos: { inicio: string; fim: string; status: string | null }[] | null }[]).find((c) =>
     (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
   );
-  const { data: dono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
+  const { data: dono, error: erroDono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
   // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida, é NOVA AVALIAÇÃO (novo pedido completo, outro avaliador
   // pelo rodízio): valor da tabela, menos a condição de retorno da cidade só se ela existir e estiver no prazo.
-  const { data: ultimo } = await s.admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", im.id).order("emitido_em", { ascending: false }).limit(1).maybeSingle();
+  const { data: ultimo, error: erroUltimo } = await s.admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", im.id).order("emitido_em", { ascending: false }).limit(1).maybeSingle();
+  // Estados vazios: sem os contratos, o imóvel ocupado passaria por vago (visita sem a concordância do morador); sem a
+  // última avaliação, a nova avaliação viraria "inicial"; sem o is_teste, o pedido de teste viraria real. Não abre.
+  if (erroContratos || erroDono || erroUltimo) return { ok: false, erro: MSG_VISTORIA_SEM_LEITURA };
   const desde = ultimo?.resultado === "reprovado" ? (ultimo.emitido_em as string) : ((ultimo?.ressalva_vencida_em as string | null | undefined) ?? null);
   const tipo = desde ? "nova_avaliacao" : "inicial";
   const cobranca = valorDoPedido(tipo, preco!, desde, agora);
