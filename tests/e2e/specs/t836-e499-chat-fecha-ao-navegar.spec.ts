@@ -39,8 +39,11 @@ for (const largura of [768, 1280] as const) {
       test("abrir o chat no painel, ir a outra tela e voltar: o chat está fechado", async ({ page }) => {
         await page.goto("/dashboard", { waitUntil: "load" });
         await abrirChat(page);
-        await page.locator('a[href="/dashboard/mensagens"]').filter({ visible: true }).first().click();
-        await page.waitForURL(/\/dashboard\/mensagens$/);
+        // qualquer tela do painel serve; o menu muda com a largura (em 768 não há link de Mensagens à vista)
+        const link = page.locator('main a[href^="/dashboard/"]').filter({ visible: true }).first();
+        const destino = (await link.getAttribute("href"))!.split(/[?#]/)[0];
+        await link.click();
+        await page.waitForURL((u) => u.pathname === destino);
         await expect(chat(page)).toHaveCount(0);
         await page.goBack();
         await page.waitForURL((u) => u.pathname === "/dashboard");
