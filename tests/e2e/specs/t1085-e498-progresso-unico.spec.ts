@@ -12,6 +12,8 @@ import { doTipoAoEndereco } from "../fixtures/cadastro";
  *      número não anda com a posição do passo).
  * As regras (ordem da lista, qualificacaoDoRascunho, a barra ligada ao pct) ficam com o e498-progresso-unico.test.ts;
  * a barra = "N% pronto" num passo só, com a t450/t386.
+ * Sem qualificação injetada na sessionStorage (como a t8 faz): o assistente contaria a qualificação que o servidor não
+ * vê (não foi gravada no draft_data) — o rascunho aqui é o de quem respondeu "depois", pelo caminho real da tela.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -19,19 +21,8 @@ const dono = { email: `dono.t1085.${sufixo}@lab.vivanomads.test`, nome: "Paula P
 const ids: Record<string, string> = {};
 let rascunho = "";
 
-async function comQualificacao(p: Page) {
-  await p.addInitScript(() => {
-    try {
-      sessionStorage.setItem("vivanomads-qualification", JSON.stringify({ eligible: true, baseBadge: true, tHome: true, tWork: false, score: 5 }));
-    } catch {
-      /* sem sessionStorage */
-    }
-  });
-}
-
 async function criarRascunho(browser: Browser): Promise<string> {
   const p = await entrar(browser, dono.email, senha);
-  await comQualificacao(p);
   await p.goto("/dashboard/imoveis/novo", { waitUntil: "domcontentloaded" });
   const qualificacao = p.getByTestId("qualificacao");
   await p.getByTestId("passo-titulo").or(qualificacao).first().waitFor({ state: "visible", timeout: 30_000 });
@@ -76,8 +67,7 @@ test.describe("T1085 — E498: o progresso do rascunho é um número só (Iníci
   for (const w of [390, 1280] as const) {
     test(`o mesmo N no Início, em Meus imóveis e no assistente (Endereço e Detalhes) (${w})`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
-      await comQualificacao(p);
-      await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+          await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
 
       // 1. Início.
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
