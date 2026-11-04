@@ -8,6 +8,8 @@ import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import { PROXIMO_PASSO_CANDIDATURA, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { VinculoMorador } from "@/components/triagem/vinculo-morador";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
+import { PedirOrcamento } from "@/components/candidaturas/pedir-orcamento";
+import { numeroPublicoPedido } from "@/lib/pedido-ref";
 
 export const metadata: Metadata = {
   title: "Minhas candidaturas",
@@ -93,6 +95,10 @@ export default async function CandidaturasPage() {
                     <MessageSquare className="h-4 w-4" /> {PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.acao.rotulo}
                   </Link>
                 </div>
+              )}
+              {/* E440: pedido aceito e ainda sem contrato — o número do pedido e "Pedir orçamento" (o servidor confere o resto). */}
+              {c.situacao.chave === "aceita" && !c.contrato && numeroPublicoPedido(c.id) && (
+                <PedirOrcamento leadId={c.id} numeroPedido={numeroPublicoPedido(c.id)!} />
               )}
               {c.contrato && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="candidatura-contrato">

@@ -4525,6 +4525,19 @@
         "t165-pedido-contador"
       ]
     },
+    "src/lib/data/pedido-orcamento-actions.ts#numerosDoContrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/pedido-orcamento-actions.ts#pedirOrcamento": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
     "src/lib/data/pedidos-actions.ts#aceitarResposta": {
       "personas": [
         "inquilino",
