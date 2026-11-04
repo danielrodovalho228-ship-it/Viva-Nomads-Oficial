@@ -38,7 +38,7 @@ import {
 } from "@/lib/data/contratos-actions";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
 import { ancoraAvaliacao } from "@/lib/avaliacoes";
-import { DevolucaoCaucaoDono, ListaDocumentos } from "@/components/documentos/documentos-contrato";
+import { AvisoDocumentosFalhou, DevolucaoCaucaoDono, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
 
@@ -357,7 +357,9 @@ function ContratoCard({
         </span>
       </div>
 
-      {extra && (
+      {extra && (extra.falhou ? (
+          <AvisoDocumentosFalhou />
+        ) : (
         <>
           <DevolucaoCaucaoDono
             contratoId={contrato.id}
@@ -368,7 +370,7 @@ function ContratoCard({
           />
           <ListaDocumentos documentos={extra.documentos} recibos={extra.recibos} />
         </>
-      )}
+      ))}
 
       {/* Avaliar o inquilino (reputação bidirecional). E346: âncora do e-mail "Avaliar a estadia". */}
       <div id={ancoraAvaliacao(contrato.id)} className="scroll-mt-24">
