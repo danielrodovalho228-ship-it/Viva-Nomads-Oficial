@@ -8,8 +8,12 @@ import { doTipoAoEndereco } from "../fixtures/cadastro";
  * nenhuma edição. Pela tela real, proprietário novo com um rascunho criado pelo próprio assistente, 390 e 1280:
  *   1. reabrir o rascunho (?draft=<id>) e esperar além do debounce: nada de "Salvando…" nem "Salvo às";
  *   2. mudar um campo (o bairro) → "Salvando…" e depois "Salvo às HH:MM" (o carimbo volta com a edição de verdade);
- *   3. recarregar: o bairro novo veio do servidor.
- * As regras (conteudoDoRascunho, decisaoAutosave) ficam com o salvo-fantasma.test.ts; o autosave em si, com a t8.
+ *   3. recarregar: o bairro novo veio do servidor;
+ *   4. (L-93) a edição feita logo ao abrir, antes do 1º debounce, também precisa ser gravada.
+ * As regras (conteudoDoRascunho, decisaoAutosave) ficam com o salvo-fantasma.test.ts; o autosave em si, com a t8. *
+ * L-93 (defeito de produto, achado lendo o E516 e conferido no teste 4, 04/11): o 1º debounce depois de abrir o
+ * rascunho vira a BASE e não grava. Uma edição feita nesses primeiros ~2 s entra na base sem ir ao servidor; quem sai
+ * (ou recarrega) sem mexer em mais nada perde a edição. Fica no teste 4, test.fail ligado ao L-93.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -89,4 +93,24 @@ test.describe("T1084 — E516: abrir o rascunho não carimba 'Salvo às'; editar
       await p.context().close();
     });
   }
+
+  test("4. L-93: uma edição logo ao abrir (antes do 1º debounce) também é gravada (390)", async ({ browser }) => {
+    test.fail(true, "L-93: o 1º debounce depois de abrir vira a base do autosave e não grava — a edição feita nesse intervalo se perde ao recarregar");
+    const p = await entrar(browser, dono.email, senha);
+    await comQualificacao(p);
+    await p.setViewportSize({ width: 390, height: 844 });
+    const bairro = p.locator('input[list="novo-bairros"]');
+    await p.goto(`/dashboard/imoveis/novo?draft=${rascunho}&etapa=2`, { waitUntil: "domcontentloaded" });
+    await expect(bairro).toHaveValue(/^(Centro|Bairro) t1084 /, { timeout: 30_000 });
+    // Edita assim que o campo aparece (dentro dos 2 s do 1º debounce) e espera bem além dele, sem mais nada.
+    const rapido = `Rapido t1084 ${sufixo}`;
+    await bairro.fill(rapido);
+    await p.waitForTimeout(6_000);
+    await p.reload({ waitUntil: "domcontentloaded" });
+    try {
+      await expect(bairro, "a edição rápida foi gravada").toHaveValue(rapido, { timeout: 20_000 });
+    } finally {
+      await p.context().close();
+    }
+  });
 });
