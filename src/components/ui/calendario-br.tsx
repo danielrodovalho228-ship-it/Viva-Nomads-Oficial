@@ -30,6 +30,7 @@ export function CalendarioBR({
   aoFechar,
   dentroDe,
   testid,
+  emLinha = false,
 }: {
   /** Data escolhida, em ISO, ou "". */
   valor: string;
@@ -42,6 +43,8 @@ export function CalendarioBR({
   /** O campo inteiro (texto + botão): clicar nele não conta como "clique fora". */
   dentroDe: RefObject<HTMLElement | null>;
   testid?: string;
+  /** E526: dentro de um painel (o de Datas da busca), abre EM LINHA — o painel cresce, nada fica por baixo. */
+  emLinha?: boolean;
 }) {
   const hoje = hojeIsoBrasilia();
   const inicial = valor || (min && min > hoje ? min : hoje);
@@ -87,7 +90,10 @@ export function CalendarioBR({
           irPara(somarDias(foco, teclas[e.key]));
         }
       }}
-      className="absolute right-0 top-full z-50 mt-2 w-[19rem] max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-white p-3 text-ink shadow-flutuante"
+      className={cn(
+        emLinha ? "relative mt-2 w-full" : "absolute right-0 top-full z-50 mt-2 w-[19rem] max-w-[calc(100vw-2rem)]",
+        "rounded-xl border border-line bg-white p-3 text-ink shadow-flutuante"
+      )}
     >
       <div className="flex items-center justify-between gap-2">
         <button

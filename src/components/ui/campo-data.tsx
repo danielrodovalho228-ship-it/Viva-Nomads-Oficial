@@ -22,6 +22,7 @@ export function CampoDataTexto({
   className,
   rotuloCalendario,
   aceitarTexto,
+  calendarioEmLinha = false,
   ...resto
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange" | "min"> & {
   value: string;
@@ -33,6 +34,8 @@ export function CampoDataTexto({
   rotuloCalendario?: string;
   /** Texto inteiro que o dono do campo trata (ex.: data e hora "AAAA-MM-DDTHH:MM" colada no campo de data e hora). */
   aceitarTexto?: (bruto: string) => boolean;
+  /** E526: calendário em linha (dentro de um painel), em vez de flutuar por cima dele. */
+  calendarioEmLinha?: boolean;
 }) {
   const caixa = useRef<HTMLSpanElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
@@ -49,6 +52,8 @@ export function CampoDataTexto({
 
   return (
     <span ref={caixa} className="relative block min-w-0">
+      {/* E526: campo + botão numa caixa própria — com o calendário em linha, o botão (centrado na altura) não desce sobre ele. */}
+      <span className="relative block min-w-0">
       <input
         {...resto}
         type="text"
@@ -92,12 +97,14 @@ export function CampoDataTexto({
       >
         <CalendarDays className="h-5 w-5" aria-hidden />
       </button>
+      </span>
       {aberto && (
         <CalendarioBR
           valor={value}
           min={min}
           rotulo={nome}
           dentroDe={caixa}
+          emLinha={calendarioEmLinha}
           testid={testid ? `${testid}-calendario-popup` : "calendario-popup"}
           aoFechar={() => {
             fechar();
@@ -131,12 +138,15 @@ export function CampoData({
   name,
   "aria-label": ariaLabel,
   "data-testid": testid,
+  calendarioEmLinha = false,
   ...resto
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "min"> & {
   value: string;
   exemplo?: string;
   min?: string;
   "data-testid"?: string;
+  /** E526: no computador, o calendário do site abre em linha (dentro de um painel). No celular vale o do aparelho. */
+  calendarioEmLinha?: boolean;
 }) {
   const toque = useToque();
   const vazio = !value;
@@ -151,6 +161,7 @@ export function CampoData({
           ariaLabel={ariaLabel}
           testid={testid}
           className={className}
+          calendarioEmLinha={calendarioEmLinha}
           aoMudar={(iso) => onChange?.({ target: { value: iso }, currentTarget: { value: iso } } as ChangeEvent<HTMLInputElement>)}
         />
         {name && <input type="hidden" name={name} value={value} />}

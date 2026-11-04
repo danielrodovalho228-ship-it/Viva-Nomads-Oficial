@@ -115,7 +115,9 @@ export function BarraPilulas(p: {
       </div>
 
       {aberto && (
-        <div className="absolute left-0 right-0 z-40 mt-2 rounded-xl border border-line bg-white p-4 shadow-flutuante sm:right-auto sm:w-[28rem]" data-testid={`painel-pilula-${aberto}`} role="dialog" aria-label={ROTULO[aberto]}>
+        // E526 (D12): o painel abre NO FLUXO, logo abaixo da linha de pílulas — empurra o título e os cartões em vez de
+        // ficar por cima deles (antes: absolute z-40, cobria "N imóveis em …" e os primeiros cartões).
+        <div className="mt-2 rounded-xl border border-line bg-white p-4 shadow-flutuante sm:w-[28rem]" data-testid={`painel-pilula-${aberto}`} role="dialog" aria-label={ROTULO[aberto]}>
           {aberto === "datas" && (
             <div className="space-y-4">
               <label className="block text-sm font-semibold text-ink">
@@ -123,6 +125,7 @@ export function BarraPilulas(p: {
                 {/* E136: o campo de data do site (no computador, o calendário em pt-BR; no celular, o do aparelho). */}
                 <span className="mt-2 block">
                   <CampoData
+                    calendarioEmLinha
                     value={f.entrada}
                     onChange={(e) => p.aplicar({ ...f, entrada: e.target.value, datasFlexiveis: e.target.value ? f.datasFlexiveis : false })}
                     className="block h-11 w-full rounded-lg border border-line bg-white px-4 text-sm font-normal text-ink outline-none focus:border-ink"
