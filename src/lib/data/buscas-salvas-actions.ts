@@ -21,12 +21,16 @@ async function sessao() {
   return user ? { supabase, user } : null;
 }
 
+/** Estados vazios: a leitura que falha não vira "não salva" (nem uma 2ª cópia, nem o limite pulado). */
+const MSG_CONFERIR_BUSCA = "Não foi possível conferir esta busca agora. Tente de novo.";
+
 /** A busca atual já está salva? (null = visitante). */
 export async function buscaEstaSalva(qs: string): Promise<{ salva: boolean | null }> {
   const s = await sessao();
   if (!s) return { salva: null };
   const parametros = normalizarBusca(qs);
-  const { data } = await s.supabase.from("buscas_salvas").select("id").eq("usuario_id", s.user.id).eq("parametros", parametros).maybeSingle();
+  const { data, error } = await s.supabase.from("buscas_salvas").select("id").eq("usuario_id", s.user.id).eq("parametros", parametros).maybeSingle();
+  if (error) throw new Error(MSG_CONFERIR_BUSCA);
   return { salva: !!data };
 }
 
@@ -38,19 +42,23 @@ export async function alternarBuscaSalva(qs: string): Promise<Res<{ salva: boole
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para salvar esta busca.", precisaEntrar: true };
   const parametros = normalizarBusca(qs);
-  const { data: existente } = await s.supabase
+  const { data: existente, error: erroExistente } = await s.supabase
     .from("buscas_salvas")
     .select("id")
     .eq("usuario_id", s.user.id)
     .eq("parametros", parametros)
     .maybeSingle();
+  // Sem saber se já está salva, o clique não grava uma 2ª cópia nem apaga nada.
+  if (erroExistente) return { ok: false, error: MSG_CONFERIR_BUSCA };
   if (existente) {
     const { error } = await s.supabase.from("buscas_salvas").delete().eq("id", existente.id);
     if (error) return { ok: false, error: "Não foi possível remover a busca. Tente de novo." };
     revalidatePath("/dashboard/buscas");
     return { ok: true, salva: false };
   }
-  const { count } = await s.supabase.from("buscas_salvas").select("id", { count: "exact", head: true }).eq("usuario_id", s.user.id);
+  const { count, error: erroContagem } = await s.supabase.from("buscas_salvas").select("id", { count: "exact", head: true }).eq("usuario_id", s.user.id);
+  // Sem a contagem, o limite não é pulado.
+  if (erroContagem) return { ok: false, error: MSG_CONFERIR_BUSCA };
   if ((count ?? 0) >= LIMITE_BUSCAS_SALVAS) return { ok: false, error: `Você já tem ${LIMITE_BUSCAS_SALVAS} buscas salvas. Apague uma em Buscas salvas.` };
   const { data: nova, error } = await s.supabase
     .from("buscas_salvas")
