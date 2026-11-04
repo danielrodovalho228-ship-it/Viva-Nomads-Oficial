@@ -34,6 +34,16 @@ for (const largura of [390, 1280]) {
 
       await passo.getByRole("button", { name: "Voltar" }).click();
       await expect(passo.getByTestId("candidatura-apresentacao")).toHaveValue(/remoto/);
+
+      // E518: em qualquer passo o diálogo fecha pelo X e pelo Esc.
+      await page.keyboard.press("Escape");
+      await expect(passo).toHaveCount(0);
+      await expect(async () => {
+        await page.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first().click();
+        await expect(passo).toBeVisible({ timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
+      await passo.getByTestId("solicitacao-fechar").click();
+      await expect(passo).toHaveCount(0);
     });
   });
 }
