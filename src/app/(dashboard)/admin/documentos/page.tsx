@@ -17,6 +17,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
+import { ABA_ADMIN } from "@/lib/admin/abas";
 
 type ClienteAdmin = NonNullable<Awaited<ReturnType<typeof adminDaPagina>>>;
 
@@ -34,7 +35,7 @@ function Abas({ atual }: { atual: "fila" | "emitidos" }) {
     <Link
       href={href}
       aria-current={atual === chave ? "page" : undefined}
-      className={cn("rounded-lg px-3 py-2 text-sm", atual === chave ? "bg-forest text-white" : "text-ink hover:bg-surface-2")}
+      className={cn("rounded-lg px-3 py-2 text-sm", atual === chave ? ABA_ADMIN.ativa : ABA_ADMIN.inativa)}
       data-testid={`documentos-aba-${chave}`}
     >
       {rotulo}

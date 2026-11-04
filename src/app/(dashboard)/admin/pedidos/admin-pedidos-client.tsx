@@ -18,6 +18,7 @@ import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
 import { abasPedidos, filtrarPedidosAdmin } from "@/lib/admin/pedidos-filtro";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { ABA_ADMIN, SELO_OK_ADMIN } from "@/lib/admin/abas";
 
 type Pedido = {
   id: string;
@@ -143,7 +144,7 @@ export function AdminPedidosClient({
               role="tab"
               aria-selected={aba === a.valor}
               onClick={() => setAba(a.valor)}
-              className={cn("min-h-11 rounded-full border px-3 text-sm", aba === a.valor ? "border-forest bg-sage-100 font-semibold text-forest" : "border-line text-ink")}
+              className={cn("min-h-11 rounded-full border px-3 text-sm", aba === a.valor ? ABA_ADMIN.ativa : ABA_ADMIN.inativa)}
               data-testid={`pedidos-aba-${a.valor}`}
             >
               {a.rotulo} ({a.total})
@@ -187,7 +188,7 @@ export function AdminPedidosClient({
                     <td className="py-3">
                       <ul className="flex flex-wrap gap-1">
                         {(p.colunas?.selos ?? []).map((s) => (
-                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "border border-line bg-white text-amber-900")}>
+                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? SELO_OK_ADMIN : "border border-line bg-white text-amber-900")}>
                             {s.texto}
                           </li>
                         ))}
