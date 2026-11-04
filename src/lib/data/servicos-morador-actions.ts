@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
-import { proximosEstados, type EstadoPedidoServico } from "@/lib/servicos-morador";
+import { linhaImovelServico, proximosEstados, type EstadoPedidoServico } from "@/lib/servicos-morador";
 
 export interface PedidoServicoView {
   id: string;
@@ -21,6 +21,8 @@ export interface PedidoServicoView {
 
 export interface PedidoServicoAdmin extends PedidoServicoView {
   morador: string;
+  /** Onda 5 (matriz admin-servicos): "Título · Bairro, Cidade" do imóvel do pedido; null sem imóvel ligado. */
+  imovel: string | null;
 }
 
 interface Resultado {
@@ -55,7 +57,7 @@ export async function pedidosServicoAdmin(): Promise<PedidoServicoAdmin[] | null
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
   const { data, error } = await admin
     .from("servicos_pedidos")
-    .select(`${COLUNAS}, profiles:tenant_id(full_name)`)
+    .select(`${COLUNAS}, profiles:tenant_id(full_name), properties:property_id(title, address, city)`)
     .order("criado_em", { ascending: false })
     .limit(200);
   // Achado 33: erro de leitura sobe e cai no aviso do admin ("Tentar de novo"), não em "Nenhum pedido… ainda".
@@ -63,6 +65,7 @@ export async function pedidosServicoAdmin(): Promise<PedidoServicoAdmin[] | null
   return ((data ?? []) as unknown as Record<string, unknown>[]).map((p) => ({
     ...paraView(p),
     morador: String((p.profiles as { full_name?: string } | null)?.full_name ?? "Morador"),
+    imovel: linhaImovelServico((p.properties as { title: string | null; address: string | null; city: string | null } | null) ?? null),
   }));
 }
 
