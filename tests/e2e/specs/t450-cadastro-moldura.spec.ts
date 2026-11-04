@@ -20,8 +20,9 @@ const SAIDA = "tests/laboratorio/saida";
 const PASSOS = Object.keys(TITULO_PASSO) as PassoCadastro[];
 
 async function semCascaDoPainel(page: Page) {
-  // A lateral do painel (a prévia do anúncio é um <aside> da própria página e fica).
-  await expect(page.locator('aside:not([data-testid="novo-resumo"])')).toHaveCount(0);
+  // A lateral do painel (a prévia do anúncio é um <aside> da própria página e fica — a do resumo e, desde o E251, a
+  // coluna da prévia do Passo 10).
+  await expect(page.locator('aside:not([data-testid="novo-resumo"]):not([data-testid="passo10-coluna-previa"])')).toHaveCount(0);
   await expect(page.locator("nav[data-papel]")).toHaveCount(0);
   await expect(page.locator('[aria-label="Abrir menu"]')).toHaveCount(0);
   await expect(page.locator('[aria-label^="Papel ativo"]')).toHaveCount(0);
