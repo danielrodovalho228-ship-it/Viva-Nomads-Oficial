@@ -10,7 +10,8 @@ test("Meus imóveis: só o anúncio no ar tem título-link e 'Ver'; rascunho e p
   const lista = ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
   assert.match(lista, /\{demoItem \|\| p\.status !== "active" \? \(\s*<span className="mt-2 font-title text-lg font-semibold text-ink">\{p\.title\}<\/span>/);
   assert.match(lista, /\{p\.status === "active" && \(\s*<ButtonLink href=\{`\/imoveis\/\$\{p\.id\}`\}/);
-  assert.match(lista, /`\/dashboard\/imoveis\/novo\?draft=\$\{p\.id\}`/, "rascunho segue com 'Continuar editando'");
+  // E507: "Continuar editando" do rascunho vai pelo destino único de retomada (sempre o assistente, /novo?draft=).
+  assert.match(lista, /hrefRetomarRascunho\(prontidao\[p\.id\], p\.id\)/, "rascunho segue com 'Continuar editando'");
 });
 
 test("a página pública só mostra anúncio ativo (a regra que o título acompanha)", () => {

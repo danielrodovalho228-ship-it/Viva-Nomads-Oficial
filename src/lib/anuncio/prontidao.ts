@@ -267,6 +267,18 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
 }
 
+/**
+ * E507: o destino ÚNICO de "Continuar editando" / "Continuar de onde parou" de um rascunho — o 1º passo que falta, na
+ * ordem dos passos (o mesmo "próximo" da lista do Início); com tudo cumprido, a Revisão. Antes a lista abria no passo
+ * guardado no rascunho e o Início no item que falta: o mesmo rascunho abria em passos diferentes.
+ */
+export function hrefRetomarRascunho(p: Prontidao | null | undefined, draftId: string): string {
+  const id = encodeURIComponent(draftId);
+  // Sem a prontidão lida (falha de leitura), o assistente decide pelo que está gravado — nunca um passo inventado.
+  if (!p) return `/dashboard/imoveis/novo?draft=${id}`;
+  return checklistAnuncio(p, draftId).proximo?.href ?? `/dashboard/imoveis/novo?draft=${id}&etapa=${ETAPA.revisao}`;
+}
+
 /** Âncoras do vídeo: a seção Vídeo do editor por seções e o bloco de vídeo do passo Fotos do assistente (65-B). */
 export const ANCORA_VIDEO_EDITOR = "secao-video";
 export const ANCORA_VIDEO_ASSISTENTE = "bloco-video";
