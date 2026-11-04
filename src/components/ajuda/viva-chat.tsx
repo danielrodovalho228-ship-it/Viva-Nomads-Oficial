@@ -56,6 +56,13 @@ function guardar(m: MsgChat[]) {
 export function VivaChatFlutuante() {
   const pathname = usePathname() ?? "/";
   const [aberto, setAberto] = useState(false);
+  // E499: o flutuante mora no layout raiz e não desmonta ao trocar de tela; sem isto o chat ficava aberto ao navegar e
+  // voltar ao painel. A troca de rota fecha o painel do chat (a conversa segue guardada na sessão).
+  const [rotaDoChat, setRotaDoChat] = useState(pathname);
+  if (rotaDoChat !== pathname) {
+    setRotaDoChat(pathname);
+    setAberto(false);
+  }
   const [campoEmFoco, setCampoEmFoco] = useState(false);
   const [pos, setPos] = useState<Posicao | null>(null); // null = posição padrão (CSS)
   const [arrastando, setArrastando] = useState<{ esquerda: number; baixo: number } | null>(null);
