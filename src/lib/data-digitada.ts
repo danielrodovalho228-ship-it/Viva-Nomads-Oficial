@@ -24,6 +24,12 @@ export function brParaIso(br: string): string | null {
   return m ? isoValida(+m[3], +m[2], +m[1]) : null;
 }
 
+/** E520: texto digitado no campo de data que não é uma data real (incompleto ou inexistente, ex.: 31/02). Vazio não é. */
+export function dataDigitadaInvalida(br: string): boolean {
+  const t = (br ?? "").trim();
+  return t.length > 0 && brParaIso(t) === null;
+}
+
 /** "2026-11-01" → "01/11/2026"; outra coisa → "". */
 export function isoParaBr(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
