@@ -22,6 +22,7 @@ import {
   Clock,
   Handshake,
   Hash,
+  X,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
@@ -166,6 +167,15 @@ export function PropertyDetail({
   }, []);
   // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
   const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
+  // E518: o Esc fecha o "Pedir para morar" (em qualquer passo) — menos durante o envio.
+  useEffect(() => {
+    if (!solicitacaoAberta) return;
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && pending === null) setSolicitacaoAberta(false);
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [solicitacaoAberta, pending]);
   const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
   // Candidatura em etapas (ordem eb4b11d8): revisar → mensagem → confirmar → confirmação.
   const [etapa, setEtapa] = useState<EtapaCandidatura>("revisar");
@@ -592,7 +602,18 @@ export function PropertyDetail({
       data-testid="solicitacao-passo"
       onClick={() => !candidatouSe && setSolicitacaoAberta(false)}
     >
-      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+        {/* E518: o X de fechar em todos os passos (antes só havia "Voltar"/"Cancelar"). */}
+        <button
+          type="button"
+          aria-label="Fechar"
+          data-testid="solicitacao-fechar"
+          disabled={pending !== null}
+          onClick={() => setSolicitacaoAberta(false)}
+          className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-50"
+        >
+          <X className="h-5 w-5" aria-hidden />
+        </button>
         {candidatouSe ? (
           <div data-testid="candidatura-confirmada" className="flex flex-col gap-3 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
@@ -614,7 +635,7 @@ export function PropertyDetail({
           </div>
         ) : (
           <>
-            <div className="mb-3" data-testid="candidatura-progresso">
+            <div className="mb-3 pr-12" data-testid="candidatura-progresso">
               <div className="flex justify-between text-xs font-medium text-muted">
                 {ETAPAS_CANDIDATURA.map((e, i) => (
                   <span key={e.chave} className={e.chave === etapa ? "text-forest" : undefined}>{i + 1}. {e.rotulo}</span>
