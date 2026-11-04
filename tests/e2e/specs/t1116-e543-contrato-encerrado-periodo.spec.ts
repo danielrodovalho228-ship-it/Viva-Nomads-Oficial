@@ -20,11 +20,14 @@ const ids: Record<string, string> = {};
 let encerrado = "";
 const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
-async function semAguardando(p: Page, rota: string) {
+/** O selo do contrato na tela (`seletor` = o elemento do estado) diz "Encerrado em <fim>"; nada de "Aguardando 1º pagamento". */
+async function semAguardando(p: Page, rota: string, seletor: string) {
   await p.goto(rota, { waitUntil: "domcontentloaded" });
-  const main = p.locator("main");
-  await expect(main).toContainText(encerrado, { timeout: 30_000 });
-  await expect(main).not.toContainText("Aguardando 1º pagamento");
+  const selo = p.locator(seletor).first();
+  await expect(selo, `${rota}: o selo do contrato aparece`).toBeVisible({ timeout: 30_000 });
+  test.info().annotations.push({ type: "selo", description: `${rota}: ${(await selo.innerText()).trim()}` });
+  await expect(selo, `${rota}: o selo`).toHaveText(encerrado);
+  await expect(p.locator("main")).not.toContainText("Aguardando 1º pagamento");
 }
 
 test.describe("T1116 — E543: contrato com o período terminado é \"Encerrado em DD/MM/AAAA\" em toda tela", () => {
@@ -82,16 +85,16 @@ test.describe("T1116 — E543: contrato com o período terminado é \"Encerrado 
       const pd = await entrar(browser, dono.email, senha);
       await pd.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       try {
-        await semAguardando(pd, "/dashboard/contratos");
-        await semAguardando(pd, `/dashboard/contratos/${ids.contrato}`);
+        await semAguardando(pd, "/dashboard/contratos", `[data-testid="contrato-cartao"][data-contrato="${ids.contrato}"] [data-testid="contrato-etapa"]`);
+        await semAguardando(pd, `/dashboard/contratos/${ids.contrato}`, '[data-testid="contrato-selo"]');
       } finally {
         await pd.context().close();
       }
       const pm = await entrar(browser, morador.email, senha);
       await pm.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       try {
-        await semAguardando(pm, "/dashboard/locacoes");
-        await semAguardando(pm, `/dashboard/locacoes/${ids.contrato}`);
+        await semAguardando(pm, "/dashboard/locacoes", `[data-testid="locacao-etapa"]`);
+        await semAguardando(pm, `/dashboard/locacoes/${ids.contrato}`, '[data-testid="contrato-selo"]');
         const sobra = await pm.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(sobra).toBeLessThanOrEqual(1);
       } finally {
