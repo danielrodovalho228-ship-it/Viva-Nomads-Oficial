@@ -40,6 +40,11 @@ const LIGHT: Record<Light, { tone: string; label: string }> = {
 
 type LeadStatus = "open" | "approved" | "rejecting" | "rejected";
 
+/** E541: abre a conversa DESTA candidatura (antes, a caixa abria a primeira da lista — de outra pessoa). */
+function hrefResponder(l: { conversaId?: string }): string {
+  return l.conversaId ? `/dashboard/mensagens?conversa=${l.conversaId}` : "/dashboard/mensagens";
+}
+
 /** Estado inicial da UI a partir do status PERSISTIDO (sobrevive a refresh). */
 function uiInicial(persisted: string | undefined): LeadStatus {
   if (persisted === "accepted") return "approved";
@@ -223,7 +228,7 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
 
                   <div className="text-right">
                     {open ? (
-                      <ButtonLink href="/dashboard/mensagens" variant="secondary" size="sm">
+                      <ButtonLink href={hrefResponder(l)} variant="secondary" size="sm" data-testid="responder-pela-plataforma">
                         <MessageSquare className="h-4 w-4" /> Responder pela plataforma
                       </ButtonLink>
                     ) : st === "rejected" ? (
