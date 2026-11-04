@@ -15,6 +15,7 @@ import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
 import { totalDoPeriodo } from "./cartao-preco.ts";
+import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
 
 export interface LinhaTaxa {
@@ -104,6 +105,11 @@ export function resumoSolicitacao(e: {
   limpezaEstadia?: LimpezaEstadia | null;
   /** Custo total do mês (calcularTotalMensal): quando vem, o resumo mostra a linha "Total por mês". */
   totalMensal?: number;
+  /**
+   * E519: a estadia do imóvel pela MESMA função do painel (estadiaDoImovel: total por mês × meses + preparação e saída),
+   * com a conta aberta. Sem ela, o total é só o mês × meses (sem inventar taxa).
+   */
+  estadia?: { meses: number; total: number; conta: string } | null;
 }): ResumoSolicitacao {
   const inicio = (e.inicioDesejado ?? "").trim();
   const fim = (e.fimDesejado ?? "").trim();
@@ -127,13 +133,19 @@ export function resumoSolicitacao(e: {
       { rotulo: "Entrada", valor: inicio && ISO_DIA.test(inicio) ? `${d}/${m}/${a}` : "A combinar com o proprietário" },
       { rotulo: "Saída", valor: fim && ISO_DIA.test(fim) ? `${df}/${mf}/${af}${dias ? ` (${dias} ${dias === 1 ? "dia" : "dias"})` : ""}` : "A combinar com o proprietário" },
       { rotulo: "Motivo da estadia", valor: motivo && isMotivo(motivo) ? motivoLabel(motivo) : "Prefiro não informar" },
-      { rotulo: "Valor por mês", valor: formatBRL(e.monthlyPrice) },
+      // E519: os rótulos da casa (PROP-2) — Mensal · Total por mês (com contas) · Total do contrato.
+      { rotulo: ROTULO_MENSAL, valor: formatBRL(e.monthlyPrice) },
       ...(e.limpezaEstadia ? [{ rotulo: "Limpeza durante a estadia", valor: textoLimpezaEstadia(e.limpezaEstadia) }] : []),
-      ...(typeof e.totalMensal === "number" ? [{ rotulo: "Total por mês", valor: formatBRL(e.totalMensal) }] : []),
-      // E53: com o período completo, o total da estadia (mesma conta do cartão e do fechamento: totalDoPeriodo).
-      ...(typeof e.totalMensal === "number" && meses
-        ? [{ rotulo: "Total da estadia", valor: `${formatBRL(totalDoPeriodo(e.totalMensal, meses))} em ${meses} ${meses === 1 ? "mês" : "meses"}` }]
-        : []),
+      ...(typeof e.totalMensal === "number" ? [{ rotulo: ROTULO_TOTAL_MES, valor: formatBRL(e.totalMensal) }] : []),
+      // E53/E519: com o período completo, o total — a mesma conta do painel (estadiaDoImovel), com a conta aberta.
+      ...(meses && e.estadia && e.estadia.meses === meses
+        ? [
+            { rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(e.estadia.total)} em ${meses} ${meses === 1 ? "mês" : "meses"}` },
+            { rotulo: "Conta do total", valor: `${e.estadia.conta} = ${formatBRL(e.estadia.total)}` },
+          ]
+        : typeof e.totalMensal === "number" && meses
+          ? [{ rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(totalDoPeriodo(e.totalMensal, meses))} em ${meses} ${meses === 1 ? "mês" : "meses"}` }]
+          : []),
       { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
     ],
