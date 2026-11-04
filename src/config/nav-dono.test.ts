@@ -12,7 +12,7 @@ test("abas do topo (snapshot): Início · Anúncios · Interessados · Contratos
     ABAS_DONO.map((a) => [a.rotulo, a.href]),
     [["Início", "/dashboard"], ["Anúncios", "/dashboard/imoveis"], ["Interessados", "/dashboard/leads"], ["Contratos", "/dashboard/contratos"], ["Mensagens", "/dashboard/mensagens"]],
   );
-  assert.deepEqual(ABAS_DONO.find((a) => a.id === "interessados")!.subabas!.map((s) => s.rotulo), ["Interessados", "Propostas", "Fechamento", "Pedidos na cidade", "Visitas"]);
+  assert.deepEqual(ABAS_DONO.find((a) => a.id === "interessados")!.subabas!.map((s) => s.rotulo), ["Interessados", "Orçamentos", "Fechamento", "Pedidos na cidade", "Visitas"]);
   assert.deepEqual(ABAS_DONO.find((a) => a.id === "contratos")!.subabas!.map((s) => s.rotulo), ["Contratos", "Ganhos", "Caução", "Recibos e notas"]);
   assert.equal(GANHOS_DISPONIVEL, true, "E176: Contratos ganha a subaba Ganhos");
 });
