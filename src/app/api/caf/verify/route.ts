@@ -40,7 +40,10 @@ export async function POST() {
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   // Conta de teste (is_teste): laudo SIMULADO, sem CPF, sem Certta/CAF e sem gastar a cota (ordem ee7d27b8).
-  if (await contaEhDeTeste(admin, user.id)) {
+  // Estados vazios: sem saber se é conta de teste, não chama a verificação paga nem gasta a cota.
+  const teste = await contaEhDeTeste(admin, user.id).catch(() => "falhou" as const);
+  if (teste === "falhou") return NextResponse.json({ error: "Não foi possível conferir sua conta agora. Tente de novo em instantes." }, { status: 503 });
+  if (teste) {
     // Só no laboratório: o cookie de teste força uma reprovação (exercita o motivo, a nova tentativa e a fila humana).
     const reprovado = integracoesSimuladas() ? laudoReprovadoDeLaboratorio((await cookies()).get(COOKIE_LAB_CAF)?.value) : null;
     const laudo: CafResult = reprovado ? { ...laudoSimuladoTeste(), ...reprovado, light: "red" } : laudoSimuladoTeste();

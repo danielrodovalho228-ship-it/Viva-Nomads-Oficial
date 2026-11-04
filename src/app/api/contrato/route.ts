@@ -41,7 +41,9 @@ export async function POST(request: Request) {
 
   // Qualquer das partes sendo conta de teste (is_teste): contrato SIMULADO, nada vai ao ZapSign (ordem ee7d27b8).
   const admin = createAdminClient();
-  const teste = (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId));
+  // Estados vazios: sem saber se é conta de teste, não gera nada (nem simulado nem real).
+  const teste = await (async () => (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId)))().catch(() => "falhou" as const);
+  if (teste === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   // Achado 82: sem ler a reserva, não decide (nem "em andamento" nem gerar de novo).
   const reserva = await lerReservaFechamento(f.leadId, "contrato").catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });

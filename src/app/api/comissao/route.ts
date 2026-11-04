@@ -22,6 +22,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Registre o contrato antes de gerar a cobrança da comissão." }, { status: 409 });
   }
 
+  // Estados vazios: sem saber se alguma das partes é conta de teste, não reserva nem cobra (nada vai ao Asaas).
+  const admin = createAdminClient();
+  const teste = await (async () => (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId)))().catch(() => "falhou" as const);
+  if (teste === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   // Prompt 24: repetir é seguro — a taxa já gerada volta com 200 (a tela não trava num 2º clique ou ao recarregar).
   const reserva = await lerReservaFechamento(f.leadId, "comissao").catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
@@ -31,8 +35,7 @@ export async function POST(request: Request) {
   }
   try {
     // Conta de teste (is_teste): cobrança SIMULADA, rótulo TESTE, nada vai ao Asaas (ordem ee7d27b8).
-    const admin = createAdminClient();
-    if ((await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId))) {
+    if (teste) {
       const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, commissionRate: contrato.taxa });
       await concluirFechamento(f.leadId, "comissao", simulada.chargeId);
       return NextResponse.json(simulada);
