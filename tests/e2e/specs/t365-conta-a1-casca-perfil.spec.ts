@@ -111,7 +111,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
 
     const titulos: Record<string, string> = {
       avaliacoes: "Avaliações",
-      papeis: "Papéis e intenção",
+      papeis: "Como você usa a Viva",
       privacidade: "Privacidade",
       notificacoes: "Notificações",
       pagamentos: "Pagamentos",

@@ -52,7 +52,7 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
       const p = await abrir(browser, largura);
       await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = p.getByTestId("seus-papeis").filter({ visible: true });
-      await expect(p.getByRole("heading", { name: "Papéis e intenção" })).toBeVisible({ timeout: 20_000 });
+      await expect(p.getByRole("heading", { name: "Como você usa a Viva" })).toBeVisible({ timeout: 20_000 });
       await expect(papeis.getByTestId(`usar-papel-${alvo}`)).toBeVisible({ timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t318-conta-papeis-${largura}.png`, fullPage: true });
       await papeis.getByTestId(`usar-papel-${alvo}`).click();

@@ -9,7 +9,7 @@ import { SECOES_CONTA, destinoDaAncora, itemDaSecao, secaoDaRota } from "./secoe
 test("oito seções na ordem do NAV-A (24/10), cada uma com a sua rota e uma descrição curta", () => {
   assert.deepEqual(
     SECOES_CONTA.map((s) => s.rotulo),
-    ["Perfil", "Papéis e intenção", "Avaliações", "Dados", "Privacidade", "Segurança e verificações", "Notificações", "Pagamentos", "Ajuda"],
+    ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Segurança e verificações", "Notificações", "Pagamentos", "Ajuda"],
   );
   for (const s of SECOES_CONTA) {
     // E176 (parte 2): Notificações é a página única do sino.

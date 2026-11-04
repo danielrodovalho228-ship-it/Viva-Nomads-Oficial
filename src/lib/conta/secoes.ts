@@ -17,7 +17,7 @@ export interface ItemSecao {
   icone: "UserRound" | "Star" | "Users" | "FileText" | "Shield" | "ShieldCheck" | "Bell" | "CreditCard" | "CircleHelp";
   /** Linha curta do menu do celular. */
   descricao: string;
-  /** NAV-A: o nome no menu, quando difere do título da tela (ex.: "Como você usa a Viva" abre "Papéis e intenção"). */
+  /** NAV-A: o nome no menu, quando difere do título da tela. E490: nenhuma seção usa mais (o menu e o título são o mesmo nome). */
   rotuloMenu?: string;
 }
 
@@ -25,7 +25,7 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
   { id: "perfil", rotulo: "Perfil", href: "/dashboard/conta/perfil", icone: "UserRound", descricao: "Foto, nome, sobre você e o que o proprietário vê." },
   // NAV-A (24/10): a ordem da Conta é Perfil, Como você usa a Viva, Avaliações, Dados, Privacidade, Notificações,
   // Pagamentos, Ajuda (e Sair, no menu do celular).
-  { id: "papeis", rotulo: "Papéis e intenção", rotuloMenu: "Como você usa a Viva", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
+  { id: "papeis", rotulo: "Como você usa a Viva", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
   { id: "avaliacoes", rotulo: "Avaliações", href: "/dashboard/conta/avaliacoes", icone: "Star", descricao: "O que disseram de você depois de cada estadia." },
   { id: "dados", rotulo: "Dados", href: "/dashboard/conta/dados", icone: "FileText", descricao: "Nome, contato e documento. Só a Viva vê." },
   { id: "privacidade", rotulo: "Privacidade", href: "/dashboard/conta/privacidade", icone: "Shield", descricao: "O que os outros veem, baixar ou excluir seus dados." },

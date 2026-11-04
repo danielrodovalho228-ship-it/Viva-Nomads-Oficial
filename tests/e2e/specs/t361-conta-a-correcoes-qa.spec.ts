@@ -10,7 +10,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  *   C1. a linha de faltas lista TUDO o que falta (cadastro + barra) e anda depois de salvar;
  *   C2. o motivo da estadia tem um estado só: não conta como falta no Perfil e mora só em Dados ("Prefiro não informar");
  *   C3. cada conteúdo uma vez: um "Salvar perfil", um título "Notificações", sem o resumo repetido do perfil público,
- *       sem títulos "Perfil profissional"/"Seu perfil", sem região/título aninhados em "Papéis e intenção";
+ *       sem títulos "Perfil profissional"/"Seu perfil", sem região/título aninhados em "Como você usa a Viva";
  *   C4. o "Fale com a Viva" (redondo no painel) nunca senta sobre o conteúdo durante a rolagem (1280);
  *   C5. foto: escolher pelo seletor de arquivo de verdade → RECORTE (arrastar/zoom) → salvar → topo, cabeçalho e espelho
  *       mudam na hora e ficam depois de recarregar (1280 e 390);
@@ -222,7 +222,7 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
     await expect(p.getByRole("heading", { name: "Notificações", exact: true })).toHaveCount(1);
     await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await expect(p.getByRole("heading", { name: "Papéis e intenção", exact: true })).toHaveCount(1);
+    await expect(p.getByRole("heading", { name: "Como você usa a Viva", exact: true })).toHaveCount(1);
     await p.context().close();
   });
 

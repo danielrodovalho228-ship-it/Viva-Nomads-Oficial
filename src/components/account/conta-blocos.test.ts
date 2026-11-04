@@ -12,7 +12,7 @@ const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
 const SECAO = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
 const SECOES = ler("src/lib/conta/secoes.ts");
 
-test("Conta (A1, NAV-A): oito telas na ordem Perfil → Papéis e intenção → Avaliações → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
+test("Conta (A1, NAV-A): oito telas na ordem Perfil → Como você usa a Viva → Avaliações → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
   const ordem = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou seção: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
