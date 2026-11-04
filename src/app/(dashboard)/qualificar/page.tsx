@@ -16,5 +16,5 @@ export default async function QualificarPage({
   const id = Array.isArray(imovel) ? imovel[0] : imovel;
   // E132-A, item 10: sem ?imovel → o cadastro novo (abre a Qualificação; com rascunho em andamento, oferece retomá-lo).
   if (!id) redirect(destinoQualificarSemImovel());
-  return <QualificarClient />;
+  return <QualificarClient imovelDaPagina={id} />;
 }

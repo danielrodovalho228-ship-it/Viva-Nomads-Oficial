@@ -89,17 +89,26 @@ export function elegibilidadeDoCadastro(i: {
  * mesma regra do assistente (elegibilidadeDoCadastro + isEligible) — assim o Início e Meus imóveis contam os mesmos itens
  * que a barra do assistente.
  */
-export function qualificacaoDoRascunho(d: unknown, f: { documento: "none" | "pending" | "approved" | "rejected"; sublocacaoOk: boolean }): boolean {
-  if (!d || typeof d !== "object") return false;
+export function qualificacaoDoRascunho(d: unknown, f: FatosQualificacaoRascunho): boolean {
+  const e = elegibilidadeDoRascunho(d, f);
+  return e ? isEligible(e) : false;
+}
+
+type FatosQualificacaoRascunho = { documento: "none" | "pending" | "approved" | "rejected"; sublocacaoOk: boolean };
+
+/**
+ * E506: a elegibilidade (os 6 requisitos) de um RASCUNHO, derivada do draft_data — o que o /qualificar mostra quando a
+ * qualificação ainda não foi gravada em qualification_checklists (isso só acontece ao publicar). null = sem draft_data.
+ */
+export function elegibilidadeDoRascunho(d: unknown, f: FatosQualificacaoRascunho): EligibilityState | null {
+  if (!d || typeof d !== "object") return null;
   const o = d as Record<string, unknown>;
-  return isEligible(
-    elegibilidadeDoCadastro({
-      mobiliado: o.furnished !== false,
-      minimoDias: Number(o.minPeriodDays) || 30,
-      operacaoDeclarada: f.sublocacaoOk,
-      documentoEnviado: f.documento !== "none",
-      emCondominio: tipoEmCondominio(typeof o.propertyType === "string" ? o.propertyType : "apartamento"),
-      declaracoes: declaracoesDoRascunho(o.declaracoesPasso10),
-    }),
-  );
+  return elegibilidadeDoCadastro({
+    mobiliado: o.furnished !== false,
+    minimoDias: Number(o.minPeriodDays) || 30,
+    operacaoDeclarada: f.sublocacaoOk,
+    documentoEnviado: f.documento !== "none",
+    emCondominio: tipoEmCondominio(typeof o.propertyType === "string" ? o.propertyType : "apartamento"),
+    declaracoes: declaracoesDoRascunho(o.declaracoesPasso10),
+  });
 }

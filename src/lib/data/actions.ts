@@ -62,6 +62,7 @@ import { getPropertyForOwner } from "@/lib/data/properties";
 import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
+import { elegibilidadeDoRascunho } from "@/lib/anuncio/requisitos-passo10";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { chegadaDoRascunho, colunasChegadaEPedido, type EntradaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
@@ -363,7 +364,7 @@ export async function carregarQualificacao(
   let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
   const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-  if (!data) return null;
+  if (!data) return propertyId ? qualificacaoDoRascunhoSalvo(supabase, user.id, propertyId) : null;
   const temDocumento = !!data.document_path;
   const form = (data.formulario ?? null) as { elig?: Partial<EligibilityState>; quality?: Partial<QualityState> } | null;
   const condo = data.condo_allows as string | null;
@@ -381,6 +382,29 @@ export async function carregarQualificacao(
   const quality: Partial<QualityState> | null =
     form?.quality ?? (data.internet_tier ? { internetTier: data.internet_tier as QualityState["internetTier"] } : null);
   return { elig, quality, temDocumento };
+}
+
+/**
+ * E506: o rascunho ainda não tem linha em qualification_checklists (ela é gravada ao publicar) — a qualificação dele está
+ * nas declarações do Passo 10 (draft_data). Sem isto, /qualificar abria "0/6 requisitos" num rascunho "100% pronto".
+ * Mesma regra do assistente e do Início (elegibilidadeDoRascunho). Só rascunho do PRÓPRIO dono; falha → null (vazio).
+ */
+async function qualificacaoDoRascunhoSalvo(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  propertyId: string
+): Promise<{ elig: EligibilityState; quality: Partial<QualityState> | null; temDocumento: boolean } | null> {
+  const { data: prop } = await supabase.from("properties").select("id").eq("id", propertyId).eq("owner_id", ownerId).eq("status", "draft").maybeSingle();
+  if (!prop) return null;
+  const [{ data: priv }, fatosMapa] = await Promise.all([
+    supabase.rpc("property_private_details", { prop_id: propertyId }),
+    fatosDosImoveis(supabase, ownerId, [propertyId]).catch(() => null),
+  ]);
+  const fatos = fatosMapa?.get(propertyId);
+  const linha = Array.isArray(priv) ? priv[0] : priv;
+  const elig = fatos ? elegibilidadeDoRascunho((linha as { draft_data?: unknown } | null)?.draft_data, fatos) : null;
+  if (!elig || !fatos) return null;
+  return { elig, quality: null, temDocumento: fatos.documento !== "none" };
 }
 
 /** Título e endereço de um imóvel do PRÓPRIO dono (cabeçalho do /qualificar). */

@@ -82,8 +82,11 @@ export default function QualificationChecklistPage({
   emPainel = false,
   onSalva,
   onFechar,
+  imovelDaPagina,
 }: {
   imovelIdInicial?: string | null;
+  /** E506: o `?imovel=` da página /qualificar, lido no servidor (o texto do topo não depende do carregamento). */
+  imovelDaPagina?: string | null;
   emPainel?: boolean;
   onSalva?: (r: { elegivel: boolean; selo: boolean; tHome: boolean; tWork: boolean }) => void;
   onFechar?: () => void;
@@ -118,6 +121,9 @@ export default function QualificationChecklistPage({
   const [hasInteracted, setHasInteracted] = useState(false);
   const [imovel, setImovel] = useState<{ id: string; titulo: string; local: string; rascunho: boolean } | null>(null);
   const [imovelInvalido, setImovelInvalido] = useState(false);
+  // E506: o imóvel PEDIDO (painel: `imovelIdInicial`; página: `?imovel=`, lido no servidor) — com ele, a tela nunca diz
+  // "próximo imóvel", nem enquanto carrega.
+  const imovelPedidoId = imovelIdInicial !== undefined ? imovelIdInicial : (imovelDaPagina ?? null);
   // Id pedido (`?imovel=`/painel) enquanto o resumo ainda carrega: um envio rápido não pode cair "sem imóvel".
   const imovelPedido = useRef<string | null>(null);
   useEffect(() => {
@@ -342,10 +348,14 @@ export default function QualificationChecklistPage({
         <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           Imóvel não encontrado entre os seus. Volte a Meus imóveis e escolha o imóvel.
         </p>
+      ) : imovelPedidoId ? (
+        <p className="mb-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted" data-testid="qualificar-carregando-imovel">
+          Carregando o imóvel…
+        </p>
       ) : (
-        <p className="mb-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted">
-          Esta qualificação vale para o <strong className="text-ink">próximo imóvel</strong> que você anunciar. Cada
-          imóvel tem a sua qualificação e o seu documento.
+        // E506: sem imóvel ainda (o cadastro novo), uma frase só, sem "próximo imóvel" contra "cada imóvel tem a sua".
+        <p className="mb-6 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm text-muted" data-testid="qualificar-sem-imovel">
+          Esta qualificação é do imóvel que você está cadastrando agora: cada imóvel tem a sua qualificação e o seu documento.
         </p>
       )}
 
