@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 
 /*
@@ -10,26 +10,82 @@ import { noPasso } from "../fixtures/cadastro";
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.e557.${sufixo}@lab.vivanomads.test`, nome: "Rita Revisão", role: "owner" as const };
-const ids: { dono?: string; imovel?: string } = {};
+// Uma conta por largura: o aceite do termo pode ficar gravado na conta, e cada teste precisa começar sem ele.
+const donoDe = (largura: number) => ({ email: `dono.e557.${largura}.${sufixo}@lab.vivanomads.test`, nome: "Rita Revisão", role: "owner" as const });
+const contas: string[] = [];
 
 test.describe("T848 — E557: 'Tudo certo' só com o Publicar liberado", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
 
-  test.beforeAll(async () => {
-    ids.dono = await criarConta(dono, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Apartamento Revisão ${sufixo}`);
-  });
+  /** Conta nova + rascunho "publicável" (a mesma montagem do t400), faltando só o aceite do texto. */
+  async function montar(largura: number): Promise<string> {
+    const ids: { dono?: string; imovel?: string } = {};
+    const TITULO = `Chácara Revisão ${largura} ${sufixo}`;
+    ids.dono = await criarConta(donoDe(largura), senha);
+    contas.push(ids.dono);
+    ids.imovel = await criarImovelPronto(ids.dono, TITULO);
+    // O assistente lê o draft_data: a mesma montagem "publicável" do t400 (passo 3, com internet fibra e velocidade).
+    const fotos = Array.from({ length: 8 }, (_, i) => {
+      const caminho = `${ids.dono}/${ids.imovel}-${i}.png`;
+      return { id: `lab-${i}`, url: `https://lab.vivanomads.test/storage/v1/object/public/property-photos/${caminho}`, name: "", path: caminho, demo: false };
+    });
+    const { error } = await adm()
+      .from("properties")
+      .update({
+        property_type: "chacara",
+        detalhes_anuncio: { chacara: { acesso: "terra", internet: "fibra", pontoMarcado: true } },
+        draft_data: {
+          title: TITULO,
+          description: "Casa de chácara mobiliada, com home office, cozinha completa e varanda. Pronta para morar por temporada.",
+          propertyType: "chacara",
+          chacara: { acesso: "terra", internet: "fibra", ponto: { lat: -18.95, lng: -48.4 } },
+          amenityKeys: { internet_fibra: true },
+          internetMbps: "250",
+          tipoEntrada: "porteiro",
+          bedrooms: "1",
+          bathrooms: "1",
+          areaM2: "40",
+          maxGuests: "2",
+          minPeriod: "30",
+          maxPeriod: "180",
+          monthlyPrice: "3200",
+          street: "Rua Santos Dumont",
+          numero: "100",
+          neighborhood: "Centro",
+          city: "Uberlândia",
+          uf: "MG",
+          cep: "38400-060",
+          garantias: { caucao: true },
+          privacidade: { semCamerasInterior: true, camerasExternas: false, tipoAcesso: "chave", senhaTrocadaEstadia: false },
+          ownershipType: "own",
+          subleaseAuthorized: false,
+          photos: fotos,
+          iaAnalisadas: fotos.map((f) => f.url),
+          step: 9,
+          ordemEtapas: 5,
+          etapaMax: 9,
+        },
+      })
+      .eq("id", ids.imovel);
+    if (error) throw error;
+    const { error: eQual } = await adm()
+      .from("qualification_checklists")
+      .update({ document_path: `${ids.dono}/${ids.imovel}-documento.png`, formulario: { versao: 1, elig: { furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } } })
+      .eq("property_id", ids.imovel!);
+    if (eQual) throw eQual;
+    return ids.imovel;
+  }
   test.afterAll(async () => {
-    await apagarContas([ids.dono]);
+    await apagarContas(contas);
   });
 
   for (const largura of [1280, 390] as const) {
     test(`${largura}px: travado diz o que falta; liberado diz 'Tudo certo para publicar'`, async ({ browser }) => {
-      const page = await entrar(browser, dono.email, senha);
+      const imovel = await montar(largura);
+      const page = await entrar(browser, donoDe(largura).email, senha);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await page.goto(`/dashboard/imoveis/novo?draft=${ids.imovel}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+      await page.goto(`/dashboard/imoveis/novo?draft=${imovel}&etapa=revisao`, { waitUntil: "domcontentloaded" });
       await noPasso(page, "revisao", 30_000);
 
       const titulo = page.locator("#lista-conferencia-titulo");
