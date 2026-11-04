@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T1091 — E541, o resto (#2455, 04/11): o aviso "Nova mensagem recebida" abre a conversa CERTA — antes, sino, lista de
@@ -49,6 +49,9 @@ test.describe("T1091 — E541: o aviso de mensagem nova abre a conversa certa", 
     ids.bruno = await criarConta(bruno, senha);
     ids.imA = await criarImovelPronto(ids.ana, T_A, { ativo: true });
     ids.imB = await criarImovelPronto(ids.bruno, T_B, { ativo: true });
+    // A RLS de messages exige a relação entre as partes (candidatura): sem ela, o envio pela tela (caso 3) é recusado.
+    await criarLead(ids.ana, ids.mor, ids.imA, true);
+    await criarLead(ids.bruno, ids.mor, ids.imB, true);
     // O Bruno escreveu antes; a Ana, depois: a conversa da Ana é a primeira da lista.
     await gravarMensagem(ids.bruno, ids.mor, ids.imB, "Oi, o studio B segue livre.", convB());
     await new Promise((r) => setTimeout(r, 1200));
@@ -59,6 +62,7 @@ test.describe("T1091 — E541: o aviso de mensagem nova abre a conversa certa", 
     if (!NO_LABORATORIO) return;
     await adm().from("avisos").delete().eq("usuario_id", ids.mor ?? "");
     await adm().from("messages").delete().in("property_id", [ids.imA, ids.imB].filter(Boolean));
+    await adm().from("leads").delete().eq("tenant_id", ids.mor ?? "");
     await apagarContas([ids.mor, ids.ana, ids.bruno]);
   });
 
@@ -92,6 +96,10 @@ test.describe("T1091 — E541: o aviso de mensagem nova abre a conversa certa", 
     await expect(campo).toBeVisible({ timeout: 30_000 });
     await campo.fill(`Pode vir visitar amanhã (t1091 ${sufixo}).`);
     await p.getByRole("button", { name: "Enviar" }).click();
+    // A mensagem foi gravada (senão o aviso nem nasce e o motivo é outro).
+    await expect
+      .poll(async () => (await adm().from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", convB()).eq("sender_id", ids.bruno).like("body", "%Pode vir visitar%")).count ?? 0, { timeout: 30_000 })
+      .toBe(1);
     await expect
       .poll(
         async () =>
