@@ -43,7 +43,7 @@ interface Grupo {
   id: keyof typeof FOTOS_FERRAMENTAS;
   titulo: string;
   texto: string;
-  itens: [Ferramenta, Ferramenta, Ferramenta, Ferramenta];
+  itens: [Ferramenta, Ferramenta, Ferramenta] | [Ferramenta, Ferramenta, Ferramenta, Ferramenta];
 }
 
 const GRUPOS: Grupo[] = [
@@ -73,13 +73,8 @@ const GRUPOS: Grupo[] = [
         texto: "Visitas, interessados e a nota de qualidade de cada anúncio, em Meus imóveis.",
         icone: TrendingUp,
       },
-      {
-        // E294: com o simulador e o ROI num cartão só, a grade 2×2 ganha os recibos (o informe anual sai deles).
-        href: "/dashboard/recibos",
-        titulo: "Recibos e notas",
-        texto: "Comprovantes emitidos, histórico e o informe anual para o imposto de renda.",
-        icone: Receipt,
-      },
+      // E495: o cartão "Recibos e notas" saiu — era a segunda porta para a tela de recibos; a que fica é
+      // Contratos › Recibos e notas. Com 3 cartões, o último ocupa a linha inteira (grade par, sem buraco).
     ],
   },
   {
@@ -245,7 +240,7 @@ export default function FerramentasPage() {
                     className="object-cover"
                   />
                 </div>
-                <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2">
+                <div className="grid gap-4 sm:auto-rows-fr sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-full">
                   {g.itens.map((f) => (
                     <CardFerramenta key={f.titulo} f={f} />
                   ))}
@@ -258,13 +253,7 @@ export default function FerramentasPage() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               )}
-              {/* Prompt 39-B1: o informe anual dos recibos, ao lado do simulador. */}
-              {g.id === "analise" && (
-                <Link href="/dashboard/recibos#informe" className="mt-3 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-forest underline underline-offset-4" data-testid="atalho-informe-ir">
-                  Informe para o IR
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
+              {/* E495: o atalho "Informe para o IR" (Prompt 39-B1) saiu com o cartão — o informe fica em Contratos › Recibos e notas. */}
             </section>
           );
         })}

@@ -60,6 +60,6 @@ test("menu: 'Recibos e notas' é subitem da área de Ganhos do dono, com rota in
   assert.equal(item?.href, "/dashboard/recibos");
   assert.equal(item?.rotulo, "Recibos e notas");
   assert.equal(destinoDaRota("/dashboard/recibos"), "app");
-  // Ferramentas: atalho "Informe para o IR" ao lado do simulador.
-  assert.match(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /href="\/dashboard\/recibos#informe"[^>]*data-testid="atalho-informe-ir"/);
+  // E495: uma porta só — Ferramentas não leva mais aos recibos (nem o cartão, nem o atalho "Informe para o IR").
+  assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx"), /\/dashboard\/recibos/);
 });
