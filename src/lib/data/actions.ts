@@ -1901,6 +1901,8 @@ export async function sendMessage(input: {
         pushUrl: "/dashboard/mensagens",
         imovelId: input.propertyId,
         conversationId,
+        // E533: o aviso do sino guarda a conversa — abrir a conversa marca esses avisos como lidos.
+        refId: conversationId,
         remetenteNome: senderName,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +

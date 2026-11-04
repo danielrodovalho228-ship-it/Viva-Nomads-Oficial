@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { marcarAvisoLido, meusAvisos, resumoDoSino } from "@/lib/data/avisos-actions";
+import { marcarAvisoLido, marcarTodosAvisosLidos, meusAvisos, resumoDoSino } from "@/lib/data/avisos-actions";
 import { criticosPendentes, ordenarParaOSino } from "@/lib/notifications/sino";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +27,10 @@ export async function GET() {
   }
 }
 
-/** Clique no aviso: marca como lido (só a coluna lido_em, só os próprios — RLS). */
+/** Clique no aviso: marca como lido; E533: `{ todos: true }` marca todos (só a coluna lido_em, só os próprios — RLS). */
 export async function POST(req: Request) {
-  const corpo = (await req.json().catch(() => null)) as { id?: unknown } | null;
+  const corpo = (await req.json().catch(() => null)) as { id?: unknown; todos?: unknown } | null;
   const id = typeof corpo?.id === "string" ? corpo.id : "";
-  const r = await marcarAvisoLido(id).catch(() => ({ ok: false }));
+  const r = corpo?.todos === true ? await marcarTodosAvisosLidos().catch(() => ({ ok: false })) : await marcarAvisoLido(id).catch(() => ({ ok: false }));
   return NextResponse.json(r, { status: r.ok ? 200 : 400, headers: SEM_CACHE });
 }
