@@ -263,6 +263,6 @@ test.describe("T-TRAV-F — Chat mascara telefone, e-mail e @rede social @critic
     await expect(corpo).not.toContainText("joao@teste.com");
     await expect(corpo).not.toContainText("@joao.nomad");
     // Aviso de proteção aparece.
-    await expect(page.getByText(/telefones e e-mails são protegidos/i)).toBeVisible();
+    await expect(page.getByText(/telefones, e-mails e links externos são protegidos/i)).toBeVisible();
   });
 });
