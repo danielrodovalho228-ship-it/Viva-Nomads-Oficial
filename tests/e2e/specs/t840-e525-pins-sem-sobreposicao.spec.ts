@@ -58,7 +58,8 @@ for (const largura of [1280, 390] as const) {
       await page.waitForTimeout(1_200);
       const pins = await page.getByTestId("pin-mapa").all();
       for (const pin of pins.slice(1)) {
-        await pin.scrollIntoViewIfNeeded();
+        // No meio da tela (no celular o topo fixo do site e a barra de abas tampam as bordas).
+        await pin.evaluate((e) => e.scrollIntoView({ block: "center", inline: "nearest" }));
         // Mede o cartão e o pin na mesma posição da página (a rolagem move os dois).
         const caixa = (await card.boundingBox())!;
         const r = await pin.boundingBox();

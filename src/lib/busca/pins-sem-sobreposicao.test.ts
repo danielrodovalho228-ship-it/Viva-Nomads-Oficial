@@ -48,6 +48,20 @@ test("390: o pin afastado não sai do mapa (o R$ 2.830 ia para x = −24, fora d
   for (const c of caixas(pins, d)) assert.ok(c.l >= 0 && c.r <= quadro.w && c.t >= 0 && c.b <= quadro.h, `${c.id} dentro do mapa`);
 });
 
+test("lab (390): 20 pins no MESMO ponto, num mapa de celular — nenhum par se cobre e todos ficam no mapa", () => {
+  const quadro = { w: 350, h: 591 };
+  const pins = Array.from({ length: 20 }, (_, i) => pin(`p${i}`, 175, 300));
+  const d = afastarPins(pins, quadro);
+  assert.deepEqual(sobrepostos(pins, d), []);
+  for (const c of caixas(pins, d)) assert.ok(c.l >= 0 && c.r <= quadro.w && c.t >= 0 && c.b <= quadro.h, `${c.id} dentro do mapa`);
+});
+
+test("pin de tamanho zero (mapa ainda escondido no celular) não conta: a fiação refaz o afastamento quando o mapa aparece", () => {
+  const src = readFileSync(new URL("../../components/search-map.tsx", import.meta.url), "utf8");
+  // o ResizeObserver do Leaflet (mapa que aparece ao tocar em "Mapa") também reorganiza os pins
+  assert.match(src, /reorganizarRef\.current\?\.\(\)/);
+});
+
 test("é estável: a mesma entrada dá a mesma saída (os pins não pulam a cada redesenho)", () => {
   const pins = [pin("a", 10, 10), pin("b", 12, 11), pin("c", 14, 9)];
   assert.deepEqual([...afastarPins(pins)], [...afastarPins(pins)]);
@@ -58,7 +72,7 @@ test("os dois motores aplicam o afastamento (por margem, sem brigar com o transl
   assert.equal(src.match(/aplicarAfastamento\(/g)?.length, 3, "a função e os dois motores");
   assert.match(src, /el\.style\.marginLeft = `\$\{dx\}px`/);
   assert.match(src, /map\.on\("zoomend moveend", reorganizar\)/);
-  assert.match(src, /map\.on\("moveend", reorganizar\)/);
+  assert.match(src, /map\.on\("moveend resize", reorganizar\)/);
 });
 
 test("título do cartão do mapa: até 2 linhas e o nome inteiro no title (antes cortava sempre com '…')", () => {
