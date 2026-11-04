@@ -90,7 +90,8 @@ test.describe("T150 — home e computador (ordem af3a27e3)", () => {
     await expect(marcas.first()).toBeVisible();
     test.skip((await marcas.count()) < 1, "sem imóveis na busca do ambiente");
     await marcas.nth(0).check();
-    const barra = (await page.getByTestId("barra-comparar").locator("> div").boundingBox())!;
+    // E529: a barra agora é encaixada (sticky, com fundo e borda); quem fica a 12 px do rodapé é a própria barra.
+    const barra = (await page.getByTestId("barra-comparar").boundingBox())!;
     const folga = 800 - (barra.y + barra.height);
     expect(folga).toBeGreaterThanOrEqual(11);
     expect(folga).toBeLessThanOrEqual(13);
