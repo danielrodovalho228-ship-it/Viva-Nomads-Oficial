@@ -52,11 +52,13 @@ export async function POST() {
     return NextResponse.json({ ...laudo, reprovacao });
   }
 
-  const { data: perfil } = await supabase
+  const { data: perfil, error: erroPerfil } = await supabase
     .from("profiles")
     .select("full_name, cpf")
     .eq("id", user.id)
     .maybeSingle();
+  // Estados vazios: sem ler o perfil, não manda cadastrar o CPF quem já cadastrou.
+  if (erroPerfil) return NextResponse.json({ error: "Não foi possível conferir seu cadastro agora. Tente de novo em instantes." }, { status: 503 });
   const cpf = String(perfil?.cpf ?? "").replace(/\D/g, "");
   if (cpf.length !== 11) {
     return NextResponse.json({ error: "Cadastre seu CPF no perfil para verificar sua identidade." }, { status: 400 });

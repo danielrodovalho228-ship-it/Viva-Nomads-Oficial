@@ -34,7 +34,9 @@ export async function depoisDaTentativa(admin: Admin, userId: string, laudo: Lau
   const motivo = motivoDaReprovacao(laudo);
   if (!motivo || motivo === "em_analise") return null;
   // Reprovações automáticas desde a última aprovada (a tentativa de agora já está gravada).
-  const { data } = await admin.from("tenant_verifications").select("caf_result, created_at").eq("tenant_id", userId).order("created_at", { ascending: false }).limit(20);
+  const { data, error: erroHistorico } = await admin.from("tenant_verifications").select("caf_result, created_at").eq("tenant_id", userId).order("created_at", { ascending: false }).limit(20);
+  // Estados vazios: sem o histórico, a conta passaria por "1ª reprovação" (devolve a cota paga e pula a análise humana).
+  if (erroHistorico) throw new Error("Não foi possível ler as tentativas anteriores agora.");
   let reprovacoes = 0;
   for (const t of (data ?? []) as { caf_result: LaudoParaMotivo | null }[]) {
     const m = motivoDaReprovacao(t.caf_result ?? {});
