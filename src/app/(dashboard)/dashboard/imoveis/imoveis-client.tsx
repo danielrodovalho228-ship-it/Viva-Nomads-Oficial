@@ -20,7 +20,6 @@ import type { Property, PropertyStatus } from "@/lib/types";
 import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
 import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
-import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
