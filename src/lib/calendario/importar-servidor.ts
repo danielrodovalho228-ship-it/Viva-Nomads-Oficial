@@ -5,7 +5,7 @@ import { notify } from "@/lib/notifications";
 import { corpoCalendarioConflito, corpoCalendarioFalha, paraNotify, type CorpoResidual } from "@/lib/notifications/corpo-e267-residual";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { periodosOcupados } from "@/lib/data/periodo-servidor";
-import { periodoDaEstadia } from "@/lib/contrato-periodo";
+import { periodoDaEstadia, periodoEmDias } from "@/lib/contrato-periodo";
 import {
   LIMITE_BYTES_ICS,
   avisarFalha,
@@ -116,10 +116,12 @@ export async function compromissosDaViva(admin: Admin, propertyId: string): Prom
     .in("status", ["enviada", "vista", "contraproposta", "aceita", "em_contrato"]);
   if (erroProps) throw new Error("Não foi possível ler as propostas do imóvel.");
   for (const p of (props ?? []) as { id: string; versao_atual: number }[]) {
-    const { data: v, error: erroVersao } = await admin.from("proposta_versoes").select("data_entrada, meses").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+    const { data: v, error: erroVersao } = await admin.from("proposta_versoes").select("data_entrada, meses, dias").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
     if (erroVersao) throw new Error("Não foi possível ler a versão da proposta.");
-    const versao = v as { data_entrada: string | null; meses: number | null } | null;
-    if (versao?.data_entrada && versao.meses) out.push({ ...periodoDaEstadia(versao.data_entrada, versao.meses), tipo: "proposta" });
+    const versao = v as { data_entrada: string | null; meses: number | null; dias?: number | null } | null;
+    // E562: o período da proposta em dias exatos (antigas: meses × 30).
+    const diasVersao = versao?.dias ?? (versao?.meses ? versao.meses * 30 : null);
+    if (versao?.data_entrada && diasVersao) out.push({ ...periodoEmDias(versao.data_entrada, diasVersao), tipo: "proposta" });
   }
   const { data: leads, error: erroLeads } = await admin.from("leads").select("inicio_desejado").eq("property_id", propertyId).in("status", ["new", "accepted"]).not("inicio_desejado", "is", null);
   if (erroLeads) throw new Error("Não foi possível ler as candidaturas do imóvel.");

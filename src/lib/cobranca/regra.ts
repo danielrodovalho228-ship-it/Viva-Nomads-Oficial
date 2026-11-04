@@ -104,6 +104,17 @@ export function comissaoSobreContrato(aluguelMensal: number, meses: number, taxa
   return Math.round(aluguelMensal * Math.floor(meses) * 100 * taxa) / 100;
 }
 
+/**
+ * E562: a MESMA fórmula para a estadia em dias — valor_total = aluguel mensal × dias ÷ 30; comissão = valor_total × taxa.
+ * Em meses cheios (dias múltiplo de 30) dá o mesmo que comissaoSobreContrato. Entrada inválida = 0.
+ */
+export function comissaoSobreDias(aluguelMensal: number, dias: number, taxa: number): number {
+  if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
+  if (!Number.isFinite(dias) || dias < 1) return 0;
+  if (!Number.isFinite(taxa) || taxa <= 0) return 0;
+  return Math.round(((aluguelMensal * Math.round(dias)) / 30) * 100 * taxa) / 100;
+}
+
 export interface TaxaFixadaAdmin {
   taxa: number;
   motivo: string;
@@ -198,7 +209,9 @@ export function rotuloTaxaServico(taxa: number, valorMensal: number, meses: numb
   const v = Number.isFinite(valorMensal) && valorMensal > 0 ? valorMensal : 0;
   const m = Number.isFinite(meses) && meses > 0 ? meses : 0;
   if (!(v > 0 && m > 0)) return inicio;
-  const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : comissaoSobreContrato(v, m, taxa);
+  // E562: estadia em dias exatos chega como meses fracionários (dias ÷ 30) — a fórmula em dias, sem truncar.
+  const calculado = Number.isInteger(m) ? comissaoSobreContrato(v, m, taxa) : comissaoSobreDias(v, Math.round(m * 30), taxa);
+  const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : calculado;
   return `${inicio} (${brlTaxa(v)} × ${numMeses(m)} = ${brlTaxa(Math.round(v * m * 100) / 100)}) = ${brlTaxa(valor)}`;
 }
 

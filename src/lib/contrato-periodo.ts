@@ -17,6 +17,11 @@ export function periodoDaEstadia(entradaISO: string, meses: number): Periodo {
   return { inicio: entradaISO, fim: fimInclusivoISO(entradaISO, m * DIAS_POR_MES) };
 }
 
+/** E562: período de uma estadia de `dias` exatos a partir da entrada (fim inclusivo). */
+export function periodoEmDias(entradaISO: string, dias: number): Periodo {
+  return { inicio: entradaISO, fim: fimInclusivoISO(entradaISO, Math.max(1, Math.round(Number(dias) || 1))) };
+}
+
 /**
  * Lê o daterange do Postgres ("[2026-10-19,2026-12-18)" — forma canônica, fim exclusivo) e devolve o fim INCLUSIVO.
  * null para vazio ou inválido.
