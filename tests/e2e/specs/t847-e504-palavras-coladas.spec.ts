@@ -40,11 +40,12 @@ const coladosNaTela = (page: Page) =>
   });
 
 const coladosNoLeitor = async (page: Page) => {
-  const arvore = await page.locator("body").ariaSnapshot();
+  // Endereços (linhas "/url:") não são texto lido: no laboratório os ids dos imóveis são UUID ("…-4cbc-…").
+  const arvore = (await page.locator("body").ariaSnapshot()).split("\n").filter((l) => !/^\s*- \/url:/.test(l)).join("\n");
   const out = new Set<string>();
   for (const m of arvore.matchAll(/[\p{L}\d]*(?:\p{Ll}\p{Lu}|\d[a-záéíóúâêôãõç]{3,}|[a-záéíóúâêôãõç]{3,}\d)[\p{L}\d]*/gu)) {
     const ctx = arvore.slice(Math.max(0, m.index - 12), m.index + m[0].length + 4);
-    if (MARCAS.test(m[0]) || /\/url:|%[0-9A-F]{2}|ube-\d/.test(ctx)) continue;
+    if (MARCAS.test(m[0]) || /^[0-9a-f]+$/.test(m[0]) || /%[0-9A-F]{2}|ube-\d/.test(ctx)) continue;
     out.add(m[0]);
   }
   return [...out];
