@@ -134,8 +134,8 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
   });
 
   test("2. autosave grava a operação junto e não mostra 'Sem conexão'", async ({ browser }) => {
-    // Um 2º rascunho, com a operação "sublocação autorizada" no banco e "É meu" no estado do editor (draft_data): ao abrir,
-    // o autosave grava own + sem sublocação pela regra do updateProperty (a linha antiga "própria com sublocação" a 0200
+    // Um 2º rascunho, com a operação "sublocação autorizada" no banco e "É meu" no estado do editor (draft_data): na 1ª
+    // edição (E516: abrir não grava), o autosave grava own + sem sublocação pela regra do updateProperty (a linha antiga "própria com sublocação" a 0200
     // recusa até na fixture, então o caminho dela fica no teste de unidade).
     const outro = await criarImovelPronto(ids.dono!, `${TITULO} (2)`);
     ids.outro = outro;
@@ -149,7 +149,14 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
       .eq("id", outro);
     if (error) throw error;
     const page = await entrar(browser, dono.email, senha);
-    await page.goto(`/dashboard/imoveis/novo?draft=${outro}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+    // E516 (#2433): abrir o rascunho deixou de gravar ("abrir não é editar") — o autosave só roda com uma edição de
+    // conteúdo. Abre na Descrição, espera o rascunho aberto assentar (o 1º debounce de 2 s vira a base) e edita a
+    // descrição: aí o autosave grava, junto, a operação do draft_data (own + sem sublocação).
+    await page.goto(`/dashboard/imoveis/novo?draft=${outro}&etapa=descricao`, { waitUntil: "domcontentloaded" });
+    const descricao = page.getByTestId("cadastro-descricao");
+    await expect(descricao).toHaveValue(/Rascunho para conferir o autosave/, { timeout: 30_000 });
+    await page.waitForTimeout(3_500);
+    await descricao.fill("Rascunho para conferir o autosave da operação no laboratório (editado).");
     await expect
       .poll(async () => (await adm().from("properties").select("ownership_type, sublease_authorized").eq("id", outro).single()).data, { timeout: 30_000 })
       .toMatchObject({ ownership_type: "own", sublease_authorized: false });
