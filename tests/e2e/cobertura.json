@@ -936,7 +936,8 @@
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t1081-e495-recibos-uma-porta"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1010,7 +1011,8 @@
         "t339-varredura-bloco16",
         "t482-e170-caixas-vazias",
         "t549-varredura-bloco39",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t1081-e495-recibos-uma-porta"
       ]
     },
     "/dashboard/garantias": {
@@ -2418,7 +2420,8 @@
         "t302-varredura-logada-bloco6",
         "t310-vao-fim-de-pagina",
         "t418-varredura-bloco35",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t1081-e495-recibos-uma-porta"
       ]
     },
     "/auth/intencao": {
