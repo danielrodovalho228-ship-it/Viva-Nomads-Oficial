@@ -33,6 +33,7 @@ import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapid
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { horaDaBolha } from "@/lib/mensagens/hora-da-bolha";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -196,7 +197,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     const texto = tipo === "pdf" ? "Anexo: PDF enviado" : "Anexo: foto enviada";
     const conversa = active.id;
     setConversations((prev) =>
-      prev.map((c) => (c.id === conversa ? { ...c, preview: texto, messages: [...c.messages, { id: j.messageId!, from: "me", text: texto, anexo: { id: j.anexoId!, tipo } }] } : c))
+      prev.map((c) => (c.id === conversa ? { ...c, preview: texto, messages: [...c.messages, { id: j.messageId!, from: "me", text: texto, anexo: { id: j.anexoId!, tipo }, enviadaEm: new Date().toISOString() }] } : c))
     );
     limparAnexo();
   }
@@ -212,7 +213,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     setConversations((prev) =>
       prev.map((c) =>
         c.id === active.id
-          ? { ...c, preview: text, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text }] }
+          ? { ...c, preview: text, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text, enviadaEm: new Date().toISOString() }] }
           : c
       )
     );
@@ -447,6 +448,12 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                     </Link>
                   )}
                 </span>
+                {/* E484: a hora de envio de cada mensagem (fuso de Brasília). */}
+                {horaDaBolha(m.enviadaEm) && (
+                  <span className="text-[11px] text-muted" data-testid="mensagem-hora" suppressHydrationWarning>
+                    {horaDaBolha(m.enviadaEm)}
+                  </span>
+                )}
                 {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
                   <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                     {AVISO_ANTIGOLPE_ALERTA}{" "}
@@ -476,7 +483,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                   setOfensaPendente(null);
                   setDraft("");
                   const r = await semQuedaDeRede(sendMessage({ ...envio, enviarMesmoAssim: true }));
-                  if (r.ok) setConversations((prev) => prev.map((c) => (c.id === envio.conversationId ? { ...c, preview: envio.body, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text: envio.body }] } : c)));
+                  if (r.ok) setConversations((prev) => prev.map((c) => (c.id === envio.conversationId ? { ...c, preview: envio.body, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text: envio.body, enviadaEm: new Date().toISOString() }] } : c)));
                 }}
               >
                 Enviar mesmo assim

@@ -22,6 +22,8 @@ export interface ChatMessage {
   visto?: boolean;
   /** E445 (item 5): foto ou PDF anexado (abre só pela rota do servidor, URL assinada para as partes). */
   anexo?: AnexoNaBolha;
+  /** E484: quando a mensagem foi enviada (ISO), para a hora na bolha. */
+  enviadaEm?: string;
 }
 
 export interface Conversation {
@@ -147,7 +149,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     const conv = byConv.get(m.conversation_id)!;
     // Mesmo filtro do envio: mensagem antiga com CPF/RG ou contato nunca aparece crua (nem na prévia da caixa).
     const texto = guardContactInfo(m.body).text;
-    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}) });
+    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, enviadaEm: m.created_at, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}) });
     // E445: não lidas da conversa (recebidas sem lido_em; sem a coluna, não conta).
     if (!mine && m.lido_em === null) conv.naoLidas = (conv.naoLidas ?? 0) + 1;
     conv.preview = texto;
