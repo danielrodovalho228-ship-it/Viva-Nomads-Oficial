@@ -10,6 +10,7 @@ import { textoVencimento } from "@/lib/propostas/regras";
 import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
 import { meusAvisos } from "@/lib/data/avisos-actions";
 import { ListaAvisos } from "@/components/account/lista-avisos";
+import { IrParaAvisos } from "@/components/account/ir-para-avisos";
 import { FILTROS_AVISOS, type FiltroAvisos } from "@/lib/notifications/sino";
 
 const MSG_AVISOS_NAO_CARREGARAM = "Não conseguimos carregar os avisos agora. Recarregue a página em instantes.";
@@ -39,6 +40,8 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
   return (
     <CascaConta ativo="notificacoes">
       <TelaNotificacoes />
+      {/* E489: "Ver todas" do sino (#avisos) leva à lista abaixo, não às preferências acima. */}
+      <IrParaAvisos alvo="avisos" titulo="h-avisos" />
 
       <section
         id="avisos"
@@ -48,7 +51,8 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
       >
         <h2
           id="h-avisos"
-          className="mb-4 font-title text-lg font-semibold text-ink"
+          tabIndex={-1}
+          className="mb-4 font-title text-lg font-semibold text-ink focus:outline-none"
         >
           Avisos recentes
         </h2>
