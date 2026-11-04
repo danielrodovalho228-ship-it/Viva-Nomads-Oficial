@@ -27,6 +27,8 @@ const INICIAL: EstadoAvisos = { naoLidas: 0, maiorPrioridade: null, recentes: []
 let estado = INICIAL;
 const ouvintes = new Set<() => void>();
 let emCurso: Promise<void> | null = null;
+// E533: muda a cada marcação na tela — uma leitura que começou antes não sobrescreve o que acabou de ser marcado.
+let versao = 0;
 let pararGlobal = () => {};
 
 function publicar(novo: EstadoAvisos) {
@@ -36,10 +38,13 @@ function publicar(novo: EstadoAvisos) {
 
 export function lerAvisos(): Promise<void> {
   if (emCurso) return emCurso;
+  const v = versao;
   emCurso = fetch(ROTA_AVISOS, { cache: "no-store", credentials: "same-origin" })
     .then(async (r) => {
       if (!r.ok) throw new Error(String(r.status));
       const j = (await r.json()) as Partial<EstadoAvisos>;
+      // Estado velho: houve marcação depois que esta leitura saiu (a gravação dispara uma leitura nova).
+      if (v !== versao) return;
       publicar({
         naoLidas: typeof j.naoLidas === "number" && j.naoLidas > 0 ? j.naoLidas : 0,
         maiorPrioridade: j.maiorPrioridade ?? null,
@@ -92,6 +97,7 @@ export function useAvisos(): EstadoAvisos {
 /** Marca lido (sem segurar a navegação) e já tira da contagem na tela. */
 export function marcarLidoEIr(a: AvisoTela, irPara: (href: string) => void) {
   if (!a.lido_em) {
+    versao++;
     fetch(ROTA_AVISOS, {
       method: "POST",
       keepalive: true,
@@ -106,6 +112,31 @@ export function marcarLidoEIr(a: AvisoTela, irPara: (href: string) => void) {
     publicar({ ...estado, naoLidas: Math.max(0, estado.naoLidas - 1), recentes: estado.recentes.map(marca), criticos: estado.criticos.map(marca) });
   }
   irPara(destinoDoAviso(a.url));
+}
+
+/** E533: "Marcar todas como lidas" (o sino e a lista). Tira a contagem na hora; a gravação confirma com uma leitura nova. */
+export function marcarTodosLidos(): Promise<boolean> {
+  versao++;
+  const agora = new Date().toISOString();
+  const marca = (x: AvisoTela) => (x.lido_em ? x : { ...x, lido_em: agora });
+  publicar({ ...estado, naoLidas: 0, recentes: estado.recentes.map(marca), criticos: estado.criticos.map(marca) });
+  return fetch(ROTA_AVISOS, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ todos: true }),
+  })
+    .then(async (r) => {
+      const ok = r.ok && ((await r.json().catch(() => null)) as { ok?: boolean } | null)?.ok === true;
+      versao++;
+      await lerAvisos();
+      return ok;
+    })
+    .catch(async () => {
+      versao++;
+      await lerAvisos();
+      return false;
+    });
 }
 
 export function SeloPrioridade({ prioridade }: { prioridade: PrioridadeAviso }) {
@@ -180,7 +211,19 @@ export function SinoAvisos({ px }: { px: string }) {
           className="fixed inset-x-4 top-16 z-50 max-h-[calc(100dvh-6rem)] overflow-y-auto rounded-xl border border-line bg-white shadow-flutuante sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96"
           data-testid={`sino-${px}-painel`}
         >
-          <p className="border-b border-line px-4 py-3 font-title text-base font-semibold text-ink">Avisos</p>
+          <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
+            <p className="font-title text-base font-semibold text-ink">Avisos</p>
+            {s.naoLidas > 0 && (
+              <button
+                type="button"
+                onClick={() => void marcarTodosLidos()}
+                className="min-h-11 text-sm font-semibold text-forest underline underline-offset-4"
+                data-testid={`sino-${px}-marcar-todas`}
+              >
+                Marcar todas como lidas
+              </button>
+            )}
+          </div>
           {s.falhou && !s.recentes.length ? (
             <p role="alert" className="px-4 py-4 text-sm text-amber-900">Não foi possível carregar os avisos agora.</p>
           ) : !s.lido ? (

@@ -29,6 +29,9 @@ export async function marcarConversaAberta(conversationId: string): Promise<void
   // E445 (item 4): abrir a conversa marca como lidas as mensagens RECEBIDAS nela (só lido_em; a RLS da 0287 só deixa o
   // destinatário marcar). Best-effort: antes da 0287, falha em silêncio.
   await supabase.from("messages").update({ lido_em: new Date().toISOString() }).eq("conversation_id", conversationId).eq("receiver_id", user.id).is("lido_em", null);
+  const agora = new Date().toISOString();
+  // E533: e os avisos de "mensagem nova" desta conversa saem do sino (RLS 0286: só os próprios, só lido_em).
+  await supabase.from("avisos").update({ lido_em: agora }).eq("usuario_id", user.id).eq("evento", "new_message").eq("ref_id", conversationId).is("lido_em", null);
 }
 
 /** E445 (item 4): não lidas por conversa e o total — alimenta o sino (E444) como prioridade "urgente". */

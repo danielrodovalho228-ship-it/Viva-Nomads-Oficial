@@ -84,6 +84,7 @@ export async function moderarPedido(pedidoId: string, motivo: string): Promise<A
       await notify({
         event: "pedido_moderado",
         email: inq.email as string,
+        userId: pedido.inquilino_id as string,
         name: (inq.full_name as string) ?? undefined,
         phone: inq.notif_whatsapp === false ? undefined : ((inq.phone as string) ?? undefined),
         // E267: o corpo diz QUAL pedido (cidade e entrada) e o motivo no bloco (antes: "seu pedido foi ocultado").

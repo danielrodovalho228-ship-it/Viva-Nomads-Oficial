@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { FILTROS_AVISOS, filtrarAvisos, type AvisoTela, type FiltroAvisos } from "@/lib/notifications/sino";
-import { SeloPrioridade, marcarLidoEIr } from "@/components/painel/sino-avisos";
+import { SeloPrioridade, marcarLidoEIr, marcarTodosLidos } from "@/components/painel/sino-avisos";
 
 /**
  * E444 item 3 — "Ver todas" (/dashboard/notificacoes#avisos): a lista da tabela de avisos, do mais recente para o mais
@@ -16,6 +16,8 @@ export function ListaAvisos({ avisos, falhou, filtroInicial }: { avisos: AvisoTe
   const [filtro, setFiltro] = useState<FiltroAvisos>(filtroInicial);
   const [lidos, setLidos] = useState<Set<string>>(() => new Set());
   const visiveis = filtrarAvisos(avisos, filtro);
+  const [erroTodas, setErroTodas] = useState(false);
+  const temNaoLido = avisos.some((a) => !a.lido_em && !lidos.has(a.id));
   return (
     <div className="mb-6 rounded-xl border border-line bg-white" data-testid="avisos-caixa">
       <div role="group" aria-label="Filtrar avisos por prioridade" className="flex flex-wrap gap-2 border-b border-line p-3 sm:px-4">
@@ -34,7 +36,31 @@ export function ListaAvisos({ avisos, falhou, filtroInicial }: { avisos: AvisoTe
             {f.rotulo}
           </button>
         ))}
+        {/* E533: marcar todas como lidas (o sino baixa junto). */}
+        {!falhou && temNaoLido && (
+          <button
+            type="button"
+            onClick={async () => {
+              setErroTodas(false);
+              setLidos(new Set(avisos.map((a) => a.id)));
+              const ok = await marcarTodosLidos();
+              if (!ok) {
+                setLidos(new Set());
+                setErroTodas(true);
+              }
+            }}
+            className="ml-auto min-h-11 text-sm font-semibold text-forest underline underline-offset-4"
+            data-testid="avisos-marcar-todas"
+          >
+            Marcar todas como lidas
+          </button>
+        )}
       </div>
+      {erroTodas && (
+        <p role="alert" className="px-4 pt-3 text-sm text-amber-900" data-testid="avisos-marcar-todas-falha">
+          Não foi possível marcar os avisos agora. Tente de novo em instantes.
+        </p>
+      )}
       {falhou ? (
         <p role="alert" className="px-4 py-4 text-sm text-amber-900" data-testid="avisos-caixa-falha">
           Não foi possível carregar os avisos agora. Recarregue a página em instantes.
