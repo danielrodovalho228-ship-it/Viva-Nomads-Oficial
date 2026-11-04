@@ -139,6 +139,26 @@ export function marcarTodosLidos(): Promise<boolean> {
     });
 }
 
+/**
+ * E502: lido × não lido precisam se distinguir de relance. O fundo antigo usava um verde "50" que não existe no tema e não
+ * pintava nada. Não lido: fundo sage-100 com barra verde à esquerda, ponto verde e título em negrito; lido: branco,
+ * título em peso normal. Vale no sino e em "Ver todas".
+ */
+export function classeDoAviso(lido: boolean): string {
+  return lido ? "border-l-4 border-transparent bg-white" : "border-l-4 border-forest bg-sage-100";
+}
+
+/** O ponto do não lido (com "Não lido" para leitor de tela); no lido, o mesmo espaço vazio para o texto não pular. */
+export function MarcaLeitura({ lido }: { lido: boolean }) {
+  if (lido) return <span className="mt-1 h-2.5 w-2.5 shrink-0" aria-hidden />;
+  return (
+    <>
+      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-forest" aria-hidden data-testid="aviso-ponto-nao-lido" />
+      <span className="sr-only">Não lido. </span>
+    </>
+  );
+}
+
 export function SeloPrioridade({ prioridade }: { prioridade: PrioridadeAviso }) {
   return (
     <span className={cn("inline-flex shrink-0 items-center rounded-full px-2 py-1 text-[11px] font-semibold", COR_PRIORIDADE[prioridade])} data-testid="aviso-prioridade" data-prioridade={prioridade}>
@@ -240,12 +260,13 @@ export function SinoAvisos({ px }: { px: string }) {
                       setAberto(false);
                       marcarLidoEIr(a, (href) => router.push(href));
                     }}
-                    className={cn("flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none", !a.lido_em && "bg-sage-50")}
+                    className={cn("flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2 focus-visible:bg-surface-2 focus-visible:outline-none", classeDoAviso(!!a.lido_em))}
                     data-testid="sino-aviso"
                     data-lido={a.lido_em ? "sim" : "nao"}
                   >
+                    <MarcaLeitura lido={!!a.lido_em} />
                     <span className="min-w-0 flex-1">
-                      <span className={cn("block text-sm text-ink [overflow-wrap:anywhere]", !a.lido_em && "font-semibold")}>{a.titulo}</span>
+                      <span className={cn("block text-sm text-ink [overflow-wrap:anywhere]", a.lido_em ? "font-normal" : "font-semibold")}>{a.titulo}</span>
                       <span className="mt-1 block text-xs text-muted">{quando(a.criado_em)}</span>
                     </span>
                     <SeloPrioridade prioridade={a.prioridade} />
