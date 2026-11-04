@@ -27,7 +27,7 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
       <>
         <PageTitle title="Parceiro" subtitle="A sua página de parceiro na Viva: dados, página, serviços e atendimento." />
         {sp.ativada === "1" && (
-          <p className="mb-4 rounded-xl border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-ink" role="status" data-testid="parceiro-ativada">
+          <p className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink" role="status" data-testid="parceiro-ativada">
             Parceria ativada. Complete a página e publique quando estiver pronta.
           </p>
         )}

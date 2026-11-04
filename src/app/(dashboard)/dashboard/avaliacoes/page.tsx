@@ -81,7 +81,7 @@ export default async function AvaliacoesRecebidasPage({ searchParams }: { search
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={a.autorFotoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
                     ) : (
-                      <span aria-hidden className="flex h-10 w-10 items-center justify-center rounded-full bg-sage-50 text-sm font-semibold text-forest">
+                      <span aria-hidden className="flex h-10 w-10 items-center justify-center rounded-full bg-sage-100 text-sm font-semibold text-forest">
                         {a.autorNome.charAt(0)}
                       </span>
                     )}
@@ -97,7 +97,7 @@ export default async function AvaliacoesRecebidasPage({ searchParams }: { search
                     </p>
                   )}
                   {a.resposta && (
-                    <p className="mt-3 rounded-xl bg-sage-50 p-3 text-sm text-ink" data-testid="avaliacao-resposta">
+                    <p className="mt-3 rounded-xl bg-sage-100 p-3 text-sm text-ink" data-testid="avaliacao-resposta">
                       <span className="block text-xs font-semibold text-forest">Sua resposta</span>
                       {a.resposta}
                     </p>

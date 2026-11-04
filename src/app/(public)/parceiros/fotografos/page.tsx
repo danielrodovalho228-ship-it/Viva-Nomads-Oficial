@@ -83,7 +83,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
                 voltarPara={`/parceiros/fotografos?cidade=${encodeURIComponent(cidade)}${uf ? `&uf=${uf}` : ""}${cepBusca ? `&cep=${cepBusca}` : ""}`}
               />
               {geral && mostrarParceiroGeral(geral, 0) && (
-                <div className="mt-4 rounded-xl border border-sage-200 bg-sage-50 p-4" data-testid="parceiro-geral">
+                <div className="mt-4 rounded-xl border border-sage-200 bg-sage-100 p-4" data-testid="parceiro-geral">
                   <p className="text-xs font-semibold text-forest">Parceiro geral da Viva</p>
                   <p className="mt-1 font-title text-lg font-semibold text-ink">{geral.nome}</p>
                   {geral.descricao && <p className="mt-1 text-sm text-ink">{geral.descricao}</p>}

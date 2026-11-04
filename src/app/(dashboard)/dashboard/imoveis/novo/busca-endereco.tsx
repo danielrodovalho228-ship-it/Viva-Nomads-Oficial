@@ -79,7 +79,7 @@ export function BuscaEndereco(p: { ufInicial: string; cidadeInicial: string; rua
                   <button
                     type="button"
                     onClick={() => p.onEscolher(o)}
-                    className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-sage-50"
+                    className="flex w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-sage-100"
                     data-testid="busca-endereco-opcao"
                   >
                     <span className="font-medium text-ink">{o.rua}</span>

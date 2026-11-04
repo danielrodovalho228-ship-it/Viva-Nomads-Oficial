@@ -28,7 +28,7 @@ function MeuPainel({ nome, foto, onClick, className }: { nome: string; foto: str
       onClick={onClick}
       data-testid="nav-meu-painel"
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg pl-2 pr-4 text-sm font-semibold text-forest transition-colors hover:bg-sage-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
+        "inline-flex h-10 shrink-0 items-center gap-3 whitespace-nowrap rounded-lg pl-2 pr-4 text-sm font-semibold text-forest transition-colors hover:bg-sage-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest",
         className
       )}
     >
@@ -121,11 +121,11 @@ export function Navbar() {
         <div className="border-t border-line bg-white lg:hidden" data-testid="nav-menu-lista">
           <div className="flex flex-col gap-1 px-4 py-4 sm:px-8">
             {PUBLIC_NAV.map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-50" onClick={() => setOpen(false)}>
+              <Link key={item.href} href={item.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-100" onClick={() => setOpen(false)}>
                 {item.label}
               </Link>
             ))}
-            <Link href={FALE_COM_A_VIVA.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-50" onClick={() => setOpen(false)}>
+            <Link href={FALE_COM_A_VIVA.href} className="rounded-lg px-3 py-3 text-base font-medium text-ink hover:bg-sage-100" onClick={() => setOpen(false)}>
               {FALE_COM_A_VIVA.label}
             </Link>
             {SELETOR_IDIOMA && <SeletorIdioma celular className="px-3" />}

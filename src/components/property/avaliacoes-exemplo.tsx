@@ -51,7 +51,7 @@ function CartaoAvaliacao({ a }: { a: AvaliacaoExemplo }) {
         </button>
       )}
       {a.resposta && (
-        <div className="mt-3 rounded-xl bg-sage-50 p-3" data-testid="avaliacao-resposta">
+        <div className="mt-3 rounded-xl bg-sage-100 p-3" data-testid="avaliacao-resposta">
           <p className="text-xs font-semibold text-forest">Resposta do proprietário</p>
           <p className="mt-1 text-sm text-ink">{a.resposta}</p>
         </div>

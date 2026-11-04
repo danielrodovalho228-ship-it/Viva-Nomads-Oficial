@@ -40,7 +40,7 @@ export function EmpresasForm() {
 
   if (ok) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-sage-200 bg-sage-50 p-6">
+      <div className="flex items-start gap-3 rounded-xl border border-sage-200 bg-sage-100 p-6">
         <Check className="mt-1 h-5 w-5 shrink-0 text-forest" />
         <div>
           <p className="font-title font-semibold text-ink">Recebemos seu contato.</p>

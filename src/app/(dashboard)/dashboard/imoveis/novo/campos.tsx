@@ -75,7 +75,7 @@ export function LinhaNumero({
             <span>{label}</span>
             <MarcaSugerido ativo={sugerido} />
             {daMatricula && (
-              <span className="ml-2 inline-flex items-center rounded-full bg-sage-50 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
+              <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
                 veio da matrícula
               </span>
             )}
@@ -158,7 +158,7 @@ export function Labeled({
         <span className="whitespace-nowrap">{label}</span>
         <MarcaSugerido ativo={sugerido} />
         {daMatricula && (
-          <span className="ml-2 inline-flex items-center rounded-full bg-sage-50 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
+          <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
             veio da matrícula
           </span>
         )}

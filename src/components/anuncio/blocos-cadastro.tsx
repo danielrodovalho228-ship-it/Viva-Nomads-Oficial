@@ -275,7 +275,7 @@ export function ProntoParaTrabalhar({
     );
   };
   return (
-    <div className="rounded-xl border-2 border-forest/30 bg-sage-50 p-4" data-testid="pronto-trabalhar">
+    <div className="rounded-xl border-2 border-forest/30 bg-sage-100 p-4" data-testid="pronto-trabalhar">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 font-title text-base font-semibold text-forest">
           <Briefcase className="h-4 w-4" aria-hidden /> Pronto para trabalhar de casa

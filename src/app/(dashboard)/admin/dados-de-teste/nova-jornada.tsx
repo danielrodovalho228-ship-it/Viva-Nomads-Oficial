@@ -87,7 +87,7 @@ export function NovaJornadaTeste({ inquilinos, anuncios }: { inquilinos: Opcao[]
         </p>
       )}
       {r && r.ok && (
-        <div className="break-words rounded-lg border border-sage-200 bg-sage-50 p-3 text-sm text-ink" role="status" data-testid="jornada-ok" data-reaproveitada={r.reaproveitada ? "1" : "0"}>
+        <div className="break-words rounded-lg border border-sage-200 bg-sage-100 p-3 text-sm text-ink" role="status" data-testid="jornada-ok" data-reaproveitada={r.reaproveitada ? "1" : "0"}>
           <p className="font-semibold text-forest">
             {r.reaproveitada ? "Jornada reaproveitada" : "Jornada criada"} · candidatura <span data-testid="jornada-numero">{r.numero}</span>
           </p>

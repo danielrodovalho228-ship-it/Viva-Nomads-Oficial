@@ -53,7 +53,7 @@ const paraSolucao = (o: ServiceOrder): OrdemSolucao => ({
 
 /** Prompt 59-A: os 4 estados do prazo de solução, sempre visíveis no chamado (morador e dono). */
 export const ROTULO_SOLUCAO = { no_prazo: "No prazo", vencido: "Vencido", resolvido_no_prazo: "Resolvido no prazo", resolvido_fora: "Fora do prazo" } as const;
-const TOM_SOLUCAO = { no_prazo: "bg-sage-50 text-ink", vencido: "bg-red-50 text-red-700", resolvido_no_prazo: "bg-emerald-50 text-emerald-700", resolvido_fora: "bg-red-50 text-red-700" } as const;
+const TOM_SOLUCAO = { no_prazo: "bg-sage-100 text-ink", vencido: "bg-red-50 text-red-700", resolvido_no_prazo: "bg-emerald-50 text-emerald-700", resolvido_fora: "bg-red-50 text-red-700" } as const;
 
 /** Prompt 59: prazo de SOLUÇÃO (horário de Brasília); no urgente, também a provisória. */
 export function SolucaoOrdem({ o }: { o: ServiceOrder }) {
@@ -283,7 +283,7 @@ export function CartaoOrdem({
             <ul data-testid="mensagens-ordem" className="space-y-2">
               {mensagens.length === 0 && <li className="text-sm text-muted" data-testid="mensagens-ordem-vazio">{textoMensagensOrdemVazia(papel)}</li>}
               {mensagens.map((m) => (
-                <li key={m.id} className={cn("rounded-xl px-3 py-2 text-sm", m.autor === "voce" ? "bg-forest/5" : "bg-sage-50")}>
+                <li key={m.id} className={cn("rounded-xl px-3 py-2 text-sm", m.autor === "voce" ? "bg-forest/5" : "bg-sage-100")}>
                   <span className="block text-xs text-muted">
                     {AUTOR[m.autor]} · {dataHoraBrasilia(new Date(m.criadoEm))}
                   </span>

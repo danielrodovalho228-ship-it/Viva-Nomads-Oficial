@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * mas continua no formulário (name, required, accept) e acessível pelo rótulo.
  */
 export const CLASSE_SELETOR_ARQUIVO =
-  "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:bg-sage-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-forest";
+  "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:bg-sage-100 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-forest";
 
 export function SeletorArquivo({
   rotulo = "Escolher arquivo",

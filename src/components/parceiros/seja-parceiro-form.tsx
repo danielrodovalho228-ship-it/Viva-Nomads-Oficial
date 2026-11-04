@@ -153,7 +153,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       )}
       {sol?.status === "aguardando_email" && <p className="rounded-xl border border-line bg-surface-2 p-3 text-sm text-ink">{STATUS_TEXTO.aguardando_email}</p>}
       {!estado.logado && (
-        <p className="rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm text-ink" data-testid="seja-parceiro-precisa-conta">
+        <p className="rounded-xl border border-sage-200 bg-sage-100 p-3 text-sm text-ink" data-testid="seja-parceiro-precisa-conta">
           Para pedir a parceria, você precisa de uma conta com e-mail confirmado. Preencha e toque em continuar: você cria a conta (ou entra) e volta com tudo preenchido.
         </p>
       )}

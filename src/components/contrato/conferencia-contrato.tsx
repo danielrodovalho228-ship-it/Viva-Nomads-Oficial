@@ -48,7 +48,7 @@ const fmt = (iso: string) => dataHoraBRT(iso, { semEtiqueta: true });
  */
 /** E247: o seletor de arquivo do site — botão de contorno em português; o input nativo fica escondido (sr-only). */
 const SELETOR_ARQUIVO =
-  "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:bg-sage-50 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-forest";
+  "inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 bg-white px-4 text-sm font-medium text-ink hover:bg-sage-100 has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-forest";
 
 export function ConferenciaContrato({ contratoId, statusContrato, dados }: { contratoId: string; statusContrato: string; dados: ConferenciasContrato }) {
   const tipos: TipoConferencia[] = statusContrato === "ativo" ? ["entrada", "saida"] : ["saida"];
@@ -172,7 +172,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       {tipo === "entrada" && <SecaoConfortoEntrada contratoId={contratoId} parte={parte} travada={travada} respondidas={conf?.conforto ?? []} adicionais={dados.confortoAdicionais ?? []} />}
 
       {laudo && (
-        <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-3 text-sm text-ink" data-testid="conferencia-laudo">
+        <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-100 p-3 text-sm text-ink" data-testid="conferencia-laudo">
           <FileCheck2 className="h-4 w-4 shrink-0 text-forest" />
           <span>
             <strong>Laudo independente</strong> anexado em {fmt(laudo.criadoEm)} — prevalece sobre as fotos.{" "}

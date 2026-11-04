@@ -47,7 +47,7 @@ export function MatriculaNoInicio(p: {
           <h2 id="matricula-inicio-titulo" className="font-title text-xl font-semibold text-ink">
             Comece pela matrícula
           </h2>
-          <button type="button" onClick={p.onFechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-sage-50" aria-label="Fechar" data-testid="matricula-inicio-fechar">
+          <button type="button" onClick={p.onFechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-sage-100" aria-label="Fechar" data-testid="matricula-inicio-fechar">
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
