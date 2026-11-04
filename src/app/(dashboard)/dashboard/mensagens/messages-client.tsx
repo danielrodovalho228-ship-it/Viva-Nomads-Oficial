@@ -5,7 +5,7 @@ import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { useEffect, useRef, useState } from "react";
-import { Send, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft, Paperclip } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
 import { DenunciarConversa } from "@/components/mensagens/denunciar-conversa";
 import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
+import { ACEITA_ANEXO, erroAntesDeEnviar, rotuloDoAnexo, tipoDaMensagemAnexo, urlDoAnexo } from "@/lib/messages/anexos-tela";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
@@ -59,6 +60,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [activeId, setActiveId] = useState<string>(conversaInicial(pedida, initial.map((c) => c.id)) ?? "");
   const [naoEncontrada, setNaoEncontrada] = useState(!demo && !!pedida && !existe);
   // E445 (item 3): aviso de termo ofensivo — a pessoa revisa ou envia mesmo assim (vai para a fila de moderação).
+  const [erroAnexo, setErroAnexo] = useState<string | null>(null);
+  const [enviandoAnexo, setEnviandoAnexo] = useState(false);
+  const arquivoRef = useRef<HTMLInputElement>(null);
   const [ofensaPendente, setOfensaPendente] = useState<{ envio: Parameters<typeof sendMessage>[0]; aviso: string } | null>(null);
   const [draft, setDraft] = useState("");
   // Prompt 55-E2: o texto do campo veio de uma resposta rápida? Então contato direto BLOQUEIA (não mascara).
@@ -185,6 +189,34 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
       }
     }
   }
+
+  // E445 (item 5): foto ou PDF pela rota do servidor (tipo real, 10 MB, bucket privado). Só em conversa entre pessoas
+  // (o pedido de serviço tem a conversa dele) e fora da demonstração.
+  async function anexar(arquivo: File) {
+    if (!active || !active.otherId) return;
+    setErroAnexo(null);
+    const antes = erroAntesDeEnviar(arquivo);
+    if (antes) return setErroAnexo(antes);
+    setEnviandoAnexo(true);
+    try {
+      const dados = new FormData();
+      dados.append("receiverId", active.otherId);
+      if (active.propertyId) dados.append("propertyId", active.propertyId);
+      dados.append("file", arquivo);
+      const res = await fetch("/api/mensagens/anexo", { method: "POST", body: dados });
+      const r = (await res.json().catch(() => null)) as { ok?: boolean; error?: string; anexoId?: string; messageId?: string; mime?: string } | null;
+      if (!res.ok || !r?.ok || !r.anexoId || !r.messageId || !r.mime) return setErroAnexo(r?.error ?? "Não foi possível enviar o anexo agora. Tente de novo.");
+      const tipo = tipoDaMensagemAnexo(r.mime);
+      const texto = tipo === "pdf" ? "Anexo: PDF enviado" : "Anexo: foto enviada";
+      const msg = { id: r.messageId, from: "me" as const, text: texto, anexo: { id: r.anexoId, tipo } };
+      setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, preview: texto, messages: [...c.messages, msg] } : c)));
+    } catch {
+      setErroAnexo("Sem conexão. O anexo não foi enviado — tente de novo.");
+    } finally {
+      setEnviandoAnexo(false);
+    }
+  }
+  const podeAnexar = !demo && !!active?.otherId && !active?.pedidoParceiroId;
 
   // E445: a última mensagem minha que o destinatário já leu (o "Visto" aparece só nela).
   const ultimaMinhaVista = active ? [...active.messages].reverse().find((m) => m.from === "me" && m.visto)?.id : undefined;
@@ -387,6 +419,17 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                   )}
                 >
                   {m.text}
+                  {m.anexo && (
+                    <a
+                      href={urlDoAnexo(m.anexo.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn("mt-2 block rounded-lg px-3 py-2 text-center text-xs font-semibold", m.from === "me" ? "bg-white/15 text-white" : "bg-sage-100 text-forest")}
+                      data-testid="mensagem-anexo"
+                    >
+                      {rotuloDoAnexo(m.anexo.tipo)}
+                    </a>
+                  )}
                   {m.propostaId && (
                     <Link
                       href={`/dashboard/propostas/${m.propostaId}`}
@@ -505,7 +548,38 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               </div>
             </div>
           )}
+          {erroAnexo && (
+            <p role="alert" data-testid="erro-anexo" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+              {erroAnexo}
+            </p>
+          )}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
+            {podeAnexar && (
+              <>
+                <input
+                  ref={arquivoRef}
+                  type="file"
+                  accept={ACEITA_ANEXO}
+                  className="hidden"
+                  data-testid="mensagem-anexo-arquivo"
+                  onChange={(e) => {
+                    const arquivo = e.target.files?.[0];
+                    e.target.value = "";
+                    if (arquivo) void anexar(arquivo);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => arquivoRef.current?.click()}
+                  disabled={enviandoAnexo}
+                  className="grid h-11 w-11 place-items-center rounded-full border border-sage-200 text-forest hover:bg-sage-100 disabled:opacity-50"
+                  aria-label={enviandoAnexo ? "Enviando anexo" : "Anexar foto ou PDF"}
+                  data-testid="mensagem-anexar"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </button>
+              </>
+            )}
             <input
               value={draft}
               ref={campoRef}

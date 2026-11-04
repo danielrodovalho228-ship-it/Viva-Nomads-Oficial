@@ -10,6 +10,7 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { conversasDeContratos, type ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
 import { conversationId } from "@/lib/messages/conversation-id";
+import { tipoDaMensagemAnexo } from "@/lib/messages/anexos-tela";
 
 export interface ChatMessage {
   id: string;
@@ -19,6 +20,8 @@ export interface ChatMessage {
   propostaId?: string;
   /** E445 (item 4): mensagem minha já lida pelo destinatário ("visto"). */
   visto?: boolean;
+  /** E445 (item 5): foto ou PDF da mensagem (abre pela rota que só as partes alcançam). */
+  anexo?: { id: string; tipo: "foto" | "pdf" };
 }
 
 export interface Conversation {
@@ -120,6 +123,17 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
   if (error && (error.code === "42703" || /lido_em/.test(error.message))) ({ data, error } = await ler(false));
   if (error && opcoes.exigir) throw new Error(MSG_MENSAGENS_NAO_CARREGARAM);
 
+  // E445 (item 5): anexos das mensagens lidas (RLS "anexos das partes"). Sem a leitura (ou antes da 0288), a mensagem
+  // segue com o texto "Anexo: …" e sem o link — nada some nem é inventado.
+  const anexoPorMsg = new Map<string, { id: string; tipo: "foto" | "pdf" }>();
+  const idsMsgs = (error || !data ? [] : (data as unknown as MsgRow[])).map((m) => m.id);
+  if (idsMsgs.length) {
+    const { data: anexos } = await supabase.from("mensagens_anexos").select("id, message_id, mime").in("message_id", idsMsgs);
+    for (const a of (anexos ?? []) as { id: string; message_id: string; mime: string }[]) {
+      anexoPorMsg.set(a.message_id, { id: a.id, tipo: tipoDaMensagemAnexo(a.mime) });
+    }
+  }
+
   const byConv = new Map<string, Conversation>();
   // Erro na leitura das mensagens: a lista segue só com as conversas de contrato (nunca inventa conversa).
   for (const m of (error || !data ? [] : data) as unknown as MsgRow[]) {
@@ -144,7 +158,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     const conv = byConv.get(m.conversation_id)!;
     // Mesmo filtro do envio: mensagem antiga com CPF/RG ou contato nunca aparece crua (nem na prévia da caixa).
     const texto = guardContactInfo(m.body).text;
-    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}) });
+    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}), ...(anexoPorMsg.has(m.id) ? { anexo: anexoPorMsg.get(m.id)! } : {}) });
     // E445: não lidas da conversa (recebidas sem lido_em; sem a coluna, não conta).
     if (!mine && m.lido_em === null) conv.naoLidas = (conv.naoLidas ?? 0) + 1;
     conv.preview = texto;
