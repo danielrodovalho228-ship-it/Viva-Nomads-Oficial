@@ -38,7 +38,8 @@ test.describe("T268 — Meus imóveis: links só para página que existe", () =>
       await expect(page.getByText(RASCUNHO, { exact: true })).toBeVisible();
       await expect(page.locator("main a", { hasText: RASCUNHO })).toHaveCount(0);
       await expect(page.locator(`a[href="/imoveis/${ids.rascunho}"]`)).toHaveCount(0);
-      await expect(page.locator(`a[href="/dashboard/imoveis/novo?draft=${ids.rascunho}"]`, { hasText: "Continuar editando" })).toHaveCount(1);
+      // E507: "Continuar editando" abre o rascunho no 1º passo que falta (o mesmo destino do Início).
+      await expect(page.locator(`a[href^="/dashboard/imoveis/novo?draft=${ids.rascunho}"]`, { hasText: "Continuar editando" })).toHaveCount(1);
 
       const r = await page.request.get(`/imoveis/${ids.ativo}`);
       expect(r.status()).toBe(200);

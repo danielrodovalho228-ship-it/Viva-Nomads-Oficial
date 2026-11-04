@@ -56,8 +56,8 @@ test("telas: cartão, aviso do tipo de entrada, reativar e e-mail do documento u
   const cartao = ler("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
   assert.match(cartao, /destinoPendencia\(p, o\.etapa\)/);
   assert.match(cartao, /data-testid=\{`pendencia-\$\{o\.key\}`\}/);
-  // Rascunho: "Continuar editando" segue no assistente.
-  assert.match(cartao, /p\.status === "draft"\s*\?\s*`\/dashboard\/imoveis\/novo\?draft=\$\{p\.id\}`/);
+  // Rascunho: "Continuar editando" segue no assistente — E507: pelo destino único de retomada (sempre /novo?draft=).
+  assert.match(cartao, /p\.status === "draft"\s*\?[^:]*hrefRetomarRascunho\(prontidao\[p\.id\], p\.id\)/);
   // E418 (02/11): o link do tipo de entrada saiu da caixa do topo e foi para o cartão de cada anúncio — mesmo destino único.
   const painel = ler("src/app/(dashboard)/dashboard/imoveis/page.tsx");
   assert.match(cartao, /destinoPendencia\(p, ETAPA\.regras\)/);
