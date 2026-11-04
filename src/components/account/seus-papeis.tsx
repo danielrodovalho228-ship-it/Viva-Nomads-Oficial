@@ -55,7 +55,7 @@ export function SeusPapeis({ dentroDoBloco = false }: { dentroDoBloco?: boolean 
     <Casca dentroDoBloco={dentroDoBloco}>
       {!dentroDoBloco && (
         <h2 id="seus-papeis-titulo" className="font-title text-lg font-semibold text-ink">
-          Papéis e intenção
+          Como você usa a Viva
         </h2>
       )}
       <p className={dentroDoBloco ? "text-sm text-muted" : "mt-1 text-sm text-muted"}>O papel em uso decide o menu e o painel que aparecem primeiro. Não muda o que você pode fazer na conta.</p>
