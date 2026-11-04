@@ -12,6 +12,9 @@ import {
   CENARIOS,
   CUSTO_FIXO_FAIXA,
   CUSTOS_FIXOS,
+  CUSTO_FORNECEDORES,
+  FORA_DO_FIXO,
+  ROTULO_HIPOTESE_IDENTIDADE,
   CUSTOS_POR_CONTRATO,
   DOLAR,
   IMPOSTO_OPCOES,
@@ -213,7 +216,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
         <p className={styles.sub}>{t.sub}</p>
         <p className={styles.warn} data-testid="aviso-premissas">
           <strong>Estimativas de {REFERENCIA} para decidir, não parecer contábil.</strong> Preços das ferramentas com fonte abaixo; dólar a{" "}
-          {brl2(DOLAR)}. Identidade e antifraude da CAF ainda precisam de orçamento formal.
+          {brl2(DOLAR)}. Identidade (Certta): {brl(VERIFICACAO.custoCaf)} por verificação é {ROTULO_HIPOTESE_IDENTIDADE}; o pró-labore é referência para projeção, não decisão.
         </p>
 
         <p className={styles.printOnly} data-testid="resumo-impressao">
@@ -526,7 +529,9 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             itens={CUSTOS_FIXOS}
             rodape={[
               ["Total usado na conta", brl(custoFixo)],
+              ["Só fornecedores", brl(CUSTO_FORNECEDORES)],
               ["Faixa", CUSTO_FIXO_FAIXA.texto],
+              ["Fora do fixo", FORA_DO_FIXO.join(" · ")],
               ["Marketing", `R$ 0 nos meses 1–3 · ${brl(marketingDoMes(4))} no ano 1 · ${brl(marketingDoMes(13))} depois`],
               ["Investimento único", `${brl(INVESTIMENTO_INICIAL)} (jurídico, CNPJ, marca, Google Play, lançamento)`],
             ]}
@@ -601,7 +606,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                 {pct(REPRESENTANTE_SEGUROS.min)} a {pct(REPRESENTANTE_SEGUROS.max)}; prêmio proporcional à duração do contrato). {SELO_POTENCIAL}.
               </li>
               <li>
-                <strong>Receitas adicionais</strong> (desligadas por padrão): verificação opcional do inquilino ({VERIFICACAO.candidatosPorContrato} candidatos por contrato × adesão × valor, menos a CAF de {brl(VERIFICACAO.custoCaf)} por verificação, {VERIFICACAO.custoCafTexto}), empresas (contratos × adesão × valor), “Publicamos para você” (donos novos × adesão × valor), ferramentas (donos ativos × adesão × valor mensal, com saída de 3% ao mês) e fundadores (desconto na taxa).
+                <strong>Receitas adicionais</strong> (desligadas por padrão): verificação opcional do inquilino ({VERIFICACAO.candidatosPorContrato} candidatos por contrato × adesão × valor, menos a verificação de identidade (Certta) de {brl(VERIFICACAO.custoCaf)} por verificação, {VERIFICACAO.custoCafTexto}), empresas (contratos × adesão × valor), “Publicamos para você” (donos novos × adesão × valor), ferramentas (donos ativos × adesão × valor mensal, com saída de 3% ao mês) e fundadores (desconto na taxa).
               </li>
               <li>
                 <strong>ROI</strong> no mês N = (caixa acumulado no mês N + dinheiro necessário) ÷ dinheiro necessário − 1, com dinheiro necessário = pior caixa (já inclui o investimento inicial).

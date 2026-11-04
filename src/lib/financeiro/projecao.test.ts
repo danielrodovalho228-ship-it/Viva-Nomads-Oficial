@@ -48,10 +48,10 @@ test("cenários 10/20/40 contratos por mês: ≈ R$ 15,6 mil / 31,1 mil / 62,2 m
   for (const x of c) assert.ok(Math.abs(x.resultado - (x.contratos * margem - CUSTO_FIXO_PADRAO)) < 0.01);
 });
 
-test("ponto de equilíbrio com o custo fixo atual (≈ R$ 6 mil com pró-labore): 5 contratos por mês, só custo fixo", () => {
+test("ponto de equilíbrio com o custo fixo atual (≈ R$ 7,3 mil com pró-labore de referência, E559): 6 contratos por mês, só custo fixo", () => {
   const margem = porContrato({ operador: 0 }).margem;
   const n = Math.ceil(CUSTO_FIXO_PADRAO / margem);
-  assert.equal(n, 5);
+  assert.equal(n, 6);
   assert.ok(n * margem >= CUSTO_FIXO_PADRAO && (n - 1) * margem < CUSTO_FIXO_PADRAO);
 });
 
@@ -65,42 +65,67 @@ test("sem assinatura nem churn: a receita base é só a taxa de serviço dos con
     assert.ok(!("receitaAssinatura" in m) && !("assinantes" in m));
   }
   perto(p.anos[0].receita, 83981, "receita ano 1");
-  perto(p.piorCaixa, -41321, "pior caixa");
-  assert.equal(p.mesPrimeiroPositivo, 7);
-  assert.equal(p.mesPayback, 14);
+  perto(p.piorCaixa, -51128, "pior caixa");
+  assert.equal(p.mesPrimeiroPositivo, 8);
+  assert.equal(p.mesPayback, 17);
 });
 
-test("cenário Base com operador de R$ 100 por contrato: pior caixa ≈ −R$ 42 mil e payback no mês 15 (com pró-labore)", () => {
+test("cenário Base com operador de R$ 100 por contrato: pior caixa ≈ −R$ 53 mil e payback no mês 18 (com pró-labore de referência)", () => {
   const p = projetar("base", { operador: 100 });
-  perto(p.piorCaixa, -42281, "pior caixa com operador");
-  assert.equal(p.mesPayback, 15);
+  perto(p.piorCaixa, -53005, "pior caixa com operador");
+  assert.equal(p.mesPayback, 18);
 });
 
-test("por contrato: receita = R$ 1.555,20; margem ≈ R$ 1.446 e empate de 5 a 6 contratos/mês (6 com operador)", () => {
+test("por contrato: receita = R$ 1.555,20; margem ≈ R$ 1.371 e empate de 6 a 7 contratos/mês (7 com operador)", () => {
   const sem = porContrato({ operador: 0 });
   assert.equal(Math.round(sem.receita * 100) / 100, 1555.2);
-  assert.equal(Math.round(sem.margem), 1446);
-  assert.deepEqual(sem.empate.map((x) => Math.ceil(x)), [5, 6]);
-  assert.deepEqual(porContrato({ operador: 100 }).empate.map((x) => Math.ceil(x)), [6, 6]);
+  assert.equal(Math.round(sem.margem), 1371);
+  assert.deepEqual(sem.empate.map((x) => Math.ceil(x)), [6, 7]);
+  assert.deepEqual(porContrato({ operador: 100 }).empate.map((x) => Math.ceil(x)), [7, 7]);
 });
 
-test("cenários ordenados: otimista se paga antes do base; o pessimista se paga mais tarde ainda", () => {
+test("cenários ordenados: otimista se paga antes do base; o pessimista não se paga em 36 meses (custos v2)", () => {
   const pes = projetar("pessimista", { operador: 0 });
   const base = projetar("base", { operador: 0 });
   const oti = projetar("otimista", { operador: 0 });
-  assert.equal(oti.mesPayback, 10);
-  assert.equal(base.mesPayback, 14);
-  assert.equal(pes.mesPayback, 29);
+  assert.equal(oti.mesPayback, 11);
+  assert.equal(base.mesPayback, 17);
+  assert.equal(pes.mesPayback, null);
   assert.ok(oti.piorCaixa > base.piorCaixa && base.piorCaixa > pes.piorCaixa);
 });
 
-test("premissas: fixo ≈ R$ 6 mil (R$ 989 de ferramentas + R$ 5.000 de pró-labore), ferramentas R$ 16/contrato, referência out/2026", () => {
-  assert.equal(CUSTO_FIXO_PADRAO, 5989);
-  assert.ok(CUSTOS_FIXOS.some((c) => c.rotulo === "Pró-labore dos sócios" && c.valor === 5000));
-  assert.equal(CUSTO_FIXO_FAIXA.texto, "≈ R$ 6 mil/mês com pró-labore");
-  assert.ok(CUSTO_FIXO_FAIXA.min <= 989 && CUSTO_FIXO_FAIXA.max >= CUSTO_FIXO_PADRAO, "o controle deslizante precisa cobrir o padrão");
-  assert.equal(CUSTO_FERRAMENTAS_POR_CONTRATO, 16);
-  assert.equal(REFERENCIA, "out/2026");
+test("premissas (E559, modelo de custos v2, 04/11/2026): fornecedores ≈ R$ 1.303 + pró-labore de referência R$ 6.000", () => {
+  const fornecedores = CUSTOS_FIXOS.filter((c) => c.rotulo !== "Pró-labore dos sócios").reduce((s, c) => s + c.valor, 0);
+  assert.ok(Math.abs(fornecedores - 1303) < 1, `fornecedores ${fornecedores}`);
+  const pro = CUSTOS_FIXOS.find((c) => c.rotulo === "Pró-labore dos sócios");
+  assert.equal(pro?.valor, 6000);
+  assert.match(pro?.obs ?? "", /referência para projeção — não é decisão/);
+  assert.ok(Math.abs(CUSTO_FIXO_PADRAO - (fornecedores + 6000)) < 1e-9);
+  assert.equal(CUSTO_FIXO_FAIXA.texto, "≈ R$ 7,3 mil/mês com pró-labore de referência");
+  assert.ok(Math.abs(CUSTO_FIXO_FAIXA.min - fornecedores) < 1, "mínimo = só fornecedores");
+  assert.ok(CUSTO_FIXO_FAIXA.max >= CUSTO_FIXO_PADRAO, "o controle deslizante precisa cobrir o padrão");
+  // Sem o WhatsApp no fixo; emissor de NFS-e e alvará "a cotar" (0, rotulados).
+  assert.ok(!CUSTOS_FIXOS.some((c) => /WhatsApp|Z-API/.test(c.rotulo)));
+  for (const r of [/NFS-e/, /[Aa]lvará/]) {
+    const c = CUSTOS_FIXOS.find((x) => r.test(x.rotulo));
+    assert.ok(c && c.valor === 0 && /a cotar/.test(c.obs ?? ""), String(r));
+  }
+  assert.equal(REFERENCIA, "04/11/2026");
+});
+
+test("premissas (E559): por contrato — identidade é hipótese (1,7 × R$ 20), assinatura R$ 2,50/doc além dos 20, cartão 2,99% + R$ 0,49", () => {
+  const id = CUSTOS_POR_CONTRATO.find((c) => /Identidade/.test(c.rotulo))!;
+  assert.ok(Math.abs(id.valor - 34) < 1e-9);
+  assert.match(id.obs ?? "", /hipótese — preço a cotar/);
+  assert.match(id.rotulo + (id.obs ?? ""), /Certta/);
+  const ass = CUSTOS_POR_CONTRATO.find((c) => /Assinatura/.test(c.rotulo))!;
+  assert.match(ass.obs ?? "", /R\$ 2,50 por documento além dos 20 do plano/);
+  const cob = CUSTOS_POR_CONTRATO.find((c) => /Cobrança/.test(c.rotulo))!;
+  assert.match(cob.obs ?? "", /2,99% \+ R\$ 0,49/);
+  assert.match(cob.obs ?? "", /Pix R\$ 1,99/);
+  const ia = CUSTOS_POR_CONTRATO.find((c) => /IA/.test(c.rotulo))!;
+  assert.match(ia.obs ?? "", /a medir/);
+  assert.ok(Math.abs(CUSTO_FERRAMENTAS_POR_CONTRATO - CUSTOS_POR_CONTRATO.reduce((s, c) => s + c.valor, 0)) < 1e-9);
 });
 
 test("modelo único: nenhum plano Gratuito/Essencial/Profissional nem Fundadores nas premissas", async () => {
@@ -127,8 +152,8 @@ test("parceiros: todos ligados no Base ≈ R$ 36,37 por contrato antes do impost
   const m = p.meses[20]; // mês 21: todos já começaram
   assert.equal(Math.round(m.receitaParceiros * 100) / 100, Math.round(m.contratos * 36.37 * 100) / 100);
   perto(p.anos[2].receitaParceiros, 12439, "parceiros ano 3");
-  perto(p.piorCaixa, -41187, "pior caixa com parceiros");
-  assert.equal(p.mesPayback, 14);
+  perto(p.piorCaixa, -50912, "pior caixa com parceiros");
+  assert.equal(p.mesPayback, 17);
 });
 
 test("parceiro só soma a partir do mês de início (o que começa mais tarde)", () => {
@@ -164,13 +189,13 @@ test("custo fixo editável muda o resultado (faixa alta piora o caixa)", () => {
   assert.ok(alto.piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
 });
 
-test("imposto da Viva: padrão 6%; anexo V (15,5%) → margem ≈ R$ 1.298 e empate de 6 contratos/mês (6 a 7 com operador)", () => {
+test("imposto da Viva: padrão 6%; anexo V (15,5%) → margem ≈ R$ 1.223 e empate de 7 a 8 contratos/mês (8 com operador)", () => {
   assert.deepEqual([...IMPOSTO_OPCOES], [0.06, 0.155]);
   assert.equal(IMPOSTO_SOBRE_RECEITA, 0.06);
   const v = porContrato({ operador: 0, imposto: 0.155 });
-  assert.equal(Math.round(v.margem), 1298);
-  assert.deepEqual(v.empate.map((x) => Math.ceil(x)), [6, 6]);
-  assert.deepEqual(porContrato({ operador: 100, imposto: 0.155 }).empate.map((x) => Math.ceil(x)), [6, 7]);
+  assert.equal(Math.round(v.margem), 1223);
+  assert.deepEqual(v.empate.map((x) => Math.ceil(x)), [7, 8]);
+  assert.deepEqual(porContrato({ operador: 100, imposto: 0.155 }).empate.map((x) => Math.ceil(x)), [8, 8]);
   assert.equal(porContrato({ operador: 0 }).margem, porContrato({ operador: 0, imposto: 0.06 }).margem);
   assert.ok(projetar("base", { operador: 0, imposto: 0.155 }).piorCaixa < projetar("base", { operador: 0 }).piorCaixa);
 });
@@ -209,8 +234,8 @@ test("p21 — tudo desligado: números idênticos aos de hoje (regressão) e tod
   const hoje = projetar("base", BASE);
   const novo = projetar("base", { ...BASE, extras: [], ajustes: {}, fatorAdesao: 1 });
   assert.deepEqual(novo.meses.map((m) => m.caixa), hoje.meses.map((m) => m.caixa));
-  assert.equal(novo.mesPayback, 14);
-  perto(novo.piorCaixa, -41321, "pior caixa");
+  assert.equal(novo.mesPayback, 17);
+  perto(novo.piorCaixa, -51128, "pior caixa");
   for (const m of novo.meses) {
     for (const k of ["receitaVerificacao", "receitaB2B", "receitaPublicamos", "receitaFerramentas", "descontoFundadores"] as const) assert.equal(m[k], 0, k);
     assert.ok(Math.abs(m.receita - (m.receitaTaxa + m.receitaSeguros + m.receitaServicos)) < 1e-6);
@@ -241,7 +266,8 @@ test("p21 — verificação desconta o custo da CAF no custo variável", () => {
   const verificacoes = com.contratos * VERIFICACAO.candidatosPorContrato * 0.4;
   const custoEsperado = sem.custoVariavel + verificacoes * VERIFICACAO.custoCaf + 0.06 * com.receitaVerificacao;
   assert.ok(Math.abs(com.custoVariavel - custoEsperado) < 1e-6);
-  assert.equal(VERIFICACAO.custoCaf, 8);
+  assert.equal(VERIFICACAO.custoCaf, 20);
+  assert.match(VERIFICACAO.custoCafTexto, /hipótese — preço a cotar/);
 });
 
 test("p21 — ferramentas: assinantes acumulam sobre os donos ativos com saída de 3% ao mês (só a partir do mês 12)", () => {
@@ -298,17 +324,17 @@ test("p21 — sensibilidade: metade da adesão atrasa (ou mantém) o payback; o 
   assert.ok(pay(0.5) >= pay(1) && pay(1) >= pay(2));
 });
 
-test("p21 — premissas: seguro-fiança acompanha a duração editável; CAF sob orçamento; selos e rodapé", () => {
+test("p21 — premissas: seguro-fiança acompanha a duração editável; identidade como hipótese (E559); selos e rodapé", () => {
   const fianca = PARCEIROS.find((p) => p.id === "seguro_fianca")!;
   const r3 = parceirosPorContrato({ ...BASE, parceiros: ["seguro_fianca"] });
   const r4 = parceirosPorContrato({ ...BASE, parceiros: ["seguro_fianca"], mesesContrato: 4 });
   assert.equal(fianca.valorUnidade, 1080);
   assert.ok(Math.abs(r4 - r3 * 4 / 3) < 0.5);
-  assert.match(CUSTOS_POR_CONTRATO[0].obs!, /^CAF — sob orçamento \(Didit como referência de preço/);
+  assert.match(CUSTOS_POR_CONTRATO[0].obs!, /hipótese — preço a cotar/);
   assert.equal(SELO_PARECER, "aguarda parecer jurídico");
   assert.deepEqual(RECEITAS_ADICIONAIS.filter((e) => e.aguardaParecer).map((e) => e.id), ["verificacao_inquilino", "fundadores"]);
   assert.equal(RODAPE_SOCIOS[0], "Potencial — parcerias e produtos sem contrato assinado ou sem parecer jurídico não são receita garantida");
-  assert.equal(RODAPE_SOCIOS[2], "Premissas de out/2026");
+  assert.equal(RODAPE_SOCIOS[2], "Premissas de 04/11/2026");
 });
 
 import { fraseResumo, sensibilidadeAdesao, FATORES_ADESAO } from "./projecao.ts";
