@@ -51,7 +51,9 @@ export async function usarPapel(papel: unknown, origem?: "area"): Promise<{ ok: 
   // boas-vindas — é a intenção (a tela, ou o 1º rascunho de anúncio). Antes, abrir "Anunciar" gastava o 1º acesso e o
   // morador que virava dono pelo rascunho ficava sem as boas-vindas de dono.
   if (origem === "area") {
-    const { data: atual } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", user.id).maybeSingle();
+    // Estados vazios: sem a leitura, a conta passaria por "1º acesso" (só o modo, e ok sem trocar o papel). Nada grava.
+    const { data: atual, error: erroAtual } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", user.id).maybeSingle();
+    if (erroAtual) return { ok: false, erro: "Não foi possível trocar agora." };
     const a = atual as { intencao?: unknown; papel_ativo?: unknown } | null;
     if (contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo)) {
       if (!modo) return { ok: true };

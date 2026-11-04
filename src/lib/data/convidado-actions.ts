@@ -25,7 +25,9 @@ export async function mesclarFavoritosConvidado(bruto: unknown): Promise<{ ok: b
   const s = await sessao();
   if (!s) return { ok: false, ids: [] };
   const locais = (Array.isArray(bruto) ? bruto : []).filter((x): x is string => typeof x === "string" && UUID.test(x)).slice(0, MAX_GUARDADOS_CONVIDADO);
-  const { data } = await s.supabase.from("favorites").select("property_id").eq("tenant_id", s.user.id);
+  const { data, error } = await s.supabase.from("favorites").select("property_id").eq("tenant_id", s.user.id);
+  // Estados vazios: sem os favoritos da conta, a tela mostraria só os do aparelho e não tentaria de novo nesta sessão.
+  if (error) return { ok: false, ids: [] };
   const daConta = (data ?? []).map((r) => r.property_id as string);
   const { novos, todos } = mesclarSemDuplicar(locais, daConta);
   if (novos.length) {
