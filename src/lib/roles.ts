@@ -10,7 +10,9 @@
  * (rótulo e acento de cor por modo), além do hook `useViewMode`.
  */
 
+import { usePathname } from "next/navigation";
 import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
+import { modoDaRota } from "./papel/modo-da-rota";
 import { primeiroNome, usuarioDoEmail } from "./display-name";
 
 export type { ViewMode };
@@ -94,9 +96,12 @@ export interface ViewModeState {
 export function useViewMode(): ViewModeState {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const activeMode = useAuthStore((s) => s.activeMode);
+  // E497: página de área (ex.: /dashboard/leads) decide o modo pela URL já no 1º render — servidor e cliente iguais,
+  // sem o menu/título trocarem depois da pintura quando o SincronizarPapel grava o papel da área.
+  const daArea = modoDaRota(usePathname());
   const { isOwner, isTenant } = rolesOf(user);
   return {
-    mode: resolveMode(user, activeMode),
+    mode: daArea ?? resolveMode(user, activeMode),
     isOwner,
     isTenant,
     hasBoth: isOwner && isTenant,

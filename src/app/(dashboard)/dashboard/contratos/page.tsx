@@ -9,6 +9,7 @@ import { hojeBR } from "@/lib/utils";
 import { BlocoRecibosDono } from "@/components/recibos/blocos-recibos";
 import { estadosConferenciaEntradaDaPessoa } from "@/lib/data/conferencia-lista";
 import { contratoComConferenciaPendente } from "@/lib/contratos/area-dono";
+import { resolveInitialMode } from "@/lib/data/mode-actions";
 
 /**
  * "Contratos & blocos" (Dashboard Fase 4): o servidor busca os contratos REAIS
@@ -19,7 +20,8 @@ import { contratoComConferenciaPendente } from "@/lib/contratos/area-dono";
  * Prompt 28: a mesma rota mostra os contratos do INQUILINO (aguardando assinatura ainda não é locação).
  */
 export default async function ContratosPage() {
-  const [contratos, doInquilino, imoveis] = await Promise.all([getMeusContratos({ exigir: true }), getContratosDoInquilino({ exigir: true }), listMyProperties({ exigir: true })]);
+  // E497: o modo do perfil (mesma regra do login) decide o lado já no servidor — sem pintar um lado e trocar depois.
+  const [contratos, doInquilino, imoveis, modoInicial] = await Promise.all([getMeusContratos({ exigir: true }), getContratosDoInquilino({ exigir: true }), listMyProperties({ exigir: true }), resolveInitialMode().catch(() => null)]);
   const temImovel = imoveis.length > 0 || contratos.length > 0;
   const hojeISO = hojeBR();
   // Recibos, comprovantes e a devolução da caução de cada contrato (o RLS filtra).
@@ -39,5 +41,5 @@ export default async function ContratosPage() {
       <ContratosClient contratos={contratos} hojeISO={hojeISO} extras={extras} conferenciaPendente={conferenciaPendente} />
     </>
   ) : null;
-  return <ContratosPorModo inquilino={inquilino} dono={dono} temInquilino={doInquilino.length > 0} />;
+  return <ContratosPorModo inquilino={inquilino} dono={dono} temInquilino={doInquilino.length > 0} modoInicial={modoInicial} />;
 }
