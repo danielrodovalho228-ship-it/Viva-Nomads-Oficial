@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { resumoDosAvisos, type PrioridadeAviso } from "@/lib/notifications/avisos";
+import { urlDoAvisoComConversa } from "@/lib/notifications/url-conversa";
 
 /*
   E444, item 2 — o sino do site (servidor): contagem de não lidas e a maior prioridade pendente, a lista e as ações de
@@ -45,12 +46,22 @@ export async function meusAvisos(limite = 30): Promise<AvisoDoSino[] | null> {
   if (!s) return null;
   const { data, error } = await s.supabase
     .from("avisos")
-    .select("id, evento, prioridade, titulo, url, criado_em, lido_em, resolvido_em")
+    .select("id, evento, prioridade, titulo, url, ref_id, criado_em, lido_em, resolvido_em")
     .eq("usuario_id", s.userId)
     .order("criado_em", { ascending: false })
     .limit(Math.min(Math.max(1, Math.round(limite)), 100));
   if (error) throw new Error(MSG_AVISOS_SEM_LEITURA);
-  return (data ?? []) as AvisoDoSino[];
+  // E541: aviso de mensagem nova gravado antes da correção (url sem ?conversa=) abre a conversa pelo ref_id.
+  return ((data ?? []) as (AvisoDoSino & { ref_id: string | null })[]).map((a) => ({
+    id: a.id,
+    evento: a.evento,
+    prioridade: a.prioridade,
+    titulo: a.titulo,
+    url: urlDoAvisoComConversa(a),
+    criado_em: a.criado_em,
+    lido_em: a.lido_em,
+    resolvido_em: a.resolvido_em,
+  }));
 }
 
 export async function marcarAvisoLido(id: string): Promise<{ ok: boolean }> {

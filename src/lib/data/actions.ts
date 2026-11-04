@@ -115,6 +115,7 @@ import {
   CAMPOS_FIXOS_DA_FILA,
 } from "@/lib/documento/fila-envio";
 import { estadoDocumentos, linhasParaLigar } from "@/lib/documento/vigente";
+import { urlDaConversa } from "@/lib/notifications/url-conversa";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string; /** E445: termo ofensivo — a tela pede confirmação. */ ofensa?: boolean };
 
@@ -1911,7 +1912,7 @@ export async function sendMessage(input: {
     // Prompt 44: o push da mensagem nova não depende do limite do e-mail. O notify() decide pela matriz: sem push com a
     // conversa aberta há menos de 10 min, agrupado por conversa ("3 mensagens novas de Ana") e sem o texto.
     const comEmail = !!contact?.email && podeAvisar;
-    const link = `${SITE_URL}/dashboard/mensagens`;
+    const link = `${SITE_URL}${urlDaConversa(conversationId)}`;
     if (comEmail || contact) {
       // Nome e prévia são texto do USUÁRIO: sem HTML ativo e sem links no e-mail.
       const nomeHtml = textoEmail(senderName, 40);
@@ -1922,7 +1923,7 @@ export async function sendMessage(input: {
         email: comEmail ? (contact!.email as string) : undefined,
         name: contact?.full_name ?? undefined,
         userId: destinatarioId,
-        pushUrl: "/dashboard/mensagens",
+        pushUrl: urlDaConversa(conversationId),
         imovelId: input.propertyId,
         conversationId,
         // E533: o aviso do sino guarda a conversa — abrir a conversa marca esses avisos como lidos.

@@ -36,7 +36,7 @@ test("leitura em curso não desfaz o que acabou de ser marcado (versão do estad
 test("mensagem nova: o aviso guarda a conversa e abrir a conversa marca esses avisos como lidos", () => {
   const acoes = ler("src/lib/data/actions.ts");
   const i = acoes.indexOf('event: "new_message"');
-  assert.match(acoes.slice(i, i + 400), /refId: conversationId,/);
+  assert.match(acoes.slice(i, i + 600), /refId: conversationId,/);
   const aberta = ler("src/lib/data/conversa-aberta-actions.ts");
   assert.match(aberta, /from\("avisos"\)\.update\(\{ lido_em: agora \}\)\.eq\("usuario_id", user\.id\)\.eq\("evento", "new_message"\)\.eq\("ref_id", conversationId\)\.is\("lido_em", null\)/);
 });
