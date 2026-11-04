@@ -82,9 +82,29 @@ test("/modelodenegocio: seção 'Virada de chave nos condomínios' é meta, nunc
   assert.ok(texto.includes("Plataforma em fase de testes. Lançamento oficial em 2027."));
 });
 
-test("custo fixo padrão ≈ R$ 6 mil com pró-labore dos sócios", async () => {
+test("custo fixo padrão ≈ R$ 7,3 mil com pró-labore de referência (E559, modelo de custos v2)", async () => {
   const { CUSTOS_FIXOS, CUSTO_FIXO_FAIXA } = await import("../../config/premissas-financeiras.ts");
   const total = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
-  assert.ok(total >= 5900 && total <= 6100, `total ${total}`);
-  assert.equal(CUSTO_FIXO_FAIXA.texto, "≈ R$ 6 mil/mês com pró-labore");
+  assert.ok(total >= 7250 && total <= 7350, `total ${total}`);
+  assert.equal(CUSTO_FIXO_FAIXA.texto, "≈ R$ 7,3 mil/mês com pró-labore de referência");
+});
+
+// E559: nenhuma tela dos sócios mostra o custo antigo (R$ 989, pró-labore de R$ 5.000) nem chama a hipótese da Certta de preço.
+test("E559: /roi, /simulacao, /decisao e /modelodenegocio sem R$ 989, sem pró-labore de R$ 5.000 e sem 'preço da Certta'", () => {
+  const telas = [
+    "src/components/financeiro/modelo-financeiro.tsx",
+    "src/components/decisao/decisao.tsx",
+    "src/components/modelo-negocio/modelo-negocio.tsx",
+    "src/app/roi/page.tsx",
+    "src/app/simulacao/page.tsx",
+    "src/app/decisao/page.tsx",
+    "src/app/modelodenegocio/page.tsx",
+    "src/config/premissas-financeiras.ts",
+  ];
+  for (const arquivo of telas) {
+    const texto = readFileSync(new URL(`../../../${arquivo}`, import.meta.url), "utf8");
+    assert.ok(!/R\$ ?989\b|\b989\b/.test(texto), `${arquivo} cita R$ 989`);
+    assert.ok(!/pró-labore[^\n]{0,40}5\.000|5\.000[^\n]{0,40}pró-labore|valor: 5000/i.test(texto), `${arquivo} cita pró-labore de R$ 5.000`);
+    assert.ok(!/preço (da|de) Certta|Certta[^\n]{0,20}preço:/i.test(texto), `${arquivo} chama a hipótese da Certta de preço`);
+  }
 });

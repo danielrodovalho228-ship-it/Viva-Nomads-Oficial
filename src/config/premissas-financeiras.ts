@@ -3,12 +3,12 @@
   dos sócios). Cada número tem valor, unidade e fonte. Para mudar a conta, mude
   aqui: as duas páginas e os testes leem este arquivo.
 
-  Referência: out/2026. Dólar: R$ 5,20. Estimativas para decidir, não parecer
-  contábil. Puro (sem alias "@"), para rodar no node --test.
+  Referência: modelo de custos v2 (04/11/2026, E559). Dólar: R$ 5,20. Estimativas
+  para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
 import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada } from "../lib/cobranca/regra.ts";
 
-export const REFERENCIA = "out/2026";
+export const REFERENCIA = "04/11/2026";
 export const DOLAR = 5.2;
 
 export interface Item {
@@ -37,16 +37,43 @@ export const MIX_FAIXAS: readonly number[] = [1, 0, 0, 0, 0];
 /** Taxa média ponderada pelas faixas (0..1). */
 export const TAXA_MEDIA = taxaMediaPonderada(MIX_FAIXAS, FAIXAS_COMISSAO_PADRAO);
 
+/** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
+export const MESES_MEDIOS_CONTRATO = 3;
+
 /** Cenários simples de contratos fechados por mês (ordem da vitrine: receita bruta da taxa). */
 export const CONTRATOS_MES_CENARIOS = [10, 20, 40] as const;
 
 // ── Custos variáveis por contrato ───────────────────────────────────────────
+/*
+  E559 (modelo de custos v2, 04/11/2026). A verificação de identidade é custo da Viva (obrigatória no fluxo) e NUNCA
+  vira receita. A Certta ainda não foi cotada: R$ 20 por verificação é HIPÓTESE, rotulada assim em toda tela.
+*/
+/** Verificações de identidade por contrato fechado (hipótese do modelo v2). */
+export const VERIFICACOES_POR_CONTRATO = 1.7;
+/** Custo por verificação de identidade (Certta) — hipótese, preço a cotar. */
+export const CUSTO_IDENTIDADE_HIPOTESE = 20;
+export const ROTULO_HIPOTESE_IDENTIDADE = "hipótese — preço a cotar";
+/** Taxa de serviço média por contrato (R$) — base da cobrança no cartão. */
+const TAXA_POR_CONTRATO = ALUGUEL_MEDIO * MESES_MEDIOS_CONTRATO * TAXA_MEDIA;
+const cent = (v: number) => Math.round(v * 100) / 100;
+
 export const CUSTOS_POR_CONTRATO: Item[] = [
-  { rotulo: "Identidade do inquilino (documento, prova de vida, rosto)", valor: 2, unidade: "R$/contrato", fonte: "https://didit.me/pricing", obs: "CAF — sob orçamento (Didit como referência de preço: ≈ US$ 0,33; 500 grátis/mês)." },
+  {
+    rotulo: "Identidade (Certta: documento, prova de vida, rosto)",
+    valor: cent(VERIFICACOES_POR_CONTRATO * CUSTO_IDENTIDADE_HIPOTESE),
+    unidade: "R$/contrato",
+    obs: `${String(VERIFICACOES_POR_CONTRATO).replace(".", ",")} verificações por contrato × R$ ${CUSTO_IDENTIDADE_HIPOTESE} (${ROTULO_HIPOTESE_IDENTIDADE}). Custo da Viva, nunca receita.`,
+  },
   { rotulo: "Antifraude / consulta de CPF", valor: 0, unidade: "R$/contrato", obs: "Opcional, só no aceite: ≈ R$ 10 por consulta, sob orçamento." },
-  { rotulo: "Assinatura eletrônica (contrato + termo de entrega)", valor: 6, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "≈ R$ 3 por documento além dos 50 do plano." },
-  { rotulo: "Cobrança da taxa de serviço (Pix + aviso)", valor: 3, unidade: "R$/contrato", fonte: "https://www.asaas.com/precos-e-taxas", obs: "Pix R$ 1,99 + aviso R$ 0,99." },
-  { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing" },
+  { rotulo: "Assinatura eletrônica (contrato + termo de entrega)", valor: 5, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "R$ 2,50 por documento além dos 20 do plano (2 documentos por contrato)." },
+  {
+    rotulo: "Cobrança da taxa de serviço (cartão)",
+    valor: cent(TAXA_POR_CONTRATO * 0.0299 + 0.49),
+    unidade: "R$/contrato",
+    fonte: "https://www.asaas.com/precos-e-taxas",
+    obs: "2,99% + R$ 0,49 sobre a taxa do contrato médio (Pix R$ 1,99).",
+  },
+  { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing", obs: "Estimativa; o custo em produção é a medir." },
 ];
 /**
  * Imposto da Viva sobre TODA a receita (Simples Nacional). O anexo depende da
@@ -60,19 +87,26 @@ export const IMPOSTO_TEXTO = "a definir pelo contador – anexo do Simples";
 export const OPERADOR_OPCOES = [0, 100] as const;
 
 // ── Custos fixos por mês ────────────────────────────────────────────────────
+/* E559: fornecedores do modelo de custos v2 (04/11/2026) ≈ R$ 1.303/mês; o pró-labore é referência para projeção. */
 export const CUSTOS_FIXOS: Item[] = [
-  { rotulo: "Banco de dados (Supabase Pro, US$ 25)", valor: 130, unidade: "R$/mês", fonte: "https://supabase.com/pricing" },
-  { rotulo: "Hospedagem (Vercel Pro, US$ 20)", valor: 105, unidade: "R$/mês", fonte: "https://vercel.com/pricing" },
-  { rotulo: "Assinatura eletrônica (ZapSign Professional, 50 documentos)", valor: 105, unidade: "R$/mês", fonte: "https://zapsign.co/plans-and-prices" },
-  { rotulo: "WhatsApp (Z-API)", valor: 99, unidade: "R$/mês", fonte: "https://www.tabnews.com.br/ivanamato/450a2559-aada-4aab-a8b7-a0af43cb3315" },
-  { rotulo: "E-mails (Resend, grátis até 3.000/mês)", valor: 0, unidade: "R$/mês", fonte: "https://resend.com/pricing", obs: "Acima disso, US$ 20." },
-  { rotulo: "IA fora dos contratos (textos, testes)", valor: 200, unidade: "R$/mês", obs: "Faixa R$ 100 a 300." },
-  { rotulo: "Contador (Simples Nacional, sem funcionários)", valor: 250, unidade: "R$/mês", fonte: "https://contabilidade.com/blog/quanto-custa-a-contabilidade-online-em-2026-guia-de-precos-e-o-que-esta-incluso/", obs: "Faixa R$ 189 a 329." },
-  { rotulo: "Apple Developer, domínio, certificado digital, e-mail próprio", valor: 100, unidade: "R$/mês" },
-  { rotulo: "Pró-labore dos sócios", valor: 5000, unidade: "R$/mês", obs: "valor inicial; sobe conforme a receita" },
+  { rotulo: "Contabilidade (A2)", valor: 450, unidade: "R$/mês" },
+  { rotulo: "CRECI pessoa jurídica (anuidade)", valor: 145.5, unidade: "R$/mês", obs: "≈ R$ 145,50 por mês." },
+  { rotulo: "CRECI pessoa física (anuidade)", valor: 66.67, unidade: "R$/mês", obs: "≈ R$ 66,67 por mês." },
+  { rotulo: "Assinatura eletrônica (ZapSign Equipe, 20 documentos)", valor: 69.9, unidade: "R$/mês", fonte: "https://zapsign.co/plans-and-prices" },
+  { rotulo: "Certificado digital (e-CNPJ)", valor: 17, unidade: "R$/mês", obs: "≈ R$ 17 por mês." },
+  { rotulo: "Domínios", valor: 10.83, unidade: "R$/mês", obs: "≈ R$ 10,83 por mês." },
+  { rotulo: "Apple Developer", valor: 43, unidade: "R$/mês", obs: "≈ R$ 43 por mês." },
+  { rotulo: "Infraestrutura (Vercel + Supabase + Resend + Expo, com IOF)", valor: 500, unidade: "R$/mês", obs: "≈ R$ 500 por mês." },
+  { rotulo: "Emissor de NFS-e", valor: 0, unidade: "R$/mês", obs: "a cotar" },
+  { rotulo: "Alvará de funcionamento", valor: 0, unidade: "R$/mês", obs: "a cotar" },
+  { rotulo: "Pró-labore dos sócios", valor: 6000, unidade: "R$/mês", obs: "referência para projeção — não é decisão" },
 ];
-/** Custo fixo real ≈ R$ 6 mil/mês (ferramentas R$ 989 + pró-labore R$ 5.000). O controle deslizante cobre de só ferramentas até R$ 8 mil. */
-export const CUSTO_FIXO_FAIXA = { min: 989, max: 8000, texto: "≈ R$ 6 mil/mês com pró-labore" };
+/** Fornecedores (sem o pró-labore) — o mínimo do controle deslizante. */
+export const CUSTO_FORNECEDORES = cent(CUSTOS_FIXOS.filter((c) => c.rotulo !== "Pró-labore dos sócios").reduce((s, c) => s + c.valor, 0));
+/** Fora do fixo: o WhatsApp (Z-API) só entra se for ligado. */
+export const FORA_DO_FIXO = ["WhatsApp (Z-API): a cotar, se for ligado"] as const;
+/** Custo fixo ≈ R$ 7,3 mil/mês (fornecedores ≈ R$ 1.303 + pró-labore de referência R$ 6.000). O controle vai de só fornecedores até R$ 10 mil. */
+export const CUSTO_FIXO_FAIXA = { min: CUSTO_FORNECEDORES, max: 10000, texto: "≈ R$ 7,3 mil/mês com pró-labore de referência" };
 
 /** Marketing por mês: nada antes dos contratos, R$ 800 no ano 1, R$ 1.500 depois. */
 export function marketingDoMes(m: number): number {
@@ -112,8 +146,6 @@ export const CENARIOS: Record<CenarioId, Cenario> = {
   SUSEP; não pode condicionar a locação ao seguro (venda casada).
 */
 
-/** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
-export const MESES_MEDIOS_CONTRATO = 3;
 
 export const REPRESENTANTE_SEGUROS = {
   min: 0,
@@ -239,7 +271,7 @@ export interface ReceitaAdicional {
 }
 
 /** Verificação paga do inquilino: candidatos verificados por contrato fechado e custo da CAF por verificação. */
-export const VERIFICACAO = { candidatosPorContrato: 2, custoCaf: 8, custoCafTexto: "sob orçamento" } as const;
+export const VERIFICACAO = { candidatosPorContrato: 2, custoCaf: CUSTO_IDENTIDADE_HIPOTESE, custoCafTexto: ROTULO_HIPOTESE_IDENTIDADE } as const;
 /** Ferramentas fora da Viva: saída mensal da base de donos ativos. */
 export const SAIDA_DONOS_MES = 0.03;
 /** Fundadores: quantos donos e por quantos meses pagam a taxa reduzida. */
