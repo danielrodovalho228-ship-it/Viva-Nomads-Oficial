@@ -22,6 +22,7 @@ import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { ABA_ADMIN } from "@/lib/admin/abas";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -96,7 +97,7 @@ export function AtendimentoClient({
             key={a.id}
             href={`/admin/atendimento?aba=${a.id}`}
             aria-current={aba === a.id ? "page" : undefined}
-            className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
+            className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? ABA_ADMIN.ativa : ABA_ADMIN.inativa)}
           >
             {a.rotulo}
             {a.id === "aprovacao" && aprovacao.length > 0 && <span className="border border-line ml-2 rounded-full bg-white px-2 text-xs text-amber-900">{aprovacao.length}</span>}

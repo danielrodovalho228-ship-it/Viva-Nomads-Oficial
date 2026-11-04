@@ -11,7 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.p181.${sufixo}@lab.vivanomads.test`, nome: "Dalila Pessoas Sobrenomeoculto", role: "owner" as const };
+const dono = { email: `dono.p181.${sufixo}@lab.vivanomads.test`, nome: "Dalila Pessoas Anfitriadono", role: "owner" as const };
 const inq = (l: number) => ({ email: `inq.p181.${l}.${sufixo}@lab.vivanomads.test`, nome: `Ivo${l} Pessoas Sobrenomeoculto`, role: "tenant" as const });
 const ids: { dono?: string; imovel?: string; inq: Record<number, string> } = { inq: {} };
 
@@ -63,6 +63,7 @@ test.describe("T181 — quantas pessoas vão morar", () => {
       await d.setViewportSize({ width: largura, height: 900 });
       await d.goto("/dashboard/leads", { waitUntil: "networkidle" });
       await expect(d.locator("main")).toContainText(`Para ${pessoas} pessoas`, { timeout: 20_000 });
+      // O token "Sobrenomeoculto" é só do inquilino (o nome do dono não o repete: ele aparece na tela do dono).
       await expect(d.locator("main")).not.toContainText("Sobrenomeoculto");
       await d.screenshot({ path: `${SAIDA}/t181-interessados-${largura}.png`, fullPage: true });
 

@@ -96,7 +96,7 @@ import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades
 import { linhaLocalizacao } from "@/lib/localizacao";
 
 /** E53: linhas do resumo à vista no passo Revisar (o resto fica em "Detalhes dos valores"). */
-const LINHAS_REVISAR = new Set(["Motivo da estadia", "Valor por mês", "Total por mês", "Total da estadia"]);
+const LINHAS_REVISAR = new Set(["Motivo da estadia", "Mensal", "Total por mês (com contas)", "Total do contrato", "Conta do total"]);
 
 export function PropertyDetail({
   property: anuncio,
@@ -313,7 +313,9 @@ export function PropertyDetail({
   // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
   // E520: data digitada que não é real (o campo entrega vazio) vira erro no resumo, nunca "sem data" calado.
   const [datasInvalidas, setDatasInvalidas] = useState({ entrada: false, saida: false });
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
+  // E519: o total da proposta é o do painel (estadiaDoImovel, com preparação e saída) — a mesma conta, o mesmo rótulo.
+  const mesesSelecao = mesesDaSelecao(selecao);
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadia: mesesSelecao ? estadiaDoImovel(property, mesesSelecao) : null, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
   // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
   const previaMensagem = validarApresentacao(apresentacao);
   function abrirSolicitacao() {

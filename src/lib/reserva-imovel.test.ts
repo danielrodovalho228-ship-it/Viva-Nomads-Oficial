@@ -67,7 +67,7 @@ test("solicitação: resumo com entrada, motivo e valores", () => {
   const v = (k: string) => r.linhas.find((l) => l.rotulo === k)!.valor;
   assert.equal(v("Entrada"), "01/11/2026");
   assert.equal(v("Motivo da estadia"), "Trabalho remoto");
-  assert.equal(v("Valor por mês"), formatBRL(2500));
+  assert.equal(v("Mensal"), formatBRL(2500));
   assert.match(v("Caução"), /devolvida no fim/);
 });
 
@@ -75,9 +75,9 @@ test("solicitação: com pacote de limpeza, o total do mês soma 2.400 + 350 + 2
   const total = 2400 + 350 + 200 + 180;
   const r = resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16", limpezaEstadia: { porMes: 2, inclui: "", valorMes: 180 }, totalMensal: total });
   assert.equal(total, 3130);
-  assert.equal(r.linhas.find((l) => l.rotulo === "Total por mês")!.valor, formatBRL(3130));
+  assert.equal(r.linhas.find((l) => l.rotulo === "Total por mês (com contas)")!.valor, formatBRL(3130));
   assert.ok(r.linhas.some((l) => l.rotulo === "Limpeza durante a estadia"));
-  assert.equal(resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16" }).linhas.some((l) => l.rotulo === "Total por mês"), false);
+  assert.equal(resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16" }).linhas.some((l) => l.rotulo === "Total por mês (com contas)"), false);
 });
 
 test("solicitação: campos opcionais vazios seguem; data no passado, data torta e motivo fora da lista são recusados", () => {
@@ -109,6 +109,6 @@ test("pacote pago: linha da proposta traz o valor e o resumo mostra o total por 
   const incl = linhasDeTaxas({ ...base, limpezaEstadia: { porMes: 1, inclui: "", valorMes: 0 } }).find((x) => x.chave === "limpeza")!;
   assert.equal(incl.valor, undefined);
   const r = resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16", totalMensal: 3130 });
-  assert.equal(r.linhas.find((x) => x.rotulo === "Total por mês")!.valor, formatBRL(3130));
-  assert.ok(!resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16" }).linhas.some((x) => x.rotulo === "Total por mês"));
+  assert.equal(r.linhas.find((x) => x.rotulo === "Total por mês (com contas)")!.valor, formatBRL(3130));
+  assert.ok(!resumoSolicitacao({ monthlyPrice: 2400, hoje: "2026-10-16" }).linhas.some((x) => x.rotulo === "Total por mês (com contas)"));
 });

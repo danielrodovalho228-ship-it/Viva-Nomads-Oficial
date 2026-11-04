@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { statusPorImovel } from "@/lib/documento/vigente";
 import { todasAsPaginas } from "@/lib/admin/paginas";
 import { eventoConta } from "@/lib/eventos/trafego";
 import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
@@ -300,6 +301,8 @@ export interface ImovelLinhaAdmin {
   bairro: string | null;
   criadoEm: string;
   documento: string;
+  /** E561: há um envio de documento em revisão (pendente), mesmo que o vigente já esteja aprovado. */
+  documentoEmRevisao?: boolean;
   qualidade: string | null;
   donoTeste: boolean;
 }
@@ -331,15 +334,15 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
   const donos = [...new Set(linhas.map((p) => p.owner_id))];
   const [{ data: perfis }, { data: docs }] = await Promise.all([
     admin.from("profiles").select("id, full_name").in("id", donos),
-    admin.from("qualification_checklists").select("property_id, document_status").in("property_id", ids),
+    admin.from("qualification_checklists").select("property_id, document_status, created_at").in("property_id", ids).order("created_at", { ascending: false }),
   ]);
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
-  const doc = new Map<string, string>();
-  for (const d of (docs ?? []) as { property_id: string; document_status: string | null }[]) {
-    const atual = doc.get(d.property_id);
-    // "pending" (em revisão) ganha de tudo: é o que o filtro "documento em revisão" procura.
-    if (!atual || d.document_status === "pending") doc.set(d.property_id, d.document_status ?? "none");
-  }
+  // E561: o estado mostrado é o do documento VIGENTE — a mesma fonte do dono (statusPorImovel, da mais recente para a
+  // mais antiga). Antes valia a 1ª linha que o banco devolvia (sem ordem), e uma recusa antiga aparecia por cima do
+  // aprovado. O filtro "documento em revisão" segue achando o envio pendente pelo campo próprio.
+  const linhasDoc = (docs ?? []) as { property_id: string; document_status: string | null }[];
+  const vigente = statusPorImovel(linhasDoc);
+  const emRevisao = new Set(linhasDoc.filter((d) => d.document_status === "pending").map((d) => d.property_id));
   return linhas.map((p) => ({
     id: p.id,
     titulo: p.title ?? "Imóvel",
@@ -349,7 +352,8 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
     cidade: p.city,
     bairro: p.address,
     criadoEm: p.created_at,
-    documento: doc.get(p.id) ?? "none",
+    documento: vigente.get(p.id) ?? "none",
+    documentoEmRevisao: emRevisao.has(p.id),
     qualidade: p.listing_quality_tier,
     donoTeste: teste.has(p.owner_id),
   }));

@@ -59,7 +59,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       await expect(passo.getByTestId("solicitacao-saida")).toHaveValue(dataBR(saida));
       await expect(passo.getByTestId("solicitacao-pessoas")).toHaveValue("2");
       await expect(passo).not.toContainText("A combinar com o proprietário");
-      const totalEstadia = passo.locator("div", { hasText: /^Total da estadia/ }).first();
+      const totalEstadia = passo.locator("div", { hasText: /^Total do contrato/ }).first();
       await expect(totalEstadia).toContainText("em 1 mês");
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t357-solicitar-preenchido-${nome}.png` });
@@ -69,7 +69,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       await passo.getByTestId("solicitacao-saida").fill(novaSaida);
       await passo.getByTestId("solicitacao-pessoas").selectOption("3");
       await expect(totalEstadia).toContainText("em 2 meses");
-      await expect(passo.locator("div", { hasText: /^Total por mês/ }).first()).toBeVisible();
+      await expect(passo.locator("div", { hasText: /^Total por mês \(com contas\)/ }).first()).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t357-solicitar-alterado-${nome}.png` });
 
       // Saída antes da entrada: erro visível e "Continuar" travado (nada some calado).
