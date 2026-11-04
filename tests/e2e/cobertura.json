@@ -709,7 +709,8 @@
         "t662-varredura-bloco63",
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t1078-e533-sino-marcar-todas"
       ]
     },
     "/dashboard/assinatura": {
@@ -1328,7 +1329,8 @@
         "t607-varredura-bloco51",
         "t648-e243-e245-mensagens",
         "t662-varredura-bloco63",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t1078-e533-sino-marcar-todas"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1347,7 +1349,8 @@
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
         "t672-e190-troca-de-modo",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1078-e533-sino-marcar-todas"
       ]
     },
     "/dashboard/orcamentos": {
@@ -3217,7 +3220,8 @@
         "proprietario"
       ],
       "specs": [
-        "t830-e444-sino-faixa"
+        "t830-e444-sino-faixa",
+        "t1078-e533-sino-marcar-todas"
       ]
     },
     "/api/automacao/pedidos/[id]": {
