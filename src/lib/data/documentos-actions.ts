@@ -54,12 +54,12 @@ export interface AcertoView {
 /** Documentos e acerto da caução de contratos em que a pessoa é parte (o RLS filtra). */
 export async function documentosDosContratos(
   contratoIds: string[],
-): Promise<Record<string, { documentos: DocumentoView[]; recibos: ReciboView[]; acerto: AcertoView | null; caucaoConfirmada: number }>> {
+): Promise<Record<string, { documentos: DocumentoView[]; recibos: ReciboView[]; acerto: AcertoView | null; caucaoConfirmada: number; falhou?: true }>> {
   const supabase = await createClient();
   const ids = contratoIds.filter((id) => UUID_RE.test(id));
   const vazio = Object.fromEntries(ids.map((id) => [id, { documentos: [] as DocumentoView[], recibos: [] as ReciboView[], acerto: null as AcertoView | null, caucaoConfirmada: 0 }]));
   if (!supabase || ids.length === 0) return vazio;
-  const [{ data: docs }, { data: acertos }, { data: caucoes }, { data: confirmados }] = await Promise.all([
+  const [{ data: docs, error: eDocs }, { data: acertos, error: eAcertos }, { data: caucoes, error: eCaucoes }, { data: confirmados, error: eConfirmados }] = await Promise.all([
     supabase.from("documentos_fiscais").select("id, tipo, numero, valor, periodo_inicio, periodo_fim, criado_em, contrato_id, pagamento_id, anulado_em, anulado_motivo").in("contrato_id", ids).order("criado_em", { ascending: false }),
     supabase.from("caucao_acertos").select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, created_at").in("contrato_id", ids).order("created_at", { ascending: false }),
     supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
@@ -70,6 +70,11 @@ export async function documentosDosContratos(
       .eq("confirmado_pelo_inquilino", true)
       .order("data_pagamento", { ascending: true }),
   ]);
+  // Estados vazios: qualquer leitura que falhe marca o contrato — a tela avisa e não mostra "sem documentos", caução 0
+  // nem o formulário da devolução como se nada tivesse sido registrado.
+  if (eDocs || eAcertos || eCaucoes || eConfirmados) {
+    return Object.fromEntries(ids.map((id) => [id, { ...vazio[id], falhou: true as const }]));
+  }
   // Recibo de cada pagamento confirmado: o documento quando já saiu; senão "Recibo em preparação" (jornada de
   // assinatura, 19/10 — antes a tela prometia o envio e o recibo nunca saía).
   const docDoPagamento = new Map(((docs ?? []) as Record<string, unknown>[]).filter((d) => d.pagamento_id).map((d) => [String(d.pagamento_id), d]));

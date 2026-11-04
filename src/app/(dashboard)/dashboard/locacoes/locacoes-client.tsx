@@ -14,7 +14,7 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONTRACTS } from "@/lib/demo/seed";
 import type { LocacaoView } from "@/lib/data/contratos-actions";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
-import { ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
+import { AvisoDocumentosFalhou, ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
 import { formatBRL } from "@/lib/utils";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { estadoCaucao } from "@/lib/caucao-estado";
@@ -124,8 +124,14 @@ export function LocacoesClient({
               {!demoOn && (
                 <>
                   <ConfirmarPagamentos pagamentos={l.pagamentos} />
-                  <DevolucaoCaucaoInquilino acerto={extras[l.id]?.acerto ?? null} />
-                  <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} recibos={extras[l.id]?.recibos ?? []} />
+                  {extras[l.id]?.falhou ? (
+                    <AvisoDocumentosFalhou />
+                  ) : (
+                    <>
+                      <DevolucaoCaucaoInquilino acerto={extras[l.id]?.acerto ?? null} />
+                      <ListaDocumentos documentos={extras[l.id]?.documentos ?? []} recibos={extras[l.id]?.recibos ?? []} />
+                    </>
+                  )}
                 </>
               )}
 

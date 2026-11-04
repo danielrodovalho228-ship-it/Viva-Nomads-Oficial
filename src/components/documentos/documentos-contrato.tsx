@@ -21,6 +21,17 @@ import { statusHumano } from "@/lib/status-humano";
 
 const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink outline-none focus:border-sage";
 
+/** Estados vazios: a leitura dos documentos e da caução falhou — nunca dizer "nenhum documento" nem caução 0. */
+export const MSG_DOCUMENTOS_NAO_CARREGARAM = "Não foi possível carregar os documentos e a caução deste contrato agora. Recarregue a página para tentar de novo.";
+
+export function AvisoDocumentosFalhou() {
+  return (
+    <p role="alert" className="mt-4 border-t border-sage-200 pt-3 text-sm text-amber-900" data-testid="documentos-falhou">
+      {MSG_DOCUMENTOS_NAO_CARREGARAM}
+    </p>
+  );
+}
+
 export function ListaDocumentos({ documentos, recibos = [] }: { documentos: DocumentoView[]; recibos?: ReciboView[] }) {
   if (documentos.length === 0 && recibos.length === 0) return null;
   return (
