@@ -46,7 +46,20 @@ const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/g;
  * somando 10+ dígitos (fixo/celular BR com DDD, com ou sem +55). Abaixo de 10
  * dígitos não mascara — evita falso positivo com CEP (8), datas e valores.
  */
-const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{7,}\d/g;
+const PHONE_CANDIDATE_RE = /\+?\(?\d[\d\s().-]{7,}\d\)?/g;
+
+/**
+ * E483: o "(" do DDD fazia parte do telefone mas ficava fora da máscara — "([contato protegido]". O candidato agora
+ * pode começar em "(" e terminar em ")"; o parêntese que sobra sem par no trecho (abre ou fecha fora do número)
+ * volta para o texto, para a frase continuar equilibrada.
+ */
+function mascararTelefone(m: string): string {
+  const abre = (m.match(/\(/g) ?? []).length;
+  const fecha = (m.match(/\)/g) ?? []).length;
+  if (abre > fecha && m.startsWith("(")) return `(${MASK}`;
+  if (fecha > abre && m.endsWith(")")) return `${MASK})`;
+  return MASK;
+}
 
 /** Links de mensageria externa (WhatsApp/Telegram) — tiram a conversa da trilha. */
 const MESSENGER_RE = /(https?:\/\/)?(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|t\.me|telegram\.me)\/\S+/gi;
@@ -136,7 +149,7 @@ export function guardContactInfo(input: string): GuardResult {
     // 10–13 dígitos = telefone BR (fixo/celular, com/sem 55). Fora disso, mantém.
     if (digits.length < 10 || digits.length > 13) return m;
     masked = true;
-    return MASK;
+    return mascararTelefone(m);
   });
   text = text.replace(SOCIAL_URL_RE, () => {
     masked = true;

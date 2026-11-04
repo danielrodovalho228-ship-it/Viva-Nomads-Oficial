@@ -59,6 +59,9 @@ test.describe("T828 — E445 item 2: aviso antes de enviar", () => {
       await expect(aviso).toContainText("telefones e e-mails são protegidos");
       await expect(p.getByTestId("aviso-previa")).toContainText(MASK);
       await expect(p.getByTestId("aviso-previa")).not.toContainText("99876");
+      // E483: o "(" do DDD sai junto com o número — a prévia não mostra parêntese aberto sem fechar.
+      await expect(p.getByTestId("aviso-previa")).toContainText(`Me chama no ${MASK} ou`);
+      await expect(p.getByTestId("aviso-previa")).not.toContainText(`(${MASK}`);
       // Um só botão preenchido na tela: os dois do aviso são de contorno.
       for (const nome of ["Editar", "Enviar mesmo assim"]) {
         const fundo = await p.getByRole("button", { name: nome }).evaluate((b) => getComputedStyle(b).backgroundColor);
