@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
-import { TEXTOS_REVISAO, linhaRevisao, tituloPrevia } from "@/lib/anuncio/assistente-telas";
+import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloPrevia } from "@/lib/anuncio/assistente-telas";
 import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
@@ -78,7 +78,8 @@ export function EtapaRevisar(p: {
   const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
   const linha = linhaRevisao(p.previewProperty.bedrooms, p.previewProperty.bathrooms, p.previewProperty.areaM2);
   const desconto = fraseDescontoCard(p.negociacao.descontos);
-  const tudoCerto = conf.itens.every((i) => i.ok);
+  // E557: o título segue a regra do botão — "tudo certo" só com o "Publicar anúncio" liberado; travado, diz o que falta.
+  const tituloLista = tituloConferencia(p.podePublicar, p.motivoTravado);
   const primeiroPendente = (id: IdEtapaAssistente) => p.completude.find((i) => !i.ok && etapaDoItemProntidao(i.key).id === id);
   const [previaAberta, setPreviaAberta] = useState(false);
   const travado = !p.podePublicar || p.publishing;
@@ -136,7 +137,7 @@ export function EtapaRevisar(p: {
   const lista = (
     <section className="min-w-0" aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={conf.itens.filter((i) => !i.ok).length}>
       <h3 id="lista-conferencia-titulo" className="text-base font-semibold text-ink">
-        {tudoCerto ? TEXTOS_REVISAO.listaTudoCerto : TEXTOS_REVISAO.lista}
+        {tituloLista}
       </h3>
       <ul className="mt-1 divide-y divide-line">
         {conf.itens.map((i) => {

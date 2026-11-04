@@ -103,6 +103,16 @@ export const TEXTOS_REVISAO = {
   editarDepois: "Você poderá editar a qualquer momento após publicar",
 } as const;
 
+/**
+ * E557: título da lista de conferência na Revisão. "Tudo certo para publicar" SÓ quando o "Publicar anúncio" está
+ * liberado (a mesma regra do botão). Antes bastavam os itens dos Passos 1 a 9: com o documento, as declarações ou o
+ * aceite faltando, a tela dizia "tudo certo" ao lado do botão travado. Travado, o título diz o que falta.
+ */
+export function tituloConferencia(podePublicar: boolean, motivoTravado: string | null): string {
+  if (podePublicar) return TEXTOS_REVISAO.listaTudoCerto;
+  return motivoTravado ?? TEXTOS_REVISAO.lista;
+}
+
 /** "Santa Mônica, Uberlândia - MG" — a mesma linha pública do anúncio (E101). */
 export function localPrevia(bairro: string, cidade: string, uf: string): string {
   return linhaLocalizacao(bairro, cidade, uf);
