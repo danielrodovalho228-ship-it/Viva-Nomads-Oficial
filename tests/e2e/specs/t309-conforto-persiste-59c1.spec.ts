@@ -134,8 +134,8 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
   });
 
   test("2. autosave grava a operação junto e não mostra 'Sem conexão'", async ({ browser }) => {
-    // Um 2º rascunho, com a operação "sublocação autorizada" no banco e "É meu" no estado do editor (draft_data): ao abrir,
-    // o autosave grava own + sem sublocação pela regra do updateProperty (a linha antiga "própria com sublocação" a 0200
+    // Um 2º rascunho, com a operação "sublocação autorizada" no banco e "É meu" no estado do editor (draft_data): na 1ª
+    // edição, o autosave grava own + sem sublocação pela regra do updateProperty (a linha antiga "própria com sublocação" a 0200
     // recusa até na fixture, então o caminho dela fica no teste de unidade).
     const outro = await criarImovelPronto(ids.dono!, `${TITULO} (2)`);
     ids.outro = outro;
@@ -149,7 +149,12 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
       .eq("id", outro);
     if (error) throw error;
     const page = await entrar(browser, dono.email, senha);
-    await page.goto(`/dashboard/imoveis/novo?draft=${outro}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/dashboard/imoveis/novo?draft=${outro}&etapa=descricao`, { waitUntil: "domcontentloaded" });
+    // E516: só ABRIR o rascunho não é edição (não grava nem carimba "Salvo às"). Uma edição real dispara o autosave —
+    // e é ele que precisa gravar a operação junto, sem "Sem conexão".
+    const titulo = page.getByTestId("cadastro-titulo");
+    await expect(titulo).not.toHaveValue("", { timeout: 20_000 });
+    await titulo.fill(`${TITULO} (2) editado`);
     await expect
       .poll(async () => (await adm().from("properties").select("ownership_type, sublease_authorized").eq("id", outro).single()).data, { timeout: 30_000 })
       .toMatchObject({ ownership_type: "own", sublease_authorized: false });

@@ -459,7 +459,7 @@ export default async function AdminAvaliadoresPage() {
           {/* Adendo 62-B1: só depois da cotação. Os dois vazios = não existe condição de retorno (nenhum texto fala em desconto). */}
           <label className="text-sm">Condição de retorno: prazo em dias (opcional)<input name="retornoDias" inputMode="numeric" className={campo} /></label>
           <label className="text-sm">Condição de retorno: desconto em % (opcional)<input name="retornoPercentual" inputMode="decimal" className={campo} /></label>
-          <div className="sm:col-span-2"><Button type="submit" size="sm">Salvar valor</Button></div>
+          <div className="sm:col-span-2"><Button type="submit" variant="secondary" size="sm">Salvar valor</Button></div>
         </FormAcao>
         <ul className="mt-4 grid gap-1 text-sm" data-testid="precos-historico">
           {tabela.map((l, i) => (

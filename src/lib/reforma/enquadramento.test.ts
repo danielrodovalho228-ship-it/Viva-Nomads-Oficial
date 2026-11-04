@@ -75,8 +75,9 @@ test("chave desligada não mostra nada; ligada só por 'on' (ou cookie no labora
   assert.match(ler("lib/flags.ts"), /export const ENQUADRAMENTO_REFORMA = process\.env\.NEXT_PUBLIC_ENQUADRAMENTO_REFORMA === "on";/);
   const pagina = ler("app/(dashboard)/dashboard/ganhos/page.tsx");
   assert.match(pagina, /if \(!isSupabaseConfigured\(\) \|\| !\(await enquadramentoReformaAtivo\(\)\)\) return null;/);
-  assert.match(pagina, /\{reforma\?\.aviso && \(/);
-  assert.match(pagina, /\{reforma && <EnquadramentoReforma/);
+  // Estados vazios: o resultado tem a forma "indisponivel" quando a leitura falha — aviso e cartão só com os números.
+  assert.match(pagina, /\{reforma && "aviso" in reforma && reforma\.aviso && \(/);
+  assert.match(pagina, /\{reforma && "numeros" in reforma && <EnquadramentoReforma/);
   assert.match(ler("lib/reforma/chave.ts"), /if \(!integracoesSimuladas\(\)\) return false;/);
 });
 

@@ -26,7 +26,7 @@ export default async function GanhosPage() {
   return (
     <div data-testid="ganhos">
       <PageTitle title="Ganhos" subtitle="O valor mensal de cada contrato, em vigência e a começar." />
-      {reforma?.aviso && (
+      {reforma && "aviso" in reforma && reforma.aviso && (
         <div className="mb-6">
           <AvisoReforma />
         </div>
@@ -76,7 +76,13 @@ export default async function GanhosPage() {
           </p>
         </>
       )}
-      {reforma && <EnquadramentoReforma {...reforma.numeros} />}
+      {reforma && "numeros" in reforma && <EnquadramentoReforma {...reforma.numeros} />}
+      {reforma && "indisponivel" in reforma && (
+        // Estados vazios: sem os contratos e imóveis lidos, não há conta a fazer — nunca "R$ 0" nem "não entra".
+        <section className="mt-12 rounded-xl border border-line bg-white p-4 text-sm text-muted sm:p-6" role="status" data-testid="enquadramento-reforma-indisponivel">
+          Não conseguimos ler seus contratos e imóveis agora, então não calculamos se você entra na regra nova. Tente de novo em instantes.
+        </section>
+      )}
     </div>
   );
 }
@@ -86,9 +92,16 @@ export default async function GanhosPage() {
  * aparece. Ligada: os números da Viva do PRÓPRIO dono (contratos e pagamentos dele, no servidor) e se o aviso aparece
  * (3 imóveis ou mais na Viva, ou R$ 200 mil ou mais no ano).
  */
-async function dadosDaReforma(): Promise<{ aviso: boolean; numeros: NumerosNaViva & { imoveisComContrato: number } } | null> {
+async function dadosDaReforma(): Promise<{ aviso: boolean; numeros: NumerosNaViva & { imoveisComContrato: number } } | { indisponivel: true } | null> {
   if (!isSupabaseConfigured() || !(await enquadramentoReformaAtivo())) return null;
-  const [contratos, imoveis] = await Promise.all([getMeusContratos().catch(() => []), listMyProperties().catch(() => [])]);
+  // Estados vazios: uma falha de leitura não vira "nenhum contrato" — sem os números, o cartão diz que não calculou.
+  let contratos: Awaited<ReturnType<typeof getMeusContratos>>;
+  let imoveis: Awaited<ReturnType<typeof listMyProperties>>;
+  try {
+    [contratos, imoveis] = await Promise.all([getMeusContratos({ exigir: true }), listMyProperties({ exigir: true })]);
+  } catch {
+    return { indisponivel: true };
+  }
   const numeros = numerosNaViva(
     contratos.map((c) => ({
       propertyId: c.propertyId,
