@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
+import { urlDaConversa } from "@/lib/notifications/url-conversa";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
 import { datasDaEstadia, decidirEnvio, reagendar, type Quando } from "./regras";
 
@@ -139,7 +140,7 @@ async function enviarUma(admin: Admin, p: LinhaProgramada, c: Contrato, agora: D
   try {
     const { data: dono } = await admin.from("profiles").select("full_name").eq("id", p.owner_id).maybeSingle();
     const nome = String(dono?.full_name ?? "").trim().split(/\s+/)[0] || "O proprietário";
-    await notify({ event: "new_message", userId: c.tenant_id, pushUrl: "/dashboard/mensagens", conversationId: conversa, remetenteNome: nome });
+    await notify({ event: "new_message", userId: c.tenant_id, pushUrl: urlDaConversa(conversa), conversationId: conversa, refId: conversa, remetenteNome: nome });
   } catch {
     /* aviso é best-effort */
   }
