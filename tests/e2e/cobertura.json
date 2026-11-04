@@ -893,7 +893,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t1065-conta-pix-nascimento-falha"
       ]
     },
     "/dashboard/conta/seguranca": {
