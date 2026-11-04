@@ -20,6 +20,8 @@ import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
 import { avisoAntesDeEnviar } from "@/lib/messages/aviso-envio";
+import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
+import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
@@ -98,6 +100,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // assim). Guarda a prévia do rascunho atual; mexer no campo fecha o aviso.
   const [confirmarEnvio, setConfirmarEnvio] = useState<string | null>(null);
   const campoRef = useRef<HTMLInputElement>(null);
+  // E445 item 5: foto ou PDF escolhido, com a prévia antes de enviar.
+  const [anexo, setAnexo] = useState<{ arquivo: File; previaUrl: string | null } | null>(null);
+  const [enviandoAnexo, setEnviandoAnexo] = useState(false);
+  const [erroAnexo, setErroAnexo] = useState<string | null>(null);
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">(existe ? "chat" : "list");
 
@@ -127,6 +133,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   function openConversation(id: string) {
     setNaoEncontrada(false);
     setConfirmarEnvio(null);
+    limparAnexo();
+    setErroAnexo(null);
     setActiveId(id);
     setMobileView("chat");
     if (!demo) {
@@ -149,6 +157,48 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     // E445 item 2: primeiro o aviso com a prévia; só o botão "Enviar mesmo assim" envia (Enter de novo não confirma).
     if (aviso.tipo === "confirmar") return setConfirmarEnvio(aviso.previa);
     await enviar(aviso.texto, false);
+  }
+
+  function limparAnexo() {
+    setAnexo((a) => {
+      if (a?.previaUrl) URL.revokeObjectURL(a.previaUrl);
+      return null;
+    });
+  }
+
+  async function escolherAnexo(f: File) {
+    setErroAnexo(null);
+    limparAnexo();
+    const erro = validarAnexoNaTela(f);
+    if (erro) return setErroAnexo(erro);
+    try {
+      const arquivo = await semLocalizacao(f);
+      setAnexo({ arquivo, previaUrl: arquivo.type === "application/pdf" ? null : URL.createObjectURL(arquivo) });
+    } catch {
+      setErroAnexo("Não foi possível ler esta foto. Tente outra.");
+    }
+  }
+
+  async function enviarAnexo() {
+    if (!anexo || !active?.otherId) return;
+    setEnviandoAnexo(true);
+    setErroAnexo(null);
+    const dados = new FormData();
+    dados.set("receiverId", active.otherId);
+    if (active.propertyId) dados.set("propertyId", active.propertyId);
+    dados.set("file", anexo.arquivo);
+    // Rede travada não deixa a prévia em "Enviando…" para sempre: 60 s e o aviso de tentar de novo.
+    const r = await fetch(ROTA_ENVIAR_ANEXO, { method: "POST", body: dados, credentials: "same-origin", signal: AbortSignal.timeout(60_000) }).catch(() => null);
+    const j = (await r?.json().catch(() => null)) as { ok?: boolean; error?: string; anexoId?: string; messageId?: string; mime?: string } | null;
+    setEnviandoAnexo(false);
+    const tipo = j?.mime ? tipoNaTela(j.mime) : null;
+    if (!r?.ok || !j?.ok || !j.anexoId || !j.messageId || !tipo) return setErroAnexo(j?.error ?? "Não foi possível enviar o anexo agora. Tente de novo.");
+    const texto = tipo === "pdf" ? "Anexo: PDF enviado" : "Anexo: foto enviada";
+    const conversa = active.id;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conversa ? { ...c, preview: texto, messages: [...c.messages, { id: j.messageId!, from: "me", text: texto, anexo: { id: j.anexoId!, tipo } }] } : c))
+    );
+    limparAnexo();
   }
 
   async function enviar(text: string, masked: boolean) {
@@ -386,7 +436,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                       : "rounded-bl-lg bg-white text-ink"
                   )}
                 >
-                  {m.text}
+                  {m.anexo ? <AnexoNaMensagem anexo={m.anexo} minha={m.from === "me"} /> : m.text}
                   {m.propostaId && (
                     <Link
                       href={`/dashboard/propostas/${m.propostaId}`}
@@ -505,7 +555,14 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               </div>
             </div>
           )}
+          {erroAnexo && (
+            <p role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900" data-testid="anexo-erro">
+              {erroAnexo}
+            </p>
+          )}
+          {anexo && <PreviaAnexo arquivo={anexo.arquivo} previaUrl={anexo.previaUrl} enviando={enviandoAnexo} onEnviar={() => void enviarAnexo()} onCancelar={limparAnexo} />}
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
+            {podeAnexar(active, demo) && <BotaoAnexar onEscolher={(f) => void escolherAnexo(f)} desligado={enviandoAnexo} />}
             <input
               value={draft}
               ref={campoRef}
