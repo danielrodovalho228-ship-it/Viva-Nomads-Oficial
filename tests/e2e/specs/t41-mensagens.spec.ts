@@ -46,7 +46,7 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await paginaDono.getByPlaceholder("Escreva uma mensagem...").fill("Claro! Me chama no (34) 99999-8888 ou em dora@exemplo.com");
     await paginaDono.getByRole("button", { name: "Enviar" }).click();
     // E445 item 2: o aviso e a prévia mascarada vêm ANTES; "Enviar mesmo assim" envia a versão mascarada.
-    await expect(paginaDono.getByTestId("aviso-antes-de-enviar")).toContainText(/telefones e e-mails são protegidos/);
+    await expect(paginaDono.getByTestId("aviso-antes-de-enviar")).toContainText(/telefones, e-mails e links externos são protegidos/);
     await paginaDono.getByRole("button", { name: "Enviar mesmo assim" }).click();
 
     // O banco guardou a resposta SEM número nem e-mail.
@@ -104,7 +104,7 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await pagina.getByRole("button", { name: /Studio das mensagens/ }).first().click();
     await pagina.getByPlaceholder("Escreva uma mensagem...").fill("Ligue para 21 97777-6666");
     await pagina.getByRole("button", { name: "Enviar" }).click();
-    await expect(pagina.getByTestId("aviso-antes-de-enviar")).toContainText(/telefones e e-mails são protegidos/);
+    await expect(pagina.getByTestId("aviso-antes-de-enviar")).toContainText(/telefones, e-mails e links externos são protegidos/);
     await pagina.context().close();
   });
 });
