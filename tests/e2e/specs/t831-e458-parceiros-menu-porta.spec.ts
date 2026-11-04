@@ -15,6 +15,7 @@ const DESTINOS = [
   ["Anunciar", "/dashboard/imoveis/novo"],
   ["Empresas", "/empresas"],
   ["Parceiros", "/parceiros"],
+  ["Planos", "/planos"], // E555
   ["Fale com a Viva", "/ajuda/fale-com-a-viva"],
 ];
 
@@ -78,7 +79,7 @@ test.describe("T831 — topo do computador numa linha só", () => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/", { waitUntil: "domcontentloaded" });
       const links = await linksDoMenu(page, largura);
-      await expect(links).toHaveCount(5);
+      await expect(links).toHaveCount(DESTINOS.length); // E555: 6 destinos
       // Cada destino numa linha só e todos na mesma altura (nada quebra nem desce).
       const caixas = await links.evaluateAll((els) => els.map((e) => ({ topo: Math.round(e.getBoundingClientRect().top), linhas: e.getClientRects().length, alto: e.getBoundingClientRect().height })));
       for (const c of caixas) expect(c.linhas, JSON.stringify(caixas)).toBe(1);

@@ -44,6 +44,8 @@ export const PUBLIC_NAV = [
   { href: "/empresas", label: "Empresas" },
   // E458 (Relay 58): "Parceiros" no menu público — a porta com os dois caminhos (encontrar / ser parceiro).
   { href: "/parceiros", label: "Parceiros" },
+  // E555 (pacote Planos): "Planos" no menu público — /planos leva à página de planos e taxas (next.config → /precos).
+  { href: "/planos", label: "Planos" },
 ] as { href: string; label: string }[];
 
 /** "Fale com a Viva" em texto no topo público (a mesma página de ajuda do link da /buscar). */

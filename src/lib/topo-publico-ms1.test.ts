@@ -11,9 +11,9 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
-test("topo: só Imóveis · Anunciar · Empresas · Parceiros (E458); Fale com a Viva em texto; Entrar é o único botão cheio", () => {
+test("topo: só Imóveis · Anunciar · Empresas · Parceiros (E458) · Planos (E555); Fale com a Viva em texto; Entrar é o único botão cheio", () => {
   const nav = ler("lib/constants.ts").match(/PUBLIC_NAV = \[([\s\S]*?)\]/)![1];
-  assert.deepEqual([...nav.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]), ["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
+  assert.deepEqual([...nav.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]), ["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos"]);
   const topo = ler("components/layout/navbar.tsx");
   assert.equal((topo.match(/variant="primary"/g) ?? []).length, 2, "Entrar no computador e no menu do celular");
   assert.match(topo, /data-testid="nav-fale-com-a-viva"/);
@@ -24,7 +24,7 @@ test("topo: só Imóveis · Anunciar · Empresas · Parceiros (E458); Fale com a
 
 test("rodapé: Publicar pedido, Como funciona, Preços e Parceiros", () => {
   const rodape = ler("components/layout/footer.tsx");
-  for (const [href, nome] of [["/pedidos/novo", "Publicar pedido"], ["/como-funciona", "Como funciona"], ["/precos", "Preços"], ["/parceiros", "Parceiros"]])
+  for (const [href, nome] of [["/pedidos/novo", "Publicar pedido"], ["/como-funciona", "Como funciona"], ["/planos", "Preços"], ["/parceiros", "Parceiros"]])
     assert.match(rodape, new RegExp(`<FooterLink href="${href}">${nome}</FooterLink>`), nome);
 });
 

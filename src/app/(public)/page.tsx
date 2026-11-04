@@ -298,8 +298,17 @@ export default async function HomePage() {
                 <ButtonLink href="/para-proprietarios" variant="accent" size="lg">
                   Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
-                <Link href="/precos" className="alvo-toque text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white">
-                  Ver preços
+                {/* E555: cartão "Planos e taxas" (no lugar do "Ver preços" solto, que ia para a mesma página). */}
+                <Link
+                  href="/planos"
+                  data-testid="home-planos-taxas"
+                  className="group flex min-h-11 w-full items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-left transition-colors hover:bg-white/20 md:max-w-xs"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-white">Planos e taxas</span>
+                    <span className="block text-sm text-white/80">De 12% a 6% por contrato. Sem mensalidade.</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-white" aria-hidden />
                 </Link>
               </div>
             </div>
