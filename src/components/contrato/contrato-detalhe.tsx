@@ -22,6 +22,8 @@ import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 import { ButtonLink } from "@/components/ui/button";
 import { situacaoDaRenovacao } from "@/lib/data/renovacao-contrato";
+import { numerosDoContrato } from "@/lib/data/pedido-orcamento-actions";
+import { linhaNumerosDoContrato } from "@/lib/pedido-ref";
 import { HREF_RENOVAR, ROTULO_RENOVAR, TEXTO_NO_MAXIMO } from "@/lib/estadia/renovacao";
 
 const PREFIXO_INICIO = "Início da estadia:";
@@ -63,6 +65,8 @@ export async function ContratoDetalhe({
   const postal = c.papel === "inquilino" ? await meuCartaoPostal(c.id) : null;
   // E222-B: renovar = aditivo de prorrogação já preenchido (um caminho só). Contrato ativo e assinado pelas duas partes.
   const renovacao = await situacaoDaRenovacao(c.id);
+  // E440: pedido do morador (VN-PD) e orçamento (ORC). Leitura que falha não some calada: a linha diz que não carregou.
+  const numeros = await numerosDoContrato(c.id).catch(() => "falhou" as const);
   return (
     <>
       <VoltarLista href={voltarHref} rotulo={voltarRotulo} />
@@ -89,6 +93,16 @@ export async function ContratoDetalhe({
       )}
       <Panel id="contrato" className="scroll-mt-24 p-4">
         <h2 className="font-title text-base font-semibold text-ink">Contrato</h2>
+        {numeros === "falhou" ? (
+          <p className="mt-2 text-sm text-red-700" data-testid="contrato-numeros-falhou">Não foi possível carregar o número do pedido e do orçamento agora.</p>
+        ) : (
+          numeros &&
+          linhaNumerosDoContrato(numeros.pedido, numeros.orcamento) && (
+            <p className="mt-2 text-sm text-muted [overflow-wrap:anywhere]" data-testid="contrato-numeros">
+              {linhaNumerosDoContrato(numeros.pedido, numeros.orcamento)}
+            </p>
+          )
+        )}
         <ul className="mt-3 space-y-2 text-sm text-ink" data-testid="contrato-resumo">
           {c.resumo.map((linha) => (
             // O número do contrato (UUID) e a data não têm espaço: sem isto estouram a tela a 360 px.
