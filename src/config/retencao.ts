@@ -71,6 +71,9 @@ export const INVENTARIO: ItemInventario[] = [
   i("fotos_perfil_revisao", "public.fotos_perfil_revisao", "caminho da foto de perfil enviada, situação da revisão e motivo da remoção", "conferir que a foto é o rosto do titular adulto", CONTA),
   i("tenant_verifications", "public.tenant_verifications", "veredito da identidade (CAF: semáforo, confere nome/CPF)", "confiança", CONTA, "só o veredito; a Viva não grava imagem de documento nem selfie"),
   i("messages", "public.messages", "mensagens do chat", "conversa entre as partes", DISPUTA),
+  // E445 item 5: foto ou PDF enviado no chat (bucket privado; só as partes abrem, por URL assinada de 10 min).
+  i("mensagens-anexos", "bucket:mensagens-anexos", "foto ou PDF enviado no chat", "conversa entre as partes", DISPUTA),
+  i("mensagens_anexos", "public.mensagens_anexos", "caminho, tipo, tamanho e hash do anexo do chat", "ligar o arquivo à mensagem", DISPUTA),
   i("service_order_messages", "public.service_order_messages", "mensagens de ordem de serviço", "conversa do serviço", DISPUTA),
   i("conferencia", "bucket:conferencia", "fotos e laudo da conferência de entrada e saída", "prova da conferência", DISPUTA),
   i("conferencia_itens", "public.conferencia_itens", "descrição e caminho da foto da conferência", "prova da conferência", DISPUTA),
