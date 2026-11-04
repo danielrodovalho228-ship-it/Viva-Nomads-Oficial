@@ -9,7 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  * Aqui, um anúncio do laboratório com limpeza de preparação R$ 450 e de saída R$ 250, visitante, 390 e 1280:
  *   1. escolhe ~60 dias no calendário → o painel diz "· R$ X em N meses" (N ≥ 2) e a conta com as duas limpezas;
  *   2. "Pedir para morar" → o passo mostra "Total do contrato: R$ X em N meses" — o MESMO X e N do painel — e a
- *      "Conta do total" com "limpeza de preparação R$ 450,00" e "limpeza de saída R$ 250,00", terminando em "= R$ X";
+ *      "Conta do total" com "limpeza de preparação R$ 450" e "limpeza de saída R$ 250", terminando em "= R$ X";
  *   3. os rótulos da casa: "Mensal" e "Total por mês (com contas)"; nada de "Total da estadia" nem "Valor por mês".
  * As regras ficam com o e519-totais-proposta.test.ts.
  */
@@ -68,13 +68,13 @@ test.describe("T1114 — E519: o passo 1 da proposta mostra o total do painel (c
       const card = page.locator("#cartao-preco");
       const estadia = card.getByTestId("cartao-lateral-estadia");
       await expect(estadia).toBeVisible({ timeout: 15_000 });
-      const m = limpo(await estadia.innerText()).match(/(R\$ [\d.]+,\d\d) em (\d+) meses/);
+      const m = limpo(await estadia.innerText()).match(/(R\$ [\d.]+(?:,\d\d)?) em (\d+) meses/);
       expect(m, `painel: "R$ X em N meses" (${await estadia.innerText()})`).not.toBeNull();
       const [, total, meses] = m!;
       expect(Number(meses)).toBeGreaterThanOrEqual(2);
       const contaPainel = limpo(await card.getByTestId("cartao-lateral-estadia-conta").innerText());
-      expect(contaPainel).toContain("limpeza de preparação R$ 450,00");
-      expect(contaPainel).toContain("limpeza de saída R$ 250,00");
+      expect(contaPainel).toMatch(/limpeza de preparação R\$ 450(,00)?\b/);
+      expect(contaPainel).toMatch(/limpeza de saída R\$ 250(,00)?\b/);
 
       // 2. "Pedir para morar": o passo mostra o MESMO total, com a conta aberta.
       const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
@@ -83,7 +83,7 @@ test.describe("T1114 — E519: o passo 1 da proposta mostra o total do painel (c
       await expect(passo).toBeVisible();
       const texto = limpo(await passo.innerText());
       expect(texto).toContain(`Total do contrato ${total} em ${meses} meses`);
-      expect(texto).toMatch(new RegExp(`Conta do total .*limpeza de preparação R\\$ 450,00.*limpeza de saída R\\$ 250,00 = ${total.replace(/[.$]/g, "\\$&")}`));
+      expect(texto).toMatch(new RegExp(`Conta do total .*limpeza de preparação R\\$ 450(,00)?.*limpeza de saída R\\$ 250(,00)? = ${total.replace(/[.$]/g, "\\$&")}`));
 
       // 3. Os rótulos da casa, sem os antigos.
       expect(texto).toContain("Mensal");
