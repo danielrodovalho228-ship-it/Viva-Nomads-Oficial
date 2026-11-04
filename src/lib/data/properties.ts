@@ -802,7 +802,9 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // E426 (02/11): rascunho com fotos SÓ no draft_data (sincronização "best-effort" que não gravou property_photos) mostrava
   // o espaço vazio em Meus anúncios, embora tivesse foto real — o Início já caía no draft_data (E308). Mesma regra aqui:
   // a 1ª foto do draft_data cujo arquivo existe. O draft_data vem pela RPC do dono (coluna sensível fora do SELECT).
-  const semCapa = lista.filter((p) => p.status === "draft" && !(p.photos ?? []).some(ehUrlDeImagem));
+  // E513 (D-S2-09 A): vale para TODO anúncio sem capa — o pausado cuja linha em property_photos apontava para arquivo
+  // apagado ficava sem foto, embora o draft_data tivesse a foto real.
+  const semCapa = lista.filter((p) => !(p.photos ?? []).some(ehUrlDeImagem));
   await Promise.all(
     semCapa.map(async (p) => {
       const { data: priv } = await supabase.rpc("property_private_details", { prop_id: p.id });

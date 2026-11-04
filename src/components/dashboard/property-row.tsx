@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
 import { coverPhoto } from "@/lib/media";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { isExemplo } from "@/lib/demo-listing";
 
 /**
@@ -36,15 +37,15 @@ export function PropertyRow({
   photos?: string[];
   demo?: boolean;
 }) {
+  const capa = coverPhoto(id, photos);
   const inner = (
     <>
-      <Image
-        src={coverPhoto(id, photos)}
-        alt=""
-        width={56}
-        height={56}
-        className="h-14 w-14 shrink-0 rounded-xl object-cover"
-      />
+      {/* E513: sem capa, o espaço sem foto (coverPhoto não inventa mais foto do acervo). */}
+      {capa ? (
+        <Image src={capa} alt="" width={56} height={56} className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+      ) : (
+        <PhotoPlaceholder className="h-14 w-14 shrink-0 rounded-xl" />
+      )}
       <span className="min-w-0 flex-1">
         {/* Conformidade (31/10): o título em até 2 linhas, como em "Meus imóveis" na mesma tela; antes, a 390, ficava
             "Imóvel mobiliado com home off…". */}

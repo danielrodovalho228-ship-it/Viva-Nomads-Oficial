@@ -6,6 +6,7 @@ import { calcularTudoIncluido } from "@/lib/precos";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import {
   Eye,
   Users,
@@ -348,15 +349,22 @@ function PainelDoDono({
           ) : (
             <>
               <ul className="divide-y divide-sage-200">
-                {myProperties.map((p) => (
+                {myProperties.map((p) => {
+                  const capa = coverPhoto(p.id, p.photos);
+                  return (
                   <li key={p.id} className="flex items-center gap-3 py-3">
-                    <Image
-                      src={coverPhoto(p.id, p.photos)}
-                      alt=""
-                      width={56}
-                      height={56}
-                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                    />
+                    {/* E513: sem capa, o espaço sem foto — nunca uma foto do acervo repetida. */}
+                    {capa ? (
+                      <Image
+                        src={capa}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <PhotoPlaceholder className="h-14 w-14 shrink-0 rounded-xl" />
+                    )}
                     <div className="min-w-0 flex-1">
                       {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
                           daria 404) — mostra como texto. Reais viram link. */}
@@ -384,7 +392,8 @@ function PainelDoDono({
                       </div>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
               <Link
                 href="/dashboard/imoveis"
