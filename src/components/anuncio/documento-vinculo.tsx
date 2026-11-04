@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CheckCircle2, Clock, FileText, Loader2, ShieldCheck, Upload, XCircle } from "lucide-react";
-import { DOCUMENTOS_ACEITOS_TEXTO, FORMATOS_ACEITOS_TEXTO, type EstadoConferencia } from "@/lib/documento/conferencia";
+import { DOCUMENTOS_ACEITOS_TEXTO, REGRAS_ENVIO_DOCUMENTO, type EstadoConferencia } from "@/lib/documento/conferencia";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 import { MSG_SEM_CONEXAO, textoDoErro } from "@/lib/erro-de-rede";
 import {
@@ -169,7 +169,16 @@ export function DocumentoVinculo({
           <li key={t}>{t}</li>
         ))}
       </ul>
-      <p className="mt-1 text-xs text-muted">{FORMATOS_ACEITOS_TEXTO} No nome do proprietário e com o endereço do imóvel.</p>
+      <p className="mt-1 text-xs text-muted">No nome do proprietário e com o endereço do imóvel.</p>
+      {/* E558: as regras ANTES do envio (antes o dono as descobria por tentativa: duplicidade, tamanho, conferência). */}
+      <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink" data-testid="documento-regras">
+        <p className="font-semibold">Antes de enviar</p>
+        <ul className="mt-1 list-disc space-y-1 pl-4">
+          {REGRAS_ENVIO_DOCUMENTO.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+      </div>
       <p className="mt-1 text-xs text-ink" data-testid="matricula-aviso-upload">
         {MSG_MATRICULA.aviso_upload}
       </p>
