@@ -15,6 +15,11 @@ export interface TemaAjuda {
   /** Foto do acervo (public/images): todo cartão de tema tem foto (QA de 29/10). */
   foto: string;
   alt: string;
+  /**
+   * E505: recorte da foto na miniatura quadrada (object-position). Sem ele, o centro. A foto de "Segurança e conta" é
+   * larguíssima (1600×600) e o centro caía na parte branca do cartão — a miniatura saía cinza.
+   */
+  fotoPosicao?: string;
   /** Perguntas do tema, na ordem em que aparecem. */
   perguntas: readonly string[];
 }
@@ -49,6 +54,7 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
     titulo: "Segurança e conta",
     resumo: "Pagamento por fora, código de acesso e senha",
     foto: "/images/painel/painel-verificacao.webp",
+    fotoPosicao: "35% 50%",
     alt: "Cartão e celular sobre a mesa",
     perguntas: ["golpe", "email-confirmacao", "senha", "contato"],
   },
