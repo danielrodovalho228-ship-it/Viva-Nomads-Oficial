@@ -16,19 +16,19 @@ for (const largura of [1280, 390] as const) {
       const topo = page.getByTestId("topo-publico");
       await expect(topo).toBeVisible({ timeout: 30_000 });
       if (largura === 1280) {
-        await expect(page.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
+        await expect(page.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos"]);
         await expect(page.getByTestId("nav-fale-com-a-viva")).toHaveText("Fale com a Viva");
         await expect(page.getByTestId("nav-entrar")).toHaveText("Entrar");
       } else {
         await page.getByTestId("nav-menu").click();
-        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Fale com a Viva", "Entrar"]);
+        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos", "Fale com a Viva", "Entrar"]);
       }
       for (const fora of ["Publicar pedido", "Como funciona", "Preços", "Mais"]) await expect(topo.getByText(fora, { exact: true })).toHaveCount(0);
       await expect(topo.locator('[aria-label*="idioma" i], [data-testid*="idioma"]')).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t669-topo-${largura}.png` });
 
       const rodape = page.locator("footer");
-      for (const [nome, href] of [["Publicar pedido", "/pedidos/novo"], ["Como funciona", "/como-funciona"], ["Preços", "/precos"], ["Parceiros", "/parceiros"]] as const)
+      for (const [nome, href] of [["Publicar pedido", "/pedidos/novo"], ["Como funciona", "/como-funciona"], ["Preços", "/planos"], ["Parceiros", "/parceiros"]] as const)
         await expect(rodape.getByRole("link", { name: nome, exact: true })).toHaveAttribute("href", href);
       await rodape.scrollIntoViewIfNeeded();
       await rodape.screenshot({ path: `${SAIDA}/t669-rodape-${largura}.png` });

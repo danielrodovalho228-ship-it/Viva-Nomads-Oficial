@@ -13,7 +13,8 @@ function destinos(): string[][] {
   return [...nav.matchAll(/\{ href: "([^"]+)", label: "([^"]+)" \}/g), ...fale.matchAll(/\{ href: "([^"]+)", label: "([^"]+)" \}/g)].map((m) => [m[2], m[1]]);
 }
 
-test("menu público: exatamente os 5 destinos, nesta ordem", () => {
+// E555: o menu ganhou "Planos" (6 destinos) — a lista completa mora em e555-planos-portas.test.ts.
+test("menu público: os destinos do E458 seguem, nesta ordem", () => {
   assert.deepEqual(
     destinos(),
     [
@@ -21,6 +22,7 @@ test("menu público: exatamente os 5 destinos, nesta ordem", () => {
       ["Anunciar", "/dashboard/imoveis/novo"],
       ["Empresas", "/empresas"],
       ["Parceiros", "/parceiros"],
+      ["Planos", "/planos"],
       ["Fale com a Viva", "/ajuda/fale-com-a-viva"],
     ]
   );

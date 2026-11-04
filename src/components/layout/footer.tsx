@@ -32,7 +32,8 @@ export function Footer() {
           <FooterLink href="/para-proprietarios">Para proprietários</FooterLink>
           <FooterLink href="/empresas">Para empresas</FooterLink>
           <FooterLink href="/parceiros">Parceiros</FooterLink>
-          <FooterLink href="/precos">Preços</FooterLink>
+          {/* E555: o rodapé leva a /planos (a página de planos e taxas). */}
+          <FooterLink href="/planos">Preços</FooterLink>
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
           <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
           <FooterLink href="/guias">Guias</FooterLink>

@@ -62,8 +62,9 @@ export default function ForLandlordsPage() {
         <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg">
           Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
         </ButtonLink>
-        <ButtonLink href="/precos" variant="inverseSecondary" size="lg">
-          Ver preços
+        {/* E555: o destaque do topo de /anunciar leva a /planos (a página de planos e taxas). */}
+        <ButtonLink href="/planos" variant="inverseSecondary" size="lg" data-testid="anunciar-planos">
+          Planos e taxas
         </ButtonLink>
       </BannerTopo>
 

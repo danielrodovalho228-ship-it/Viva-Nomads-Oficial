@@ -27,7 +27,8 @@ test("links de texto soltos: área de toque de 44 px (só em tela de toque), sem
     ["components/property/owner-card.tsx", 'className="alvo-toque mt-2 inline-flex'],
     ["components/property/avaliacoes-exemplo.tsx", 'className="alvo-toque mt-1 text-sm'],
     ["app/(public)/ajuda/[tema]/page.tsx", 'className="alvo-toque inline-flex'],
-    ["app/(public)/page.tsx", '<Link href="/precos" className="alvo-toque'],
+    // E555: o "Ver preços" solto da home virou o cartão "Planos e taxas" (min-h-11 = 44 px por si).
   ])
     assert.ok(ler(arq).includes(marca), arq);
+  assert.match(ler("app/(public)/page.tsx"), /href="\/planos"\s+data-testid="home-planos-taxas"\s+className="group flex min-h-11/);
 });
