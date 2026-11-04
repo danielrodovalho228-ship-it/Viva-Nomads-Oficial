@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { conversationId } from "@/lib/messages/conversation-id";
 import { categoriaLabelParaDono } from "@/config/categorias-profissionais";
 import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
@@ -227,6 +228,8 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
     );
     return {
       id: r.id,
+      // E541: a conversa DESTA candidatura (as duas pessoas + o imóvel) — "Responder pela plataforma" abre exatamente ela.
+      conversaId: conversationId(r.tenant_id, user.id, r.property_id),
       status: r.status,
       name: cartao.titulo,
       fotoUrl: cartao.fotoUrl,

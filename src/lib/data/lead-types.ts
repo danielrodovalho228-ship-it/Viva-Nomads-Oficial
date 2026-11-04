@@ -7,6 +7,8 @@ export type Light = "green" | "yellow" | "red";
 
 export interface Lead {
   id: string;
+  /** E541: id da conversa desta candidatura (dono + morador + imóvel); sem ele (exemplo), a caixa de Mensagens. */
+  conversaId?: string;
   /** Status cru persistido (leads.status): 'new' | 'accepted' | 'rejected'. */
   status?: string;
   name: string; // "Candidato(a)" antes do aceite; nome completo (E427) depois. Nunca contato.
