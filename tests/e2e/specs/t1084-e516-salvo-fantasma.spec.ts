@@ -11,9 +11,9 @@ import { doTipoAoEndereco } from "../fixtures/cadastro";
  *   3. recarregar: o bairro novo veio do servidor;
  *   4. (L-93) a edição feita logo ao abrir, antes do 1º debounce, também precisa ser gravada.
  * As regras (conteudoDoRascunho, decisaoAutosave) ficam com o salvo-fantasma.test.ts; o autosave em si, com a t8. *
- * L-93 (defeito de produto, achado lendo o E516 e conferido no teste 4, 04/11): o 1º debounce depois de abrir o
- * rascunho vira a BASE e não grava. Uma edição feita nesses primeiros ~2 s entra na base sem ir ao servidor; quem sai
- * (ou recarrega) sem mexer em mais nada perde a edição. Fica no teste 4, test.fail ligado ao L-93.
+ * L-93 (defeito de produto achado lendo o E516, 04/11): o 1º debounce depois de abrir o rascunho virava a BASE e não
+ * gravava — a edição feita nesses primeiros ~2 s se perdia ao sair ou recarregar. A Pista B corrigiu no #2444 (seguimento
+ * do E516); o teste 4 fica como regressão.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -94,8 +94,7 @@ test.describe("T1084 — E516: abrir o rascunho não carimba 'Salvo às'; editar
     });
   }
 
-  test("4. L-93: uma edição logo ao abrir (antes do 1º debounce) também é gravada (390)", async ({ browser }) => {
-    test.fail(true, "L-93: o 1º debounce depois de abrir vira a base do autosave e não grava — a edição feita nesse intervalo se perde ao recarregar");
+  test("4. L-93 (corrigido no #2444): uma edição logo ao abrir (antes do 1º debounce) também é gravada (390)", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await comQualificacao(p);
     await p.setViewportSize({ width: 390, height: 844 });
