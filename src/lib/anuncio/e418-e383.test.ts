@@ -4,18 +4,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { gruposRascunhosDuplicados, idsRascunhosDuplicados } from "./rascunhos-duplicados.ts";
-import { AVISO_SEM_TIPO_ENTRADA, textoAvisoTipoEntrada } from "./chegada-e-pedido.ts";
 
 const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
-test("E418: um aviso só, com o texto aprovado e a contagem", () => {
-  assert.equal(textoAvisoTipoEntrada(1), `${AVISO_SEM_TIPO_ENTRADA} Falta em 1 anúncio publicado — o link está no cartão dele.`);
-  assert.equal(textoAvisoTipoEntrada(8), `${AVISO_SEM_TIPO_ENTRADA} Falta em 8 anúncios publicados — o link está no cartão de cada um.`);
+test("E418 → E508: Meus imóveis sem caixa de alertas — e, desde o E508, sem pendência de tipo de entrada em anúncio publicado", () => {
   const pagina = ler("../../app/(dashboard)/dashboard/imoveis/page.tsx");
-  assert.doesNotMatch(pagina, /semTipoEntrada\.map\(\(i\) => \(\n?\s*<li/);
-  assert.match(pagina, /data-testid="aviso-tipo-entrada"/);
-  assert.match(pagina, /semTipoEntrada=\{semTipoEntrada\.map\(\(i\) => i\.id\)\}/);
-  assert.match(ler("../../app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /semEntrada\.has\(p\.id\)[\s\S]{0,400}data-testid="card-tipo-entrada"/);
+  assert.doesNotMatch(pagina, /data-testid="aviso-tipo-entrada"/);
+  assert.doesNotMatch(ler("../../app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /data-testid="card-tipo-entrada"/);
 });
 
 test("E383: grupos de rascunhos repetidos — o 1º é o que aparece", () => {

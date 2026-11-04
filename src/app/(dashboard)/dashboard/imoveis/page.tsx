@@ -6,8 +6,6 @@ import { meusPedidosDeAjuda } from "@/lib/data/ajuda-publicacao-actions";
 import { donoPodeDecidir, ROTULO_STATUS } from "@/lib/ajuda-publicacao/ajuda";
 import { DecisaoRascunho } from "@/components/property/decisao-rascunho";
 import { MyPropertiesClient } from "./imoveis-client";
-import { avisoTipoEntradaNoPainel, textoAvisoTipoEntrada } from "@/lib/anuncio/chegada-e-pedido";
-import { DoorOpen } from "lucide-react";
 import { TEXTO_RASCUNHO_SALVO } from "@/components/layout/moldura-assistente";
 
 /**
@@ -23,23 +21,18 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
   const prontidao: Record<string, Prontidao> = {};
   // 64-B: o motivo de cada pausa (decide se o dono vê "Reativar" ou o caminho da Viva).
   const pausas: Record<string, string | null> = {};
-  // 61-B: anúncio já publicado sem o tipo de entrada segue no ar, com o aviso aqui (sem bloqueio retroativo).
-  const semTipoEntrada: { id: string; title: string; status: string }[] = [];
   if (supabase && properties.length) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      const [mapa, { data: motivos }, entrada] = await Promise.all([
+      const [mapa, { data: motivos }] = await Promise.all([
         // E498: rascunho conta a qualificação, como a barra do assistente e o Início.
         prontidaoDosImoveis(supabase, user.id, properties.map((p) => p.id), { qualificacaoDoRascunho: true }),
         supabase.from("properties").select("id, pausa_motivo").eq("owner_id", user.id).eq("status", "paused"),
-        // Sem a 0225, erro → nenhum aviso.
-        supabase.from("properties").select("id, title, status, tipo_entrada").eq("owner_id", user.id).neq("status", "draft"),
       ]);
-      for (const l of (entrada.error ? [] : (entrada.data ?? [])) as { id: string; title: string; status: string; tipo_entrada: string | null }[]) {
-        if (avisoTipoEntradaNoPainel({ tipoEntrada: l.tipo_entrada, status: l.status })) semTipoEntrada.push({ id: l.id, title: l.title, status: l.status });
-      }
+      // E508 (D-S2-04): anúncio publicado (no ar ou pausado) não carrega pendência de cadastro na lista — saiu a dica
+      // "Informe o tipo de entrada" do topo e o link do cartão. O tipo segue obrigatório para publicar anúncio novo.
       for (const [id, pr] of mapa) prontidao[id] = pr;
       for (const m of (motivos ?? []) as { id: string; pausa_motivo: string | null }[]) pausas[m.id] = m.pausa_motivo;
     }
@@ -71,15 +64,7 @@ export default async function MyPropertiesPage({ searchParams }: { searchParams:
           <p className="mt-1 text-xs text-muted">Nada vai ao ar sem a sua aprovação.</p>
         </section>
       )}
-      {/* E418 (02/11): um aviso único e discreto (antes: caixa de largura total com um link por anúncio, empurrando a
-          lista). O link de cada anúncio fica no cartão dele. */}
-      {semTipoEntrada.length > 0 && (
-        <p className="mb-4 flex items-start gap-2 text-sm text-muted" role="status" data-testid="aviso-tipo-entrada">
-          <DoorOpen className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden />
-          <span>{textoAvisoTipoEntrada(semTipoEntrada.length)}</span>
-        </p>
-      )}
-      <MyPropertiesClient properties={properties} prontidao={prontidao} pausas={pausas} semTipoEntrada={semTipoEntrada.map((i) => i.id)} />
+      <MyPropertiesClient properties={properties} prontidao={prontidao} pausas={pausas} />
     </>
   );
 }
