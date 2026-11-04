@@ -7,6 +7,7 @@ import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
+import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
 function formatDate(iso?: string): string | null {
@@ -31,7 +32,8 @@ function disponivelFuturo(iso?: string): string | null {
  * Cartão lateral (fixo no desktop, empilhado no celular — Prompt 41): no topo "R$ X/mês · R$ Y em N meses"
  * (N = 1 → só "/mês", a regra do cartão da busca), "A Viva não segura dinheiro", o detalhamento do total do mês,
  * os pagamentos fora do total, a disponibilidade e as ações (recebidas via `actions`, com UM primário: "Solicitar").
- * No desktop o cartão fica preso ao rolar; se for mais alto que a tela, rola por dentro (nunca some da vista). A frase
+ * O cartão fica preso ao rolar; se for mais alto que a tela, rola com a página até a base e prende por ela (E528: sem
+ * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
 export function PriceCard({ property, actions, meses = 1 }: { property: Property; actions: React.ReactNode; meses?: number }) {
@@ -44,7 +46,8 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-4 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto xl:p-6">
+    // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
+    <PainelPrecoFixo>
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}
@@ -131,6 +134,6 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
         Endereço exato liberado após o aceite da candidatura. Antes, mostramos a região
         aproximada ({property.neighborhood}).
       </p>
-    </div>
+    </PainelPrecoFixo>
   );
 }
