@@ -1,5 +1,8 @@
 import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import Link from "next/link";
+import Image from "next/image";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { coverPhoto } from "@/lib/media";
 import { Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -65,6 +68,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
     documento: "none",
     qualidade: null,
     donoTeste: false,
+    capa: coverPhoto(e.id),
   }));
   const todos: Linha[] = [...doBanco, ...exemplos].map((i) => {
     const t = tipoImovel({ id: i.id, titulo: i.titulo, donoTeste: i.donoTeste });
@@ -155,7 +159,14 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
         ) : (
           <ul className="grid gap-3">
             {lista.map((i) => (
-              <li key={i.id} className="rounded-xl border border-line p-3 text-sm" data-testid="imovel-linha" data-tipo={i.tipo} data-publico={i.publico ? "sim" : "nao"}>
+              <li key={i.id} className="flex gap-3 rounded-xl border border-line p-3 text-sm" data-testid="imovel-linha" data-tipo={i.tipo} data-publico={i.publico ? "sim" : "nao"}>
+                {/* Onda 5 (matriz admin-anuncios): a capa do anúncio, como no mockup; sem foto real, o espaço sem foto. */}
+                {i.capa ? (
+                  <Image src={i.capa} alt="" width={80} height={80} sizes="80px" className="h-16 w-16 shrink-0 rounded-lg object-cover sm:h-20 sm:w-20" data-testid="imovel-capa" />
+                ) : (
+                  <span className="shrink-0" data-testid="imovel-capa" data-vazia="1"><PhotoPlaceholder className="h-16 w-16 rounded-lg sm:h-20 sm:w-20" /></span>
+                )}
+                <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-semibold text-ink">
                     {i.titulo}
@@ -189,6 +200,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
                   )}
                   {i.tipo !== "demonstracao" && i.status === "active" && (soLeitura.has(i.id) ? <SoLeituraQa /> : <PausarImovel id={i.id} />)}
                 </p>
+                </div>
               </li>
             ))}
           </ul>

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { capasPorImovel, emLotes } from "@/lib/admin/capas-admin";
 import { todasAsPaginas } from "@/lib/admin/paginas";
 import { eventoConta } from "@/lib/eventos/trafego";
 import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
@@ -302,6 +303,8 @@ export interface ImovelLinhaAdmin {
   documento: string;
   qualidade: string | null;
   donoTeste: boolean;
+  /** Onda 5 (matriz admin-anuncios): a 1ª foto real do anúncio; null = espaço "sem foto". */
+  capa: string | null;
 }
 
 /** Imóveis do banco para /admin/imoveis (todos: reais e de teste — o tipo sai de tipoImovel). */
@@ -329,10 +332,23 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
   if (!linhas.length) return [];
   const ids = linhas.map((p) => p.id);
   const donos = [...new Set(linhas.map((p) => p.owner_id))];
-  const [{ data: perfis }, { data: docs }] = await Promise.all([
+  const [{ data: perfis }, { data: docs }, fotos] = await Promise.all([
     admin.from("profiles").select("id, full_name").in("id", donos),
     admin.from("qualification_checklists").select("property_id, document_status").in("property_id", ids),
+    // Onda 5: só a capa (ordem 0) de cada anúncio, em lotes — com todas as fotos, 3000 anúncios passam do limite de linhas.
+    // A falha não derruba a lista: sem leitura, cada linha mostra o espaço "sem foto".
+    Promise.all(
+      emLotes(ids, 500).map((lote) =>
+        admin
+          .from("property_photos")
+          .select("property_id, url, sort_order")
+          .in("property_id", lote)
+          .eq("sort_order", 0)
+          .then(({ data: d }) => (d ?? []) as { property_id: string; url: string | null; sort_order: number | null }[]),
+      ),
+    ).catch(() => []),
   ]);
+  const capas = capasPorImovel(fotos.flat());
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
   const doc = new Map<string, string>();
   for (const d of (docs ?? []) as { property_id: string; document_status: string | null }[]) {
@@ -352,6 +368,7 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
     documento: doc.get(p.id) ?? "none",
     qualidade: p.listing_quality_tier,
     donoTeste: teste.has(p.owner_id),
+    capa: capas.get(p.id) ?? null,
   }));
 }
 
