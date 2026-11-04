@@ -228,7 +228,8 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     page.on("dialog", (d) => d.accept());
     await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     for (let i = 0; i < 20; i++) {
-      const botao = page.getByRole("button", { name: "Excluir rascunho" }).first();
+      // E515: o botão nomeia o rascunho ("Excluir o rascunho “…”").
+      const botao = page.getByRole("button", { name: /^Excluir o rascunho / }).first();
       if (!(await botao.isVisible().catch(() => false))) break;
       await botao.click();
       // Confirmação na página (adendo ao prompt 28): o 2º clique exclui.
