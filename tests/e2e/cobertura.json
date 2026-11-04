@@ -3006,14 +3006,18 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t832-e445-anexos-tela"
+      ]
     },
     "/api/mensagens/anexo/[id]": {
       "personas": [
         "inquilino",
         "proprietario"
       ],
-      "specs": []
+      "specs": [
+        "t832-e445-anexos-tela"
+      ]
     },
     "/api/upload/inquilino-doc": {
       "personas": [

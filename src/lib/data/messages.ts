@@ -10,6 +10,7 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { conversasDeContratos, type ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
 import { conversationId } from "@/lib/messages/conversation-id";
+import { anexoDaMensagem, type AnexoNaBolha } from "@/lib/messages/anexo-tela";
 
 export interface ChatMessage {
   id: string;
@@ -19,6 +20,8 @@ export interface ChatMessage {
   propostaId?: string;
   /** E445 (item 4): mensagem minha já lida pelo destinatário ("visto"). */
   visto?: boolean;
+  /** E445 (item 5): foto ou PDF anexado (abre só pela rota do servidor, URL assinada para as partes). */
+  anexo?: AnexoNaBolha;
 }
 
 export interface Conversation {
@@ -148,6 +151,18 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     // E445: não lidas da conversa (recebidas sem lido_em; sem a coluna, não conta).
     if (!mine && m.lido_em === null) conv.naoLidas = (conv.naoLidas ?? 0) + 1;
     conv.preview = texto;
+  }
+
+  // E445 item 5: os anexos das minhas conversas (RLS "anexos das partes" — só remetente e destinatário). Antes da 0288
+  // ou com falha, as mensagens seguem só com o texto ("Anexo: foto enviada").
+  if (byConv.size > 0) {
+    const { data: anexos } = await supabase
+      .from("mensagens_anexos")
+      .select("id, message_id, mime")
+      .in("conversation_id", [...byConv.keys()]);
+    const porMensagem = anexoDaMensagem((anexos ?? []) as { id: string; message_id: string; mime: string }[]);
+    if (porMensagem.size > 0)
+      for (const c of byConv.values()) for (const m of c.messages) if (porMensagem.has(m.id)) m.anexo = porMensagem.get(m.id);
   }
 
   // E200: a conversa de cada contrato em que sou parte entra na lista desde a criação, mesmo sem mensagem (antes só
