@@ -106,8 +106,9 @@ export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
     subabas: [
       { id: "interessados", rotulo: "Interessados", href: "/dashboard/leads" },
       // As propostas que o dono envia moram em /dashboard/orcamentos; /dashboard/propostas é a lista do lado morador
-      // (as que ele recebeu). As duas acendem a mesma subaba "Propostas".
-      { id: "propostas", rotulo: "Propostas", href: "/dashboard/orcamentos", ativoEm: ["/dashboard/propostas"] },
+      // (as que ele recebeu). As duas acendem a mesma subaba. E491: o nome é o da página que ela abre, "Orçamentos"
+      // (nomenclatura do E440 — orçamento ORC-…); o id segue "propostas" (âncoras e testids estáveis).
+      { id: "propostas", rotulo: "Orçamentos", href: "/dashboard/orcamentos", ativoEm: ["/dashboard/propostas"] },
       { id: "fechamento", rotulo: "Fechamento", href: "/dashboard/fechamento" },
       { id: "pedidos-cidade", rotulo: "Pedidos na cidade", href: "/dashboard/pedidos-cidade" },
       // E211: as visitas recebidas nos imóveis do dono (e o detalhe de cada uma).
