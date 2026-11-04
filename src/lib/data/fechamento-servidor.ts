@@ -56,13 +56,15 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
     .maybeSingle();
   if (!lead) return { status: 404, error: "Candidatura aceita não encontrada." };
 
-  const [{ data: imovel }, { data: dono }, { data: inquilino }, docDonoPerfil, docInquilino] = await Promise.all([
+  const [{ data: imovel }, { data: dono, error: erroDono }, { data: inquilino, error: erroInquilino }, docDonoPerfil, docInquilino] = await Promise.all([
     admin.from("properties").select("title, monthly_price, owner_id").eq("id", lead.property_id).maybeSingle(),
     admin.from("profiles").select("full_name, email").eq("id", lead.owner_id).maybeSingle(),
     admin.from("profiles").select("full_name, email").eq("id", lead.tenant_id).maybeSingle(),
     lerDocumento(admin, lead.owner_id as string),
     lerDocumento(admin, lead.tenant_id as string),
   ]);
+  // Estados vazios: sem o perfil das partes, o contrato e a cobrança sairiam com "Proprietário"/"Inquilino" e sem e-mail.
+  if (erroDono || erroInquilino) return { status: 503, error: "Não foi possível ler os dados das partes agora. Tente de novo em instantes." };
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
   // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
   const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);

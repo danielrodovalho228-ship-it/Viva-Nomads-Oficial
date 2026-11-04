@@ -18,7 +18,7 @@ export async function GET() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
-  if (!(await contaEhDeTeste(admin, user.id))) return NextResponse.json({ emails: null }, { headers: { "Cache-Control": "no-store" } });
+  if (!(await contaEhDeTeste(admin, user.id).catch(() => false))) return NextResponse.json({ emails: null }, { headers: { "Cache-Control": "no-store" } });
 
   const { data } = await admin
     .from("emails_teste")

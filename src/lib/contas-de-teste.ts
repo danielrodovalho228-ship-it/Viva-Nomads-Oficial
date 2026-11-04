@@ -16,15 +16,16 @@ export const MSG_VERIFICACAO_EM_BREVE = "A verificação de identidade abre em b
 
 const idSimulado = (prefixo: string) => `${prefixo}_${Math.random().toString(36).slice(2, 10)}`;
 
-/** Lê profiles.is_teste com o cliente de serviço. Sem cliente, sem perfil ou com erro: false (conta real). */
+/**
+ * Lê profiles.is_teste com o cliente de serviço. Sem cliente ou sem perfil: false (conta real).
+ * Estados vazios: a leitura que FALHA lança — "não sei" nunca vira "conta real", senão a conta de teste receberia
+ * cobrança, contrato e verificação de verdade. Quem chama decide (503 sem efeito real).
+ */
 export async function contaEhDeTeste(admin: SupabaseClient | null, userId: string | null | undefined): Promise<boolean> {
   if (!admin || !userId) return false;
-  try {
-    const { data } = await admin.from("profiles").select("is_teste").eq("id", userId).maybeSingle();
-    return data?.is_teste === true;
-  } catch {
-    return false;
-  }
+  const { data, error } = await admin.from("profiles").select("is_teste").eq("id", userId).maybeSingle();
+  if (error) throw new Error("Não foi possível conferir a conta agora.");
+  return data?.is_teste === true;
 }
 
 /**

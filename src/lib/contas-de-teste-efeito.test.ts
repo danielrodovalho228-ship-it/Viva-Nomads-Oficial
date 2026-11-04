@@ -27,7 +27,8 @@ test("contaEhDeTeste: só true quando is_teste é exatamente true", async () => 
   assert.equal(await contaEhDeTeste(adminCom(false), "u1"), false);
   assert.equal(await contaEhDeTeste(adminCom(undefined), "u1"), false);
   assert.equal(await contaEhDeTeste(adminCom("true"), "u1"), false);
-  assert.equal(await contaEhDeTeste(adminCom(true, true), "u1"), false);
+  // Estados vazios: a leitura que falha não vira "conta real" — lança, e a rota responde 503 sem efeito real.
+  await assert.rejects(contaEhDeTeste(adminCom(true, true), "u1"));
   assert.equal(await contaEhDeTeste(null, "u1"), false);
   assert.equal(await contaEhDeTeste(adminCom(true), null), false);
 });
