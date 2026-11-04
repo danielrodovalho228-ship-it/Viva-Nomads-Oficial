@@ -70,7 +70,9 @@ export async function getReputacao(userId: string): Promise<Reputacao> {
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(userId)) return { media: 0, n: 0 };
   // Só o que já foi PUBLICADO (às cegas) conta na reputação.
-  const { data } = await supabase.from("avaliacoes").select("nota_geral").eq("alvo_id", userId).eq("status", "publicada");
+  const { data, error } = await supabase.from("avaliacoes").select("nota_geral").eq("alvo_id", userId).eq("status", "publicada");
+  // Estados vazios: a falha não vira "nota 0 com 0 avaliações" — quem chama decide (o cartão fica sem o selo).
+  if (error) throw new Error("Não foi possível ler as avaliações agora.");
   const notas = (data ?? []).map((r) => Number(r.nota_geral));
   if (notas.length === 0) return { media: 0, n: 0 };
   const soma = notas.reduce((s, n) => s + n, 0);
