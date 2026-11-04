@@ -17,6 +17,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
+import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
 import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
 import { ETAPA } from "@/lib/anuncio/etapas-ids";
@@ -346,11 +347,12 @@ export function MyPropertiesClient({
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
                         {p.status === "draft" && (
                           <ConfirmarNaPagina
-                            aviso="Excluir este rascunho? Esta ação não pode ser desfeita."
+                            // E515: a confirmação nomeia o rascunho (título e bairro), não "este rascunho".
+                            aviso={avisoExcluirRascunho(p.title, p.neighborhood)}
                             confirmar="Excluir"
                             onConfirmar={() => excluirRascunho(p.id)}
                             disabled={excluindo === p.id}
-                            ariaLabel="Excluir rascunho"
+                            ariaLabel={rotuloExcluirRascunho(p.title, p.neighborhood)}
                             botaoClassName="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
                             testid="excluir-rascunho"
                           >
