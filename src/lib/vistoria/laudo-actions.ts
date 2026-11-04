@@ -302,7 +302,8 @@ export async function adminResolverBloqueio(form: FormData): Promise<Res> {
   if (!a) return SEM_ACESSO;
   const { data: b } = await a.admin.from("vistoria_bloqueios").select("property_id, motivo").eq("id", String(form.get("id") ?? "")).is("resolvido_em", null).maybeSingle();
   if (!b) return SEM_ACESSO;
-  await liberar(a.admin, b.property_id as string, [b.motivo as "seguranca_grave" | "strike_2" | "strike_3"], new Date());
+  const falhou = await liberar(a.admin, b.property_id as string, [b.motivo as "seguranca_grave" | "strike_2" | "strike_3"], new Date()).then(() => false, () => true);
+  if (falhou) return { ok: false, erro: "Não foi possível conferir os bloqueios do anúncio agora. Tente de novo em instantes." };
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
 }
