@@ -68,7 +68,8 @@ test.describe("T1079 — E541: Responder pela plataforma abre a conversa daquela
       await expect(p).toHaveURL(new RegExp(`conversa=${conversationId(ids.bruno, ids.dono, ids.imB)}`), { timeout: 30_000 });
       await expect(p.getByTestId("conversa-nome")).toContainText("Bruno", { timeout: 30_000 });
       await expect(p.getByTestId("conversa-contexto")).toContainText(T_B);
-      await expect(p.getByText("Oi, sou o Bruno e quero o studio B.")).toBeVisible();
+      // A conversa aberta (a prévia da lista, no <aside>, repete o texto).
+      await expect(p.locator("section").getByText("Oi, sou o Bruno e quero o studio B.")).toBeVisible();
 
       // 3. O da Ana abre a da Ana.
       await p.goto("/dashboard/leads", { waitUntil: "domcontentloaded" });
