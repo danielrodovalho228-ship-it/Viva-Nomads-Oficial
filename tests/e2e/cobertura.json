@@ -1926,7 +1926,8 @@
         "t3-isolamento-papeis",
         "t200-roi-socios",
         "t208-sem-nomade-drive",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t1106-e559-premissas-v2"
       ]
     },
     "/seguranca": {
@@ -1950,7 +1951,8 @@
         "t7-fluxo-publico",
         "t200-roi-socios",
         "t208-sem-nomade-drive",
-        "t307-varredura-bloco8"
+        "t307-varredura-bloco8",
+        "t1106-e559-premissas-v2"
       ]
     },
     "/socios": {
