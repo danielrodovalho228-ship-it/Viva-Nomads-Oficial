@@ -19,12 +19,15 @@ type Res<T = undefined> = { ok: true; valor: T } | { ok: false; erro: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const MSG_CONVIDADOS_SEM_LEITURA = "Não foi possível conferir os convidados agora. Tente de novo.";
+
 export async function convidarOcupante(contratoId: string, email: string): Promise<Res<ConvidadoView>> {
   const ctx = await contextoDaEstadia(contratoId);
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
   if (ctx.papel !== "inquilino") return { ok: false, erro: "Quem convida é o morador." };
   if (!assinadoPelasDuas(ctx.c) || ctx.c.status !== "ativo") return { ok: false, erro: "O convite fica disponível depois da assinatura das duas partes." };
   const ativos = await convidadosAtivos(ctx.admin, ctx.c.id);
+  if (!ativos) return { ok: false, erro: MSG_CONVIDADOS_SEM_LEITURA };
   const v = podeConvidar({ qtdOcupantes: ctx.c.qtd_ocupantes, ativos: ativos.length, email, jaConvidados: ativos.map((a) => a.email), emailDoMorador: ctx.email });
   if (!v.ok) return v;
   const alvo = email.trim().toLowerCase();
