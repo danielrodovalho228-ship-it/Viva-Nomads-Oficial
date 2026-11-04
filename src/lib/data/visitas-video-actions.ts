@@ -16,6 +16,7 @@ import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
 import { enderecoDaVisita, mostraEnderecoDaVisita, regiaoDaVisita, type EnderecoVisita } from "@/lib/visitas/endereco-visita";
 import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } from "@/lib/visitas/avisos-servidor";
 import { nomeDepoisDoAceite, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { MSG_HORARIO_OCUPADO, horarioOcupado } from "@/lib/visitas/horario-ocupado";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import { blocoDados } from "@/lib/notifications/modelo-email";
@@ -237,7 +238,7 @@ const MSG_VISITAS_NAO_CARREGARAM = "Não foi possível carregar as visitas agora
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
  * home, notificações), segue a lista vazia. */
-export async function listVisitasDono(opcoes: { exigir?: boolean } = {}): Promise<(VisitaDono & { endereco: string | null; enderecoMapa: string | null; regiao: string | null })[]> {
+export async function listVisitasDono(opcoes: { exigir?: boolean } = {}): Promise<(VisitaDono & { endereco: string | null; enderecoMapa: string | null; regiao: string | null; pessoa?: string | null })[]> {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
@@ -258,13 +259,24 @@ export async function listVisitasDono(opcoes: { exigir?: boolean } = {}): Promis
   const admin = createAdminClient();
   if (!admin || linhas.length === 0) return linhas.map((v) => ({ ...v, endereco: null, enderecoMapa: null, regiao: null }));
   const ids = [...new Set(linhas.map((v) => v.propertyId))];
+  // E500 + E547 (E328/E427): depois da confirmação, a lista diz QUEM VEM (o mesmo nome do detalhe) — dois moradores no
+  // mesmo imóvel nunca viram dois cartões iguais. Antes da confirmação, segue protegido ("Interessado(a)").
+  const liberadas = linhas.filter((v) => nomeLiberadoNaVisita(v.status)).map((v) => v.id);
+  const nomePorVisita = new Map<string, string | null>();
+  if (liberadas.length) {
+    const { data: quem } = await admin.from("visitas_video").select("id, tenant_id").in("id", liberadas).eq("owner_id", user.id);
+    const tenants = [...new Set(((quem ?? []) as { tenant_id: string }[]).map((q) => q.tenant_id))];
+    const { data: perfis } = tenants.length ? await admin.from("profiles").select("id, full_name").in("id", tenants) : { data: [] };
+    const nomePorTenant = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((pf) => [pf.id, nomeDepoisDoAceite(pf.full_name)]));
+    for (const q of (quem ?? []) as { id: string; tenant_id: string }[]) nomePorVisita.set(q.id, nomePorTenant.get(q.tenant_id) ?? null);
+  }
   const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", ids).eq("owner_id", user.id); // consistency-ignore: E211 — o endereço exato do imóvel do PRÓPRIO dono, na presencial confirmada
   const porId = new Map(((props ?? []) as { id: string; exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null }[]).map((p) => [p.id, p]));
   const agora = new Date();
   return linhas.map((v) => {
     const p = porId.get(v.propertyId);
     const e = p && mostraEnderecoDaVisita(v, agora) ? enderecoDaVisita(p) : null;
-    return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null };
+    return { ...v, endereco: e?.texto ?? null, enderecoMapa: e?.mapa ?? null, regiao: p ? regiaoDaVisita(p) : null, pessoa: nomePorVisita.get(v.id) ?? null };
   });
 }
 
@@ -338,6 +350,19 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   });
   if (!m.ok) return { ok: false, error: m.error };
   const campos = m.campos;
+  // E500 + E547: um imóvel não tem duas visitas confirmadas no MESMO horário (antes o dono confirmava dois moradores
+  // diferentes às 10:00 de 03/11 e a lista mostrava dois cartões iguais). Recusa antes de gravar; falha da leitura
+  // também recusa (nunca confirma às cegas).
+  if (campos.status === "confirmado" && typeof campos.horario_confirmado === "string") {
+    const { data: confirmadas, error: erroConfirmadas } = await admin
+      .from("visitas_video")
+      .select("id, status, horario_confirmado")
+      .eq("property_id", v.property_id)
+      .eq("status", "confirmado");
+    if (erroConfirmadas) return { ok: false, error: erroBancoPT(erroConfirmadas) };
+    const outras = ((confirmadas ?? []) as { id: string; status: string | null; horario_confirmado: string | null }[]).map((o) => ({ id: o.id, status: o.status, horarioConfirmado: o.horario_confirmado }));
+    if (horarioOcupado(outras, v.id as string, campos.horario_confirmado)) return { ok: false, error: MSG_HORARIO_OCUPADO };
+  }
   const { data: gravou, error } = await admin.from("visitas_video").update(campos).eq("id", v.id).eq("status", v.status).select("id");
   if (error) return { ok: false, error: erroBancoPT(error) };
   if (!gravou?.length) return { ok: false, error: "Este pedido mudou enquanto você respondia. Atualize a página." };
