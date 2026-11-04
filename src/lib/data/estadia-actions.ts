@@ -223,7 +223,9 @@ export async function removerOcupante(contratoId: string, ocupanteId: string): P
 export async function listaParaPortaria(contratoId: string): Promise<Res<string>> {
   const ctx = await contextoDaEstadia(contratoId);
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
-  const { data } = await ctx.admin.from("contrato_ocupantes").select("nome, documento").eq("contrato_id", ctx.c.id).order("criado_em");
+  const { data, error: erroOcupantes } = await ctx.admin.from("contrato_ocupantes").select("nome, documento").eq("contrato_id", ctx.c.id).order("criado_em");
+  // Estados vazios: sem os ocupantes, sairia um PRT oficial e numerado com a lista vazia.
+  if (erroOcupantes) return { ok: false, erro: "Não foi possível ler os ocupantes agora. Tente de novo." };
   const p = periodoDoContrato(ctx.c);
   const texto = textoListaPortaria(
     { numero: numeroPublicoContrato(ctx.c.id), imovel: ctx.c.properties?.title ?? "Imóvel", inicio: p.inicio, fim: p.fim },
@@ -277,7 +279,9 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
   const v = validarProposta(paraAditivo(ctx.c), proposta, hojeEmBrasilia());
   if (!v.ok) return { ok: false, erro: v.erro };
   await expirarVencidos(ctx.admin, ctx.c.id);
-  const { data: ultimo } = await ctx.admin.from("contrato_aditivos").select("numero").eq("contrato_id", ctx.c.id).order("numero", { ascending: false }).limit(1).maybeSingle();
+  const { data: ultimo, error: erroUltimo } = await ctx.admin.from("contrato_aditivos").select("numero").eq("contrato_id", ctx.c.id).order("numero", { ascending: false }).limit(1).maybeSingle();
+  // Estados vazios: sem o último número, nasceria outro "Aditivo nº 1" (não há índice único em contrato + número).
+  if (erroUltimo) return { ok: false, erro: "Não foi possível conferir os aditivos agora. Tente de novo." };
   const numero = Number((ultimo as { numero?: number } | null)?.numero ?? 0) + 1;
   const expiraEm = expiraEmDe();
   const { data, error } = await ctx.admin
