@@ -31,6 +31,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
+import { conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { videoDoAnuncio } from "@/lib/video-anuncio";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -334,6 +335,9 @@ export default function NewPropertyPage() {
   // 59-C1: a causa da recusa do servidor no autosave (null = falha de rede).
   const [saveErro, setSaveErro] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string>("");
+  // E516: o conteúdo (sem a navegação) do último estado salvo ou aberto, e se o rascunho acabou de ser aberto.
+  const baseConteudoRef = useRef<string | null>(null);
+  const aguardandoBaseRef = useRef(false);
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
@@ -840,6 +844,8 @@ export default function NewPropertyPage() {
 
   // Aplica um snapshot de rascunho (localStorage OU servidor) ao formulário — fonte única da restauração.
   function aplicarDraft(d: Record<string, unknown>) {
+    // E516: o estado que sai deste rascunho aberto é o ponto de partida do autosave — abrir não é editar.
+    aguardandoBaseRef.current = true;
     const s = (v: unknown) => (typeof v === "string" ? v : undefined);
     if (s(d.title)) setTitle(d.title as string);
     if (s(d.propertyType)) setPropertyType(d.propertyType as string);
@@ -1146,10 +1152,20 @@ export default function NewPropertyPage() {
     if (vazio) return;
 
     let on = true;
+    // E516: abrir o rascunho não é edição (vira a base); navegar entre passos grava em silêncio; só mudar o conteúdo
+    // mostra "Salvando…" e carimba "Salvo às …".
+    const conteudo = conteudoDoRascunho(draftJson);
+    const decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, base: baseConteudoRef.current, conteudo });
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSaveStatus("saving");
+    if (decisao === "edicao") setSaveStatus("saving");
     const t = setTimeout(async () => {
       if (!on) return;
+      if (aguardandoBaseRef.current) {
+        // O estado do rascunho aberto assentou (o debounce juntou as mudanças da carga): é a base, nada a gravar.
+        aguardandoBaseRef.current = false;
+        baseConteudoRef.current = conteudoDoRascunho(draftJson);
+        return;
+      }
       // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
       let res: Awaited<ReturnType<typeof saveDraftData>>;
       try {
@@ -1181,8 +1197,11 @@ export default function NewPropertyPage() {
           setDraftServerId(res.id);
           if (novo && !editId) window.history.replaceState(null, "", `/dashboard/imoveis/novo?draft=${res.id}`);
         }
-        setSaveStatus("saved");
-        setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+        baseConteudoRef.current = conteudo;
+        if (decisao === "edicao") {
+          setSaveStatus("saved");
+          setSavedAt(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+        }
       } else {
         setSaveErro(res.error ?? "o servidor recusou a gravação.");
         setSaveStatus(res.demo ? "saved" : "error");
