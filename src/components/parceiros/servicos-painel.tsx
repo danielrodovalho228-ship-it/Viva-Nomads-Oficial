@@ -14,6 +14,12 @@ export const COMO_FUNCIONA_SERVICOS = [
 ] as const;
 
 /**
+ * E487: no cartão, "Manutenção" se confundia com o chamado de manutenção ao proprietário. Aqui o serviço do parceiro
+ * se chama "Reparos com parceiros"; a categoria (e o destino do cartão) segue sendo "manutencao".
+ */
+const ROTULO_NO_CARTAO: Partial<Record<string, string>> = { manutencao: "Reparos com parceiros" };
+
+/**
  * Prompt 31a: seção "Serviços" dos painéis do inquilino e do dono — a busca de parceiros com a cidade preenchida.
  * E276 (mockup aprovado): cada serviço é um cartão com a FOTO real da categoria no topo (16:10, todas do mesmo tamanho),
  * o nome e uma frase curta; grade par (2 colunas no celular, 3 no computador); embaixo, a faixa "Como funciona" em 3
@@ -52,7 +58,7 @@ export function ServicosPainel({ cidade }: { cidade?: string | null }) {
                   )}
                 </span>
                 <span className="flex flex-1 flex-col gap-1 p-3">
-                  <span className="text-sm font-semibold text-ink group-hover:text-forest">{c.rotulo}</span>
+                  <span className="text-sm font-semibold text-ink group-hover:text-forest">{ROTULO_NO_CARTAO[c.valor] ?? c.rotulo}</span>
                   {foto && <span className="text-xs text-muted" data-testid="servicos-frase">{foto.frase}</span>}
                 </span>
               </Link>
