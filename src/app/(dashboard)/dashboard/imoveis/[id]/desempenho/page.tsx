@@ -13,6 +13,9 @@ const dataBR = (iso: string) => iso.split("-").reverse().slice(0, 2).join("/");
  * Prompt 54 — desempenho do anúncio: últimos 30 dias contra os 30 anteriores, com a fórmula de cada número, a
  * comparação com imóveis parecidos (só com 5 ou mais) e, ao lado, o que fazer. Nenhum número de ganho estimado.
  */
+/** Estados vazios: a leitura dos parecidos falhou — a tela diz isso, nunca "0 imóveis no grupo". */
+const TEXTO_COMPARACAO_INDISPONIVEL = "Não conseguimos comparar com os imóveis parecidos agora. Tente de novo em instantes.";
+
 export default async function DesempenhoDoAnuncioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const p = await painelDesempenho(id);
@@ -52,7 +55,7 @@ export default async function DesempenhoDoAnuncioPage({ params }: { params: Prom
             })}
           </section>
           <p className="text-xs text-muted" data-testid="desempenho-grupo" data-parecidos={p.parecidos}>
-            {FORMULAS.mediana} {p.parecidos >= 5 ? `${p.parecidos} imóveis no grupo.` : `${p.parecidos} ${p.parecidos === 1 ? "imóvel" : "imóveis"} no grupo agora.`}
+            {p.parecidos === null ? TEXTO_COMPARACAO_INDISPONIVEL : `${FORMULAS.mediana} ${p.parecidos >= 5 ? `${p.parecidos} imóveis no grupo.` : `${p.parecidos} ${p.parecidos === 1 ? "imóvel" : "imóveis"} no grupo agora.`}`}
           </p>
 
           <section className="rounded-xl border border-line bg-white p-4" data-testid="desempenho-acoes">
