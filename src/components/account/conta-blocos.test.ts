@@ -16,8 +16,9 @@ test("Conta (A1, NAV-A): oito telas na ordem Perfil → Papéis e intenção →
   const ordem = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou seção: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
-  // No computador /dashboard/conta é a tela Perfil na casca; no celular, o menu.
-  assert.match(CONTA, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
+  // E492: no computador /dashboard/conta leva ao Perfil (/dashboard/conta/perfil, um endereço só); no celular, o menu.
+  assert.match(CONTA, /window\.location\.replace\(destinoDaContaNoComputador\(destino\)\)/);
+  assert.match(SECAO, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
   assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
   // Cada seção é um caso de /conta/[secao] ou a sua rota própria (as que leem dados no servidor, ex.: Avaliações).
   for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "seguranca", "pagamentos", "ajuda"]) {

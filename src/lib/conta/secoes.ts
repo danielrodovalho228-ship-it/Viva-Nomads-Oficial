@@ -84,4 +84,12 @@ export function destinoDaAncora(hash: string, search = ""): string | null {
   return `${rota}${search && search !== "?" ? search : ""}${ancora ? `#${ancora}` : ""}`;
 }
 
+/**
+ * E492 (+E552): no computador a Conta tem UM endereço para o Perfil — /dashboard/conta leva a /dashboard/conta/perfil.
+ * Uma âncora antiga (destinoDaAncora) vence. No celular, /dashboard/conta continua sendo o menu.
+ */
+export function destinoDaContaNoComputador(destinoAncora: string | null): string {
+  return destinoAncora ?? "/dashboard/conta/perfil";
+}
+
 export const itemDaSecao = (id: SecaoConta): ItemSecao => SECOES_CONTA.find((s) => s.id === id)!;

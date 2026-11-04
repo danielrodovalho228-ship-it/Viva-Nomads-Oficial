@@ -37,7 +37,8 @@ test("mockup perfil-01: cabeçalho com foto na Conta, menos na tela Perfil (E55:
 test("/dashboard/conta no celular não monta o Perfil do computador (as ações dele devolviam a URL ao menu)", () => {
   const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/conta/page.tsx", import.meta.url), "utf8");
   assert.match(pagina, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
-  assert.match(pagina, /\{computador && \(\s*<div className="hidden lg:block" data-so-computador>/);
+  // E492: a página não monta o Perfil em largura nenhuma (no computador ela leva a /dashboard/conta/perfil).
+  assert.doesNotMatch(pagina, /<PerfilTela/);
 });
 
 test("âncoras antigas de /dashboard/conta trocam de documento (fora da fila das Server Actions)", () => {
