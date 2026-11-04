@@ -6,6 +6,7 @@ import { rotuloItem } from "@/config/niveis";
 import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { statusPorImovel } from "@/lib/documento/vigente";
 import { qualificacaoDoRascunho } from "./requisitos-passo10";
+import { fatosDoRascunho } from "./fatos-do-rascunho";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -121,6 +122,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
           const f = mapa.get(p.id);
           if (e || !f || !draftData) return;
           f.qualificacaoOk = qualificacaoDoRascunho(draftData, f);
+          // E556: internet e privacidade do rascunho vêm do draft_data, com a mesma regra do editor.
+          mapa.set(p.id, fatosDoRascunho(draftData, f));
         }),
     );
   }
