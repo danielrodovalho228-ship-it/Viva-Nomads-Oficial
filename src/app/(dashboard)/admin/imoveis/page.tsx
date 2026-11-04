@@ -83,7 +83,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
       (!cidade || chaveCidade(i.cidade) === chaveCidade(cidade)) &&
       (!bairro || (i.bairro ?? "").toLowerCase().includes(bairro)) &&
       (!dono || i.dono.toLowerCase().includes(dono)) &&
-      (!docRevisao || i.documento === "pending") &&
+      (!docRevisao || i.documentoEmRevisao) &&
       (ini === null || (i.criadoEm && new Date(i.criadoEm).getTime() >= ini && new Date(i.criadoEm).getTime() < (fim as number)))
   );
   const campo = "h-10 rounded-xl border border-line px-3 py-2 text-sm text-ink";

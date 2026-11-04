@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { CampoData } from "@/components/ui/campo-data";
 import { PERIODOS, type Periodo } from "@/lib/admin/visao-geral";
+import { ABA_ADMIN } from "@/lib/admin/abas";
 
 /**
  * Filtros do admin numa linha só, acima dos gráficos: período (7/30/90 dias,
@@ -54,7 +55,7 @@ export function FiltrosAdmin({
             aria-current={periodo.id === p.id ? "true" : undefined}
             className={cn(
               "rounded-lg px-3 py-2 text-sm",
-              periodo.id === p.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest"
+              periodo.id === p.id ? ABA_ADMIN.ativa : ABA_ADMIN.inativa
             )}
           >
             {p.rotulo}
@@ -84,7 +85,7 @@ export function FiltrosAdmin({
           type="submit"
           className={cn(
             "rounded-lg px-3 py-2 text-sm",
-            periodo.id === "custom" ? "bg-forest text-white" : "border border-line text-ink hover:border-forest"
+            periodo.id === "custom" ? ABA_ADMIN.ativa : ABA_ADMIN.inativa
           )}
         >
           Aplicar

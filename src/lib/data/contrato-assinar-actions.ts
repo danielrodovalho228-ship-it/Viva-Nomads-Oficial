@@ -108,7 +108,7 @@ interface LinhaContrato {
 // E197: as colunas do estado (status, assinaturas e pagamentos com anulado_em) são as de COLUNAS_ESTADO_CONTRATO —
 // sem anulado_em, um pagamento anulado contava como 1º pagamento no detalhe e não na lista.
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
+  "id, tenant_id, status, periodo, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
