@@ -48,6 +48,23 @@ test.describe("T767 — E308: foto real do rascunho no Início do dono", () => {
     });
   }
 
+  // E501: foto que o navegador não consegue mostrar não vira painel cinza vazio — cai no espaço desenhado.
+  test("E501: foto do rascunho que não carrega vira o espaço desenhado (390 e 1280)", async ({ browser }) => {
+    const p = await entrar(browser, dono.email, senha);
+    await p.route("**/property-photos/**", (r) => r.abort());
+    for (const largura of [1280, 390] as const) {
+      await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      const bloco = p.getByTestId("inicio-dono-principal");
+      await expect(bloco).toHaveAttribute("data-tipo", "rascunho", { timeout: 30_000 });
+      await expect(bloco.getByTestId("inicio-dono-foto-vazia")).toBeVisible({ timeout: 20_000 });
+      await expect(bloco.getByTestId("inicio-dono-foto")).toHaveCount(0);
+      expect(await bloco.getByTestId("inicio-dono-foto-vazia").evaluate((d) => getComputedStyle(d).borderStyle)).toBe("dashed");
+      await bloco.screenshot({ path: `${SAIDA}/t767-e501-foto-falhou-${largura}.png` });
+    }
+    await p.context().close();
+  });
+
   test("rascunho SEM foto: placeholder desenhado (nada de foto inventada)", async ({ browser }) => {
     // Um rascunho mais novo, sem nenhuma foto, passa a ser o do bloco.
     const semFoto = await criarImovelPronto(ids.dono!, `Studio sem foto t767 ${sufixo}`, { semInternet: true, semConforto: true });

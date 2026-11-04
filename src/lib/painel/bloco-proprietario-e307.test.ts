@@ -21,8 +21,10 @@ test("E307: Orçamentos na área do dono fala com o dono — modo proprietário 
 });
 
 test("E308 (devolução): 'Continue seu anúncio' com a FOTO REAL do rascunho em capa; sem foto, placeholder desenhado", () => {
-  const c = ler("src/components/painel/inicio-dono.tsx");
-  assert.match(c, /bloco\.tipo === "rascunho" \? "object-cover" : "object-contain"/);
+  // E501: a foto e o placeholder moram em foto-inicio-dono.tsx (com plano B quando a imagem não carrega).
+  const c = ler("src/components/painel/foto-inicio-dono.tsx");
+  assert.match(ler("src/components/painel/inicio-dono.tsx"), /rascunho=\{bloco\.tipo === "rascunho"\}/);
+  assert.match(c, /rascunho \? "object-cover" : "object-contain"/);
   assert.match(c, /data-testid="inicio-dono-foto"/);
   assert.match(c, /data-testid="inicio-dono-foto-vazia"/);
   // A foto do rascunho é a primeira por sort_order (capaDoRascunho) e chega ao bloco (foto: r.foto).

@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Check, ChevronRight, ClipboardList, ImageIcon, Lock, ReceiptText } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Check, ChevronRight, ClipboardList, Lock, ReceiptText } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { FotoDoInicio } from "./foto-inicio-dono";
 import { ehUrlDeImagem } from "@/lib/fotos-anuncio";
 import type { Decisao } from "@/lib/painel/decisoes";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
@@ -50,29 +51,9 @@ export function InicioDono({
       {hoje.length > 0 && <HojeNoInicio cartoes={hoje} />}
 
       <section className="rounded-lg border border-line bg-white p-4 sm:p-6" data-testid="inicio-dono-principal" data-tipo={bloco.tipo} aria-labelledby="inicio-dono-titulo">
-        <div className={cn("grid gap-6", (foto || bloco.tipo === "rascunho") && "lg:grid-cols-2 lg:items-center")}>
-          {foto ? (
-            // E308 (devolução 01/11): no "Continue seu anúncio", a FOTO REAL do rascunho (a primeira, por sort_order) em
-            // encaixe de capa (object-cover), na moldura 16:10. Nas demais variações, a capa do anúncio inteira (contain).
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={foto}
-              alt=""
-              className={cn("aspect-[16/10] w-full rounded-lg bg-surface-2", bloco.tipo === "rascunho" ? "object-cover" : "object-contain")}
-              data-testid="inicio-dono-foto"
-            />
-          ) : (
-            bloco.tipo === "rascunho" && (
-              // E308: rascunho ainda SEM foto → placeholder desenhado (nunca foto inventada), o mesmo do assistente.
-              <div
-                className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-lg bg-surface-2 text-sm text-muted"
-                data-testid="inicio-dono-foto-vazia"
-              >
-                <ImageIcon className="h-8 w-8" aria-hidden />
-                A foto principal aparece aqui
-              </div>
-            )
-          )}
+        <div className={cn("grid gap-6", (foto || bloco.tipo === "rascunho") && "lg:grid-cols-2 lg:items-center lg:has-[[data-foto-falhou]]:grid-cols-1")}>
+          {/* E501: a foto (ou o espaço desenhado do rascunho) com plano B quando a imagem não carrega. */}
+          {(foto || bloco.tipo === "rascunho") && <FotoDoInicio foto={foto} rascunho={bloco.tipo === "rascunho"} />}
           <div className="min-w-0">
             <h2 id="inicio-dono-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
               {bloco.titulo}
