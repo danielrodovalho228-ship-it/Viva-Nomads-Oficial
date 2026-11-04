@@ -172,9 +172,11 @@ test.describe("T266 — Painel do Prompt 42", () => {
       // E292-bis: o simulador PF × PJ saiu do hub (a Viva não calcula imposto com regra própria).
       await expect(page.locator('main a[href="/dashboard/simulador"]').first()).toBeVisible({ timeout: 25_000 });
       await expect(page.locator('main a[href="/dashboard/tributacao"]')).toHaveCount(0);
-      // Grades de caixas com número par em cada grupo.
+      // Grades de caixas com número par em cada grupo. Exceção desde o E495 (Recibos e notas saiu de Ferramentas):
+      // Análise & cálculo, o 1º grupo, tem 3.
       const porGrupo = await page.getByTestId("ferramentas-grupo").evaluateAll((gs) => gs.map((g) => g.querySelectorAll('[data-testid="ferramenta-card"]').length));
-      for (const n of porGrupo) expect(n % 2).toBe(0);
+      expect(porGrupo[0]).toBe(3);
+      for (const n of porGrupo.slice(1)) expect(n % 2).toBe(0);
       await semRolagemLateral(page);
       await page.context().close();
     });
