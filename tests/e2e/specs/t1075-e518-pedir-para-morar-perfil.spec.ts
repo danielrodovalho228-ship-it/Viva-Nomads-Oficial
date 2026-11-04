@@ -11,6 +11,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  *   2. a leitura falha SEMPRE → depois das tentativas o is_teste resolve como false: a faixa de visitante aparece e o
  *      botão fica desativado COM o texto que explica — nunca o "carregando" eterno sem faixa;
  *   3. controle, sem falha: equipe direto, botão ativo.
+ * Nos casos 1 e 2 o is_teste guardado no aparelho (store "vivanomads-auth") é apagado antes de recarregar: é a sessão
+ * nova, onde o defeito acontecia. Com um is_teste já conhecido, a falha mantém o último valor (o E518 não o rebaixa).
  * A regra (tenta de novo, sempre resolve, regra do botão igual) fica com o e518-pedir-para-morar.test.ts; a faixa e o
  * botão por tipo de conta, com a t398.
  */
@@ -37,6 +39,20 @@ async function falharPerfil(p: Page, vezes: number) {
     return r.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ message: "falha simulada t1075" }) });
   });
   return barradas;
+}
+
+/**
+ * O store da sessão (zustand, "vivanomads-auth") guarda o usuário com o is_teste da última leitura boa. O E518 trata o
+ * is_teste AINDA DESCONHECIDO (sessão nova, onde o botão travava): apaga o valor guardado antes de recarregar.
+ */
+async function esquecerIsTeste(p: Page) {
+  await p.evaluate(() => {
+    const bruto = localStorage.getItem("vivanomads-auth");
+    if (!bruto) return;
+    const s = JSON.parse(bruto) as { state?: { user?: Record<string, unknown> | null } };
+    if (s.state?.user) delete s.state.user.isTeste;
+    localStorage.setItem("vivanomads-auth", JSON.stringify(s));
+  });
 }
 
 const botao = (p: Page, w: number) => (w === 1280 ? p.getByTestId("cartao-solicitar") : p.getByTestId("barra-solicitar"));
@@ -71,6 +87,7 @@ test.describe("T1075 — E518: o perfil que falha não trava 'Pedir para morar' 
 
       // 1. Falha uma vez: a nova tentativa lê o perfil e libera.
       const uma = await falharPerfil(p, 1);
+      await esquecerIsTeste(p);
       await p.reload({ waitUntil: "domcontentloaded" });
       await expect.poll(() => uma.n, { timeout: 20_000 }).toBe(1);
       await expect(faixa).toHaveAttribute("data-modo", "equipe", { timeout: 20_000 });
@@ -81,6 +98,7 @@ test.describe("T1075 — E518: o perfil que falha não trava 'Pedir para morar' 
 
       // 2. Falha sempre: resolve como visitante (faixa que explica), não fica "carregando" para sempre.
       const todas = await falharPerfil(p, Number.POSITIVE_INFINITY);
+      await esquecerIsTeste(p);
       await p.reload({ waitUntil: "domcontentloaded" });
       await expect(faixa).toHaveAttribute("data-modo", "visitante", { timeout: 30_000 });
       await expect(faixa).toHaveText(VISITANTE);
