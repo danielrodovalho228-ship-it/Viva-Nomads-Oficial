@@ -9,7 +9,8 @@
    • convenção do condomínio ← só nos tipos em condomínio (Sim / Não sei / Não); casa e chácara contam como "Sim".
   isEligible (lib/qualification.ts) segue a regra: "Não sei" publica com pendência; "Não" bloqueia.
 */
-import type { EligibilityState, QualityState } from "../qualification.ts";
+import { isEligible, type EligibilityState, type QualityState } from "../qualification.ts";
+import { tipoEmCondominio } from "../amenities.ts";
 
 export type RespostaConvencao = "" | "yes" | "unknown" | "no";
 
@@ -80,4 +81,25 @@ export function elegibilidadeDoCadastro(i: {
     hasDocument: i.documentoEnviado,
     condoAllows: i.emCondominio ? i.declaracoes.convencao : "yes",
   };
+}
+
+/**
+ * E498: a qualificação de um RASCUNHO, lida do que o assistente grava no draft_data (tipo, mobiliado, período mínimo e
+ * as declarações do Passo 10) e do que o servidor já sabe do imóvel (documento enviado; operação com a autorização). A
+ * mesma regra do assistente (elegibilidadeDoCadastro + isEligible) — assim o Início e Meus imóveis contam os mesmos itens
+ * que a barra do assistente.
+ */
+export function qualificacaoDoRascunho(d: unknown, f: { documento: "none" | "pending" | "approved" | "rejected"; sublocacaoOk: boolean }): boolean {
+  if (!d || typeof d !== "object") return false;
+  const o = d as Record<string, unknown>;
+  return isEligible(
+    elegibilidadeDoCadastro({
+      mobiliado: o.furnished !== false,
+      minimoDias: Number(o.minPeriodDays) || 30,
+      operacaoDeclarada: f.sublocacaoOk,
+      documentoEnviado: f.documento !== "none",
+      emCondominio: tipoEmCondominio(typeof o.propertyType === "string" ? o.propertyType : "apartamento"),
+      declaracoes: declaracoesDoRascunho(o.declaracoesPasso10),
+    }),
+  );
 }

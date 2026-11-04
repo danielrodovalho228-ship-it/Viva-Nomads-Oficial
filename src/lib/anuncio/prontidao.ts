@@ -222,6 +222,12 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   };
 }
 
+/**
+ * E498: o texto do progresso, um só em todas as telas (cartão do Início, rodapé de cada passo do assistente): "25% pronto".
+ * O número é sempre o pct da prontidão (o que está cumprido), nunca a posição do passo.
+ */
+export const textoPronto = (p: Pick<Prontidao, "pct">) => `${p.pct}% pronto`;
+
 export interface ItemChecklist {
   key: string;
   label: string;
@@ -245,7 +251,10 @@ export interface ChecklistAnuncio {
  */
 export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
   const id = encodeURIComponent(draftId);
-  const itens = p.obrigatorios.map((i): ItemChecklist => {
+  // E498: a lista segue a ORDEM DOS PASSOS do assistente (antes vinha na ordem dos obrigatórios — o "Período" do Passo 9
+  // antes das Fotos do Passo 2). Ordenação estável: dentro do mesmo passo, a ordem da prontidão.
+  const ordenados = p.obrigatorios.map((i, n) => ({ i, n })).sort((a, b) => a.i.etapa - b.i.etapa || a.n - b.n).map((x) => x.i);
+  const itens = ordenados.map((i): ItemChecklist => {
     const etapa = i.etapa;
     return {
       key: i.key,

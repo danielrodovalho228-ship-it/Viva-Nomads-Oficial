@@ -2150,7 +2150,8 @@ export async function getLatestDraft(): Promise<{
   // C4: draft_data vem pela RPC (coluna sensível fora do SELECT por coluna).
   const { data: priv } = await supabase.rpc("property_private_details", { prop_id: data.id });
   const row = Array.isArray(priv) ? priv[0] : priv;
-  const fatos = (await fatosDosImoveis(supabase, user.id, [data.id as string])).get(data.id as string) ?? null;
+  // E498: a qualificação do rascunho entra no cálculo (o mesmo pct da barra do assistente).
+  const fatos = (await fatosDosImoveis(supabase, user.id, [data.id as string], { qualificacaoDoRascunho: true })).get(data.id as string) ?? null;
   const prontidao = fatos ? prontidaoAnuncio(fatos) : null;
   return {
     id: data.id as string,

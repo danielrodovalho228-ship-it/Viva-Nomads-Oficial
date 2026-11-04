@@ -5,6 +5,7 @@ import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imove
 import { rotuloItem } from "@/config/niveis";
 import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { statusPorImovel } from "@/lib/documento/vigente";
+import { qualificacaoDoRascunho } from "./requisitos-passo10";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -21,7 +22,15 @@ const COLUNAS =
   "id, status, title, address, city, bathrooms, area_m2, min_period_days, monthly_price, garantias_aceitas, ownership_type, sublease_authorized, description, ready_to_live_badge, video_url, video_arquivo";
 
 /** Fatos do banco por imóvel (o editor usa como base e sobrepõe o que está sendo editado). */
-export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: string[]): Promise<Map<string, FatosAnuncio>> {
+export interface OpcoesFatos {
+  /**
+   * E498: conta a qualificação dos RASCUNHOS (declarações do Passo 10 no draft_data) — as telas que mostram o progresso
+   * (Início, Meus imóveis) contam os mesmos itens que a barra do assistente. Não muda o portão do Publicar.
+   */
+  qualificacaoDoRascunho?: boolean;
+}
+
+export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: string[], opcoes: OpcoesFatos = {}): Promise<Map<string, FatosAnuncio>> {
   const mapa = new Map<string, FatosAnuncio>();
   const consulta = (colunas: string) => {
     let q = cliente.from("properties").select(colunas).eq("owner_id", ownerId);
@@ -97,12 +106,30 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (provasPor.has(p.id)) f.provasParaRefazer = provasPor.get(p.id);
     mapa.set(p.id, f);
   }
+  if (opcoes.qualificacaoDoRascunho) {
+    // C4: o draft_data vem pela RPC (coluna sensível). Sem leitura, o item fica de fora (não inventa "falta").
+    await Promise.all(
+      lista
+        .filter((p) => p.status === "draft")
+        .map(async (p) => {
+          const { data: priv, error: e } = await cliente.rpc("property_private_details", { prop_id: p.id }).then(
+            (r: { data: unknown; error: unknown }) => r,
+            (erro: unknown) => ({ data: null, error: erro }),
+          );
+          const linha = Array.isArray(priv) ? priv[0] : priv;
+          const draftData = (linha as { draft_data?: unknown } | null)?.draft_data;
+          const f = mapa.get(p.id);
+          if (e || !f || !draftData) return;
+          f.qualificacaoOk = qualificacaoDoRascunho(draftData, f);
+        }),
+    );
+  }
   return mapa;
 }
 
-export async function prontidaoDosImoveis(cliente: Cliente, ownerId: string, ids?: string[]): Promise<Map<string, Prontidao>> {
+export async function prontidaoDosImoveis(cliente: Cliente, ownerId: string, ids?: string[], opcoes: OpcoesFatos = {}): Promise<Map<string, Prontidao>> {
   const mapa = new Map<string, Prontidao>();
-  for (const [id, f] of await fatosDosImoveis(cliente, ownerId, ids)) mapa.set(id, prontidaoAnuncio(f));
+  for (const [id, f] of await fatosDosImoveis(cliente, ownerId, ids, opcoes)) mapa.set(id, prontidaoAnuncio(f));
   return mapa;
 }
 
