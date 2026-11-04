@@ -1257,7 +1257,8 @@
         "t416-varredura-bloco33",
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1076-varredura-bloco274"
       ]
     },
     "/dashboard/locacoes": {
@@ -1328,7 +1329,8 @@
         "t607-varredura-bloco51",
         "t648-e243-e245-mensagens",
         "t662-varredura-bloco63",
-        "t672-e190-troca-de-modo"
+        "t672-e190-troca-de-modo",
+        "t1076-varredura-bloco274"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1347,7 +1349,8 @@
         "t568-e176-parte2-conta",
         "t588-varredura-bloco46",
         "t672-e190-troca-de-modo",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1076-varredura-bloco274"
       ]
     },
     "/dashboard/orcamentos": {
