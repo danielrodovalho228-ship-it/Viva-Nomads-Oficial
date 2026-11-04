@@ -26,6 +26,9 @@ function arquivos(dir: string, out: string[] = []): string[] {
 const EXCECOES: Record<string, string> = {
   "/api/webhooks/asaas": "webhook: quem chama é o Asaas (URL cadastrada no painel do Asaas), não o app",
   "/api/lab/mensagens-programadas": "rota do laboratório: só os specs E2E a chamam, e ela recusa fora do lab",
+  // E445 item 5: entrega só o backend (pedido do Muse); o botão de anexar no chat vem no PR da tela.
+  "/api/mensagens/anexo": "E445 item 5, só o backend: o botão de anexar no chat entra no PR da tela",
+  "/api/mensagens/anexo/[id]": "E445 item 5, só o backend: o link do anexo na conversa entra no PR da tela",
 };
 
 /** "/api/x/[id]/y" a partir de "src/app/api/x/[id]/y/route.ts" (grupos "(…)" não entram na URL). */

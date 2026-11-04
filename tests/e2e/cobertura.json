@@ -3001,6 +3001,20 @@
         "t293-video-anuncio"
       ]
     },
+    "/api/mensagens/anexo": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "/api/mensagens/anexo/[id]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/upload/inquilino-doc": {
       "personas": [
         "inquilino",
