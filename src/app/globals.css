@@ -387,6 +387,10 @@ html[data-app] .vn-tabbar-spacer {
     bottom: 0.75rem;
   }
 }
+/* E529 (D15): com a barra Comparar encaixada no pé da coluna, o que rola até a vista para acima dela, nunca por baixo. */
+html:has([data-testid="barra-comparar"]) {
+  scroll-padding-bottom: 8rem;
+}
 html[data-app] .vn-barra-comparar {
   bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
 }

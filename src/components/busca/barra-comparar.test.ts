@@ -27,3 +27,26 @@ test("af3a27e3: 'Fale com a Viva' arrastado também respeita o piso da barra Com
   const src = ler("components/ajuda/viva-chat.tsx");
   assert.match(src, /bottom: `max\(\$\{pos\.baixo\}px, var\(--viva-piso, 0px\)\)`/);
 });
+
+/*
+  E529 (D15, QA de cliques do morador 02/11): a barra "Comparar (2)" flutuava (pílula fixa no meio da tela) sobre os
+  cartões. Agora é uma barra ENCAIXADA na coluna de resultados: sticky (não fixed), largura toda da coluna, fundo branco
+  opaco com borda — no fim da lista ela fica DEPOIS do último cartão; e a página ganha scroll-padding embaixo enquanto
+  ela existe (o que rola até a vista para acima dela, nunca por baixo).
+*/
+test("E529: barra Comparar encaixada na coluna (sticky, largura toda, fundo opaco), não mais uma pílula fixa", () => {
+  const src = ler("components/busca/barra-comparar.tsx");
+  const raiz = src.match(/<div className="([^"]+)" data-testid="barra-comparar">/)?.[1] ?? "";
+  assert.match(raiz, /\bvn-barra-comparar\b/);
+  assert.match(raiz, /\bsticky\b/);
+  assert.doesNotMatch(raiz, /\bfixed\b/);
+  assert.doesNotMatch(raiz, /\binset-x-0\b/);
+  assert.match(raiz, /\bbg-white\b/);
+  assert.match(raiz, /\bborder-t\b/);
+  assert.doesNotMatch(src, /rounded-full/, "sem a pílula flutuante");
+});
+
+test("E529: enquanto a barra existe, o que rola até a vista para acima dela (scroll-padding embaixo)", () => {
+  const css = ler("app/globals.css");
+  assert.match(css, /html:has\(\[data-testid="barra-comparar"\]\)\s*\{\s*scroll-padding-bottom: 8rem;/);
+});
