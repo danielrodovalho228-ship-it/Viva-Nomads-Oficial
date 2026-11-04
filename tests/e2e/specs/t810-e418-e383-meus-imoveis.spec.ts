@@ -44,13 +44,10 @@ test.describe("T810 — E418 + E383: Meus imóveis limpo", () => {
       const cartao = (id: string) => p.locator(`[data-testid="meu-anuncio"][data-imovel="${id}"]`);
       await expect(cartao(ids.pub1)).toBeVisible({ timeout: 30_000 });
 
-      // E418: um aviso, sem links, baixo; o link em cada cartão.
-      const aviso = p.getByTestId("aviso-tipo-entrada");
-      await expect(aviso).toHaveCount(1);
-      await expect(aviso).toContainText("Falta em 2 anúncios publicados");
-      await expect(aviso.getByRole("link")).toHaveCount(0);
-      expect((await aviso.boundingBox())!.height).toBeLessThan(w === 390 ? 140 : 80);
-      for (const k of ["pub1", "pub2"]) await expect(cartao(ids[k]).getByTestId("card-tipo-entrada")).toHaveText("Informar o tipo de entrada");
+      // E508 (D-S2-04): anúncio publicado sem o tipo de entrada NÃO carrega pendência na lista — nem a dica do topo
+      // (E418) nem o link no cartão.
+      await expect(p.getByTestId("aviso-tipo-entrada")).toHaveCount(0);
+      for (const k of ["pub1", "pub2"]) await expect(cartao(ids[k]).getByTestId("card-tipo-entrada")).toHaveCount(0);
 
       // E383: só o mais recente do grupo; a cópia aparece ao pedir.
       await expect(cartao(ids.novo)).toBeVisible();
