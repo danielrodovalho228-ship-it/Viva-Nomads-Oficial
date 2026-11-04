@@ -80,7 +80,8 @@ export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo
         <ComoFuncionamAvaliacoes />
       </div>
       <p className="mt-2 text-sm text-muted">{AVISO_EXEMPLO}</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      {/* Grade par (varredura 04/11): com número ímpar, a última avaliação ocupa a linha inteira. */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-full">
         {avaliacoes.map((a) => (
           <CartaoAvaliacao key={`${a.autor}-${a.mes}`} a={a} />
         ))}
