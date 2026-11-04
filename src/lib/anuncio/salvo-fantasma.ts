@@ -24,12 +24,14 @@ export type DecisaoAutosave = "base" | "silencioso" | "edicao";
 
 /**
  * O que fazer com uma mudança do JSON do rascunho:
- *  - "base": o rascunho acabou de ser aberto (aplicado) — esse estado é o ponto de partida; não grava nem carimba;
+ *  - "base": o rascunho acabou de ser aberto (aplicado) e ninguém mexeu — esse estado é o ponto de partida; não grava
+ *    nem carimba (se a pessoa já digitou/marcou algo nesse meio-tempo, é "edicao");
  *  - "silencioso": só a navegação mudou — grava sem mostrar "Salvando…"/"Salvo às";
  *  - "edicao": o conteúdo mudou — grava e mostra "Salvo às …".
  */
-export function decisaoAutosave(i: { aguardandoBase: boolean; base: string | null; conteudo: string }): DecisaoAutosave {
-  if (i.aguardandoBase) return "base";
+export function decisaoAutosave(i: { aguardandoBase: boolean; editou?: boolean; base: string | null; conteudo: string }): DecisaoAutosave {
+  // Uma edição real (digitar, marcar) logo depois de abrir não é engolida pela base: vale como edição.
+  if (i.aguardandoBase) return i.editou ? "edicao" : "base";
   if (i.base !== null && i.conteudo === i.base) return "silencioso";
   return "edicao";
 }

@@ -10,6 +10,13 @@ test("abrir: o estado aplicado do rascunho vira a base (não grava nem carimba)"
   assert.equal(decisaoAutosave({ aguardandoBase: true, base: null, conteudo: "x" }), "base");
 });
 
+test("editar logo depois de abrir (ainda na janela da base) conta como edição, não é engolido", () => {
+  assert.equal(decisaoAutosave({ aguardandoBase: true, editou: true, base: null, conteudo: "x" }), "edicao");
+  const s = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx", "utf8");
+  assert.match(s, /onInputCapture=\{\(\) => \{\s*editouRef\.current = true;/);
+  assert.match(s, /if \(!editouRef\.current\) \{\s*\/\/ O estado do rascunho aberto assentou/);
+});
+
 test("navegar entre passos sem editar: grava em silêncio (o etapaMax segue salvo, sem 'Salvo às')", () => {
   const a = conteudoDoRascunho(json({ title: "Casa", step: 2, etapaMax: 2, ordemEtapas: 3 }));
   const b = conteudoDoRascunho(json({ title: "Casa", step: 5, etapaMax: 5, ordemEtapas: 3 }));
