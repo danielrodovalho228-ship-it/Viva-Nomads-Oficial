@@ -24,7 +24,11 @@ test("a tela Meus imóveis pede com exigir; o painel tem a tela de erro com 'Ten
   assert.match(erro, /Não conseguimos abrir esta tela/);
   assert.match(erro, /Tentar de novo/);
   // Os contadores e as outras telas não passam exigir (uma falha ali não derruba o painel inteiro).
-  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/app/(dashboard)/dashboard/ganhos/page.tsx", "src/app/api/properties/mine/route.ts"]) {
+  for (const f of ["src/app/(dashboard)/dashboard/page.tsx", "src/app/api/properties/mine/route.ts"]) {
     assert.doesNotMatch(ler(f), /listMyProperties\(\{ exigir: true \}\)/, f);
   }
+  // Ganhos: o enquadramento da reforma exige a leitura, mas a falha é pega ali mesmo (o cartão diz que não calculou) —
+  // a tela de Ganhos não cai inteira.
+  const ganhos = ler("src/app/(dashboard)/dashboard/ganhos/page.tsx");
+  assert.match(ganhos, /try \{\s*\[contratos, imoveis\] = await Promise\.all\(\[getMeusContratos\(\{ exigir: true \}\), listMyProperties\(\{ exigir: true \}\)\]\);\s*\} catch \{\s*return \{ indisponivel: true \};/);
 });
