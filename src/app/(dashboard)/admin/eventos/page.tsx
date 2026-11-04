@@ -9,6 +9,7 @@ import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { hojeBR } from "@/lib/utils";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { ABA_ADMIN } from "@/lib/admin/abas";
 
 export const metadata = { title: tituloDoAdmin("/admin/eventos"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function AdminEventosPage({ searchParams }: { searchParams:
             key={t}
             href={`/admin/eventos?tipo=${t}&${qs}`}
             aria-current={t === tipo ? "page" : undefined}
-            className={t === tipo ? "rounded-lg bg-forest px-3 py-2 text-sm text-white" : "rounded-lg border border-line px-3 py-2 text-sm text-ink hover:border-forest"}
+            className={`rounded-lg px-3 py-2 text-sm ${t === tipo ? ABA_ADMIN.ativa : ABA_ADMIN.inativa}`}
           >
             {EVENTOS_HOME[t]}
           </Link>
