@@ -338,6 +338,8 @@ export default function NewPropertyPage() {
   // E516: o conteúdo (sem a navegação) do último estado salvo ou aberto, e se o rascunho acabou de ser aberto.
   const baseConteudoRef = useRef<string | null>(null);
   const aguardandoBaseRef = useRef(false);
+  // E516 (t309): a pessoa digitou ou marcou algo desde que o rascunho foi aberto — a 1ª gravação é edição, não base.
+  const editouRef = useRef(false);
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
@@ -846,6 +848,7 @@ export default function NewPropertyPage() {
   function aplicarDraft(d: Record<string, unknown>) {
     // E516: o estado que sai deste rascunho aberto é o ponto de partida do autosave — abrir não é editar.
     aguardandoBaseRef.current = true;
+    editouRef.current = false;
     const s = (v: unknown) => (typeof v === "string" ? v : undefined);
     if (s(d.title)) setTitle(d.title as string);
     if (s(d.propertyType)) setPropertyType(d.propertyType as string);
@@ -1155,16 +1158,21 @@ export default function NewPropertyPage() {
     // E516: abrir o rascunho não é edição (vira a base); navegar entre passos grava em silêncio; só mudar o conteúdo
     // mostra "Salvando…" e carimba "Salvo às …".
     const conteudo = conteudoDoRascunho(draftJson);
-    const decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, base: baseConteudoRef.current, conteudo });
+    let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, base: baseConteudoRef.current, conteudo });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (decisao === "edicao") setSaveStatus("saving");
     const t = setTimeout(async () => {
       if (!on) return;
       if (aguardandoBaseRef.current) {
-        // O estado do rascunho aberto assentou (o debounce juntou as mudanças da carga): é a base, nada a gravar.
         aguardandoBaseRef.current = false;
-        baseConteudoRef.current = conteudoDoRascunho(draftJson);
-        return;
+        if (!editouRef.current) {
+          // O estado do rascunho aberto assentou (o debounce juntou as mudanças da carga): é a base, nada a gravar.
+          baseConteudoRef.current = conteudoDoRascunho(draftJson);
+          return;
+        }
+        // Já houve edição real nesse meio-tempo: grava e carimba como edição.
+        decisao = "edicao";
+        setSaveStatus("saving");
       }
       // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
       let res: Awaited<ReturnType<typeof saveDraftData>>;
@@ -1856,7 +1864,16 @@ export default function NewPropertyPage() {
   const meta = STEP_META[step];
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full"
+      // E516 (t309): digitar ou marcar algo é edição — mesmo nos primeiros segundos depois de abrir o rascunho.
+      onInputCapture={() => {
+        editouRef.current = true;
+      }}
+      onChangeCapture={() => {
+        editouRef.current = true;
+      }}
+    >
       {avisoRascunho}
 
       {/* Mockups cadastro-imovel-01..10: à esquerda, o título do passo (o H1 da tela) e o formulário; à direita
