@@ -221,9 +221,10 @@ function SearchMapbox({
         { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
       );
     reorganizar();
-    map.on("moveend", reorganizar);
+    // E525: também ao ganhar tamanho (no celular o mapa nasce escondido e os pins mediam 0 × 0).
+    map.on("moveend resize", reorganizar);
     return () => {
-      map.off("moveend", reorganizar);
+      map.off("moveend resize", reorganizar);
     };
     // O enquadramento (fitBounds) fica num efeito próprio keyed em [sig, focusKey]
     // para um único ajuste de câmera — evita animações concorrentes quando lista
@@ -402,6 +403,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLElement }>>(new Map());
+  const reorganizarRef = useRef<(() => void) | null>(null);
   const focusLayerRef = useRef<L.LayerGroup | null>(null);
 
   const onHoverRef = useRef(onHover);
@@ -442,6 +444,8 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         enquadrado = true;
         enquadrarMapa(map, propsRef.current, focusRef.current);
       } else map.invalidateSize();
+      // E525: no celular o mapa nasce escondido (pins medidos com 0 × 0); ao aparecer, os pins são afastados de novo.
+      reorganizarRef.current?.();
     });
     ro.observe(containerRef.current);
     const markers = markersRef.current;
@@ -483,6 +487,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
       );
     reorganizar();
+    reorganizarRef.current = reorganizar;
     map.on("zoomend moveend", reorganizar);
     return () => {
       map.off("zoomend moveend", reorganizar);
