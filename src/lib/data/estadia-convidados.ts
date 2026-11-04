@@ -24,14 +24,15 @@ export interface ConvidadoView {
 }
 
 /** Convidados ATIVOS do contrato (o morador vê a lista; removidos não aparecem). Sem a 0225: lista vazia. */
-export async function convidadosAtivos(admin: SupabaseClient, contratoId: string): Promise<ConvidadoView[]> {
+/** Estados vazios: a falha da leitura devolve null (nunca "nenhum convidado"). */
+export async function convidadosAtivos(admin: SupabaseClient, contratoId: string): Promise<ConvidadoView[] | null> {
   const { data, error } = await admin
     .from("estadia_convidados")
     .select("id, email, convidado_user_id, criado_em")
     .eq("contrato_id", contratoId)
     .is("removido_em", null)
     .order("criado_em");
-  if (error || !data) return [];
+  if (error || !data) return null;
   return (data as { id: string; email: string; convidado_user_id: string | null; criado_em: string }[]).map((c) => ({
     id: c.id,
     email: c.email,
