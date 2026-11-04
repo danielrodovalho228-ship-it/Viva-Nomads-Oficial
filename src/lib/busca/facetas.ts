@@ -26,7 +26,7 @@ export function faceta(n: number, ativo: boolean): Faceta {
 
 type Contar = (f: FiltrosPainel) => number;
 type EscolhaUnica = "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "garantia" | "internetMin";
-type Interruptor = "petsOnly" | "homeOfficeOnly" | "readyToLiveOnly" | "notaOnly" | "gestorOnly" | "soInternetMedida" | "datasFlexiveis";
+type Interruptor = "petsOnly" | "homeOfficeOnly" | "readyToLiveOnly" | "notaOnly" | "gestorOnly" | "negociaOnly" | "soInternetMedida" | "datasFlexiveis";
 
 /** Faceta de uma opção de escolha única: a busca com ESTA opção no lugar da atual. */
 export function facetaUnica<K extends EscolhaUnica>(contar: Contar, r: FiltrosPainel, k: K, v: FiltrosPainel[K]): Faceta {

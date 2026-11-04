@@ -137,6 +137,14 @@ export function PropertyCard({
             {preco.disponivel}
           </p>
         )}
+
+        {/* E439: o dono aceita negociar (properties.negociacao, o mesmo dado do anúncio). Fica no fim, fora do selo
+            único da foto e da ordem congelada acima. */}
+        {property.negociacao?.aceita && (
+          <p className="text-sm font-medium text-forest" data-testid="cartao-negocia">
+            Aceita negociação
+          </p>
+        )}
       </div>
     </Link>
     {fotos.length > 1 && <SetasFotos />}
