@@ -13,6 +13,7 @@ import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 import { afastarPins } from "@/lib/busca/pins-sem-sobreposicao";
+import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -98,6 +99,22 @@ function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLE
     el.style.marginLeft = `${dx}px`;
     el.style.marginTop = `${dy}px`;
   }
+}
+
+/** E524 (D10): com o cartão do pin aberto, Esc fecha (antes só clicando no cartão dava para sair). */
+function useFecharCartaoComEsc(aberto: boolean, fechar: () => void) {
+  const fecharRef = useRef(fechar);
+  useEffect(() => {
+    fecharRef.current = fechar;
+  });
+  useEffect(() => {
+    if (!aberto) return;
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (fechaCartaoComTecla(e.key)) fecharRef.current();
+    };
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [aberto]);
 }
 
 export function SearchMap(props: SearchMapProps) {
@@ -330,9 +347,17 @@ function SearchMapbox({
       .setLngLat([p.lng, p.lat])
       .setDOMContent(popupEl)
       .addTo(map);
+    // E524 (D10): o Mapbox não tem autoPan — com o cartão já desenhado, move o mapa até ele caber, longe do zoom.
+    const quadro = requestAnimationFrame(() => {
+      const { dx, dy } = deslocamentoParaCaber(popupEl.getBoundingClientRect(), map.getContainer().getBoundingClientRect());
+      if (dx || dy) map.panBy([-dx, -dy], { duration: 250 });
+      mostrarCartaoNaTela(popupEl);
+    });
+    return () => cancelAnimationFrame(quadro);
   }, [selectedId, sig, popupEl]);
 
   const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
+  useFecharCartaoComEsc(!!aberto, () => onSelect?.(null));
 
   return (
     <>
@@ -515,13 +540,32 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       return;
     }
     popupRef.current?.remove();
-    popupRef.current = L.popup({ closeButton: false, autoClose: false, closeOnClick: false, offset: [0, -12], className: "vn-popup", maxWidth: 280, minWidth: 256 })
+    // E524 (D10): o autoPan usa as folgas da casa — a da direita livra os botões de zoom (o padrão do Leaflet era 5 px).
+    popupRef.current = L.popup({
+      closeButton: false,
+      autoClose: false,
+      closeOnClick: false,
+      offset: [0, -12],
+      className: "vn-popup",
+      maxWidth: 280,
+      minWidth: 256,
+      autoPan: true,
+      autoPanPaddingTopLeft: [FOLGA_CARTAO_MAPA.esquerda, FOLGA_CARTAO_MAPA.topo],
+      autoPanPaddingBottomRight: [FOLGA_CARTAO_MAPA.direita, FOLGA_CARTAO_MAPA.base],
+    })
       .setLatLng([p.lat, p.lng])
       .setContent(popupEl)
       .openOn(map);
+    // Com o cartão desenhado (foto, chips), refaz o enquadramento com o tamanho real.
+    const quadro = requestAnimationFrame(() => {
+      popupRef.current?.update();
+      mostrarCartaoNaTela(popupEl);
+    });
+    return () => cancelAnimationFrame(quadro);
   }, [selectedId, sig, popupEl]);
 
   const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
+  useFecharCartaoComEsc(!!aberto, () => onSelect?.(null));
 
   return (
     <>

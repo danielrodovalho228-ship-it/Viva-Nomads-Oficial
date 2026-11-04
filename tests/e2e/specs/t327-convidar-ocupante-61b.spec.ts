@@ -87,11 +87,12 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
   test("1. aviso no painel → dono informa tipo, recado e o que considerar → morador lê o recado no pedido", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await abrir(browser, dono.email, 1280);
-    // Publicado sem tipo de entrada: segue no ar (sem bloqueio retroativo) e ganha o aviso.
+    // Publicado sem tipo de entrada: segue no ar (sem bloqueio retroativo). E508: sem pendência na lista (nem dica no
+    // topo, nem link no cartão); o dono informa o tipo pelo editor.
     await d.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    // E418 (02/11): um aviso único no topo; o link do anúncio fica no cartão dele.
-    await expect(d.getByTestId("aviso-tipo-entrada")).toBeVisible({ timeout: 20_000 });
-    await expect(d.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.imovel}"]`).getByTestId("card-tipo-entrada")).toBeVisible();
+    await expect(d.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.imovel}"]`)).toBeVisible({ timeout: 20_000 });
+    await expect(d.getByTestId("aviso-tipo-entrada")).toHaveCount(0);
+    await expect(d.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.imovel}"]`).getByTestId("card-tipo-entrada")).toHaveCount(0);
     expect((await adm().from("properties").select("status").eq("id", ids.imovel!).single()).data?.status).toBe("active");
 
     await d.goto(`/dashboard/imoveis/${ids.imovel}/editar`, { waitUntil: "domcontentloaded" });

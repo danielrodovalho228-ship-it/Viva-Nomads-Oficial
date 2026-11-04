@@ -20,7 +20,6 @@ import type { Property, PropertyStatus } from "@/lib/types";
 import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
 import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
-import { ETAPA } from "@/lib/anuncio/etapas-ids";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
@@ -46,13 +45,10 @@ export function MyPropertiesClient({
   properties: real,
   prontidao = {},
   pausas = {},
-  semTipoEntrada = [],
 }: {
   properties: Property[];
   prontidao?: Record<string, Prontidao>;
   pausas?: Record<string, string | null>;
-  /** E418: anúncios publicados sem o tipo de entrada — o link vai no cartão de cada um (não numa caixa no topo). */
-  semTipoEntrada?: string[];
 }) {
   const { on: demoOn } = useDemoMode();
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
@@ -68,7 +64,6 @@ export function MyPropertiesClient({
   const copias = new Set(grupos.flatMap((g) => g.slice(1)));
   const [copiasAbertas, setCopiasAbertas] = useState<Set<string>>(new Set());
   const grupoAberto = (id: string) => grupos.some((g) => g.includes(id) && copiasAbertas.has(g[0]));
-  const semEntrada = new Set(semTipoEntrada);
   const visiveis = properties.filter((p) => !copias.has(p.id) || grupoAberto(p.id));
 
   async function excluirRascunho(id: string) {
@@ -202,17 +197,6 @@ export function MyPropertiesClient({
                       </span>
                     )}
                   </div>
-                  {/* E418: o anúncio publicado sem o tipo de entrada leva o link no próprio cartão (antes: uma caixa de
-                      largura total no topo, com um link por anúncio). */}
-                  {!demoItem && semEntrada.has(p.id) && (
-                    <Link
-                      href={destinoPendencia(p, ETAPA.regras)}
-                      className="mt-2 inline-flex min-h-11 items-center gap-1 self-start text-sm font-medium text-forest underline"
-                      data-testid="card-tipo-entrada"
-                    >
-                      Informar o tipo de entrada
-                    </Link>
-                  )}
                   {/* Prontidão (fonte única: lib/anuncio/prontidao). "Falta" só tem
                       obrigatórios; selo/vídeo aparecem à parte, como melhoria. */}
                   {!demoItem && comp && (() => {
