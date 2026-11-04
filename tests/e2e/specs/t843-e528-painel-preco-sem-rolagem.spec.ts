@@ -19,7 +19,7 @@ for (const [largura, altura] of [[1280, 800], [390, 844]] as const) {
       // Espera a hidratação: o "top" do painel passa a seguir a regra (preso no topo se cabe; pela base se não cabe).
       await expect
         .poll(() =>
-          painel.evaluate((c) => {
+          painel.evaluate((c: HTMLElement) => {
             const h = c.offsetHeight;
             const esperado = h + 144 + 16 <= innerHeight ? 144 : innerHeight - h - 16;
             return parseFloat(getComputedStyle(c).top) === esperado;
