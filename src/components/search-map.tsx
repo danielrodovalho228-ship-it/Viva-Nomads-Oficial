@@ -12,6 +12,7 @@ import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
+import { afastarPins } from "@/lib/busca/pins-sem-sobreposicao";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -81,6 +82,22 @@ interface SearchMapProps {
   /** Raio (km) desenhado ao redor do endereço buscado. */
   radiusKm?: number;
   className?: string;
+}
+
+/**
+ * E525 (D11): afasta os pins que se cobrem (cada um vai à posição livre mais próxima). Por MARGEM, não por transform:
+ * o pin já usa o translate do Tailwind (Leaflet) e o transform do próprio marcador (Mapbox).
+ */
+function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLElement }[], quadro: { w: number; h: number }) {
+  const desloc = afastarPins(
+    itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
+    quadro
+  );
+  for (const { id, el } of itens) {
+    const { dx, dy } = desloc.get(id) ?? { dx: 0, dy: 0 };
+    el.style.marginLeft = `${dx}px`;
+    el.style.marginTop = `${dy}px`;
+  }
 }
 
 export function SearchMap(props: SearchMapProps) {
@@ -178,6 +195,19 @@ function SearchMapbox({
         .addTo(map);
       markersRef.current.set(p.id, { marker, el });
     });
+    const reorganizar = () =>
+      aplicarAfastamento(
+        [...markersRef.current].map(([id, { marker, el }]) => {
+          const pt = map.project(marker.getLngLat());
+          return { id, x: pt.x, y: pt.y, el };
+        }),
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
+      );
+    reorganizar();
+    map.on("moveend", reorganizar);
+    return () => {
+      map.off("moveend", reorganizar);
+    };
     // O enquadramento (fitBounds) fica num efeito próprio keyed em [sig, focusKey]
     // para um único ajuste de câmera — evita animações concorrentes quando lista
     // e endereço mudam juntos (ex.: trocar o raio).
@@ -419,6 +449,19 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       markersRef.current.set(p.id, { marker, el });
     });
     enquadrarMapa(map, list, focusRef.current);
+    const reorganizar = () =>
+      aplicarAfastamento(
+        [...markersRef.current].map(([id, { marker, el }]) => {
+          const pt = map.latLngToContainerPoint(marker.getLatLng());
+          return { id, x: pt.x, y: pt.y, el };
+        }),
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
+      );
+    reorganizar();
+    map.on("zoomend moveend", reorganizar);
+    return () => {
+      map.off("zoomend moveend", reorganizar);
+    };
   }, [sig, focusKey]);
 
   // Centro do endereço buscado + círculo do raio.

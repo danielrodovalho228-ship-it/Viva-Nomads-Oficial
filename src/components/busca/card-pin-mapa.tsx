@@ -61,7 +61,8 @@ export function CardPinMapa({ property: p, onFechar }: { property: Property; onF
           )}
         </div>
         <div className="space-y-2 p-3">
-          <p className="line-clamp-1 text-sm font-semibold text-ink">{p.title}</p>
+          {/* E525 (D11): o título cortava sempre com "…" numa linha só — até 2 linhas, e o nome inteiro no title. */}
+          <p className="line-clamp-2 text-sm font-semibold text-ink" title={p.title}>{p.title}</p>
           <p className="truncate text-xs text-muted">
             {linhaLocalizacao(p.neighborhood, p.city, p.state)}
           </p>
