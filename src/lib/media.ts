@@ -202,15 +202,13 @@ export function galleryFor(propertyId: string, n: number): string[] {
 }
 
 /**
- * Foto de CAPA (miniatura) de um imóvel: usa a 1ª foto real do anúncio quando
- * existe; senão, uma foto de ambiente determinística pelo id (nunca quebra, e o
- * mesmo imóvel mostra sempre a mesma capa).
+ * Foto de CAPA (miniatura) de um imóvel: a 1ª foto real do anúncio (ou a do anúncio de exemplo); sem nenhuma, null —
+ * a tela desenha o espaço sem foto. E513 (D-S2-09 B): antes caía numa foto do acervo pelo hash do id — a MESMA foto em
+ * vários anúncios sem capa (os pausados apareciam com foto repetida) e uma foto que não é do imóvel.
  */
-export function coverPhoto(propertyId: string, photos?: string[]): string {
+export function coverPhoto(propertyId: string, photos?: string[]): string | null {
   if (photos && photos.length > 0) return photos[0];
   const real = PROPERTY_PHOTOS[propertyId];
   if (real && real.length > 0) return real[0];
-  let h = 0;
-  for (let i = 0; i < propertyId.length; i++) h = (h * 31 + propertyId.charCodeAt(i)) >>> 0;
-  return PHOTOS.galleryRooms[h % PHOTOS.galleryRooms.length];
+  return null;
 }
