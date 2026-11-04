@@ -52,10 +52,16 @@ export async function meusAvisos(limite = 30): Promise<AvisoDoSino[] | null> {
     .limit(Math.min(Math.max(1, Math.round(limite)), 100));
   if (error) throw new Error(MSG_AVISOS_SEM_LEITURA);
   // E541: aviso de mensagem nova gravado antes da correção (url sem ?conversa=) abre a conversa pelo ref_id.
-  return ((data ?? []) as (AvisoDoSino & { ref_id: string | null })[]).map((a) => {
-    const { ref_id: _ref, ...aviso } = a;
-    return { ...aviso, url: urlDoAvisoComConversa(a) };
-  });
+  return ((data ?? []) as (AvisoDoSino & { ref_id: string | null })[]).map((a) => ({
+    id: a.id,
+    evento: a.evento,
+    prioridade: a.prioridade,
+    titulo: a.titulo,
+    url: urlDoAvisoComConversa(a),
+    criado_em: a.criado_em,
+    lido_em: a.lido_em,
+    resolvido_em: a.resolvido_em,
+  }));
 }
 
 export async function marcarAvisoLido(id: string): Promise<{ ok: boolean }> {
