@@ -14,6 +14,9 @@ import { lerPendente } from "@/lib/modo-pendente";
  */
 /** Tempo máximo de sessão: 24h desde o login → pede login de novo. */
 const SESSION_MAX_MS = 24 * 60 * 60 * 1000;
+/** E518: novas tentativas de ler o perfil quando o Supabase devolve erro (sem isso, o isTeste ficava indefinido). */
+const TENTATIVAS_PERFIL = 2;
+const ESPERA_TENTATIVA_MS = 3000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
@@ -36,10 +39,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // funciona no segundo clique") e a casca re-renderizava várias vezes.
     const perfilLido = new Set<string>();
 
+    // E518: o anúncio de teste espera o isTeste para liberar "Pedir para morar". Sem a linha do perfil, ou sem leitura
+    // depois das tentativas, ele resolve como false (visitante, com a faixa que explica) — nunca "carregando" para sempre.
+    function resolverIsTeste(id: string) {
+      const agora = useAuthStore.getState().user;
+      if (agora && agora.id === id && agora.isTeste === undefined) setUser({ ...agora, isTeste: false });
+    }
+
     async function hydrate(
       session: import("@supabase/supabase-js").Session | null,
-      forcarPerfil = false
-    ) {
+      forcarPerfil = false,
+      tentativa = 0
+    ): Promise<void> {
       if (!session?.user) {
         setUser(null);
         return;
@@ -72,11 +83,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Enriquece com o perfil (fonte CONFIÁVEL de nome/papel para a UI) sem
       // travar o login; a autorização de admin é validada no servidor (proxy).
       try {
-        const { data: profile } = await supabase!
+        const { data: profile, error: erroPerfil } = await supabase!
           .from("profiles")
           .select("full_name, role, preferred_mode, papel_ativo, is_teste")
           .eq("id", u.id)
           .maybeSingle();
+        // E518: o Supabase DEVOLVE o erro (não lança). Antes, o perfil ficava "lido" sem dado e o isTeste, indefinido
+        // para sempre — no anúncio de teste, "Pedir para morar" nunca liberava. Agora tenta de novo e, no fim, resolve.
+        if (erroPerfil) {
+          perfilLido.delete(u.id);
+          if (tentativa < TENTATIVAS_PERFIL) setTimeout(() => void hydrate(session, true, tentativa + 1), ESPERA_TENTATIVA_MS);
+          else resolverIsTeste(u.id);
+          return;
+        }
+        if (!profile) resolverIsTeste(u.id);
         // Com qualquer perfil lido: o isTeste (anúncio de teste) precisa chegar mesmo sem nome/papel no perfil.
         if (profile) {
           const agora = useAuthStore.getState().user;
@@ -109,7 +129,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           useAuthStore.setState(e.parceiro ? { parceiroAtivo: true } : { activeMode: e.modo, parceiroAtivo: false });
         }
       } catch {
-        perfilLido.delete(u.id); // tenta de novo no próximo evento
+        perfilLido.delete(u.id); // tenta de novo no próximo evento — e, sem evento, pela nova tentativa (E518)
+        if (tentativa < TENTATIVAS_PERFIL) setTimeout(() => void hydrate(session, true, tentativa + 1), ESPERA_TENTATIVA_MS);
+        else resolverIsTeste(u.id);
       }
     }
 
