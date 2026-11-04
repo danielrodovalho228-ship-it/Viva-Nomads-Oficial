@@ -42,6 +42,8 @@ test.describe("T41 — Mensagens inquilino ↔ dono", () => {
     await paginaDono.getByRole("button", { name: /Studio das mensagens/ }).first().click();
     // A frase aparece na lista (prévia) e na conversa aberta: a bolha é a última.
     await expect(paginaDono.getByText("Olá! Tenho interesse no studio.").last()).toBeVisible();
+    // E484: cada bolha mostra a hora de envio (mensagem de agora: só "HH:MM", fuso de Brasília).
+    await expect(paginaDono.getByTestId("mensagem-hora").first()).toHaveText(/^\d{2}:\d{2}$/);
 
     await paginaDono.getByPlaceholder("Escreva uma mensagem...").fill("Claro! Me chama no (34) 99999-8888 ou em dora@exemplo.com");
     await paginaDono.getByRole("button", { name: "Enviar" }).click();
