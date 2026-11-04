@@ -101,6 +101,15 @@ test.describe("T830 — E444: sino com prioridade e faixa de crítico", () => {
       await expect(lista.getByTestId("avisos-item")).toHaveAttribute("data-prioridade", "critico");
       await p.getByTestId("avisos-filtro-urgente").click();
       await expect(lista.getByTestId("avisos-item")).toHaveAttribute("data-lido", "sim");
+      // E502: o lido fica branco e sem ponto; o não lido (o crítico) tem fundo verde-claro e o ponto.
+      const lidoItem = lista.getByTestId("avisos-item");
+      await expect(lidoItem.getByTestId("aviso-ponto-nao-lido")).toHaveCount(0);
+      expect(await lidoItem.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe("rgb(255, 255, 255)");
+      await p.getByTestId("avisos-filtro-critico").click();
+      const naoLido = lista.getByTestId("avisos-item");
+      await expect(naoLido).toHaveAttribute("data-lido", "nao");
+      await expect(naoLido.getByTestId("aviso-ponto-nao-lido")).toHaveCount(1);
+      expect(await naoLido.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe("rgb(238, 246, 239)");
       expect(await p.evaluate((l) => document.documentElement.scrollWidth - l, largura)).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t830-lista-${largura}.png`, fullPage: true });
 
