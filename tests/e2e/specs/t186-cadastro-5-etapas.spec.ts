@@ -210,6 +210,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await expect(prox).toHaveCount(8, { timeout: 20_000 }); // PERTO-B: escola entrou (8 tipos)
       for (const p of await prox.all()) await expect(p).toHaveAttribute("data-mostrar", "1");
       await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-mostrar").click(); // PERTO-A: desliga "Mostrar" em uma
+      await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-ocultar-confirmar").click(); // E605: confirmação do padrão TOGGLE
       // Nenhuma imagem decorativa no meio do formulário.
       await expect(page.getByTestId("etapa-encontramos").locator("img")).toHaveCount(0);
       // Segurança e imóvel: o grupo Segurança e a declaração das câmeras no mesmo bloco.
