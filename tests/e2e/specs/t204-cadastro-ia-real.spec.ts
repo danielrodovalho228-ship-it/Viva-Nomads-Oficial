@@ -17,6 +17,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, p
   4. Datas: no computador digita dd/mm/aaaa e cola; no celular (toque) segue o seletor nativo.
   5. Matrícula sem leitura: a tentativa fica gravada em property_ownership_checks (em revisão, com o motivo).
   6. /admin: painel "IA do cadastro" com ligada/desligada e o último erro (sem dado pessoal).
+  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const LARGURAS = [390, 1280] as const;
@@ -201,8 +202,9 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=fotos`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-fotos")).toBeVisible({ timeout: 30_000 });
       let falhar = true;
+      let chamadasIa = 0;
       await page.route("**/api/ai/fotos", (r) =>
-        falhar
+        ++chamadasIa && falhar
           ? r.fulfill({ status: 503, json: { error: "Leitura indisponível agora — tente de novo em alguns minutos.", motivo: "indisponivel" } })
           : r.fallback(),
       );
@@ -220,7 +222,11 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       }, png8);
       await expect(page.getByTestId("etapa-fotos")).toContainText("8 / 8 fotos", { timeout: 60_000 });
       const falha = page.getByTestId("ia-fotos-falha");
-      await expect(falha).toBeVisible({ timeout: 60_000 });
+      // Triagem (Pista C, 05/11): a falha diz em que estado a IA ficou e se a rota chegou a ser chamada.
+      await expect(falha).toBeVisible({ timeout: 60_000 }).catch(async (e) => {
+        const locais = await page.evaluate(() => Array.from(document.querySelectorAll("img")).filter((i) => i.src.startsWith("blob:")).length);
+        throw new Error(`IA das fotos: estado=${await page.getByTestId("ia-fotos").getAttribute("data-estado")}; chamadas a /api/ai/fotos=${chamadasIa}; imagens blob: na tela=${locais}\n${e}`);
+      });
       await expect(falha).toContainText("indisponível agora — tente de novo");
       await expect(page.getByText("Sem sugestões automáticas agora")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t204-ia-falha-${largura}.png`, fullPage: false });
@@ -250,6 +256,9 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
     // E104: a matrícula fica no "Antes de publicar" da Revisão.
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    // As seções do "Antes de publicar" abrem fechadas: abre a do documento (como a t1184).
+    await expect(d.page.getByTestId("etapa-revisar")).toBeVisible({ timeout: 30_000 });
+    await abrirSecoesPasso10(d.page, ["documento"]);
     await expect(d.page.getByTestId("documento-vinculo")).toBeVisible({ timeout: 30_000 });
     // PDF sem o marcador do laboratório: ninguém consegue ler (como um arquivo ilegível em produção).
     await d.page.getByTestId("documento-vinculo").locator('input[type="file"]').setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });

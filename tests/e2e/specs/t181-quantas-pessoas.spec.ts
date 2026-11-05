@@ -66,8 +66,9 @@ test.describe("T181 — quantas pessoas vão morar", () => {
       await d.setViewportSize({ width: largura, height: 900 });
       await d.goto("/dashboard/leads", { waitUntil: "networkidle" });
       await expect(d.locator("main")).toContainText(`Para ${pessoas} pessoas`, { timeout: 20_000 });
-      // O token "Sobrenomeoculto" é só do inquilino (o nome do dono não o repete: ele aparece na tela do dono).
-      await expect(d.locator("main")).not.toContainText("Sobrenomeoculto");
+      // O nome completo DESTA candidata não aparece antes do aceite. (Pista C, 05/11: o token "Sobrenomeoculto" é dos dois
+      // inquilinos do spec; o da outra largura já foi aceito — e depois do aceite o nome completo aparece, por desenho.)
+      await expect(d.locator("main")).not.toContainText(inq(largura).nome);
       await d.screenshot({ path: `${SAIDA}/t181-interessados-${largura}.png`, fullPage: true });
 
       // Aceite (o que o servidor grava) → Fechamento abre com o número da candidatura.

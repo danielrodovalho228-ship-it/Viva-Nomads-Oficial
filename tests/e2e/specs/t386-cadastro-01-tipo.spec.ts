@@ -9,7 +9,9 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
  *      "Continuar". 390 e 1280, com prints.
  *   2. Escolher o tipo marca o cartão e a prévia muda na hora; "Continuar" leva ao passo 2 (Fotos) e "Voltar" volta
  *      com o tipo escolhido; a escolha fica no rascunho.
- */
+ 
+  Reteste do L-101 (Pista C, 05/11): rolagem lateral do assistente a 390 px corrigida no #2763; roda no portão do #2747.
+*/
 const SAIDA = "tests/laboratorio/saida";
 
 async function semRolagemLateral(p: Page) {

@@ -10,6 +10,7 @@ import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, cri
    2. a fila "Documentos com falha" é legível: com 2 falhas, cada linha mostra o seu número, tipo, contrato
       (VN-CT-…), o nome curto do proprietário e do inquilino, o motivo e a data — e as duas são diferentes.
   O laboratório usa o Resend falso (LAB_RESEND_URL): só e-mail aceito entra na caixa.
+  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";
@@ -41,12 +42,17 @@ async function contratoAssinado(imovel: string): Promise<string> {
   return data.id as string;
 }
 
+/**
+ * E546 (05/11): a emissão não repete recibo — mesmo dono, inquilino, endereço e valor com período sobreposto é
+ * duplicidade. Os dois imóveis da massa têm o mesmo endereço ("Centro"), então cada pagamento deste spec leva um valor seu.
+ */
+let valorSeguinte = 6400;
 async function pagamentoConfirmado(contratoId: string): Promise<string> {
   // 0182: um valor mensal por bloco — usa um bloco ainda sem pagamento (cria o próximo se precisar).
   const blocoId = await blocoSemValorMensal(contratoId);
   const { data, error } = await adm()
     .from("pagamentos_bloco")
-    .insert({ bloco_id: blocoId, contrato_id: contratoId, tipo: "aluguel", valor: 6400, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
+    .insert({ bloco_id: blocoId, contrato_id: contratoId, tipo: "aluguel", valor: (valorSeguinte += 10), forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;
@@ -143,7 +149,14 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
         const numeros: string[] = [];
         for (const [pg, contrato] of [[ids.f1!, ids.ca!], [ids.f2!, ids.cb!]] as const) {
           await expect.poll(async () => (await adm().from("documentos_falhas").select("id").eq("pagamento_id", pg).is("resolvido_em", null)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
-          numeros.push((await adm().from("documentos_fiscais").select("numero").eq("pagamento_id", pg).single()).data!.numero as string);
+          // E546 (0295): um pagamento pode ter mais de um documento (o repetido fica anulado) — o número vem do documento DA
+          // falha; sem ele, o mais recente do pagamento.
+          const { data: falha } = await adm().from("documentos_falhas").select("documento_id").eq("pagamento_id", pg).is("resolvido_em", null).single();
+          const doc = falha?.documento_id
+            ? (await adm().from("documentos_fiscais").select("numero").eq("id", falha.documento_id).single()).data
+            : (await adm().from("documentos_fiscais").select("numero").eq("pagamento_id", pg).order("criado_em", { ascending: false }).limit(1).maybeSingle()).data;
+          expect(doc?.numero, `documento do pagamento ${pg}`).toBeTruthy();
+          numeros.push(doc!.numero as string);
           void contrato;
         }
         await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });

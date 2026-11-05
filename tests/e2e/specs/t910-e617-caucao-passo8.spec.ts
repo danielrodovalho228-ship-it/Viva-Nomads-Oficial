@@ -7,6 +7,7 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
   demonstração não se reproduz (medido de 320 a 1440 px: o texto quebra dentro da pílula, com a folga do respiro). Esta
   guarda roda com sessão real, num rascunho de verdade, a 320, 390 e 1280: o texto inteiro fica dentro da pílula (com o
   respiro) e a pílula dentro da coluna; nada rola de lado.
+  Reteste do L-101 (Pista C, 05/11): rolagem lateral do assistente a 390 px corrigida no #2763; roda no portão do #2747.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
