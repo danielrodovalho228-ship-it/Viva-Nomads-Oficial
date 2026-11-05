@@ -7,7 +7,7 @@ import { lerDaterange } from "../../../src/lib/contrato-periodo";
  * pagamento e com o PERÍODO já terminado (calendário de Brasília) aparecia ao mesmo tempo como "Aguardando 1º
  * pagamento" (lista e detalhe), bloco "Encerrado" e estadia "Encerrada em 30/10/2026" (VN-CT-A0268B00). A fonte única
  * (estadoDoContratoUnico) passou a ler o período: o contrato é "Encerrado em DD/MM/AAAA" em toda tela. Pela tela real,
- * 390 e 1280, com o bloco do contrato entre 90 e 35 dias atrás (o gatilho da 0176 grava contratos.periodo):
+ * 390 e 1280, com o bloco do contrato entre 90 e 35 dias atrás, já "encerrado" (o gatilho da 0176 grava o período):
  *   1. o dono: Contratos (lista) e o detalhe do contrato dizem "Encerrado em <fim>", nunca "Aguardando 1º pagamento";
  *   2. o morador: Minhas locações (lista) e o detalhe dizem o mesmo.
  * As regras (o fim inclusivo do daterange, o calendário de Brasília) ficam com o e543-estado-contrato.test.ts.
@@ -63,10 +63,12 @@ test.describe("T1116 — E543: contrato com o período terminado é \"Encerrado 
       .single();
     expect(error, error?.message).toBeNull();
     ids.contrato = data!.id as string;
-    // O bloco no passado (sem nenhum pagamento): o gatilho da 0176 grava contratos.periodo a partir dele.
+    // O bloco no passado (sem nenhum pagamento), já "encerrado" — o caso do VN-CT-A0268B00: bloco Encerrado e contrato
+    // ainda "ativo". (Com o bloco "ativo", o ciclo avancar_ciclo_blocos da 0063, que a lista do dono roda, encerraria o
+    // contrato como "encerrado_sem_renovacao" e o caso do E543 não aconteceria.) O gatilho da 0176 grava o período.
     const { error: eBloco } = await adm()
       .from("contrato_blocos")
-      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(-90), fim: dia(-35), meses: 2, valor: 6400, caucao: 3200, status: "ativo" });
+      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(-90), fim: dia(-35), meses: 2, valor: 6400, caucao: 3200, status: "encerrado" });
     expect(eBloco, eBloco?.message).toBeNull();
     const { data: c } = await adm().from("contratos").select("periodo").eq("id", ids.contrato).single();
     const p = lerDaterange(c?.periodo);
