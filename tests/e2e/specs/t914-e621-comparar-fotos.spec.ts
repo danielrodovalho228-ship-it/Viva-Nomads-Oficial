@@ -5,8 +5,9 @@ import { test, expect } from "@playwright/test";
   na proporção dos cartões do site (4:3) — com a foto carregada ou, sem foto, o espaço reservado padrão; nunca uma coluna
   sem o bloco. 390 e 1280. Usa os anúncios de exemplo; se o ambiente não os tiver, a comparação cai no estado vazio e o
   teste se pula (nunca passa em falso).
+  Varredura 16: as colunas dividem a largura por igual — as fotos ficam da mesma altura (a 768 eram 143/131/119 px).
 */
-for (const w of [1280, 390] as const) {
+for (const w of [1280, 768, 390] as const) {
   test.describe(`T914 — E621 a ${w} px`, () => {
     test.use({ viewport: { width: w, height: 900 } });
 
@@ -28,6 +29,8 @@ for (const w of [1280, 390] as const) {
         expect(Math.abs(m.razao - 4 / 3), `coluna ${i + 1}: 4:3`).toBeLessThan(0.03);
         if (m.foto) await expect.poll(() => bloco.locator("img").first().evaluate((im: HTMLImageElement) => im.complete && im.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
       }
+      const alturas = await colunas.evaluateAll((cs) => cs.map((c) => Math.round(c.querySelector('[data-testid="comparar-foto"]')!.firstElementChild!.getBoundingClientRect().height)));
+      expect(Math.max(...alturas) - Math.min(...alturas), `fotos da mesma altura: ${alturas.join("/")}`).toBeLessThanOrEqual(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `tests/laboratorio/saida/t914-e621-${w}.png` });
     });
