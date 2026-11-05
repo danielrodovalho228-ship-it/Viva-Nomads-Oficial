@@ -310,6 +310,24 @@ export interface ImovelLinhaAdmin {
   capa: string | null;
 }
 
+/**
+ * Onda 5 (matriz admin-anuncios): a capa (ordem 0) de cada anúncio, em lotes — com todas as fotos, 3000 anúncios passam
+ * do limite de linhas da API. A falha não derruba a lista: sem leitura, cada linha mostra o espaço "sem foto".
+ */
+async function lerCapas(admin: Admin, ids: string[]): Promise<Map<string, string>> {
+  const lotes = await Promise.all(
+    emLotes(ids, 500).map((lote) =>
+      admin
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", lote)
+        .eq("sort_order", 0)
+        .then(({ data }) => (data ?? []) as { property_id: string; url: string | null; sort_order: number | null }[]),
+    ),
+  ).catch(() => []);
+  return capasPorImovel(lotes.flat());
+}
+
 /** Imóveis do banco para /admin/imoveis (todos: reais e de teste — o tipo sai de tipoImovel). */
 export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> {
   const [{ data, error }, teste] = await Promise.all([
@@ -335,23 +353,11 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
   if (!linhas.length) return [];
   const ids = linhas.map((p) => p.id);
   const donos = [...new Set(linhas.map((p) => p.owner_id))];
-  const [{ data: perfis }, { data: docs }, fotos] = await Promise.all([
+  const [{ data: perfis }, { data: docs }, capas] = await Promise.all([
     admin.from("profiles").select("id, full_name").in("id", donos),
     admin.from("qualification_checklists").select("property_id, document_status, created_at").in("property_id", ids).order("created_at", { ascending: false }),
-    // Onda 5: só a capa (ordem 0) de cada anúncio, em lotes — com todas as fotos, 3000 anúncios passam do limite de linhas.
-    // A falha não derruba a lista: sem leitura, cada linha mostra o espaço "sem foto".
-    Promise.all(
-      emLotes(ids, 500).map((lote) =>
-        admin
-          .from("property_photos")
-          .select("property_id, url, sort_order")
-          .in("property_id", lote)
-          .eq("sort_order", 0)
-          .then(({ data: d }) => (d ?? []) as { property_id: string; url: string | null; sort_order: number | null }[]),
-      ),
-    ).catch(() => []),
+    lerCapas(admin, ids),
   ]);
-  const capas = capasPorImovel(fotos.flat());
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
   // E561: o estado mostrado é o do documento VIGENTE — a mesma fonte do dono (statusPorImovel, da mais recente para a
   // mais antiga). Antes valia a 1ª linha que o banco devolvia (sem ordem), e uma recusa antiga aparecia por cima do

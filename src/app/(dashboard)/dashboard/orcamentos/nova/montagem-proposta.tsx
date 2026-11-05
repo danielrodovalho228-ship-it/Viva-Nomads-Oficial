@@ -8,7 +8,8 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { enviarProposta, type DadosMontagem } from "@/lib/data/propostas-actions";
-import { calcularTotais, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
+import { calcularTotais, diasDosTermos, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
+import { mesesCompletos } from "@/lib/estadia-em-dias";
 import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
@@ -43,7 +44,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  const termos: TermosProposta = { ...t, descontoEstadiaPct: descontoParaMeses(dados.negociacao.descontos, t.meses) };
+  // E562: a faixa de desconto conta os meses completos dos dias (a mesma regra do servidor).
+  const termos: TermosProposta = { ...t, descontoEstadiaPct: descontoParaMeses(dados.negociacao.descontos, mesesCompletos(diasDosTermos(t))) };
   const tot = calcularTotais(termos);
   const pessoasN = pessoas ? Number(pessoas) : null;
   const problema = validarTermos(termos, dados.limites, hojeBR(), pessoasN);
@@ -61,6 +63,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
       descontoValor: tipoDesconto === "valor" ? termos.descontoValor : 0,
       motivoDesconto: termos.descontoPct > 0 || termos.descontoValor > 0 ? termos.motivoDesconto : null,
       meses: termos.meses,
+      // E562: os dias da candidatura seguem para a proposta (a escolha de meses no seletor vira meses × 30).
+      dias: diasDosTermos(termos),
       dataEntrada: termos.dataEntrada,
       condominio: termos.condominio,
       consumo: termos.consumo,
@@ -90,7 +94,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
                 <CampoReais semPrefixo centavos value={t.valorBase || null} onChange={(v) => set("valorBase", v ?? 0)} testid="proposta-valor" />
               </Campo>
               <Campo rotulo="Número de meses" ajuda={`Entre ${dados.limites.mesesMin} e ${dados.limites.mesesMax}, como no anúncio.`}>
-                <select className="input" value={t.meses} onChange={(e) => set("meses", Number(e.target.value))} data-testid="proposta-meses">
+                <select className="input" value={t.meses} onChange={(e) => setT((x) => ({ ...x, meses: Number(e.target.value), dias: Number(e.target.value) * 30 }))} data-testid="proposta-meses">
                   {meses.map((m) => (
                     <option key={m} value={m}>
                       {m} {m === 1 ? "mês" : "meses"}
@@ -222,7 +226,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               </div>
             </dl>
             <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="proposta-taxa-dono">
-              Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, termos.meses)}.
+              Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, tot.dias / 30)}.
             </p>
             {erro && (
               <p className="mt-3 text-[13px] text-red-600" role="alert" data-testid="proposta-erro">
