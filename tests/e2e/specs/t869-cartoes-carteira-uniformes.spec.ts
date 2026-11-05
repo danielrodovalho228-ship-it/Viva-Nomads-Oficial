@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { MIN_IMOVEIS_ANALISE_CARTEIRA } from "../../../src/lib/cobranca/regra";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -15,8 +16,8 @@ test.describe("T869 — indicadores da carteira com a mesma altura na linha", ()
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    // Sem imóvel a carteira mostra o vazio (sem indicadores): um imóvel ativo basta para os 6 cartões.
-    await criarImovelPronto(ids.dono, `Studio T869 ${sufixo}`, { ativo: true });
+    // A análise da carteira só abre com MIN_IMOVEIS_ANALISE_CARTEIRA imóveis ativos (antes disso: "carteira-fechada").
+    for (let i = 1; i <= MIN_IMOVEIS_ANALISE_CARTEIRA; i++) await criarImovelPronto(ids.dono, `Studio T869 ${i} ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
