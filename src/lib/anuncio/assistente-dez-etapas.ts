@@ -155,7 +155,11 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };
 }
 
-/** E260 (b) + E271: quantas pendências seguram a publicação (as linhas por passo + as seções do Passo 10). */
+/**
+ * E260 (b) + E271: quantas pendências seguram a publicação. E598: conta ITENS, não linhas — os "Falta: …" de cada passo
+ * + as pendências do Passo 10 —, que são os mesmos itens do "Falta para publicar" do cartão de Meus imóveis (um passo
+ * com dois itens faltando conta 2).
+ */
 export function faltamNaConferencia(c: { itens: ItemConferencia[]; pendentesNaRevisao: string[] }): number {
-  return c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length;
+  return c.itens.reduce((n, i) => n + (i.ok ? 0 : Math.max(1, i.faltam.length)), 0) + c.pendentesNaRevisao.length;
 }
