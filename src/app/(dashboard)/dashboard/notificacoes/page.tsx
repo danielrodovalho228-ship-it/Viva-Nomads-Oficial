@@ -11,6 +11,7 @@ import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
 import { meusAvisos } from "@/lib/data/avisos-actions";
 import { ListaAvisos } from "@/components/account/lista-avisos";
 import { IrParaAvisos } from "@/components/account/ir-para-avisos";
+import { TextoManutencaoVazia } from "@/components/account/link-manutencao";
 import { FILTROS_AVISOS, type FiltroAvisos } from "@/lib/notifications/sino";
 import { getCanais } from "@/lib/data/canais-actions";
 import { getCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
@@ -151,16 +152,8 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
           {avisos.length === 0 && r?.falhou ? (
             <p className="text-sm text-muted">{MSG_AVISOS_NAO_CARREGARAM}</p>
           ) : avisos.length === 0 ? (
-            <p className="text-sm text-muted">
-              Nenhuma atualização por enquanto. As ordens de manutenção ficam em{" "}
-              <Link
-                href="/dashboard/solicitacoes"
-                className="font-medium text-forest underline"
-              >
-                Solicitações
-              </Link>
-              .
-            </p>
+            // E468: o destino segue o papel ativo (parceiro → Pedidos do painel dele; dono e morador → Solicitações).
+            <TextoManutencaoVazia />
           ) : (
             <ul className="divide-y divide-sage-100">
               {avisos.map((a) => (
@@ -174,6 +167,7 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
                       {a.imovel} · {dataHoraBrasilia(new Date(a.criadoEm))}
                     </span>
                   </span>
+                  {/* Cada atualização é uma ordem de manutenção (de um imóvel ou estadia): abre em Solicitações. */}
                   <Link
                     href="/dashboard/solicitacoes"
                     className="shrink-0 text-xs font-medium text-forest underline"
