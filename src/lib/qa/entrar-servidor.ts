@@ -96,7 +96,7 @@ export async function entrarComoQa(
   if (limiteIp === "erro") return { status: 503 };
 
   const email = emailNormalizado(entrada.email);
-  if (!email) return recusa("perfil");
+  if (!email) return recusa("email");
   const admin = createAdminClient();
   if (!admin) return { status: 503 };
 

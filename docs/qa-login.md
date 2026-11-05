@@ -36,14 +36,15 @@ Pelo terminal ou por um teste automatizado: `POST /api/qa/entrar` com o corpo JS
 
 ## Por que deu 404 (log do servidor)
 
-O cliente recebe sempre o mesmo 404. No log do servidor (Vercel › Logs), cada recusa deixa **uma** linha JSON `{"evento":"qa_porta_recusa","motivo":"…"}`, sem e-mail, sem chave e sem IP:
+Sem a chave certa (ou com a porta desligada), o cliente recebe sempre o mesmo 404 e o formulário diz "A chave não confere". E488: **com a chave certa**, a recusa vira **403** com o código da causa (`{"ok":false,"motivo":"perfil"}`: `perfil`, `2fa`, `padrao`, `admin_fechada` ou `email`) e o formulário mostra a frase só daquela causa. No log do servidor (Vercel › Logs), cada recusa deixa **uma** linha JSON `{"evento":"qa_porta_recusa","motivo":"…"}`, sem e-mail, sem chave e sem IP:
 
 | Motivo | Quando |
 |---|---|
 | `desligada` | sem `QA_LOGIN_KEY_HASH` válida (página, rota ou servidor) |
 | `metodo` | `GET` em `/api/qa/entrar` (link aberto no navegador ou redirecionamento que virou GET) |
 | `chave` | chave errada, ou chave na URL da página (`?chave=`/`?key=`) |
-| `perfil` | conta que não é de teste, admin comum, e-mail inválido ou conta que não pôde ser criada |
+| `perfil` | conta que não é de teste, admin comum ou conta que não pôde ser criada |
+| `email` | o e-mail digitado não é um e-mail válido (E488) |
 | `2fa` | conta de teste com fator 2FA cadastrado |
 | `padrao` | conta nova com e-mail fora de `QA_EMAIL_PADRAO` |
 | `admin_fechada` | admin observador com a porta dele fechada (`PRE_LANCAMENTO=off` ou depois de 31/12/2026) |
