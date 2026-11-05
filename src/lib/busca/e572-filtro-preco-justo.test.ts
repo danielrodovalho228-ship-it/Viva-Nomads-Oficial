@@ -1,6 +1,6 @@
 /*
-  E572 — filtro "Preço justo" na busca: o morador vai direto aos imóveis com o selo. Lógica da Pista B, atrás da MESMA
-  chave desligada do selo (PRECO_JUSTO_COMPARADOR, família E399-C); a apresentação no painel de filtros é da Pista A.
+  E572 — filtro "Preço justo" na busca: o morador vai direto aos imóveis com o selo. E580: o filtro saiu de trás da
+  chave PRECO_JUSTO_COMPARADOR e ganhou o chip no grupo Contrato — segue o mesmo selo do card (ver e580-…test.ts).
   Par do E572: o indicador interno (admin) de % de imóveis com link de outra plataforma que têm o selo.
   Roda: node --test src/lib/busca/e572-filtro-preco-justo.test.ts
 */
@@ -18,42 +18,37 @@ const comSelo = { ...base, precoJusto: true };
 const semSelo = { ...base, precoJusto: false };
 const FILTRO = { ...FILTROS_PAINEL_VAZIOS, precoJustoOnly: true };
 
-test("chave LIGADA: o filtro só deixa passar quem tem o selo; sem dado de selo não passa", () => {
-  assert.equal(filtroPrecoJustoLigado(FILTRO, true), true);
-  assert.equal(passaPrecoJusto(comSelo, FILTRO, true), true);
-  assert.equal(passaPrecoJusto(semSelo, FILTRO, true), false);
-  assert.equal(passaPrecoJusto(base, FILTRO, true), false);
+test("o filtro só deixa passar quem tem o selo; sem dado de selo não passa (E580: sem chave)", () => {
+  assert.equal(filtroPrecoJustoLigado(FILTRO), true);
+  assert.equal(passaPrecoJusto(comSelo, FILTRO), true);
+  assert.equal(passaPrecoJusto(semSelo, FILTRO), false);
+  assert.equal(passaPrecoJusto(base, FILTRO), false);
   // Filtro não escolhido: ninguém sai, com ou sem selo.
-  assert.equal(passaPrecoJusto(semSelo, FILTROS_PAINEL_VAZIOS, true), true);
+  assert.equal(passaPrecoJusto(semSelo, FILTROS_PAINEL_VAZIOS), true);
 });
 
-test("chave DESLIGADA: o filtro não tira ninguém, não conta e não aparece no resumo", () => {
-  assert.equal(filtroPrecoJustoLigado(FILTRO, false), false);
-  assert.equal(passaPrecoJusto(semSelo, FILTRO, false), true);
-  assert.equal(passaPrecoJusto(base, FILTRO, false), true);
-});
-
-test("a chave segue DESLIGADA no ambiente: passaNoPainel, contagem e resumo ignoram o filtro", () => {
+test("E580: com a chave do motor DESLIGADA o filtro vale, conta e entra no resumo (segue o selo do card)", () => {
   assert.equal(PRECO_JUSTO_COMPARADOR, false);
-  assert.equal(passaNoPainel(semSelo, FILTRO), true);
-  assert.equal(contarFiltrosPainel(FILTRO), contarFiltrosPainel(FILTROS_PAINEL_VAZIOS));
-  assert.doesNotMatch(resumoFiltros(FILTRO), /Preço justo/);
+  assert.equal(passaNoPainel(semSelo, FILTRO), false);
+  assert.equal(passaNoPainel(comSelo, FILTRO), true);
+  assert.equal(contarFiltrosPainel(FILTRO), contarFiltrosPainel(FILTROS_PAINEL_VAZIOS) + 1);
+  assert.match(resumoFiltros(FILTRO), /Preço justo/);
   assert.match(ler("src/lib/flags.ts"), /export const PRECO_JUSTO_COMPARADOR = process\.env\.NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR === "on";/);
 });
 
-test("painel: o filtro passa pela regra única (passaNoPainel), conta 1 e entra no resumo quando a chave liga", () => {
+test("painel: o filtro passa pela regra única (passaNoPainel), conta 1 e entra no resumo", () => {
   const src = ler("src/lib/busca/painel-filtros.ts");
   assert.match(src, /if \(!passaPrecoJusto\(p, f\)\) return false;/);
   assert.match(src, /\(filtroPrecoJustoLigado\(f\) \? 1 : 0\)/);
   assert.match(src, /if \(filtroPrecoJustoLigado\(f\)\) partes\.push\("Preço justo"\);/);
 });
 
-test("busca: a URL ?precojusto=1 só vale com a chave; Limpar zera; a lista e a contagem usam o mesmo filtro", () => {
+test("busca: a URL ?precojusto=1 vale (E580: sem chave); Limpar zera; a lista e a contagem usam o mesmo filtro", () => {
   const busca = ler("src/app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /if \(PRECO_JUSTO_COMPARADOR && on\("precojusto"\)\) setPrecoJustoOnly\(true\);/);
-  assert.match(busca, /put\("precojusto", PRECO_JUSTO_COMPARADOR && precoJustoOnly, "1"\);/);
+  assert.match(busca, /if \(on\("precojusto"\)\) setPrecoJustoOnly\(true\);/);
+  assert.match(busca, /put\("precojusto", precoJustoOnly, "1"\);/);
   assert.match(busca, /negociaOnly,\n\s+precoJustoOnly,/);
-  assert.match(busca, /setPrecoJustoOnly\(PRECO_JUSTO_COMPARADOR && \(f\.precoJustoOnly \?\? false\)\);/);
+  assert.match(busca, /setPrecoJustoOnly\(f\.precoJustoOnly \?\? false\);/);
   assert.ok((busca.match(/setPrecoJustoOnly\(false\)/g) ?? []).length >= 2, "os dois 'Limpar' zeram o filtro");
   // A lista da /buscar já traz o selo calculado no servidor (motor E399-C com a chave).
   assert.match(ler("src/lib/data/properties.ts"), /p\.precoJusto = decidirSelo\(entrada, agora\)\.selo;/);
