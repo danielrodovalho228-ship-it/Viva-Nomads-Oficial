@@ -20,6 +20,12 @@ const dono = conta("dono", "Dina Dona", "owner");
 const morador = conta("morador", "Mário Morador");
 const avA = conta("ava", "Ana Avaliadora");
 const ids: Record<string, string> = {};
+/**
+ * Isolamento (Pista C, 05/11, diagnóstico no #2720): uma cidade SÓ deste spec para o imóvel, o avaliador e a tabela de
+ * preço. Em Uberlândia, a fila do rodízio é dividida com a t303 e com outros specs (--workers=2): a designação ia para o
+ * avaliador de outro spec e o caso do avaliador esperava 240 s por um pedido que não era dele.
+ */
+const CIDADE = `Cidade Lab T315 ${sufixo}`;
 let numeroA = "";
 let pedidoId = "";
 
@@ -37,6 +43,16 @@ async function comChave(page: Page) {
 async function primariosNoMain(page: Page): Promise<number> {
   return page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible").count();
 }
+/**
+ * L-100 (Pista C, 05/11; dono: Pista A/B): desde o NIVEIS-MEDIR-B (24/10) a página do nível mostra sempre o "Medir a
+ * internet agora" com variant="primary" (src/components/anuncio/medir-internet.tsx) — dois primários com o "Pedir
+ * avaliação do imóvel". O caso "0" abaixo segura o L-100 (test.fail); o caso 1 conta os primários SEM esse botão, para
+ * o resto da tela seguir conferido. Corrigido o L-100, o caso 0 passa e o test.fail sai.
+ */
+const SEM_MEDIR = ':not([data-testid="medir-internet-botao"])';
+async function primariosSemMedir(page: Page): Promise<number> {
+  return page.locator("main").locator(`button.bg-forest:visible${SEM_MEDIR}, a.bg-forest:visible${SEM_MEDIR}`).count();
+}
 
 test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -49,7 +65,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
         .select("id")
         .single();
       if (error) throw error;
@@ -58,10 +74,11 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     // A já credenciado e ativo, o primeiro do rodízio (nunca designado, ativado há muito tempo).
     const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
     numeroA = n as string;
-    const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: "Uberlândia", numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
+    const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: CIDADE, numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel publicado, ocupado pelo morador (contrato vigente) e a conversa entre os dois.
     ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t315 ${sufixo}`, { ativo: true });
+    await adm().from("properties").update({ city: CIDADE }).eq("id", ids.imovel);
     const hoje = new Date();
     const dia = (d: number) => new Date(hoje.getTime() + d * 86_400_000).toISOString().slice(0, 10);
     const { data: c, error: eK } = await adm()
@@ -78,9 +95,9 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     const { data: precos } = await adm()
       .from("vistoria_precos")
       .insert([
-        { cidade: "Uberlândia", porte: "estudio", valor: 280 },
-        { cidade: "Uberlândia", porte: "q1_2", valor: 350 },
-        { cidade: "Uberlândia", porte: "q3_mais", valor: 420 },
+        { cidade: CIDADE, porte: "estudio", valor: 280 },
+        { cidade: CIDADE, porte: "q1_2", valor: 350 },
+        { cidade: CIDADE, porte: "q3_mais", valor: 420 },
       ])
       .select("id");
     ids.precos = ((precos ?? []) as { id: string }[]).map((x) => x.id).join(",");
@@ -94,6 +111,22 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     await adm().from("vistoria_designacoes").delete().in("avaliador_id", ((await adm().from("avaliadores_credenciamento").select("id").in("parceiro_id", [ids.parcA].filter(Boolean))).data ?? []).map((x) => x.id as string));
     await adm().from("avaliadores_credenciamento").delete().in("parceiro_id", [ids.parcA].filter(Boolean));
     await apagarContas([ids.A, ids.morador, ids.dono]);
+  });
+
+  test("0. L-100 — um primário só na página do nível (o \"Medir a internet agora\" também é primário)", async ({ browser }) => {
+    test.fail(true, "L-100: /dashboard/imoveis/[id]/nivel mostra dois primários (Medir a internet agora + Pedir avaliação do imóvel)");
+    const d = await entrar(browser, dono.email, senha);
+    await comChave(d);
+    await largura(d, 1280);
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+    await expect(d.getByTestId("avaliacao-dono").getByTestId("rota-foto")).toBeVisible({ timeout: 30_000 });
+    // O "Medir" monta no cliente depois do bloco da avaliação: conta com a página assentada (se a correção tirar o
+    // componente da página, a espera só expira e a conta segue).
+    await d.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+    await d.getByTestId("medir-internet").or(d.getByTestId("medir-internet-indisponivel")).first().waitFor({ timeout: 15_000 }).catch(() => {});
+    await d.waitForTimeout(500);
+    expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
+    await d.context().close();
   });
 
   test("1. dono: duas rotas lado a lado, frase fixa, um primário; pedir → linha do tempo com o nº, sem repetir a frase", async ({ browser }) => {
@@ -114,7 +147,8 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
       }));
       if (w === 1280) expect(Math.abs(f!.y - a!.y), "lado a lado a 1280").toBeLessThan(2);
       else expect(a!.y, "uma embaixo da outra a 390").toBeGreaterThan(f!.y + f!.height - 1);
-      expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
+      // L-100: o "Medir a internet agora" fica fora desta conta (o caso 0 segura o defeito).
+      expect(await primariosSemMedir(d), "um primário só no bloco da avaliação e no resto da tela (QA #1111 item 7)").toBe(1);
       await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
@@ -151,7 +185,9 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const quando = new Date(Date.now() + 2 * 86_400_000);
     const dia = new Date(quando.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
-    await item.getByTestId("agendar-visita").getByLabel("Data e hora da visita").fill(`${dia}T10:00`);
+    // Varredura 01/11: no computador o campo é a data do site (dd/mm/aaaa) + a lista de hora; o texto completo
+    // "AAAA-MM-DDTHH:MM" colado na data preenche as duas partes (como na t211).
+    await item.getByTestId("agendar-visita").getByRole("textbox", { name: "Data", exact: true }).fill(`${dia}T10:00`);
     await item.getByTestId("agendar-visita").getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("agendado_para").eq("id", pedidoId).single()).data?.agendado_para as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
     await p.context().close();
