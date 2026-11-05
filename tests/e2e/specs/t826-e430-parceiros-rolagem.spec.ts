@@ -4,6 +4,8 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, no
 /*
   T826 — E430 (D-V12): /parceiros sem rolagem lateral para quem já tem pedido de parceria (e-mail longo na frase
   "Mandamos a confirmação para …"). 390 e 1280.
+  Reteste (Pista C, 05/11): pedido da lista-master (E430, prova de laboratório pendente — a t826 ficava de fora das
+  rodadas noturnas pelo limite de tempo, L-5); roda no portão do PR do reteste.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
