@@ -73,7 +73,8 @@ test.describe("T863 — E562: candidatura de 43 dias → proposta enviada → ac
     await abrir(page, `/dashboard/orcamentos/nova?interessado=${ids.lead}`);
     await expect(page.getByTestId("montagem-proposta")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("Número de meses")).toHaveCount(0);
-    await expect(page.getByTestId("proposta-saida")).toHaveValue(SAIDA_DATA);
+    // O campo de data do computador mostra dd/mm/aaaa (máscara da main); no celular, o campo nativo guarda ISO.
+    await expect(page.getByTestId("proposta-saida")).toHaveValue(new RegExp(`^(${SAIDA_DATA}|${SAIDA_DATA.split("-").reverse().join("/")})$`));
     await expect(page.getByTestId("proposta-dias")).toContainText("43 dias");
     await expect(page.getByTestId("resumo-rotulo-total")).toHaveText("Total da estadia (43 dias)");
     await expect(page.getByTestId("resumo-total-contrato")).toContainText("4.671,67");
