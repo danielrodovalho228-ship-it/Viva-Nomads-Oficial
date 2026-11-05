@@ -63,7 +63,8 @@ function confereQuadro(c: string) {
   expect(c).toContain(`Saída: ${br(periodo.saida!)} (30 dias)`);
   expect(c).toContain(`Valor mensal: R$ 3.200`);
   expect(c).toMatch(/Total por mês: R\$ [\d.]+/);
-  expect(c).toMatch(/Total da estadia: R\$ [\d.]+ em 1 mês/);
+  // E583: a estadia em dias, o mesmo total da tela ("Total da estadia (30 dias): R$ X (1 mês)").
+  expect(c).toMatch(/Total da estadia \(30 dias\): R\$\s?[\d.,]+ \(1 mês\)/);
   expect(c).not.toContain("A combinar com o proprietário");
 }
 
