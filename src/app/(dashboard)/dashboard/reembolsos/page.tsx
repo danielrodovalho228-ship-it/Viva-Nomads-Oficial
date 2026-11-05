@@ -179,12 +179,13 @@ function ReembolsoPreview() {
               </ul>
             )}
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_8rem_1fr_auto]">
+            {/* Varredura 768 (passada 15): 2 colunas a partir do tablet (com 4, os campos não encolhiam e o "Adicionar" saía da tela). */}
+            <div className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="reembolso-linha-desconto">
               <input
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Motivo (ex.: reparo de parede)"
-                className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+                className="h-11 min-w-0 rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
               <CampoReais
                 semPrefixo
@@ -193,15 +194,15 @@ function ReembolsoPreview() {
                 onChange={(v) => setValor(v ?? 0)}
                 placeholder="Valor (R$)"
                 ariaLabel="Valor (R$)"
-                className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+                className="w-full h-11 min-w-0 rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
               <input
                 value={evidencia}
                 onChange={(e) => setEvidencia(e.target.value)}
                 placeholder="Evidência (arquivo/foto)"
-                className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+                className="h-11 min-w-0 rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
-              <Button variant="outline" onClick={addDesconto} disabled={!motivo.trim() || valor <= 0}>
+              <Button variant="outline" className="h-11" onClick={addDesconto} disabled={!motivo.trim() || valor <= 0}>
                 <Plus className="h-4 w-4" /> Adicionar
               </Button>
             </div>
