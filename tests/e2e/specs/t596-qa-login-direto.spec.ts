@@ -120,20 +120,31 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     expect((await request.get(`/qa/entrar?email=teste.t596.${sufixo}@lab.vivanomads.test`)).status()).toBe(404);
   });
 
-  test("2. chave errada, conta real, admin comum e admin de teste sem qa_admin → 404 igual, sem sessão", async () => {
-    const casos = [
+  test("2. sem a chave certa → 404 igual; com a chave, conta real, admin comum e admin de teste sem qa_admin → 403 'perfil' (E488), sem sessão", async () => {
+    const semChave = [
       await entrar({ email: `teste.t596.${sufixo}@lab.vivanomads.test`, chave: `${CHAVE}x` }),
       await entrar({ email: `teste.t596.${sufixo}@lab.vivanomads.test`, chave: HASH }), // o hash não serve de chave
       await entrar({ email: `teste.t596.${sufixo}@lab.vivanomads.test` }),
+    ];
+    for (const r of semChave) {
+      expect(r.status).toBe(404);
+      expect(r.texto).toBe(semChave[0].texto);
+      expect(r.cookies.some((c) => /sb-.*-auth-token/.test(c))).toBe(false);
+    }
+    // E488: quem tem a chave certa recebe a causa específica (uma só), nunca a lista de causas possíveis.
+    const comChave = [
       await entrar({ email: `real.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }),
       await entrar({ email: `daniel.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }),
       await entrar({ email: `admin.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }),
     ];
-    for (const r of casos) {
-      expect(r.status).toBe(404);
-      expect(r.texto).toBe(casos[0].texto);
+    for (const r of comChave) {
+      expect(r.status).toBe(403);
+      expect(JSON.parse(r.texto)).toEqual({ ok: false, motivo: "perfil" });
       expect(r.cookies.some((c) => /sb-.*-auth-token/.test(c))).toBe(false);
     }
+    const invalido = await entrar({ email: "nao-e-email", chave: CHAVE });
+    expect(invalido.status).toBe(403);
+    expect(JSON.parse(invalido.texto)).toEqual({ ok: false, motivo: "email" });
   });
 
   test("3. conta de teste: sessão nos cookies, nenhum e-mail sai, registro 'teste' sem e-mail nem chave", async () => {
@@ -174,13 +185,15 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     criadas.push(c2!.id);
     expect(c2).toMatchObject({ role: "tenant", qa_admin: false });
     const fora = `fora.t596.${sufixo}@lab.vivanomads.test`;
-    expect((await entrar({ email: fora, chave: CHAVE })).status).toBe(404);
+    const rFora = await entrar({ email: fora, chave: CHAVE });
+    expect(rFora.status).toBe(403); // E488: com a chave, a causa — fora do padrão
+    expect(JSON.parse(rFora.texto)).toEqual({ ok: false, motivo: "padrao" });
     expect(await contaPorEmail(fora)).toBeNull();
   });
 
   test("5. limite: 30 por hora por IP e 30 por hora por conta", async () => {
     const ip = novoIp();
-    for (let i = 0; i < LIMITE_QA_POR_HORA; i++) expect((await entrar({ email: `fora${i}.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }, ip)).status).toBe(404);
+    for (let i = 0; i < LIMITE_QA_POR_HORA; i++) expect((await entrar({ email: `fora${i}.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }, ip)).status).toBe(403);
     expect((await entrar({ email: `teste.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }, ip)).status).toBe(429);
     expect((await entrar({ email: `teste.t596.${sufixo}@lab.vivanomads.test`, chave: "errada" }, ip)).status, "chave errada segue 404").toBe(404);
     // Por conta: as 30 da hora consumidas no limitador com a MESMA chave da rota (30 entradas reais estourariam o
@@ -265,7 +278,9 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
 
   test("7. desligamento: com PRE_LANCAMENTO=off o observador leva 404; a conta de teste continua entrando", async () => {
     await subir(3129, LOG_OFF, { NEXT_PUBLIC_PRE_LANCAMENTO: "off" });
-    expect((await entrar({ email: emailObs, chave: CHAVE }, novoIp(), BASE_OFF)).status).toBe(404);
+    const fechada = await entrar({ email: emailObs, chave: CHAVE }, novoIp(), BASE_OFF);
+    expect(fechada.status).toBe(403); // E488: com a chave, a causa — a entrada do observador fechou
+    expect(JSON.parse(fechada.texto)).toEqual({ ok: false, motivo: "admin_fechada" });
     expect((await entrar({ email: `teste.t596.${sufixo}@lab.vivanomads.test`, chave: CHAVE }, novoIp(), BASE_OFF)).status).toBe(200);
     // E no servidor com o pré-lançamento ligado o observador segue entrando.
     expect((await entrar({ email: emailObs, chave: CHAVE })).status).toBe(200);
