@@ -33,6 +33,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "RESUMO_SEMANAL_ATIVO", rotulo: "Resumo semanal de recomendações (e-mail às terças)", variavel: "RESUMO_SEMANAL_ATIVO" },
   { nome: "SELETOR_IDIOMA", rotulo: "Seletor de idioma (globo PT/EN) no topo público", variavel: "NEXT_PUBLIC_SELETOR_IDIOMA" },
   { nome: "PRECO_JUSTO_COMPARADOR", rotulo: "Selo \"Preço justo\" pelo link do Airbnb (dados simulados)", variavel: "NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR" },
+  { nome: "FAIXA_91_180_ATIVA", rotulo: "Estadias de 91 a 180 dias (desligada: propostas e contratos novos até 90 dias)", variavel: "NEXT_PUBLIC_FAIXA_91_180_ATIVA" },
 ];
 
 export const ONDE_MUDA_AMBIENTE = "Muda na Vercel (Daniel)";

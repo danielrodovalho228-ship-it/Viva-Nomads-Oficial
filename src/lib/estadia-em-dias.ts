@@ -13,6 +13,7 @@
 */
 import { REGRAS_CONTRATO } from "../config/planos.ts";
 import { comissaoSobreDias } from "./cobranca/regra.ts";
+import { FAIXA_91_180_ATIVA } from "./flags.ts";
 
 /** Dias por "mês" da regra comercial (30). */
 export const DIAS_DO_MES = REGRAS_CONTRATO.diasPorMes;
@@ -25,10 +26,18 @@ export const DIAS_MAX_BLOCO = REGRAS_CONTRATO.maxDiasBloco;
 const centavos = (v: number) => Math.round(v * 100) / 100;
 const pos = (v: unknown) => (Number.isFinite(Number(v)) ? Math.max(0, Number(v)) : 0);
 
-/** Dias de estadia aceitos: inteiro entre 30 e 180. */
-export function diasValidos(dias: unknown): boolean {
+/**
+ * Teto de dias de uma estadia NOVA (proposta ou contrato): 180 com a trava FAIXA_91_180_ATIVA ligada (padrão); 90 (um
+ * bloco de temporada) com ela desligada.
+ */
+export function diasMaxEstadiaVigente(faixa91a180Ativa: boolean = FAIXA_91_180_ATIVA): number {
+  return faixa91a180Ativa ? DIAS_MAX_ESTADIA : DIAS_MAX_BLOCO;
+}
+
+/** Dias de estadia aceitos: inteiro entre 30 e o teto vigente (180; 90 com a trava FAIXA_91_180 desligada). */
+export function diasValidos(dias: unknown, faixa91a180Ativa: boolean = FAIXA_91_180_ATIVA): boolean {
   const d = Number(dias);
-  return Number.isInteger(d) && d >= DIAS_MIN_ESTADIA && d <= DIAS_MAX_ESTADIA;
+  return Number.isInteger(d) && d >= DIAS_MIN_ESTADIA && d <= diasMaxEstadiaVigente(faixa91a180Ativa);
 }
 
 /** Meses de REFERÊNCIA de uma estadia em dias (para cima): 30→1, 43→2, 90→3, 91→4. */

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { enviarProposta, type DadosMontagem } from "@/lib/data/propostas-actions";
 import { calcularTotais, diasDosTermos, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
-import { DIAS_MAX_ESTADIA, DIAS_MIN_ESTADIA, mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
+import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente, mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
 import { formatBRLExato, periodoPorExtenso, precoDaProposta, rotuloTotalDaEstadia } from "@/lib/precos";
 import { resumoContratoEmDias } from "@/lib/contrato-blocos";
 import { diasDaSelecao } from "@/lib/imovel/selecao-estadia";
@@ -99,7 +99,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
   }
 
   const diasMin = Math.max(DIAS_MIN_ESTADIA, dados.limites.diasMin ?? dados.limites.mesesMin * 30);
-  const diasMax = Math.min(DIAS_MAX_ESTADIA, dados.limites.diasMax ?? dados.limites.mesesMax * 30);
+  const diasMax = Math.min(diasMaxEstadiaVigente(), dados.limites.diasMax ?? dados.limites.mesesMax * 30);
 
   return (
     <>

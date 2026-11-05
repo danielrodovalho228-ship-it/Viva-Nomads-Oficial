@@ -158,3 +158,10 @@ export const RESUMO_SEMANAL_ATIVO = process.env.RESUMO_SEMANAL_ATIVO === "1";
  * (Apify/AirROI) fica para depois do CNPJ (decisão E406 do Daniel).
  */
 export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR === "on";
+
+/**
+ * TRAVA FAIXA_91_180 (preparação pedida pelo coordenador, 05/11): estadias de 91 a 180 dias. LIGADA por padrão — o
+ * comportamento de hoje (30 a 180 dias) não muda; só o valor "off" desliga. Desligada, propostas e contratos NOVOS
+ * ficam limitados a 30–90 dias (um bloco de temporada). Contratos e renovações que já existem não mudam.
+ */
+export const FAIXA_91_180_ATIVA = process.env.NEXT_PUBLIC_FAIXA_91_180_ATIVA !== "off";

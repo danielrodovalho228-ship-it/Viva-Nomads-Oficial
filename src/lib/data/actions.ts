@@ -87,7 +87,7 @@ import {
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
-import { diasValidos } from "@/lib/estadia-em-dias";
+import { diasMaxEstadiaVigente, diasValidos } from "@/lib/estadia-em-dias";
 import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
@@ -1457,8 +1457,11 @@ export async function registrarContrato(
 
   const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
   // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
-  if (acordada ? !diasValidos(acordada.dias) : !(prazo >= PRAZO_MIN_MESES && prazo <= PRAZO_MAX_MESES))
-    return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${PRAZO_MAX_MESES} meses, até ${PRAZO_MAX_DIAS} dias).` };
+  // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
+  const tetoDias = diasMaxEstadiaVigente();
+  const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / 30));
+  if (acordada ? !diasValidos(acordada.dias) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
+    return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${tetoMeses} meses, até ${Math.min(PRAZO_MAX_DIAS, tetoDias)} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
   if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
