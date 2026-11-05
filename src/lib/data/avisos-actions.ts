@@ -47,7 +47,7 @@ export async function meusAvisos(limite = 30): Promise<AvisoDoSino[] | null> {
   const s = await sessao();
   if (!s) return null;
   const n = Math.min(Math.max(1, Math.round(limite)), 100);
-  const ler = (colunas: string) => s.supabase.from("avisos").select(colunas).eq("usuario_id", s.userId).order("criado_em", { ascending: false }).limit(n);
+  const ler = (colunas: string) => s.supabase.from("avisos").select(colunas).eq("usuario_id", s.userId).order("criado_em", { ascending: false }).order("id", { ascending: false }).limit(n);
   let { data, error } = await ler("id, evento, prioridade, titulo, texto, url, ref_id, criado_em, lido_em, resolvido_em");
   // Sem a 0298 aplicada (coluna texto), lê como antes — o aviso sai só com o título.
   if (error?.code === "42703") ({ data, error } = await ler("id, evento, prioridade, titulo, url, ref_id, criado_em, lido_em, resolvido_em"));

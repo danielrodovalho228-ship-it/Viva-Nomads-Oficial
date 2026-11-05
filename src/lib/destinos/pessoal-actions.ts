@@ -8,6 +8,7 @@
     para a fila do admin em /admin/destinos.
   • Laboratório: nada sai para a rede (pontoDoLaboratorio).
 */
+import { recusaObservador } from "@/lib/qa/observador";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
@@ -167,6 +168,9 @@ export async function resolverLocalNaoAchado(id: string): Promise<{ ok: boolean;
   const admin = createAdminClient();
   if (!supabase || !uid || !admin || !UUID.test(id ?? "")) return { ok: false, erro: "Sem permissão." };
   if (!(await ehAdmin(supabase, uid))) return { ok: false, erro: "Sem permissão." };
+  // E477: o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(uid);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { error } = await admin.from("destinos_nao_achados").update({ resolvido_em: new Date().toISOString(), resolvido_por: uid }).eq("id", id).is("resolvido_em", null);
   if (error) return { ok: false, erro: "Não foi possível salvar." };
   revalidatePath("/admin/destinos");

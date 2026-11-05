@@ -28,6 +28,7 @@ import { avisoInicioSemLeitura, type FonteDoInicio } from "@/lib/painel/sem-leit
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { BOTAO_PARCERIA_APROVADA, HREF_ATIVAR_PARCERIA, TEXTO_PARCERIA_APROVADA, situacaoParceiro } from "@/lib/parceiros/situacao-conta";
 import { ButtonLink } from "@/components/ui/button";
+import { RodapeInicio } from "@/components/dashboard/rodape-inicio";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -151,12 +152,19 @@ export default async function DashboardPage() {
     // E181: "Buscas salvas" conta a MESMA lista de /dashboard/buscas (um número, uma fonte).
     ou("buscas", listarBuscasSalvas({ exigir: true }), null),
   ]);
-  const [pausadaEm, capaRascunho] = await Promise.all([ou("conta", contaPausadaEm(), null), capaDoRascunho(draft?.id ?? null, draft?.data ?? null)]);
+  // E503: o que depende só do 1º lote sai num 2º lote, junto — antes eram quatro esperas em série (conta pausada e capa,
+  // parceria, fatos da conta, agenda), e o esqueleto do painel ficava na tela a soma delas a cada volta ao Início.
+  const [[pausadaEm, capaRascunho], parceriaLida, fatos, agendaHoje] = await Promise.all([
+    Promise.all([ou("conta", contaPausadaEm(), null), capaDoRascunho(draft?.id ?? null, draft?.data ?? null)]),
+    // E576: parceria aprovada e página ainda não ativada → aviso no Início com o caminho para ativar.
+    minhaParceria().catch(() => null),
+    // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
+    fatosDaConta(draft).catch(() => null),
+    // E190 (parte 2): quem entra e quem sai HOJE (a mesma leitura da Agenda), só para quem tem imóvel.
+    imoveisDono.length ? carregarAgendaDoDono().catch(() => null) : Promise.resolve(null),
+  ]);
   const rascunho = rascunhoDoDraft(draft);
-  // E576: parceria aprovada e página ainda não ativada → aviso no Início com o caminho para ativar.
-  const parceria = situacaoParceiro(await minhaParceria().catch(() => null));
-  // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
-  const fatos = await fatosDaConta(draft).catch(() => null);
+  const parceria = situacaoParceiro(parceriaLida);
   // Prompt 50: o checklist some na ativação do papel (data gravada em ativacoes; o que já aconteceu e falta gravar,
   // grava agora — rede de segurança dos pontos de gravação).
   const ativados = fatos ? await ativacoesDaSessao(fatos).catch(() => ({})) : {};
@@ -187,8 +195,6 @@ export default async function DashboardPage() {
 
   // PROP-6: o Início do dono (modo dono) — faixa com a pendência mais urgente e o bloco principal, das mesmas regras.
   const capaAnuncio = imoveisDono.find((i) => i.photos?.[0])?.photos[0] ?? null;
-  // E190 (parte 2): quem entra e quem sai HOJE (a mesma leitura da Agenda), só para quem tem imóvel.
-  const agendaHoje = imoveisDono.length ? await carregarAgendaDoDono().catch(() => null) : null;
   const hoje = agendaHoje ? cartoesDeHoje(agendaHoje.itens, hojeEmBrasilia(agora), agendaHoje.horarios) : [];
   const inicioDono = {
     alerta: alertaDoTopo(decisoesDono),
@@ -253,6 +259,8 @@ export default async function DashboardPage() {
       totalBuscasSalvas={buscasSalvas ? buscasSalvas.length : null}
       inicioDono={inicioDono}
       />
+      {/* E503: o Início fecha com um rodapé curto, em vez de terminar num vão sem nada. */}
+      <RodapeInicio />
     </>
   );
 }

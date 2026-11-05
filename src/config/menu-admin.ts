@@ -11,11 +11,14 @@ export const SISTEMA_DISPONIVEL = true;
 const folha = (id: string, rotulo: string, href: string, icone: ItemMenu["icone"]): ItemMenu => ({ id, rotulo, href, icone });
 const grupo = (id: string, rotulo: string, icone: ItemMenu["icone"], filhos: ItemMenu[]): ItemMenu => ({ id, rotulo, icone, filhos });
 
+// E479: cada rótulo diz o que a tela é e bate com o endereço (antes: Anúncios→imoveis, Manutenção→solicitacoes,
+// Avaliações do imóvel→avaliadores, Chaves e integrações→sistema, Testes→dados-de-teste). Os endereços não mudaram.
+
 export const BARRA_ADMIN: readonly ItemMenu[] = [
   folha("admin-painel", "Visão geral", "/admin", "visao"),
   folha("admin-pendencias", "Pendências", "/admin/pendencias", "solicitacoes"),
   grupo("admin-anuncios-pessoas", "Anúncios e pessoas", "imoveis", [
-    folha("admin-imoveis", "Anúncios", "/admin/imoveis", "imoveis"),
+    folha("admin-imoveis", "Imóveis", "/admin/imoveis", "imoveis"),
     folha("admin-ajuda-publicacao", "Publicamos para você", "/admin/ajuda-publicacao", "documentos"),
     folha("admin-pedidos", "Pedidos de moradia", "/admin/pedidos", "pedidos"),
     folha("admin-usuarios", "Usuários", "/admin/usuarios", "conta"),
@@ -26,13 +29,13 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
   grupo("admin-estadias", "Estadias", "estadias", [
     folha("admin-contratos", "Contratos", "/admin/contratos", "contratos"),
     folha("admin-candidaturas", "Candidaturas", "/admin/candidaturas", "candidaturas"),
-    folha("admin-solicitacoes", "Manutenção", "/admin/solicitacoes", "solicitacoes"),
+    folha("admin-solicitacoes", "Solicitações de manutenção", "/admin/solicitacoes", "solicitacoes"),
     folha("admin-servicos", "Serviços do morador", "/admin/servicos", "ferramentas"),
     folha("admin-atendimento", "Atendimento", "/admin/atendimento", "atendimento"),
   ]),
   grupo("admin-rede", "Rede", "rede", [
     folha("admin-parceiros", "Parceiros", "/admin/parceiros", "parceiros"),
-    folha("admin-avaliadores", "Avaliações do imóvel", "/admin/avaliadores", "parceiros"),
+    folha("admin-avaliadores", "Avaliadores", "/admin/avaliadores", "parceiros"),
   ]),
   grupo("admin-cidades-marketing", "Cidades e marketing", "marketing", [
     folha("admin-cidades", "Cidades", "/admin/cidades", "pedidosCidade"),
@@ -50,9 +53,9 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
     folha("admin-socios", "Caixa dos Sócios", "/admin/socios", "socios"),
   ]),
   grupo("admin-sistema", "Sistema", "ferramentas", [
-    ...(SISTEMA_DISPONIVEL ? [folha("admin-sistema-chaves", "Chaves e integrações", "/admin/sistema", "ferramentas")] : []),
+    ...(SISTEMA_DISPONIVEL ? [folha("admin-sistema-chaves", "Sistema e integrações", "/admin/sistema", "ferramentas")] : []),
     folha("admin-retencao", "Dados e retenção", "/admin/retencao", "documentos"),
-    folha("admin-dados-teste", "Testes", "/admin/dados-de-teste", "ferramentas"),
+    folha("admin-dados-teste", "Dados de teste", "/admin/dados-de-teste", "ferramentas"),
   ]),
 ];
 

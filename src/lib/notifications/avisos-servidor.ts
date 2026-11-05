@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
-import { chaveDoAvisoPendente, prioridadeDoAviso, textoDoAviso, tituloComImovel, tituloDoAviso, urlDoAviso, type PapelAviso, type PrioridadeAviso } from "./avisos";
+import { chaveDoAvisoPendente, duplicatasDoPendente, prioridadeDoAviso, textoDoAviso, tituloComImovel, tituloDoAviso, urlDoAviso, type PapelAviso, type PrioridadeAviso } from "./avisos";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 
 /*
@@ -64,7 +64,28 @@ export async function gravarAviso(p: {
   let { error } = await admin.from("avisos").insert({ ...linha, texto });
   if (error?.code === SEM_COLUNA) ({ error } = await admin.from("avisos").insert(linha));
   if (error) console.error("[avisos] não gravou:", error.code, error.message);
+  // E586: dois avisos quase simultâneos passam os dois pela leitura acima; depois de gravar, junta num só.
+  else await juntarPendentes(admin, p.usuarioId, chave);
   return !error;
+}
+
+type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
+
+/** E586: os pendentes repetidos da mesma chave viram um só (o mais antigo, com a hora renovada). Nunca lança. */
+async function juntarPendentes(admin: Admin, usuarioId: string, chave: ReturnType<typeof chaveDoAvisoPendente>): Promise<void> {
+  try {
+    let q = admin.from("avisos").select("id, criado_em").eq("usuario_id", usuarioId).eq("evento", chave.evento).is("lido_em", null).is("resolvido_em", null);
+    q = "refId" in chave ? q.eq("ref_id", chave.refId) : q.is("ref_id", null).eq("titulo", chave.titulo);
+    const { data, error } = await q.limit(20);
+    if (error) return;
+    const d = duplicatasDoPendente((data ?? []) as { id: string; criado_em: string }[]);
+    if (!d || !d.apagar.length) return;
+    const { error: e1 } = await admin.from("avisos").delete().in("id", d.apagar).eq("usuario_id", usuarioId).is("lido_em", null);
+    if (e1) return console.error("[avisos] não juntou:", e1.code, e1.message);
+    await admin.from("avisos").update({ criado_em: new Date().toISOString() }).eq("id", d.manter);
+  } catch {
+    /* juntar é melhoria: o aviso já foi gravado */
+  }
 }
 
 /** A ação do evento foi feita (assinou, respondeu, confirmou): marca "resolvido" nos avisos pendentes daquele objeto. */

@@ -48,13 +48,21 @@ export function rotuloContagem(n: number): string | null {
   return n > 9 ? "9+" : String(Math.floor(n));
 }
 
-const pendente = (a: AvisoTela) => !a.lido_em && !a.resolvido_em;
-const peso = (a: AvisoTela) => (!pendente(a) ? 2 : a.prioridade === "critico" ? 0 : a.prioridade === "urgente" ? 1 : 2);
 const recente = (a: AvisoTela, b: AvisoTela) => Date.parse(b.criado_em) - Date.parse(a.criado_em);
+// E586: desempate estável (mesma hora → a mesma ordem em qualquer carregamento).
+const porId = (a: AvisoTela, b: AvisoTela) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
 
-/** Os últimos do sino: crítico → urgente (só os ainda pendentes furam a fila) → mais recente. */
+/** E586: a lista de avisos é estritamente cronológica — data/hora decrescente, desempate pelo id. */
+export function ordemCronologica<T extends AvisoTela>(avisos: readonly T[]): T[] {
+  return [...avisos].sort((a, b) => recente(a, b) || porId(a, b));
+}
+
+/**
+ * Os últimos do sino, na ordem cronológica (E586: a prioridade não fura a lista — um aviso de hoje nunca aparece entre
+ * os de ontem). Os críticos pendentes têm a faixa própria do topo (criticosPendentes).
+ */
 export function ordenarParaOSino<T extends AvisoTela>(avisos: readonly T[]): T[] {
-  return [...avisos].sort((a, b) => peso(a) - peso(b) || recente(a, b)).slice(0, ULTIMOS_DO_SINO);
+  return ordemCronologica(avisos).slice(0, ULTIMOS_DO_SINO);
 }
 
 export function filtrarAvisos<T extends AvisoTela>(avisos: readonly T[], filtro: FiltroAvisos): T[] {

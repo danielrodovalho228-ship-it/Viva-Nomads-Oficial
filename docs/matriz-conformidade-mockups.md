@@ -135,3 +135,28 @@ Rotas do painel que ainda não tinham linha, conferidas pelo padrão codificado 
 
 Conferido em 05/11 (modo demonstração, painel do sino com 2 avisos não lidos e 2 lidos simulados, 390 e 1280): a distinção do E502 está de pé e é clara. Não lido: fundo sage-100 (rgb 238, 246, 239), barra verde de 4 px à esquerda (rgb 28, 107, 58), ponto verde, título em negrito (600) e "Não lido" para leitor de tela. Lido: fundo branco, sem barra (transparente), sem ponto, título em peso normal (400). Mesmos valores nos dois tamanhos. Guarda: `src/components/painel/e502-avisos-lidos.test.ts`. Sem mudança de código.
 
+
+## Assistente de cadastro e telas que mudaram em 05/11 — passada 11 (05/11, modo demonstração, 390 e 1280)
+
+Reconferência das linhas `cadastro-imovel-*` (a última era a passada 3, de 01/11) e das telas mexidas hoje pelos PRs da Pista A
+(#2651 E196, #2658 E450, #2667 E584, #2675 E503). Varredura por script local em 15 rotas × 2 larguras, com as verificações da
+casa: rolagem lateral, um h1, no máximo um botão cheio (`data-cta="primary"`), vocabulário da casa, imagem quebrada e grade com
+buraco (último item que não ocupa a linha numa grade de cartões). Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Assistente, 10 passos** (`/dashboard/imoveis/novo?etapa=tipo` … `revisao`): sem rolagem lateral, um h1, um botão cheio no
+   máximo, nenhuma palavra fora do vocabulário, nos dois tamanhos. A 1280 o formulário e a prévia ficam em duas colunas de
+   alturas diferentes — é o desenho (`lg:items-start`), não defeito. **Conforme.**
+2. **Comodidades e Regras** (passos 5 e 6): as grades `grade-par` fecham sem buraco (a última opção ímpar ocupa a linha). **Conforme.**
+3. **Revisão (Passo 10)**: "Antes de publicar" com a lista de conferência e o acordeão (quem opera, identidade, documento,
+   declarações); "Publicar anúncio" é o único botão cheio e fica desabilitado com o motivo escrito embaixo. **Conforme.**
+4. **`/qualificar`** (sem imóvel): leva ao cadastro novo, sem página própria no caminho. Com imóvel, o #2651 (E196) leva à Revisão
+   do rascunho. **Conforme.**
+5. **Página do anúncio** (`/imoveis/ube-001`): as listas "Comodidades" (19 itens) e "Trabalho" (3) têm a última linha com um item
+   só — são listas com ícone (E313), não cartões, então não é buraco. Galeria em mosaico (1 grande + 4) é o desenho. Os calendários
+   de 7 colunas terminam onde o mês termina. **Conforme.**
+6. **Início do painel, Meus imóveis e Para proprietários**: sem rolagem lateral, um h1, um botão cheio no máximo. **Conforme.**
+
+Nenhum defeito novo nesta passada. As linhas que seguem pendentes dependem de sessão real (laboratório, T838) ou de decisão de
+desenho com o Muse (`cabecalho-*`, `pouso-morador`, `cadastro-imovel-07-descricao`).
