@@ -3,6 +3,19 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import {
 
+  NO_LABORATORIO,
+  adm,
+  apagarContas,
+  cpfAleatorio,
+  criarConta,
+  criarImovelPronto,
+  liberarLimiteLogin,
+  liberarLimiteLoginIp,
+  novaSenha,
+  novoSufixo,
+  tornarContratoVigente,
+} from "../fixtures/laboratorio";
+
 // TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação, para
 // regenerar as referências fora do runner (o artefato não pode ser baixado desta sessão). Sai antes do PR ficar pronto.
 test.afterEach(async ({}, info) => {
@@ -18,18 +31,6 @@ test.afterEach(async ({}, info) => {
   }
 });
 
-  NO_LABORATORIO,
-  adm,
-  apagarContas,
-  cpfAleatorio,
-  criarConta,
-  criarImovelPronto,
-  liberarLimiteLogin,
-  liberarLimiteLoginIp,
-  novaSenha,
-  novoSufixo,
-  tornarContratoVigente,
-} from "../fixtures/laboratorio";
 
 /*
   T263 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
