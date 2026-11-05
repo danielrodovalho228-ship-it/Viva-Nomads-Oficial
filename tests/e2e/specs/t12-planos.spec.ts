@@ -38,8 +38,8 @@ test.describe("T12 — Escada de planos @criticos", () => {
         ["3", /10%/],
         ["6", /8%/],
         ["16", /6%/],
+        // O controle vai de 1 a 20 (max={20}): 20 já é a faixa do Plano Gestor.
         ["20", /4%/],
-        ["31", /4%/],
       ];
       for (const [n, esperado] of casos) {
         await slider.fill(n);
