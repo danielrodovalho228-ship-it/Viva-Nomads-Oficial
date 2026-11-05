@@ -26,13 +26,14 @@ export const dynamic = "force-dynamic";
  * ADMIN-2: abas "Dados | E-mails" (?aba=emails); /admin/emails-teste redireciona para a aba E-mails.
  */
 export default async function AdminDadosDeTestePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const aba = abaDadosTeste((await searchParams).aba);
+  const sp = await searchParams;
+  const aba = abaDadosTeste(sp.aba);
   if (aba === "emails") {
     return (
       <div data-testid="admin-dados-de-teste">
         <PageTitle title={rotuloDoAdmin("/admin/dados-de-teste")} subtitle="Ações e e-mails das contas de teste (is_teste) e dos anúncios [TESTE QA]." />
         <AbasDadosTeste ativa={aba} />
-        <EmailsTesteLista />
+        <EmailsTesteLista sp={sp} />
       </div>
     );
   }
