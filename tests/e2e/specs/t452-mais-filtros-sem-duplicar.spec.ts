@@ -70,12 +70,17 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
         ["pilula-nivel", "painel-pilula-nivel", null],
       ] as const;
       for (const [pilula, painel, opcao] of casos) {
+        // E452: sem nível no resultado a pílula "Nível" não existe; com nível, abre com opções selecionáveis.
+        if (pilula === "pilula-nivel") {
+          await expect(page.getByTestId("pilula-preco")).toBeVisible();
+          if ((await page.getByTestId("pilula-nivel").count()) === 0) continue;
+        }
         await expect(async () => {
           await page.getByTestId(pilula).click({ timeout: 5_000 });
           await expect(page.getByTestId(painel)).toBeVisible({ timeout: 5_000 });
         }).toPass({ timeout: 60_000 });
         if (opcao) await expect(page.getByTestId(opcao)).toHaveAttribute("data-n", /^\d+$/);
-        else await expect(page.getByTestId(painel).locator('[data-testid^="pilula-nivel-"], [data-testid="painel-nivel-vazio"]').first()).toBeVisible();
+        else await expect(page.getByTestId(painel).locator('button[data-testid^="pilula-nivel-"]:not([disabled])').first()).toBeVisible();
         await page.screenshot({ path: `${SAIDA}/t452-${pilula}-${largura}.png`, fullPage: false });
         await page.keyboard.press("Escape");
         await expect(page.getByTestId(painel)).toHaveCount(0);

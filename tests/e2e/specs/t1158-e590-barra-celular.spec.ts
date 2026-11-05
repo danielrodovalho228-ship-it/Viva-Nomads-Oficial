@@ -47,22 +47,23 @@ test("celular: Datas, Tipo, Preço, Nível e Ordenar abrem dentro da tela e apli
     await expect(page.getByTestId(`pilula-${pilula}`)).not.toHaveAttribute("data-valor", "");
   }
 
-  // Nível (E590): SEMPRE as 3 opções com o contador; a primeira com imóvel aplica. Sem nível na busca, todas "· 0"
-  // (desabilitadas) e a nota embaixo.
-  const nivel = await abrir(page, "nivel");
-  const opcoes = nivel.locator('button[data-testid^="pilula-nivel-"]');
-  await expect(opcoes).toHaveCount(3);
-  for (const v of ["essencial", "conforto", "premium"]) {
-    await expect(nivel.getByTestId(`pilula-nivel-${v}`)).toBeVisible();
-    await expect(nivel.getByTestId(`pilula-nivel-${v}-n`)).toHaveText(/·\s*\d+/);
-  }
-  const comImovel = nivel.locator('button[data-testid^="pilula-nivel-"]:not([disabled])').first();
-  if ((await comImovel.count()) > 0) {
+  // Nível (E590 + E452): a pílula só existe quando há nível no resultado; aí, as 3 opções com o contador e a primeira
+  // com imóvel aplica. Sem nível na busca, a pílula não aparece (nunca um painel só com texto).
+  if ((await page.getByTestId("pilula-nivel").count()) === 0) {
+    await expect(page.getByTestId("painel-pilula-nivel")).toHaveCount(0);
+  } else {
+    const nivel = await abrir(page, "nivel");
+    const opcoes = nivel.locator('button[data-testid^="pilula-nivel-"]');
+    await expect(opcoes).toHaveCount(3);
+    for (const v of ["essencial", "conforto", "premium"]) {
+      await expect(nivel.getByTestId(`pilula-nivel-${v}`)).toBeVisible();
+      await expect(nivel.getByTestId(`pilula-nivel-${v}-n`)).toHaveText(/·\s*\d+/);
+    }
+    const comImovel = nivel.locator('button[data-testid^="pilula-nivel-"]:not([disabled])').first();
+    await expect(comImovel, "a pílula só aparece com pelo menos uma opção selecionável").toHaveCount(1);
     await comImovel.tap();
     await expect(page).toHaveURL(/nivel=/);
     await expect(page.getByTestId("pilula-nivel")).not.toHaveAttribute("data-valor", "");
-  } else {
-    await expect(nivel.getByTestId("painel-nivel-vazio")).toBeVisible();
   }
 
   // Ordenar: tocar aplica e fecha.
