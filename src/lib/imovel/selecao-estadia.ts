@@ -61,3 +61,30 @@ export function linhaPeriodoNaMensagem(sel: Pick<SelecaoEstadia, "entrada" | "sa
   const d = diasDaSelecao(sel);
   return d === null ? null : `Período escolhido: ${br(sel.entrada)} a ${br(sel.saida)} (${d} ${d === 1 ? "dia" : "dias"}).`;
 }
+
+const brDia = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+const somaDias = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * E517 — a data de entrada que vem da BUSCA só pré-seleciona se couber NESTE anúncio: dentro da disponibilidade
+ * (a partir de availableFrom, nunca no passado) e com espaço para a estadia mínima antes de availableUntil. Senão a
+ * página abre SEM seleção e com o aviso claro (antes: 15/11 vinha marcada num anúncio que só aceita a partir de 21/11,
+ * e escolher a saída gerava 15/11→21/11, 6 dias, abaixo do mínimo, com só um aviso).
+ */
+export function entradaDaBusca(
+  inicio: string,
+  a: { availableFrom?: string | null; availableUntil?: string | null; minDias?: number | null; hoje: string },
+): { entrada: string; aviso: string | null } {
+  if (!inicio || !valida(inicio)) return { entrada: "", aviso: null };
+  const de = a.availableFrom && valida(a.availableFrom.slice(0, 10)) ? a.availableFrom.slice(0, 10) : null;
+  const ate = a.availableUntil && valida(a.availableUntil.slice(0, 10)) ? a.availableUntil.slice(0, 10) : null;
+  const primeira = de && de > a.hoje ? de : a.hoje;
+  const min = a.minDias && a.minDias > 0 ? a.minDias : 30;
+  if (inicio < primeira) {
+    return { entrada: "", aviso: `A data da sua busca (${brDia(inicio)}) não está disponível neste imóvel: a entrada é a partir de ${brDia(primeira)}. Escolha as datas no calendário.` };
+  }
+  if (ate && somaDias(inicio, min) > ate) {
+    return { entrada: "", aviso: `A data da sua busca (${brDia(inicio)}) não comporta a estadia mínima de ${min} dias neste imóvel (disponível até ${brDia(ate)}). Escolha as datas no calendário.` };
+  }
+  return { entrada: inicio, aviso: null };
+}
