@@ -30,7 +30,8 @@ const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", rota: () => "/excluir-conta/confirmar", nome: "Confirmar exclusão de conta" },
   { conta: "VISITANTE", papel: "visitante", rota: () => "/auth/pronto", nome: "Pronto (depois de entrar)" },
   { conta: "DONO17", papel: "proprietário", rota: () => "/dashboard/orcamentos/nova", nome: "Novo orçamento" },
-  { conta: "DONO17", papel: "proprietário", rota: (m) => `/qualificar?imovel=${m.rascunho1}`, nome: "Qualificar o rascunho" },
+  // E196: a qualificação do rascunho mora no "Antes de publicar" da Revisão (a /qualificar só redireciona para cá).
+  { conta: "DONO17", papel: "proprietário", rota: (m) => `/dashboard/imoveis/novo?draft=${m.rascunho1}&etapa=revisao`, nome: "Qualificar o rascunho" },
 ];
 
 const MASSA = lerMassa();

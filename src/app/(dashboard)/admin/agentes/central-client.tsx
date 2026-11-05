@@ -44,7 +44,7 @@ import { MSG_ATRASO_NAO_LIDO } from "@/lib/atendimento/aviso-topo-admin";
 
 /*
   Central de Agentes v2 — ADMIN-5: nos tokens do admin (fundo claro, sem o tema escuro do QG), avatares hexagonais
-  com foto e anel da última ronda; o chat e as atas são lidos só quando a aba abre, com paginação. Abas: Equipe · Rede ao vivo · Raio-X · Diário de bordo · Conversar ·
+  com foto e anel da última ronda; o chat e as atas são lidos só quando a aba abre, com paginação. Abas: Equipe · Rede (24 h) · Raio-X · Diário de bordo · Conversar ·
   Sala de reunião. Tudo vem do banco (agentes, agentes_rondas, agentes_ordens);
   a página se atualiza sozinha a cada 90 s. "Deixar ordem" grava para a próxima
   ronda; "Executar agora" grava e dispara a rotina real do agente na hora
@@ -79,6 +79,7 @@ const COR_STATUS: Record<StatusAgente, string> = {
   no_ar: "#15803D",
   planejado: "#6B7280",
   pausado: "#6B7280",
+  parado: "#B45309",
 };
 const COR_ESTADO: Record<EstadoOrdem, string> = {
   aguardando: "#B45309",
@@ -347,7 +348,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
           <Vazio titulo={estado.vazio.titulo} texto={estado.vazio.texto} acao={estado.vazio.acao} />
         ) : aba === "Equipe" ? (
           <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />
-        ) : aba === "Rede ao vivo" ? (
+        ) : aba === "Rede (24 h)" ? (
           <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} />
         ) : aba === "Raio-X da Viva" ? (
           <RaioX agentes={dados.agentes} rondas={dados.rondas} agora={agora} onConversar={abrirConversa} />
@@ -380,7 +381,7 @@ function CardAgente({
   onConversar: (s: string) => void;
 }) {
   const cor = COR_ESQUADRAO[a.esquadrao];
-  const st = statusDoAgente(a, ultima);
+  const st = statusDoAgente(a, ultima, agora ?? undefined);
   const ativo = a.status === "ativo";
   const anel = st === "no_ar" ? COR_STATUS.no_ar : ativo ? COR_RONDA_HEX[corDaRonda(ultima)] : undefined;
   const dur = ultima ? duracao(ultima.iniciada_em, ultima.concluida_em) : null;

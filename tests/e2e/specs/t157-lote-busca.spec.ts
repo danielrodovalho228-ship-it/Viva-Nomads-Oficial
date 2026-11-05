@@ -3,7 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 /**
  * T157 — Lote busca (ordem 826719b1, D1/D5/D12), pública, 390 e 1280 px.
  * D1: "Até R$ 2.500" não mostra anúncio de total maior; D5: Limpar filtros zera a descrição e os chips;
- * D12: clicar no coração favorita SEM navegar para o anúncio.
+ * D12: clicar no coração não navega para o anúncio (E448: o visitante vai para a porta de login).
  * E82-A: a descrição vive numa folha ("Descrever o que procuro"), que fecha ao aplicar; limpar é o "Limpar filtros"
  * do estado vazio ou o "Limpar tudo" da folha de filtros.
  */
@@ -51,16 +51,15 @@ for (const largura of [390, 1280]) {
       await expect(folha.getByLabel("Descreva o lugar ideal")).toHaveValue("");
     });
 
-    test("clicar no coração favorita sem navegar", async ({ page }) => {
+    test("E448: visitante toca no coração → porta de login (não abre o anúncio, não guarda sem conta)", async ({ page }) => {
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      const url = page.url();
+      // O botão não está dentro de um link.
+      expect(await page.locator("a button").count()).toBe(0);
       const coracao = page.getByRole("button", { name: "Adicionar aos favoritos" }).first();
       await expect(coracao).toBeVisible();
       await coracao.click();
-      await expect(page).toHaveURL(url);
-      await expect(page.getByRole("button", { name: "Remover dos favoritos" }).first()).toBeVisible();
-      // O botão não está dentro de um link.
-      expect(await page.locator("a button").count()).toBe(0);
+      await page.waitForURL((u) => u.pathname === "/auth" && u.searchParams.get("motivo") === "favorito", { timeout: 15_000 });
+      expect(new URL(page.url()).searchParams.get("redirect")).toMatch(/^\/buscar/);
     });
   });
 }

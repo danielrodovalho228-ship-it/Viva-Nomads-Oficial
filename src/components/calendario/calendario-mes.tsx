@@ -31,13 +31,17 @@ export function CalendarioMes(p: {
   onDia?: (iso: string) => void;
   desabilitado?: (iso: string) => boolean;
   sobreposicao?: ReactNode;
+  /** E466: no lugar do título do mês (ex.: o título com as setas de mês anterior/próximo). */
+  cabecalho?: ReactNode;
 }) {
   const celulas = celulasDoMes(p.ano, p.mes);
   return (
     <div className="rounded-xl border border-line bg-white p-3" data-testid="calendario-mes" data-tipo={p.tipo} data-mes={ymd(p.ano, p.mes, 1).slice(0, 7)}>
-      <p className="mb-2 text-center text-sm font-semibold text-ink">
-        {NOMES_MES[p.mes][0].toUpperCase() + NOMES_MES[p.mes].slice(1)} de {p.ano}
-      </p>
+      {p.cabecalho ?? (
+        <p className="mb-2 text-center text-sm font-semibold text-ink">
+          {NOMES_MES[p.mes][0].toUpperCase() + NOMES_MES[p.mes].slice(1)} de {p.ano}
+        </p>
+      )}
       <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted" aria-hidden>
         {DIAS_SEMANA.map((d, i) => (
           <span key={i}>{d}</span>

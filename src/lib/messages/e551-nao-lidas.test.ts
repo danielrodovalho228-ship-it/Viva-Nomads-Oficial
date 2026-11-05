@@ -20,7 +20,8 @@ test("lista de conversas: selo com o número de não lidas, nome em negrito e es
 
 test("abrir a conversa a marca como lida: servidor grava lido_em e o selo some na hora", () => {
   assert.match(tela, /marcarConversaAberta\(conversaAbertaId\)/);
-  assert.match(tela, /c\.id === conversaAbertaId \? \{ \.\.\.c, naoLidas: 0 \} : c/);
+  // Com o E481 (Pista C) na main: a lista zera a conversa aberta pela mesma troca, junto do aviso ao sino.
+  assert.match(tela, /c\.id === conversaAbertaId && c\.naoLidas \? \{ \.\.\.c, naoLidas: 0 \} : c/);
   assert.match(ler("src/lib/data/conversa-aberta-actions.ts"), /update\(\{ lido_em: new Date\(\)\.toISOString\(\) \}\)\.eq\("conversation_id", conversationId\)\.eq\("receiver_id", user\.id\)\.is\("lido_em", null\)/);
   assert.match(ler("src/lib/data/messages.ts"), /if \(!mine && m\.lido_em === null\) conv\.naoLidas = \(conv\.naoLidas \?\? 0\) \+ 1;/);
 });

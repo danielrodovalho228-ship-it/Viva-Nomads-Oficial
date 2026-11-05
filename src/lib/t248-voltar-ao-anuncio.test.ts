@@ -2,6 +2,7 @@
   Estático (laboratório verde, faixa D, lab 0c89bd6a): o t248 estourava os 120 s porque clicava em "Voltar ao anúncio"
   sem salvar a qualificação. Na tela, o botão `qualificacao-voltar` só existe DEPOIS de salvar (`saved`), e salvar exige
   os 5 requisitos, o documento e a resposta da convenção. O spec tem de percorrer esse caminho.
+  E196 (fecho): a /qualificar foi absorvida pela Revisão do assistente; o t248 passa a conferir o caminho único.
 */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -17,15 +18,11 @@ test("na tela, 'Voltar ao anúncio' só aparece depois de salvar a qualificaçã
   assert.match(tela, /disabled=\{!eligible \|\| saving\}[^>]*data-testid="qualificacao-salvar"/);
 });
 
-test("t248 cumpre os requisitos, envia o documento e salva antes de clicar em Voltar", () => {
+test("E196: o t248 confere o caminho único — link antigo /qualificar?imovel= cai no 'Antes de publicar' do rascunho", () => {
   const spec = ler("tests/e2e/specs/t248-antes-de-anunciar-link.spec.ts");
-  const salvar = spec.indexOf("qualificacao-salvar");
-  const voltar = spec.indexOf("qualificacao-voltar");
-  assert.ok(salvar > 0, "o spec clica em Salvar qualificação");
-  assert.ok(voltar > salvar, "e só depois em Voltar ao anúncio");
-  assert.match(spec, /Enviar documentação do imóvel/);
-  assert.match(spec, /Sim, permite/);
-  for (const r of ["Imóvel mobiliado completo", "Aceita período mínimo de 30 dias", "IPTU em dia", "Proprietário ou procurador legal"]) {
-    assert.ok(spec.includes(r), `marca o requisito "${r}"`);
-  }
+  assert.match(spec, /page\.goto\(`\/qualificar\?imovel=\$\{imovel\}`/);
+  assert.match(spec, /searchParams\.get\("draft"\)\)\.toBe\(imovel\)/);
+  assert.match(spec, /searchParams\.get\("etapa"\)\)\.toBe\("revisao"\)/);
+  assert.match(spec, /getByTestId\("antes-de-publicar"\)\)\.toBeVisible/);
+  assert.match(spec, /getByTestId\("rascunho-requisitos-selo"\)\)\.toHaveCount\(0\)/);
 });

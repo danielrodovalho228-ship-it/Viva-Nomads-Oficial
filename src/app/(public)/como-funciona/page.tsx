@@ -1,5 +1,6 @@
 import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import { PASSO_CONVERSE_TEXTO } from "@/config/conversa-chat";
+import { PASSOS_MORADOR } from "@/config/caminho-reserva";
 import type { Metadata } from "next";
 import {
   Search,
@@ -30,11 +31,12 @@ export const metadata: Metadata = {
 
 const IMG = "/images/como-funciona";
 
+// E530: títulos e textos vêm da fonte única do caminho de reserva (também usada no anúncio de exemplo).
 const TENANT_STEPS = [
-  { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
-  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: PASSO_CONVERSE_TEXTO },
-  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Candidate-se", text: "Envie sua candidatura pela plataforma. A verificação de identidade chega em breve." },
-  { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
+  { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: PASSOS_MORADOR[0].titulo, text: PASSOS_MORADOR[0].texto },
+  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: PASSOS_MORADOR[1].titulo, text: PASSO_CONVERSE_TEXTO },
+  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: PASSOS_MORADOR[2].titulo, text: PASSOS_MORADOR[2].texto },
+  { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: PASSOS_MORADOR[3].titulo, text: PASSOS_MORADOR[3].texto },
 ];
 
 const OWNER_STEPS = [

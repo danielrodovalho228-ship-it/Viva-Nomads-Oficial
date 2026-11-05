@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import Link from "next/link";
 import { FileSignature, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -31,6 +32,9 @@ function dataBR(iso: string | null): string {
   const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
 }
+
+/** E440: pedido aceito e ainda sem contrato — aí o cartão mostra o número junto do "Pedir orçamento". */
+const podePedir = (c: { id: string; situacao: { chave: string }; contrato?: unknown }) => c.situacao.chave === "aceita" && !c.contrato && !!numeroPublicoPedido(c.id);
 
 export default async function CandidaturasPage() {
   const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas({ exigir: true }), triagemVinculoAtiva()]);
@@ -97,15 +101,19 @@ export default async function CandidaturasPage() {
                 </div>
               )}
               {/* E440: pedido aceito e ainda sem contrato — o número do pedido e "Pedir orçamento" (o servidor confere o resto). */}
-              {c.situacao.chave === "aceita" && !c.contrato && numeroPublicoPedido(c.id) && (
-                <PedirOrcamento leadId={c.id} numeroPedido={numeroPublicoPedido(c.id)!} />
+              {podePedir(c) && <PedirOrcamento leadId={c.id} numeroPedido={numeroPublicoPedido(c.id)!} />}
+              {/* E440: nos outros casos, o número do pedido em si, citável desde o envio (o mesmo do e-mail e do contrato). */}
+              {!podePedir(c) && numeroPublicoPedido(c.id) && (
+                <p className="mt-3 text-xs text-muted" data-testid="candidatura-numero-pedido-cartao">
+                  Pedido nº <strong className="text-ink">{numeroPublicoPedido(c.id)}</strong>
+                </p>
               )}
               {c.contrato && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="candidatura-contrato">
                   <span className="min-w-0">
                     Contrato: <strong data-testid="candidatura-contrato-status">{c.contrato.status}</strong>
                   </span>
-                  <Link href={`/dashboard/locacoes/${c.contrato.id}`} className="font-medium underline" data-testid="candidatura-contrato-abrir">
+                  <Link href={HREF_CONTRATO_DA_ESTADIA(c.contrato.id)} className="font-medium underline" data-testid="candidatura-contrato-abrir">
                     Ver contrato
                   </Link>
                 </div>

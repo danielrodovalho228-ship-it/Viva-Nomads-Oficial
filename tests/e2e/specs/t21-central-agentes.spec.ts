@@ -87,7 +87,7 @@ test.describe("T21 — Central de Agentes v2", () => {
   test("Rede ao vivo e briefing com o resumo real da última ronda", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await abrirAba(page, "Rede ao vivo");
+    await abrirAba(page, "Rede (24 h)");
     await expect(page.getByTestId("rede-ao-vivo").locator("canvas")).toBeVisible();
     await page.getByRole("button", { name: /Assistir ao briefing/ }).click();
     const legenda = page.getByTestId("briefing-legenda");
@@ -180,12 +180,13 @@ test.describe("T21 — Central de Agentes v2", () => {
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    const form = p.getByTestId("form-pessoa");
+    // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só).
+    const form = p.locator("#abrir-chamado");
     await form.getByLabel("Seu nome").fill("Visitante T21");
-    await form.getByLabel("Seu e-mail").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
-    await form.getByLabel("Pedido para a equipe").fill("Quero saber como funciona a Caução antes de anunciar.");
-    await form.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = p.getByTestId("chamado-aberto-chat");
+    await form.getByLabel("Seu e-mail (para a resposta)").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
+    await form.getByLabel("O que aconteceu?").fill("Quero saber como funciona a Caução antes de anunciar.");
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
+    const ok = p.getByTestId("central-aviso");
     await expect(ok).toBeVisible({ timeout: 20_000 });
     const numero = (await ok.innerText()).match(/VN-\d+/)![0];
     await vis.close();
@@ -252,7 +253,7 @@ test.describe("T21 — Central de Agentes no celular (390 px)", () => {
   test("nenhuma aba rola para o lado", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    for (const aba of ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
+    for (const aba of ["Equipe", "Rede (24 h)", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
       await abrirAba(page, aba);
       await semRolagemLateral(page);
     }

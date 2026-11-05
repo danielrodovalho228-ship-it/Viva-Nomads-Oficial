@@ -78,6 +78,8 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     admin.from("parceiros").select("id, user_id").limit(5000),
     admin.from("profiles").select("id").eq("is_teste", true).limit(5000),
   ]);
+  // Achado 124: os números do cartão do parceiro também não viram 0 na falha.
+  if ([cartoesP, pedidosP, donosP, testesP].some((r) => r.error)) throw new Error("Não foi possível ler os números do cartão do parceiro agora.");
   const numCartao = numerosCartaoParceiro({
     cartoes: (cartoesP.data ?? []) as { parceiro_id: string | null; usuario_id: string }[],
     pedidos: (pedidosP.data ?? []) as { parceiro_id: string; cliente_id: string }[],
@@ -85,7 +87,9 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     contasTeste: new Set(((testesP.data ?? []) as { id: string }[]).map((p) => p.id)),
   });
   // ADMIN-2: um contador só, da mesma consulta (Todos = Fotógrafos + Outros).
-  const { data: todosParceiros } = await admin.from("parceiros").select("id, categorias").limit(5000);
+  const { data: todosParceiros, error: erroTodos } = await admin.from("parceiros").select("id, categorias").limit(5000);
+  // Achado 124: o contador de ativos não vira 0 na falha — cai no aviso do admin, como as filas (Achado 18).
+  if (erroTodos) throw new Error("Não foi possível contar os parceiros agora.");
   const porTipo = contarPorTipo((todosParceiros ?? []) as { categorias: string[] | null }[]);
   const ativos = porTipo[tipo];
 

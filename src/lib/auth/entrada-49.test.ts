@@ -164,7 +164,8 @@ test("convidado sem armazenamento pede a conta; com armazenamento guarda no apar
   assert.equal(armazenamentoDisponivel(null), false);
   assert.equal(armazenamentoDisponivel(ok), true);
   const coracao = ler("src/components/favorite-button.tsx");
-  assert.match(coracao, /if \(!logado && !armazenamentoDisponivel\(armazenamentoDoNavegador\(\)\)\) \{\s*window\.location\.assign\(urlEntrada\("favorito"/);
+  // E448: deslogado, o coração sempre pede a conta (não guarda mais no aparelho).
+  assert.match(coracao, /if \(!logado\) \{\s*window\.location\.assign\(urlEntrada\("favorito"/);
   const busca = ler("src/components/busca/salvar-busca.tsx");
   assert.match(busca, /router\.push\(urlEntrada\("busca"/);
   // Ao entrar, mescla e limpa o local.

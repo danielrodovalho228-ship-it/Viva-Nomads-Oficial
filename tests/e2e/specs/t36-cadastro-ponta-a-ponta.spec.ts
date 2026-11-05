@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { authFile } from "../fixtures/auth";
 import { FAIXAS_COMISSAO_PADRAO } from "../../../src/lib/cobranca/regra";
 import {
@@ -115,6 +116,8 @@ test.describe("T36 — Cadastro completo, do CPF ao fechamento", () => {
     // Passo de confirmação (resumo) antes de enviar (610a1d5).
     const passo = inq.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();
+    // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+    await preencherPeriodoDaProposta(passo);
     await passo.getByRole("button", { name: "Continuar" }).click();
     await passo.getByRole("button", { name: "Continuar" }).click();
     await passo.getByRole("button", { name: "Enviar candidatura" }).click();

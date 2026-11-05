@@ -31,6 +31,6 @@ test("achados 109–112: Fechamento, perfil, pedidos do admin e proposta lançam
   assert.match(fn(ler("src/lib/data/leads-actions.ts"), "export async function getFechamentoContext"), /if \(erroLead\) throw new Error\(/);
   assert.match(fn(ler("src/lib/data/papeis-actions.ts"), "export async function meuPerfilPublico"), /if \(error\) throw new Error\(/);
   assert.match(ler("src/components/account/seu-perfil-publico.tsx"), /\.catch\(\(\) => vivo && setP\(null\)\);/);
-  assert.match(fn(ler("src/lib/data/pedidos-admin.ts"), "export async function adminListPedidos"), /if \(error\) throw new Error\(/);
+  assert.match(fn(ler("src/lib/data/admin-indicadores.ts"), "export async function pedidosMoradiaAdmin"), /if \(error\) throw new Error\(/); // E472: a lista do admin mudou de fonte
   assert.match(fn(ler("src/lib/data/propostas-actions.ts"), "export async function dadosNovaProposta"), /if \(erroLead\) throw new Error\(/);
 });

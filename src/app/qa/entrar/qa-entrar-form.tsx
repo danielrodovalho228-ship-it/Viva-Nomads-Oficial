@@ -36,9 +36,10 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
       window.location.assign(destino);
       return;
     }
+    // E488: com a chave certa, a porta diz a causa (403 + código); a frase é só dela.
+    const corpo = r && r.status === 403 ? ((await r.json().catch(() => null)) as { motivo?: string } | null) : null;
     setEnviando(false);
-    // E361: a causa (limite com prazo, falha da conferência, causas possíveis do 404) em vez do genérico.
-    setErro(mensagemPortaQa(r ? r.status : null));
+    setErro(mensagemPortaQa(r ? r.status : null, corpo?.motivo));
   }
 
   return (

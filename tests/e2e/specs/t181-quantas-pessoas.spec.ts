@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -29,6 +30,8 @@ async function candidatar(page: Page, largura: number, pessoas: number) {
   await botao.click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
+  // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+  await preencherPeriodoDaProposta(passo);
   await passo.getByRole("button", { name: "Continuar" }).click();
   await passo.getByRole("button", { name: "Continuar" }).click();
   await passo.getByRole("button", { name: "Enviar candidatura" }).click();

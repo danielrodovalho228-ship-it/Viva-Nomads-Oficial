@@ -17,6 +17,8 @@ import { formatBRL } from "./utils.ts";
 import { totalDoPeriodo } from "./cartao-preco.ts";
 import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
+import { validarReserva } from "./availability.ts";
+import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente } from "./estadia-em-dias.ts";
 
 export interface LinhaTaxa {
   chave: "mensal" | "condominio" | "consumo" | "preparacao" | "saida" | "pet" | "limpeza" | "caucao" | "viva";
@@ -95,6 +97,31 @@ const ISO_DIA = /^\d{4}-\d{2}-\d{2}$/;
  * ISO (yyyy-mm-dd), comparadas como texto, sem fuso. Data e motivo são opcionais,
  * mas, se preenchidos, precisam ser válidos — o servidor revalida tudo.
  */
+const brDe = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
+
+/** E520: o período da proposta conferido pela regra do calendário (validarReserva), com a data que vale na mensagem. */
+function erroDoPeriodo(
+  inicio: string,
+  fim: string,
+  hoje: string,
+  j: NonNullable<Parameters<typeof resumoSolicitacao>[0]["janela"]>,
+): string | null {
+  if (!inicio) return "Escolha a data de entrada para continuar.";
+  if (!fim) return "Escolha a data de saída (até quando quer ficar) para continuar.";
+  const de = j.availableFrom ? j.availableFrom.slice(0, 10) : null;
+  const desde = de && de > hoje ? de : hoje;
+  const until = j.availableUntil ? j.availableUntil.slice(0, 10) : null;
+  const teto = diasMaxEstadiaVigente(j.faixa91a180Ativa);
+  const minDias = Math.min(teto, Math.max(DIAS_MIN_ESTADIA, Math.round(Number(j.minDias) || DIAS_MIN_ESTADIA)));
+  const maxDias = Math.min(teto, Math.max(minDias, Math.round(Number(j.maxDias) || teto)));
+  const r = validarReserva({ checkIn: inicio, checkOut: fim, fromISO: desde, untilISO: until, minDias, maxDias });
+  if (r.ok) return null;
+  if (/antes do início/.test(r.motivo ?? "")) return `A entrada é antes do início da disponibilidade (${brDe(desde)}). Escolha a partir de ${brDe(desde)}.`;
+  if (/fim da disponibilidade/.test(r.motivo ?? "") && until) return `A saída passa do fim da disponibilidade (${brDe(until)}). Ajuste a saída.`;
+  if (/mínima|máxima/.test(r.motivo ?? "")) return `${r.motivo} Este período tem ${r.dias} dias; ajuste a entrada ou a saída.`;
+  return `${r.motivo ?? "Período inválido."} Ajuste as datas para continuar.`;
+}
+
 export function resumoSolicitacao(e: {
   monthlyPrice: number;
   inicioDesejado?: string;
@@ -119,6 +146,12 @@ export function resumoSolicitacao(e: {
   entradaInvalida?: boolean;
   /** E520: idem para a saída. */
   saidaInvalida?: boolean;
+  /**
+   * E520 (reprova 05/11): a janela do anúncio. Com ela, entrada e saída são obrigatórias e o período passa pela MESMA
+   * regra do calendário de disponibilidade (validarReserva): dentro da disponibilidade e entre o prazo mínimo e o
+   * máximo do anúncio, no intervalo de 30 a 180 dias (o teto vigente da trava FAIXA_91_180).
+   */
+  janela?: { availableFrom?: string | null; availableUntil?: string | null; minDias?: number | null; maxDias?: number | null; faixa91a180Ativa?: boolean } | null;
 }): ResumoSolicitacao {
   const inicio = (e.inicioDesejado ?? "").trim();
   const fim = (e.fimDesejado ?? "").trim();
@@ -132,7 +165,10 @@ export function resumoSolicitacao(e: {
     erro = "A data de entrada precisa ser hoje ou depois. Ajuste ou apague a data para continuar.";
   } else if (fim && (!ISO_DIA.test(fim) || (inicio && fim <= inicio))) {
     erro = "A data de saída precisa ser depois da entrada. Ajuste ou apague a saída para continuar.";
-  } else if (motivo && !isMotivo(motivo)) {
+  } else if (e.janela) {
+    erro = erroDoPeriodo(inicio, fim, e.hoje, e.janela);
+  }
+  if (!erro && motivo && !isMotivo(motivo)) {
     erro = "Escolha um motivo da lista ou marque “Prefiro não informar”.";
   }
   const [a, m, d] = inicio.split("-");

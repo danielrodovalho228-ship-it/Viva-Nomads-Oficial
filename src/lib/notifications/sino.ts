@@ -18,6 +18,8 @@ export interface AvisoTela {
   evento: string;
   prioridade: PrioridadeAviso;
   titulo: string;
+  /** E482: a linha de texto do aviso (ex.: prévia da mensagem). */
+  texto?: string | null;
   url: string | null;
   criado_em: string;
   lido_em: string | null;

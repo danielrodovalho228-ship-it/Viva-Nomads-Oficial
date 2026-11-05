@@ -2,18 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LifeBuoy, Loader2, MessageCircle, Send, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
-import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
+import { ASSUNTO_CHAMADO_DO_CHAT, CHAVE_CONVERSA_CHAT, EVENTO_FALAR_COM_PESSOA, SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehCampoDeFormulario, flutuanteLevaAPagina, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
 import { ehArraste, gravarPosicao, grudarNaBorda, lerPosicao, limitarBaixo, posicaoDuranteArraste, type Posicao, type Tamanho, type Tela } from "@/lib/atendimento/flutuante-arrastavel";
 import { buttonClasses } from "@/components/ui/button";
 
@@ -33,7 +33,7 @@ import { buttonClasses } from "@/components/ui/button";
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
 // "/buscar" (E95): no celular o botão sentava sobre o título dos cartões; a ajuda da busca fica como link no fim da lista.
 export const ESCONDER = ["/buscar", "/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
-const CHAVE = "vivanomads-viva-chat";
+const CHAVE = CHAVE_CONVERSA_CHAT;
 
 function carregar(): MsgChat[] {
   try {
@@ -76,6 +76,9 @@ export function VivaChatFlutuante() {
   // CONTA-A C4: no painel o botão é sempre o redondo (48 px) e a coluna reserva a faixa da direita (dashboard-shell),
   // para ele nunca sentar sobre um cartão durante a rolagem.
   const painel = pathname.startsWith("/dashboard");
+  // E539 (v): no painel o botão leva à página Fale com a Viva (sem uma segunda janela do mesmo chat).
+  const levaAPagina = flutuanteLevaAPagina(pathname);
+  const router = useRouter();
 
   const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
   const tamanhoBotao = (): Tamanho => {
@@ -181,13 +184,14 @@ export function VivaChatFlutuante() {
         type="button"
         onClick={() => {
           if (gesto.current?.arrastou) return;
+          if (levaAPagina) return router.push(HREF_FALE_COM_A_VIVA);
           setAberto((v) => !v);
         }}
         onPointerDown={aoPressionar}
         onPointerMove={aoMover}
         onPointerUp={aoSoltar}
         onPointerCancel={aoSoltar}
-        aria-expanded={aberto}
+        aria-expanded={levaAPagina ? undefined : aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
         className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
@@ -200,16 +204,19 @@ export function VivaChatFlutuante() {
   );
 }
 
-/** Bloco da página Fale com a Viva (mesma conversa do botão). E84: sem repetir a promessa — a página já a diz uma vez. */
+/**
+ * Bloco da página Fale com a Viva (mesma conversa do botão). E84: sem repetir a promessa — a página já a diz uma vez.
+ * E539 (iii): aqui "Falar com uma pessoa" entrega a conversa ao "Abrir chamado" da Central (um formulário só na página).
+ */
 export function VivaChatBloco() {
   return (
     <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" aria-label="Chat com a Viva" data-testid="viva-chat-bloco">
-      <PainelChat altura="h-[420px]" semPromessa />
+      <PainelChat altura="h-[420px]" semPromessa entregarPessoa />
     </section>
   );
 }
 
-function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; altura: string; semPromessa?: boolean }) {
+function PainelChat({ onFechar, altura, semPromessa, entregarPessoa }: { onFechar?: () => void; altura: string; semPromessa?: boolean; entregarPessoa?: boolean }) {
   const user = useAuthStore((s) => s.user);
   const [msgs, setMsgs] = useState<MsgChat[]>([]);
   const [texto, setTexto] = useState("");
@@ -317,7 +324,10 @@ function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <button
               type="button"
-              onClick={() => setPessoa(true)}
+              onClick={() => {
+                if (entregarPessoa) window.dispatchEvent(new CustomEvent(EVENTO_FALAR_COM_PESSOA, { detail: { conversa: msgs } }));
+                else setPessoa(true);
+              }}
               className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-semibold", sugerePessoa ? "border-forest bg-forest/5 text-forest" : "border-line text-muted hover:text-ink")}
             >
               <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
@@ -364,7 +374,7 @@ function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgCh
     const r = await abrirChamado({
       categoria: "duvida",
       mensagem,
-      assunto: "Conversa com a Viva (chat do site)",
+      assunto: ASSUNTO_CHAMADO_DO_CHAT,
       canal: "site",
       pedePessoa: true,
       ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email, visitanteTelefone: telefone, captchaToken: captcha.token ?? undefined }),

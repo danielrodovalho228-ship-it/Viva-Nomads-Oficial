@@ -139,11 +139,22 @@ export function motivoBloqueioAprovacao(p: PerfilDocumento | null | undefined): 
     : "O dono ainda não tem CPF válido. Peça para preencher em Conta → Documento antes de aprovar.";
 }
 
+/**
+ * E463 — o documento como Conta → Dados mostra (rótulo + máscara), a partir do PERFIL: a fonte única. Toda tela que
+ * mostra "o meu CPF" usa esta leitura; null = ainda não informado.
+ */
+export function documentoNaTela(p: PerfilDocumento | null | undefined): { rotulo: "CPF" | "CNPJ"; mascarado: string | null } {
+  if (p?.person_type === "pj") return { rotulo: "CNPJ", mascarado: mascararCnpj(p.cnpj) };
+  return { rotulo: "CPF", mascarado: mascararCpf(p?.cpf) };
+}
+
 export const LINK_DOCUMENTO = "/dashboard/conta/dados#documento";
 
 /** Mensagens das travas (aceitar candidatura, assinar plano, fechar contrato). */
 export const MSG_DOCUMENTO = {
   aceitar: "Antes de aceitar uma candidatura, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai no contrato.",
+  // E582: a trava do envio da proposta, dita no próprio formulário.
+  proposta: "Antes de enviar a proposta, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai no contrato.",
   assinar: "Antes de assinar o plano, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai na cobrança e na nota.",
   fecharDono: "Para fechar o contrato, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento.",
   fecharInquilino: "O inquilino ainda não informou o CPF (ou o CNPJ da empresa). Peça para ele preencher em Conta → Documento; o contrato precisa do documento das duas partes.",

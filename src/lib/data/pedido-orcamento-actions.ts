@@ -26,9 +26,14 @@ export async function numerosDoContrato(contratoId: string): Promise<{ pedido: s
   if (!UUID_RE.test(String(contratoId))) return null;
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data: c, error } = await supabase.from("contratos").select("lead_id").eq("id", contratoId).maybeSingle();
+  // E440: o orçamento de origem gravado no contrato (0299). Sem a coluna (0299 ainda não aplicada), a leitura antiga.
+  let { data: c, error } = await supabase.from("contratos").select("lead_id, proposta_id, propostas!contratos_proposta_id_fkey(numero)").eq("id", contratoId).maybeSingle();
+  if (error && (error.code === "42703" || error.code === "PGRST200")) ({ data: c, error } = await supabase.from("contratos").select("lead_id").eq("id", contratoId).maybeSingle());
   if (error) throw new Error("Não foi possível ler os números do contrato agora.");
-  const leadId = (c as { lead_id?: string | null } | null)?.lead_id ?? null;
+  const linha = c as { lead_id?: string | null; propostas?: { numero?: string | null } | { numero?: string | null }[] | null } | null;
+  const leadId = linha?.lead_id ?? null;
+  const vinculada = Array.isArray(linha?.propostas) ? linha?.propostas[0]?.numero : linha?.propostas?.numero;
+  if (vinculada) return { pedido: numeroPublicoPedido(leadId), orcamento: vinculada };
   if (!leadId) return { pedido: null, orcamento: null };
   const { data: p, error: eP } = await supabase
     .from("propostas")

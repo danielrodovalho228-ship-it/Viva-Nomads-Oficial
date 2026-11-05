@@ -16,10 +16,13 @@ begin
   delete from public.automacoes_envios e
    where exists (select 1 from unnest(c_contratos) k where e.chave like '%' || k::text || '%')
       or exists (select 1 from unnest(v_pedidos) k where e.chave like '%' || k::text || '%');
-  delete from public.documentos_registro
-   where (ref_tabela = 'parceiro_pedidos' and ref_id = any (v_pedidos))
+  -- documentos_registro é imutável (o gatilho barra o DELETE): o registro fica ANULADO, com o motivo, e segue is_teste.
+  update public.documentos_registro
+     set status = 'anulado', anulado_motivo = 'Massa de teste da 0261 removida (rollback 0261).'
+   where status = 'valido'
+     and ((ref_tabela = 'parceiro_pedidos' and ref_id = any (v_pedidos))
       or (ref_tabela = 'contratos' and ref_id = any (c_contratos))
-      or (ref_tabela = 'contrato_aditivos' and ref_id in (select id from public.contrato_aditivos where contrato_id = any (c_contratos)));
+      or (ref_tabela = 'contrato_aditivos' and ref_id in (select id from public.contrato_aditivos where contrato_id = any (c_contratos))));
   delete from public.parceiro_pedidos where id = any (v_pedidos);
   delete from public.contratos where id = any (c_contratos);
   delete from public.imovel_parceiros where id in ('a0261000-0000-4000-8000-000000000021', 'a0261000-0000-4000-8000-000000000031');

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { ordenarPorAtividade } from "@/lib/mensagens/ordem";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -241,7 +242,8 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     }
   }
   await enriquecer(supabase, conversas, user.id);
-  return conversas;
+  // E481: a conversa com a mensagem mais recente primeiro (antes: contrato, candidatura e a ordem da 1ª mensagem).
+  return ordenarPorAtividade(conversas);
 }
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;

@@ -155,7 +155,7 @@ export function AdminPedidosClient({
       <Panel className="scroll-mt-24 p-0 pt-6" id="lista">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">{todos.length === 0 ? "Nenhum pedido no sistema." : "Nenhum pedido com esse filtro."}</p>
+            <p className="py-8 text-center text-sm text-muted">{todos.length === 0 ? "Nenhum pedido nesta lista." : "Nenhum pedido com esse filtro."}</p>
           ) : (
             <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">

@@ -8,6 +8,7 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { definirNomeNoCartao, registrarCompartilhamento, trocarMeuCodigo } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { ImagemNitida } from "@/components/ui/imagem-nitida";
 
 /**
  * Compartilhar um cartão (Fase 1): prévia, formato (1080×1350 ou 1080×1080) e UM toque para o WhatsApp — com a
@@ -102,11 +103,13 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
           <div className="grid grid-cols-2 gap-3" data-testid="cartao-previas">
             {(["retrato", "quadrado"] as const).map((f) => (
               <figure key={f} className="min-w-0">
-                {/* eslint-disable-next-line @next/next/no-img-element -- imagem gerada no servidor, já no tamanho final */}
-                <img
+                {/* E469: a prévia não nasce em branco — "Gerando a prévia…" até a imagem do servidor chegar. */}
+                <ImagemNitida
                   src={`${f === "retrato" ? pacote.imagemRetrato : pacote.imagemQuadrado}&v=${versao}`}
                   alt={`Prévia do cartão do parceiro (${f === "retrato" ? "1080×1350" : "1080×1080"})`}
-                  className="w-full rounded-xl border border-line bg-surface-2 "
+                  aviso="Gerando a prévia…"
+                  moldura="rounded-xl border border-line"
+                  className="block h-auto w-full"
                   width={1080}
                   height={f === "retrato" ? 1350 : 1080}
                   data-testid={f === "retrato" ? "cartao-previa" : "cartao-previa-quadrado"}
@@ -116,11 +119,12 @@ export function CartaoCompartilhar({ inicial }: { inicial: PacoteDeCompartilhar 
             ))}
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element -- imagem gerada no servidor, já no tamanho final
-          <img
+          <ImagemNitida
             src={imagem}
             alt={pacote.tipo === "poststay" ? "Prévia do seu cartão-postal" : "Prévia do cartão do seu anúncio"}
-            className="w-full rounded-xl border border-line bg-surface-2 "
+            aviso="Gerando a prévia…"
+            moldura="rounded-xl border border-line"
+            className="block h-auto w-full"
             width={1080}
             height={formato === "retrato" ? 1350 : 1080}
             data-testid="cartao-previa"
