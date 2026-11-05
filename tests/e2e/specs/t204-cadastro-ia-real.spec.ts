@@ -1,8 +1,9 @@
 import { test, expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { abrirSecoesPasso10 } from "../fixtures/cadastro";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 
 /*
   T204 — Prompt 22 (QA do Muse no cadastro, 18/10), a 390 e 1280 px:
@@ -19,6 +20,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, p
   6. /admin: painel "IA do cadastro" com ligada/desligada e o último erro (sem dado pessoal).
 */
 const SAIDA = "tests/laboratorio/saida";
+/** Fotos reais (as do t186): as PNG sintéticas de 640×480 hoje caem no aviso "Foto pequena" e não completam as 8. */
+const FOTOS = ["sala", "quarto-1", "quarto-2", "cozinha", "banheiro", "home-office", "varanda", "fachada"].map((n) => `public/images/imoveis/ube/ube-001-${n}.webp`);
 const LARGURAS = [390, 1280] as const;
 const VIACEP = "https://viacep.com.br/ws/**";
 const BRASILAPI = "https://brasilapi.com.br/api/cep/**";
@@ -207,17 +210,17 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
           : r.fallback(),
       );
       const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByTestId("fotos-adicionar").click()]);
-      await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura) })));
+      await chooser.setFiles(FOTOS.slice(0, 7));
       await expect(page.getByTestId("etapa-fotos")).toContainText("7 / 8 fotos", { timeout: 60_000 });
       // Arrastar e soltar um arquivo na galeria.
-      const png8 = pngDeTeste(8 + 20 * largura).toString("base64");
+      const foto8 = readFileSync(FOTOS[7]).toString("base64");
       await page.getByTestId("fotos-galeria").evaluate((alvo, b64) => {
         const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
         const dt = new DataTransfer();
-        dt.items.add(new File([bytes], "foto-8.png", { type: "image/png" }));
+        dt.items.add(new File([bytes], "foto-8.webp", { type: "image/webp" }));
         alvo.dispatchEvent(new DragEvent("dragover", { dataTransfer: dt, bubbles: true, cancelable: true }));
         alvo.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
-      }, png8);
+      }, foto8);
       await expect(page.getByTestId("etapa-fotos")).toContainText("8 / 8 fotos", { timeout: 60_000 });
       const falha = page.getByTestId("ia-fotos-falha");
       await expect(falha).toBeVisible({ timeout: 60_000 });
@@ -250,6 +253,7 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
     // E104: a matrícula fica no "Antes de publicar" da Revisão.
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    await abrirSecoesPasso10(d.page, ["documento"]); // E251: as seções do "Antes de publicar" são um acordeão
     await expect(d.page.getByTestId("documento-vinculo")).toBeVisible({ timeout: 30_000 });
     // PDF sem o marcador do laboratório: ninguém consegue ler (como um arquivo ilegível em produção).
     await d.page.getByTestId("documento-vinculo").locator('input[type="file"]').setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });
