@@ -6,9 +6,7 @@ import { Check } from "lucide-react";
 import { meusPapeis } from "@/lib/data/papeis-actions";
 import { ROTULO_PAPEL, type PapelDaConta } from "@/lib/onboarding/ativacao";
 import { useAuthStore } from "@/lib/store";
-import { useViewMode } from "@/lib/roles";
-import { useParceiroAprovado } from "@/lib/use-papel-barra";
-import { papelDoModo } from "@/lib/papel/papel-ativo";
+import { usePapelEmUso } from "@/components/account/use-papel-em-uso";
 import { EVENTO_PAPEL, useTrocaPapel } from "@/components/papel/use-troca-papel";
 
 /**
@@ -25,10 +23,8 @@ export function SeusPapeis({ dentroDoBloco = false }: { dentroDoBloco?: boolean 
   const [papeis, setPapeis] = useState<PapelDaConta[] | null>(null);
   const { papeis: podeUsar, trocando, erro, trocar } = useTrocaPapel();
   const admin = useAuthStore((s) => s.user?.role === "admin");
-  const parceiroAtivo = useAuthStore((s) => s.parceiroAtivo);
-  const { mode } = useViewMode();
-  const aprovado = useParceiroAprovado();
-  const emUso = parceiroAtivo && aprovado ? "parceiro" : papelDoModo(mode === "owner" ? "owner" : "tenant");
+  // E537: o "Em uso" vem do hook único (o mesmo do interruptor "Quero morar").
+  const emUso = usePapelEmUso();
   useEffect(() => {
     let vivo = true;
     const ler = () =>

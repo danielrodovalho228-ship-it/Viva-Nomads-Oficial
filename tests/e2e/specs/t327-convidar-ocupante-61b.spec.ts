@@ -1,5 +1,6 @@
 // Portão pós-#1500 (Pista C, 29/10): o E193 (#1496) trocou listas e caixas por pílulas e cartões no assistente e no editor; roda no lab-crítico deste PR.
 import { test, expect, type Browser, type Page } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, liberarLimiteCodigo, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -128,6 +129,8 @@ test.describe("T327 — 61-B: tipo de entrada, recado para quem pede e convidar 
       await m.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first().click();
       await expect(passo).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
+    // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+    await preencherPeriodoDaProposta(passo);
     await passo.getByRole("button", { name: "Continuar" }).click();
     const recado = passo.getByTestId("mensagem-do-dono");
     await expect(recado).toContainText("Prefiro estadias de 3 meses ou mais.");

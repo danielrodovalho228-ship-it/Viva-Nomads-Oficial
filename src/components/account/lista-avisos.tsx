@@ -89,6 +89,11 @@ export function ListaAvisos({ avisos, falhou, filtroInicial }: { avisos: AvisoTe
                   <MarcaLeitura lido={lido} />
                   <span className="min-w-0 flex-1">
                     <span className={cn("block text-sm text-ink [overflow-wrap:anywhere]", lido ? "font-normal" : "font-semibold")}>{a.titulo}</span>
+                    {a.texto && (
+                      <span className="mt-1 line-clamp-2 block text-sm text-muted [overflow-wrap:anywhere]" data-testid="aviso-texto">
+                        {a.texto}
+                      </span>
+                    )}
                     <span className="mt-1 block text-xs text-muted">
                       {new Date(a.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}
                       {a.resolvido_em ? " · resolvido" : ""}

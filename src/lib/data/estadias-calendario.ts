@@ -31,11 +31,13 @@ export async function getEstadiasDoImovel(propertyId: string, opcoes: { exigir?:
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data: imovel } = await supabase
+  const { data: imovel, error: erroImovel } = await supabase
     .from("properties")
     .select("owner_id")
     .eq("id", propertyId)
     .maybeSingle();
+  // Achado 129: a falha ao conferir o dono não vira "nenhuma estadia" (o calendário avisa, como no Achado 20).
+  if (erroImovel && opcoes.exigir) throw new Error("Não foi possível ler as estadias deste imóvel.");
   if (!imovel || imovel.owner_id !== user.id) return [];
 
   const { data, error } = await supabase

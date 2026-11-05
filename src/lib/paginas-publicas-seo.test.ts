@@ -35,7 +35,8 @@ test("#36: /cidades existe e redireciona 308; title de /precos é descritivo (<=
 });
 
 test("#37: o rodapé diz que anunciar pede login; no topo, 'Anunciar' tem um nome só (E176)", () => {
-  assert.match(ler("lib/constants.ts"), /\{ href: "\/dashboard\/imoveis\/novo", label: "Anunciar" \}/);
+  // E450: o "Anunciar" do topo leva primeiro à página pública do dono (como o CTA da seção de donos e o rodapé).
+  assert.match(ler("lib/constants.ts"), /\{ href: "\/para-proprietarios", label: "Anunciar" \}/);
   const foot = ler("components/layout/footer.tsx");
   assert.match(foot, /Anunciar imóvel \(com login\)/);
 });

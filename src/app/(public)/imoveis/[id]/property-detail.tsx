@@ -300,7 +300,8 @@ export function PropertyDetail({
     }
     // Falha real (rede/servidor): NUNCA deixa o botão "morto" — mostra o erro.
     if (!r || !r.ok) {
-      setLeadErro("Não foi possível enviar agora. Verifique a conexão e tente novamente.");
+      // E581: a razão do servidor aparece quando há (ex.: candidatura já respondida → falar pelo chat).
+      setLeadErro(r?.error ?? "Não foi possível enviar agora. Verifique a conexão e tente novamente.");
       return false;
     }
     if (kind === "candidatura") {
@@ -321,7 +322,7 @@ export function PropertyDetail({
   // arredondados (43 dias = "1 mês + 13 dias", não 2 meses).
   const diasSelecao = diasDaSelecao(selecao);
   const estadiaSelecao = diasSelecao ? estadiaDoImovelEmDias(property, diasSelecao) : null;
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida, janela: { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, maxDias: property.maxPeriodDays } });
   // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
   const previaMensagem = validarApresentacao(apresentacao);
   function abrirSolicitacao() {
@@ -396,7 +397,7 @@ export function PropertyDetail({
     <>
       {/* Um embaixo do outro, na largura do cartão (Q3: campo de data inteiro no iPhone, como o select do motivo). */}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-        Quando quer entrar? (opcional)
+        Quando quer entrar?
         <CampoData
           data-testid={`${prefixo}-inicio`}
           min={hojeBR()}
@@ -407,7 +408,7 @@ export function PropertyDetail({
         />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-        Até quando? (opcional)
+        Até quando?
         <CampoData
           data-testid={`${prefixo}-saida`}
           min={selecao.entrada || hojeBR()}

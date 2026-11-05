@@ -6,6 +6,7 @@
 import type { Property } from "../types.ts";
 import { garantiaLabel } from "../faixas.ts";
 import { textoValorPet } from "../anuncio/pets-regras.ts";
+import { calcularTotalMensal, ROTULO_TOTAL_MES } from "../precos.ts";
 
 export const MAX_COMPARAR = 3;
 export const MIN_COMPARAR = 2;
@@ -35,9 +36,30 @@ export function alternarSelecao(atual: readonly string[], id: string): { ids: st
   return { ids: [...atual, id], aviso: null };
 }
 
-/** Endereço do comparativo (com a seleção na URL). */
-export function hrefComparar(ids: readonly string[]): string {
-  return `/comparar?comparar=${ids.slice(0, MAX_COMPARAR).join(",")}`;
+/**
+ * Endereço do comparativo (com a seleção na URL). E532: `buscaAtual` é o ?… da busca (filtros e ordenação) — vai em
+ * `volta`, para "Voltar à busca" devolver a busca como estava (não /buscar limpo).
+ */
+export function hrefComparar(ids: readonly string[], buscaAtual?: string | null): string {
+  const base = `/comparar?comparar=${ids.slice(0, MAX_COMPARAR).join(",")}`;
+  const volta = consultaDaBusca(buscaAtual);
+  return volta ? `${base}&volta=${encodeURIComponent(volta)}` : base;
+}
+
+/** E532: a consulta da busca, limpa (sem "?", sem a seleção do comparar), relida pelo URLSearchParams; "" se vazia/longa. */
+export function consultaDaBusca(bruto: string | string[] | null | undefined): string {
+  const texto = (Array.isArray(bruto) ? bruto[0] : bruto ?? "").replace(/^\?/, "");
+  if (!texto || texto.length > 2000) return "";
+  const p = new URLSearchParams(texto);
+  p.delete("comparar");
+  p.delete("volta");
+  return p.toString();
+}
+
+/** E532: "Voltar à busca" — a busca com os filtros e a ordenação de antes (só /buscar, nunca outro caminho). */
+export function hrefVoltarBusca(volta: string | string[] | null | undefined): string {
+  const q = consultaDaBusca(volta);
+  return q ? `/buscar?${q}` : "/buscar";
 }
 
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
@@ -57,7 +79,10 @@ export function montarTabela(imoveis: readonly Property[]): LinhaComparar[] {
     valores: imoveis.map(f),
   });
   return [
-    por("mensal", "Valor mensal", (p) => (p.monthlyPrice > 0 ? brl(p.monthlyPrice) : SEM_DADO)),
+    // E521: a MESMA base da busca, do mapa e do anúncio — o total por mês com as contas (calcularTotalMensal). Antes a
+    // primeira linha era só o aluguel ("Valor mensal R$ 2.000" contra "R$ 2.430" na busca), sem aviso.
+    por("total", ROTULO_TOTAL_MES, (p) => (p.monthlyPrice > 0 ? brl(calcularTotalMensal(p).total) : SEM_DADO)),
+    por("mensal", "Aluguel (só o valor mensal)", (p) => (p.monthlyPrice > 0 ? brl(p.monthlyPrice) : SEM_DADO)),
     por("quartos", "Quartos", (p) => num(p.bedrooms)),
     por("banheiros", "Banheiros", (p) => num(p.bathrooms)),
     por("area", "Área (m²)", (p) => num(p.areaM2)),

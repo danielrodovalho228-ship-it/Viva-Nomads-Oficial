@@ -170,3 +170,18 @@ Conferido em produção só com leitura, em 02/11/2026, 02h (horário de Brasíl
 
 **Decisões em aberto (não executadas):** item 2 (passar `ia_chamadas` à fase 1 antes de 16/01/2027), P4 (item 11),
 `destinos` pelo OSM (item 12), coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
+
+## 9. Tabelas novas depois da auditoria (05/11/2026)
+
+Revisão das migrações 0282–0296. Duas tabelas novas ligam uma pessoa a conteúdo e não estavam no inventário: a guarda
+(`inventario.test.ts`) só reconhece colunas pelo nome, e `titulo` e `termo` não estavam na lista.
+
+| Tabela | Migração | O que guarda | Entrou no inventário como |
+|---|---|---|---|
+| `avisos` | 0286 | pessoa, evento, título e link do aviso do sino | fase 2, prazo pendente, sai em cascata com a conta |
+| `moderacao_ofensas` | 0287 | autor, conversa e o termo ofensivo enviado | fase 2, prazo pendente, gatilho decisão da moderação |
+
+- `mensagens_anexos` (0288) já estava no inventário; as colunas novas de `emails_teste` (0284) entram no item que já
+  existia.
+- A guarda passa a reconhecer `termo`.
+- **Nada é apagado** por esta mudança: os prazos das duas tabelas entram na lista de decisões do Daniel (item 13).

@@ -3,6 +3,7 @@ import { getProperty } from "@/lib/data/properties";
 import { calcularTotalMensal, estadiaDoImovelEmDias, totalMesDaLinha } from "@/lib/precos";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
+import { numeroPublicoPedido } from "@/lib/pedido-ref";
 import { aberturaCandidatura, linhasCandidatura, periodoDaCandidatura, proximoPassoCandidatura, type MomentoCandidatura } from "@/lib/notifications/dados-candidatura";
 
 /**
@@ -25,9 +26,8 @@ export async function corpoDoEmailDaCandidatura(admin: SupabaseClient, leadId: s
   const imovel = { titulo: (im.title as string | null) ?? null, bairro: (im.address as string | null) ?? null, cidade: (im.city as string | null) ?? null };
   // Primeiro nome só (o contato nunca sai; o nome completo é revelado ao dono depois do aceite, na tela).
   const interessado = String((quem?.full_name as string | null) ?? "").includes("@") ? "" : String(quem?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
-  // E562: o total da estadia em DIAS, pela mesma conta do anúncio (o que o morador viu ao pedir).
-  const periodo = periodoDaCandidatura((lead.inicio_desejado as string | null) ?? null, (lead.fim_desejado as string | null) ?? null);
-  const totalEstadia = publico && periodo ? (estadiaDoImovelEmDias(publico, periodo.dias)?.total ?? null) : null;
+  // E583: o total da estadia pela MESMA função da tela do "Pedir para morar" (em dias, com preparação e saída).
+  const p = periodoDaCandidatura((lead.inicio_desejado as string | null) ?? null, (lead.fim_desejado as string | null) ?? null);
   const linhas = linhasCandidatura({
     imovel,
     interessado,
@@ -35,7 +35,9 @@ export async function corpoDoEmailDaCandidatura(admin: SupabaseClient, leadId: s
     saida: (lead.fim_desejado as string | null) ?? null,
     valorMensal: Number(im.monthly_price ?? 0),
     totalMensal,
-    totalEstadia,
+    // E440: o número do pedido, o mesmo da tela (Minhas candidaturas) e do contrato.
+    numeroPedido: numeroPublicoPedido(leadId),
+    estadiaDias: publico && p ? estadiaDoImovelEmDias(publico, p.dias) : null,
   });
   const passo = proximoPassoCandidatura(momento);
   return {

@@ -11,7 +11,12 @@ import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
 import { meusAvisos } from "@/lib/data/avisos-actions";
 import { ListaAvisos } from "@/components/account/lista-avisos";
 import { IrParaAvisos } from "@/components/account/ir-para-avisos";
+import { TextoManutencaoVazia } from "@/components/account/link-manutencao";
 import { FILTROS_AVISOS, type FiltroAvisos } from "@/lib/notifications/sino";
+import { getCanais } from "@/lib/data/canais-actions";
+import { getCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
+import { getAlertasEquipe } from "@/lib/data/pedidos-actions";
+import type { PreferenciasIniciais } from "@/lib/conta/tela-notificacoes";
 
 const MSG_AVISOS_NAO_CARREGARAM = "Não conseguimos carregar os avisos agora. Recarregue a página em instantes.";
 
@@ -24,13 +29,18 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
   const pedido = (await searchParams).prioridade;
   // E444 item 3: "e mais N avisos críticos" (faixa) abre já filtrado.
   const filtroInicial: FiltroAvisos = FILTROS_AVISOS.find((f) => f.id === pedido)?.id ?? "todos";
-  const [r, todas, pedidosNovos, caixa] = await Promise.all([
+  const [r, todas, pedidosNovos, caixa, inicial] = await Promise.all([
     avisosRecentes(),
     // Achado nº 13: a falha das propostas não pode virar "nada para responder" calado.
     listarPropostas({ exigir: true }).catch(() => null),
     pedidosNovosCompativeis().catch(() => ({ total: 0, recentes: [] })),
     // E444 item 3: a lista da tabela de avisos (Pista B, 0286). Falha de leitura ≠ "nenhum aviso".
     meusAvisos(100).catch(() => "falhou" as const),
+    // E549: as preferências lidas aqui — os interruptores já chegam com o estado. Falha de leitura = null: a tela relê
+    // no navegador e, se falhar de novo, mostra "Tentar de novo" (achados 52/53: nunca abre com "tudo ligado" inventado).
+    Promise.all([getCategoriasDesligadas(), getCanais(), getAlertasEquipe().catch(() => null)])
+      .then(([desligadas, canais, equipe]): PreferenciasIniciais => ({ desligadas, canais, equipe }))
+      .catch(() => null),
   ]);
   const avisos = r?.avisos ?? [];
   // Propostas esperando a SUA resposta (prompt 27, item 7): o aviso no site, junto do push e do e-mail.
@@ -39,7 +49,7 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
   const agora = new Date();
   return (
     <CascaConta ativo="notificacoes">
-      <TelaNotificacoes />
+      <TelaNotificacoes inicial={inicial} />
       {/* E489: "Ver todas" do sino (#avisos) leva à lista abaixo, não às preferências acima. */}
       <IrParaAvisos alvo="avisos" titulo="h-avisos" />
 
@@ -142,16 +152,8 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
           {avisos.length === 0 && r?.falhou ? (
             <p className="text-sm text-muted">{MSG_AVISOS_NAO_CARREGARAM}</p>
           ) : avisos.length === 0 ? (
-            <p className="text-sm text-muted">
-              Nenhuma atualização por enquanto. As ordens de manutenção ficam em{" "}
-              <Link
-                href="/dashboard/solicitacoes"
-                className="font-medium text-forest underline"
-              >
-                Solicitações
-              </Link>
-              .
-            </p>
+            // E468: o destino segue o papel ativo (parceiro → Pedidos do painel dele; dono e morador → Solicitações).
+            <TextoManutencaoVazia />
           ) : (
             <ul className="divide-y divide-sage-100">
               {avisos.map((a) => (
@@ -165,6 +167,7 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
                       {a.imovel} · {dataHoraBrasilia(new Date(a.criadoEm))}
                     </span>
                   </span>
+                  {/* Cada atualização é uma ordem de manutenção (de um imóvel ou estadia): abre em Solicitações. */}
                   <Link
                     href="/dashboard/solicitacoes"
                     className="shrink-0 text-xs font-medium text-forest underline"

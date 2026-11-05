@@ -138,7 +138,7 @@ test("E256-B: as 5 contas da equipe marcadas como teste entram (tipo 'teste'); p
 
 test("E256-B: a linha do log da recusa leva só o evento e o código (sem e-mail, chave nem IP)", async () => {
   const { linhaLogRecusaQa, MOTIVOS_RECUSA_QA } = await import("./entrar.ts");
-  assert.deepEqual([...MOTIVOS_RECUSA_QA], ["desligada", "metodo", "chave", "perfil", "2fa", "padrao", "admin_fechada"]);
+  assert.deepEqual([...MOTIVOS_RECUSA_QA], ["desligada", "metodo", "chave", "perfil", "2fa", "padrao", "admin_fechada", "email"]); // E488: + email
   for (const m of MOTIVOS_RECUSA_QA) assert.deepEqual(JSON.parse(linhaLogRecusaQa(m)), { evento: "qa_porta_recusa", motivo: m });
   const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
   const servidor = ler("src/lib/qa/entrar-servidor.ts");

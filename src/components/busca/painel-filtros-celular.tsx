@@ -195,6 +195,10 @@ export function FolhaFiltros({
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "negociaOnly")} ativo={!!rascunho.negociaOnly} onClick={() => muda("negociaOnly", !rascunho.negociaOnly)} testId="faceta-negocia">
             Aceita negociação
           </ChipFaceta>
+          {/* E580: o mesmo selo "Preço justo" do card (Property.precoJusto); a contagem é a de imóveis da busca com ele. */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "precoJustoOnly")} ativo={!!rascunho.precoJustoOnly} onClick={() => muda("precoJustoOnly", !rascunho.precoJustoOnly)} testId="faceta-selo-preco-justo">
+            Preço justo
+          </ChipFaceta>
           {/* E574: dono PJ/MEI que declarou emitir nota fiscal da locação (selo de confiança sobre a declaração). */}
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">
             {ROTULO_FILTRO_NOTA_LOCACAO}

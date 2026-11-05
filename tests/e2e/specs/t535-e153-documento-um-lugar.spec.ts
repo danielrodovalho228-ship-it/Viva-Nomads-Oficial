@@ -7,8 +7,8 @@ import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 /*
   T535 — E153, guarda permanente da Pista C: o pedido de envio do documento do imóvel aparece em UM lugar só. Num
   rascunho sem documento, conta os pedidos de envio (botão "Enviar documento" do cartão, o "Enviar documento" do
-  resumo da Revisão e o campo de envio da /qualificar) no Passo 3, no Passo 10 e em /qualificar?imovel=…; a soma tem
-  de ser 1. A 1280 px. As contagens vão nas anotações do teste.
+  resumo da Revisão e o campo de envio da antiga /qualificar) no Passo 3 e no Passo 10; a soma tem de ser 1. E196: o
+  link antigo /qualificar?imovel=… cai na mesma Revisão (não há segundo lugar). A 1280 px. As contagens vão nas anotações do teste.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -51,9 +51,9 @@ test.describe("T535 — E153: pedido do documento em um lugar só", () => {
   });
 
   test("a 1280 px: Passo 3 + Passo 10 + /qualificar = 1 pedido de envio", async ({ browser }) => {
-    // E153 (Pista A): o pedido aparece em dois lugares — o "Enviar documento" da Revisão e o envio da /qualificar
-    // (lab-crítico 40207606596: {"endereco":0,"revisao":1,"qualificar":1}, total 2). Quem corrigir tira este test.fail.
-    test.fail(true, "E153: o pedido do documento aparece na Revisão e de novo na /qualificar");
+    // E153 (Pista A) fechado pelo E196: antes o pedido aparecia na Revisão e de novo na /qualificar (lab-crítico
+    // 40207606596: {"endereco":0,"revisao":1,"qualificar":1}, total 2). Agora a /qualificar foi absorvida: o link
+    // antigo cai na MESMA Revisão — não é um segundo lugar, então não soma de novo.
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     const contagem: Record<string, number> = {};
@@ -66,8 +66,8 @@ test.describe("T535 — E153: pedido do documento em um lugar só", () => {
       await page.screenshot({ path: `tests/laboratorio/saida/t535-${passo}-1280.png`, fullPage: true });
     }
     await page.goto(`/qualificar?imovel=${ids.rascunho}`, { waitUntil: "domcontentloaded" });
-    await expect(page.locator("main")).toBeVisible({ timeout: 30_000 });
-    contagem.qualificar = await contar(page);
+    await expect(page).toHaveURL(new RegExp(`/dashboard/imoveis/novo\\?draft=${ids.rascunho}&etapa=revisao`), { timeout: 30_000 });
+    await noPasso(page, "revisao", 30_000);
     await page.screenshot({ path: "tests/laboratorio/saida/t535-qualificar-1280.png", fullPage: true });
     const total = Object.values(contagem).reduce((a, b) => a + b, 0);
     test.info().annotations.push({ type: "contagem", description: JSON.stringify(contagem) });

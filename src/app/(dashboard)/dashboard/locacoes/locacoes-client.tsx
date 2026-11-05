@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { HREF_ESTADIA, HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { Home, CircleDollarSign } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -86,7 +86,7 @@ export function LocacoesClient({
                     {demoOn ? (
                       l.propertyTitle
                     ) : (
-                      <Link href={`/dashboard/locacoes/${l.id}`} className="hover:underline" data-testid="locacao-titulo">
+                      <Link href={HREF_CONTRATO_DA_ESTADIA(l.id)} className="hover:underline" data-testid="locacao-titulo">
                         {l.propertyTitle}
                       </Link>
                     )}
@@ -136,7 +136,7 @@ export function LocacoesClient({
               )}
 
               {!demoOn && (
-                <ButtonLink href={`/dashboard/locacoes/${l.id}`} variant="secondary" className="mt-4" data-testid="locacao-ver-contrato">
+                <ButtonLink href={HREF_CONTRATO_DA_ESTADIA(l.id)} variant="secondary" className="mt-4" data-testid="locacao-ver-contrato">
                   {l.etapa === "aguardando_assinatura" && l.status === "ativo" ? "Ver e assinar contrato" : "Ver contrato"}
                 </ButtonLink>
               )}

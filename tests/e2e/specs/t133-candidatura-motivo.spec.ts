@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, TELEFONE_LAB } from "../fixtures/laboratorio";
 
 /**
@@ -20,6 +21,8 @@ async function candidatar(page: import("@playwright/test").Page, imovel: string,
   await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Pedir para morar", exact: true }).click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
+  // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+  await preencherPeriodoDaProposta(passo);
   await passo.getByRole("button", { name: "Continuar" }).click();
   await passo.getByRole("button", { name: "Continuar" }).click();
   await passo.getByRole("button", { name: "Enviar candidatura" }).click();

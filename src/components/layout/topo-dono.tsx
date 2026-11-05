@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { secaoDaRota } from "@/lib/conta/secoes";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
@@ -63,9 +62,9 @@ export function TopoPainel(p: {
           })}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          {/* E185 (resíduo, QA de 31/10): nas telas da Conta o menu lateral já tem "Notificações" (mesmo destino); o topo
-              — que só existe do lg para cima, a mesma largura do menu lateral — não repete o sino ali. */}
-          {secaoDaRota(p.pathname) === null && <Sino px={px} notificacoes={p.notificacoes} />}
+          {/* E464: o sino fica em TODAS as telas do painel, inclusive as da Conta (o E185 o escondia ali e o cabeçalho
+              mudava de uma tela para outra). Desde o E444 ele abre o painel dos avisos — não repete o link do menu lateral. */}
+          <Sino px={px} notificacoes={p.notificacoes} />
           <MenuConta px={px} nome={p.nome} foto={p.foto} itens={p.itensConta} onAcao={p.onAcao} />
         </div>
       </div>

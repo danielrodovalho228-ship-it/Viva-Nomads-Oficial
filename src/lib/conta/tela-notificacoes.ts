@@ -31,6 +31,18 @@ export const CANAIS_AVISO: readonly { canal: keyof CanaisAviso; titulo: string; 
   { canal: "whatsapp", titulo: "WhatsApp", texto: "Receba atualizações e lembretes via WhatsApp" },
 ];
 
+/** E549: a lista de desligadas (gravada) vira o estado dos interruptores — ligado = fora da lista. */
+export function tiposDeDesligadas(desligadas: readonly string[]): Record<CategoriaComInterruptor, boolean> {
+  return Object.fromEntries(TIPOS_AVISO.map((t) => [t.categoria, !desligadas.includes(t.categoria)])) as Record<CategoriaComInterruptor, boolean>;
+}
+
+/** E549: as preferências lidas pela página (no servidor) — a tela já nasce com o estado desenhado. */
+export interface PreferenciasIniciais {
+  desligadas: CategoriaComInterruptor[];
+  canais: CanaisAviso;
+  equipe: boolean | null;
+}
+
 /** Interruptor ligado = categoria fora da lista de desligadas. */
 export function categoriasDesligadasDe(ligadas: Record<CategoriaComInterruptor, boolean>): CategoriaComInterruptor[] {
   return TIPOS_AVISO.map((t) => t.categoria).filter((c) => !ligadas[c]);

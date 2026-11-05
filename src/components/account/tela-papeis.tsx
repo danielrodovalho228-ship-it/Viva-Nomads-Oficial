@@ -7,6 +7,7 @@ import { Check, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { SeusPapeis } from "@/components/account/seus-papeis";
+import { usePapelEmUso } from "@/components/account/use-papel-em-uso";
 import { getMinhaIntencao, salvarMinhaIntencao } from "@/lib/data/intencao-actions";
 import { getMeuPerfilPublico } from "@/lib/data/perfil-actions";
 import type { Intencao } from "@/lib/auth/entrada";
@@ -19,8 +20,10 @@ import {
   BOTAO_PARCEIRO_ATIVO,
   BOTAO_QUERO_PARCEIRO,
   RODAPE_PAPEIS,
+  TEXTO_MORAR_EM_USO,
   TEXTO_QUERO_PARCEIRO,
   alternarIntencao,
+  estadoQueroMorar,
   linhaQueroMorar,
   resumoQueroMorar,
   textoQueroAnunciar,
@@ -41,6 +44,7 @@ export function TelaPapeis() {
   // E576: a situação inteira (ativo, aprovada sem página ou nenhum), não só "tem página".
   const [situacao, setSituacao] = useState<SituacaoParceiro>("nenhum");
   const parceiro = situacao === "ativo";
+  const emUso = usePapelEmUso();
   const aprovadaSemPagina = situacao === "aprovada_sem_pagina";
 
   useEffect(() => {
@@ -83,7 +87,8 @@ export function TelaPapeis() {
       </div>
     );
 
-  const morar = intencao.includes("morar");
+  // E537: o interruptor reflete o papel de verdade (intenção "morar" OU morador em uso), não só a intenção.
+  const { ligado: morar, travado: morarTravado } = estadoQueroMorar(intencao, emUso === "morador");
   const anunciar = intencao.includes("anunciar");
 
   return (
@@ -91,8 +96,13 @@ export function TelaPapeis() {
       <CartaoPapel id="morar" foto={PHOTOS.papeis.morar} ativo={morar}>
         <div className="flex items-start justify-between gap-3">
           <h2 className={TITULO_CARTAO}>Quero morar</h2>
-          <Switch checked={morar} onChange={(v) => void alternar("morar", v)} label="Quero morar" testId="papel-morar-toggle" />
+          <Switch checked={morar} disabled={morarTravado} onChange={(v) => void alternar("morar", v)} label="Quero morar" testId="papel-morar-toggle" />
         </div>
+        {morarTravado && (
+          <p className="mt-1 text-sm text-muted" data-testid="papel-morar-em-uso">
+            {TEXTO_MORAR_EM_USO}
+          </p>
+        )}
         <p className="mt-1 text-base text-ink">{linhaQueroMorar(cidade)}</p>
         <p className="mt-3 flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink sm:text-base" data-testid="papel-morar-resumo">
           <MapPin className="h-5 w-5 shrink-0 text-forest" aria-hidden /> {resumoQueroMorar(cidade)}

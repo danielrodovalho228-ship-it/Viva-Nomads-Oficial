@@ -22,7 +22,11 @@ export function mesclarGuardadosDoConvidado(userId: string | null | undefined): 
     /* sem armazenamento: nada guardado */
   }
   const carregarConta = fav.owner === userId && contaCarregada !== userId;
-  if (!pendentes.length && !buscas.length && !carregarConta) return;
+  if (!pendentes.length && !buscas.length && !carregarConta) {
+    // E535: a lista desta conta já veio nesta aba (ou não há o que trazer): o contador pode contar.
+    if (fav.owner === userId) useFavoritesStore.getState().marcarSincronizado(userId);
+    return;
+  }
   emCurso = true;
   void import("@/lib/data/convidado-actions")
     .then(async (a) => {
@@ -33,6 +37,8 @@ export function mesclarGuardadosDoConvidado(userId: string | null | undefined): 
           useFavoritesStore.getState().concluirMescla(userId, r.ids);
           contaCarregada = userId;
         }
+        // E535: com ou sem sucesso, a espera acaba (sem a leitura, o contador usa a lista do aparelho).
+        useFavoritesStore.getState().marcarSincronizado(userId);
       }
       if (buscas.length) {
         const r = await a.mesclarBuscasConvidado(buscas);
@@ -45,7 +51,9 @@ export function mesclarGuardadosDoConvidado(userId: string | null | undefined): 
         }
       }
     })
-    .catch(() => {})
+    .catch(() => {
+      useFavoritesStore.getState().marcarSincronizado(userId);
+    })
     .finally(() => {
       emCurso = false;
     });

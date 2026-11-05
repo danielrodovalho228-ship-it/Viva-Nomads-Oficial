@@ -16,7 +16,6 @@ import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
 import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
 import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
 import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
-import { PRECO_JUSTO_COMPARADOR } from "../flags.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -50,8 +49,8 @@ export interface FiltrosPainel {
   /** E439: só quem aceita negociar (properties.negociacao.aceita; `?negocia=1`). */
   negociaOnly?: boolean;
   /**
-   * E572: só imóveis com o selo "Preço justo" (`?precojusto=1`). Atrás da MESMA chave do selo (PRECO_JUSTO_COMPARADOR,
-   * família E399-C): com a chave desligada o filtro não tira ninguém, não conta e não entra no resumo.
+   * E572/E580: só imóveis com o selo "Preço justo" (`?precojusto=1`). Lê o MESMO campo do selo do card
+   * (Property.precoJusto), sem chave: com PRECO_JUSTO_COMPARADOR desligada o selo vem da coluna (0130/0277).
    */
   precoJustoOnly?: boolean;
   /** Prompt 57, fase 2: download MEDIDO mínimo (50 | 100 | 300); 0 = desligado. */
@@ -170,18 +169,18 @@ type ImovelFiltravel = ImovelComInternet & {
   nivel?: NivelOuAdequacao | null;
   /** E439: negociação pública do dono (só o `aceita` pesa no filtro). Sem dado = não negocia. */
   negociacao?: { aceita: boolean } | null;
-  /** E572: selo "Preço justo" calculado pelo servidor (motor E399-C com a chave ligada). Sem dado = sem selo. */
+  /** E572/E580: o selo "Preço justo" do card (coluna sem a chave; motor E399-C com ela). Sem dado = sem selo. */
   precoJusto?: boolean;
 };
 
-/** E572: o filtro "Preço justo" está valendo? Só com a chave do selo ligada E o filtro escolhido. */
-export function filtroPrecoJustoLigado(f: Pick<FiltrosPainel, "precoJustoOnly">, chave: boolean = PRECO_JUSTO_COMPARADOR): boolean {
-  return chave && f.precoJustoOnly === true;
+/** E572/E580: o filtro "Preço justo" está escolhido? (Sem chave: o filtro segue o selo que o card mostra.) */
+export function filtroPrecoJustoLigado(f: Pick<FiltrosPainel, "precoJustoOnly">): boolean {
+  return f.precoJustoOnly === true;
 }
 
-/** E572: o imóvel passa no filtro "Preço justo"? Filtro desligado (ou chave desligada) não tira ninguém. */
-export function passaPrecoJusto(p: Pick<ImovelFiltravel, "precoJusto">, f: Pick<FiltrosPainel, "precoJustoOnly">, chave: boolean = PRECO_JUSTO_COMPARADOR): boolean {
-  return !filtroPrecoJustoLigado(f, chave) || p.precoJusto === true;
+/** E572/E580: o imóvel passa no filtro "Preço justo"? Filtro não escolhido não tira ninguém. */
+export function passaPrecoJusto(p: Pick<ImovelFiltravel, "precoJusto">, f: Pick<FiltrosPainel, "precoJustoOnly">): boolean {
+  return !filtroPrecoJustoLigado(f) || p.precoJusto === true;
 }
 
 /** Rótulo curto das garantias do filtro (resumo do topo). */

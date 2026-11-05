@@ -39,7 +39,7 @@ test("Fechamento com proposta aceita: prazo, blocos, base e taxa pelos DIAS da p
 });
 
 test("e-mail da candidatura: o total da estadia em dias, pela conta do anúncio", () => {
+  // Na main, o E583 (#2650) passou a estadia inteira (rótulo, total e conta) pela mesma função da tela.
   const c = ler("lib/data/candidatura-email.ts");
-  assert.match(c, /estadiaDoImovelEmDias\(publico, periodo\.dias\)\?\.total/);
-  assert.match(c, /totalEstadia,\n\s+\}\);/);
+  assert.match(c, /estadiaDias: publico && p \? estadiaDoImovelEmDias\(publico, p\.dias\) : null,/);
 });

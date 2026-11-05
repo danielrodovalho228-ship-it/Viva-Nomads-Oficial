@@ -244,7 +244,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
 
     await page.getByTestId("parceiro-aba-dados").click();
     await expect(page.getByTestId("recebimento-em-breve")).toContainText("Pagamento pela plataforma em breve.");
-    await expect(page.getByTestId("parceiro-documento")).toContainText("•••");
+    await expect(page.getByTestId("parceiro-documento")).toContainText(/^\*\*\*\.\d{3}\.\d{3}-\*\*$/);
 
     await expect(page.getByTestId("parceiro-publicar")).toBeEnabled({ timeout: 15_000 });
     await page.getByTestId("parceiro-publicar").click();

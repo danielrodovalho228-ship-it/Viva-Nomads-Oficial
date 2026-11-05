@@ -45,5 +45,5 @@ test("a tela grava as duas preferências num só 'Salvar preferências' e não l
   assert.match(acoes, /updateUser\(\{ data: \{ notif_push: c\.push \} \}\)/);
   // E176 (parte 2): a página única de Notificações (a do sino) mostra o mockup perfil-06 na casca da Conta.
   const pagina = ler("src/app/(dashboard)/dashboard/notificacoes/page.tsx");
-  assert.match(pagina, /<CascaConta ativo="notificacoes">\s*<TelaNotificacoes \/>/);
+  assert.match(pagina, /<CascaConta ativo="notificacoes">\s*<TelaNotificacoes inicial=\{inicial\} \/>/);
 });

@@ -10,8 +10,8 @@ test("Favoritos e Buscas salvas contam as MESMAS listas das telas de destino (nu
   assert.doesNotMatch(home, /label="Favoritos" value=\{demo \? "3" : "0"\}/);
   assert.doesNotMatch(home, /label="Buscas salvas" value=\{demo \? "2" : "0"\}/);
   // Favoritos: a lista de /dashboard/favoritos (useFavoritos — os favoritados que existem).
-  assert.match(home, /const \{ favoritos \} = useFavoritos\(\);/);
-  assert.match(home, /label="Favoritos" value=\{demo \? "3" : String\(favoritos\.length\)\}/);
+  assert.match(home, /const \{ favoritos, pronto: favoritosProntos \} = useFavoritos\(\);/); // E535: espera o "pronto"
+  assert.match(home, /label="Favoritos" value=\{demo \? "3" : valorContador\(favoritosProntos \? favoritos\.length : null\)\}/);
   assert.match(ler("app/(dashboard)/dashboard/favoritos/page.tsx"), /useFavoritos\(\)/);
   // Buscas salvas: a lista de /dashboard/buscas (listarBuscasSalvas), lida no servidor.
   assert.match(home, /label="Buscas salvas" value=\{demo \? "2" : valorContador\(totalBuscasSalvas\)\}/);

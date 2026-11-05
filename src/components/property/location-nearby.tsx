@@ -105,7 +105,8 @@ export function LocationNearby({ property }: { property: Property }) {
             >
               <X className="h-5 w-5" />
             </button>
-            <p className="absolute inset-x-3 bottom-3 z-[5] rounded-xl bg-white/95 px-3 py-2 text-xs text-muted ">
+            {/* E531: no topo — no rodapé a legenda cobria a atribuição do mapa (canto inferior direito, obrigatória). */}
+            <p data-testid="mapa-tela-cheia-legenda" className="absolute left-3 right-16 top-3 z-[5] rounded-xl bg-white/95 px-3 py-2 text-xs text-muted">
               Área aproximada de {property.neighborhood}. O endereço exato é liberado após o aceite da candidatura.
             </p>
           </div>

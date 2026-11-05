@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { aberturaCandidatura, linhasCandidatura, linkCandidaturaDono, linkCandidaturaMorador, periodoDaCandidatura, proximoPassoCandidatura } from "./dados-candidatura.ts";
 import { prazoInicial } from "../inicio-estadia.ts";
+import { formatBRLExato, periodoPorExtenso, rotuloTotalDaEstadia } from "../precos.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const imovel = { titulo: "[TESTE QA NÍVEL] Premium", bairro: "Santa Mônica", cidade: "Uberlândia" };
@@ -20,8 +21,8 @@ test("quadro: imóvel · interessado · entrada/saída · valor mensal · total 
     { rotulo: "Saída", valor: "15/12/2026 (30 dias)" },
     { rotulo: "Valor mensal", valor: "R$ 3.200" },
     { rotulo: "Total por mês", valor: "R$ 3.340" },
-    // E562: em dias (30 dias = 1 mês exato).
-    { rotulo: "Total da estadia (30 dias)", valor: "R$ 3.340 (1 mês)" },
+    // E583: a estadia em dias (total por mês × dias ÷ 30), o mesmo número da tela — 30 dias = R$ 3.340.
+    { rotulo: rotuloTotalDaEstadia(30), valor: `${formatBRLExato(3340)} (${periodoPorExtenso(30)})` },
   ]);
 });
 
@@ -62,7 +63,8 @@ test("guarda: os três momentos da candidatura usam o corpo com dados (envio ao 
   assert.match(acoes, /pushUrl: kind === "candidatura" && leadId \? linkCandidaturaDono\(leadId\) : "\/dashboard\/leads"/);
   assert.match(acoes, /corpoDoEmailDaCandidatura\(adm, leadId, "enviada"\)[\s\S]{0,200}event: "application_received"[\s\S]{0,200}pushUrl: linkCandidaturaMorador\(leadId\)/);
   // A saída da candidatura vai ao banco (0258) e o pedido manda a saída escolhida.
-  assert.match(acoes, /\.\.\.\(fimOk \? \{ fim_desejado: fim \} : \{\}\)/);
+  // E581: a saída entra pelos campos únicos (só com entrada válida e depois dela), no insert e na candidatura repetida.
+  assert.match(acoes, /camposDaCandidatura\(\{[\s\S]{0,300}fim: fimDesejado \?\? "",/);
   assert.match(ler("src/app/(public)/imoveis/[id]/property-detail.tsx"), /kind === "candidatura" && selecao\.saida \? selecao\.saida : undefined\)/);
   const leads = ler("src/lib/data/leads-actions.ts");
   assert.match(leads, /corpoDoEmailDaCandidatura\(admin, leadId, "aceita"\)/);
@@ -90,15 +92,4 @@ test("(a) anúncio de teste: sem a faixa de visitante enquanto a sessão/perfil 
   assert.match(tela, /aguardando=\{aguardandoPerfil\}/);
   // O isTeste chega com qualquer perfil lido.
   assert.match(ler("src/components/auth-provider.tsx"), /if \(profile\) \{/);
-});
-
-test("E562 (reprova 05/11): candidatura de 43 dias = total em DIAS, nunca 2 meses", () => {
-  // VN-4A693A: R$ 3.050/mês, preparação R$ 300 → R$ 4.671,67 (o total do anúncio, passado por quem chama).
-  const l = linhasCandidatura({ imovel, interessado: "Ana", entrada: "2026-12-01", saida: "2027-01-13", valorMensal: 2800, totalMensal: 3050, totalEstadia: 4671.67 });
-  const total = l.find((x) => x.rotulo.startsWith("Total da estadia"));
-  assert.deepEqual(total, { rotulo: "Total da estadia (43 dias)", valor: "R$ 4.671,67 (1 mês + 13 dias)" });
-  assert.equal(l.some((x) => /2 meses/.test(x.valor)), false);
-  // Sem o total do anúncio: total por mês ÷ 30 × dias (3.050 × 43 ÷ 30 = 4.371,67).
-  const sem = linhasCandidatura({ imovel, interessado: "Ana", entrada: "2026-12-01", saida: "2027-01-13", valorMensal: 2800, totalMensal: 3050 });
-  assert.equal(sem.find((x) => x.rotulo.startsWith("Total da estadia"))?.valor, "R$ 4.371,67 (1 mês + 13 dias)");
 });
