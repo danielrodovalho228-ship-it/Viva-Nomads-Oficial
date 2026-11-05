@@ -20,6 +20,8 @@ export interface DadosCandidatura {
   valorMensal: number;
   /** Custo total do mês (calcularTotalMensal), o mesmo "Total por mês" da tela do Solicitar. */
   totalMensal: number;
+  /** E440: o número público do pedido (VN-PD-…), citável desde o envio. */
+  numeroPedido?: string | null;
   /**
    * E583: a estadia em DIAS pela mesma função da tela do "Pedir para morar" (estadiaDoImovelEmDias: total por mês × dias
    * ÷ 30 + preparação/saída), com o rótulo e a conta aberta. Sem ela, o proporcional do mês (nunca meses arredondados).
@@ -45,6 +47,7 @@ export function linhasCandidatura(d: DadosCandidatura): LinhaDado[] {
   const p = periodoDaCandidatura(d.entrada, d.saida);
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(d.imovel) },
+    ...(d.numeroPedido ? [{ rotulo: "Pedido", valor: d.numeroPedido }] : []),
     { rotulo: "Interessado", valor: limpo(d.interessado) || "Interessado" },
     { rotulo: "Entrada", valor: dataBR(d.entrada) || A_COMBINAR },
     { rotulo: "Saída", valor: dataBR(d.saida) ? `${dataBR(d.saida)}${p ? ` (${p.dias} ${p.dias === 1 ? "dia" : "dias"})` : ""}` : A_COMBINAR },
