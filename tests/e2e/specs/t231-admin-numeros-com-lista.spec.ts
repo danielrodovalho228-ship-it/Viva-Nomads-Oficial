@@ -133,7 +133,8 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
       // E330 (01/11): a Central de Pendências lista cada decisão como li[data-decisao=chave], com o botão
       // central-decisao-<chave> (decisão de outra tela: data-n e o href da tela) ou central-filtro-<chave> (fila da Central).
       const fila = async (chave: string) => {
-        const li = page.locator(`[data-decisao="${chave}"]`);
+        // Só o resumo do topo (li[data-ativo]); a mesma chave também nomeia a linha da decisão na lista da Central.
+        const li = page.locator(`[data-decisao="${chave}"][data-ativo]`);
         if (!(await li.count())) return { valor: 0, href: "" };
         const link = li.locator(`[data-testid="central-decisao-${chave}"], [data-testid="central-filtro-${chave}"]`).first();
         return { valor: Number(await link.getAttribute("data-n")), href: (await link.getAttribute("href"))! };
@@ -156,7 +157,7 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
       }
       expect(alvos.find((a) => a.nome === "fila comissoes_vencidas")!.href).toBe("/admin/financeiro?situacao=vencida");
       expect(alvos.find((a) => a.nome === "fila candidaturas_sem_resposta_48h")!.href).toBe("/admin/candidaturas?status=sem_resposta");
-      await expect(page.locator('[data-decisao="comissoes_vencidas"]')).toContainText(/taxas? vencidas?/);
+      await expect(page.locator('[data-decisao="comissoes_vencidas"][data-ativo]')).toContainText(/taxas? vencidas?/);
 
       for (const a of alvos) {
         if (a.esperado !== undefined) expect(a.valor, a.nome).toBe(a.esperado);
