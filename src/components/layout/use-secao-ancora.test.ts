@@ -28,12 +28,13 @@ test("E340 — carregando (sem seções) e página que não rola: vale o #âncor
   assert.equal(secaoVisivel(ids, "", doc({ pedidos: 100, agenda: 300, ganhos: 500 }), janela(0, 700)), "pedidos");
 });
 
-test("E340 — uma aba acesa por vez: a da seção; sem seção medida, Pedidos", () => {
+test("E340 — uma aba acesa por vez: a da seção; sem seção medida, a 1ª (E459: Início, o topo do painel)", () => {
   const a = ancorasDasAbas(ABAS_PARCEIRO);
-  assert.deepEqual(a, { rota: "/dashboard/parceiro", ids });
+  assert.deepEqual(a, { rota: "/dashboard/parceiro", ids: ["inicio", ...ids] });
   assert.equal(abaAtivaPainel(ABAS_PARCEIRO, "/dashboard/parceiro", "agenda")?.id, "agenda");
   assert.equal(abaAtivaPainel(ABAS_PARCEIRO, "/dashboard/parceiro", "ganhos")?.id, "ganhos");
-  assert.equal(abaAtivaPainel(ABAS_PARCEIRO, "/dashboard/parceiro", null)?.id, "pedidos");
+  assert.equal(abaAtivaPainel(ABAS_PARCEIRO, "/dashboard/parceiro", null)?.id, "inicio");
+  assert.equal(abaAtivaPainel(ABAS_PARCEIRO, "/dashboard/parceiro", "pedidos")?.id, "pedidos");
   assert.equal(abaAtivaPainel(ABAS_PARCEIRO, "/dashboard/servicos/pedidos/x", "ganhos")?.id, "pedidos");
 });
 

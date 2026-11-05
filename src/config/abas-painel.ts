@@ -133,7 +133,8 @@ export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
 
 /** Parceiro aprovado: as abas do meio são as seções do painel do parceiro (âncoras em /dashboard/parceiro). */
 export const ABAS_PARCEIRO: readonly AbaPainel[] = [
-  INICIO,
+  // E459: o Início do parceiro é o topo do painel DELE (não o /dashboard do dono) — mais uma âncora da mesma página.
+  { ...INICIO, href: "/dashboard/parceiro#inicio" },
   { id: "pedidos", rotulo: "Pedidos", href: "/dashboard/parceiro#pedidos", icone: "pedidos", authRequired: true, ativoEm: ["/dashboard/servicos/pedidos"] },
   { id: "agenda", rotulo: "Agenda", href: "/dashboard/parceiro#agenda", icone: "agenda", authRequired: true },
   { id: "ganhos", rotulo: "Ganhos", href: "/dashboard/parceiro#ganhos", icone: "ganhos", authRequired: true },
