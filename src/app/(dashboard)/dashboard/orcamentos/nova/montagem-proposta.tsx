@@ -9,7 +9,10 @@ import { Button } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { enviarProposta, type DadosMontagem } from "@/lib/data/propostas-actions";
 import { calcularTotais, diasDosTermos, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
-import { mesesCompletos } from "@/lib/estadia-em-dias";
+import { DIAS_MAX_ESTADIA, DIAS_MIN_ESTADIA, mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
+import { formatBRLExato, periodoPorExtenso, precoDaProposta, rotuloTotalDaEstadia } from "@/lib/precos";
+import { resumoContratoEmDias } from "@/lib/contrato-blocos";
+import { diasDaSelecao } from "@/lib/imovel/selecao-estadia";
 import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
@@ -29,6 +32,12 @@ function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; ch
 /** Percentual do desconto (não é dinheiro): "6,5" → 6,5. Valores em R$ usam o CampoReais (lerReais). */
 const numero = (v: string) => (v === "" ? 0 : Math.max(0, Number(v.replace(",", ".")) || 0));
 
+/** "2026-12-01" + 43 dias → "2027-01-13" (sem fuso). "" se a entrada não for data. */
+function somarDias(iso: string, dias: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !(dias > 0)) return "";
+  return new Date(Date.parse(`${iso}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10);
+}
+
 /**
  * Montagem da proposta (prompt 17): valores do anúncio já preenchidos e editáveis, desconto opcional (R$ ou %),
  * validade, total por mês e total do contrato na hora — a mesma conta que o servidor refaz ao gravar. A taxa de
@@ -47,6 +56,14 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
   // E562: a faixa de desconto conta os meses completos dos dias (a mesma regra do servidor).
   const termos: TermosProposta = { ...t, descontoEstadiaPct: descontoParaMeses(dados.negociacao.descontos, mesesCompletos(diasDosTermos(t))) };
   const tot = calcularTotais(termos);
+  // E562 (telas): a estadia em DIAS exatos, da candidatura (entrada e saída). A saída é a entrada + os dias; mudar a
+  // entrada leva a saída junto (os dias ficam), mudar a saída muda os dias.
+  const diasEstadia = diasDosTermos(termos);
+  const saida = somarDias(t.dataEntrada, diasEstadia);
+  const preco = precoDaProposta({ ...termos, valorMensal: tot.valorMensal });
+  // A caução do 1º bloco pela mesma regra do contrato (50% do bloco proporcional, blocos contados em dias).
+  const caucao = resumoContratoEmDias(diasEstadia, tot.valorMensal, dados.taxa).blocos[0];
+  const mudarDias = (dias: number) => setT((x) => ({ ...x, dias, meses: mesesDeReferencia(dias) }));
   const pessoasN = pessoas ? Number(pessoas) : null;
   const problema = validarTermos(termos, dados.limites, hojeBR(), pessoasN);
   const set = <K extends keyof TermosProposta>(k: K, v: TermosProposta[K]) => setT((x) => ({ ...x, [k]: v }));
@@ -63,8 +80,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
       descontoValor: tipoDesconto === "valor" ? termos.descontoValor : 0,
       motivoDesconto: termos.descontoPct > 0 || termos.descontoValor > 0 ? termos.motivoDesconto : null,
       meses: termos.meses,
-      // E562: os dias da candidatura seguem para a proposta (a escolha de meses no seletor vira meses × 30).
-      dias: diasDosTermos(termos),
+      // E562: os dias da candidatura (ou a saída que o dono ajustou) seguem para a proposta.
+      dias: diasEstadia,
       dataEntrada: termos.dataEntrada,
       condominio: termos.condominio,
       consumo: termos.consumo,
@@ -81,7 +98,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
     router.push(`/dashboard/propostas/${r.id}`);
   }
 
-  const meses = Array.from({ length: dados.limites.mesesMax - dados.limites.mesesMin + 1 }, (_, i) => dados.limites.mesesMin + i);
+  const diasMin = Math.max(DIAS_MIN_ESTADIA, dados.limites.diasMin ?? dados.limites.mesesMin * 30);
+  const diasMax = Math.min(DIAS_MAX_ESTADIA, dados.limites.diasMax ?? dados.limites.mesesMax * 30);
 
   return (
     <>
@@ -93,18 +111,24 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               <Campo rotulo="Valor mensal (R$)">
                 <CampoReais semPrefixo centavos value={t.valorBase || null} onChange={(v) => set("valorBase", v ?? 0)} testid="proposta-valor" />
               </Campo>
-              <Campo rotulo="Número de meses" ajuda={`Entre ${dados.limites.mesesMin} e ${dados.limites.mesesMax}, como no anúncio.`}>
-                <select className="input" value={t.meses} onChange={(e) => setT((x) => ({ ...x, meses: Number(e.target.value), dias: Number(e.target.value) * 30 }))} data-testid="proposta-meses">
-                  {meses.map((m) => (
-                    <option key={m} value={m}>
-                      {m} {m === 1 ? "mês" : "meses"}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
               <Campo rotulo="Data de entrada">
                 <CampoData className="input" value={t.dataEntrada} min={hojeBR()} onChange={(e) => set("dataEntrada", e.target.value)} data-testid="proposta-data" />
               </Campo>
+              <Campo rotulo="Data de saída" ajuda={`Estadia de ${diasMin} a ${diasMax} dias, como no anúncio.`}>
+                <CampoData
+                  className="input"
+                  value={saida}
+                  min={somarDias(t.dataEntrada, 1) || hojeBR()}
+                  onChange={(e) => {
+                    const d = diasDaSelecao({ entrada: t.dataEntrada, saida: e.target.value });
+                    if (d) mudarDias(d);
+                  }}
+                  data-testid="proposta-saida"
+                />
+              </Campo>
+              <p className="text-sm text-ink sm:col-span-2" data-testid="proposta-dias">
+                Estadia: <strong>{diasEstadia} dias</strong> ({periodoPorExtenso(diasEstadia)})
+              </p>
               <Campo rotulo="Pessoas (opcional)" ajuda={dados.limites.capacidade ? `O imóvel recebe até ${dados.limites.capacidade}.` : undefined}>
                 <input inputMode="numeric" className="input" value={pessoas} onChange={(e) => setPessoas(e.target.value.replace(/\D/g, "").slice(0, 2))} />
               </Campo>
@@ -221,12 +245,21 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
                 <dd className="font-medium text-ink" data-testid="resumo-total-mensal">{formatBRL(tot.totalMensal)}</dd>
               </div>
               <div className="flex justify-between gap-3 border-t border-sage-200 pt-2">
-                <dt className="font-semibold text-ink">Total do contrato</dt>
-                <dd className="font-title text-lg font-semibold text-forest" data-testid="resumo-total-contrato">{formatBRL(tot.totalContrato)}</dd>
+                <dt className="font-semibold text-ink" data-testid="resumo-rotulo-total">{rotuloTotalDaEstadia(diasEstadia)}</dt>
+                <dd className="font-title text-lg font-semibold text-forest" data-testid="resumo-total-contrato">{formatBRLExato(tot.totalContrato)}</dd>
               </div>
+              <div className="text-[13px] text-muted" data-testid="resumo-conta">
+                {periodoPorExtenso(diasEstadia)}: {preco.conta}
+              </div>
+              {caucao && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted">Caução (50% do 1º bloco, {caucao.dias} dias)</dt>
+                  <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.caucao)}</dd>
+                </div>
+              )}
             </dl>
             <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="proposta-taxa-dono">
-              Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, tot.dias / 30)}.
+              Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, diasEstadia / 30)}.
             </p>
             {erro && (
               <p className="mt-3 text-[13px] text-red-600" role="alert" data-testid="proposta-erro">

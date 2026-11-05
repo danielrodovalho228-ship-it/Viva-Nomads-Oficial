@@ -15,7 +15,7 @@ import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
 import { totalDoPeriodo } from "./cartao-preco.ts";
-import { ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "./precos.ts";
+import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
 
 export interface LinhaTaxa {
@@ -110,6 +110,11 @@ export function resumoSolicitacao(e: {
    * com a conta aberta. Sem ela, o total é só o mês × meses (sem inventar taxa).
    */
   estadia?: { meses: number; total: number; conta: string } | null;
+  /**
+   * E562 (telas): a estadia em DIAS exatos (estadiaDoImovelEmDias: total por mês × dias ÷ 30 + preparação e saída).
+   * Vence a estadia em meses: com ela o resumo diz "Total da estadia (43 dias)", com "1 mês + 13 dias".
+   */
+  estadiaDias?: { dias: number; total: number; conta: string; periodo: string; rotulo: string } | null;
   /** E520: o campo de entrada tem texto que não é uma data real (o valor chega vazio, mas a pessoa digitou algo). */
   entradaInvalida?: boolean;
   /** E520: idem para a saída. */
@@ -146,7 +151,12 @@ export function resumoSolicitacao(e: {
       ...(e.limpezaEstadia ? [{ rotulo: "Limpeza durante a estadia", valor: textoLimpezaEstadia(e.limpezaEstadia) }] : []),
       ...(typeof e.totalMensal === "number" ? [{ rotulo: ROTULO_TOTAL_MES, valor: formatBRL(e.totalMensal) }] : []),
       // E53/E519: com o período completo, o total — a mesma conta do painel (estadiaDoImovel), com a conta aberta.
-      ...(meses && e.estadia && e.estadia.meses === meses
+      ...(dias && e.estadiaDias && e.estadiaDias.dias === dias
+        ? [
+            { rotulo: e.estadiaDias.rotulo, valor: `${formatBRLExato(e.estadiaDias.total)} (${e.estadiaDias.periodo})` },
+            { rotulo: "Conta do total", valor: `${e.estadiaDias.conta} = ${formatBRLExato(e.estadiaDias.total)}` },
+          ]
+        : meses && e.estadia && e.estadia.meses === meses
         ? [
             { rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(e.estadia.total)} em ${meses} ${meses === 1 ? "mês" : "meses"}` },
             { rotulo: "Conta do total", valor: `${e.estadia.conta} = ${formatBRL(e.estadia.total)}` },

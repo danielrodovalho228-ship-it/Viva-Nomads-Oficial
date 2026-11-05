@@ -60,8 +60,9 @@ async function enviarPelaTela(page: Page, c: Cenario, validade = "7"): Promise<s
   await page.goto(`/dashboard/orcamentos/nova?interessado=${c.lead}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("montagem-proposta")).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("proposta-valor").fill("3200");
-  await page.getByTestId("proposta-meses").selectOption("4");
   await page.getByTestId("proposta-data").fill(emDias(10));
+  // E562 (telas): sem "Número de meses" — a estadia vem em dias; 4 meses = saída 120 dias depois da entrada.
+  await page.getByTestId("proposta-saida").fill(emDias(130));
   await page.getByTestId("proposta-validade").selectOption(validade);
   await expect(page.getByTestId("resumo-total-contrato")).toContainText("12.800");
   await expect(page.getByTestId("proposta-taxa-dono")).toContainText("12%");
