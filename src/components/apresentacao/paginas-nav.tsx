@@ -17,8 +17,6 @@ const PAGINAS: PaginaRef[] = [
   { href: "/modelodenegocio", nome: "Modelo de negócio", resumo: "visão do proprietário e do híbrido" },
   { href: "/simulacao", nome: "Simulação", resumo: "as 5 fontes de receita da plataforma" },
   { href: "/roi", nome: "ROI", resumo: "payback e break-even da empresa" },
-  { href: "/socios", nome: "Sócios", resumo: "quem faz o quê" },
-  { href: "/decisao", nome: "Decisão", resumo: "híbrido × tradicional" },
 ];
 
 /** Barra discreta com links entre as páginas internas. `atual` = href da página. */

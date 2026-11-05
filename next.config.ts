@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
     // E563: a mesma chave de src/config/precos-visivel.ts (página de preços suspensa enquanto não for "1").
     const precosVisivel = process.env.NEXT_PUBLIC_PRECOS_VISIVEL === "1";
     return [
+      // E595/E596 (ordem do Daniel, 05/11): /decisao e /socios defendiam o modelo revogado e foram eliminadas. O acesso
+      // direto vai para a área interna válida (/modelodenegocio, ainda atrás da porta dos sócios) — nunca o conteúdo velho.
+      { source: "/socios", destination: "/modelodenegocio", permanent: false },
+      { source: "/socios/:path*", destination: "/modelodenegocio", permanent: false },
+      { source: "/decisao", destination: "/modelodenegocio", permanent: false },
+      { source: "/decisao/:path*", destination: "/modelodenegocio", permanent: false },
       // www → ápice, MENOS /.well-known/*: Android (assetlinks) e Apple (AASA) não aceitam redirect nesse arquivo,
       // então os dois hosts servem /.well-known direto (200). O redirect mora aqui, não no domínio da Vercel,
       // porque o redirect de domínio da Vercel não tem exceção por caminho.
