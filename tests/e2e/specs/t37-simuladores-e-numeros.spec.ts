@@ -38,7 +38,8 @@ test.describe("T37 — Números do código (fonte única)", () => {
     // Exemplo: R$ 2.400 × 4 meses = R$ 9.600 → R$ 1.152 / 768 / 384 / 384 (o Gestor paga a faixa de 4%, #2519).
     expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([1152, 768, 384, 384]);
     expect(textoComissao(0.12, 2400)).toContain("12% do valor total do contrato");
-    expect(textoComissao(0)).toContain("Taxa de serviço zero");
+    // E564: não existe mais "taxa de serviço zero" (o Gestor paga 4%).
+    expect(textoComissao(0)).not.toContain("Taxa de serviço zero");
   });
 
   test("Caução: 50% de cada bloco e, no total, no máximo 3 aluguéis", () => {
