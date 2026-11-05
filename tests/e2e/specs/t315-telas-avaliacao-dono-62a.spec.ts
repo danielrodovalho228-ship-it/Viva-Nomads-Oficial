@@ -113,6 +113,11 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     await largura(d, 1280);
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("avaliacao-dono").getByTestId("rota-foto")).toBeVisible({ timeout: 30_000 });
+    // O "Medir" monta no cliente depois do bloco da avaliação: conta com a página assentada (se a correção tirar o
+    // componente da página, a espera só expira e a conta segue).
+    await d.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+    await d.getByTestId("medir-internet").or(d.getByTestId("medir-internet-indisponivel")).first().waitFor({ timeout: 15_000 }).catch(() => {});
+    await d.waitForTimeout(500);
     expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
     await d.context().close();
   });
