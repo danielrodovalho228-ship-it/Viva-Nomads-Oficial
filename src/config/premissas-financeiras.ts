@@ -3,10 +3,14 @@
   dos sócios). Cada número tem valor, unidade e fonte. Para mudar a conta, mude
   aqui: as duas páginas e os testes leem este arquivo.
 
-  Referência: modelo de custos v2 (04/11/2026, E559). Dólar: R$ 5,20. Estimativas
-  para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
+  Referência: modelo de custos v3 validado pelo coordenador (ordem do Daniel, 05/11/2026; continuação do E559/E592):
+  contrato de referência R$ 3.000 × 3 meses na faixa da carteira (12/10/8/6 — nunca 12% fixo), regime Simples × Lucro
+  Presumido (Presumido em destaque), fornecedores pós-CNPJ, pró-labore de referência + encargos. Dólar: R$ 5,20.
+  Estimativas para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
-export const REFERENCIA = "04/11/2026";
+export const REFERENCIA = "05/11/2026";
+/** Nome do modelo de custos que estas premissas seguem. */
+export const MODELO_CUSTOS = "modelo de custos v3 (validado pelo coordenador em 05/11/2026)";
 export const DOLAR = 5.2;
 
 export interface Item {
@@ -32,10 +36,15 @@ export interface Item {
 export const ALUGUEL_MEDIO = 3000;
 
 /**
- * Taxa média por contrato (0..1) — E592/E594: 10%, a do modelo validado (antes 12%: todos os contratos na 1ª faixa).
- * As faixas por nº de imóveis do dono seguem em lib/cobranca/regra.ts; 10% é a média entre elas (ex.: metade a 12%,
- * metade a 8%), não uma faixa.
+ * Modelo v3: a taxa é a da FAIXA da carteira do dono (tabela 12/10/8/6 de lib/cobranca/regra.ts) — nunca 12% fixo. A
+ * tela escolhe a faixa; o padrão é 10% (carteira de 3 a 5 imóveis), a do contrato de referência do modelo.
  */
+export const TAXA_FAIXAS = [
+  { taxa: 0.12, carteira: "1–2 imóveis" },
+  { taxa: 0.1, carteira: "3–5 imóveis" },
+  { taxa: 0.08, carteira: "6–15 imóveis" },
+  { taxa: 0.06, carteira: "16–19 imóveis" },
+] as const;
 export const TAXA_MEDIA = 0.1;
 
 /** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
@@ -46,14 +55,14 @@ export const CONTRATOS_MES_CENARIOS = [10, 20, 40] as const;
 
 // ── Custos variáveis por contrato ───────────────────────────────────────────
 /*
-  E559 (modelo de custos v2, 04/11/2026). A verificação de identidade é custo da Viva (obrigatória no fluxo) e NUNCA
-  vira receita. A Certta ainda não foi cotada: R$ 20 por verificação é HIPÓTESE, rotulada assim em toda tela.
+  Modelo v3. A verificação de identidade é custo da Viva (obrigatória no fluxo) e NUNCA vira receita. A Certta NÃO tem
+  preço público: 1,7 verificações × R$ 20 = R$ 34 por contrato é HIPÓTESE, rotulada assim em toda tela (nunca preço).
 */
 /** Verificações de identidade por contrato fechado (hipótese do modelo v2). */
 export const VERIFICACOES_POR_CONTRATO = 1.7;
 /** Custo por verificação de identidade (Certta) — hipótese, preço a cotar. */
 export const CUSTO_IDENTIDADE_HIPOTESE = 20;
-export const ROTULO_HIPOTESE_IDENTIDADE = "hipótese — preço a cotar";
+export const ROTULO_HIPOTESE_IDENTIDADE = "hipótese — a Certta não tem preço público";
 /** Taxa de serviço média por contrato (R$) — base da cobrança no cartão. */
 const TAXA_POR_CONTRATO = ALUGUEL_MEDIO * MESES_MEDIOS_CONTRATO * TAXA_MEDIA;
 const cent = (v: number) => Math.round(v * 100) / 100;
@@ -76,19 +85,56 @@ export const CUSTOS_POR_CONTRATO: Item[] = [
   },
   { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing", obs: "Estimativa; o custo em produção é a medir." },
 ];
-/**
- * Imposto da Viva sobre TODA a receita (Simples Nacional). O anexo depende da
- * atividade cadastrada e da folha: a definir pelo contador na abertura do CNPJ.
- * Padrão 6% (faixa inicial); 15,5% se cair no anexo V.
- */
-export const IMPOSTO_OPCOES = [0.06, 0.155] as const;
-export const IMPOSTO_SOBRE_RECEITA = IMPOSTO_OPCOES[0];
-export const IMPOSTO_TEXTO = "a definir pelo contador – anexo do Simples";
+/*
+  Modelo v3: regime tributário — Simples Nacional (~6% sobre a receita; a contribuição patronal já vem no DAS) ×
+  Lucro Presumido (~13,3% sobre a receita com ISS de 2%, até ~16,3% com ISS de 5%; e o INSS patronal de 20% sobre o
+  pró-labore, que entra no custo fixo). O Presumido é o cenário em destaque; o instrumento societário está em revisão.
+*/
+export type RegimeId = "simples" | "presumido" | "presumido_iss5";
+export interface Regime {
+  id: RegimeId;
+  nome: string;
+  /** Impostos sobre a receita (0..1). */
+  aliquota: number;
+  /** INSS patronal sobre o pró-labore (0..1) — fora do Simples. */
+  inssPatronal: number;
+  detalhe: string;
+}
+export const REGIMES: Regime[] = [
+  { id: "simples", nome: "Simples Nacional", aliquota: 0.06, inssPatronal: 0, detalhe: "≈ 6% sobre a receita; a contribuição patronal vem no DAS" },
+  {
+    id: "presumido",
+    nome: "Lucro Presumido",
+    aliquota: 0.1333,
+    inssPatronal: 0.2,
+    detalhe: "≈ 13,3% sobre a receita (PIS, Cofins, IRPJ, CSLL e ISS de 2%) + INSS patronal de 20% sobre o pró-labore",
+  },
+  {
+    id: "presumido_iss5",
+    nome: "Lucro Presumido (ISS 5%)",
+    aliquota: 0.1633,
+    inssPatronal: 0.2,
+    detalhe: "≈ 16,3% sobre a receita com ISS de 5% + INSS patronal de 20% sobre o pró-labore",
+  },
+];
+/** O cenário em destaque do modelo v3. */
+export const REGIME_PADRAO: RegimeId = "presumido";
+export const regimePorId = (id: RegimeId) => REGIMES.find((r) => r.id === id) ?? REGIMES[1];
+/** O instrumento societário (contrato social/acordo de sócios) ainda não está fechado. */
+export const SELO_SOCIETARIO = "instrumento societário em revisão";
+export const IMPOSTO_OPCOES = REGIMES.map((r) => r.aliquota);
+export const IMPOSTO_SOBRE_RECEITA = regimePorId(REGIME_PADRAO).aliquota;
+export const IMPOSTO_TEXTO = "regime a confirmar com o contador (Simples × Lucro Presumido)";
 /** Operador local por contrato: R$ 0 (sócios fazem) ou R$ 100. */
 export const OPERADOR_OPCOES = [0, 100] as const;
 
 // ── Custos fixos por mês ────────────────────────────────────────────────────
-/* E559: fornecedores do modelo de custos v2 (04/11/2026) ≈ R$ 1.303/mês; o pró-labore é referência para projeção. */
+/*
+  Modelo v3: fornecedores pós-CNPJ (≈ R$ 1.303/mês no modelo) + o pró-labore de referência (R$ 6.000/mês, mais os
+  encargos do regime). Linhas sem preço entram como R$ 0 e vão para as lacunas.
+*/
+export const ROTULO_PRO_LABORE = "Pró-labore dos sócios";
+export const PRO_LABORE = 6000;
 export const CUSTOS_FIXOS: Item[] = [
   { rotulo: "Contabilidade (A2)", valor: 450, unidade: "R$/mês" },
   { rotulo: "CRECI pessoa jurídica (anuidade)", valor: 145.5, unidade: "R$/mês", obs: "≈ R$ 145,50 por mês." },
@@ -100,12 +146,37 @@ export const CUSTOS_FIXOS: Item[] = [
   { rotulo: "Infraestrutura (Vercel + Supabase + Resend + Expo, com IOF)", valor: 500, unidade: "R$/mês", obs: "≈ R$ 500 por mês." },
   { rotulo: "Emissor de NFS-e", valor: 0, unidade: "R$/mês", obs: "a cotar" },
   { rotulo: "Alvará de funcionamento", valor: 0, unidade: "R$/mês", obs: "a cotar" },
-  { rotulo: "Pró-labore dos sócios", valor: 6000, unidade: "R$/mês", obs: "referência para projeção — não é decisão" },
+  { rotulo: "Marketing pago", valor: 0, unidade: "R$/mês", obs: "começa em R$ 0 — a linha fica para quando houver verba" },
+  { rotulo: ROTULO_PRO_LABORE, valor: PRO_LABORE, unidade: "R$/mês", obs: "referência para projeção — não é decisão; + encargos do regime" },
 ];
 /** Fornecedores (sem o pró-labore) — o mínimo do controle deslizante. */
-export const CUSTO_FORNECEDORES = cent(CUSTOS_FIXOS.filter((c) => c.rotulo !== "Pró-labore dos sócios").reduce((s, c) => s + c.valor, 0));
-/** Fora do fixo: o WhatsApp (Z-API) só entra se for ligado. */
-export const FORA_DO_FIXO = ["WhatsApp (Z-API): a cotar, se for ligado"] as const;
+export const CUSTO_FORNECEDORES = cent(CUSTOS_FIXOS.filter((c) => c.rotulo !== ROTULO_PRO_LABORE).reduce((s, c) => s + c.valor, 0));
+/** Encargos do pró-labore no regime (INSS patronal fora do Simples), em R$/mês. */
+export const encargosProLabore = (r: Regime, proLabore = PRO_LABORE) => cent(proLabore * r.inssPatronal);
+/**
+ * Veredito do coordenador (05/11): custos visíveis mas FORA da soma — opcionais ou sem decisão. Aparecem no bloco
+ * "Custos ainda sem valor / opcionais (não somados)" da tela; nenhum entra no custo fixo.
+ */
+export const OPCIONAIS_NAO_SOMADOS: Item[] = [
+  {
+    rotulo: "Associação à CDL Uberlândia",
+    valor: 100,
+    unidade: "R$/mês",
+    obs: "Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente",
+  },
+  {
+    rotulo: "Caixas de e-mail da empresa (Hostinger)",
+    valor: 5.99,
+    unidade: "R$/mês",
+    obs: "~R$ 5,99/mês (Hostinger) — fora da soma até o número de caixas ser decidido",
+  },
+];
+/** Fora do fixo: o que não entra na conta hoje, com o porquê (sem número inventado). */
+export const FORA_DO_FIXO = [
+  "WhatsApp (Z-API): a cotar, se for ligado",
+  "Stays (channel manager): só na fase 2 do Gestor",
+  "Seguro da empresa: a Viva não tem hoje — decisão pendente",
+] as const;
 /**
  * E592/E594: as lacunas de custo — o que ainda não tem preço. Entram na conta como R$ 0 (a cotar) ou como hipótese, e a
  * tela as lista à parte para o resultado não parecer completo.
@@ -117,7 +188,8 @@ export interface LacunaCusto {
 }
 export const LACUNAS_CUSTO: LacunaCusto[] = [
   ...[...CUSTOS_FIXOS, ...CUSTOS_POR_CONTRATO]
-    .filter((c) => c.valor === 0)
+    // O marketing pago em R$ 0 é decisão do modelo v3 (não falta de preço): fica fora das lacunas.
+    .filter((c) => c.valor === 0 && c.rotulo !== "Marketing pago")
     .map((c) => ({ rotulo: c.rotulo, situacao: `R$ 0 na conta — ${c.obs ?? "a cotar"}` })),
   {
     rotulo: CUSTOS_POR_CONTRATO[0].rotulo,
@@ -126,17 +198,33 @@ export const LACUNAS_CUSTO: LacunaCusto[] = [
   { rotulo: "WhatsApp (Z-API)", situacao: "fora da conta — a cotar, se for ligado" },
 ];
 
-/** Custo fixo ≈ R$ 7,3 mil/mês (fornecedores ≈ R$ 1.303 + pró-labore de referência R$ 6.000). O controle vai de só fornecedores até R$ 10 mil. */
-export const CUSTO_FIXO_FAIXA = { min: CUSTO_FORNECEDORES, max: 10000, texto: "≈ R$ 7,3 mil/mês com pró-labore de referência" };
+/** Custo fixo (fornecedores + pró-labore de referência, antes dos encargos do regime). O controle vai de só fornecedores até R$ 12 mil. */
+export const CUSTO_FIXO_FAIXA = { min: CUSTO_FORNECEDORES, max: 12000, texto: "fornecedores + pró-labore de referência; os encargos do regime somam à parte" };
 
-/** Marketing por mês: nada antes dos contratos, R$ 800 no ano 1, R$ 1.500 depois. */
+/** Marketing pago por mês: o modelo v3 começa em R$ 0 (a linha existe em CUSTOS_FIXOS para quando houver verba). */
+export const MARKETING_PAGO_MES = 0;
 export function marketingDoMes(m: number): number {
-  if (m <= 3) return 0;
-  return m <= 12 ? 800 : 1500;
+  return m >= 1 ? MARKETING_PAGO_MES : 0;
 }
 
-/** Investimento único: jurídico, CNPJ, marca, Google Play, lançamento. */
+/**
+ * Investimento único (envelope de 06/10): jurídico, CNPJ, marca, Google Play, lançamento. Veredito do coordenador
+ * (05/11): o parecer jurídico (R$ 4.000) e a consulta de 05/11 (R$ 500) estão DENTRO dele — não são linhas à parte.
+ */
 export const INVESTIMENTO_INICIAL = 16000;
+/** "Dos quais": partes do envelope de R$ 16.000 — informativas, NÃO somadas de novo (nenhum custo em duas linhas). */
+export const INVESTIMENTO_DOS_QUAIS: Item[] = [
+  { rotulo: "Parecer da Dra. Beatriz", valor: 4000, unidade: "R$", obs: "proposta de 05/11, aguarda OK" },
+  { rotulo: "Consulta de 05/11", valor: 500, unidade: "R$", obs: "paga pelo Rogério, a reembolsar" },
+];
+export const INVESTIMENTO_INICIAL_DETALHE = `dos quais: ${INVESTIMENTO_DOS_QUAIS.map(
+  (i) => `${i.rotulo.charAt(0).toLowerCase()}${i.rotulo.slice(1)} R$ ${i.valor.toLocaleString("pt-BR")} (${i.obs})`,
+).join(" e ")} — informativos, não somados`;
+/** A cotar (não somado): custos jurídicos ainda sem número fechado — ficam fora do investimento e da projeção. */
+export const INVESTIMENTO_A_COTAR: { rotulo: string; situacao: string }[] = [
+  { rotulo: "Contrato do investidor", situacao: "SCP (R$ 10.000 padrão, com desconto a combinar) ou mútuo — em revisão; a cotar (não somado)" },
+  { rotulo: "5 modelos de contrato", situacao: "a cotar (não somado)" },
+];
 
 // ── Cenários (contratos começam no mês 4) ──────────────────────────────────
 export type CenarioId = "pessimista" | "base" | "otimista";

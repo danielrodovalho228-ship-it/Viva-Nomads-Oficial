@@ -186,3 +186,86 @@ Achados (numerados):
    "Entrar". Uma linha em `src/components/layout/footer.tsx` se o Daniel quiser trocar por "(é preciso entrar)".
 
 Nenhum defeito novo nesta passada. /socios e /decisao (E597) foram conferidas pelo T908 no lab-critico do #2713 (390 e 1280).
+
+## Varredura geral por blocos — passada 13 (05/11, modo demonstração, 390 e 1280)
+
+16 rotas públicas e 19 do painel (incluindo assistente de cadastro no passo 1 e na Revisão, Conta, Agenda, Simulador, Pedidos,
+Locações e Visitas), medidas no topo e no fim da rolagem, nas classes pedidas pela vigia: imagem vazia/quebrada, elemento fixo
+sobrepondo conteúdo, estouro horizontal e texto cortado. Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Imagem vazia ou quebrada**: nenhuma. **Conforme.**
+2. **Estouro horizontal**: nenhum. **Conforme.**
+3. **Texto cortado**: os únicos cortes medidos são textos só para leitor de tela (`sr-only`, 1 px de propósito — "Aceita pets",
+   "Imóveis encontrados", "— falta"). Nenhum texto visível cortado. **Conforme.**
+4. **Elemento fixo sobre o conteúdo**: a 390, a barra de navegação de baixo e o rodapé do assistente cobrem controles enquanto a
+   página rola (é o normal de uma barra fixa); no fim da rolagem, nenhum controle, título ou parágrafo fica por baixo deles nas
+   10 rotas apontadas (busca, ajuda, para proprietários, privacidade, Início, Meus imóveis, Revisão, Meus dados, Simulador, Pedidos),
+   nos dois tamanhos. **Conforme.**
+5. **E526** (diálogos de filtro da busca): reconferido na main de hoje com o T841 local — passa a 390 e 1280 (correção do #2457 de pé).
+
+Nenhum defeito novo nesta passada.
+
+## Rotas que nenhuma passada tinha medido — passada 14 (05/11, modo demonstração, 390 e 1280)
+
+14 rotas públicas (fale com a Viva, cidades, parceiros: ativar, buscar e fotógrafos, pedidos e novo pedido, preços, segurança,
+conferir, desligar alerta de busca e avisos, guia de fotos, excluir conta) e 18 do painel (contratos, fechamento, leads, recibos,
+ROI, serviços, tributação, verificação, painel do parceiro, orçamentos, Conta › avaliações, segurança, papéis e pagamentos,
+agenda, buscas, candidaturas, propostas), com as verificações da casa (um h1, um botão cheio no `main`, rolagem lateral) e as da
+passada 13 (imagem vazia/quebrada, fixo sobre conteúdo no fim da rolagem, texto cortado). Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Rolagem lateral, imagem quebrada, h1**: nenhuma rolagem lateral, nenhuma imagem quebrada, um h1 em cada tela. **Conforme.**
+2. **Texto cortado**: só textos para leitor de tela (`sr-only`: "Conversa com a assistente", "Sua mensagem para a Viva",
+   "Outro local: nome do lugar ou endereço"). **Conforme.**
+3. **Fixo sobre conteúdo**: a barra de baixo (390) e o botão "Fale com a Viva" (1280, /parceiros/buscar) cobrem itens só no meio
+   da rolagem; no fim, nada fica por baixo deles nas 6 rotas apontadas. **Conforme.**
+4. **Dois botões cheios em Conta › Como você usa a Viva** ("Começar um anúncio" e "Cadastrar meu serviço"): é o desenho do
+   mockup aprovado `perfil-03-papeis-com-fotos` (os dois cartões com botão verde cheio). Exceção do desenho à regra de um botão
+   cheio por tela; **não mudei** — fica para decisão do Muse se a regra deve vencer o mockup.
+5. **Redirecionamentos**: /precos → home, /dashboard/roi-imovel → Simulador, /dashboard/tributacao → Ferramentas, /cidades →
+   a cidade do demo. /pedidos e Conta › avaliações pedem sessão real (levam ao login no demo; ficam para o laboratório).
+
+Nenhum defeito novo nesta passada.
+
+## Tablet (768) depois das mudanças de 05/11 — passada 15 (05/11, modo demonstração)
+
+A largura de tablet não era medida desde a passada 4 (02/11). 24 rotas públicas e 37 do painel a 768 × 1024, com as
+verificações das passadas 13 e 14 (um h1, um botão cheio no `main`, rolagem lateral, imagem vazia/quebrada, fixo sobre conteúdo
+no fim da rolagem, texto cortado). Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Reembolso da caução** (`/dashboard/reembolsos`): a linha "Motivo · Valor · Evidência · Adicionar" tinha 4 colunas já a 640 px;
+   a 768 os campos se sobrepunham, o "Adicionar" saía da tela e a página rolava 101 px de lado (a 1280, o exemplo do Motivo
+   aparecia cortado). **Corrigido — PR #2742**: 1 coluna no celular, 2 a partir do tablet, campos que encolhem e com a altura do
+   botão. Guardas: teste de unidade e T909 (laboratório, 390/768/1280).
+2. **Assistente, passo 2 (Fotos)**: a varredura apontou "Dicas rápidas" sob o rodapé fixo — é o conteúdo do "Ver dicas de foto"
+   fechado (`<details>`), que não aparece na tela. Falso positivo. **Conforme.**
+3. **Demais rotas**: nenhuma rolagem lateral, nenhuma imagem quebrada, um h1 por tela; textos cortados só nos de leitor de tela.
+   Conta › Como você usa a Viva segue com os dois botões cheios do mockup `perfil-03` (passada 14, item 4). **Conforme.**
+4. **Modo morador do painel**: no demo o Início sempre mostra a visão combinada (o demo vence o modo); a medição do modo morador
+   fica para o laboratório.
+
+## E99 (PUBLICO-A) — páginas públicas no padrão aprovado, reconferência de 05/11 (modo demonstração, 1280 e 390)
+
+O E99 de 31/10 (#1669) conferiu /parceiros e /empresas (conformes) e corrigiu /como-funciona. Faltavam a home e as demais públicas.
+Critério do #1669: menu público novo, fundo clean (branco e `#f7f7f7`, nada de bege; camada escura só sobre foto), um botão cheio
+por tela no `main`, grades pares (sem buraco na última linha), fotos carregadas e sem rolagem lateral. Medido rolando cada página
+até o fim (para carregar as fotos), com recorte da página inteira.
+
+| Página | Fotos | Resultado |
+|---|---|---|
+| `/` (home; tabela comparativa intacta) | 26/26 | **Conforme, sem PR** |
+| `/para-proprietarios` | 11/11 | **Conforme, sem PR** |
+| `/ajuda` | 7/7 | **Conforme, sem PR** |
+| `/guias` | 2/2 | **Conforme, sem PR** (7 cartões: o último ocupa a linha, passada 9) |
+| `/seguranca` | 3/3 | **Conforme, sem PR** |
+| `/parceiros/buscar` | 12/12 | **Conforme, sem PR** — a "grade" apontada a 1280 é o formulário de busca (campos + "Buscar" numa linha, "Emite nota fiscal" na de baixo); categorias 6 numa linha |
+| `/parceiros/fotografos` | 2/2 | **Conforme, sem PR** — idem: formulário CEP/cidade + "Buscar" |
+| `/cidades/uberlandia` | 32/32 | **Conforme** — a última linha da lista de anúncios incompleta é a decisão de desenho da /buscar (passada 9) |
+| `/parceiros`, `/empresas`, `/como-funciona` | 21, 10, 18 | **Conformes** (reconferidas depois do #1669) |
+
+Nenhuma página pública precisou de correção nesta reconferência.

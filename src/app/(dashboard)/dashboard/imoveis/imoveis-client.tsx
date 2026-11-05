@@ -5,9 +5,9 @@ import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { gruposRascunhosDuplicados, idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Award, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
-import { ROTULO_NIVEL } from "@/config/niveis";
-import { textoNivelCartao } from "@/lib/cartao-sintese";
+import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { SelosFoto } from "@/components/property/selos-foto";
 import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 import { destinoDoCartao } from "@/lib/anuncio/destino-cartao";
-import { ORDENS, POR_PAGINA, abasVisiveis, filtrarEOrdenar, paginar, type AbaEstado, type OrdemLista } from "@/lib/anuncio/lista-meus-imoveis";
+import { ORDENS, POR_PAGINA, abasVisiveis, filtrarEOrdenar, juntarCopiasAoPai, paginar, type AbaEstado, type OrdemLista } from "@/lib/anuncio/lista-meus-imoveis";
 
 /** E511: a barra da lista (abas, busca, ordem) aparece a partir desta quantidade de imóveis. */
 const MIN_BARRA = 4;
@@ -77,7 +77,8 @@ export function MyPropertiesClient({
   const [ordem, setOrdem] = useState<OrdemLista>("recentes");
   const [paginas, setPaginas] = useState(1);
   const comBarra = visiveis.length >= MIN_BARRA;
-  const filtrada = comBarra ? filtrarEOrdenar(visiveis, { aba, busca, ordem }) : visiveis;
+  // E514: as cópias abertas ficam logo depois do cartão-pai (antes, iam para o fim da lista).
+  const filtrada = juntarCopiasAoPai(comBarra ? filtrarEOrdenar(visiveis, { aba, busca, ordem }) : visiveis, copiasDe);
   const pagina = paginar(filtrada, paginas);
   const abas = abasVisiveis(visiveis);
 
@@ -204,19 +205,26 @@ export function MyPropertiesClient({
               >
                 {/* E510: a foto é clicável em todo estado (o mesmo destino do título; fora da ordem de tabulação, o título já é o
                     link). `contents`: o link não cria caixa — a foto segue 4:3 e sem esticar com o cartão (E311, #1724). */}
-                <Link href={destino} tabIndex={-1} aria-hidden className="contents" data-testid="cartao-foto-link">
-                  {hasPhoto(p.photos[0]) ? (
-                    <BrandImage
-                      src={p.photos[0]}
-                      alt={p.title}
-                      sizes="200px"
-                      className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
-                    />
-                  ) : (
-                    // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
-                    <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
-                  )}
-                </Link>
+                {/* E416 (05/11): os selos do anúncio sobre a foto, a mesma fileira da vitrine (sem coração aqui). */}
+                <div className="relative w-full shrink-0 sm:w-48 sm:self-start" data-testid="meu-anuncio-foto">
+                  <Link href={destino} tabIndex={-1} aria-hidden className="contents" data-testid="cartao-foto-link">
+                    {hasPhoto(p.photos[0]) ? (
+                      <BrandImage
+                        src={p.photos[0]}
+                        alt={p.title}
+                        sizes="200px"
+                        className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
+                      />
+                    ) : (
+                      // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
+                      <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
+                    )}
+                  </Link>
+                  <SelosFoto
+                    semCoracao
+                    selos={selosDaFoto({ precoJusto: !!p.precoJusto, pets: !!p.petsAllowed, nivel: p.nivel, nivelVistoriado: p.nivelVistoriado, negocia: !!p.negociacao?.aceita })}
+                  />
+                </div>
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* 64-B: o selo vira o menu de pausa (demonstração: só o selo). */}
@@ -237,12 +245,7 @@ export function MyPropertiesClient({
                       )}
                     </span>
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                    {/* E416 (retrabalho): o selo de nível do anúncio, com o mesmo texto do cartão da vitrine. */}
-                    {p.nivel && p.nivel !== "em_adequacao" && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-100 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
-                        <Award className="h-3.5 w-3.5" aria-hidden /> {textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado)}
-                      </span>
-                    )}
+                    {/* E416 (05/11): o nível foi para os selos da foto (acima), junto dos outros. */}
                     {demoItem && <DemoBadge />}
                     {/* E383: o mais recente do grupo diz quantas cópias há e abre/fecha as cópias; cada cópia aberta se
                         marca para o dono decidir excluir. */}

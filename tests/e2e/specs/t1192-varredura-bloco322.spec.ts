@@ -9,8 +9,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   seis classes (imagem pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
   régua da t249) no relatório. Telas mudadas pelos merges recentes: como visitante, a busca (barra de filtros do E590), os parceiros com a categoria
-  pela URL (E447) e a cidade com os bairros (E446); como sócio, /socios e /decisao com o aviso fixo do E597 (elemento fixo
-  sobre o conteúdo); como proprietário (DONO17), Meus imóveis com as abas do E511 e a Revisão do rascunho (E598). O admin
+  pela URL (E447) e a cidade com os bairros (E446); (/socios e /decisao saíram do bloco: o E595/E596, #2785, eliminou as duas páginas); como proprietário (DONO17), Meus imóveis com as abas do E511 e a Revisão do rascunho (E598). O admin
   fica fora: a varredura não tem conta de admin. Defeito novo entra como test.fail ligado a um item (L-101 / D-V13 são os próximos livres).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
@@ -26,8 +25,6 @@ const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", nome: "Busca (barra de filtros do E590)", rota: () => "/buscar" },
   { conta: "VISITANTE", papel: "visitante", nome: "Parceiros (categoria pela URL, E447)", rota: () => "/parceiros?categoria=fotografia" },
   { conta: "VISITANTE", papel: "visitante", nome: "Cidade com bairros (E446)", rota: () => "/cidades/uberlandia" },
-  { conta: "SOCIO", papel: "sócio", nome: "Sócios com o aviso fixo (E597)", rota: () => "/socios" },
-  { conta: "SOCIO", papel: "sócio", nome: "Decisão com o aviso fixo (E597)", rota: () => "/decisao" },
   { conta: "DONO17", papel: "proprietário", nome: "Meus imóveis (abas e busca, E511)", rota: () => "/dashboard/imoveis" },
   { conta: "DONO17", papel: "proprietário", nome: "Revisão do rascunho (contagem do E598)", rota: (m) => `/dashboard/imoveis/novo?draft=${m.rascunho1}&etapa=revisao` },
 ];

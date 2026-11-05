@@ -7,7 +7,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
-import { checklistCompleto, ITENS_CHECKLIST, MOTIVOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
+import { checklistCompleto, ITENS_CHECKLIST, MODELOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarDocumento } from "@/lib/documento-pessoa";
 import { estadoDaFicha, type EstadoFicha } from "@/lib/parceiros/fila-pendentes";
 import { cn } from "@/lib/utils";
@@ -274,14 +274,34 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         )}
         <div className="min-w-0 flex-1 space-y-2">
           <label htmlFor={`motivo-${f.id}`} className="block text-sm font-semibold text-ink">Motivo da recusa (obrigatório)</label>
-          <select aria-label="Modelos de motivo" className="w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-sm" value="" onChange={(e) => e.target.value && setMotivo(e.target.value)} data-testid="ficha-modelo-recusa">
-            <option value="">Escolher um modelo…</option>
-            {MOTIVOS_RECUSA_PARCERIA.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
+          {/* E350: os modelos ficam na própria tela (texto inteiro, um por item do checklist + pedido incompleto) — o seletor
+              nativo abria no celular uma lista longa por cima da tela, com os textos cortados. Escolher preenche o motivo,
+              que continua editável. */}
+          <fieldset className="space-y-2" data-testid="ficha-modelo-recusa">
+            <legend className="mb-1 text-xs text-muted">Escolha um modelo ou escreva o motivo:</legend>
+            {MODELOS_RECUSA_PARCERIA.map((m) => (
+              <label
+                key={m.chave}
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm",
+                  motivo === m.texto ? "border-forest bg-sage-100" : "border-sage-200 bg-white hover:border-forest",
+                )}
+              >
+                <input
+                  type="radio"
+                  name={`modelo-recusa-${f.id}`}
+                  className="mt-1"
+                  checked={motivo === m.texto}
+                  onChange={() => setMotivo(m.texto)}
+                  data-testid={`ficha-modelo-recusa-${m.chave}`}
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{m.rotulo}</span>
+                  <span className="block text-muted">{m.texto}</span>
+                </span>
+              </label>
             ))}
-          </select>
+          </fieldset>
           <textarea id={`motivo-${f.id}`} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="w-full rounded-lg border border-sage-200 px-3 py-2 text-sm" data-testid="ficha-motivo" />
           <ConfirmarNaPagina
             aviso="Recusar o pedido? A pessoa recebe o motivo por e-mail e continua com a conta normal."

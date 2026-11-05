@@ -77,3 +77,21 @@ export function paginar<T>(lista: readonly T[], paginas: number): { visiveis: T[
   const n = Math.max(1, paginas) * POR_PAGINA;
   return { visiveis: lista.slice(0, n), restantes: Math.max(0, lista.length - n) };
 }
+
+/**
+ * E514: as cópias abertas de um rascunho ("N cópias deste rascunho · ver") vêm logo depois do cartão-pai, na ordem do
+ * grupo — antes, a ordem da lista (as cópias são mais antigas) as jogava para o fim. Cópia cujo pai não está na lista
+ * (filtrado pela aba ou pela busca) fica onde estava.
+ */
+export function juntarCopiasAoPai<T extends { id: string }>(lista: readonly T[], copiasDe: ReadonlyMap<string, readonly string[]>): T[] {
+  const porId = new Map(lista.map((p) => [p.id, p] as const));
+  const presas = new Set<string>();
+  for (const [pai, cs] of copiasDe) if (porId.has(pai)) for (const c of cs) if (porId.has(c)) presas.add(c);
+  const out: T[] = [];
+  for (const p of lista) {
+    if (presas.has(p.id)) continue;
+    out.push(p);
+    for (const c of copiasDe.get(p.id) ?? []) if (presas.has(c)) out.push(porId.get(c)!);
+  }
+  return out;
+}

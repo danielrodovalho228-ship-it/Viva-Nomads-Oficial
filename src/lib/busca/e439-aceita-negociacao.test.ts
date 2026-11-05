@@ -45,8 +45,9 @@ test("lista da /buscar carrega a negociação (best-effort) e o cartão mostra o
   const dados = ler("../data/properties.ts");
   assert.match(dados, /await attachNegociacao\(supabase, mapped\)/);
   assert.match(dados, /select\("id, negociacao"\)/);
+  // E416 (05/11): "Aceita negociação" virou selo da foto (mesmo dado, mesmo test id).
   const cartao = ler("../../components/property-card.tsx");
-  assert.match(cartao, /property\.negociacao\?\.aceita && \(/);
-  assert.match(cartao, /data-testid="cartao-negocia"/);
-  assert.match(cartao, /Aceita negociação/);
+  assert.match(cartao, /negocia: !!property\.negociacao\?\.aceita/);
+  assert.match(ler("../../components/property/selos-foto.tsx"), /negocia: "cartao-negocia"/);
+  assert.match(ler("../cartao-selos-foto.ts"), /ROTULO_NEGOCIA = "Aceita negociação"/);
 });

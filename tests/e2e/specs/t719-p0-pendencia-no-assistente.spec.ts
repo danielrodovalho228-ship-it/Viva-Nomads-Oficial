@@ -46,7 +46,8 @@ test.describe("T719 — P0: pendência do rascunho abre o passo no assistente", 
     }
     await p.screenshot({ path: `${SAIDA}/t719-cartao-pendencias-390.png`, fullPage: true });
     await falta.getByTestId("pendencia-fotos").click();
-    await expect(p).toHaveURL(new RegExp(`/dashboard/imoveis/novo\\?draft=${ids.rascunho}&etapa=1`));
+    // E615: a URL passa a dizer o passo pelo nome (etapa=1 → etapa=fotos) assim que o assistente abre.
+    await expect(p).toHaveURL(new RegExp(`/dashboard/imoveis/novo\\?draft=${ids.rascunho}&etapa=(1|fotos)$`));
     await expect(p.getByTestId("etapa-fotos")).toBeVisible({ timeout: 30_000 });
     await expect(p.getByTestId("passo-texto")).toHaveText("Passo 2 de 10");
     await p.screenshot({ path: `${SAIDA}/t719-passo2-fotos-390.png`, fullPage: true });

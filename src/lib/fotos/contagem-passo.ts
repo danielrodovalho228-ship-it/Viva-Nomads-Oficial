@@ -22,5 +22,5 @@ export function avisoDaContagem(passo: EstadoPassoFotos | undefined, contadas: n
   if (passo.trava !== "faltam") return { trava: passo.trava, mensagem: passo.mensagem };
   const faltam = Math.max(0, minimo - contadas);
   if (faltam === 0) return { trava: "enviando", mensagem: TEXTO_TERMINANDO_ENVIO };
-  return { trava: "faltam", mensagem: `${faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`} para continuar (mínimo de ${minimo}).` };
+  return { trava: "faltam", mensagem: `${faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`} para publicar (mínimo de ${minimo}).` };
 }

@@ -13,7 +13,6 @@ import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anunc
 import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { cn } from "@/lib/utils";
-import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
@@ -85,8 +84,13 @@ export function EtapaEncontramos(p: {
     aviso: string | null;
     /** Os campos ainda mostram a sugestão (o rótulo discreto aparece). */
     ehSugestao: boolean;
-    /** O dono escreveu algo diferente da sugestão: "Gerar de novo" confirma antes de trocar. */
-    donoEscreveu: boolean;
+    /** E613: a sugestão (IA ou modelo fixo) — mostrada no cartão, nunca gravada sozinha nos campos. */
+    texto: { titulo: string; descricao: string } | null;
+    /** E613: há campo vazio que a sugestão pode preencher. */
+    podeUsar: boolean;
+    /** E613: o clique do dono — põe a sugestão só nos campos vazios. */
+    usar: () => void;
+    /** Pede outra sugestão (troca só o cartão; o texto do dono nunca muda). */
     gerarDeNovo: () => void;
   };
   title: string;
@@ -189,24 +193,31 @@ export function EtapaEncontramos(p: {
             {sugestao.aviso}
           </p>
         )}
-        {/* E148-A: "Gerar de novo" em texto (o único botão cheio do passo é o Continuar). Só com a IA respondendo; por
-            cima do texto do dono, pede confirmação antes de trocar. */}
-        {sugestao?.estado === "ia" &&
-          (sugestao.donoEscreveu ? (
-            <ConfirmarNaPagina
-              aviso="Trocar o seu texto por uma nova sugestão? O que você escreveu será substituído."
-              confirmar="Trocar"
-              onConfirmar={sugestao.gerarDeNovo}
-              botaoClassName="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4"
-              testid="sugestao-gerar-de-novo"
-            >
-              Gerar de novo
-            </ConfirmarNaPagina>
-          ) : (
-            <button type="button" onClick={sugestao.gerarDeNovo} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-gerar-de-novo">
-              Gerar de novo
-            </button>
-          ))}
+        {/* E613: a sugestão fica num cartão à parte e só entra nos campos no clique do dono ("Usar esta sugestão"), que
+            preenche só o que está vazio. Antes ela ia sozinha para os campos e a Revisão marcava o passo como feito. */}
+        {sugestao?.texto && sugestao.estado !== "carregando" && sugestao.podeUsar && (
+          <div className="rounded-xl border border-line bg-surface-2 p-4" data-testid="sugestao-cartao">
+            <p className="text-sm font-semibold text-ink">Sugestão com os dados do cadastro</p>
+            <p className="mt-1 text-sm text-muted">Só entra no anúncio se você usar — e você pode editar depois.</p>
+            <p className="mt-3 text-sm font-semibold text-ink" data-testid="sugestao-titulo">
+              {sugestao.texto.titulo}
+            </p>
+            <p className="mt-1 text-sm text-ink" data-testid="sugestao-descricao">
+              {sugestao.texto.descricao}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <button type="button" onClick={sugestao.usar} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-usar">
+                Usar esta sugestão
+              </button>
+              {/* E148-A: "Gerar de novo" em texto (o único botão cheio do passo é o Continuar), só com a IA respondendo. */}
+              {sugestao.estado === "ia" && (
+                <button type="button" onClick={sugestao.gerarDeNovo} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-gerar-de-novo">
+                  Gerar de novo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

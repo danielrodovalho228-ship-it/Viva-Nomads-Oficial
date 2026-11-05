@@ -269,7 +269,6 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
   varrer("");
   assert.deepEqual(usos.sort(), [
     "app/(dashboard)/admin/agentes/central-client.tsx", // menu suspenso e botão flutuante da Central (Prompt 45)
-    "app/(dashboard)/dashboard/imoveis/novo/etapa-tipo.tsx", // setas de rolagem sobre as bordas da linha de tipos (01-b/E87)
     "app/(dashboard)/dashboard/imoveis/novo/painel-qualificacao.tsx", // gaveta lateral sobre a página (Prompt 45)
     "app/(public)/pedidos/novo/page.tsx", // menu suspenso de sugestões (Prompt 45)
     "components/admin/motivo-dialog.tsx", // diálogo sobre a página (Prompt 45)
@@ -317,10 +316,10 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.match(c, /\{preco\.estadia && \(/); // N = 1: só "R$ X/mês"
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
-  // Carrossel com pontos e no máximo 1 selo.
+  // Carrossel com pontos; E416 (05/11): os selos empilhados sobre a foto (antes: no máximo 1).
   assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} \/>/);
   assert.match(ler("components/property/fotos-cartao.tsx"), /data-testid="cartao-pontos"/);
-  assert.match(c, /\{selo && <Selo id=\{selo\} \/>\}/);
+  assert.match(c, /<SelosFoto selos=\{selos\} \/>/);
 });
 
 test("coração: 1 toque salva, outro desfaz, com aria-pressed (mesmo store de favoritos)", () => {

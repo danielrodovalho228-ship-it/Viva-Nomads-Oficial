@@ -12,11 +12,11 @@ import { enviarProposta, type DadosMontagem } from "@/lib/data/propostas-actions
 import { calcularTotais, diasDosTermos, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
 import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente, mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
 import { formatBRLExato, periodoPorExtenso, precoDaProposta, rotuloTotalDaEstadia } from "@/lib/precos";
-import { resumoContratoEmDias } from "@/lib/contrato-blocos";
 import { diasDaSelecao } from "@/lib/imovel/selecao-estadia";
 import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { formatBRL, hojeBR } from "@/lib/utils";
 import { MSG_ACAO_FALHOU, semQuedaDeRede } from "@/lib/erro-de-rede";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
@@ -64,7 +64,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
   const saida = somarDias(t.dataEntrada, diasEstadia);
   const preco = precoDaProposta({ ...termos, valorMensal: tot.valorMensal });
   // A caução do 1º bloco pela mesma regra do contrato (50% do bloco proporcional, blocos contados em dias).
-  const caucao = resumoContratoEmDias(diasEstadia, tot.valorMensal, dados.taxa).blocos[0];
+  // E601: a mesma função que a proposta recebida usa (a moradora vê o mesmo valor).
+  const caucao = caucaoDaProposta(termos, tot.valorMensal);
   const mudarDias = (dias: number) => setT((x) => ({ ...x, dias, meses: mesesDeReferencia(dias) }));
   const pessoasN = pessoas ? Number(pessoas) : null;
   const problema = validarTermos(termos, dados.limites, hojeBR(), pessoasN);
@@ -266,7 +267,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               {caucao && (
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted">Caução (50% do 1º bloco, {caucao.dias} dias)</dt>
-                  <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.caucao)}</dd>
+                  <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.valor)}</dd>
                 </div>
               )}
             </dl>
