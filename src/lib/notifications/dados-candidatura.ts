@@ -6,6 +6,7 @@
   Roda: node --test src/lib/notifications/dados-candidatura.test.ts
 */
 import { brl, dataBR, imovelPorExtenso, type ImovelDoEmail, type LinhaDado } from "./dados-negociacao.ts";
+import { formatBRLExato, periodoPorExtenso, rotuloTotalDaEstadia } from "../precos.ts";
 
 export type MomentoCandidatura = "nova" | "enviada" | "aceita";
 
@@ -19,6 +20,11 @@ export interface DadosCandidatura {
   valorMensal: number;
   /** Custo total do mês (calcularTotalMensal), o mesmo "Total por mês" da tela do Solicitar. */
   totalMensal: number;
+  /**
+   * E583: a estadia em DIAS pela mesma função da tela do "Pedir para morar" (estadiaDoImovelEmDias: total por mês × dias
+   * ÷ 30 + preparação/saída), com o rótulo e a conta aberta. Sem ela, o proporcional do mês (nunca meses arredondados).
+   */
+  estadiaDias?: { dias: number; total: number; rotulo: string; periodo: string; conta: string } | null;
 }
 
 const A_COMBINAR = "A combinar com o proprietário";
@@ -46,7 +52,16 @@ export function linhasCandidatura(d: DadosCandidatura): LinhaDado[] {
     { rotulo: "Total por mês", valor: brl(d.totalMensal) },
   ];
   // Sem o período completo não há total da estadia (nunca um número inventado).
-  if (p) linhas.push({ rotulo: "Total da estadia", valor: `${brl(Math.round(d.totalMensal * 100 * p.meses) / 100)} em ${p.meses} ${p.meses === 1 ? "mês" : "meses"}` });
+  if (!p) return linhas;
+  // E583: a conta da estadia é em DIAS (E562), a mesma da tela — antes, "R$ 6.100 em 2 meses" para 35 dias.
+  const e = d.estadiaDias && d.estadiaDias.dias === p.dias ? d.estadiaDias : null;
+  if (e) {
+    linhas.push({ rotulo: e.rotulo, valor: `${formatBRLExato(e.total)} (${e.periodo})` });
+    linhas.push({ rotulo: "Conta do total", valor: `${e.conta} = ${formatBRLExato(e.total)}` });
+  } else {
+    const total = Math.round((d.totalMensal * p.dias * 100) / 30) / 100;
+    linhas.push({ rotulo: rotuloTotalDaEstadia(p.dias), valor: `${formatBRLExato(total)} (${periodoPorExtenso(p.dias)})` });
+  }
   return linhas;
 }
 
