@@ -37,6 +37,18 @@ export function isoParaBr(iso: string): string {
 }
 
 /**
+ * E568: o texto do campo quando o VALOR muda de fora (calendário, rascunho, a outra caixa ligada à mesma seleção).
+ * Exceção: enquanto a pessoa digita, o campo emite "" (data incompleta) e o pai devolve ""; isso NÃO é mudança de fora e
+ * não pode apagar o que foi digitado — antes, a 1ª tecla num campo que já tinha data sumia ("10/01/2027" virava "00/12/027").
+ */
+export function textoAposMudancaDeFora(texto: string, valor: string): string {
+  const atual = brParaIso(texto);
+  if (atual === valor) return texto;
+  if (valor === "" && atual === null) return texto; // digitando (incompleta ou inexistente): fica o que a pessoa escreveu
+  return isoParaBr(valor);
+}
+
+/**
  * Data COLADA: "01/11/2026", "1/11/2026", "01-11-2026", "01.11.2026", "2026-11-01" ou "01112026" → ISO.
  * Ano com 2 dígitos vira 20xx. Não reconheceu → null (a tela mantém o que estava).
  */

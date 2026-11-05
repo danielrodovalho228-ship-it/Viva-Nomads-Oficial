@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type InputH
 import { CalendarDays } from "lucide-react";
 import { CalendarioBR } from "@/components/ui/calendario-br";
 import { useToque } from "@/components/ui/use-toque";
-import { brParaIso, dataDigitadaInvalida, interpretarDataColada, isoParaBr, mascararData } from "@/lib/data-digitada";
+import { brParaIso, dataDigitadaInvalida, interpretarDataColada, isoParaBr, mascararData, textoAposMudancaDeFora } from "@/lib/data-digitada";
 import { cn } from "@/lib/utils";
 
 /**
@@ -48,7 +48,8 @@ export function CampoDataTexto({
   const [anterior, setAnterior] = useState(value);
   if (anterior !== value) {
     setAnterior(value);
-    if (brParaIso(texto) !== value) setTexto(isoParaBr(value));
+    // E568: o "" emitido durante a digitação não apaga o texto (ver textoAposMudancaDeFora).
+    setTexto((t) => textoAposMudancaDeFora(t, value));
   }
   const fechar = useCallback(() => setAberto(false), []);
   const nome = rotuloCalendario ?? ariaLabel;
