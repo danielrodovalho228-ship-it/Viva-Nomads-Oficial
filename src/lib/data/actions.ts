@@ -1,5 +1,6 @@
 "use server";
 
+import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
 import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
 import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
@@ -1704,7 +1705,7 @@ export async function requestLead(
   {
     const { data: existing, error: erroExistente } = await supabase
       .from("leads")
-      .select("id")
+      .select("id, status")
       .eq("property_id", propertyId)
       .eq("tenant_id", user.id)
       .maybeSingle();
@@ -1713,22 +1714,69 @@ export async function requestLead(
     if (erroExistente) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
     novoContato = !existing;
     leadId = (existing?.id as string | undefined) ?? null;
-    if (!existing) {
-      // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
-      let motivoLead: string | null = null;
-      if (kind === "candidatura") {
-        const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
-        motivoLead = escolhido.ok ? escolhido.valor : null;
-        if (!motivoLead) {
-          const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
-          const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
-          motivoLead = doPerfil.ok ? doPerfil.valor : null;
-        }
+
+    // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
+    let motivoLead: string | null = null;
+    if (kind === "candidatura") {
+      const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
+      motivoLead = escolhido.ok ? escolhido.valor : null;
+      if (!motivoLead) {
+        const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+        const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
+        motivoLead = doPerfil.ok ? doPerfil.valor : null;
       }
-      const inicioOk = kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok;
-      // E202: a saída só entra com a entrada válida e depois dela (a mesma regra do resumo do Solicitar e do check da 0258).
-      const fim = (fimDesejado ?? "").trim();
-      const fimOk = inicioOk && /^\d{4}-\d{2}-\d{2}$/.test(fim) && fim > inicioDesejado!.trim();
+    }
+    // E202/E581: entrada, saída (só com a entrada válida e depois dela — a mesma regra do resumo e do check da 0258),
+    // motivo e pessoas: os MESMOS campos validados no insert e na atualização da candidatura repetida.
+    const campos = camposDaCandidatura({
+      inicioOk: kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok,
+      inicio: inicioDesejado ?? "",
+      fim: fimDesejado ?? "",
+      motivo: motivoLead,
+      ocupantes: ocupantes.valor ?? null,
+    });
+    const camposDoInsert = Object.fromEntries(Object.entries(campos).filter(([, v]) => v != null));
+
+    const conversationId = idConversa(user.id, ownerId, propertyId);
+    // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
+    // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
+    // antes do aceite); sem texto, cai na mensagem padrão da ação.
+    const abrirConversa = async () => {
+      const corpo = note && note.trim()
+        ? guardContactInfo(note.trim().slice(0, 1000)).text
+        : LEAD_KIND_MSG[kind](propertyTitle);
+      const { error: msgErr } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        receiver_id: ownerId,
+        property_id: propertyId,
+        body: corpo,
+      });
+      if (msgErr) {
+        console.error("[requestLead] falha ao abrir conversa:", msgErr.code, msgErr.message);
+      }
+    };
+
+    if (existing && kind === "candidatura") {
+      // E581: candidatura repetida (ou depois de uma dúvida/visita) ATUALIZA o período do lead ainda sem resposta. Antes
+      // nada mudava, mas os e-mails saíam de novo com o período antigo (120 dias no lugar dos 43 escolhidos) e a proposta
+      // derivava dali. Já respondida (aceita/recusada): não muda nem manda e-mail — o caminho é o chat.
+      if (existing.status !== "new") return { ok: false, error: MSG_CANDIDATURA_JA_RESPONDIDA };
+      const adm = createAdminClient();
+      if (!adm) return { ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU };
+      const { data: atualizado, error: erroAtualiza } = await adm
+        .from("leads")
+        .update(campos)
+        .eq("id", existing.id)
+        .eq("tenant_id", user.id)
+        .eq("status", "new")
+        .select("id");
+      if (erroAtualiza || !atualizado?.length) return { ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU };
+      // A nova escolha também vai para a conversa: o dono vê o período novo.
+      await abrirConversa();
+    }
+
+    if (!existing) {
       const { data: novo, error: leadErr } = await supabase
         .from("leads")
         .insert({
@@ -1736,10 +1784,7 @@ export async function requestLead(
           owner_id: ownerId,
           tenant_id: user.id,
           status: "new",
-          ...(inicioOk ? { inicio_desejado: inicioDesejado!.trim() } : {}),
-          ...(fimOk ? { fim_desejado: fim } : {}),
-          ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
-          ...(ocupantes.valor ? { qtd_ocupantes: ocupantes.valor } : {}),
+          ...camposDoInsert,
         })
         .select("id")
         .maybeSingle();
@@ -1755,23 +1800,7 @@ export async function requestLead(
         // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
         await registrarAtivacao(user.id, "morador", new Date(), adm);
       }
-      const conversationId = idConversa(user.id, ownerId, propertyId);
-      // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
-      // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
-      // antes do aceite); sem texto, cai na mensagem padrão da ação.
-      const corpo = note && note.trim()
-        ? guardContactInfo(note.trim().slice(0, 1000)).text
-        : LEAD_KIND_MSG[kind](propertyTitle);
-      const { error: msgErr } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        receiver_id: ownerId,
-        property_id: propertyId,
-        body: corpo,
-      });
-      if (msgErr) {
-        console.error("[requestLead] falha ao abrir conversa:", msgErr.code, msgErr.message);
-      }
+      await abrirConversa();
     }
   }
 
