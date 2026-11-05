@@ -82,10 +82,10 @@ test("/modelodenegocio: seção 'Virada de chave nos condomínios' é meta, nunc
   assert.ok(texto.includes("Plataforma em fase de testes. Lançamento oficial em 2027."));
 });
 
-test("custo fixo padrão (modelo v3): fornecedores + CDL + pró-labore de referência ≈ R$ 7,4 mil, antes dos encargos do regime", async () => {
+test("custo fixo padrão (modelo v3): fornecedores R$ 1.302,90 + pró-labore de referência ≈ R$ 7,3 mil, antes dos encargos do regime", async () => {
   const { CUSTOS_FIXOS, CUSTO_FIXO_FAIXA } = await import("../../config/premissas-financeiras.ts");
   const total = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
-  assert.ok(total >= 7350 && total <= 7450, `total ${total}`);
+  assert.ok(Math.abs(total - 7302.9) < 0.01, `total ${total}`);
   assert.match(CUSTO_FIXO_FAIXA.texto, /encargos do regime/);
 });
 

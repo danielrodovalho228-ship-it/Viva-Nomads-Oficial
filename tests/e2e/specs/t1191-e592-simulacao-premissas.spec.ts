@@ -31,7 +31,7 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       // Modelo v3 (05/11): a taxa é a da faixa da carteira (padrão 10%), nunca 12% fixo; a projeção antiga saiu.
       expect(corpo).toMatch(/A conta usa a faixa escolhida \(agora 10%/);
       expect(corpo).not.toMatch(/R\$ 4\.320/);
-      expect(corpo).not.toMatch(/69,3 mil|1º mês positivo no mês 14|se paga no mês 27/);
+      expect(corpo).not.toMatch(/69,3 mil|se paga no mês 27/);
       await expect(page.getByTestId("regime-presumido")).toHaveAttribute("aria-pressed", "true");
       await expect(page.getByTestId("seletor-regime")).toContainText("instrumento societário em revisão");
       await expect(page.getByTestId("faixa-10")).toHaveAttribute("aria-pressed", "true");
@@ -43,7 +43,11 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       // Lacunas de custo: o quadro existe e lista o que ainda não tem preço.
       const lacunas = page.getByTestId("lacunas-custo");
       await expect(lacunas).toBeVisible();
-      await expect(lacunas).toContainText("Lacunas de custo (ainda sem preço)");
+      await expect(lacunas).toContainText("Custos ainda sem valor / opcionais (não somados)");
+      // Veredito do coordenador (05/11): CDL e e-mail visíveis, fora da soma.
+      await expect(lacunas).toContainText("Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
+      await expect(lacunas).toContainText("Hostinger");
+      await expect(page.getByTestId("opcional-nao-somado")).toHaveCount(2);
       for (const item of ["Emissor de NFS-e", "Alvará de funcionamento", "Antifraude", "Identidade", "WhatsApp"]) {
         await expect(lacunas, item).toContainText(item);
       }

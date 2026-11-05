@@ -17,7 +17,8 @@ import {
   ROTULO_HIPOTESE_IDENTIDADE,
   CUSTOS_POR_CONTRATO,
   DOLAR,
-  CUSTOS_UNICOS,
+  INVESTIMENTO_INICIAL_DETALHE,
+  OPCIONAIS_NAO_SOMADOS,
   MODELO_CUSTOS,
   PRO_LABORE,
   REGIMES,
@@ -49,7 +50,6 @@ import {
 } from "@/config/premissas-financeiras";
 import {
   CUSTO_FIXO_PADRAO,
-  RATEIO_UNICOS_MES,
   custoFixoDe,
   FONTES,
   cenariosContratosMes,
@@ -557,11 +557,9 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
               [`Encargos do pró-labore (${regimePorId(regime).nome})`, brl(encargosProLabore(regimePorId(regime)))],
               ["Total usado na conta", brl(custoFixoDe({ custoFixo, regime }))],
               ["Só fornecedores", brl(CUSTO_FORNECEDORES)],
-              ...CUSTOS_UNICOS.map((c): [string, string] => [`${c.rotulo} (único)`, `${brl(c.valor)} — ${c.obs}`]),
-              ["Rateio dos únicos na projeção", `${brl2(RATEIO_UNICOS_MES)}/mês em 36 meses`],
               ["Fora do fixo", FORA_DO_FIXO.join(" · ")],
               ["Marketing pago", `${brl(marketingDoMes(1))} — a linha fica para quando houver verba`],
-              ["Investimento único", `${brl(INVESTIMENTO_INICIAL)} (jurídico, CNPJ, marca, Google Play, lançamento)`],
+              ["Investimento único", `${brl(INVESTIMENTO_INICIAL)} (jurídico, CNPJ, marca, Google Play, lançamento) — ${INVESTIMENTO_INICIAL_DETALHE}`],
             ]}
           />
           <Quadro
@@ -576,8 +574,11 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
 
         {/* E592/E594: o que ainda não tem preço fica à vista — o resultado acima não é completo sem estes custos. */}
         <div className={styles.card} data-testid="lacunas-custo">
-          <h2>Lacunas de custo (ainda sem preço)</h2>
-          <p className={styles.cardHelp}>O resultado acima não inclui estes custos pelo valor real: entram como R$ 0 ou como hipótese até a cotação.</p>
+          <h2>Custos ainda sem valor / opcionais (não somados)</h2>
+          <p className={styles.cardHelp}>
+            O resultado acima não inclui estes custos pelo valor real: os sem preço entram como R$ 0 ou como hipótese até a cotação; os opcionais e os
+            sem decisão ficam fora da soma.
+          </p>
           <div className={styles.tblWrap}>
             <table className={styles.tbl}>
               <tbody>
@@ -585,6 +586,12 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                   <tr key={l.rotulo}>
                     <td>{l.rotulo}</td>
                     <td>{l.situacao}</td>
+                  </tr>
+                ))}
+                {OPCIONAIS_NAO_SOMADOS.map((o) => (
+                  <tr key={o.rotulo} data-testid="opcional-nao-somado">
+                    <td>{o.rotulo}</td>
+                    <td>{o.obs} — não somado</td>
                   </tr>
                 ))}
               </tbody>
@@ -661,7 +668,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                 <strong>Imposto da Viva:</strong> {regimePorId(regime).nome}, {pctImposto} sobre toda a receita (taxa de serviço e parceiros) — {regimePorId(regime).detalhe}. {IMPOSTO_TEXTO}; {SELO_SOCIETARIO}.
               </li>
               <li>
-                <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}) + encargos do pró-labore no regime; na projeção de 36 meses, + o rateio do parecer e da consulta jurídica ({brl2(RATEIO_UNICOS_MES)}/mês).
+                <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}) + encargos do pró-labore no regime; o parecer jurídico e a consulta de 05/11 estão dentro do investimento inicial de {brl(INVESTIMENTO_INICIAL)} ({INVESTIMENTO_INICIAL_DETALHE}).
               </li>
               {!leitura && (
                 <li>
