@@ -49,9 +49,10 @@ export function ordenarPendentes<T extends { criado_em: string; id: string }>(li
  *  - "aguardando": a pessoa ainda não confirmou o e-mail;
  *  - "incompleto": falta dado do pedido (e-mail, categoria, cidade ou CPF/CNPJ) — não dá para aprovar como está;
  *  - "checklist": dados ok, checklist da equipe pela metade;
- *  - "pronto": checklist completo, "Aprovar" liberado.
+ *  - "pronto": checklist completo, "Aprovar" liberado;
+ *  - "recusada" (E577): pedido já decidido — "Recusado", nunca "Não aprovável ainda · faltam N itens".
  */
-export type EstadoFicha = { tipo: "aguardando" | "incompleto" | "checklist" | "pronto"; rotulo: string };
+export type EstadoFicha = { tipo: "aguardando" | "incompleto" | "checklist" | "pronto" | "recusada"; rotulo: string };
 
 export function estadoDaFicha(f: {
   status: string;
@@ -61,6 +62,9 @@ export function estadoDaFicha(f: {
   documento: string | null;
   checklist: Partial<Record<string, unknown>> | null | undefined;
 }): EstadoFicha {
+  // E577: na aba Recusadas o pedido saía "Não aprovável ainda · faltam 5 de 5 itens do checklist" (o checklist nunca é
+  // marcado num pedido recusado). O estado de quem já foi decidido vem antes de qualquer conta do checklist.
+  if (f.status === "recusada") return { tipo: "recusada", rotulo: "Recusado" };
   if (f.status === "aguardando_email") return { tipo: "aguardando", rotulo: "Aguardando a pessoa confirmar" };
   const sem = [
     !f.email && "e-mail",

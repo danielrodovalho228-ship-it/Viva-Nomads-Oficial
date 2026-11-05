@@ -120,6 +120,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
       dadosCategoria: (s.dados_categoria as Record<string, string>) ?? {},
       status: s.status as string,
       motivoRecusa: (s.motivo_recusa as string | null) ?? null,
+      decididoEm: (s.decidido_em as string | null) ?? null,
       checklist: (s.checklist as Record<string, unknown>) ?? {},
       origem: s.origem as string,
       criadoEm: s.criado_em as string,
