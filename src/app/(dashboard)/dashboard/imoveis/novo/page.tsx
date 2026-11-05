@@ -33,7 +33,7 @@ import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
-import { videoDoAnuncio } from "@/lib/video-anuncio";
+import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
@@ -97,14 +97,12 @@ import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/s
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
 import { reportarProximidade } from "@/lib/data/proximidades-actions";
-import { manualSemEndereco } from "@/lib/anuncio/proximidades";
 import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import { ChegadaEPedidoCampos, formDeChegada, formDeRascunho, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
-import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
@@ -395,37 +393,46 @@ export default function NewPropertyPage() {
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
   const garantiaOk = Object.values(garantias).some(Boolean);
-  const prontidao = prontidaoAnuncio({
-    enderecoOk: !!(street.trim() && neighborhood.trim() && city.trim()),
-    detalhesOk: (Number(bathrooms) || 0) >= 1 && (Number(areaM2) || 0) > 0,
-    periodoOk: (Number(minPeriod) || 0) > 0,
-    fotos: photos.length,
-    titulo: title,
-    preco: Number(monthlyPrice) || 0,
-    garantiaOk,
-    sublocacaoOk: !subleaseBlocked,
-    privacidadeOk: privacidade.semCamerasInterior,
-    operacao: ownershipType,
-    documento: docStatus,
-    descricao: description,
-    selo: qual.baseBadge,
-    // 65-B: uma fonte só (arquivo, ou link permitido do YouTube/Vimeo).
-    video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
-    // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
-    qualificacaoOk: editingId ? undefined : qualificado,
-    // 61-B: o tipo de entrada só é exigido do anúncio NOVO (o publicado sem ele ganha só o aviso no painel).
-    tipoEntradaOk: editingId ? undefined : tipoEntradaValido(chegada.tipoEntrada),
-    // FILTROS-1 (E39): a velocidade da internet é o dado que o chip "Wi-Fi" da busca lê — anúncio novo só publica com ela.
-    internetOk: editingId ? undefined : (mbpsValido(internetMbps) ?? 0) > 0,
-    // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
-    confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
-    // PERTO-B: lugar manual antigo, sem o endereço do lugar, fica fora da página até o dono informar onde fica.
-    proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
-    // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
-    chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
-    // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
-    semInternet: semInternet || undefined,
-  });
+  // E556: a prontidão do rascunho tem UMA fonte — fatosDoRascunho, a mesma função que lê o draft_data no card de Meus
+  // imóveis e no Início. O editor passa as MESMAS chaves que grava no draft_data; o que não mora no rascunho
+  // (documento, sublocação, qualificação, padrão mínimo, chácara) vai como base, igual ao servidor.
+  const prontidao = prontidaoAnuncio(
+    fatosDoRascunho(
+      {
+        title, street, neighborhood, city, bathrooms, areaM2, minPeriod, monthlyPrice, garantias, privacidade, description, qual,
+        videoUrl, videoArquivo, internetMbps, photos, manualProximities,
+        ...(chegada.tipoEntrada ? { tipoEntrada: chegada.tipoEntrada } : {}),
+      },
+      {
+        enderecoOk: false,
+        detalhesOk: false,
+        periodoOk: false,
+        fotos: 0,
+        titulo: "",
+        preco: 0,
+        garantiaOk: false,
+        sublocacaoOk: !subleaseBlocked,
+        privacidadeOk: false,
+        operacao: ownershipType,
+        documento: docStatus,
+        descricao: "",
+        selo: false,
+        video: false,
+        // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
+        qualificacaoOk: editingId ? undefined : qualificado,
+        // 61-B / FILTROS-1: tipo de entrada e velocidade da internet só se exigem do anúncio NOVO (o draft_data decide).
+        tipoEntradaOk: editingId ? undefined : false,
+        internetOk: editingId ? undefined : false,
+        // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
+        confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
+        // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
+        chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
+        // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
+        semInternet: semInternet || undefined,
+      },
+      { publicado: !!editingId },
+    ),
+  );
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
     irPara(item.etapa);
