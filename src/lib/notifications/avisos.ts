@@ -133,6 +133,17 @@ export function chaveDoAvisoPendente(a: { evento: string; refId?: string | null;
   return a.refId ? { evento: a.evento, refId: a.refId } : { evento: a.evento, titulo: a.titulo };
 }
 
+/**
+ * E586: pendentes repetidos da MESMA chave (gravados quase juntos, os dois passando pela leitura antes da gravação):
+ * fica o mais antigo (o primeiro que a pessoa pode ter visto), os outros saem. Sem linhas, null.
+ */
+export function duplicatasDoPendente(linhas: readonly { id: string; criado_em: string }[]): { manter: string; apagar: string[] } | null {
+  if (!linhas.length) return null;
+  const ordem = [...linhas].sort((a, b) => Date.parse(a.criado_em) - Date.parse(b.criado_em) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const manter = ordem[0].id;
+  return { manter, apagar: linhas.filter((l) => l.id !== manter).map((l) => l.id) };
+}
+
 /** Destino do aviso: só caminho interno ("/rota"), nunca URL externa. */
 export function urlDoAviso(u: string | null | undefined): string | null {
   const s = String(u ?? "");
