@@ -52,7 +52,10 @@ function uiInicial(persisted: string | undefined): LeadStatus {
   return "open";
 }
 
-export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
+/** E569: o que falta ao dono para aceitar (documento), mostrado antes de qualquer clique. */
+type PendenciaDono = { texto: string; href: string; rotulo: string } | null;
+
+export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lead[]; pendencia?: PendenciaDono }) {
   const [status, setStatus] = useState<Record<string, LeadStatus>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [erro, setErro] = useState<string | null>(null);
@@ -67,8 +70,9 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
 
   /** Aprova: persiste no servidor (real) e atualiza a UI. Demo: só UI. */
   function aprovar(id: string) {
-    set(id, "approved");
-    if (demoOn) return;
+    // E569: o cartão só muda para "aprovado" depois que o servidor confirma — antes, o "Responder pela plataforma"
+    // aparecia por um instante e sumia quando o servidor recusava (ex.: falta o documento do dono).
+    if (demoOn) return set(id, "approved");
     startTransition(async () => {
       // Auditoria de erros (achado nº 3): sem conexão a ação REJEITA dentro da transição — sem o try, o erro subia ao
       // limite de erro e a tela inteira caía. Agora reverte o cartão e diz o motivo em português.
@@ -81,9 +85,12 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
         return;
       }
       if (!r.ok) {
-        set(id, "open"); // reverte se o servidor recusar — e diz por quê
+        set(id, "open"); // o servidor recusou — o cartão segue aberto e diz por quê
         setErro(r.error ?? MSG_APROVAR_FALHOU);
-      } else setErro(null);
+      } else {
+        set(id, "approved");
+        setErro(null);
+      }
     });
   }
 
@@ -128,6 +135,16 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
               Informar meu documento
             </Link>
           )}
+        </div>
+      )}
+
+      {/* E569: requisito pendente do dono, ANTES de qualquer clique, com o caminho para resolver. */}
+      {pendencia && !demoOn && leads.some((l) => (status[l.id] ?? uiInicial(l.status)) === "open") && (
+        <div role="status" id="pendencia-dono-aceite" data-testid="pendencia-dono-aceite" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p>{pendencia.texto}</p>
+          <Link href={pendencia.href} className="mt-2 inline-block font-semibold text-forest underline" data-testid="pendencia-dono-link">
+            {pendencia.rotulo}
+          </Link>
         </div>
       )}
 
@@ -226,12 +243,15 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                   </div>
                   </div>
 
-                  <div className="text-right">
-                    {open ? (
-                      <ButtonLink href={hrefResponder(l)} variant="secondary" size="sm" data-testid="responder-pela-plataforma">
+                  <div className="flex flex-col items-end gap-2 text-right">
+                    {/* E569: o "Responder pela plataforma" fica visível no cartão (antes e depois do aceite) e abre a
+                        conversa DESTE morador neste imóvel (a lista de Mensagens já traz a conversa da candidatura). */}
+                    {st !== "rejected" && (
+                      <ButtonLink href={hrefResponder(l)} variant={open ? "secondary" : "outline"} size="sm" data-testid="responder-pela-plataforma">
                         <MessageSquare className="h-4 w-4" /> Responder pela plataforma
                       </ButtonLink>
-                    ) : st === "rejected" ? (
+                    )}
+                    {open ? null : st === "rejected" ? (
                       <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
                         <X className="h-4 w-4" /> Recusado
                       </span>
@@ -246,7 +266,9 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         <button
                           onClick={() => aprovar(l.id)}
                           disabled={pending}
+                          aria-describedby={pendencia && !demoOn ? "pendencia-dono-aceite" : undefined}
                           className={buttonClasses({ variant: "secondary", size: "sm" })}
+                          data-testid="aprovar-candidatura"
                         >
                           <Check className="h-4 w-4" /> Aprovar e responder
                         </button>

@@ -105,7 +105,8 @@ test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte únic
   // Os números que a página mostra são os da regra.
   const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
   assert.equal(pctTexto(Math.max(...publicas.map((f) => f.taxa))), "12%");
-  assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
+  // E564: a menor é a do Plano Gestor (4%); a faixa negociável saiu.
+  assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "4%");
 });
 
 test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () => {

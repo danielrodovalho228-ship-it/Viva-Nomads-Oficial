@@ -10,6 +10,7 @@ import {
   GESTOR_MIN_IMOVEIS_VALIDADOS,
   type AccountType,
 } from "@/lib/planos/gestor";
+import { COLUNAS_FAIXA, contarAtivosDeVerdade } from "@/lib/cobranca/taxa-servidor";
 import { ehUuid } from "@/lib/fotografos/regras";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { recusaObservador } from "@/lib/qa/observador";
@@ -47,15 +48,10 @@ export async function getGestorElegibilidade(): Promise<GestorElegibilidade> {
     .maybeSingle();
   const accountType = ((perfil?.account_type as string) ?? "individual") as AccountType;
 
-  // Imóveis DISTINTOS com documentação aprovada. Antes contava checklists:
-  // o mesmo documento enviado 5 vezes "virava" 5 imóveis (Gestor indevido).
-  const { data: aprovadas } = await supabase
-    .from("qualification_checklists")
-    .select("property_id")
-    .eq("owner_id", user.id)
-    .eq("document_status", "approved")
-    .not("property_id", "is", null);
-  const imoveisValidados = new Set((aprovadas ?? []).map((r) => r.property_id as string)).size;
+  // E564/E565: a mesma contagem da faixa de taxa — imóveis ativos de verdade (publicado, documento aprovado e calendário
+  // em dia). Leitura que falha: 0 (a linha mostra quanto falta; a taxa de verdade sai de taxaDoDonoAgora, no servidor).
+  const { data: publicados } = await supabase.from("properties").select(COLUNAS_FAIXA).eq("owner_id", user.id).eq("status", "active");
+  const imoveisValidados = await contarAtivosDeVerdade(supabase, (publicados ?? []) as { id: string; status: string; disponibilidade_confirmada_em: string | null }[]).catch(() => 0);
 
   return {
     elegivel: gestorElegivel({ accountType, imoveisValidados }),

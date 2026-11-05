@@ -391,6 +391,9 @@ export async function GET(request: Request) {
   const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
   // Avaliações de pedido de parceiro: publicam 14 dias depois da conclusão, mesmo sem a outra parte (nunca no simulado).
   const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
+  // E565: a faixa da taxa conta só os ativos de verdade (calendário confirmado nos últimos 30 dias): o calendário que
+  // vence não muda nenhuma linha, então a rotina diária recalcula a faixa_dono de todos (a queda abre a janela de 30 dias).
+  const faixasAtualizadas = simular ? 0 : await admin.rpc("atualizar_faixas_dos_donos").then((r) => Number(r.data ?? 0) || 0, () => 0);
   // Página da estadia (Prompt 32): ocupantes apagados RETENCAO_OCUPANTES_DIAS depois do fim do contrato; aditivos sem
   // resposta em 7 dias vencem (nada muda no contrato). Na simulação, só conta.
   const estadia = await manutencaoDaEstadia(admin, agora, simular).catch(() => ({ ocupantesApagados: 0, aditivosVencidos: 0, convidadosApagados: 0 }));
@@ -417,7 +420,7 @@ export async function GET(request: Request) {
   // Minimização (Prompt 58): a rotina única de eliminação. Fase 1 apaga de verdade só com ELIMINACAO_ATIVA=1 (ou no
   // laboratório); fora disso, o relatório "o que seria apagado hoje" sai sem apagar nada.
   const eliminacao = await rodarEliminacao(admin, agora, rodadaSimulada({ pedidoSimular: simular, laboratorio: integracoesSimuladas(), chaveAtiva: process.env.ELIMINACAO_ATIVA })).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, visitasExpiradas, visitasVespera, eliminacao });
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, faixasAtualizadas, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, visitasExpiradas, visitasVespera, eliminacao });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */

@@ -15,7 +15,7 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("achado 83: a taxa do dono lança na falha; os quatro pontos que congelam a taxa recusam com o aviso", () => {
   const t = ler("src/lib/cobranca/taxa-servidor.ts");
   assert.match(t, /if \(error\) throw new Error\(MSG_TAXA_SEM_LEITURA\);/);
-  assert.match(t, /if \(e1 \|\| e2 \|\| e3\) throw new Error\(MSG_TAXA_SEM_LEITURA\);/);
+  assert.match(t, /if \(e1 \|\| e2 \|\| e3 \|\| e5\) throw new Error\(MSG_TAXA_SEM_LEITURA\);/);
   assert.doesNotMatch(t.slice(t.indexOf("export async function faixasVigentes"), t.indexOf("export async function taxaDoDonoAgora")), /catch \{/);
   assert.match(ler("src/lib/data/leads-actions.ts"), /if \(!t\) return \{ ok: false, error: MSG_TAXA_SEM_LEITURA \};/);
   const p = ler("src/lib/data/propostas-actions.ts");

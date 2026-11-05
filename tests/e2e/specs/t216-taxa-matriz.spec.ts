@@ -46,6 +46,9 @@ async function cenario(nome: string, ativosNoInicio: number): Promise<Cenario> {
   // Imóveis extras: ativos ou rascunho, para mudar a faixa no meio do fluxo.
   const extras: string[] = [];
   for (let i = 1; i <= 2; i++) extras.push(await criarImovelPronto(dono.id, `Studio extra ${i} ${nome}`, { ativo: i < ativosNoInicio }));
+  // E565: a faixa conta só os ativos de verdade (documento aprovado + calendário confirmado nos últimos 30 dias). O
+  // laboratório grava pelo service_role, que mantém a data informada (o gatilho da 0196 só troca a do dono por now()).
+  await adm().from("properties").update({ disponibilidade_confirmada_em: new Date().toISOString() }).eq("owner_id", dono.id);
   const lead = await criarLead(dono.id, inq.id, imovel);
   return { dono, inq, imovel, extras, lead };
 }

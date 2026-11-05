@@ -58,7 +58,7 @@ test("links desta candidatura (não a lista genérica) e o cartão tem a âncora
 test("guarda: os três momentos da candidatura usam o corpo com dados (envio ao dono, confirmação ao morador, aceite)", () => {
   const acoes = ler("src/lib/data/actions.ts");
   assert.match(acoes, /corpoDoEmailDaCandidatura\(adm, leadId, "nova"\)/);
-  assert.match(acoes, /pushUrl: corpo && leadId \? linkCandidaturaDono\(leadId\) : "\/dashboard\/leads"/);
+  assert.match(acoes, /pushUrl: kind === "candidatura" && leadId \? linkCandidaturaDono\(leadId\) : "\/dashboard\/leads"/);
   assert.match(acoes, /corpoDoEmailDaCandidatura\(adm, leadId, "enviada"\)[\s\S]{0,200}event: "application_received"[\s\S]{0,200}pushUrl: linkCandidaturaMorador\(leadId\)/);
   // A saída da candidatura vai ao banco (0258) e o pedido manda a saída escolhida.
   assert.match(acoes, /\.\.\.\(fimOk \? \{ fim_desejado: fim \} : \{\}\)/);

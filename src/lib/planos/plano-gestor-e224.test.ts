@@ -14,11 +14,13 @@ test("Conta › Plano: 'Você tem N; faltam M.' e o estado já liberado", () => 
   const min = GESTOR_MIN_IMOVEIS_VALIDADOS;
   const linha = (n: number, tipo = "individual") =>
     textoElegibilidadeGestor({ elegivel: gestorElegivel({ accountType: tipo, imoveisValidados: n }), imoveisValidados: n, faltam: faltamParaGestor(n) });
-  assert.equal(linha(0), `Plano Gestor: liberado com ${min} imóveis com documento aprovado. Você tem 0; faltam ${min}.`);
-  assert.equal(linha(3), `Plano Gestor: liberado com ${min} imóveis com documento aprovado. Você tem 3; faltam ${min - 3}.`);
-  assert.equal(linha(min - 1), `Plano Gestor: liberado com ${min} imóveis com documento aprovado. Você tem ${min - 1}; faltam 1.`);
-  assert.equal(linha(min), "Liberado. Fale com a Viva para ativar.");
-  assert.equal(linha(0, "gestor"), "Liberado. Fale com a Viva para ativar.");
+  // E564: sem assinatura nem ativação — a taxa de 4% vale sozinha nos próximos contratos.
+  const meta = `Plano Gestor: taxa de 4% com ${min} imóveis ativos (publicados, com documento aprovado e calendário em dia).`;
+  assert.equal(linha(0), `${meta} Você tem 0; faltam ${min}.`);
+  assert.equal(linha(3), `${meta} Você tem 3; faltam ${min - 3}.`);
+  assert.equal(linha(min - 1), `${meta} Você tem ${min - 1}; faltam 1.`);
+  assert.equal(linha(min), "Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.");
+  assert.equal(linha(0, "gestor"), "Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.");
 });
 
 test("a tela do proprietário não promete checkout: sem botão, sem link, sem 'assinar'", () => {
