@@ -51,7 +51,7 @@ import { useTempos } from "@/components/busca/use-tempos";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
-import type { ModoRota } from "@/lib/rotas/tempo";
+import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -500,6 +500,9 @@ export function SearchClient({
       const t = tempos.get(p.id);
       return t?.min != null && t.min <= estadoDestino.ate;
     });
+    // E523: sem tempo de rota (linha reta), o limite "até N min" não era aplicado — 15 min a pé mantinha imóveis a ~4 km.
+    // A rota nunca é mais curta que a linha reta: sai quem, nem na velocidade máxima do modo, chegaria no tempo.
+    else if (estadoDestino.ate) list = list.filter((p) => !foraDoTempoPelaReta(distanciaAte(p, alvoDestino)?.metros, estadoDestino.modo, estadoDestino.ate));
     // A mesma conta que o cartão mostra: posição do servidor primeiro; o resto pela distância em linha reta.
     if (sort === "trabalho") list = ordenarPorDestino(list, (id) => tempos.get(id)?.pos, (p) => distanciaAte(p, alvoDestino)?.metros ?? null);
     return list;
