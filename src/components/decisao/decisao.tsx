@@ -113,7 +113,7 @@ export function Decisao({ meses }: { meses: number }) {
           <div className={styles.kicker}>Taxa por contrato</div>
           <h2 className={styles.h2}>Regra antiga (1º mês) × regra nova (valor total)</h2>
           <p>
-            Aluguel médio de {brl(ALUGUEL_MEDIO)} e taxa de {pctTexto(TAXA_MEDIA)} (faixa de 1 a 2 imóveis). A regra vigente cobra a taxa sobre o
+            Aluguel médio de {brl(ALUGUEL_MEDIO)} e taxa média de {pctTexto(TAXA_MEDIA)} (modelo validado, média entre as faixas). A regra vigente cobra a taxa sobre o
             valor total do contrato (aluguel × meses); a antiga cobrava só sobre o 1º mês e está aqui apenas para comparar.
           </p>
           <form method="get" action="/decisao#regra-da-taxa" className="my-3 flex flex-wrap items-center gap-2">
