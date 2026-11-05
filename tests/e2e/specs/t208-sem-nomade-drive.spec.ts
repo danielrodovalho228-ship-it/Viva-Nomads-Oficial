@@ -34,7 +34,7 @@ test.describe("T208 — nenhuma menção à Nômade Drive", () => {
   }
 
   test("páginas públicas e de parceiros sem a menção", async ({ page }) => {
-    for (const rota of ["/", "/parceiros", ...comPrecos("/precos"), "/como-funciona", "/para-proprietarios", "/modelodenegocio", "/decisao"]) {
+    for (const rota of ["/", "/parceiros", ...comPrecos("/precos"), "/como-funciona", "/para-proprietarios", "/modelodenegocio"]) {
       const r = await page.goto(rota, { waitUntil: "domcontentloaded" });
       if (r && r.status() >= 400) continue;
       expect(await page.content(), rota).not.toMatch(NOME);

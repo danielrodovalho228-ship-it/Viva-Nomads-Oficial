@@ -16,7 +16,8 @@ import { authFile } from "../fixtures/auth";
 const PUBLICAS_FORA_DA_CASCA = ["/buscar", "/pedidos/novo"];
 const OWNER_MENU = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 
-const PAGINAS_INTERNAS = ["/simulacao", "/roi", "/socios", "/decisao", "/modelodenegocio"];
+// E595/E596 (05/11): /socios e /decisao foram eliminadas (o acesso direto redireciona — t908).
+const PAGINAS_INTERNAS = ["/simulacao", "/roi", "/modelodenegocio"];
 
 test.describe("T3 — Não-admin (proprietário) @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
@@ -80,10 +81,10 @@ test.describe("T3 — Internas: só com o código, e noindex @criticos", () => {
   test("com o código dos sócios, as internas abrem e são noindex", async ({ page }) => {
     const codigo = process.env.SOCIOS_ACCESS_CODE;
     test.skip(!codigo, "SOCIOS_ACCESS_CODE não definido neste ambiente");
-    await page.goto("/acesso-socios?next=%2Fsocios", { waitUntil: "domcontentloaded" });
+    await page.goto("/acesso-socios?next=%2Fsimulacao", { waitUntil: "domcontentloaded" });
     await page.locator('input[name="codigo"]').fill(codigo!);
     await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page).toHaveURL(/\/socios$/);
+    await expect(page).toHaveURL(/\/simulacao$/);
     for (const rota of PAGINAS_INTERNAS) {
       const resp = await page.goto(rota, { waitUntil: "domcontentloaded" });
       await expect(page, `com o código deveria abrir ${rota}`).toHaveURL(new RegExp(`${rota}$`));

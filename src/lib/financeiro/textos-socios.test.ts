@@ -16,7 +16,6 @@ const ARQUIVOS = [
   "src/config/premissas-financeiras.ts",
   "src/lib/financeiro/projecao.ts",
   "src/components/modelo-negocio/modelo-negocio.tsx",
-  "src/components/socios/socios.tsx",
   "src/app/(dashboard)/dashboard/roi-imovel/page.tsx",
 ];
 
@@ -49,18 +48,14 @@ test("/modelodenegocio: regra única 12% por contrato, faixas e rodapé; sem pla
   assert.ok(texto.includes("Plano Gestor"));
 });
 
-test("/socios, decisão e rede: Rogério como sócio/dono, sem remover ninguém", () => {
-  const socios = readFileSync(new URL("../../../src/components/socios/socios.tsx", import.meta.url), "utf8");
-  for (const nome of ["Daniel", "Rômulo", "Danilo", "Rogério"]) assert.ok(socios.includes(`nome: "${nome}"`), `falta ${nome} em /socios`);
-  assert.ok(socios.includes("Sócio · Dono"));
-  const decisao = readFileSync(new URL("../../../src/components/decisao/decisao.tsx", import.meta.url), "utf8");
-  assert.ok(decisao.includes('["Daniel", "Rômulo", "Danilo", "Rogério"]'));
+// E595/E596 (05/11): /socios e /decisao saíram (sócios e modelo revogados; a reescrita vem depois da decisão societária).
+test("rede: Rogério no painel e na Central de agentes", () => {
   const painel = readFileSync(new URL("../../../src/lib/agentes/painel.ts", import.meta.url), "utf8");
   assert.ok(painel.includes('id: "rogerio"') && painel.includes('["moacir", "rogerio", "relatorio"]'));
   const central = readFileSync(new URL("../../../src/app/(dashboard)/admin/agentes/central-client.tsx", import.meta.url), "utf8");
   assert.ok(central.includes('data-testid="agente-daniel"') && central.includes('data-testid="agente-rogerio"'));
   // Ninguém ganha admin por e-mail fixo no código: o Moacir promove no banco.
-  for (const f of [socios, painel, central]) assert.ok(!/rogerio@/i.test(f));
+  for (const f of [painel, central]) assert.ok(!/rogerio@/i.test(f));
 });
 
 // Ordem da1f9b50: custo fixo real ≈ R$ 6 mil (pró-labore), "equipes jurídicas", condomínios como meta.
@@ -90,14 +85,12 @@ test("custo fixo padrão ≈ R$ 7,3 mil com pró-labore de referência (E559, mo
 });
 
 // E559: nenhuma tela dos sócios mostra o custo antigo (R$ 989, pró-labore de R$ 5.000) nem chama a hipótese da Certta de preço.
-test("E559: /roi, /simulacao, /decisao e /modelodenegocio sem R$ 989, sem pró-labore de R$ 5.000 e sem 'preço da Certta'", () => {
+test("E559: /roi, /simulacao e /modelodenegocio sem R$ 989, sem pró-labore de R$ 5.000 e sem 'preço da Certta'", () => {
   const telas = [
     "src/components/financeiro/modelo-financeiro.tsx",
-    "src/components/decisao/decisao.tsx",
     "src/components/modelo-negocio/modelo-negocio.tsx",
     "src/app/roi/page.tsx",
     "src/app/simulacao/page.tsx",
-    "src/app/decisao/page.tsx",
     "src/app/modelodenegocio/page.tsx",
     "src/config/premissas-financeiras.ts",
   ];

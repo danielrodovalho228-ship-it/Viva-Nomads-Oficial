@@ -34,5 +34,4 @@ test("tela: a /simulacao mostra o quadro das lacunas e a taxa média do modelo v
   assert.match(s, /data-testid="lacunas-custo"/);
   assert.match(s, /LACUNAS_CUSTO\.map\(/);
   assert.doesNotMatch(s, /MIX_FAIXAS/);
-  assert.doesNotMatch(ler("components/decisao/decisao.tsx"), /faixa de 1 a 2 imóveis/);
 });
