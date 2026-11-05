@@ -295,7 +295,8 @@ function DesktopMosaic({
   );
 }
 
-function Lightbox({
+/** E466: exportado — a galeria pública do parceiro usa a mesma visualização ampliada. */
+export function Lightbox({
   photos,
   title,
   index,
