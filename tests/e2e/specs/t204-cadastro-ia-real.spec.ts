@@ -222,6 +222,8 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
         alvo.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
       }, foto8);
       await expect(page.getByTestId("etapa-fotos")).toContainText("8 / 8 fotos", { timeout: 60_000 });
+      // O estado da caixa da IA primeiro: se a falha não aparecer, o erro do teste diz em que estado ela parou.
+      await expect(page.getByTestId("ia-fotos")).toHaveAttribute("data-estado", "erro", { timeout: 60_000 });
       const falha = page.getByTestId("ia-fotos-falha");
       await expect(falha).toBeVisible({ timeout: 60_000 });
       await expect(falha).toContainText("indisponível agora — tente de novo");
