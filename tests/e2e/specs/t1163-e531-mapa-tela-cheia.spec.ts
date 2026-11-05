@@ -25,7 +25,7 @@ test.describe("T1163 — E531: no mapa em tela cheia, a legenda não cobre a atr
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio do mapa ${sufixo}`, { ativo: true });
-    const { error } = await adm().from("properties").update({ lat: -18.919, lng: -48.277, neighborhood: "Centro" }).eq("id", ids.imovel);
+    const { error } = await adm().from("properties").update({ lat: -18.919, lng: -48.277, address: "Centro" }) /* o bairro do anúncio sai de address */.eq("id", ids.imovel);
     expect(error, error?.message).toBeNull();
   });
 
