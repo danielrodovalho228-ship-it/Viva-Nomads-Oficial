@@ -30,7 +30,7 @@ const MSG_JA_REGISTRADO = "Este recebimento já foi registrado";
 
 /** Colunas de `contratos` que as partes leem pela sessão (sem a taxa — 0177). */
 const COLUNAS_CONTRATO_PARTES =
-  "id, property_id, tenant_id, lead_id, status, periodo, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, garantia";
+  "id, property_id, tenant_id, lead_id, status, periodo, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia";
 
 /** O acerto da devolução vem junto (o RLS deixa as partes lerem): entra no estado único da caução. */
 const ACERTOS_CAUCAO = "caucao_acertos(status, valor_devolvido, created_at)";
@@ -100,6 +100,10 @@ export interface ContratoView {
   pagamentos: PagamentoView[];
   /** Estado único da caução (o mesmo da Garantias e da tela do inquilino). */
   caucao: EstadoCaucao;
+  /** E544: janela de avaliação aberta (contrato encerrado há até 14 dias) — a mesma regra do servidor (0089). */
+  podeAvaliar: boolean;
+  /** E544: fim do contrato para o prazo da avaliação — o encerramento ou, antes dele, o fim do último bloco. */
+  fimParaAvaliacao: string | null;
 }
 
 function toBloco(b: Record<string, unknown>): BlocoView {
@@ -386,6 +390,8 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       blocos,
       pagamentos,
       caucao: caucaoDaLinha(c, blocos, pagamentos),
+      podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
+      fimParaAvaliacao: (c.encerrado_em as string | null) ?? blocos[blocos.length - 1]?.fim ?? null,
     };
   });
 }

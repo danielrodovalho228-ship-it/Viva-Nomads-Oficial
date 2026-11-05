@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { avaliar } from "@/lib/data/avaliacoes-actions";
-import { LIMITE_COMENTARIO, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
+import { LIMITE_COMENTARIO, TEXTO_AVALIACAO_FECHADA, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
@@ -22,6 +22,7 @@ export function AvaliacaoForm({
   placeholder,
   demo,
   encerradoEm,
+  fechada = false,
 }: {
   contratoId: string;
   alvoId: string;
@@ -32,6 +33,11 @@ export function AvaliacaoForm({
   demo?: boolean;
   /** Fim do contrato: dá o prazo (14 dias) mostrado nas duas partes. */
   encerradoEm?: string | null;
+  /**
+   * E544: a janela de avaliação ainda não abriu (estadia futura ou em andamento). Mostra o estado pendente com o prazo e
+   * NÃO oferece o botão — o servidor recusaria (0089: só contrato encerrado, até 14 dias depois do fim).
+   */
+  fechada?: boolean;
 }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -74,6 +80,17 @@ export function AvaliacaoForm({
             ? "Avaliação recebida. Ela passa por uma revisão da equipe antes de aparecer (o comentário tinha contato ou palavra que não publicamos)."
             : "Avaliação enviada. Ela aparece quando a outra parte também avaliar, ou em até 14 dias depois do fim do contrato."}
       </p>
+      </>
+    );
+  }
+
+  if (fechada) {
+    return (
+      <>
+        {partes}
+        <p className="mt-3 text-sm text-muted" data-testid="avaliacao-fechada">
+          {TEXTO_AVALIACAO_FECHADA}
+        </p>
       </>
     );
   }

@@ -143,6 +143,8 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       blocos,
       pagamentos,
       caucao: estadoCaucao({ blocos, pagamentos }),
+      podeAvaliar: false,
+      fimParaAvaliacao: null,
     };
   });
 }
@@ -382,6 +384,9 @@ function ContratoCard({
         titulo="Como foi a locação com este morador?"
         placeholder="Comentário (opcional) — pontualidade, cuidado com o imóvel, comunicação…"
         demo={demo}
+        encerradoEm={contrato.fimParaAvaliacao}
+        // E544: só dentro da janela (contrato encerrado, até 14 dias depois); antes, o pendente com o prazo.
+        fechada={!demo && !contrato.podeAvaliar}
       />
       </div>
     </Panel>
