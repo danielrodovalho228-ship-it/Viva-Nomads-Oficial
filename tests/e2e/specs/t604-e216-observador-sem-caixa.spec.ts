@@ -63,8 +63,11 @@ test.describe("T604 — E216: admin observador sem 'Caixa dos Sócios' na barra 
   test.beforeAll(async () => {
     ids.obs = await criarConta({ email: emailObs, nome: "Olga Observadora", role: "tenant" }, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.obs);
-    const { error } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
-    if (error) throw error;
+    // Só cabe um observador por vez (promover_qa_admin): espera outra spec (t596, t601, t650, t655) soltar o dela.
+    test.setTimeout(300_000);
+    await expect
+      .poll(async () => (await adm().rpc("promover_qa_admin", { p_id: ids.obs })).error?.message ?? "ok", { timeout: 180_000, intervals: [5_000] })
+      .toBe("ok");
     // 2FA próprio pelo fluxo do Supabase (enroll → challenge → verify); o segredo fica só aqui.
     const c = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
     const { error: eLogin } = await c.auth.signInWithPassword({ email: emailObs, password: senha });
