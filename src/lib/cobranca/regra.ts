@@ -4,8 +4,9 @@
   A taxa vale sobre o VALOR TOTAL de cada contrato fechado (aluguel mensal × meses contratados — ordem do
   Daniel, 14/10). Cada renovação/prorrogação é cobrada à parte, sobre o valor total do período renovado, com a
   taxa da faixa do dono no momento do fechamento. Sem mensalidade. O inquilino não paga taxa da Viva.
-    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–30 = 6% · 31+ = condição negociada ("fale com a gente"):
-  continua em 6% até o admin fixar uma condição negociada (override com motivo e validade).
+    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–19 = 6% · a última faixa, sem teto, é a do Plano Gestor, a 4%
+  (E564, decisão do Daniel de 04/11/2026: sem assinatura nem taxa zero; conta de administradora também entra). A faixa "31+ negociável"
+  deixou de existir. Imóveis que contam: só os ATIVOS DE VERDADE (E565, carteira-ativa.ts).
   Lógica PURA, sem banco. As faixas vêm da tabela de config (faixas_comissao); na falta dela vale o padrão
   abaixo, que espelha a migração 0100. A plataforma não toca no aluguel nem na caução: a taxa é cobrada
   à parte, do PROPRIETÁRIO.
@@ -17,8 +18,9 @@ export interface FaixaComissao {
   minImoveis: number;
   maxImoveis: number | null; // null = sem teto
   taxa: number; // 0..1, sobre o valor total do contrato (aluguel × meses)
-  /** Faixa sem teto (31+): taxa negociável. A automática é a da faixa; condição melhor só por fixação do admin.
-   *  Não é o Plano Gestor (E252-B): o Gestor começa em GESTOR_PRECO.minimoImoveis e só aparece no formulário/simulador. */
+  /** E564: a faixa do Plano Gestor (a partir de GESTOR_PRECO.minimoImoveis ativos, ou administradora): 4%, sem assinatura. */
+  gestor?: boolean;
+  /** Legado: a faixa "31+ negociável" saiu no E564 (nenhuma faixa padrão é negociável). Mantido só para leitura. */
   negociavel?: boolean;
 }
 
@@ -26,11 +28,13 @@ export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
   { minImoveis: 1, maxImoveis: 2, taxa: 0.12 },
   { minImoveis: 3, maxImoveis: 5, taxa: 0.1 },
   { minImoveis: 6, maxImoveis: 15, taxa: 0.08 },
-  { minImoveis: 16, maxImoveis: 30, taxa: 0.06 },
-  { minImoveis: 31, maxImoveis: null, taxa: 0.06, negociavel: true },
+  { minImoveis: 16, maxImoveis: 19, taxa: 0.06 },
+  { minImoveis: 20, maxImoveis: null, taxa: 0.04, gestor: true },
 ];
 
 export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
+/** E564: a faixa do Plano Gestor (a última, sem teto). */
+export const FAIXA_GESTOR: FaixaComissao = FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1];
 /**
  * Prompt 16: a "Análise da carteira" abre a partir da 2ª faixa (3 imóveis ativos), pela MESMA regra das taxas —
  * sem plano pago nem trava de upgrade.
@@ -69,7 +73,7 @@ export function proximaFaixa(
   return { faltam: prox.minImoveis - atuais, taxa: prox.taxa };
 }
 
-/** Faixa sem teto (31+): a taxa é negociável; as telas mostram "taxa negociável" em vez de um percentual menor. */
+/** Legado (E564): a faixa "31+ negociável" saiu — com as faixas padrão, sempre false. */
 export function ehFaixaNegociavel(n: number, faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): boolean {
   return faixaPorImoveisAtivos(n, faixas).negociavel === true;
 }
@@ -141,8 +145,12 @@ export function taxaNaAssinatura(e: {
   faixas?: readonly FaixaComissao[];
   queda?: { taxaAnterior: number; em: Date } | null;
   fixadaPeloAdmin?: TaxaFixadaAdmin | null;
+  /** E564: conta de administradora (profiles.account_type = 'gestor') é Plano Gestor qualquer que seja a carteira. */
+  administradora?: boolean;
 }): TaxaAplicada {
-  const faixa = faixaPorImoveisAtivos(e.imoveisAtivos, e.faixas ?? FAIXAS_COMISSAO_PADRAO);
+  const faixas = e.faixas ?? FAIXAS_COMISSAO_PADRAO;
+  const gestor = faixas.find((f) => f.gestor) ?? null;
+  const faixa = e.administradora && gestor ? gestor : faixaPorImoveisAtivos(e.imoveisAtivos, faixas);
   if (fixacaoAdminValida(e.fixadaPeloAdmin, e.assinadoEm)) {
     return { taxa: e.fixadaPeloAdmin.taxa, origem: "admin", tipo: e.tipo, faixaNoFechamento: faixa };
   }
@@ -172,12 +180,15 @@ export function taxaPublicaTexto(f: FaixaComissao): string {
   return f.negociavel ? TAXA_NEGOCIADA_TEXTO : pctTexto(f.taxa);
 }
 
-/** E252-B: a faixa sem teto se chama "taxa negociável", nunca "Plano Gestor" (o Gestor começa em 20, outra regra). */
+/** Legado (E252-B): o rótulo da antiga faixa "31+ negociável", que saiu no E564. */
 export const ROTULO_FAIXA_NEGOCIAVEL = "taxa negociável";
+/** E564: o rótulo da faixa sem teto, a do Plano Gestor (4%). */
+export const ROTULO_FAIXA_GESTOR = "Plano Gestor";
 /** Rótulo da faixa nas tabelas: "1–2", "31+ · taxa negociável"; com `imoveis`, "1–2 imóveis", "31+ imóveis · taxa negociável". */
 export function rotuloFaixaTaxa(f: FaixaComissao, imoveis = false): string {
   const base = f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`;
   const comImoveis = imoveis ? `${base} imóveis` : base;
+  if (f.gestor) return `${comImoveis} · ${ROTULO_FAIXA_GESTOR}`;
   return f.negociavel ? `${comImoveis} · ${ROTULO_FAIXA_NEGOCIAVEL}` : comImoveis;
 }
 
@@ -214,13 +225,13 @@ export function textoTaxaPainel(taxa: number, valorMensal: number, meses: number
  * contrato fechado (aluguel × meses), em cada contrato e em cada renovação.
  */
 export const TEXTO_REGRA_UNICA =
-  "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.";
+  "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
 
 /** Meta description de /precos (≤155 caracteres; ordem 218c62ad, #153). */
 export const DESCRICAO_PRECOS =
-  "Anunciar é grátis. A Viva cobra 12% do contrato fechado, menor com mais imóveis (até 6%). Sem mensalidade. Para imóveis mobiliados.";
+  "Anunciar é grátis. A Viva cobra 12% do contrato fechado, menor com mais imóveis (até 4%). Sem mensalidade. Para imóveis mobiliados.";
 
 /** Frase padrão (ordem b3c9d76e), com a taxa da faixa. */
 export function fraseComissaoUnica(taxaTexto: string): string {

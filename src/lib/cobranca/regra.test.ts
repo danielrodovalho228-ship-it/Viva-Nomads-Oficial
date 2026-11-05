@@ -62,11 +62,12 @@ test("textos padrão da comissão (frase padrão e curta)", () => {
   assert.equal(comissaoCurta("12%"), "12% sobre o valor total do contrato fechado.");
 });
 
-test("4.320 (1 mês) por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 (6%)", () => {
+test("4.320 (1 mês) por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 (6%), 172,80 (Gestor, 4%)", () => {
   assert.deepEqual([1, 2].map((n) => valor(n)), [518.4, 518.4]);
   assert.deepEqual([3, 5].map((n) => valor(n)), [432, 432]);
   assert.deepEqual([6, 15].map((n) => valor(n)), [345.6, 345.6]);
-  assert.deepEqual([16, 30].map((n) => valor(n)), [259.2, 259.2]);
+  assert.deepEqual([16, 19].map((n) => valor(n)), [259.2, 259.2]);
+  assert.deepEqual([20, 40].map((n) => valor(n)), [172.8, 172.8]);
 });
 
 test("renovação conta como novo contrato: mesma taxa da faixa do dono", () => {
@@ -74,33 +75,26 @@ test("renovação conta como novo contrato: mesma taxa da faixa do dono", () => 
   assert.equal(valor(4, "renovacao"), 432);
 });
 
-test("31+ imóveis (taxa negociável): dono com 40 imóveis sem override paga 6%; com override 4% paga 4%", () => {
-  assert.equal(valor(40), 259.2);
-  assert.equal(ehFaixaNegociavel(40), true);
-  assert.equal(ehFaixaNegociavel(30), false);
+test("E564: 20+ imóveis = Plano Gestor, 4% sem assinatura; a faixa 31+ negociável saiu; administradora é Gestor", () => {
+  assert.equal(valor(40), 172.8);
+  assert.equal(faixaPorImoveisAtivos(20).gestor, true);
+  assert.equal(faixaPorImoveisAtivos(19).gestor, undefined);
+  assert.equal(ehFaixaNegociavel(40), false);
+  assert.equal(FAIXAS_COMISSAO_PADRAO.some((f) => f.negociavel), false);
+  // Conta de administradora: Gestor com qualquer carteira.
+  assert.equal(taxaNaAssinatura({ tipo: "novo", imoveisAtivos: 1, assinadoEm: em, administradora: true }).taxa, 0.04);
+  assert.equal(taxaNaAssinatura({ tipo: "novo", imoveisAtivos: 1, assinadoEm: em }).taxa, 0.12);
+  // A fixação do admin continua valendo por cima (com motivo e validade); vencida, volta à faixa.
   const ate = new Date("2026-12-31T00:00:00Z");
-  const t = cobrancaParaAceite({
-    tipo: "novo",
-    imoveisAtivos: 40,
-    aluguelMensal: 4320,
-    meses: 1,
-    assinadoEm: em,
-    fixadaPeloAdmin: { taxa: 0.04, motivo: "negociação Plano Gestor", validoAte: ate },
-  });
-  assert.deepEqual([t.taxa, t.origem, t.valor], [0.04, "admin", 172.8]);
-  // override vencido volta aos 6%
-  const vencido = taxaNaAssinatura({
-    tipo: "novo",
-    imoveisAtivos: 40,
-    assinadoEm: em,
-    fixadaPeloAdmin: { taxa: 0.04, motivo: "negociação", validoAte: new Date("2026-10-01T00:00:00Z") },
-  });
-  assert.equal(vencido.taxa, 0.06);
+  const t = cobrancaParaAceite({ tipo: "novo", imoveisAtivos: 10, aluguelMensal: 4320, meses: 1, assinadoEm: em, fixadaPeloAdmin: { taxa: 0.05, motivo: "condição especial", validoAte: ate } });
+  assert.deepEqual([t.taxa, t.origem, t.valor], [0.05, "admin", 216]);
+  const vencido = taxaNaAssinatura({ tipo: "novo", imoveisAtivos: 10, assinadoEm: em, fixadaPeloAdmin: { taxa: 0.05, motivo: "x", validoAte: new Date("2026-10-01T00:00:00Z") } });
+  assert.equal(vencido.taxa, 0.08);
 });
 
 test("limites das faixas e entrada inválida", () => {
   const taxa = (n: number) => faixaPorImoveisAtivos(n).taxa;
-  assert.deepEqual([1, 2, 3, 5, 6, 15, 16, 30, 31, 100].map(taxa), [0.12, 0.12, 0.1, 0.1, 0.08, 0.08, 0.06, 0.06, 0.06, 0.06]);
+  assert.deepEqual([1, 2, 3, 5, 6, 15, 16, 19, 20, 100].map(taxa), [0.12, 0.12, 0.1, 0.1, 0.08, 0.08, 0.06, 0.06, 0.04, 0.04]);
   for (const ruim of [0, -3, Number.NaN]) assert.equal(taxa(ruim), 0.12);
   assert.equal(FAIXAS_COMISSAO_PADRAO.length, 5);
 });
@@ -141,10 +135,10 @@ test("override do admin exige motivo e validade; vencido, sem motivo ou fora de 
   }
 });
 
-test("texto oficial: 12%, faixas até 6%, sem mensalidade", () => {
+test("texto oficial: 12%, faixas até 4% (E564: o Plano Gestor), sem mensalidade", () => {
   assert.equal(
     TEXTO_REGRA_UNICA,
-    "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
+    "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.",
   );
   assert.equal(TEXTO_REGRA_CURTO, TEXTO_REGRA_UNICA);
   assert.doesNotMatch(TEXTO_REGRA_UNICA, /plano|Essencial|Gestor|aluguel|comiss/i);
@@ -255,12 +249,10 @@ test("painel do dono: valor mensal ou prazo inválido não inventa valor", () =>
   assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% sobre o valor mensal × meses");
 });
 
-test("F6: tabela pública — 31+ (taxa negociável) é 'Negociado'; as demais faixas mostram o percentual", async () => {
-  const { taxaPublicaTexto } = await import("./regra.ts");
-  assert.deepEqual(
-    FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto),
-    ["12%", "10%", "8%", "6%", "Negociado"],
-  );
+test("E564: tabela pública — todas as faixas mostram o percentual (o Gestor é 4%; nada de 'Negociado')", async () => {
+  const { taxaPublicaTexto, rotuloFaixaTaxa } = await import("./regra.ts");
+  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto), ["12%", "10%", "8%", "6%", "4%"]);
+  assert.equal(rotuloFaixaTaxa(FAIXAS_COMISSAO_PADRAO[4], true), "20+ imóveis · Plano Gestor");
 });
 
 test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor", async () => {
@@ -276,10 +268,9 @@ test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../atendimento/viva-prompt.ts", import.meta.url), "utf8");
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
-  // E236: a faixa sem teto (31+) é negociada; o Plano Gestor vale a partir de GESTOR_PRECO.minimoImoveis.
-  assert.match(t, /com 31 ou mais, condições negociadas \(sem percentual fixo público/);
-  // E321: o Gestor é outra regra, com a porta inteira (N+ com documento aprovado ou administradora).
-  assert.match(t, /O Plano Gestor é outra regra, separada das faixas de taxa: vale para \$\{PORTA_GESTOR_TEXTO\}\./);
+  // E564: sem a faixa "31+ negociável"; o Gestor é 4% sem assinatura, com a porta inteira.
+  assert.doesNotMatch(t, /31 ou mais|negociad/);
+  assert.match(t, /O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para \$\{PORTA_GESTOR_TEXTO\}\./);
 });
 
 test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {

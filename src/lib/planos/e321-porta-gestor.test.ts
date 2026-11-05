@@ -7,8 +7,8 @@ import { mensagemAvisoParceiro } from "../fotografos/aviso.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("E321: a porta do Gestor é uma só — N+ imóveis com documento aprovado OU administradora", () => {
-  assert.equal(PORTA_GESTOR_TEXTO, `${GESTOR_PRECO.minimoImoveis} imóveis ou mais com documento aprovado, ou conta de administradora`);
+test("E321/E564: a porta do Gestor é uma só — N+ imóveis ativos de verdade OU administradora", () => {
+  assert.equal(PORTA_GESTOR_TEXTO, `${GESTOR_PRECO.minimoImoveis} imóveis ou mais ativos (publicados, com documento aprovado e calendário em dia), ou conta de administradora`);
   assert.equal(GESTOR_MIN_IMOVEIS_VALIDADOS, 20);
   // A mesma regra da elegibilidade.
   assert.equal(gestorElegivel({ accountType: "gestor", imoveisValidados: 0 }), true);

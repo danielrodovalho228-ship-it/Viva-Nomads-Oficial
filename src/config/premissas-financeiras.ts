@@ -22,15 +22,17 @@ export interface Item {
 // ── Receita por contrato ────────────────────────────────────────────────────
 /*
   Modelo único (Daniel, 10/10): taxa de serviço por contrato fechado (renovação = novo contrato), sobre o
-  valor TOTAL do contrato (aluguel × meses; ordem do Daniel, 14/10). Sem cobrança recorrente nesta fase (assinatura = fase 2, futuro, para donos com muitos
-  imóveis, fora das projeções). Faixas em lib/cobranca/regra.ts (fonte única).
+  valor TOTAL do contrato (aluguel × meses; ordem do Daniel, 14/10). Sem cobrança recorrente: E564 (04/11/2026) tirou a
+  assinatura do Gestor (valor fixo por mês com imóveis incluídos, valor por extra e taxa zero) — o Gestor é a faixa de 4%
+  a partir de GESTOR_PRECO.minimoImoveis imóveis ativos, ou conta de administradora. Valor mínimo mensal é fase 2, fora das projeções. Faixas em
+  lib/cobranca/regra.ts (fonte única).
 */
 /** Aluguel mensal médio de um contrato (R$) — o mesmo ticket do Compare. A taxa incide sobre ele × MESES_MEDIOS_CONTRATO. */
 export const ALUGUEL_MEDIO = 4320;
 
 /**
- * Parte dos contratos por faixa de imóveis do dono (mesma ordem de FAIXAS_COMISSAO_PADRAO).
- * Padrão: todos na 1ª faixa (1–2 imóveis, 12%), o caso típico do piloto.
+ * Parte dos contratos por faixa de imóveis do dono (mesma ordem de FAIXAS_COMISSAO_PADRAO: 12%, 10%, 8%, 6% e o
+ * Plano Gestor a 4%). Padrão: todos na 1ª faixa (1–2 imóveis, 12%), o caso típico do piloto.
  */
 export const MIX_FAIXAS: readonly number[] = [1, 0, 0, 0, 0];
 

@@ -17,7 +17,7 @@ test("a Viva sabe explicar como virar parceiro, com os links certos", () => {
   assert.doesNotMatch(p.resposta, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|aluguel/i);
 });
 
-test("a faixa menor citada é até 6%, nunca 4% (faixas 12/10/8/6%)", () => {
-  assert.match(SYSTEM_VIVA, /menor a taxa \(até 6%\)/);
-  assert.doesNotMatch(SYSTEM_VIVA, /até 4%/);
+test("E564: a faixa menor citada é até 4% (o Plano Gestor), nunca mais 'até 6%'", () => {
+  assert.match(SYSTEM_VIVA, /menor a taxa \(até 4%\)/);
+  assert.doesNotMatch(SYSTEM_VIVA, /até 6%/);
 });

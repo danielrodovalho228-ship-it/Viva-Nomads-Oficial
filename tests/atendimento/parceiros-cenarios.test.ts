@@ -34,7 +34,8 @@ test("parceiros: o prompt da Viva traz tipos, modos, taxa de serviço de 10%, ac
   for (const re of [/Categorias abertas/, /Uma conta só/, /10% sobre o valor do serviço/, /só são liberados/, /Uberlândia \(MG\)/, /Plano Gestor/, /12\/10\/8\/6%/]) {
     assert.match(SYSTEM_VIVA, re);
   }
-  assert.doesNotMatch(SYSTEM_VIVA, /até 4%/);
+  // E564: o menor percentual citado é o do Plano Gestor (4%); "até 6%" saiu.
+  assert.doesNotMatch(SYSTEM_VIVA, /até 6%/);
   assert.doesNotMatch(SYSTEM_VIVA, /R\$ ?(40|60|80)(?![\d.,])/, "a taxa fixa dos fotógrafos saiu");
   assert.doesNotMatch(SYSTEM_VIVA, /todo o Brasil/i);
 });
