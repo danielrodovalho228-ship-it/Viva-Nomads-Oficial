@@ -178,3 +178,21 @@ export function secaoDoItem(chave: string): SecaoAntesDePublicar | null {
   if (chave === "qualificacao") return "declaracoes";
   return null;
 }
+
+/**
+ * E619: a conta do "Faltam N itens" à vista, logo abaixo do título da lista — o N junta os subitens de cada passo
+ * ("Comodidades" com 3 faltas conta 3) e as seções do "Antes de publicar", e só fechava contando tudo à mão. O aceite do
+ * termo da IA, que não entra no N, é dito aqui também, com o lugar dele. null quando nada falta na lista nem nas seções.
+ */
+export function contaDaConferencia(p: { itens: { ok: boolean; faltam: string[] }[]; pendentesNaRevisao: string[]; aceitouIa: boolean }): string | null {
+  const pendentes = p.itens.filter((i) => !i.ok);
+  const naLista = pendentes.reduce((n, i) => n + Math.max(1, i.faltam.length), 0);
+  const naRevisao = p.pendentesNaRevisao.length;
+  if (naLista === 0 && naRevisao === 0) return null;
+  const partes: string[] = [];
+  if (naLista > 0) partes.push(`${naLista} ${naLista === 1 ? "item" : "itens"} em ${pendentes.length} ${pendentes.length === 1 ? "passo" : "passos"} da lista`);
+  if (naRevisao > 0) partes.push(`${naRevisao} no “Antes de publicar”`);
+  const soma = partes.length > 1 ? ` = ${naLista + naRevisao}` : "";
+  const aceite = p.aceitouIa ? "" : " Também falta o aceite do termo da IA, no fim desta coluna.";
+  return `A conta: ${partes.join(" + ")}${soma}.${aceite}`;
+}
