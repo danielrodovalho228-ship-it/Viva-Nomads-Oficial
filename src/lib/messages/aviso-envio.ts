@@ -17,3 +17,13 @@ export function avisoAntesDeEnviar(rascunho: string): AvisoEnvio {
   if (masked) return { tipo: "confirmar", previa: text };
   return { tipo: "livre", texto: text };
 }
+
+/**
+ * E585 — a prévia mascarada AO DIGITAR (a mesma da proposta, antes do envio): com contato no rascunho, devolve o texto
+ * como vai ser gravado; sem contato, vazio ou vindo de resposta rápida (lá o contato é bloqueado, 55-E2), null.
+ */
+export function previaAoDigitar(rascunho: string, opts: { deRapida?: boolean } = {}): string | null {
+  if (!rascunho.trim() || opts.deRapida) return null;
+  const a = avisoAntesDeEnviar(rascunho);
+  return a.tipo === "confirmar" ? a.previa : null;
+}

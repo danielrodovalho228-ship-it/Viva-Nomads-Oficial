@@ -19,7 +19,7 @@ import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
-import { avisoAntesDeEnviar } from "@/lib/messages/aviso-envio";
+import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio";
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
@@ -98,9 +98,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [guardNotice, setGuardNotice] = useState(false);
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
-  // E445 item 2: com contato/link no texto, o aviso e a prévia mascarada aparecem ANTES do envio (Editar / Enviar mesmo
-  // assim). Guarda a prévia do rascunho atual; mexer no campo fecha o aviso.
-  const [confirmarEnvio, setConfirmarEnvio] = useState<string | null>(null);
+  // E445 item 2 + E585: com contato/link no texto, o aviso e a prévia mascarada aparecem AO DIGITAR (como na proposta),
+  // antes de qualquer envio. "Editar" recolhe o aviso para aquele rascunho; mexer no texto (ou tentar enviar) reabre.
+  const [avisoFechadoPara, setAvisoFechadoPara] = useState<string | null>(null);
+  const previaContato = previaAoDigitar(draft, { deRapida });
+  const avisoAberto = previaContato !== null && avisoFechadoPara !== draft;
   const campoRef = useRef<HTMLInputElement>(null);
   // E445 item 5: foto ou PDF escolhido, com a prévia antes de enviar.
   const [anexo, setAnexo] = useState<{ arquivo: File; previaUrl: string | null } | null>(null);
@@ -141,7 +143,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
 
   function openConversation(id: string) {
     setNaoEncontrada(false);
-    setConfirmarEnvio(null);
+    setAvisoFechadoPara(null);
     limparAnexo();
     setErroAnexo(null);
     setActiveId(id);
@@ -164,7 +166,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     setDocBloqueado(aviso.tipo === "documento");
     if (aviso.tipo === "documento") return;
     // E445 item 2: primeiro o aviso com a prévia; só o botão "Enviar mesmo assim" envia (Enter de novo não confirma).
-    if (aviso.tipo === "confirmar") return setConfirmarEnvio(aviso.previa);
+    // E585: Enter ou o botão redondo nunca enviam contato — reabrem o aviso; só "Enviar mesmo assim" envia (mascarado).
+    if (aviso.tipo === "confirmar") return setAvisoFechadoPara(null);
     await enviar(aviso.texto, false);
   }
 
@@ -212,7 +215,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
 
   async function enviar(text: string, masked: boolean) {
     if (!active) return;
-    setConfirmarEnvio(null);
+    setAvisoFechadoPara(null);
     setGuardNotice(masked);
     setDraft("");
     const usouRapida = deRapida;
@@ -551,18 +554,18 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               }}
             />
           )}
-          {confirmarEnvio !== null && (
+          {avisoAberto && (
             <div role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" data-testid="aviso-antes-de-enviar">
               <p>{GUARD_NOTICE}</p>
               <p className="mt-2 font-semibold">Vai assim:</p>
               <p className="mt-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-ink [overflow-wrap:anywhere]" data-testid="aviso-previa">
-                {confirmarEnvio}
+                {previaContato}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    setConfirmarEnvio(null);
+                    setAvisoFechadoPara(draft);
                     campoRef.current?.focus();
                   }}
                   className="min-h-11 rounded-full border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-forest"
@@ -571,7 +574,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 </button>
                 <button
                   type="button"
-                  onClick={() => void enviar(confirmarEnvio, true)}
+                  onClick={() => previaContato && void enviar(previaContato, true)}
                   className="min-h-11 rounded-full border border-forest bg-white px-4 text-sm font-semibold text-forest hover:bg-sage-100"
                 >
                   Enviar mesmo assim
@@ -592,7 +595,6 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               ref={campoRef}
               onChange={(e) => {
                 setDraft(e.target.value);
-                setConfirmarEnvio(null);
                 if (!e.target.value) setDeRapida(false);
               }}
               data-testid="mensagem-campo"
@@ -601,7 +603,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             />
             <button
               type="submit"
-              className="grid h-11 w-11 place-items-center rounded-full bg-forest text-white hover:bg-forest-700"
+              // E585: com contato no rascunho o botão muda (âmbar) e não envia direto: abre o aviso com a prévia.
+              data-contato={previaContato ? "1" : undefined}
+              title={previaContato ? "Telefone, e-mail ou link serão ocultados — revise o aviso" : undefined}
+              className={cn("grid h-11 w-11 place-items-center rounded-full text-white", previaContato ? "bg-amber-600 hover:bg-amber-700" : "bg-forest hover:bg-forest-700")}
               aria-label="Enviar"
             >
               <Send className="h-4 w-4" />
