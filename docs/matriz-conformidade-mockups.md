@@ -291,3 +291,22 @@ fica acima da barra fixa de baixo.
    larguras. **Conforme** (E595/E596).
 5. **Demais rotas**: nenhuma rolagem lateral, nenhuma imagem quebrada, no máximo um botão cheio no `main`. Selos empilhados
    nos cartões (E416), grade do Passo 1 (E607) e índice do assistente (E602) conferidos na tela a 390 e 768. **Conformes.**
+
+## Estados vazios, sem dado e de erro — passada 17 (05/11, modo demonstração, 390 toque e 1280)
+
+404 público e do painel (`/pagina-que-nao-existe`, `/imoveis/…`, `/guias/…`, `/dashboard/…`), anúncio inexistente na edição,
+`/comparar` vazio e com id inexistente, `/favoritos` vazio, `/parceiros/buscar` sem resultado, e as listas do painel que
+costumam vir vazias (Contratos, Recibos, Reembolsos, Caução, Indicações, Buscas salvas, Candidaturas, Orçamentos, Mensagens
+com conversa inexistente). Medido como na passada 16, mais o título (h1) e o recorte do topo de cada tela.
+
+1. **Buscas salvas com duas barras de abas** — subabas do morador (Buscar · Favoritos · Buscas salvas) e, logo abaixo, a
+   `FavoritosTabs` antiga (Favoritos · Comparações · Buscas salvas), cortada a 390. **Corrigido no #2803** (Buscas salvas
+   só com a subaba; a `FavoritosTabs` fica com Favoritos · Comparações; guarda t916).
+2. **404**: status 404, título "Página não encontrada" e um único botão cheio ("Buscar imóveis") nas quatro rotas. **Conforme.**
+3. **Anúncio inexistente na edição**: "Imóvel não encontrado" com o caminho de volta a Meus imóveis. **Conforme.**
+4. **`/comparar` vazio ou com id inexistente** e **`/favoritos` vazio**: estado vazio com próximo passo. **Conforme.**
+5. **`/parceiros/buscar`**: a faixa de categoria "coberta" pelo "Fale com a Viva" só fica sob o botão com a página no
+   topo; no fim da página nada fica coberto. **Conforme.**
+6. **Listas do painel**: todas abrem com título, sem rolagem lateral, no máximo um botão cheio. **Conformes.**
+7. Não medido: o estado "nenhum imóvel encontrado" da `/buscar` — os parâmetros de URL testados (`quartos=9`, cidade
+   inexistente) não zeram o resultado no modo demonstração; fica para a próxima passada, pelo próprio filtro.
