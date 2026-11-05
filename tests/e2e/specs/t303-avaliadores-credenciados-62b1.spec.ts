@@ -205,7 +205,9 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const amanha = new Date(Date.now() + 2 * 86_400_000);
     const valor = `${amanha.toISOString().slice(0, 10)}T10:00`;
-    await item.getByTestId("agendar-visita").getByLabel("Data e hora da visita").fill(valor);
+    // Varredura 01/11: o campo é o do site (data dd/mm/aaaa + lista de hora); o texto aceita colar "AAAA-MM-DDTHH:MM".
+    await item.getByTestId("agendar-visita").locator("[data-campo-data-hora] input").first().fill(valor);
+    await expect(item.getByTestId("agendar-visita").locator("[data-campo-data-hora] select")).toHaveValue("10:00");
     await item.getByTestId("agendar-visita").getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => (await pedido()).agendado_para, { timeout: 20_000 }).not.toBeNull();
     const antes = await pedido();

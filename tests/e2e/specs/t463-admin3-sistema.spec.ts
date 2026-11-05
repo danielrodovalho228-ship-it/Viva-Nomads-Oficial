@@ -1,5 +1,6 @@
 import { test, expect, type Browser } from "@playwright/test";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
+import { CHAVES_AMBIENTE } from "../../../src/config/chaves-ambiente";
 import { authFile } from "../fixtures/auth";
 
 /*
@@ -26,7 +27,8 @@ test.describe("T463 — ADMIN-3: Chaves e integrações", () => {
       await expect(page.getByTestId("chave-sms")).toBeVisible();
       await expect(page.getByTestId("chave-parceiro-geral")).toBeVisible();
       const ambiente = page.getByTestId("chaves-ambiente");
-      await expect(ambiente.getByTestId("chave-ambiente")).toHaveCount(17);
+      // A tela lista CHAVES_AMBIENTE inteira; o número fixo (17) ficou para trás quando a lista cresceu (22 em 05/11).
+      await expect(ambiente.getByTestId("chave-ambiente")).toHaveCount(CHAVES_AMBIENTE.length);
       await expect(ambiente.locator("button, input, form")).toHaveCount(0);
       // Abre a confirmação do SMS e cancela: nada muda.
       await page.getByTestId("chave-sms-trocar").click();
