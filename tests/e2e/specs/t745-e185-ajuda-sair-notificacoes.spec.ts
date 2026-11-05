@@ -56,14 +56,14 @@ test.describe("T745 — E185: Ajuda com um destino, Sair uma vez, Notificações
       await p.screenshot({ path: `${SAIDA}/t745-ajuda-avatar-${largura}.png` });
       await p.keyboard.press("Escape");
 
-      // Notificações: uma página só, e UMA entrada visível na tela da Conta (E185 resíduo, 31/10): no celular o sino;
-      // no computador o item do menu lateral da Conta (o topo não repete o sino nas telas da Conta).
-      // E444 item 3: no celular o sino virou BOTÃO (abre o painel dos avisos, com "Ver todas" para esta página).
+      // Notificações: uma página só, e UM link visível para ela na tela da Conta (E185 resíduo, 31/10): no computador o
+      // item do menu lateral da Conta. E444 item 3: o sino virou BOTÃO (abre o painel dos avisos, com "Ver todas" para
+      // esta página) — não é link. E464: o sino fica também nas telas da Conta, no computador e no celular.
       const notif = p.locator('a[href="/dashboard/notificacoes"]').filter({ visible: true });
       if (largura === 1280) {
         await expect(notif).toHaveCount(1);
         await expect(notif).toHaveAttribute("data-testid", "conta-menu-notificacoes");
-        await expect(p.getByTestId("sino-morador")).toHaveCount(0);
+        await expect(p.getByTestId("sino-morador")).toBeVisible();
       } else {
         await expect(notif).toHaveCount(0);
         await expect(p.getByTestId("topo-celular").getByTestId("sino-morador-celular")).toBeVisible();
