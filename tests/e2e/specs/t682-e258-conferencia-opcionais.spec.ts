@@ -63,8 +63,9 @@ test.describe("T682 — E258: a conferência explica o opcional vazio; o Passo 5
           await t.click({ timeout: 10_000 });
         }
       }
-      await expect(p.getByTestId("ruido-como-salva")).toHaveText("Vale depois de “Salvar ruído”. Sem nada marcado, salva “não” nas quatro.");
-      await expect(p.getByTestId("extras-como-salva")).toHaveText("Vale depois de “Salvar extras”.");
+      // E606: um modelo só no Passo 5 — a mesma frase nos três blocos.
+      await expect(p.getByTestId("ruido-como-salva")).toHaveText("Cada toque salva na hora.");
+      await expect(p.getByTestId("extras-como-salva")).toHaveText("Cada toque salva na hora.");
       await expect(p.getByTestId("estrutura-como-salva")).toHaveText("Cada toque salva na hora.");
       await p.getByTestId("ruido-form").scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t682-passo5-${w}.png` });
