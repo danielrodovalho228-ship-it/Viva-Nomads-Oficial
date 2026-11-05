@@ -533,7 +533,8 @@
         "t489-e176-menus",
         "t588-varredura-bloco46",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t853-busca-conta-teste"
+        "t853-busca-conta-teste",
+        "t1125-e572-preco-justo-desligado"
       ]
     },
     "/cidades": {
@@ -2518,7 +2519,8 @@
         "t316-sair-da-viva-51",
         "t319-varredura-bloco10",
         "t467-admin6-rotas",
-        "t420-varredura-bloco37"
+        "t420-varredura-bloco37",
+        "t1125-e572-preco-justo-desligado"
       ]
     },
     "/dashboard/imoveis/[id]/desempenho": {
