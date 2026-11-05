@@ -16,6 +16,7 @@ import type { Property } from "@/lib/types";
 import { formatBRL } from "./utils.ts";
 import type { LimpezaEstadia } from "./anuncio/limpeza-estadia.ts";
 import { comissaoSobreContrato } from "./cobranca/regra.ts";
+import { DIAS_DO_MES, mesesDeReferencia, totalDaEstadia } from "./estadia-em-dias.ts";
 
 export interface TudoIncluido {
   aluguel: number;
@@ -284,6 +285,86 @@ export function estadiaDoImovel(p: Parameters<typeof precoDoImovel>[0], meses: n
   return { meses: r.meses, total: r.totalContrato, conta };
 }
 
+/*
+  E562 (telas): a estadia do ANÚNCIO em DIAS exatos, pela regra única (totalDaEstadia) — a mesma da proposta. A barra
+  lateral do anúncio e os passos 1 e 3 do "Pedir para morar" usam esta função com os dias da seleção; a montagem da
+  proposta parte dos MESMOS termos (termosDaEstadiaDoImovel), então os dois lados dão o mesmo total.
+  Ex.: VN-4A693A, 43 dias: R$ 3.050,00 × 43 dias ÷ 30 (1 mês + 13 dias) + limpeza de preparação R$ 300,00 = R$ 4.671,67.
+*/
+
+/** Os termos da estadia que saem do anúncio — os campos de totalDaEstadia (sem os dias). Fonte única do anúncio e da proposta. */
+export interface TermosEstadiaDoImovel {
+  mensal: number;
+  condominio: number;
+  consumo: number;
+  limpezasMes: number;
+  /** Valor de UMA limpeza do pacote (valor do pacote por mês ÷ limpezas por mês). */
+  valorLimpeza: number;
+  /** Preparação + saída (entram inteiras). */
+  limpezaUnica: number;
+  unicos: ParcelaPreco[];
+}
+
+export function termosDaEstadiaDoImovel(p: Parameters<typeof precoDoImovel>[0]): TermosEstadiaDoImovel {
+  const inc = calcularTudoIncluido(p);
+  const porMes = p.limpezaEstadia && p.limpezaEstadia.porMes > 0 ? p.limpezaEstadia.porMes : 0;
+  const unicos = precoDoImovel(p).unicos;
+  return {
+    mensal: inc.aluguel,
+    condominio: inc.condominio,
+    consumo: inc.consumoFixo,
+    limpezasMes: porMes,
+    valorLimpeza: porMes > 0 && p.limpezaEstadia ? centavos(p.limpezaEstadia.valorMes / porMes) : 0,
+    limpezaUnica: centavos(unicos.reduce((s, u) => s + u.valor, 0)),
+    unicos,
+  };
+}
+
+/** "R$ 3.050" (inteiro) / "R$ 4.671,67" (com centavos) — a estadia em dias quase nunca dá real inteiro. */
+export function formatBRLExato(v: number): string {
+  const inteiro = Math.abs(v - Math.round(v)) < 0.005;
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: inteiro ? 0 : 2 }).format(v);
+}
+
+/** "1 mês + 13 dias", "2 meses", "29 dias" — os dias da estadia em meses de 30 dias e o resto. */
+export function periodoPorExtenso(dias: number): string {
+  const d = Math.max(0, Math.round(Number(dias) || 0));
+  const m = Math.floor(d / DIAS_DO_MES);
+  const r = d % DIAS_DO_MES;
+  const meses = m > 0 ? `${m} ${m === 1 ? "mês" : "meses"}` : "";
+  const resto = r > 0 ? `${r} ${r === 1 ? "dia" : "dias"}` : "";
+  return [meses, resto].filter(Boolean).join(" + ") || "0 dias";
+}
+
+/** "Total da estadia (43 dias)". */
+export function rotuloTotalDaEstadia(dias: number): string {
+  const d = Math.max(0, Math.round(Number(dias) || 0));
+  return `Total da estadia (${d} ${d === 1 ? "dia" : "dias"})`;
+}
+
+export interface EstadiaDoImovelEmDias {
+  dias: number;
+  total: number;
+  /** "1 mês + 13 dias". */
+  periodo: string;
+  /** "Total da estadia (43 dias)". */
+  rotulo: string;
+  /** A conta por extenso, sem o "= total". */
+  conta: string;
+}
+
+export function estadiaDoImovelEmDias(p: Parameters<typeof precoDoImovel>[0], dias: number): EstadiaDoImovelEmDias | null {
+  const d = Math.round(Number(dias));
+  if (!Number.isFinite(d) || d <= 0) return null;
+  const t = termosDaEstadiaDoImovel(p);
+  const est = totalDaEstadia({ dias: d, mensal: t.mensal, condominio: t.condominio, consumo: t.consumo, limpezasMes: t.limpezasMes, valorLimpeza: t.valorLimpeza, limpezaUnica: t.limpezaUnica });
+  const periodo = periodoPorExtenso(d);
+  const partes = [`${formatBRLExato(est.recorrenteMes)} × ${d} dias ÷ ${DIAS_DO_MES} (${periodo})`];
+  if (est.valorPacote > 0) partes.push(`${est.limpezasPacote} ${est.limpezasPacote === 1 ? "limpeza" : "limpezas"} ${formatBRLExato(est.valorPacote)}`);
+  partes.push(...t.unicos.map((u) => `${u.rotulo.toLowerCase()} ${formatBRLExato(u.valor)}`));
+  return { dias: d, total: est.total, periodo, rotulo: rotuloTotalDaEstadia(d), conta: partes.join(" + ") };
+}
+
 /** "Estadia mínima (3 meses): R$ 10.800,00 · 3 × R$ 3.450,00 + limpeza de saída R$ 450,00" (null com 1 mês). */
 export function linhaEstadiaMinima(p: Parameters<typeof precoDoImovel>[0], meses: number): string | null {
   if (meses <= 1) return null;
@@ -305,6 +386,10 @@ export function estadiaDoCartaoDoDono(p: Parameters<typeof precoDoImovel>[0] & {
 export interface TermosPreco {
   valorMensal: number;
   meses: number;
+  /** E562: dias exatos da estadia (vazio = meses × 30). */
+  dias?: number | null;
+  /** E562: ajuste do dono no pacote de limpezas (vazio = round(limpezas por mês × dias ÷ 30)). */
+  limpezasPacote?: number | null;
   condominio: number;
   consumo: number;
   limpezasMes: number;
@@ -316,6 +401,9 @@ export interface TermosPreco {
 /** Preço de uma PROPOSTA (qualquer versão) ou do contrato que nasceu dela. */
 export function precoDaProposta(t: TermosPreco): PrecoRotulado {
   const qtd = Math.round(Number(t.limpezasMes) || 0);
+  const dias = Math.round(Number(t.dias));
+  // E562: estadia em dias que não fecha meses cheios (ou com pacote de limpezas ajustado) → a regra única em dias.
+  if (Number.isFinite(dias) && dias > 0 && (dias % DIAS_DO_MES !== 0 || t.limpezasPacote != null)) return precoDaPropostaEmDias(t, dias);
   return precoRotulado({
     mensal: t.valorMensal,
     extrasMes: [
@@ -324,9 +412,42 @@ export function precoDaProposta(t: TermosPreco): PrecoRotulado {
       { rotulo: `Limpezas (${qtd}/mês)`, valor: qtd * (Number(t.valorLimpeza) || 0) },
       { rotulo: "Taxa pet", valor: Number(t.taxaPet) || 0 },
     ],
-    meses: t.meses,
+    meses: Number.isFinite(dias) && dias > 0 ? dias / DIAS_DO_MES : t.meses,
     unicos: [{ rotulo: ROTULO_PREPARACAO, valor: Number(t.limpezaUnica) || 0 }],
   });
+}
+
+/**
+ * E562: o preço da proposta em DIAS exatos, pela regra única (totalDaEstadia): "R$ 3.500,00 × 43 dias ÷ 30 + 6 limpezas
+ * R$ 600,00 + preparação R$ 250,00 = R$ 5.866,67". O total por mês e as parcelas do mês seguem as mesmas.
+ */
+function precoDaPropostaEmDias(t: TermosPreco, dias: number): PrecoRotulado {
+  const qtd = Math.round(Number(t.limpezasMes) || 0);
+  const base = precoRotulado({
+    mensal: t.valorMensal,
+    extrasMes: [
+      { rotulo: "Condomínio", valor: Number(t.condominio) || 0 },
+      { rotulo: "Consumo estimado", valor: Number(t.consumo) || 0 },
+      { rotulo: `Limpezas (${qtd}/mês)`, valor: qtd * (Number(t.valorLimpeza) || 0) },
+      { rotulo: "Taxa pet", valor: Number(t.taxaPet) || 0 },
+    ],
+    unicos: [{ rotulo: ROTULO_PREPARACAO, valor: Number(t.limpezaUnica) || 0 }],
+  });
+  const est = totalDaEstadia({
+    dias,
+    mensal: t.valorMensal,
+    condominio: t.condominio,
+    consumo: t.consumo,
+    taxaPet: t.taxaPet,
+    limpezasMes: t.limpezasMes,
+    valorLimpeza: t.valorLimpeza,
+    limpezasPacote: t.limpezasPacote ?? null,
+    limpezaUnica: t.limpezaUnica,
+  });
+  const partes = [`${formatBRLExato(est.recorrenteMes)} × ${dias} dias ÷ ${DIAS_DO_MES}`];
+  if (est.valorPacote > 0) partes.push(`${est.limpezasPacote} ${est.limpezasPacote === 1 ? "limpeza" : "limpezas"} ${formatBRLExato(est.valorPacote)}`);
+  partes.push(...base.unicos.map((u) => `${u.rotulo.toLowerCase()} ${formatBRLExato(u.valor)}`));
+  return { ...base, meses: mesesDeReferencia(dias), totalContrato: est.total, conta: `${partes.join(" + ")} = ${formatBRLExato(est.total)}` };
 }
 
 /** Proposta aceita como o Fechamento a recebe: valor mensal, meses e, quando houver, os termos da versão acordada. */

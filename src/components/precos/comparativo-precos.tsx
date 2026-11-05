@@ -4,6 +4,7 @@ import { COMPARE_ALUGUEL, COMPARE_CONTRATO, COMPARE_MESES, COMPARE_RODAPE, DIFER
 import { reaisInteiros } from "@/config/planos";
 import { pctTexto } from "@/lib/cobranca/regra";
 import { cartoesCompare, type CartaoCompare } from "@/lib/precos-pagina";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 
 /**
  * "Compare" — regra única de 12% × o que o mercado cobra. Números só de
@@ -68,11 +69,14 @@ export function ComparativoPrecos({ variante = "completo" }: { variante?: "compl
             </div>
           )}
         </div>
-        <p className="mt-3 text-sm">
-          <Link href="/precos#compare" className="alvo-toque web-only font-medium text-forest underline">
-            Ver a comparação completa
-          </Link>
-        </p>
+        {/* E563: o link para a página de preços só com a chave ligada. */}
+        {PRECOS_VISIVEL && (
+          <p className="mt-3 text-sm">
+            <Link href="/precos#compare" className="alvo-toque web-only font-medium text-forest underline">
+              Ver a comparação completa
+            </Link>
+          </p>
+        )}
         <p className="mt-3 text-xs text-muted">{COMPARE_RODAPE}</p>
       </div>
     );

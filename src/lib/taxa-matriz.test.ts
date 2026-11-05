@@ -120,15 +120,16 @@ test("17/R9. arredondamento em centavos, uma vez, no fim: telas diferentes batem
 
 /* ── C. Faixas ─────────────────────────────────────────────────────────────────────────────────── */
 
-test("19. faixas 12/10/8/6 nos limites exatos 2→3, 5→6, 15→16, 30→31; 31+ público 'Negociado', interno 6%", () => {
-  const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [30, 0.06], [31, 0.06], [80, 0.06]];
+test("19. faixas 12/10/8/6/4 nos limites exatos 2→3, 5→6, 15→16, 19→20 (E564: 20+ = Plano Gestor, 4%; sem 'Negociado')", () => {
+  const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [19, 0.06], [20, 0.04], [80, 0.04]];
   for (const [n, taxa] of casos) assert.equal(faixaPorImoveisAtivos(n).taxa, taxa, `${n} imóveis`);
-  assert.equal(faixaPorImoveisAtivos(31).negociavel, true);
-  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "Negociado");
-  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(30)), "6%");
-  // A migração 0171 preenche as propostas antigas com as MESMAS faixas.
+  assert.equal(faixaPorImoveisAtivos(31).negociavel, undefined);
+  assert.equal(faixaPorImoveisAtivos(20).gestor, true);
+  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "4%");
+  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(19)), "6%");
+  // A migração 0171 (histórica) preencheu as propostas antigas com as faixas da época (até 15 = as mesmas de hoje).
   const sql = ler("../../supabase/migrations/0171_propostas_taxa_no_envio.sql");
-  for (const f of FAIXAS_COMISSAO_PADRAO.filter((x) => x.maxImoveis != null && x.maxImoveis < 30)) {
+  for (const f of FAIXAS_COMISSAO_PADRAO.filter((x) => x.maxImoveis != null && x.maxImoveis < 16)) {
     assert.match(sql, new RegExp(`when count\\(\\*\\) <= ${f.maxImoveis} then ${f.taxa.toFixed(2)}`), `faixa até ${f.maxImoveis}`);
   }
   assert.match(sql, /else 0\.06/, "16+ (inclusive o Gestor) a 6%");
@@ -317,7 +318,8 @@ test("33. toda taxa aplicada guarda a origem e a faixa no momento (proposta e ca
 
 test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca recebe a taxa", () => {
   const acoes = ler("./data/propostas-actions.ts");
-  assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, Number\(v\.meses\), tx\.taxa_no_envio\);/);
+  // E562: a base escrita em dias ÷ 30 (meses cheios dão os meses de antes).
+  assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, tot\.dias \/ 30, tx\.taxa_no_envio\);/);
   // E205-B: o aceite manda os dois e-mails (emailsDoAceite) — a taxa vai SÓ no do dono.
   assert.match(acoes, /await emailsDoAceite\(admin, p, termosDaLinha\(v\), linhaTaxa\);/);
   const ini = acoes.indexOf("async function emailsDoAceite(");

@@ -54,7 +54,8 @@ export default async function EditarImovelPage({
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      fatos = (await fatosDosImoveis(supabase, user.id, [id])).get(id) ?? null;
+      // E567: a mesma fonte do Início e de Meus imóveis (com a qualificação do rascunho) — um percentual por anúncio.
+      fatos = (await fatosDosImoveis(supabase, user.id, [id], { qualificacaoDoRascunho: true })).get(id) ?? null;
       if (property.status === "paused") {
         const { data: m } = await supabase.from("properties").select("pausa_motivo").eq("id", id).maybeSingle();
         pausaMotivo = (m as { pausa_motivo?: string | null } | null)?.pausa_motivo ?? null;

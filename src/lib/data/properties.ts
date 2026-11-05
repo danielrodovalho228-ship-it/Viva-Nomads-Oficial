@@ -16,7 +16,7 @@ import { avisosDoMotor, COLUNAS_IMOVEL_PRECO, totalVivaDoImovel, type ImovelPara
 import { capaDoDraftData, ehUrlDeImagem, soFotosExistentes } from "@/lib/fotos-anuncio";
 import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { signAvatarPath } from "@/lib/data/avatar-url";
-import { semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
+import { ehAnuncioDeTeste, semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
@@ -374,7 +374,8 @@ async function donosDeTeste(linhas: PropertyRow[]): Promise<Set<string>> {
  * Fora da vitrine pública: anúncio com a marca de teste no título E anúncio de conta de teste (E93 + E131). Filtra as
  * LINHAS do banco (o owner_id não vai para o Property que chega ao navegador).
  */
-async function semAnunciosDeTesteNaVitrine(linhas: PropertyRow[]): Promise<Property[]> {
+async function semAnunciosDeTesteNaVitrine(linhas: PropertyRow[], incluirTeste = false): Promise<Property[]> {
+  if (incluirTeste) return comAnunciosDeTesteMarcados(linhas);
   const semMarca = semAnunciosDeTeste(linhas);
   const semConta = semAnunciosDeContaTeste(
     semMarca.map((r) => ({ ...r, ownerId: r.owner_id ?? null })),
@@ -383,7 +384,19 @@ async function semAnunciosDeTesteNaVitrine(linhas: PropertyRow[]): Promise<Prope
   return semConta.map(rowToProperty).map(comCoordenadaAproximada);
 }
 
-export async function listProperties(): Promise<Property[]> {
+/**
+ * E571 (decisão do Daniel, 04/11/2026): só para a busca de uma CONTA DE TESTE logada — os anúncios de teste ativos
+ * entram, marcados com `deTeste` (fora do JSON-LD e de qualquer saída pública). Ninguém mais recebe essa lista.
+ */
+async function comAnunciosDeTesteMarcados(linhas: PropertyRow[]): Promise<Property[]> {
+  const contasTeste = await donosDeTeste(linhas);
+  return linhas.map((r) => {
+    const p = comCoordenadaAproximada(rowToProperty(r));
+    return ehAnuncioDeTeste(r.title) || (r.owner_id != null && contasTeste.has(r.owner_id)) ? { ...p, deTeste: true } : p;
+  });
+}
+
+export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): Promise<Property[]> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
   if (!supabase) return SAMPLE_PROPERTIES;
@@ -407,7 +420,8 @@ export async function listProperties(): Promise<Property[]> {
     // Imóveis reais + anúncios demo (enquanto o flag estiver ligado), sem 500.
     if (error || !data) return withDemos([]);
     // Anúncio de teste do QA (marca no título ou conta de teste — E131) nunca aparece ao visitante.
-    const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
+    // E571: a conta de teste logada (só ela, decidido no servidor pela página da busca) vê os anúncios de teste.
+    const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[], opcoes.incluirTeste === true);
     await attachCoverPhotos(supabase, mapped); // capa real para os cards (best-effort)
     await attachReviewAggregates(supabase, mapped); // nota/contagem REAL (fonte única)
     await attachComodidadesFiltro(supabase, mapped); // Wi-Fi/cozinha/garagem/lavar, para os filtros da busca (best-effort)

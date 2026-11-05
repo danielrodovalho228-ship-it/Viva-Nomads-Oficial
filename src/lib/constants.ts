@@ -1,5 +1,6 @@
 import type { Persona } from "./types";
 import { PLANOS, COMISSAO_POR_PLANO } from "@/config/planos";
+import { comPortasDePrecos } from "@/config/precos-visivel";
 
 /** Os 4 perfis de público-alvo (seção 0 do documento mestre). */
 export const PERSONAS: Persona[] = [
@@ -38,15 +39,16 @@ export const PERSONAS: Persona[] = [
  * texto e "Entrar" à direita. "Anunciar" tem um nome só em todo o site. Como funciona, Preços e Parceiros ficam no
  * rodapé.
  */
-export const PUBLIC_NAV = [
+export const PUBLIC_NAV = comPortasDePrecos([
   { href: "/buscar", label: "Imóveis" },
   { href: "/dashboard/imoveis/novo", label: "Anunciar" },
   { href: "/empresas", label: "Empresas" },
   // E458 (Relay 58): "Parceiros" no menu público — a porta com os dois caminhos (encontrar / ser parceiro).
   { href: "/parceiros", label: "Parceiros" },
   // E555 (pacote Planos): "Planos" no menu público — /planos leva à página de planos e taxas (next.config → /precos).
+  // E563: suspenso enquanto a chave PRECOS_VISIVEL estiver desligada (volta sozinho ao ligar).
   { href: "/planos", label: "Planos" },
-] as { href: string; label: string }[];
+] as { href: string; label: string }[]);
 
 /** "Fale com a Viva" em texto no topo público (a mesma página de ajuda do link da /buscar). */
 // E84: "Fale com a Viva" tem página própria (a Central de ajuda é o /ajuda).

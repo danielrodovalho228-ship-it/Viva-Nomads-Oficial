@@ -87,7 +87,7 @@ const PLANOS_BASE: Plano[] = [
     publico: "Administradoras e coordenadores",
     precoMensal: null, // sob consulta
     assinaturaAnual: null,
-    comissao: 0, // COMISSÃO ZERO no topo (C1) — a receita é só a assinatura
+    comissao: 0.04, // E564 (04/11/2026): Gestor = taxa de 4% por contrato, sem assinatura nem taxa zero
     limiteAnuncios: 999,
     destaque: false,
     beneficios: [
@@ -96,7 +96,7 @@ const PLANOS_BASE: Plano[] = [
       "Feito para administradoras — recursos de carteira em construção com os primeiros gestores parceiros",
       "Atendimento dedicado",
     ],
-    custoLabel: "Taxa de serviço zero — você paga só a assinatura",
+    custoLabel: "Taxa de serviço de 4% do valor total do contrato, sem assinatura",
     cta: "Falar com vendas",
   },
 ];
@@ -218,37 +218,26 @@ export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): numb
 }
 
 /**
- * Preço do Gestor (decisão do Daniel, out/2026): R$ 500/mês com 20 imóveis
- * incluídos + R$ 25 por imóvel adicional, comissão zero. Nos cartões aparece
- * como "a partir de R$ 500/mês". Entra nos comparativos só a partir de
- * `minimoImoveis`: com 19 imóveis o Gestor (R$ 6.000) já sairia mais barato
- * que o Profissional (R$ 6.108 no cenário Residência médica) e o canibalizaria.
- * `precoMensal` do plano continua null (ativação com o time), então os painéis
- * que tratam "sob consulta" não mudam.
+ * E564 (decisão do Daniel, 04/11/2026; desenho validado nos Relays 68–70): o Plano Gestor é a TAXA de 4% por contrato
+ * para carteiras de `minimoImoveis`+ imóveis ativos de verdade (E565) ou conta de administradora. Sem assinatura no
+ * lançamento: saíram a mensalidade de R$ 500 com 20 imóveis incluídos, os R$ 25 por imóvel extra e a taxa zero.
+ * A faixa "31+ negociável" deixou de existir. A fase 2 (equipe/permissões, operações em massa, sincronização,
+ * mensalidade-mínimo) é desenho futuro, fora desta regra. A faixa de 4% está em lib/cobranca/regra.ts.
  */
 export const GESTOR_PRECO = {
   ligado: true,
-  mensalBase: 500,
-  imoveisInclusos: 20,
-  porImovelAdicional: 25,
   minimoImoveis: 20,
+  taxa: 0.04,
 } as const;
 
 /**
- * E321 (01/11): a PORTA do Plano Gestor, igual em todas as telas — N+ imóveis com documento aprovado OU conta de
- * administradora (a mesma regra de gestorElegivel). Não confundir com a faixa "31+ · taxa negociável" da tabela de taxa,
- * que é regra de TAXA e vale para qualquer anunciante pela quantidade de imóveis ativos.
+ * E321/E564: a PORTA do Plano Gestor, igual em todas as telas — N+ imóveis ativos de verdade (publicados, com documento
+ * aprovado e calendário em dia) OU conta de administradora (a mesma regra de gestorElegivel e da faixa de 4%).
  */
-export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mais com documento aprovado, ou conta de administradora`;
+export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mais ativos (publicados, com documento aprovado e calendário em dia), ou conta de administradora`;
 
-/** Assinatura anual do Gestor para `imoveis` imóveis (base + adicionais acima dos inclusos). */
-export function assinaturaAnualGestor(imoveis: number): number {
-  const n = Math.max(1, Math.round(Number(imoveis) || 1));
-  return 12 * (GESTOR_PRECO.mensalBase + GESTOR_PRECO.porImovelAdicional * Math.max(0, n - GESTOR_PRECO.imoveisInclusos));
-}
-
-/** "a partir de R$ 500/mês · taxa de serviço zero · para carteiras de 20+ imóveis" */
-export const GESTOR_RESUMO = `a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês · taxa de serviço zero · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
+/** "taxa de 4% por contrato · sem assinatura · para carteiras de 20+ imóveis" */
+export const GESTOR_RESUMO = `taxa de ${`${Math.round(GESTOR_PRECO.taxa * 1000) / 10}`.replace(".", ",")}% por contrato · sem assinatura · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T59 — F49: o botão flutuante "Fale com a Viva" nunca tampa botão/campo (360/390 px).
@@ -120,7 +121,7 @@ test("4f8d17c6 — flutuante idêntico em /, /precos e /como-funciona a 768 e 12
   const estilos = new Set<string>();
   for (const largura of [390, 768, 1280]) {
     await page.setViewportSize({ width: largura, height: 800 });
-    for (const rota of ["/", "/precos", "/como-funciona"]) {
+    for (const rota of ["/", ...comPrecos("/precos"), "/como-funciona"]) {
       if (largura === 390) {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("fale-com-a-viva"), `${rota} a 390px`).toBeHidden();

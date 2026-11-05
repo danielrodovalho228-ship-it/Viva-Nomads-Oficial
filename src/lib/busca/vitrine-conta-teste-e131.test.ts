@@ -46,7 +46,9 @@ test("sem contas de teste conhecidas (falha na leitura), nada muda além da marc
 
 test("a vitrine pública (busca, home, cidades, página do proprietário) filtra pela conta de teste, nas linhas do banco", () => {
   const s = readFileSync(new URL("../data/properties.ts", import.meta.url), "utf8");
-  assert.equal((s.match(/await semAnunciosDeTesteNaVitrine\(data as unknown as PropertyRow\[\]\)/g) ?? []).length, 2, "listProperties e listPropertiesDoProprietario");
+  // E571: a listProperties passa a opção da conta de teste (falsa para o público); a do proprietário segue sem ela.
+  assert.equal((s.match(/await semAnunciosDeTesteNaVitrine\(data as unknown as PropertyRow\[\]\)/g) ?? []).length, 1, "listPropertiesDoProprietario");
+  assert.equal((s.match(/await semAnunciosDeTesteNaVitrine\(data as unknown as PropertyRow\[\], opcoes\.incluirTeste === true\)/g) ?? []).length, 1, "listProperties");
   assert.match(s, /\.from\("profiles"\)\.select\("id"\)\.in\("id", donos\)\.eq\("is_teste", true\)/, "só os ids das contas de teste");
   assert.doesNotMatch(s, /ownerId: row\.owner_id/, "o owner_id não vai para o Property público");
 });

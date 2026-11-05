@@ -99,6 +99,21 @@ export function tituloDoAviso(assuntoDoCatalogo: string): string {
   return assuntoDoCatalogo.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Aviso da Viva Nomads";
 }
 
+/** Rótulo do morador para o dono ANTES do aceite (regra de máscara do prompt 6 / E427): nunca nome, foto ou contato. */
+export const CANDIDATO_MASCARADO = "Candidato(a)";
+
+/**
+ * E570: o aviso de candidatura no sino nomeia quem se candidatou (pela regra de máscara: "Candidato(a)" até o aceite)
+ * e o imóvel — antes era "Nova candidatura no seu imóvel", e o dono adivinhava pelo horário qual era.
+ * "Nova candidatura de Candidato(a) para Casa mobiliada no Centro". Imóvel vazio: "para o seu imóvel".
+ */
+export function tituloAvisoCandidatura(e: { candidato?: string | null; imovel?: string | null }): string {
+  const limpa = (s: string | null | undefined) => String(s ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim();
+  const candidato = limpa(e.candidato) || CANDIDATO_MASCARADO;
+  const imovel = limpa(e.imovel).slice(0, 90);
+  return tituloDoAviso(`Nova candidatura de ${candidato} para ${imovel || "o seu imóvel"}`);
+}
+
 /** Destino do aviso: só caminho interno ("/rota"), nunca URL externa. */
 export function urlDoAviso(u: string | null | undefined): string | null {
   const s = String(u ?? "");

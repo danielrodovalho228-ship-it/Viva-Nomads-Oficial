@@ -52,10 +52,12 @@ const meses = (n: number) => `${n} ${n === 1 ? "mês" : "meses"}`;
  * E210: "DD/MM/AAAA a DD/MM/AAAA (N meses)" com as datas reais. Sem as duas datas, nunca "a " vazio: só os meses
  * (o contrato sem blocos não tem período gravado — em produção, todo contrato tem blocos).
  */
-export function textoPeriodo(inicio: string | null | undefined, fim: string | null | undefined, n: number): string {
+export function textoPeriodo(inicio: string | null | undefined, fim: string | null | undefined, n: number, dias?: number | null): string {
   const de = dataBR(inicio);
   const ate = dataBR(fim);
-  return de && ate ? `${de} a ${ate} (${meses(n)})` : meses(n);
+  // E562: estadia em dias exatos que não fecha meses cheios → "(43 dias)".
+  const duracao = dias != null && dias > 0 && dias % 30 !== 0 ? `${dias} dias` : meses(n);
+  return de && ate ? `${de} a ${ate} (${duracao})` : duracao;
 }
 
 /** Linhas do quadro de dados de uma proposta (nova, contraproposta ou respondida). */
@@ -65,6 +67,8 @@ export function linhasProposta(o: {
   entrada: string;
   saida: string;
   meses: number;
+  /** E562: dias exatos da estadia (vazio = meses cheios). */
+  dias?: number | null;
   valorMensal: number;
   /** A conta aberta do total, a mesma da tela ("4 × R$ 2.700 + preparação R$ 450 = R$ 11.250"). */
   contaTotal: string;
@@ -73,9 +77,10 @@ export function linhasProposta(o: {
 }): LinhaDado[] {
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: textoPeriodo(o.entrada, o.saida, o.meses) },
+    { rotulo: "Período", valor: textoPeriodo(o.entrada, o.saida, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
-    { rotulo: "Total do contrato", valor: o.contaTotal },
+    // E562 (telas): estadia em dias exatos → o mesmo rótulo do anúncio e da montagem, "Total da estadia (43 dias)".
+    { rotulo: o.dias != null && o.dias > 0 && o.dias % 30 !== 0 ? `Total da estadia (${o.dias} dias)` : "Total do contrato", valor: o.contaTotal },
   ];
   const prazo = dataHoraBR(o.responderAte);
   if (prazo) linhas.push({ rotulo: "Responder até", valor: prazo });
@@ -84,12 +89,17 @@ export function linhasProposta(o: {
 }
 
 /** Linhas do quadro de dados de um contrato (pronto para assinar ou assinado). */
-export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: string; meses: number; valorMensal: number }): LinhaDado[] {
+export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: string; meses: number; valorMensal: number; dias?: number | null }): LinhaDado[] {
+  // E562: contrato em dias exatos → "R$ 3.000 × 43 dias ÷ 30 = R$ 4.300" (em meses cheios, como antes).
+  const emDias = o.dias != null && o.dias > 0 && o.dias % 30 !== 0;
+  const total = emDias
+    ? `${brl(o.valorMensal)} × ${o.dias} dias ÷ 30 = ${brl(Math.round(((o.valorMensal * (o.dias as number)) / 30) * 100) / 100)}`
+    : `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}`;
   return [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses) },
+    { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
-    { rotulo: "Total do contrato", valor: `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}` },
+    { rotulo: "Total do contrato", valor: total },
   ];
 }
 

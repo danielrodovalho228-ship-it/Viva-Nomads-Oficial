@@ -47,6 +47,7 @@ import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
+import { CANDIDATO_MASCARADO, tituloAvisoCandidatura } from "@/lib/notifications/avisos";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
@@ -78,14 +79,15 @@ import { hojeBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import {
   resumoContrato,
+  resumoContratoEmDias,
   encadearDatas,
-  DIAS_POR_MES,
   MESES_POR_BLOCO_PADRAO,
   PRAZO_MIN_MESES,
   PRAZO_MAX_MESES,
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
+import { diasValidos } from "@/lib/estadia-em-dias";
 import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
@@ -1454,7 +1456,8 @@ export async function registrarContrato(
   }
 
   const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
-  if (!(prazo >= PRAZO_MIN_MESES && prazo <= PRAZO_MAX_MESES))
+  // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
+  if (acordada ? !diasValidos(acordada.dias) : !(prazo >= PRAZO_MIN_MESES && prazo <= PRAZO_MAX_MESES))
     return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${PRAZO_MAX_MESES} meses, até ${PRAZO_MAX_DIAS} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
@@ -1470,10 +1473,11 @@ export async function registrarContrato(
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
   const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
-  const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
+  // E562: pela proposta, blocos de até 90 dias contados em dias (valor, caução e taxa proporcionais aos dias).
+  const resumo = acordada ? resumoContratoEmDias(acordada.dias, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
   // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
   const garantia: GarantiaContrato = input.garantia === "seguro_fianca" ? "seguro_fianca" : "caucao";
-  const okGarantia = validarGarantia(garantia, resumo.prazoTotalMeses * DIAS_POR_MES);
+  const okGarantia = validarGarantia(garantia, resumo.prazoTotalDias);
   if (!okGarantia.ok) return { ok: false, error: okGarantia.error };
 
   // Disponibilidade por datas (0176): o período inteiro (1º início ao último fim) não pode cruzar outro contrato ativo.
@@ -1490,7 +1494,7 @@ export async function registrarContrato(
       tenant_id: lead.tenant_id,
       owner_plan: plano,
       faixa: input.faixa,
-      prazo_total_dias: resumo.prazoTotalMeses * DIAS_POR_MES,
+      prazo_total_dias: resumo.prazoTotalDias,
       aluguel_mensal: aluguel,
       tamanho_bloco_meses: resumo.tamanhoBlocoMeses,
       comissao_percent: resumo.comissaoPercent,
@@ -1538,7 +1542,7 @@ export async function registrarContrato(
       // E202: o e-mail do contrato pronto diz o imóvel, o período, o valor mensal e o total (não só "Há uma atualização").
       const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
       const imovelEmail = { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
-      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel });
+      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias });
       await notify({
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
@@ -1793,8 +1797,14 @@ export async function requestLead(
       phone: ownerPhone ?? undefined,
       name: ownerName ?? undefined,
       userId: ownerId ?? undefined,
-      pushUrl: corpo && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
+      // E570: o clique cai no cartão DESTA candidatura (mesmo sem o corpo do e-mail).
+      pushUrl: kind === "candidatura" && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
       imovelId: propertyId,
+      // E570: no sino, a candidatura nomeia o morador (máscara: "Candidato(a)" até o aceite) e o imóvel, e o clique cai
+      // no cartão DESTA candidatura (refId = a candidatura).
+      ...(kind === "candidatura" && leadId
+        ? { tituloAviso: tituloAvisoCandidatura({ candidato: CANDIDATO_MASCARADO, imovel: propertyTitle }), refId: leadId, papelAviso: "dono" as const }
+        : {}),
       ...(corpo ? { body: corpo.body } : {}),
       detailsHtml: pessoa ? pessoa.html + (detailsHtml ?? "") : detailsHtml,
       detailsText: pessoa ? [pessoa.texto, detailsText ?? ""].filter(Boolean).join("\n") : detailsText,

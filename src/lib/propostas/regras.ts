@@ -3,7 +3,8 @@
   rodadas, o que cada lado pode mudar e o histórico. O servidor (propostas-actions.ts) usa estas funções antes de
   gravar; a tela usa as mesmas para mostrar o total. A proposta é documento, não cobrança: a Viva não recebe valor.
 */
-import { comissaoSobreContrato, rotuloTaxaServico, taxaNaAssinatura } from "../cobranca/regra.ts";
+import { comissaoSobreContrato, comissaoSobreDias, rotuloTaxaServico, taxaNaAssinatura } from "../cobranca/regra.ts";
+import { DIAS_DO_MES, DIAS_MAX_ESTADIA, DIAS_MIN_ESTADIA, mesesCompletos, mesesDeReferencia, totalDaEstadia } from "../estadia-em-dias.ts";
 import { descontoParaMeses, PCT_MAX, type FaixaDesconto, type ItemNegociavel, type Negociacao } from "../anuncio/negociacao.ts";
 
 export type StatusProposta =
@@ -98,7 +99,13 @@ export interface TermosProposta {
   motivoDesconto: string | null;
   /** Desconto automático por estadia mais longa (faixas do anúncio), em %. */
   descontoEstadiaPct: number;
+  /** Referência derivada dos dias (ceil(dias ÷ 30)); nas propostas antigas, a duração. */
   meses: number;
+  /**
+   * E562: a duração em DIAS exatos (30 a 180). Vazio (proposta antiga ou tela que ainda manda meses) = meses × 30.
+   * Leia sempre por `diasDosTermos`.
+   */
+  dias?: number;
   /** AAAA-MM-DD */
   dataEntrada: string;
   condominio: number;
@@ -108,6 +115,15 @@ export interface TermosProposta {
   taxaPet: number;
   /** Itens únicos (limpeza de preparação/pacote único). */
   limpezaUnica: number;
+  /** E562: ajuste do dono no pacote de limpezas da estadia. Vazio = round(limpezas por mês × dias ÷ 30). */
+  limpezasPacote?: number | null;
+}
+
+/** E562: os dias da estadia — os gravados ou, na proposta antiga, meses × 30. */
+export function diasDosTermos(t: Pick<TermosProposta, "meses" | "dias">): number {
+  const d = Math.round(Number(t.dias));
+  if (Number.isFinite(d) && d > 0) return d;
+  return Math.max(0, Math.round(Number(t.meses) || 0)) * DIAS_DO_MES;
 }
 
 const n = (v: unknown) => (Number.isFinite(Number(v)) ? Math.max(0, Number(v)) : 0);
@@ -128,28 +144,45 @@ export interface TotaisProposta {
   valorMensal: number;
   /** Total por mês: valor mensal + condomínio + consumo + limpezas do mês + taxa pet. */
   totalMensal: number;
-  /** Total do contrato: total por mês × meses + itens únicos. */
+  /** Total do contrato (E562): total por mês × dias ÷ 30 (limpezas pelo pacote) + itens únicos. */
   totalContrato: number;
-  /** Base da taxa de serviço: valor mensal × meses (o valor total dos contratos; nunca encargos nem itens únicos). */
+  /** Base da taxa de serviço: valor mensal × dias ÷ 30 (o aluguel do período; nunca encargos nem itens únicos). */
   baseTaxa: number;
+  /** E562: dias da estadia e o pacote de limpezas que entrou no total. */
+  dias: number;
+  limpezasPacote: number;
 }
 
 export function calcularTotais(t: TermosProposta): TotaisProposta {
   const valorMensal = valorMensalFinal(t);
-  const meses = Math.max(0, Math.round(n(t.meses)));
   const totalMensal = r2(valorMensal + n(t.condominio) + n(t.consumo) + Math.round(n(t.limpezasMes)) * n(t.valorLimpeza) + n(t.taxaPet));
+  // E562: a regra única da estadia em dias (meses cheios dão o mesmo total de antes).
+  const est = totalDaEstadia({
+    dias: diasDosTermos(t),
+    mensal: valorMensal,
+    condominio: t.condominio,
+    consumo: t.consumo,
+    taxaPet: t.taxaPet,
+    limpezasMes: t.limpezasMes,
+    valorLimpeza: t.valorLimpeza,
+    limpezasPacote: t.limpezasPacote ?? null,
+    limpezaUnica: t.limpezaUnica,
+  });
   return {
     valorMensal,
     totalMensal,
-    totalContrato: r2(totalMensal * meses + n(t.limpezaUnica)),
-    baseTaxa: valorMensal * meses,
+    totalContrato: est.dias > 0 ? est.total : r2(n(t.limpezaUnica)),
+    baseTaxa: est.aluguelProporcional,
+    dias: est.dias,
+    limpezasPacote: est.limpezasPacote,
   };
 }
 
-/** Taxa de serviço da Viva (só o proprietário vê): taxa × valor mensal × meses. */
+/** Taxa de serviço da Viva (só o proprietário vê): taxa × valor mensal × dias ÷ 30 (E562; em meses cheios, × meses). */
 export function taxaServicoProposta(t: TermosProposta, taxa: number): number {
   const tot = calcularTotais(t);
-  return comissaoSobreContrato(tot.valorMensal, Math.round(n(t.meses)), taxa);
+  if (tot.dias % DIAS_DO_MES === 0) return comissaoSobreContrato(tot.valorMensal, tot.dias / DIAS_DO_MES, taxa);
+  return comissaoSobreDias(tot.valorMensal, tot.dias, taxa);
 }
 
 /** Taxa congelada no ACEITE da proposta: a da faixa pelos imóveis ativos do proprietário naquele momento. */
@@ -204,9 +237,19 @@ export function mesesDoAnuncio(minPeriodDias: number | null | undefined, maxPeri
   return { min, max };
 }
 
+/** E562: dias permitidos pelo anúncio (prazo mínimo e máximo), dentro de 30 a 180. */
+export function diasDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined): { min: number; max: number } {
+  const min = Math.min(DIAS_MAX_ESTADIA, Math.max(DIAS_MIN_ESTADIA, Math.round(n(minPeriodDias || DIAS_MIN_ESTADIA))));
+  const max = Math.min(DIAS_MAX_ESTADIA, Math.max(min, Math.round(n(maxPeriodDias || DIAS_MAX_ESTADIA))));
+  return { min, max };
+}
+
 export interface LimitesAnuncio {
   mesesMin: number;
   mesesMax: number;
+  /** E562: limites em dias (do anúncio). Sem eles, mesesMin × 30 a mesesMax × 30. */
+  diasMin?: number;
+  diasMax?: number;
   /** Capacidade do imóvel (pessoas); null = sem limite informado. */
   capacidade: number | null;
 }
@@ -214,11 +257,20 @@ export interface LimitesAnuncio {
 /** Validações do servidor (também usadas na tela). Devolve a mensagem do primeiro problema, ou null. */
 export function validarTermos(t: TermosProposta, lim: LimitesAnuncio, hojeISO: string, pessoas?: number | null): string | null {
   if (!(valorMensalFinal(t) > 0) || !(n(t.valorBase) > 0)) return "Informe um valor mensal maior que zero.";
-  const meses = Math.round(Number(t.meses));
-  if (!Number.isFinite(meses) || meses < lim.mesesMin || meses > lim.mesesMax)
-    return lim.mesesMin === lim.mesesMax
-      ? `Este anúncio aceita só ${lim.mesesMin} ${lim.mesesMin === 1 ? "mês" : "meses"}.`
-      : `O número de meses tem de ficar entre ${lim.mesesMin} e ${lim.mesesMax}, como no anúncio.`;
+  if (t.dias == null) {
+    const meses = Math.round(Number(t.meses));
+    if (!Number.isFinite(meses) || meses < lim.mesesMin || meses > lim.mesesMax)
+      return lim.mesesMin === lim.mesesMax
+        ? `Este anúncio aceita só ${lim.mesesMin} ${lim.mesesMin === 1 ? "mês" : "meses"}.`
+        : `O número de meses tem de ficar entre ${lim.mesesMin} e ${lim.mesesMax}, como no anúncio.`;
+  } else {
+    // E562: a estadia em dias exatos, entre 30 e 180 e dentro do prazo do anúncio.
+    const dias = Number(t.dias);
+    const min = Math.max(DIAS_MIN_ESTADIA, lim.diasMin ?? lim.mesesMin * DIAS_DO_MES);
+    const max = Math.min(DIAS_MAX_ESTADIA, lim.diasMax ?? lim.mesesMax * DIAS_DO_MES);
+    if (!Number.isInteger(dias) || dias < min || dias > max)
+      return min === max ? `Este anúncio aceita só ${min} dias.` : `A estadia tem de ficar entre ${min} e ${max} dias, como no anúncio.`;
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(t.dataEntrada) || t.dataEntrada <= hojeISO) return "A data de entrada tem de ser no futuro.";
   if (pessoas != null && lim.capacidade != null && pessoas > lim.capacidade)
     return `O imóvel recebe até ${lim.capacidade} ${lim.capacidade === 1 ? "pessoa" : "pessoas"}.`;
@@ -237,7 +289,8 @@ export const CAMPOS_CONTRAPROPOSTA = [
 ] as const satisfies readonly { campo: keyof TermosProposta; item: ItemNegociavel; rotulo: string }[];
 export type CampoContraproposta = (typeof CAMPOS_CONTRAPROPOSTA)[number]["campo"];
 
-export type Mudancas = Partial<Pick<TermosProposta, CampoContraproposta>>;
+/** E562: `dias` muda a duração em dias exatos (a tela que ainda manda `meses` muda para meses × 30). */
+export type Mudancas = Partial<Pick<TermosProposta, CampoContraproposta | "dias">>;
 
 /**
  * Pode contrapropor? Só com a proposta em andamento, na vez da pessoa, abaixo do máximo de versões e — para o
@@ -265,25 +318,33 @@ export function bloqueioContraproposta(e: {
 export function aplicarContraproposta(anterior: TermosProposta, mudancas: Mudancas, descontos: readonly FaixaDesconto[]): TermosProposta {
   const nova: TermosProposta = { ...anterior };
   if (mudancas.valorBase !== undefined) nova.valorBase = Math.round(n(mudancas.valorBase) * 100) / 100;
-  if (mudancas.meses !== undefined) nova.meses = Math.round(n(mudancas.meses));
+  if (mudancas.dias !== undefined) {
+    nova.dias = Math.round(n(mudancas.dias));
+    nova.meses = mesesDeReferencia(nova.dias);
+  } else if (mudancas.meses !== undefined) {
+    nova.meses = Math.round(n(mudancas.meses));
+    if (anterior.dias != null) nova.dias = nova.meses * DIAS_DO_MES;
+  }
   if (mudancas.dataEntrada !== undefined) nova.dataEntrada = String(mudancas.dataEntrada);
   if (mudancas.limpezasMes !== undefined) nova.limpezasMes = Math.min(8, Math.round(n(mudancas.limpezasMes)));
   if (mudancas.taxaPet !== undefined) nova.taxaPet = n(mudancas.taxaPet);
-  nova.descontoEstadiaPct = descontoParaMeses(descontos, nova.meses);
+  // E562: a faixa de desconto conta os meses COMPLETOS da estadia (43 dias = 1 mês).
+  nova.descontoEstadiaPct = descontoParaMeses(descontos, nova.dias != null ? mesesCompletos(nova.dias) : nova.meses);
   return nova;
 }
 
-/** Campos que mudaram entre duas versões (só os da contraproposta). */
+/** Campos que mudaram entre duas versões (só os da contraproposta). E562: "Meses" compara os DIAS da estadia. */
 export function camposAlterados(a: TermosProposta, b: TermosProposta): CampoContraproposta[] {
-  return CAMPOS_CONTRAPROPOSTA.filter(({ campo }) => String(a[campo]) !== String(b[campo])).map((c) => c.campo);
+  return CAMPOS_CONTRAPROPOSTA.filter(({ campo }) =>
+    campo === "meses" ? diasDosTermos(a) !== diasDosTermos(b) : String(a[campo]) !== String(b[campo]),
+  ).map((c) => c.campo);
 }
 
 /** Itens que o interessado tentou mudar sem o proprietário ter liberado (vazio = tudo certo). */
 export function mudancasProibidas(anterior: TermosProposta, nova: TermosProposta, quem: Autor, itensLiberados: readonly ItemNegociavel[]): string[] {
   if (quem === "owner") return [];
-  return CAMPOS_CONTRAPROPOSTA.filter(({ campo, item }) => String(anterior[campo]) !== String(nova[campo]) && !itensLiberados.includes(item)).map(
-    (c) => c.rotulo,
-  );
+  const mudou = new Set(camposAlterados(anterior, nova));
+  return CAMPOS_CONTRAPROPOSTA.filter(({ campo, item }) => mudou.has(campo) && !itensLiberados.includes(item)).map((c) => c.rotulo);
 }
 
 /** Uma linha do histórico: o que mudou, riscado → novo valor. */
@@ -301,8 +362,13 @@ function formatar(campo: CampoContraproposta, t: TermosProposta): string {
   switch (campo) {
     case "valorBase":
       return brl(t.valorBase);
-    case "meses":
-      return `${t.meses} ${t.meses === 1 ? "mês" : "meses"}`;
+    case "meses": {
+      // E562: em dias exatos, "43 dias"; em meses cheios, como antes.
+      const d = diasDosTermos(t);
+      if (d % DIAS_DO_MES !== 0) return `${d} dias`;
+      const m = d / DIAS_DO_MES;
+      return `${m} ${m === 1 ? "mês" : "meses"}`;
+    }
     case "dataEntrada":
       return dataBr(t.dataEntrada);
     case "limpezasMes":

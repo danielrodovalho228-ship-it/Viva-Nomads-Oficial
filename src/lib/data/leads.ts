@@ -17,6 +17,8 @@ import { textoParaDono, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { donoVeFichaPet, petsVaoNaCandidatura, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
 import { umPorPessoaEImovel } from "@/lib/painel/interessados-unicos";
 import { IDENTIDADE_INDISPONIVEL, identidadeParaOutraParte, type EstadoIdentidade } from "@/lib/identidade/estado";
+import { temDocumento } from "@/lib/data/documento-servidor";
+import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
 export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
@@ -253,4 +255,25 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       fichaPet,
     };
   });
+}
+
+/**
+ * E569: o que falta ao DONO para aceitar candidaturas, mostrado no cartão ANTES de qualquer clique (antes o portão
+ * "informe seu CPF" só surgia depois de "Aprovar"). Hoje é o documento (CPF/CNPJ), a mesma trava de aceitarCandidatura.
+ * Sem sessão: nada. Falha de leitura: nada (o servidor ainda confere no aceite e diz o motivo).
+ */
+export async function pendenciaDoDonoParaAceite(): Promise<{ texto: string; href: string; rotulo: string } | null> {
+  try {
+    const supabase = await createClient();
+    const admin = createAdminClient();
+    if (!supabase || !admin) return null;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    if (await temDocumento(admin, user.id)) return null;
+    return { texto: MSG_DOCUMENTO.aceitar, href: LINK_DOCUMENTO, rotulo: "Informar meu documento" };
+  } catch {
+    return null;
+  }
 }

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T669 — MS-1/PUBLICO-A: topo público simples (Imóveis · Anunciar · Empresas · Parceiros [E458] + "Fale com a Viva" em texto + Entrar
@@ -28,7 +29,7 @@ for (const largura of [1280, 390] as const) {
       await page.screenshot({ path: `${SAIDA}/t669-topo-${largura}.png` });
 
       const rodape = page.locator("footer");
-      for (const [nome, href] of [["Publicar pedido", "/pedidos/novo"], ["Como funciona", "/como-funciona"], ["Preços", "/planos"], ["Parceiros", "/parceiros"]] as const)
+      for (const [nome, href] of [["Publicar pedido", "/pedidos/novo"], ["Como funciona", "/como-funciona"], ...comPrecos(["Preços", "/planos"] as const), ["Parceiros", "/parceiros"]] as const)
         await expect(rodape.getByRole("link", { name: nome, exact: true })).toHaveAttribute("href", href);
       await rodape.scrollIntoViewIfNeeded();
       await rodape.screenshot({ path: `${SAIDA}/t669-rodape-${largura}.png` });

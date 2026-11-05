@@ -117,7 +117,8 @@ test("2. app: aceite da candidatura, aceite da proposta, 'Gerar contrato', renov
   const leads = ler("./data/leads-actions.ts");
   assert.match(leads, /conflitoNoImovel\(admin, datas\.property_id as string, periodoDaEstadia\(String\(datas\.inicio_desejado\)/);
   assert.match(leads, /admin\.from\("leads"\)\.select\("property_id, inicio_desejado"\)/);
-  assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoDaEstadia\(String\(v\.data_entrada\)\.slice\(0, 10\), Number\(v\.meses\)\)\)/);
+  // E562: o aceite confere o período em dias exatos da versão (antigas: meses × 30).
+  assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoEmDias\(String\(v\.data_entrada\)\.slice\(0, 10\), diasDosTermos\(termosDaLinha\(v\)\)\)\)/);
   const acts = ler("./data/actions.ts");
   const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("const LEAD_LIMITE_HORA"));
   assert.ok(reg.indexOf("conflitoNoImovel(") < reg.indexOf('.from("contratos")\n    .insert('), "confere antes de gravar");

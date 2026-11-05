@@ -11,7 +11,8 @@ import { readFileSync } from "node:fs";
 import { statusPorImovel } from "../documento/vigente.ts";
 
 const f = readFileSync("src/lib/data/admin-indicadores.ts", "utf8");
-const fn = f.slice(f.indexOf("export async function imoveisDoBanco("), f.indexOf("export async function imoveisDoBanco(") + 2600);
+// A função inteira (até a próxima exportação), não um número fixo de caracteres: a capa da Onda 5 a deixou mais longa.
+const fn = f.slice(f.indexOf("export async function imoveisDoBanco("), f.indexOf("export function nomeCurtoAdmin("));
 const pg = readFileSync("src/app/(dashboard)/admin/imoveis/page.tsx", "utf8");
 
 test("o caso do 4a693a63: recusa antiga + aprovado novo → o vigente é aprovado (o que o dono vê)", () => {

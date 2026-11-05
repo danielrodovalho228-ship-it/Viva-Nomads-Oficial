@@ -4,10 +4,10 @@
  * Gestor é plano de ELEGIBILIDADE, não de prateleira: disponível só para
  *  (a) contas do tipo 'gestor' (administradora — marcada por admin, com
  *      auditoria); ou
- *  (b) proprietários com 20+ imóveis de documentação APROVADA — o mesmo
- *      mínimo do preço do Gestor (GESTOR_PRECO.minimoImoveis, config/planos):
- *      abaixo disso o Profissional sai mais barato e o Gestor só tiraria
- *      comissão de quem tem poucos imóveis de aluguel alto.
+ *  (b) proprietários com 20+ imóveis ATIVOS DE VERDADE (E565: publicados, com
+ *      documento aprovado e calendário em dia) — GESTOR_PRECO.minimoImoveis.
+ * E564: o Gestor é a taxa de 4% por contrato, sem assinatura; vale sozinho nos
+ * próximos contratos (a mesma faixa de lib/cobranca/regra.ts).
  * Sem elegibilidade, o card do Gestor vira META ("valide N imóveis para
  * desbloquear") + venda assistida ("Fale com a gente"), nunca porta muda.
  */
@@ -20,7 +20,7 @@ export type AccountType = "individual" | "gestor";
 export interface GestorSinais {
   /** Tipo da conta (profiles.account_type). */
   accountType: AccountType | string | null | undefined;
-  /** Nº de imóveis do dono com documentação aprovada (moderação). */
+  /** Nº de imóveis do dono que contam para a faixa (E565: ativos de verdade). */
   imoveisValidados: number;
 }
 
@@ -37,19 +37,19 @@ export function faltamParaGestor(imoveisValidados: number): number {
 
 /** Motivo da elegibilidade (para a UI explicar o caminho). */
 export function motivoGestor(s: GestorSinais): string {
-  if (s.accountType === "gestor") return "Conta de administradora (Gestor liberado).";
+  if (s.accountType === "gestor") return "Conta de administradora: Plano Gestor, taxa de 4%.";
   const faltam = faltamParaGestor(s.imoveisValidados);
-  if (faltam === 0) return `Você tem ${GESTOR_MIN_IMOVEIS_VALIDADOS}+ imóveis validados — Gestor liberado.`;
-  return `Valide ${faltam} imóvel(is) para desbloquear o Gestor (${s.imoveisValidados ?? 0}/${GESTOR_MIN_IMOVEIS_VALIDADOS}).`;
+  if (faltam === 0) return `Você tem ${GESTOR_MIN_IMOVEIS_VALIDADOS}+ imóveis ativos: Plano Gestor, taxa de 4%.`;
+  return `Ative ${faltam} imóvel(is) para chegar ao Plano Gestor (${s.imoveisValidados ?? 0}/${GESTOR_MIN_IMOVEIS_VALIDADOS}).`;
 }
 
 /**
- * E224 — a linha do Plano Gestor na Conta (proprietário). Sem botão de assinar: não há cobrança ligada; quem já está
- * liberado fala com a Viva para ativar.
+ * E224/E564 — a linha do Plano Gestor na Conta (proprietário). Sem assinatura: a taxa de 4% vale sozinha nos próximos
+ * contratos de quem chega lá.
  */
 export function textoElegibilidadeGestor(e: { elegivel: boolean; imoveisValidados: number; faltam: number }): string {
-  if (e.elegivel) return "Liberado. Fale com a Viva para ativar.";
-  return `Plano Gestor: liberado com ${GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis com documento aprovado. Você tem ${e.imoveisValidados}; faltam ${e.faltam}.`;
+  if (e.elegivel) return "Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.";
+  return `Plano Gestor: taxa de 4% com ${GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis ativos (publicados, com documento aprovado e calendário em dia). Você tem ${e.imoveisValidados}; faltam ${e.faltam}.`;
 }
 
 /** E224 — como o admin vê o tipo da conta (os valores são os que definirAccountType aceita). */

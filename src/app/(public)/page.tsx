@@ -38,6 +38,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -299,6 +300,8 @@ export default async function HomePage() {
                   Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
                 {/* E555: cartão "Planos e taxas" (no lugar do "Ver preços" solto, que ia para a mesma página). */}
+                {/* E563: suspenso enquanto a chave PRECOS_VISIVEL estiver desligada. */}
+                {PRECOS_VISIVEL && (
                 <Link
                   href="/planos"
                   data-testid="home-planos-taxas"
@@ -310,6 +313,7 @@ export default async function HomePage() {
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0 text-white" aria-hidden />
                 </Link>
+                )}
               </div>
             </div>
           </div>

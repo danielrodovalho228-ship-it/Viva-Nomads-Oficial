@@ -14,7 +14,9 @@ const FAIXAS: [number, number, string][] = [
   [6, 0.08, "8%"],
   [15, 0.08, "8%"],
   [16, 0.06, "6%"],
-  [30, 0.06, "6%"],
+  [19, 0.06, "6%"],
+  [20, 0.04, "4%"],
+  [80, 0.04, "4%"],
 ];
 
 for (const [imoveis, taxa, texto] of FAIXAS) {
@@ -29,10 +31,11 @@ for (const [imoveis, taxa, texto] of FAIXAS) {
   });
 }
 
-test("31+ imóveis: taxa negociável, sem valor de taxa (E252-B: não é o Plano Gestor)", () => {
+test("E564: a faixa 31+ negociável saiu — 20+ é o Plano Gestor, 4% com o valor calculado", () => {
   for (const n of [31, 80]) {
     const b = calcularBolso(3000, 6, n);
-    assert.deepEqual(b, { estado: "negociavel", recebe: 18000 });
+    assert.equal(b.estado, "ok");
+    if (b.estado === "ok") assert.deepEqual([b.taxa, b.valorTaxa], [0.04, 720]);
   }
 });
 

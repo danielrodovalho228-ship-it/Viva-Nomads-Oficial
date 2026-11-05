@@ -169,8 +169,9 @@ test.describe("T212 — ferramentas do proprietário (prompt 27)", () => {
       await d.goto(`/dashboard/orcamentos/nova?interessado=${ids.lead}`, { waitUntil: "domcontentloaded" });
       await expect(d.getByTestId("montagem-proposta")).toBeVisible({ timeout: 20_000 });
       await d.getByTestId("proposta-valor").fill("3200");
-      await d.getByTestId("proposta-meses").selectOption("4");
       await d.getByTestId("proposta-data").fill(emDias(10));
+      // E562 (telas): sem "Número de meses" — a estadia vem em dias; 4 meses = saída 120 dias depois da entrada.
+      await d.getByTestId("proposta-saida").fill(emDias(130));
       await d.getByTestId("proposta-validade").selectOption("7");
       // O total do contrato inclui o condomínio (R$ 300/mês), mas a base da taxa continua R$ 3.200 × 4.
       await expect(d.getByTestId("resumo-total-contrato")).not.toHaveText(/^R\$\s?12\.800$/);

@@ -8,11 +8,12 @@ const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "ut
 // constants.ts importa por "@/": lido como texto (como os demais testes do topo).
 function destinos(): string[][] {
   const c = ler("lib/constants.ts");
-  const nav = c.match(/export const PUBLIC_NAV = \[([\s\S]*?)\] as/)![1];
+  const nav = c.match(/export const PUBLIC_NAV = comPortasDePrecos\(\[([\s\S]*?)\] as/)![1];
   const fale = c.match(/export const FALE_COM_A_VIVA = (\{[^}]*\})/)![1];
   return [...nav.matchAll(/\{ href: "([^"]+)", label: "([^"]+)" \}/g), ...fale.matchAll(/\{ href: "([^"]+)", label: "([^"]+)" \}/g)].map((m) => [m[2], m[1]]);
 }
 
+// E563: a lista do código é a do E555 (com Planos); a chave PRECOS_VISIVEL tira o Planos enquanto a página estiver suspensa.
 // E555: o menu ganhou "Planos" (6 destinos) — a lista completa mora em e555-planos-portas.test.ts.
 test("menu público: os destinos do E458 seguem, nesta ordem", () => {
   assert.deepEqual(

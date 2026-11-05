@@ -138,6 +138,8 @@ export async function notify(params: {
   papelAviso?: PapelAviso | null;
   /** E444: o objeto do aviso (proposta, contrato, visita…) — permite marcar "resolvido" quando a ação for feita. */
   refId?: string | null;
+  /** E570: título específico do aviso no sino (montado por função pura de avisos.ts); sem ele, o assunto do catálogo. */
+  tituloAviso?: string | null;
   /** E444: prioridade explícita quando o mesmo evento é só informativo (ex.: "contrato assinado pelas duas partes"). */
   prioridadeAviso?: PrioridadeAviso | null;
 }): Promise<NotifyResult> {
@@ -183,7 +185,7 @@ export async function notify(params: {
   // E444: o aviso no sino do site, do MESMO evento (fonte única), em paralelo. Título do catálogo, nunca texto do usuário.
   const avisoPromise =
     params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)
-      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso }))
+      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso }))
       : null;
 
   if (params.email) {

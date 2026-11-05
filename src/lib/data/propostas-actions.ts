@@ -25,9 +25,10 @@ import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
-import { comissaoSobreContrato } from "@/lib/cobranca/regra";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
-import { periodoDaEstadia } from "@/lib/contrato-periodo";
+import { periodoEmDias } from "@/lib/contrato-periodo";
+import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
+import { mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
 import {
   aguardandoResposta,
   aplicarContraproposta,
@@ -40,6 +41,9 @@ import {
   MAX_VERSOES,
   MENSAGEM_MAX,
   mesesDoAnuncio,
+  diasDoAnuncio,
+  diasDosTermos,
+  taxaServicoProposta,
   motivoRecusaValido,
   MOTIVOS_RECUSA,
   STATUS_ABERTOS,
@@ -70,7 +74,7 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
-import { precoDaProposta } from "@/lib/precos";
+import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
 
 /**
  * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
@@ -93,13 +97,14 @@ function dadosDoEmailDaProposta(
   quemRecebe: "owner" | "tenant",
 ) {
   const tot = calcularTotais(c.termos);
-  const periodo = periodoDaEstadia(String(c.termos.dataEntrada).slice(0, 10), Number(c.termos.meses));
+  const periodo = periodoEmDias(String(c.termos.dataEntrada).slice(0, 10), tot.dias);
   const linhas = linhasProposta({
     numero: String(numero),
     imovel,
     entrada: periodo.inicio,
     saida: periodo.fim,
-    meses: Math.round(Number(c.termos.meses)),
+    meses: mesesDeReferencia(tot.dias),
+    dias: tot.dias,
     valorMensal: tot.valorMensal,
     contaTotal: contaDaProposta(c.termos),
     responderAte: c.desfecho === "nova" || c.desfecho === "contraproposta" ? c.responderAte : null,
@@ -170,7 +175,9 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
 
 function limitesDoImovel(im: ImovelProposta) {
   const m = mesesDoAnuncio(im.min_period_days, im.max_period_days);
-  return { mesesMin: m.min, mesesMax: m.max, capacidade: im.max_guests && im.max_guests > 0 ? im.max_guests : null };
+  // E562: os limites em dias exatos do anúncio (30 a 180).
+  const d = diasDoAnuncio(im.min_period_days, im.max_period_days);
+  return { mesesMin: m.min, mesesMax: m.max, diasMin: d.min, diasMax: d.max, capacidade: im.max_guests && im.max_guests > 0 ? im.max_guests : null };
 }
 
 /**
@@ -186,23 +193,34 @@ async function taxaPetDaProposta(admin: Admin, im: ImovelProposta, tenantId: str
 }
 
 /** Valores que a montagem abre preenchidos (do anúncio), todos editáveis pelo proprietário. */
-function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string, neg: Negociacao, taxaPet = 0): TermosProposta {
-  const limpeza = normalizarLimpezaEstadia(im.limpeza_estadia);
-  const porMes = limpeza?.porMes ?? 0;
+function termosDoAnuncio(im: ImovelProposta, dias: number, dataEntrada: string, neg: Negociacao, taxaPet = 0): TermosProposta {
+  // E562 (telas): os MESMOS termos da barra lateral do anúncio e do "Pedir para morar" (termosDaEstadiaDoImovel).
+  const t = termosDaEstadiaDoImovel({
+    monthlyPrice: Number(im.monthly_price) || 0,
+    condoFee: Number(im.condo_fee) || 0,
+    utilitiesMode: im.utilities_mode === "fixed" ? "fixed" : "real",
+    utilitiesEstimate: Number(im.utilities_estimate) || 0,
+    limpezaEstadia: normalizarLimpezaEstadia(im.limpeza_estadia) ?? undefined,
+    prepFee: Number(im.prep_fee) || 0,
+    checkoutCleaningEnabled: !!im.checkout_cleaning_enabled,
+    checkoutCleaningFee: Number(im.checkout_cleaning_fee) || 0,
+  });
   return {
     valorBase: Number(im.monthly_price) || 0,
     descontoPct: 0,
     descontoValor: 0,
     motivoDesconto: null,
-    descontoEstadiaPct: descontoParaMeses(neg.descontos, meses),
-    meses,
+    // E562: a faixa de desconto conta os meses completos da estadia.
+    descontoEstadiaPct: descontoParaMeses(neg.descontos, mesesCompletos(dias)),
+    meses: mesesDeReferencia(dias),
+    dias,
     dataEntrada,
-    condominio: Number(im.condo_fee) || 0,
-    consumo: im.utilities_mode === "fixed" ? Number(im.utilities_estimate) || 0 : 0,
-    limpezasMes: porMes,
-    valorLimpeza: porMes > 0 && limpeza ? Math.round((limpeza.valorMes / porMes) * 100) / 100 : 0,
+    condominio: t.condominio,
+    consumo: t.consumo,
+    limpezasMes: t.limpezasMes,
+    valorLimpeza: t.valorLimpeza,
     taxaPet,
-    limpezaUnica: (Number(im.prep_fee) || 0) + (im.checkout_cleaning_enabled ? Number(im.checkout_cleaning_fee) || 0 : 0),
+    limpezaUnica: t.limpezaUnica,
   };
 }
 
@@ -459,7 +477,7 @@ export interface DadosMontagem {
   interessado: string;
   imovel: { id: string; titulo: string };
   termos: TermosProposta;
-  limites: { mesesMin: number; mesesMax: number; capacidade: number | null };
+  limites: { mesesMin: number; mesesMax: number; diasMin?: number; diasMax?: number; capacidade: number | null };
   negociacao: Negociacao;
   /** Taxa de serviço prevista (só o proprietário vê). */
   taxa: number;
@@ -469,7 +487,7 @@ export interface DadosMontagem {
 export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado").eq("id", leadId).maybeSingle();
+  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado, fim_desejado").eq("id", leadId).maybeSingle();
   // Achado 112: a falha LANÇA (error.tsx) — nunca "Escolha um interessado" quando o interessado existe.
   if (erroLead) throw new Error("Não foi possível ler o interessado.");
   if (!lead || lead.owner_id !== s.user.id || !["new", "accepted"].includes(lead.status as string)) return null;
@@ -485,11 +503,21 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
     leadId,
     interessado: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
     imovel: { id: im.id, titulo: im.title },
-    termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg, await taxaPetDaProposta(s.admin, im, lead.tenant_id as string)),
+    termos: termosDoAnuncio(im, diasDaMontagem(desejada, (lead.fim_desejado as string | null) ?? null, lim), entrada, neg, await taxaPetDaProposta(s.admin, im, lead.tenant_id as string)),
     limites: lim,
     negociacao: neg,
     taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
   };
+}
+
+/**
+ * E562: a montagem abre com os DIAS da candidatura (entrada → saída, sem arredondar para meses), dentro do prazo do
+ * anúncio. Sem período na candidatura, 4 meses (120 dias) como antes, dentro dos limites.
+ */
+function diasDaMontagem(entrada: string | null, saida: string | null, lim: { diasMin: number; diasMax: number }): number {
+  const p = periodoDaCandidatura(entrada, saida);
+  const desejado = p ? p.dias : 120;
+  return Math.min(lim.diasMax, Math.max(lim.diasMin, desejado));
 }
 
 export interface EntradaProposta {
@@ -499,6 +527,8 @@ export interface EntradaProposta {
   descontoValor?: number;
   motivoDesconto?: string | null;
   meses: number;
+  /** E562: dias exatos (30 a 180). Sem eles (tela antiga), meses × 30. */
+  dias?: number | null;
   dataEntrada: string;
   condominio?: number;
   consumo?: number;
@@ -506,6 +536,8 @@ export interface EntradaProposta {
   valorLimpeza?: number;
   taxaPet?: number;
   limpezaUnica?: number;
+  /** E562: ajuste do dono no pacote de limpezas (vazio = round(limpezas por mês × dias ÷ 30)). */
+  limpezasPacote?: number | null;
   pessoas?: number | null;
   validadeDias: number;
   mensagem?: string;
@@ -529,14 +561,17 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   // 64-B: anúncio pausado não recebe proposta nova (as candidaturas abertas continuam e seguem nas mensagens).
   if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
-  const meses = Math.round(num(e.meses));
+  // E562: a duração é em DIAS; meses vira a referência derivada.
+  const dias = e.dias != null && Number.isFinite(Number(e.dias)) ? Number(e.dias) : Math.round(num(e.meses)) * 30;
+  const meses = mesesDeReferencia(dias);
   const termos: TermosProposta = {
     valorBase: Math.round(num(e.valorBase) * 100) / 100,
     descontoPct: Math.round(num(e.descontoPct) * 100) / 100,
     descontoValor: Math.round(num(e.descontoValor) * 100) / 100,
     motivoDesconto: e.motivoDesconto ? String(e.motivoDesconto).slice(0, 80) : null,
-    descontoEstadiaPct: descontoParaMeses(neg.descontos, meses),
+    descontoEstadiaPct: descontoParaMeses(neg.descontos, mesesCompletos(dias)),
     meses,
+    dias,
     dataEntrada: String(e.dataEntrada ?? ""),
     condominio: num(e.condominio),
     consumo: num(e.consumo),
@@ -544,6 +579,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     valorLimpeza: num(e.valorLimpeza),
     taxaPet: num(e.taxaPet),
     limpezaUnica: num(e.limpezaUnica),
+    limpezasPacote: e.limpezasPacote == null ? null : Math.min(48, Math.round(num(e.limpezasPacote))),
   };
   const pessoas = e.pessoas == null ? null : Math.round(num(e.pessoas)) || null;
   const erro = validarTermos(termos, limitesDoImovel(im), hojeBR(), pessoas);
@@ -818,10 +854,11 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
       if (pct != null) taxa = {
         pct,
-        valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
+        // E562: a taxa sobre o aluguel × dias ÷ 30 (em meses cheios, × meses como antes).
+        valor: taxaServicoProposta(atual.termos, pct),
         congelada,
         valorMensal: atual.totais.valorMensal,
-        meses: atual.termos.meses,
+        meses: atual.totais.dias / 30,
         seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
         caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
       };
@@ -941,6 +978,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   const mudancas: Mudancas = {};
   if (m.valorBase !== undefined) mudancas.valorBase = num(m.valorBase);
   if (m.meses !== undefined) mudancas.meses = num(m.meses);
+  // E562: contraproposta em dias exatos (vence `meses` quando os dois vêm).
+  if (m.dias !== undefined && m.dias !== null) mudancas.dias = num(m.dias);
   if (m.dataEntrada !== undefined) mudancas.dataEntrada = String(m.dataEntrada);
   if (m.limpezasMes !== undefined) mudancas.limpezasMes = num(m.limpezasMes);
   if (m.taxaPet !== undefined) mudancas.taxaPet = num(m.taxaPet);
@@ -1015,7 +1054,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
   // Disponibilidade por datas (0176): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
-  const conflito = await conflitoNoImovel(admin, p.property_id, periodoDaEstadia(String(v.data_entrada).slice(0, 10), Number(v.meses)));
+  const conflito = await conflitoNoImovel(admin, p.property_id, periodoEmDias(String(v.data_entrada).slice(0, 10), diasDosTermos(termosDaLinha(v))));
   if (conflito) return { ok: false, error: conflito };
 
   const { data: ok } = await admin
@@ -1052,7 +1091,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   }
   const tot = calcularTotais(termosDaLinha(v));
   // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
-  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, Number(v.meses), tx.taxa_no_envio);
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, tot.dias / 30, tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,

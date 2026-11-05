@@ -1,4 +1,5 @@
 import { formatBRL } from "./utils.ts";
+import { formatBRLExato } from "./precos.ts";
 import { statusDisponibilidade } from "./imovel-pagina.ts";
 import { rotuloPreco } from "./cartao-preco.ts";
 
@@ -31,6 +32,8 @@ export function barraFixaImovel(p: {
   meses?: number;
   /** E254-A: o total do período pela função do anúncio (estadiaDoImovel, com a limpeza de saída); sem ele, mês × meses. */
   totalPeriodo?: number | null;
+  /** E562 (telas): dias exatos da seleção; com eles (e o totalPeriodo em dias) a barra diz "R$ Y em 43 dias". */
+  dias?: number | null;
   exemplo: boolean;
   candidatouSe: boolean;
   availableFrom?: string;
@@ -47,7 +50,9 @@ export function barraFixaImovel(p: {
     estado: p.candidatouSe ? "candidatou" : "candidatar",
     valor: precoValido ? formatBRL(total) : "",
     mes: preco?.mes ?? "",
-    estadia: preco?.estadia && p.totalPeriodo != null ? `${formatBRL(p.totalPeriodo)} em ${preco.meses} meses` : (preco?.estadia ?? null),
+    estadia: precoValido && p.dias && p.dias > 0 && p.totalPeriodo != null
+      ? `${formatBRLExato(p.totalPeriodo)} em ${p.dias} ${p.dias === 1 ? "dia" : "dias"}`
+      : preco?.estadia && p.totalPeriodo != null ? `${formatBRL(p.totalPeriodo)} em ${preco.meses} meses` : (preco?.estadia ?? null),
     linha: "Caução e taxas no detalhe",
     status: statusDisponibilidade(p.availableFrom, p.hoje ?? new Date().toISOString().slice(0, 10)),
   };

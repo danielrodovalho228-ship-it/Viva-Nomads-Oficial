@@ -14,6 +14,7 @@ import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
 import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto } from "@/lib/cobranca/regra";
 import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
 const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
@@ -50,11 +51,18 @@ export default function ForLandlordsPage() {
               condomínio e IPTU que podem ser transferidos ao morador conforme o contrato.
             </p>
             <p className="mt-4 text-base text-white/90">
-              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; com {LIMITE_FAIXAS + 1} ou mais imóveis ativos, {ROTULO_FAIXA_NEGOCIAVEL}). Plano Gestor: {PORTA_GESTOR_TEXTO}. Sem mensalidade —{" "}
-              <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
-                ver os preços
-              </Link>
-              .
+              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; com {LIMITE_FAIXAS + 1} ou mais imóveis ativos, {ROTULO_FAIXA_NEGOCIAVEL}). Plano Gestor: {PORTA_GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
+              {PRECOS_VISIVEL ? (
+                <>
+                  Sem mensalidade —{" "}
+                  <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
+                    ver os preços
+                  </Link>
+                  .
+                </>
+              ) : (
+                "Sem mensalidade."
+              )}
             </p>
           </>
         }
@@ -63,9 +71,12 @@ export default function ForLandlordsPage() {
           Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
         </ButtonLink>
         {/* E555: o destaque do topo de /anunciar leva a /planos (a página de planos e taxas). */}
+        {/* E563: suspenso enquanto a chave PRECOS_VISIVEL estiver desligada. */}
+        {PRECOS_VISIVEL && (
         <ButtonLink href="/planos" variant="inverseSecondary" size="lg" data-testid="anunciar-planos">
           Planos e taxas
         </ButtonLink>
+        )}
       </BannerTopo>
 
       {/* Quanto custa, em reais, contra o Airbnb (versão curta; a completa fica em /precos). */}
