@@ -27,7 +27,6 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
-import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
@@ -114,7 +113,7 @@ export function SearchClient({
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
-  // E572: só com o selo "Preço justo" (`?precojusto=1`) — atrás da chave do selo (PRECO_JUSTO_COMPARADOR, E399-C).
+  // E572/E580: só com o selo "Preço justo" (`?precojusto=1`) — o mesmo selo do card, sem chave.
   const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
   const [painelAberto, setPainelAberto] = useState(false);
@@ -206,7 +205,7 @@ export function SearchClient({
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     if (on("negocia")) setNegociaOnly(true);
-    if (PRECO_JUSTO_COMPARADOR && on("precojusto")) setPrecoJustoOnly(true);
+    if (on("precojusto")) setPrecoJustoOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
     setInternetMin(fi.internetMin);
@@ -277,7 +276,7 @@ export function SearchClient({
     params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("negocia", negociaOnly, "1");
-    put("precojusto", PRECO_JUSTO_COMPARADOR && precoJustoOnly, "1");
+    put("precojusto", precoJustoOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
     filtroNivelNaUrl(params, nivelMin);
@@ -527,7 +526,7 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
-    (PRECO_JUSTO_COMPARADOR && precoJustoOnly ? 1 : 0) + // E572
+    (precoJustoOnly ? 1 : 0) + // E572/E580
     (niveis.length ? 1 : 0) + // E573
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
       Boolean
@@ -543,7 +542,7 @@ export function SearchClient({
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, PRECO_JUSTO_COMPARADOR && precoJustoOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -654,7 +653,7 @@ export function SearchClient({
     setInvoiceOnly(f.notaOnly);
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
-    setPrecoJustoOnly(PRECO_JUSTO_COMPARADOR && (f.precoJustoOnly ?? false));
+    setPrecoJustoOnly(f.precoJustoOnly ?? false);
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
