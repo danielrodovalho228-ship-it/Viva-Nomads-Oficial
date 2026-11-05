@@ -12,7 +12,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   varredura no bloco 315, t1179): as do PAINEL DO PROPRIETÁRIO sem id na URL — agenda, carteira, ganhos, recibos,
   respostas rápidas, simulador e ferramentas —, com a conta DONO17 da massa da varredura. Ficam de fora, por desenho:
   /dashboard/roi-imovel e /dashboard/viabilidade (#1715) e /dashboard/tributacao (#1747), que redirecionam, e
-  /dashboard/assinatura (redireciona para /precos). Defeito novo entra como test.fail ligado a um item (L-99 / D-V13
+  /dashboard/assinatura (redireciona para /precos). Defeito novo entra como test.fail ligado a um item (L-103 / D-V13
   seguem os próximos livres).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
