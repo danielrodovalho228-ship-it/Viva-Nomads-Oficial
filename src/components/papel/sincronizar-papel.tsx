@@ -13,6 +13,10 @@ import { EVENTO_PAPEL } from "./use-troca-papel";
  * PAPEL-B — navegação coerente: abrir uma página de OUTRA área (link de e-mail, favorito, push) troca o papel ativo
  * para o daquela área e GRAVA, para o selo e o menu sempre baterem com a página. Páginas comuns (Visão geral,
  * mensagens, conta, ajuda) não mudam o papel. Admin é Equipe: nada a sincronizar. Não desenha nada.
+ * E548 (QA 04/11): o papel nunca muda sozinho. Abrir a área do morador ou do proprietário (ex.: "Ver minhas estadias"
+ * em Conta › Avaliações) NÃO troca nem grava o modo do painel: a própria página já se desenha pela URL (modoDaRota,
+ * E497) e, ao sair dela, o painel volta ao modo escolhido. Só o 1º acesso (E283, o servidor grava só o modo) e a área
+ * de parceiro (que não tem modo pela URL) seguem sincronizando.
  */
 export function SincronizarPapel() {
   const pathname = usePathname();
@@ -34,8 +38,10 @@ export function SincronizarPapel() {
       gravado.current = null;
       return;
     }
-    // Sempre acerta o estado local (a leitura do perfil no login pode chegar depois e trazer o valor antigo)…
-    setPapel(alvo);
+    // E548: morador/proprietário — nada muda no estado local; o servidor só grava no 1º acesso (usarPapel "area").
+    const soAreaDeModo = alvo !== "parceiro";
+    // Parceiro: acerta o estado local (a leitura do perfil no login pode chegar depois e trazer o valor antigo)…
+    if (!soAreaDeModo) setPapel(alvo);
     // …e grava só o que esta aba ainda não gravou.
     if (gravado.current === alvo) return;
     gravado.current = alvo;
