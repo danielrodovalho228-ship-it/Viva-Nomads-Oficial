@@ -8,6 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
     2) o sino aparece em todas elas (antes sumia nas telas da Conta, no computador);
     3) o menu Conta tem os mesmos itens nas três.
   390 e 1280, sessão real.
+  Complemento (#2603 → este PR): o 1º lab-critico viu "topo:proprietario" — o ModeInitializer desligava o parceiro a cada carga.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
