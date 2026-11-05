@@ -1,6 +1,9 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
+import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
+import { indicadorPrecoJustoAdmin } from "@/lib/comparador-airbnb/comparacao-servidor";
+import type { IndicadorPrecoJusto } from "@/lib/comparador-airbnb/comparacao";
 import {
   JANELA_CORRECAO_DIAS,
   QUEBRADORES,
@@ -216,4 +219,15 @@ export async function contextoDaSaida(id: string): Promise<{ contexto: ContextoM
   const { data, error } = await admin.from("contratos").select("property_id, properties(title)").eq("tenant_id", uid).order("created_at", { ascending: false }).limit(3);
   if (error) throw new Error(MSG_CONTEXTO_SEM_LEITURA);
   return { contexto, itens: ((data ?? []) as unknown as { property_id: string; properties: { title: string | null } | null }[]).map((c) => ({ rotulo: c.properties?.title ?? "Anúncio", href: `/imoveis/${c.property_id}` })) };
+}
+
+/**
+ * E572 — indicador interno do Preço justo: % dos imóveis ativos com link de outra plataforma que têm o selo. Atrás da
+ * chave PRECO_JUSTO_COMPARADOR (desligada = "desligado", nada é lido). Contas de teste fora. Sem leitura = null.
+ */
+export async function indicadorPrecoJustoDoPainel(agora = new Date()): Promise<IndicadorPrecoJusto | "desligado" | null> {
+  if (!PRECO_JUSTO_COMPARADOR) return "desligado";
+  const admin = createAdminClient();
+  if (!admin) return null;
+  return indicadorPrecoJustoAdmin(admin, await idsContasTeste(admin), agora);
 }
