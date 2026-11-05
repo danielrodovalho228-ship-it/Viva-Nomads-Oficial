@@ -1510,6 +1510,8 @@ export async function registrarContrato(
       garantia,
       // O período já nasce no contrato: o banco recusa a sobreposição antes dos blocos (o gatilho o mantém depois).
       periodo: `[${periodo.inicio},${periodo.fim}]`,
+      // E440: o contrato carrega o orçamento de origem (pedido VN-PD → orçamento ORC → contrato VN-CT).
+      proposta_id: acordada ? acordada.id : null,
     })
     .select("id")
     .single();

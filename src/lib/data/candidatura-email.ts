@@ -3,6 +3,7 @@ import { getProperty } from "@/lib/data/properties";
 import { calcularTotalMensal, estadiaDoImovelEmDias, totalMesDaLinha } from "@/lib/precos";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
+import { numeroPublicoPedido } from "@/lib/pedido-ref";
 import { aberturaCandidatura, linhasCandidatura, periodoDaCandidatura, proximoPassoCandidatura, type MomentoCandidatura } from "@/lib/notifications/dados-candidatura";
 
 /**
@@ -34,6 +35,8 @@ export async function corpoDoEmailDaCandidatura(admin: SupabaseClient, leadId: s
     saida: (lead.fim_desejado as string | null) ?? null,
     valorMensal: Number(im.monthly_price ?? 0),
     totalMensal,
+    // E440: o número do pedido, o mesmo da tela (Minhas candidaturas) e do contrato.
+    numeroPedido: numeroPublicoPedido(leadId),
     estadiaDias: publico && p ? estadiaDoImovelEmDias(publico, p.dias) : null,
   });
   const passo = proximoPassoCandidatura(momento);
