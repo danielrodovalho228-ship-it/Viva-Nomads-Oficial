@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { guardSocios } from "@/lib/socios/guard";
 import { PaginasInternasNav } from "@/components/apresentacao/paginas-nav";
+import { AvisoEmAtualizacao } from "@/components/socios/aviso-atualizacao";
 import { mesesContratoValidos } from "@/lib/financeiro/projecao";
 import { Decisao } from "@/components/decisao/decisao";
 
@@ -17,6 +18,8 @@ export default async function DecisaoPage({ searchParams }: { searchParams: Prom
   const { meses } = await searchParams;
   return (
     <>
+      {/* E597: aviso fixo enquanto a página não é revisada com a decisão de 04/11 (Caminho B). */}
+      <AvisoEmAtualizacao />
       <PaginasInternasNav atual="/decisao" />
       <Decisao meses={mesesContratoValidos(Array.isArray(meses) ? meses[0] : meses)} />
     </>
