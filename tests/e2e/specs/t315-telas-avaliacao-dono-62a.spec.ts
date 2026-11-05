@@ -37,6 +37,17 @@ async function comChave(page: Page) {
 async function primariosNoMain(page: Page): Promise<number> {
   return page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible").count();
 }
+/** Diagnóstico (Pista C, 05/11): o texto e o testid de cada primário visível — a falha diz QUAL é o segundo. */
+async function quaisPrimarios(page: Page): Promise<string> {
+  const els = page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible");
+  const n = await els.count();
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const e = els.nth(i);
+    out.push(`${((await e.textContent()) ?? "").trim().slice(0, 60)} [${(await e.getAttribute("data-testid")) ?? "-"}]`);
+  }
+  return out.join(" | ");
+}
 
 test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -114,7 +125,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
       }));
       if (w === 1280) expect(Math.abs(f!.y - a!.y), "lado a lado a 1280").toBeLessThan(2);
       else expect(a!.y, "uma embaixo da outra a 390").toBeGreaterThan(f!.y + f!.height - 1);
-      expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
+      expect(await primariosNoMain(d), `um primário só na tela (QA #1111 item 7) a ${w}: ${await quaisPrimarios(d)}`).toBe(1);
       await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);

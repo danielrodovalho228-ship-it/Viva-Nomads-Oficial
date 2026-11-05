@@ -32,6 +32,12 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     const { data } = await adm().from("avaliadores_credenciamento").select("id, numero_credenciado, status").eq("parceiro_id", ids[`parc${letra}`]).maybeSingle();
     return data as { id: string; numero_credenciado: string; status: string } | null;
   }
+  /** Diagnóstico (Pista C, 05/11): quem é o avaliador designado (nº, cidade, desde quando) — a fila de Uberlândia é compartilhada. */
+  async function quem(avaliadorId: string | null): Promise<string> {
+    if (!avaliadorId) return "ninguém";
+    const { data } = await adm().from("avaliadores_credenciamento").select("numero_credenciado, cidade, status, ativado_em, ultima_designacao_em, parceiros(nome_publico, slug)").eq("id", avaliadorId).maybeSingle();
+    return JSON.stringify(data);
+  }
   async function pedido() {
     const { data } = await adm().from("vistoria_pedidos").select("id, status, avaliador_id, agendado_para, concordancia_em, ocupado").eq("id", pedidoId).single();
     return data as { id: string; status: string; avaliador_id: string | null; agendado_para: string | null; concordancia_em: string | null; ocupado: boolean };
@@ -175,7 +181,8 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     pedidoId = p!.id as string;
     const a = (await credenciamento("A"))!;
     const x = (await credenciamento("X"))!;
-    expect((await pedido()).avaliador_id).toBe(a.id);
+    const designado = (await pedido()).avaliador_id;
+    expect(designado, `designado: ${await quem(designado)}`).toBe(a.id);
     const { data: designados } = await adm().from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", pedidoId);
     expect((designados ?? []).map((r) => r.avaliador_id)).not.toContain(x.id);
     await d.reload();
@@ -192,7 +199,12 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
     await p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`).getByTestId("designacao-recusar").click();
     const b = (await credenciamento("B"))!;
-    await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(b.id);
+    await expect
+      .poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 })
+      .toBe(b.id)
+      .catch(async (e) => {
+        throw new Error(`esperado B (${b.numero_credenciado}); pedido: ${JSON.stringify(await pedido())}; designado: ${await quem((await pedido()).avaliador_id)}\n${e}`);
+      });
     await p.context().close();
   });
 
