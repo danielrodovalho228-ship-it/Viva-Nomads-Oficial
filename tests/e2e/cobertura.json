@@ -2006,7 +2006,8 @@
         "t210-contrato-estado-jornada",
         "t213-jornada-teste-confirmacao",
         "t212-ferramentas-proprietario",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t1140-e435-admin-emails-caixa-qa"
       ]
     },
     "/dashboard/agenda": {
