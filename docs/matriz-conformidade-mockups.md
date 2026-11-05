@@ -160,3 +160,29 @@ Achados (numerados):
 
 Nenhum defeito novo nesta passada. As linhas que seguem pendentes dependem de sessão real (laboratório, T838) ou de decisão de
 desenho com o Muse (`cabecalho-*`, `pouso-morador`, `cadastro-imovel-07-descricao`).
+
+## Páginas públicas e painel depois dos PRs de 05/11 — passada 12 (05/11, modo demonstração, 390 e 1280)
+
+Reconferência depois dos merges da tarde (#2697 E496, #2706 E510, #2710 E511, #2713 E597). Varredura por script local em
+8 rotas públicas (home, /buscar, página do anúncio, /empresas, /como-funciona, /ajuda, /para-proprietarios, /parceiros) e 8 do
+painel (Início, Meus imóveis, Conta, Notificações, Mensagens, Favoritos, edição do anúncio), nos dois tamanhos, com as verificações
+da casa: rolagem lateral, um h1, um botão cheio dentro do `main`, imagem quebrada, elemento fora da tela e fundo (todas em branco).
+Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Rolagem lateral**: nenhuma página rola de lado, nos dois tamanhos. **Conforme.**
+2. **Elementos além da borda**: todos dentro de faixas roláveis de propósito — tabela comparativa da home, filtros da /buscar,
+   galeria do anúncio, abas do /como-funciona, carrossel de fotos do Início e abas de Mensagens. O campo "Não preencha" do
+   /parceiros fica fora da tela de propósito (armadilha de robô). **Conforme.**
+3. **Botão cheio**: o "Entrar" do cabeçalho (1280) é do mockup `PUBLICO-A` e fica fora do `main`; dentro do `main`, no máximo um
+   por tela. **Conforme.**
+4. **Imagem quebrada**: nenhuma. **Conforme.**
+5. **Meus imóveis** (E510/E511): com 3 imóveis no demo a barra (abas, busca, ordem) não aparece — o limite é 4; foto e título
+   levam ao destino do cartão. **Conforme.**
+6. **Conta › Perfil a 1280**: no demo a coluna fica vazia (o título mora na coluna da direita, `xl`, e o Perfil não tem dados
+   sem Supabase) — é a linha `perfil-01-topo-espelho`, já conferida com sessão real (T838, #2435). **Sem mudança.**
+7. **Observação para decisão** (texto, não mudei): o rodapé público diz "Anunciar imóvel (com login)"; no resto do site o verbo é
+   "Entrar". Uma linha em `src/components/layout/footer.tsx` se o Daniel quiser trocar por "(é preciso entrar)".
+
+Nenhum defeito novo nesta passada. /socios e /decisao (E597) foram conferidas pelo T908 no lab-critico do #2713 (390 e 1280).
