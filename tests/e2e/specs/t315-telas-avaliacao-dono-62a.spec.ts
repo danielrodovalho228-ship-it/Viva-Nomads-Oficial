@@ -185,7 +185,9 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const quando = new Date(Date.now() + 2 * 86_400_000);
     const dia = new Date(quando.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
-    await item.getByTestId("agendar-visita").getByLabel("Data e hora da visita").fill(`${dia}T10:00`);
+    // Varredura 01/11: no computador o campo é a data do site (dd/mm/aaaa) + a lista de hora; o texto completo
+    // "AAAA-MM-DDTHH:MM" colado na data preenche as duas partes (como na t211).
+    await item.getByTestId("agendar-visita").getByRole("textbox", { name: "Data", exact: true }).fill(`${dia}T10:00`);
     await item.getByTestId("agendar-visita").getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("agendado_para").eq("id", pedidoId).single()).data?.agendado_para as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
     await p.context().close();
