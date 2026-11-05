@@ -60,6 +60,9 @@ export async function usarPapel(papel: unknown, origem?: "area"): Promise<{ ok: 
       const { error } = await supabase.from("profiles").update({ preferred_mode: modo }).eq("id", user.id);
       return error ? { ok: false, erro: "Não foi possível trocar agora." } : { ok: true };
     }
+    // E548: fora do 1º acesso, abrir a área do morador/proprietário não troca o papel nem o modo gravados — a página se
+    // desenha pela URL e o painel volta ao modo escolhido ao sair. A troca é sempre explícita (selo ou Conta).
+    if (papel !== "parceiro") return { ok: true };
   }
   const { error } = await supabase
     .from("profiles")
