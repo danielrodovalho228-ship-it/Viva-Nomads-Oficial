@@ -48,6 +48,10 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       await expect(lacunas).toContainText("Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
       await expect(lacunas).toContainText("Hostinger");
       await expect(page.getByTestId("opcional-nao-somado")).toHaveCount(2);
+      // P3 (05/11): contrato do investidor e 5 modelos de contrato a cotar, fora da soma.
+      await expect(page.getByTestId("a-cotar-nao-somado")).toHaveCount(2);
+      await expect(lacunas).toContainText("Contrato do investidor");
+      await expect(lacunas).toContainText("5 modelos de contrato");
       for (const item of ["Emissor de NFS-e", "Alvará de funcionamento", "Antifraude", "Identidade", "WhatsApp"]) {
         await expect(lacunas, item).toContainText(item);
       }

@@ -18,6 +18,7 @@ import {
   CUSTOS_POR_CONTRATO,
   DOLAR,
   INVESTIMENTO_INICIAL_DETALHE,
+  INVESTIMENTO_A_COTAR,
   OPCIONAIS_NAO_SOMADOS,
   MODELO_CUSTOS,
   PRO_LABORE,
@@ -588,6 +589,12 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                     <td>{l.situacao}</td>
                   </tr>
                 ))}
+                {INVESTIMENTO_A_COTAR.map((a) => (
+                  <tr key={a.rotulo} data-testid="a-cotar-nao-somado">
+                    <td>{a.rotulo}</td>
+                    <td>{a.situacao}</td>
+                  </tr>
+                ))}
                 {OPCIONAIS_NAO_SOMADOS.map((o) => (
                   <tr key={o.rotulo} data-testid="opcional-nao-somado">
                     <td>{o.rotulo}</td>
@@ -668,7 +675,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                 <strong>Imposto da Viva:</strong> {regimePorId(regime).nome}, {pctImposto} sobre toda a receita (taxa de serviço e parceiros) — {regimePorId(regime).detalhe}. {IMPOSTO_TEXTO}; {SELO_SOCIETARIO}.
               </li>
               <li>
-                <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}) + encargos do pró-labore no regime; o parecer jurídico e a consulta de 05/11 estão dentro do investimento inicial de {brl(INVESTIMENTO_INICIAL)} ({INVESTIMENTO_INICIAL_DETALHE}).
+                <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}) + encargos do pró-labore no regime; o parecer jurídico e a consulta de 05/11 estão dentro do investimento inicial de {brl(INVESTIMENTO_INICIAL)} ({INVESTIMENTO_INICIAL_DETALHE}); o contrato do investidor e os 5 modelos de contrato estão a cotar (não somados).
               </li>
               {!leitura && (
                 <li>
