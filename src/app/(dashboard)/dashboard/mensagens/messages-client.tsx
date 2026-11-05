@@ -34,6 +34,7 @@ import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { horaDaBolha } from "@/lib/mensagens/hora-da-bolha";
+import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -120,7 +121,14 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
-      if (document.visibilityState === "visible") marcarConversaAberta(conversaAbertaId).catch(() => {});
+      if (document.visibilityState !== "visible") return;
+      // E481: lida a conversa, a contagem dela zera na lista e o sino relê na hora (não no ciclo de 1 minuto).
+      setConversations((cs) => cs.map((c) => (c.id === conversaAbertaId && c.naoLidas ? { ...c, naoLidas: 0 } : c)));
+      marcarConversaAberta(conversaAbertaId)
+        .then(() => {
+          window.dispatchEvent(new Event(EVENTO_CONTADORES));
+        })
+        .catch(() => {});
     };
     marcar();
     const t = setInterval(marcar, 5 * 60_000);
@@ -315,6 +323,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               key={c.id}
               data-testid="mensagens-conversa"
               data-conversa={c.id}
+              data-nao-lidas={c.naoLidas ?? 0}
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
@@ -329,7 +338,15 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 <Avatar name={c.name} size={48} photoUrl={avatars[c.id] ?? undefined} />
               )}
               <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="truncate font-medium text-ink">{c.name}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  {/* E481: não lida em destaque (nome em negrito e a contagem); o acabamento visual fica com a Pista A. */}
+                  <span className={cn("truncate text-ink", c.naoLidas ? "font-semibold" : "font-medium")}>{c.name}</span>
+                  {!!c.naoLidas && (
+                    <span className="shrink-0 rounded-full bg-forest px-2 text-xs font-semibold text-white" data-testid="mensagens-nao-lidas" aria-label={`${c.naoLidas} não lidas`}>
+                      {c.naoLidas}
+                    </span>
+                  )}
+                </span>
                 {(c.property || c.periodo) && (
                   <span className="truncate text-xs text-muted">{[c.property, c.periodo].filter(Boolean).join(" · ")}</span>
                 )}
