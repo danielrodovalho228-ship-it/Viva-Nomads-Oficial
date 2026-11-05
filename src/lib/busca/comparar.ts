@@ -6,6 +6,7 @@
 import type { Property } from "../types.ts";
 import { garantiaLabel } from "../faixas.ts";
 import { textoValorPet } from "../anuncio/pets-regras.ts";
+import { calcularTotalMensal, ROTULO_TOTAL_MES } from "../precos.ts";
 
 export const MAX_COMPARAR = 3;
 export const MIN_COMPARAR = 2;
@@ -57,7 +58,10 @@ export function montarTabela(imoveis: readonly Property[]): LinhaComparar[] {
     valores: imoveis.map(f),
   });
   return [
-    por("mensal", "Valor mensal", (p) => (p.monthlyPrice > 0 ? brl(p.monthlyPrice) : SEM_DADO)),
+    // E521: a MESMA base da busca, do mapa e do anúncio — o total por mês com as contas (calcularTotalMensal). Antes a
+    // primeira linha era só o aluguel ("Valor mensal R$ 2.000" contra "R$ 2.430" na busca), sem aviso.
+    por("total", ROTULO_TOTAL_MES, (p) => (p.monthlyPrice > 0 ? brl(calcularTotalMensal(p).total) : SEM_DADO)),
+    por("mensal", "Aluguel (só o valor mensal)", (p) => (p.monthlyPrice > 0 ? brl(p.monthlyPrice) : SEM_DADO)),
     por("quartos", "Quartos", (p) => num(p.bedrooms)),
     por("banheiros", "Banheiros", (p) => num(p.bathrooms)),
     por("area", "Área (m²)", (p) => num(p.areaM2)),
