@@ -894,7 +894,8 @@
         "t560-varredura-bloco44",
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
-        "t644-conta-menu-alinhado"
+        "t644-conta-menu-alinhado",
+        "t1164-e540-visuais-morador"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -2183,7 +2184,8 @@
         "t311-marco-principal-unico",
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
-        "t560-varredura-bloco44"
+        "t560-varredura-bloco44",
+        "t1164-e540-visuais-morador"
       ]
     },
     "/admin/contratos/[id]": {
