@@ -186,3 +186,23 @@ Achados (numerados):
    "Entrar". Uma linha em `src/components/layout/footer.tsx` se o Daniel quiser trocar por "(é preciso entrar)".
 
 Nenhum defeito novo nesta passada. /socios e /decisao (E597) foram conferidas pelo T908 no lab-critico do #2713 (390 e 1280).
+
+## Varredura geral por blocos — passada 13 (05/11, modo demonstração, 390 e 1280)
+
+16 rotas públicas e 19 do painel (incluindo assistente de cadastro no passo 1 e na Revisão, Conta, Agenda, Simulador, Pedidos,
+Locações e Visitas), medidas no topo e no fim da rolagem, nas classes pedidas pela vigia: imagem vazia/quebrada, elemento fixo
+sobrepondo conteúdo, estouro horizontal e texto cortado. Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Imagem vazia ou quebrada**: nenhuma. **Conforme.**
+2. **Estouro horizontal**: nenhum. **Conforme.**
+3. **Texto cortado**: os únicos cortes medidos são textos só para leitor de tela (`sr-only`, 1 px de propósito — "Aceita pets",
+   "Imóveis encontrados", "— falta"). Nenhum texto visível cortado. **Conforme.**
+4. **Elemento fixo sobre o conteúdo**: a 390, a barra de navegação de baixo e o rodapé do assistente cobrem controles enquanto a
+   página rola (é o normal de uma barra fixa); no fim da rolagem, nenhum controle, título ou parágrafo fica por baixo deles nas
+   10 rotas apontadas (busca, ajuda, para proprietários, privacidade, Início, Meus imóveis, Revisão, Meus dados, Simulador, Pedidos),
+   nos dois tamanhos. **Conforme.**
+5. **E526** (diálogos de filtro da busca): reconferido na main de hoje com o T841 local — passa a 390 e 1280 (correção do #2457 de pé).
+
+Nenhum defeito novo nesta passada.
