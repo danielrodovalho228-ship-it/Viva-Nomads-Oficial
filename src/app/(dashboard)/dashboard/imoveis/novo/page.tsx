@@ -62,7 +62,7 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
 import { avisoDoBairro } from "@/lib/cep/bairro";
-import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
+import { estadoPassoFotos, fotosBloqueiamAvanco, fotosDaPrevia, motivoAvancoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -116,6 +116,8 @@ import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
+import { IndicePassos } from "./indice-passos";
+import { indicePassos } from "@/lib/anuncio/indice-passos";
 import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
@@ -500,7 +502,8 @@ export default function NewPropertyPage() {
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
-    if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
+    // E602: a contagem mínima de fotos é exigência para PUBLICAR, não para navegar; só foto/vídeo sinalizado segura o avanço.
+    if (s === ETAPA.fotos && fotosBloqueiamAvanco(passoFotos)) e.fotos = motivoAvancoFotos(passoFotos) ?? "Confira as fotos para continuar.";
     if (s === ETAPA.detalhes) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
@@ -1909,7 +1912,9 @@ export default function NewPropertyPage() {
 
       {/* E161: a grade da página do imóvel — conteúdo + coluna lateral do tamanho do cartão do anúncio (22rem/26rem). */}
       <div
-        className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
+        // E602: a coluna única (celular e Passo 10) também é minmax(0,1fr) — sem ela, a faixa do índice de passos (que rola
+        // de lado) alargava a coluna implícita e a página inteira rolava de lado a 390 px.
+        className={cn("grid grid-cols-[minmax(0,1fr)] gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
         data-testid="novo-duas-colunas"
       >
         {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo clean da moldura (E166; antes, areia). */}
@@ -1954,6 +1959,14 @@ export default function NewPropertyPage() {
           <p className="mt-2 text-base text-muted" data-testid="passo-subtitulo">
             {meta.subtitle}
           </p>
+          {/* E602: o índice de passos clicável, com o estado de cada um — sem ele, quem não tinha as 8 fotos ficava preso no Passo 2. */}
+          <IndicePassos
+            passos={indicePassos(conferencia, step, etapaMax)}
+            onIr={(i) => {
+              setErros({});
+              irPara(i);
+            }}
+          />
           {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
           {/* E260 (a): a janela curta não entra aqui — o aviso dela, junto das datas, já diz tudo (uma vez só). */}
           {errosDoResumo(erros).length > 0 && (
@@ -2279,7 +2292,8 @@ export default function NewPropertyPage() {
                 pendente: faltaNoPasso.length > 0,
                 title: faltaNoPasso.length ? `Falta: ${faltaNoPasso.join(" ")}` : undefined,
                 // E133: no Passo 2, desabilitado de verdade (visual e clique) até o mínimo de fotos e sem aviso pendente.
-                ...(step === ETAPA.fotos && !passoFotos.podeContinuar ? { disabled: true, title: passoFotos.mensagem ?? undefined } : {}),
+                // E602: com menos de 8 fotos o Continuar segue livre (as fotos seguram só o Publicar).
+                ...(step === ETAPA.fotos && fotosBloqueiamAvanco(passoFotos) ? { disabled: true, title: motivoAvancoFotos(passoFotos) ?? undefined } : {}),
               }
             : telaLarga
               ? // E251: no computador o "Publicar anúncio" é o da coluna da prévia (um botão cheio por tela).
