@@ -560,7 +560,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t1183-e446-bairros-mesma-contagem"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -572,7 +573,8 @@
         "t18-seo-a11y",
         "t20-p1-agentes",
         "t311-marco-principal-unico",
-        "t421-varredura-bloco38"
+        "t421-varredura-bloco38",
+        "t1183-e446-bairros-mesma-contagem"
       ]
     },
     "/como-funciona": {
