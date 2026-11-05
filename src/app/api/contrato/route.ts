@@ -7,6 +7,8 @@ import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
 import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
 import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA } from "@/lib/data/fechamento-servidor";
+import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { prazoDoContratoEmDias } from "@/lib/contrato-prazo-dias";
 
 /**
  * Contrato no ZapSign. A5: recebe o id da candidatura aceita + escolhas do
@@ -44,6 +46,11 @@ export async function POST(request: Request) {
   // Estados vazios: sem saber se é conta de teste, não gera nada (nem simulado nem real).
   const teste = await (async () => (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId)))().catch(() => "falhou" as const);
   if (teste === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  // E562 (Relay 67): o prazo do documento em DIAS — os da proposta aceita, a mesma fonte do registro do contrato e da
+  // taxa; sem proposta, os meses do Fechamento × 30. Falha de leitura não vira "sem proposta" (sairia com outro prazo).
+  const acordada = admin ? await propostaAcordadaDoLead(admin, f.leadId).catch(() => "falhou" as const) : null;
+  if (acordada === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  const periodo = prazoDoContratoEmDias({ diasAcordados: acordada ? acordada.dias : null, mesesDoFechamento: prazo });
   // Achado 82: sem ler a reserva, não decide (nem "em andamento" nem gerar de novo).
   const reserva = await lerReservaFechamento(f.leadId, "contrato").catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
@@ -79,7 +86,9 @@ export async function POST(request: Request) {
       ownerName: f.ownerNome,
       propertyTitle: f.tituloImovel,
       monthlyRent: f.aluguelMensal,
-      termMonths: prazo,
+      termMonths: periodo.meses,
+      termDays: periodo.dias,
+      termText: periodo.texto,
       guarantee: garantia,
       costSplit: split,
     });
