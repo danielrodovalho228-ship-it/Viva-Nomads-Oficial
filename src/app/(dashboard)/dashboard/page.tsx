@@ -197,6 +197,8 @@ export default async function DashboardPage() {
             foto: capaRascunho,
             // E507: o mesmo destino de retomada de Meus imóveis.
             retomar: hrefRetomarRascunho(draft?.prontidao, rascunho.id),
+            // E567: o nome do rascunho junto do "% pronto" — o percentual é DESTE anúncio em andamento.
+            nome: draft?.title ?? null,
           }
         : null,
       decisoes: decisoesDono,
