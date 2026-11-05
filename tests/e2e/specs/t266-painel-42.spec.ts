@@ -201,8 +201,9 @@ test.describe("T266 — Painel do Prompt 42", () => {
       const rotas: [string, string][] = [
         ["ferramentas-todas", "/dashboard/ferramentas"],
         ["simulador", "/dashboard/simulador"],
-        // E294: a Calculadora de ROI está no simulador; E292-bis: Tributação saiu. Os cartões do hub hoje:
-        ["recibos", "/dashboard/recibos"],
+        // E294: a Calculadora de ROI está no simulador; E292-bis: Tributação saiu; E495 (04/11): "Recibos e notas" saiu do
+        // hub (a porta que fica é a de Contratos). Os cartões do hub hoje:
+        ["carteira", "/dashboard/carteira"],
         ["contratos-lista", "/dashboard/contratos"],
       ];
       // MENUS-5: o dono não tem mais gaveta nem "Ferramentas" no menu da Conta. Ferramentas se abre pelo link "Todas as
