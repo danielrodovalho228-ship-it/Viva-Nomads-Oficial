@@ -68,8 +68,8 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await p.getByTestId("disponivel-de").fill(de);
     await p.getByTestId("disponivel-ate").fill(ateCurto);
     // E136: o que se lê é pt-BR mesmo com o aparelho em inglês.
-    await expect(p.getByTestId("disponivel-de-texto")).toHaveText(br(de));
-    await expect(p.getByTestId("disponivel-ate-texto")).toHaveText(br(ateCurto));
+    await expect(p.getByTestId("disponivel-de")).toHaveValue(br(de));
+    await expect(p.getByTestId("disponivel-ate")).toHaveValue(br(ateCurto));
     // E137: aviso no passo e o Continuar não avança.
     await expect(p.getByTestId("janela-curta")).toContainText("são 24 dias — menos que a duração mínima de 30 dias");
     await p.getByTestId("cadastro-continuar").tap();
@@ -99,14 +99,13 @@ test.describe("T476 — Passos 3 e 9 (E136, E137, E138, E147)", () => {
     await expect(p.getByTestId("bloqueio-item")).toHaveCount(0, { timeout: 15_000 });
 
     // Com 30 dias a janela cabe e o Continuar avança.
-    // O campo segue sendo o seletor nativo de data (aparelho de toque) depois de mexer no calendário. Os prints desta
+    // O campo segue sendo o de texto dd/mm/aaaa (E136: no toque, o calendário do site) depois de mexer no calendário. Os prints desta
     // spec são da tela visível: o print de página inteira faz o Chromium emulado responder (pointer: coarse) = falso
     // dali em diante, e o site passa a se comportar como no computador (medido na sonda de 25/10).
-    await expect(p.getByTestId("disponivel-ate")).toHaveAttribute("type", "date");
+    await expect(p.getByTestId("disponivel-ate")).toHaveAttribute("type", "text");
     await p.getByTestId("disponivel-ate").fill(dia(32));
     // Primeiro o valor (o texto pt-BR do campo), depois o aviso: separa "não entrou" de "não recalculou".
-    await expect(p.getByTestId("disponivel-ate")).toHaveValue(dia(32));
-    await expect(p.getByTestId("disponivel-ate-texto")).toHaveText(br(dia(32)));
+    await expect(p.getByTestId("disponivel-ate")).toHaveValue(br(dia(32)));
     await expect(p.getByTestId("janela-curta")).toHaveCount(0);
     await p.getByTestId("cadastro-continuar").tap();
     await noPasso(p, "revisao", 20_000);

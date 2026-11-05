@@ -269,7 +269,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // ── Passo 9: Disponibilidade ────────────────────────────────────────
       await noPasso(page, "disponibilidade");
       // Prompt 22: no computador a data aceita digitar dd/mm/aaaa (com máscara) e o calendário fica num botão; no
-      // celular (toque) segue o seletor nativo — coberto no t204.
+      // celular (toque) o toque no campo abre o mesmo calendário do site (E136) — coberto no t204 e na t915.
       const de = page.getByTestId("disponivel-de");
       const ate = page.getByTestId("disponivel-ate");
       for (const d of [de, ate]) await expect(d).toHaveAttribute("type", "text");

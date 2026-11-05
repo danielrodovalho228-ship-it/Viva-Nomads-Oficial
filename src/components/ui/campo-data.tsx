@@ -23,6 +23,7 @@ export function CampoDataTexto({
   rotuloCalendario,
   aceitarTexto,
   calendarioEmLinha = false,
+  abrirAoTocar = false,
   aoInvalido,
   ...resto
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange" | "min"> & {
@@ -39,6 +40,8 @@ export function CampoDataTexto({
   aceitarTexto?: (bruto: string) => boolean;
   /** E526: calendário em linha (dentro de um painel), em vez de flutuar por cima dele. */
   calendarioEmLinha?: boolean;
+  /** E136 (toque): tocar no campo abre o calendário do site, sem teclado — nada de seletor nativo do aparelho. */
+  abrirAoTocar?: boolean;
 }) {
   const caixa = useRef<HTMLSpanElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
@@ -61,10 +64,11 @@ export function CampoDataTexto({
       <input
         {...resto}
         type="text"
-        inputMode="numeric"
+        inputMode={abrirAoTocar ? "none" : "numeric"}
         autoComplete="off"
         placeholder="dd/mm/aaaa"
         value={texto}
+        onClick={abrirAoTocar ? () => setAberto(true) : undefined}
         onChange={(e) => {
           const bruto = e.target.value;
           if (aceitarTexto?.(bruto.trim())) return;

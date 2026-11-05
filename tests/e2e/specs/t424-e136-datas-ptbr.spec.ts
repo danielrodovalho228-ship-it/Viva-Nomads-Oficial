@@ -7,8 +7,8 @@ import { abrirPasso, emDiasBR, isoParaBR, prepararRascunho } from "../fixtures/r
   T424 — E136 (levantamento do Daniel, 25/10; correção na Pista A). Passo 9, Disponibilidade: as datas aparecem em
   pt-BR, nada de "Oct"/"Nov", mesmo com o navegador em inglês (locale en-US, o padrão do laboratório).
    1. 1280 px (campo de texto dd/mm/aaaa): a data digitada fica dd/mm/aaaa e o passo não mostra mês em inglês;
-   2. 390 px no toque (o campo vira o seletor nativo, t204): a data escolhida aparece em dd/mm/aaaa na tela — o
-      seletor nativo desenha no idioma do aparelho ("Oct 25, 2026" num celular em inglês).
+   2. 390 px no toque: a data escolhida aparece em dd/mm/aaaa no campo — o toque abre o calendário do site (E136,
+      resíduo), não o seletor nativo, que desenhava no idioma do aparelho ("Oct 25, 2026" num celular em inglês).
   Só no laboratório.
 */
 const senha = novaSenha();
@@ -42,14 +42,14 @@ test.describe("T424 — E136: datas do Passo 9 em pt-BR", () => {
   });
 
   test("2. 390 px no toque: a data escolhida aparece em dd/mm/aaaa na tela", async ({ browser }) => {
-    // E136 (corrigido na Pista A): no toque o seletor nativo continua abrindo, e a data aparece por cima em dd/mm/aaaa.
+    // E136 (resíduo): no toque o campo é o mesmo do computador — a data escolhida fica no campo em dd/mm/aaaa.
     const page = await abrirPasso(browser, { email: dono.email, senha }, ids.rascunho!, "disponibilidade", 390, { locale: "en-US", hasTouch: true, isMobile: true });
     const campo = page.getByTestId("disponivel-de");
-    await expect(campo).toHaveAttribute("type", "date", { timeout: 30_000 });
+    await expect(campo).toHaveAttribute("type", "text", { timeout: 30_000 });
     await campo.fill(DATA);
     const bloco = page.getByTestId("disponibilidade");
     expect(await bloco.innerText()).not.toMatch(MES_EM_INGLES);
-    await expect(bloco.getByText(isoParaBR(DATA)), "a data escolhida, em dd/mm/aaaa, ao lado do seletor nativo").toBeVisible();
+    await expect(campo, "a data escolhida, em dd/mm/aaaa, no campo").toHaveValue(isoParaBR(DATA));
     await page.context().close();
   });
 });
