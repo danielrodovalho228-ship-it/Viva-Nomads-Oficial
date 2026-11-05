@@ -21,8 +21,8 @@ import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ");
 
 test.describe("T37 — Números do código (fonte única)", () => {
-  test("comissão 12 / 8 / 4 / 0 % e preços históricos", () => {
-    expect(COMISSAO_POR_PLANO).toEqual({ free: 0.12, essential: 0.08, pro: 0.04, gestor: 0 });
+  test("comissão 12 / 8 / 4 / 4 % (Gestor = faixa de 4%, #2519) e preços históricos", () => {
+    expect(COMISSAO_POR_PLANO).toEqual({ free: 0.12, essential: 0.08, pro: 0.04, gestor: 0.04 });
     expect(PLANOS.map((p) => p.precoMensal)).toEqual([0, 49, 129, null]);
     expect(PLANOS.map((p) => p.assinaturaAnual)).toEqual([0, 588, 1548, null]);
   });
@@ -35,10 +35,11 @@ test.describe("T37 — Números do código (fonte única)", () => {
         expect(r.comissaoValor).toBeLessThanOrEqual(Math.round(aluguel * 4 * 0.12));
       }
     }
-    // Exemplo: R$ 2.400 × 4 meses = R$ 9.600 → R$ 1.152 / 768 / 384 / 0.
-    expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([1152, 768, 384, 0]);
+    // Exemplo: R$ 2.400 × 4 meses = R$ 9.600 → R$ 1.152 / 768 / 384 / 384 (o Gestor paga a faixa de 4%, #2519).
+    expect(PLANOS.map((p) => resumoContrato(4, 2400, p.comissao).comissaoValor)).toEqual([1152, 768, 384, 384]);
     expect(textoComissao(0.12, 2400)).toContain("12% do valor total do contrato");
-    expect(textoComissao(0)).toContain("Taxa de serviço zero");
+    // E564: não existe mais "taxa de serviço zero" (o Gestor paga 4%).
+    expect(textoComissao(0)).not.toContain("Taxa de serviço zero");
   });
 
   test("Caução: 50% de cada bloco e, no total, no máximo 3 aluguéis", () => {

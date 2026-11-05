@@ -36,18 +36,18 @@ test.describe("T72 — páginas institucionais", () => {
     });
   }
 
-  test("2. nenhum link do cabeçalho leva a 404 (desktop, menu Mais e celular)", async ({ page, request }) => {
+  test("2. nenhum link do cabeçalho leva a 404 (desktop e celular; o menu 'Mais' saiu no E176)", async ({ page, request }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
     const header = page.locator("header").first();
-    await header.getByRole("button", { name: "Mais" }).click();
     const desktop = await header.locator("a[href^='/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Abrir menu" }).click();
     const celular = await page.locator("header").first().locator("a[href^='/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
     const links = [...new Set([...desktop, ...celular])].filter((h) => !h.startsWith("/dashboard") && !h.startsWith("/auth"));
-    expect(links.length).toBeGreaterThanOrEqual(7);
+    // Topo de hoje: Imóveis · Anunciar · Empresas · Parceiros (+ Planos com a chave do E563 ligada), logo e Fale com a Viva.
+    expect(links.length).toBeGreaterThanOrEqual(5 + comPrecos(1).length);
     for (const href of links) {
       const r = await request.get(href);
       expect(r.status(), href).toBeLessThan(400);
