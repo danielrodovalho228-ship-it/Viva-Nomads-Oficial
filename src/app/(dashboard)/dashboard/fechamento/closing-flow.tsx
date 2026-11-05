@@ -2,7 +2,7 @@
 
 import { prazoInicial } from "@/lib/inicio-estadia";
 import { rotuloPreco } from "@/lib/cartao-preco";
-import { mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
@@ -590,7 +590,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <p className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest" data-testid="fechamento-proposta">
                   Valores da proposta <strong>{ACORDO.numero}</strong>, aceita pelas duas partes: {ROTULO_TOTAL_MES.toLowerCase()}{" "}
                   <strong data-testid="fechamento-proposta-mes">{formatBRL(PRECO_FECHAMENTO.totalPorMes)}</strong> · {ROTULO_TOTAL_CONTRATO.toLowerCase()}{" "}
-                  <strong data-testid="fechamento-proposta-contrato">{formatBRL(PRECO_FECHAMENTO.totalContrato ?? 0)}</strong>
+                  {/* E562: em dias o total tem centavos (R$ 4.671,67), o mesmo da proposta; valor inteiro segue sem ",00". */}
+                  <strong data-testid="fechamento-proposta-contrato">{formatBRLExato(PRECO_FECHAMENTO.totalContrato ?? 0)}</strong>
                   {PRECO_FECHAMENTO.conta && <span className="block" data-testid="fechamento-proposta-conta">{PRECO_FECHAMENTO.conta}</span>}
                 </p>
               )}

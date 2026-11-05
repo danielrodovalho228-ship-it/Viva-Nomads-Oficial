@@ -43,3 +43,8 @@ test("e-mail da candidatura: o total da estadia em dias, pela conta do anúncio"
   const c = ler("lib/data/candidatura-email.ts");
   assert.match(c, /estadiaDias: publico && p \? estadiaDoImovelEmDias\(publico, p\.dias\) : null,/);
 });
+
+test("Fechamento com proposta em dias: o total do contrato com centavos, igual à proposta (t863: R$ 4.671,67, não R$ 4.672)", () => {
+  const f = ler("app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  assert.match(f, /data-testid="fechamento-proposta-contrato">\{formatBRLExato\(PRECO_FECHAMENTO\.totalContrato \?\? 0\)\}/);
+});
