@@ -5,6 +5,7 @@
 */
 import { propertyTypeLabel } from "../amenities.ts";
 import { linhaLocalizacao } from "../localizacao.ts";
+import { ETAPA } from "./etapas-ids.ts";
 
 export interface TelaAssistente {
   /** Rótulo curto (barra de passos, lista de conferência). */
@@ -128,4 +129,13 @@ export function resumoDisponibilidadePrevia(availableFrom: string, minDias: stri
   const status = !de || !/^\d{4}-\d{2}-\d{2}$/.test(de) || de <= hoje ? "Disponível agora" : `Disponível a partir de ${de.slice(8, 10)}/${de.slice(5, 7)}`;
   const n = Math.round(Number(minDias));
   return Number.isFinite(n) && n > 0 ? `Resumo: ${status} · Mínimo ${n} dias` : `Resumo: ${status}`;
+}
+
+/**
+ * E603: o chip "Mobiliado" da prévia (e do cartão no tamanho real) só depois de o dono DECLARAR — o cadastro nasce com
+ * "Mobiliado e equipado" ligado e a declaração mora no Passo 6 (Regras). Antes dele, o valor inicial não vira chip
+ * (a prévia dizia "Mobiliado" com o Passo 5 vazio). O anúncio publicado em edição já foi declarado.
+ */
+export function mobiliadoNaPrevia(o: { furnished: boolean; etapaMax: number; editando: boolean }): boolean {
+  return o.furnished && (o.editando || o.etapaMax >= ETAPA.regras);
 }

@@ -123,7 +123,7 @@ import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
 import { useTelaLarga } from "@/components/ui/use-tela-larga";
 import { EVENTO_ABRIR_SECAO, motivoPublicarTravado, secaoDoItem, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
-import { TELAS_ASSISTENTE, resumoDisponibilidadePrevia } from "@/lib/anuncio/assistente-telas";
+import { TELAS_ASSISTENTE, mobiliadoNaPrevia, resumoDisponibilidadePrevia } from "@/lib/anuncio/assistente-telas";
 import { TITULO_PASSO_CADASTRO } from "@/lib/conta/visual-mockup";
 
 /**
@@ -665,6 +665,10 @@ export default function NewPropertyPage() {
   // E164: a prévia (cartão, tamanho real e revisão) só mostra foto elegível — a sinalizada sem confirmação nunca é a
   // principal; sem nenhuma elegível, a prévia fica sem foto.
   const fotosPrevia = fotosDaPrevia(photos).map((p) => p.url);
+  // E603: "Mobiliado" na prévia e no cartão no tamanho real só depois de o dono declarar (Passo 6) — o cadastro nasce
+  // com "Mobiliado e equipado" ligado, e a prévia dizia "Mobiliado" com o Passo 5 vazio.
+  const mobiliadoPrevia = mobiliadoNaPrevia({ furnished, etapaMax: Math.max(etapaMax, step), editando: !!editingId });
+  const mobiliadoDeclarado = mobiliadoNaPrevia({ furnished: true, etapaMax: Math.max(etapaMax, step), editando: !!editingId });
   const previewProperty = {
     id: "preview",
     title: title.trim() || "Sem título ainda",
@@ -697,6 +701,8 @@ export default function NewPropertyPage() {
     internetMbps: mbpsValido(internetMbps),
     parkingSpots: Number(parkingSpots) || 0,
     proximities: proximidadesFinais,
+    // E603: a mesma regra da prévia — a mobília só entra depois de declarada no Passo 6 (antes, nem "Sem mobília").
+    furnished: mobiliadoDeclarado ? furnished : undefined,
   } as Property;
 
   async function publish(asDraft = false, irParaQualificacao = false) {
@@ -1202,6 +1208,7 @@ export default function NewPropertyPage() {
           city,
           monthlyPrice: Number(monthlyPrice) || 0,
           neighborhood,
+          bedrooms: Number(bedrooms) || 0,
           bathrooms: Number(bathrooms) || 0,
           areaM2: Number(areaM2) || 0,
           description,
@@ -2256,7 +2263,7 @@ export default function NewPropertyPage() {
             tipo={propertyType}
             quartos={Number(bedrooms) || 0}
             areaM2={Number(areaM2) || 0}
-            mobiliado={furnished}
+            mobiliado={mobiliadoPrevia}
             pets={petsOk}
             bairro={neighborhood}
             cidade={city}
