@@ -1,11 +1,9 @@
 import { test, expect, devices } from "@playwright/test";
 
 /**
- * T1158 — E590 (relato do Daniel, celular, 05/11): "Nível" na barra da busca sem as opções. Diagnóstico: não é defeito
- * de celular — o painel é o mesmo componente em qualquer largura e, com anúncios que têm nível, as 3 opções abrem e
- * aplicam por toque. Em produção (leitura de 05/11) os únicos anúncios com nível em Uberlândia são de TESTE (8
- * "essencial", o "Essencial ou acima · 8" da prova de 04/11 com conta de teste); para quem não é conta de teste, a
- * busca só tem os de demonstração, sem nível, e o painel mostra o aviso de "sem níveis" (TEXTO_SEM_NIVEIS).
+ * T1158 — E590 (relato do Daniel, celular, 05/11): "Nível" na barra da busca sem as opções. Causa: sem anúncio com nível
+ * na busca (Uberlândia para quem não é conta de teste), o painel trocava as opções por um aviso. Correção: as 3 opções
+ * aparecem SEMPRE com o contador (zero = desabilitada) e a nota fica embaixo.
  * Guarda: no celular (toque), cada pílula da barra — Datas, Tipo, Preço, Nível, Ordenar — abre o painel DENTRO da tela,
  * com conteúdo (opções ou o aviso do nível), e Tipo/Preço/Ordenar/Nível aplicam (URL e pílula). @criticos
  */
@@ -46,17 +44,20 @@ test("celular: Datas, Tipo, Preço, Nível e Ordenar abrem dentro da tela e apli
     await expect(page.getByTestId(`pilula-${pilula}`)).not.toHaveAttribute("data-valor", "");
   }
 
-  // Nível: as 3 opções com contador (e a primeira com imóvel aplica) OU, sem nível nenhum na busca, o aviso.
+  // Nível (E590): SEMPRE as 3 opções com o contador; a primeira com imóvel aplica. Sem nível na busca, todas "· 0"
+  // (desabilitadas) e a nota embaixo.
   const nivel = await abrir(page, "nivel");
   const opcoes = nivel.locator('[data-testid^="pilula-nivel-"]:not([data-testid$="-n"])');
-  if ((await opcoes.count()) > 0) {
-    await expect(opcoes).toHaveCount(3);
-    for (const v of ["essencial", "conforto", "premium"]) await expect(nivel.getByTestId(`pilula-nivel-${v}-n`)).toBeVisible();
-    const comImovel = nivel.locator('[data-testid^="pilula-nivel-"]:not([data-testid$="-n"]):not([disabled])').first();
-    if ((await comImovel.count()) > 0) {
-      await comImovel.tap();
-      await expect(page).toHaveURL(/nivel=/);
-    }
+  await expect(opcoes).toHaveCount(3);
+  for (const v of ["essencial", "conforto", "premium"]) {
+    await expect(nivel.getByTestId(`pilula-nivel-${v}`)).toBeVisible();
+    await expect(nivel.getByTestId(`pilula-nivel-${v}-n`)).toHaveText(/·\s*\d+/);
+  }
+  const comImovel = nivel.locator('[data-testid^="pilula-nivel-"]:not([data-testid$="-n"]):not([disabled])').first();
+  if ((await comImovel.count()) > 0) {
+    await comImovel.tap();
+    await expect(page).toHaveURL(/nivel=/);
+    await expect(page.getByTestId("pilula-nivel")).not.toHaveAttribute("data-valor", "");
   } else {
     await expect(nivel.getByTestId("painel-nivel-vazio")).toBeVisible();
   }
