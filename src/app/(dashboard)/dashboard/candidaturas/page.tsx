@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import Link from "next/link";
 import { FileSignature, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -105,7 +106,7 @@ export default async function CandidaturasPage() {
                   <span className="min-w-0">
                     Contrato: <strong data-testid="candidatura-contrato-status">{c.contrato.status}</strong>
                   </span>
-                  <Link href={`/dashboard/locacoes/${c.contrato.id}`} className="font-medium underline" data-testid="candidatura-contrato-abrir">
+                  <Link href={HREF_CONTRATO_DA_ESTADIA(c.contrato.id)} className="font-medium underline" data-testid="candidatura-contrato-abrir">
                     Ver contrato
                   </Link>
                 </div>

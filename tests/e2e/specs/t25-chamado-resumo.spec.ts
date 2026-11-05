@@ -27,11 +27,12 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    await bloco.getByLabel("Pedido para a equipe").fill(`${PERGUNTA} (${Date.now()})`);
-    await bloco.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = p.getByTestId("chamado-aberto-chat");
-    await expect(ok).toBeVisible({ timeout: 20_000 });
-    const numero = (await ok.innerText()).match(/VN-\d+/)![0];
+    // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só); logado, o chamado abre na hora.
+    const form = p.locator("#abrir-chamado");
+    await form.getByLabel("O que aconteceu?").fill(`${PERGUNTA} (${Date.now()})`);
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
+    await expect(p).toHaveURL(/\?chamado=VN-\d+/, { timeout: 20_000 });
+    const numero = new globalThis.URL(p.url()).searchParams.get("chamado")!;
     await dono.close();
     const { data: c } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
     // A Viva já deixou resumo e sugestão SEM o admin abrir (abertura do chamado).

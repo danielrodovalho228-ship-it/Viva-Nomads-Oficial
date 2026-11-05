@@ -5,6 +5,7 @@
   corrige ou contesta, morador confirma ou reabre, o atendimento da Viva decide a contestação). Toda gravação passa pelo
   cliente de serviço DEPOIS de conferir quem age; as regras são as de src/lib/conforto/regras.ts.
 */
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -131,7 +132,7 @@ export async function agirNaPendencia(
   }
   await recalcularNivel(admin, p.property_id as string);
   revalidatePath(`/dashboard/contratos/${p.contrato_id}`);
-  revalidatePath(`/dashboard/locacoes/${p.contrato_id}`);
+  revalidatePath(HREF_CONTRATO_DA_ESTADIA(p.contrato_id));
   revalidatePath("/admin/conforto");
   return { ok: true, mensagem: MSG[acao] };
 }

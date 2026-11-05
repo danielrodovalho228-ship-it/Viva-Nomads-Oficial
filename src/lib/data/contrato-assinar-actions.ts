@@ -5,6 +5,7 @@ import { corpoAnuncioCompartilhar, paraNotify } from "@/lib/notifications/corpo-
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -540,7 +541,7 @@ export async function assinarContrato(input: {
   const { error: errCol } = await admin.from("contratos").update({ [coluna]: agora }).eq("id", c.id).is(coluna, null);
   if (errCol) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
   // A tela do contrato (dos dois lados) e as listas voltam já com o aviso novo, na mesma resposta da ação.
-  revalidatePath("/dashboard/locacoes/[id]", "page");
+  revalidatePath("/dashboard/estadia/[contratoId]/contrato", "page");
   revalidatePath("/dashboard/contratos/[id]", "page");
   revalidatePath("/dashboard/contratos");
   revalidatePath("/dashboard/locacoes");
@@ -584,7 +585,7 @@ export async function assinarContrato(input: {
         userId: outroId,
         // Quem recebe é a outra parte: o dono abre em Contratos, o inquilino em Minhas locações.
         // Prompt 61-A: com as duas assinaturas, o aviso de quem assinou antes abre a tela "Estadia confirmada".
-        pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
+        pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : HREF_CONTRATO_DA_ESTADIA(c.id),
         subject: assuntoAvisoOutraParte(outraJaAssinou),
         imovelId: c.property_id,
         // E444: "falta você assinar" é crítico (resolvido quando a pessoa assinar); com as duas assinaturas, só informa.

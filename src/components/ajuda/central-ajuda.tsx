@@ -13,6 +13,7 @@ import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
+import { ASSUNTO_CHAMADO_DO_CHAT, CHAVE_CONVERSA_CHAT, EVENTO_FALAR_COM_PESSOA, mensagemDoChamado, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
@@ -56,6 +57,8 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const [aba, setAba] = useState<"inicio" | "novo" | "chamado">("inicio");
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [contexto, setContexto] = useState<{ tipo: string; id: string } | null>(null);
+  // E539 (iii): a conversa entregue pelo "Falar com uma pessoa" do chat da página (um formulário de chamado só).
+  const [conversa, setConversa] = useState<MsgChat[] | null>(null);
   // Ordem 521c5af7 (S3): "Algo deu errado? Fale com a Viva" chega com o código do pedido de serviço.
   const [codigoServico, setCodigoServico] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -122,6 +125,18 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
     recarregar();
   }, [recarregar]);
 
+  useEffect(() => {
+    const aoPedirPessoa = (e: Event) => {
+      const msgs = (e as CustomEvent<{ conversa?: MsgChat[] }>).detail?.conversa;
+      setConversa(Array.isArray(msgs) ? msgs : []);
+      setNumeroAberto(null);
+      setAba("novo");
+      requestAnimationFrame(() => document.getElementById("abrir-chamado")?.scrollIntoView({ block: "start", behavior: "smooth" }));
+    };
+    window.addEventListener(EVENTO_FALAR_COM_PESSOA, aoPedirPessoa);
+    return () => window.removeEventListener(EVENTO_FALAR_COM_PESSOA, aoPedirPessoa);
+  }, []);
+
   function abrir(numero: string) {
     setNumeroAberto(numero);
     setAba("chamado");
@@ -136,7 +151,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
 
   return (
     <div className="w-full min-w-0">
-      {aviso && <p className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink">{aviso}</p>}
+      {aviso && <p data-testid="central-aviso" className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink">{aviso}</p>}
       {pessoaLink && (
         <ConfirmarPessoa
           link={pessoaLink}
@@ -154,6 +169,7 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
         <NovoChamado
           canal={canal}
           contexto={contexto}
+          conversa={conversa}
           codigoServico={codigoServico}
           logado={!!user}
           emailConta={user?.email ?? null}
@@ -162,10 +178,19 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
           onTentarContratos={carregarContratos}
           onCancelar={() => {
             setContexto(null);
+            setConversa(null);
             setAba("inicio");
           }}
           onAberto={(n) => {
             setContexto(null);
+            if (conversa) {
+              setConversa(null);
+              try {
+                sessionStorage.removeItem(CHAVE_CONVERSA_CHAT); // a conversa já foi anexada ao chamado
+              } catch {
+                /* ignore */
+              }
+            }
             recarregar();
             if (user) abrir(n);
             else {
@@ -322,6 +347,7 @@ function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonl
 function NovoChamado({
   canal,
   contexto,
+  conversa = null,
   codigoServico,
   logado,
   emailConta,
@@ -333,6 +359,7 @@ function NovoChamado({
 }: {
   canal: "site" | "app";
   contexto: { tipo: string; id: string } | null;
+  conversa?: MsgChat[] | null;
   codigoServico: string | null;
   logado: boolean;
   emailConta?: string | null;
@@ -355,6 +382,7 @@ function NovoChamado({
 
   const categorias = CATEGORIAS.filter((c) => !c.interna && (!c.exigeContrato || contratos.length > 0) && (!c.soContexto || c.soContexto === contexto?.tipo));
   const manutencao = cat === "manutencao";
+  const comConversa = !!conversa && conversa.length > 0;
   const camera = cat === "camera";
   const emailMascarado = emailMascaradoDaConta(emailConta);
   const captcha = useCaptcha();
@@ -366,8 +394,10 @@ function NovoChamado({
     setEnviando(true);
     const r = await abrirChamado({
       categoria: cat,
-      mensagem,
+      mensagem: mensagemDoChamado(conversa, mensagem),
       canal,
+      assunto: conversa ? ASSUNTO_CHAMADO_DO_CHAT : undefined,
+      pedePessoa: conversa ? true : undefined,
       contextoTipo: (contexto?.tipo as "pedido" | "contrato" | "anuncio" | "parceiro" | "perfil" | undefined) ?? null,
       contextoId: contexto?.id ?? null,
       contratoId: manutencao || camera ? contratoId || null : null,
@@ -389,12 +419,17 @@ function NovoChamado({
 
   const campo = "w-full rounded-xl border border-line bg-white px-3 py-3 text-sm text-ink focus:border-forest focus:outline-none";
   return (
-    <form onSubmit={enviar} className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
+    <form onSubmit={enviar} id="abrir-chamado" className="scroll-mt-24 rounded-xl border border-sage-200 bg-white p-4 sm:p-6">
       <button type="button" onClick={onCancelar} className="mb-3 inline-flex items-center gap-1 text-sm text-muted hover:text-forest">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </button>
       <h2 className="font-title text-lg font-semibold text-ink">Abrir chamado</h2>
       {contexto && <p className="mt-1 text-sm text-muted">Sobre {CONTEXTO_ROTULO[contexto.tipo]} — a equipe já recebe o link.</p>}
+      {comConversa && (
+        <p className="mt-1 text-sm text-muted" data-testid="chamado-conversa-anexada">
+          A sua conversa com a Viva vai anexada. Uma pessoa responde em até 24 h.
+        </p>
+      )}
 
       <AvisoEmergencia texto={mensagem} />
 
@@ -471,11 +506,11 @@ function NovoChamado({
         )}
 
         <label className="block text-sm">
-          <span className="mb-1 block font-medium text-ink">O que aconteceu?</span>
+          <span className="mb-1 block font-medium text-ink">{comConversa ? "Quer acrescentar algo? (opcional)" : "O que aconteceu?"}</span>
           <textarea
-            required
-            minLength={5}
-            maxLength={4000}
+            required={!comConversa}
+            minLength={comConversa ? undefined : 5}
+            maxLength={comConversa ? 600 : 4000}
             rows={5}
             value={mensagem}
             onChange={(e) => setMensagem(e.target.value)}
