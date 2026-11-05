@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 const src = readFileSync(new URL("./page.tsx", import.meta.url), "utf8");
 
 test("os dois 'Voltar à busca' usam alvo-toque", () => {
-  const links = src.match(/<Link href="\/buscar" className="[^"]*">\s*Voltar à busca/g) ?? [];
+  // E532: o destino é a busca de onde veio (voltarBusca); o alvo de toque segue o mesmo.
+  const links = src.match(/<Link href=\{voltarBusca\} data-testid="comparar-voltar-busca" className="[^"]*">\s*Voltar à busca/g) ?? [];
   assert.equal(links.length, 2);
   for (const l of links) assert.match(l, /\balvo-toque\b/);
 });
