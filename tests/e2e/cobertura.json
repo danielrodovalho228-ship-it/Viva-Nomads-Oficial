@@ -295,7 +295,8 @@
         "t232-pedido-moradia-completo",
         "t255-admin-f15-f16-f18-f20",
         "t301-varredura-logada-bloco5",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t1158-e472-admin-pedidos-lista"
       ]
     },
     "/admin/socios": {
