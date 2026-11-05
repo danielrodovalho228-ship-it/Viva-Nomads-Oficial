@@ -9,7 +9,7 @@ import { getCanais, setCanais } from "@/lib/data/canais-actions";
 import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
 import { getAlertasEquipe, setAlertasEquipe } from "@/lib/data/pedidos-actions";
 import type { CategoriaComInterruptor } from "@/config/matriz-notificacoes";
-import { CANAIS_AVISO, TIPOS_AVISO, categoriasDesligadasDe, type CanaisAviso } from "@/lib/conta/tela-notificacoes";
+import { CANAIS_AVISO, TIPOS_AVISO, categoriasDesligadasDe, tiposDeDesligadas, type CanaisAviso, type PreferenciasIniciais } from "@/lib/conta/tela-notificacoes";
 
 type Tipos = Record<CategoriaComInterruptor, boolean>;
 
@@ -18,10 +18,12 @@ type Tipos = Record<CategoriaComInterruptor, boolean>;
  * Novidades e dicas, Sugestões e novidades) e o cartão "Canais" (E-mail, push, WhatsApp) com "Salvar preferências". Decisões e segurança
  * sempre chegam (sem interruptor). Gravar a preferência não liga envio: WhatsApp e push seguem atrás das chaves.
  */
-export function TelaNotificacoes() {
-  const [tipos, setTipos] = useState<Tipos | null>(null);
-  const [canais, setCanaisUi] = useState<CanaisAviso | null>(null);
-  const [equipe, setEquipe] = useState<boolean | null>(null);
+export function TelaNotificacoes({ inicial = null }: { inicial?: PreferenciasIniciais | null }) {
+  // E549: a página lê as preferências no servidor — os interruptores já nascem ligados/desligados. Antes, os 7 ficavam
+  // no trilho de carregamento (oval vazio) enquanto as três leituras do navegador não voltavam.
+  const [tipos, setTipos] = useState<Tipos | null>(inicial ? tiposDeDesligadas(inicial.desligadas) : null);
+  const [canais, setCanaisUi] = useState<CanaisAviso | null>(inicial?.canais ?? null);
+  const [equipe, setEquipe] = useState<boolean | null>(inicial?.equipe ?? null);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   // Achados 52/53: sem ler as preferências gravadas, a tela não abre com valores padrão (todos ligados) — salvar isso
@@ -30,12 +32,14 @@ export function TelaNotificacoes() {
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
+    // Com o estado vindo da página, o navegador só relê em "Tentar de novo".
+    if (inicial && tentativa === 0) return;
     let vivo = true;
     Promise.all([getCategoriasDesligadas(), getCanais(), getAlertasEquipe().catch(() => null)])
       .then(([desl, c, eq]) => {
         if (!vivo) return;
         setFalhou(false);
-        setTipos({ mensagens: !desl.includes("mensagens"), lembretes: !desl.includes("lembretes"), outros: !desl.includes("outros"), sugestoes: !desl.includes("sugestoes") });
+        setTipos(tiposDeDesligadas(desl));
         setCanaisUi(c);
         setEquipe(eq);
       })
@@ -43,7 +47,7 @@ export function TelaNotificacoes() {
     return () => {
       vivo = false;
     };
-  }, [tentativa]);
+  }, [tentativa, inicial]);
 
   async function salvar() {
     if (!tipos || !canais) return;
