@@ -42,12 +42,17 @@ async function contratoAssinado(imovel: string): Promise<string> {
   return data.id as string;
 }
 
+/**
+ * E546 (05/11): a emissão não repete recibo — mesmo dono, inquilino, endereço e valor com período sobreposto é
+ * duplicidade. Os dois imóveis da massa têm o mesmo endereço ("Centro"), então cada pagamento deste spec leva um valor seu.
+ */
+let valorSeguinte = 6400;
 async function pagamentoConfirmado(contratoId: string): Promise<string> {
   // 0182: um valor mensal por bloco — usa um bloco ainda sem pagamento (cria o próximo se precisar).
   const blocoId = await blocoSemValorMensal(contratoId);
   const { data, error } = await adm()
     .from("pagamentos_bloco")
-    .insert({ bloco_id: blocoId, contrato_id: contratoId, tipo: "aluguel", valor: 6400, forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
+    .insert({ bloco_id: blocoId, contrato_id: contratoId, tipo: "aluguel", valor: (valorSeguinte += 10), forma: "pix", data_pagamento: dia(0), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;
