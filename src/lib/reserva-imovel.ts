@@ -110,12 +110,20 @@ export function resumoSolicitacao(e: {
    * com a conta aberta. Sem ela, o total é só o mês × meses (sem inventar taxa).
    */
   estadia?: { meses: number; total: number; conta: string } | null;
+  /** E520: o campo de entrada tem texto que não é uma data real (o valor chega vazio, mas a pessoa digitou algo). */
+  entradaInvalida?: boolean;
+  /** E520: idem para a saída. */
+  saidaInvalida?: boolean;
 }): ResumoSolicitacao {
   const inicio = (e.inicioDesejado ?? "").trim();
   const fim = (e.fimDesejado ?? "").trim();
   const motivo = (e.motivoEstadia ?? "").trim();
   let erro: string | null = null;
-  if (inicio && (!ISO_DIA.test(inicio) || inicio < e.hoje)) {
+  if (e.entradaInvalida) {
+    erro = "A data de entrada está incompleta ou não existe. Corrija (dd/mm/aaaa) ou apague para continuar.";
+  } else if (e.saidaInvalida) {
+    erro = "A data de saída está incompleta ou não existe. Corrija (dd/mm/aaaa) ou apague para continuar.";
+  } else if (inicio && (!ISO_DIA.test(inicio) || inicio < e.hoje)) {
     erro = "A data de entrada precisa ser hoje ou depois. Ajuste ou apague a data para continuar.";
   } else if (fim && (!ISO_DIA.test(fim) || (inicio && fim <= inicio))) {
     erro = "A data de saída precisa ser depois da entrada. Ajuste ou apague a saída para continuar.";

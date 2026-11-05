@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { capasPorImovel, emLotes } from "@/lib/admin/capas-admin";
 import { statusPorImovel } from "@/lib/documento/vigente";
 import { todasAsPaginas } from "@/lib/admin/paginas";
 import { eventoConta } from "@/lib/eventos/trafego";
@@ -305,6 +306,26 @@ export interface ImovelLinhaAdmin {
   documentoEmRevisao?: boolean;
   qualidade: string | null;
   donoTeste: boolean;
+  /** Onda 5 (matriz admin-anuncios): a 1ª foto real do anúncio; null = espaço "sem foto". */
+  capa: string | null;
+}
+
+/**
+ * Onda 5 (matriz admin-anuncios): a capa (ordem 0) de cada anúncio, em lotes — com todas as fotos, 3000 anúncios passam
+ * do limite de linhas da API. A falha não derruba a lista: sem leitura, cada linha mostra o espaço "sem foto".
+ */
+async function lerCapas(admin: Admin, ids: string[]): Promise<Map<string, string>> {
+  const lotes = await Promise.all(
+    emLotes(ids, 500).map((lote) =>
+      admin
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", lote)
+        .eq("sort_order", 0)
+        .then(({ data }) => (data ?? []) as { property_id: string; url: string | null; sort_order: number | null }[]),
+    ),
+  ).catch(() => []);
+  return capasPorImovel(lotes.flat());
 }
 
 /** Imóveis do banco para /admin/imoveis (todos: reais e de teste — o tipo sai de tipoImovel). */
@@ -332,9 +353,10 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
   if (!linhas.length) return [];
   const ids = linhas.map((p) => p.id);
   const donos = [...new Set(linhas.map((p) => p.owner_id))];
-  const [{ data: perfis }, { data: docs }] = await Promise.all([
+  const [{ data: perfis }, { data: docs }, capas] = await Promise.all([
     admin.from("profiles").select("id, full_name").in("id", donos),
     admin.from("qualification_checklists").select("property_id, document_status, created_at").in("property_id", ids).order("created_at", { ascending: false }),
+    lerCapas(admin, ids),
   ]);
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
   // E561: o estado mostrado é o do documento VIGENTE — a mesma fonte do dono (statusPorImovel, da mais recente para a
@@ -356,6 +378,7 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
     documentoEmRevisao: emRevisao.has(p.id),
     qualidade: p.listing_quality_tier,
     donoTeste: teste.has(p.owner_id),
+    capa: capas.get(p.id) ?? null,
   }));
 }
 
