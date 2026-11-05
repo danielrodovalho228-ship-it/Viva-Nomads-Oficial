@@ -209,8 +209,8 @@ export function Toggle({
 
 /**
  * Campo de data do cadastro. Valor em AAAA-MM-DD.
- *  • Celular (toque): o `input type="date"` nativo, SEM máscara (Q8/Q9) — no iPhone abre só o calendário. Ocupa 100%
- *    da largura e não sai do cartão no iOS (`appearance: none`, `min-width: 0`).
+ *  • Celular (toque), E136: o MESMO campo do computador — tocar nele abre o calendário do site (`CalendarioBR`, pt-BR),
+ *    sem teclado. O seletor nativo do aparelho saía no idioma dele ("October 2026", "Sun Mon…").
  *  • Computador (prompt 22): digitar dd/mm/aaaa com máscara, COLAR em vários formatos (01/11/2026, 2026-11-01…) e o
  *    calendário num botão ao lado (o campo nativo do computador é segmentado e não aceitava digitar nem colar). E136:
  *    o calendário é o do site, em pt-BR (`CalendarioBR`); o pop-up do navegador saía no idioma do navegador.
@@ -229,30 +229,6 @@ export function CampoDataUnico({
   testid?: string;
 }) {
   const toque = useToque();
-
-  if (toque) {
-    // E136: o campo nativo escreve a data no idioma do APARELHO ("Oct 25, 2026" num iPhone em inglês). O texto nativo
-    // fica transparente e a data aparece por cima SEMPRE em pt-BR (25/10/2026); o toque continua abrindo o calendário.
-    return (
-      <span className="relative block min-w-0">
-        <input
-          type="date"
-          lang="pt-BR"
-          value={value}
-          min={min}
-          onChange={(e) => onChange(e.target.value)}
-          aria-label={ariaLabel}
-          data-testid={testid}
-          data-vazio={value ? undefined : "1"}
-          className="input box-border block h-11 w-full min-w-0 max-w-full appearance-none text-transparent [&::-webkit-datetime-edit]:text-transparent"
-        />
-        <span className={cn("pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm tabular-nums", value ? "text-ink" : "text-muted")} aria-hidden data-testid={testid ? `${testid}-texto` : undefined}>
-          {value ? isoParaBr(value) : "dd/mm/aaaa"}
-        </span>
-      </span>
-    );
-  }
-
   const antesDoMinimo = !!value && !!min && value < min;
   return (
     <span className="block min-w-0">
@@ -262,6 +238,7 @@ export function CampoDataUnico({
         min={min}
         ariaLabel={ariaLabel}
         testid={testid}
+        abrirAoTocar={toque}
         aria-invalid={antesDoMinimo || undefined}
         className="input h-11"
       />

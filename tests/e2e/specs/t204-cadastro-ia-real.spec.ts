@@ -232,14 +232,15 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     });
   }
 
-  test("390px celular (toque) — a data segue o seletor nativo", async ({ browser }) => {
+  test("390px celular (toque) — a data abre o calendário do site, não o seletor nativo (E136)", async ({ browser }) => {
     test.setTimeout(120_000);
     const d = await novoDono(browser, 390, { hasTouch: true, isMobile: true });
     ids.push(d.id);
     const id = await rascunho(d.id, { title: "Rascunho do T204" });
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
-    await expect(d.page.getByTestId("disponivel-de")).toHaveAttribute("type", "date", { timeout: 30_000 });
-    await expect(d.page.getByTestId("disponivel-de-calendario")).toHaveCount(0);
+    await expect(d.page.getByTestId("disponivel-de")).toHaveAttribute("type", "text", { timeout: 30_000 });
+    await d.page.getByTestId("disponivel-de").tap();
+    await expect(d.page.getByTestId("disponivel-de-calendario-popup")).toBeVisible();
     await d.fechar();
   });
 

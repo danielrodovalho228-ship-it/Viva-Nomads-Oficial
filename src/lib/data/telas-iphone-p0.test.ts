@@ -8,13 +8,12 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("cadastro novo (prompt 10, Q8/Q9): UM seletor de data — o calendário nativo, sem máscara — com exemplo dd/mm/aaaa no iOS", () => {
+test("cadastro novo (prompt 10, Q8/Q9 → E136): UM seletor de data — o calendário do site, também no toque", () => {
   const campos = ler("src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx");
   const preco = ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-preco.tsx");
-  assert.match(campos, /type="date"/);
-  // E136: por cima do campo nativo, SEMPRE a data em pt-BR (ou o exemplo dd/mm/aaaa) — nunca "Oct 25, 2026".
-  assert.match(campos, /\{value \? isoParaBr\(value\) : "dd\/mm\/aaaa"\}/);
-  assert.match(campos, /min-w-0 max-w-full appearance-none/);
+  // E136 (resíduo): o nativo do aparelho saía no idioma dele; o toque no campo abre o CalendarioBR (pt-BR).
+  assert.doesNotMatch(campos, /type="date"/);
+  assert.match(campos, /abrirAoTocar=\{toque\}/);
   assert.doesNotMatch(preco, /DateFieldBR|inputMode="numeric"/);
   assert.equal((preco.match(/<CampoDataUnico/g) ?? []).length, 2);
 });
