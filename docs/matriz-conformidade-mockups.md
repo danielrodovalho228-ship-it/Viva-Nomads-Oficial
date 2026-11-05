@@ -109,3 +109,29 @@ Sem mockup no branch `mockups`: conferidas pelo padrão codificado (fundo clean,
 | favoritos (visitante) | /favoritos | Conforme | Vazio com um botão cheio ("Explorar imóveis"). |
 | avaliadores | /avaliadores → /parceiros/avaliadores | Conforme | Redireciona; sem rolagem lateral. |
 | conferir, guia de fotos, excluir conta, comparar | /conferir, /guia-fotos, /excluir-conta, /comparar | Conforme | Sem rolagem lateral, um h1, nenhum botão cheio a mais, sem vocabulário fora da casa. |
+
+## Painel sem linha na matriz — passada 10 (05/11, modo demonstração, 390 e 1280)
+
+Rotas do painel que ainda não tinham linha, conferidas pelo padrão codificado (fundo clean, grade par, cartões uniformes, um botão cheio, vocabulário da casa, sem rolagem lateral, um h1), com sessão de demonstração. Varredura por script local e recortes de tela.
+
+| Tela | Rota real | Estado | Prova / observação |
+|---|---|---|---|
+| análise da carteira | /dashboard/carteira | Corrigido — PR aberto | Os 6 indicadores dividiam a linha com alturas diferentes ("Reservados", com dica, 108 px × "Vagos", sem dica, 74 px a 390; 115 × 94 a 1280): o StatCard dentro do invólucro da grade não ocupava a célula. Agora `h-full` no StatCard (vale para todas as telas que o usam). Medido depois: mesma altura em cada linha, nos dois tamanhos. T869 (laboratório). |
+| buscas salvas | /dashboard/buscas | Conforme | Sem rolagem lateral, um h1, nenhum botão cheio a mais. |
+| candidaturas | /dashboard/candidaturas | Conforme | Vazio com um botão cheio ("Explorar imóveis"). |
+| comparar (painel) | /dashboard/comparar | Conforme | Vazio com um botão cheio ("Buscar imóveis"). |
+| excluir conta | /dashboard/conta/excluir | Conforme | Sem botão cheio; sem rolagem lateral. |
+| ganhos | /dashboard/ganhos | Conforme | Fileira de subabas com a seta do E248 a 390 (desenho aprovado; ver o comentário do t591 na #2548). |
+| garantias, indicações, locações, visitas | /dashboard/garantias, /indicacoes, /locacoes, /visitas | Conforme | Sem rolagem lateral; no máximo um botão cheio por tela. |
+| novo orçamento | /dashboard/orcamentos/nova | Conforme | Sem botão cheio a mais; sem rolagem lateral. |
+| pedidos da cidade | /dashboard/pedidos-cidade | Conforme | Sem rolagem lateral, um h1. |
+| propostas | /dashboard/propostas | Conforme | Vazio com link "Ver minhas candidaturas" (texto), nas abas de Pedidos. |
+| reembolso da caução | /dashboard/reembolsos | Conforme | Um botão cheio ("Gerar comprovante (exemplo)" no demo); cartões uniformes. |
+| respostas rápidas, solicitações | /dashboard/respostas-rapidas, /dashboard/solicitacoes | Conforme | Sem rolagem lateral, um h1. |
+| redirecionamentos | /dashboard/assinatura → /dashboard (E563), /dashboard/viabilidade → /dashboard/simulador, /dashboard/parceiro/avaliacao → /dashboard (sem parceiro no demo) | Conforme | Destinos já conferidos nas suas linhas. |
+| avaliações (painel) | /dashboard/avaliacoes | A conferir com sessão real | No demo leva ao login (precisa de sessão real), como `perfil-02-avaliacoes`. |
+
+### E550 (parte visual) — sino: lido × não lido
+
+Conferido em 05/11 (modo demonstração, painel do sino com 2 avisos não lidos e 2 lidos simulados, 390 e 1280): a distinção do E502 está de pé e é clara. Não lido: fundo sage-100 (rgb 238, 246, 239), barra verde de 4 px à esquerda (rgb 28, 107, 58), ponto verde, título em negrito (600) e "Não lido" para leitor de tela. Lido: fundo branco, sem barra (transparente), sem ponto, título em peso normal (400). Mesmos valores nos dois tamanhos. Guarda: `src/components/painel/e502-avisos-lidos.test.ts`. Sem mudança de código.
+
