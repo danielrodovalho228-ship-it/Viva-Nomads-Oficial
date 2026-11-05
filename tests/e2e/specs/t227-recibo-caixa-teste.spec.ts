@@ -10,6 +10,8 @@ import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, cri
    2. a fila "Documentos com falha" é legível: com 2 falhas, cada linha mostra o seu número, tipo, contrato
       (VN-CT-…), o nome curto do proprietário e do inquilino, o motivo e a data — e as duas são diferentes.
   O laboratório usa o Resend falso (LAB_RESEND_URL): só e-mail aceito entra na caixa.
+  05/11 (Pista C): depois do E546 (#2546, guarda contra recibo em duplicidade), o imóvel B ganha endereço próprio — com o
+  mesmo "Centro" do A, o recibo do contrato B era recusado como duplicata e a fila não tinha o número dele.
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";
@@ -75,6 +77,11 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.inq]);
     ids.a = await criarImovelPronto(ids.dono, `Studio caixa A ${sufixo}`, { ativo: true, preco: 3200 });
     ids.b = await criarImovelPronto(ids.dono, `Studio caixa B ${sufixo}`, { ativo: true, preco: 3200 });
+    // E546 (#2546): recibo igual a um válido (mesmo dono, morador, endereço e valor, período sobreposto) não sai. Os dois
+    // imóveis da fixture nascem com o mesmo endereço ("Centro"), e o recibo do contrato B saía como duplicata do de A;
+    // aqui o B tem endereço próprio, como dois imóveis de verdade.
+    const { error: eEnd } = await adm().from("properties").update({ address: `Rua do Studio B ${sufixo}` }).eq("id", ids.b);
+    expect(eEnd, eEnd?.message).toBeNull();
     ids.ca = await contratoAssinado(ids.a);
   });
 
