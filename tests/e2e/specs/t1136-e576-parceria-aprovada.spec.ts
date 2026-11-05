@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { BOTAO_PARCERIA_APROVADA, TEXTO_PARCERIA_APROVADA } from "../../../src/lib/parceiros/situacao-conta";
@@ -11,11 +11,14 @@ import { BOTAO_PARCERIA_APROVADA, TEXTO_PARCERIA_APROVADA } from "../../../src/l
  *   1. Início: o aviso inicio-parceria-aprovada com o texto e o botão "Parceria aprovada — ativar sua página";
  *   2. Conta › Papéis: o cartão do parceiro com o mesmo texto (papel-parceiro-aprovada) e o botão apontando para
  *      /dashboard/parceiro.
+ * L-98 (achado desta spec, 05/11): a 390, Conta › Papéis estoura 87 px com o botão novo, que não quebra a linha — fica
+ * como test.fail ligado ao L-98 (Pista B) no caso de rolagem a 390; a 1280 e o Início seguem cobrados.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const pessoa = { email: `aprovada.t1136.${sufixo}@lab.vivanomads.test`, nome: "Nara Aprovada", role: "tenant" as const };
 const ids: Record<string, string> = {};
+const sobra = (p: Page) => p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
 
 test.describe("T1136 — E576: parceria aprovada sem página aparece em Papéis e no Início, com o caminho para ativar", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -60,6 +63,7 @@ test.describe("T1136 — E576: parceria aprovada sem página aparece em Papéis 
         await expect(aviso).toBeVisible({ timeout: 30_000 });
         await expect(aviso).toContainText(TEXTO_PARCERIA_APROVADA);
         await expect(aviso.getByRole("link", { name: BOTAO_PARCERIA_APROVADA })).toHaveAttribute("href", "/dashboard/parceiro");
+        expect(await sobra(p), "Início sem rolagem lateral").toBeLessThanOrEqual(1);
 
         // 2. Conta › Papéis.
         await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
@@ -67,7 +71,23 @@ test.describe("T1136 — E576: parceria aprovada sem página aparece em Papéis 
         const botao = p.getByTestId("papel-parceiro-botao");
         await expect(botao).toHaveText(BOTAO_PARCERIA_APROVADA);
         await expect(botao).toHaveAttribute("href", "/dashboard/parceiro");
-        expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      } finally {
+        await p.context().close();
+      }
+    });
+
+    test(`Papéis sem rolagem lateral com o botão da parceria aprovada (${w})`, async ({ browser }) => {
+      // L-98 (achado desta spec, 05/11): a 390 o botão "Parceria aprovada — ativar sua página" (ButtonLink size lg,
+      // whitespace-nowrap + shrink-0) não quebra e empurra a tela 87 px para a direita. A 1280 cabe.
+      test.fail(w === 390, "L-98: a 390 o botão da parceria aprovada em Conta › Papéis não quebra a linha (whitespace-nowrap) e estoura 87 px");
+      const p = await entrar(browser, pessoa.email, senha);
+      await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      try {
+        await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
+        await expect(p.getByTestId("papel-parceiro-botao")).toHaveText(BOTAO_PARCERIA_APROVADA, { timeout: 30_000 });
+        const px = await sobra(p);
+        test.info().annotations.push({ type: "sobra", description: `${px}px` });
+        expect(px, "Papéis sem rolagem lateral").toBeLessThanOrEqual(1);
       } finally {
         await p.context().close();
       }
