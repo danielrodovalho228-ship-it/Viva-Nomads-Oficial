@@ -166,8 +166,8 @@ test("agenda do avaliador: contador das 24 h, visitas da semana e hora sem segun
 });
 
 test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com o motivo", () => {
-  assert.equal(TITULO_ADMIN, "Avaliações do imóvel");
-  assert.match(MENU, /folha\("admin-avaliadores", "Avaliações do imóvel", "\/admin\/avaliadores", "parceiros"\)/);
+  assert.equal(TITULO_ADMIN, "Avaliadores");
+  assert.match(MENU, /folha\("admin-avaliadores", "Avaliadores", "\/admin\/avaliadores", "parceiros"\)/);
   assert.equal(rotuloDecisao("solicitado", "em_teste"), "Aprovar para teste");
   assert.equal(rotuloDecisao("em_teste", "ativo"), "Aprovar o teste (ativar)");
   assert.equal(rotuloDecisao("suspenso", "ativo"), "Reativar");

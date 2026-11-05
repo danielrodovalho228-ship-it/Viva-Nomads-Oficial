@@ -133,6 +133,17 @@ export function chaveDoAvisoPendente(a: { evento: string; refId?: string | null;
   return a.refId ? { evento: a.evento, refId: a.refId } : { evento: a.evento, titulo: a.titulo };
 }
 
+/**
+ * E586: pendentes repetidos da MESMA chave (gravados quase juntos, os dois passando pela leitura antes da gravação):
+ * fica o mais antigo (o primeiro que a pessoa pode ter visto), os outros saem. Sem linhas, null.
+ */
+export function duplicatasDoPendente(linhas: readonly { id: string; criado_em: string }[]): { manter: string; apagar: string[] } | null {
+  if (!linhas.length) return null;
+  const ordem = [...linhas].sort((a, b) => Date.parse(a.criado_em) - Date.parse(b.criado_em) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const manter = ordem[0].id;
+  return { manter, apagar: linhas.filter((l) => l.id !== manter).map((l) => l.id) };
+}
+
 /** Destino do aviso: só caminho interno ("/rota"), nunca URL externa. */
 export function urlDoAviso(u: string | null | undefined): string | null {
   const s = String(u ?? "");
@@ -159,3 +170,19 @@ export function resumoDosAvisos(avisos: readonly { prioridade: PrioridadeAviso; 
 }
 
 export { CRITICOS as EVENTOS_CRITICOS, URGENTES as EVENTOS_URGENTES, POR_PAPEL as PRIORIDADE_POR_PAPEL };
+
+/** E482: a linha de texto do aviso — sem controle nem HTML, espaços normalizados, até 140 caracteres (com "…"). */
+export function textoDoAviso(s: string | null | undefined): string | null {
+  const t = String(s ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  return t.length > 140 ? `${t.slice(0, 139)}…` : t;
+}
+
+/**
+ * E482 — o aviso de mensagem nova diz QUEM escreveu (o primeiro nome, o mesmo do e-mail) e traz a prévia no texto.
+ * O imóvel entra no título pelo gravarAviso (E550). Sem remetente, o assunto do catálogo.
+ */
+export function avisoDeMensagem(e: { remetente?: string | null; previa?: string | null }): { titulo: string; texto: string | null } {
+  const remetente = String(e.remetente ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+  return { titulo: tituloDoAviso(remetente ? `Nova mensagem de ${remetente}` : "Você tem uma nova mensagem"), texto: textoDoAviso(e.previa) };
+}

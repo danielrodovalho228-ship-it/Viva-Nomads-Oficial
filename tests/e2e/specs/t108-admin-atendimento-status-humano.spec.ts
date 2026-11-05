@@ -20,11 +20,12 @@ test.describe("T108 — Admin: chamado sem código de status", () => {
     await p.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    await bloco.getByLabel("Pedido para a equipe").fill(`Preciso de ajuda com a minha locação (${Date.now()})`);
-    await bloco.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = p.getByTestId("chamado-aberto-chat");
-    await expect(ok).toBeVisible({ timeout: 20_000 });
-    const numero = (await ok.innerText()).match(/VN-\d+/)![0];
+    // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só); logado, o chamado abre na hora.
+    const form = p.locator("#abrir-chamado");
+    await form.getByLabel("O que aconteceu?").fill(`Preciso de ajuda com a minha locação (${Date.now()})`);
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
+    await expect(p).toHaveURL(/\?chamado=VN-\d+/, { timeout: 20_000 });
+    const numero = new globalThis.URL(p.url()).searchParams.get("chamado")!;
     await dono.close();
     const { data } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
     return data?.id ?? null;

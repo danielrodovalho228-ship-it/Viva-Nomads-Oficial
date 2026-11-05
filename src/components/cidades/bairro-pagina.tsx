@@ -45,7 +45,8 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
       : null;
   const centro = centroDoBairro(bairro.imoveis);
   const distancias = distanciasDoBairro(centro, PONTOS_REFERENCIA.filter((p) => p.cidade === cidade.slug));
-  const total = bairro.imoveis.filter((i) => !isExemplo(i.id)).length;
+  // E446: o número da página é o da busca (exemplos inclusos com a vitrine ligada).
+  const total = bairro.imoveis.length;
   const faq = perguntasDoBairro(bairro.nome, cidade.name, mediaGeral, total);
 
   const dados = {

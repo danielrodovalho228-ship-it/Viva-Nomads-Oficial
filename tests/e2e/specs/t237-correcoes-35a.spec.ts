@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /*
   T237 — Correções do Prompt 35A (390 e 1280 px):
-   1. /qualificar: o documento entra na fila NO ENVIO. A pessoa envia e SAI sem concluir → o item aparece em
+   1. (desligada pelo E196: a /qualificar foi absorvida pela Revisão) /qualificar: o documento entra na fila NO ENVIO. A pessoa envia e SAI sem concluir → o item aparece em
       /admin/documentos ("Documento sem imóvel ligado", com o dono) e o admin recebe o aviso (LAB_OUTBOX). Falha
       simulada da action: a tela NÃO diz "Enviado" e oferece "Tentar de novo" (que, de volta a rede, enfileira).
    2. "Ideal para": o ube-001 mostra "Com pet" em 1º na /buscar.
@@ -23,6 +23,10 @@ async function semRolagemLateral(page: Page) {
 
 // ─────────────────────────── 1. Documento enfileirado no envio ───────────────────────────
 test.describe("T237 — 1. documento do /qualificar entra na fila no envio", () => {
+  // E196 (fecho): a página longa /qualificar foi absorvida pelo assistente — o link cai no "Antes de publicar" da
+  // Revisão, onde o documento segue a conferência automática (DocumentoVinculo; guardas t457, t535, t849). O envio
+  // desta tela (fila manual + "Tentar de novo") não tem mais onde acontecer.
+  test.skip(true, "E196: a tela /qualificar não existe mais (absorvida pela Revisão do assistente).");
   test.skip(!NO_LABORATORIO, "Só no laboratório (Supabase local + integrações simuladas).");
   test.skip(!hasAccount("admin"), "conta admin do laboratório não configurada");
   test.describe.configure({ mode: "serial" });

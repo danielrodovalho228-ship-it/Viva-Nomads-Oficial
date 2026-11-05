@@ -160,19 +160,22 @@ export function BarraPilulas(p: {
               })}
             </div>
           )}
-          {/* E105: o nível mora só aqui (saiu da folha "Mais filtros"); sem nenhum nível na busca, a mesma frase de antes. */}
-          {aberto === "nivel" &&
-            (nivel.visivel ? (
+          {/* E105: o nível mora só aqui (saiu da folha "Mais filtros"). E590: as 3 opções aparecem SEMPRE, com o contador
+              (zero = desabilitada, como Tipo e Preço); sem nenhum nível na busca, a nota explica o zero embaixo delas. */}
+          {aberto === "nivel" && (
+            <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 {NIVEIS.map((v) =>
                   opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v }), v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
                 )}
               </div>
-            ) : (
-              <p className="text-sm text-muted" data-testid="painel-nivel-vazio">
-                {TEXTO_SEM_NIVEIS}
-              </p>
-            ))}
+              {!nivel.visivel && (
+                <p className="text-sm text-muted" data-testid="painel-nivel-vazio">
+                  {TEXTO_SEM_NIVEIS}
+                </p>
+              )}
+            </div>
+          )}
           {aberto === "ordenar" && (
             <div className="flex flex-col gap-1" role="radiogroup" aria-label="Ordenar resultados">
               {p.opcoesOrdem.map(([v, r]) => (

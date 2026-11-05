@@ -27,13 +27,13 @@ test("ordem da barra (instantâneo): Visão geral, Pendências e os sete grupos"
   assert.deepEqual(forma, [
     "Visão geral",
     "Pendências",
-    "Anúncios e pessoas: Anúncios · Publicamos para você · Pedidos de moradia · Usuários · Documentos · Fotos de perfil · Ofensas no chat",
-    "Estadias: Contratos · Candidaturas · Manutenção · Serviços do morador · Atendimento",
-    "Rede: Parceiros · Avaliações do imóvel",
+    "Anúncios e pessoas: Imóveis · Publicamos para você · Pedidos de moradia · Usuários · Documentos · Fotos de perfil · Ofensas no chat",
+    "Estadias: Contratos · Candidaturas · Solicitações de manutenção · Serviços do morador · Atendimento",
+    "Rede: Parceiros · Avaliadores",
     "Cidades e marketing: Cidades · Destinos · Marketing",
     "Números: Financeiro · Funil e indicadores · Eventos · Qualidade",
     "Equipe: Central de Agentes · Caixa dos Sócios",
-    "Sistema: Chaves e integrações · Dados e retenção · Testes",
+    "Sistema: Sistema e integrações · Dados e retenção · Dados de teste",
   ]);
 });
 
@@ -89,10 +89,10 @@ test("E216: o admin observador da QA não vê 'Caixa dos Sócios' na barra; o ad
   const obs = folhas(barraAdminPara({ observadorQa: true }));
   assert.ok(!obs.includes("/admin/socios"));
   assert.deepEqual(FORA_DA_BARRA_OBSERVADOR, ["/admin/socios"]);
-  // Só a Caixa sai: o resto da barra é igual (o grupo Equipe continua, com a Central de Agentes).
-  assert.deepEqual(obs, folhas(BARRA_ADMIN).filter((h) => h !== "/admin/socios"));
+  // Só a Caixa sai; E591: no lugar dela, "Premissas (leitura)". O resto da barra é igual.
+  assert.deepEqual(obs, folhas(BARRA_ADMIN).map((h) => (h === "/admin/socios" ? "/admin/premissas" : h)));
   const equipe = barraAdminPara({ observadorQa: true }).find((g) => g.id === "admin-equipe");
-  assert.deepEqual(equipe?.filhos?.map((f) => f.href), ["/admin/agentes"]);
+  assert.deepEqual(equipe?.filhos?.map((f) => f.href), ["/admin/agentes", "/admin/premissas"]);
   // A barra original não é alterada.
   assert.ok(folhas(BARRA_ADMIN).includes("/admin/socios"));
 });
@@ -104,4 +104,14 @@ test("E216: a casca monta a barra do admin com a marca do observador (vinda do s
   assert.doesNotMatch(casca, /\[\.\.\.BARRA_ADMIN\]/);
   const servidor = readFileSync(new URL("../lib/painel/contadores-servidor.ts", import.meta.url), "utf8");
   assert.match(servidor, /admin \? ehObservadorQa\(user\.id\)/);
+});
+
+test("E479: cada rótulo da barra diz o que a tela é e bate com o endereço (nada de Anúncios→imoveis, Testes→dados-de-teste)", () => {
+  const por = Object.fromEntries(PAGINAS_BARRA_ADMIN.map((i) => [i.href, i.rotulo]));
+  assert.equal(por["/admin/imoveis"], "Imóveis");
+  assert.equal(por["/admin/solicitacoes"], "Solicitações de manutenção");
+  assert.equal(por["/admin/avaliadores"], "Avaliadores");
+  assert.equal(por["/admin/sistema"], "Sistema e integrações");
+  assert.equal(por["/admin/dados-de-teste"], "Dados de teste");
+  for (const r of ["Anúncios", "Manutenção", "Avaliações do imóvel", "Chaves e integrações", "Testes"]) assert.ok(!Object.values(por).includes(r), r);
 });

@@ -33,7 +33,9 @@ test("Papéis: o cartão do parceiro usa a situação (aprovada → botão de at
 
 test("Início: aviso da parceria aprovada com o caminho para ativar", () => {
   const inicio = ler("src/app/(dashboard)/dashboard/page.tsx");
-  assert.match(inicio, /situacaoParceiro\(await minhaParceria\(\)\.catch\(\(\) => null\)\)/);
+  // E503: a leitura da parceria sai no 2º lote paralelo do Início (antes, uma espera em série só para ela).
+  assert.match(inicio, /minhaParceria\(\)\.catch\(\(\) => null\)/);
+  assert.match(inicio, /const parceria = situacaoParceiro\(parceriaLida\);/);
   assert.match(inicio, /data-testid="inicio-parceria-aprovada"/);
   assert.match(inicio, /href=\{HREF_ATIVAR_PARCERIA\}/);
 });

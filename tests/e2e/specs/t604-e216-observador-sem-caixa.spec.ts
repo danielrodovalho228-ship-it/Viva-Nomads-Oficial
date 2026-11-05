@@ -8,7 +8,9 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
 // Regressão dos merges #1472–#1479 (Pista C, 29/10): a suíte completa estoura o tempo antes de chegar aqui; roda no portão do PR.
 /*
   T604 — E216: o admin observador da QA (profiles.qa_admin) não vê o link "Caixa dos Sócios" na barra do admin (a página
-  já é 404 para ele), nem na Visão geral. O admin comum continua vendo o link. 1280 e 390.
+  é fechada para ele), nem na Visão geral. O admin comum continua vendo o link. 1280 e 390.
+  E591: no lugar da Caixa, a barra do observador tem "Premissas (leitura)" (/admin/premissas: o modelo do /simulacao em
+  leitura, sem código); em /admin/socios ele vê o aviso com o motivo e o caminho. O admin comum não tem essa entrada.
   Reconferência do E216 pedida pela vigia (31/10): rodada de novo no lab-crítico sobre a main atual.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -85,10 +87,21 @@ test.describe("T604 — E216: admin observador sem 'Caixa dos Sócios' na barra 
       const menu = await menuDoAdmin(page, largura);
       await expect(menu.locator('a[href="/admin/socios"]')).toHaveCount(0);
       await expect(menu.getByText("Caixa dos Sócios", { exact: true })).toHaveCount(0);
+      // E591: as premissas em leitura, no lugar da Caixa.
+      await expect(menu.locator('a[href="/admin/premissas"]')).toHaveText("Premissas (leitura)");
       await page.screenshot({ path: `${SAIDA}/t604-observador-menu-${largura}.png` });
       await page.goto("/admin", { waitUntil: "domcontentloaded" });
       await expect(page.locator("main h1").first()).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(/Caixa dos Sócios/)).toHaveCount(0);
+      // E591: /admin/socios mostra o aviso (sem nada da Caixa) e /admin/premissas abre o modelo em leitura.
+      await page.goto("/admin/socios", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("caixa-restrita-qa")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText("Novo envio")).toHaveCount(0);
+      await page.getByTestId("caixa-restrita-qa").getByRole("link", { name: /Abrir as premissas/ }).click();
+      await expect(page).toHaveURL(/\/admin\/premissas$/, { timeout: 30_000 });
+      await expect(page.getByTestId("premissas-leitura")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("premissas-leitura")).toContainText("Simulação do negócio");
+      await page.screenshot({ path: `${SAIDA}/t604-observador-premissas-${largura}.png` });
       await page.context().close();
     });
   }
@@ -99,6 +112,10 @@ test.describe("T604 — E216: admin observador sem 'Caixa dos Sócios' na barra 
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     const menu = await menuDoAdmin(page, 1280);
     await expect(menu.locator('a[href="/admin/socios"]')).toHaveText("Caixa dos Sócios");
+    // E591: a entrada das premissas em leitura é só do observador; o admin comum segue pela porta dos sócios.
+    await expect(menu.locator('a[href="/admin/premissas"]')).toHaveCount(0);
+    await page.goto("/admin/premissas", { waitUntil: "domcontentloaded" });
+    await expect(page).not.toHaveURL(/\/admin\/premissas/, { timeout: 30_000 });
     await ctx.close();
   });
 });

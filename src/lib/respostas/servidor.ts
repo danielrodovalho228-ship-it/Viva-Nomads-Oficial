@@ -140,7 +140,7 @@ async function enviarUma(admin: Admin, p: LinhaProgramada, c: Contrato, agora: D
   try {
     const { data: dono } = await admin.from("profiles").select("full_name").eq("id", p.owner_id).maybeSingle();
     const nome = String(dono?.full_name ?? "").trim().split(/\s+/)[0] || "O proprietário";
-    await notify({ event: "new_message", userId: c.tenant_id, pushUrl: urlDaConversa(conversa), conversationId: conversa, refId: conversa, remetenteNome: nome });
+    await notify({ event: "new_message", userId: c.tenant_id, pushUrl: urlDaConversa(conversa), conversationId: conversa, refId: conversa, remetenteNome: nome, previaAviso: p.texto, imovelId: c.property_id });
   } catch {
     /* aviso é best-effort */
   }

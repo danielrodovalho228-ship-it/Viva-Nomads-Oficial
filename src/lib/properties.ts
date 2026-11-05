@@ -181,8 +181,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     city: "Uberlândia",
     state: "MG",
     neighborhood: "Tibery",
-    lat: -18.89,
-    lng: -48.24,
+    // E531: dentro do Tibery (antes -18.89/-48.24 caía em Custódio Pereira/Alto Umuarama).
+    lat: -18.906,
+    lng: -48.236,
     bedrooms: 3,
     bathrooms: 2,
     areaM2: 120,
@@ -568,8 +569,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     city: "Uberlândia",
     state: "MG",
     neighborhood: "Tibery",
-    lat: -18.903,
-    lng: -48.251,
+    // E531: dentro do Tibery (antes -48.251 ficava na divisa com o Santa Mônica).
+    lat: -18.902,
+    lng: -48.24,
     bedrooms: 2,
     bathrooms: 1,
     areaM2: 65,

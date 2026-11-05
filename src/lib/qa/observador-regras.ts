@@ -3,6 +3,15 @@
   Roda: node --test src/lib/qa/observador-regras.test.ts
 */
 
+/**
+ * E591: /admin/socios para a observadora — a Caixa dos Sócios (correspondência privada) segue fechada; o aviso diz o
+ * motivo e onde conferir as premissas do E559 (fonte única em premissas-financeiras.ts, mostradas no /simulacao).
+ */
+export const TEXTO_CAIXA_RESTRITA_QA = {
+  motivo: "A Caixa dos Sócios é restrita aos sócios: é a correspondência deles e fica fechada para a conta de QA.",
+  caminho: "As premissas do modelo de custos estão em Premissas (leitura), no menu Equipe: o mesmo modelo do /simulacao, só leitura.",
+} as const;
+
 export const MSG_OBSERVADOR =
   "Esta é a conta de QA (admin observador): ela só vê. Esta ação está fechada para ela — use uma conta de teste ou peça a alguém da equipe.";
 

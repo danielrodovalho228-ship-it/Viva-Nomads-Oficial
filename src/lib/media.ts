@@ -58,7 +58,8 @@ export const PHOTOS = {
   // Conta › Pagamentos (E70): uma foto do acervo por cartão, no padrão dos Papéis.
   pagamentos: {
     proprietario: `${H}/home-proprietarios-chaves.webp`,
-    morador: `${I}/placeholder-imovel-sala.webp`,
+    // E540: a foto própria de pagamentos (antes, o placeholder de imóvel placeholder-imovel-sala.webp).
+    morador: "/images/unicas/cf-pagamentos.webp",
     parceiro: "/images/unicas/parceiros-servicos.webp",
   },
   // Conta › Ajuda (E71): a foto só no cartão de contato (uma pessoa numa conversa pelo celular).

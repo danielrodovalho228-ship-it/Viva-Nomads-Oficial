@@ -93,6 +93,8 @@ export const PROTECOES_VIVA: readonly string[] = [
 
 export const SEGURANCA_SEM_DECLARACAO =
   "O anunciante ainda não declarou câmeras e acesso; pergunte pelo chat antes de fechar.";
+/** E532: com declaração, a janela "Segurança" aponta o bloco "Privacidade" (as linhas declaradas moram só lá). */
+export const VER_BLOCO_PRIVACIDADE = "Câmeras e acesso declarados pelo anunciante: veja o bloco Privacidade do anúncio.";
 export const RESUMO_SEGURANCA_SEM_DECLARACAO = "Proteções da Viva · câmeras e acesso a confirmar pelo chat";
 
 const pessoas = (n: number) => `até ${n} ${n === 1 ? "pessoa" : "pessoas"}`;
@@ -158,8 +160,8 @@ export function linhasBomSaber(p: Property): LinhaBomSaber[] {
       chave: "seguranca",
       titulo: "Segurança",
       resumo: seguranca,
-      // Sempre as proteções da Viva; depois o que o anunciante declarou (ou o convite a perguntar).
-      detalhe: [...PROTECOES_VIVA, ...(priv.length > 0 ? priv : [SEGURANCA_SEM_DECLARACAO])],
+      // Sempre as proteções da Viva; o declarado mora no bloco "Privacidade" (E532: não repete aqui) — ou o convite a perguntar.
+      detalhe: [...PROTECOES_VIVA, priv.length > 0 ? VER_BLOCO_PRIVACIDADE : SEGURANCA_SEM_DECLARACAO],
     },
     linhaManutencaoBomSaber(),
   ];

@@ -299,6 +299,14 @@
         "t1158-e472-admin-pedidos-lista"
       ]
     },
+    "/admin/premissas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t604-e216-observador-sem-caixa"
+      ]
+    },
     "/admin/socios": {
       "personas": [
         "admin"
@@ -1290,6 +1298,16 @@
         "t557-varredura-bloco42",
         "t489-e176-menus",
         "t686-varredura-bloco72"
+      ]
+    },
+    "/dashboard/estadia/[contratoId]/contrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar",
+        "t48-varredura"
       ]
     },
     "/dashboard/locacoes/[id]": {

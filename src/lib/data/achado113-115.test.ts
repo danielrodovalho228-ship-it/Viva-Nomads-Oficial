@@ -37,7 +37,7 @@ test("achado 114: observador da QA falha FECHADO (ação recusa, tela só leitur
   assert.match(s, /recusaComDeps\(deps\(admin\), userId, alvo\)\.catch\(\(\) => MSG_PERMISSAO_SEM_LEITURA\)/);
   assert.match(s, /soLeituraNaTelaOuFalha\(linhas\)\.catch\(\(\) => linhas\.map\(\(l\) => l\.id\)\)/);
   // A Caixa dos Sócios continua fechada ao observador: sem conferir, a página vai ao error.tsx (nunca abre).
-  assert.match(ler("src/app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) notFound\(\);/);
+  assert.match(ler("src/app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) return <CaixaRestritaQa \/>;/); // E591: aviso, sem ler a Caixa
 });
 
 test("achado 115: laudo atual lança; a exibição do '· vistoriado' já trata", () => {

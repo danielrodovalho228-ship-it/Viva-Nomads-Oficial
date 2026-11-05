@@ -241,10 +241,10 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     await page.locator("#codigo-2fa").fill(gerarCodigoTotp(segredoTotp));
     await page.getByRole("button", { name: /confirmar e entrar/i }).click();
     await page.waitForURL(/\/admin(\?|$|\/)/, { timeout: 30_000 });
-    // Caixa dos Sócios: a página não existe para ele (notFound() dentro do layout do admin com streaming entrega a tela de
-    // "não encontrada" com status 200; o que vale é o conteúdo: nada da Caixa aparece).
+    // Caixa dos Sócios: fechada para ele. E591: no lugar do 404, o aviso com o motivo e o caminho das premissas (leitura);
+    // o que vale é o conteúdo: nada da Caixa aparece.
     await page.goto("/admin/socios");
-    await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("caixa-restrita-qa")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Novo envio")).toHaveCount(0);
     // Sistema: estado das chaves sem os botões; sem o cartão de backup; com a Porta de QA.
     await page.goto("/admin/sistema");

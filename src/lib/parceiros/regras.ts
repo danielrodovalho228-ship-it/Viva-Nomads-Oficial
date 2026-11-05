@@ -30,6 +30,12 @@ export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
 
+/** E447: a categoria escolhida na URL (?categoria=) entra marcada, sem desmarcar as outras nem duplicar. */
+export function categoriasComDaUrl(atuais: readonly string[], daUrl: string | null | undefined): string[] {
+  if (!daUrl || !categoriaValida(daUrl) || atuais.includes(daUrl)) return [...atuais];
+  return [...atuais, daUrl];
+}
+
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;
 

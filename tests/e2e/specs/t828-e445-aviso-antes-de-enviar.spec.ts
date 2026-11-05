@@ -6,6 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T828 — E445 item 2 (Relay 57, aprovado pelo Daniel): texto com contato/link → o aviso e a PRÉVIA MASCARADA aparecem
   ANTES do envio; "Editar" volta ao campo sem gravar nada; "Enviar mesmo assim" grava a versão mascarada (o servidor
   continua mascarando — o contato nunca é liberado). Texto sem contato segue direto. 390 e 1280.
+  E585: o aviso e a prévia aparecem já AO DIGITAR (como na proposta) e o botão Enviar muda de cor.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -53,8 +54,12 @@ test.describe("T828 — E445 item 2: aviso antes de enviar", () => {
       // 1. Contato no texto: aviso + prévia mascarada, nada gravado.
       const comContato = `Me chama no (34) 99876-5432 ou dora.${w}@exemplo.com ${sufixo}`;
       await campo.fill(comContato);
-      await p.getByRole("button", { name: "Enviar", exact: true }).click();
       const aviso = p.getByTestId("aviso-antes-de-enviar");
+      // E585: o aviso e a prévia mascarada aparecem AO DIGITAR (antes de qualquer clique), e o botão Enviar muda.
+      await expect(aviso).toBeVisible();
+      await expect(p.getByTestId("aviso-previa")).toContainText(MASK);
+      await expect(p.getByRole("button", { name: "Enviar", exact: true })).toHaveAttribute("data-contato", "1");
+      await p.getByRole("button", { name: "Enviar", exact: true }).click();
       await expect(aviso).toBeVisible();
       await expect(aviso).toContainText("telefones, e-mails e links externos são protegidos");
       await expect(p.getByTestId("aviso-previa")).toContainText(MASK);
@@ -94,8 +99,9 @@ test.describe("T828 — E445 item 2: aviso antes de enviar", () => {
       expect(gravada).toContain(MASK);
       expect(gravada).not.toMatch(/99876|@exemplo/);
 
-      // 4. Texto sem contato: vai direto, sem aviso.
+      // 4. Texto sem contato: vai direto, sem aviso (o botão volta ao normal).
       await campo.fill(`Posso visitar sábado? ${w} ${sufixo}`);
+      await expect(p.getByRole("button", { name: "Enviar", exact: true })).not.toHaveAttribute("data-contato", "1");
       await p.getByRole("button", { name: "Enviar", exact: true }).click();
       await expect(aviso).toHaveCount(0);
       await expect.poll(async () => (await gravadasDoInq()).length, { timeout: 20_000 }).toBe(antes + 2);

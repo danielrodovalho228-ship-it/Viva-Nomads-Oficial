@@ -1,5 +1,6 @@
 "use client";
 
+import type { NovoEnvio } from "@/lib/documento/vigente";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, AlertTriangle, CheckCircle2, ChevronDown } from "lucide-react";
@@ -335,7 +336,9 @@ export function AntesDePublicar(p: {
   imovelId: string | null;
   docEstado: EstadoDocumentoTela;
   docMotivos: string[];
-  onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** E587: envio novo à parte do aprovado vigente. */
+  docNovo?: NovoEnvio | null;
+  onDocumento: (estado: EstadoDocumentoTela, motivos: string[], novo?: NovoEnvio | null) => void;
   /** Prompt 19: a matrícula conferida preenche o anúncio. */
   onMatricula?: (m: InfoMatricula) => void;
   /** O que ainda falta na operação (declaração, tipo do documento ou o anexo); "" = nada. */
@@ -460,6 +463,7 @@ export function AntesDePublicar(p: {
           operacao={p.ownershipType}
           estado={p.docEstado}
           motivos={p.docMotivos}
+          novo={p.docNovo}
           onResultado={p.onDocumento}
           onMatricula={p.onMatricula}
           enderecoSalvo={p.enderecoSalvo}

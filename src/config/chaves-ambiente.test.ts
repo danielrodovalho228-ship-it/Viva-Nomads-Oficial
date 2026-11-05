@@ -65,5 +65,5 @@ test("a saúde (IA, Detecção, Backup, E-mail, Mapas, Push) saiu da inicial e m
     assert.doesNotMatch(inicial, new RegExp(`<${c} `), c);
     assert.match(sistema, new RegExp(`<${c} />`), c);
   }
-  assert.ok(PAGINAS_BARRA_ADMIN.some((i) => i.href === "/admin/sistema" && i.rotulo === "Chaves e integrações"));
+  assert.ok(PAGINAS_BARRA_ADMIN.some((i) => i.href === "/admin/sistema" && i.rotulo === "Sistema e integrações"));
 });

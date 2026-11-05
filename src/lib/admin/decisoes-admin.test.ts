@@ -145,3 +145,16 @@ test("E330: a página da Central não tem mais o topo 'Hoje você tem N decisõe
   assert.match(pg, /central\.linhas\.length === 0 && !outras\?\.linhas\.length/);
   assert.match(pg, /<LinhaDecisao key=/);
 });
+
+test("E474 (i): as decisões de outras telas aparecem uma vez só na Central — na lista, não repetidas no topo", async () => {
+  const { readFileSync } = await import("node:fs");
+  const pg = readFileSync(new URL("../../app/(dashboard)/admin/pendencias/page.tsx", import.meta.url), "utf8");
+  // Na lista "Todas as pendências": um item por decisão, com detalhe e ação.
+  assert.equal((pg.match(/outras\?\.linhas\.map\(/g) ?? []).length, 1);
+  assert.match(pg, /\{outras\?\.linhas\.map\(\(l\) => \(\s*<LinhaDecisao key=/);
+  // No topo, nada de repetir as mesmas decisões (antes: `extras` com o mesmo texto e o mesmo botão).
+  assert.doesNotMatch(pg, /const extras = /);
+  assert.doesNotMatch(pg, /central-decisao-\$\{/);
+  // O título continua contando a fila inteira (E330).
+  assert.match(pg, /const total = totalCentral \+ \(outras\?\.total \?\? 0\)/);
+});

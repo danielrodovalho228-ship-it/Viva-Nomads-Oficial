@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getContratoParaEquipe } from "@/lib/data/contrato-assinar-actions";
-import { COLUNAS_PROVAS, montarDadosProvas, nomeDoLaudo, totaisPagamentos, type DadosProvas, type PagamentoProva } from "@/lib/contrato-provas";
+import { COLUNAS_PROVAS, montarDadosProvas, nomeDoLaudo, textoOuNulo, totaisPagamentos, type DadosProvas, type PagamentoProva } from "@/lib/contrato-provas";
 import { compararHashComResumo, hashResumo } from "@/lib/contrato-assinar";
 import { estadoConferencia, estadoConferenciaLista, type EstadoConferencia, type EstadoConferenciaLista, type ParteConferencia, type RespostaConferencia, type TipoConferencia } from "@/lib/conferencia";
 import { mesesDoContrato } from "@/lib/admin/indicadores";
@@ -93,6 +93,8 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     prazoEntradaEm: v.prazoConferenciaEm,
     prazoSaidaEm: v.prazoConferenciaSaidaEm,
     assinaturas: ass ?? [],
+    // E197: o pacote de provas lê as mesmas datas do contrato que a lista e a tela do admin.
+    datasAssinatura: { proprietario: textoOuNulo(extra?.assinado_proprietario_em), inquilino: textoOuNulo(extra?.assinado_inquilino_em) },
     pagamentos: pags ?? [],
     conferencias: confs ?? [],
     itens: itens ?? [],

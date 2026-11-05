@@ -8,6 +8,7 @@ import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { rotuloItem } from "@/config/niveis";
 import { dataHoraBrasilia } from "@/config/atendimento";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { AVISO_SELO_CONFORTO, procedentes12m, seloPeloConforto, type AcaoPendencia, type PendenciaConforto } from "./regras";
 
 type Db = SupabaseClient;
@@ -57,7 +58,7 @@ export async function avisarPendenciaConforto(db: Db, pendenciaId: string, acao:
   const item = rotulo(p.chave as string);
   const titulo = textoEmail(prop?.title ?? "imóvel", 80);
   const dono_url = `/dashboard/contratos/${p.contrato_id}#pendencias-conforto`;
-  const morador_url = `/dashboard/locacoes/${p.contrato_id}#pendencias-conforto`;
+  const morador_url = `${HREF_CONTRATO_DA_ESTADIA(p.contrato_id)}#pendencias-conforto`;
   const prazo = dataHoraBrasilia(new Date(p.prazo_ate as string));
   if (acao === "aberta" || acao === "reabrir") {
     const texto = acao === "aberta"

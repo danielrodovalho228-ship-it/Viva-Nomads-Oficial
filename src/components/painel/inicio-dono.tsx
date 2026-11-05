@@ -85,15 +85,26 @@ export function InicioDono({
                     const estado = p.feito ? "feito" : i === bloco.passos.findIndex((x) => !x.feito) ? "agora" : "depois";
                     return (
                     <li key={p.rotulo}>
-                      <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
-                        <IconePasso estado={estado} />
-                        <span className="min-w-0 flex-1 py-2">
-                          {/* Conformidade painel-proprietario (01/11): o passo atual diz "Em andamento", como no mockup. */}
-                          <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
-                          {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
-                        </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                      </Link>
+                      {/* E494: o passo que leva ao mesmo lugar do botão acima não é atalho — só o estado, sem seta. */}
+                      {p.href ? (
+                        <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
+                          <IconePasso estado={estado} />
+                          <span className="min-w-0 flex-1 py-2">
+                            {/* Conformidade painel-proprietario (01/11): o passo atual diz "Em andamento", como no mockup. */}
+                            <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
+                            {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                        </Link>
+                      ) : (
+                        <div className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink" data-testid="inicio-dono-passo-atual">
+                          <IconePasso estado={estado} />
+                          <span className="min-w-0 flex-1 py-2">
+                            <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
+                            {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
+                          </span>
+                        </div>
+                      )}
                     </li>
                     );
                   })}
