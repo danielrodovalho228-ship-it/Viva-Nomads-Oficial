@@ -26,7 +26,7 @@ import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 import { destinoDoCartao } from "@/lib/anuncio/destino-cartao";
-import { ORDENS, POR_PAGINA, abasVisiveis, filtrarEOrdenar, paginar, type AbaEstado, type OrdemLista } from "@/lib/anuncio/lista-meus-imoveis";
+import { ORDENS, POR_PAGINA, abasVisiveis, filtrarEOrdenar, juntarCopiasAoPai, paginar, type AbaEstado, type OrdemLista } from "@/lib/anuncio/lista-meus-imoveis";
 
 /** E511: a barra da lista (abas, busca, ordem) aparece a partir desta quantidade de imóveis. */
 const MIN_BARRA = 4;
@@ -77,7 +77,8 @@ export function MyPropertiesClient({
   const [ordem, setOrdem] = useState<OrdemLista>("recentes");
   const [paginas, setPaginas] = useState(1);
   const comBarra = visiveis.length >= MIN_BARRA;
-  const filtrada = comBarra ? filtrarEOrdenar(visiveis, { aba, busca, ordem }) : visiveis;
+  // E514: as cópias abertas ficam logo depois do cartão-pai (antes, iam para o fim da lista).
+  const filtrada = juntarCopiasAoPai(comBarra ? filtrarEOrdenar(visiveis, { aba, busca, ordem }) : visiveis, copiasDe);
   const pagina = paginar(filtrada, paginas);
   const abas = abasVisiveis(visiveis);
 
