@@ -74,7 +74,8 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 | `/admin/parceiros/pedidos/[id]` | Abrir um pedido de serviço | Valores (taxa congelada no aceite), pagamento indisponível/simulado, eventos; grava `ver_pedido_parceiro` |
 | `/admin/pedidos` | Ver pedidos de moradia | Pedido da semente aparece; compatíveis são avisados |
 | `/admin/servicos` | Ver serviços para o morador | Indicadores carregam |
-| `/admin/socios` | Ver a caixa dos sócios | Pedido só some com o aceite de quem pediu |
+| `/admin/premissas` | Conferir as premissas do modelo de custos (observador da QA) | Mesmo modelo do /simulacao em leitura; admin comum vai ao /simulacao (E591) |
+| `/admin/socios` | Ver a caixa dos sócios | Pedido só some com o aceite de quem pediu; para o observador, aviso com o caminho das premissas (E591) |
 | `/admin/solicitacoes` | Ver solicitações de manutenção | Lista por status; abrir uma solicitação |
 | `/admin/usuarios` | Buscar e abrir um usuário | Selo TESTE nas contas `is_teste`; sem acesso a senha |
 

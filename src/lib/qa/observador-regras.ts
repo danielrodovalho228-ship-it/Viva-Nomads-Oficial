@@ -9,7 +9,7 @@
  */
 export const TEXTO_CAIXA_RESTRITA_QA = {
   motivo: "A Caixa dos Sócios é restrita aos sócios: é a correspondência deles e fica fechada para a conta de QA.",
-  caminho: "As premissas do modelo de custos estão no /simulacao, que abre só leitura com o código do investidor (sem nenhuma escrita).",
+  caminho: "As premissas do modelo de custos estão em Premissas (leitura), no menu Equipe: o mesmo modelo do /simulacao, só leitura.",
 } as const;
 
 export const MSG_OBSERVADOR =
