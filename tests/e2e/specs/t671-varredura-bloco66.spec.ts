@@ -3,6 +3,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T671 — VARREDURA DA PÁGINA INTEIRA, BLOCO 66 (Pista C, 30/10). O protocolo do bloco 21 (t385): seis classes, página
@@ -32,7 +33,7 @@ const EMAIL_DONO = `dono.t671.${sufixo}@lab.vivanomads.test`;
 const ACESSIVEL = ["entradaSemDegrauOuRampa", "elevadorOuTerreo", "portas80cm", "banheiroAdaptado"];
 
 const TELAS: Tela[] = [
-  { conta: "VISITANTE", papel: "visitante", nome: "Preços com a faixa 31+ negociável (E252-B)", rota: () => "/precos", marca: (l) => (l < 640 ? "faixas-taxa-cartoes" : "faixas-taxa") },
+  ...comPrecos({ conta: "VISITANTE", papel: "visitante", nome: "Preços com a faixa 31+ negociável (E252-B)", rota: () => "/precos", marca: (l: number) => (l < 640 ? "faixas-taxa-cartoes" : "faixas-taxa") }),
   { conta: "VISITANTE", papel: "visitante", nome: "Início com o rodapé novo (#1549/#1550)", rota: () => "/" },
   { conta: "VISITANTE", papel: "visitante", nome: "Central de Ajuda (#1549)", rota: () => "/ajuda" },
   { conta: "VISITANTE", papel: "visitante", nome: "Fale com a Viva, com o caminho dos parceiros (#1550)", rota: () => "/ajuda/fale-com-a-viva" },

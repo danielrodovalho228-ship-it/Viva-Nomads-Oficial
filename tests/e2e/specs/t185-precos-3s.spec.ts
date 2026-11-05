@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
   T185 — /precos revisão 3S (prompt 13), a 390, 768 e 1280 px.
@@ -20,6 +21,7 @@ async function caixas(page: Page) {
 
 for (const largura of [390, 768, 1280]) {
   test(`T185 ${largura}px — botões sem sobreposição, grades pares, vocabulário e fontes`, async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
 
@@ -60,6 +62,7 @@ for (const largura of [390, 768, 1280]) {
 }
 
 test("T185 — Plano Gestor abre numa janela à parte e fecha (390 e 1280)", async ({ page }) => {
+  test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
   for (const largura of [390, 1280]) {
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
@@ -81,6 +84,7 @@ test("T185 — Plano Gestor abre numa janela à parte e fecha (390 e 1280)", asy
 });
 
 test("T185 — 390px: o 'Fale com a Viva' não tampa os botões nem as faixas da tabela (mesma regra do Q4)", async ({ page }) => {
+  test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/precos", { waitUntil: "networkidle" });
   const flut = page.getByTestId("fale-com-a-viva");

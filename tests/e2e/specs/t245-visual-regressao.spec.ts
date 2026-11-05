@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Locator, type APIRequestContext } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T245 — Regressão visual (adendo do Prompt 40): `toHaveScreenshot` em 20 telas (13 públicas e 7 logadas da
@@ -163,7 +164,7 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
 
       for (const [n, rota, nome] of [
         ["10", "/como-funciona", "como-funciona"],
-        ["11", "/precos", "precos"],
+        ...comPrecos(["11", "/precos", "precos"] as const),
         ["12", "/para-proprietarios", "para-proprietarios"],
         ["13", "/auth", "entrar"],
       ] as const) {

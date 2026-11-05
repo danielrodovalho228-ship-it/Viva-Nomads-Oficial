@@ -1,11 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
 * T49 — Segurança vista de FORA (sem login, sem env): cabeçalhos, portões,
  * APIs privadas, open redirect e vazamento de detalhes em erro.
  * Ordem 2567f1af (LAB 1/2, parte C). Não grava nada: só GET/POST recusados.
  */
-const PAGINAS_PUBLICAS = ["/", "/buscar", "/precos", "/como-funciona", "/auth"];
+const PAGINAS_PUBLICAS = ["/", "/buscar", ...comPrecos("/precos"), "/como-funciona", "/auth"];
 
 test.describe("T49 cabeçalhos de segurança @seguranca", () => {
   for (const rota of PAGINAS_PUBLICAS) {

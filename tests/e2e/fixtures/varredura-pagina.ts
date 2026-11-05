@@ -1,5 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { controlesCobertos } from "./varredura";
+import { comPrecos } from "./precos";
 
 /**
  * VARREDURA DA PÁGINA INTEIRA (t274): o protocolo do Daniel, tela por tela, rolando a página toda em 390 e 1280 px.
@@ -290,7 +291,7 @@ export const PAGINAS_PUBLICAS: Rota[] = [
   { nome: "Parceiros — mudança", rota: "/parceiros/buscar?categoria=mudanca" },
   { nome: "Parceiros — fotógrafos", rota: "/parceiros/fotografos" },
   { nome: "Guia de fotos", rota: "/guia-fotos" },
-  { nome: "Preços", rota: "/precos" },
+  ...comPrecos({ nome: "Preços", rota: "/precos" }),
   { nome: "Segurança", rota: "/seguranca" },
   { nome: "Ajuda", rota: "/ajuda" },
   { nome: "Guias", rota: "/guias" },

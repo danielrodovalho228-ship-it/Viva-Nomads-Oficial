@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T746 — E246 (vigia, 31/10), guarda permanente: o botão flutuante "Fale com a Viva" nunca senta sobre texto ou
@@ -8,7 +9,7 @@ import { NO_LABORATORIO } from "../fixtures/laboratorio";
   a Viva" segue no menu ☰ do topo público. A 1280 px ele continua (o desktop não muda) e não cobre botão nenhum.
 */
 const SAIDA = "tests/laboratorio/saida";
-const PUBLICAS = ["/", "/precos", "/como-funciona", "/para-proprietarios", "/parceiros", "/parceiros/fotografos", "/imoveis/ube-001"];
+const PUBLICAS = ["/", ...comPrecos("/precos"), "/como-funciona", "/para-proprietarios", "/parceiros", "/parceiros/fotografos", "/imoveis/ube-001"];
 const PAINEL_DONO = ["/dashboard", "/dashboard/contratos", "/dashboard/imoveis"];
 const PAINEL_MORADOR = ["/dashboard", "/dashboard/locacoes"];
 
@@ -58,7 +59,7 @@ test.describe("T746 — E246: sem flutuante no celular; desktop intacto", () => 
   test.describe("1280 px — visitante", () => {
     test.use({ viewport: { width: 1280, height: 900 }, storageState: { cookies: [], origins: [] } });
     test("o flutuante continua e não cobre botão nenhum", async ({ page }) => {
-      for (const rota of ["/", "/precos", "/parceiros/fotografos"]) {
+      for (const rota of ["/", ...comPrecos("/precos"), "/parceiros/fotografos"]) {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
         const flut = page.getByTestId("fale-com-a-viva");
         await expect(flut, rota).toBeVisible();

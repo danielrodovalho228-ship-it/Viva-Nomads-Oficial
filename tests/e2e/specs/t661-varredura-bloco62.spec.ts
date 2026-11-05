@@ -3,6 +3,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T661 — VARREDURA DA PÁGINA INTEIRA, BLOCO 62 (Pista C, 29/10). O protocolo do bloco 21 (t385): seis classes, página
@@ -36,7 +37,7 @@ const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Início com os próximos passos do rascunho (E239)", rota: () => "/dashboard", marca: "inicio-dono-passos" },
   { conta: "DONO", papel: "proprietário", nome: "Cadastro, passo 1 com o estado na linha do selo (#1532)", rota: () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=tipo`, marca: "passo-titulo" },
   { conta: "DONO", papel: "proprietário", nome: "Cadastro, passo da descrição (#1532)", rota: () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=descricao`, marca: "cadastro-descricao" },
-  { conta: "PUBLICO", papel: "visitante", nome: "Preços com a tabela de faixas (E236)", rota: () => "/precos", marca: "plano-gestor-botao" },
+  ...comPrecos({ conta: "PUBLICO", papel: "visitante", nome: "Preços com a tabela de faixas (E236)", rota: () => "/precos", marca: "plano-gestor-botao" }),
   { conta: "PUBLICO", papel: "visitante", nome: "Parceiros (E236)", rota: () => "/parceiros" },
   { conta: "PUBLICO", papel: "visitante", nome: "Termos (E236)", rota: () => "/termos" },
   { conta: "SOCIO", papel: "sócio", nome: "Modelo de negócio (E236)", rota: () => "/modelodenegocio" },

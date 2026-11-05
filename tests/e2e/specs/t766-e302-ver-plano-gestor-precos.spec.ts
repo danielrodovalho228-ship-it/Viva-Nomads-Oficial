@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
   T766 — E302 (resíduo de 01/11): em /precos, junto do "Falar sobre o Plano Gestor" (contato), a ação "Ver o Plano
@@ -8,6 +9,7 @@ const SAIDA = "tests/laboratorio/saida";
 
 for (const largura of [390, 1280] as const) {
   test(`T766 — E302: "Ver o Plano Gestor" em /precos rola até a seção (${largura} px)`, async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
     const botoes = page.getByTestId("precos-botoes");

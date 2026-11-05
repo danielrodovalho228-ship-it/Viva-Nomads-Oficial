@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
@@ -24,6 +26,8 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
+  // E563 (decisão do Daniel, 04/11): página SUSPENSA — com a chave desligada, /precos (e /planos) vão para a home.
+  if (!PRECOS_VISIVEL) redirect("/");
   return (
     <>
       <JsonLd dados={ofertaRegraUnica(SITE_URL)} />

@@ -31,7 +31,8 @@ test("E71: artigos de custo e taxa levam a /precos; golpe e contato, a /seguranc
   const faq = ler("lib/atendimento/faq.ts");
   assert.match(faq, /const LINK_PRECOS = \{ rotulo: "[^"]+", href: "\/precos" \};/);
   assert.match(faq, /const LINK_SEGURANCA = \{ rotulo: "[^"]+", href: "\/seguranca" \};/);
-  assert.equal((faq.match(/links: \[LINK_PRECOS\]/g) ?? []).length, 3);
+  // E563: os 3 links para /precos seguem, atrás da chave PRECOS_VISIVEL.
+  assert.equal((faq.match(/links: comPortasDePrecos\(\[LINK_PRECOS\]\)/g) ?? []).length, 3);
   assert.equal((faq.match(/links: \[LINK_SEGURANCA\]/g) ?? []).length, 2);
   assert.match(ler("components/ajuda/central-ajuda.tsx"), /faq-link-/);
 });

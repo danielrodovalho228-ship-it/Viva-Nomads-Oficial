@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T831 — E458 (Relay 58, spec do coordenador validada em 02/11): "Parceiros" no menu público e a porta com dois caminhos.
@@ -15,7 +16,7 @@ const DESTINOS = [
   ["Anunciar", "/dashboard/imoveis/novo"],
   ["Empresas", "/empresas"],
   ["Parceiros", "/parceiros"],
-  ["Planos", "/planos"], // E555
+  ...comPrecos(["Planos", "/planos"]), // E555 (E563: só com a página de preços ligada)
   ["Fale com a Viva", "/ajuda/fale-com-a-viva"],
 ];
 

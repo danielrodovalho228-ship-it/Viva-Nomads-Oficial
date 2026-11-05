@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
   T837 — E555 (pacote Planos): as portas para /planos, no computador (1280) e no celular (390).
@@ -16,6 +17,7 @@ for (const largura of [390, 1280] as const) {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test("menu: Planos entre Parceiros e Fale com a Viva, para /planos", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/", { waitUntil: "load" });
       if (largura === 390) {
         await page.getByTestId("topo-publico").getByRole("button", { name: /menu/i }).click();
@@ -37,6 +39,7 @@ for (const largura of [390, 1280] as const) {
     });
 
     test("home: cartão 'Planos e taxas'; rodapé: 'Preços' → /planos", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/", { waitUntil: "load" });
       const cartao = page.getByTestId("bloco-proprietarios").getByTestId("home-planos-taxas");
       await expect(cartao).toBeVisible();
@@ -49,6 +52,7 @@ for (const largura of [390, 1280] as const) {
     });
 
     test("/anunciar: destaque 'Planos e taxas' no topo; /planos abre os planos e taxas", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/anunciar", { waitUntil: "load" });
       await expect(page).toHaveURL(/\/para-proprietarios$/);
       const destaque = page.getByTestId("anunciar-planos");

@@ -4,6 +4,7 @@
   PR 2 também responde a partir daqui. Puro (testável com node --test).
 */
 import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
+import { comPortasDePrecos } from "../../config/precos-visivel.ts";
 import { frasePrazosManutencao } from "../../config/atendimento.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
@@ -53,7 +54,7 @@ export const FAQ: Pergunta[] = [
     pergunta: "Quanto custa anunciar?",
     resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4%, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado. Veja a comparação com outras opções em /precos.`,
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
-    links: [LINK_PRECOS],
+    links: comPortasDePrecos([LINK_PRECOS]),
   },
   {
     id: "como-virar-parceiro",
@@ -74,7 +75,7 @@ export const FAQ: Pergunta[] = [
     pergunta: "Taxa de serviço dos parceiros",
     resposta: `${TAXA_PARCERIA_TEXTO} ${CONTATO_NO_ACEITE} ${REGRAS_ENTREGA}`,
     termos: ["taxa de parceria", "taxa de servico", "taxa parceiro", "10%", "90%", "fotos", "advertencia", "suspensao", "mensalidade", "dinheiro do servico", "contato", "aceite", "liberado", "entregar"],
-    links: [LINK_PRECOS],
+    links: comPortasDePrecos([LINK_PRECOS]),
   },
   {
     id: "contratar-fotografo",
@@ -88,7 +89,7 @@ export const FAQ: Pergunta[] = [
     resposta:
       "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o morador. A taxa de 12% sobre o valor total do contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
     termos: ["taxa", "inquilino", "morador", "custo", "gratis"],
-    links: [LINK_PRECOS],
+    links: comPortasDePrecos([LINK_PRECOS]),
   },
   {
     id: "prazo",

@@ -5,6 +5,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T338 — VARREDURA DA PÁGINA INTEIRA, BLOCO 15 (Pista C, 24/10). O mesmo protocolo da t306 (seis classes, página
@@ -23,7 +24,7 @@ interface Tela {
 const TELAS: Tela[] = [
   // Públicas primeiro.
   { conta: "VISITANTE", papel: "visitante", rota: (m) => `/proprietario/${m.ids.DONO17}`, nome: "Perfil público do proprietário (63-A)" },
-  { conta: "VISITANTE", papel: "visitante", rota: () => "/precos", nome: "Preços (taxa E51 a E54)" },
+  ...comPrecos({ conta: "VISITANTE", papel: "visitante", rota: () => "/precos", nome: "Preços (taxa E51 a E54)" }),
   // Logadas.
   { conta: "DONO17", papel: "proprietário", rota: () => "/dashboard/leads", nome: "Interessados (63-A)" },
   { conta: "DONO17", papel: "proprietário", rota: () => "/dashboard/imoveis/novo", nome: "Cadastro do anúncio (calendário do E44)" },

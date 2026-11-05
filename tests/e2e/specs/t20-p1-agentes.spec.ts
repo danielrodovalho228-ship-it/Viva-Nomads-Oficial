@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T20 — Achados P1 dos agentes: conferência pública, SEO (index, sitemap,
@@ -65,7 +66,7 @@ test.describe("T20 — P1 dos agentes", () => {
   for (const [rota, tipo] of [
     ["/", "Organization"],
     ["/ajuda/seguranca", "FAQPage"], // E84: as perguntas moram na página de cada tema
-    ["/precos", "Offer"],
+    ...comPrecos(["/precos", "Offer"] as const),
     ["/buscar", "ItemList"],
   ] as const) {
     test(`JSON-LD ${tipo} em ${rota}`, async ({ page }) => {
