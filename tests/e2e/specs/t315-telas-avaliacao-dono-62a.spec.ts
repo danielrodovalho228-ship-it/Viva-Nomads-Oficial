@@ -37,6 +37,16 @@ async function comChave(page: Page) {
 async function primariosNoMain(page: Page): Promise<number> {
   return page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible").count();
 }
+/**
+ * L-100 (Pista C, 05/11; dono: Pista A/B): desde o NIVEIS-MEDIR-B (24/10) a página do nível mostra sempre o "Medir a
+ * internet agora" com variant="primary" (src/components/anuncio/medir-internet.tsx) — dois primários com o "Pedir
+ * avaliação do imóvel". O caso "0" abaixo segura o L-100 (test.fail); o caso 1 conta os primários SEM esse botão, para
+ * o resto da tela seguir conferido. Corrigido o L-100, o caso 0 passa e o test.fail sai.
+ */
+const SEM_MEDIR = ':not([data-testid="medir-internet-botao"])';
+async function primariosSemMedir(page: Page): Promise<number> {
+  return page.locator("main").locator(`button.bg-forest:visible${SEM_MEDIR}, a.bg-forest:visible${SEM_MEDIR}`).count();
+}
 
 test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -96,6 +106,17 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     await apagarContas([ids.A, ids.morador, ids.dono]);
   });
 
+  test("0. L-100 — um primário só na página do nível (o \"Medir a internet agora\" também é primário)", async ({ browser }) => {
+    test.fail(true, "L-100: /dashboard/imoveis/[id]/nivel mostra dois primários (Medir a internet agora + Pedir avaliação do imóvel)");
+    const d = await entrar(browser, dono.email, senha);
+    await comChave(d);
+    await largura(d, 1280);
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+    await expect(d.getByTestId("avaliacao-dono").getByTestId("rota-foto")).toBeVisible({ timeout: 30_000 });
+    expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
+    await d.context().close();
+  });
+
   test("1. dono: duas rotas lado a lado, frase fixa, um primário; pedir → linha do tempo com o nº, sem repetir a frase", async ({ browser }) => {
     const d = await entrar(browser, dono.email, senha);
     await comChave(d);
@@ -114,7 +135,8 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
       }));
       if (w === 1280) expect(Math.abs(f!.y - a!.y), "lado a lado a 1280").toBeLessThan(2);
       else expect(a!.y, "uma embaixo da outra a 390").toBeGreaterThan(f!.y + f!.height - 1);
-      expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
+      // L-100: o "Medir a internet agora" fica fora desta conta (o caso 0 segura o defeito).
+      expect(await primariosSemMedir(d), "um primário só no bloco da avaliação e no resto da tela (QA #1111 item 7)").toBe(1);
       await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
