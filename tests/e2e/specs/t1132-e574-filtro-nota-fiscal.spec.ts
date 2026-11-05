@@ -7,9 +7,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  * PJ que respondeu "não" ou não respondeu também não. Entrou com o e574-nota-locacao.test.ts; aqui é a busca real,
  * numa cidade só do teste, com 3 anúncios ativos de 3 donos, 390 e 1280 (o total lido no "Aplicar", como a t350):
  *   PJ que declarou emitir · PJ que declarou não emitir · PF  →  sem filtro 3 · `?nota=1` 1.
- * L-97 (achado desta spec, 05/11): `?nota=1` dá 0 — listProperties chama attachNotaDono, mas o Property da busca não
- * carrega ownerId (rowToProperty não o preenche), então ninguém ganha o selo. O caso fica como test.fail ligado ao L-97
- * (Pista B): quando corrigirem, o test.fail vira e acusa.
+ * L-97 (achado desta spec, 05/11): `?nota=1` dava 0 — o Property da busca não carregava ownerId e ninguém ganhava o
+ * selo. Corrigido pelo E579 (#2567: o dono vem das linhas do banco); o caso voltou a ser cobrança normal.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -67,8 +66,7 @@ test.describe("T1132 — E574: o filtro \"Emite nota fiscal\" segue a declaraç�
       }
     });
 
-    test(`L-97: ?nota=1 traz o anúncio do PJ que declarou emitir (${w})`, async ({ browser }) => {
-      test.fail(true, "L-97: listProperties chama attachNotaDono(mapped), mas rowToProperty não preenche ownerId — nenhum anúncio da busca ganha emiteNotaDono e ?nota=1 dá 0 mesmo com o PJ que declarou emitir");
+    test(`?nota=1 traz só o anúncio do PJ que declarou emitir (${w})`, async ({ browser }) => {
       const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: w, height: w === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       try {
