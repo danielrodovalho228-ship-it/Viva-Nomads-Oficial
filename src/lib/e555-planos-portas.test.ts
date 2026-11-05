@@ -24,7 +24,7 @@ function destinos(): string[][] {
 test("E555: menu público com exatamente 6 destinos, nesta ordem", () => {
   assert.deepEqual(destinos(), [
     ["Imóveis", "/buscar"],
-    ["Anunciar", "/dashboard/imoveis/novo"],
+    ["Anunciar", "/para-proprietarios"],
     ["Empresas", "/empresas"],
     ["Parceiros", "/parceiros"],
     ["Planos", "/planos"],
