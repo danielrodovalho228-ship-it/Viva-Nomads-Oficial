@@ -7,7 +7,7 @@ import { Download, Trash2 } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { formatBRL, hojeBR } from "@/lib/utils";
-import { CANAIS_MARKETING, canalLabel, gastosCsv, totaisPorMes, type GastoMarketing } from "@/lib/marketing";
+import { CANAIS_MARKETING, canalLabel, gastosCsv, opcoesDeMes, totaisPorMes, type GastoMarketing } from "@/lib/marketing";
 import { lancarGastoMarketing, apagarGastoMarketing } from "@/lib/data/marketing-admin";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -84,7 +84,14 @@ export function AdminMarketingClient({ gastos, aviso, soLeitura = false }: { gas
         <form onSubmit={lancar} className="grid gap-3 sm:grid-cols-[10rem_10rem_10rem_1fr_auto] sm:items-end">
           <label className="block text-sm">
             <span className="mb-1 block font-semibold text-ink">Mês</span>
-            <input type="month" required value={mes} onChange={(e) => setMes(e.target.value)} className={campo} />
+            {/* E476 (ii): lista em português; o campo nativo de mês escrevia no idioma do navegador ("November 2026"). */}
+            <select required value={mes} onChange={(e) => setMes(e.target.value)} className={campo}>
+              {opcoesDeMes(mesAtual()).map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.rotulo}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-semibold text-ink">Canal</span>

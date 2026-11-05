@@ -72,3 +72,29 @@ export function gastosCsv(gastos: GastoMarketing[]): string {
   );
   return ["mes;canal;valor;observacao", ...linhas].join("\n");
 }
+
+/* E476 (ii): o mês em português na tela do admin, sem depender do idioma do navegador (o <input type="month"> nativo
+   escrevia "November 2026"). O valor gravado não muda (AAAA-MM). */
+const MESES_PT = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+/** "2026-11" → "novembro de 2026". */
+export function rotuloDoMes(mes: string): string {
+  const [a, m] = mes.split("-").map(Number);
+  return `${MESES_PT[m - 1] ?? "?"} de ${a}`;
+}
+
+/** Meses para escolher: do mês atual (AAAA-MM) até janeiro de 2024 (o início do período aceito), do mais recente. */
+export function opcoesDeMes(atual: string): { valor: string; rotulo: string }[] {
+  let [a, m] = atual.split("-").map(Number);
+  const out: { valor: string; rotulo: string }[] = [];
+  while (a > 2024 || (a === 2024 && m >= 1)) {
+    const valor = `${a}-${String(m).padStart(2, "0")}`;
+    out.push({ valor, rotulo: rotuloDoMes(valor) });
+    m -= 1;
+    if (m === 0) {
+      m = 12;
+      a -= 1;
+    }
+  }
+  return out;
+}
