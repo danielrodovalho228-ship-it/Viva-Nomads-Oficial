@@ -16,6 +16,7 @@ import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
 import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
 import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
 import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
+import { PRECO_JUSTO_COMPARADOR } from "../flags.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -45,6 +46,11 @@ export interface FiltrosPainel {
   gestorOnly: boolean;
   /** E439: só quem aceita negociar (properties.negociacao.aceita; `?negocia=1`). */
   negociaOnly?: boolean;
+  /**
+   * E572: só imóveis com o selo "Preço justo" (`?precojusto=1`). Atrás da MESMA chave do selo (PRECO_JUSTO_COMPARADOR,
+   * família E399-C): com a chave desligada o filtro não tira ninguém, não conta e não entra no resumo.
+   */
+  precoJustoOnly?: boolean;
   /** Prompt 57, fase 2: download MEDIDO mínimo (50 | 100 | 300); 0 = desligado. */
   internetMin: number;
   /** "Só com internet medida" (dentro de "Para trabalhar de casa"). */
@@ -71,6 +77,7 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   notaOnly: false,
   gestorOnly: false,
   negociaOnly: false,
+  precoJustoOnly: false,
   internetMin: 0,
   soInternetMedida: false,
   entrada: "",
@@ -155,7 +162,19 @@ type ImovelFiltravel = ImovelComInternet & {
   nivel?: NivelOuAdequacao | null;
   /** E439: negociação pública do dono (só o `aceita` pesa no filtro). Sem dado = não negocia. */
   negociacao?: { aceita: boolean } | null;
+  /** E572: selo "Preço justo" calculado pelo servidor (motor E399-C com a chave ligada). Sem dado = sem selo. */
+  precoJusto?: boolean;
 };
+
+/** E572: o filtro "Preço justo" está valendo? Só com a chave do selo ligada E o filtro escolhido. */
+export function filtroPrecoJustoLigado(f: Pick<FiltrosPainel, "precoJustoOnly">, chave: boolean = PRECO_JUSTO_COMPARADOR): boolean {
+  return chave && f.precoJustoOnly === true;
+}
+
+/** E572: o imóvel passa no filtro "Preço justo"? Filtro desligado (ou chave desligada) não tira ninguém. */
+export function passaPrecoJusto(p: Pick<ImovelFiltravel, "precoJusto">, f: Pick<FiltrosPainel, "precoJustoOnly">, chave: boolean = PRECO_JUSTO_COMPARADOR): boolean {
+  return !filtroPrecoJustoLigado(f, chave) || p.precoJusto === true;
+}
 
 /** Rótulo curto das garantias do filtro (resumo do topo). */
 const ROTULO_GARANTIA: Record<string, string> = {
@@ -218,6 +237,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (f.negociaOnly && p.negociacao?.aceita !== true) return false;
+  if (!passaPrecoJusto(p, f)) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;
   return true;
@@ -255,6 +275,7 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     // A data de entrada conta fora da folha (chip "Entrada …"); aqui só a flexibilidade, e só com data.
     (f.entrada && f.datasFlexiveis ? 1 : 0) +
     (f.nivelMin ? 1 : 0) +
+    (filtroPrecoJustoLigado(f) ? 1 : 0) +
     // Adendo 3 (E43): "Pronto para Morar" é um estado só (readyToLiveOnly) — atalho e chip contam 1.
     [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly].filter(Boolean).length +
     comodidadesValidas(f.comodidades).length
@@ -289,5 +310,6 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.notaOnly) partes.push("Nota Fiscal");
   if (f.gestorOnly) partes.push("Gestor profissional");
   if (f.negociaOnly) partes.push("Aceita negociação");
+  if (filtroPrecoJustoLigado(f)) partes.push("Preço justo");
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
 }

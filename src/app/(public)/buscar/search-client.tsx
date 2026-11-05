@@ -27,7 +27,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
-import { SELO_NF_UI } from "@/lib/flags";
+import { PRECO_JUSTO_COMPARADOR, SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
@@ -112,6 +112,8 @@ export function SearchClient({
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
+  // E572: só com o selo "Preço justo" (`?precojusto=1`) — atrás da chave do selo (PRECO_JUSTO_COMPARADOR, E399-C).
+  const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
   const [painelAberto, setPainelAberto] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
@@ -202,6 +204,7 @@ export function SearchClient({
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     if (on("negocia")) setNegociaOnly(true);
+    if (PRECO_JUSTO_COMPARADOR && on("precojusto")) setPrecoJustoOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
     setInternetMin(fi.internetMin);
@@ -271,6 +274,7 @@ export function SearchClient({
     params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("negocia", negociaOnly, "1");
+    put("precojusto", PRECO_JUSTO_COMPARADOR && precoJustoOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
     filtroNivelNaUrl(params, nivelMin);
@@ -285,7 +289,7 @@ export function SearchClient({
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, comodidades, estadoDestino,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades, estadoDestino,
     internetMin, soInternetMedida, datasFlexiveis, nivelMin,
   ]);
 
@@ -381,6 +385,7 @@ export function SearchClient({
     setInvoiceOnly(false);
     setOperatedOnly(false);
     setNegociaOnly(false);
+    setPrecoJustoOnly(false);
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
@@ -397,10 +402,11 @@ export function SearchClient({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
       periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, gestorOnly: operatedOnly,
       negociaOnly,
+      precoJustoOnly,
       internetMin, soInternetMedida,
       entrada: dataEntrada, datasFlexiveis, nivelMin,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
   );
 
   const { base, dist } = useMemo(() => {
@@ -513,6 +519,7 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
+    (PRECO_JUSTO_COMPARADOR && precoJustoOnly ? 1 : 0) + // E572
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
       Boolean
     ).length +
@@ -526,7 +533,7 @@ export function SearchClient({
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly, negociaOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly, negociaOnly, PRECO_JUSTO_COMPARADOR && precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -560,6 +567,7 @@ export function SearchClient({
     setInvoiceOnly(false);
     setOperatedOnly(false);
     setNegociaOnly(false);
+    setPrecoJustoOnly(false);
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
@@ -609,7 +617,7 @@ export function SearchClient({
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, comodidades.join(","),
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades.join(","),
     internetMin, soInternetMedida, datasFlexiveis, nivelMin,
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
@@ -634,6 +642,7 @@ export function SearchClient({
     setInvoiceOnly(f.notaOnly);
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
+    setPrecoJustoOnly(PRECO_JUSTO_COMPARADOR && (f.precoJustoOnly ?? false));
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }

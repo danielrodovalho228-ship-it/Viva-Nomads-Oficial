@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CampoDataFormulario } from "@/components/ui/campo-data";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { MSG_CONTEXTO_SEM_LEITURA, contextoDaSaida, painelQualidade } from "@/lib/data/qualidade";
+import { MSG_CONTEXTO_SEM_LEITURA, contextoDaSaida, indicadorPrecoJustoDoPainel, painelQualidade } from "@/lib/data/qualidade";
 import { adminDefinirCorrecao, adminEstadoDenuncia, adminFecharCorrecao } from "@/lib/saida/acoes";
 import { ESTADOS_DENUNCIA, MOTIVOS_DENUNCIA, ROTULO_ESTADO_DENUNCIA, ROTULO_NIVEL_SAIDA, ROTULO_PAPEL_SAIDA, prioridadeDenuncia, rotuloMotivo, type EstadoDenuncia, type NivelSaida, type PapelSaida } from "@/lib/saida/regras";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
@@ -26,7 +26,11 @@ const ROTULO_CONTEXTO = { chamados: "Chamados da pessoa", pagamentos: "Contratos
 export default async function AdminQualidadePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const saidaAberta = typeof sp.saida === "string" ? sp.saida : null;
-  const [p, ctx] = await Promise.all([painelQualidade().catch(() => null), saidaAberta ? contextoDaSaida(saidaAberta).catch(() => "falhou" as const) : Promise.resolve(null)]);
+  const [p, ctx, pj] = await Promise.all([
+    painelQualidade().catch(() => null),
+    saidaAberta ? contextoDaSaida(saidaAberta).catch(() => "falhou" as const) : Promise.resolve(null),
+    indicadorPrecoJustoDoPainel().catch(() => null),
+  ]);
   if (!p) return <EmptyState icon={LifeBuoy} title="Sem dados" text="Não foi possível ler o painel de qualidade agora." action={null} />;
 
   const abertas = p.correcoes.filter((c) => !c.fechadaEm);
@@ -100,6 +104,22 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
           <p className="mt-1 text-xs text-muted">Fórmula: saídas em que a pessoa aceitou a ajuda ÷ saídas com ajuda oferecida, últimos 30 dias. Base: {p.baseRevertidas}.</p>
         </Panel>
       </div>
+
+      {/* E572: indicador interno do selo Preço justo (atrás da chave PRECO_JUSTO_COMPARADOR). */}
+      <Panel title="Preço justo: imóveis com link de outra plataforma" className="mb-6" data-testid="qualidade-preco-justo" data-valor={pj && pj !== "desligado" ? (pj.pct ?? "") : ""}>
+        {pj === "desligado" ? (
+          <p className="text-sm text-muted">Chave do Preço justo desligada: nada é lido.</p>
+        ) : pj == null ? (
+          <p className="text-sm text-muted">Não foi possível ler o Preço justo agora.</p>
+        ) : (
+          <>
+            <p className="font-title text-lg text-ink">{pj.pct == null ? "sem base" : `${String(pj.pct).replace(".", ",")}% com o selo`}</p>
+            <p className="mt-1 text-xs text-muted">
+              Fórmula: imóveis ativos com o selo ÷ imóveis ativos com link de outra plataforma. {pj.comSelo} de {pj.comLink}. Contas de teste fora.
+            </p>
+          </>
+        )}
+      </Panel>
 
       <Panel title="Correções" className="mb-6" data-testid="qualidade-correcoes" id="correcoes">
         <p className="mb-3 text-xs text-muted">Um motivo com mais de 3 saídas em 30 dias vira Correção. Dono e prazo são obrigatórios; fechar exige a ligação ao PR ou à ação.</p>
