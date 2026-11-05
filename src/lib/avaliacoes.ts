@@ -53,6 +53,9 @@ export function papelOposto(papelAutor: "proprietario" | "inquilino"): "inquilin
   return papelAutor === "proprietario" ? "inquilino" : "proprietario";
 }
 
+/** E544: antes do fim do contrato a avaliação não abre — o texto do estado pendente. */
+export const TEXTO_AVALIACAO_FECHADA = "A avaliação abre quando a estadia terminar e fica aberta por 14 dias.";
+
 /** Prazo da avaliação: até 14 dias depois do fim do contrato (as duas aparecem juntas, ou no fim do prazo). */
 export const DIAS_PRAZO_AVALIACAO = 14;
 

@@ -34,7 +34,7 @@ import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
 import { naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
-import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
+import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
 import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
@@ -103,6 +103,8 @@ export function SearchClient({
   const [internetMin, setInternetMin] = useState(0);
   // Adendo 59.1: nível "a partir de" (`?nivel=`), escolhido na folha de filtros.
   const [nivelMin, setNivelMin] = useState<Nivel | "">("");
+  // E573: níveis EXATOS do grupo "Nível" do painel (`?niveis=`); o rótulo/posição no painel é da Pista A.
+  const [niveis, setNiveis] = useState<Nivel[]>([]);
   const [soInternetMedida, setSoInternetMedida] = useState(false);
   // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
   const [datasFlexiveis, setDatasFlexiveis] = useState(false);
@@ -210,6 +212,7 @@ export function SearchClient({
     setInternetMin(fi.internetMin);
     setSoInternetMedida(fi.soInternetMedida);
     setNivelMin(filtroNivelDaUrl(sp));
+    setNiveis(niveisDaUrl(sp));
   }, []);
 
   // Restaura no mount (link compartilhado / reload) e re-aplica a cada
@@ -278,6 +281,7 @@ export function SearchClient({
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
     filtroNivelNaUrl(params, nivelMin);
+    niveisNaUrl(params, niveis);
     destinoNaUrl(params, estadoDestino);
     if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
@@ -290,7 +294,7 @@ export function SearchClient({
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
     readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades, estadoDestino,
-    internetMin, soInternetMedida, datasFlexiveis, nivelMin,
+    internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis,
   ]);
 
   // Prompt 37: sem destino na URL, o "Meu local de trabalho" salvo na conta vira o padrão (só para quem está logado;
@@ -390,6 +394,7 @@ export function SearchClient({
     setInternetMin(0);
     setSoInternetMedida(false);
     setNivelMin("");
+    setNiveis([]);
     setDatasFlexiveis(false);
     setEstadoDestino({ destino: null, modo: "carro", ate: 0 });
     setSort("relevance");
@@ -404,9 +409,9 @@ export function SearchClient({
       negociaOnly,
       precoJustoOnly,
       internetMin, soInternetMedida,
-      entrada: dataEntrada, datasFlexiveis, nivelMin,
+      entrada: dataEntrada, datasFlexiveis, nivelMin, niveis,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin, niveis]
   );
 
   const { base, dist } = useMemo(() => {
@@ -520,6 +525,7 @@ export function SearchClient({
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
     (PRECO_JUSTO_COMPARADOR && precoJustoOnly ? 1 : 0) + // E572
+    (niveis.length ? 1 : 0) + // E573
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
       Boolean
     ).length +
@@ -533,6 +539,7 @@ export function SearchClient({
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
+    (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
     [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, PRECO_JUSTO_COMPARADOR && precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
@@ -568,6 +575,7 @@ export function SearchClient({
     setOperatedOnly(false);
     setNegociaOnly(false);
     setPrecoJustoOnly(false);
+    setNiveis([]);
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
@@ -618,7 +626,7 @@ export function SearchClient({
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
     faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades.join(","),
-    internetMin, soInternetMedida, datasFlexiveis, nivelMin,
+    internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis.join(","),
   ].join("|");
   function aplicarPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
@@ -630,6 +638,7 @@ export function SearchClient({
     setComodidades(comodidadesValidas(f.comodidades));
     setInternetMin(f.internetMin);
     setNivelMin(f.nivelMin ?? "");
+    setNiveis(f.niveis ?? []);
     setSoInternetMedida(f.homeOfficeOnly && f.soInternetMedida);
     // Só sobraram os de internet não medida: o botão da folha já abre essa lista.
     setVerNaoMedidos(contarComPainel(f) === 0 && contarNaoMedidos(f) > 0);

@@ -17,7 +17,9 @@ test("a carteira repassa exigir às leituras de imóveis e contratos", () => {
 });
 
 test("Carteira e Ganhos pedem com exigir", () => {
-  for (const f of ["src/app/(dashboard)/dashboard/carteira/page.tsx", "src/app/(dashboard)/dashboard/ganhos/page.tsx"]) {
-    assert.match(ler(f), /await getCarteiraDoDono\(undefined, \{ exigir: true \}\)/, f);
-  }
+  assert.match(ler("src/app/(dashboard)/dashboard/carteira/page.tsx"), /await getCarteiraDoDono\(undefined, \{ exigir: true \}\)/);
+  // E545: Ganhos lê um contrato por linha (getGanhosDoDono), com o mesmo exigir.
+  assert.match(ler("src/app/(dashboard)/dashboard/ganhos/page.tsx"), /await getGanhosDoDono\(undefined, \{ exigir: true \}\)/);
+  const src = ler("src/lib/data/carteira.ts");
+  assert.match(src.slice(src.indexOf("export async function getGanhosDoDono")), /listMyProperties\(\{ exigir: opcoes\.exigir \}\), getMeusContratos\(\{ exigir: opcoes\.exigir \}\)/);
 });

@@ -6,9 +6,9 @@
   Só campos que existem no banco; sem escolha = filtro desligado (nunca
   "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opção).
 */
-import type { Nivel, NivelOuAdequacao } from "../../config/niveis.ts";
+import { NIVEIS, type Nivel, type NivelOuAdequacao } from "../../config/niveis.ts";
 import { nivelAoMenos } from "../niveis/regras.ts";
-import { rotuloFiltroNivel } from "./filtro-nivel.ts";
+import { passaNiveis, rotuloFiltroNiveis, rotuloFiltroNivel } from "./filtro-nivel.ts";
 import { ROTULO_COMODIDADE, comodidadesValidas, passaComodidades, type ComodidadeAntiga, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
@@ -64,6 +64,8 @@ export interface FiltrosPainel {
   datasFlexiveis: boolean;
   /** Adendo 59.1: "a partir de" Conforto/Premium (`?nivel=`); "" = desligado. */
   nivelMin?: Nivel | "";
+  /** E573: níveis EXATOS escolhidos (`?niveis=`); vazio = desligado. Sem nível definido, o anúncio não entra. */
+  niveis?: Nivel[];
 }
 
 export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
@@ -86,6 +88,7 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   entrada: "",
   datasFlexiveis: false,
   nivelMin: "",
+  niveis: [],
 };
 
 export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
@@ -245,7 +248,21 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (!passaPrecoJusto(p, f)) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;
+  if (!passaNiveis(p.nivel, f.niveis)) return false;
   return true;
+}
+
+/**
+ * E573: o contador de cada opção do grupo "Nível" — quantos anúncios da lista passam em TODOS os outros filtros e têm
+ * exatamente aquele nível (o mesmo padrão "· N" dos demais filtros: a contagem já considera o resto do painel).
+ */
+export function contagensPorNivel(lista: readonly ImovelFiltravel[], f: FiltrosPainel, agora: Date = new Date()): Record<Nivel, number> {
+  const out = Object.fromEntries(NIVEIS.map((v) => [v, 0])) as Record<Nivel, number>;
+  for (const v of NIVEIS) {
+    const so = { ...f, niveis: [v] };
+    out[v] = lista.filter((p) => passaNoPainel(p, so, agora)).length;
+  }
+  return out;
 }
 
 /**
@@ -280,6 +297,7 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     // A data de entrada conta fora da folha (chip "Entrada …"); aqui só a flexibilidade, e só com data.
     (f.entrada && f.datasFlexiveis ? 1 : 0) +
     (f.nivelMin ? 1 : 0) +
+    (f.niveis?.length ? 1 : 0) +
     (filtroPrecoJustoLigado(f) ? 1 : 0) +
     // Adendo 3 (E43): "Pronto para Morar" é um estado só (readyToLiveOnly) — atalho e chip contam 1.
     [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly].filter(Boolean).length +
@@ -309,6 +327,8 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
   const nivel = rotuloFiltroNivel(f.nivelMin);
   if (nivel) partes.push(nivel);
+  const niveis = rotuloFiltroNiveis(f.niveis);
+  if (niveis) partes.push(niveis);
   for (const c of comodidadesValidas(f.comodidades)) partes.push(ROTULO_COMODIDADE[c]);
   if (f.garantia) partes.push(ROTULO_GARANTIA[f.garantia] ?? "Garantia");
   else if (f.seguroOnly) partes.push(ROTULO_GARANTIA.seguro_fianca);

@@ -54,7 +54,9 @@ test("VARREDURA public/: as páginas estáticas não ligam 'Gestor' a um número
     }
   }
   assert.deepEqual(achados, []);
-  assert.match(ler("public/apresentacao.html"), /<span>31\+ imóveis · taxa negociável<\/span>/);
+  // E564: a tabela da apresentação segue a regra nova (16–19 a 6%; o Plano Gestor a 4%), sem a "31+ negociável".
+  assert.match(ler("public/apresentacao.html"), /<span>Plano Gestor<\/span><b>4%<\/b>/);
+  assert.doesNotMatch(ler("public/apresentacao.html"), /taxa negociável/);
 });
 
 test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => {
@@ -66,16 +68,18 @@ test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => 
     "src/lib/atendimento/viva-prompt.ts",
     "src/lib/atendimento/parceiros-texto.ts",
   ])
-    // E321: a porta inteira (N+ com documento aprovado OU administradora) sai de PORTA_GESTOR_TEXTO, que lê a constante.
-    assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis|PORTA_GESTOR_TEXTO/, f);
+    // E321/E564: a porta (PORTA_GESTOR_TEXTO) ou o texto das telas (GESTOR_TEXTO) — os dois leem a constante.
+    assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis|PORTA_GESTOR_TEXTO|GESTOR_TEXTO/, f);
   assert.match(ler("src/config/planos.ts"), /PORTA_GESTOR_TEXTO = `\$\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais ativos \(publicados, com documento aprovado e calendário em dia\), ou conta de administradora`/);
-  assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor para \$\{PORTA_GESTOR_TEXTO\}\./);
+  assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor: \$\{GESTOR_TEXTO\}\./);
+  assert.match(ler("src/config/planos.ts"), /GESTOR_TEXTO = `[^`]*% para carteiras de \$\{GESTOR_PRECO\.minimoImoveis\} ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva`/);
   const form = ler("src/components/precos/plano-gestor-form.tsx");
   assert.match(form, /title="Plano Gestor"/);
   assert.match(ler("src/app/api/plano-gestor/route.ts"), /subject: `Lead — Plano Gestor \(\$\{GESTOR_PRECO\.minimoImoveis\}\+ imóveis\)`/);
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/simulador/page.tsx"), /Gestor \(31\+\)/);
-  // /modelodenegocio não lê @/config/planos (guarda dos planos antigos): usa o alias GESTOR_MIN_IMOVEIS_VALIDADOS = GESTOR_PRECO.minimoImoveis.
-  assert.match(ler("src/components/modelo-negocio/modelo-negocio.tsx"), /Plano Gestor a partir de \{GESTOR_MIN_IMOVEIS_VALIDADOS\} imóveis\./);
+  // /modelodenegocio não lê @/config/planos (guarda dos planos antigos): usa o GESTOR_TEXTO reexportado por lib/planos/gestor.
+  assert.match(ler("src/components/modelo-negocio/modelo-negocio.tsx"), /Plano Gestor: \{GESTOR_TEXTO\}\./);
+  assert.match(ler("src/components/modelo-negocio/modelo-negocio.tsx"), /from "@\/lib\/planos\/gestor"/);
   assert.match(ler("src/lib/planos/gestor.ts"), /GESTOR_MIN_IMOVEIS_VALIDADOS: number = GESTOR_PRECO\.minimoImoveis;/);
 });
 

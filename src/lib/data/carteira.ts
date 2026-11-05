@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { listMyProperties } from "@/lib/data/properties";
 import { getMeusContratos } from "@/lib/data/contratos-actions";
 import { montarCarteira, type ItemCarteira } from "@/lib/carteira-dono";
+import { itensDeGanhos } from "@/lib/ganhos-dono";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { hojeBR } from "@/lib/utils";
 
@@ -28,6 +29,35 @@ export async function getCarteiraDoDono(hojeISO = hojeBR(), opcoes: { exigir?: b
   return montarCarteira(
     ativos.map((p) => ({ id: p.id, titulo: p.title, bairro: p.neighborhood })),
     contratos.map((c) => ({
+      id: c.id,
+      propertyId: c.propertyId,
+      status: c.status,
+      etapa: c.etapa,
+      selo: c.estado.selo,
+      valorMensal: c.aluguelMensal,
+      blocos: c.blocos.map((b) => ({ inicio: b.inicio, fim: b.fim })),
+      morador: nomes.get(c.tenantId) ?? null,
+    })),
+    hojeISO,
+  );
+}
+
+/**
+ * E545 — Ganhos: TODOS os contratos ativos do dono (um por linha), em qualquer anúncio que não seja rascunho — inclusive
+ * o anúncio pausado depois de alugar. Mesmas leituras da carteira (sessão do dono → RLS); com `exigir`, a falha lança.
+ */
+export async function getGanhosDoDono(hojeISO = hojeBR(), opcoes: { exigir?: boolean } = {}): Promise<ItemCarteira[]> {
+  const [props, contratos] = await Promise.all([listMyProperties({ exigir: opcoes.exigir }), getMeusContratos({ exigir: opcoes.exigir })]);
+  const ativos = contratos.filter((c) => c.status === "ativo");
+  if (ativos.length === 0) return [];
+  const idsInquilinos = [...new Set(ativos.map((c) => c.tenantId).filter(Boolean))];
+  const admin = createAdminClient();
+  const { data: perfis } =
+    admin && idsInquilinos.length ? await admin.from("profiles").select("id, full_name").in("id", idsInquilinos) : { data: null };
+  const nomes = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCompleto(p.full_name)]));
+  return itensDeGanhos(
+    props.map((p) => ({ id: p.id, titulo: p.title, bairro: p.neighborhood })),
+    ativos.map((c) => ({
       id: c.id,
       propertyId: c.propertyId,
       status: c.status,

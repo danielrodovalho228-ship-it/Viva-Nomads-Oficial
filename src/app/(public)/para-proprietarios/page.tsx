@@ -12,15 +12,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
-import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto } from "@/lib/cobranca/regra";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
+import { GESTOR_TEXTO } from "@/config/planos";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
-const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
+// E564: a frase cobre a tabela; a faixa do Plano Gestor é dita à parte (GESTOR_TEXTO).
+const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
 const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
 const TAXA_MENOR = pctTexto(Math.min(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
-const LIMITE_FAIXAS = Math.max(...FAIXAS_PUBLICAS.map((f) => f.maxImoveis ?? 0));
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -51,7 +51,7 @@ export default function ForLandlordsPage() {
               condomínio e IPTU que podem ser transferidos ao morador conforme o contrato.
             </p>
             <p className="mt-4 text-base text-white/90">
-              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; com {LIMITE_FAIXAS + 1} ou mais imóveis ativos, {ROTULO_FAIXA_NEGOCIAVEL}). Plano Gestor: {PORTA_GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
+              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}). Plano Gestor: {GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
               {PRECOS_VISIVEL ? (
                 <>
                   Sem mensalidade —{" "}
