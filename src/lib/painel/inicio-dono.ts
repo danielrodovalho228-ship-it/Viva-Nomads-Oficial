@@ -14,7 +14,8 @@ import type { ChecklistAtivacao } from "../onboarding/ativacao.ts";
 export interface ItemPassoDono {
   rotulo: string;
   feito: boolean;
-  href: string;
+  /** E494: null quando o passo leva ao MESMO lugar do botão do bloco (não é atalho; a lista só mostra o estado). */
+  href: string | null;
   /** Linha curta de "para que serve" (o guia de ativação do dono traz; o rascunho, não). */
   detalhe?: string | null;
 }
@@ -53,6 +54,12 @@ export function blocoPrincipalDono(p: {
    */
   checklist?: ChecklistAtivacao | null;
 }): BlocoPrincipalDono {
+  const b = montarBloco(p);
+  // E494: "Próximos passos" não repete o destino do botão principal (ex.: "Endereço" = "Continuar de onde parou").
+  return { ...b, passos: b.passos.map((x) => (x.href === b.botao.href ? { ...x, href: null } : x)) };
+}
+
+function montarBloco(p: Parameters<typeof blocoPrincipalDono>[0]): BlocoPrincipalDono {
   const r = p.rascunho;
   if (r && !r.pronto) {
     const falta = r.itens.find((i) => !i.ok) ?? null;
