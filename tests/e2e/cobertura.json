@@ -1259,7 +1259,8 @@
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
         "t686-varredura-bloco72",
-        "t854-interessado-responder"
+        "t854-interessado-responder",
+        "t1124-e570-aviso-candidatura"
       ]
     },
     "/dashboard/locacoes": {
@@ -1726,7 +1727,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t1124-e570-aviso-candidatura"
       ]
     },
     "/modelodenegocio": {
