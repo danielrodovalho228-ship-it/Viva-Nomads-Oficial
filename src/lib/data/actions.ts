@@ -1971,6 +1971,8 @@ export async function sendMessage(input: {
         // E533: o aviso do sino guarda a conversa — abrir a conversa marca esses avisos como lidos.
         refId: conversationId,
         remetenteNome: senderName,
+        // E482: a prévia vira o texto do aviso no sino (limpa e com o filtro de contato no gravarAviso).
+        previaAviso: safeBody,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +

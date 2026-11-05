@@ -159,3 +159,19 @@ export function resumoDosAvisos(avisos: readonly { prioridade: PrioridadeAviso; 
 }
 
 export { CRITICOS as EVENTOS_CRITICOS, URGENTES as EVENTOS_URGENTES, POR_PAPEL as PRIORIDADE_POR_PAPEL };
+
+/** E482: a linha de texto do aviso — sem controle nem HTML, espaços normalizados, até 140 caracteres (com "…"). */
+export function textoDoAviso(s: string | null | undefined): string | null {
+  const t = String(s ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  return t.length > 140 ? `${t.slice(0, 139)}…` : t;
+}
+
+/**
+ * E482 — o aviso de mensagem nova diz QUEM escreveu (o primeiro nome, o mesmo do e-mail) e traz a prévia no texto.
+ * O imóvel entra no título pelo gravarAviso (E550). Sem remetente, o assunto do catálogo.
+ */
+export function avisoDeMensagem(e: { remetente?: string | null; previa?: string | null }): { titulo: string; texto: string | null } {
+  const remetente = String(e.remetente ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+  return { titulo: tituloDoAviso(remetente ? `Nova mensagem de ${remetente}` : "Você tem uma nova mensagem"), texto: textoDoAviso(e.previa) };
+}
