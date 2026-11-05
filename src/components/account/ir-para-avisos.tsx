@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { deveIrParaAvisos } from "@/lib/notifications/ir-para-avisos";
+import { deveIrParaAvisos, hashAvisosNormalizado } from "@/lib/notifications/ir-para-avisos";
 
 /**
  * E489 — "Ver todas" do sino chega em /dashboard/notificacoes#avisos. No computador quem rola é o <main> do painel, e a
@@ -12,6 +12,9 @@ export function IrParaAvisos({ alvo, titulo }: { alvo: string; titulo: string })
   useEffect(() => {
     const ir = () => {
       if (!deveIrParaAvisos(window.location.hash)) return;
+      // E496: a âncora chegou repetida (#avisos#avisos) — o endereço volta à forma única, mantendo o estado do roteador.
+      const certo = hashAvisosNormalizado(window.location.hash);
+      if (certo) window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}${certo}`);
       const secao = document.getElementById(alvo);
       if (!secao) return;
       secao.scrollIntoView({ block: "start" });
