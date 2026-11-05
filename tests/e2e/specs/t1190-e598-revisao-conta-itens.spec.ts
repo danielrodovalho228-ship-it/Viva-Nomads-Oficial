@@ -32,9 +32,10 @@ test.describe("T1190 — E598: a Revisão conta os mesmos itens que o cartão de
     test(`"Faltam N itens" na Revisão = os N atalhos do cartão (${w})`, async ({ browser }) => {
       const titulo = `Rascunho incompleto t1190 ${w} ${sufixo}`;
       const imovel = await criarImovelPronto(ids.dono!, titulo);
-      // Sem fotos e sem descrição, preço e regras: vários itens faltando, mais de um no mesmo passo.
+      // Sem fotos, descrição e preço: vários itens faltando. Só as COLUNAS mudam (a fixture não grava draft_data, e o
+      // assistente lê as colunas): um draft_data parcial faria o assistente e o cartão lerem fontes diferentes.
       expect((await adm().from("property_photos").delete().eq("property_id", imovel)).error).toBeNull();
-      expect((await adm().from("properties").update({ description: "", monthly_price: 0, draft_data: { title: titulo, photos: [] } }).eq("id", imovel)).error).toBeNull();
+      expect((await adm().from("properties").update({ description: "", monthly_price: 0, photo_count: 0 }).eq("id", imovel)).error).toBeNull();
 
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
       try {
