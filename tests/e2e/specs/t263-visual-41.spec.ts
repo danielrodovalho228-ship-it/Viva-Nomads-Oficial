@@ -15,6 +15,21 @@ import {
   tornarContratoVigente,
 } from "../fixtures/laboratorio";
 
+
+// TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação.
+test.afterEach(async ({}, info) => {
+  if (info.status === info.expectedStatus) return;
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  let arqs: string[] = [];
+  try { arqs = readdirSync(info.outputDir).filter((a) => a.endsWith("-actual.png")); } catch { return; }
+  for (const a of arqs) {
+    const b64 = readFileSync(join(info.outputDir, a)).toString("base64");
+    const partes = Math.ceil(b64.length / 8000);
+    for (let i = 0; i < partes; i++) console.log(`@@PNG ${a} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+  }
+});
+
 /*
   T263 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
   linha de base em tests/e2e/visual/t263-visual-41.spec.ts/, só muda no PR que muda a tela), a 390 e 1280 px:
@@ -220,7 +235,7 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
           await page.getByTestId("cogumelo").click();
           const folha = page.getByRole("dialog", { name: "Ações desta estadia" });
           await expect(folha).toBeVisible();
-          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 7 : fase === "antes" ? 5 : 6);
+          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 5 : 4); // E539 (05/11): a folha não repete "Falar com…" nem as instruções
           await page.evaluate(() => document.fonts.ready);
           await page.waitForTimeout(400); // animação da folha
           const nome = `${n}-estadia-cogumelo-${quem}${fase ? `-${fase}` : ""}-${largura}.png`;

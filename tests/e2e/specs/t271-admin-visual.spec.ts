@@ -3,6 +3,21 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+
+// TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação.
+test.afterEach(async ({}, info) => {
+  if (info.status === info.expectedStatus) return;
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  let arqs: string[] = [];
+  try { arqs = readdirSync(info.outputDir).filter((a) => a.endsWith("-actual.png")); } catch { return; }
+  for (const a of arqs) {
+    const b64 = readFileSync(join(info.outputDir, a)).toString("base64");
+    const partes = Math.ceil(b64.length / 8000);
+    for (let i = 0; i < partes; i++) console.log(`@@PNG ${a} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+  }
+});
+
 /*
   T271 — regressão visual do admin no Prompt 46 (D5): mesma escala, cores e raios do sistema, decisões primeiro e
   números em lista com divisor fino. Desktop (1280): /admin, /admin/financeiro, /admin/documentos, /admin/atendimento,
