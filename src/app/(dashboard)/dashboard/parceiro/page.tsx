@@ -41,7 +41,7 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
           <ButtonLink href="/dashboard/parceiro/avaliacao" variant="secondary" size="sm" className="mt-3">Credenciamento e avaliações</ButtonLink>
         </Panel>
         {/* Prompt 38: convites e vínculos de parceiro fixo de imóvel. */}
-        <ImoveisFixos />
+        <ImoveisFixos pagina={{ status: painel.status, slug: painel.slug }} />
         <PainelParceiroCliente inicial={painel} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </>
     );
