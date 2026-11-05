@@ -132,6 +132,17 @@ export async function contratosReais(
     }));
 }
 
+/**
+ * E472 — a LISTA de Admin → Pedidos, pelo MESMO cliente de serviço dos números da página e da inicial (pedidosParaMetrica,
+ * contarPedidosNoAr): uma fonte só. Antes a lista lia pela RLS da sessão (is_admin() exige AAL2 de quem tem 2FA) e podia
+ * voltar vazia enquanto os números contavam os pedidos. Falha → lança (achado 111: nunca "nenhum pedido" calado).
+ */
+export async function pedidosMoradiaAdmin(admin: Admin): Promise<Record<string, unknown>[]> {
+  const { data, error } = await admin.from("pedidos_moradia").select("*").order("criado_em", { ascending: false }).limit(500);
+  if (error) throw new Error("Não foi possível ler os pedidos de moradia.");
+  return (data ?? []) as Record<string, unknown>[];
+}
+
 /** Pedidos de moradia (de contas reais) criados no período, com a 1ª resposta (contato ou proposta). */
 export async function pedidosParaMetrica(
   admin: Admin,

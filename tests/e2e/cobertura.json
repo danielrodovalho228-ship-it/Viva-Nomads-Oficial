@@ -4664,12 +4664,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/pedidos-admin.ts#adminListPedidos": {
-      "personas": [
-        "admin"
-      ],
-      "specs": []
-    },
     "src/lib/data/pedidos-admin.ts#getMetricasPedidosAdmin": {
       "personas": [
         "admin"
