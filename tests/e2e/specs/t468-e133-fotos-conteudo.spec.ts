@@ -8,7 +8,8 @@ import { FOTOS_TESTE_MINIMO, noPasso, abrirCadastroNovo } from "../fixtures/cada
 /*
   T468 — E133: o Passo 2 (Fotos) não aceita qualquer imagem. Só no laboratório (a conferência usa a medida local de
   tela no lugar do modelo; o link do vídeo usa a resposta fixa do oEmbed).
-   1. Abaixo de 8 fotos o "Continuar" fica desabilitado de verdade (visual e clique), com a contagem.
+   1. Abaixo de 8 fotos a contagem diz o que falta para PUBLICAR; sem foto o "Continuar" é livre (E602), mas uma foto
+      sinalizada o trava mesmo abaixo de 8 (com o motivo da foto).
    2. Foto-print: aviso forte junto da foto, não vira a principal, e o passo não avança (nem depois de recarregar o
       rascunho) até o dono remover ou confirmar; confirmada, avança.
    3. Vídeo arbitrário (quadros sintéticos) é sinalizado e trava até confirmar.
@@ -61,12 +62,13 @@ test.describe("T468 — E133: fotos, vídeo e link que não mostram o imóvel", 
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await abrirPassoFotos(p);
 
-      // 1. Sem foto e com 1 foto: desabilitado, a contagem explica; o clique não avança.
-      await expect(continuar(p)).toBeDisabled();
+      // 1. Sem foto: o Continuar é livre (E602 — as fotos seguram o publicar). Com o print + 1 foto: a contagem explica o
+      //    que falta para publicar, e o print (sinalizado) trava o avanço; o clique não avança.
+      await expect(continuar(p)).toBeEnabled();
       await enviar(p, [PRINT, FOTOS_TESTE_MINIMO[0]]);
       await expect(p.getByText(/^2\/40 fotos/)).toBeVisible({ timeout: 60_000 });
       await expect(p.getByTestId("fotos-trava")).toHaveAttribute("data-trava", "faltam");
-      await expect(p.getByTestId("fotos-trava")).toHaveText("Faltam 6 fotos para continuar (mínimo de 8).");
+      await expect(p.getByTestId("fotos-trava")).toHaveText("Faltam 6 fotos para publicar (mínimo de 8).");
       await expect(continuar(p)).toBeDisabled();
       await continuar(p).click({ force: true });
       await noPasso(p, "fotos");
