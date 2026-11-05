@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T112 — ordem 19b8abf5: imagens únicas no site. Em cada página pública, no computador e
@@ -7,7 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
  * mapa e o seletor de categorias do cadastro de parceiro (sp-categorias: usa de propósito as
  * fotos provisórias de fotografia/montagem, as mesmas dos cartões da página) ficam de fora — a foto do imóvel acompanha o imóvel onde ele aparecer.
  */
-const PAGINAS = ["/", "/como-funciona", "/para-proprietarios", "/parceiros", "/empresas", "/precos", "/buscar"];
+const PAGINAS = ["/", "/como-funciona", "/para-proprietarios", "/parceiros", "/empresas", ...comPrecos("/precos"), "/buscar"];
 /** Mesmo elemento/estado (não é repetição na tela). */
 const PERMITIDAS = new Set(["/media/hero-home-poster.webp", "/media/hero-home-poster-768.webp"]);
 

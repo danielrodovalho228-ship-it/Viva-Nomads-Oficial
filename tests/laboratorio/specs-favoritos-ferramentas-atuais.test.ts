@@ -8,7 +8,7 @@ const ler = (f: string) => readFileSync(f, "utf8");
 const spec = (f: string) => ler(`tests/e2e/specs/${f}`);
 
 test("t160: o topo público não tem Favoritos, então a spec não cobra o link", () => {
-  const nav = ler("src/lib/constants.ts").match(/export const PUBLIC_NAV = \[([\s\S]*?)\]/)?.[1] ?? "";
+  const nav = ler("src/lib/constants.ts").match(/export const PUBLIC_NAV = comPortasDePrecos\(\[([\s\S]*?)\]/)?.[1] ?? "";
   assert.deepEqual([...nav.matchAll(/label: "([^"]+)"/g)].map((m) => m[1]), ["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos"]);
   const t160 = spec("t160-favoritos-pagina.spec.ts");
   assert.doesNotMatch(t160, /const link = page\.getByRole\("link", \{ name: \/Favoritos\/ \}\)/);

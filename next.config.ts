@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
+    // E563: a mesma chave de src/config/precos-visivel.ts (página de preços suspensa enquanto não for "1").
+    const precosVisivel = process.env.NEXT_PUBLIC_PRECOS_VISIVEL === "1";
     return [
       // www → ápice, MENOS /.well-known/*: Android (assetlinks) e Apple (AASA) não aceitam redirect nesse arquivo,
       // então os dois hosts servem /.well-known direto (200). O redirect mora aqui, não no domínio da Vercel,
@@ -51,7 +53,9 @@ const nextConfig: NextConfig = {
       { source: "/qualificar", missing: [{ type: "query" as const, key: "imovel" }], destination: "/dashboard/imoveis/novo", permanent: false },
       // /planos é natural de digitar e pode ter links antigos; a página canônica
       // é /precos (o rótulo "Planos" no menu/rodapé já aponta para /precos).
-      { source: "/planos", destination: "/precos", permanent: true },
+      // E563: com a página de preços suspensa (chave desligada), /planos vai para a home e SEM 308 — um redirect
+      // permanente ficaria no cache do navegador e seguiria escondendo a página depois de religada.
+      { source: "/planos", destination: precosVisivel ? "/precos" : "/", permanent: precosVisivel },
       // Link curto de bairro (só Uberlândia tem bairros curados): vai para a página da cidade.
       { source: "/bairros/:bairro", destination: "/cidades/uberlandia/:bairro", permanent: true },
       // Link antigo/intuitivo: quem procura "anunciar" cai na página do proprietário (301).
@@ -72,7 +76,7 @@ const nextConfig: NextConfig = {
       // Sem mensalidade (ordem 90181c57): a antiga tela de assinatura vai a /precos já na resposta HTTP.
       // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
       // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
-      { source: "/dashboard/assinatura", destination: "/precos", permanent: false },
+      { source: "/dashboard/assinatura", destination: precosVisivel ? "/precos" : "/dashboard", permanent: false },
       // Prompt 23: a agenda do proprietário mora em Ferramentas › Agenda; o endereço antigo dava 404.
       { source: "/dashboard/calendario", destination: "/dashboard/agenda", permanent: false },
       { source: "/dashboard/calendario/:resto*", destination: "/dashboard/agenda", permanent: false },

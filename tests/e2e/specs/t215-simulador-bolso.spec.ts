@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { calcularBolso } from "../../../src/lib/cobranca/bolso";
 import { formatBRL } from "../../../src/lib/utils";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /**
  * T215 — "O que vai para o seu bolso" em /precos#simulador (ordem 6696611c, tela 10), a 390 e 1280 px.
@@ -13,6 +14,7 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
     test.use({ viewport: { width: largura, height: 900 } });
 
     test("3.000 × 4: dois fatos separados — recebe integral e a taxa à parte, sem linha de resultado (E51); sem rolagem lateral", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos#simulador");
       const caixa = page.getByTestId("simulador-bolso");
       await expect(caixa).toBeVisible();
@@ -38,6 +40,7 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
     });
 
     test("muda a faixa pela quantidade de imóveis e 31+ vira taxa negociável (sem Plano Gestor, E252-B)", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos");
       const imoveis = page.getByTestId("bolso-imoveis");
       for (const [n, pct] of [["3", "10%"], ["6", "8%"], ["16", "6%"]] as const) {
@@ -51,6 +54,7 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
     });
 
     test("entrada inválida não mostra valores", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos");
       await page.getByTestId("bolso-valor").fill("0");
       await expect(page.getByTestId("bolso-resultado")).toHaveAttribute("data-estado", "invalido");
@@ -58,6 +62,7 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
     });
 
     test("o texto público não usa 'comissão' nem termos de custódia; a taxa nunca aparece com sinal de menos", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos");
       const texto = limpo(await page.getByTestId("simulador-bolso").textContent());
       expect(texto).not.toMatch(/comiss|corretagem|intermedia/i);

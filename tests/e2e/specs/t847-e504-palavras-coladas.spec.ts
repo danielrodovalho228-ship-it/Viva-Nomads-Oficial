@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T847 — E504 (D-S1-16): nenhuma palavra colada na renderização. Duas medidas por página, em 1280 e 390:
@@ -7,7 +8,7 @@ import { test, expect, type Page } from "@playwright/test";
   2) NO LEITOR DE TELA: a árvore de acessibilidade não lê minúscula+Maiúscula nem número+palavra grudados.
   O wordmark "VivaNomads" (logo oficial, escrito junto de propósito) e marcas de terceiros ficam de fora.
 */
-const ROTAS = ["/", "/buscar", "/imoveis/ube-001", "/como-funciona", "/ajuda", "/precos", "/para-proprietarios", "/parceiros"];
+const ROTAS = ["/", "/buscar", "/imoveis/ube-001", "/como-funciona", "/ajuda", ...comPrecos("/precos"), "/para-proprietarios", "/parceiros"];
 const MARCAS = /^(VivaNomads|QuintoAndar|ZapSign|WhatsApp|LinkedIn|YouTube|TikTok|iPhone|GitHub|OpenStreetMap)/;
 
 const coladosNaTela = (page: Page) =>

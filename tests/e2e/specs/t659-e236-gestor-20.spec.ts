@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { FAIXAS_COMISSAO_PADRAO, rotuloFaixaTaxa } from "../../../src/lib/cobranca/regra";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
   T659 — E236 (#1524): o Plano Gestor começa em GESTOR_PRECO.minimoImoveis (20) em todo texto público — antes, várias
@@ -44,6 +45,7 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
 
   for (const largura of [1280, 390] as const) {
     test(`${largura} px — /parceiros, /modelodenegocio, /precos e /termos`, async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
 
       const parceiros = await textoDe(page, "/parceiros");
@@ -82,6 +84,7 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
 
     // L-76, corrigido no E252-B: a faixa 31+ da tabela de /precos é "31+ · taxa negociável", sem "Plano Gestor".
     test(`${largura} px — /precos: a faixa 31+ da tabela não se chama Plano Gestor (L-76)`, async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await textoDe(page, "/precos");
       const faixas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa");

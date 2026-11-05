@@ -4,6 +4,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, cliqueResponde, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T591 — VARREDURA DA PÁGINA INTEIRA, BLOCO 48 (Pista C, 28/10). O protocolo do bloco 21 (t385): seis classes (imagem
@@ -38,7 +39,7 @@ const TELAS: Tela[] = [
   { conta: "VISITANTE", papel: "visitante", nome: "Perfil público do avaliador", rota: () => `/avaliadores/${avaliador}`, pular: () => (avaliador ? null : "o laboratório não tem avaliador público (avaliadores_publicos vazio)") },
   { conta: "VISITANTE", papel: "visitante", nome: "Imóveis perto de um destino", rota: () => `/imoveis-perto-de/${destino}`, pular: () => (destino ? null : "o laboratório não tem destino ativo") },
   { conta: "DONO17", papel: "proprietário", nome: "Ganhos", rota: () => "/dashboard/ganhos" },
-  { conta: "DONO17", papel: "proprietário", nome: "Planos (destino de /dashboard/assinatura para o dono sem plano pago)", rota: () => "/precos", clicar: false },
+  ...comPrecos({ conta: "DONO17", papel: "proprietário", nome: "Planos (destino de /dashboard/assinatura para o dono sem plano pago)", rota: () => "/precos", clicar: false }),
   { conta: "INQUILINA", papel: "morador", nome: "Pedidos da cidade (destino de /pedidos)", rota: () => "/dashboard/pedidos-cidade" },
 ];
 

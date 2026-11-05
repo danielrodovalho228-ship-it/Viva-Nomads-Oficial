@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ROTAS_AXE_PUBLICAS } from "../../../src/lib/lab/axe-regras";
 import { caminhosDoSitemap, extrairMeta, linksInternos, pesoExcedido, problemasDaPagina, repetidos, type MetaPagina } from "../../../src/lib/lab/seo-regras";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T257 — SEO e peso (ordem 21708cca, parte D). Lê o HTML que o servidor entrega, sem login:
@@ -31,7 +32,7 @@ test("sitemap: toda URL responde 200 e as rotas principais estão nele", async (
   const xml = await (await request.get("/sitemap.xml")).text();
   const caminhos = caminhosDoSitemap(xml);
   expect(caminhos.length).toBeGreaterThan(10);
-  for (const rota of ["/", "/buscar", "/como-funciona", "/precos", "/para-proprietarios"]) expect(caminhos, rota).toContain(rota);
+  for (const rota of ["/", "/buscar", "/como-funciona", ...comPrecos("/precos"), "/para-proprietarios"]) expect(caminhos, rota).toContain(rota);
   const falhas: string[] = [];
   for (const c of caminhos.slice(0, 60)) {
     const res = await request.get(c);
