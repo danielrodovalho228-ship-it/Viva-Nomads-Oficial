@@ -179,7 +179,8 @@
       "specs": [
         "t196-cidades-liberadas",
         "t202-cidades-liberadas-logado",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t1173-e477-observador-configuracao"
       ]
     },
     "/admin/documentos": {
@@ -259,7 +260,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t1173-e477-observador-configuracao"
       ]
     },
     "/admin/parceiros": {
@@ -2322,7 +2324,8 @@
         "t261-tempo-ate-o-trabalho",
         "t301-varredura-logada-bloco5",
         "t332-merges-1170-1172",
-        "t392-varredura-bloco24"
+        "t392-varredura-bloco24",
+        "t1173-e477-observador-configuracao"
       ]
     },
     "/imoveis-perto-de/[slug]": {
