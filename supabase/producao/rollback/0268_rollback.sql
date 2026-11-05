@@ -13,8 +13,11 @@ begin
   select coalesce(array_agg(id), '{}') into v_blocos from public.contrato_blocos where contrato_id = any (c_contratos);
   delete from public.automacoes_envios e
    where exists (select 1 from unnest(c_contratos || v_blocos || c_proposta) k where e.chave like '%' || k::text || '%');
-  delete from public.documentos_registro where ref_tabela = 'contratos' and ref_id = any (c_contratos);
-  delete from public.documentos_registro where ref_tabela = 'propostas' and ref_id = c_proposta;
+  -- documentos_registro é imutável (o gatilho barra o DELETE): o registro fica ANULADO, com o motivo, e segue is_teste.
+  update public.documentos_registro
+     set status = 'anulado', anulado_motivo = 'Massa de teste da 0268 removida (rollback 0268).'
+   where status = 'valido'
+     and ((ref_tabela = 'contratos' and ref_id = any (c_contratos)) or (ref_tabela = 'propostas' and ref_id = c_proposta));
   delete from public.propostas where id = c_proposta;
   delete from public.leads where id = 'a0268c00-0000-4000-8000-000000000031';
   delete from public.contratos where id = any (c_contratos);
