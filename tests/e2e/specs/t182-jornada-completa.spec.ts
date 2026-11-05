@@ -8,6 +8,8 @@ import { hojeBR } from "../../../src/lib/utils";
 
 /** E136: no computador o campo de data mostra dd/mm/aaaa (o calendário é o do site, em pt-BR). */
 const dataBR = (iso: string) => iso.split("-").reverse().join("/");
+/** A entrada escolhida no passo 1 da candidatura (teste 3); o fechamento abre com ela (teste 4). */
+let entradaPedida: string | null = null;
 
 /*
   T182 — JORNADA COMPLETA, do anúncio publicado até a avaliação dos dois lados, sem cobrança real (laboratório).
@@ -122,7 +124,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     const passo = page.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();
     // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
-    await preencherPeriodoDaProposta(passo);
+    entradaPedida = (await preencherPeriodoDaProposta(passo)).entrada;
     await passo.getByRole("button", { name: "Continuar" }).click();
     await passo.getByRole("button", { name: "Continuar" }).click();
     await passo.getByRole("button", { name: "Enviar candidatura" }).click();
@@ -208,7 +210,8 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await abrir(page, "/dashboard/leads");
     await page.getByRole("link", { name: "Iniciar fechamento" }).first().click();
     await expect(page).toHaveURL(/\/dashboard\/fechamento/);
-    await expect(page.getByTestId("inicio-estadia")).toHaveValue(dataBR(hojeBR()), { timeout: 20_000 });
+    // E520 (#2664): a candidatura passou a ter entrada certa (a do período escolhido); o fechamento abre com ELA, não com hoje.
+    await expect(page.getByTestId("inicio-estadia")).toHaveValue(dataBR(entradaPedida ?? hojeBR()), { timeout: 20_000 });
     await expect(page.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible();
 
     // Etapa 1: portão suave — conta real fica "Verificação pendente" e segue.
