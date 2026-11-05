@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { calcularTotais, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
+import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
+import { mesesDeReferencia } from "@/lib/estadia-em-dias";
 
 /*
   Propostas (prompt 17) — leitura no servidor, usada pelas ações, pelo fechamento e pela rotina de automações.
@@ -8,7 +9,7 @@ import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
 */
 
 export const COLUNAS_VERSAO =
-  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, data_entrada, condominio, consumo, limpezas_mes, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em";
+  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em";
 
 export const COLUNAS_PROPOSTA =
   "id, numero, lead_id, property_id, owner_id, tenant_id, status, versao_atual, validade_dias, valida_ate, visto_em, recusada_por, recusa_motivo, recusa_texto, aceita_em, criada_em, atualizada_em";
@@ -73,10 +74,14 @@ export interface LinhaVersao {
   desconto_estadia_pct: number;
   valor_mensal: number;
   meses: number;
+  /** E562 (0291): dias exatos da estadia; a 0291 preenche as antigas com meses × 30. */
+  dias?: number | null;
   data_entrada: string;
   condominio: number;
   consumo: number;
   limpezas_mes: number;
+  /** E562 (0291): ajuste do dono no pacote de limpezas (vazio = derivado dos dias). */
+  limpezas_pacote?: number | null;
   valor_limpeza: number;
   taxa_pet: number;
   limpeza_unica: number;
@@ -95,6 +100,7 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     motivoDesconto: v.motivo_desconto,
     descontoEstadiaPct: Number(v.desconto_estadia_pct),
     meses: Number(v.meses),
+    dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     condominio: Number(v.condominio),
     consumo: Number(v.consumo),
@@ -102,12 +108,15 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     valorLimpeza: Number(v.valor_limpeza),
     taxaPet: Number(v.taxa_pet),
     limpezaUnica: Number(v.limpeza_unica),
+    limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
   };
 }
 
 /** Linha a gravar de uma versão (os totais são SEMPRE recalculados aqui, nunca vêm do navegador). */
 export function linhaDaVersao(propostaId: string, versao: number, autor: Autor, t: TermosProposta, pessoas: number | null, mensagem: string | null) {
   const tot = calcularTotais(t);
+  // E562: os dias são a duração; meses é a referência derivada (ceil(dias ÷ 30)).
+  const dias = diasDosTermos(t);
   return {
     proposta_id: propostaId,
     versao,
@@ -118,11 +127,13 @@ export function linhaDaVersao(propostaId: string, versao: number, autor: Autor, 
     motivo_desconto: t.motivoDesconto,
     desconto_estadia_pct: t.descontoEstadiaPct,
     valor_mensal: tot.valorMensal,
-    meses: t.meses,
+    meses: mesesDeReferencia(dias),
+    dias,
     data_entrada: t.dataEntrada,
     condominio: t.condominio,
     consumo: t.consumo,
     limpezas_mes: t.limpezasMes,
+    limpezas_pacote: t.limpezasPacote ?? null,
     valor_limpeza: t.valorLimpeza,
     taxa_pet: t.taxaPet,
     limpeza_unica: t.limpezaUnica,
@@ -154,6 +165,8 @@ export interface PropostaAcordada {
   numero: string;
   valorMensal: number;
   meses: number;
+  /** E562: dias exatos da versão aceita (antigas: meses × 30). O contrato nasce com eles. */
+  dias: number;
   dataEntrada: string;
   taxa: number | null;
   /** PROP-2: os termos que formam o preço da proposta (o Fechamento mostra o MESMO total da proposta, com a conta). */
@@ -168,6 +181,9 @@ export interface TermosDoAcordo {
   valorLimpeza: number;
   taxaPet: number;
   limpezaUnica: number;
+  /** E562: os dias e o pacote de limpezas da versão acordada (o Fechamento mostra o mesmo total). */
+  dias?: number;
+  limpezasPacote?: number | null;
 }
 
 /** Proposta ACEITA de uma candidatura (a mais recente): o fechamento e o contrato abrem com estes valores. */
@@ -185,7 +201,7 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
   if (!p) return null;
   const { data: v, error: erroVersao } = await admin
     .from("proposta_versoes")
-    .select("valor_mensal, meses, data_entrada, condominio, consumo, limpezas_mes, valor_limpeza, taxa_pet, limpeza_unica")
+    .select("valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica")
     .eq("proposta_id", p.id)
     .eq("versao", p.versao_atual)
     .maybeSingle();
@@ -196,6 +212,7 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
     numero: p.numero as string,
     valorMensal: Number(v.valor_mensal),
     meses: Number(v.meses),
+    dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     taxa: p.taxa_congelada == null ? null : Number(p.taxa_congelada),
     termos: {
@@ -205,6 +222,8 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
       valorLimpeza: Number(v.valor_limpeza) || 0,
       taxaPet: Number(v.taxa_pet) || 0,
       limpezaUnica: Number(v.limpeza_unica) || 0,
+      dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+      limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
     },
   };
 }
