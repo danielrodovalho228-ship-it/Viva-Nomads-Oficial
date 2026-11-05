@@ -4,7 +4,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
- * T1158 — E472 (#2628, 05/11): em Admin → Pedidos de moradia, a LISTA sai da mesma fonte dos números (o cliente de
+ * T1186 — E472 (#2628, 05/11): em Admin → Pedidos de moradia, a LISTA sai da mesma fonte dos números (o cliente de
  * serviço do admin já conferido). Antes ela saía do cliente da sessão, pela RLS is_admin() (que exige AAL2 de quem tem
  * 2FA verificado): numa sessão sem AAL2 a lista voltava vazia ("0 pedidos nesta lista" e "Nenhum pedido no sistema")
  * enquanto os números contavam. O E472 entrou só com teste de unidade; aqui é a tela, com a sessão de admin do
@@ -16,10 +16,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const CIDADE = `Pedidópolis ${sufixo}`;
-const inq = { email: `inq.t1158.${sufixo}@lab.vivanomads.test`, nome: "Rita Pedido", role: "tenant" as const };
+const inq = { email: `inq.t1186.${sufixo}@lab.vivanomads.test`, nome: "Rita Pedido", role: "tenant" as const };
 const ids: { inq?: string; pedidos: string[] } = { pedidos: [] };
 
-test.describe("T1158 — E472: a lista de Pedidos do admin mostra os pedidos que os números contam", () => {
+test.describe("T1186 — E472: a lista de Pedidos do admin mostra os pedidos que os números contam", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
