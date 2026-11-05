@@ -90,11 +90,12 @@ const PLANOS_BASE: Plano[] = [
     comissao: 0.04, // E564 (04/11/2026): Gestor = taxa de 4% por contrato, sem assinatura nem taxa zero
     limiteAnuncios: 999,
     destaque: false,
+    // E564 (parte A): só os diferenciais do lançamento (GESTOR_DIFERENCIAIS) — nada da fase 2.
     beneficios: [
-      "Imóveis ilimitados",
-      "Tudo do Profissional",
-      "Feito para administradoras — recursos de carteira em construção com os primeiros gestores parceiros",
-      "Atendimento dedicado",
+      "Taxa de serviço de 4% sobre o valor total de cada contrato",
+      "Cadastro assistido da carteira",
+      "Contato direto na Viva",
+      "Suporte prioritário",
     ],
     custoLabel: "Taxa de serviço de 4% do valor total do contrato, sem assinatura",
     cta: "Falar com vendas",
@@ -103,7 +104,6 @@ const PLANOS_BASE: Plano[] = [
 
 /** Texto da comissão, sempre em reais: "12% do valor total do contrato (≈ R$ 288 por mês de aluguel)". */
 export function textoComissao(comissao: number, aluguel?: number): string {
-  if (comissao === 0) return "Taxa de serviço zero: você paga só a assinatura";
   const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
   const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)} por mês de aluguel)` : "";
   return `${pct}% do valor total do contrato${valor}`;
@@ -238,6 +238,21 @@ export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mai
 
 /** "taxa de 4% por contrato · sem assinatura · para carteiras de 20+ imóveis" */
 export const GESTOR_RESUMO = `taxa de ${`${Math.round(GESTOR_PRECO.taxa * 1000) / 10}`.replace(".", ",")}% por contrato · sem assinatura · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
+
+/**
+ * E564 (parte A): o texto único do Gestor nas telas — 4%, carteiras de 20+, cadastro assistido e contato direto. Sai da
+ * mesma constante da regra (GESTOR_PRECO).
+ */
+const GESTOR_PCT = String(Math.round(GESTOR_PRECO.taxa * 1000) / 10).replace(".", ",");
+export const GESTOR_TEXTO = `${GESTOR_PCT}% para carteiras de ${GESTOR_PRECO.minimoImoveis} ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva`;
+
+/** Os únicos diferenciais anunciáveis no lançamento (nada da fase 2: equipe, operações em massa, sincronização). */
+export const GESTOR_DIFERENCIAIS = [
+  "Taxa de serviço de 4% sobre o valor total de cada contrato",
+  "Cadastro assistido da carteira",
+  "Contato direto na Viva",
+  "Suporte prioritário",
+] as const;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).
