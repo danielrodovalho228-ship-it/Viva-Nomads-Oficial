@@ -1,12 +1,13 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
+import { NOTA_SEM_DATA_INICIO } from "../../../src/lib/anuncio/assistente-dez-etapas";
 
 /*
   T682 — E258 (travessia 1→10 do QA, 30/10). 1280 e 390, com prints.
    (a) Endereço "feito" sem CEP: a lista diz que o "O que tem por perto" fica de fora; com CEP, a nota some. O Passo 5
        diz a mesma regra (CEP e rua, no Passo 3; o CEP não segura a publicação).
-   (b) Disponibilidade "feito" sem "Disponível a partir de": a lista diz "Disponível agora (sem data de início)"; com a
+   (b) Disponibilidade "feito" sem "Disponível a partir de": a lista diz que a data não foi informada (E616); com a
        data, "Disponível a partir de dd/mm/aaaa".
    (c) Passo 5: cada bloco diz como grava — Ruído e Extras no botão; acessibilidade a cada toque.
 */
@@ -39,7 +40,7 @@ test.describe("T682 — E258: a conferência explica o opcional vazio; o Passo 5
       await expect(p.getByTestId("conferencia-endereco")).toHaveAttribute("data-ok", "1");
       await expect(p.getByTestId("conferencia-nota-endereco")).toHaveText("Sem CEP: o “O que tem por perto” fica de fora do anúncio.");
       await expect(p.getByTestId("conferencia-disponibilidade")).toHaveAttribute("data-ok", "1");
-      await expect(p.getByTestId("conferencia-nota-disponibilidade")).toHaveText("Disponível agora (sem data de início).");
+      await expect(p.getByTestId("conferencia-nota-disponibilidade")).toHaveText(NOTA_SEM_DATA_INICIO);
       await lista.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t682-conferencia-sem-${w}.png`, fullPage: w === 390 });
       await p.context().close();
