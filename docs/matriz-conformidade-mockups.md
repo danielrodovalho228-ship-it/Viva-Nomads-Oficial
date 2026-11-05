@@ -300,3 +300,27 @@ fica acima da barra fixa de baixo.
 2. **E451 — "Limpar tudo" com a folha aberta**: barra, título e URL já ficam limpos na hora (corrigido no E589, #2698).
    **Guarda do caso do relato no #2806** (t917: pílulas Tipo e Preço vindas da URL).
 3. **E453 — título do cartão do mapa**: títulos longos ainda saíam cortados na 2ª linha. **Corrigido no #2807**.
+
+## Rotas ainda não medidas e fechamento da matriz — passada 19 (05/11, modo demonstração, 390 toque e 1280)
+
+Páginas públicas que nenhuma passada tinha medido (`/precos`, `/avaliadores`, `/conferir`, `/excluir-conta`, `/guia-fotos`,
+`/alerta-busca/desligar`, `/pedidos/novo`, `/termos`, `/privacidade`, `/seguranca`, `/ajuda`, os 7 guias, `/proprietario/exemplo-1`
+e `-2`, `/parceiros/avaliadores`, `/fotografos`, `/buscar`) e 28 telas do painel (Interessados, Avaliações, Ganhos, Carteira,
+Agenda, Ferramentas, Simulador, Tributação, Fechamento, Verificação, Respostas rápidas, Serviços, Solicitações, Visitas,
+Locações, Notificações, Conta e suas seções, Propostas, Mensagens, Indicações…). Medido: imagem quebrada ou vazia, rolagem
+lateral, texto cortado, controle coberto por elemento fixo (no topo e rolando até o fim da página), botões cheios no `main` e
+fundo bege.
+
+1. **Imagem quebrada ou vazia, rolagem lateral, fundo bege, botão cheio a mais**: nenhum caso nas 46 rotas, nas duas larguras.
+   **Conforme.**
+2. **Controle coberto por elemento fixo**: a sonda acusou `/excluir-conta`, `/privacidade`, `/ajuda`, `/guias/o-que-e-a-caucao`,
+   `/parceiros/buscar` e `/dashboard/simulador`/`conta/seguranca` a 390 — são controles abaixo da dobra, atrás da barra de
+   baixo na primeira tela. Rolando até a página parar, o último controle de cada uma fica acima da barra. **Conforme, sem PR.**
+3. **Textos "cortados"** (`/pedidos/novo` "Outro local: nome do lugar ou endereço"): rótulo só para leitor de tela (1 px).
+   **Conforme.**
+4. **404 esperados** de endereços que não existem (`/avisos`, `/imoveis-perto-de/uberlandia`, `/dashboard/estadia`,
+   `/dashboard/qa`…): a página "Página não encontrada" aparece (passada 17). **Conformes.**
+5. **Matriz × mockups**: os 87 mockups do ramo `mockups` têm linha na matriz. O que resta sem fechar é só o que depende de
+   decisão do Daniel (`cabecalho-*`, `cadastro-imovel-07-descricao`, `admin-servicos`, `pouso-morador`) ou de sessão real
+   (`parceiro-ordens`, `perfil-01`, `perfil-02`, `/auth/verificar-codigo`, `/dashboard/avaliacoes`), cada uma com a guarda do
+   laboratório que a cobre. **Nada novo a conferir no modo demonstração.**
