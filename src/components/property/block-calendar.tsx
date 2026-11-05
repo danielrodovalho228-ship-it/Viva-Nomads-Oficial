@@ -6,13 +6,15 @@ import Link from "next/link";
 import { CalendarDays, Loader2, Trash2, Ban } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { segmentosDaPilula, rotuloPilula } from "@/lib/calendario-estadias";
-import { getEstadiasDoImovel, type EstadiaCalendario } from "@/lib/data/estadias-calendario";
+import type { EstadiaCalendario } from "@/lib/data/estadias-calendario";
+// E611: leituras por GET — fora da fila das Server Actions (o calendário não espera o autosave).
+import { lerBlocos, lerEstadias } from "@/lib/calendario/leitura-cliente";
 import {
   mesesCalendario,
   expandirBloqueios,
   type Bloqueio,
 } from "@/lib/availability";
-import { getBlocks, addBlock, removeBlock, type BlocoDatas } from "@/lib/data/blocks-actions";
+import { addBlock, removeBlock, type BlocoDatas } from "@/lib/data/blocks-actions";
 import { cn } from "@/lib/utils";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
@@ -54,7 +56,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
 
   useEffect(() => {
     let vivo = true;
-    getBlocks(propertyId)
+    lerBlocos(propertyId)
       .then((b) => {
         if (vivo) setBlocks(b);
       })
@@ -64,7 +66,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       .finally(() => {
         if (vivo) setCarregando(false);
       });
-    getEstadiasDoImovel(propertyId, { exigir: true })
+    lerEstadias(propertyId)
       .then((e) => {
         if (vivo) setEstadias(e);
       })
@@ -125,7 +127,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
     if (r.ok) {
       // Atualiza otimista (demo) ou recarrega (real).
       // O bloqueio já foi gravado; sem conexão na releitura, fica a atualização otimista.
-      const novo = await getBlocks(propertyId).catch(() => []);
+      const novo = await lerBlocos(propertyId).catch(() => []);
       setBlocks(
         novo.length
           ? novo
