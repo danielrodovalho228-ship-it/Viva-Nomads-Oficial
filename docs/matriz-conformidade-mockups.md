@@ -310,3 +310,12 @@ com conversa inexistente). Medido como na passada 16, mais o título (h1) e o re
 6. **Listas do painel**: todas abrem com título, sem rolagem lateral, no máximo um botão cheio. **Conformes.**
 7. Não medido: o estado "nenhum imóvel encontrado" da `/buscar` — os parâmetros de URL testados (`quartos=9`, cidade
    inexistente) não zeram o resultado no modo demonstração; fica para a próxima passada, pelo próprio filtro.
+
+## `/buscar` sem resultado e limpeza dos filtros — passada 18 (05/11, modo demonstração, 390 toque, 768 e 1280)
+
+1. **"Nenhum imóvel encontrado"** (filtros que zeram a busca: `pet=1&porte=G&nota=1&gestor=1&negocia=1&precojusto=1&homeoffice=1`,
+   e `local=Manaus`): título "Nenhum imóvel com estes filtros", um botão cheio ("Publicar um pedido de moradia"), nenhum
+   botão fora do bloco, sem rolagem lateral nas três larguras. **Conforme** (fecha o item 7 da passada 17).
+2. **E451 — "Limpar tudo" com a folha aberta**: barra, título e URL já ficam limpos na hora (corrigido no E589, #2698).
+   **Guarda do caso do relato no #2806** (t917: pílulas Tipo e Preço vindas da URL).
+3. **E453 — título do cartão do mapa**: títulos longos ainda saíam cortados na 2ª linha. **Corrigido no #2807**.
