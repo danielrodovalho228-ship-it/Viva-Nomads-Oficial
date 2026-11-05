@@ -156,6 +156,8 @@ export interface ComissaoDoContrato {
   aluguelMensal: number;
   meses: number;
   taxa: number;
+  /** E562: a taxa JÁ CALCULADA no registro do contrato (em dias: aluguel × dias ÷ 30 × taxa). É ela que se cobra. */
+  comissaoValor: number | null;
 }
 
 /**
@@ -168,7 +170,7 @@ export async function comissaoDoContrato(leadId: string): Promise<ComissaoDoCont
   if (!admin) return null;
   const { data, error } = await admin
     .from("contratos")
-    .select("aluguel_mensal, prazo_total_dias, comissao_percent")
+    .select("aluguel_mensal, prazo_total_dias, comissao_percent, comissao_valor")
     .eq("lead_id", leadId)
     .maybeSingle();
   // Achado 81: falha de leitura não vira "registre o contrato antes" (409) — lança; a rota responde 503.
@@ -178,5 +180,7 @@ export async function comissaoDoContrato(leadId: string): Promise<ComissaoDoCont
     aluguelMensal: Number(data.aluguel_mensal),
     meses: Math.round(Number(data.prazo_total_dias) / DIAS_POR_MES),
     taxa: Number(data.comissao_percent),
+    // E562 (reprova 05/11): 43 dias viravam round(43 ÷ 30) = 1 mês na cobrança. O valor gravado no contrato manda.
+    comissaoValor: data.comissao_valor == null || !Number.isFinite(Number(data.comissao_valor)) ? null : Number(data.comissao_valor),
   };
 }

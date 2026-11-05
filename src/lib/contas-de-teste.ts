@@ -53,14 +53,14 @@ export function laudoSimuladoTeste(): CafResult {
   };
 }
 
-export function cobrancaSimuladaTeste(p: { aluguelMensal: number; meses: number; commissionRate: number }): CommissionResult & { rotulo: string } {
+export function cobrancaSimuladaTeste(p: { aluguelMensal: number; meses: number; commissionRate: number; valor?: number | null }): CommissionResult & { rotulo: string } {
   return {
     demo: true,
     rotulo: ROTULO_TESTE,
     chargeId: idSimulado("teste"),
     baseAluguel: p.aluguelMensal,
     commissionRate: p.commissionRate,
-    platformCommission: valorComissao(p.aluguelMensal, p.meses, p.commissionRate),
+    platformCommission: p.valor != null && p.valor >= 0 ? p.valor : valorComissao(p.aluguelMensal, p.meses, p.commissionRate),
     status: "TESTE_SIMULADA",
   };
 }

@@ -20,7 +20,8 @@ test("quadro: imóvel · interessado · entrada/saída · valor mensal · total 
     { rotulo: "Saída", valor: "15/12/2026 (30 dias)" },
     { rotulo: "Valor mensal", valor: "R$ 3.200" },
     { rotulo: "Total por mês", valor: "R$ 3.340" },
-    { rotulo: "Total da estadia", valor: "R$ 3.340 em 1 mês" },
+    // E562: em dias (30 dias = 1 mês exato).
+    { rotulo: "Total da estadia (30 dias)", valor: "R$ 3.340 (1 mês)" },
   ]);
 });
 
@@ -29,7 +30,7 @@ test("sem datas: 'A combinar com o proprietário' e nenhum total da estadia inve
   assert.equal(l.find((x) => x.rotulo === "Entrada")?.valor, "A combinar com o proprietário");
   assert.equal(l.find((x) => x.rotulo === "Saída")?.valor, "A combinar com o proprietário");
   assert.equal(l.find((x) => x.rotulo === "Interessado")?.valor, "Interessado");
-  assert.equal(l.some((x) => x.rotulo === "Total da estadia"), false);
+  assert.equal(l.some((x) => x.rotulo.startsWith("Total da estadia")), false);
 });
 
 test("período: 30 dias = 1 mês, arredonda para cima; saída antes da entrada não vale", () => {
@@ -89,4 +90,15 @@ test("(a) anúncio de teste: sem a faixa de visitante enquanto a sessão/perfil 
   assert.match(tela, /aguardando=\{aguardandoPerfil\}/);
   // O isTeste chega com qualquer perfil lido.
   assert.match(ler("src/components/auth-provider.tsx"), /if \(profile\) \{/);
+});
+
+test("E562 (reprova 05/11): candidatura de 43 dias = total em DIAS, nunca 2 meses", () => {
+  // VN-4A693A: R$ 3.050/mês, preparação R$ 300 → R$ 4.671,67 (o total do anúncio, passado por quem chama).
+  const l = linhasCandidatura({ imovel, interessado: "Ana", entrada: "2026-12-01", saida: "2027-01-13", valorMensal: 2800, totalMensal: 3050, totalEstadia: 4671.67 });
+  const total = l.find((x) => x.rotulo.startsWith("Total da estadia"));
+  assert.deepEqual(total, { rotulo: "Total da estadia (43 dias)", valor: "R$ 4.671,67 (1 mês + 13 dias)" });
+  assert.equal(l.some((x) => /2 meses/.test(x.valor)), false);
+  // Sem o total do anúncio: total por mês ÷ 30 × dias (3.050 × 43 ÷ 30 = 4.371,67).
+  const sem = linhasCandidatura({ imovel, interessado: "Ana", entrada: "2026-12-01", saida: "2027-01-13", valorMensal: 2800, totalMensal: 3050 });
+  assert.equal(sem.find((x) => x.rotulo.startsWith("Total da estadia"))?.valor, "R$ 4.371,67 (1 mês + 13 dias)");
 });

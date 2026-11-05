@@ -6,6 +6,7 @@
   Roda: node --test src/lib/notifications/dados-candidatura.test.ts
 */
 import { brl, dataBR, imovelPorExtenso, type ImovelDoEmail, type LinhaDado } from "./dados-negociacao.ts";
+import { periodoPorExtenso } from "../precos.ts";
 
 export type MomentoCandidatura = "nova" | "enviada" | "aceita";
 
@@ -19,6 +20,9 @@ export interface DadosCandidatura {
   valorMensal: number;
   /** Custo total do mês (calcularTotalMensal), o mesmo "Total por mês" da tela do Solicitar. */
   totalMensal: number;
+  /** E562: o total da estadia EM DIAS, pela mesma conta do anúncio (estadiaDoImovelEmDias: mensal ÷ 30 × dias + únicos).
+   *  Sem ele, total por mês ÷ 30 × dias (nunca mais meses arredondados). */
+  totalEstadia?: number | null;
 }
 
 const A_COMBINAR = "A combinar com o proprietário";
@@ -46,7 +50,11 @@ export function linhasCandidatura(d: DadosCandidatura): LinhaDado[] {
     { rotulo: "Total por mês", valor: brl(d.totalMensal) },
   ];
   // Sem o período completo não há total da estadia (nunca um número inventado).
-  if (p) linhas.push({ rotulo: "Total da estadia", valor: `${brl(Math.round(d.totalMensal * 100 * p.meses) / 100)} em ${p.meses} ${p.meses === 1 ? "mês" : "meses"}` });
+  // E562 (reprova 05/11): em DIAS — a candidatura de 43 dias saía "R$ … em 2 meses" (total mensal × meses arredondados).
+  if (p) {
+    const total = d.totalEstadia != null && Number.isFinite(d.totalEstadia) ? d.totalEstadia : Math.round(((d.totalMensal * p.dias) / 30) * 100) / 100;
+    linhas.push({ rotulo: `Total da estadia (${p.dias} ${p.dias === 1 ? "dia" : "dias"})`, valor: `${brl(total)} (${periodoPorExtenso(p.dias)})` });
+  }
   return linhas;
 }
 

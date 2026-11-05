@@ -1,9 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProperty } from "@/lib/data/properties";
-import { calcularTotalMensal, totalMesDaLinha } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovelEmDias, totalMesDaLinha } from "@/lib/precos";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
-import { aberturaCandidatura, linhasCandidatura, proximoPassoCandidatura, type MomentoCandidatura } from "@/lib/notifications/dados-candidatura";
+import { aberturaCandidatura, linhasCandidatura, periodoDaCandidatura, proximoPassoCandidatura, type MomentoCandidatura } from "@/lib/notifications/dados-candidatura";
 
 /**
  * E202 (candidatura): o corpo dos três e-mails da candidatura — abertura com o imóvel, o quadro (imóvel · interessado ·
@@ -25,6 +25,9 @@ export async function corpoDoEmailDaCandidatura(admin: SupabaseClient, leadId: s
   const imovel = { titulo: (im.title as string | null) ?? null, bairro: (im.address as string | null) ?? null, cidade: (im.city as string | null) ?? null };
   // Primeiro nome só (o contato nunca sai; o nome completo é revelado ao dono depois do aceite, na tela).
   const interessado = String((quem?.full_name as string | null) ?? "").includes("@") ? "" : String(quem?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
+  // E562: o total da estadia em DIAS, pela mesma conta do anúncio (o que o morador viu ao pedir).
+  const periodo = periodoDaCandidatura((lead.inicio_desejado as string | null) ?? null, (lead.fim_desejado as string | null) ?? null);
+  const totalEstadia = publico && periodo ? (estadiaDoImovelEmDias(publico, periodo.dias)?.total ?? null) : null;
   const linhas = linhasCandidatura({
     imovel,
     interessado,
@@ -32,6 +35,7 @@ export async function corpoDoEmailDaCandidatura(admin: SupabaseClient, leadId: s
     saida: (lead.fim_desejado as string | null) ?? null,
     valorMensal: Number(im.monthly_price ?? 0),
     totalMensal,
+    totalEstadia,
   });
   const passo = proximoPassoCandidatura(momento);
   return {

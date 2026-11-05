@@ -61,11 +61,13 @@ export async function createCommissionCharge(params: {
   /** Meses contratados (contrato ou renovação): a comissão é taxa × aluguel × meses. */
   meses: number;
   commissionRate: number;
+  /** E562: o valor da taxa já calculado no contrato (em dias). Sem ele, aluguel × meses × taxa. */
+  valor?: number | null;
   ownerName: string;
   ownerEmail: string;
   ownerCpfCnpj?: string;
 }): Promise<CommissionResult> {
-  const platformCommission = valorComissao(params.aluguelMensal, params.meses, params.commissionRate);
+  const platformCommission = params.valor != null && params.valor >= 0 ? params.valor : valorComissao(params.aluguelMensal, params.meses, params.commissionRate);
 
   if (!isAsaasConfigured()) {
     exigirChaveEmProducao("Asaas");
