@@ -74,6 +74,8 @@ export interface OwnerProfile {
 
 export interface Property {
   id: string;
+  /** E571: anúncio de teste, só na busca da conta de teste logada (nunca sai no JSON-LD nem para o público). */
+  deTeste?: boolean;
   title: string;
   description: string;
   propertyType: string; // Apartamento, Casa, Studio...

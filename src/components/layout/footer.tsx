@@ -3,6 +3,7 @@ import { Logo } from "@/components/ui/logo";
 import { CITIES } from "@/lib/constants";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 
 export function Footer() {
   return (
@@ -33,7 +34,7 @@ export function Footer() {
           <FooterLink href="/empresas">Para empresas</FooterLink>
           <FooterLink href="/parceiros">Parceiros</FooterLink>
           {/* E555: o rodapé leva a /planos (a página de planos e taxas). */}
-          <FooterLink href="/planos">Preços</FooterLink>
+          {PRECOS_VISIVEL && <FooterLink href="/planos">Preços</FooterLink>}
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
           <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
           <FooterLink href="/guias">Guias</FooterLink>

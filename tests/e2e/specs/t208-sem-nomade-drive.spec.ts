@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T208 — Adendo ao prompt 26 (correção do Daniel, 18/10): a Nômade Drive NÃO EXISTE MAIS. Nenhuma tela pode citá-la
@@ -33,7 +34,7 @@ test.describe("T208 — nenhuma menção à Nômade Drive", () => {
   }
 
   test("páginas públicas e de parceiros sem a menção", async ({ page }) => {
-    for (const rota of ["/", "/parceiros", "/precos", "/como-funciona", "/para-proprietarios", "/modelodenegocio", "/decisao"]) {
+    for (const rota of ["/", "/parceiros", ...comPrecos("/precos"), "/como-funciona", "/para-proprietarios", "/modelodenegocio", "/decisao"]) {
       const r = await page.goto(rota, { waitUntil: "domcontentloaded" });
       if (r && r.status() >= 400) continue;
       expect(await page.content(), rota).not.toMatch(NOME);

@@ -57,7 +57,7 @@ import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
-import { calcularTotalMensal, estadiaDoImovel } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { mesesDoCartao } from "@/lib/cartao-preco";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -87,7 +87,7 @@ import { FaixaProprietario } from "@/components/property/faixa-proprietario";
 import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
-import { SELECAO_VAZIA, comEntrada, comPessoas, comSaida, linhaPeriodoNaMensagem, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+import { SELECAO_VAZIA, comEntrada, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -313,9 +313,11 @@ export function PropertyDetail({
   // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
   // E520: data digitada que não é real (o campo entrega vazio) vira erro no resumo, nunca "sem data" calado.
   const [datasInvalidas, setDatasInvalidas] = useState({ entrada: false, saida: false });
-  // E519: o total da proposta é o do painel (estadiaDoImovel, com preparação e saída) — a mesma conta, o mesmo rótulo.
-  const mesesSelecao = mesesDaSelecao(selecao);
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadia: mesesSelecao ? estadiaDoImovel(property, mesesSelecao) : null, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
+  // E562 (telas): o total da estadia em DIAS exatos (estadiaDoImovelEmDias) — a mesma regra da proposta; nada de meses
+  // arredondados (43 dias = "1 mês + 13 dias", não 2 meses).
+  const diasSelecao = diasDaSelecao(selecao);
+  const estadiaSelecao = diasSelecao ? estadiaDoImovelEmDias(property, diasSelecao) : null;
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
   // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
   const previaMensagem = validarApresentacao(apresentacao);
   function abrirSolicitacao() {
@@ -688,7 +690,7 @@ export function PropertyDetail({
                   </div>
                 )}
                 <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
-                  {(etapa === "revisar" ? resumo.linhas.filter((l) => LINHAS_REVISAR.has(l.rotulo)) : resumo.linhas).map((l) => (
+                  {(etapa === "revisar" ? resumo.linhas.filter((l) => LINHAS_REVISAR.has(l.rotulo) || l.rotulo.startsWith("Total da estadia (")) : resumo.linhas).map((l) => (
                     <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                       <dt className="text-muted">{l.rotulo}</dt>
                       <dd className="text-right font-medium text-ink">{l.valor}</dd>
@@ -817,7 +819,7 @@ export function PropertyDetail({
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: meses > 1 ? estadiaDoImovel(property, meses)?.total : null, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : meses > 1 ? estadiaDoImovel(property, meses)?.total : null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}
@@ -1005,7 +1007,7 @@ export function PropertyDetail({
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
         <aside>
-          <PriceCard property={property} actions={actions} meses={meses} />
+          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} />
         </aside>
       </div>
 

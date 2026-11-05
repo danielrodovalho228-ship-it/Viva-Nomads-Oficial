@@ -6,6 +6,7 @@ import { simularRentabilidade } from "../../../src/lib/simulador";
 import { formatBRL } from "../../../src/lib/utils";
 import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, comissaoSobreContrato, taxaPublicaTexto } from "../../../src/lib/cobranca/regra";
 import { GESTOR_PRECO } from "../../../src/config/planos";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /**
  * T37 — SIMULADORES E NÚMEROS (laboratório e preview). Tudo o que a tela mostra
@@ -64,6 +65,7 @@ test.describe("T37 — /precos (visitante)", () => {
   // Plano Gestor a partir de GESTOR_PRECO.minimoImoveis (20), só no formulário.
   // A 390 px a tabela some (hidden sm:table) e as mesmas faixas aparecem em cartões (t185).
   test("390 px: os cartões de faixa mostram a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("faixas-taxa")).toBeHidden();
     const cartoes = page.getByTestId("faixas-taxa-cartoes");
@@ -101,6 +103,7 @@ test.describe("T37 — /precos (visitante, 1280 px)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 1280, height: 800 } });
 
   test("a tabela de faixas mostra a taxa e o exemplo em reais de cada faixa", async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
     const tabela = page.getByTestId("faixas-taxa");
     await expect(tabela).toBeVisible();

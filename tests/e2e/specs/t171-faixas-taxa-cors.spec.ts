@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T169 — Taxa de serviço dos parceiros e CORS das páginas (ordens 39cc7c00, a4a13765 e a regra nova do Prompt 29).
@@ -35,7 +36,7 @@ for (const rota of ["/parceiros", "/parceiros/fotografos"]) {
 }
 
 test("páginas HTML e /api/comissao não mandam Access-Control-Allow-Origin: *", async ({ request }) => {
-  for (const rota of ["/", "/precos", "/como-funciona", "/para-proprietarios", "/empresas", "/api/comissao"]) {
+  for (const rota of ["/", ...comPrecos("/precos"), "/como-funciona", "/para-proprietarios", "/empresas", "/api/comissao"]) {
     const res = await request.get(rota);
     expect(res.headers()["access-control-allow-origin"], rota).not.toBe("*");
   }

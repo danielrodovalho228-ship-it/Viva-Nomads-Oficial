@@ -15,7 +15,7 @@ const perto = (real: number, esperado: number, msg: string) =>
 test("números da regra única sobre R$ 4.320 em 1 mês: 518,40 / 432,00 / 345,60 / 259,20 (ordem bd296d53)", () => {
   assert.equal(ALUGUEL_MEDIO, 4320);
   assert.deepEqual(FAIXAS_COMISSAO_PADRAO.slice(0, 4).map((f) => comissaoSobreContrato(4320, 1, f.taxa)), [518.4, 432, 345.6, 259.2]);
-  assert.equal(comissaoSobreContrato(4320, 1, FAIXAS_COMISSAO_PADRAO[4].taxa), 259.2); // Plano Gestor: 6% até negociar
+  assert.equal(comissaoSobreContrato(4320, 1, FAIXAS_COMISSAO_PADRAO[4].taxa), 172.8); // E564: Plano Gestor, 4% (sem assinatura)
 });
 
 test("taxa sobre o valor TOTAL (ordem 5df28a7b): R$ 3.000 a 12% = 360 (1 mês), 720 (2 meses), 1.080 (3 meses); não é mais o 1º mês", () => {
@@ -36,7 +36,7 @@ test("taxa média ponderada pelas faixas: padrão = 12%; mix misto pondera; mix 
   assert.ok(Math.abs(taxaMediaPonderada([1, 0, 1, 0, 0]) - 0.1) < 1e-9); // metade a 12%, metade a 8%
   assert.equal(taxaMediaPonderada([]), 0.12);
   assert.equal(taxaMediaPonderada([0, 0, 0, 0, 0]), 0.12);
-  assert.equal(taxaMediaPonderada([Number.NaN, -1, 0, 0, 3]), 0.06);
+  assert.equal(taxaMediaPonderada([Number.NaN, -1, 0, 0, 3]), 0.04);
 });
 
 test("cenários 10/20/40 contratos por mês: ≈ R$ 15,6 mil / 31,1 mil / 62,2 mil de receita bruta", () => {

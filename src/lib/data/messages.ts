@@ -182,11 +182,30 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     messages: [],
   }));
 
+  // E569: a conversa de cada CANDIDATURA em andamento (nova ou aceita) também entra, mesmo sem mensagem — o "Responder
+  // pela plataforma" do cartão do interessado abre exatamente ela (antes, candidatura sem mensagem caía em "não está na
+  // sua lista"). Mesma regra de id das conversas (morador + dono + imóvel); a que já existe não duplica.
+  const daCandidatura: Conversation[] = conversasDeContratos(
+    [...byConv.keys(), ...doContrato.map((c) => c.id)],
+    await candidaturasDaPessoa(supabase, user.id),
+    user.id,
+    conversationId,
+  ).map((n) => ({
+    id: n.id,
+    name: "Conversa",
+    property: n.contrato.titulo,
+    preview: "",
+    otherId: n.outroId,
+    propertyId: n.contrato.propertyId,
+    papel: n.papel,
+    messages: [],
+  }));
+
   // Nome do outro lado (prompt 6, mesma regra do cartão do candidato): o proprietário vê
   // "Candidato(a)" até aceitar e o nome completo depois (E427); o inquilino vê o nome curto do
   // proprietário até o aceite e o nome completo depois. Nome completo e aceite vêm do servidor (service role); sem ele, o
   // proprietário continua vendo "Candidato(a)". Suporte segue com o primeiro nome (RPC 0057).
-  const conversas = [...doContrato, ...byConv.values()];
+  const conversas = [...doContrato, ...daCandidatura, ...byConv.values()];
   const outros = [...new Set(conversas.map((c) => c.otherId).filter(Boolean))] as string[];
   if (outros.length > 0) {
     const { data: nomes } = await supabase.rpc("primeiros_nomes", { ids: outros });
@@ -284,6 +303,28 @@ async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string)
  * E200: os contratos em que a pessoa é parte (morador ou dono do imóvel), para a conversa de cada um estar na lista
  * mesmo sem mensagem. A leitura vai pela sessão (RLS); nada de cliente de serviço. Best-effort: falhou, lista sem elas.
  */
+/**
+ * E569: candidaturas em andamento (nova ou aceita) em que sou o dono ou o morador, no formato das conversas de contrato
+ * (o id da candidatura vai em `id`; a conversa NÃO leva contratoId). Falha: nenhuma (a lista segue com as outras).
+ */
+async function candidaturasDaPessoa(supabase: Supa, userId: string): Promise<ContratoParaConversa[]> {
+  try {
+    const { data } = await supabase
+      .from("leads")
+      .select("id, owner_id, tenant_id, property_id, property:properties ( title )")
+      .or(`owner_id.eq.${userId},tenant_id.eq.${userId}`)
+      .in("status", ["new", "accepted"])
+      .order("created_at", { ascending: false })
+      .limit(200);
+    type Linha = { id: string; owner_id: string; tenant_id: string; property_id: string | null; property: { title: string | null } | null };
+    return ((data ?? []) as unknown as Linha[])
+      .filter((l) => !!l.property_id && !!l.owner_id && !!l.tenant_id)
+      .map((l) => ({ id: l.id, tenantId: l.tenant_id, ownerId: l.owner_id, propertyId: l.property_id as string, titulo: l.property?.title ?? "Imóvel" }));
+  } catch {
+    return [];
+  }
+}
+
 async function contratosDaPessoa(supabase: Supa, userId: string): Promise<ContratoParaConversa[]> {
   try {
     const colunas = "id, tenant_id, property_id, properties ( title, owner_id )";

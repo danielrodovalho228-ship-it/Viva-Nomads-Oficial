@@ -30,6 +30,8 @@ export interface BlocoPrincipalDono {
   /** "Próximos passos" do rascunho (até 3: o feito mais recente e os que faltam). */
   passos: ItemPassoDono[];
   foto: string | null;
+  /** E567: o nome do RASCUNHO a que o "% pronto" se refere (o dono não confunde com o anúncio já publicado). */
+  nome?: string | null;
 }
 
 /** A pendência mais urgente: atrasada primeiro, depois o prazo mais próximo; sem prazo, a primeira da lista. */
@@ -41,7 +43,7 @@ export function alertaDoTopo(decisoes: readonly Decisao[]): Decisao | null {
 
 export function blocoPrincipalDono(p: {
   /** E507: `retomar` é o destino único de retomada (hrefRetomarRascunho) — o mesmo do "Continuar editando" de Meus imóveis. */
-  rascunho: { id: string; pct: number; pronto: boolean; itens: { label: string; ok: boolean; href: string }[]; foto: string | null; retomar?: string } | null;
+  rascunho: { id: string; pct: number; pronto: boolean; itens: { label: string; ok: boolean; href: string }[]; foto: string | null; retomar?: string; nome?: string | null } | null;
   decisoes: readonly Decisao[];
   temAnuncio: boolean;
   fotoAnuncio: string | null;
@@ -64,6 +66,7 @@ export function blocoPrincipalDono(p: {
       botao: { rotulo: "Continuar de onde parou", href: r.retomar ?? falta?.href ?? `/dashboard/imoveis/novo?draft=${r.id}` },
       passos,
       foto: r.foto,
+      nome: r.nome ?? null,
     };
   }
   // E218-A, caso obrigatório: rascunho PRONTO e ainda não publicado → revisar e publicar ESSE rascunho (antes caía em
@@ -77,6 +80,7 @@ export function blocoPrincipalDono(p: {
       botao: { rotulo: "Revisar e publicar", href: `/dashboard/imoveis/novo?draft=${r.id}&etapa=revisao` },
       passos: [],
       foto: r.foto,
+      nome: r.nome ?? null,
     };
   }
   const urgente = alertaDoTopo(p.decisoes);

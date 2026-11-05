@@ -1,7 +1,7 @@
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
-import { calcularTotalMensal, estadiaDoImovel } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLExato } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
@@ -36,13 +36,16 @@ function disponivelFuturo(iso?: string): string | null {
  * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
-export function PriceCard({ property, actions, meses = 1 }: { property: Property; actions: React.ReactNode; meses?: number }) {
+export function PriceCard({ property, actions, meses = 1, dias = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
   const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: property.availableFrom });
   // E254-A: o total do período pela mesma função da prévia do Passo 10 e do cartão de Meus anúncios — com a limpeza de
   // saída somada e discriminada na conta (ela segue fora do "Total por mês", na linha própria abaixo).
-  const estadia = meses > 1 ? estadiaDoImovel(property, meses) : null;
+  // E562 (telas): com as datas escolhidas, o total da estadia em DIAS exatos (a mesma regra da proposta):
+  // "Total da estadia (43 dias): R$ 4.671,67 · 1 mês + 13 dias". Sem datas, a duração da busca/estadia mínima em meses.
+  const estadiaDias = dias ? estadiaDoImovelEmDias(property, dias) : null;
+  const estadia = !estadiaDias && meses > 1 ? estadiaDoImovel(property, meses) : null;
   const availableFrom = disponivelFuturo(property.availableFrom);
 
   return (
@@ -60,6 +63,16 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
           </span>
         )}
       </p>
+      {estadiaDias && (
+        <>
+          <p className="text-sm text-ink tabular-nums" data-testid="cartao-lateral-estadia">
+            {estadiaDias.rotulo}: <strong>{formatBRLExato(estadiaDias.total)}</strong> · {estadiaDias.periodo}
+          </p>
+          <p className="text-xs text-muted" data-testid="cartao-lateral-estadia-conta">
+            {estadiaDias.conta} = {formatBRLExato(estadiaDias.total)}
+          </p>
+        </>
+      )}
       {estadia && (
         <p className="text-xs text-muted" data-testid="cartao-lateral-estadia-conta">
           {estadia.conta}

@@ -467,12 +467,15 @@ export function EditarImovelClient({
             )}
           </div>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className="h-full rounded-full bg-forest transition-all"
-            style={{ width: `${comp.pct}%` }}
-          />
-        </div>
+        {/* E567: anúncio ATIVO não mostra "% completo" — nem no texto, nem na barra. */}
+        {!publicado && (
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" data-testid="prontidao-barra">
+            <div
+              className="h-full rounded-full bg-forest transition-all"
+              style={{ width: `${comp.pct}%` }}
+            />
+          </div>
+        )}
         {!publicado && termoJaAceito && (
           <p className="mt-3 text-sm text-muted" data-testid="aceite-ia-ja-aceito">
             {textoTermoJaAceito(termoJaAceito.aceitoEm)}

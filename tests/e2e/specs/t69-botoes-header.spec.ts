@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T69 — ordem c67e818f: header e botões.
@@ -13,7 +14,7 @@ import { authFile } from "../fixtures/auth";
  *  4. Foco pelo teclado mostra o anel.
  */
 const PRIMARIO = "rgb(28, 107, 58)";
-const PAGINAS = ["/", "/buscar", "/como-funciona", "/para-proprietarios", "/precos", "/empresas", "/parceiros", "/pedidos/novo", "/auth"];
+const PAGINAS = ["/", "/buscar", "/como-funciona", "/para-proprietarios", ...comPrecos("/precos"), "/empresas", "/parceiros", "/pedidos/novo", "/auth"];
 
 async function medirHeader(page: Page) {
   return page.evaluate(() => {

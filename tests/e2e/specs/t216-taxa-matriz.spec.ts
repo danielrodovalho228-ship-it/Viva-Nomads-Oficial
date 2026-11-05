@@ -68,8 +68,9 @@ async function enviar(page: Page, c: Cenario, pctEsperado: string, taxaEsperada:
   await page.goto(`/dashboard/orcamentos/nova?interessado=${c.lead}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("montagem-proposta")).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("proposta-valor").fill("3200");
-  await page.getByTestId("proposta-meses").selectOption("4");
   await page.getByTestId("proposta-data").fill(emDias(10));
+  // E562 (telas): sem "Número de meses" — a estadia vem em dias; 4 meses = saída 120 dias depois da entrada.
+  await page.getByTestId("proposta-saida").fill(emDias(130));
   await page.getByLabel("Consumo estimado (R$/mês)").fill("200");
   await page.getByLabel("Limpeza de preparação (R$, única)").fill("450");
   await page.getByTestId("proposta-validade").selectOption("7");

@@ -27,10 +27,11 @@ test("E302: 'Ver o Plano Gestor' leva à âncora do Gestor em Preços, e ela exi
   assert.match(PRECOS, /<h3 className="font-semibold text-ink">Plano Gestor<\/h3>/);
 });
 
-test("E303: o Gestor é 20+ (ou administradora); o 31+ é a faixa da taxa negociável — números distintos, ditos as duas vezes", () => {
+test("E303/E564: o Gestor é 20+ (ou administradora) e é a faixa sem teto (4%); a faixa negociável saiu da regra", () => {
   assert.equal(GESTOR_PRECO.minimoImoveis, 20);
-  const negociavel = FAIXAS_COMISSAO_PADRAO.find((f) => f.negociavel)!;
-  assert.equal(negociavel.minImoveis, 31);
+  assert.equal(FAIXAS_COMISSAO_PADRAO.find((f) => f.negociavel), undefined);
+  assert.equal(FAIXAS_COMISSAO_PADRAO.find((f) => f.gestor)?.minImoveis, GESTOR_PRECO.minimoImoveis);
+  // A seção do /precos ainda mostra o texto antigo: a troca da tela é da Pista A (E564, parte de telas).
   const secao = PRECOS.slice(PRECOS.indexOf('id="plano-gestor"'), PRECOS.indexOf('data-testid="precos-botoes"'));
   assert.match(secao, /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas/);
   assert.match(secao, /31\+ · \{ROTULO_FAIXA_NEGOCIAVEL\}/);

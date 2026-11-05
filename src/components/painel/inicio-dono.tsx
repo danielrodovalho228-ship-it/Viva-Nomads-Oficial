@@ -58,6 +58,11 @@ export function InicioDono({
             <h2 id="inicio-dono-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
               {bloco.titulo}
             </h2>
+            {bloco.tipo === "rascunho" && bloco.nome && (
+              <p className="mt-1 truncate text-sm text-muted" data-testid="inicio-dono-nome">
+                {bloco.nome}
+              </p>
+            )}
             {bloco.pct !== null && (
               <div className="mt-2" data-testid="inicio-dono-pct" data-pct={bloco.pct}>
                 <p className="text-sm font-semibold text-forest">{bloco.pct}% pronto</p>

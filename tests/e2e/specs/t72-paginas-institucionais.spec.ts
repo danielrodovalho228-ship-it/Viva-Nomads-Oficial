@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA, comPrecos } from "../fixtures/precos";
 
 /**
  * T72 — ordem 5a4b9146: páginas institucionais.
@@ -9,7 +10,7 @@ import { test, expect, type Page } from "@playwright/test";
  *  5. Comparações com outras plataformas continuam na página.
  *  6. Sem rolagem lateral a 390 e 1280 px; prints.
  */
-const PAGINAS = ["/para-proprietarios", "/empresas", "/precos", "/como-funciona", "/parceiros"];
+const PAGINAS = ["/para-proprietarios", "/empresas", ...comPrecos("/precos"), "/como-funciona", "/parceiros"];
 const semRolagem = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 test.describe("T72 — páginas institucionais", () => {
@@ -76,6 +77,7 @@ test.describe("T72 — páginas institucionais", () => {
   });
 
   test("5. comparações com outras plataformas intactas", async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     // /para-proprietarios (versão curta) ainda segue a regra c6b62141; /precos mudou no prompt 13.
     await page.goto("/para-proprietarios", { waitUntil: "networkidle" });
     const curto = page.getByTestId("comparativo-curto");

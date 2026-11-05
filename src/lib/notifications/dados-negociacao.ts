@@ -79,7 +79,8 @@ export function linhasProposta(o: {
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
     { rotulo: "Período", valor: textoPeriodo(o.entrada, o.saida, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
-    { rotulo: "Total do contrato", valor: o.contaTotal },
+    // E562 (telas): estadia em dias exatos → o mesmo rótulo do anúncio e da montagem, "Total da estadia (43 dias)".
+    { rotulo: o.dias != null && o.dias > 0 && o.dias % 30 !== 0 ? `Total da estadia (${o.dias} dias)` : "Total do contrato", valor: o.contaTotal },
   ];
   const prazo = dataHoraBR(o.responderAte);
   if (prazo) linhas.push({ rotulo: "Responder até", valor: prazo });
