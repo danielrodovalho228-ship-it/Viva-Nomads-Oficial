@@ -128,9 +128,10 @@ export const ROTAS_COM_PARAMETRO: Record<string, readonly string[]> = {
 
 /**
  * Telas que NENHUMA persona da varredura abre (404 de propósito para quem não tem a marca): ficam fora do t183 e têm
- * spec próprio. /dashboard/qa/emails só abre para conta de teste com qa_leitor (QA-CAIXA-B, t470).
+ * spec próprio. /dashboard/qa/emails só abre para conta de teste com qa_leitor (QA-CAIXA-B, t470); /admin/premissas só
+ * para o admin observador da QA (E591, t604) — o admin comum vai ao /simulacao.
  */
-export const TELAS_RESTRITAS: readonly string[] = ["/dashboard/qa/emails"];
+export const TELAS_RESTRITAS: readonly string[] = ["/dashboard/qa/emails", "/admin/premissas"];
 
 /** Telas que cada persona visita (o admin também abre o painel comum). */
 export function telasDaPersona(persona: "inquilino" | "proprietario" | "admin"): string[] {

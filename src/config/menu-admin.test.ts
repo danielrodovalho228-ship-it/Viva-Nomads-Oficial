@@ -89,10 +89,10 @@ test("E216: o admin observador da QA não vê 'Caixa dos Sócios' na barra; o ad
   const obs = folhas(barraAdminPara({ observadorQa: true }));
   assert.ok(!obs.includes("/admin/socios"));
   assert.deepEqual(FORA_DA_BARRA_OBSERVADOR, ["/admin/socios"]);
-  // Só a Caixa sai: o resto da barra é igual (o grupo Equipe continua, com a Central de Agentes).
-  assert.deepEqual(obs, folhas(BARRA_ADMIN).filter((h) => h !== "/admin/socios"));
+  // Só a Caixa sai; E591: no lugar dela, "Premissas (leitura)". O resto da barra é igual.
+  assert.deepEqual(obs, folhas(BARRA_ADMIN).map((h) => (h === "/admin/socios" ? "/admin/premissas" : h)));
   const equipe = barraAdminPara({ observadorQa: true }).find((g) => g.id === "admin-equipe");
-  assert.deepEqual(equipe?.filhos?.map((f) => f.href), ["/admin/agentes"]);
+  assert.deepEqual(equipe?.filhos?.map((f) => f.href), ["/admin/agentes", "/admin/premissas"]);
   // A barra original não é alterada.
   assert.ok(folhas(BARRA_ADMIN).includes("/admin/socios"));
 });

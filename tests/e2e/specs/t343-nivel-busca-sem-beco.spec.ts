@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
   T343 — NIVEL-BUSCA-A (filtro de nível sem beco sem saída) e MIUDOS-A item 1 ("e menos" na home). A 390 e 1280.
   Massa num bairro só deste teste: um Essencial, um Conforto e um sem nível; num 2º bairro, só um sem nível.
    1. Folha: contagens "a partir de" (Essencial 2, Conforto 1, Premium 0); Premium desabilitado com o "· 0".
-   2. 2º bairro (tudo 0): o grupo some e entra a linha "Os níveis aparecem quando…" (sem link).
+   2. 2º bairro (tudo 0): E590 — as 3 opções seguem com "· 0" (desabilitadas) e a nota explica (sem link).
    3. ?nivel=premium no 1º bairro: "Nenhum imóvel com nível Premium nesta busca" + "Ver todos" volta os 3.
    4. Home: o h2 de "Para proprietários" lê "Mais estabilidade e menos tempo com o imóvel parado." (innerText).
   A /buscar guarda cache de 60 s: o primeiro passo espera os imóveis novos entrarem.
@@ -85,16 +85,19 @@ test.describe("T343 — nível na busca sem beco sem saída", () => {
       await page.screenshot({ path: `${SAIDA}/t343-folha-nivel-${w}.png` });
       await page.keyboard.press("Escape");
 
-      // 2º bairro: tudo 0 → o grupo some e a linha explica, sem link.
+      // 2º bairro: tudo 0 → E590: as 3 opções seguem lá, com "· 0" e desabilitadas; a nota explica, sem link.
       await expect(async () => {
         await page.goto(busca(BAIRRO2), { waitUntil: "domcontentloaded" });
         await expect(cards(page)).toHaveCount(1, { timeout: 5_000 });
       }).toPass({ timeout: 60_000 });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
       const grupo2 = await abrirNivel(page);
-      await expect(grupo2.getByTestId("pilula-nivel-essencial")).toHaveCount(0);
+      for (const v of ["essencial", "conforto", "premium"]) {
+        await expect(grupo2.getByTestId(`pilula-nivel-${v}`)).toBeDisabled();
+        await expect(grupo2.getByTestId(`pilula-nivel-${v}-n`)).toHaveText("· 0");
+      }
       const linha = grupo2.getByTestId("painel-nivel-vazio");
-      await expect(linha).toHaveText("Os níveis aparecem quando os anúncios desta busca tiverem o padrão mínimo confirmado.");
+      await expect(linha).toHaveText("Nenhum anúncio desta busca tem o padrão mínimo confirmado ainda.");
       await expect(linha.locator("a")).toHaveCount(0);
       await linha.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t343-folha-sem-niveis-${w}.png` });

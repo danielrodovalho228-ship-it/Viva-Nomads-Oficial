@@ -32,7 +32,7 @@ test("NIVEL-BUSCA-A: opção em 0 desabilitada (o '· 0' fica); as três em 0 ti
   assert.deepEqual(grupoNivel({ essencial: 0, conforto: 0, premium: 0 }, ""), { visivel: false, desabilitado: { essencial: true, conforto: true, premium: true } });
   // ?nivel=premium que zerou tudo: o grupo continua (para desligar) e o Premium escolhido não fica desabilitado.
   assert.deepEqual(grupoNivel({ essencial: 0, conforto: 0, premium: 0 }, "premium"), { visivel: true, desabilitado: { essencial: true, conforto: true, premium: false } });
-  assert.equal(TEXTO_SEM_NIVEIS, "Os níveis aparecem quando os anúncios desta busca tiverem o padrão mínimo confirmado.");
+  assert.equal(TEXTO_SEM_NIVEIS, "Nenhum anúncio desta busca tem o padrão mínimo confirmado ainda."); // E590
   assert.equal(avisoNivelSemResultado("premium"), "Nenhum imóvel com nível Premium nesta busca");
   assert.equal(avisoNivelSemResultado("conforto"), "Nenhum imóvel com nível Conforto nesta busca");
 });
@@ -45,6 +45,7 @@ test("NIVEL-BUSCA-A: a folha e a busca usam as regras (sem link na linha; 'Ver t
   assert.doesNotMatch(folha, /painel-nivel|filtro-nivel-/);
   const pilulas = readFileSync("src/components/busca/barra-pilulas.tsx", "utf8");
   assert.match(pilulas, /opcao\(v, f\.nivelMin === v, porNivel\[v\], nivel\.desabilitado\[v\]/);
-  assert.match(pilulas, /nivel\.visivel \?[\s\S]*data-testid="painel-nivel-vazio"[^>]*>\s*\{TEXTO_SEM_NIVEIS\}\s*<\/p>/);
+  // E590: as opções aparecem sempre; a nota só complementa quando nenhum nível tem imóvel.
+  assert.match(pilulas, /\{!nivel\.visivel && \(\s*<p[^>]*data-testid="painel-nivel-vazio"[^>]*>\s*\{TEXTO_SEM_NIVEIS\}\s*<\/p>/);
   assert.match(busca, /data-testid="busca-vazia-nivel"[\s\S]*\{avisoNivelSemResultado\(nivelMin\)\}[\s\S]*onClick=\{\(\) => setNivelMin\(""\)\}[\s\S]*Ver todos/);
 });

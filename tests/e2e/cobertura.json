@@ -298,6 +298,14 @@
         "t419-varredura-bloco36"
       ]
     },
+    "/admin/premissas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t604-e216-observador-sem-caixa"
+      ]
+    },
     "/admin/socios": {
       "personas": [
         "admin"
