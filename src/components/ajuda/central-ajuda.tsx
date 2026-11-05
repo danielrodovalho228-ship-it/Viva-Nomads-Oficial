@@ -52,6 +52,16 @@ function lerParams(): URLSearchParams {
   return typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
 }
 
+/** E449: a conversa do chat flutuante, guardada na sessão (a mesma chave do viva-chat), para anexar ao chamado. */
+function conversaGuardadaDoChat(): MsgChat[] {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(CHAVE_CONVERSA_CHAT) ?? "[]");
+    return Array.isArray(v) ? (v as MsgChat[]).slice(-40) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
   const user = useAuthStore((s) => s.user);
   const [aba, setAba] = useState<"inicio" | "novo" | "chamado">("inicio");
@@ -116,6 +126,12 @@ export function CentralAjuda({ canal }: { canal: "site" | "app" }) {
     if (p.get("avaliado") === "1") setAviso("Obrigado pela sua nota! Ela ajuda a melhorar o atendimento.");
     if (p.get("avaliacao") === "invalida") setAviso("Esse link de avaliação não é válido.");
     if (p.get("novo") === "1") setAba("novo");
+    // E449: o "Falar com uma pessoa" do chat flutuante chega aqui (rota única): o formulário da Central abre com a conversa.
+    if (p.get("doChat") === "1") {
+      setConversa(conversaGuardadaDoChat());
+      setAba("novo");
+      requestAnimationFrame(() => document.getElementById("abrir-chamado")?.scrollIntoView({ block: "start" }));
+    }
     const pc = p.get("pessoa");
     const ps = p.get("s");
     if (pc && ps) setPessoaLink({ c: pc, s: ps });
