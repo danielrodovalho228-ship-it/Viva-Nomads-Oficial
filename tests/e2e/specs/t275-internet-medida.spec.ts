@@ -24,6 +24,10 @@ async function medir(page: Page, imovel: string, onde: { latitude: number; longi
   await page.getByRole("button", { name: /Comodidades/ }).click();
   const bloco = page.getByTestId("medir-internet");
   await expect(bloco).toBeVisible({ timeout: 20_000 });
+  // E609: o ponto começa sem escolha — o "Medir" só libera depois de escolher.
+  await expect(bloco.getByTestId("medir-internet-botao")).toBeDisabled();
+  await expect(bloco.getByTestId("medir-internet-escolha-ponto")).toBeVisible();
+  await bloco.getByTestId("medir-internet-ponto-quarto_principal").click();
   await bloco.getByTestId("medir-internet-wifi").check();
   await bloco.getByTestId("medir-internet-botao").click();
   const r = bloco.getByTestId("medir-internet-resultado");
