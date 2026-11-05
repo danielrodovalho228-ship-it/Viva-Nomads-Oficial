@@ -46,6 +46,8 @@ export interface DadosProvas {
   /** Linhas do resumo como a tela mostra (e como o hash foi calculado). */
   resumo: string[];
   assinaturas: { papel: Parte; em: string; hash: string }[];
+  /** E197: papel com a data de assinatura gravada no contrato e SEM o registro com hash (não se inventa hash). */
+  assinaturasSemHash?: { papel: Parte; em: string }[];
   pagamentos: PagamentoProva[];
   conferencias: ConferenciaProva[];
   /** Instante do prazo da conferência de entrada (prazoConferenciaEntrada). */
@@ -201,6 +203,7 @@ export interface RegistroPacote {
 export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote): ConteudoDocumento {
   const hashAtual = hashResumo(d.resumo);
   const ass = [...d.assinaturas].sort((a, b) => (a.em < b.em ? -1 : 1));
+  const semHash = [...(d.assinaturasSemHash ?? [])].sort((a, b) => (a.em < b.em ? -1 : 1));
   const t = totaisPagamentos(d.pagamentos);
   return {
     // Documento da plataforma (D1-a): só a marca Viva.
@@ -218,12 +221,16 @@ export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote):
       "RESUMO DO CONTRATO",
       ...d.resumo,
       "ASSINATURAS",
-      ...(ass.length
-        ? ass.map(
+      ...(ass.length || semHash.length
+        ? [
+          ...ass.map(
             (a) =>
               // QA do Muse no 35B: cada assinatura mostra o próprio hash e um de três estados; "igual" só com o mesmo hash.
               `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — Hash do resumo assinado: ${a.hash} (${compararHashComResumo(d.resumo, a.hash, d.registradoEm).texto}).`
-          )
+          ),
+          // E197: a data gravada no contrato, sem registro com hash — a mesma assinatura que a lista do admin mostra.
+          ...semHash.map((a) => `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — data gravada no contrato, sem o registro do hash do resumo assinado.`),
+        ]
         : ["Nenhuma assinatura ainda."]),
       "ADITIVOS",
       ...linhasAditivos(d.aditivos),
@@ -258,6 +265,8 @@ export interface LinhasProvas {
   prazoEntradaEm: string | null;
   prazoSaidaEm?: string | null;
   assinaturas: { papel: unknown; assinado_em: unknown; hash_documento: unknown }[];
+  /** E197: as datas de assinatura gravadas no próprio contrato (assinado_*_em) — a mesma fonte da lista do admin. */
+  datasAssinatura?: { proprietario: string | null; inquilino: string | null };
   pagamentos: {
     tipo: unknown;
     valor: unknown;
@@ -284,12 +293,17 @@ export interface LinhasProvas {
 }
 
 const parteDe = (p: unknown): Parte => (p === "proprietario" ? "proprietario" : "inquilino");
-const textoOuNulo = (v: unknown): string | null => (v === null || v === undefined || v === "" ? null : String(v));
+export const textoOuNulo = (v: unknown): string | null => (v === null || v === undefined || v === "" ? null : String(v));
 /** Só o nome do arquivo do laudo (sem a pasta de quem enviou). */
 export const nomeDoLaudo = (path: unknown) => String(path ?? "").split("/").pop() || "laudo.pdf";
 
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
+  const comHash = new Set(l.assinaturas.map((a) => parteDe(a.papel)));
+  const assinaturasSemHash = (["proprietario", "inquilino"] as const)
+    .filter((p) => !comHash.has(p) && !!l.datasAssinatura?.[p])
+    .map((p) => ({ papel: p, em: String(l.datasAssinatura![p]) }));
   return {
+    assinaturasSemHash,
     aditivos: (l.aditivos ?? []).map((a) => ({
       numero: Number(a.numero),
       resumo: String(a.resumo ?? ""),
