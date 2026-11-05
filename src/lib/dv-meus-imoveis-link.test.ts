@@ -6,9 +6,11 @@ import { join } from "node:path";
 
 const ler = (p: string) => readFileSync(join("src", p), "utf8");
 
-test("Meus imóveis: só o anúncio no ar tem título-link e 'Ver'; rascunho e pausado têm o título em texto", () => {
+test("Meus imóveis: só o anúncio no ar aponta para a página pública; rascunho e pausado levam à edição (E510)", () => {
   const lista = ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
-  assert.match(lista, /\{demoItem \|\| p\.status !== "active" \? \(\s*<span className="mt-2 font-title text-lg font-semibold text-ink">\{p\.title\}<\/span>/);
+  // E510: título e foto são links em todo estado, pelo destino único (ativo → página; outros → edição, nunca 404).
+  assert.match(lista, /<Link href=\{destino\} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest" data-testid="cartao-titulo-link">/);
+  assert.match(ler("lib/anuncio/destino-cartao.ts"), /if \(p\.status === "active"\) return `\/imoveis\/\$\{p\.id\}`;/);
   assert.match(lista, /\{p\.status === "active" && \(\s*<ButtonLink href=\{`\/imoveis\/\$\{p\.id\}`\}/);
   // E507: "Continuar editando" do rascunho vai pelo destino único de retomada (sempre o assistente, /novo?draft=).
   assert.match(lista, /hrefRetomarRascunho\(prontidao\[p\.id\], p\.id\)/, "rascunho segue com 'Continuar editando'");

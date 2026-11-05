@@ -25,6 +25,7 @@ import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
+import { destinoDoCartao } from "@/lib/anuncio/destino-cartao";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -111,6 +112,9 @@ export function MyPropertiesClient({
             const demoItem = demoOn;
             const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
             const comp = prontidao[p.id];
+            // E510: foto e título levam ao mesmo destino dos botões do cartão (ativo → página; rascunho → onde parou;
+            // pausado → editor). Na demonstração, o título segue como texto (não há edição de verdade).
+            const destino = destinoDoCartao({ id: p.id, status: p.status, retomar: hrefRetomarRascunho(prontidao[p.id], p.id) });
             return (
               <div
                 key={p.id}
@@ -118,17 +122,21 @@ export function MyPropertiesClient({
                 data-testid="meu-anuncio"
                 data-imovel={p.id}
               >
-                {hasPhoto(p.photos[0]) ? (
-                  <BrandImage
-                    src={p.photos[0]}
-                    alt={p.title}
-                    sizes="200px"
-                    className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
-                  />
-                ) : (
-                  // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
-                  <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
-                )}
+                {/* E510: a foto é clicável em todo estado (o mesmo destino do título; fora da ordem de tabulação, o título já é o
+                    link). `contents`: o link não cria caixa — a foto segue 4:3 e sem esticar com o cartão (E311, #1724). */}
+                <Link href={destino} tabIndex={-1} aria-hidden className="contents" data-testid="cartao-foto-link">
+                  {hasPhoto(p.photos[0]) ? (
+                    <BrandImage
+                      src={p.photos[0]}
+                      alt={p.title}
+                      sizes="200px"
+                      className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
+                    />
+                  ) : (
+                    // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
+                    <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
+                  )}
+                </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* 64-B: o selo vira o menu de pausa (demonstração: só o selo). */}
@@ -175,12 +183,12 @@ export function MyPropertiesClient({
                       </span>
                     )}
                   </div>
-                  {/* Só anúncio no ar tem página pública: nos outros o título é texto (rascunho e pausado davam 404 —
-                      t249 D-V7) e a ação é "Continuar editando" ou "Editar". */}
-                  {demoItem || p.status !== "active" ? (
+                  {/* E510: o título é link em todo estado. Só o anúncio no ar tem página pública (rascunho e pausado davam 404 —
+                      t249 D-V7): nos outros ele leva à edição, como "Continuar editando" / "Editar". */}
+                  {demoItem ? (
                     <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
-                    <Link href={`/imoveis/${p.id}`} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest">
+                    <Link href={destino} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest" data-testid="cartao-titulo-link">
                       {p.title}
                     </Link>
                   )}
