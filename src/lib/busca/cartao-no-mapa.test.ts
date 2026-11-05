@@ -55,5 +55,6 @@ test("os dois motores do mapa usam a regra: Leaflet com as folgas no autoPan e M
   assert.match(src, /deslocamentoParaCaber\(/);
   assert.match(src, /map\.panBy\(\[-dx, -dy\]/);
   assert.equal(src.match(/mostrarCartaoNaTela\(popupEl\)/g)?.length, 2, "rola a página até o cartão nos dois motores");
-  assert.equal(src.match(/  useFecharCartaoComEsc\(!!aberto, \(\) => onSelect\?\.\(null\)\);/g)?.length, 2, "Esc nos dois motores");
+  // E442: o Esc fecha o cartão do clique E a prévia do hover (o mesmo `fechar`).
+  assert.equal(src.match(/  useFecharCartaoComEsc\(!!aberto, fechar\);/g)?.length, 2, "Esc nos dois motores");
 });

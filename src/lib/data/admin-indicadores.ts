@@ -7,7 +7,7 @@ import { capasPorImovel, emLotes } from "@/lib/admin/capas-admin";
 import { statusPorImovel } from "@/lib/documento/vigente";
 import { todasAsPaginas } from "@/lib/admin/paginas";
 import { eventoConta } from "@/lib/eventos/trafego";
-import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
+import { COLUNAS_ESTADO_CONTRATO, seloParaEquipe, situacaoParaEquipe, type LinhaEstadoContrato, type SituacaoEquipe } from "@/lib/contrato-estado";
 import {
   EVENTOS_HOME,
   resumoCandidaturas,
@@ -58,6 +58,8 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   assinadoInquilino: boolean;
   /** E197: o selo da equipe pela fonte única (o mesmo do detalhe do contrato). */
   selo: string;
+  /** E543: a situação do filtro, pela mesma fonte do selo (nunca o status cru). */
+  situacao: SituacaoEquipe;
   /** Conta de teste ou anúncio [TESTE…] (só aparece com o filtro "teste"). */
   teste: boolean;
   /** Data do aceite da candidatura (a taxa foi gravada nesse dia) — para o rótulo único rotuloBaseTaxa. */
@@ -82,7 +84,8 @@ export async function contratosReais(
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
-    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)")
+    // E543: as MESMAS colunas de estado do detalhe (com o período) — o selo da lista e o do detalhe saem iguais.
+    .select(`id, created_at, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at), ${COLUNAS_ESTADO_CONTRATO}`)
     .order("created_at", { ascending: false })
     .limit(2000);
   if (periodo) q = q.gte("created_at", periodo.ini).lt("created_at", periodo.fim);
@@ -105,6 +108,7 @@ export async function contratosReais(
     properties: { owner_id: string; title: string | null; city: string | null };
     leads: { accepted_at: string | null } | null;
     pagamentos_bloco: LinhaEstadoContrato["pagamentos_bloco"];
+    periodo?: string | null;
   }[])
     .map((c) => ({ ...c, ehTeste: teste.has(c.tenant_id) || teste.has(c.properties.owner_id) || MARCA_TESTE.test(c.properties.title ?? "") }))
     .filter((c) => (tipo === "todos" ? true : tipo === "teste" ? c.ehTeste : !c.ehTeste))
@@ -125,11 +129,23 @@ export async function contratosReais(
       assinadoDono: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       selo: seloParaEquipe(c),
+      situacao: situacaoParaEquipe(c).chave,
       aluguelMensal: c.aluguel_mensal === null ? null : Number(c.aluguel_mensal),
       prazoDias: c.prazo_total_dias === null ? null : Number(c.prazo_total_dias),
       taxaValor: c.comissao_valor === null ? null : Number(c.comissao_valor),
       taxaPercent: c.comissao_percent === null ? null : Number(c.comissao_percent),
     }));
+}
+
+/**
+ * E472 — a LISTA de Admin → Pedidos, pelo MESMO cliente de serviço dos números da página e da inicial (pedidosParaMetrica,
+ * contarPedidosNoAr): uma fonte só. Antes a lista lia pela RLS da sessão (is_admin() exige AAL2 de quem tem 2FA) e podia
+ * voltar vazia enquanto os números contavam os pedidos. Falha → lança (achado 111: nunca "nenhum pedido" calado).
+ */
+export async function pedidosMoradiaAdmin(admin: Admin): Promise<Record<string, unknown>[]> {
+  const { data, error } = await admin.from("pedidos_moradia").select("*").order("criado_em", { ascending: false }).limit(500);
+  if (error) throw new Error("Não foi possível ler os pedidos de moradia.");
+  return (data ?? []) as Record<string, unknown>[];
 }
 
 /** Pedidos de moradia (de contas reais) criados no período, com a 1ª resposta (contato ou proposta). */

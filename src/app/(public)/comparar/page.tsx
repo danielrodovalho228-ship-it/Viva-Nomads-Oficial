@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listProperties } from "@/lib/data/properties";
-import { hrefComparar, idsDeComparar, montarTabela, MIN_COMPARAR } from "@/lib/busca/comparar";
+import { buscaComAnunciosDeTeste } from "@/lib/data/busca-teste";
+import { consultaDaBusca, hrefComparar, hrefVoltarBusca, idsDeComparar, montarTabela, MIN_COMPARAR } from "@/lib/busca/comparar";
 import { linhaLocalizacao } from "@/lib/localizacao";
 
 export const revalidate = 60;
@@ -17,8 +18,15 @@ export default async function CompararPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const ids = idsDeComparar((await searchParams).comparar);
-  const todos = ids.length ? await listProperties() : [];
+  const sp = await searchParams;
+  const ids = idsDeComparar(sp.comparar);
+  // E532: a busca de onde veio (filtros e ordenação) — "Voltar à busca" e "Tirar da comparação" a preservam.
+  const volta = consultaDaBusca(sp.volta);
+  const voltarBusca = hrefVoltarBusca(volta);
+  // E521 (reprova 05/11): a MESMA lista da busca — a conta de teste logada vê ali os anúncios de teste (E571) e, ao
+  // marcá-los, eles precisam ser achados aqui também; antes a página lia só a lista pública e caía no estado vazio.
+  const incluirTeste = ids.length ? await buscaComAnunciosDeTeste() : false;
+  const todos = ids.length ? await listProperties({ incluirTeste }) : [];
   // Mantém a ordem escolhida; id que não existe mais simplesmente some.
   const imoveis = ids.map((id) => todos.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => !!p);
   const tabela = montarTabela(imoveis);
@@ -29,7 +37,7 @@ export default async function CompararPage({
       {imoveis.length < MIN_COMPARAR ? (
         <div className="mt-4 rounded-xl border border-line bg-white p-4" data-testid="comparar-vazio">
           <p className="text-ink">Escolha de 2 a 3 imóveis na busca para ver os dados lado a lado.</p>
-          <Link href="/buscar" className="alvo-toque mt-3 inline-block font-semibold text-forest underline underline-offset-2">
+          <Link href={voltarBusca} data-testid="comparar-voltar-busca" className="alvo-toque mt-3 inline-block font-semibold text-forest underline underline-offset-2">
             Voltar à busca
           </Link>
         </div>
@@ -54,7 +62,7 @@ export default async function CompararPage({
                         {linhaLocalizacao(p.neighborhood, p.city, p.state)}
                       </div>
                       <Link
-                        href={hrefComparar(ids.filter((x) => x !== p.id))}
+                        href={hrefComparar(ids.filter((x) => x !== p.id), volta)}
                         className="mt-1 inline-block text-xs font-normal text-muted underline underline-offset-2"
                       >
                         Tirar da comparação
@@ -79,7 +87,7 @@ export default async function CompararPage({
               </tbody>
             </table>
           </div>
-          <Link href="/buscar" className="alvo-toque mt-4 inline-block font-semibold text-forest underline underline-offset-2">
+          <Link href={voltarBusca} data-testid="comparar-voltar-busca" className="alvo-toque mt-4 inline-block font-semibold text-forest underline underline-offset-2">
             Voltar à busca
           </Link>
         </>

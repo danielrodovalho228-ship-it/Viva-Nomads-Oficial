@@ -32,7 +32,7 @@ import { ROTULO_FILTRO_NOTA_LOCACAO } from "@/lib/fiscal/nota-locacao";
  * baixo (bottom-sheet.tsx); no computador é um painel na lateral direita.
  * Edita um RASCUNHO e mostra, ao vivo, quantos imóveis aparecem antes de
  * aplicar ("Mostrar 23 imóveis" usa a MESMA função da lista). "Limpar tudo"
- * (terciário) zera o rascunho. Todas as escolhas são chips: tocar de novo
+ * zera o rascunho e (E589) limpa a busca na hora, com a folha aberta. Todas as escolhas são chips: tocar de novo
  * desliga — sem opção "Qualquer", "Ambos", "Indiferente" ou "Tanto faz".
  *
  * Regra de forma por tipo de controle (veredito do coordenador, QA do Prompt 40; guarda em
@@ -52,6 +52,7 @@ export function FolhaFiltros({
   contar,
   contarNaoMedidos,
   onAplicar,
+  onLimpar,
   onFechar,
   garantias,
   medicoes = [],
@@ -62,6 +63,11 @@ export function FolhaFiltros({
   /** Prompt 57 fase 2: imóveis com internet informada, mas não medida (linha "Mais N…" no fim da lista). */
   contarNaoMedidos?: (f: FiltrosPainel) => number;
   onAplicar: (f: FiltrosPainel) => void;
+  /**
+   * E589: "Limpar tudo" limpa a BUSCA na hora (não só o rascunho) — antes, limpar e fechar a folha sem tocar em
+   * "Mostrar N imóveis" deixava o filtro preso no contador, na URL e na lista.
+   */
+  onLimpar?: () => void;
   onFechar: () => void;
   /** Garantias do filtro público (caução unificada + seguro-fiança). */
   garantias: { key: string; label: string }[];
@@ -92,7 +98,10 @@ export function FolhaFiltros({
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={() => setRascunho(FILTROS_PAINEL_VAZIOS)}
+            onClick={() => {
+              setRascunho(FILTROS_PAINEL_VAZIOS);
+              onLimpar?.();
+            }}
             data-testid="limpar-tudo"
             className={buttonClasses({ variant: "secondary", className: "shrink-0 px-4 sm:px-6" })}
           >
@@ -194,6 +203,10 @@ export function FolhaFiltros({
           {/* E439: o dono aceita negociar (properties.negociacao), o mesmo dado do selo do anúncio. */}
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "negociaOnly")} ativo={!!rascunho.negociaOnly} onClick={() => muda("negociaOnly", !rascunho.negociaOnly)} testId="faceta-negocia">
             Aceita negociação
+          </ChipFaceta>
+          {/* E580: o mesmo selo "Preço justo" do card (Property.precoJusto); a contagem é a de imóveis da busca com ele. */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "precoJustoOnly")} ativo={!!rascunho.precoJustoOnly} onClick={() => muda("precoJustoOnly", !rascunho.precoJustoOnly)} testId="faceta-selo-preco-justo">
+            Preço justo
           </ChipFaceta>
           {/* E574: dono PJ/MEI que declarou emitir nota fiscal da locação (selo de confiança sobre a declaração). */}
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">

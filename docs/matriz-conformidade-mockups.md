@@ -109,3 +109,163 @@ Sem mockup no branch `mockups`: conferidas pelo padrão codificado (fundo clean,
 | favoritos (visitante) | /favoritos | Conforme | Vazio com um botão cheio ("Explorar imóveis"). |
 | avaliadores | /avaliadores → /parceiros/avaliadores | Conforme | Redireciona; sem rolagem lateral. |
 | conferir, guia de fotos, excluir conta, comparar | /conferir, /guia-fotos, /excluir-conta, /comparar | Conforme | Sem rolagem lateral, um h1, nenhum botão cheio a mais, sem vocabulário fora da casa. |
+
+## Painel sem linha na matriz — passada 10 (05/11, modo demonstração, 390 e 1280)
+
+Rotas do painel que ainda não tinham linha, conferidas pelo padrão codificado (fundo clean, grade par, cartões uniformes, um botão cheio, vocabulário da casa, sem rolagem lateral, um h1), com sessão de demonstração. Varredura por script local e recortes de tela.
+
+| Tela | Rota real | Estado | Prova / observação |
+|---|---|---|---|
+| análise da carteira | /dashboard/carteira | Corrigido — PR aberto | Os 6 indicadores dividiam a linha com alturas diferentes ("Reservados", com dica, 108 px × "Vagos", sem dica, 74 px a 390; 115 × 94 a 1280): o StatCard dentro do invólucro da grade não ocupava a célula. Agora `h-full` no StatCard (vale para todas as telas que o usam). Medido depois: mesma altura em cada linha, nos dois tamanhos. T869 (laboratório). |
+| buscas salvas | /dashboard/buscas | Conforme | Sem rolagem lateral, um h1, nenhum botão cheio a mais. |
+| candidaturas | /dashboard/candidaturas | Conforme | Vazio com um botão cheio ("Explorar imóveis"). |
+| comparar (painel) | /dashboard/comparar | Conforme | Vazio com um botão cheio ("Buscar imóveis"). |
+| excluir conta | /dashboard/conta/excluir | Conforme | Sem botão cheio; sem rolagem lateral. |
+| ganhos | /dashboard/ganhos | Conforme | Fileira de subabas com a seta do E248 a 390 (desenho aprovado; ver o comentário do t591 na #2548). |
+| garantias, indicações, locações, visitas | /dashboard/garantias, /indicacoes, /locacoes, /visitas | Conforme | Sem rolagem lateral; no máximo um botão cheio por tela. |
+| novo orçamento | /dashboard/orcamentos/nova | Conforme | Sem botão cheio a mais; sem rolagem lateral. |
+| pedidos da cidade | /dashboard/pedidos-cidade | Conforme | Sem rolagem lateral, um h1. |
+| propostas | /dashboard/propostas | Conforme | Vazio com link "Ver minhas candidaturas" (texto), nas abas de Pedidos. |
+| reembolso da caução | /dashboard/reembolsos | Conforme | Um botão cheio ("Gerar comprovante (exemplo)" no demo); cartões uniformes. |
+| respostas rápidas, solicitações | /dashboard/respostas-rapidas, /dashboard/solicitacoes | Conforme | Sem rolagem lateral, um h1. |
+| redirecionamentos | /dashboard/assinatura → /dashboard (E563), /dashboard/viabilidade → /dashboard/simulador, /dashboard/parceiro/avaliacao → /dashboard (sem parceiro no demo) | Conforme | Destinos já conferidos nas suas linhas. |
+| avaliações (painel) | /dashboard/avaliacoes | A conferir com sessão real | No demo leva ao login (precisa de sessão real), como `perfil-02-avaliacoes`. |
+
+### E550 (parte visual) — sino: lido × não lido
+
+Conferido em 05/11 (modo demonstração, painel do sino com 2 avisos não lidos e 2 lidos simulados, 390 e 1280): a distinção do E502 está de pé e é clara. Não lido: fundo sage-100 (rgb 238, 246, 239), barra verde de 4 px à esquerda (rgb 28, 107, 58), ponto verde, título em negrito (600) e "Não lido" para leitor de tela. Lido: fundo branco, sem barra (transparente), sem ponto, título em peso normal (400). Mesmos valores nos dois tamanhos. Guarda: `src/components/painel/e502-avisos-lidos.test.ts`. Sem mudança de código.
+
+
+## Assistente de cadastro e telas que mudaram em 05/11 — passada 11 (05/11, modo demonstração, 390 e 1280)
+
+Reconferência das linhas `cadastro-imovel-*` (a última era a passada 3, de 01/11) e das telas mexidas hoje pelos PRs da Pista A
+(#2651 E196, #2658 E450, #2667 E584, #2675 E503). Varredura por script local em 15 rotas × 2 larguras, com as verificações da
+casa: rolagem lateral, um h1, no máximo um botão cheio (`data-cta="primary"`), vocabulário da casa, imagem quebrada e grade com
+buraco (último item que não ocupa a linha numa grade de cartões). Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Assistente, 10 passos** (`/dashboard/imoveis/novo?etapa=tipo` … `revisao`): sem rolagem lateral, um h1, um botão cheio no
+   máximo, nenhuma palavra fora do vocabulário, nos dois tamanhos. A 1280 o formulário e a prévia ficam em duas colunas de
+   alturas diferentes — é o desenho (`lg:items-start`), não defeito. **Conforme.**
+2. **Comodidades e Regras** (passos 5 e 6): as grades `grade-par` fecham sem buraco (a última opção ímpar ocupa a linha). **Conforme.**
+3. **Revisão (Passo 10)**: "Antes de publicar" com a lista de conferência e o acordeão (quem opera, identidade, documento,
+   declarações); "Publicar anúncio" é o único botão cheio e fica desabilitado com o motivo escrito embaixo. **Conforme.**
+4. **`/qualificar`** (sem imóvel): leva ao cadastro novo, sem página própria no caminho. Com imóvel, o #2651 (E196) leva à Revisão
+   do rascunho. **Conforme.**
+5. **Página do anúncio** (`/imoveis/ube-001`): as listas "Comodidades" (19 itens) e "Trabalho" (3) têm a última linha com um item
+   só — são listas com ícone (E313), não cartões, então não é buraco. Galeria em mosaico (1 grande + 4) é o desenho. Os calendários
+   de 7 colunas terminam onde o mês termina. **Conforme.**
+6. **Início do painel, Meus imóveis e Para proprietários**: sem rolagem lateral, um h1, um botão cheio no máximo. **Conforme.**
+
+Nenhum defeito novo nesta passada. As linhas que seguem pendentes dependem de sessão real (laboratório, T838) ou de decisão de
+desenho com o Muse (`cabecalho-*`, `pouso-morador`, `cadastro-imovel-07-descricao`).
+
+## Páginas públicas e painel depois dos PRs de 05/11 — passada 12 (05/11, modo demonstração, 390 e 1280)
+
+Reconferência depois dos merges da tarde (#2697 E496, #2706 E510, #2710 E511, #2713 E597). Varredura por script local em
+8 rotas públicas (home, /buscar, página do anúncio, /empresas, /como-funciona, /ajuda, /para-proprietarios, /parceiros) e 8 do
+painel (Início, Meus imóveis, Conta, Notificações, Mensagens, Favoritos, edição do anúncio), nos dois tamanhos, com as verificações
+da casa: rolagem lateral, um h1, um botão cheio dentro do `main`, imagem quebrada, elemento fora da tela e fundo (todas em branco).
+Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Rolagem lateral**: nenhuma página rola de lado, nos dois tamanhos. **Conforme.**
+2. **Elementos além da borda**: todos dentro de faixas roláveis de propósito — tabela comparativa da home, filtros da /buscar,
+   galeria do anúncio, abas do /como-funciona, carrossel de fotos do Início e abas de Mensagens. O campo "Não preencha" do
+   /parceiros fica fora da tela de propósito (armadilha de robô). **Conforme.**
+3. **Botão cheio**: o "Entrar" do cabeçalho (1280) é do mockup `PUBLICO-A` e fica fora do `main`; dentro do `main`, no máximo um
+   por tela. **Conforme.**
+4. **Imagem quebrada**: nenhuma. **Conforme.**
+5. **Meus imóveis** (E510/E511): com 3 imóveis no demo a barra (abas, busca, ordem) não aparece — o limite é 4; foto e título
+   levam ao destino do cartão. **Conforme.**
+6. **Conta › Perfil a 1280**: no demo a coluna fica vazia (o título mora na coluna da direita, `xl`, e o Perfil não tem dados
+   sem Supabase) — é a linha `perfil-01-topo-espelho`, já conferida com sessão real (T838, #2435). **Sem mudança.**
+7. **Observação para decisão** (texto, não mudei): o rodapé público diz "Anunciar imóvel (com login)"; no resto do site o verbo é
+   "Entrar". Uma linha em `src/components/layout/footer.tsx` se o Daniel quiser trocar por "(é preciso entrar)".
+
+Nenhum defeito novo nesta passada. /socios e /decisao (E597) foram conferidas pelo T908 no lab-critico do #2713 (390 e 1280).
+
+## Varredura geral por blocos — passada 13 (05/11, modo demonstração, 390 e 1280)
+
+16 rotas públicas e 19 do painel (incluindo assistente de cadastro no passo 1 e na Revisão, Conta, Agenda, Simulador, Pedidos,
+Locações e Visitas), medidas no topo e no fim da rolagem, nas classes pedidas pela vigia: imagem vazia/quebrada, elemento fixo
+sobrepondo conteúdo, estouro horizontal e texto cortado. Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Imagem vazia ou quebrada**: nenhuma. **Conforme.**
+2. **Estouro horizontal**: nenhum. **Conforme.**
+3. **Texto cortado**: os únicos cortes medidos são textos só para leitor de tela (`sr-only`, 1 px de propósito — "Aceita pets",
+   "Imóveis encontrados", "— falta"). Nenhum texto visível cortado. **Conforme.**
+4. **Elemento fixo sobre o conteúdo**: a 390, a barra de navegação de baixo e o rodapé do assistente cobrem controles enquanto a
+   página rola (é o normal de uma barra fixa); no fim da rolagem, nenhum controle, título ou parágrafo fica por baixo deles nas
+   10 rotas apontadas (busca, ajuda, para proprietários, privacidade, Início, Meus imóveis, Revisão, Meus dados, Simulador, Pedidos),
+   nos dois tamanhos. **Conforme.**
+5. **E526** (diálogos de filtro da busca): reconferido na main de hoje com o T841 local — passa a 390 e 1280 (correção do #2457 de pé).
+
+Nenhum defeito novo nesta passada.
+
+## Rotas que nenhuma passada tinha medido — passada 14 (05/11, modo demonstração, 390 e 1280)
+
+14 rotas públicas (fale com a Viva, cidades, parceiros: ativar, buscar e fotógrafos, pedidos e novo pedido, preços, segurança,
+conferir, desligar alerta de busca e avisos, guia de fotos, excluir conta) e 18 do painel (contratos, fechamento, leads, recibos,
+ROI, serviços, tributação, verificação, painel do parceiro, orçamentos, Conta › avaliações, segurança, papéis e pagamentos,
+agenda, buscas, candidaturas, propostas), com as verificações da casa (um h1, um botão cheio no `main`, rolagem lateral) e as da
+passada 13 (imagem vazia/quebrada, fixo sobre conteúdo no fim da rolagem, texto cortado). Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Rolagem lateral, imagem quebrada, h1**: nenhuma rolagem lateral, nenhuma imagem quebrada, um h1 em cada tela. **Conforme.**
+2. **Texto cortado**: só textos para leitor de tela (`sr-only`: "Conversa com a assistente", "Sua mensagem para a Viva",
+   "Outro local: nome do lugar ou endereço"). **Conforme.**
+3. **Fixo sobre conteúdo**: a barra de baixo (390) e o botão "Fale com a Viva" (1280, /parceiros/buscar) cobrem itens só no meio
+   da rolagem; no fim, nada fica por baixo deles nas 6 rotas apontadas. **Conforme.**
+4. **Dois botões cheios em Conta › Como você usa a Viva** ("Começar um anúncio" e "Cadastrar meu serviço"): é o desenho do
+   mockup aprovado `perfil-03-papeis-com-fotos` (os dois cartões com botão verde cheio). Exceção do desenho à regra de um botão
+   cheio por tela; **não mudei** — fica para decisão do Muse se a regra deve vencer o mockup.
+5. **Redirecionamentos**: /precos → home, /dashboard/roi-imovel → Simulador, /dashboard/tributacao → Ferramentas, /cidades →
+   a cidade do demo. /pedidos e Conta › avaliações pedem sessão real (levam ao login no demo; ficam para o laboratório).
+
+Nenhum defeito novo nesta passada.
+
+## Tablet (768) depois das mudanças de 05/11 — passada 15 (05/11, modo demonstração)
+
+A largura de tablet não era medida desde a passada 4 (02/11). 24 rotas públicas e 37 do painel a 768 × 1024, com as
+verificações das passadas 13 e 14 (um h1, um botão cheio no `main`, rolagem lateral, imagem vazia/quebrada, fixo sobre conteúdo
+no fim da rolagem, texto cortado). Recortes de tela de cada rota.
+
+Achados (numerados):
+
+1. **Reembolso da caução** (`/dashboard/reembolsos`): a linha "Motivo · Valor · Evidência · Adicionar" tinha 4 colunas já a 640 px;
+   a 768 os campos se sobrepunham, o "Adicionar" saía da tela e a página rolava 101 px de lado (a 1280, o exemplo do Motivo
+   aparecia cortado). **Corrigido — PR #2742**: 1 coluna no celular, 2 a partir do tablet, campos que encolhem e com a altura do
+   botão. Guardas: teste de unidade e T909 (laboratório, 390/768/1280).
+2. **Assistente, passo 2 (Fotos)**: a varredura apontou "Dicas rápidas" sob o rodapé fixo — é o conteúdo do "Ver dicas de foto"
+   fechado (`<details>`), que não aparece na tela. Falso positivo. **Conforme.**
+3. **Demais rotas**: nenhuma rolagem lateral, nenhuma imagem quebrada, um h1 por tela; textos cortados só nos de leitor de tela.
+   Conta › Como você usa a Viva segue com os dois botões cheios do mockup `perfil-03` (passada 14, item 4). **Conforme.**
+4. **Modo morador do painel**: no demo o Início sempre mostra a visão combinada (o demo vence o modo); a medição do modo morador
+   fica para o laboratório.
+
+## E99 (PUBLICO-A) — páginas públicas no padrão aprovado, reconferência de 05/11 (modo demonstração, 1280 e 390)
+
+O E99 de 31/10 (#1669) conferiu /parceiros e /empresas (conformes) e corrigiu /como-funciona. Faltavam a home e as demais públicas.
+Critério do #1669: menu público novo, fundo clean (branco e `#f7f7f7`, nada de bege; camada escura só sobre foto), um botão cheio
+por tela no `main`, grades pares (sem buraco na última linha), fotos carregadas e sem rolagem lateral. Medido rolando cada página
+até o fim (para carregar as fotos), com recorte da página inteira.
+
+| Página | Fotos | Resultado |
+|---|---|---|
+| `/` (home; tabela comparativa intacta) | 26/26 | **Conforme, sem PR** |
+| `/para-proprietarios` | 11/11 | **Conforme, sem PR** |
+| `/ajuda` | 7/7 | **Conforme, sem PR** |
+| `/guias` | 2/2 | **Conforme, sem PR** (7 cartões: o último ocupa a linha, passada 9) |
+| `/seguranca` | 3/3 | **Conforme, sem PR** |
+| `/parceiros/buscar` | 12/12 | **Conforme, sem PR** — a "grade" apontada a 1280 é o formulário de busca (campos + "Buscar" numa linha, "Emite nota fiscal" na de baixo); categorias 6 numa linha |
+| `/parceiros/fotografos` | 2/2 | **Conforme, sem PR** — idem: formulário CEP/cidade + "Buscar" |
+| `/cidades/uberlandia` | 32/32 | **Conforme** — a última linha da lista de anúncios incompleta é a decisão de desenho da /buscar (passada 9) |
+| `/parceiros`, `/empresas`, `/como-funciona` | 21, 10, 18 | **Conformes** (reconferidas depois do #1669) |
+
+Nenhuma página pública precisou de correção nesta reconferência.

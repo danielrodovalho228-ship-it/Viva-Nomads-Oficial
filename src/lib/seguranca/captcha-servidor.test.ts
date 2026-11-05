@@ -24,14 +24,20 @@ test("captcha do chamado: token inválido ou falha de rede é recusado; token v�
   assert.equal((await verificarCaptchaServidor(token, { ...chaves, fetcher: ok })).ok, true);
 });
 
-test("captcha do chamado: abrirChamado confere o token só do visitante e os dois formulários o enviam", async () => {
+test("captcha do chamado: abrirChamado confere o token só do visitante e o formulário (único, E449) o envia", async () => {
   const { readFileSync } = await import("node:fs");
   const acoes = readFileSync("src/lib/data/atendimento-actions.ts", "utf8");
   assert.match(acoes, /if \(!user\) \{[\s\S]{0,400}verificarCaptchaServidor\(input\.captchaToken/);
-  for (const f of ["src/components/ajuda/central-ajuda.tsx", "src/components/ajuda/viva-chat.tsx"]) {
+  for (const f of ["src/components/ajuda/central-ajuda.tsx"]) {
     const t = readFileSync(f, "utf8");
     assert.match(t, /useCaptcha\(\)/, f);
     assert.match(t, /captchaToken:/, f);
     assert.match(t, /captcha\.reset\(\)/, f);
   }
+});
+
+test("E449: o chat não abre chamado por conta própria (sem abrirChamado, sem captcha próprio)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const chat = readFileSync("src/components/ajuda/viva-chat.tsx", "utf8");
+  assert.doesNotMatch(chat, /abrirChamado|useCaptcha/);
 });

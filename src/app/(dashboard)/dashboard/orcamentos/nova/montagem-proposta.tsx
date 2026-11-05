@@ -1,7 +1,8 @@
 "use client";
 
 import { CampoReais } from "@/components/ui/campo-reais";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -11,13 +12,14 @@ import { enviarProposta, type DadosMontagem } from "@/lib/data/propostas-actions
 import { calcularTotais, diasDosTermos, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
 import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente, mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
 import { formatBRLExato, periodoPorExtenso, precoDaProposta, rotuloTotalDaEstadia } from "@/lib/precos";
-import { resumoContratoEmDias } from "@/lib/contrato-blocos";
 import { diasDaSelecao } from "@/lib/imovel/selecao-estadia";
 import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { formatBRL, hojeBR } from "@/lib/utils";
-import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { MSG_ACAO_FALHOU, semQuedaDeRede } from "@/lib/erro-de-rede";
+import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
@@ -62,16 +64,26 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
   const saida = somarDias(t.dataEntrada, diasEstadia);
   const preco = precoDaProposta({ ...termos, valorMensal: tot.valorMensal });
   // A caução do 1º bloco pela mesma regra do contrato (50% do bloco proporcional, blocos contados em dias).
-  const caucao = resumoContratoEmDias(diasEstadia, tot.valorMensal, dados.taxa).blocos[0];
+  // E601: a mesma função que a proposta recebida usa (a moradora vê o mesmo valor).
+  const caucao = caucaoDaProposta(termos, tot.valorMensal);
   const mudarDias = (dias: number) => setT((x) => ({ ...x, dias, meses: mesesDeReferencia(dias) }));
   const pessoasN = pessoas ? Number(pessoas) : null;
   const problema = validarTermos(termos, dados.limites, hojeBR(), pessoasN);
   const set = <K extends keyof TermosProposta>(k: K, v: TermosProposta[K]) => setT((x) => ({ ...x, [k]: v }));
 
+  const avisoRef = useRef<HTMLDivElement>(null);
+  function mostrarErro(texto: string) {
+    setErro(texto);
+    // O aviso fica ao lado do botão; rola para a vista (no celular o resumo fica embaixo).
+    requestAnimationFrame(() => avisoRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }));
+  }
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
-    if (problema) return setErro(problema);
+    // E582: sem o documento do dono, o portão fala aqui, no envio, sem chamar o servidor.
+    if (!dados.documentoOk) return mostrarErro(MSG_DOCUMENTO.proposta);
+    if (problema) return mostrarErro(problema);
     setEnviando(true);
     const r = await semQuedaDeRede(enviarProposta({
       leadId: dados.leadId,
@@ -94,7 +106,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
       mensagem: mensagem || undefined,
     }));
     setEnviando(false);
-    if (!r.ok) return setErro(r.error);
+    // E582: nenhum envio falha sem mensagem visível.
+    if (!r.ok) return mostrarErro(r.error || MSG_ACAO_FALHOU);
     router.push(`/dashboard/propostas/${r.id}`);
   }
 
@@ -254,18 +267,36 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               {caucao && (
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted">Caução (50% do 1º bloco, {caucao.dias} dias)</dt>
-                  <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.caucao)}</dd>
+                  <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.valor)}</dd>
                 </div>
               )}
             </dl>
             <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="proposta-taxa-dono">
               Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, diasEstadia / 30)}.
             </p>
-            {erro && (
-              <p className="mt-3 text-[13px] text-red-600" role="alert" data-testid="proposta-erro">
-                {erro}
-              </p>
+            {!dados.documentoOk && erro !== MSG_DOCUMENTO.proposta && (
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] text-ink" data-testid="proposta-trava-documento">
+                {MSG_DOCUMENTO.proposta}{" "}
+                <Link href={LINK_DOCUMENTO} className="font-semibold text-forest underline">
+                  Informar meu CPF
+                </Link>
+              </div>
             )}
+            <div ref={avisoRef}>
+              {erro && (
+                <p className="mt-3 text-[13px] text-red-600" role="alert" data-testid="proposta-erro">
+                  {erro}
+                  {erro === MSG_DOCUMENTO.proposta && (
+                    <>
+                      {" "}
+                      <Link href={LINK_DOCUMENTO} className="font-semibold text-forest underline" data-testid="proposta-erro-documento">
+                        Informar meu CPF
+                      </Link>
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
             <Button type="submit" className="mt-4 w-full" disabled={enviando} data-testid="enviar-proposta">
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar proposta
             </Button>

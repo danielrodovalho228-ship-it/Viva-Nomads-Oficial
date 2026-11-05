@@ -123,7 +123,8 @@ export function visitaNaSemana(agendadoPara: string | null, agora: Date): boolea
 }
 
 // ── Item 7: admin "Avaliações do imóvel" (o "Avaliações" do admin é o das estadias) ───────────────────────────
-export const TITULO_ADMIN = "Avaliações do imóvel";
+// E479: o rótulo diz o que a tela é (a rede de avaliadores: credenciamento, rodízio e preço) e bate com /admin/avaliadores.
+export const TITULO_ADMIN = "Avaliadores";
 
 /** O botão diz a ação (QA do #1111, item 2), não o estado de destino. A aprovação única do 62-B3 é "Aprovar para teste". */
 export function rotuloDecisao(de: StatusCredenciamento, para: StatusCredenciamento): string {

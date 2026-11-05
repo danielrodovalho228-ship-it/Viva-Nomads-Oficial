@@ -12,6 +12,8 @@ import { rotuloTaxaServico } from "../cobranca/regra.ts";
 export type PapelEstadia = "proprietario" | "inquilino";
 
 export const HREF_ESTADIA = (contratoId: string): string => `/dashboard/estadia/${contratoId}`;
+/** E539 (i): o contrato do morador mora dentro da URL da estadia (o antigo /dashboard/locacoes/<id> redireciona para cá). */
+export const HREF_CONTRATO_DA_ESTADIA = (contratoId: string): string => `${HREF_ESTADIA(contratoId)}/contrato`;
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 

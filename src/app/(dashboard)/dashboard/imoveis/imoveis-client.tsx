@@ -5,12 +5,12 @@ import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { gruposRascunhosDuplicados, idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Award, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
-import { ROTULO_NIVEL } from "@/config/niveis";
-import { textoNivelCartao } from "@/lib/cartao-sintese";
+import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { SelosFoto } from "@/components/property/selos-foto";
 import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -25,6 +25,11 @@ import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
+import { destinoDoCartao } from "@/lib/anuncio/destino-cartao";
+import { ORDENS, POR_PAGINA, abasVisiveis, filtrarEOrdenar, juntarCopiasAoPai, paginar, type AbaEstado, type OrdemLista } from "@/lib/anuncio/lista-meus-imoveis";
+
+/** E511: a barra da lista (abas, busca, ordem) aparece a partir desta quantidade de imóveis. */
+const MIN_BARRA = 4;
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -65,6 +70,17 @@ export function MyPropertiesClient({
   const [copiasAbertas, setCopiasAbertas] = useState<Set<string>>(new Set());
   const grupoAberto = (id: string) => grupos.some((g) => g.includes(id) && copiasAbertas.has(g[0]));
   const visiveis = properties.filter((p) => !copias.has(p.id) || grupoAberto(p.id));
+  // E511: abas de estado, busca, ordem e "Mostrar mais" (antes, 27+ cartões de uma vez). A barra aparece a partir de
+  // MIN_BARRA imóveis; abaixo disso a lista é curta e a barra só ocuparia lugar.
+  const [aba, setAba] = useState<AbaEstado>("todos");
+  const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<OrdemLista>("recentes");
+  const [paginas, setPaginas] = useState(1);
+  const comBarra = visiveis.length >= MIN_BARRA;
+  // E514: as cópias abertas ficam logo depois do cartão-pai (antes, iam para o fim da lista).
+  const filtrada = juntarCopiasAoPai(comBarra ? filtrarEOrdenar(visiveis, { aba, busca, ordem }) : visiveis, copiasDe);
+  const pagina = paginar(filtrada, paginas);
+  const abas = abasVisiveis(visiveis);
 
   async function excluirRascunho(id: string) {
     setErroExcluir(null);
@@ -107,10 +123,79 @@ export function MyPropertiesClient({
         />
       ) : (
         <div className="grid gap-4">
-          {visiveis.map((p) => {
+          {comBarra && (
+            <div className="grid gap-3" data-testid="imoveis-barra">
+              <div role="group" aria-label="Estado do anúncio" className="flex gap-2 overflow-x-auto" data-testid="imoveis-abas">
+                {abas.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    aria-pressed={aba === a.id}
+                    onClick={() => {
+                      setAba(a.id);
+                      setPaginas(1);
+                    }}
+                    className={cn(
+                      "inline-flex h-11 shrink-0 items-center gap-1 rounded-lg border px-3 text-sm font-semibold",
+                      aba === a.id ? "border-forest bg-sage-100 text-forest" : "border-line bg-white text-ink",
+                    )}
+                    data-testid={`imoveis-aba-${a.id}`}
+                  >
+                    {a.rotulo} <span className="tabular-nums text-muted">({a.n})</span>
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_14rem]">
+                <label className="block">
+                  <span className="sr-only">Buscar por nome, bairro ou cidade</span>
+                  <input
+                    type="search"
+                    value={busca}
+                    onChange={(e) => {
+                      setBusca(e.target.value);
+                      setPaginas(1);
+                    }}
+                    placeholder="Buscar por nome, bairro ou cidade"
+                    className="h-11 w-full rounded-lg border border-line bg-white px-3 text-base text-ink"
+                    data-testid="imoveis-busca"
+                  />
+                </label>
+                <label className="block">
+                  <span className="sr-only">Ordenar</span>
+                  <select
+                    value={ordem}
+                    onChange={(e) => {
+                      setOrdem(e.target.value as OrdemLista);
+                      setPaginas(1);
+                    }}
+                    className="h-11 w-full rounded-lg border border-line bg-white px-3 text-base text-ink"
+                    data-testid="imoveis-ordem"
+                  >
+                    {ORDENS.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className="text-sm text-muted" role="status" data-testid="imoveis-contagem">
+                {filtrada.length === 1 ? "1 imóvel" : `${filtrada.length} imóveis`}
+              </p>
+            </div>
+          )}
+          {comBarra && filtrada.length === 0 && (
+            <p className="rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink" data-testid="imoveis-sem-resultado">
+              Nenhum imóvel com esse filtro. Troque a aba ou apague a busca.
+            </p>
+          )}
+          {pagina.visiveis.map((p) => {
             const demoItem = demoOn;
             const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
             const comp = prontidao[p.id];
+            // E510: foto e título levam ao mesmo destino dos botões do cartão (ativo → página; rascunho → onde parou;
+            // pausado → editor). Na demonstração, o título segue como texto (não há edição de verdade).
+            const destino = destinoDoCartao({ id: p.id, status: p.status, retomar: hrefRetomarRascunho(prontidao[p.id], p.id) });
             return (
               <div
                 key={p.id}
@@ -118,17 +203,28 @@ export function MyPropertiesClient({
                 data-testid="meu-anuncio"
                 data-imovel={p.id}
               >
-                {hasPhoto(p.photos[0]) ? (
-                  <BrandImage
-                    src={p.photos[0]}
-                    alt={p.title}
-                    sizes="200px"
-                    className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
+                {/* E510: a foto é clicável em todo estado (o mesmo destino do título; fora da ordem de tabulação, o título já é o
+                    link). `contents`: o link não cria caixa — a foto segue 4:3 e sem esticar com o cartão (E311, #1724). */}
+                {/* E416 (05/11): os selos do anúncio sobre a foto, a mesma fileira da vitrine (sem coração aqui). */}
+                <div className="relative w-full shrink-0 sm:w-48 sm:self-start" data-testid="meu-anuncio-foto">
+                  <Link href={destino} tabIndex={-1} aria-hidden className="contents" data-testid="cartao-foto-link">
+                    {hasPhoto(p.photos[0]) ? (
+                      <BrandImage
+                        src={p.photos[0]}
+                        alt={p.title}
+                        sizes="200px"
+                        className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
+                      />
+                    ) : (
+                      // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
+                      <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
+                    )}
+                  </Link>
+                  <SelosFoto
+                    semCoracao
+                    selos={selosDaFoto({ precoJusto: !!p.precoJusto, pets: !!p.petsAllowed, nivel: p.nivel, nivelVistoriado: p.nivelVistoriado, negocia: !!p.negociacao?.aceita })}
                   />
-                ) : (
-                  // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
-                  <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
-                )}
+                </div>
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* 64-B: o selo vira o menu de pausa (demonstração: só o selo). */}
@@ -149,12 +245,7 @@ export function MyPropertiesClient({
                       )}
                     </span>
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                    {/* E416 (retrabalho): o selo de nível do anúncio, com o mesmo texto do cartão da vitrine. */}
-                    {p.nivel && p.nivel !== "em_adequacao" && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-100 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
-                        <Award className="h-3.5 w-3.5" aria-hidden /> {textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado)}
-                      </span>
-                    )}
+                    {/* E416 (05/11): o nível foi para os selos da foto (acima), junto dos outros. */}
                     {demoItem && <DemoBadge />}
                     {/* E383: o mais recente do grupo diz quantas cópias há e abre/fecha as cópias; cada cópia aberta se
                         marca para o dono decidir excluir. */}
@@ -175,12 +266,12 @@ export function MyPropertiesClient({
                       </span>
                     )}
                   </div>
-                  {/* Só anúncio no ar tem página pública: nos outros o título é texto (rascunho e pausado davam 404 —
-                      t249 D-V7) e a ação é "Continuar editando" ou "Editar". */}
-                  {demoItem || p.status !== "active" ? (
+                  {/* E510: o título é link em todo estado. Só o anúncio no ar tem página pública (rascunho e pausado davam 404 —
+                      t249 D-V7): nos outros ele leva à edição, como "Continuar editando" / "Editar". */}
+                  {demoItem ? (
                     <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
-                    <Link href={`/imoveis/${p.id}`} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest">
+                    <Link href={destino} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest" data-testid="cartao-titulo-link">
                       {p.title}
                     </Link>
                   )}
@@ -317,15 +408,11 @@ export function MyPropertiesClient({
                           </ButtonLink>
                         )}
                         {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. E196: "Qualificação" abre as MESMAS 5 telas
-                            do assistente (no rascunho); a página longa de requisitos e selo tem nome próprio. */}
+                            do assistente (no rascunho) e é o único caminho — os requisitos e o documento ficam no "Antes de
+                            publicar" da Revisão (Passo 10); a antiga página longa (/qualificar) foi absorvida. */}
                         {p.status === "draft" && (
                           <ButtonLink href={`/dashboard/imoveis/novo?draft=${p.id}&qualificacao=1`} variant="outline" size="sm" data-testid="rascunho-qualificacao">
                             Qualificação
-                          </ButtonLink>
-                        )}
-                        {p.status === "draft" && (
-                          <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm" data-testid="rascunho-requisitos-selo">
-                            Requisitos e selo
                           </ButtonLink>
                         )}
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
@@ -350,6 +437,12 @@ export function MyPropertiesClient({
               </div>
             );
           })}
+          {/* E511: "Mostrar mais" soma outra página (12 cartões) — nunca 27+ cartões de uma vez. */}
+          {pagina.restantes > 0 && (
+            <Button type="button" variant="secondary" onClick={() => setPaginas((n) => n + 1)} className="justify-self-center" data-testid="imoveis-mostrar-mais">
+              Mostrar mais ({Math.min(pagina.restantes, POR_PAGINA)} de {pagina.restantes})
+            </Button>
+          )}
         </div>
       )}
     </>

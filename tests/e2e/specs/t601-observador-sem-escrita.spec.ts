@@ -33,8 +33,11 @@ test.describe("T601 — 0253: o admin observador lê, mas não escreve direto na
     const emailAdm = `adm.t601.${sufixo}@lab.vivanomads.test`;
     ids.obs = await criarConta({ email: emailObs, nome: "Olivia Observadora", role: "tenant" }, senha);
     await adm().from("profiles").update({ is_teste: true }).eq("id", ids.obs);
-    const { error: ePromo } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
-    if (ePromo) throw ePromo;
+    // Só cabe um observador por vez (promover_qa_admin): espera outra spec (t596, t604, t650, t655) soltar o dela.
+    test.setTimeout(300_000);
+    await expect
+      .poll(async () => (await adm().rpc("promover_qa_admin", { p_id: ids.obs })).error?.message ?? "ok", { timeout: 180_000, intervals: [5_000] })
+      .toBe("ok");
     ids.adm = await criarAdmin(emailAdm, "Abel Admin", senha);
     ids.dono = await criarConta({ email: `dono.t601.${sufixo}@lab.vivanomads.test`, nome: "Dora Dona", role: "owner" }, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio t601 ${sufixo}`, { ativo: true });

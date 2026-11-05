@@ -126,7 +126,7 @@ test("Segurança: proteções da Viva sempre; sem declaração, convida a pergun
   assert.match(decl.resumo, /Acesso: Chave/);
   // Proteções da Viva primeiro, depois o que o anunciante declarou.
   assert.deepEqual(decl.detalhe.slice(0, PROTECOES_VIVA.length), [...PROTECOES_VIVA]);
-  assert.ok(decl.detalhe.includes("Acesso: Chave"));
+  assert.ok(!decl.detalhe.includes("Acesso: Chave"), "E532: o declarado mora no bloco Privacidade");
   assert.ok(!decl.detalhe.includes(SEGURANCA_SEM_DECLARACAO));
 });
 

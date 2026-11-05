@@ -12,12 +12,14 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import {
+  AVISO_ATUALIZAR_ACEITO,
   AVISO_RECUSAR_ORCAMENTO,
   AVISO_RECUSAR_PEDIDO,
   MOTIVO_RECUSA_MAX,
   proximoPasso,
   ROTULO_REGISTRO_SEM_DINHEIRO,
   rotuloStatus,
+  saidaDoAceitoLiberada,
   TEXTO_CONTATO_ANTES_DO_ACEITE,
   TEXTO_DIVISAO_NA_ORIGEM,
   TEXTO_PAGAMENTO_INATIVO,
@@ -321,16 +323,22 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
   const parceiro = d.papel === "parceiro";
   const blocos: React.ReactNode[] = [];
 
-  if (parceiro && ["solicitado", "orcado"].includes(d.status)) {
+  // E462: no "Orçamento aceito" (sem pagamento registrado) o parceiro tem as mesmas saídas do pedido recebido.
+  if (parceiro && ["solicitado", "orcado", "aceito"].includes(d.status) && saidaDoAceitoLiberada(d.status, d.pagamentoStatus)) {
     blocos.push(
       <div key="orcar" className="grid gap-2" data-testid="pedido-orcar">
+        {d.status === "aceito" && (
+          <p className="text-sm text-muted" data-testid="pedido-aviso-atualizar-aceito">
+            {AVISO_ATUALIZAR_ACEITO}
+          </p>
+        )}
         <label className="text-sm font-semibold text-ink" htmlFor="pedido-valor-campo">
           Valor do serviço
         </label>
         <CampoReais id="pedido-valor-campo" value={valor} onChange={setValor} centavos />
         {valor ? <p className="text-sm text-muted">{textoDivisaoParceiro(valor)}</p> : null}
         <Button variant="primary" disabled={pendente || !valor} onClick={() => rodar("enviar-orcamento", { valor }, "Orçamento enviado.")} data-testid="pedido-enviar-orcamento">
-          {d.status === "orcado" ? "Atualizar orçamento" : "Enviar orçamento"}
+          {d.status === "solicitado" ? "Enviar orçamento" : "Atualizar orçamento"}
         </Button>
         <label className="mt-3 text-sm font-semibold text-ink" htmlFor="pedido-motivo">
           Não vai atender?

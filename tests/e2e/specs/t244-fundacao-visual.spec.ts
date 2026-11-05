@@ -7,7 +7,7 @@ import { test, expect, type Page, type Locator, type APIRequestContext } from "@
       (celular: de baixo para cima; computador: painel lateral);
    3. favoritos; 4. /cidades/uberlandia; 5. "Imóveis parecidos" na página do imóvel;
    6. esqueleto no formato do cartão com rede lenta simulada (page.route com atraso);
-   7. coração: 1 toque salva, outro desfaz (aria-pressed);
+   7. coração do visitante: aria-pressed falso e o toque leva à porta de login (E448);
    8. botões: altura 52 (celular) / 56 (computador), raio 8, cor (getComputedStyle);
    9. adendo: cartão na ordem nova (bairro + nota → título em até 2 linhas → total do mês · total da estadia →
       síntese → disponibilidade; 1 selo; carrossel com pontos), cinzas do texto corrido (#3F3F3F; #6A6A6A só
@@ -80,10 +80,9 @@ async function conferirCartao(cartao: Locator, onde: string) {
   expect(titulo.peso).toBe("600");
   const fonte = await cartao.getByTestId("cartao-local").evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
   expect(fonte, `${onde}: cartão 16/600`).toBe(16);
-  // Adendo: no máximo 1 selo, em pill branca.
-  const selos = cartao.getByTestId("selos-foto").locator(":scope > *");
-  expect(await selos.count(), `${onde}: no máximo 1 selo`).toBeLessThanOrEqual(1);
-  if (await selos.count()) expect((await estilo(selos.first())).fundo).toBe(BRANCO);
+  // E416 (05/11): os selos empilhados sobre a foto, cada um em pill branca, nenhum sobre o coração.
+  const selos = cartao.getByTestId("selos-foto").locator("[data-selo]");
+  for (let i = 0; i < (await selos.count()); i++) expect((await estilo(selos.nth(i))).fundo, `${onde}: selo em pill branca`).toBe(BRANCO);
   // Adendo: ordem bairro + nota → título (até 2 linhas) → total → síntese → disponibilidade (de cima para baixo).
   const ys: number[] = [];
   for (const id of ["cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"]) {
@@ -350,29 +349,21 @@ test.describe("T244 — Fundação visual (Prompt 40)", () => {
         await expect(page.getByTestId("busca")).toBeVisible({ timeout: 30_000 });
       });
 
-      test("7. coração: 1 toque salva, outro desfaz (aria-pressed)", async ({ page }) => {
+      test("7. coração do visitante: aria-pressed falso e o toque leva à porta de login (E448)", async ({ page }) => {
         semDialogo(page);
         await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
         await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
         const cartao = page.getByTestId("cartao-imovel").first();
         const coracao = cartao.getByTestId("coracao");
-        const id = (await cartao.locator("a").first().getAttribute("href"))!.replace("/imoveis/", "");
-        const guardados = () => page.evaluate(() => JSON.parse(localStorage.getItem("vivanomads-favorites") ?? "{}").state?.ids ?? []);
-        await expect(coracao).toHaveAttribute("aria-pressed", "false");
-        // O toque antes da hidratação é repetido (como no T160).
-        await expect(async () => {
-          if ((await coracao.getAttribute("aria-pressed")) !== "true") await coracao.click();
-          await expect(coracao).toHaveAttribute("aria-pressed", "true", { timeout: 3_000 });
-        }).toPass({ timeout: 30_000 });
-        await expect(coracao).toHaveAccessibleName("Remover dos favoritos");
-        expect(await guardados()).toContain(id);
-        expect(page.url(), "o toque não navega").toContain("/buscar");
-        await cartao.screenshot({ path: `${SAIDA}/t244-coracao-salvo-${largura}.png` });
-        await coracao.click();
         await expect(coracao).toHaveAttribute("aria-pressed", "false");
         await expect(coracao).toHaveAccessibleName("Adicionar aos favoritos");
-        expect(await guardados()).not.toContain(id);
-        await cartao.screenshot({ path: `${SAIDA}/t244-coracao-desfeito-${largura}.png` });
+        await cartao.screenshot({ path: `${SAIDA}/t244-coracao-${largura}.png` });
+        // O toque antes da hidratação é repetido até a navegação acontecer.
+        await expect(async () => {
+          if (new URL(page.url()).pathname !== "/auth") await coracao.click({ timeout: 3_000 });
+          await page.waitForURL((u) => u.pathname === "/auth", { timeout: 3_000 });
+        }).toPass({ timeout: 30_000 });
+        expect(new URL(page.url()).searchParams.get("motivo")).toBe("favorito");
       });
 
       test("8. botões das telas da matriz: altura, raio e cor; uma sombra só (a do flutuante)", async ({ page }) => {

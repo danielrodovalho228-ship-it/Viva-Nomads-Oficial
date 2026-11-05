@@ -34,7 +34,8 @@ test("servidor da candidatura valida o motivo, cai no perfil e grava só em cand
   const a = ler("src/lib/data/actions.ts");
   assert.match(a, /kind === "candidatura"[\s\S]{0,200}validarMotivoEstadia\(motivoEstadia/);
   assert.match(a, /from\("profiles"\)\.select\("motivo_estadia"\)\.eq\("id", user\.id\)/);
-  assert.match(a, /\.\.\.\(motivoLead \? \{ motivo_estadia: motivoLead \} : \{\}\)/);
+  // E581: o motivo entra pelos campos únicos da candidatura (insert e atualização da candidatura repetida).
+  assert.match(a, /camposDaCandidatura\(\{[\s\S]{0,300}motivo: motivoLead,/);
 });
 
 test("lista do proprietário lê o motivo pelo servidor e nunca expõe a chave crua", () => {

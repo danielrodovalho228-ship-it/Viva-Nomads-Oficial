@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BadgeCheck, BadgePercent, PawPrint, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
@@ -8,7 +8,8 @@ import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
-import { ROTULO_SELO_UNICO, seloDoCartao, type SeloUnico } from "@/lib/card-selos";
+import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { SelosFoto } from "@/components/property/selos-foto";
 import { MarcaImovel } from "@/components/property/marca-imovel";
 import { FotosCartao, SetasFotos } from "@/components/property/fotos-cartao";
 import { linhaLocalizacao } from "@/lib/localizacao";
@@ -31,18 +32,24 @@ export function PropertyCard({
   // Prompt 47: preço com contexto pela função única (mensal · total do período · disponível a partir de).
   const preco = rotuloPreco({ mensal: inc.total, meses: mesesDoCartao(periodMonths, property.minPeriodDays), disponivelEm: property.availableFrom });
   const sintese = itensSintese(property);
-  const selo = seloDoCartao({
+  // E416 (05/11): o nível virou selo da foto — sai da linha-síntese (nada repetido).
+  const linhaSintese = sintese.filter((i) => i.chave !== "nivel");
+  // E416 (05/11): todos os selos do imóvel, empilhados sobre a foto (antes: no máximo 1, e nenhum de nível).
+  const selos = selosDaFoto({
     // Verificação do dono só quando o dado chega com o anúncio; exemplo nunca.
     verificado: !exemplo && property.owner?.verified === true,
     precoJusto: !!property.precoJusto,
     pets: !!property.petsAllowed,
+    nivel: property.nivel,
+    nivelVistoriado: property.nivelVistoriado,
+    negocia: !!property.negociacao?.aceita,
   });
 
   return (
     // Prompt 40 + adendo + QA do Muse: cartão SEM caixa, borda ou sombra. Ordem CONGELADA: foto 4:3 (raio 12,
     // carrossel com pontos, coração no canto) → bairro + nota → título (até 2 linhas) → "R$ X/mês · R$ Y em
     // N meses" (N = 1: só "R$ X/mês") → quartos · banheiros · m² · mobiliado → "Disponível a partir de [data]".
-    // No máximo 1 selo. "Ideal para" fica na página do imóvel.
+    // Selos empilhados sobre a foto (E416). "Ideal para" fica na página do imóvel.
     // O coração e as setas ficam FORA do <a> (botão dentro de link é HTML inválido): ordem 826719b1, D12.
     <div className="group relative h-full" data-testid="cartao-imovel">
     <Link
@@ -55,10 +62,8 @@ export function PropertyCard({
         ) : (
           <PhotoPlaceholder label={property.photos[0]} className="h-full w-full" />
         )}
-        {/* No máximo 1 selo (adendo do Prompt 40): Proprietário verificado → Preço justo → Aceita pets. */}
-        <div className="absolute left-3 top-3 flex" data-testid="selos-foto">
-          {selo && <Selo id={selo} />}
-        </div>
+        {/* E416: todos os selos, em fileira no canto superior esquerdo (quebra linha; nunca sobre o coração). */}
+        <SelosFoto selos={selos} />
         {/* Marca do usuário logado ("Visto" / "Você já contatou"): canto inferior esquerdo. */}
         <div className="absolute bottom-3 left-3">
           <MarcaImovel propertyId={property.id} />
@@ -109,25 +114,19 @@ export function PropertyCard({
         </p>
 
         {/* Linha-síntese: cada item só com o dado; a linha some se não houver nenhum (src/lib/cartao-sintese.ts). */}
-        {sintese.length > 0 && (
+        {linhaSintese.length > 0 && (
           <p className="flex flex-wrap items-center gap-x-1 text-sm text-muted" data-testid="cartao-sintese">
-            {sintese.map((item, i) => (
+            {linhaSintese.map((item, i) => (
               <span key={item.chave} className="inline-flex items-center gap-x-1">
                 {i > 0 && <span aria-hidden>·</span>}
                 <span
-                  className={item.chave === "area" ? "tabular-nums" : item.chave === "nivel" ? "font-medium text-ink" : undefined}
-                  data-testid={item.chave === "quartos" ? "card-quartos" : item.chave === "nivel" ? "card-nivel" : undefined}
+                  className={item.chave === "area" ? "tabular-nums" : undefined}
+                  data-testid={item.chave === "quartos" ? "card-quartos" : undefined}
                 >
                   {item.texto}
                 </span>
               </span>
             ))}
-            {property.petsAllowed && (
-              <span className="ml-1 inline-flex items-center" title="Aceita pets">
-                <PawPrint className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">Aceita pets</span>
-              </span>
-            )}
           </p>
         )}
 
@@ -138,13 +137,7 @@ export function PropertyCard({
           </p>
         )}
 
-        {/* E439: o dono aceita negociar (properties.negociacao, o mesmo dado do anúncio). Fica no fim, fora do selo
-            único da foto e da ordem congelada acima. */}
-        {property.negociacao?.aceita && (
-          <p className="text-sm font-medium text-forest" data-testid="cartao-negocia">
-            Aceita negociação
-          </p>
-        )}
+        {/* E439 → E416: o "Aceita negociação" virou selo da foto (properties.negociacao, o mesmo dado do anúncio). */}
       </div>
     </Link>
     {fotos.length > 1 && <SetasFotos />}
@@ -152,18 +145,5 @@ export function PropertyCard({
       <FavoriteButton propertyId={property.id} />
     </div>
     </div>
-  );
-}
-
-/** Selo único sobre a foto: pill branca com ícone e nome, sem sombra. Selo 12/600. */
-function Selo({ id }: { id: SeloUnico }) {
-  const Icone = id === "verificado" ? BadgeCheck : id === "precoJusto" ? BadgePercent : PawPrint;
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-xs font-semibold text-ink"
-      data-testid={id === "precoJusto" ? "selo-preco-justo" : `selo-${id}`}
-    >
-      <Icone className="h-3.5 w-3.5" aria-hidden /> {ROTULO_SELO_UNICO[id]}
-    </span>
   );
 }

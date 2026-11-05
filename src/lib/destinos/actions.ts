@@ -1,5 +1,6 @@
 "use server";
 
+import { recusaObservador } from "@/lib/qa/observador";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -36,6 +37,9 @@ const aposMudar = (slug?: string) => {
 export async function salvarDestino(_: ResultadoDestino | null, form: FormData): Promise<ResultadoDestino> {
   const adm = await exigirAdmin();
   if (!adm) return { ok: false, erro: "Sem permissão." };
+  // E477: configuração da plataforma — o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(adm.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const v = validarDestino(Object.fromEntries(form.entries()));
   if (!v.ok) return { ok: false, erro: v.erro };
   const d = v.destino;
@@ -63,6 +67,9 @@ export async function salvarDestino(_: ResultadoDestino | null, form: FormData):
 export async function alternarDestino(id: string, ativar: boolean): Promise<ResultadoDestino> {
   const adm = await exigirAdmin();
   if (!adm) return { ok: false, erro: "Sem permissão." };
+  // E477: configuração da plataforma — o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(adm.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   if (!/^[0-9a-f-]{36}$/.test(id)) return { ok: false, erro: "Destino inválido." };
   const { data, error } = await adm.db.from("destinos").update({ ativo: Boolean(ativar) }).eq("id", id).select("slug");
   if (error) {

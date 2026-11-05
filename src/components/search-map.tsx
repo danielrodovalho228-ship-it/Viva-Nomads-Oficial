@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
+import { usePreviaNoHover } from "@/components/busca/previa-hover";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 import { afastarPins } from "@/lib/busca/pins-sem-sobreposicao";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
@@ -149,6 +150,24 @@ function SearchMapbox({
   // Refs com os valores mais recentes — para os listeners dos pins não
   // precisarem recriar o mapa a cada render.
   const onHoverRef = useRef(onHover);
+  // E442: prévia do cartão no hover do preço (o mesmo cartão do clique).
+  const previa = usePreviaNoHover();
+  const previaRef = useRef(previa);
+  useEffect(() => {
+    previaRef.current = previa;
+  });
+  /** O cartão aberto: o do clique (fica) ou o da prévia do hover. */
+  const abertoId = selectedId ?? previa.id;
+  // E442: entrar no cartão mantém a prévia aberta (dá para clicar); sair fecha com a mesma folga do preço.
+  useEffect(() => {
+    if (!popupEl) return;
+    popupEl.addEventListener("mouseenter", previa.manter);
+    popupEl.addEventListener("mouseleave", previa.sair);
+    return () => {
+      popupEl.removeEventListener("mouseenter", previa.manter);
+      popupEl.removeEventListener("mouseleave", previa.sair);
+    };
+  }, [popupEl, previa.manter, previa.sair]);
   const propsRef = useRef(properties);
   const focusRef = useRef(focus);
   useEffect(() => {
@@ -201,8 +220,15 @@ function SearchMapbox({
       el.dataset.testid = "pin-mapa";
       el.dataset.id = p.id;
       el.textContent = rotuloPreco({ mensal: precoDeBusca(p) }).valor;
-      el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
-      el.addEventListener("mouseleave", () => onHoverRef.current(null));
+      // E442: o hover no preço abre o cartão (prévia); sair fecha com folga para chegar ao cartão.
+      el.addEventListener("mouseenter", () => {
+        onHoverRef.current(p.id);
+        previaRef.current.entrarPin(p.id);
+      });
+      el.addEventListener("mouseleave", () => {
+        onHoverRef.current(null);
+        previaRef.current.sair();
+      });
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectRef.current?.(p.id);
@@ -323,7 +349,10 @@ function SearchMapbox({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const fechar = () => onSelectRef.current?.(null);
+    const fechar = () => {
+      onSelectRef.current?.(null);
+      previaRef.current.limpar();
+    };
     map.on("click", fechar);
     return () => {
       map.off("click", fechar);
@@ -333,16 +362,16 @@ function SearchMapbox({
   // Realce do pin (hover ou aberto) — hover NÃO abre nada, só muda a cor.
   useEffect(() => {
     markersRef.current.forEach(({ el }, id) => {
-      el.className = pinClass(id === activeId || id === selectedId);
+      el.className = pinClass(id === activeId || id === abertoId);
     });
-  }, [activeId, selectedId, sig]);
+  }, [activeId, abertoId, sig]);
 
   // Card do imóvel ancorado no pin clicado.
   useEffect(() => {
     const map = mapRef.current;
     popupRef.current?.remove();
     popupRef.current = null;
-    const p = selectedId ? propsRef.current.find((x) => x.id === selectedId) : null;
+    const p = abertoId ? propsRef.current.find((x) => x.id === abertoId) : null;
     if (!map || !p || !popupEl) return;
     popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 18, maxWidth: "none", className: "vn-popup" })
       .setLngLat([p.lng, p.lat])
@@ -355,15 +384,19 @@ function SearchMapbox({
       mostrarCartaoNaTela(popupEl);
     });
     return () => cancelAnimationFrame(quadro);
-  }, [selectedId, sig, popupEl]);
+  }, [abertoId, sig, popupEl]);
 
-  const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
-  useFecharCartaoComEsc(!!aberto, () => onSelect?.(null));
+  const aberto = abertoId ? properties.find((x) => x.id === abertoId) : null;
+  const fechar = () => {
+    onSelect?.(null);
+    previa.limpar();
+  };
+  useFecharCartaoComEsc(!!aberto, fechar);
 
   return (
     <>
       <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-xl border border-line", className)} />
-      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
+      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={fechar} />, popupEl)}
     </>
   );
 }
@@ -407,6 +440,24 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   const focusLayerRef = useRef<L.LayerGroup | null>(null);
 
   const onHoverRef = useRef(onHover);
+  // E442: prévia do cartão no hover do preço (o mesmo cartão do clique).
+  const previa = usePreviaNoHover();
+  const previaRef = useRef(previa);
+  useEffect(() => {
+    previaRef.current = previa;
+  });
+  /** O cartão aberto: o do clique (fica) ou o da prévia do hover. */
+  const abertoId = selectedId ?? previa.id;
+  // E442: entrar no cartão mantém a prévia aberta (dá para clicar); sair fecha com a mesma folga do preço.
+  useEffect(() => {
+    if (!popupEl) return;
+    popupEl.addEventListener("mouseenter", previa.manter);
+    popupEl.addEventListener("mouseleave", previa.sair);
+    return () => {
+      popupEl.removeEventListener("mouseenter", previa.manter);
+      popupEl.removeEventListener("mouseleave", previa.sair);
+    };
+  }, [popupEl, previa.manter, previa.sair]);
   const propsRef = useRef(properties);
   const activeRef = useRef(activeId);
   useEffect(() => {
@@ -434,7 +485,10 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     } else {
       avisarMapaSemChave();
     }
-    map.on("click", () => onSelectRef.current?.(null));
+    map.on("click", () => {
+      onSelectRef.current?.(null);
+      previaRef.current.limpar();
+    });
     mapRef.current = map;
     // Ao ganhar tamanho pela 1ª vez, enquadra; depois só ajusta o tamanho.
     let enquadrado = false;
@@ -470,10 +524,18 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         iconSize: [0, 0],
         html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(rotuloPreco({ mensal: precoDeBusca(p) }).valor)}</div>`,
       });
-      const marker = L.marker([p.lat, p.lng], { icon, title: p.title, riseOnHover: true }).addTo(map);
+      // E442: sem `title` — a etiqueta nativa do navegador era o "texto simples" no lugar do cartão.
+      const marker = L.marker([p.lat, p.lng], { icon, riseOnHover: true, alt: p.title }).addTo(map);
       const el = marker.getElement()!.firstElementChild as HTMLElement;
-      el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
-      el.addEventListener("mouseleave", () => onHoverRef.current(null));
+      // E442: o hover no preço abre o cartão (prévia); sair fecha com folga para chegar ao cartão.
+      el.addEventListener("mouseenter", () => {
+        onHoverRef.current(p.id);
+        previaRef.current.entrarPin(p.id);
+      });
+      el.addEventListener("mouseleave", () => {
+        onHoverRef.current(null);
+        previaRef.current.sair();
+      });
       marker.on("click", () => onSelectRef.current?.(p.id));
       markersRef.current.set(p.id, { marker, el });
     });
@@ -527,18 +589,18 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   // traz o pin para a frente — hover não abre nada.
   useEffect(() => {
     markersRef.current.forEach(({ marker, el }, id) => {
-      const on = id === activeId || id === selectedId;
+      const on = id === activeId || id === abertoId;
       el.className = `${pinClass(on)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2`;
       el.dataset.ativo = on ? "1" : "0";
       marker.setZIndexOffset(on ? 1000 : 0);
     });
-  }, [activeId, selectedId, sig]);
+  }, [activeId, abertoId, sig]);
 
   // Card do imóvel ancorado no pin clicado (popup do Leaflet com o card React).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !popupEl) return;
-    const p = selectedId ? propsRef.current.find((x) => x.id === selectedId) : null;
+    const p = abertoId ? propsRef.current.find((x) => x.id === abertoId) : null;
     if (!p) {
       popupRef.current?.remove();
       popupRef.current = null;
@@ -567,15 +629,19 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       mostrarCartaoNaTela(popupEl);
     });
     return () => cancelAnimationFrame(quadro);
-  }, [selectedId, sig, popupEl]);
+  }, [abertoId, sig, popupEl]);
 
-  const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
-  useFecharCartaoComEsc(!!aberto, () => onSelect?.(null));
+  const aberto = abertoId ? properties.find((x) => x.id === abertoId) : null;
+  const fechar = () => {
+    onSelect?.(null);
+    previa.limpar();
+  };
+  useFecharCartaoComEsc(!!aberto, fechar);
 
   return (
     <>
       <div ref={containerRef} data-testid="mapa-busca" data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"} className={cn("z-0 overflow-hidden bg-surface-2", className)} />
-      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
+      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={fechar} />, popupEl)}
     </>
   );
 }

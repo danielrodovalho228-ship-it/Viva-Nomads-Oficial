@@ -23,6 +23,10 @@ import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 import { textoDoErro } from "@/lib/erro-de-rede";
 import { MSG_APROVAR_FALHOU, MSG_RECUSAR_FALHOU } from "@/lib/interessados/erros";
+import { hrefPerfilCandidato } from "@/lib/notifications/dados-candidatura";
+
+/** E553: o perfil completo só existe para candidatura real (a mesma regra UUID_LEAD de perfilDoCandidato). */
+const UUID_CANDIDATURA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Motivos de recusa pré-definidos (quick win #3). */
 const REJECT_REASONS = [
@@ -160,27 +164,47 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
             {ordered.map((l) => {
             const st = status[l.id] ?? uiInicial(l.status);
             const open = st === "approved";
+            const perfilHref = !demoOn && UUID_CANDIDATURA.test(l.id) ? hrefPerfilCandidato(l.id) : null;
             return (
               // E202 (candidatura): o e-mail ao dono aponta para este cartão (#candidato-<id>).
               <Panel key={l.id} id={`candidato-${l.id}`} className="scroll-mt-24">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex min-w-0 items-start gap-3" data-testid="cartao-candidato">
                     {/* Foto só depois do aceite; antes, um avatar neutro (sem inicial nem nome). */}
-                    {l.fotoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={l.fotoUrl} alt={`Foto de ${l.name}`} className="h-12 w-12 shrink-0 rounded-full object-cover" data-testid="candidato-foto" />
-                    ) : (
-                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sage-100 text-forest" aria-hidden>
-                        <UserRound className="h-6 w-6" />
-                      </span>
-                    )}
+                    {(() => {
+                      const foto = l.fotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={l.fotoUrl} alt={`Foto de ${l.name}`} className="h-12 w-12 shrink-0 rounded-full object-cover" data-testid="candidato-foto" />
+                      ) : (
+                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sage-100 text-forest" aria-hidden>
+                          <UserRound className="h-6 w-6" />
+                        </span>
+                      );
+                      // E553: a foto abre o mesmo perfil do nome (fora da ordem do Tab: o nome já é o link).
+                      return perfilHref ? (
+                        <Link href={perfilHref} tabIndex={-1} aria-hidden className="shrink-0 rounded-full" data-testid="candidato-perfil-foto">
+                          {foto}
+                        </Link>
+                      ) : (
+                        foto
+                      );
+                    })()}
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Semáforo em destaque, primeiro (o que decide) */}
                       <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
                         {LIGHT[l.light].label}
                       </span>
-                      <h2 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">{l.name}</h2>
+                      <h2 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">
+                        {/* E553: o nome abre o perfil completo do candidato (padrão dos títulos clicáveis do painel). */}
+                        {perfilHref ? (
+                          <Link href={perfilHref} className="alvo-toque hover:text-forest focus-visible:text-forest" data-testid="candidato-perfil-link">
+                            {l.name}
+                          </Link>
+                        ) : (
+                          l.name
+                        )}
+                      </h2>
                       {/* PROP-3 (E118): verificada/pendente pela MESMA função do Fechamento; sem os textos "para mim". */}
                       <span
                         className={cn(

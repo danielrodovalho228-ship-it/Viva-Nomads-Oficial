@@ -41,7 +41,9 @@ export const PERSONAS: Persona[] = [
  */
 export const PUBLIC_NAV = comPortasDePrecos([
   { href: "/buscar", label: "Imóveis" },
-  { href: "/dashboard/imoveis/novo", label: "Anunciar" },
+  // E450: "Anunciar" mostra primeiro o porquê (página pública do dono), como o CTA da seção de donos e o rodapé —
+  // antes ia direto ao cadastro e o visitante caía na parede de login (/auth?motivo=anunciar).
+  { href: "/para-proprietarios", label: "Anunciar" },
   { href: "/empresas", label: "Empresas" },
   // E458 (Relay 58): "Parceiros" no menu público — a porta com os dois caminhos (encontrar / ser parceiro).
   { href: "/parceiros", label: "Parceiros" },

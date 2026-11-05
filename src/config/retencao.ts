@@ -196,6 +196,9 @@ export const INVENTARIO: ItemInventario[] = [
   // A rotina dos prazos (prazos-59-servidor, passo D) apaga os dois com mais de 1 dia; saem em cascata com a conta.
   i("prova_capturas", "public.prova_capturas", "hash do token de captura, item, caminho e hash perceptual da foto da prova feita na hora", "provar que a foto do item foi feita na hora, uma vez só", { prazoDias: 1, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "a prova gravada em nivel_itens (caminho, hora da captura, hash)"),
   i("prova_links_celular", "public.prova_links_celular", "hash do link de uso único, item e dono", "abrir a câmera do item no celular do próprio dono", { prazoDias: 1, gatilho: "sem_gatilho_automatico", modo: "apagar", base: "proposta", fase: 2 }, "nada"),
+  // E293 (05/11): tabelas criadas depois da auditoria. Prazo pendente (decisão do Daniel, item 13): só relatório simulado.
+  i("avisos", "public.avisos", "avisos do sino por pessoa (evento, título e link)", "mostrar e resolver o aviso na central", { prazoDias: null, gatilho: "exclusao_conta", modo: "apagar", base: "pendente", fase: 2 }, "nada (sai em cascata com a conta)"),
+  i("moderacao_ofensas", "public.moderacao_ofensas", "registro de mensagem ofensiva enviada (autor, conversa e o termo)", "a moderação revisar o caso", { prazoDias: null, gatilho: "decisao_admin", modo: "apagar", base: "pendente", fase: 2 }, "a revisão (data e quem revisou)"),
   i("denuncias_anuncio", "public.denuncias_anuncio", "motivo e texto da denúncia de anúncio", "o atendimento analisar a denúncia", { prazoDias: 365, gatilho: "decisao_admin", modo: "apagar", base: "proposta", fase: 2 }, "o estado da denúncia no chamado"),
 ];
 

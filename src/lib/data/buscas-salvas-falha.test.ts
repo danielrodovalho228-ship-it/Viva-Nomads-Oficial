@@ -15,9 +15,10 @@ const alternar = s.slice(s.indexOf("export async function alternarBuscaSalva"), 
 const esta = s.slice(s.indexOf("export async function buscaEstaSalva"), s.indexOf("export async function alternarBuscaSalva"));
 
 test("alternar: a falha ao conferir se já está salva não grava uma 2ª cópia", () => {
-  assert.match(alternar, /const \{ data: existente, error: erroExistente \} = await s\.supabase/);
-  assert.match(alternar, /if \(erroExistente\) return \{ ok: false, error: MSG_CONFERIR_BUSCA \};/);
-  assert.ok(alternar.indexOf("if (erroExistente)") < alternar.indexOf(".insert("), "confere antes de inserir");
+  // E539 (ii): a conferência é pela identidade (mesmasBuscas: null = falha de leitura).
+  assert.match(alternar, /const iguais = await mesmasBuscas\(s, qs\);/);
+  assert.match(alternar, /if \(!iguais\) return \{ ok: false, error: MSG_CONFERIR_BUSCA \};/);
+  assert.ok(alternar.indexOf("if (!iguais)") < alternar.indexOf(".insert("), "confere antes de inserir");
 });
 
 test("alternar: a falha na contagem não pula o limite", () => {
@@ -27,7 +28,8 @@ test("alternar: a falha na contagem não pula o limite", () => {
 });
 
 test("estado do coração: a falha lança (não vira 'não salva')", () => {
-  assert.match(esta, /const \{ data, error \} = await s\.supabase/);
-  assert.match(esta, /if \(error\) throw new Error\(MSG_CONFERIR_BUSCA\);/);
+  // E539 (ii): pela identidade (mesmasBuscas: null = falha de leitura).
+  assert.match(esta, /const iguais = await mesmasBuscas\(s, qs\);/);
+  assert.match(esta, /if \(!iguais\) throw new Error\(MSG_CONFERIR_BUSCA\);/);
   assert.match(s, /const MSG_CONFERIR_BUSCA = "Não foi possível conferir esta busca agora\. Tente de novo\.";/);
 });

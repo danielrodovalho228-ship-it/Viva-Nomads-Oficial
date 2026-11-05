@@ -155,6 +155,8 @@ export async function concluirFechamento(leadId: string, tipo: "comissao" | "con
 export interface ComissaoDoContrato {
   aluguelMensal: number;
   meses: number;
+  /** E562: a estadia em dias exatos (o registro do contrato e a taxa são em dias). */
+  dias: number;
   taxa: number;
 }
 
@@ -177,6 +179,7 @@ export async function comissaoDoContrato(leadId: string): Promise<ComissaoDoCont
   return {
     aluguelMensal: Number(data.aluguel_mensal),
     meses: Math.round(Number(data.prazo_total_dias) / DIAS_POR_MES),
+    dias: Number(data.prazo_total_dias),
     taxa: Number(data.comissao_percent),
   };
 }

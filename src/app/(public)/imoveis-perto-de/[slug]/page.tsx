@@ -24,7 +24,9 @@ const pertoDe = (nome: string, artigo: string) => `perto ${artigo === "o" ? "do"
 async function dadosDaPagina(slug: string) {
   const admin = createAdminClient();
   if (!admin || !/^[a-z0-9-]{2,60}$/.test(slug)) return null;
-  const { data: d } = await admin.from("destinos").select("nome, artigo, cidade, uf").eq("slug", slug).eq("ativo", true).maybeSingle();
+  const { data: d, error } = await admin.from("destinos").select("nome, artigo, cidade, uf").eq("slug", slug).eq("ativo", true).maybeSingle();
+  // Achado 126: a falha não vira 404 numa página pública indexada — cai no aviso de erro do site.
+  if (error) throw new Error("Não foi possível abrir esta página agora.");
   const destino = d ? await resolverDestino({ destino: slug }, admin) : null;
   if (!d || !destino) return null;
   const daCidade = (await listProperties()).filter(

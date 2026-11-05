@@ -36,7 +36,8 @@ test("os três calendários (imóvel, agenda do parceiro, estadia) usam o mesmo 
   const { readFileSync } = await import("node:fs");
   const usos = {
     disponibilidade: "src/components/property/block-calendar.tsx",
-    agenda: "src/components/parceiros/pedidos-do-parceiro.tsx",
+    // E466: a agenda do parceiro (com mês anterior/próximo e dias clicáveis) mora no componente próprio.
+    agenda: "src/components/parceiros/agenda-calendario.tsx",
     estadia: "src/app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx",
   };
   for (const [tipo, f] of Object.entries(usos)) {

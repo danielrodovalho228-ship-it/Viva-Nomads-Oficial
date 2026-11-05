@@ -27,12 +27,11 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
-import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { FILTROS_PAINEL_VAZIOS, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
@@ -51,7 +50,7 @@ import { useTempos } from "@/components/busca/use-tempos";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
-import type { ModoRota } from "@/lib/rotas/tempo";
+import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -114,7 +113,7 @@ export function SearchClient({
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
-  // E572: só com o selo "Preço justo" (`?precojusto=1`) — atrás da chave do selo (PRECO_JUSTO_COMPARADOR, E399-C).
+  // E572/E580: só com o selo "Preço justo" (`?precojusto=1`) — o mesmo selo do card, sem chave.
   const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
   const [painelAberto, setPainelAberto] = useState(false);
@@ -206,7 +205,7 @@ export function SearchClient({
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     if (on("negocia")) setNegociaOnly(true);
-    if (PRECO_JUSTO_COMPARADOR && on("precojusto")) setPrecoJustoOnly(true);
+    if (on("precojusto")) setPrecoJustoOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
     setInternetMin(fi.internetMin);
@@ -277,7 +276,7 @@ export function SearchClient({
     params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("negocia", negociaOnly, "1");
-    put("precojusto", PRECO_JUSTO_COMPARADOR && precoJustoOnly, "1");
+    put("precojusto", precoJustoOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
     filtroNivelNaUrl(params, nivelMin);
@@ -500,6 +499,9 @@ export function SearchClient({
       const t = tempos.get(p.id);
       return t?.min != null && t.min <= estadoDestino.ate;
     });
+    // E523: sem tempo de rota (linha reta), o limite "até N min" não era aplicado — 15 min a pé mantinha imóveis a ~4 km.
+    // A rota nunca é mais curta que a linha reta: sai quem, nem na velocidade máxima do modo, chegaria no tempo.
+    else if (estadoDestino.ate) list = list.filter((p) => !foraDoTempoPelaReta(distanciaAte(p, alvoDestino)?.metros, estadoDestino.modo, estadoDestino.ate));
     // A mesma conta que o cartão mostra: posição do servidor primeiro; o resto pela distância em linha reta.
     if (sort === "trabalho") list = ordenarPorDestino(list, (id) => tempos.get(id)?.pos, (p) => distanciaAte(p, alvoDestino)?.metros ?? null);
     return list;
@@ -524,7 +526,7 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
-    (PRECO_JUSTO_COMPARADOR && precoJustoOnly ? 1 : 0) + // E572
+    (precoJustoOnly ? 1 : 0) + // E572/E580
     (niveis.length ? 1 : 0) + // E573
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
       Boolean
@@ -540,7 +542,7 @@ export function SearchClient({
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, PRECO_JUSTO_COMPARADOR && precoJustoOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -628,7 +630,8 @@ export function SearchClient({
     faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades.join(","),
     internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis.join(","),
   ].join("|");
-  function aplicarPainel(f: FiltrosPainel) {
+  // E589: define os filtros da busca a partir da folha (sem fechar nada) — o "Mostrar N" e o "Limpar tudo" usam a mesma.
+  function definirFiltrosDoPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
     setMinBedrooms(f.minBedrooms);
     setPetsOnly(f.petsOnly);
@@ -651,7 +654,10 @@ export function SearchClient({
     setInvoiceOnly(f.notaOnly);
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
-    setPrecoJustoOnly(PRECO_JUSTO_COMPARADOR && (f.precoJustoOnly ?? false));
+    setPrecoJustoOnly(f.precoJustoOnly ?? false);
+  }
+  function aplicarPainel(f: FiltrosPainel) {
+    definirFiltrosDoPainel(f);
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -797,6 +803,7 @@ export function SearchClient({
           contar={contarComPainel}
           contarNaoMedidos={contarNaoMedidos}
           onAplicar={aplicarPainel}
+          onLimpar={() => definirFiltrosDoPainel(FILTROS_PAINEL_VAZIOS)}
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
           medicoes={medicoes}

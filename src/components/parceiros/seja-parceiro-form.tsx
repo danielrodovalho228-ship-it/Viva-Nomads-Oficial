@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, categoriasComDaUrl, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -61,6 +61,14 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
     emiteNota: sol?.emiteNota === true ? "sim" : sol?.emiteNota === false ? "nao" : "",
     aceite: false,
   }));
+  // E447: os botões "Sou fotógrafo", "Quero atender"… ficam na MESMA página (/parceiros?categoria=…): a navegação não
+  // recria o formulário, então a categoria da URL entra marcada também quando muda com a página aberta.
+  // (Ajuste durante a renderização quando a prop muda — o padrão do React para "estado que deriva de uma prop".)
+  const [categoriaDaUrl, setCategoriaDaUrl] = useState(categoriaInicial);
+  if (categoriaDaUrl !== categoriaInicial) {
+    setCategoriaDaUrl(categoriaInicial);
+    if (!sol?.categorias?.length) setC((x) => ({ ...x, categorias: categoriasComDaUrl(x.categorias, categoriaInicial) }));
+  }
   const [armadilha, setArmadilha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);

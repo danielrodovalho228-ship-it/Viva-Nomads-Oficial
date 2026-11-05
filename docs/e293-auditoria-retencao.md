@@ -170,3 +170,54 @@ Conferido em produção só com leitura, em 02/11/2026, 02h (horário de Brasíl
 
 **Decisões em aberto (não executadas):** item 2 (passar `ia_chamadas` à fase 1 antes de 16/01/2027), P4 (item 11),
 `destinos` pelo OSM (item 12), coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
+
+## 9. Tabelas novas depois da auditoria (05/11/2026)
+
+Revisão das migrações 0282–0296. Duas tabelas novas ligam uma pessoa a conteúdo e não estavam no inventário: a guarda
+(`inventario.test.ts`) só reconhece colunas pelo nome, e `titulo` e `termo` não estavam na lista.
+
+| Tabela | Migração | O que guarda | Entrou no inventário como |
+|---|---|---|---|
+| `avisos` | 0286 | pessoa, evento, título e link do aviso do sino | fase 2, prazo pendente, sai em cascata com a conta |
+| `moderacao_ofensas` | 0287 | autor, conversa e o termo ofensivo enviado | fase 2, prazo pendente, gatilho decisão da moderação |
+
+- `mensagens_anexos` (0288) já estava no inventário; as colunas novas de `emails_teste` (0284) entram no item que já
+  existia.
+- A guarda passa a reconhecer `termo`.
+- **Nada é apagado** por esta mudança: os prazos das duas tabelas entram na lista de decisões do Daniel (item 13).
+
+## 10. Relatório numerado de retenção (05/11/2026)
+
+Conferido em produção só com leitura, em 05/11/2026, por volta das 10h (horário de Brasília). Nada foi apagado. A rotina
+`e293-limpeza-retencao` (0281) rodou hoje às 04h17 UTC e terminou com sucesso.
+
+| # | Item (inventário) | Prazo declarado | Quem cumpre | Linhas | Vencidas hoje | Situação |
+|---|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | `pg_cron` da 0067 | 17.775 (desde 05/10/2026) | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | fase 2: o relatório só conta | 287 (desde 18/10/2026) | 0 | **as primeiras vencem em 16/01/2027**; passar à fase 1 antes disso é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | rotina do atendimento | 0 | 0 | em dia |
+| 4 | `saidas_motivos` | 365 dias (anonimizar) | fase 2: só conta | 0 | 0 | sem dados |
+| 5 | `denuncias_anuncio` | 365 dias da decisão | fase 2: só conta | 0 | 0 | sem dados |
+| 6 | `proprietario_strikes` | 365 dias | rotina da avaliação | 0 | 0 | sem dados (`VISTORIA_ATIVA` desligada) |
+| 7 | `estadia_convidados` | 30 dias do fim da estadia | rotina da estadia | 0 | 0 | sem dados |
+| 8 | `contrato_ocupantes` | 90 dias do fim da estadia | rotina do Prompt 32 | 0 | 0 | sem dados |
+| 9 | Tempos de deslocamento e vizinhança (P6) | 30 dias | `0281` | 0 e 7 linhas | 0 | em dia |
+| 10 | Verificação CAF vencida (P5) | validade do laudo | `0281` | — | 0 | em dia |
+| 11 | `property_workspaces` (Google Places, P4) | — | — | 0 | — | decisão a/b pendente (Daniel) |
+| 12 | `destinos` | — | — | 4 (polos públicos) | — | refazer pelo OSM: pendente (Daniel) |
+| 13 | `avisos` (0286; coluna `texto` na 0298) | pendente (item 13) | sai em cascata com a conta | 34 | — | prazo pendente (Daniel) |
+| 14 | `moderacao_ofensas` (0287) | pendente (item 13) | gatilho: decisão da moderação | 0 | — | sem dados |
+
+- **Livro de eliminações** (`eliminacoes_registro`): 111 linhas.
+- **Migrações 0297 a 0301** (revisadas para este relatório):
+  - nenhuma cria tabela;
+  - as colunas novas são `avisos.texto` (0298), que entra no item 13 já existente, e `contratos.proposta_id` (0299), que é
+    só um vínculo, sem dado pessoal novo;
+  - a guarda `inventario.test.ts` segue verde.
+
+**Decisões em aberto (não executadas):**
+- passar `ia_chamadas` à fase 1 antes de 16/01/2027 (item 2);
+- P4 (item 11);
+- `destinos` pelo OSM (item 12);
+- coluna `caf_transacao_id`;
+- prazos do item 13 (parecer da Dra. Beatriz), que incluem `avisos` e `moderacao_ofensas`.

@@ -17,9 +17,8 @@ test("cada causa tem a sua mensagem; nenhuma é o genérico de antes", () => {
   assert.match(limite, new RegExp(`${LIMITE_QA_POR_HORA} entradas por hora`));
   assert.match(limite, /até 1 hora/);
   assert.match(mensagemPortaQa(503), /Tente de novo/);
-  const recusa = mensagemPortaQa(404);
-  for (const causa of [/chave/i, /conta de teste/i, /2FA/, /padrão/]) assert.match(recusa, causa);
-  assert.match(recusa, /qa_porta_recusa/);
+  // E488: o 404 é a chave que não confere; as outras causas vêm no 403, cada uma com a sua frase (e488-causa-recusa).
+  assert.match(mensagemPortaQa(404), /chave não confere/);
   assert.match(mensagemPortaQa(null), /conexão/i);
   const todas = [429, 503, 404, null].map((s) => mensagemPortaQa(s));
   assert.equal(new Set(todas).size, todas.length, "mensagens distintas");
@@ -28,8 +27,9 @@ test("cada causa tem a sua mensagem; nenhuma é o genérico de antes", () => {
 
 test("o formulário usa as mensagens; a rota segue com o mesmo corpo em todo 404", () => {
   const form = readFileSync(new URL("../../app/qa/entrar/qa-entrar-form.tsx", import.meta.url), "utf8");
-  assert.match(form, /setErro\(mensagemPortaQa\(r \? r\.status : null\)\)/);
+  assert.match(form, /setErro\(mensagemPortaQa\(r \? r\.status : null, corpo\?\.motivo\)\)/);
   assert.doesNotMatch(form, /"Não foi possível entrar\."/);
   const rota = readFileSync(new URL("../../app/api/qa/entrar/route.ts", import.meta.url), "utf8");
-  assert.match(rota, /if \(r\.status === 404\) return naoEncontrado\(\);/);
+  // E488: chave errada/porta desligada seguem o 404 de sempre; com a chave certa, 403 com a causa.
+  assert.match(rota, /if \(r\.status === 404\) return r\.motivo === "chave" \|\| r\.motivo === "desligada" \? naoEncontrado\(\) : recusada\(r\.motivo\);/);
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { statusDepoisDoEnvio } from "@/lib/documento/vigente";
+import { novoDoStatus, statusDepoisDoEnvio, type NovoEnvio } from "@/lib/documento/vigente";
 import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
@@ -33,7 +33,7 @@ import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
 import { conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
-import { videoDoAnuncio } from "@/lib/video-anuncio";
+import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
 import { itensFaltantes } from "@/lib/conforto/regras";
 import { ChecklistConforto } from "@/components/conforto/checklist-conforto";
@@ -45,7 +45,7 @@ import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
-import { camposQueRecebem, donoEscreveu, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
+import { camposParaUsarSugestao, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { confirmarConforto } from "@/lib/data/conforto-actions";
@@ -62,7 +62,7 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
 import { avisoDoBairro } from "@/lib/cep/bairro";
-import { estadoPassoFotos, fotosDaPrevia, type ConteudoFoto } from "@/lib/fotos/conteudo";
+import { estadoPassoFotos, fotosBloqueiamAvanco, fotosDaPrevia, motivoAvancoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
 import type { AnuncioOrganizado } from "@/lib/anuncio/importar-anuncio";
 import type { CuratedPlace } from "@/components/property/places-picker";
@@ -93,18 +93,17 @@ import {
   VERSAO_ORDEM_ETAPAS,
 } from "@/lib/etapas-anuncio";
 import { ETAPA } from "@/lib/anuncio/etapas-ids";
+import { urlComEtapa } from "@/lib/anuncio/etapa-na-url";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
 import { reportarProximidade } from "@/lib/data/proximidades-actions";
-import { manualSemEndereco } from "@/lib/anuncio/proximidades";
 import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
 import { chaveLugar } from "@/components/anuncio/blocos-cadastro";
 import type { CampoSugerido, EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import { ChegadaEPedidoCampos, formDeChegada, formDeRascunho, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
-import { tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
 import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
@@ -117,6 +116,8 @@ import { EtapaEncontramos } from "./etapa-encontramos";
 import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
+import { IndicePassos } from "./indice-passos";
+import { indicePassos } from "@/lib/anuncio/indice-passos";
 import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
@@ -174,6 +175,8 @@ export default function NewPropertyPage() {
   // E-DOC-VIGENTE (Relay 47): já há documento APROVADO deste imóvel? Um envio novo não o rebaixa na tela.
   const [vigenteAprovado, setVigenteAprovado] = useState(false);
   const [docMotivos, setDocMotivos] = useState<string[]>([]);
+  // E587: envio novo À PARTE do aprovado vigente (em análise ou recusado); o aprovado segue valendo na tela.
+  const [docNovo, setDocNovo] = useState<NovoEnvio | null>(null);
   // Prompt 19: campos preenchidos pela matrícula (etiqueta "veio da matrícula") e o endereço dela, quando ≠ do CEP.
   const [daMatricula, setDaMatricula] = useState<Set<string>>(() => new Set());
   const [enderecoMatricula, setEnderecoMatricula] = useState<PreenchimentoMatricula["endereco"] | null>(null);
@@ -395,37 +398,46 @@ export default function NewPropertyPage() {
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
   const garantiaOk = Object.values(garantias).some(Boolean);
-  const prontidao = prontidaoAnuncio({
-    enderecoOk: !!(street.trim() && neighborhood.trim() && city.trim()),
-    detalhesOk: (Number(bathrooms) || 0) >= 1 && (Number(areaM2) || 0) > 0,
-    periodoOk: (Number(minPeriod) || 0) > 0,
-    fotos: photos.length,
-    titulo: title,
-    preco: Number(monthlyPrice) || 0,
-    garantiaOk,
-    sublocacaoOk: !subleaseBlocked,
-    privacidadeOk: privacidade.semCamerasInterior,
-    operacao: ownershipType,
-    documento: docStatus,
-    descricao: description,
-    selo: qual.baseBadge,
-    // 65-B: uma fonte só (arquivo, ou link permitido do YouTube/Vimeo).
-    video: videoDoAnuncio({ videoArquivo, videoUrl }).tipo !== null,
-    // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
-    qualificacaoOk: editingId ? undefined : qualificado,
-    // 61-B: o tipo de entrada só é exigido do anúncio NOVO (o publicado sem ele ganha só o aviso no painel).
-    tipoEntradaOk: editingId ? undefined : tipoEntradaValido(chegada.tipoEntrada),
-    // FILTROS-1 (E39): a velocidade da internet é o dado que o chip "Wi-Fi" da busca lê — anúncio novo só publica com ela.
-    internetOk: editingId ? undefined : (mbpsValido(internetMbps) ?? 0) > 0,
-    // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
-    confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
-    // PERTO-B: lugar manual antigo, sem o endereço do lugar, fica fora da página até o dono informar onde fica.
-    proximidadesSemEndereco: manualProximities.filter(manualSemEndereco).length,
-    // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
-    chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
-    // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
-    semInternet: semInternet || undefined,
-  });
+  // E556: a prontidão do rascunho tem UMA fonte — fatosDoRascunho, a mesma função que lê o draft_data no card de Meus
+  // imóveis e no Início. O editor passa as MESMAS chaves que grava no draft_data; o que não mora no rascunho
+  // (documento, sublocação, qualificação, padrão mínimo, chácara) vai como base, igual ao servidor.
+  const prontidao = prontidaoAnuncio(
+    fatosDoRascunho(
+      {
+        title, street, neighborhood, city, bathrooms, areaM2, minPeriod, monthlyPrice, garantias, privacidade, description, qual,
+        videoUrl, videoArquivo, internetMbps, photos, manualProximities,
+        ...(chegada.tipoEntrada ? { tipoEntrada: chegada.tipoEntrada } : {}),
+      },
+      {
+        enderecoOk: false,
+        detalhesOk: false,
+        periodoOk: false,
+        fotos: 0,
+        titulo: "",
+        preco: 0,
+        garantiaOk: false,
+        sublocacaoOk: !subleaseBlocked,
+        privacidadeOk: false,
+        operacao: ownershipType,
+        documento: docStatus,
+        descricao: "",
+        selo: false,
+        video: false,
+        // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
+        qualificacaoOk: editingId ? undefined : qualificado,
+        // 61-B / FILTROS-1: tipo de entrada e velocidade da internet só se exigem do anúncio NOVO (o draft_data decide).
+        tipoEntradaOk: editingId ? undefined : false,
+        internetOk: editingId ? undefined : false,
+        // Prompt 59: publicar exige o padrão mínimo (anúncio já publicado segue o prazo de adequação, não trava a edição).
+        confortoFaltam: editingId ? undefined : itensFaltantes(conforto.map((chave) => ({ chave, confirmado: true, versao_lista: VERSAO_CONFORTO }))).length,
+        // TIPO-CHACARA-B: chácara/sítio só publica com acesso, tipo de internet e o ponto no mapa.
+        chacaraFaltam: ehChacara(propertyType) ? faltaChacara({ acesso: chacara.acesso, internet: chacara.internet, pontoMarcado: !!chacara.ponto || chacaraPontoGravado }) : undefined,
+        // E102-B: "Não tem internet" barra pelo padrão mínimo (e a velocidade nem é pedida).
+        semInternet: semInternet || undefined,
+      },
+      { publicado: !!editingId },
+    ),
+  );
   /** "Resolver" de um item do portão: vai à etapa; a qualificação abre ali mesmo. */
   function resolverItem(item: ItemProntidao) {
     irPara(item.etapa);
@@ -490,7 +502,8 @@ export default function NewPropertyPage() {
       if (!neighborhood.trim()) e.bairro = "Informe o bairro.";
       if (!city.trim()) e.cidade = "Informe a cidade.";
     }
-    if (s === ETAPA.fotos && !passoFotos.podeContinuar) e.fotos = passoFotos.mensagem ?? "Confira as fotos para continuar.";
+    // E602: a contagem mínima de fotos é exigência para PUBLICAR, não para navegar; só foto/vídeo sinalizado segura o avanço.
+    if (s === ETAPA.fotos && fotosBloqueiamAvanco(passoFotos)) e.fotos = motivoAvancoFotos(passoFotos) ?? "Confira as fotos para continuar.";
     if (s === ETAPA.detalhes) {
       if ((Number(bathrooms) || 0) < 1) e.banheiros = "Informe ao menos 1 banheiro.";
       if ((Number(areaM2) || 0) <= 0) e.area = "Informe a área do imóvel (m²).";
@@ -544,7 +557,7 @@ export default function NewPropertyPage() {
   // nunca sobrescrever o que o dono digitou enquanto esperava.
   const textoAtual = useRef({ titulo: title, descricao: description });
   textoAtual.current = { titulo: title, descricao: description };
-  async function pedirSugestao(trocarTudo: boolean) {
+  async function pedirSugestao() {
     setEstadoSugestao("carregando");
     setAvisoSugestao(null);
     const comodidades = Object.keys(AMENITY_LABEL).filter((k) => amenityKeys[k]).map((k) => AMENITY_LABEL[k]);
@@ -582,25 +595,29 @@ export default function NewPropertyPage() {
     } catch {
       /* sem rede: o modelo fixo abaixo */
     }
-    // Sem IA (desligada, 503, limite ou erro), o passo nunca fica vazio: o modelo fixo monta com o que já foi informado.
+    // Sem IA (desligada, 503, limite ou erro), a sugestão nunca falta: o modelo fixo monta com o que já foi informado.
     if (!texto) texto = textoDoModelo(dados);
-    const recebe = trocarTudo ? { titulo: true, descricao: true } : camposQueRecebem(textoAtual.current, sugestaoTexto);
-    if (recebe.titulo) setTitle(texto.titulo);
-    if (recebe.descricao) setDescription(texto.descricao);
+    // E613: a sugestão fica no cartão à parte — NUNCA entra sozinha nos campos (preenchida sem o dono, a Revisão marcava
+    // "Título e descrição — feito" e o cartão do imóvel ganhava o título gerado). Só o "Usar esta sugestão" a aplica.
     setSugestaoTexto(texto);
     setEstadoSugestao(origem);
+    if (origem === "ia") setTextoIaOriginal(texto);
+  }
+  /** E613: o clique do dono em "Usar esta sugestão" — só nos campos ainda vazios (nunca por cima do texto dele). */
+  function usarSugestao() {
+    if (!sugestaoTexto) return;
+    const recebe = camposParaUsarSugestao(textoAtual.current);
+    if (recebe.titulo) setTitle(sugestaoTexto.titulo);
+    if (recebe.descricao) setDescription(sugestaoTexto.descricao);
     // A sugestão da IA conta para o aceite do texto gerado por IA (o modelo fixo não é IA).
-    if (origem === "ia") {
-      if (recebe.descricao) setDescricaoGeradaPorIa(true);
-      setTextoIaOriginal(texto);
-    }
+    if (estadoSugestao === "ia" && recebe.descricao) setDescricaoGeradaPorIa(true);
   }
   useEffect(() => {
     if (step !== ETAPA.descricao || editId || approved !== true) return;
     const chave = imovelId ?? "novo";
     if (sugestaoPedidaPara.current === chave || !pedeSugestaoAoEntrar(title, description)) return;
     sugestaoPedidaPara.current = chave;
-    void pedirSugestao(false);
+    void pedirSugestao();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, editId, approved, imovelId]);
   useEffect(() => {
@@ -612,6 +629,7 @@ export default function NewPropertyPage() {
         setVigenteAprovado(r.status === "approved");
         setDocEstado(estadoDoStatus(r.status));
         setDocMotivos(r.reason ? r.reason.split(" · ") : []);
+        setDocNovo(novoDoStatus(r.novo, r.motivoNovo));
       })
       .catch(() => {});
     return () => {
@@ -1605,6 +1623,15 @@ export default function NewPropertyPage() {
   const mostrarQualificacao =
     (approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente") ||
     (approved === true && !editId && qualDoRascunho && !!draftParam && draftServerId === draftParam);
+  // E615: a URL acompanha o passo — `?etapa=` ficava no valor com que a página abriu (etapa=4 nos Passos 5 a 10), e
+  // atualizar ou abrir o link devolvia ao passo errado. Regrava a cada troca de passo (e quando o rascunho ganha id,
+  // que reescreve a URL com `?draft=`). Fora da Qualificação (senão o recarregar pularia a Qualificação) e da edição
+  // (`?id=` abre sempre no Passo 1).
+  useEffect(() => {
+    if (approved !== true || editId || mostrarQualificacao) return;
+    const busca = urlComEtapa(window.location.search, step);
+    if (busca !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${busca}`);
+  }, [step, approved, editId, mostrarQualificacao, draftServerId]);
   // E415: com rascunho salvo, o resultado da Qualificação credita as provas já feitas (foto na hora, internet medida,
   // ruído) — antes calculava só pelas respostas e o item fotografado seguia como "falta".
   const [provasQual, setProvasQual] = useState<{ id: string; provas: ProvasDoRascunho | null } | null>(null);
@@ -1836,8 +1863,11 @@ export default function NewPropertyPage() {
       estado: estadoSugestao,
       aviso: avisoSugestao,
       ehSugestao: !!sugestaoTexto && (title === sugestaoTexto.titulo || description === sugestaoTexto.descricao),
-      donoEscreveu: donoEscreveu({ titulo: title, descricao: description }, sugestaoTexto),
-      gerarDeNovo: () => void pedirSugestao(true),
+      texto: sugestaoTexto,
+      // E613: o cartão oferece a sugestão enquanto houver campo vazio que ela possa preencher.
+      podeUsar: !!sugestaoTexto && (camposParaUsarSugestao({ titulo: title, descricao: description }).titulo || camposParaUsarSugestao({ titulo: title, descricao: description }).descricao),
+      usar: usarSugestao,
+      gerarDeNovo: () => void pedirSugestao(),
     },
     title,
     setTitle,
@@ -1882,7 +1912,9 @@ export default function NewPropertyPage() {
 
       {/* E161: a grade da página do imóvel — conteúdo + coluna lateral do tamanho do cartão do anúncio (22rem/26rem). */}
       <div
-        className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
+        // E602: a coluna única (celular e Passo 10) também é minmax(0,1fr) — sem ela, a faixa do índice de passos (que rola
+        // de lado) alargava a coluna implícita e a página inteira rolava de lado a 390 px.
+        className={cn("grid grid-cols-[minmax(0,1fr)] gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
         data-testid="novo-duas-colunas"
       >
         {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo clean da moldura (E166; antes, areia). */}
@@ -1927,6 +1959,14 @@ export default function NewPropertyPage() {
           <p className="mt-2 text-base text-muted" data-testid="passo-subtitulo">
             {meta.subtitle}
           </p>
+          {/* E602: o índice de passos clicável, com o estado de cada um — sem ele, quem não tinha as 8 fotos ficava preso no Passo 2. */}
+          <IndicePassos
+            passos={indicePassos(conferencia, step, etapaMax)}
+            onIr={(i) => {
+              setErros({});
+              irPara(i);
+            }}
+          />
           {/* E135: "Continuar" recusado SEMPRE diz no próprio passo o que falta (nunca um clique mudo). */}
           {/* E260 (a): a janela curta não entra aqui — o aviso dela, junto das datas, já diz tudo (uma vez só). */}
           {errosDoResumo(erros).length > 0 && (
@@ -1949,9 +1989,11 @@ export default function NewPropertyPage() {
                     imovelId={imovelId}
                     estado={docEstado}
                     motivos={docMotivos}
-                    onResultado={(e, m) => {
+                    novo={docNovo}
+                    onResultado={(e, m, novo) => {
                       setDocEstado(e);
                       setDocMotivos(m);
+                      setDocNovo(novo ?? null);
                       setDocStatus(statusDepoisDoEnvio(vigenteAprovado, e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none"));
                       if (e !== "nenhum") setDocumentoNoInicio(true);
                     }}
@@ -2131,9 +2173,11 @@ export default function NewPropertyPage() {
                     imovelId={imovelId}
                     docEstado={docEstado}
                     docMotivos={docMotivos}
-                    onDocumento={(e, m) => {
+                    docNovo={docNovo}
+                    onDocumento={(e, m, novo) => {
                       setDocEstado(e);
                       setDocMotivos(m);
+                      setDocNovo(novo ?? null);
                       setDocStatus(statusDepoisDoEnvio(vigenteAprovado, e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none"));
                     }}
                     onMatricula={aplicarMatricula}
@@ -2248,7 +2292,8 @@ export default function NewPropertyPage() {
                 pendente: faltaNoPasso.length > 0,
                 title: faltaNoPasso.length ? `Falta: ${faltaNoPasso.join(" ")}` : undefined,
                 // E133: no Passo 2, desabilitado de verdade (visual e clique) até o mínimo de fotos e sem aviso pendente.
-                ...(step === ETAPA.fotos && !passoFotos.podeContinuar ? { disabled: true, title: passoFotos.mensagem ?? undefined } : {}),
+                // E602: com menos de 8 fotos o Continuar segue livre (as fotos seguram só o Publicar).
+                ...(step === ETAPA.fotos && fotosBloqueiamAvanco(passoFotos) ? { disabled: true, title: motivoAvancoFotos(passoFotos) ?? undefined } : {}),
               }
             : telaLarga
               ? // E251: no computador o "Publicar anúncio" é o da coluna da prévia (um botão cheio por tela).

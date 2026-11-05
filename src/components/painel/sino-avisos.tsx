@@ -267,6 +267,12 @@ export function SinoAvisos({ px }: { px: string }) {
                     <MarcaLeitura lido={!!a.lido_em} />
                     <span className="min-w-0 flex-1">
                       <span className={cn("block text-sm text-ink [overflow-wrap:anywhere]", a.lido_em ? "font-normal" : "font-semibold")}>{a.titulo}</span>
+                      {/* E482: a prévia da mensagem (ou outra linha de texto do aviso), em duas linhas no máximo. */}
+                      {a.texto && (
+                        <span className="mt-1 line-clamp-2 block text-sm text-muted [overflow-wrap:anywhere]" data-testid="aviso-texto">
+                          {a.texto}
+                        </span>
+                      )}
                       <span className="mt-1 block text-xs text-muted">{quando(a.criado_em)}</span>
                     </span>
                     <SeloPrioridade prioridade={a.prioridade} />

@@ -11,7 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, liberarLimit
  *   2. código em conta existente (intenção já respondida) → direto ao destino;
  *   3. "Entrar com senha" (terciário) continua entrando;
  *   4. admin entrando só com código não abre /admin (AAL2);
- *   5. convidado favorita 2 imóveis, cria conta no momento de valor e encontra os 2 na conta;
+ *   5. E448: visitante toca no coração → porta de login (motivo favorito); entra, volta ao anúncio e favorita na conta;
  *   6. app simulado entra por código sem sair do WebView.
  * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
  */
@@ -137,39 +137,41 @@ test.describe("T300 — entrada sem senha, intenção e convidado (Prompt 49)", 
     expect(new URL(page.url()).pathname).not.toBe("/admin");
   });
 
-  test("5. convidado favorita 2, cria conta no momento de valor e encontra os 2", async ({ page }) => {
+  test("5. E448: visitante toca no coração → porta de login com o motivo; volta ao anúncio e favorita na conta", async ({ page }) => {
     test.setTimeout(180_000);
-    const { data: imoveis } = await adm().from("properties").select("id").eq("status", "active").limit(2);
-    expect(imoveis?.length).toBe(2);
-    for (const im of imoveis!) {
-      await page.goto(`/imoveis/${im.id}`, { waitUntil: "domcontentloaded" });
-      // Um coração por tamanho de tela: vale o primeiro visível (lab-crítico do #1195, depois do #1190).
-      const coracao = page.getByTestId("coracao").locator("visible=true").first();
-      await expect(async () => {
-        if ((await coracao.getAttribute("aria-pressed")) !== "true") await coracao.click({ timeout: 4_000 });
-        await expect(coracao).toHaveAttribute("aria-pressed", "true", { timeout: 3_000 });
-      }).toPass({ timeout: 30_000 });
-    }
+    const { data: imoveis } = await adm().from("properties").select("id").eq("status", "active").limit(1);
+    expect(imoveis?.length).toBe(1);
+    const id = imoveis![0].id as string;
+    await page.goto(`/imoveis/${id}`, { waitUntil: "domcontentloaded" });
+    // Um coração por tamanho de tela: vale o primeiro visível. O toque antes da hidratação é repetido.
+    const coracao = page.getByTestId("coracao").locator("visible=true").first();
+    await expect(async () => {
+      if (new URL(page.url()).pathname !== "/auth") await coracao.click({ timeout: 4_000 });
+      await page.waitForURL((u) => u.pathname === "/auth", { timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
+    const entrada = new URL(page.url());
+    expect(entrada.searchParams.get("motivo")).toBe("favorito");
+    expect(entrada.searchParams.get("redirect")).toBe(`/imoveis/${id}`);
+    await expect(page.getByTestId("entrada-motivo")).toHaveText("Para guardar seus favoritos em qualquer aparelho, entre com seu e-mail.");
+    // Nada guardado no aparelho sem conta.
     const locais = await page.evaluate(() => (JSON.parse(localStorage.getItem("vivanomads-favorites") ?? "{}").state?.ids ?? []) as string[]);
-    expect(locais).toHaveLength(2);
-    // Momento de valor: a entrada diz o porquê e volta para a ação.
+    expect(locais).toEqual([]);
+    // Entra (conta nova), passa pela intenção e volta ao anúncio; o coração agora favorita na conta.
     const email = `convidado.t300.${novoSufixo()}@lab.vivanomads.test`;
-    await page.goto(`/auth?motivo=pedido&redirect=${encodeURIComponent("/dashboard/favoritos")}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("entrada-motivo")).toHaveText("Para enviar seu pedido, entre com seu e-mail.");
-    await entrarPorCodigo(page, email, `/auth?motivo=pedido&redirect=${encodeURIComponent("/dashboard/favoritos")}`);
+    await entrarPorCodigo(page, email, entrada.pathname + entrada.search);
     await page.waitForURL(/\/auth\/intencao/, { timeout: 45_000 });
     const p = await perfil(email);
     criadas.push(p.id);
     await page.getByTestId("intencao-agora-nao").click();
-    await page.waitForURL((u) => u.pathname === "/dashboard/favoritos", { timeout: 30_000 });
-    // Mesclou na conta, sem duplicar, e a cópia do aparelho passou a ser a da conta (nada pendente).
+    await page.waitForURL((u) => u.pathname === `/imoveis/${id}`, { timeout: 30_000 });
+    const coracaoLogado = page.getByTestId("coracao").locator("visible=true").first();
+    await expect(async () => {
+      if ((await coracaoLogado.getAttribute("aria-pressed")) !== "true") await coracaoLogado.click({ timeout: 4_000 });
+      await expect(coracaoLogado).toHaveAttribute("aria-pressed", "true", { timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
     await expect
-      .poll(async () => ((await adm().from("favorites").select("property_id").eq("tenant_id", p.id)).data ?? []).map((r) => r.property_id).sort(), { timeout: 30_000 })
-      .toEqual([...locais].sort());
-    const estado = await page.evaluate(() => JSON.parse(localStorage.getItem("vivanomads-favorites") ?? "{}").state);
-    expect(estado.pendente).toEqual([]);
-    expect([...estado.ids].sort()).toEqual([...locais].sort());
-    expect((await perfil(email)).intencao).toEqual([]);
+      .poll(async () => ((await adm().from("favorites").select("property_id").eq("tenant_id", p.id)).data ?? []).map((r) => r.property_id), { timeout: 30_000 })
+      .toEqual([id]);
   });
 
   test("6. app simulado entra por código sem trocar de navegador", async ({ browser }) => {

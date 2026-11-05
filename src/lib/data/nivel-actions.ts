@@ -6,6 +6,7 @@
   aceita ou recusa a foto com motivo. Toda gravação passa pelo cliente de serviço DEPOIS de conferir quem age, e todo
   passo recalcula o nível (elo mais fraco). Nada financeiro (D7).
 */
+import { recusaObservador } from "@/lib/qa/observador";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -213,6 +214,9 @@ export async function analisarFotoNivel(propertyId: string, chave: string, decis
   const admin = createAdminClient();
   if (!s || !admin || !UUID.test(propertyId ?? "")) return { ok: false, erro: "Sem permissão." };
   if (!(await ehAdmin(s.supabase, s.uid))) return { ok: false, erro: "Só o atendimento da Viva analisa as fotos." };
+  // E477: imóvel real — o admin observador da QA só lê (imóvel de conta de teste segue liberado).
+  const recusaQa = await recusaObservador(s.uid, { imoveis: [propertyId] });
+  if (recusaQa) return { ok: false, erro: recusaQa };
   if (!ehChaveNivel(chave) || (decisao !== "aceita" && decisao !== "recusada")) return { ok: false, erro: "Pedido inválido." };
   const m = (motivo ?? "").trim().slice(0, 300);
   if (decisao === "recusada" && m.length < 5) return { ok: false, erro: "Diga em poucas palavras por que a foto não serve (ex.: não mostra o item)." };

@@ -13,7 +13,7 @@ import { comPrecos } from "../fixtures/precos";
 const SAIDA = "tests/laboratorio/saida";
 const DESTINOS = [
   ["Imóveis", "/buscar"],
-  ["Anunciar", "/dashboard/imoveis/novo"],
+  ["Anunciar", "/para-proprietarios"],
   ["Empresas", "/empresas"],
   ["Parceiros", "/parceiros"],
   ...comPrecos(["Planos", "/planos"]), // E555 (E563: só com a página de preços ligada)

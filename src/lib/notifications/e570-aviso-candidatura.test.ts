@@ -20,9 +20,10 @@ test("título nomeia o morador mascarado e o imóvel; sem imóvel, 'o seu imóve
 
 test("a candidatura grava o aviso com o título nomeado, a candidatura como refId e o link do cartão dela", () => {
   const a = ler("src/lib/data/actions.ts");
-  assert.match(a, /tituloAviso: tituloAvisoCandidatura\(\{ candidato: CANDIDATO_MASCARADO, imovel: propertyTitle \}\), refId: leadId/);
+  // E570 (resíduo): o primeiro nome do candidato (sem nome, "Candidato(a)") — ver e570-nome-candidato.test.ts.
+  assert.match(a, /tituloAviso: tituloAvisoCandidatura\(\{ candidato: primeiroNome\(me\?\.full_name\), imovel: propertyTitle \}\), refId: leadId/);
   assert.match(a, /pushUrl: kind === "candidatura" && leadId \? linkCandidaturaDono\(leadId\) : "\/dashboard\/leads",/);
-  assert.match(ler("src/lib/notifications/index.ts"), /titulo: params\.tituloAviso, imovelId: params\.imovelId \}/);
+  assert.match(ler("src/lib/notifications/index.ts"), /titulo: params\.tituloAviso \?\? mensagem\?\.titulo, texto: mensagem\?\.texto, imovelId: params\.imovelId \}/);
   // O título específico passa pelo filtro de contato antes de ir ao banco.
   assert.match(ler("src/lib/notifications/avisos-servidor.ts"), /let titulo = p\.titulo \? tituloDoAviso\(guardContactInfo\(p\.titulo\)\.text\) : tituloDoAviso\(base\.subject\);/);
 });

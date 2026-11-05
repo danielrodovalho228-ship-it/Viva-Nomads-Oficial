@@ -298,6 +298,14 @@
         "t419-varredura-bloco36"
       ]
     },
+    "/admin/premissas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t604-e216-observador-sem-caixa"
+      ]
+    },
     "/admin/socios": {
       "personas": [
         "admin"
@@ -1292,6 +1300,16 @@
         "t686-varredura-bloco72"
       ]
     },
+    "/dashboard/estadia/[contratoId]/contrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar",
+        "t48-varredura"
+      ]
+    },
     "/dashboard/locacoes/[id]": {
       "personas": [
         "inquilino",
@@ -1563,15 +1581,6 @@
         "t593-e211-visita-do-dono",
         "t589-varredura-bloco47",
         "t599-varredura-bloco49"
-      ]
-    },
-    "/decisao": {
-      "personas": [
-        "socio"
-      ],
-      "specs": [
-        "t3-isolamento-papeis",
-        "t307-varredura-bloco8"
       ]
     },
     "/dev/emails": {
@@ -1962,15 +1971,6 @@
         "t7-fluxo-publico",
         "t200-roi-socios",
         "t208-sem-nomade-drive",
-        "t307-varredura-bloco8"
-      ]
-    },
-    "/socios": {
-      "personas": [
-        "socio"
-      ],
-      "specs": [
-        "t3-isolamento-papeis",
         "t307-varredura-bloco8"
       ]
     },
@@ -4662,12 +4662,6 @@
       "personas": [
         "inquilino",
         "proprietario"
-      ],
-      "specs": []
-    },
-    "src/lib/data/pedidos-admin.ts#adminListPedidos": {
-      "personas": [
-        "admin"
       ],
       "specs": []
     },

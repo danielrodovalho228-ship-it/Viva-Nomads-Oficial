@@ -44,7 +44,7 @@ import { MSG_ATRASO_NAO_LIDO } from "@/lib/atendimento/aviso-topo-admin";
 
 /*
   Central de Agentes v2 — ADMIN-5: nos tokens do admin (fundo claro, sem o tema escuro do QG), avatares hexagonais
-  com foto e anel da última ronda; o chat e as atas são lidos só quando a aba abre, com paginação. Abas: Equipe · Rede ao vivo · Raio-X · Diário de bordo · Conversar ·
+  com foto e anel da última ronda; o chat e as atas são lidos só quando a aba abre, com paginação. Abas: Equipe · Rede (24 h) · Raio-X · Diário de bordo · Conversar ·
   Sala de reunião. Tudo vem do banco (agentes, agentes_rondas, agentes_ordens);
   a página se atualiza sozinha a cada 90 s. "Deixar ordem" grava para a próxima
   ronda; "Executar agora" grava e dispara a rotina real do agente na hora
@@ -79,6 +79,7 @@ const COR_STATUS: Record<StatusAgente, string> = {
   no_ar: "#15803D",
   planejado: "#6B7280",
   pausado: "#6B7280",
+  parado: "#B45309",
 };
 const COR_ESTADO: Record<EstadoOrdem, string> = {
   aguardando: "#B45309",
@@ -312,8 +313,10 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
       </div>
 
       <div className="pb-16">
-        <section className={`grid items-end gap-4 lg:grid-cols-[1.3fr_1fr] lg:gap-6 ${aba === "Equipe" ? "py-8" : "py-4"}`}>
-          <div className={aba === "Equipe" ? "" : "hidden lg:block"}>
+        {/* E474 (ii): a capa com os números (agentes ativos, rondas, falhas, P1) é da aba Equipe — não se repete nas outras. */}
+        {aba === "Equipe" && (
+        <section className="grid items-end gap-4 py-8 lg:grid-cols-[1.3fr_1fr] lg:gap-6">
+          <div>
             <p className="font-title text-xl font-semibold text-ink">
               A equipe trabalhando{" "}
               <span className="text-forest">24 horas</span>, cada agente com nome e função.
@@ -337,6 +340,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
             ))}
           </div>
         </section>
+        )}
 
         {aba === "Aprovações" ? (
           <section id="aprovacoes" aria-label="Aprovações" className="scroll-mt-24" data-testid="secao-aprovacoes">
@@ -347,7 +351,7 @@ export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }:
           <Vazio titulo={estado.vazio.titulo} texto={estado.vazio.texto} acao={estado.vazio.acao} />
         ) : aba === "Equipe" ? (
           <Equipe dados={dados} agora={agora} onConversar={abrirConversa} />
-        ) : aba === "Rede ao vivo" ? (
+        ) : aba === "Rede (24 h)" ? (
           <RedeAoVivo agentes={dados.agentes} rondas={dados.rondas} agora={agora} />
         ) : aba === "Raio-X da Viva" ? (
           <RaioX agentes={dados.agentes} rondas={dados.rondas} agora={agora} onConversar={abrirConversa} />
@@ -380,7 +384,7 @@ function CardAgente({
   onConversar: (s: string) => void;
 }) {
   const cor = COR_ESQUADRAO[a.esquadrao];
-  const st = statusDoAgente(a, ultima);
+  const st = statusDoAgente(a, ultima, agora ?? undefined);
   const ativo = a.status === "ativo";
   const anel = st === "no_ar" ? COR_STATUS.no_ar : ativo ? COR_RONDA_HEX[corDaRonda(ultima)] : undefined;
   const dur = ultima ? duracao(ultima.iniciada_em, ultima.concluida_em) : null;
@@ -527,53 +531,20 @@ function Equipe({ dados, agora, onConversar }: { dados: DadosCentral; agora: Dat
 }
 
 // ── Diário de bordo ────────────────────────────────────────────────────────
+/**
+ * E474 (ii): o Diário é o HISTÓRICO das rondas (com filtro por agente e prioridade). A "última ronda de cada agente"
+ * mora só nos cartões da aba Equipe, e os números da capa (agentes ativos, rondas, falhas, P1) também — antes as duas
+ * coisas se repetiam aqui.
+ */
 function Diario({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Record<string, Agente>; agora: Date | null }) {
-  const ultimas = useMemo(() => Object.values(ultimaPorAgente(dados.rondas)).sort((x, y) => new Date(y.iniciada_em).getTime() - new Date(x.iniciada_em).getTime()), [dados.rondas]);
   return (
-    <div className="w-full">
-      <Rotulo>Última ronda de cada agente</Rotulo>
-      {ultimas.length === 0 ? (
-        <Vazio titulo="Nenhuma ronda registrada ainda" texto="Quando os agentes chamarem registrar_ronda no fim de cada ronda, a última de cada um aparece aqui." />
+    <div className="w-full" data-testid="diario">
+      <Rotulo>Histórico das rondas</Rotulo>
+      {dados.rondas.length === 0 ? (
+        <Vazio titulo="Nenhuma ronda registrada ainda" texto="Quando os agentes chamarem registrar_ronda no fim de cada ronda, o histórico aparece aqui." />
       ) : (
-        <ul className="space-y-2" data-testid="diario">
-          {ultimas.map((r) => {
-            const a = porSlug[r.agente_slug];
-            const achados = (Array.isArray(r.achados) ? r.achados : []).filter((x) => /^P[0-3]$/i.test(String(x?.prioridade ?? "")));
-            return (
-              <li key={r.id} className="grid grid-cols-[40px_1fr] gap-3 rounded-xl border border-line bg-white p-3">
-                {a ? <AvatarAgente slug={a.slug} nome={a.nome} cor={COR_ESQUADRAO[a.esquadrao]} anel={COR_RONDA[r.status]} recente={!!agora && rondaRecente(r, agora)} tamanho={40} /> : <span />}
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <b className="text-ink">{a?.nome ?? r.agente_slug}</b>
-                    <Chip cor={COR_RONDA[r.status]}>{ROTULO_RONDA[r.status]}</Chip>
-                    <span className="text-xs text-muted" style={mono}>
-                      {dataHora(r.iniciada_em)}{agora ? ` · ${tempoRelativo(r.iniciada_em, agora)}` : ""}
-                    </span>
-                  </div>
-                  {r.resumo && <p className="mt-1 text-[13px] text-ink">{resumoCurto(r.resumo, 260)}</p>}
-                  {achados.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-[13px] text-ink">
-                      {achados.slice(0, 5).map((x, i) => (
-                        <li key={i}>
-                          <ChipPrioridade p={String(x.prioridade)} />
-                          {x.titulo ?? x.detalhe}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {r.link_sessao && (
-                    <a href={r.link_sessao} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-forest hover:underline">
-                      Abrir ronda ↗
-                    </a>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <Rondas dados={dados} porSlug={porSlug} agora={agora} />
       )}
-      <Rotulo>Histórico</Rotulo>
-      <Rondas dados={dados} porSlug={porSlug} agora={agora} />
     </div>
   );
 }

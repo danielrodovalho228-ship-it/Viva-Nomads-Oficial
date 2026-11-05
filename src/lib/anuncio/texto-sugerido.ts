@@ -89,3 +89,11 @@ export function donoEscreveu(atual: { titulo: string; descricao: string }, anter
   const q = camposQueRecebem(atual, anterior);
   return !q.titulo || !q.descricao;
 }
+
+/**
+ * E613: "Usar esta sugestão" — o clique do dono põe a sugestão SÓ nos campos ainda vazios (nunca por cima do texto dele).
+ * A sugestão nunca entra nos campos sozinha: preenchida sem o dono, a Revisão marcava "Título e descrição — feito".
+ */
+export function camposParaUsarSugestao(atual: { titulo: string; descricao: string }): { titulo: boolean; descricao: boolean } {
+  return { titulo: !atual.titulo.trim(), descricao: !atual.descricao.trim() };
+}

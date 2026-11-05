@@ -30,6 +30,12 @@ export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
 
+/** E447: a categoria escolhida na URL (?categoria=) entra marcada, sem desmarcar as outras nem duplicar. */
+export function categoriasComDaUrl(atuais: readonly string[], daUrl: string | null | undefined): string[] {
+  if (!daUrl || !categoriaValida(daUrl) || atuais.includes(daUrl)) return [...atuais];
+  return [...atuais, daUrl];
+}
+
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;
 
@@ -184,12 +190,39 @@ export function checklistCompleto(c: Partial<Record<string, unknown>> | null | u
   return ITENS_CHECKLIST.every((i) => c?.[i.chave] === true) && !!c?.documento_conferido_em;
 }
 
-export const MOTIVOS_RECUSA_PARCERIA = [
-  "Não conseguimos confirmar a sua identidade ou o documento informado.",
-  "No momento ainda não atendemos esta cidade com parceiros.",
-  "O portfólio enviado não permitiu avaliar o serviço. Você pode enviar um novo pedido com outro link.",
-  "As informações do serviço ficaram incompletas. Você pode enviar um novo pedido com mais detalhes.",
+/**
+ * E350 (decisão do Daniel, 01/11): os modelos de recusa de PARCERIA, um a um com o checklist do admin (identidade, documento,
+ * área, categoria) e um para pedido incompleto. `rotulo` é o que o admin lê na ficha; `texto` vai no e-mail ao parceiro
+ * recusado — o motivo e o próximo passo.
+ */
+export const MODELOS_RECUSA_PARCERIA = [
+  {
+    chave: "identidade",
+    rotulo: "Identidade não confirmada",
+    texto: "Não conseguimos confirmar a sua identidade com o documento com foto enviado. Para tentar de novo, envie um novo pedido de parceria e refaça a confirmação com um documento válido e legível.",
+  },
+  {
+    chave: "documento",
+    rotulo: "CPF ou CNPJ não conferido",
+    texto: "O CPF ou CNPJ informado não pôde ser conferido na Receita Federal (número inválido ou situação irregular). Confira o número e a situação do documento e envie um novo pedido de parceria.",
+  },
+  {
+    chave: "area",
+    rotulo: "Cidade ainda não atendida",
+    texto: "Ainda não atendemos a sua cidade ou região com parceiros. Quando a Viva Nomads chegar à sua região, você pode enviar um novo pedido de parceria.",
+  },
+  {
+    chave: "categoria",
+    rotulo: "Serviço não pôde ser avaliado",
+    texto: "O portfólio, a empresa ou veículo ou a descrição enviados não permitiram avaliar o serviço. Envie um novo pedido de parceria com um link de portfólio ou detalhes que mostrem o seu trabalho.",
+  },
+  {
+    chave: "incompleto",
+    rotulo: "Informações incompletas",
+    texto: "As informações do pedido ficaram incompletas. Envie um novo pedido de parceria preenchendo todos os campos do serviço e da área de atendimento.",
+  },
 ] as const;
+export const MOTIVOS_RECUSA_PARCERIA = MODELOS_RECUSA_PARCERIA.map((m) => m.texto);
 
 // ── Página e publicação ────────────────────────────────────────────────────────────────────────────────────────
 export const GALERIA_MAX = 30;

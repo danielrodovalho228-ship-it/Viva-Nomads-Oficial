@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emailMascarado, mesmoEmail, situacaoToken, type SituacaoToken } from "./regras";
-import { concluirAtivacao, ERRO_ATIVAR_AGORA, ERRO_CONFIRME_EMAIL, podeAtivarPeloPainel, type SolicitacaoAtivavel } from "./ativacao-nucleo";
+import { concluirAtivacao, ERRO_ATIVAR_AGORA, ERRO_CONFIRME_EMAIL, podeAtivarPeloPainel, preencherCpfDoPerfil, type SolicitacaoAtivavel } from "./ativacao-nucleo";
 import { hashToken, tokenBemFormado } from "./token";
 
 /**
@@ -62,7 +62,10 @@ export async function ativarParceria(token: string): Promise<{ ok: true; slug: s
   if (!user.email_confirmed_at) return { ok: false, erro: ERRO_CONFIRME_EMAIL };
   const sit = situacaoToken({ status: sol.status as string, tokenExpiraEm: sol.token_expira_em as string | null }, new Date());
   if (sit !== "valido") return { ok: false, erro: sit === "usado" ? "Este link já foi usado." : "Este link venceu. Peça um novo link." };
-  return concluirAtivacao(admin, sol as unknown as SolicitacaoAtivavel, user.id, "Este link já foi usado.");
+  const r = await concluirAtivacao(admin, sol as unknown as SolicitacaoAtivavel, user.id, "Este link já foi usado.");
+  // E463: o CPF do pedido vai para o perfil (fonte única) quando o perfil ainda não tem documento.
+  if (r.ok) await preencherCpfDoPerfil(admin, user.id, sol as unknown as SolicitacaoAtivavel);
+  return r;
 }
 
 /**
@@ -89,5 +92,7 @@ export async function ativarPeloPainel(): Promise<{ ok: true; slug: string } | {
     if (!conta.emailConfirmado && (data ?? []).length) return { ok: false, erro: ERRO_CONFIRME_EMAIL };
     return { ok: false, erro: "Não há parceria aprovada para esta conta." };
   }
-  return concluirAtivacao(admin, sol, user.id);
+  const r = await concluirAtivacao(admin, sol, user.id);
+  if (r.ok) await preencherCpfDoPerfil(admin, user.id, sol);
+  return r;
 }

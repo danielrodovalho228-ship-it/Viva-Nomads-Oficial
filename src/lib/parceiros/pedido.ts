@@ -23,8 +23,9 @@ export type PapelNoPedido = "cliente" | "parceiro";
 
 /** Ações do pedido: quem pode, de qual estado e para qual estado. Qualquer outra combinação é recusada. */
 export const TRANSICOES = {
-  orcar: { quem: "parceiro", de: ["solicitado", "orcado"], para: "orcado" }, // reenviar ajusta o valor
-  recusar_pedido: { quem: "parceiro", de: ["solicitado", "orcado"], para: "recusado" },
+  // E462: também do "Orçamento aceito" (antes do horário confirmado): atualizar volta ao cliente; recusar encerra.
+  orcar: { quem: "parceiro", de: ["solicitado", "orcado", "aceito"], para: "orcado" }, // reenviar ajusta o valor
+  recusar_pedido: { quem: "parceiro", de: ["solicitado", "orcado", "aceito"], para: "recusado" },
   aceitar_orcamento: { quem: "cliente", de: ["orcado"], para: "aceito" },
   recusar_orcamento: { quem: "cliente", de: ["orcado"], para: "cancelado" },
   cancelar: { quem: "cliente", de: ["solicitado"], para: "cancelado" },
@@ -39,6 +40,14 @@ export type AcaoPedido = keyof typeof TRANSICOES;
 export function podeFazer(acao: AcaoPedido, status: string, papel: PapelNoPedido): boolean {
   const t = TRANSICOES[acao];
   return t.quem === papel && (t.de as readonly string[]).includes(status);
+}
+
+/**
+ * E462: as saídas do parceiro (atualizar o orçamento, recusar) no "Orçamento aceito" só valem enquanto não há
+ * pagamento registrado; recebido e orçado não têm pagamento, então sempre valem.
+ */
+export function saidaDoAceitoLiberada(status: string, pagamentoStatus: string): boolean {
+  return status !== "aceito" || pagamentoStatus === "indisponivel";
 }
 
 /** "Em aberto" para o teto: ainda esperando orçamento ou decisão. */
@@ -231,6 +240,8 @@ export function telefoneNaTela(t: string): string {
 // ── L2-B item 17: recusa do parceiro ──────────────────────────────────────────────────────────────────────────
 /** Todo "Recusar" pede confirmação com este texto; o motivo é opcional. */
 export const AVISO_RECUSAR_PEDIDO = "Recusar este pedido? O cliente será avisado.";
+/** E462: o que acontece ao atualizar um orçamento já aceito (a decisão volta ao cliente). */
+export const AVISO_ATUALIZAR_ACEITO = "O cliente já aceitou o orçamento. Ao atualizar, ele precisa aceitar o novo valor.";
 export const AVISO_RECUSAR_ORCAMENTO = "Recusar este orçamento? O parceiro será avisado.";
 /** "Pedir a outro parceiro": a busca de parceiros na mesma categoria. */
 export const linkOutroParceiro = (categoria: string) => `/parceiros/buscar?categoria=${encodeURIComponent(categoria)}`;
@@ -269,6 +280,7 @@ export const CHAVE_CONVERSA_PEDIDO = (pedidoId: string) => `pedido:${pedidoId}`;
 export const MENSAGENS_AUTOMATICAS = {
   boas_vindas: "Aqui vocês combinam tudo. Contato pessoal só pela plataforma: telefone, e-mail e outros apps não passam por aqui.",
   orcamento: (valor: number) => `Orçamento enviado: ${brl(valor)}.`,
+  orcamento_atualizado: (valor: number) => `Orçamento atualizado: ${brl(valor)}. O cliente precisa aceitar o novo valor.`,
   horario: (quando: string) => `Horário confirmado: ${quando}.`,
   lembrete: (quando: string) => `Lembrete: o serviço está marcado para ${quando}.`,
   entrega: "O parceiro marcou a entrega. Confira os arquivos e confirme a conclusão.",
@@ -303,7 +315,7 @@ export function proximoPasso(status: string, papel: PapelNoPedido): string | nul
   const parceiro: Partial<Record<StatusPedido, string>> = {
     solicitado: "Envie o orçamento ou recuse o pedido.",
     orcado: "Aguarde o cliente decidir.",
-    aceito: "Confirme um dos horários.",
+    aceito: "Confirme um dos horários. Se não puder atender assim, atualize o orçamento ou recuse.",
     agendado: "No dia, marque o início do serviço.",
     em_execucao: "Envie a entrega e marque como entregue.",
     entregue: "Aguarde o cliente confirmar a conclusão.",

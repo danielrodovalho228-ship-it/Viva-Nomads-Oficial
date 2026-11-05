@@ -44,8 +44,13 @@ export async function POST(request: Request) {
   // Edição de anúncio já salvo (rascunho ou publicado): o endereço vem do servidor, não do navegador.
   const doAnuncio = typeof corpo?.propertyId === "string" ? await enderecoDoAnuncio(admin, corpo.propertyId, user.id) : null;
   const cep = doAnuncio?.cep ?? cepValido(corpo?.cep);
-  if (!cep) return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
-  const endereco = doAnuncio ?? { rua: s(corpo?.rua, 150), numero: s(corpo?.numero, 20), cidade: s(corpo?.cidade, 100), uf: s(corpo?.uf, 2), cep };
+  // E593: anúncio publicado que perdeu o CEP (o draft_data é zerado ao publicar): a origem é o PONTO gravado do próprio
+  // anúncio — o CEP só servia de chave do cache e para achar o ponto. Sem CEP e sem ponto, aí sim 400.
+  const pontoGravado = !cep && doAnuncio?.ponto ? doAnuncio.ponto : null;
+  if (!cep && !pontoGravado) return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
+  const endereco = doAnuncio
+    ? { rua: doAnuncio.rua, numero: doAnuncio.numero, cidade: doAnuncio.cidade, uf: doAnuncio.uf, cep: cep ?? "" }
+    : { rua: s(corpo?.rua, 150), numero: s(corpo?.numero, 20), cidade: s(corpo?.cidade, 100), uf: s(corpo?.uf, 2), cep: cep ?? "" };
 
   // ── Lugar adicionado à mão: distância calculada até o endereço do anúncio ──
   if (corpo?.acao === "lugar") {
@@ -56,7 +61,7 @@ export async function POST(request: Request) {
       return NextResponse.json(/inexistente/i.test(enderecoLugar) ? { distanciaM: null } : { distanciaM: 700 });
     }
     if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) return NextResponse.json({ distanciaM: null, fonte: "limite" });
-    const origem = await origemDoAnuncio(admin, cep, endereco, etapas);
+    const origem = pontoGravado ?? (cep ? await origemDoAnuncio(admin, cep, endereco, etapas) : null);
     const lugar = origem ? await geocodificarLugar(enderecoLugar, endereco.cidade, endereco.uf, etapas) : null;
     registrar(origem && lugar ? "lugar_ok" : "lugar_sem_ponto", etapas);
     return NextResponse.json({ distanciaM: origem && lugar ? distanciaMetros(origem, lugar) : null });
@@ -72,6 +77,19 @@ export async function POST(request: Request) {
     registrar(r.fonte as FonteProximidades | "ancoras", ancoras.length ? [...etapas, `ancoras:${ancoras.length}`] : etapas);
     return NextResponse.json(r);
   };
+
+  // E593: sem CEP, busca a partir do ponto gravado do anúncio — sem o cache por CEP (a chave dele é o CEP).
+  if (pontoGravado) {
+    etapas.push("ponto_do_anuncio");
+    if (integracoesSimuladas()) {
+      await registrarSimulado("osm", { acao: "proximidades", cep: null });
+      return responder(PROXIMIDADES_LAB, "lab", pontoGravado);
+    }
+    if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) return responder(null, "limite", pontoGravado);
+    const achados = await buscarLugares(pontoGravado, etapas);
+    return responder(achados, achados ? "osm" : "erro", pontoGravado);
+  }
+  if (!cep) return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
 
   if (integracoesSimuladas()) {
     await registrarSimulado("osm", { acao: "proximidades", cep });
@@ -125,15 +143,38 @@ async function origemDoAnuncio(admin: ReturnType<typeof createAdminClient>, cep:
   return (await geocodificarEndereco(endereco, etapas)).ponto;
 }
 
-/** Endereço de um anúncio do PRÓPRIO dono (rascunho: o CEP do rascunho; publicado: o CEP guardado na 0238). */
-async function enderecoDoAnuncio(admin: ReturnType<typeof createAdminClient>, propertyId: string, userId: string): Promise<{ cep: string; rua: string; numero: string; cidade: string; uf: string } | null> {
+/**
+ * Endereço de um anúncio do PRÓPRIO dono (rascunho: o CEP do rascunho; publicado: o CEP guardado na 0238). E593: sem
+ * CEP, devolve o PONTO gravado (lat_exata/lng_exata, senão o público lat/lng) — nunca vai à resposta.
+ */
+async function enderecoDoAnuncio(
+  admin: ReturnType<typeof createAdminClient>,
+  propertyId: string,
+  userId: string,
+): Promise<{ cep: string | null; rua: string; numero: string; cidade: string; uf: string; ponto: Ponto | null } | null> {
   if (!admin || !/^[0-9a-f-]{36}$/i.test(propertyId)) return null;
-  const { data } = await admin.from("properties").select("owner_id, city, state, exact_address, draft_data, cep_proximidades").eq("id", propertyId).maybeSingle(); // consistency-ignore: PERTO-B — só o servidor, e só devolve ao PRÓPRIO dono (owner_id conferido abaixo); o endereço nunca vai à resposta
-  const p = data as { owner_id: string; city: string | null; state: string | null; exact_address: string | null; draft_data: Record<string, unknown> | null; cep_proximidades: string | null } | null;
+  const { data } = await admin.from("properties").select("owner_id, city, state, exact_address, draft_data, cep_proximidades, lat, lng, lat_exata, lng_exata").eq("id", propertyId).maybeSingle(); // consistency-ignore: PERTO-B — só o servidor, e só devolve ao PRÓPRIO dono (owner_id conferido abaixo); o endereço e o ponto nunca vão à resposta
+  const p = data as {
+    owner_id: string;
+    city: string | null;
+    state: string | null;
+    exact_address: string | null;
+    draft_data: Record<string, unknown> | null;
+    cep_proximidades: string | null;
+    lat: number | null;
+    lng: number | null;
+    lat_exata: number | null;
+    lng_exata: number | null;
+  } | null;
   if (!p || p.owner_id !== userId) return null;
   const d = p.draft_data ?? {};
   const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-  const cep = cepValido(txt(d.cep)) ?? cepValido(p.cep_proximidades);
-  if (!cep) return null;
-  return { cep, rua: txt(d.street) || (p.exact_address ?? "").split(",")[0].trim(), numero: txt(d.numero), cidade: txt(d.city) || p.city || "", uf: txt(d.uf) || p.state || "" };
+  const cep = cepValido(txt(d.cep)) ?? cepValido(p.cep_proximidades) ?? null;
+  const num = (v: number | null) => (v == null ? NaN : Number(v));
+  const exato = { lat: num(p.lat_exata), lng: num(p.lng_exata) };
+  const publico = { lat: num(p.lat), lng: num(p.lng) };
+  const valido = (q: Ponto) => Number.isFinite(q.lat) && Number.isFinite(q.lng) && (q.lat !== 0 || q.lng !== 0);
+  const ponto = valido(exato) ? exato : valido(publico) ? publico : null;
+  if (!cep && !ponto) return null;
+  return { cep, rua: txt(d.street) || (p.exact_address ?? "").split(",")[0].trim(), numero: txt(d.numero), cidade: txt(d.city) || p.city || "", uf: txt(d.uf) || p.state || "", ponto };
 }

@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { aberturaCandidatura, linhasCandidatura, linkCandidaturaDono, linkCandidaturaMorador, periodoDaCandidatura, proximoPassoCandidatura } from "./dados-candidatura.ts";
 import { prazoInicial } from "../inicio-estadia.ts";
+import { formatBRLExato, periodoPorExtenso, rotuloTotalDaEstadia } from "../precos.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const imovel = { titulo: "[TESTE QA NÍVEL] Premium", bairro: "Santa Mônica", cidade: "Uberlândia" };
@@ -20,7 +21,8 @@ test("quadro: imóvel · interessado · entrada/saída · valor mensal · total 
     { rotulo: "Saída", valor: "15/12/2026 (30 dias)" },
     { rotulo: "Valor mensal", valor: "R$ 3.200" },
     { rotulo: "Total por mês", valor: "R$ 3.340" },
-    { rotulo: "Total da estadia", valor: "R$ 3.340 em 1 mês" },
+    // E583: a estadia em dias (total por mês × dias ÷ 30), o mesmo número da tela — 30 dias = R$ 3.340.
+    { rotulo: rotuloTotalDaEstadia(30), valor: `${formatBRLExato(3340)} (${periodoPorExtenso(30)})` },
   ]);
 });
 
@@ -29,7 +31,7 @@ test("sem datas: 'A combinar com o proprietário' e nenhum total da estadia inve
   assert.equal(l.find((x) => x.rotulo === "Entrada")?.valor, "A combinar com o proprietário");
   assert.equal(l.find((x) => x.rotulo === "Saída")?.valor, "A combinar com o proprietário");
   assert.equal(l.find((x) => x.rotulo === "Interessado")?.valor, "Interessado");
-  assert.equal(l.some((x) => x.rotulo === "Total da estadia"), false);
+  assert.equal(l.some((x) => x.rotulo.startsWith("Total da estadia")), false);
 });
 
 test("período: 30 dias = 1 mês, arredonda para cima; saída antes da entrada não vale", () => {
@@ -61,7 +63,8 @@ test("guarda: os três momentos da candidatura usam o corpo com dados (envio ao 
   assert.match(acoes, /pushUrl: kind === "candidatura" && leadId \? linkCandidaturaDono\(leadId\) : "\/dashboard\/leads"/);
   assert.match(acoes, /corpoDoEmailDaCandidatura\(adm, leadId, "enviada"\)[\s\S]{0,200}event: "application_received"[\s\S]{0,200}pushUrl: linkCandidaturaMorador\(leadId\)/);
   // A saída da candidatura vai ao banco (0258) e o pedido manda a saída escolhida.
-  assert.match(acoes, /\.\.\.\(fimOk \? \{ fim_desejado: fim \} : \{\}\)/);
+  // E581: a saída entra pelos campos únicos (só com entrada válida e depois dela), no insert e na candidatura repetida.
+  assert.match(acoes, /camposDaCandidatura\(\{[\s\S]{0,300}fim: fimDesejado \?\? "",/);
   assert.match(ler("src/app/(public)/imoveis/[id]/property-detail.tsx"), /kind === "candidatura" && selecao\.saida \? selecao\.saida : undefined\)/);
   const leads = ler("src/lib/data/leads-actions.ts");
   assert.match(leads, /corpoDoEmailDaCandidatura\(admin, leadId, "aceita"\)/);

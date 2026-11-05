@@ -25,7 +25,10 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
   if (painel) {
     return (
       <>
-        <PageTitle title="Parceiro" subtitle="A sua página de parceiro na Viva: dados, página, serviços e atendimento." />
+        {/* E459: o "Início" do menu do parceiro leva aqui (#inicio), não ao início do dono. */}
+        <div id="inicio" className="scroll-mt-24">
+          <PageTitle title="Parceiro" subtitle="A sua página de parceiro na Viva: dados, página, serviços e atendimento." />
+        </div>
         {sp.ativada === "1" && (
           <p className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink" role="status" data-testid="parceiro-ativada">
             Parceria ativada. Complete a página e publique quando estiver pronta.
@@ -41,7 +44,7 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
           <ButtonLink href="/dashboard/parceiro/avaliacao" variant="secondary" size="sm" className="mt-3">Credenciamento e avaliações</ButtonLink>
         </Panel>
         {/* Prompt 38: convites e vínculos de parceiro fixo de imóvel. */}
-        <ImoveisFixos />
+        <ImoveisFixos pagina={{ status: painel.status, slug: painel.slug }} />
         <PainelParceiroCliente inicial={painel} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </>
     );

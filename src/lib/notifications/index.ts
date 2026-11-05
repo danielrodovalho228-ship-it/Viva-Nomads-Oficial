@@ -11,7 +11,7 @@ import { CATEGORIAS_COM_INTERRUPTOR, eventoDesligadoPelaPessoa } from "@/config/
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { DestaqueEmail } from "./destaque-email";
 import { gravarAviso } from "./avisos-servidor";
-import type { PapelAviso, PrioridadeAviso } from "./avisos";
+import { avisoDeMensagem, type PapelAviso, type PrioridadeAviso } from "./avisos";
 
 const UUID_DESTAQUE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -140,6 +140,8 @@ export async function notify(params: {
   refId?: string | null;
   /** E570: título específico do aviso no sino (montado por função pura de avisos.ts); sem ele, o assunto do catálogo. */
   tituloAviso?: string | null;
+  /** E482: a prévia da mensagem nova — vira o texto do aviso no sino (nunca vai no push nem no título). */
+  previaAviso?: string | null;
   /** E444: prioridade explícita quando o mesmo evento é só informativo (ex.: "contrato assinado pelas duas partes"). */
   prioridadeAviso?: PrioridadeAviso | null;
 }): Promise<NotifyResult> {
@@ -183,10 +185,12 @@ export async function notify(params: {
     : null;
 
   // E444: o aviso no sino do site, do MESMO evento (fonte única), em paralelo. Título do catálogo, nunca texto do usuário.
+  // E482: a mensagem nova diz no sino quem escreveu e traz a prévia (o imóvel entra pelo gravarAviso).
+  const mensagem = params.event === "new_message" ? avisoDeMensagem({ remetente: params.remetenteNome, previa: params.previaAviso }) : null;
   const avisoPromise =
     // E550: só eventos com a central na matriz (o "só e-mail" não vira aviso), com o imóvel no título.
     params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event) && eventoTemCentral(params.event)
-      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso, imovelId: params.imovelId }))
+      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso ?? mensagem?.titulo, texto: mensagem?.texto, imovelId: params.imovelId }))
       : null;
 
   if (params.email) {

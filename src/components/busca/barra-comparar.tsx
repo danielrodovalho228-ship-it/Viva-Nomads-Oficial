@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
 import { hrefComparar, MIN_COMPARAR } from "@/lib/busca/comparar";
 
@@ -9,6 +12,7 @@ import { hrefComparar, MIN_COMPARAR } from "@/lib/busca/comparar";
  * com fundo branco opaco e borda — no fim da lista ela vem DEPOIS do último cartão.
  */
 export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: string | null; onLimpar: () => void }) {
+  const router = useRouter();
   if (ids.length === 0) return null;
   const pronto = ids.length >= MIN_COMPARAR;
   return (
@@ -20,7 +24,16 @@ export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: 
           <p role="status" className="text-sm text-muted">Marque mais 1 para comparar</p>
         ) : null}
         {pronto ? (
-          <Link href={hrefComparar(ids)} className={buttonClasses({ size: "sm" })} data-testid="comparar-abrir">
+          <Link
+            href={hrefComparar(ids)}
+            // E532: leva a busca de agora (filtros e ordenação, lidos da URL no clique) para o "Voltar à busca".
+            onClick={(e) => {
+              e.preventDefault();
+              router.push(hrefComparar(ids, window.location.search));
+            }}
+            className={buttonClasses({ size: "sm" })}
+            data-testid="comparar-abrir"
+          >
             Comparar ({ids.length})
           </Link>
         ) : (

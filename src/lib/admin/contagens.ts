@@ -77,6 +77,16 @@ export function resumoContasTeste(contas: readonly { role: string | null; anonym
   return { total: contas.length, usuarios, outras: contas.length - usuarios };
 }
 
+/**
+ * E475: separa as contas de teste em "de Usuários" (proprietário/inquilino não anonimizado, a regra de contarUsuarios)
+ * e as outras (da equipe, como o admin observador da QA, ou anonimizadas) — a tela Testes mostra as duas à parte.
+ */
+export function separarContasTeste<T extends { role: string | null; anonymized_at?: string | null }>(contas: readonly T[]): { deUsuarios: T[]; outras: T[] } {
+  const papeis: readonly string[] = PAPEIS_USUARIOS;
+  const ehDeUsuarios = (c: T) => c.role !== null && papeis.includes(c.role) && !c.anonymized_at;
+  return { deUsuarios: contas.filter(ehDeUsuarios), outras: contas.filter((c) => !ehDeUsuarios(c)) };
+}
+
 /** "14 · 13 proprietários e inquilinos (os de Usuários) · 1 da equipe ou anonimizada". */
 export function textoContasTeste(r: { total: number; usuarios: number; outras: number }): string {
   if (r.outras === 0) return `${r.total}`;

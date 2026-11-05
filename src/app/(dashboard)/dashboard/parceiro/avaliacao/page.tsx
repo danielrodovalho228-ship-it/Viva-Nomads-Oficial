@@ -51,13 +51,16 @@ export default async function AvaliacaoParceiroPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/auth?redirect=%2Fdashboard%2Fparceiro%2Favaliacao");
-  const { data: parc } = await admin.from("parceiros").select("id").eq("user_id", user.id).maybeSingle();
+  const { data: parc, error: erroParc } = await admin.from("parceiros").select("id").eq("user_id", user.id).maybeSingle();
+  // Achado 125: a falha não vira "ainda não é parceiro" (que levaria a pedir de novo) — cai no aviso do painel.
+  if (erroParc) throw new Error("Não foi possível ler sua parceria agora.");
   // Correção 62-B3: o pedido de quem ainda não é parceiro fica ligado à pessoa (o parceiro nasce na aprovação).
-  const { data: credLinhas } = await admin
+  const { data: credLinhas, error: erroCred } = await admin
     .from("avaliadores_credenciamento")
     .select("id, numero_credenciado, cidade, status")
     .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${user.id}` : `user_id.eq.${user.id}`)
     .limit(1);
+  if (erroCred) throw new Error("Não foi possível ler seu credenciamento agora.");
   const cred = (credLinhas ?? [])[0] as { id: string; numero_credenciado: string; cidade: string; status: string } | undefined;
   const identidade = (await estadoIdentidade(admin, user.id)).estado;
   const identidadeOk = identidade === "confirmada";

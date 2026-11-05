@@ -38,3 +38,14 @@ export function alternarIntencao(atuais: readonly Intencao[], alvo: Intencao, li
   else conjunto.delete(alvo);
   return (["morar", "anunciar", "servicos"] as const).filter((i) => conjunto.has(i));
 }
+
+/**
+ * E537: o interruptor "Quero morar" reflete o papel de verdade — ligado quando a intenção tem "morar" OU o papel de
+ * morador está em uso agora (o mesmo "Em uso" de "Como você usa a Viva"). Em uso, fica travado: desligar ali não
+ * desligaria o papel; para isso, troca-se o papel em uso.
+ */
+export function estadoQueroMorar(intencao: readonly Intencao[], morarEmUso: boolean): { ligado: boolean; travado: boolean } {
+  return { ligado: morarEmUso || intencao.includes("morar"), travado: morarEmUso };
+}
+
+export const TEXTO_MORAR_EM_USO = "Em uso agora. Para desligar, use outro papel em “Como você usa a Viva”, abaixo.";

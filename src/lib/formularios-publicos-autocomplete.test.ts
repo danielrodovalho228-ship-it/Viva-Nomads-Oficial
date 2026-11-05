@@ -24,13 +24,10 @@ test("/ajuda: nome e e-mail do chamado têm name e autocomplete", () => {
   assert.match(email, /autoComplete="email"/);
 });
 
-test("chat da Viva: nome e e-mail têm name e autocomplete", () => {
+test("chat da Viva: sem formulário próprio de nome e e-mail (E449: o chamado é o da Central, testado acima)", () => {
   const f = ler("../components/ajuda/viva-chat.tsx");
-  const nome = tag(f, 'aria-label="Seu nome"');
-  const email = tag(f, 'aria-label="Seu e-mail"');
-  assert.match(nome, /autoComplete="name"/);
-  assert.match(email, /autoComplete="email"/);
-  assert.match(email, /\bname="email"/);
+  assert.ok(!f.includes('aria-label="Seu nome"'));
+  assert.ok(!f.includes('aria-label="Seu e-mail"'));
 });
 
 test("parceiros: cidade do fotógrafo e site do parceiro têm autocomplete", () => {

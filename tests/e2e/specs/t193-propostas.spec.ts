@@ -112,6 +112,9 @@ test.describe("T193 — propostas", () => {
       const inq = await abrir(browser, c.inq.email, largura);
       await inq.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
       await expect(inq.getByTestId("proposta-status")).toHaveText("Vista");
+      // E536: o "ver todas" do morador fica na área do morador (nunca a Orçamentos do dono).
+      await expect(inq.getByTestId("proposta-ver-todas")).toHaveText("Ver todas as propostas");
+      await expect(inq.getByTestId("proposta-ver-todas")).toHaveAttribute("href", "/dashboard/propostas");
       // A taxa da Viva nunca aparece para o interessado.
       await expect(inq.getByTestId("proposta-taxa")).toHaveCount(0);
       expect(await inq.content()).not.toContain("Taxa de serviço");
@@ -139,6 +142,7 @@ test.describe("T193 — propostas", () => {
 
       await dono.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
       await expect(dono.getByTestId("historico-versoes").getByTestId("versao")).toHaveCount(2);
+      await expect(dono.getByTestId("proposta-ver-todas")).toHaveAttribute("href", "/dashboard/orcamentos"); // E536
       await expect(dono.getByTestId("historico-versoes")).toContainText("4 meses");
       await expect(dono.getByTestId("historico-versoes")).toContainText("6 meses");
       await dono.screenshot({ path: `${SAIDA}/t193-5-historico-${largura}.png`, fullPage: true });

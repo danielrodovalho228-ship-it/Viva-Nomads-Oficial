@@ -20,7 +20,7 @@ test("menu público: os destinos do E458 seguem, nesta ordem", () => {
     destinos(),
     [
       ["Imóveis", "/buscar"],
-      ["Anunciar", "/dashboard/imoveis/novo"],
+      ["Anunciar", "/para-proprietarios"],
       ["Empresas", "/empresas"],
       ["Parceiros", "/parceiros"],
       ["Planos", "/planos"],
