@@ -4,19 +4,6 @@ import { hasAccount } from "../fixtures/accounts";
 import { comPrecos } from "../fixtures/precos";
 
 
-// TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação.
-test.afterEach(async ({}, info) => {
-  if (info.status === info.expectedStatus) return;
-  const { readdirSync, readFileSync } = await import("node:fs");
-  const { join } = await import("node:path");
-  let arqs: string[] = [];
-  try { arqs = readdirSync(info.outputDir).filter((a) => a.endsWith("-actual.png")); } catch { return; }
-  for (const a of arqs) {
-    const b64 = readFileSync(join(info.outputDir, a)).toString("base64");
-    const partes = Math.ceil(b64.length / 8000);
-    for (let i = 0; i < partes; i++) console.log(`@@PNG ${a} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
-  }
-});
 
 /*
   T245 — Regressão visual (adendo do Prompt 40): `toHaveScreenshot` em 20 telas (13 públicas e 7 logadas da
@@ -35,6 +22,8 @@ test.afterEach(async ({}, info) => {
   só a área visível (sem fullPage). Rode t245 ANTES do resto da suíte (ou isolado): outros specs criam imóveis
   e conversas no laboratório e mudariam as listas.
   Rodada L-33/L-4 (Pista C, 23/10 à noite): roda no lab-crítico do PR da vigia só para publicar o diff (esperado, obtido, diferença) para o QA do Muse; a linha de base só muda com o OK registrado.
+  Referências regeneradas em 05/11 (Pista C) a partir do próprio lab-crítico, conferidas uma a uma: desenho novo (menus por
+  papel, topo público, Conta e Segurança, painel do dono). Os cartões de anúncio ficam mascarados (lista com dados de outras specs).
 */
 const LARGURAS = [390, 1280] as const;
 const altura = (l: number) => (l === 390 ? 844 : 900);
@@ -137,7 +126,8 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
 
       test("07 /cidades/uberlandia", async ({ page }) => {
         await page.goto("/cidades/uberlandia", { waitUntil: "networkidle" });
-        await print(page, `07-cidade-uberlandia-${largura}`);
+        // A fileira de cartões mostra a borda do 2º cartão quando a base tem mais anúncios (1,2% a 390): tolerância de 2%.
+        await print(page, `07-cidade-uberlandia-${largura}`, undefined, 0.02);
       });
 
       test("08 página do imóvel (topo)", async ({ page }) => {
