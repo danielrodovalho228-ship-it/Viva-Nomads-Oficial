@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
-  T887 — E442 (regressão, prioridade alta): no mapa da busca, passar o mouse sobre o PREÇO abre o cartão do imóvel —
+  T899 — E442 (regressão, prioridade alta): no mapa da busca, passar o mouse sobre o PREÇO abre o cartão do imóvel —
   foto, título, valor/mês — e o clique no cartão leva ao anúncio certo. O hover se perdeu na ordem ca0e7dad (14/10,
   commit 41b55043d: "hover só destaca") e sobrava a etiqueta nativa (title) do Leaflet. Teste permanente do hover:
     1280 — hover no preço abre o cartão do MESMO imóvel; o cartão fica aberto ao levar o mouse até ele; clicar leva a
@@ -47,7 +47,7 @@ async function conferirCartao(page: Page, id: string) {
   return card;
 }
 
-test.describe("T887 — E442: hover no preço do mapa abre o cartão (1280)", () => {
+test.describe("T899 — E442: hover no preço do mapa abre o cartão (1280)", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test("hover abre o cartão certo, o mouse chega até ele e o clique leva ao anúncio; sair fecha", async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe("T887 — E442: hover no preço do mapa abre o cartão (1280)", ()
     const pin = page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`);
     await pin.hover();
     const card = await conferirCartao(page, id);
-    await page.screenshot({ path: `${SAIDA}/t887-hover-1280.png` });
+    await page.screenshot({ path: `${SAIDA}/t899-hover-1280.png` });
 
     // Tirar o mouse do preço para longe (sem passar pelo cartão): fecha.
     await page.mouse.move(5, 5);
@@ -76,7 +76,7 @@ test.describe("T887 — E442: hover no preço do mapa abre o cartão (1280)", ()
   });
 });
 
-test.describe("T887 — E442: toque no preço abre o mesmo cartão (390)", () => {
+test.describe("T899 — E442: toque no preço abre o mesmo cartão (390)", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
   test("tocar no preço abre o cartão (foto, título, valor/mês, link do anúncio)", async ({ page }) => {
@@ -84,6 +84,6 @@ test.describe("T887 — E442: toque no preço abre o mesmo cartão (390)", () =>
     const id = await pinLivre(page);
     await page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`).tap();
     await conferirCartao(page, id);
-    await page.screenshot({ path: `${SAIDA}/t887-toque-390.png` });
+    await page.screenshot({ path: `${SAIDA}/t899-toque-390.png` });
   });
 });
