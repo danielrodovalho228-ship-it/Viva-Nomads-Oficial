@@ -41,7 +41,6 @@ import {
   marketingDoMes,
   receitaParceiroPorContrato,
   type CenarioId,
-  CUSTOS_UNICOS,
   REGIME_PADRAO,
   encargosProLabore,
   regimePorId,
@@ -151,8 +150,6 @@ export interface Projecao {
 }
 
 export const CUSTO_FIXO_PADRAO = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
-/** Modelo v3: os custos únicos (parecer, consulta) rateados nos meses da projeção. */
-export const RATEIO_UNICOS_MES = CUSTOS_UNICOS.reduce((s, c) => s + c.valor, 0) / HORIZONTE_MESES;
 
 /** Imposto sobre a receita das opções: o informado ou a alíquota do regime. */
 export function impostoDe(op: Pick<Opcoes, "imposto" | "regime">): number {
@@ -261,8 +258,8 @@ function extraLigada(op: Opcoes, id: ReceitaAdicionalId): ReceitaAdicional | nul
 
 export function projetar(id: CenarioId, op: Opcoes): Projecao {
   const cen = CENARIOS[id];
-  // Modelo v3: o custo fixo do mês na projeção leva o rateio dos custos únicos (parecer e consulta).
-  const fixo = custoFixoDe(op) + RATEIO_UNICOS_MES;
+  // O parecer e a consulta jurídica estão dentro do investimento inicial (veredito do coordenador, 05/11): sem rateio.
+  const fixo = custoFixoDe(op);
   const imposto = impostoDe(op);
   const taxa = taxaDe(op);
   const mesesContrato = mesesContratoValidos(op.mesesContrato);
