@@ -149,7 +149,8 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         </Panel>
       )}
 
-      <div role="tablist" aria-label="Seções do painel de parceiro" className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      {/* E461: "Abrir minha página" (Imóveis fixos) leva aqui quando a página ainda não está no ar. */}
+      <div id="editor-pagina" role="tablist" aria-label="Seções do painel de parceiro" className="grid scroll-mt-24 grid-cols-2 gap-2 sm:grid-cols-5">
         {ABAS.map((a) => (
           <button
             key={a.id}
