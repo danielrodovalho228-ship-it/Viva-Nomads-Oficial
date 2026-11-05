@@ -205,12 +205,11 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
           ? r.fulfill({ status: 503, json: { error: "Leitura indisponível agora — tente de novo em alguns minutos.", motivo: "indisponivel" } })
           : r.fallback(),
       );
-      // O envio recusa foto pequena (menos de 1200 px no lado maior): as do laboratório têm 1600 × 1200. Pista C, 05/11.
       const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByTestId("fotos-adicionar").click()]);
-      await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura, 1600, 1200) })));
+      await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura) })));
       await expect(page.getByTestId("etapa-fotos")).toContainText("7 / 8 fotos", { timeout: 60_000 });
       // Arrastar e soltar um arquivo na galeria.
-      const png8 = pngDeTeste(8 + 20 * largura, 1600, 1200).toString("base64");
+      const png8 = pngDeTeste(8 + 20 * largura).toString("base64");
       await page.getByTestId("fotos-galeria").evaluate((alvo, b64) => {
         const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
         const dt = new DataTransfer();
