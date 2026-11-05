@@ -61,6 +61,7 @@ import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoD
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
+import { confirmadosAoContinuar, lerConfirmados, type CampoConfirmavel } from "@/lib/anuncio/confirmados";
 import { avisoDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosBloqueiamAvanco, fotosDaPrevia, motivoAvancoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
@@ -214,6 +215,10 @@ export default function NewPropertyPage() {
   const [iaLigada, setIaLigada] = useState<boolean | null>(null);
   const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
   const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
+  // E614: preço sugerido, garantia e período padrão só contam no "N% pronto" depois de o dono confirmar (mexer no campo
+  // ou "Continuar" no passo). null = rascunho anterior à regra (conta como antes).
+  const [confirmados, setConfirmados] = useState<CampoConfirmavel[] | null>([]);
+  const confirmar = (...c: CampoConfirmavel[]) => setConfirmados((s) => (s === null ? s : [...new Set([...s, ...c])]));
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
@@ -406,6 +411,7 @@ export default function NewPropertyPage() {
       {
         title, street, neighborhood, city, bathrooms, areaM2, minPeriod, monthlyPrice, garantias, privacidade, description, qual,
         videoUrl, videoArquivo, internetMbps, photos, manualProximities,
+        ...(confirmados ? { confirmados } : {}),
         ...(chegada.tipoEntrada ? { tipoEntrada: chegada.tipoEntrada } : {}),
       },
       {
@@ -534,6 +540,7 @@ export default function NewPropertyPage() {
     const e = validarEtapa(step);
     setErros(e);
     if (Object.keys(e).length === 0) {
+      confirmar(...confirmadosAoContinuar(step));
       irPara(Math.min(ULTIMA_ETAPA, step + 1));
       return;
     }
@@ -926,6 +933,7 @@ export default function NewPropertyPage() {
     if (Array.isArray(d.proxDesmarcados)) setProxDesmarcados((d.proxDesmarcados as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.iaAnalisadas)) setIaAnalisadas((d.iaAnalisadas as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.sugeridos)) setSugeridos(d.sugeridos as CampoSugerido[]);
+    setConfirmados(lerConfirmados(d.confirmados));
     if (Array.isArray(d.comodidadesSugeridas)) setComodidadesSugeridas(d.comodidadesSugeridas as string[]);
     if (d.utilitiesMode === "fixed" || d.utilitiesMode === "real") setUtilitiesMode(d.utilitiesMode);
     if (typeof d.utilitiesEstimate === "number") setUtilitiesEstimate(d.utilitiesEstimate);
@@ -1146,7 +1154,7 @@ export default function NewPropertyPage() {
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
-    iaAnalisadas, sugeridos, comodidadesSugeridas,
+    iaAnalisadas, sugeridos, comodidadesSugeridas, ...(confirmados ? { confirmados } : {}),
     qual,
     qualificacaoConforto: qualConf,
     declaracoesPasso10: declaracoes,
@@ -1487,6 +1495,7 @@ export default function NewPropertyPage() {
     proxBuscadoRef.current = null;
     setIaAnalisadas([]);
     setSugeridos([]);
+    setConfirmados([]);
     setComodidadesSugeridas([]);
     // O botão "Começar outro" some com o aviso: o foco volta para o CEP, primeiro campo da etapa 1.
     setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-cep"]')?.focus(), 0);
@@ -2116,7 +2125,10 @@ export default function NewPropertyPage() {
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
                 monthlyPrice={monthlyPrice}
-                setMonthlyPrice={setMonthlyPrice}
+                setMonthlyPrice={(v) => {
+                  setMonthlyPrice(v);
+                  confirmar("preco");
+                }}
                 precoRegiao={precoRegiao}
                 condoFee={condoFee}
                 setCondoFee={setCondoFee}
@@ -2129,13 +2141,19 @@ export default function NewPropertyPage() {
                 availableUntil={availableUntil}
                 setAvailableUntil={setAvailableUntil}
                 minPeriod={minPeriod}
-                setMinPeriod={setMinPeriod}
+                setMinPeriod={(v) => {
+                  setMinPeriod(v);
+                  confirmar("periodo");
+                }}
                 maxPeriod={maxPeriod}
                 setMaxPeriod={setMaxPeriod}
                 faixas={faixas}
                 setFaixas={setFaixas}
                 garantias={garantias}
-                setGarantias={setGarantias}
+                setGarantias={(fn) => {
+                  setGarantias(fn);
+                  confirmar("garantia");
+                }}
                 prepFee={prepFee}
                 setPrepFee={setPrepFee}
                 issuesInvoice={issuesInvoice}

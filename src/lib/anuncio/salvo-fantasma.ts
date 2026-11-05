@@ -7,7 +7,8 @@
 */
 
 /** Campos de navegação do JSON do rascunho: gravados, mas não são "edição". */
-export const CAMPOS_DE_NAVEGACAO = ["step", "etapaMax", "ordemEtapas"] as const;
+/** E614: `confirmados` também — o "Continuar" confirma o valor pronto (preço, garantia, período) sem editar nada. */
+export const CAMPOS_DE_NAVEGACAO = ["step", "etapaMax", "ordemEtapas", "confirmados"] as const;
 
 /** O conteúdo do rascunho sem os campos de navegação (para comparar com o que já estava salvo). */
 export function conteudoDoRascunho(json: string): string {

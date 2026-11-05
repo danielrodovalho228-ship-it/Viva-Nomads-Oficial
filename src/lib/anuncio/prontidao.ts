@@ -85,6 +85,11 @@ export interface FatosAnuncio {
    * um item pendente "Refaça a foto de [item] pela câmera até [data]". Ausente = não se aplica.
    */
   provasParaRefazer?: { chave: string; rotulo: string; ate: string }[];
+  /**
+   * E614: chaves de obrigatórios cujo valor veio pronto (padrão ou sugestão) e o dono ainda não confirmou. Valem para
+   * publicar, mas não contam no "N% pronto". Ausente = todos confirmados (rascunho antigo, anúncio publicado).
+   */
+  naoConfirmados?: readonly string[];
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -211,14 +216,27 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   for (const p of f.provasParaRefazer ?? []) {
     opcionais.push({ key: `refazer_foto_${p.chave}`, label: textoRefazerFoto(p.rotulo, p.ate), ok: false, etapa: ETAPA.comodidades });
   }
-  const cumpridos = obrigatorios.filter((i) => i.ok).length;
+  // E614: os itens condicionais (internet, privacidade, tipo de entrada, padrão mínimo, chácara, autorização) só entram
+  // na lista enquanto faltam; resolvidos, contam como FEITOS no número (antes saíam da conta e o % mal se mexia).
+  const resolvidos = [
+    f.tipoEntradaOk === true,
+    !f.semInternet && f.internetOk === true,
+    // A privacidade só é item do anúncio que ainda vai publicar (no publicado, `privacidadeOk: true` quer dizer "não se
+    // aplica"); o marcador dessa fase é o tipo de entrada, que só se passa ao anúncio novo.
+    f.tipoEntradaOk !== undefined && f.privacidadeOk,
+    f.confortoFaltam !== undefined && f.confortoFaltam <= 0,
+    f.chacaraFaltam !== undefined && f.chacaraFaltam.length === 0,
+    f.sublocacaoOk && (f.operacao === "subleased" || f.operacao === "managed"),
+  ].filter(Boolean).length;
+  const naoConfirmado = new Set(f.naoConfirmados ?? []);
+  const cumpridos = obrigatorios.filter((i) => i.ok && !naoConfirmado.has(i.key)).length + resolvidos;
   return {
     podePublicar: obrigatorios.every((i) => i.ok),
     obrigatorios,
     faltam: obrigatorios.filter((i) => !i.ok).map((i) => (i.detalhe ? `${i.label} (${i.detalhe})` : i.label)),
     opcionais,
     melhorar: opcionais.filter((i) => !i.ok).map((i) => i.label),
-    pct: Math.round((cumpridos / obrigatorios.length) * 100),
+    pct: Math.round((cumpridos / (obrigatorios.length + resolvidos)) * 100),
   };
 }
 
