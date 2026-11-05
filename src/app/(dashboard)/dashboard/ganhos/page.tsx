@@ -4,7 +4,7 @@ import { Wallet, Hourglass } from "lucide-react";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getCarteiraDoDono } from "@/lib/data/carteira";
+import { getGanhosDoDono } from "@/lib/data/carteira";
 import { ganhosDoDono } from "@/lib/ganhos-dono";
 import { dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { getMeusContratos } from "@/lib/data/contratos-actions";
@@ -16,12 +16,13 @@ import { AvisoReforma, EnquadramentoReforma } from "@/components/reforma/enquadr
 export const metadata: Metadata = { title: "Ganhos" };
 
 /**
- * E176 (D1): a subaba "Ganhos" de Contratos. O valor mensal de cada contrato em vigência ou a começar, somado. Mesma
- * fonte da Análise da carteira (getCarteiraDoDono, no servidor), sem a trava de 3 imóveis: aqui é o dinheiro do dono,
- * contrato a contrato. A Viva não recebe o valor mensal: ele vai direto do morador para o proprietário.
+ * E176 (D1): a subaba "Ganhos" de Contratos. O valor mensal de cada contrato em vigência ou a começar, somado,
+ * contrato a contrato (E545: getGanhosDoDono — todos os contratos ativos, mesmo em anúncio pausado; a Análise da
+ * carteira segue medindo a ocupação dos anúncios ativos). A Viva não recebe o valor mensal: ele vai direto do morador para o proprietário.
  */
 export default async function GanhosPage() {
-  const g = ganhosDoDono(isSupabaseConfigured() ? await getCarteiraDoDono(undefined, { exigir: true }) : []);
+  // E545: um contrato por linha (inclusive em anúncio pausado depois de alugar) — não a carteira de anúncios ativos.
+  const g = ganhosDoDono(isSupabaseConfigured() ? await getGanhosDoDono(undefined, { exigir: true }) : []);
   const reforma = await dadosDaReforma();
   return (
     <div data-testid="ganhos">
