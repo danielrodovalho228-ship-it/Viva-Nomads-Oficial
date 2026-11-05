@@ -7,6 +7,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  * PJ que respondeu "não" ou não respondeu também não. Entrou com o e574-nota-locacao.test.ts; aqui é a busca real,
  * numa cidade só do teste, com 3 anúncios ativos de 3 donos, 390 e 1280 (o total lido no "Aplicar", como a t350):
  *   PJ que declarou emitir · PJ que declarou não emitir · PF  →  sem filtro 3 · `?nota=1` 1.
+ * L-97 (achado desta spec, 05/11): `?nota=1` dá 0 — listProperties chama attachNotaDono, mas o Property da busca não
+ * carrega ownerId (rowToProperty não o preenche), então ninguém ganha o selo. O caso fica como test.fail ligado ao L-97
+ * (Pista B): quando corrigirem, o test.fail vira e acusa.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -53,14 +56,23 @@ test.describe("T1132 — E574: o filtro \"Emite nota fiscal\" segue a declaraç�
   });
 
   for (const w of [390, 1280] as const) {
-    test(`sem filtro 3; ?nota=1 só o anúncio do PJ que declarou emitir (${w})`, async ({ browser }) => {
+    test(`sem filtro: os 3 anúncios da cidade do teste (${w})`, async ({ browser }) => {
       const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: w, height: w === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       try {
-        const base = `/buscar?local=${encodeURIComponent(CIDADE)}`;
-        expect(await totalDaFolha(page, base), "os 3 anúncios da cidade do teste").toBe(3);
-        expect(await totalDaFolha(page, `${base}&nota=1`), "só o PJ que declarou emitir nota").toBe(1);
+        expect(await totalDaFolha(page, `/buscar?local=${encodeURIComponent(CIDADE)}`)).toBe(3);
         expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+      } finally {
+        await ctx.close();
+      }
+    });
+
+    test(`L-97: ?nota=1 traz o anúncio do PJ que declarou emitir (${w})`, async ({ browser }) => {
+      test.fail(true, "L-97: listProperties chama attachNotaDono(mapped), mas rowToProperty não preenche ownerId — nenhum anúncio da busca ganha emiteNotaDono e ?nota=1 dá 0 mesmo com o PJ que declarou emitir");
+      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] }, viewport: { width: w, height: w === 390 ? 844 : 900 } });
+      const page = await ctx.newPage();
+      try {
+        expect(await totalDaFolha(page, `/buscar?local=${encodeURIComponent(CIDADE)}&nota=1`), "só o PJ que declarou emitir nota").toBe(1);
       } finally {
         await ctx.close();
       }
