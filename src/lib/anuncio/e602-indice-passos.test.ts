@@ -84,8 +84,11 @@ test("E602: a grade da página tem coluna minmax(0,1fr) também no celular (a fa
   assert.match(tela, /"grid grid-cols-\[minmax\(0,1fr\)\] gap-8 lg:items-start"/);
 });
 
-test("E602: a faixa do índice não alarga a página (largura intrínseca 0, ocupa a coluna)", () => {
+test("E602: o índice não tem faixa que rola de lado — os passos quebram em linhas (t468: a faixa alargava a página)", () => {
   const comp = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/indice-passos.tsx", import.meta.url), "utf8");
-  assert.match(comp, /<nav[^>]*className="[^"]*\bw-0 min-w-full\b/);
-  assert.match(comp, /overflow-x-auto/);
+  assert.match(comp, /<ol className="flex flex-wrap gap-2">/);
+  assert.doesNotMatch(comp, /overflow-x-auto/);
+  assert.doesNotMatch(comp, /shrink-0/);
+  // no celular, só o número na tela; o nome completo vai para o leitor de tela e para o title
+  assert.match(comp, /sr-only sm:not-sr-only/);
 });
