@@ -5,8 +5,8 @@ import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, TAXA_NEGOCIADA_TEXTO, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa, ROTULO_FAIXA_NEGOCIAVEL } from "@/lib/cobranca/regra";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
+import { GESTOR_DIFERENCIAIS, GESTOR_TEXTO } from "@/config/planos";
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -86,21 +86,20 @@ export default function PricingPage() {
               {FAIXAS_COMISSAO_PADRAO.map((f) => (
                 <tr
                   key={f.minImoveis}
-                  data-negociavel={f.negociavel ? "1" : undefined}
-                  className={cn("border-b border-line text-ink even:bg-surface-2", f.negociavel && "bg-sage-100 font-semibold even:bg-sage-100")}
+                  className="border-b border-line text-ink even:bg-surface-2"
                 >
                   <th scope="row" className="py-3 pl-3 pr-3 font-medium">
                     {rotuloFaixaTaxa(f)}
                   </th>
                   <td className="py-3 pr-3 text-right tabular-nums">{taxaPublicaTexto(f)}</td>
-                  <td className="py-3 pr-3 text-right tabular-nums">{f.negociavel ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
+                  <td className="py-3 pr-3 text-right tabular-nums">{formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <ul className="mt-6 grid gap-3 sm:hidden" data-testid="faixas-taxa-cartoes">
             {FAIXAS_COMISSAO_PADRAO.map((f) => (
-              <li key={f.minImoveis} className={cn("rounded-xl border border-line p-4", f.negociavel && "border-forest bg-sage-100")}>
+              <li key={f.minImoveis} className="rounded-xl border border-line p-4">
                 <p className="font-semibold text-ink">
                   {rotuloFaixaTaxa(f, true)}
                 </p>
@@ -109,22 +108,23 @@ export default function PricingPage() {
                 </p>
                 <p className="flex justify-between text-sm text-muted">
                   <span>3 meses a R$ 3.000</span>
-                  <span className="tabular-nums">{f.negociavel ? TAXA_NEGOCIADA_TEXTO : formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</span>
+                  <span className="tabular-nums">{formatBRL(comissaoSobreContrato(3000, 3, f.taxa))}</span>
                 </p>
               </li>
             ))}
           </ul>
 
-          {/* E302/E303 (QA 31/10): o "Ver o Plano Gestor" de /parceiros chega aqui (#plano-gestor), e os dois números não
-              se confundem — o Gestor começa em GESTOR_PRECO.minimoImoveis imóveis (ou administradora); o 31+ da tabela é a
-              faixa da taxa negociável, que vale para qualquer anunciante pela quantidade de imóveis ativos. */}
+          {/* E302/E303 (QA 31/10): o "Ver o Plano Gestor" de /parceiros chega aqui (#plano-gestor). E564 (04/11/2026): o texto
+              do Gestor sai de GESTOR_TEXTO e os diferenciais de GESTOR_DIFERENCIAIS — só os do lançamento (nada da fase 2). */}
           <div id="plano-gestor" className="mt-6 scroll-mt-24 rounded-xl bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="plano-gestor-secao">
             <h3 className="font-semibold text-ink">Plano Gestor</h3>
-            <p className="mt-1">
-              Para {PORTA_GESTOR_TEXTO}: condições negociadas com o time da Viva.
-              É outra regra, diferente da faixa &ldquo;31+ · {ROTULO_FAIXA_NEGOCIAVEL}&rdquo; da tabela acima, que vale para qualquer
-              anunciante pela quantidade de imóveis ativos.
-            </p>
+            <p className="mt-1" data-testid="plano-gestor-texto">{GESTOR_TEXTO}.</p>
+            <ul className="mt-2 list-disc space-y-1 pl-4" data-testid="plano-gestor-diferenciais">
+              {GESTOR_DIFERENCIAIS.map((d) => (
+                <li key={d}>{d}</li>
+              ))}
+            </ul>
+            <p className="mt-2 text-muted">Sem o Plano Gestor, vale a tabela acima.</p>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row" data-testid="precos-botoes">

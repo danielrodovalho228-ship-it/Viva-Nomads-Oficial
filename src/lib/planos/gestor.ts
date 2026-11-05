@@ -12,6 +12,8 @@
  * desbloquear") + venda assistida ("Fale com a gente"), nunca porta muda.
  */
 import { GESTOR_PRECO } from "../../config/planos.ts";
+/** E564: o texto único do Gestor, também por aqui (telas que não leem @/config/planos, como /modelodenegocio). */
+export { GESTOR_TEXTO } from "../../config/planos.ts";
 
 export const GESTOR_MIN_IMOVEIS_VALIDADOS: number = GESTOR_PRECO.minimoImoveis;
 

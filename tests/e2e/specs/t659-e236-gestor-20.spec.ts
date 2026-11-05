@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { FAIXAS_COMISSAO_PADRAO, rotuloFaixaTaxa } from "../../../src/lib/cobranca/regra";
 import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
+import { GESTOR_TEXTO } from "../../../src/config/planos";
 
 /*
   T659 — E236 (#1524): o Plano Gestor começa em GESTOR_PRECO.minimoImoveis (20) em todo texto público — antes, várias
@@ -49,7 +50,7 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
 
       const parceiros = await textoDe(page, "/parceiros");
-      expect(parceiros).toContain("Plano Gestor para 20 imóveis ou mais com documento aprovado, ou conta de administradora"); // E321
+      expect(parceiros).toContain(`Plano Gestor: ${GESTOR_TEXTO}`); // E564
       expect(parceiros).not.toMatch(GESTOR_COM_31);
 
       // /modelodenegocio é dos sócios: entra pela porta /acesso-socios com o código do laboratório (sem ele, pula só esta tela).
@@ -60,7 +61,7 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
         await page.getByRole("button", { name: "Entrar" }).click();
         await expect(page).toHaveURL(/\/modelodenegocio$/);
         const modelo = await textoDe(page, "/modelodenegocio");
-        expect(modelo).toContain("Plano Gestor a partir de 20 imóveis");
+        expect(modelo).toContain(`Plano Gestor: ${GESTOR_TEXTO}`); // E564
         expect(await textoSemFaixas(page)).not.toMatch(GESTOR_COM_31);
       } else {
         test.info().annotations.push({ type: "pulado", description: "SOCIOS_ACCESS_CODE não definido: /modelodenegocio não conferida" });
@@ -72,8 +73,8 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await expect(botao).toBeVisible({ timeout: 15_000 });
       await botao.click();
       const janela = page.getByRole("dialog").filter({ hasText: "Plano Gestor" }).first();
-      // E321: a porta inteira do Gestor, a mesma em todas as telas.
-      await expect(janela).toContainText("Para 20 imóveis ou mais com documento aprovado, ou conta de administradora", { timeout: 10_000 });
+      // E564: o texto único do Gestor, o mesmo em todas as telas.
+      await expect(janela).toContainText(`Plano Gestor: ${GESTOR_TEXTO}`, { timeout: 10_000 });
       await expect(janela).not.toContainText(/\b31\b/);
       await page.keyboard.press("Escape");
 
@@ -82,7 +83,7 @@ test.describe("T659 — E236: Plano Gestor a partir de 20 imóveis em todo texto
       await page.screenshot({ path: `tests/laboratorio/saida/t659-termos-${largura}.png` });
     });
 
-    // L-76, corrigido no E252-B: a faixa 31+ da tabela de /precos é "31+ · taxa negociável", sem "Plano Gestor".
+    // L-76 (E252-B → E564): a faixa 31+ da tabela de /precos é "31+" (6%), sem "Plano Gestor".
     test(`${largura} px — /precos: a faixa 31+ da tabela não se chama Plano Gestor (L-76)`, async ({ page }) => {
       test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });

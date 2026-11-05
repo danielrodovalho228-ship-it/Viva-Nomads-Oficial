@@ -30,7 +30,6 @@ export async function faixasVigentes(admin: Admin): Promise<readonly FaixaComiss
       minImoveis: Number(l.min_imoveis),
       maxImoveis: l.max_imoveis == null ? null : Number(l.max_imoveis),
       taxa: Number(l.taxa),
-      ...(l.max_imoveis == null && Number(l.min_imoveis) >= 31 ? { negociavel: true } : {}),
     }));
   }
 }

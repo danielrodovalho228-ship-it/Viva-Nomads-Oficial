@@ -29,10 +29,11 @@ for (const [imoveis, taxa, texto] of FAIXAS) {
   });
 }
 
-test("31+ imóveis: taxa negociável, sem valor de taxa (E252-B: não é o Plano Gestor)", () => {
+test("31+ imóveis: a taxa da tabela, 6% (E564: a 'taxa negociável' saiu)", () => {
   for (const n of [31, 80]) {
     const b = calcularBolso(3000, 6, n);
-    assert.deepEqual(b, { estado: "negociavel", recebe: 18000 });
+    assert.equal(b.estado, "ok");
+    assert.equal(b.estado === "ok" && b.taxa, 0.06);
   }
 });
 

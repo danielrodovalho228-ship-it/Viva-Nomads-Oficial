@@ -39,7 +39,7 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
       await caixa.screenshot({ path: `tests/laboratorio/saida/t215-${process.env.T215_FASE ?? "depois"}-bolso-${largura}.png` });
     });
 
-    test("muda a faixa pela quantidade de imóveis e 31+ vira taxa negociável (sem Plano Gestor, E252-B)", async ({ page }) => {
+    test("muda a faixa pela quantidade de imóveis e 31+ fica em 6% (E564; sem Plano Gestor)", async ({ page }) => {
       test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos");
       const imoveis = page.getByTestId("bolso-imoveis");
@@ -47,10 +47,10 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
         await imoveis.fill(n);
         await expect(page.getByTestId("bolso-taxa-detalhe")).toContainText(`${pct} sobre o valor mensal × meses`);
       }
+      // E564: 31+ é a faixa de 6% (a "taxa negociável" saiu).
       await imoveis.fill("31");
-      await expect(page.getByTestId("bolso-negociavel")).toContainText("Taxa negociável: fale com a Viva");
+      await expect(page.getByTestId("bolso-taxa-detalhe")).toContainText("6% sobre o valor mensal × meses");
       await expect(page.getByTestId("bolso-resultado")).not.toContainText("Gestor");
-      await expect(page.getByTestId("bolso-taxa")).toHaveCount(0);
     });
 
     test("entrada inválida não mostra valores", async ({ page }) => {

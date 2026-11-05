@@ -99,11 +99,11 @@ test("(b) /seguranca: 'Morar com segurança na Viva Nomads', 'morador' e nada de
 
 test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte única (nada digitado à mão)", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
-  assert.match(p, /import \{ FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto \} from "@\/lib\/cobranca\/regra";/);
+  assert.match(p, /import \{ FAIXAS_COMISSAO_PADRAO, pctTexto \} from "@\/lib\/cobranca\/regra";/);
   assert.match(p, /A taxa de serviço da Viva é de \{TAXA_MAIOR\}/);
   assert.doesNotMatch(p, /\d+ ?%/, "nenhum percentual escrito à mão");
   // Os números que a página mostra são os da regra.
-  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
+  const publicas = FAIXAS_COMISSAO_PADRAO; // E564: 31+ é 6%, faixa pública como as outras
   assert.equal(pctTexto(Math.max(...publicas.map((f) => f.taxa))), "12%");
   assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
 });

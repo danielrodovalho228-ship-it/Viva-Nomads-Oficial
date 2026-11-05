@@ -6,7 +6,7 @@ import { TrendingUp, Home, Download, Info, Scale } from "lucide-react";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { useProperties } from "@/lib/use-properties";
-import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto, rotuloTaxaServico, taxaPublicaTexto } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, rotuloTaxaServico, taxaPublicaTexto } from "@/lib/cobranca/regra";
 import { calcularImovel, entradaVazia, type EntradaImovel, type TradicionalDigitado } from "@/lib/calculo-imovel";
 import { COMPARE_RODAPE, RETORNO_AIRBNB_UBERLANDIA, canaisDaCalculadora } from "@/config/compare-precos";
 import { formatBRL, numBR } from "@/lib/utils";
@@ -210,11 +210,7 @@ export default function SimuladorPage() {
                 <p className="text-sm text-white/80">Receita líquida estimada / ano</p>
                 <p className="font-title text-2xl font-semibold">{formatBRL(res.receitaLiquidaAnual)}</p>
                 <p className="mt-1 text-sm text-white/85">
-                  {faixa.negociavel ? (
-                    <>Com {faixa.minImoveis}+ imóveis a taxa é negociável: este valor usa {pctTexto(faixa.taxa)} só como referência.</>
-                  ) : (
-                    <>Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.</>
-                  )}
+                  Média de <strong>{formatBRL(res.mediaMensal)}/mês</strong> no bolso.
                 </p>
                 {res.rentabilidadeImovel !== null && (
                   <p className="mt-2 border-t border-white/20 pt-2 text-sm text-white/90" data-testid="sim-rentabilidade-imovel">

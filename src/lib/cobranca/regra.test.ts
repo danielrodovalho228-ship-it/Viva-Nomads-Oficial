@@ -5,7 +5,6 @@ import {
   TEXTO_REGRA_UNICA,
   TEXTO_REGRA_CURTO,
   cobrancaParaAceite,
-  ehFaixaNegociavel,
   faixaPorImoveisAtivos,
   fixacaoAdminValida,
   pctTexto,
@@ -74,10 +73,8 @@ test("renovação conta como novo contrato: mesma taxa da faixa do dono", () => 
   assert.equal(valor(4, "renovacao"), 432);
 });
 
-test("31+ imóveis (taxa negociável): dono com 40 imóveis sem override paga 6%; com override 4% paga 4%", () => {
+test("31+ imóveis (E564: faixa de 6%): dono com 40 imóveis sem override paga 6%; com override 4% (Plano Gestor) paga 4%", () => {
   assert.equal(valor(40), 259.2);
-  assert.equal(ehFaixaNegociavel(40), true);
-  assert.equal(ehFaixaNegociavel(30), false);
   const ate = new Date("2026-12-31T00:00:00Z");
   const t = cobrancaParaAceite({
     tipo: "novo",
@@ -255,11 +252,11 @@ test("painel do dono: valor mensal ou prazo inválido não inventa valor", () =>
   assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% sobre o valor mensal × meses");
 });
 
-test("F6: tabela pública — 31+ (taxa negociável) é 'Negociado'; as demais faixas mostram o percentual", async () => {
+test("F6 → E564: tabela pública — todas as faixas mostram o percentual (31+ = 6%)", async () => {
   const { taxaPublicaTexto } = await import("./regra.ts");
   assert.deepEqual(
     FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto),
-    ["12%", "10%", "8%", "6%", "Negociado"],
+    ["12%", "10%", "8%", "6%", "6%"],
   );
 });
 
@@ -267,7 +264,7 @@ test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor",
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../../app/(public)/precos/page.tsx", import.meta.url), "utf8");
   assert.match(t, /taxaPublicaTexto\(f\)/);
-  assert.match(t, /f\.negociavel \? TAXA_NEGOCIADA_TEXTO/);
+  assert.doesNotMatch(t, /negociavel|TAXA_NEGOCIADA_TEXTO/);
   assert.doesNotMatch(t, /pctTexto\(f\.taxa\)/);
   assert.match(t, /Falar sobre o Plano Gestor|PlanoGestorForm/);
 });
@@ -276,10 +273,9 @@ test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../atendimento/viva-prompt.ts", import.meta.url), "utf8");
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
-  // E236: a faixa sem teto (31+) é negociada; o Plano Gestor vale a partir de GESTOR_PRECO.minimoImoveis.
-  assert.match(t, /com 31 ou mais, condições negociadas \(sem percentual fixo público/);
-  // E321: o Gestor é outra regra, com a porta inteira (N+ com documento aprovado ou administradora).
-  assert.match(t, /O Plano Gestor é outra regra, separada das faixas de taxa: vale para \$\{PORTA_GESTOR_TEXTO\}\./);
+  // E564: 31+ é a faixa de 6%; o Plano Gestor é o texto único (4%, cadastro assistido, contato direto) e nada da fase 2.
+  assert.match(t, /31 ou mais = 6%\. Plano Gestor: \$\{GESTOR_TEXTO\}/);
+  assert.match(t, /não prometa várias contas de proprietário numa só, equipe com permissões, importação em massa nem sincronização/);
 });
 
 test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {

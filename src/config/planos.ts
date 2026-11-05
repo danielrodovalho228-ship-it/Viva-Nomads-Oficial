@@ -90,20 +90,20 @@ const PLANOS_BASE: Plano[] = [
     comissao: 0, // COMISSÃO ZERO no topo (C1) — a receita é só a assinatura
     limiteAnuncios: 999,
     destaque: false,
+    // E564 (04/11/2026): só os diferenciais do lançamento — nada da fase 2 (vários donos numa conta, equipe, importação…).
     beneficios: [
-      "Imóveis ilimitados",
-      "Tudo do Profissional",
-      "Feito para administradoras — recursos de carteira em construção com os primeiros gestores parceiros",
-      "Atendimento dedicado",
+      "Taxa de serviço de 4% sobre o valor total de cada contrato",
+      "Cadastro assistido da carteira",
+      "Contato direto na Viva",
+      "Suporte prioritário",
     ],
-    custoLabel: "Taxa de serviço zero — você paga só a assinatura",
+    custoLabel: "Taxa de serviço de 4% para carteiras de 20 ou mais imóveis",
     cta: "Falar com vendas",
   },
 ];
 
 /** Texto da comissão, sempre em reais: "12% do valor total do contrato (≈ R$ 288 por mês de aluguel)". */
 export function textoComissao(comissao: number, aluguel?: number): string {
-  if (comissao === 0) return "Taxa de serviço zero: você paga só a assinatura";
   const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
   const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)} por mês de aluguel)` : "";
   return `${pct}% do valor total do contrato${valor}`;
@@ -218,21 +218,26 @@ export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): numb
 }
 
 /**
- * Preço do Gestor (decisão do Daniel, out/2026): R$ 500/mês com 20 imóveis
- * incluídos + R$ 25 por imóvel adicional, comissão zero. Nos cartões aparece
- * como "a partir de R$ 500/mês". Entra nos comparativos só a partir de
- * `minimoImoveis`: com 19 imóveis o Gestor (R$ 6.000) já sairia mais barato
- * que o Profissional (R$ 6.108 no cenário Residência médica) e o canibalizaria.
- * `precoMensal` do plano continua null (ativação com o time), então os painéis
- * que tratam "sob consulta" não mudam.
+ * Plano Gestor (E564, decisão do Daniel, 04/11/2026): a assinatura de R$ 500/mês com taxa zero SAIU. O Gestor é a taxa
+ * de serviço de 4% para carteiras de 20 ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva.
+ * `minimoImoveis` segue sendo a porta (gestorElegivel). A cobrança do plano (COMISSAO_POR_PLANO) é da parte B.
  */
 export const GESTOR_PRECO = {
   ligado: true,
-  mensalBase: 500,
-  imoveisInclusos: 20,
-  porImovelAdicional: 25,
+  taxa: 0.04,
   minimoImoveis: 20,
 } as const;
+
+/** O texto único do Gestor, igual em todas as telas e no atendimento. */
+export const GESTOR_TEXTO = `${Math.round(GESTOR_PRECO.taxa * 100)}% para carteiras de ${GESTOR_PRECO.minimoImoveis} ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva`;
+
+/** Os únicos diferenciais anunciáveis no lançamento (nada da fase 2). */
+export const GESTOR_DIFERENCIAIS = [
+  "Taxa de serviço de 4% sobre o valor total de cada contrato",
+  "Cadastro assistido da carteira",
+  "Contato direto na Viva",
+  "Suporte prioritário",
+] as const;
 
 /**
  * E321 (01/11): a PORTA do Plano Gestor, igual em todas as telas — N+ imóveis com documento aprovado OU conta de
@@ -241,14 +246,8 @@ export const GESTOR_PRECO = {
  */
 export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mais com documento aprovado, ou conta de administradora`;
 
-/** Assinatura anual do Gestor para `imoveis` imóveis (base + adicionais acima dos inclusos). */
-export function assinaturaAnualGestor(imoveis: number): number {
-  const n = Math.max(1, Math.round(Number(imoveis) || 1));
-  return 12 * (GESTOR_PRECO.mensalBase + GESTOR_PRECO.porImovelAdicional * Math.max(0, n - GESTOR_PRECO.imoveisInclusos));
-}
-
-/** "a partir de R$ 500/mês · taxa de serviço zero · para carteiras de 20+ imóveis" */
-export const GESTOR_RESUMO = `a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês · taxa de serviço zero · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
+/** "4% · carteiras de 20+ imóveis · cadastro assistido da carteira · contato direto na Viva" */
+export const GESTOR_RESUMO = `${Math.round(GESTOR_PRECO.taxa * 100)}% · carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis · cadastro assistido da carteira · contato direto na Viva`;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).

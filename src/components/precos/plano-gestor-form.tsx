@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { GESTOR_TEXTO } from "@/config/planos";
 
 /**
  * "Falar sobre o Plano Gestor" (a partir de GESTOR_PRECO.minimoImoveis imóveis): botão secundário que abre o formulário numa janela à parte
@@ -56,7 +56,7 @@ export function PlanoGestorForm({ className }: { className?: string }) {
           </p>
         ) : (
           <form onSubmit={enviar} className="grid gap-3" data-testid="plano-gestor-form">
-            <p className="text-sm text-muted">Para {PORTA_GESTOR_TEXTO}: condições negociadas com o time da Viva. Entre em contato.</p>
+            <p className="text-sm text-muted">Plano Gestor: {GESTOR_TEXTO}. Conte sobre a sua carteira e o time da Viva fala com você.</p>
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink">Nome</span>
               <input required maxLength={100} value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} autoComplete="name" />

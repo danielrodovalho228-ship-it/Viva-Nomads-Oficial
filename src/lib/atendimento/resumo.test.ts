@@ -71,6 +71,8 @@ test("preço que a Viva informa é a regra única de 12%, sem planos nem faixas 
   assert.match(f, /A Viva cobra 12% sobre o valor total do contrato fechado\. Quanto mais imóveis, menor a taxa \(até 6%\)\. Sem mensalidade\./);
   assert.match(f, /Sem mensalidade/);
   assert.doesNotMatch(f, /sem mensalidade, comissão|\/mês|até \d+ anúncio/);
-  assert.doesNotMatch(f, /Essencial: |Profissional: |Gestor: |Gratuito: /);
+  // E564: "Plano Gestor: 4% …" é o desenho atual; a lista de planos de assinatura ("Gestor: R$ …") segue proibida.
+  assert.doesNotMatch(f, /Essencial: |Profissional: |(?<!Plano )Gestor: |Gratuito: /);
+  assert.doesNotMatch(f, /Gestor: (R\$|a partir)/);
   assert.doesNotMatch(f, /\b(10|8|6|4)% de um aluguel/);
 });

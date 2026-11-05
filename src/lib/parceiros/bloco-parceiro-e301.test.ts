@@ -27,15 +27,17 @@ test("E302: 'Ver o Plano Gestor' leva à âncora do Gestor em Preços, e ela exi
   assert.match(PRECOS, /<h3 className="font-semibold text-ink">Plano Gestor<\/h3>/);
 });
 
-test("E303: o Gestor é 20+ (ou administradora); o 31+ é a faixa da taxa negociável — números distintos, ditos as duas vezes", () => {
+test("E303 → E564: o Gestor é 4% para carteiras de 20+; a faixa sem teto da tabela é 6% — duas vias, ditas na seção", () => {
   assert.equal(GESTOR_PRECO.minimoImoveis, 20);
-  const negociavel = FAIXAS_COMISSAO_PADRAO.find((f) => f.negociavel)!;
-  assert.equal(negociavel.minImoveis, 31);
+  const semTeto = FAIXAS_COMISSAO_PADRAO.find((f) => f.maxImoveis === null)!;
+  assert.equal(semTeto.minImoveis, 31);
+  assert.equal(semTeto.taxa, 0.06);
   const secao = PRECOS.slice(PRECOS.indexOf('id="plano-gestor"'), PRECOS.indexOf('data-testid="precos-botoes"'));
-  assert.match(secao, /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas/);
-  assert.match(secao, /31\+ · \{ROTULO_FAIXA_NEGOCIAVEL\}/);
-  assert.match(secao, /É outra regra/);
-  assert.match(PARCEIROS, /Plano Gestor para \$\{PORTA_GESTOR_TEXTO\}/);
+  assert.match(secao, /<h3[^>]*>Plano Gestor<\/h3>/);
+  assert.match(secao, /data-testid="plano-gestor-texto">\{GESTOR_TEXTO\}\.<\/p>/);
+  assert.match(secao, /GESTOR_DIFERENCIAIS\.map/);
+  assert.match(secao, /Sem o Plano Gestor, vale a tabela acima\./);
+  assert.match(PARCEIROS, /Plano Gestor: \$\{GESTOR_TEXTO\}/);
 });
 
 test("E304: cidade sem UF habilita o aviso quando o nome é único; indicar manda o link do pedido de parceria", () => {

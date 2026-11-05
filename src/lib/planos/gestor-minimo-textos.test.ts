@@ -8,7 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { GESTOR_PRECO, PORTA_GESTOR_TEXTO } from "../../config/planos.ts";
+import { GESTOR_PRECO, GESTOR_TEXTO, PORTA_GESTOR_TEXTO } from "../../config/planos.ts";
 import { FAQ } from "../atendimento/faq.ts";
 import { EMPRESAS_E_GESTORES } from "../atendimento/parceiros-texto.ts";
 import { FAIXAS_COMISSAO_PADRAO } from "../cobranca/regra.ts";
@@ -31,7 +31,7 @@ const NUMERO_FIXO = /\b(5|20|30|31)\s*(\+|ou mais|imóve)|\b(a partir de|tem|com
 /** Frases que citam Gestor e um número, mas não falam do mínimo do plano (com o motivo). */
 const EXCECOES: Record<string, string> = {
   "src/lib/data/planos-actions.ts": "comentário sobre o mesmo documento enviado 5 vezes contar como 5 imóveis (dedupe), não o mínimo",
-  "src/config/planos.ts": "a própria constante e o comentário do preço (R$ 500 com 20 inclusos) — a fonte do número",
+  "src/config/planos.ts": "a própria constante (GESTOR_PRECO) e o texto único que sai dela — a fonte do número",
 };
 
 test("VARREDURA: nenhuma frase liga 'Gestor' a um número fixo de imóveis (falha se surgir uma)", () => {
@@ -54,7 +54,8 @@ test("VARREDURA public/: as páginas estáticas não ligam 'Gestor' a um número
     }
   }
   assert.deepEqual(achados, []);
-  assert.match(ler("public/apresentacao.html"), /<span>31\+ imóveis · taxa negociável<\/span>/);
+  // E564: a faixa sem teto é 6% (a "taxa negociável" saiu).
+  assert.match(ler("public/apresentacao.html"), /<span>31\+ imóveis<\/span><b>6%<\/b>/);
 });
 
 test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => {
@@ -66,24 +67,26 @@ test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => 
     "src/lib/atendimento/viva-prompt.ts",
     "src/lib/atendimento/parceiros-texto.ts",
   ])
-    // E321: a porta inteira (N+ com documento aprovado OU administradora) sai de PORTA_GESTOR_TEXTO, que lê a constante.
-    assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis|PORTA_GESTOR_TEXTO/, f);
+    // E564: o texto do Gestor sai de GESTOR_TEXTO, que lê a constante.
+    assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis|GESTOR_TEXTO/, f);
   assert.match(ler("src/config/planos.ts"), /PORTA_GESTOR_TEXTO = `\$\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais com documento aprovado, ou conta de administradora`/);
-  assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor para \$\{PORTA_GESTOR_TEXTO\}\./);
+  assert.match(ler("src/config/planos.ts"), /GESTOR_TEXTO = `\$\{Math\.round\(GESTOR_PRECO\.taxa \* 100\)\}% para carteiras de \$\{GESTOR_PRECO\.minimoImoveis\} ou mais imóveis/);
+  assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor: \$\{GESTOR_TEXTO\}\./);
   const form = ler("src/components/precos/plano-gestor-form.tsx");
   assert.match(form, /title="Plano Gestor"/);
   assert.match(ler("src/app/api/plano-gestor/route.ts"), /subject: `Lead — Plano Gestor \(\$\{GESTOR_PRECO\.minimoImoveis\}\+ imóveis\)`/);
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/simulador/page.tsx"), /Gestor \(31\+\)/);
   // /modelodenegocio não lê @/config/planos (guarda dos planos antigos): usa o alias GESTOR_MIN_IMOVEIS_VALIDADOS = GESTOR_PRECO.minimoImoveis.
-  assert.match(ler("src/components/modelo-negocio/modelo-negocio.tsx"), /Plano Gestor a partir de \{GESTOR_MIN_IMOVEIS_VALIDADOS\} imóveis\./);
+  assert.match(ler("src/components/modelo-negocio/modelo-negocio.tsx"), /Plano Gestor: \{GESTOR_TEXTO\}\./);
   assert.match(ler("src/lib/planos/gestor.ts"), /GESTOR_MIN_IMOVEIS_VALIDADOS: number = GESTOR_PRECO\.minimoImoveis;/);
 });
 
 test("os textos prontos do Gestor saem da constante (mudam juntos com ela)", () => {
   const taxa = FAQ.map((q) => q.resposta).find((r) => r.includes("Plano Gestor"));
-  assert.ok(taxa?.includes(`O Plano Gestor é outra regra: vale para ${PORTA_GESTOR_TEXTO}`));
-  assert.ok(PORTA_GESTOR_TEXTO.startsWith(`${N} imóveis ou mais`));
-  assert.ok(EMPRESAS_E_GESTORES.includes(`Plano Gestor para ${PORTA_GESTOR_TEXTO}`));
+  assert.ok(taxa?.includes(`Plano Gestor: ${GESTOR_TEXTO}`));
+  assert.ok(GESTOR_TEXTO.includes(`${N} ou mais imóveis`));
+  assert.ok(PORTA_GESTOR_TEXTO.startsWith(`${N} imóveis ou mais`), "a porta da elegibilidade segue da constante");
+  assert.ok(EMPRESAS_E_GESTORES.includes(`Plano Gestor: ${GESTOR_TEXTO}`));
 });
 
 test("a faixa sem teto da taxa de serviço continua '31+' (outra regra)", () => {
@@ -94,11 +97,10 @@ test("a faixa sem teto da taxa de serviço continua '31+' (outra regra)", () => 
   assert.match(ler("src/app/(public)/termos/page.tsx"), /16 a 30, 6%; 31 ou mais, condição negociada\./);
 });
 
-test("E252-B: a faixa 31+ da tabela é 'taxa negociável', sem 'Plano Gestor'; o rótulo 31+ continua", async () => {
-  const { FAIXAS_COMISSAO_PADRAO: faixas, rotuloFaixaTaxa, ROTULO_FAIXA_NEGOCIAVEL } = await import("../cobranca/regra.ts");
+test("E252-B → E564: a faixa 31+ da tabela é só '31+' (6%), sem 'Plano Gestor' nem 'taxa negociável'", async () => {
+  const { FAIXAS_COMISSAO_PADRAO: faixas, rotuloFaixaTaxa } = await import("../cobranca/regra.ts");
   const rotulos = faixas.map((f) => rotuloFaixaTaxa(f, true));
-  assert.deepEqual(rotulos, ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16–30 imóveis", "31+ imóveis · taxa negociável"]);
-  assert.equal(ROTULO_FAIXA_NEGOCIAVEL, "taxa negociável");
+  assert.deepEqual(rotulos, ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16–30 imóveis", "31+ imóveis"]);
   for (const r of [...rotulos, ...faixas.map((f) => rotuloFaixaTaxa(f))]) assert.doesNotMatch(r, /Gestor/);
   // As telas que montam a tabela de faixas usam o rótulo da faixa, nunca "Plano Gestor" na linha da faixa 31+.
   const precos = ler("src/app/(public)/precos/page.tsx");
@@ -117,5 +119,5 @@ test("E252-B: a faixa 31+ da tabela é 'taxa negociável', sem 'Plano Gestor'; o
     assert.doesNotMatch(t, /\bgestor\s*\?|\.gestor\b|ehPlanoGestor|estado === "gestor"/, f);
   }
   // O Plano Gestor aparece só pelo formulário (e pelo simulador do plano), com o número da constante.
-  assert.match(ler("src/components/precos/plano-gestor-form.tsx"), /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas com o time da Viva\./);
+  assert.match(ler("src/components/precos/plano-gestor-form.tsx"), /Plano Gestor: \{GESTOR_TEXTO\}\./);
 });

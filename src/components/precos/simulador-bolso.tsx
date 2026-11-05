@@ -2,11 +2,9 @@
 
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
-import Link from "next/link";
 import { blocosBolso, blocosBolsoPeriodo, calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
 import { contaDoPeriodo, type CamposTotalMes } from "@/lib/precos";
-import { formatBRL, cn } from "@/lib/utils";
-import { SUPORTE_EMAIL } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 /**
  * "O que vai para o seu bolso" (ordem 6696611c, tela 10). A conta sai de calcularBolso → comissaoSobreContrato.
@@ -97,32 +95,17 @@ export function SimuladorBolso(p: {
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {b.estado === "negociavel" ? (
-              <>
-                <Fato rotulo="Você recebe do morador" detalhe="integral e direto a você" testid="bolso-recebe" valor={formatBRL(b.recebe)} />
-                <dl className="rounded-xl border border-line p-4 text-sm">
-                  <dt className="text-ink">Taxa de serviço da Viva</dt>
-                  <dd className="mt-1 font-semibold text-ink" data-testid="bolso-negociavel">
-                    Taxa negociável:{" "}
-                    <Link href={`mailto:${SUPORTE_EMAIL}`} className="underline">
-                      fale com a Viva
-                    </Link>
-                  </dd>
-                </dl>
-              </>
-            ) : (
-              (() => {
-                // E51: dois fatos lado a lado, sem conta entre eles — a taxa é cobrada à parte, nunca descontada do que o
-                // morador paga ao dono (a Viva só intermedia, não segura pagamentos).
-                const [recebe, taxa] = blocosBolso(b, valor, Number(meses));
-                return (
-                  <>
-                    <Fato {...recebe} testid="bolso-recebe" />
-                    <Fato {...taxa} testid="bolso-taxa" />
-                  </>
-                );
-              })()
-            )}
+            {(() => {
+              // E51: dois fatos lado a lado, sem conta entre eles — a taxa é cobrada à parte, nunca descontada do que o
+              // morador paga ao dono (a Viva só intermedia, não segura pagamentos). E564: 31+ também é a taxa da tabela.
+              const [recebe, taxa] = blocosBolso(b, valor, Number(meses));
+              return (
+                <>
+                  <Fato {...recebe} testid="bolso-recebe" />
+                  <Fato {...taxa} testid="bolso-taxa" />
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
