@@ -129,12 +129,13 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         const l = page.locator(`[data-funil="${rotulo}"]`);
         return { valor: (await l.locator("[data-valor]").innerText()).trim(), href: (await l.getAttribute("data-href"))! };
       };
-      // Prompt 46: as filas viraram "Hoje você tem N decisões"; fila zerada não aparece (o número dela é 0).
+      // E330/E474 (01–05/11): as decisões de outras telas são itens da fila da Central ("N candidaturas sem resposta…",
+      // com o botão para a lista). Decisão zerada não aparece (o número dela é 0).
       const fila = async (chave: string) => {
-        const li = page.locator(`[data-precisa="${chave}"]`);
+        const li = page.locator(`[data-testid="central-linha-decisao"][data-decisao="${chave}"]`);
         if (!(await li.count())) return { valor: 0, href: "" };
-        const link = li.locator("[data-href]").first();
-        return { valor: Number(await link.getAttribute("data-valor")), href: (await link.getAttribute("data-href"))! };
+        const texto = (await li.locator("p").first().innerText()).trim();
+        return { valor: Number(texto.match(/^\d+/)?.[0] ?? NaN), href: (await li.getByRole("link").first().getAttribute("href"))! };
       };
 
       const alvos: { nome: string; valor: number; href: string; esperado?: number }[] = [];
@@ -147,14 +148,14 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         alvos.push({ nome: `funil ${rotulo}`, valor: n(f.valor), href: f.href, esperado });
       }
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("central-decisoes")).toBeVisible({ timeout: 30_000 });
       for (const chave of ["candidaturas_sem_resposta_48h", "chamados_urgentes_sem_resposta", "comissoes_vencidas", "pedidos_sem_resposta_expirando"]) {
         const f = await fila(chave);
         alvos.push({ nome: `fila ${chave}`, valor: f.valor, href: f.href });
       }
       expect(alvos.find((a) => a.nome === "fila comissoes_vencidas")!.href).toBe("/admin/financeiro?situacao=vencida");
       expect(alvos.find((a) => a.nome === "fila candidaturas_sem_resposta_48h")!.href).toBe("/admin/candidaturas?status=sem_resposta");
-      await expect(page.locator('[data-precisa="comissoes_vencidas"]')).toContainText(/taxas? vencidas?/);
+      await expect(page.locator('[data-testid="central-linha-decisao"][data-decisao="comissoes_vencidas"]')).toContainText(/taxas? vencidas?/);
 
       for (const a of alvos) {
         if (a.esperado !== undefined) expect(a.valor, a.nome).toBe(a.esperado);
