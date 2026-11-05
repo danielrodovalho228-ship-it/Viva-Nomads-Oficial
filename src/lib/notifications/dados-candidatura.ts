@@ -79,3 +79,8 @@ export function proximoPassoCandidatura(m: MomentoCandidatura): string {
 /** Links desta candidatura: o cartão em Interessados (dono) e em Minhas candidaturas (morador). */
 export const linkCandidaturaDono = (leadId: string) => `/dashboard/leads#candidato-${leadId}`;
 export const linkCandidaturaMorador = (leadId: string) => `/dashboard/candidaturas#candidatura-${leadId}`;
+/**
+ * E553: o perfil completo do candidato (dono). O cartão em Interessados liga aqui ("Ver perfil"; ligação visual da
+ * Pista A). A página aplica as MESMAS regras de máscara do cartão (listLeads/cartaoCandidato).
+ */
+export const hrefPerfilCandidato = (leadId: string) => `/dashboard/leads/${encodeURIComponent(leadId)}`;
