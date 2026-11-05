@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 
 /**
  * T225 — Candidatura em etapas (ordem eb4b11d8, Pacote Clareza UX5), 390 e 1280 px.
@@ -19,6 +20,10 @@ for (const largura of [390, 1280]) {
       }).toPass({ timeout: 30_000 });
       await expect(passo.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "33");
       await expect(passo.getByTestId("candidatura-detalhes")).toContainText("Caução");
+
+      // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+
+      await preencherPeriodoDaProposta(passo);
 
       await passo.getByRole("button", { name: "Continuar" }).click();
       await expect(passo.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "67");

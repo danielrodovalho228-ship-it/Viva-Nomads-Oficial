@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -50,6 +51,7 @@ test.describe("T75 — Barra fixa do imóvel", () => {
       await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
       await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Pedir para morar", exact: true }).click();
       // Passo de confirmação (#671): só o último "Enviar candidatura" (após Continuar) leva ao login.
+      await preencherPeriodoDaProposta(page.getByTestId("solicitacao-passo"));
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Continuar" }).click();
       await page.getByTestId("solicitacao-passo").getByRole("button", { name: "Enviar candidatura" }).click();
