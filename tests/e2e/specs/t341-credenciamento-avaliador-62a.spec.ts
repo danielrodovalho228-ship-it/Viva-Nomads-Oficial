@@ -215,7 +215,7 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     for (const w of LARGURAS) {
       const p = await admin(browser, w);
       await p.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
-      await expect(p.getByRole("heading", { level: 1 })).toHaveText("Avaliações do imóvel", { timeout: 30_000 });
+      await expect(p.getByRole("heading", { level: 1 })).toHaveText("Avaliadores", { timeout: 30_000 });
       const topo = p.getByTestId("avaliacoes-decidir");
       await expect(topo.getByTestId("decidir-numero-credenciamentos")).toBeVisible();
       // Decisões antes da fila e do rodízio.
