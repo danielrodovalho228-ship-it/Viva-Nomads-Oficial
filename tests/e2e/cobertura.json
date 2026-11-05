@@ -1776,7 +1776,8 @@
         "t408-varredura-bloco27",
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
-        "t661-varredura-bloco62"
+        "t661-varredura-bloco62",
+        "t969-e425-ativar-no-painel"
       ]
     },
     "/parceiros/avaliadores": {
@@ -2123,7 +2124,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t969-e425-ativar-no-painel"
       ]
     },
     "/parceiros/[slug]": {
@@ -2147,7 +2149,8 @@
       ],
       "specs": [
         "t236-parceiros-ciclo",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t969-e425-ativar-no-painel"
       ]
     },
     "/parceiros/buscar": {
@@ -5539,7 +5542,9 @@
       "personas": [
         "parceiro"
       ],
-      "specs": []
+      "specs": [
+        "t969-e425-ativar-no-painel"
+      ]
     },
     "src/lib/parceiros/ativacao-actions.ts#estadoAtivacao": {
       "personas": [
