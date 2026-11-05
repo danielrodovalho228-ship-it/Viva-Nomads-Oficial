@@ -533,7 +533,8 @@
         "t489-e176-menus",
         "t588-varredura-bloco46",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t853-busca-conta-teste"
+        "t853-busca-conta-teste",
+        "t1145-e521-comparar-total"
       ]
     },
     "/cidades": {
@@ -603,7 +604,8 @@
         "t156-comparar-exemplos",
         "t48-varredura",
         "t311-marco-principal-unico",
-        "t408-varredura-bloco27"
+        "t408-varredura-bloco27",
+        "t1145-e521-comparar-total"
       ]
     },
     "/conferir": {
