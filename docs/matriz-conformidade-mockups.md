@@ -241,7 +241,8 @@ Achados (numerados):
 1. **Reembolso da caução** (`/dashboard/reembolsos`): a linha "Motivo · Valor · Evidência · Adicionar" tinha 4 colunas já a 640 px;
    a 768 os campos se sobrepunham, o "Adicionar" saía da tela e a página rolava 101 px de lado (a 1280, o exemplo do Motivo
    aparecia cortado). **Corrigido — PR #2742**: 1 coluna no celular, 2 a partir do tablet, campos que encolhem e com a altura do
-   botão. Guardas: teste de unidade e T909 (laboratório, 390/768/1280).
+   botão. Guarda: teste de unidade. Só no modo demonstração (build demo e apresentação do admin): a conta real vê o estado vazio,
+   sem a linha.
 2. **Assistente, passo 2 (Fotos)**: a varredura apontou "Dicas rápidas" sob o rodapé fixo — é o conteúdo do "Ver dicas de foto"
    fechado (`<details>`), que não aparece na tela. Falso positivo. **Conforme.**
 3. **Demais rotas**: nenhuma rolagem lateral, nenhuma imagem quebrada, um h1 por tela; textos cortados só nos de leitor de tela.
