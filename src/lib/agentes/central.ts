@@ -143,8 +143,10 @@ export function statusDoAgente(
   if (a.status === "planejado") return "planejado";
   if (a.status === "pausado") return "pausado";
   if (!ultima) return a.trigger_id === null || (a.slug && SEM_RONDAS[a.slug]) ? "no_ar" : "sem_ronda";
+  if (ultima.status !== "ok") return ultima.status; // "Falhou"/"Alerta" seguem valendo, recentes ou não
+  // E473: só o "Em espera" afirmava estar em dia — ronda ok velha vira "Parado".
   if (agora && ultima.iniciada_em && agora.getTime() - Date.parse(ultima.iniciada_em) > JANELA_PARADO_MS) return "parado";
-  return ultima.status === "ok" ? "espera" : ultima.status;
+  return "espera";
 }
 
 export function prioridadesDe(r: Pick<Ronda, "achados">): string[] {

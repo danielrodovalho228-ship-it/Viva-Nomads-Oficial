@@ -46,11 +46,13 @@ test("todos em dia → 'Ao vivo'; nenhum em dia → a última ronda; planejado e
   assert.deepEqual([nenhum.tipo, nenhum.selo], ["parado", "Última ronda há 3 dias"]);
 });
 
-test("cartão: ativo com última ronda velha diz 'Parado'; recente segue 'Em espera'/'Alerta'", () => {
+test("cartão: ativo com última ronda ok velha diz 'Parado'; recente segue 'Em espera'; falha/alerta seguem", () => {
   assert.equal(ROTULO_STATUS.parado, "Parado");
   const a = { status: "ativo" as const, trigger_id: "trig_x", slug: "luana" };
   assert.equal(statusDoAgente(a, { status: "ok", iniciada_em: "2026-10-17T10:48:03Z" }, agora), "parado");
   assert.equal(statusDoAgente(a, { status: "alerta", iniciada_em: atras(30) }, agora), "alerta");
+  // Falha ou alerta antigos seguem dizendo o que aconteceu (não afirmam estar em dia) — t21: a Marina "Falhou".
+  assert.equal(statusDoAgente(a, { status: "falhou", iniciada_em: "2026-10-17T10:48:03Z" }, agora), "falhou");
   assert.equal(statusDoAgente(a, { status: "ok", iniciada_em: new Date(agora.getTime() - JANELA_PARADO_MS + 60_000).toISOString() }, agora), "espera");
   assert.equal(statusDoAgente(a, { status: "ok", iniciada_em: "2026-10-17T10:48:03Z" }), "espera", "sem relógio, o comportamento antigo");
 });
