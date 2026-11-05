@@ -65,7 +65,7 @@ const COMPARTILHADAS: { t: string; d: string }[] = [
   { t: "A garantia", d: "O ponto mais crítico. Rômulo busca o parceiro de seguro; Daniel implementa; juntos decidem o modelo." },
 ];
 
-export function Socios({ pendencias = [] }: { pendencias?: Pendencia[] }) {
+export function Socios({ pendencias = [] }: { pendencias?: Pendencia[] | null }) {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
@@ -122,7 +122,11 @@ export function Socios({ pendencias = [] }: { pendencias?: Pendencia[] }) {
         <section className={styles.section} data-testid="pendencias">
           <div className={styles.kicker}>Pendências</div>
           <h2 className={styles.h2}>O que espera a aprovação do Daniel</h2>
-          {pendencias.length === 0 ? (
+          {pendencias === null ? (
+            <p className={styles.lead} data-testid="pendencias-erro">
+              Não foi possível ler as pendências agora. Recarregue a página para tentar de novo.
+            </p>
+          ) : pendencias.length === 0 ? (
             <p className={styles.lead}>Nada pendente agora.</p>
           ) : (
             <ul className={styles.pend}>
