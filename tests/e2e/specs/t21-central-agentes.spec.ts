@@ -87,7 +87,7 @@ test.describe("T21 — Central de Agentes v2", () => {
   test("Rede ao vivo e briefing com o resumo real da última ronda", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await abrirAba(page, "Rede ao vivo");
+    await abrirAba(page, "Rede (24 h)");
     await expect(page.getByTestId("rede-ao-vivo").locator("canvas")).toBeVisible();
     await page.getByRole("button", { name: /Assistir ao briefing/ }).click();
     const legenda = page.getByTestId("briefing-legenda");
@@ -252,7 +252,7 @@ test.describe("T21 — Central de Agentes no celular (390 px)", () => {
   test("nenhuma aba rola para o lado", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    for (const aba of ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
+    for (const aba of ["Equipe", "Rede (24 h)", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
       await abrirAba(page, aba);
       await semRolagemLateral(page);
     }
