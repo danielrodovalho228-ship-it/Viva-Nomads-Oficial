@@ -71,7 +71,7 @@ test("notify grava o aviso do mesmo evento, com o título do catálogo; avisos i
   const idx = ler("./index.ts");
   assert.match(idx, /params\.userId && !params\.interno && !EVENTOS_INTERNOS\.has\(params\.event\)\s*\? comLimite\(gravarAviso\(/);
   const srv = ler("./avisos-servidor.ts");
-  assert.match(srv, /titulo: tituloDoAviso\(base\.subject\)/);
+  assert.match(srv, /titulo: p\.titulo \? tituloDoAviso\(guardContactInfo\(p\.titulo\)\.text\) : tituloDoAviso\(base\.subject\)/);
   assert.match(srv, /prioridade: p\.prioridade \?\? prioridadeDoAviso\(p\.evento, p\.papel\)/);
   assert.doesNotMatch(srv, /p\.subject|detailsText|\bemail\s*:|telefone|phone/);
 });
