@@ -31,7 +31,8 @@ async function enviar(browser: Browser, saida: string) {
   await card.getByTestId("candidatura-saida").fill(saida);
   const passo = page.getByTestId("solicitacao-passo");
   await expect(async () => {
-    await card.getByRole("button", { name: "Pedir para morar", exact: true }).click();
+    // Abaixo de 1024 px o primário "Pedir para morar" mora na barra fixa (prompt 41, como na t181), não no cartão.
+    await page.getByTestId("barra-fixa-imovel").getByRole("button", { name: "Pedir para morar", exact: true }).click();
     await expect(passo).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 30_000 });
   await passo.getByRole("button", { name: "Continuar" }).click();
