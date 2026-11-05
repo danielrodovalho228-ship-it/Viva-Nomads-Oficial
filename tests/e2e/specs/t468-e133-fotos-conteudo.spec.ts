@@ -17,6 +17,7 @@ import { FOTOS_TESTE_MINIMO, noPasso, abrirCadastroNovo } from "../fixtures/cada
       linhas e nenhum passa da tela (a 1ª versão era uma faixa rolável cujos botões saíam da tela — 762 px de sobra).
    4. Link: formato errado, vídeo que não existe e vídeo que não pode ser incorporado são recusados com mensagem clara;
       o link válido fica pendente — o anúncio não mostra o vídeo até o admin aprovar.
+  Reteste do L-101 (Pista C, 05/11): rolagem lateral do assistente a 390 px corrigida no #2763; roda no portão do #2747.
 */
 const SAIDA = "tests/laboratorio/saida";
 const PRINT = "docs/capturas/e44/exportar-1280.png";

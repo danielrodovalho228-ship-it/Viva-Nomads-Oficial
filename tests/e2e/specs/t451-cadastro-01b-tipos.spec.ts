@@ -9,6 +9,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       marcado leva o selo verde.
    2. E102-A: na Revisão, o bloco "Dados da chácara/sítio" mostra os valores preenchidos; o subtítulo do Passo 9 sem
       "aluguel".
+  Reteste do L-101 (Pista C, 05/11): rolagem lateral do assistente a 390 px corrigida no #2763; roda no portão do #2747.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
