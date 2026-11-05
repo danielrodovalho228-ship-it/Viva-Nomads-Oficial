@@ -120,7 +120,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
-      if (document.visibilityState === "visible") marcarConversaAberta(conversaAbertaId).catch(() => {});
+      if (document.visibilityState !== "visible") return;
+      marcarConversaAberta(conversaAbertaId).catch(() => {});
+      // E551: aberta = lida (o servidor grava lido_em); o selo de não lidas da lista some na hora.
+      setConversations((prev) => (prev.some((c) => c.id === conversaAbertaId && c.naoLidas) ? prev.map((c) => (c.id === conversaAbertaId ? { ...c, naoLidas: 0 } : c)) : prev));
     };
     marcar();
     const t = setInterval(marcar, 5 * 60_000);
@@ -315,6 +318,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               key={c.id}
               data-testid="mensagens-conversa"
               data-conversa={c.id}
+              data-lida={c.naoLidas ? "nao" : "sim"}
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
@@ -329,11 +333,23 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 <Avatar name={c.name} size={48} photoUrl={avatars[c.id] ?? undefined} />
               )}
               <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="truncate font-medium text-ink">{c.name}</span>
+                <span className="flex items-center justify-between gap-2">
+                  <span className={cn("truncate text-ink", c.naoLidas ? "font-semibold" : "font-medium")}>{c.name}</span>
+                  {/* E551 (desenho E445): conversa com mensagem recebida ainda não lida — o número, como no sino. */}
+                  {!!c.naoLidas && (
+                    <span
+                      className="inline-flex min-w-6 shrink-0 items-center justify-center rounded-full bg-forest px-2 py-0.5 text-xs font-semibold text-white"
+                      data-testid="mensagens-nao-lidas"
+                      aria-label={`${c.naoLidas} ${c.naoLidas === 1 ? "mensagem não lida" : "mensagens não lidas"}`}
+                    >
+                      {c.naoLidas > 99 ? "99+" : c.naoLidas}
+                    </span>
+                  )}
+                </span>
                 {(c.property || c.periodo) && (
                   <span className="truncate text-xs text-muted">{[c.property, c.periodo].filter(Boolean).join(" · ")}</span>
                 )}
-                <span className="line-clamp-1 text-sm text-muted">{c.preview}</span>
+                <span className={cn("line-clamp-1 text-sm", c.naoLidas ? "text-ink" : "text-muted")}>{c.preview}</span>
               </span>
             </button>
           ))}
