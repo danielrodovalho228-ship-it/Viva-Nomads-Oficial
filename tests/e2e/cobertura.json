@@ -542,7 +542,7 @@
         "t588-varredura-bloco46",
         "t710-e265-sem-selo-em-todo-cartao",
         "t853-busca-conta-teste",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/cidades": {
@@ -570,7 +570,7 @@
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
         "t591-varredura-bloco48",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -1067,7 +1067,7 @@
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
         "t708-e254-estadia-minima-uma-fonte",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1234,7 +1234,7 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1593,7 +1593,7 @@
       "specs": [
         "t3-isolamento-papeis",
         "t307-varredura-bloco8",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/dev/emails": {
@@ -1808,7 +1808,7 @@
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
         "t661-varredura-bloco62",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1995,7 +1995,7 @@
       "specs": [
         "t3-isolamento-papeis",
         "t307-varredura-bloco8",
-        "t1191-varredura-bloco322"
+        "t1192-varredura-bloco322"
       ]
     },
     "/termos": {
