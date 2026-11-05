@@ -1,9 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { FAIXAS_COMISSAO_PADRAO, taxaNaAssinatura, type FaixaComissao, type TaxaAplicada } from "./regra.ts";
+import { ativosDeVerdade } from "./carteira-ativa.ts";
+import { statusPorImovel } from "../documento/vigente.ts";
 
 /**
  * A taxa do dono AGORA, com a regra inteira de src/lib/cobranca/regra.ts (especificação de testes da taxa, 19/10):
- *  • R2 faixa pelos imóveis ATIVOS (rascunho, pausado e reprovado não contam), lida de faixas_comissao;
+ *  • R2 faixa pelos imóveis ATIVOS DE VERDADE (E565: publicado + documento aprovado + calendário confirmado nos
+ *    últimos 30 dias — carteira-ativa.ts), lida de faixas_comissao;
  *  • R3 queda de faixa: a taxa anterior vale por mais 30 dias (faixa_dono, mantida por gatilho — migração 0172);
  *  • R4 fixação do admin com motivo e validade (comissao_fixada_admin) prevalece.
  * Fonte única do servidor para o aceite da candidatura, o envio e o aceite da proposta. Só o servidor chama
@@ -35,9 +38,33 @@ export async function faixasVigentes(admin: Admin): Promise<readonly FaixaComiss
   }
 }
 
+type LinhaPublicado = { id: string; status: string; disponibilidade_confirmada_em: string | null };
+
+/**
+ * E565: quantos imóveis publicados contam para a faixa — documento VIGENTE aprovado e calendário em dia
+ * (carteira-ativa.ts). A leitura que falha LANÇA (nunca uma contagem parcial que mudaria a taxa).
+ */
+export async function contarAtivosDeVerdade(client: Admin, publicados: readonly LinhaPublicado[], agora: Date = new Date()): Promise<number> {
+  if (!publicados.length) return 0;
+  const { data: qc, error } = await client
+    .from("qualification_checklists")
+    .select("property_id, document_status, created_at")
+    .in("property_id", publicados.map((l) => l.id))
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(MSG_TAXA_SEM_LEITURA);
+  const docs = statusPorImovel((qc ?? []) as { property_id: string; document_status: string | null }[]);
+  return ativosDeVerdade(
+    publicados.map((l) => ({ status: l.status, documento: docs.get(l.id) ?? "none", calendarioConfirmadoEm: l.disponibilidade_confirmada_em })),
+    agora,
+  );
+}
+
+/** As colunas de properties que a contagem da faixa lê (use com .eq("status", "active")). */
+export const COLUNAS_FAIXA = "id, status, disponibilidade_confirmada_em";
+
 export async function taxaDoDonoAgora(admin: Admin, ownerId: string, agora: Date = new Date()): Promise<TaxaDoDono> {
-  const [{ count, error: e1 }, faixas, { data: fix, error: e2 }, { data: fd, error: e3 }] = await Promise.all([
-    admin.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("status", "active"),
+  const [{ data: publicados, error: e1 }, faixas, { data: fix, error: e2 }, { data: fd, error: e3 }] = await Promise.all([
+    admin.from("properties").select("id, status, disponibilidade_confirmada_em").eq("owner_id", ownerId).eq("status", "active"),
     faixasVigentes(admin),
     admin
       .from("comissao_fixada_admin")
@@ -51,7 +78,7 @@ export async function taxaDoDonoAgora(admin: Admin, ownerId: string, agora: Date
   ]);
   // Achado 83: sem ler os imóveis ativos, a fixação do admin ou a queda de 30 dias, a taxa não é calculada (lança).
   if (e1 || e2 || e3) throw new Error(MSG_TAXA_SEM_LEITURA);
-  const imoveisAtivos = count ?? 0;
+  const imoveisAtivos = await contarAtivosDeVerdade(admin, (publicados ?? []) as LinhaPublicado[], agora);
   const f = fix as { taxa: number | string; motivo: string; valido_ate: string } | null;
   const q = fd as { taxa_anterior: number | string | null; queda_em: string | null } | null;
   const t = taxaNaAssinatura({
