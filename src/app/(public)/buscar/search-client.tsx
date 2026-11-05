@@ -27,7 +27,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
-import { PRECO_JUSTO_COMPARADOR, SELO_NF_UI } from "@/lib/flags";
+import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
@@ -200,8 +200,8 @@ export function SearchClient({
     if (on("pronto")) setReadyToLiveOnly(true);
     if (on("homeoffice")) setHomeOfficeOnly(true);
     if (on("localizado")) setWorkLocatedOnly(true);
-    // "Com Nota Fiscal" só existe com a chave do selo ligada (aluguel de PF é recibo, não NF).
-    if (SELO_NF_UI && on("nota")) setInvoiceOnly(true);
+    // E574: "Emite nota fiscal" = dono PJ/MEI que declarou emitir nota da locação (PF gera recibo, nunca entra).
+    if (on("nota")) setInvoiceOnly(true);
     // E43 (Adendo 3): o atalho antigo `?seguro=1` vira a garantia "Seguro-fiança" — a mesma migração das buscas salvas.
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
@@ -405,7 +405,7 @@ export function SearchClient({
   const filtrosPainel: FiltrosPainel = useMemo(
     () => ({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
-      periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, gestorOnly: operatedOnly,
+      periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: invoiceOnly, gestorOnly: operatedOnly,
       negociaOnly,
       precoJustoOnly,
       internetMin, soInternetMedida,
@@ -540,7 +540,7 @@ export function SearchClient({
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly, negociaOnly, PRECO_JUSTO_COMPARADOR && precoJustoOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, PRECO_JUSTO_COMPARADOR && precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -799,7 +799,6 @@ export function SearchClient({
           onAplicar={aplicarPainel}
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
-          comNotaFiscal={SELO_NF_UI}
           medicoes={medicoes}
           topo={
             // E82-A: o 1º bloco da folha é a descrição, recolhida numa linha (tocar abre o campo).

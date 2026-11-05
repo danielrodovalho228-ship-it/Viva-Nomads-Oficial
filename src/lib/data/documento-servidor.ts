@@ -17,3 +17,11 @@ export async function lerDocumento(admin: SupabaseClient, userId: string): Promi
 export async function temDocumento(admin: SupabaseClient, userId: string): Promise<boolean> {
   return documentoCompleto(await lerDocumento(admin, userId));
 }
+
+/** E574: a declaração do proprietário PJ sobre a nota fiscal da locação (null = não respondeu; sem a 0294 = null). */
+export async function lerNotaLocacao(admin: SupabaseClient, userId: string): Promise<boolean | null> {
+  const r = await admin.from("profiles").select("emite_nota_locacao").eq("id", userId).maybeSingle();
+  if (r.error) return null;
+  const v = (r.data as { emite_nota_locacao?: boolean | null } | null)?.emite_nota_locacao;
+  return typeof v === "boolean" ? v : null;
+}

@@ -113,6 +113,9 @@ export const DOCUMENTO_VAZIO_PF = {
   cnpj: null,
   razaoSocial: null,
   cpfRepresentante: null,
+  /** E574: a pergunta da nota fiscal da locação (só PJ). */
+  emiteNotaLocacao: null as boolean | null,
+  faltaNotaLocacao: false,
 };
 
 /** O perfil já tem o documento completo para assinar contrato e ser cobrado? */

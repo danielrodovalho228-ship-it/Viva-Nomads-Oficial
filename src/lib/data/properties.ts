@@ -24,6 +24,7 @@ import { normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { normalizarNegociacao } from "@/lib/anuncio/negociacao";
+import { donoEmiteNota } from "@/lib/fiscal/nota-locacao";
 
 /** Negociação pública e Mbps (0152); linha ausente ou sem configuração = nada. */
 type LinhaMedida = { download_mbps: number | string; upload_mbps: number | string; latencia_ms: number; medido_em: string; valido_ate: string };
@@ -431,6 +432,7 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
     await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
     await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
     await attachNegociacao(supabase, mapped); // "Aceita negociação": selo do cartão e filtro da busca (E439; best-effort)
+    await attachNotaDono(mapped); // E574: dono PJ que declarou emitir nota fiscal da locação (filtro da busca; best-effort)
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -488,6 +490,8 @@ async function getPropertySemCache(id: string): Promise<Property | undefined> {
     // Página pública: coordenada aproximada no servidor (a exata só no painel do dono).
     const base = comCoordenadaAproximada(rowToProperty(data as unknown as PropertyRow));
     await attachPrecoJusto(supabase, [base]);
+    base.ownerId = base.ownerId ?? (data as { owner_id?: string }).owner_id ?? undefined;
+    await attachNotaDono([base]); // E574: o motivo de denúncia "Não emitiu a nota fiscal declarada" só com a declaração
     return enrichProperty(supabase, base, (data as { owner_id?: string }).owner_id ?? null);
   } catch {
     return showDemoProperties() ? SAMPLE_PROPERTIES.find((p) => p.id === id) : undefined;
@@ -676,6 +680,31 @@ async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise
  * E439: negociação pública (properties.negociacao) de cada imóvel da lista, para o selo do cartão e o filtro
  * "Aceita negociação". Sem a leitura, ninguém ganha o selo nem passa no filtro (nunca um "aceita" inventado).
  */
+/**
+ * E574: o anúncio do dono PJ (MEI conta) que DECLAROU emitir nota fiscal da locação (profiles.emite_nota_locacao, 0294).
+ * Lido pelo servidor (cliente de serviço): o público só recebe o booleano do selo, nunca o documento. Sem leitura ou
+ * sem a coluna, ninguém ganha o selo (o filtro não acha ninguém) — best-effort.
+ */
+async function attachNotaDono(list: Property[]): Promise<void> {
+  const reais = list.filter((p) => !isExemplo(p.id) && p.ownerId);
+  for (const p of reais) p.emiteNotaDono = false;
+  if (reais.length === 0) return;
+  const admin = createAdminClient();
+  if (!admin) return;
+  try {
+    const donos = [...new Set(reais.map((p) => p.ownerId as string))];
+    const { data, error } = await admin.from("profiles").select("id, person_type, emite_nota_locacao").in("id", donos);
+    if (error) return;
+    const porDono = new Map(((data ?? []) as { id: string; person_type: string | null; emite_nota_locacao: boolean | null }[]).map((r) => [r.id, r]));
+    for (const p of reais) {
+      const d = porDono.get(p.ownerId as string);
+      p.emiteNotaDono = donoEmiteNota({ tipoPessoa: d?.person_type ?? null, emiteNota: d?.emite_nota_locacao ?? null });
+    }
+  } catch {
+    /* sem a coluna, sem selo */
+  }
+}
+
 async function attachNegociacao(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;
   try {

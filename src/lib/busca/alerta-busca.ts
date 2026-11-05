@@ -37,6 +37,8 @@ export interface ImovelParaAlerta {
   tagWorkLocated?: boolean;
   readyToLiveBadge?: boolean;
   issuesInvoice?: boolean;
+  /** E574: dono PJ/MEI que declarou emitir nota fiscal da locação (o mesmo critério do filtro da busca). */
+  emiteNotaDono?: boolean;
   acceptsInsurance?: boolean;
   ownershipType?: "own" | "subleased" | "managed";
   subleaseAuthorized?: boolean;
@@ -121,7 +123,8 @@ export function imovelBateComBusca(parametros: string, p: ImovelParaAlerta, minu
 
   if (on("mobiliado") && !p.furnished) return false;
   if (on("localizado") && !p.tagWorkLocated) return false;
-  if (on("nota") && !p.issuesInvoice) return false;
+  // E574: o mesmo critério do filtro da busca (dono PJ/MEI que declarou emitir nota fiscal da locação).
+  if (on("nota") && p.emiteNotaDono !== true) return false;
   if (on("gestor") && !(p.ownershipType && p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   return true;
 }

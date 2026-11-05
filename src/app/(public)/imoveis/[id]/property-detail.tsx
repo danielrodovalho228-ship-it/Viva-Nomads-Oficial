@@ -1000,7 +1000,7 @@ export function PropertyDetail({
           </div>
           {!exemplo && (
             <div className="mt-6">
-              <DenunciarAnuncio propertyId={property.id} />
+              <DenunciarAnuncio propertyId={property.id} notaDeclarada={property.emiteNotaDono === true} />
             </div>
           )}
         </div>

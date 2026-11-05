@@ -143,6 +143,8 @@ export interface Property {
   nearbyWorkspaces: Workspace[];
   ownerName: string;
   ownerId?: string; // dono do imóvel (para saber se o visitante é o próprio dono)
+  /** E574: o dono é PJ/MEI e DECLAROU emitir nota fiscal da locação (filtro "Emite nota fiscal" da busca). */
+  emiteNotaDono?: boolean;
   createdAt?: string; // data de cadastro (ISO) — ordenação "Adicionados recentemente"
   // ── Enriquecimento da página (todos opcionais; a seção some quando ausente) ──
   parkingSpots?: number; // vagas

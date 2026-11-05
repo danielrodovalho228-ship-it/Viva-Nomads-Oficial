@@ -16,13 +16,17 @@ test("/empresas: recibo da estadia em nome do proprietário, sem nota da Viva pa
   assert.doesNotMatch(s, /nota fiscal/i);
 });
 
-test("busca: filtro 'Com Nota Fiscal' só com a chave do selo (SELO_NF_UI)", () => {
+test("busca: filtro 'Emite nota fiscal' pela declaração do dono PJ/MEI (E574), sem a chave do selo antigo", () => {
   const s = ler("app/(public)/buscar/search-client.tsx");
-  // Prompt 40: o chip mora na folha de filtros, que só o mostra com a chave (comNotaFiscal={SELO_NF_UI}).
-  assert.match(s, /comNotaFiscal=\{SELO_NF_UI\}/);
-  assert.match(s, /notaOnly: SELO_NF_UI && invoiceOnly/);
-  assert.match(ler("components/busca/painel-filtros-celular.tsx"), /\{comNotaFiscal && \(\s*<ChipFaceta f=\{facetaInterruptor\(contar, rascunho, "notaOnly"\)\} ativo=\{rascunho\.notaOnly\}/);
-  assert.match(s, /SELO_NF_UI && on\("nota"\)/);
+  // E574 (decisão do Daniel, 04/11): o filtro vale para todos — só entra o dono PJ/MEI que declarou emitir nota da
+  // locação (PF gera o Recibo de Locação e nunca entra). O selo antigo do cartão (issues_invoice) segue com SELO_NF_UI.
+  assert.match(s, /notaOnly: invoiceOnly,/);
+  assert.match(s, /if \(on\("nota"\)\) setInvoiceOnly\(true\);/);
+  assert.doesNotMatch(s, /SELO_NF_UI/);
+  const folha = ler("components/busca/painel-filtros-celular.tsx");
+  assert.match(folha, /<ChipFaceta f=\{facetaInterruptor\(contar, rascunho, "notaOnly"\)\} ativo=\{rascunho\.notaOnly\}/);
+  assert.match(folha, /\{ROTULO_FILTRO_NOTA_LOCACAO\}/);
+  assert.doesNotMatch(folha, /comNotaFiscal/);
 });
 
 test("editor: interruptor 'emite Nota Fiscal do valor mensal' só com a chave do selo", () => {

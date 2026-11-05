@@ -25,6 +25,7 @@ import {
 import { buttonClasses } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Chip } from "@/components/ui/chip";
+import { ROTULO_FILTRO_NOTA_LOCACAO } from "@/lib/fiscal/nota-locacao";
 
 /**
  * Folha de filtros da /buscar (ordem 314f764e; Prompt 40): no celular sobe de
@@ -53,7 +54,6 @@ export function FolhaFiltros({
   onAplicar,
   onFechar,
   garantias,
-  comNotaFiscal = false,
   medicoes = [],
   topo,
 }: {
@@ -65,8 +65,6 @@ export function FolhaFiltros({
   onFechar: () => void;
   /** Garantias do filtro público (caução unificada + seguro-fiança). */
   garantias: { key: string; label: string }[];
-  /** "Com Nota Fiscal" só com a chave do selo ligada. */
-  comNotaFiscal?: boolean;
   /** FILTROS-1 (E40): downloads medidos (Mbps) dos anúncios da busca atual — sem nenhum, a seção de internet some. */
   medicoes?: number[];
   /** E82-A: o 1º bloco da folha (a descrição, recolhida numa linha). */
@@ -197,11 +195,10 @@ export function FolhaFiltros({
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "negociaOnly")} ativo={!!rascunho.negociaOnly} onClick={() => muda("negociaOnly", !rascunho.negociaOnly)} testId="faceta-negocia">
             Aceita negociação
           </ChipFaceta>
-          {comNotaFiscal && (
-            <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">
-              Com Nota Fiscal
-            </ChipFaceta>
-          )}
+          {/* E574: dono PJ/MEI que declarou emitir nota fiscal da locação (selo de confiança sobre a declaração). */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">
+            {ROTULO_FILTRO_NOTA_LOCACAO}
+          </ChipFaceta>
         </Grupo>
         <Grupo titulo="Comodidades" testId="painel-comodidades">
           {/* FILTROS-2: Cozinha equipada é do padrão mínimo (garantia, não filtro) — a linha abaixo diz isso. Adendo 3
