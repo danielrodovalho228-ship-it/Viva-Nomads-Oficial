@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
+import { BaixarPdf } from "@/components/recibos/baixar-pdf";
 import { brl, dataBR } from "@/lib/fiscal/documento";
 import { recibosDaPessoa, servicosConcluidosDoParceiro } from "@/lib/data/recibos";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
@@ -147,9 +148,15 @@ export async function BlocoRecibosParceiro({ pagamentoAtivo }: { pagamentoAtivo:
       )}
       <div className="mt-3 flex flex-wrap gap-x-4">
         {anos.map((ano) => (
-          <a key={ano} href={`/api/recibos/parceiro?ano=${ano}`} className={linkBaixar} data-testid="parceiro-resumo-anual">
-            <Download className="h-4 w-4" aria-hidden /> Resumo anual {ano} para o contador (PDF)
-          </a>
+          // E465: o clique gera o PDF, mostra "Gerando…", baixa e confirma (ou mostra o erro) — nunca um clique mudo.
+          <BaixarPdf
+            key={ano}
+            href={`/api/recibos/parceiro?ano=${ano}`}
+            rotulo={`Resumo anual ${ano} para o contador (PDF)`}
+            nomePadrao={`resumo-servicos-${ano}.pdf`}
+            testId="parceiro-resumo-anual"
+            className={linkBaixar}
+          />
         ))}
       </div>
     </Panel>
