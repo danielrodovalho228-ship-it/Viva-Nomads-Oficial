@@ -74,7 +74,7 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
-import { precoDaProposta } from "@/lib/precos";
+import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
 
 /**
  * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
@@ -194,8 +194,17 @@ async function taxaPetDaProposta(admin: Admin, im: ImovelProposta, tenantId: str
 
 /** Valores que a montagem abre preenchidos (do anúncio), todos editáveis pelo proprietário. */
 function termosDoAnuncio(im: ImovelProposta, dias: number, dataEntrada: string, neg: Negociacao, taxaPet = 0): TermosProposta {
-  const limpeza = normalizarLimpezaEstadia(im.limpeza_estadia);
-  const porMes = limpeza?.porMes ?? 0;
+  // E562 (telas): os MESMOS termos da barra lateral do anúncio e do "Pedir para morar" (termosDaEstadiaDoImovel).
+  const t = termosDaEstadiaDoImovel({
+    monthlyPrice: Number(im.monthly_price) || 0,
+    condoFee: Number(im.condo_fee) || 0,
+    utilitiesMode: im.utilities_mode === "fixed" ? "fixed" : "real",
+    utilitiesEstimate: Number(im.utilities_estimate) || 0,
+    limpezaEstadia: normalizarLimpezaEstadia(im.limpeza_estadia) ?? undefined,
+    prepFee: Number(im.prep_fee) || 0,
+    checkoutCleaningEnabled: !!im.checkout_cleaning_enabled,
+    checkoutCleaningFee: Number(im.checkout_cleaning_fee) || 0,
+  });
   return {
     valorBase: Number(im.monthly_price) || 0,
     descontoPct: 0,
@@ -206,12 +215,12 @@ function termosDoAnuncio(im: ImovelProposta, dias: number, dataEntrada: string, 
     meses: mesesDeReferencia(dias),
     dias,
     dataEntrada,
-    condominio: Number(im.condo_fee) || 0,
-    consumo: im.utilities_mode === "fixed" ? Number(im.utilities_estimate) || 0 : 0,
-    limpezasMes: porMes,
-    valorLimpeza: porMes > 0 && limpeza ? Math.round((limpeza.valorMes / porMes) * 100) / 100 : 0,
+    condominio: t.condominio,
+    consumo: t.consumo,
+    limpezasMes: t.limpezasMes,
+    valorLimpeza: t.valorLimpeza,
     taxaPet,
-    limpezaUnica: (Number(im.prep_fee) || 0) + (im.checkout_cleaning_enabled ? Number(im.checkout_cleaning_fee) || 0 : 0),
+    limpezaUnica: t.limpezaUnica,
   };
 }
 

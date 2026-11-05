@@ -34,7 +34,9 @@ test("sem a estadia do imóvel, o total segue a conta do mês (sem inventar taxa
 
 test("a tela: o diálogo passa a estadiaDoImovel (a mesma do painel) e mostra a conta no Revisar", () => {
   const pd = readFileSync("src/app/(public)/imoveis/[id]/property-detail.tsx", "utf8");
-  assert.match(pd, /estadia: mesesSelecao \? estadiaDoImovel\(property, mesesSelecao\) : null/);
+  // E562 (telas): a estadia vai em dias exatos (estadiaDoImovelEmDias), a regra única da proposta.
+  assert.match(pd, /estadiaDias: estadiaSelecao/);
+  assert.match(pd, /LINHAS_REVISAR\.has\(l\.rotulo\) \|\| l\.rotulo\.startsWith\("Total da estadia \("\)/);
   assert.match(pd, /const LINHAS_REVISAR = new Set\(\["Motivo da estadia", "Mensal", "Total por mês \(com contas\)", "Total do contrato", "Conta do total"\]\);/);
   const card = readFileSync("src/components/property/price-card.tsx", "utf8");
   assert.match(card, /estadiaDoImovel\(property, meses\)/);

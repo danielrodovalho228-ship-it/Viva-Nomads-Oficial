@@ -220,6 +220,13 @@ export function rotuloTaxaServico(taxa: number, valorMensal: number, meses: numb
   const v = Number.isFinite(valorMensal) && valorMensal > 0 ? valorMensal : 0;
   const m = Number.isFinite(meses) && meses > 0 ? meses : 0;
   if (!(v > 0 && m > 0)) return inicio;
+  if (!Number.isInteger(Math.round(m * 1e6) / 1e6)) {
+    // E562 (telas): estadia em dias exatos — a conta aberta em dias: "R$ 2.800 × 43 dias ÷ 30 = R$ 4.013,33".
+    const dias = Math.round(m * 30);
+    const base = Math.round(((v * dias) / 30) * 100) / 100;
+    const valorDias = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : comissaoSobreDias(v, dias, taxa);
+    return `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × dias ÷ 30 (${brlTaxa(v)} × ${dias} dias ÷ 30 = ${brlTaxa(base)}) = ${brlTaxa(valorDias)}`;
+  }
   // E562: estadia em dias exatos chega como meses fracionários (dias ÷ 30) — a fórmula em dias, sem truncar.
   const calculado = Number.isInteger(m) ? comissaoSobreContrato(v, m, taxa) : comissaoSobreDias(v, Math.round(m * 30), taxa);
   const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : calculado;

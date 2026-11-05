@@ -59,7 +59,8 @@ test("E254-A: prévia, cartão de Meus anúncios e página pública usam a mesma
   assert.match(ler("lib/anuncio/passo10-colunas.ts"), /estadiaDoImovel\(property, meses\)/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /estadia: estadiaDoCartaoDoDono\(p, r\.meses\)/);
   assert.match(ler("components/property/price-card.tsx"), /estadiaDoImovel\(property, meses\)/);
-  assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /totalPeriodo: meses > 1 \? estadiaDoImovel\(property, meses\)\?\.total : null/);
+  // E562 (telas): com as datas escolhidas, o total vem em dias (estadiaDoImovelEmDias); sem datas, a mesma função em meses.
+  assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /totalPeriodo: estadiaSelecao \? estadiaSelecao\.total : meses > 1 \? estadiaDoImovel\(property, meses\)\?\.total : null/);
 });
 
 test("E254-A: a prévia do Passo 10 recebe os pagamentos únicos (preparação e limpeza de saída) que o cartão e a página somam", () => {
