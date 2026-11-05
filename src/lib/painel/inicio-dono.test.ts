@@ -121,3 +121,24 @@ test("E218-A: com anúncio publicado o guia some (decisão ou em dia), e o modo 
   const pagina = ler("../../app/(dashboard)/dashboard/page.tsx");
   assert.match(pagina, /checklist: checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null/);
 });
+
+test("E494: o passo que leva ao MESMO lugar do botão não é atalho (só estado); os outros seguem com o link", () => {
+  const b = blocoPrincipalDono({ rascunho: { id: "r1", pct: 30, pronto: false, itens: [
+    { label: "Fotos", ok: true, href: "/dashboard/imoveis/novo?draft=r1&etapa=fotos" },
+    { label: "Endereço", ok: false, href: "/dashboard/imoveis/novo?draft=r1&etapa=endereco" },
+    { label: "Detalhes", ok: false, href: "/dashboard/imoveis/novo?draft=r1&etapa=detalhes" },
+  ], foto: null, retomar: "/dashboard/imoveis/novo?draft=r1&etapa=endereco" }, decisoes: [], temAnuncio: false, fotoAnuncio: null });
+  assert.equal(b.botao.href, "/dashboard/imoveis/novo?draft=r1&etapa=endereco");
+  const por = Object.fromEntries(b.passos.map((p) => [p.rotulo, p.href]));
+  assert.equal(por["Endereço"], null, "Endereço = Continuar de onde parou: sem link próprio");
+  assert.equal(por["Fotos"], "/dashboard/imoveis/novo?draft=r1&etapa=fotos");
+  assert.equal(por["Detalhes"], "/dashboard/imoveis/novo?draft=r1&etapa=detalhes");
+  // Nenhum passo de nenhum bloco repete o destino do botão.
+  for (const p of b.passos) assert.notEqual(p.href, b.botao.href);
+});
+
+test("E494: a tela desenha o passo sem link como estado (sem seta), e o resto como atalho", () => {
+  const tela = readFileSync(new URL("../../components/painel/inicio-dono.tsx", import.meta.url), "utf8");
+  assert.match(tela, /p\.href \? \(/);
+  assert.match(tela, /data-testid="inicio-dono-passo-atual"/);
+});
