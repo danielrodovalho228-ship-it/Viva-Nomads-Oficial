@@ -30,7 +30,16 @@ const continuar = (p: Page) => p.getByTestId("cadastro-continuar");
 const enviar = (p: Page, arquivos: string | string[]) => p.getByTestId("etapa-fotos").locator('input[type="file"]').first().setInputFiles(arquivos);
 
 async function semRolagemLateral(p: Page) {
-  expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+  // Na falha, a mensagem diz QUEM passa da tela (os mais externos que saem da largura), não só quanto.
+  const r = await p.evaluate(() => {
+    const sobra = document.documentElement.scrollWidth - window.innerWidth;
+    const largos = [...document.querySelectorAll<HTMLElement>("body *")]
+      .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1 && !(el.parentElement && el.parentElement.getBoundingClientRect().right > window.innerWidth + 1))
+      .slice(0, 8)
+      .map((el) => `${el.tagName.toLowerCase()}${el.dataset.testid ? `[data-testid=${el.dataset.testid}]` : ""}.${String(el.className).slice(0, 80)} → right=${Math.round(el.getBoundingClientRect().right)}`);
+    return { sobra, largos };
+  });
+  expect(r.sobra, `rolagem lateral; passam da tela: ${r.largos.join(" | ")}`).toBeLessThanOrEqual(1);
 }
 
 async function abrirPassoFotos(p: Page) {
