@@ -102,3 +102,11 @@ export function novoDoStatus(novo: "pending" | "rejected" | null | undefined, mo
   if (novo === "rejected") return { estado: "corrija", motivos: motivo ? motivo.split(" · ").filter(Boolean) : [] };
   return null;
 }
+
+/**
+ * E587 (vigia 05/11): com aprovado vigente, a conferência automática NÃO decide o envio novo na hora (nem recusa, nem
+ * aprova): todo envio novo fica em análise para a equipe. Sem vigente, vale o veredito automático (o fluxo de sempre).
+ */
+export function decisaoComVigente(vigenteAprovado: boolean, estadoAutomatico: EstadoNaTela): EstadoNaTela {
+  return vigenteAprovado ? "revisao" : estadoAutomatico;
+}

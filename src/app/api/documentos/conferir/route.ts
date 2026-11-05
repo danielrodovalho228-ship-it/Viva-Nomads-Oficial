@@ -27,6 +27,7 @@ import {
   REVISAO_PRAZO_HORAS,
   type CadastroComparado,
 } from "@/lib/documento/conferencia";
+import { decisaoComVigente } from "@/lib/documento/vigente";
 import { hojeBR } from "@/lib/utils";
 
 const BUCKET = "property-docs";
@@ -170,8 +171,9 @@ export async function POST(request: Request) {
       decidirMatricula(mat, { perfil: perfilDono, caf, enderecoCadastro: cadastro.endereco, duplicado: cadastro.duplicado, hoje: cadastro.hoje }),
       falha,
     );
-    const estado = estadoTelaDaMatricula(d.resultado);
-    const emRevisao = d.resultado === "em_revisao";
+    // E587: com aprovado vigente, a equipe decide o envio novo (a leitura fica só na trilha e em property_ownership_checks).
+    const estado = decisaoComVigente(vigenteAprovado, estadoTelaDaMatricula(d.resultado));
+    const emRevisao = vigenteAprovado || d.resultado === "em_revisao";
 
     const { data: check, error: erroCheck } = await admin
       .from("property_ownership_checks")
@@ -191,7 +193,7 @@ export async function POST(request: Request) {
       .select("id")
       .single();
     const { error: erroQual } = await gravarQualificacao({
-      document_status: statusDaMatricula(d.resultado),
+      document_status: vigenteAprovado ? "pending" : statusDaMatricula(d.resultado),
       document_review_reason: d.resultado === "conferido" ? null : d.mensagem.slice(0, 500),
       document_reviewed_at: emRevisao ? null : agora.toISOString(),
       conferido_por: emRevisao ? null : "automatico",
@@ -204,6 +206,8 @@ export async function POST(request: Request) {
         resultado: d.resultado,
         motivo: d.motivo,
         caf_ok: caf.ok,
+        // E587: havia aprovado vigente — o veredito acima é só a leitura automática; a decisão é da equipe.
+        decisao: vigenteAprovado ? "equipe" : "automatica",
         conferidor,
         modelo,
         // Falha da leitura (prompt 22), sem dado pessoal: status HTTP e tipo do erro.
@@ -220,8 +224,9 @@ export async function POST(request: Request) {
       estado,
       rotulo: rotuloEstado(estado),
       vigenteAprovado,
-      motivos: estado === "aprovado" ? [] : [d.mensagem],
-      matricula: {
+      motivos: estado === "aprovado" || vigenteAprovado ? [] : [d.mensagem],
+      // E587: com vigente, a leitura do novo não volta para a tela (nem preenche o anúncio) até a equipe aprovar.
+      matricula: vigenteAprovado ? undefined : {
         id: check.id,
         resultado: d.resultado,
         motivo: d.motivo,
@@ -238,16 +243,19 @@ export async function POST(request: Request) {
   // Sem matrícula (IPTU, contrato de compra, conta…): aceito, mas a equipe confere — nunca aprovado na hora.
   const r = semMatriculaVaiParaRevisao(decidirConferencia(leitura, cadastro), leitura?.tipo ?? null);
   const motivosTexto = r.motivos.map((m) => m.texto).join(" · ").slice(0, 500) || null;
+  // E587: com aprovado vigente, o envio novo vai para a equipe (em análise); o veredito automático fica na trilha.
+  const estadoFinal = decisaoComVigente(vigenteAprovado, r.estado);
   const { error: erroIns } = await gravarQualificacao({
-    document_status: statusDoEstado(r.estado),
+    document_status: statusDoEstado(estadoFinal),
     document_review_reason: r.estado === "aprovado" ? null : motivosTexto,
-    document_reviewed_at: r.estado === "revisao" ? null : agora.toISOString(),
-    conferido_por: r.estado === "revisao" ? null : "automatico",
-    revisao_ate: r.estado === "revisao" ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
+    document_reviewed_at: estadoFinal === "revisao" ? null : agora.toISOString(),
+    conferido_por: estadoFinal === "revisao" ? null : "automatico",
+    revisao_ate: estadoFinal === "revisao" ? new Date(agora.getTime() + REVISAO_PRAZO_HORAS * 3_600_000).toISOString() : null,
     // Trilha de auditoria: o veredito do que foi lido (sim/não, sem dado pessoal — E293 P2), por quem, e o checklist.
     conferencia: {
       versao: 2,
       estado: r.estado,
+      decisao: vigenteAprovado ? "equipe" : "automatica",
       checklist: r.checklist,
       motivos: r.motivos,
       lido: leituraParaGravar(leitura, r.checklist),
@@ -262,13 +270,13 @@ export async function POST(request: Request) {
   }
 
   // Só os casos em revisão entram na fila: avisa os admins (sem dados do documento).
-  if (r.estado === "revisao") await avisarAdmins();
+  if (estadoFinal === "revisao") await avisarAdmins();
 
   return NextResponse.json({
-    estado: r.estado,
-    rotulo: rotuloEstado(r.estado),
+    estado: estadoFinal,
+    rotulo: rotuloEstado(estadoFinal),
     vigenteAprovado,
-    motivos: r.motivos.map((m) => m.texto),
+    motivos: vigenteAprovado ? [] : r.motivos.map((m) => m.texto),
   });
 }
 

@@ -6,12 +6,14 @@
   trazia só o veredito do novo, e o editor o punha no lugar do estado do documento.
   Correção: a rota diz se há aprovado vigente, e a tela segue "Documentação conferida", com o envio novo À PARTE
   ("em análise" ou "recusado, o aprovado continua valendo"). A troca só acontece quando o novo é aprovado.
+  Reativação (vigia 05/11): havendo aprovado vigente, TODO envio novo fica em análise para a equipe — a conferência
+  automática não decide na hora (nem recusa, nem aprova); o veredito dela fica só na trilha (conferencia) para a equipe.
   Roda: node --test src/lib/documento/e587-vigente-na-tela.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resultadoNaTela, novoDoStatus, TEXTO_NOVO_EM_ANALISE, TEXTO_NOVO_RECUSADO } from "./vigente.ts";
+import { decisaoComVigente, resultadoNaTela, novoDoStatus, TEXTO_NOVO_EM_ANALISE, TEXTO_NOVO_RECUSADO } from "./vigente.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 const MOTIVOS = ["Tipo de documento não aceito", "Documento ilegível ou incompleto"];
@@ -42,7 +44,7 @@ test("ao reabrir a tela, o envio novo gravado vem à parte (mesma história da l
 test("rota: diz se há aprovado vigente (lido ANTES de gravar o novo) e nunca altera a linha aprovada", () => {
   const r = ler("app/api/documentos/conferir/route.ts");
   assert.match(r, /const vigenteAprovado = await temAprovadoVigente\(/);
-  assert.equal((r.match(/vigenteAprovado,/g) ?? []).length, 2, "as duas respostas (matrícula e outros) levam o vigenteAprovado");
+  assert.equal((r.match(/^\s+vigenteAprovado,$/gm) ?? []).length, 2, "as duas respostas (matrícula e outros) levam o vigenteAprovado");
   assert.doesNotMatch(r, /\.update\(/, "a conferência só insere linha nova");
 });
 
@@ -56,4 +58,19 @@ test("tela: o componente aplica resultadoNaTela e mostra o novo à parte; o edit
   assert.match(p, /setDocNovo\(novoDoStatus\(r\.novo, r\.motivoNovo\)\)/);
   assert.equal((p.match(/setDocNovo\(novo \?\? null\)/g) ?? []).length, 2, "os dois pontos de envio (início e passo do documento)");
   assert.ok(TEXTO_NOVO_EM_ANALISE && TEXTO_NOVO_RECUSADO);
+});
+
+test("com aprovado vigente, a conferência automática não decide: todo envio novo vai para a equipe", () => {
+  for (const auto of ["aprovado", "corrija", "revisao"] as const) assert.equal(decisaoComVigente(true, auto), "revisao", auto);
+  for (const auto of ["aprovado", "corrija", "revisao"] as const) assert.equal(decisaoComVigente(false, auto), auto, auto);
+});
+
+test("rota: com vigente, grava o novo como pendente da equipe (os dois ramos), avisa a equipe e não devolve a leitura", () => {
+  const r = ler("app/api/documentos/conferir/route.ts");
+  assert.match(r, /const estadoFinal = decisaoComVigente\(vigenteAprovado, r\.estado\);/);
+  assert.match(r, /document_status: statusDoEstado\(estadoFinal\)/);
+  assert.match(r, /const estado = decisaoComVigente\(vigenteAprovado, estadoTelaDaMatricula\(d\.resultado\)\);/);
+  assert.match(r, /document_status: vigenteAprovado \? "pending" : statusDaMatricula\(d\.resultado\)/);
+  assert.match(r, /matricula: vigenteAprovado \? undefined : \{/);
+  assert.match(r, /if \(estadoFinal === "revisao"\) await avisarAdmins\(\);/);
 });
