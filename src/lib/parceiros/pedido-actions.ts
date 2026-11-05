@@ -27,6 +27,7 @@ import {
   contatoNoPedido,
   linkOutroParceiro,
   podeFazer,
+  saidaDoAceitoLiberada,
   podeSimularPagamento,
   provedorSimulado,
   STATUS_ABERTOS,
@@ -266,15 +267,24 @@ async function mudar(
   return { ok: true, valor: null };
 }
 
+/** E462: com pagamento registrado, o aceito não volta atrás pela tela do parceiro. */
+const ERRO_ACEITO_COM_PAGAMENTO = "Este pedido já tem pagamento registrado. Fale com o suporte para mudar ou cancelar.";
+
 export async function enviarOrcamento(pedidoId: string, valor: unknown): Promise<Res> {
   const v = validarOrcamento(valor);
   if (!v.ok) return v;
   return mudar(
     pedidoId,
     "orcar",
-    async () => ({ ok: true, valor: { status: "orcado", valor_combinado: v.valor } }),
+    async ({ p }) => {
+      if (!saidaDoAceitoLiberada(p.status, p.pagamento_status)) return { ok: false, erro: ERRO_ACEITO_COM_PAGAMENTO };
+      // E462: atualizar um orçamento já aceito volta ao cliente; os valores congelados no aceite saem (o banco exige
+      // taxa + parceiro = valor combinado) e voltam a congelar no novo aceite.
+      const congelados = p.status === "aceito" ? { taxa_percent: null, valor_taxa: null, valor_parceiro: null } : {};
+      return { ok: true, valor: { status: "orcado", valor_combinado: v.valor, ...congelados } };
+    },
     async ({ admin, userId, p }) => {
-      await mensagem(admin, p, userId, MENSAGENS_AUTOMATICAS.orcamento(v.valor));
+      await mensagem(admin, p, userId, p.status === "aceito" ? MENSAGENS_AUTOMATICAS.orcamento_atualizado(v.valor) : MENSAGENS_AUTOMATICAS.orcamento(v.valor));
       await avisar(admin, p.cliente_id, "parceiro_orcamento_recebido", p.id);
     },
   );
@@ -298,7 +308,8 @@ export async function recusarPedido(pedidoId: string, motivo?: string | null): P
   const r = await mudar(
     pedidoId,
     "recusar_pedido",
-    async () => ({ ok: true, valor: { status: "recusado", motivo_recusa: m } }),
+    async ({ p }) =>
+      saidaDoAceitoLiberada(p.status, p.pagamento_status) ? { ok: true, valor: { status: "recusado", motivo_recusa: m } } : { ok: false, erro: ERRO_ACEITO_COM_PAGAMENTO },
     async ({ admin, userId, p }) => {
       await mensagem(admin, p, userId, m ? `Pedido recusado pelo parceiro: ${m}` : "Pedido recusado pelo parceiro.");
       await avisar(admin, p.cliente_id, "parceiro_pedido_recusado", p.id, {
