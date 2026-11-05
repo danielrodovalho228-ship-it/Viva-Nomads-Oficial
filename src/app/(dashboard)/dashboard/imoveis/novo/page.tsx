@@ -45,7 +45,7 @@ import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
-import { camposParaUsarSugestao, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
+import { TEMPO_MAX_SUGESTAO_MS, camposParaUsarSugestao, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { confirmarConforto } from "@/lib/data/conforto-actions";
@@ -578,6 +578,8 @@ export default function NewPropertyPage() {
       const r = await fetch("/api/ai/anuncio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // E618: sem resposta em TEMPO_MAX_SUGESTAO_MS, cai no texto pronto (o "a caminho" não fica pendurado).
+        signal: AbortSignal.timeout(TEMPO_MAX_SUGESTAO_MS),
         body: JSON.stringify({
           ...dados,
           vagas: Number(parkingSpots) || undefined,
