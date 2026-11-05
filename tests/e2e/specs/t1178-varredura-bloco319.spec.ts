@@ -12,7 +12,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   varredura no bloco 302, t1119): as COMPARTILHADAS sem id, pelas contas da massa da varredura — como proprietário
   (DONO17): pedidos da cidade, nova solicitação de orçamento, painel de parceiro, qualificar com o imóvel da massa, conta
   (perfil, papéis, meus dados) e o aviso da prova pelo celular; como parceiro (PARCEIRO): o painel de parceiro e a
-  avaliação de imóveis. Defeito novo entra como test.fail ligado a um item (L-99 registrado aqui: o editor sem CEP e /api/proximidades; L-100 / D-V13 são os próximos livres).
+  avaliação de imóveis. Defeito novo entra como test.fail ligado a um item (L-99 registrado aqui — o editor sem CEP e /api/proximidades — e corrigido pelo E593; L-100 / D-V13 são os próximos livres).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
 interface Tela {
@@ -26,7 +26,7 @@ const TELAS: Tela[] = [
   { conta: "DONO17", papel: "proprietário", nome: "Pedidos da cidade", rota: () => "/dashboard/pedidos-cidade" },
   { conta: "DONO17", papel: "proprietário", nome: "Nova solicitação de orçamento", rota: () => "/dashboard/orcamentos/nova" },
   { conta: "DONO17", papel: "proprietário", nome: "Painel de parceiro", rota: () => "/dashboard/parceiro" },
-  // E196 (#2651): /qualificar?imovel= só redireciona (anúncio publicado → o editor). L-99 no editor: ver o test.fail abaixo.
+  // E196 (#2651): /qualificar?imovel= só redireciona (anúncio publicado → o editor). L-99 no editor: corrigido pelo E593 (#2714).
   { conta: "DONO17", papel: "proprietário", nome: "Qualificar o imóvel", rota: (m) => `/qualificar?imovel=${m.imovel17}` },
   { conta: "DONO17", papel: "proprietário", nome: "Conta › Perfil", rota: () => "/dashboard/conta/perfil" },
   { conta: "DONO17", papel: "proprietário", nome: "Conta › Papéis", rota: () => "/dashboard/conta/papeis" },
@@ -58,10 +58,7 @@ test.describe("T1178 — varredura da página inteira, bloco 319 (15ª volta, co
   for (const t of TELAS) {
     test(`${t.papel} — ${t.nome}: as seis classes, rolando a página inteira`, async ({ browser }) => {
       test.setTimeout(180_000);
-      // L-99 (Pista C, 05/11, bloco 319): o editor do anúncio publicado SEM CEP (o da massa: só bairro e cidade) chama
-      // /api/proximidades sem CEP e recebe 400 ("CEP inválido") — erro de console a 390 e a 1280, nas duas tentativas.
-      // Desde o E196 o /qualificar?imovel= leva a esse editor. Sai quando o editor deixar de pedir sem CEP.
-      test.fail(t.nome === "Qualificar o imóvel", "L-99: o editor do anúncio sem CEP chama /api/proximidades e recebe 400 (erro de console)");
+      // L-99 (bloco 319: editor sem CEP → /api/proximidades 400) saiu com o E593 (#2714): a tela volta a ser verificada inteira.
       test.skip(t.conta !== "VISITANTE" && t.conta !== "SOCIO" && !temContaVarredura(t.conta), `sem a conta ${t.conta} na massa`);
       test.skip(t.conta === "SOCIO" && !CODIGO_SOCIOS, "SOCIOS_ACCESS_CODE não definido neste ambiente");
       const rota = t.rota(MASSA!);
