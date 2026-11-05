@@ -269,3 +269,25 @@ até o fim (para carregar as fotos), com recorte da página inteira.
 | `/parceiros`, `/empresas`, `/como-funciona` | 21, 10, 18 | **Conformes** (reconferidas depois do #1669) |
 
 Nenhuma página pública precisou de correção nesta reconferência.
+
+## Telas que mudaram depois da passada 15 — passada 16 (05/11, modo demonstração, 390 toque, 768 e 1280)
+
+Rotas mexidas pelos PRs mesclados depois da passada 15 (E416 selos, E595/E596, E602 índice do assistente, E607 Passo 1,
+E610, E613, E621 /comparar, E136 calendário no toque, E521 tabela do /comparar): `/`, `/buscar`, `/comparar`,
+`/imoveis/ube-001`, `/socios`, `/decisao`, `/favoritos`, painel (Início, Meus imóveis, os 10 passos do cadastro, Propostas,
+Comparar, Pedidos, Favoritos). 390 em iPhone 13 emulado (toque). Medido: rolagem lateral, imagem quebrada, texto cortado,
+botões cheios no `main`, controle coberto por barra fixa e — rolando com a roda até a página parar — se o último controle
+fica acima da barra fixa de baixo.
+
+1. **`/comparar` a 768 e 1280: colunas de larguras diferentes** — a tabela em layout automático dava a cada coluna a
+   largura do título; as fotos 4:3 do E621 saíam com 143/132/119 px de altura e os títulos desalinhados. **Corrigido no
+   #2800** (cada coluna com a mesma fração; t914 mede 768 e a altura).
+2. **Fim da página atrás da barra fixa** (390 /buscar, /dashboard e Passo 5; 768 /dashboard e Passo 5): a primeira sonda
+   (`scrollTo` direto) mediu durante a acomodação da página. Rolando de verdade até parar, o último controle fica acima da
+   barra em todas. **Conforme, sem PR.**
+3. **Textos "cortados"** (índice do assistente "1. Tipo do imóvel", "— passo atual", "— feito", "Imóveis encontrados"): são
+   textos só para leitor de tela (1 px). **Conforme.**
+4. **`/socios` e `/decisao`**: redirecionam para `/modelodenegocio`, que pede o código de acesso (`/acesso-socios`), nas três
+   larguras. **Conforme** (E595/E596).
+5. **Demais rotas**: nenhuma rolagem lateral, nenhuma imagem quebrada, no máximo um botão cheio no `main`. Selos empilhados
+   nos cartões (E416), grade do Passo 1 (E607) e índice do assistente (E602) conferidos na tela a 390 e 768. **Conformes.**
