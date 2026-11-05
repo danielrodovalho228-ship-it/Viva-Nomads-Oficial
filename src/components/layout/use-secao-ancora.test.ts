@@ -42,7 +42,8 @@ test("E340 — o topo do computador e a barra do celular usam a seção visível
   const topo = readFileSync(new URL("./topo-dono.tsx", import.meta.url), "utf8");
   assert.match(topo, /const ativa = abaAtivaPainel\(p\.abas, p\.pathname, secao\);/);
   const barra = readFileSync(new URL("./mobile-tab-bar.tsx", import.meta.url), "utf8");
-  assert.match(barra, /if \(ancora\) return pathname === rota && ancora === \(secao \?\? "pedidos"\);/);
+  // E460: a barra usa a mesma regra do topo (ancoraAtiva), sem "pedidos" fixo.
+  assert.match(barra, /if \(ancora\) return ancoraAtiva\(tabs, pathname, secao\) === ancora;/);
   assert.match(barra, /const secao = useSecaoAncora\(/);
 });
 
