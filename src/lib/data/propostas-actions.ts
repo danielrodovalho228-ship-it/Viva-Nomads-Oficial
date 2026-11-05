@@ -481,6 +481,8 @@ export interface DadosMontagem {
   negociacao: Negociacao;
   /** Taxa de serviço prevista (só o proprietário vê). */
   taxa: number;
+  /** E582: o documento do dono está completo? Sem ele, o formulário mostra a trava ao lado do botão. */
+  documentoOk: boolean;
 }
 
 /** Valores do anúncio para abrir a montagem preenchida (só o dono do interessado). */
@@ -507,6 +509,7 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
     limites: lim,
     negociacao: neg,
     taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
+    documentoOk: await temDocumento(s.admin, s.user.id),
   };
 }
 
@@ -553,7 +556,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   if (!lead || lead.owner_id !== s.user.id) return { ok: false, error: "Escolha um interessado da sua lista." };
   if (!["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   // O aceite da proposta pode valer como aceite da candidatura: o documento do dono vai no contrato.
-  if (!(await temDocumento(s.admin, s.user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
+  if (!(await temDocumento(s.admin, s.user.id))) return { ok: false, error: MSG_DOCUMENTO.proposta };
   if (!VALIDADES_DIAS.includes(Number(e.validadeDias) as 3 | 7 | 15)) return { ok: false, error: "Escolha a validade: 3, 7 ou 15 dias." };
 
   const im = await lerImovel(s.admin, lead.property_id as string);
