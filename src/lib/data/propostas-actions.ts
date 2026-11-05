@@ -26,7 +26,7 @@ import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
-import { periodoEmDias } from "@/lib/contrato-periodo";
+import { dataDeSaida, periodoEmDias } from "@/lib/contrato-periodo";
 import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
 import { mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
 import {
@@ -97,12 +97,13 @@ function dadosDoEmailDaProposta(
   quemRecebe: "owner" | "tenant",
 ) {
   const tot = calcularTotais(c.termos);
-  const periodo = periodoEmDias(String(c.termos.dataEntrada).slice(0, 10), tot.dias);
+  const entrada = String(c.termos.dataEntrada).slice(0, 10);
   const linhas = linhasProposta({
     numero: String(numero),
     imovel,
-    entrada: periodo.inicio,
-    saida: periodo.fim,
+    entrada,
+    // E599: a data de SAÍDA (entrada + dias), a mesma do formulário e da candidatura — não o fim inclusivo (um dia antes).
+    saida: dataDeSaida(entrada, tot.dias),
     meses: mesesDeReferencia(tot.dias),
     dias: tot.dias,
     valorMensal: tot.valorMensal,

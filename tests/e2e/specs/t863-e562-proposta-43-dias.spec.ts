@@ -23,6 +23,9 @@ const emDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString(
 const ENTRADA = emDias(30);
 const SAIDA_DATA = emDias(73); // 43 dias
 
+/** E601: o valor da caução que o dono viu no formulário (passo 1), conferido na tela da moradora (passo 2). */
+let caucaoDoDono = "";
+
 async function abrir(page: Page, rota: string) {
   await page.goto(rota, { waitUntil: "domcontentloaded" });
   await page.locator("main").first().waitFor();
@@ -81,6 +84,9 @@ test.describe("T863 — E562: candidatura de 43 dias → proposta enviada → ac
     await expect(page.getByTestId("proposta-dias")).toContainText("43 dias");
     await expect(page.getByTestId("resumo-rotulo-total")).toHaveText("Total da estadia (43 dias)");
     await expect(page.getByTestId("resumo-total-contrato")).toContainText("4.671,67");
+    // E601: a caução que o dono vê ao montar (a moradora tem de ver a mesma na proposta).
+    caucaoDoDono = (await page.getByTestId("resumo-caucao").innerText()).trim();
+    expect(caucaoDoDono).toMatch(/R\$/);
     await page.getByTestId("proposta-validade").selectOption("7");
     await page.screenshot({ path: `${SAIDA}/t863-1-montagem.png`, fullPage: true });
     await page.getByTestId("enviar-proposta").click();
@@ -95,12 +101,21 @@ test.describe("T863 — E562: candidatura de 43 dias → proposta enviada → ac
     await page.context().close();
   });
 
-  test("2. a interessada aceita; o Fechamento abre em dias (43 dias, R$ 4.671,67)", async ({ browser }) => {
+  test("2. a interessada vê a proposta em dias (E600) e aceita; o Fechamento abre em dias (43 dias, R$ 4.671,67)", async ({ browser }) => {
     const pi = await entrar(browser, inq.email, senha);
     await abrir(pi, `/dashboard/propostas/${ids.proposta}`);
     await expect(pi.getByTestId("proposta-aceitar")).toBeVisible({ timeout: 20_000 });
+    // E600: a proposta recebida mostra a estadia em dias, a data de saída e o total exato (o da conta aberta).
+    const atual = pi.getByTestId("proposta-atual");
+    await expect(atual.getByTestId("proposta-estadia")).toContainText("43 dias (1 mês + 13 dias)");
+    await expect(atual.getByTestId("proposta-saida")).toContainText(SAIDA_DATA.split("-").reverse().join("/"));
+    await expect(atual.getByTestId("proposta-total-contrato")).toContainText("4.671,67");
+    await expect(atual).not.toContainText(/Meses\s*2/);
     await pi.getByTestId("proposta-aceitar").click();
     await expect.poll(async () => (await adm().from("propostas").select("status").eq("id", ids.proposta!).single()).data?.status, { timeout: 20_000 }).toBe("aceita");
+    // E601: a moradora vê na proposta a mesma caução do formulário do dono.
+    await abrir(pi, `/dashboard/propostas/${ids.proposta}`);
+    await expect(pi.getByTestId("proposta-atual").getByTestId("proposta-caucao")).toContainText(caucaoDoDono, { timeout: 20_000 });
     await pi.context().close();
 
     const pd = await entrar(browser, dono.email, senha);

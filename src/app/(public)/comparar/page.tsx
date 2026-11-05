@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { listProperties } from "@/lib/data/properties";
+import { buscaComAnunciosDeTeste } from "@/lib/data/busca-teste";
 import { consultaDaBusca, hrefComparar, hrefVoltarBusca, idsDeComparar, montarTabela, MIN_COMPARAR } from "@/lib/busca/comparar";
 import { linhaLocalizacao } from "@/lib/localizacao";
 
@@ -22,7 +23,10 @@ export default async function CompararPage({
   // E532: a busca de onde veio (filtros e ordenação) — "Voltar à busca" e "Tirar da comparação" a preservam.
   const volta = consultaDaBusca(sp.volta);
   const voltarBusca = hrefVoltarBusca(volta);
-  const todos = ids.length ? await listProperties() : [];
+  // E521 (reprova 05/11): a MESMA lista da busca — a conta de teste logada vê ali os anúncios de teste (E571) e, ao
+  // marcá-los, eles precisam ser achados aqui também; antes a página lia só a lista pública e caía no estado vazio.
+  const incluirTeste = ids.length ? await buscaComAnunciosDeTeste() : false;
+  const todos = ids.length ? await listProperties({ incluirTeste }) : [];
   // Mantém a ordem escolhida; id que não existe mais simplesmente some.
   const imoveis = ids.map((id) => todos.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => !!p);
   const tabela = montarTabela(imoveis);

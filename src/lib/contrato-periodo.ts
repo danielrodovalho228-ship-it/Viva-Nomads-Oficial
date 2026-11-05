@@ -23,6 +23,14 @@ export function periodoEmDias(entradaISO: string, dias: number): Periodo {
 }
 
 /**
+ * E599: a DATA DE SAÍDA de uma estadia de `dias` — entrada + dias, a mesma conta do formulário e da candidatura
+ * (diasDaSelecao = saída − entrada). Não é o fim inclusivo do período (a última noite, um dia antes).
+ */
+export function dataDeSaida(entradaISO: string, dias: number): string {
+  return somaDias(entradaISO, Math.max(1, Math.round(Number(dias) || 1)));
+}
+
+/**
  * Lê o daterange do Postgres ("[2026-10-19,2026-12-18)" — forma canônica, fim exclusivo) e devolve o fim INCLUSIVO.
  * null para vazio ou inválido.
  */
