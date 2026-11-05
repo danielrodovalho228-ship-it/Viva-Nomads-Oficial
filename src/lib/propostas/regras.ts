@@ -4,7 +4,7 @@
   gravar; a tela usa as mesmas para mostrar o total. A proposta é documento, não cobrança: a Viva não recebe valor.
 */
 import { comissaoSobreContrato, comissaoSobreDias, rotuloTaxaServico, taxaNaAssinatura } from "../cobranca/regra.ts";
-import { DIAS_DO_MES, DIAS_MAX_ESTADIA, DIAS_MIN_ESTADIA, mesesCompletos, mesesDeReferencia, totalDaEstadia } from "../estadia-em-dias.ts";
+import { DIAS_DO_MES, DIAS_MIN_ESTADIA, diasMaxEstadiaVigente, mesesCompletos, mesesDeReferencia, totalDaEstadia } from "../estadia-em-dias.ts";
 import { descontoParaMeses, PCT_MAX, type FaixaDesconto, type ItemNegociavel, type Negociacao } from "../anuncio/negociacao.ts";
 
 export type StatusProposta =
@@ -231,16 +231,20 @@ export function textoTaxaCongeladaParaDono(taxa: number, valorMensal: number, me
 }
 
 /** Meses permitidos pelo anúncio (prazo em dias → meses de 30 dias, entre 1 e 6). */
-export function mesesDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined): { min: number; max: number } {
-  const min = Math.min(6, Math.max(1, Math.ceil(n(minPeriodDias || 30) / 30)));
-  const max = Math.min(6, Math.max(min, Math.floor(n(maxPeriodDias || 180) / 30)));
+export function mesesDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined, faixa91a180Ativa?: boolean): { min: number; max: number } {
+  // TRAVA FAIXA_91_180: desligada, o teto é 3 meses (90 dias).
+  const teto = Math.floor(diasMaxEstadiaVigente(faixa91a180Ativa) / 30);
+  const min = Math.min(teto, Math.max(1, Math.ceil(n(minPeriodDias || 30) / 30)));
+  const max = Math.min(teto, Math.max(min, Math.floor(n(maxPeriodDias || 180) / 30)));
   return { min, max };
 }
 
 /** E562: dias permitidos pelo anúncio (prazo mínimo e máximo), dentro de 30 a 180. */
-export function diasDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined): { min: number; max: number } {
-  const min = Math.min(DIAS_MAX_ESTADIA, Math.max(DIAS_MIN_ESTADIA, Math.round(n(minPeriodDias || DIAS_MIN_ESTADIA))));
-  const max = Math.min(DIAS_MAX_ESTADIA, Math.max(min, Math.round(n(maxPeriodDias || DIAS_MAX_ESTADIA))));
+export function diasDoAnuncio(minPeriodDias: number | null | undefined, maxPeriodDias: number | null | undefined, faixa91a180Ativa?: boolean): { min: number; max: number } {
+  // TRAVA FAIXA_91_180: o teto é o vigente (180; 90 com a trava desligada).
+  const teto = diasMaxEstadiaVigente(faixa91a180Ativa);
+  const min = Math.min(teto, Math.max(DIAS_MIN_ESTADIA, Math.round(n(minPeriodDias || DIAS_MIN_ESTADIA))));
+  const max = Math.min(teto, Math.max(min, Math.round(n(maxPeriodDias || teto))));
   return { min, max };
 }
 
@@ -267,7 +271,7 @@ export function validarTermos(t: TermosProposta, lim: LimitesAnuncio, hojeISO: s
     // E562: a estadia em dias exatos, entre 30 e 180 e dentro do prazo do anúncio.
     const dias = Number(t.dias);
     const min = Math.max(DIAS_MIN_ESTADIA, lim.diasMin ?? lim.mesesMin * DIAS_DO_MES);
-    const max = Math.min(DIAS_MAX_ESTADIA, lim.diasMax ?? lim.mesesMax * DIAS_DO_MES);
+    const max = Math.min(diasMaxEstadiaVigente(), lim.diasMax ?? lim.mesesMax * DIAS_DO_MES);
     if (!Number.isInteger(dias) || dias < min || dias > max)
       return min === max ? `Este anúncio aceita só ${min} dias.` : `A estadia tem de ficar entre ${min} e ${max} dias, como no anúncio.`;
   }
