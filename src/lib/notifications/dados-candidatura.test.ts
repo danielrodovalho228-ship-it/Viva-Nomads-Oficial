@@ -61,7 +61,8 @@ test("guarda: os três momentos da candidatura usam o corpo com dados (envio ao 
   assert.match(acoes, /pushUrl: kind === "candidatura" && leadId \? linkCandidaturaDono\(leadId\) : "\/dashboard\/leads"/);
   assert.match(acoes, /corpoDoEmailDaCandidatura\(adm, leadId, "enviada"\)[\s\S]{0,200}event: "application_received"[\s\S]{0,200}pushUrl: linkCandidaturaMorador\(leadId\)/);
   // A saída da candidatura vai ao banco (0258) e o pedido manda a saída escolhida.
-  assert.match(acoes, /\.\.\.\(fimOk \? \{ fim_desejado: fim \} : \{\}\)/);
+  // E581: a saída entra pelos campos únicos (só com entrada válida e depois dela), no insert e na candidatura repetida.
+  assert.match(acoes, /camposDaCandidatura\(\{[\s\S]{0,300}fim: fimDesejado \?\? "",/);
   assert.match(ler("src/app/(public)/imoveis/[id]/property-detail.tsx"), /kind === "candidatura" && selecao\.saida \? selecao\.saida : undefined\)/);
   const leads = ler("src/lib/data/leads-actions.ts");
   assert.match(leads, /corpoDoEmailDaCandidatura\(admin, leadId, "aceita"\)/);

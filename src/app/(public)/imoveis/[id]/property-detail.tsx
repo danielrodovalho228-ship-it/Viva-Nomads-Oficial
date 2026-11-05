@@ -300,7 +300,8 @@ export function PropertyDetail({
     }
     // Falha real (rede/servidor): NUNCA deixa o botão "morto" — mostra o erro.
     if (!r || !r.ok) {
-      setLeadErro("Não foi possível enviar agora. Verifique a conexão e tente novamente.");
+      // E581: a razão do servidor aparece quando há (ex.: candidatura já respondida → falar pelo chat).
+      setLeadErro(r?.error ?? "Não foi possível enviar agora. Verifique a conexão e tente novamente.");
       return false;
     }
     if (kind === "candidatura") {
