@@ -5,7 +5,7 @@
 */
 import {
   AREAS,
-  EXTRAS,
+  EXTRAS_TODOS,
   MATRIZ,
   NIVEIS,
   ROTULO_AREA,
@@ -50,7 +50,8 @@ export function textoRuido(classe: ClasseRuido | null | undefined, isolamento = 
 /** Extras na ordem da lista, só os conhecidos: "Secador de cabelo, Air fryer". */
 export function textoExtras(chaves: readonly string[] | null | undefined): string | null {
   const sel = new Set(chaves ?? []);
-  const rotulos = EXTRAS.filter((e) => sel.has(e.chave)).map((e) => e.rotulo);
+  // E604: inclui os legados (Lava-louças, TV), que hoje são só comodidade mas já foram salvos como extra.
+  const rotulos = EXTRAS_TODOS.filter((e) => sel.has(e.chave)).map((e) => e.rotulo);
   return rotulos.length ? rotulos.join(", ") : null;
 }
 
