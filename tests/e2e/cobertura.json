@@ -1238,6 +1238,14 @@
         "t675-varredura-bloco68"
       ]
     },
+    "/dashboard/leads/[id]": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t862-e553-perfil-candidato"
+      ]
+    },
     "/dashboard/leads": {
       "personas": [
         "proprietario"

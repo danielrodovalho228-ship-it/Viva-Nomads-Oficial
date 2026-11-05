@@ -11,7 +11,8 @@ import { getMinhaIntencao, salvarMinhaIntencao } from "@/lib/data/intencao-actio
 import { getMeuPerfilPublico } from "@/lib/data/perfil-actions";
 import type { Intencao } from "@/lib/auth/entrada";
 import { PHOTOS } from "@/lib/media";
-import { useParceiroAprovado } from "@/lib/use-papel-barra";
+import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
+import { BOTAO_PARCERIA_APROVADA, HREF_ATIVAR_PARCERIA, TEXTO_PARCERIA_APROVADA, situacaoParceiro, type SituacaoParceiro } from "@/lib/parceiros/situacao-conta";
 import { cn } from "@/lib/utils";
 import { SOMBRA_CARTAO_CONTA } from "@/lib/conta/visual-mockup";
 import {
@@ -37,7 +38,10 @@ export function TelaPapeis() {
   const [intencao, setIntencao] = useState<Intencao[] | null>(null);
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState<"ok" | "salvando" | "erro" | "erro_leitura" | null>(null);
-  const parceiro = useParceiroAprovado();
+  // E576: a situação inteira (ativo, aprovada sem página ou nenhum), não só "tem página".
+  const [situacao, setSituacao] = useState<SituacaoParceiro>("nenhum");
+  const parceiro = situacao === "ativo";
+  const aprovadaSemPagina = situacao === "aprovada_sem_pagina";
 
   useEffect(() => {
     let vivo = true;
@@ -48,6 +52,9 @@ export function TelaPapeis() {
       else setIntencao(i ?? []);
       setCidade(p?.cidade ?? "");
     });
+    minhaParceria()
+      .then((e) => vivo && setSituacao(situacaoParceiro(e)))
+      .catch(() => {});
     return () => {
       vivo = false;
     };
@@ -106,9 +113,13 @@ export function TelaPapeis() {
 
       <CartaoPapel id="parceiro" foto={PHOTOS.papeis.parceiro} ativo={parceiro}>
         <h2 className={TITULO_CARTAO}>Quero ser parceiro</h2>
-        <p className="mt-1 text-base text-ink">{TEXTO_QUERO_PARCEIRO}</p>
-        <ButtonLink href="/dashboard/parceiro" size="lg" className="mt-3 w-full" data-testid="papel-parceiro-botao">
-          {parceiro ? BOTAO_PARCEIRO_ATIVO : BOTAO_QUERO_PARCEIRO}
+        {aprovadaSemPagina ? (
+          <p className="mt-1 text-base text-ink" data-testid="papel-parceiro-aprovada">{TEXTO_PARCERIA_APROVADA}</p>
+        ) : (
+          <p className="mt-1 text-base text-ink">{TEXTO_QUERO_PARCEIRO}</p>
+        )}
+        <ButtonLink href={HREF_ATIVAR_PARCERIA} size="lg" className="mt-3 w-full" data-testid="papel-parceiro-botao">
+          {parceiro ? BOTAO_PARCEIRO_ATIVO : aprovadaSemPagina ? BOTAO_PARCERIA_APROVADA : BOTAO_QUERO_PARCEIRO}
         </ButtonLink>
       </CartaoPapel>
 

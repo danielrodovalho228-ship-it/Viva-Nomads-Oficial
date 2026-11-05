@@ -87,7 +87,7 @@ import { FaixaProprietario } from "@/components/property/faixa-proprietario";
 import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
-import { SELECAO_VAZIA, comEntrada, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+import { SELECAO_VAZIA, comEntrada, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -242,16 +242,20 @@ export function PropertyDetail({
   // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
   // Prompt 41: a duração da busca também dá o total do rodapé e do cartão ("R$ Y em N meses").
   const [mesesBusca, setMesesBusca] = useState(0);
+  const [avisoDataBusca, setAvisoDataBusca] = useState<string | null>(null);
   useEffect(() => {
     try {
       const { inicio, meses } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      // E517: a data da busca só pré-seleciona se couber neste anúncio (disponibilidade e mínimo); senão, aviso.
+      const daBusca = entradaDaBusca(inicio, { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, hoje: hojeBR() });
       // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
-      if (inicio) setSelecao((atual) => (atual.entrada ? atual : comEntrada(atual, inicio)));
+      if (daBusca.entrada) setSelecao((atual) => (atual.entrada ? atual : comEntrada(atual, daBusca.entrada)));
+      setAvisoDataBusca(daBusca.aviso);
       if (meses) setMesesBusca(meses);
     } catch {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
-  }, []);
+  }, [property.availableFrom, property.availableUntil, property.minPeriodDays]);
 
   // Candidatura pré-preenchida com o motivo do perfil (deslogado: sem sessão, fica vazio).
   useEffect(() => {
@@ -973,6 +977,11 @@ export function PropertyDetail({
             <PrivacidadeAcesso privacidade={property.privacidade} tipoEntrada={property.chegadaEPedido?.tipoEntrada} />
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
+            {avisoDataBusca && !selecao.entrada && (
+              <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-amber-800" data-testid="aviso-data-busca">
+                {avisoDataBusca}
+              </p>
+            )}
             <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}

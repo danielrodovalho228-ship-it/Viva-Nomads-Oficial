@@ -47,6 +47,8 @@ export interface Ficha {
   dadosCategoria: Record<string, string>;
   status: string;
   motivoRecusa: string | null;
+  /** E577: quando o pedido foi decidido (aprovado ou recusado). */
+  decididoEm: string | null;
   checklist: Record<string, unknown>;
   origem: string;
   criadoEm: string;
@@ -98,12 +100,14 @@ const SELO_ESTADO: Record<EstadoFicha["tipo"], string> = {
   incompleto: "border-red-200 bg-white text-red-700",
   checklist: "border-amber-200 bg-white text-amber-800",
   pronto: "border-forest/30 bg-white text-forest",
+  recusada: "border-red-200 bg-white text-red-700",
 };
 const BORDA_ESTADO: Record<EstadoFicha["tipo"], string> = {
   aguardando: "border-l-line",
   incompleto: "border-l-red-500",
   checklist: "border-l-amber-500",
   pronto: "border-l-forest",
+  recusada: "border-l-red-500",
 };
 
 export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura?: boolean }) {
@@ -112,6 +116,8 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
   const [motivo, setMotivo] = useState("");
   const completo = checklistCompleto(check);
   const aguardando = f.status === "aguardando_email";
+  // E577: pedido recusado é só leitura — sem checklist, sem Aprovar/Recusar (o servidor já recusa os dois).
+  const recusada = f.status === "recusada";
   const estado = estadoDaFicha({ status: f.status, email: f.email, categorias: f.categorias, cidades: f.cidades, documento: f.documento, checklist: check });
   // Prompt 36, item 4: cada item mostra "Salvando…", "Salvo" ou o erro com "Tentar de novo".
   const router = useRouter();
@@ -199,7 +205,17 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         )}
       </dl>
 
-      {!aguardando && (
+      {recusada && (
+        <div className="mt-4 rounded-xl border border-red-200 bg-white p-3 text-sm" data-testid="ficha-recusada">
+          <p className="font-semibold text-ink">Pedido recusado{f.decididoEm ? ` em ${dataHora(f.decididoEm)}` : ""}.</p>
+          <p className="mt-1 text-ink" data-testid="ficha-recusada-motivo">
+            Motivo: {f.motivoRecusa?.trim() || "não registrado"}
+          </p>
+          <p className="mt-1 text-muted">Pedido já decidido: não há o que aprovar ou recusar aqui. Para reconsiderar, a pessoa faz um novo pedido.</p>
+        </div>
+      )}
+
+      {!aguardando && !recusada && (
         <fieldset disabled={pendente || salvandoChecklist} className="mt-4 rounded-xl border border-line p-3" data-testid="ficha-checklist">
           <legend className="px-1 text-sm font-semibold text-ink">Checklist</legend>
           <p className="mb-2 text-sm text-ink" data-testid="ficha-identidade">
@@ -240,6 +256,8 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </fieldset>
       )}
 
+      {/* E577: pedido recusado não tem ação (o servidor recusa Aprovar e Recusar). */}
+      {!recusada && (<>
       {soLeitura ? <SoLeituraQa className="mt-4" /> : (
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start">
         {!aguardando && (
@@ -278,7 +296,8 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </div>
       </div>
       )}
-      {!completo && !aguardando && !soLeitura && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
+      </>)}
+      {!completo && !aguardando && !recusada && !soLeitura && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
       {aviso}
     </Panel>
   );

@@ -257,6 +257,20 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   });
 }
 
+const UUID_LEAD = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * E553 (dados): o perfil completo de UM candidato, para a rota /dashboard/leads/<id>. Fonte única: a MESMA leitura e as
+ * MESMAS regras de máscara do cartão de Interessados (listLeads → cartaoCandidato: "Candidato(a)" sem nome, foto ou
+ * contato antes do aceite). Só o dono do lead o encontra (a RLS de leads filtra por owner_id); id estranho ou de outro
+ * dono → null (a página dá 404). Falha de leitura LANÇA (nunca "candidato não existe").
+ */
+export async function perfilDoCandidato(leadId: string): Promise<Lead | null> {
+  if (!UUID_LEAD.test(leadId)) return null;
+  const leads = await listLeads({ exigir: true });
+  return leads.find((l) => l.id === leadId) ?? null;
+}
+
 /**
  * E569: o que falta ao DONO para aceitar candidaturas, mostrado no cartão ANTES de qualquer clique (antes o portão
  * "informe seu CPF" só surgia depois de "Aprovar"). Hoje é o documento (CPF/CNPJ), a mesma trava de aceitarCandidatura.

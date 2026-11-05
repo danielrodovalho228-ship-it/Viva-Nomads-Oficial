@@ -14,7 +14,9 @@
  * (casca do painel). Todo lugar que saúda/exibe o usuário passa por aqui.
  */
 export function primeiroNome(nomeCompleto: string | null | undefined): string {
-  const n = nomeCompleto?.trim();
+  // E575: a marca entre colchetes das contas de teste ("[TESTE QA] Marina Souza") não é nome — a saudação saía
+  // "Olá [TESTE,". Tira as marcas do começo e saúda pelo primeiro nome de verdade.
+  const n = nomeCompleto?.trim().replace(/^(\[[^\]]*\]\s*)+/, "").trim();
   if (!n || n.includes("@")) return "";
   return n.split(/\s+/)[0];
 }

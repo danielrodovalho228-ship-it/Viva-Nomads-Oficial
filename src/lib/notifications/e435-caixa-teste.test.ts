@@ -43,7 +43,8 @@ test("captura: o envio passa o HTML e a caixa extrai o descadastro antes de limp
 });
 
 test("tela do leitor de QA: paginada, com HTML isolado, destinatário, descadastro e o imóvel por extenso", () => {
-  const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/qa/emails/page.tsx", import.meta.url), "utf8");
+  // E435 (reteste): a caixa saiu da página do leitor para CaixaEmailsQa, usada também pela aba E-mails do admin.
+  const pagina = readFileSync(new URL("../../components/admin/caixa-emails-qa.tsx", import.meta.url), "utf8");
   assert.match(pagina, /select\("id, criado_em, evento, assunto, corpo, destinatario_mascarado, html, destinatario, descadastro_url", \{ count: "exact" \}\)/);
   assert.match(pagina, /\.range\(de, ate\)/);
   assert.doesNotMatch(pagina, /\.limit\(LISTA_MAX\)/);
@@ -54,13 +55,31 @@ test("tela do leitor de QA: paginada, com HTML isolado, destinatário, descadast
   assert.equal((lista.match(/qa && l\.destinatario \? l\.destinatario : l\.destinatario_mascarado/g) ?? []).length, 2, "celular e computador");
   assert.equal((lista.match(/<ImovelPorExtenso corpo=\{l\.corpo\} \/>/g) ?? []).length, 2, "celular e computador");
   assert.doesNotMatch(lista, /truncate|line-clamp/);
-  // A lista do ADMIN continua sem as colunas novas (mascarada).
+  // E435 (reteste de 04/11): o QA é admin e era levado para a lista antiga; a aba do admin agora é a MESMA caixa.
   const admin = readFileSync(new URL("../../components/admin/emails-teste-lista.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(admin, /destinatario,|descadastro_url|html,/);
+  assert.match(admin, /<CaixaEmailsQa sp=\{sp\} base="\/admin\/dados-de-teste" fixos=\{\{ aba: "emails" \}\}/);
+  assert.doesNotMatch(admin, /LISTA_MAX|<ListaEmailsTeste/);
+  const leitor = readFileSync(new URL("../../app/(dashboard)/dashboard/qa/emails/page.tsx", import.meta.url), "utf8");
+  assert.match(leitor, /<CaixaEmailsQa sp=\{await searchParams\} base="\/dashboard\/qa\/emails" \/>/);
+  const dados = readFileSync(new URL("../../app/(dashboard)/admin/dados-de-teste/page.tsx", import.meta.url), "utf8");
+  assert.match(dados, /<EmailsTesteLista sp=\{sp\} \/>/);
 });
 
 test("migração 0284: as três colunas, idempotente", () => {
   const m = readFileSync(new URL("../../../supabase/producao/aplicar-0284.sql", import.meta.url), "utf8");
   for (const c of ["html", "destinatario", "descadastro_url"]) assert.match(m, new RegExp(`add column if not exists ${c} text`));
   assert.match(m, /0284_emails_teste_html_destinatario/);
+});
+
+test("E435 reteste: a paginação e o filtro do admin mantêm a aba E-mails", async () => {
+  const { hrefDaCaixa } = await import("./caixa-teste.ts");
+  const admin = { aba: "emails" };
+  assert.equal(hrefDaCaixa("/admin/dados-de-teste", admin, { pagina: 2 }), "/admin/dados-de-teste?aba=emails&pagina=2");
+  assert.equal(hrefDaCaixa("/admin/dados-de-teste", admin, { conta: "u1", evento: "parceria_aprovada", pagina: 1 }), "/admin/dados-de-teste?aba=emails&conta=u1&evento=parceria_aprovada");
+  assert.equal(hrefDaCaixa("/admin/dados-de-teste", admin, {}), "/admin/dados-de-teste?aba=emails");
+  assert.equal(hrefDaCaixa("/dashboard/qa/emails", {}, {}), "/dashboard/qa/emails");
+  assert.equal(hrefDaCaixa("/dashboard/qa/emails", {}, { evento: "x", pagina: 3 }), "/dashboard/qa/emails?evento=x&pagina=3");
+  // O formulário do admin leva aba=emails num campo oculto (senão o GET cairia na aba Dados).
+  const caixa = readFileSync(new URL("../../components/admin/caixa-emails-qa.tsx", import.meta.url), "utf8");
+  assert.match(caixa, /<input key=\{k\} type="hidden" name=\{k\} value=\{v\} \/>/);
 });
