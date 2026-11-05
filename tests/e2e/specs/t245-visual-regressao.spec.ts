@@ -48,6 +48,11 @@ function mascaras(page: Page): Locator[] {
     page.locator('[data-testid="titulo-busca"], [data-testid="cartao-disponivel"], [data-testid="cartao-nota"], [data-testid="atalho-total"]'),
     page.locator('[data-testid="marca-imovel"], [data-testid="aviso-testes"]'),
     page.locator('[data-visual="muda"]'),
+    // Pista C, 05/11: as listas públicas mostram anúncios de OUTRAS specs do laboratório (criados e apagados durante a
+    // rodada — título, preço, "Foto indisponível" e a contagem da cidade mudam a cada rodada). O cartão fica mascarado
+    // por inteiro (o tamanho e a posição dele, que é o que a referência guarda, continuam conferidos) e a contagem também.
+    page.locator('[data-testid="cartao-imovel"]'),
+    page.getByText(/ de exemplo em /),
   ];
 }
 
