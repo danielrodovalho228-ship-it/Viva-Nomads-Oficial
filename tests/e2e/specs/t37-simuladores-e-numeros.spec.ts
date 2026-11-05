@@ -1,11 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { COMISSAO_POR_PLANO, PLANOS, REGRAS_CONTRATO, textoComissao } from "../../../src/config/planos";
+import { COMISSAO_POR_PLANO, PLANOS, REGRAS_CONTRATO, textoComissao, GESTOR_TEXTO } from "../../../src/config/planos";
 import { resumoContrato } from "../../../src/lib/contrato-blocos";
 import { simularRentabilidade } from "../../../src/lib/simulador";
 import { formatBRL } from "../../../src/lib/utils";
-import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, comissaoSobreContrato, taxaPublicaTexto } from "../../../src/lib/cobranca/regra";
-import { GESTOR_PRECO } from "../../../src/config/planos";
+import { FAIXAS_COMISSAO_PADRAO, comissaoSobreContrato, taxaPublicaTexto } from "../../../src/lib/cobranca/regra";
 import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /**
@@ -75,11 +74,8 @@ test.describe("T37 — /precos (visitante)", () => {
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
       expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      if (f.negociavel) {
-        expect(texto).toContain(ROTULO_FAIXA_NEGOCIAVEL);
-        expect(texto).not.toContain("Gestor");
-      }
-      else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
+      // E564: toda faixa (inclusive a do Plano Gestor, 4%) mostra o exemplo em reais; a "taxa negociável" saiu.
+      expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
     // O Plano Gestor é um botão que abre a janela de contato (t185); não há mais bloco fixo na página.
     // O clique antes da hidratação não abre a janela: repete o toque até o formulário aparecer.
@@ -87,7 +83,8 @@ test.describe("T37 — /precos (visitante)", () => {
       await page.getByTestId("plano-gestor-botao").click();
       await expect(page.getByTestId("plano-gestor-form")).toBeVisible({ timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
-    await expect(page.getByTestId("plano-gestor-form")).toContainText(`${GESTOR_PRECO.minimoImoveis} imóveis ou mais`);
+    // E564 (parte A): o texto único do Gestor.
+    await expect(page.getByTestId("plano-gestor-form")).toContainText(`Plano Gestor: ${GESTOR_TEXTO}`);
     await page.keyboard.press("Escape");
     const corpo = limpo(await page.locator("body").innerText());
     expect(corpo).toContain("Sem mensalidade");
@@ -113,11 +110,8 @@ test.describe("T37 — /precos (visitante, 1280 px)", () => {
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
       expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      if (f.negociavel) {
-        expect(texto).toContain(ROTULO_FAIXA_NEGOCIAVEL);
-        expect(texto).not.toContain("Gestor");
-      }
-      else expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
+      // E564: toda faixa (inclusive a do Plano Gestor, 4%) mostra o exemplo em reais; a "taxa negociável" saiu.
+      expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
   });
 });
