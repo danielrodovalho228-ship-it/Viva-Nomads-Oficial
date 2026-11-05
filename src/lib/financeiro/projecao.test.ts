@@ -49,8 +49,8 @@ test("cenários 10/20/40 contratos por mês: R$ 9 mil / 18 mil / 36 mil de recei
   for (const x of c) assert.ok(Math.abs(x.resultado - (x.contratos * margem - custoFixoDe({}))) < 0.01);
 });
 
-test("modelo v3: equilíbrio ≈ 10 contratos/mês no Simples e 13 no Presumido; com 20, ≈ R$ 8,1 mil × R$ 5,0–5,6 mil", () => {
-  for (const [regime, esperado] of [["simples", 10], ["presumido", 13], ["presumido_iss5", 13]] as const) {
+test("modelo v3: equilíbrio ≈ 10 contratos/mês no Simples e 12–13 no Presumido; com 20, ≈ R$ 8,2 mil × R$ 5,1–5,7 mil", () => {
+  for (const [regime, esperado] of [["simples", 10], ["presumido", 12], ["presumido_iss5", 13]] as const) {
     const margem = porContrato({ operador: 0, regime }).margem;
     const fixo = custoFixoDe({ regime });
     const n = Math.ceil(fixo / margem);
@@ -58,7 +58,7 @@ test("modelo v3: equilíbrio ≈ 10 contratos/mês no Simples e 13 no Presumido;
     assert.ok(n * margem >= fixo && (n - 1) * margem < fixo);
   }
   const vinte = (regime: "simples" | "presumido" | "presumido_iss5") => cenariosContratosMes({ operador: 0, regime })[1].resultado;
-  assert.ok(vinte("simples") > 7800 && vinte("simples") < 8400, String(vinte("simples")));
+  assert.equal(Math.round(vinte("simples")), 8189); // ≈ R$ 8,2 mil (veredito do coordenador, 05/11)
   assert.ok(vinte("presumido_iss5") >= 4700 && vinte("presumido") <= 5700, `${vinte("presumido_iss5")} / ${vinte("presumido")}`);
 });
 
@@ -73,27 +73,27 @@ test("sem assinatura nem churn: a receita base é só a taxa de serviço dos con
   }
   perto(p.anos[0].receita, 48600, "receita ano 1");
   // Modelo v3 (Presumido em destaque): a projeção antiga (até R$ 69,3 mil, 1º positivo no mês 14, payback no 27) saiu.
-  perto(p.piorCaixa, -83626, "pior caixa");
-  assert.equal(p.mesPrimeiroPositivo, 15);
-  assert.equal(p.mesPayback, 30);
+  perto(p.piorCaixa, -80477, "pior caixa");
+  assert.equal(p.mesPrimeiroPositivo, 14);
+  assert.equal(p.mesPayback, 29);
   const s = projetar("base", { operador: 0, regime: "simples" });
-  perto(s.piorCaixa, -64724, "pior caixa no Simples");
-  assert.equal(s.mesPayback, 25);
+  perto(s.piorCaixa, -62249, "pior caixa no Simples");
+  assert.equal(s.mesPayback, 24);
 });
 
-test("cenário Base com operador de R$ 100 por contrato (modelo v3, Presumido): pior caixa ≈ −R$ 92 mil e payback no mês 34", () => {
+test("cenário Base com operador de R$ 100 por contrato (modelo v3, Presumido): pior caixa ≈ −R$ 89 mil e payback no mês 33", () => {
   const p = projetar("base", { operador: 100 });
-  perto(p.piorCaixa, -92349, "pior caixa com operador");
-  assert.equal(p.mesPayback, 34);
+  perto(p.piorCaixa, -88767, "pior caixa com operador");
+  assert.equal(p.mesPayback, 33);
 });
 
-test("por contrato (modelo v3): receita = R$ 900; margem ≈ R$ 709 no Presumido (R$ 775 no Simples); empate 13 (15 com operador)", () => {
+test("por contrato (modelo v3): receita = R$ 900; margem ≈ R$ 709 no Presumido (R$ 775 no Simples); empate 12 (14 com operador)", () => {
   const sem = porContrato({ operador: 0 });
   assert.equal(Math.round(sem.receita * 100) / 100, 900);
   assert.equal(Math.round(sem.margem), 709);
   assert.equal(Math.round(porContrato({ operador: 0, regime: "simples" }).margem), 775);
-  assert.deepEqual(sem.empate.map((x) => Math.ceil(x)), [13, 13]); // marketing pago em R$ 0: as duas pontas iguais
-  assert.deepEqual(porContrato({ operador: 100 }).empate.map((x) => Math.ceil(x)), [15, 15]);
+  assert.deepEqual(sem.empate.map((x) => Math.ceil(x)), [12, 12]); // marketing pago em R$ 0: as duas pontas iguais
+  assert.deepEqual(porContrato({ operador: 100 }).empate.map((x) => Math.ceil(x)), [14, 14]);
   // faixa da carteira, nunca 12% fixo
   assert.equal(porContrato({ operador: 0, taxa: 0.12 }).receita, 1080);
   assert.equal(porContrato({ operador: 0, taxa: 0.06 }).receita, 540);
@@ -104,14 +104,14 @@ test("cenários ordenados: otimista se paga antes do base; o pessimista não se 
   const base = projetar("base", { operador: 0 });
   const oti = projetar("otimista", { operador: 0 });
   assert.equal(oti.mesPayback, 17);
-  assert.equal(base.mesPayback, 30);
+  assert.equal(base.mesPayback, 29);
   assert.equal(pes.mesPayback, null);
   assert.ok(oti.piorCaixa > base.piorCaixa && base.piorCaixa > pes.piorCaixa);
 });
 
-test("premissas (modelo v3, 05/11/2026): fornecedores ≈ R$ 1.303 + CDL R$ 100 + pró-labore de referência R$ 6.000", () => {
+test("premissas (modelo v3, 05/11/2026): fornecedores R$ 1.302,90 (sem a CDL) + pró-labore de referência R$ 6.000", () => {
   const fornecedores = CUSTOS_FIXOS.filter((c) => c.rotulo !== "Pró-labore dos sócios").reduce((s, c) => s + c.valor, 0);
-  assert.ok(Math.abs(fornecedores - 1403) < 1, `fornecedores ${fornecedores}`);
+  assert.ok(Math.abs(fornecedores - 1302.9) < 0.01, `fornecedores ${fornecedores}`);
   const pro = CUSTOS_FIXOS.find((c) => c.rotulo === "Pró-labore dos sócios");
   assert.equal(pro?.valor, 6000);
   assert.match(pro?.obs ?? "", /referência para projeção — não é decisão/);
@@ -167,8 +167,8 @@ test("parceiros: todos ligados no Base ≈ R$ 33,07 por contrato antes do impost
   const m = p.meses[20]; // mês 21: todos já começaram
   assert.equal(Math.round(m.receitaParceiros * 100) / 100, Math.round(m.contratos * 33.07 * 100) / 100);
   perto(p.anos[2].receitaParceiros, 11310, "parceiros ano 3");
-  perto(p.piorCaixa, -81822, "pior caixa com parceiros");
-  assert.equal(p.mesPayback, 29);
+  perto(p.piorCaixa, -78897, "pior caixa com parceiros");
+  assert.equal(p.mesPayback, 28);
 });
 
 test("parceiro só soma a partir do mês de início (o que começa mais tarde)", () => {
@@ -249,8 +249,8 @@ test("p21 — tudo desligado: números idênticos aos de hoje (regressão) e tod
   const hoje = projetar("base", BASE);
   const novo = projetar("base", { ...BASE, extras: [], ajustes: {}, fatorAdesao: 1 });
   assert.deepEqual(novo.meses.map((m) => m.caixa), hoje.meses.map((m) => m.caixa));
-  assert.equal(novo.mesPayback, 30);
-  perto(novo.piorCaixa, -83626, "pior caixa");
+  assert.equal(novo.mesPayback, 29);
+  perto(novo.piorCaixa, -80477, "pior caixa");
   for (const m of novo.meses) {
     for (const k of ["receitaVerificacao", "receitaB2B", "receitaPublicamos", "receitaFerramentas", "descontoFundadores"] as const) assert.equal(m[k], 0, k);
     assert.ok(Math.abs(m.receita - (m.receitaTaxa + m.receitaSeguros + m.receitaServicos)) < 1e-6);

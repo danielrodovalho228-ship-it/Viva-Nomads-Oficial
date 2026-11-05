@@ -11,7 +11,9 @@ import {
   ALUGUEL_MEDIO,
   CUSTOS_FIXOS,
   CUSTOS_POR_CONTRATO,
-  CUSTOS_UNICOS,
+  INVESTIMENTO_INICIAL,
+  INVESTIMENTO_INICIAL_DETALHE,
+  OPCIONAIS_NAO_SOMADOS,
   DOLAR,
   FORA_DO_FIXO,
   MESES_MEDIOS_CONTRATO,
@@ -21,7 +23,7 @@ import {
   TAXA_FAIXAS,
   marketingDoMes,
 } from "../../config/premissas-financeiras.ts";
-import { RATEIO_UNICOS_MES, cenariosContratosMes, custoFixoDe, fraseResumo, porContrato, projetar } from "./projecao.ts";
+import { CUSTO_FIXO_PADRAO, cenariosContratosMes, custoFixoDe, fraseResumo, porContrato, projetar } from "./projecao.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
@@ -42,28 +44,36 @@ test("v3: regime Simples (~6%) × Lucro Presumido (~13,3%, até ~16,3% com ISS 5
   assert.match(SELO_SOCIETARIO, /em revisão/);
 });
 
-test("v3: equilíbrio ≈ 10 (Simples) e ≈ 13 (Presumido); com 20 contratos ≈ R$ 8,1 mil × R$ 5,0–5,6 mil", () => {
+test("v3: equilíbrio ≈ 10 (Simples) e 12–13 (Presumido); com 20 contratos ≈ R$ 8,2 mil × R$ 5,1–5,7 mil", () => {
   const empate = (regime: (typeof REGIMES)[number]["id"]) => Math.ceil(custoFixoDe({ regime }) / porContrato({ operador: 0, regime }).margem);
   assert.equal(empate("simples"), 10);
-  assert.ok([13, 14].includes(empate("presumido")) && [13, 14].includes(empate("presumido_iss5")));
+  assert.equal(empate("presumido"), 12);
+  assert.equal(empate("presumido_iss5"), 13);
   const vinte = (regime: (typeof REGIMES)[number]["id"]) => cenariosContratosMes({ operador: 0, regime })[1].resultado;
-  assert.ok(Math.abs(vinte("simples") - 8200) < 300, String(vinte("simples")));
+  assert.equal(Math.round(vinte("simples")), 8189); // ≈ R$ 8,2 mil
   for (const r of ["presumido", "presumido_iss5"] as const) assert.ok(vinte(r) >= 4700 && vinte(r) <= 5700, `${r}: ${vinte(r)}`);
 });
 
-test("v3: as linhas do modelo estão presentes — CDL, e-mail, marketing pago em 0, parecer e consulta únicos rateados", () => {
+test("v3 (veredito do coordenador, 05/11): CDL e e-mail visíveis mas FORA da soma; parecer e consulta dentro do investimento", () => {
   const linha = (r: RegExp) => CUSTOS_FIXOS.find((c) => r.test(c.rotulo));
-  assert.equal(linha(/CDL/)?.valor, 100);
-  assert.ok(linha(/e-mail/));
+  assert.equal(linha(/CDL/), undefined);
+  assert.equal(linha(/e-mail/), undefined);
+  const fornecedores = CUSTOS_FIXOS.filter((c) => !/Pró-labore/.test(c.rotulo)).reduce((s, c) => s + c.valor, 0);
+  assert.ok(Math.abs(fornecedores - 1302.9) < 0.01, String(fornecedores));
+  assert.ok(Math.abs(CUSTO_FIXO_PADRAO - 7302.9) < 0.01);
+  const opc = (r: RegExp) => OPCIONAIS_NAO_SOMADOS.find((c) => r.test(c.rotulo));
+  assert.equal(opc(/CDL/)?.obs, "Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
+  assert.equal(opc(/e-mail/)?.valor, 5.99);
+  assert.match(opc(/e-mail/)?.obs ?? "", /Hostinger/);
+  assert.equal(INVESTIMENTO_INICIAL, 16000);
+  assert.equal(INVESTIMENTO_INICIAL_DETALHE, "inclui parecer jurídico R$ 4.000 + consulta 05/11 R$ 500");
   assert.equal(linha(/Marketing pago/)?.valor, 0);
   assert.equal(marketingDoMes(1), 0);
   assert.equal(marketingDoMes(36), 0);
   assert.equal(linha(/Pró-labore/)?.valor, 6000);
-  assert.deepEqual(CUSTOS_UNICOS.map((c) => [c.rotulo, c.valor]), [["Parecer jurídico", 4000], ["Consulta jurídica", 500]]);
-  assert.equal(RATEIO_UNICOS_MES, 4500 / 36);
-  // o rateio entra na projeção (custo fixo do mês) mas não nos cenários de um mês
+  // sem rateio de parecer: o custo fixo do mês na projeção é o mesmo dos cenários de um mês
   const p = projetar("base", { operador: 0 });
-  assert.ok(Math.abs(p.meses[0].custoFixo - (custoFixoDe({}) + RATEIO_UNICOS_MES)) < 1e-9);
+  assert.equal(p.meses[0].custoFixo, custoFixoDe({}));
   assert.equal(DOLAR, 5.2);
 });
 
@@ -83,7 +93,7 @@ test("v3: Certta sem preço público — 1,7 × R$ 20 = R$ 34 por contrato é HI
 test("v3: a frase do topo não repete a projeção antiga; /simulacao e /roi usam o mesmo componente", () => {
   const p = projetar("base", { operador: 0 });
   const f = fraseResumo("Base", p, p, 0);
-  assert.doesNotMatch(f, /69,3 mil|mês 14|mês 27/);
+  assert.doesNotMatch(f, /69,3 mil|se paga no mês 27/); // "1º positivo no mês 14" volta a coincidir no Presumido
   const comp = ler("src/components/financeiro/modelo-financeiro.tsx");
   assert.match(comp, /data-testid="seletor-regime"/);
   assert.match(comp, /data-testid="seletor-faixa"/);

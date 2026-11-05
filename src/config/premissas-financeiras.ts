@@ -146,8 +146,6 @@ export const CUSTOS_FIXOS: Item[] = [
   { rotulo: "Infraestrutura (Vercel + Supabase + Resend + Expo, com IOF)", valor: 500, unidade: "R$/mês", obs: "≈ R$ 500 por mês." },
   { rotulo: "Emissor de NFS-e", valor: 0, unidade: "R$/mês", obs: "a cotar" },
   { rotulo: "Alvará de funcionamento", valor: 0, unidade: "R$/mês", obs: "a cotar" },
-  { rotulo: "CDL (associação comercial)", valor: 100, unidade: "R$/mês", obs: "≈ R$ 100 por mês." },
-  { rotulo: "Caixas de e-mail da empresa", valor: 0, unidade: "R$/mês", obs: "linha do modelo v3; valor a confirmar" },
   { rotulo: "Marketing pago", valor: 0, unidade: "R$/mês", obs: "começa em R$ 0 — a linha fica para quando houver verba" },
   { rotulo: ROTULO_PRO_LABORE, valor: PRO_LABORE, unidade: "R$/mês", obs: "referência para projeção — não é decisão; + encargos do regime" },
 ];
@@ -156,12 +154,22 @@ export const CUSTO_FORNECEDORES = cent(CUSTOS_FIXOS.filter((c) => c.rotulo !== R
 /** Encargos do pró-labore no regime (INSS patronal fora do Simples), em R$/mês. */
 export const encargosProLabore = (r: Regime, proLabore = PRO_LABORE) => cent(proLabore * r.inssPatronal);
 /**
- * Custos únicos do modelo v3, rateados na projeção de 36 meses (entram no custo fixo do mês da projeção, não nos
- * cenários de um mês).
+ * Veredito do coordenador (05/11): custos visíveis mas FORA da soma — opcionais ou sem decisão. Aparecem no bloco
+ * "Custos ainda sem valor / opcionais (não somados)" da tela; nenhum entra no custo fixo.
  */
-export const CUSTOS_UNICOS: Item[] = [
-  { rotulo: "Parecer jurídico", valor: 4000, unidade: "R$ (único)", obs: "rateado na projeção" },
-  { rotulo: "Consulta jurídica", valor: 500, unidade: "R$ (único)", obs: "rateada na projeção" },
+export const OPCIONAIS_NAO_SOMADOS: Item[] = [
+  {
+    rotulo: "Associação à CDL Uberlândia",
+    valor: 100,
+    unidade: "R$/mês",
+    obs: "Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente",
+  },
+  {
+    rotulo: "Caixas de e-mail da empresa (Hostinger)",
+    valor: 5.99,
+    unidade: "R$/mês",
+    obs: "~R$ 5,99/mês (Hostinger) — fora da soma até o número de caixas ser decidido",
+  },
 ];
 /** Fora do fixo: o que não entra na conta hoje, com o porquê (sem número inventado). */
 export const FORA_DO_FIXO = [
@@ -199,8 +207,12 @@ export function marketingDoMes(m: number): number {
   return m >= 1 ? MARKETING_PAGO_MES : 0;
 }
 
-/** Investimento único: jurídico, CNPJ, marca, Google Play, lançamento. */
+/**
+ * Investimento único (envelope de 06/10): jurídico, CNPJ, marca, Google Play, lançamento. Veredito do coordenador
+ * (05/11): o parecer jurídico (R$ 4.000) e a consulta de 05/11 (R$ 500) estão DENTRO dele — não são linhas à parte.
+ */
 export const INVESTIMENTO_INICIAL = 16000;
+export const INVESTIMENTO_INICIAL_DETALHE = "inclui parecer jurídico R$ 4.000 + consulta 05/11 R$ 500";
 
 // ── Cenários (contratos começam no mês 4) ──────────────────────────────────
 export type CenarioId = "pessimista" | "base" | "otimista";
