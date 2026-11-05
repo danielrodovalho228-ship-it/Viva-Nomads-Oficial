@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T869 — Matriz, passada 10 (05/11): em /dashboard/carteira os indicadores dividem a linha com a mesma altura (regra da
@@ -15,6 +15,8 @@ test.describe("T869 — indicadores da carteira com a mesma altura na linha", ()
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
+    // Sem imóvel a carteira mostra o vazio (sem indicadores): um imóvel ativo basta para os 6 cartões.
+    await criarImovelPronto(ids.dono, `Studio T869 ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
