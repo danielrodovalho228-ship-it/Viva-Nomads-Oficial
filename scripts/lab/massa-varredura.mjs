@@ -149,7 +149,10 @@ async function criarImovel(owner, titulo, status, qtdFotos, extra = {}) {
   ok(error, `imóvel ${titulo}`);
   if (qtdFotos > 0) {
     const urls = [];
-    for (let k = 0; k < qtdFotos; k++) urls.push(await enviar("property-photos", `varredura/${data.id}/${k}.png`, k));
+    // As fotos ficam DIRETO na pasta do dono (`<dono>/<arquivo>`), como o produto grava: Meus imóveis só mostra as fotos
+    // que existem nessa pasta (arquivosDoDono + soFotosExistentes). Em `varredura/<imóvel>/` elas eram descartadas e o
+    // D-V4 (t249) acusava "sem miniatura" nos cartões da varredura.
+    for (let k = 0; k < qtdFotos; k++) urls.push(await enviar("property-photos", `${owner}/varredura-${data.id}-${k}.png`, k));
     ok((await admin.from("property_photos").insert(urls.map((u, k) => ({ property_id: data.id, url: u, sort_order: k })))).error, `fotos ${titulo}`);
     await admin.from("properties").update({ photo_count: qtdFotos }).eq("id", data.id);
   }
