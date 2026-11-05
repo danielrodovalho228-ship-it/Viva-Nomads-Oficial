@@ -1,6 +1,6 @@
 /*
   Auditoria de páginas de erro dos fluxos logados (rodada 1): (1) toda tela de erro mostra o código de referência que o Next
-  entrega (digest), para a equipe achar a causa no log; (2) o admin tem o próprio 404, fora da vitrine pública.
+  entrega (digest), para a equipe achar a causa no log; (2) o admin segue SEM not-found próprio (decisão do repositório: a área não se revela).
   Roda: node --test src/lib/erros-telas.test.ts
 */
 import { test } from "node:test";
@@ -32,11 +32,7 @@ test("as quatro telas de erro e o erro geral mostram o código de referência", 
   assert.match(ler("src/components/ui/codigo-do-erro.tsx"), /Código para a equipe/);
 });
 
-test("o admin tem 404 próprio na casca; o notFound() do layout segue na 404 da raiz (a área não se revela)", () => {
-  const nf = ler("src/app/(dashboard)/admin/not-found.tsx");
-  assert.match(nf, /data-testid="admin-nao-encontrado"/);
-  assert.match(nf, /title: "Página não encontrada"/);
-  assert.match(nf, /href="\/admin"/);
-  assert.doesNotMatch(nf, /PropertyCard|listProperties|para-proprietarios/); // nada de vitrine
-  assert.match(ler("src/app/(dashboard)/admin/layout.tsx"), /role !== "admin"\) notFound\(\)/);
+test("o admin segue sem not-found próprio (a área não se revela; um 404 admin só entra com prova ao vivo)", async () => {
+  const { existsSync } = await import("node:fs");
+  assert.ok(!existsSync(new URL("../../src/app/(dashboard)/admin/not-found.tsx", import.meta.url)));
 });
