@@ -26,7 +26,6 @@ import { continuarAte, noPasso, abrirCadastroNovo, abrirSecoesPasso10 } from "..
   recebido o de morador ("Quero morar" + a chave de envio): ganha "anunciar" na intenção, sem outro boas-vindas.
   Laboratório: o Supabase local é http e a regra do editor só aceita fotos https na pasta do dono; por isso as fotos
   do rascunho são trocadas pelas de teste (como em criarImovelPronto) antes de publicar.
-  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const FOTOS = ["sala", "quarto-1", "quarto-2", "cozinha", "banheiro", "home-office", "varanda", "fachada"].map((n) => `public/images/imoveis/ube/ube-001-${n}.webp`);
@@ -211,6 +210,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await expect(prox).toHaveCount(8, { timeout: 20_000 }); // PERTO-B: escola entrou (8 tipos)
       for (const p of await prox.all()) await expect(p).toHaveAttribute("data-mostrar", "1");
       await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-mostrar").click(); // PERTO-A: desliga "Mostrar" em uma
+      await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-ocultar-confirmar").click(); // E605: confirmação do padrão TOGGLE
       // Nenhuma imagem decorativa no meio do formulário.
       await expect(page.getByTestId("etapa-encontramos").locator("img")).toHaveCount(0);
       // Segurança e imóvel: o grupo Segurança e a declaração das câmeras no mesmo bloco.
@@ -274,10 +274,9 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       const ate = page.getByTestId("disponivel-ate");
       for (const d of [de, ate]) await expect(d).toHaveAttribute("type", "text");
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
-      // Data futura (Pista C, 05/11): o "01/11/2026" fixo virou passado — o aviso de data passada sob o 1º campo empurrava
-      // a coluna e os dois campos deixavam de alinhar (20 px a 1280).
+      // Data sempre no futuro: uma fixa (01/11/2026) virou passado e o aviso "não pode ser antes de hoje" desalinhava as caixas.
       const futura = new Date(Date.now() + 30 * 86_400_000);
-      const [dd, mm, aaaa] = [String(futura.getUTCDate()).padStart(2, "0"), String(futura.getUTCMonth() + 1).padStart(2, "0"), String(futura.getUTCFullYear())];
+      const [dd, mm, aaaa] = [String(futura.getDate()).padStart(2, "0"), String(futura.getMonth() + 1).padStart(2, "0"), String(futura.getFullYear())];
       await de.pressSequentially(`${dd}${mm}${aaaa}`);
       await expect(de).toHaveValue(`${dd}/${mm}/${aaaa}`);
       // Q9: rótulo curto; no celular os dois campos ficam um embaixo do outro, com a mesma largura.
