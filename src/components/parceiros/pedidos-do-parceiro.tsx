@@ -8,8 +8,7 @@ import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
 import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { dataHoraBRT, diaBRT } from "@/lib/datas-brasilia";
-import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
-import { mesesAPartirDe, type MarcaDia } from "@/lib/calendario/grade";
+import { AgendaCalendario } from "@/components/parceiros/agenda-calendario";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const FECHADOS = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
@@ -32,11 +31,6 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
     .sort((a, b) => String(a.horario).localeCompare(String(b.horario)));
   // Prompt 43, item 4: a agenda usa a mesma grade dos calendários do imóvel e da estadia (dias com horário marcados).
   const hoje = diaBRT(new Date());
-  const marcasAgenda: Record<string, MarcaDia[]> = {};
-  for (const p of agenda) {
-    const dia = diaBRT(p.horario);
-    if (dia) marcasAgenda[dia] = ["evento"];
-  }
   return (
     <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
@@ -68,27 +62,19 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
       </Panel>
       <div className="grid content-start gap-6">
         <Panel id="agenda" title="Agenda" className="scroll-mt-24" data-testid="parceiro-agenda">
-          {hoje && (
-            <div className="mb-3">
-              <LegendaCalendario marcas={["evento", "hoje"]} />
-              {mesesAPartirDe(hoje, 1).map(({ ano, mes }) => (
-                <CalendarioMes key={`${ano}-${mes}`} tipo="agenda" ano={ano} mes={mes} hoje={hoje} marcas={marcasAgenda} />
-              ))}
-            </div>
-          )}
+          {/* E466 (i): calendário com mês anterior/próximo e dias clicáveis (o dia filtra os horários). */}
           {agenda.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
+            <>
+              {hoje && <AgendaCalendario hoje={hoje} itens={[]} />}
+              <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
+            </>
           ) : (
-            <ul className="divide-y divide-line">
-              {agenda.map((p) => (
-                <li key={p.id}>
-                  <Link href={`/dashboard/servicos/pedidos/${p.id}`} className="flex min-h-11 items-center justify-between gap-2 py-3 text-sm" data-testid="parceiro-agenda-item">
-                    <span className="font-semibold text-ink">{dataHoraBRT(p.horario)}</span>
-                    <span className="text-muted">{rotuloCategoria(p.categoria)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            hoje && (
+              <AgendaCalendario
+                hoje={hoje}
+                itens={agenda.map((p) => ({ id: p.id, dia: diaBRT(p.horario) ?? "", quando: dataHoraBRT(p.horario), categoria: rotuloCategoria(p.categoria) }))}
+              />
+            )
           )}
         </Panel>
         <Panel id="ganhos" title="Ganhos" className="scroll-mt-24" data-testid="parceiro-ganhos">
