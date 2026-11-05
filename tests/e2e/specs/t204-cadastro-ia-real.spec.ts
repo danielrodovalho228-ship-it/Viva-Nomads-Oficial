@@ -183,8 +183,11 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const de = page.getByTestId("disponivel-de");
       await expect(de).toHaveAttribute("type", "text", { timeout: 30_000 });
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
-      await de.pressSequentially("01112026");
-      await expect(de).toHaveValue("01/11/2026");
+      // Data sempre no futuro: uma fixa (01/11/2026) virou passado e o aviso "não pode ser antes de hoje" desalinhava as caixas.
+      const futura = new Date(Date.now() + 30 * 86_400_000);
+      const [dd, mm, aaaa] = [String(futura.getDate()).padStart(2, "0"), String(futura.getMonth() + 1).padStart(2, "0"), String(futura.getFullYear())];
+      await de.pressSequentially(`${dd}${mm}${aaaa}`);
+      await expect(de).toHaveValue(`${dd}/${mm}/${aaaa}`);
       await de.fill("");
       await de.evaluate((el) => {
         const dt = new DataTransfer();
