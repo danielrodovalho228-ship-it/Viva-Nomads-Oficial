@@ -8,6 +8,9 @@
   Presumido (Presumido em destaque), fornecedores pós-CNPJ, pró-labore de referência + encargos. Dólar: R$ 5,20.
   Estimativas para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
+import { GESTOR_PRECO } from "./planos.ts";
+import { FAIXAS_COMISSAO_PADRAO } from "../lib/cobranca/regra.ts";
+
 export const REFERENCIA = "05/11/2026";
 /** Nome do modelo de custos que estas premissas seguem. */
 export const MODELO_CUSTOS = "modelo de custos v3 (validado pelo coordenador em 05/11/2026)";
@@ -39,12 +42,16 @@ export const ALUGUEL_MEDIO = 3000;
  * Modelo v3: a taxa é a da FAIXA da carteira do dono (tabela 12/10/8/6 de lib/cobranca/regra.ts) — nunca 12% fixo. A
  * tela escolhe a faixa; o padrão é 10% (carteira de 3 a 5 imóveis), a do contrato de referência do modelo.
  */
-export const TAXA_FAIXAS = [
-  { taxa: 0.12, carteira: "1–2 imóveis" },
-  { taxa: 0.1, carteira: "3–5 imóveis" },
-  { taxa: 0.08, carteira: "6–15 imóveis" },
-  { taxa: 0.06, carteira: "16–19 imóveis" },
-] as const;
+/**
+ * As faixas da carteira, lidas da REGRA DE COBRANÇA (FAIXAS_COMISSAO_PADRAO, lib/cobranca/regra.ts) — nunca uma lista
+ * própria. E623 (estrutura aprovada em 04/11/2026, E564): inclui a faixa do Gestor — a taxa e o mínimo de imóveis de GESTOR_PRECO, ou
+ * administradora, com cadastro assistido e contato direto (GESTOR_PRECO, config/planos.ts).
+ */
+export const TAXA_FAIXAS: readonly { taxa: number; carteira: string; detalhe?: string }[] = FAIXAS_COMISSAO_PADRAO.map((f) =>
+  f.gestor
+    ? { taxa: f.taxa, carteira: `Gestor: ${GESTOR_PRECO.minimoImoveis}+ imóveis ou administradora`, detalhe: "cadastro assistido e contato direto" }
+    : { taxa: f.taxa, carteira: `${f.minImoveis}–${f.maxImoveis} imóveis` },
+);
 export const TAXA_MEDIA = 0.1;
 
 /** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */

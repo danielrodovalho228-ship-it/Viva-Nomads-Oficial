@@ -35,7 +35,12 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       await expect(page.getByTestId("regime-presumido")).toHaveAttribute("aria-pressed", "true");
       await expect(page.getByTestId("seletor-regime")).toContainText("instrumento societário em revisão");
       await expect(page.getByTestId("faixa-10")).toHaveAttribute("aria-pressed", "true");
-      for (const f of ["12", "10", "8", "6"]) await expect(page.getByTestId(`faixa-${f}`)).toBeVisible();
+      for (const f of ["12", "10", "8", "6", "4"]) await expect(page.getByTestId(`faixa-${f}`)).toBeVisible();
+      // E623: a faixa do Gestor (estrutura de 04/11/2026) aparece com o que ela traz.
+      await expect(page.getByTestId("faixa-4")).toContainText("Gestor: 20+ imóveis ou administradora");
+      await expect(page.getByTestId("faixa-gestor-detalhe")).toContainText("cadastro assistido e contato direto");
+      // E622: o rótulo do equilíbrio e o KPI usam o mesmo custo fixo (com os encargos do regime): 12 no Presumido.
+      await expect(page.getByTestId("equilibrio-fixo")).toContainText("12 contratos por mês");
       expect(corpo).toMatch(/Stays \(channel manager\): só na fase 2 do Gestor/);
       expect(corpo).toMatch(/a Viva não tem hoje/);
       expect(corpo).not.toMatch(/Taxa média ponderada/);
