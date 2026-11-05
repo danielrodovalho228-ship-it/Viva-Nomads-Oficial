@@ -21,7 +21,8 @@ test("listLeads e listConversations: com exigir, a falha do banco lança", () =>
 });
 
 test("as telas Interessados e Mensagens pedem com exigir; a home não", () => {
-  assert.match(ler("src/app/(dashboard)/dashboard/leads/page.tsx"), /await listLeads\(\{ exigir: true \}\)/);
+  // E569: a página lê os interessados com exigir (e a pendência do dono junto, no mesmo Promise.all).
+  assert.match(ler("src/app/(dashboard)/dashboard/leads/page.tsx"), /listLeads\(\{ exigir: true \}\), pendenciaDoDonoParaAceite\(\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/mensagens/page.tsx"), /await listConversations\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /ou\("conversas", listConversations\(\{ exigir: true \}\), null\)/);
   // Achado nº 24: a home pede com exigir, mas SEMPRE dentro de ou(...) — a falha vira aviso no topo, nunca a página de erro.
