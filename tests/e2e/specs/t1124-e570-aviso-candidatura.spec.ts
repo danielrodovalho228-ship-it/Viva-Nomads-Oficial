@@ -84,10 +84,11 @@ test.describe("T1124 — E570: o aviso de candidatura nomeia o morador (máscara
     const { data: lead } = await adm().from("leads").select("id").eq("property_id", ids.imovel!).eq("tenant_id", ids.inq!).single();
     ids.lead = lead!.id as string;
     // O aviso sai em paralelo ao e-mail, depois da resposta: espera até 30 s.
-    let aviso: { titulo: string; url: string | null; ref_id: string | null } | undefined;
+    type Aviso = { titulo: string; url: string | null; ref_id: string | null };
+    let aviso: Aviso | undefined;
     for (let i = 0; i < 30 && !aviso; i++) {
       const { data } = await adm().from("avisos").select("titulo, url, ref_id").eq("usuario_id", ids.dono!).eq("evento", "candidatura_nova").limit(1);
-      aviso = (data ?? [])[0] as typeof aviso;
+      aviso = (data ?? [])[0] as Aviso | undefined;
       if (!aviso) await new Promise((r) => setTimeout(r, 1000));
     }
     expect(aviso, "o aviso de candidatura do dono foi gravado").toBeTruthy();
