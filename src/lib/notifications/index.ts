@@ -1,7 +1,7 @@
 import { sendEmail, isEmailConfigured } from "./email";
 import { sendWhatsapp, isWhatsappConfigured } from "./whatsapp";
 import { processarPush } from "./push-servidor";
-import { textoDaDecisao, type DadosDaDecisao } from "./regra-push";
+import { eventoTemCentral, textoDaDecisao, type DadosDaDecisao } from "./regra-push";
 import { SITE_URL } from "@/lib/site";
 import { montarNotificacao, urlInterna } from "./montar-email";
 import { primeiroNome } from "@/lib/display-name";
@@ -184,8 +184,9 @@ export async function notify(params: {
 
   // E444: o aviso no sino do site, do MESMO evento (fonte única), em paralelo. Título do catálogo, nunca texto do usuário.
   const avisoPromise =
-    params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event)
-      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso }))
+    // E550: só eventos com a central na matriz (o "só e-mail" não vira aviso), com o imóvel no título.
+    params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event) && eventoTemCentral(params.event)
+      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso, imovelId: params.imovelId }))
       : null;
 
   if (params.email) {

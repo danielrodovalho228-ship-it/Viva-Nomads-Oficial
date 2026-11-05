@@ -114,6 +114,25 @@ export function tituloAvisoCandidatura(e: { candidato?: string | null; imovel?: 
   return tituloDoAviso(`Nova candidatura de ${candidato} para ${imovel || "o seu imóvel"}`);
 }
 
+/**
+ * E550 — o aviso diz de QUAL imóvel é: "Documento aprovado · Casa mobiliada no Centro". Sem imóvel, o título fica como
+ * está. O título do imóvel é cortado (90) e limpo; o filtro de contato é aplicado por quem grava.
+ */
+export function tituloComImovel(titulo: string, imovel: string | null | undefined): string {
+  const nome = String(imovel ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
+  if (!nome || titulo.includes(nome)) return tituloDoAviso(titulo);
+  return tituloDoAviso(`${titulo} · ${nome}`);
+}
+
+/**
+ * E550 — o MESMO aviso não se repete no sino: um aviso ainda não lido e não resolvido do mesmo evento e do mesmo
+ * objeto (ref_id) — ou, sem ref_id, com o mesmo título — é renovado (sobe para o topo) em vez de virar uma 2ª linha
+ * idêntica. A chave é a do filtro de busca do aviso pendente.
+ */
+export function chaveDoAvisoPendente(a: { evento: string; refId?: string | null; titulo: string }): { evento: string; refId: string } | { evento: string; titulo: string } {
+  return a.refId ? { evento: a.evento, refId: a.refId } : { evento: a.evento, titulo: a.titulo };
+}
+
 /** Destino do aviso: só caminho interno ("/rota"), nunca URL externa. */
 export function urlDoAviso(u: string | null | undefined): string | null {
   const s = String(u ?? "");
