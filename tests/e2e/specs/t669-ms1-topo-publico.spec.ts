@@ -17,12 +17,12 @@ for (const largura of [1280, 390] as const) {
       const topo = page.getByTestId("topo-publico");
       await expect(topo).toBeVisible({ timeout: 30_000 });
       if (largura === 1280) {
-        await expect(page.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos"]);
+        await expect(page.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", ...comPrecos("Planos")]);
         await expect(page.getByTestId("nav-fale-com-a-viva")).toHaveText("Fale com a Viva");
         await expect(page.getByTestId("nav-entrar")).toHaveText("Entrar");
       } else {
         await page.getByTestId("nav-menu").click();
-        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos", "Fale com a Viva", "Entrar"]);
+        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", ...comPrecos("Planos"), "Fale com a Viva", "Entrar"]);
       }
       for (const fora of ["Publicar pedido", "Como funciona", "Preços", "Mais"]) await expect(topo.getByText(fora, { exact: true })).toHaveCount(0);
       await expect(topo.locator('[aria-label*="idioma" i], [data-testid*="idioma"]')).toHaveCount(0);

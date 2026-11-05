@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ROTAS_AXE_PUBLICAS } from "../../../src/lib/lab/axe-regras";
 import { caminhosDoSitemap, extrairMeta, linksInternos, pesoExcedido, problemasDaPagina, repetidos, type MetaPagina } from "../../../src/lib/lab/seo-regras";
-import { comPrecos } from "../fixtures/precos";
+import { PRECOS_SUSPENSA, comPrecos } from "../fixtures/precos";
 
 /*
   T257 — SEO e peso (ordem 21708cca, parte D). Lê o HTML que o servidor entrega, sem login:
@@ -19,7 +19,7 @@ test.beforeEach(({}, info) => {
 test("título, descrição e H1 únicos nas páginas públicas principais", async ({ request }) => {
   const paginas: Record<string, MetaPagina> = {};
   const problemas: string[] = [];
-  for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth")) {
+  for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth" && (r !== "/precos" || !PRECOS_SUSPENSA))) {
     const res = await request.get(rota);
     expect(res.status(), rota).toBe(200);
     paginas[rota] = extrairMeta(await res.text());
@@ -59,7 +59,7 @@ test("links internos das páginas públicas principais não quebram", async ({ r
   expect(quebrados.join("\n")).toBe("");
 });
 
-for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth")) {
+for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth" && (r !== "/precos" || !PRECOS_SUSPENSA))) {
   test(`${rota}: peso transferido abaixo do limite`, async ({ page }) => {
     let bytes = 0;
     page.on("response", async (r) => {
