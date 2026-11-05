@@ -38,11 +38,6 @@ export default async function AdminServicosPage() {
                 <p className="mt-1 text-sm text-muted">
                   {codigoDoPedido(p.id)} · {dataBR(p.dataDesejada)} · {FAIXAS_HORARIO.find((f) => f.id === p.faixa)?.rotulo ?? p.faixa} · {p.prestador}
                 </p>
-                {p.imovel && (
-                  <p className="mt-1 text-sm text-ink" data-testid="admin-servico-imovel">
-                    Imóvel: {p.imovel}
-                  </p>
-                )}
                 {p.observacao && <p className="mt-1 text-sm text-ink">{p.observacao}</p>}
                 <MudarEstado id={p.id} status={p.status} />
               </li>
