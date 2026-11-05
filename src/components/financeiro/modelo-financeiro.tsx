@@ -32,7 +32,7 @@ import {
   IMPOSTO_TEXTO,
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
-  OPERADOR_OPCOES,
+  ROTULO_REGIME_ALTERNATIVO,
   PARCEIROS,
   REFERENCIA,
   REPRESENTANTE_SEGUROS,
@@ -87,7 +87,7 @@ const ORDEM: CenarioId[] = ["pessimista", "base", "otimista"];
 const TEXTO = {
   simulacao: {
     h1: "Simulação do negócio — documento interno dos sócios",
-    sub: "Quanto entra e quanto custa cada contrato, e o que isso dá em 36 meses. Escolha o cenário e se há operador local pago.",
+    sub: "Quanto entra e quanto custa cada contrato, e o que isso dá em 36 meses. Escolha o cenário e o regime (Simples é o padrão; o Presumido é o cenário alternativo, em definição).",
   },
   roi: {
     h1: "Quando o negócio se paga?",
@@ -122,9 +122,10 @@ const mesmos = (a: readonly string[], b: readonly string[]) => a.length === b.le
  */
 export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulacao" | "roi"; leitura?: boolean }) {
   const [cenario, setCenario] = useState<CenarioId>("base");
-  const [operador, setOperador] = useState<number>(0);
+  // E622 (veredito de 05/11): sem operador local pago desde 18/10 — R$ 0, sem seletor.
+  const operador = 0;
   const [custoFixo, setCustoFixo] = useState<number>(CUSTO_FIXO_PADRAO);
-  // Modelo v3: regime (Lucro Presumido em destaque) e a faixa da carteira (12/10/8/6 — nunca 12% fixo).
+  // Modelo v3: regime (Simples por padrão; Presumido como cenário alternativo — E622) e a faixa da carteira (nunca 12% fixo).
   const [regime, setRegime] = useState<RegimeId>(REGIME_PADRAO);
   const [taxa, setTaxa] = useState<number>(TAXA_MEDIA);
   const imposto = regimePorId(regime).aliquota;
@@ -297,19 +298,11 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
               </button>
             ))}
           </div>
-          <div className={styles.toggles} role="group" aria-label="Operador local">
-            <span className={styles.lbl}>Operador local por contrato:</span>
-            {OPERADOR_OPCOES.map((v) => (
-              <button key={v} type="button" className={styles.pill} aria-pressed={operador === v} onClick={() => setOperador(v)}>
-                {v === 0 ? "Sem operador pago" : `${brl(v)} por contrato`}
-              </button>
-            ))}
-          </div>
           <div className={styles.toggles} role="group" aria-label="Regime tributário" data-testid="seletor-regime">
             <span className={styles.lbl}>Regime ({IMPOSTO_TEXTO}; {SELO_SOCIETARIO}):</span>
             {REGIMES.map((r) => (
               <button key={r.id} type="button" className={styles.pill} aria-pressed={regime === r.id} onClick={() => setRegime(r.id)} data-testid={`regime-${r.id}`} title={r.detalhe}>
-                {r.nome} · {(r.aliquota * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%{r.id === REGIME_PADRAO ? " (em destaque)" : ""}
+                {r.nome} · {(r.aliquota * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%{r.id === REGIME_PADRAO ? " (padrão)" : ` (${ROTULO_REGIME_ALTERNATIVO})`}
               </button>
             ))}
           </div>
@@ -463,7 +456,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
         {/* Por contrato */}
         <div className={styles.kpibar} data-testid="kpis-contrato">
           <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`taxa de serviço (${pctTexto(taxa)}) ${brl2(taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContrato, taxa))}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
-          <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto${operador ? " + operador" : ""}`} />
+          <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto`} />
           <Kpi k="Margem por contrato" v={brl2(unit.margem)} hint="receita − custo variável" />
           <Kpi k="Contratos/mês para empatar" v={Math.ceil(unit.empate[0]) === Math.ceil(unit.empate[1]) ? `${Math.ceil(unit.empate[0])}` : `${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint={`custo fixo ${brl(custoFixoDe({ custoFixo, regime }))} ÷ margem; marketing pago em R$ 0; sem cobrança recorrente nesta fase`} />
         </div>
@@ -532,7 +525,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
 
         {/* Os 3 cenários lado a lado */}
         <div className={styles.card}>
-          <h2>Os três cenários {operador ? `(com operador de ${brl(operador)})` : "(sem operador pago)"}</h2>
+          <h2>Os três cenários (sem operador pago)</h2>
           <div className={styles.tblWrap}>
             <table className={styles.tbl} data-testid="tabela-cenarios">
               <thead>
@@ -574,7 +567,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             itens={CUSTOS_POR_CONTRATO}
             rodape={[
               [`Imposto da Viva (${IMPOSTO_TEXTO})`, `${pctImposto} da receita`],
-              ["Operador local (opcional)", operador ? brl(operador) : "R$ 0 (sócios fazem)"],
+              ["Operador local", "R$ 0 — sem operador pago desde 18/10 (fora da soma)"],
             ]}
           />
         </div>
@@ -625,7 +618,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
           </p>
           {investidor.map((linha) => (
             <div key={linha.operador} className={styles.investidorBloco}>
-              <h3>{linha.operador ? `Com operador local (${brl(linha.operador)} por contrato)` : "Sem operador pago"}</h3>
+              <h3>Sem operador pago</h3>
               <div className={styles.tblWrap}>
                 <table className={styles.tbl}>
                   <thead>

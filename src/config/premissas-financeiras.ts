@@ -5,7 +5,7 @@
 
   Referência: modelo de custos v3 validado pelo coordenador (ordem do Daniel, 05/11/2026; continuação do E559/E592):
   contrato de referência R$ 3.000 × 3 meses na faixa da carteira (12/10/8/6 — nunca 12% fixo), regime Simples × Lucro
-  Presumido (Presumido em destaque), fornecedores pós-CNPJ, pró-labore de referência + encargos. Dólar: R$ 5,20.
+  Presumido (Simples por padrão; Presumido como cenário alternativo, E622), fornecedores pós-CNPJ, pró-labore de referência + encargos. Dólar: R$ 5,20.
   Estimativas para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
 import { GESTOR_PRECO } from "./planos.ts";
@@ -93,11 +93,15 @@ export const CUSTOS_POR_CONTRATO: Item[] = [
   { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing", obs: "Estimativa; o custo em produção é a medir." },
 ];
 /*
-  Modelo v3: regime tributário — Simples Nacional (~6% sobre a receita; a contribuição patronal já vem no DAS) ×
-  Lucro Presumido (~13,3% sobre a receita com ISS de 2%, até ~16,3% com ISS de 5%; e o INSS patronal de 20% sobre o
-  pró-labore, que entra no custo fixo). O Presumido é o cenário em destaque; o instrumento societário está em revisão.
+  Modelo v3 — regime tributário, VEREDITO DO COORDENADOR (E622, 05/11; a mesma premissa do simulador oficial):
+  - Simples Nacional: ~6% sobre a receita; a contribuição patronal já vem no DAS (INSS patronal R$ 0). É o PADRÃO da
+    página: o regime só se decide na reunião a três.
+  - Lucro Presumido (cenário alternativo, "regime em definição"): 16,33% sobre a taxa = 11,33% federais (PIS/Cofins 3,65%
+    + IRPJ 4,8% + CSLL 2,88%) + ISS de 5% (teto conservador, a confirmar com o Rodolfo); + INSS patronal de 20% sobre o
+    pró-labore (R$ 1.200 sobre R$ 6.000), automático, também a confirmar com o Rodolfo. A contabilidade segue a tabela da
+    A2 nos dois regimes (sem acréscimo estimado). O ISS de 2% saiu: não fecha com o simulador oficial.
 */
-export type RegimeId = "simples" | "presumido" | "presumido_iss5";
+export type RegimeId = "simples" | "presumido";
 export interface Regime {
   id: RegimeId;
   nome: string;
@@ -107,33 +111,29 @@ export interface Regime {
   inssPatronal: number;
   detalhe: string;
 }
+/** O rótulo das premissas do Presumido que o contador ainda confirma. */
+export const A_CONFIRMAR_RODOLFO = "a confirmar com o Rodolfo";
 export const REGIMES: Regime[] = [
   { id: "simples", nome: "Simples Nacional", aliquota: 0.06, inssPatronal: 0, detalhe: "≈ 6% sobre a receita; a contribuição patronal vem no DAS" },
   {
     id: "presumido",
     nome: "Lucro Presumido",
-    aliquota: 0.1333,
-    inssPatronal: 0.2,
-    detalhe: "≈ 13,3% sobre a receita (PIS, Cofins, IRPJ, CSLL e ISS de 2%) + INSS patronal de 20% sobre o pró-labore",
-  },
-  {
-    id: "presumido_iss5",
-    nome: "Lucro Presumido (ISS 5%)",
     aliquota: 0.1633,
     inssPatronal: 0.2,
-    detalhe: "≈ 16,3% sobre a receita com ISS de 5% + INSS patronal de 20% sobre o pró-labore",
+    detalhe: `16,33% sobre a taxa — 11,33% federais (PIS/Cofins 3,65% + IRPJ 4,8% + CSLL 2,88%) + ISS de 5% (teto conservador, ${A_CONFIRMAR_RODOLFO}) — e INSS patronal de 20% sobre o pró-labore (${A_CONFIRMAR_RODOLFO})`,
   },
 ];
-/** O cenário em destaque do modelo v3. */
-export const REGIME_PADRAO: RegimeId = "presumido";
-export const regimePorId = (id: RegimeId) => REGIMES.find((r) => r.id === id) ?? REGIMES[1];
+/** O padrão da página: Simples. O Presumido é o cenário alternativo ("regime em definição"). */
+export const REGIME_PADRAO: RegimeId = "simples";
+export const ROTULO_REGIME_ALTERNATIVO = "cenário alternativo · regime em definição";
+export const regimePorId = (id: RegimeId) => REGIMES.find((r) => r.id === id) ?? REGIMES[0];
 /** O instrumento societário (contrato social/acordo de sócios) ainda não está fechado. */
 export const SELO_SOCIETARIO = "instrumento societário em revisão";
 export const IMPOSTO_OPCOES = REGIMES.map((r) => r.aliquota);
 export const IMPOSTO_SOBRE_RECEITA = regimePorId(REGIME_PADRAO).aliquota;
 export const IMPOSTO_TEXTO = "regime a confirmar com o contador (Simples × Lucro Presumido)";
-/** Operador local por contrato: R$ 0 (sócios fazem) ou R$ 100. */
-export const OPERADOR_OPCOES = [0, 100] as const;
+/** E622 (veredito de 05/11): sem operador local pago desde 18/10 — a linha do modelo de 06/10 saiu da soma (R$ 0). */
+export const OPERADOR_OPCOES = [0] as const;
 
 // ── Custos fixos por mês ────────────────────────────────────────────────────
 /*
