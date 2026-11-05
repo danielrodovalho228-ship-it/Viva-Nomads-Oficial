@@ -93,6 +93,7 @@ import {
   VERSAO_ORDEM_ETAPAS,
 } from "@/lib/etapas-anuncio";
 import { ETAPA } from "@/lib/anuncio/etapas-ids";
+import { urlComEtapa } from "@/lib/anuncio/etapa-na-url";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
@@ -1615,6 +1616,15 @@ export default function NewPropertyPage() {
   const mostrarQualificacao =
     (approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente") ||
     (approved === true && !editId && qualDoRascunho && !!draftParam && draftServerId === draftParam);
+  // E615: a URL acompanha o passo — `?etapa=` ficava no valor com que a página abriu (etapa=4 nos Passos 5 a 10), e
+  // atualizar ou abrir o link devolvia ao passo errado. Regrava a cada troca de passo (e quando o rascunho ganha id,
+  // que reescreve a URL com `?draft=`). Fora da Qualificação (senão o recarregar pularia a Qualificação) e da edição
+  // (`?id=` abre sempre no Passo 1).
+  useEffect(() => {
+    if (approved !== true || editId || mostrarQualificacao) return;
+    const busca = urlComEtapa(window.location.search, step);
+    if (busca !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${busca}`);
+  }, [step, approved, editId, mostrarQualificacao, draftServerId]);
   // E415: com rascunho salvo, o resultado da Qualificação credita as provas já feitas (foto na hora, internet medida,
   // ruído) — antes calculava só pelas respostas e o item fotografado seguia como "falta".
   const [provasQual, setProvasQual] = useState<{ id: string; provas: ProvasDoRascunho | null } | null>(null);
