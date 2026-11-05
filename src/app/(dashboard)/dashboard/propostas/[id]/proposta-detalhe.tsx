@@ -30,8 +30,10 @@ import {
   type Mudancas,
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
+import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
+import { CAUCAO_FRASE } from "@/lib/faixas";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
-import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
+import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
 
@@ -45,6 +47,21 @@ function Linha({ rotulo, valor, forte }: { rotulo: string; valor: string; forte?
     <div className="flex justify-between gap-3 py-1">
       <dt className="text-muted">{rotulo}</dt>
       <dd className={cn("text-right text-ink", forte && "font-semibold")}>{valor}</dd>
+    </div>
+  );
+}
+
+/**
+ * E601: a caução da proposta, para as duas partes — 50% do 1º bloco proporcional, pela mesma função do formulário do
+ * dono (caucaoDaProposta). A moradora vê o mesmo valor que o dono viu ao montar a proposta.
+ */
+function LinhaCaucao({ v }: { v: VersaoView }) {
+  const caucao = caucaoDaProposta(v.termos, v.totais.valorMensal);
+  if (!caucao) return null;
+  return (
+    <div className="mt-2 border-t border-sage-200 pt-2" data-testid="proposta-caucao">
+      <Linha rotulo={`Caução (50% do 1º bloco, ${caucao.dias} dias)`} valor={formatBRLExato(caucao.valor)} />
+      <p className="text-right text-xs text-muted">{CAUCAO_FRASE}</p>
     </div>
   );
 }
@@ -83,6 +100,7 @@ function Valores({ v }: { v: VersaoView }) {
           </p>
         )}
       </div>
+      <LinhaCaucao v={v} />
     </dl>
   );
 }
