@@ -1,6 +1,6 @@
 "use client";
 
-import { statusDepoisDoEnvio } from "@/lib/documento/vigente";
+import { novoDoStatus, statusDepoisDoEnvio, type NovoEnvio } from "@/lib/documento/vigente";
 import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
@@ -172,6 +172,8 @@ export default function NewPropertyPage() {
   // E-DOC-VIGENTE (Relay 47): já há documento APROVADO deste imóvel? Um envio novo não o rebaixa na tela.
   const [vigenteAprovado, setVigenteAprovado] = useState(false);
   const [docMotivos, setDocMotivos] = useState<string[]>([]);
+  // E587: envio novo À PARTE do aprovado vigente (em análise ou recusado); o aprovado segue valendo na tela.
+  const [docNovo, setDocNovo] = useState<NovoEnvio | null>(null);
   // Prompt 19: campos preenchidos pela matrícula (etiqueta "veio da matrícula") e o endereço dela, quando ≠ do CEP.
   const [daMatricula, setDaMatricula] = useState<Set<string>>(() => new Set());
   const [enderecoMatricula, setEnderecoMatricula] = useState<PreenchimentoMatricula["endereco"] | null>(null);
@@ -619,6 +621,7 @@ export default function NewPropertyPage() {
         setVigenteAprovado(r.status === "approved");
         setDocEstado(estadoDoStatus(r.status));
         setDocMotivos(r.reason ? r.reason.split(" · ") : []);
+        setDocNovo(novoDoStatus(r.novo, r.motivoNovo));
       })
       .catch(() => {});
     return () => {
@@ -1956,9 +1959,11 @@ export default function NewPropertyPage() {
                     imovelId={imovelId}
                     estado={docEstado}
                     motivos={docMotivos}
-                    onResultado={(e, m) => {
+                    novo={docNovo}
+                    onResultado={(e, m, novo) => {
                       setDocEstado(e);
                       setDocMotivos(m);
+                      setDocNovo(novo ?? null);
                       setDocStatus(statusDepoisDoEnvio(vigenteAprovado, e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none"));
                       if (e !== "nenhum") setDocumentoNoInicio(true);
                     }}
@@ -2138,9 +2143,11 @@ export default function NewPropertyPage() {
                     imovelId={imovelId}
                     docEstado={docEstado}
                     docMotivos={docMotivos}
-                    onDocumento={(e, m) => {
+                    docNovo={docNovo}
+                    onDocumento={(e, m, novo) => {
                       setDocEstado(e);
                       setDocMotivos(m);
+                      setDocNovo(novo ?? null);
                       setDocStatus(statusDepoisDoEnvio(vigenteAprovado, e === "aprovado" ? "approved" : e === "corrija" ? "rejected" : e === "revisao" ? "pending" : "none"));
                     }}
                     onMatricula={aplicarMatricula}

@@ -129,6 +129,10 @@ export async function POST(request: Request) {
   // Imóvel já com rascunho: a dele; sem nenhuma ainda, a que estava à espera (respondida antes do rascunho existir).
   const anterior = await (async () => ((imovelId ? await ultima(imovelId) : null) ?? (await ultima(null))))().catch(() => "falhou" as const);
   if (anterior === "falhou") return NextResponse.json({ error: MSG_CONFERIR_SEM_LEITURA }, { status: 503 });
+  // E587: o aprovado vigente do imóvel (lido ANTES de gravar o novo). A resposta leva este fato para a tela não pôr
+  // o veredito do envio novo no lugar do aprovado — o novo fica à parte até ser aprovado (E-DOC-VIGENTE).
+  const vigenteAprovado = await temAprovadoVigente(admin, user.id, imovelId).catch(() => "falhou" as const);
+  if (vigenteAprovado === "falhou") return NextResponse.json({ error: MSG_CONFERIR_SEM_LEITURA }, { status: 503 });
   const herdado: Record<string, unknown> = { ...(anterior ?? {}) };
   for (const k of [
     "id", "created_at", "document_path", "document_hash_sha256", "document_uploaded_at", "document_status",
@@ -215,6 +219,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       estado,
       rotulo: rotuloEstado(estado),
+      vigenteAprovado,
       motivos: estado === "aprovado" ? [] : [d.mensagem],
       matricula: {
         id: check.id,
@@ -262,8 +267,18 @@ export async function POST(request: Request) {
   return NextResponse.json({
     estado: r.estado,
     rotulo: rotuloEstado(r.estado),
+    vigenteAprovado,
     motivos: r.motivos.map((m) => m.texto),
   });
+}
+
+/** E587: há documento APROVADO para este imóvel (ou, sem imóvel, para a qualificação à espera)? Erro de leitura lança. */
+async function temAprovadoVigente(admin: NonNullable<ReturnType<typeof createAdminClient>>, ownerId: string, imovelId: string | null): Promise<boolean> {
+  let q = admin.from("qualification_checklists").select("id", { count: "exact", head: true }).eq("owner_id", ownerId).eq("document_status", "approved");
+  q = imovelId ? q.eq("property_id", imovelId) : q.is("property_id", null);
+  const { count, error } = await q;
+  if (error) throw new Error("Não foi possível ler o documento vigente.");
+  return (count ?? 0) > 0;
 }
 
 /** Avisa a equipe de que há documento na fila (sem nenhum dado do documento). */
