@@ -61,6 +61,7 @@ import { DOC_AUTORIZACAO, operacaoValida, type Operacao, exigeAutorizacao, tipoD
 import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
+import { mesclarFotosDoRascunho } from "@/lib/anuncio/fotos-do-rascunho";
 import { avisoDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosBloqueiamAvanco, fotosDaPrevia, motivoAvancoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
@@ -935,7 +936,8 @@ export default function NewPropertyPage() {
     if (d.negociacao && typeof d.negociacao === "object") setNegociacao(normalizarNegociacao(d.negociacao));
     if (operacaoValida(d.ownershipType)) setOwnershipType(d.ownershipType);
     if (typeof d.subleaseAuthorized === "boolean") setSubleaseAuthorized(d.subleaseAuthorized);
-    if (Array.isArray(d.photos)) setPhotos(d.photos as PhotoItem[]);
+    // O rascunho pode chegar depois de fotos novas (Server Actions em fila): mescla em vez de trocar a lista.
+    if (Array.isArray(d.photos)) setPhotos((tela) => mesclarFotosDoRascunho(d.photos as PhotoItem[], tela, fotosAntesDoRascunhoRef.current));
     if (Array.isArray(d.subleaseDoc)) setSubleaseDoc(d.subleaseDoc as PhotoItem[]);
     if (typeof d.subleaseDocTipo === "string") setSubleaseDocTipo(d.subleaseDocTipo);
     if (d.qual && typeof d.qual === "object") {
@@ -964,8 +966,13 @@ export default function NewPropertyPage() {
   const rascunhoFechado = fechado && fechado.id === draftParam ? fechado.motivo : null;
   // P0 (30/10): depois do "Começar outro", a 1ª gravação cria um rascunho NOVO (o servidor não reaproveita o inacabado).
   const comecouOutroRef = useRef(false);
+  // As fotos que já estavam na tela quando o rascunho começou a carregar (de outro rascunho) não entram na mescla.
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  const fotosAntesDoRascunhoRef = useRef<ReadonlySet<string>>(new Set());
   useEffect(() => {
     if (!draftParam || draftParam === draftIdRef.current) return;
+    fotosAntesDoRascunhoRef.current = new Set(photosRef.current.map((x) => x.id));
     let alive = true;
     (async () => {
       const r = await abrirRascunho(draftParam).catch(() => ({ ok: false as const, motivo: "indisponivel" as const }));
