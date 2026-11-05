@@ -180,12 +180,13 @@ test.describe("T21 — Central de Agentes v2", () => {
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    const form = p.getByTestId("form-pessoa");
+    // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só).
+    const form = p.locator("#abrir-chamado");
     await form.getByLabel("Seu nome").fill("Visitante T21");
-    await form.getByLabel("Seu e-mail").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
-    await form.getByLabel("Pedido para a equipe").fill("Quero saber como funciona a Caução antes de anunciar.");
-    await form.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = p.getByTestId("chamado-aberto-chat");
+    await form.getByLabel("Seu e-mail (para a resposta)").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
+    await form.getByLabel("O que aconteceu?").fill("Quero saber como funciona a Caução antes de anunciar.");
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
+    const ok = p.getByTestId("central-aviso");
     await expect(ok).toBeVisible({ timeout: 20_000 });
     const numero = (await ok.innerText()).match(/VN-\d+/)![0];
     await vis.close();

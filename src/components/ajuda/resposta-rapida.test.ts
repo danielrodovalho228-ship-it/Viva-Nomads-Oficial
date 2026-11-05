@@ -17,7 +17,7 @@ test("Falar com a Viva: terciário, com a promessa única, no fim das telas de d
   for (const tela of [
     "app/(dashboard)/dashboard/propostas/[id]/page.tsx",
     "app/(dashboard)/dashboard/contratos/[id]/page.tsx",
-    "app/(dashboard)/dashboard/locacoes/[id]/page.tsx",
+    "app/(dashboard)/dashboard/estadia/[contratoId]/contrato/page.tsx",
     "app/(dashboard)/dashboard/pedidos/page.tsx",
     "app/(dashboard)/dashboard/servicos/pedidos/[id]/page.tsx",
     "app/(dashboard)/dashboard/fechamento/page.tsx",

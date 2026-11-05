@@ -78,6 +78,7 @@ import { SITE_URL } from "@/lib/site";
 import type { Property, Proximity } from "@/lib/types";
 import { hojeBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import {
   resumoContrato,
   resumoContratoEmDias,
@@ -1551,7 +1552,7 @@ export async function registrarContrato(
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
         userId: lead.tenant_id as string,
-        pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
+        pushUrl: HREF_CONTRATO_DA_ESTADIA(contratoNovoId),
         imovelId: lead.property_id as string,
         // E444: crítico (assinar), resolvido quando o morador assinar.
         refId: contratoNovoId,

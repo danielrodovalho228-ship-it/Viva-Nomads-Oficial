@@ -12,7 +12,7 @@ const corpoAssinar = fonte.slice(fonte.indexOf("export async function assinarCon
 
 test("assinarContrato revalida o detalhe do contrato dos dois lados e as listas, depois de gravar", () => {
   assert.match(fonte, /import \{ revalidatePath \} from "next\/cache"/);
-  assert.match(corpoAssinar, /revalidatePath\("\/dashboard\/locacoes\/\[id\]", "page"\)/);
+  assert.match(corpoAssinar, /revalidatePath\("\/dashboard\/estadia\/\[contratoId\]\/contrato", "page"\)/); // E539 (i)
   assert.match(corpoAssinar, /revalidatePath\("\/dashboard\/contratos\/\[id\]", "page"\)/);
   assert.match(corpoAssinar, /revalidatePath\("\/dashboard\/contratos"\)/);
   assert.match(corpoAssinar, /revalidatePath\("\/dashboard\/locacoes"\)/);

@@ -36,14 +36,13 @@ for (const largura of [768, 1280] as const) {
       test.skip(!hasAccount("proprietario"), "conta de proprietário do laboratório não configurada");
       test.use({ storageState: authFile("proprietario") });
 
-      test("abrir o chat no painel, ir a outra tela e voltar: o chat está fechado", async ({ page }) => {
+      test("E539 (v): no painel o botão leva à página Fale com a Viva, sem abrir uma segunda janela do chat", async ({ page }) => {
         await page.goto("/dashboard", { waitUntil: "load" });
-        await abrirChat(page);
-        // qualquer tela do painel serve; o menu muda com a largura (em 768 não há link de Mensagens à vista)
-        const link = page.locator('main a[href^="/dashboard/"]').filter({ visible: true }).first();
-        const destino = (await link.getAttribute("href"))!.split(/[?#]/)[0];
-        await link.click();
-        await page.waitForURL((u) => u.pathname === destino);
+        const botao = page.getByTestId("fale-com-a-viva");
+        await expect(botao).not.toHaveAttribute("aria-expanded", /.*/);
+        await botao.click();
+        await page.waitForURL((u) => u.pathname === "/ajuda/fale-com-a-viva");
+        await expect(page.getByTestId("viva-chat-bloco")).toBeVisible();
         await expect(chat(page)).toHaveCount(0);
         await page.goBack();
         await page.waitForURL((u) => u.pathname === "/dashboard");

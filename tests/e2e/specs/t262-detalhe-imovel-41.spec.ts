@@ -493,9 +493,10 @@ test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
   const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
 
   const ITENS = {
-    moradorAntes: ["Falar com o proprietário", "Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
-    moradorDepois: ["Falar com o proprietário", "Ver o contrato", "Propor alteração de datas", "Ver instruções de chegada", "Pedir limpeza", "Pedir manutenção"],
-    proprietario: ["Falar com o morador", "Ver o contrato", "Propor alteração de datas", "Ver instruções de chegada", "Pedir limpeza", "Pedir manutenção", "Ver no calendário"],
+    // E539 (iv): "Falar com…" (o "Mensagem" do cartão) e "Ver instruções de chegada" (painel da página) saíram da folha.
+    moradorAntes: ["Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
+    moradorDepois: ["Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
+    proprietario: ["Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção", "Ver no calendário"],
   };
 
   test.beforeAll(async () => {
@@ -548,6 +549,8 @@ test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
         // Fora da estadia, nada de cogumelo (nem no detalhe do contrato: ele só aponta para a estadia).
         await page.goto(quem === "morador" ? `/dashboard/locacoes/${ids.contrato}` : `/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("contrato-abrir-estadia")).toBeVisible({ timeout: 25_000 });
+        // E539 (i): o endereço antigo do morador redireciona para o contrato dentro da URL da estadia.
+        if (quem === "morador") await expect(page).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}/contrato$`));
         await expect(page.getByTestId("cogumelo")).toHaveCount(0);
 
         await page.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
@@ -596,17 +599,17 @@ test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
         for (const t of esperado) expect(t).not.toMatch(/cancelar|encerrar|avaliar|pagar/i);
         // Cada item leva a uma rota que existe, com o contexto da estadia.
         const href = (rotulo: string) => folha.getByRole("link", { name: rotulo, exact: true }).getAttribute("href");
-        expect(await href(quem === "morador" ? "Falar com o proprietário" : "Falar com o morador")).toMatch(/^\/dashboard\/mensagens\?conversa=/);
-        expect(await href("Ver o contrato")).toBe(quem === "morador" ? `/dashboard/locacoes/${ids.contrato}` : `/dashboard/contratos/${ids.contrato}`);
+        expect(await href("Ver o contrato")).toBe(quem === "morador" ? `/dashboard/estadia/${ids.contrato}/contrato` : `/dashboard/contratos/${ids.contrato}`);
         expect(await href("Propor alteração de datas")).toBe(`/dashboard/estadia/${ids.contrato}/alteracao`);
         expect(await href("Pedir limpeza")).toBe(`/parceiros/buscar?categoria=limpeza&cidade=Uberl%C3%A2ndia&imovel=${ids.imovel}`);
         expect(await href("Pedir manutenção")).toBe(`/parceiros/buscar?categoria=manutencao&cidade=Uberl%C3%A2ndia&imovel=${ids.imovel}`);
         if (quem === "proprietário") expect(await href("Ver no calendário")).toBe("/dashboard/agenda");
-        if (esperado.includes("Ver instruções de chegada")) {
-          expect(await href("Ver instruções de chegada")).toBe(`/dashboard/estadia/${ids.contrato}#instrucoes`);
-          await folha.getByRole("link", { name: "Ver instruções de chegada" }).click();
+        // E539 (iv): nada da folha repete o que a página já mostra.
+        await expect(folha.getByRole("link", { name: /^Falar com o|^Ver instruções de chegada$/ })).toHaveCount(0);
+        if (quem === "proprietário" || fase === "depois") {
+          await page.keyboard.press("Escape");
           await expect(folha).toHaveCount(0);
-          await expect(page.locator("#instrucoes")).toBeInViewport();
+          await expect(page.locator("#instrucoes")).toBeVisible();
           // Liberadas: some o "Liberadas em…" (se o dono ainda não publicou, o aviso diz só isso).
           if (quem === "morador") expect((await page.getByTestId("instrucoes-bloqueadas").allTextContents()).join(" ")).not.toMatch(/Liberadas em/);
         } else {

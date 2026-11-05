@@ -21,40 +21,33 @@ const limpeza = `/parceiros/buscar?categoria=limpeza&cidade=Uberl%C3%A2ndia&imov
 const manutencao = `/parceiros/buscar?categoria=manutencao&cidade=Uberl%C3%A2ndia&imovel=${IMOVEL}`;
 const pares = (a: { rotulo: string; href: string }[]) => a.map((x) => [x.rotulo, x.href]);
 
-test("morador antes da liberação: sem 'Ver instruções de chegada' e sem calendário", () => {
+test("morador antes da liberação: sem calendário (E539: falar e instruções já estão na página)", () => {
   assert.deepEqual(pares(acoesDaEstadia("inquilino", base)), [
-    ["Falar com o proprietário", "/dashboard/mensagens?conversa=conv-1"],
-    ["Ver o contrato", `/dashboard/locacoes/${ID}`],
+    ["Ver o contrato", `${est}/contrato`],
     ["Propor alteração de datas", `${est}/alteracao`],
     ["Pedir limpeza", limpeza],
     ["Pedir manutenção", manutencao],
   ]);
 });
 
-test("morador depois da liberação: 'Ver instruções de chegada' entra, antes dos pedidos de serviço", () => {
-  assert.deepEqual(
-    acoesDaEstadia("inquilino", { ...base, fase: "durante", instrucoesLiberadas: true }).map((x) => x.chave),
-    ["falar", "contrato", "alteracao", "instrucoes", "limpeza", "manutencao"],
-  );
-  assert.equal(acoesDaEstadia("inquilino", { ...base, instrucoesLiberadas: true }).find((x) => x.chave === "instrucoes")?.href, `${est}#instrucoes`);
+test("morador depois da liberação: as instruções ficam no painel da página, não na folha (E539)", () => {
+  assert.deepEqual(acoesDaEstadia("inquilino", { ...base, fase: "durante", instrucoesLiberadas: true }).map((x) => x.chave), ["contrato", "alteracao", "limpeza", "manutencao"]);
 });
 
-test("proprietário: fala com o morador, vê as instruções (edita nesta página) e o calendário (Agenda)", () => {
+test("proprietário: contrato, alteração, serviços e o calendário (Agenda)", () => {
   assert.deepEqual(pares(acoesDaEstadia("proprietario", base)), [
-    ["Falar com o morador", "/dashboard/mensagens?conversa=conv-1"],
     ["Ver o contrato", `/dashboard/contratos/${ID}`],
     ["Propor alteração de datas", `${est}/alteracao`],
-    ["Ver instruções de chegada", `${est}#instrucoes`],
     ["Pedir limpeza", limpeza],
     ["Pedir manutenção", manutencao],
     ["Ver no calendário", "/dashboard/agenda"],
   ]);
 });
 
-test("estadia encerrada: só falar e ver o contrato; sem Encerrar no fim da página", () => {
+test("estadia encerrada: só ver o contrato; sem Encerrar no fim da página", () => {
   for (const papel of ["inquilino", "proprietario"] as const) {
     const c = { ...base, fase: "encerrada" as const, instrucoesLiberadas: true };
-    assert.deepEqual(acoesDaEstadia(papel, c).map((x) => x.chave), ["falar", "contrato"], papel);
+    assert.deepEqual(acoesDaEstadia(papel, c).map((x) => x.chave), ["contrato"], papel);
     assert.equal(encerrarDaEstadia(papel, c), null);
   }
 });
