@@ -70,7 +70,8 @@ test("(2) o filtro: só o dono PJ/MEI que declarou; o selo antigo do imóvel (is
 
 test("(2) servidor: a busca carrega a declaração do dono pelo cliente de serviço (só o booleano)", () => {
   const dados = ler("src/lib/data/properties.ts");
-  assert.match(dados, /await attachNotaDono\(mapped\);/);
+  // E579: o dono vem das linhas do banco (o Property da busca não leva o ownerId — com ele ausente, o filtro dava 0).
+  assert.match(dados, /await attachNotaDono\(mapped, donoPorImovelDasLinhas\(data as unknown as PropertyRow\[\]\)\);/);
   const fn = dados.slice(dados.indexOf("async function attachNotaDono"));
   assert.match(fn, /select\("id, person_type, emite_nota_locacao"\)/);
   assert.match(fn, /p\.emiteNotaDono = donoEmiteNota\(/);

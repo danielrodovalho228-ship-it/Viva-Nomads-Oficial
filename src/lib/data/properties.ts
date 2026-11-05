@@ -397,6 +397,11 @@ async function comAnunciosDeTesteMarcados(linhas: PropertyRow[]): Promise<Proper
   });
 }
 
+/** E579: imóvel → dono, das linhas do banco (só no servidor; o Property da busca não leva o owner_id). */
+export function donoPorImovelDasLinhas(linhas: readonly { id: string; owner_id?: string | null }[]): Map<string, string> {
+  return new Map(linhas.filter((r) => !!r.owner_id).map((r) => [r.id, r.owner_id as string]));
+}
+
 export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): Promise<Property[]> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
@@ -432,7 +437,8 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
     await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
     await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
     await attachNegociacao(supabase, mapped); // "Aceita negociação": selo do cartão e filtro da busca (E439; best-effort)
-    await attachNotaDono(mapped); // E574: dono PJ que declarou emitir nota fiscal da locação (filtro da busca; best-effort)
+    // E574/E579: dono PJ que declarou emitir nota fiscal da locação (filtro da busca; best-effort). O dono sai das linhas.
+    await attachNotaDono(mapped, donoPorImovelDasLinhas(data as unknown as PropertyRow[]));
     return withDemos(mapped);
   } catch (e) {
     // Falha de rede/consulta → só os demos (ou vazio, se desligados), nunca 500.
@@ -685,19 +691,22 @@ async function attachInternet(supabase: SupabaseLike, list: Property[]): Promise
  * Lido pelo servidor (cliente de serviço): o público só recebe o booleano do selo, nunca o documento. Sem leitura ou
  * sem a coluna, ninguém ganha o selo (o filtro não acha ninguém) — best-effort.
  */
-async function attachNotaDono(list: Property[]): Promise<void> {
-  const reais = list.filter((p) => !isExemplo(p.id) && p.ownerId);
+async function attachNotaDono(list: Property[], donoPorImovel?: ReadonlyMap<string, string>): Promise<void> {
+  // E579 (lab t1132, L-97): na busca o Property NÃO leva o ownerId (o dono não vai ao navegador) — o cruzamento nunca
+  // casava e o filtro "Emite nota fiscal" dava sempre 0. O dono vem das LINHAS do banco (donoPorImovel), no servidor.
+  const donoDe = (p: Property) => donoPorImovel?.get(p.id) ?? p.ownerId ?? null;
+  const reais = list.filter((p) => !isExemplo(p.id) && donoDe(p));
   for (const p of reais) p.emiteNotaDono = false;
   if (reais.length === 0) return;
   const admin = createAdminClient();
   if (!admin) return;
   try {
-    const donos = [...new Set(reais.map((p) => p.ownerId as string))];
+    const donos = [...new Set(reais.map((p) => donoDe(p) as string))];
     const { data, error } = await admin.from("profiles").select("id, person_type, emite_nota_locacao").in("id", donos);
     if (error) return;
     const porDono = new Map(((data ?? []) as { id: string; person_type: string | null; emite_nota_locacao: boolean | null }[]).map((r) => [r.id, r]));
     for (const p of reais) {
-      const d = porDono.get(p.ownerId as string);
+      const d = porDono.get(donoDe(p) as string);
       p.emiteNotaDono = donoEmiteNota({ tipoPessoa: d?.person_type ?? null, emiteNota: d?.emite_nota_locacao ?? null });
     }
   } catch {
