@@ -21,8 +21,8 @@ test.describe("T463 — ADMIN-3: Chaves e integrações", () => {
       const page = await nova(browser, w);
       await page.goto("/admin/sistema", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("admin-sistema")).toBeVisible({ timeout: 30_000 });
-      await expect(page).toHaveTitle("Chaves e integrações — Admin · Viva Nomads");
-      await expect(page.locator("main h1").first()).toHaveText("Chaves e integrações");
+      await expect(page).toHaveTitle("Sistema e integrações — Admin · Viva Nomads");
+      await expect(page.locator("main h1").first()).toHaveText("Sistema e integrações");
       await expect(page.getByTestId("chave-sms")).toBeVisible();
       await expect(page.getByTestId("chave-parceiro-geral")).toBeVisible();
       const ambiente = page.getByTestId("chaves-ambiente");
