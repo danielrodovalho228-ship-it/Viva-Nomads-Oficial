@@ -13,6 +13,8 @@ import {
   CUSTOS_POR_CONTRATO,
   INVESTIMENTO_INICIAL,
   INVESTIMENTO_INICIAL_DETALHE,
+  INVESTIMENTO_DOS_QUAIS,
+  INVESTIMENTO_A_COTAR,
   OPCIONAIS_NAO_SOMADOS,
   DOLAR,
   FORA_DO_FIXO,
@@ -66,7 +68,10 @@ test("v3 (veredito do coordenador, 05/11): CDL e e-mail visíveis mas FORA da so
   assert.equal(opc(/e-mail/)?.valor, 5.99);
   assert.match(opc(/e-mail/)?.obs ?? "", /Hostinger/);
   assert.equal(INVESTIMENTO_INICIAL, 16000);
-  assert.equal(INVESTIMENTO_INICIAL_DETALHE, "inclui parecer jurídico R$ 4.000 + consulta 05/11 R$ 500");
+  assert.equal(
+    INVESTIMENTO_INICIAL_DETALHE,
+    "dos quais: parecer da Dra. Beatriz R$ 4.000 (proposta de 05/11, aguarda OK) e consulta de 05/11 R$ 500 (paga pelo Rogério, a reembolsar) — informativos, não somados",
+  );
   assert.equal(linha(/Marketing pago/)?.valor, 0);
   assert.equal(marketingDoMes(1), 0);
   assert.equal(marketingDoMes(36), 0);
@@ -99,4 +104,22 @@ test("v3: a frase do topo não repete a projeção antiga; /simulacao e /roi usa
   assert.match(comp, /data-testid="seletor-faixa"/);
   assert.doesNotMatch(comp, /4\.320|4320|anexo V/); // "nunca 12% fixo" pode aparecer como regra, não como premissa
   for (const pg of ["src/app/simulacao/page.tsx", "src/app/roi/page.tsx"]) assert.match(ler(pg), /<ModeloFinanceiro pagina=/);
+});
+
+test("P3 (05/11): investimento único continua R$ 16.000; parecer e consulta só no \"dos quais\"; investidor e 5 modelos a cotar, fora da soma", () => {
+  assert.equal(INVESTIMENTO_INICIAL, 16000);
+  assert.deepEqual(
+    INVESTIMENTO_DOS_QUAIS.map((i) => [i.rotulo, i.valor]),
+    [["Parecer da Dra. Beatriz", 4000], ["Consulta de 05/11", 500]],
+  );
+  assert.ok(INVESTIMENTO_A_COTAR.some((a) => /investidor/.test(a.rotulo) && /SCP/.test(a.situacao) && /R\$ 10\.000/.test(a.situacao) && /mútuo/.test(a.situacao)));
+  assert.ok(INVESTIMENTO_A_COTAR.some((a) => /5 modelos de contrato/.test(a.rotulo) && /a cotar/.test(a.situacao)));
+  // nenhum custo em duas linhas: parecer/consulta/investidor/modelos não estão no fixo, por contrato, opcionais nem lacunas
+  const outras = [...CUSTOS_FIXOS, ...CUSTOS_POR_CONTRATO, ...OPCIONAIS_NAO_SOMADOS].map((c) => c.rotulo);
+  for (const r of outras) assert.ok(!/[Pp]arecer|[Cc]onsulta de 05\/11|investidor|modelos de contrato/.test(r), r);
+  // a projeção começa em −R$ 16.000 (nada somado por cima do envelope)
+  assert.match(ler("src/lib/financeiro/projecao.ts"), /let caixa = -INVESTIMENTO_INICIAL;/);
+  const fonte = ler("src/components/financeiro/modelo-financeiro.tsx");
+  assert.match(fonte, /INVESTIMENTO_A_COTAR\.map\(/);
+  assert.match(fonte, /data-testid="a-cotar-nao-somado"/);
 });

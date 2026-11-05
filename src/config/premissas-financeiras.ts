@@ -212,7 +212,19 @@ export function marketingDoMes(m: number): number {
  * (05/11): o parecer jurídico (R$ 4.000) e a consulta de 05/11 (R$ 500) estão DENTRO dele — não são linhas à parte.
  */
 export const INVESTIMENTO_INICIAL = 16000;
-export const INVESTIMENTO_INICIAL_DETALHE = "inclui parecer jurídico R$ 4.000 + consulta 05/11 R$ 500";
+/** "Dos quais": partes do envelope de R$ 16.000 — informativas, NÃO somadas de novo (nenhum custo em duas linhas). */
+export const INVESTIMENTO_DOS_QUAIS: Item[] = [
+  { rotulo: "Parecer da Dra. Beatriz", valor: 4000, unidade: "R$", obs: "proposta de 05/11, aguarda OK" },
+  { rotulo: "Consulta de 05/11", valor: 500, unidade: "R$", obs: "paga pelo Rogério, a reembolsar" },
+];
+export const INVESTIMENTO_INICIAL_DETALHE = `dos quais: ${INVESTIMENTO_DOS_QUAIS.map(
+  (i) => `${i.rotulo.charAt(0).toLowerCase()}${i.rotulo.slice(1)} R$ ${i.valor.toLocaleString("pt-BR")} (${i.obs})`,
+).join(" e ")} — informativos, não somados`;
+/** A cotar (não somado): custos jurídicos ainda sem número fechado — ficam fora do investimento e da projeção. */
+export const INVESTIMENTO_A_COTAR: { rotulo: string; situacao: string }[] = [
+  { rotulo: "Contrato do investidor", situacao: "SCP (R$ 10.000 padrão, com desconto a combinar) ou mútuo — em revisão; a cotar (não somado)" },
+  { rotulo: "5 modelos de contrato", situacao: "a cotar (não somado)" },
+];
 
 // ── Cenários (contratos começam no mês 4) ──────────────────────────────────
 export type CenarioId = "pessimista" | "base" | "otimista";
