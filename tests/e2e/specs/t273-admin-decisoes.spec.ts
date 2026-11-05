@@ -65,51 +65,38 @@ test.describe("T273 — admin: decisões primeiro", () => {
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura}px — "Hoje você tem N decisões", cada uma com o botão e a lista que conta o mesmo`, async ({ page }) => {
+    // E330/E474 (01–05/11): a Central redesenhou o topo — "N pendências esperando ação" (o título conta o mesmo que a
+    // fila), os atalhos das filas da Central (número + Abrir, secundário) e as decisões de outras telas UMA vez, como
+    // itens de "Todas as pendências" com o botão que leva à decisão. O teste segue o desenho atual (antes: "Hoje você
+    // tem N decisões" com links para as outras telas, testid admin-decisoes).
+    test(`${largura}px — "N pendências esperando ação": nenhum primário no topo; encerramento e candidatura levam à decisão`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      const secao = page.getByTestId("admin-decisoes");
-      const h1 = secao.getByRole("heading", { level: 2 });
-      await expect(h1).toHaveText(/^Hoje você tem \d+ decis(ão|ões)$/, { timeout: 25_000 });
+      const secao = page.getByTestId("central-decisoes");
+      const h2 = secao.getByRole("heading", { level: 2 });
+      await expect(h2).toHaveText(/^\d+ pendências? esperando ação$/, { timeout: 25_000 });
+      expect(Number((await h2.innerText()).match(/\d+/)![0]), "o encerramento e a candidatura semeados contam").toBeGreaterThanOrEqual(2);
+      expect(Number(await secao.getAttribute("data-total"))).toBe(Number((await h2.innerText()).match(/\d+/)![0]));
+      await expect(secao.locator("a.bg-forest, button.bg-forest"), "os atalhos do topo são secundários").toHaveCount(0);
       await semRolagemLateral(page);
-
-      // N = soma das linhas; cada linha: link (número) e botão secundário para a MESMA tela do admin.
-      const linhas = secao.locator("[data-decisao]");
-      const qtd = await linhas.count();
-      expect(qtd).toBeGreaterThanOrEqual(2);
-      let soma = 0;
-      for (let i = 0; i < qtd; i++) {
-        const l = linhas.nth(i);
-        const link = l.locator("[data-href]").first();
-        const href = (await link.getAttribute("data-href"))!;
-        soma += Number(await link.getAttribute("data-valor"));
-        expect(href).toMatch(/^\/admin/);
-        const botao = l.getByRole("link").last();
-        expect(await botao.getAttribute("href")).toBe(href);
-        expect(await botao.getAttribute("data-cta")).not.toBe("primary");
-      }
-      expect(Number((await h1.innerText()).match(/\d+/)![0])).toBe(soma);
-      await expect(secao.locator('[data-cta="primary"]')).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t273-decisoes-${largura}.png`, fullPage: false });
 
-      // Encerramento aberto: a linha conta o mesmo que a lista de encerramentos (não concluídos).
-      const enc = secao.locator('[data-decisao="encerramentos"] [data-href]').first();
-      const nEnc = Number(await enc.getAttribute("data-valor"));
-      expect(nEnc).toBeGreaterThanOrEqual(1);
-      // A URL só muda quando a tela de destino termina de carregar no servidor (leituras do admin): espera até 30 s.
-      await page.waitForLoadState("networkidle");
-      await enc.click();
-      await expect(page).toHaveURL(/\/admin\/contratos\/encerramentos/, { timeout: 30_000 });
-      await expect(page.locator('[data-testid="admin-encerramento"]:not([data-status="concluido"])')).toHaveCount(nEnc, { timeout: 20_000 });
-      await expect(page.locator(`[data-contrato="${ids.contrato}"]`)).toHaveCount(1);
+      // Encerramento aberto: um item na fila, com o botão para a tela dos encerramentos, onde o contrato está.
+      const enc = page.locator('[data-testid="central-linha-decisao"][data-decisao="encerramentos"]');
+      await expect(enc).toHaveCount(1);
+      const hrefEnc = await enc.getByRole("link").first().getAttribute("href");
+      expect(hrefEnc).toMatch(/^\/admin\/contratos\/encerramentos/);
+      await page.goto(hrefEnc!, { waitUntil: "domcontentloaded" });
+      await expect(page.locator(`[data-contrato="${ids.contrato}"]`)).toHaveCount(1, { timeout: 30_000 });
 
-      // Candidatura parada há 3 dias: a linha conta o mesmo que a lista filtrada.
+      // Candidatura parada há 3 dias: um item na fila, com o botão para a lista filtrada (não vazia).
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      const cand = page.locator('[data-decisao="candidaturas_sem_resposta_48h"] [data-href]').first();
-      const nCand = Number(await cand.getAttribute("data-valor"));
-      expect(nCand).toBeGreaterThanOrEqual(1);
-      await page.goto((await cand.getAttribute("data-href"))!, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("lista-total")).toHaveText(String(nCand));
+      const cand = page.locator('[data-testid="central-linha-decisao"][data-decisao="candidaturas_sem_resposta_48h"]');
+      await expect(cand).toHaveCount(1, { timeout: 25_000 });
+      const hrefCand = await cand.getByRole("link").first().getAttribute("href");
+      expect(hrefCand).toMatch(/^\/admin/);
+      await page.goto(hrefCand!, { waitUntil: "domcontentloaded" });
+      expect(Number(await page.getByTestId("lista-total").innerText({ timeout: 25_000 }))).toBeGreaterThanOrEqual(1);
     });
 
     test(`${largura}px — Funil e indicadores: sem número-herói, listas com divisor fino, nada de gradiente nem bloco colorido`, async ({ page }) => {

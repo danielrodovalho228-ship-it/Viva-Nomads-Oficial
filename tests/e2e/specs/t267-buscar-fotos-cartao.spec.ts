@@ -17,7 +17,10 @@ for (const largura of [390, 1280] as const) {
 
     const porCartao = await cartoes.evaluateAll((els) =>
       els.map((el) => ({
-        fotos: el.querySelectorAll('[data-fotos] img').length,
+        // E323 (01/11): a foto que falha vira "Foto indisponível" (sem <img>) no MESMO lugar. A regra é de quantos lugares
+        // com foto o cartão põe na página (a visível e a próxima), carregue ou não — e o lab compartilhado apaga anúncios
+        // de outras specs enquanto esta lê a busca.
+        fotos: Array.from(el.querySelector("[data-fotos]")?.children ?? []).filter((c) => !c.hasAttribute("data-foto-depois")).length,
         espacos: el.querySelectorAll("[data-foto-depois]").length,
         pontos: el.querySelectorAll('[data-testid="cartao-pontos"] span').length,
       })),
@@ -46,7 +49,7 @@ for (const largura of [390, 1280] as const) {
     const fotos = cartoes.nth(idx).locator("[data-fotos]");
     await fotos.scrollIntoViewIfNeeded();
     await fotos.evaluate((el) => el.scrollTo({ left: el.clientWidth }));
-    await expect(fotos.locator("img")).toHaveCount(3);
+    await expect(fotos.locator(":scope > :not([data-foto-depois])")).toHaveCount(3);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
   });
 }
