@@ -3,6 +3,21 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { comPrecos } from "../fixtures/precos";
 
+
+// TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação.
+test.afterEach(async ({}, info) => {
+  if (info.status === info.expectedStatus) return;
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  let arqs: string[] = [];
+  try { arqs = readdirSync(info.outputDir).filter((a) => a.endsWith("-actual.png")); } catch { return; }
+  for (const a of arqs) {
+    const b64 = readFileSync(join(info.outputDir, a)).toString("base64");
+    const partes = Math.ceil(b64.length / 8000);
+    for (let i = 0; i < partes; i++) console.log(`@@PNG ${a} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+  }
+});
+
 /*
   T245 — Regressão visual (adendo do Prompt 40): `toHaveScreenshot` em 20 telas (13 públicas e 7 logadas da
   matriz), a 390 e 1280 px. A linha de base fica versionada em tests/e2e/visual/t245-visual-regressao.spec.ts/
