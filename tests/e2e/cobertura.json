@@ -937,7 +937,8 @@
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t1130-e544-avaliacao-janela"
       ]
     },
     "/dashboard/contratos/[id]": {
