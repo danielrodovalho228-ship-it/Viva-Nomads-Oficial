@@ -65,7 +65,8 @@ test.describe("T903 — E469: acabamento do painel do parceiro", () => {
       await expect(molduras).toHaveCount(2, { timeout: 30_000 });
       for (const i of [0, 1]) {
         await expect(molduras.nth(i)).toHaveAttribute("data-imagem-fase", "pronta", { timeout: 30_000 });
-        expect(await molduras.nth(i).locator("img").evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+        // A foto entra com uma transição curta de opacidade: espera ela terminar.
+        await expect.poll(() => molduras.nth(i).locator("img").evaluate((el) => getComputedStyle(el).opacity), { timeout: 5_000 }).toBe("1");
       }
       await p.getByTestId("parceiro-galeria-lista").scrollIntoViewIfNeeded();
       await p.screenshot({ path: `tests/laboratorio/saida/t903-galeria-${w}.png` });
