@@ -99,14 +99,14 @@ test("(b) /seguranca: 'Morar com segurança na Viva Nomads', 'morador' e nada de
 
 test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte única (nada digitado à mão)", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
-  assert.match(p, /import \{ FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto \} from "@\/lib\/cobranca\/regra";/);
+  assert.match(p, /import \{ FAIXAS_COMISSAO_PADRAO, pctTexto \} from "@\/lib\/cobranca\/regra";/);
   assert.match(p, /A taxa de serviço da Viva é de \{TAXA_MAIOR\}/);
   assert.doesNotMatch(p, /\d+ ?%/, "nenhum percentual escrito à mão");
   // Os números que a página mostra são os da regra.
-  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
+  // E564 (parte A): a frase vai de 12% a 6% (a tabela); o Plano Gestor (4%) é dito à parte, pelo texto único.
+  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
   assert.equal(pctTexto(Math.max(...publicas.map((f) => f.taxa))), "12%");
-  // E564: a menor é a do Plano Gestor (4%); a faixa negociável saiu.
-  assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "4%");
+  assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
 });
 
 test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () => {

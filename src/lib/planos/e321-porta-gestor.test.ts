@@ -16,15 +16,17 @@ test("E321/E564: a porta do Gestor é uma só — N+ imóveis ativos de verdade 
   assert.equal(gestorElegivel({ accountType: "individual", imoveisValidados: 19 }), false);
 });
 
-test("E321: /para-proprietarios não mistura as regras — 31+ é taxa negociável; Gestor é a porta própria", () => {
+test("E321 → E564: /para-proprietarios não mistura as regras — a tabela de 12% a 6%; o Gestor (4%) é o texto próprio", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
-  assert.doesNotMatch(p, /acima de \{LIMITE_FAIXAS\} imóveis, condições negociadas/);
-  assert.match(p, /com \{LIMITE_FAIXAS \+ 1\} ou mais imóveis ativos, \{ROTULO_FAIXA_NEGOCIAVEL\}/);
-  assert.match(p, /Plano Gestor: \{PORTA_GESTOR_TEXTO\}/);
+  assert.doesNotMatch(p, /condições negociadas|ROTULO_FAIXA_NEGOCIAVEL|LIMITE_FAIXAS/);
+  assert.match(p, /\(de \{TAXA_MAIOR\} a \{TAXA_MENOR\}\)\. Plano Gestor: \{GESTOR_TEXTO\}\./);
 });
 
-test("E321: as demais telas que citam o Gestor usam a mesma porta", () => {
-  for (const arq of ["app/(public)/precos/page.tsx", "components/precos/plano-gestor-form.tsx", "app/(public)/parceiros/page.tsx", "lib/atendimento/faq.ts", "lib/atendimento/viva-prompt.ts", "lib/atendimento/parceiros-texto.ts"]) {
+test("E321/E564: as telas citam o Gestor pelo texto único; o atendimento, pela porta inteira (20+ ou administradora)", () => {
+  for (const arq of ["app/(public)/precos/page.tsx", "components/precos/plano-gestor-form.tsx", "app/(public)/parceiros/page.tsx"]) {
+    assert.match(ler(arq), /GESTOR_TEXTO/, arq);
+  }
+  for (const arq of ["lib/atendimento/faq.ts", "lib/atendimento/viva-prompt.ts", "lib/atendimento/parceiros-texto.ts"]) {
     assert.match(ler(arq), /PORTA_GESTOR_TEXTO/, arq);
   }
   // Nenhuma tela pública diz "Gestor a partir de N" sem a outra metade (administradora).
