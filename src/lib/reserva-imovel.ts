@@ -15,7 +15,7 @@ import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
 import { totalDoPeriodo } from "./cartao-preco.ts";
-import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "./precos.ts";
+import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, type TotalMensal } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
 import { validarReserva } from "./availability.ts";
 import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente } from "./estadia-em-dias.ts";
@@ -85,8 +85,30 @@ export function destinoContatoViva(imovelId: string): { href: string; rotulo: st
 export interface ResumoSolicitacao {
   /** Mensagem visível quando algo não pode seguir (ex.: data de entrada no passado). */
   erro: string | null;
-  /** Linhas "rótulo: valor" do passo de confirmação (datas, motivo, valores). */
-  linhas: { rotulo: string; valor: string }[];
+  /**
+   * Linhas "rótulo: valor" do passo de confirmação (datas, motivo, valores). E584: `revisar` marca as parcelas que o
+   * passo 1 mostra à vista, com o rótulo do painel do anúncio (contas, condomínio, limpeza de preparação/saída).
+   */
+  linhas: { rotulo: string; valor: string; revisar?: true }[];
+}
+
+/** E584: rótulo da limpeza de preparação no passo 1 — o mesmo do painel do anúncio ("Cobrada uma única vez."). */
+export const ROTULO_PREPARACAO_PASSO1 = "Limpeza de preparação — cobrada uma única vez";
+
+/**
+ * E584: as parcelas do anúncio que o passo 1 nomeia, tiradas da MESMA conta do painel (calcularTotalMensal): por mês,
+ * condomínio e água/luz/gás; uma vez só, a limpeza de preparação e a de saída. Nenhum número novo.
+ */
+export function parcelasDoResumo(mes: Pick<TotalMensal, "linhas" | "unicos">): {
+  parcelasMes: { rotulo: string; valor: number }[];
+  pagamentosUnicos: { rotulo: string; valor: number }[];
+} {
+  return {
+    parcelasMes: mes.linhas.filter((l) => (l.chave === "condominio" || l.chave === "contas") && l.valor > 0).map((l) => ({ rotulo: l.rotulo, valor: l.valor })),
+    pagamentosUnicos: mes.unicos
+      .filter((u) => u.valor > 0)
+      .map((u) => ({ rotulo: u.chave === "preparacao" ? ROTULO_PREPARACAO_PASSO1 : u.rotulo, valor: u.valor })),
+  };
 }
 
 const ISO_DIA = /^\d{4}-\d{2}-\d{2}$/;
@@ -142,6 +164,10 @@ export function resumoSolicitacao(e: {
    * Vence a estadia em meses: com ela o resumo diz "Total da estadia (43 dias)", com "1 mês + 13 dias".
    */
   estadiaDias?: { dias: number; total: number; conta: string; periodo: string; rotulo: string } | null;
+  /** E584: parcelas do mês além do aluguel (condomínio, água/luz/gás), com o rótulo do painel — parcelasDoResumo. */
+  parcelasMes?: { rotulo: string; valor: number }[];
+  /** E584: pagamentos de uma vez (limpeza de preparação, de saída), com o rótulo do painel — parcelasDoResumo. */
+  pagamentosUnicos?: { rotulo: string; valor: number }[];
   /** E520: o campo de entrada tem texto que não é uma data real (o valor chega vazio, mas a pessoa digitou algo). */
   entradaInvalida?: boolean;
   /** E520: idem para a saída. */
@@ -184,8 +210,12 @@ export function resumoSolicitacao(e: {
       { rotulo: "Motivo da estadia", valor: motivo && isMotivo(motivo) ? motivoLabel(motivo) : "Prefiro não informar" },
       // E519: os rótulos da casa (PROP-2) — Mensal · Total por mês (com contas) · Total do contrato.
       { rotulo: ROTULO_MENSAL, valor: formatBRL(e.monthlyPrice) },
+      // E584: cada parcela do mês com linha própria, como no painel do anúncio (antes só implícitas no total por mês).
+      ...(e.parcelasMes ?? []).map((p) => ({ rotulo: p.rotulo, valor: formatBRL(p.valor), revisar: true as const })),
       ...(e.limpezaEstadia ? [{ rotulo: "Limpeza durante a estadia", valor: textoLimpezaEstadia(e.limpezaEstadia) }] : []),
       ...(typeof e.totalMensal === "number" ? [{ rotulo: ROTULO_TOTAL_MES, valor: formatBRL(e.totalMensal) }] : []),
+      // E584: o que se paga uma vez só (antes só dentro da "Conta do total").
+      ...(e.pagamentosUnicos ?? []).map((p) => ({ rotulo: p.rotulo, valor: formatBRL(p.valor), revisar: true as const })),
       // E53/E519: com o período completo, o total — a mesma conta do painel (estadiaDoImovel), com a conta aberta.
       ...(dias && e.estadiaDias && e.estadiaDias.dias === dias
         ? [
