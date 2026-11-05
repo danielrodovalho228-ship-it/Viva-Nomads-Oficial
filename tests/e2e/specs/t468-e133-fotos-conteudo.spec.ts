@@ -13,8 +13,8 @@ import { FOTOS_TESTE_MINIMO, noPasso, abrirCadastroNovo } from "../fixtures/cada
    2. Foto-print: aviso forte junto da foto, não vira a principal, e o passo não avança (nem depois de recarregar o
       rascunho) até o dono remover ou confirmar; confirmada, avança.
    3. Vídeo arbitrário (quadros sintéticos) é sinalizado e trava até confirmar.
-   (E602) O "sem rolagem lateral" a 390 px também guarda o índice de passos do assistente: a faixa dos 10 passos rola por
-      dentro e nunca alarga a página (a 1ª versão alargava 762 px).
+   (E602) O "sem rolagem lateral" a 390 px também guarda o índice de passos do assistente: os 10 passos quebram em
+      linhas e nenhum passa da tela (a 1ª versão era uma faixa rolável cujos botões saíam da tela — 762 px de sobra).
    4. Link: formato errado, vídeo que não existe e vídeo que não pode ser incorporado são recusados com mensagem clara;
       o link válido fica pendente — o anúncio não mostra o vídeo até o admin aprovar.
 */
