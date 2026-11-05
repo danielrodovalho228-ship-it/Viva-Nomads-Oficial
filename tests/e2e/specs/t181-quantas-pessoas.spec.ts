@@ -64,7 +64,11 @@ test.describe("T181 — quantas pessoas vão morar", () => {
       await d.goto("/dashboard/leads", { waitUntil: "networkidle" });
       await expect(d.locator("main")).toContainText(`Para ${pessoas} pessoas`, { timeout: 20_000 });
       // O token "Sobrenomeoculto" é só do inquilino (o nome do dono não o repete: ele aparece na tela do dono).
-      await expect(d.locator("main")).not.toContainText("Sobrenomeoculto");
+      // Mede no cartão DESTA candidatura (ainda sem aceite): o caso de 390 já aceitou a dele e, desde o E427 (#2184), o
+      // nome completo aparece depois do aceite — na tela inteira, o "Ivo390 … Sobrenomeoculto" aceito acusaria à toa.
+      const cartao = d.locator(`#candidato-${lead!.id}`);
+      await expect(cartao).toBeVisible({ timeout: 20_000 });
+      await expect(cartao).not.toContainText("Sobrenomeoculto");
       await d.screenshot({ path: `${SAIDA}/t181-interessados-${largura}.png`, fullPage: true });
 
       // Aceite (o que o servidor grava) → Fechamento abre com o número da candidatura.

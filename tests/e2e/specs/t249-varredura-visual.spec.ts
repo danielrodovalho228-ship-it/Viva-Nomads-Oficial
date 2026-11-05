@@ -210,6 +210,9 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     test.skip(!temContaVarredura("DONO17"), "sem a conta DONO17");
     const { context, page } = await abrirComoConta(browser, "DONO17", "1280");
     await abrirRota(page, "/dashboard/imoveis");
+    // 05/11 (Pista C): vermelho desde 02/11 por causa da MASSA, não da tela — as fotos da massa iam para
+    // property-photos/varredura/<id>/ e, desde o E308, Meus imóveis só usa a foto cujo arquivo está na pasta do dono
+    // (arquivosDoDono). A massa (scripts/lab/massa-varredura.mjs) passou a gravar em <dono>/, como o produto.
     // As miniaturas carregam depois da tela: espera até 5 s, como imagensAcimaDaDobra (lab de 22/10: "imagem quebrada"
     // na 1ª leitura às 02h42, 05h07 e no lab-crítico do #1040, sempre resolvida no retry).
     const medir = () => page.evaluate(async () => {

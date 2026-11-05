@@ -119,9 +119,10 @@ test.describe("T229 — admin conversa com tudo", () => {
       // minutos antes pode divergir com razão. Compara a home relida com a página logo em seguida, com nova tentativa.
       await expect(async () => {
         await page.goto(PENDENCIAS, { waitUntil: "domcontentloaded" });
-        await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 10_000 });
-        const linha = page.locator('[data-precisa="documentos_pendentes"] [data-href]').first();
-        const naHome = (await linha.count()) ? Number(await linha.getAttribute("data-valor")) : 0;
+        // E330 (01/11): a Central lista a decisão como li[data-decisao], com o número em data-n do botão.
+        await expect(page.getByTestId("central-decisoes")).toBeVisible({ timeout: 10_000 });
+        const linha = page.locator('[data-decisao="documentos_pendentes"][data-ativo]').locator('[data-testid="central-decisao-documentos_pendentes"], [data-testid="central-filtro-documentos_pendentes"]').first();
+        const naHome = (await linha.count()) ? Number(await linha.getAttribute("data-n")) : 0;
         await page.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("fila-agora-total")).toHaveText(String(naHome), { timeout: 10_000 });
         if (largura === 1280) {
