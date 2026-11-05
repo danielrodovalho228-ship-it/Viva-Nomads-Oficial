@@ -2,7 +2,7 @@
 
 import { prazoInicial } from "@/lib/inicio-estadia";
 import { rotuloPreco } from "@/lib/cartao-preco";
-import { mensalDoFechamento, parcelaDoMes, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
@@ -54,7 +54,7 @@ import { textoTaxaPainel, pctTexto, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobra
 import { registrarContrato } from "@/lib/data/actions";
 import { lerEstadoDoContrato, type EstadoContratoView } from "@/lib/data/contratos-actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
-import { percentualCaucao, resumoContrato } from "@/lib/contrato-blocos";
+import { percentualCaucao, resumoContrato, resumoContratoEmDias } from "@/lib/contrato-blocos";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
 import {
   selecionarModeloContrato,
@@ -114,8 +114,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [inicioISO, setInicioISO] = useState(ctx.inicioSugerido ?? hoje);
   const inicioValido = validarInicioEstadia(inicioISO, hoje);
   // Derivações do prazo (dinâmicas). Nomes espelham os antigos p/ o JSX seguir.
+  // E562 (reprova 05/11): com proposta aceita, o prazo são os DIAS dela (o contrato no servidor já é em dias); a tela
+  // mostrava "2 meses" para uma proposta de 43 dias. Sem proposta, os meses do Fechamento, como antes.
+  const DIAS_ACORDO = ACORDO?.termos?.dias && ACORDO.termos.dias > 0 ? ACORDO.termos.dias : null;
   const STAY_MESES = prazoMeses;
-  const STAY_DAYS = prazoMeses * 30;
+  const STAY_DAYS = DIAS_ACORDO ?? prazoMeses * 30;
+  const PRAZO_TEXTO = DIAS_ACORDO ? `${DIAS_ACORDO} dias (${periodoPorExtenso(DIAS_ACORDO)})` : `${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"}`;
   const FAIXA = faixaForDays(STAY_DAYS);
   const FAIXA_LABEL = faixaLabel(FAIXA);
   const FAIXA_RESUMO = faixaResumo(FAIXA);
@@ -126,8 +130,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const ELEGIVEIS = useMemo(() => garantiasElegiveis(STAY_DAYS), [STAY_DAYS]);
   // Contrato fracionado: blocos de até 90 dias, caução 50% por bloco, comissão única.
   const resumo = useMemo(
-    () => resumoContrato(prazoMeses, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO),
-    [prazoMeses]
+    () => (DIAS_ACORDO ? resumoContratoEmDias(DIAS_ACORDO, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO) : resumoContrato(prazoMeses, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO)),
+    [prazoMeses, DIAS_ACORDO]
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
   // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
@@ -539,6 +543,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     blocos de {TAMANHO_BLOCO} meses (cada bloco ≤ 90 dias).
                   </p>
                 </div>
+                {DIAS_ACORDO ? (
+                  <span className="font-semibold text-ink" data-testid="fechamento-prazo-dias">{PRAZO_TEXTO}</span>
+                ) : (
                 <select
                   value={prazoMeses}
                   onChange={(e) => setPrazoMeses(Number(e.target.value))}
@@ -554,6 +561,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     )
                   )}
                 </select>
+                )}
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-sage-200 pt-3">
                 <div>
@@ -582,7 +590,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <p className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-xs text-forest" data-testid="fechamento-proposta">
                   Valores da proposta <strong>{ACORDO.numero}</strong>, aceita pelas duas partes: {ROTULO_TOTAL_MES.toLowerCase()}{" "}
                   <strong data-testid="fechamento-proposta-mes">{formatBRL(PRECO_FECHAMENTO.totalPorMes)}</strong> · {ROTULO_TOTAL_CONTRATO.toLowerCase()}{" "}
-                  <strong data-testid="fechamento-proposta-contrato">{formatBRL(PRECO_FECHAMENTO.totalContrato ?? 0)}</strong>
+                  {/* E562: em dias o total tem centavos (R$ 4.671,67), o mesmo da proposta; valor inteiro segue sem ",00". */}
+                  <strong data-testid="fechamento-proposta-contrato">{formatBRLExato(PRECO_FECHAMENTO.totalContrato ?? 0)}</strong>
                   {PRECO_FECHAMENTO.conta && <span className="block" data-testid="fechamento-proposta-conta">{PRECO_FECHAMENTO.conta}</span>}
                 </p>
               )}
@@ -620,7 +629,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </h2>
               <p className="mt-1 text-sm text-muted">
                 A lei permite <strong>uma</strong> garantia por contrato (Lei 8.245, art. 37).
-                Para esta estadia de <strong>{STAY_MESES} meses</strong> (~{STAY_DAYS} dias), estas
+                Para esta estadia de <strong>{DIAS_ACORDO ? PRAZO_TEXTO : `${STAY_MESES} meses`}</strong>{DIAS_ACORDO ? "" : ` (~${STAY_DAYS} dias)`}, estas
                 são as opções:
               </p>
               <p className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted">
@@ -1068,7 +1077,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <Row label="Inquilino" value={tenant.name} />
               <Row label="Imóvel" value={PROPERTY.title} />
               <Row label="Início da estadia" value={dataBR(inicioISO)} />
-              <Row label="Prazo" value={`${prazoMeses} meses`} />
+              <Row label="Prazo" value={PRAZO_TEXTO} />
               <Row label="Aluguel" value={`${formatBRL(PROPERTY.monthlyRent)}/mês`} />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
             </div>
@@ -1141,7 +1150,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Taxa de serviço: cobrada do proprietário, à parte, mostrada ANTES de aceitar */}
             <div className="rounded-xl border border-champagne/40 bg-champagne/10 p-4 text-sm">
               <p className="font-title font-semibold text-forest" data-testid="taxa-servico-painel">
-                {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent, prazoMeses)}
+                {textoTaxaPainel(COMMISSION_RATE, PROPERTY.monthlyRent, DIAS_ACORDO ? DIAS_ACORDO / 30 : prazoMeses)}
                 {aceiteBR ? ` (taxa travada em ${aceiteBR})` : ""}
               </p>
               <p className="mt-1 text-xs text-muted">
@@ -1152,7 +1161,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 esse valor. O morador não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
-                <Row label={`Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
+                <Row label={DIAS_ACORDO ? `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${DIAS_ACORDO} dias ÷ 30)` : `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
                   <span>Taxa de serviço ({pctTexto(COMMISSION_RATE)})</span>
                   <span>{formatBRL(PLATFORM_COMMISSION)}</span>
