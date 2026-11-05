@@ -87,8 +87,8 @@ test("GUARDA: cada ação da lista confere o observador ANTES de gravar", () => 
   }
 });
 
-test("GUARDA: telas — Caixa dos Sócios 404 e Sistema sem os botões de chave/backup para o observador; RLS na 0252", () => {
-  assert.match(ler("../../app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) notFound\(\)/);
+test("GUARDA: telas — Caixa dos Sócios fechada (aviso E591) e Sistema sem os botões de chave/backup para o observador; RLS na 0252", () => {
+  assert.match(ler("../../app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) return <CaixaRestritaQa \/>;/); // E591: aviso no lugar do 404
   const sistema = ler("../../app/(dashboard)/admin/sistema/page.tsx");
   assert.match(sistema, /observador \? \(/);
   assert.match(sistema, /\{observador \? null : <ParceiroGeralForm/);

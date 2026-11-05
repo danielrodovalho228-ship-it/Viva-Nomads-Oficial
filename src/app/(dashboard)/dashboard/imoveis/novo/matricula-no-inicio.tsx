@@ -1,5 +1,6 @@
 "use client";
 
+import type { NovoEnvio } from "@/lib/documento/vigente";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,9 @@ export function MatriculaNoInicio(p: {
   imovelId: string | null;
   estado: EstadoDocumentoTela;
   motivos: string[];
-  onResultado: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** E587: envio novo à parte do aprovado vigente. */
+  novo?: NovoEnvio | null;
+  onResultado: (estado: EstadoDocumentoTela, motivos: string[], novo?: NovoEnvio | null) => void;
   /** Aplica o que a matrícula trouxe no cadastro e devolve o resumo ("Preenchemos: endereço, área, vagas."). */
   onMatricula: (m: InfoMatricula) => string;
   operacao: Operacao;
@@ -60,6 +63,7 @@ export function MatriculaNoInicio(p: {
             operacao={p.operacao}
             estado={p.estado}
             motivos={p.motivos}
+            novo={p.novo}
             onResultado={p.onResultado}
             enderecoOpcional
             onMatricula={(m) => {

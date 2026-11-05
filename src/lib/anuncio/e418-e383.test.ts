@@ -23,7 +23,9 @@ test("E383: grupos de rascunhos repetidos — o 1º é o que aparece", () => {
   assert.deepEqual(gruposRascunhosDuplicados(lista), [["n", "a", "z"]]);
   assert.deepEqual([...idsRascunhosDuplicados(lista)].sort(), ["a", "n", "z"]);
   const c = ler("../../app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
-  assert.match(c, /\{visiveis\.map\(\(p\) => \{/);
+  // E511: a lista passa pela barra (abas, busca, ordem, página) — que parte de `visiveis` (as cópias seguem escondidas).
+  assert.match(c, /filtrarEOrdenar\(visiveis, \{ aba, busca, ordem \}\)/);
+  assert.match(c, /\{pagina\.visiveis\.map\(\(p\) => \{/);
   assert.match(c, /data-testid="rascunho-copias"/);
   assert.match(c, /\{copias\.has\(p\.id\) && duplicados\.has\(p\.id\) && \(/);
 });

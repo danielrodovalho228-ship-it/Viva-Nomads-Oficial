@@ -28,6 +28,12 @@ export const EVENTO_FALAR_COM_PESSOA = "viva-chat:falar-com-pessoa";
 export const ASSUNTO_CHAMADO_DO_CHAT = "Conversa com a Viva (chat do site)";
 export const CHAVE_CONVERSA_CHAT = "vivanomads-viva-chat";
 
+/**
+ * E449: a rota ÚNICA do chamado vindo do chat. Fora da página Fale com a Viva, "Falar com uma pessoa" leva para cá; a
+ * página abre o mesmo formulário da Central ("Abrir chamado") com a conversa guardada (sessionStorage) anexada.
+ */
+export const HREF_CHAMADO_DO_CHAT = "/ajuda/fale-com-a-viva?doChat=1#abrir-chamado";
+
 /** Com conversa do chat, ela vai anexada (o texto da pessoa entra como pedido); sem, só o texto. */
 export function mensagemDoChamado(conversa: MsgChat[] | null, texto: string): string {
   return conversa?.length ? transcricaoChat(conversa, texto) : texto.trim();

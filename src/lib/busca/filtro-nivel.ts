@@ -23,8 +23,8 @@ export function filtroNivelNaUrl(params: URLSearchParams, nivel: Nivel | ""): vo
 }
 
 // ── NIVEL-BUSCA-A: filtro de nível sem beco sem saída ───────────────────────────────────────────────────────────
-/** No lugar do grupo "Nível a partir de" quando nenhum nível tem anúncio na busca atual (sem link). */
-export const TEXTO_SEM_NIVEIS = "Os níveis aparecem quando os anúncios desta busca tiverem o padrão mínimo confirmado.";
+/** E590: nota embaixo das 3 opções (todas com zero) quando nenhum anúncio da busca atual tem nível (sem link). */
+export const TEXTO_SEM_NIVEIS = "Nenhum anúncio desta busca tem o padrão mínimo confirmado ainda.";
 
 /** Aviso da busca que o `?nivel=` zerou (o botão "Ver todos" tira só o filtro de nível). */
 export function avisoNivelSemResultado(nivel: Nivel): string {

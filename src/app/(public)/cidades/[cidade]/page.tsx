@@ -14,7 +14,7 @@ import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
-import { bairrosDaGrade } from "@/lib/bairros";
+import { bairrosDaGrade, contaNaBusca } from "@/lib/bairros";
 import { tituloContagemCidade } from "@/lib/cidades";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
@@ -74,7 +74,8 @@ export default async function CityLandingPage({ params }: Params) {
   const properties = await listPropertiesByCity(name);
   const infoCidade = CITIES.find((c) => c.slug === cidade);
   const precosMedios = calcularPrecosMedios(properties);
-  const bairros = bairrosDaGrade(cidade, properties, isExemplo);
+  // E446: os bairros contam o mesmo que a lista acima e a busca (exemplos inclusos com a vitrine ligada).
+  const bairros = bairrosDaGrade(cidade, properties, contaNaBusca);
   const atualizadoEm = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date());
 
   return (

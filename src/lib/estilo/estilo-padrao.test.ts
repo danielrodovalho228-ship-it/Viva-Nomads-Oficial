@@ -420,7 +420,7 @@ test('filtros: "Limpar tudo" zera — volta a contar todos os imóveis e o conta
   assert.equal(contarFiltrosPainel(FILTROS_PAINEL_VAZIOS), 0);
   const folha = ler("components/busca/painel-filtros-celular.tsx");
   // E105: botão de contorno (secundário), ao lado do "Mostrar N imóveis".
-  assert.match(folha, /onClick=\{\(\) => setRascunho\(FILTROS_PAINEL_VAZIOS\)\}\s+data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
+  assert.match(folha, /onClick=\{\(\) => \{\s*setRascunho\(FILTROS_PAINEL_VAZIOS\);\s*onLimpar\?\.\(\);\s*\}\}\s+data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
 });
 
 test('filtros: nunca "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opção; chips com aria-pressed', () => {

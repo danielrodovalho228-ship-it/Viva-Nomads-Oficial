@@ -31,7 +31,7 @@ import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { FILTROS_PAINEL_VAZIOS, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
@@ -630,7 +630,8 @@ export function SearchClient({
     faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades.join(","),
     internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis.join(","),
   ].join("|");
-  function aplicarPainel(f: FiltrosPainel) {
+  // E589: define os filtros da busca a partir da folha (sem fechar nada) — o "Mostrar N" e o "Limpar tudo" usam a mesma.
+  function definirFiltrosDoPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
     setMinBedrooms(f.minBedrooms);
     setPetsOnly(f.petsOnly);
@@ -654,6 +655,9 @@ export function SearchClient({
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
     setPrecoJustoOnly(f.precoJustoOnly ?? false);
+  }
+  function aplicarPainel(f: FiltrosPainel) {
+    definirFiltrosDoPainel(f);
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -799,6 +803,7 @@ export function SearchClient({
           contar={contarComPainel}
           contarNaoMedidos={contarNaoMedidos}
           onAplicar={aplicarPainel}
+          onLimpar={() => definirFiltrosDoPainel(FILTROS_PAINEL_VAZIOS)}
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
           medicoes={medicoes}
