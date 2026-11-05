@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /*
   T907 — E511: Meus imóveis com muitos cartões tem abas de estado, busca, ordem e "Mostrar mais". Dono com 14 imóveis
-  (1 ativo + 13 rascunhos): 12 cartões à vista e "Mostrar mais (2 de 2)"; a aba Ativos mostra só o ativo; a busca acha
+  (1 ativo + 13 rascunhos): 12 cartões à vista, "Mostrando 12 de 14 imóveis" e "Mostrar mais 2"; a aba Ativos mostra só o ativo; a busca acha
   pelo nome; sem resultado, o aviso. 390 e 1280, sessão real.
 */
 const senha = novaSenha();
@@ -45,9 +45,12 @@ test.describe("T907 — E511: lista de Meus imóveis com abas, busca, ordem e Mo
       // Página: 12 cartões e "Mostrar mais" com o que falta.
       await expect(p.getByTestId("meu-anuncio")).toHaveCount(12);
       const mais = p.getByTestId("imoveis-mostrar-mais");
-      await expect(mais).toHaveText("Mostrar mais (2 de 2)");
+      // E624: um número só — as abas, a contagem e o botão leem o mesmo total (14).
+      await expect(p.getByTestId("imoveis-contagem")).toHaveText("Mostrando 12 de 14 imóveis");
+      await expect(mais).toHaveText("Mostrar mais 2");
       await mais.click();
       await expect(p.getByTestId("meu-anuncio")).toHaveCount(14);
+      await expect(p.getByTestId("imoveis-contagem")).toHaveText("14 imóveis");
       await expect(mais).toHaveCount(0);
 
       // Aba Ativos: só o ativo.
