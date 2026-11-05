@@ -214,8 +214,10 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     ids.obs = conta!.id;
     expect(conta).toMatchObject({ is_teste: true, role: "tenant", qa_admin: false });
     // Ninguém se promove sozinho: a sessão da própria conta não muda qa_admin (gatilho da 0252).
-    const { error: ePromo } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
-    expect(ePromo).toBeNull();
+    // Só cabe um observador por vez: espera outra spec (t601, t604, t650, t655) soltar o dela.
+    await expect
+      .poll(async () => (await adm().rpc("promover_qa_admin", { p_id: ids.obs })).error?.message ?? "ok", { timeout: 180_000, intervals: [5_000] })
+      .toBe("ok");
     expect(await contaPorEmail(emailObs)).toMatchObject({ role: "admin", qa_admin: true, is_teste: true });
     // Conta real não pode ser promovida.
     const { error: eReal } = await adm().rpc("promover_qa_admin", { p_id: ids.real });
