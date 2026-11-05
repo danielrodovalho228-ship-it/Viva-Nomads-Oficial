@@ -2,6 +2,22 @@ import { test, expect, type Page, type Locator, type Browser } from "@playwright
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import {
+
+// TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação, para
+// regenerar as referências fora do runner (o artefato não pode ser baixado desta sessão). Sai antes do PR ficar pronto.
+test.afterEach(async ({}, info) => {
+  if (info.status === info.expectedStatus) return;
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  let arqs: string[] = [];
+  try { arqs = readdirSync(info.outputDir).filter((a) => a.endsWith("-actual.png")); } catch { return; }
+  for (const a of arqs) {
+    const b64 = readFileSync(join(info.outputDir, a)).toString("base64");
+    const partes = Math.ceil(b64.length / 8000);
+    for (let i = 0; i < partes; i++) console.log(`@@PNG ${a} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+  }
+});
+
   NO_LABORATORIO,
   adm,
   apagarContas,
