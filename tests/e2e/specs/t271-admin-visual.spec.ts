@@ -3,22 +3,6 @@ import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
-// TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação, para
-// regenerar as referências fora do runner (o artefato não pode ser baixado desta sessão). Sai antes do PR ficar pronto.
-test.afterEach(async ({}, info) => {
-  if (info.status === info.expectedStatus) return;
-  const { readdirSync, readFileSync } = await import("node:fs");
-  const { join } = await import("node:path");
-  let arqs: string[] = [];
-  try { arqs = readdirSync(info.outputDir).filter((a) => a.endsWith("-actual.png")); } catch { return; }
-  for (const a of arqs) {
-    const b64 = readFileSync(join(info.outputDir, a)).toString("base64");
-    const partes = Math.ceil(b64.length / 8000);
-    for (let i = 0; i < partes; i++) console.log(`@@PNG ${a} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
-  }
-});
-
-
 /*
   T271 — regressão visual do admin no Prompt 46 (D5): mesma escala, cores e raios do sistema, decisões primeiro e
   números em lista com divisor fino. Desktop (1280): /admin, /admin/financeiro, /admin/documentos, /admin/atendimento,
@@ -27,6 +11,8 @@ test.afterEach(async ({}, info) => {
   O que muda de uma base para outra (números, datas, nomes, linhas das tabelas) vai mascarado: a imagem guarda a
   anatomia da tela (título, decisões, herói, listas, filtros, cabeçalhos), não os dados.
   Rodada L-33/L-4 (Pista C, 23/10 à noite): roda no lab-crítico do PR da vigia só para publicar o diff (esperado, obtido, diferença) para o QA do Muse; a linha de base só muda com o OK registrado.
+  Referências regeneradas em 05/11 (Pista C) a partir do próprio lab-crítico: as diferenças eram desenho novo (MENUS-5,
+  E176, E459/E460, PUBLICO-A, admin em grupos) — conferidas uma a uma antes de trocar.
 */
 const DESKTOP = ["/admin", "/admin/financeiro", "/admin/documentos", "/admin/atendimento", "/admin/parceiros", "/admin/contratos", "CONTRATO", "/admin/usuarios"];
 const CELULAR = ["/admin", "/admin/documentos", "/admin/atendimento"];
