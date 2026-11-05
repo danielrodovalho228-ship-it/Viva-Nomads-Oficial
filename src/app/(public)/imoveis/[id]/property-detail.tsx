@@ -311,9 +311,13 @@ export function PropertyDetail({
   }
 
   // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
+  // E520: data digitada que não é real (o campo entrega vazio) vira erro no resumo, nunca "sem data" calado.
+  const [datasInvalidas, setDatasInvalidas] = useState({ entrada: false, saida: false });
   // E519: o total da proposta é o do painel (estadiaDoImovel, com preparação e saída) — a mesma conta, o mesmo rótulo.
   const mesesSelecao = mesesDaSelecao(selecao);
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadia: mesesSelecao ? estadiaDoImovel(property, mesesSelecao) : null });
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadia: mesesSelecao ? estadiaDoImovel(property, mesesSelecao) : null, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
+  // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
+  const previaMensagem = validarApresentacao(apresentacao);
   function abrirSolicitacao() {
     if (testeVisitante) return;
     if (aguardandoPerfil) return;
@@ -392,6 +396,7 @@ export function PropertyDetail({
           min={hojeBR()}
           value={selecao.entrada}
           onChange={(e) => setSelecao((s) => comEntrada(s, e.target.value))}
+          aoInvalido={(inv) => setDatasInvalidas((d) => ({ ...d, entrada: inv }))}
           className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
@@ -402,6 +407,7 @@ export function PropertyDetail({
           min={selecao.entrada || hojeBR()}
           value={selecao.saida}
           onChange={(e) => setSelecao((s) => comSaida(s, e.target.value))}
+          aoInvalido={(inv) => setDatasInvalidas((d) => ({ ...d, saida: inv }))}
           className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
@@ -715,7 +721,12 @@ export function PropertyDetail({
                 )}
                 {etapa === "confirmar" && apresentacao.trim() && (
                   <p className="mt-3 rounded-lg border border-line px-3 py-2 text-sm text-muted">
-                    <span className="font-medium text-ink">Sua mensagem: </span>{apresentacao.trim().slice(0, 200)}
+                    <span className="font-medium text-ink">Sua mensagem: </span>{previaMensagem.ok ? previaMensagem.texto.slice(0, 200) : apresentacao.trim().slice(0, 200)}
+                  </p>
+                )}
+                {etapa === "confirmar" && previaMensagem.ok && previaMensagem.mascarou && (
+                  <p role="status" data-testid="candidatura-contato-ocultado" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    Telefone e e-mail foram ocultados: a conversa segue pela plataforma até o aceite.
                   </p>
                 )}
                 {etapa === "confirmar" && !exemplo && <ConviteFotoCandidatura />}

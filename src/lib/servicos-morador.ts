@@ -53,3 +53,14 @@ export function proximosEstados(estado: string): EstadoPedidoServico[] {
 export function codigoDoPedido(id: string): string {
   return `SV-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
 }
+
+/**
+ * Onda 5 (matriz admin-servicos): a linha do imóvel no pedido de serviço do admin — "Título · Bairro, Cidade". Sem
+ * imóvel ligado ao pedido (property_id é opcional), null: a tela não mostra a linha.
+ */
+export function linhaImovelServico(p: { title: string | null; address: string | null; city: string | null } | null): string | null {
+  if (!p) return null;
+  const local = [p.address, p.city].map((x) => x?.trim()).filter(Boolean).join(", ");
+  const partes = [p.title?.trim(), local].filter(Boolean);
+  return partes.length ? partes.join(" · ") : null;
+}

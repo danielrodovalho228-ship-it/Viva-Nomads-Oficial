@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type InputH
 import { CalendarDays } from "lucide-react";
 import { CalendarioBR } from "@/components/ui/calendario-br";
 import { useToque } from "@/components/ui/use-toque";
-import { brParaIso, interpretarDataColada, isoParaBr, mascararData } from "@/lib/data-digitada";
+import { brParaIso, dataDigitadaInvalida, interpretarDataColada, isoParaBr, mascararData } from "@/lib/data-digitada";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,10 +23,13 @@ export function CampoDataTexto({
   rotuloCalendario,
   aceitarTexto,
   calendarioEmLinha = false,
+  aoInvalido,
   ...resto
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange" | "min"> & {
   value: string;
   aoMudar: (iso: string) => void;
+  /** E520: avisa quando o texto digitado não é uma data real (incompleto ou inexistente); vazio ou válido = false. */
+  aoInvalido?: (invalido: boolean) => void;
   min?: string;
   ariaLabel?: string;
   testid?: string;
@@ -67,11 +70,13 @@ export function CampoDataTexto({
           const iso = /^\d{4}-\d{1,2}-\d{1,2}$/.test(bruto.trim()) ? interpretarDataColada(bruto) : null;
           if (iso) {
             setTexto(isoParaBr(iso));
+            aoInvalido?.(false);
             aoMudar(iso);
             return;
           }
           const m = mascararData(bruto);
           setTexto(m);
+          aoInvalido?.(dataDigitadaInvalida(m));
           aoMudar(brParaIso(m) ?? "");
         }}
         onPaste={(e) => {
@@ -79,6 +84,7 @@ export function CampoDataTexto({
           if (!iso) return; // formato desconhecido: deixa o navegador colar e a máscara limpar
           e.preventDefault();
           setTexto(isoParaBr(iso));
+          aoInvalido?.(false);
           aoMudar(iso);
         }}
         aria-label={ariaLabel}
@@ -112,6 +118,7 @@ export function CampoDataTexto({
           }}
           aoEscolher={(iso) => {
             setTexto(isoParaBr(iso));
+            aoInvalido?.(false);
             aoMudar(iso);
             fechar();
             botao.current?.focus();
@@ -139,10 +146,13 @@ export function CampoData({
   "aria-label": ariaLabel,
   "data-testid": testid,
   calendarioEmLinha = false,
+  aoInvalido,
   ...resto
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "min"> & {
   value: string;
   exemplo?: string;
+  /** E520: avisa quando o que foi digitado não é uma data real (o valor chega vazio nesse caso). */
+  aoInvalido?: (invalido: boolean) => void;
   min?: string;
   "data-testid"?: string;
   /** E526: no computador, o calendário do site abre em linha (dentro de um painel). No celular vale o do aparelho. */
@@ -162,6 +172,7 @@ export function CampoData({
           testid={testid}
           className={className}
           calendarioEmLinha={calendarioEmLinha}
+          aoInvalido={aoInvalido}
           aoMudar={(iso) => onChange?.({ target: { value: iso }, currentTarget: { value: iso } } as ChangeEvent<HTMLInputElement>)}
         />
         {name && <input type="hidden" name={name} value={value} />}
@@ -177,7 +188,13 @@ export function CampoData({
         name={name}
         min={min}
         value={value}
-        onChange={onChange}
+        onChange={(e) => {
+          aoInvalido?.(!!e.currentTarget.validity?.badInput);
+          onChange?.(e);
+        }}
+        // E520: data incompleta no campo nativo não muda o valor (fica vazio) — o input e a saída conferem a validade.
+        onInput={(e) => aoInvalido?.(!!e.currentTarget.validity?.badInput)}
+        onBlur={(e) => aoInvalido?.(!!e.currentTarget.validity?.badInput)}
         aria-label={ariaLabel}
         data-testid={testid}
         data-vazio={vazio ? "1" : undefined}

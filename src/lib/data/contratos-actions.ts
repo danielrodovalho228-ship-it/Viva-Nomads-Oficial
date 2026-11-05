@@ -30,7 +30,7 @@ const MSG_JA_REGISTRADO = "Este recebimento já foi registrado";
 
 /** Colunas de `contratos` que as partes leem pela sessão (sem a taxa — 0177). */
 const COLUNAS_CONTRATO_PARTES =
-  "id, property_id, tenant_id, lead_id, status, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, garantia";
+  "id, property_id, tenant_id, lead_id, status, periodo, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, garantia";
 
 /** O acerto da devolução vem junto (o RLS deixa as partes lerem): entra no estado único da caução. */
 const ACERTOS_CAUCAO = "caucao_acertos(status, valor_devolvido, created_at)";
@@ -158,7 +158,7 @@ export async function lerEstadoDoContrato(contratoId: string, papel: "inquilino"
   if (!supabase) return null;
   const { data, error } = await supabase
     .from("contratos")
-    .select("id, status, created_at, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(*)")
+    .select("id, status, periodo, created_at, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(*)")
     .eq("id", contratoId)
     .maybeSingle();
   // Achado 106: a falha LANÇA (o Fechamento já trata) — nunca "contrato não existe" logo depois de registrá-lo.
@@ -195,7 +195,7 @@ export async function getContratosDoInquilino(opcoes: { exigir?: boolean } = {})
   if (!user) return [];
   const { data, error } = await supabase
     .from("contratos")
-    .select("id, status, aluguel_mensal, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title), pagamentos_bloco(*)")
+    .select("id, status, periodo, aluguel_mensal, created_at, assinado_proprietario_em, assinado_inquilino_em, properties(title), pagamentos_bloco(*)")
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
   if (error && opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM);
@@ -261,7 +261,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
 
   const { data, error } = await supabase
     .from("contratos")
-    .select(`id, property_id, aluguel_mensal, status, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
+    .select(`id, property_id, aluguel_mensal, status, periodo, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
   if (error && opcoes.exigir) throw new Error(MSG_LOCACOES_NAO_CARREGARAM);
