@@ -6,8 +6,6 @@
   Referência: modelo de custos v2 (04/11/2026, E559). Dólar: R$ 5,20. Estimativas
   para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
-import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada } from "../lib/cobranca/regra.ts";
-
 export const REFERENCIA = "04/11/2026";
 export const DOLAR = 5.2;
 
@@ -27,17 +25,18 @@ export interface Item {
   a partir de GESTOR_PRECO.minimoImoveis imóveis ativos, ou conta de administradora. Valor mínimo mensal é fase 2, fora das projeções. Faixas em
   lib/cobranca/regra.ts (fonte única).
 */
-/** Aluguel mensal médio de um contrato (R$) — o mesmo ticket do Compare. A taxa incide sobre ele × MESES_MEDIOS_CONTRATO. */
-export const ALUGUEL_MEDIO = 4320;
+/**
+ * Aluguel mensal médio de um contrato (R$) — E592/E594: o do modelo validado (R$ 3.000; antes R$ 4.320, o exemplo do
+ * Compare). A taxa incide sobre ele × MESES_MEDIOS_CONTRATO.
+ */
+export const ALUGUEL_MEDIO = 3000;
 
 /**
- * Parte dos contratos por faixa de imóveis do dono (mesma ordem de FAIXAS_COMISSAO_PADRAO: 12%, 10%, 8%, 6% e o
- * Plano Gestor a 4%). Padrão: todos na 1ª faixa (1–2 imóveis, 12%), o caso típico do piloto.
+ * Taxa média por contrato (0..1) — E592/E594: 10%, a do modelo validado (antes 12%: todos os contratos na 1ª faixa).
+ * As faixas por nº de imóveis do dono seguem em lib/cobranca/regra.ts; 10% é a média entre elas (ex.: metade a 12%,
+ * metade a 8%), não uma faixa.
  */
-export const MIX_FAIXAS: readonly number[] = [1, 0, 0, 0, 0];
-
-/** Taxa média ponderada pelas faixas (0..1). */
-export const TAXA_MEDIA = taxaMediaPonderada(MIX_FAIXAS, FAIXAS_COMISSAO_PADRAO);
+export const TAXA_MEDIA = 0.1;
 
 /** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
 export const MESES_MEDIOS_CONTRATO = 3;
@@ -107,6 +106,26 @@ export const CUSTOS_FIXOS: Item[] = [
 export const CUSTO_FORNECEDORES = cent(CUSTOS_FIXOS.filter((c) => c.rotulo !== "Pró-labore dos sócios").reduce((s, c) => s + c.valor, 0));
 /** Fora do fixo: o WhatsApp (Z-API) só entra se for ligado. */
 export const FORA_DO_FIXO = ["WhatsApp (Z-API): a cotar, se for ligado"] as const;
+/**
+ * E592/E594: as lacunas de custo — o que ainda não tem preço. Entram na conta como R$ 0 (a cotar) ou como hipótese, e a
+ * tela as lista à parte para o resultado não parecer completo.
+ */
+export interface LacunaCusto {
+  rotulo: string;
+  /** Como entra hoje na conta. */
+  situacao: string;
+}
+export const LACUNAS_CUSTO: LacunaCusto[] = [
+  ...[...CUSTOS_FIXOS, ...CUSTOS_POR_CONTRATO]
+    .filter((c) => c.valor === 0)
+    .map((c) => ({ rotulo: c.rotulo, situacao: `R$ 0 na conta — ${c.obs ?? "a cotar"}` })),
+  {
+    rotulo: CUSTOS_POR_CONTRATO[0].rotulo,
+    situacao: `R$ ${CUSTO_IDENTIDADE_HIPOTESE} por verificação (${ROTULO_HIPOTESE_IDENTIDADE})`,
+  },
+  { rotulo: "WhatsApp (Z-API)", situacao: "fora da conta — a cotar, se for ligado" },
+];
+
 /** Custo fixo ≈ R$ 7,3 mil/mês (fornecedores ≈ R$ 1.303 + pró-labore de referência R$ 6.000). O controle vai de só fornecedores até R$ 10 mil. */
 export const CUSTO_FIXO_FAIXA = { min: CUSTO_FORNECEDORES, max: 10000, texto: "≈ R$ 7,3 mil/mês com pró-labore de referência" };
 

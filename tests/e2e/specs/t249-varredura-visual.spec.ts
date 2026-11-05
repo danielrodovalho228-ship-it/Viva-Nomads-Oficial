@@ -261,9 +261,10 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
     });
     await abrirRota(page, "/dashboard/imoveis");
     await page.waitForTimeout(1_500); // o pré-carregamento dos links acontece logo depois da tela assentar
+    // E510: o título do rascunho virou link — para o passo a passo (nunca a página pública, que daria 404).
     const rascunho = page.locator("main a", { hasText: "[Varredura] Rascunho com 1 foto" });
     const destino = (await rascunho.count()) > 0 ? await rascunho.first().getAttribute("href") : null;
-    expect({ linkDoRascunho: destino, paginas404: [...new Set(naoAchados)] }).toEqual({ linkDoRascunho: null, paginas404: [] });
+    expect({ paraPaginaPublica: !!destino && /^\/imoveis\//.test(destino), paginas404: [...new Set(naoAchados)] }).toEqual({ paraPaginaPublica: false, paginas404: [] });
     await context.close();
   });
 

@@ -117,3 +117,34 @@ export function seloParaEquipe(c: LinhaEstadoContrato): string {
   if (!prop && !inq) return "Aguardando assinatura · faltam as duas partes";
   return `Aguardando assinatura · falta o ${prop ? "inquilino" : "proprietário"}`;
 }
+
+/** E543: a situação da EQUIPE (filtro da lista do admin) — grupos da fonte única, nunca o status cru do banco. */
+export type SituacaoEquipe = "aguardando_assinatura" | "aguardando_pagamento" | "em_vigencia" | "em_acerto" | "encerrado" | "cancelado";
+
+export const ROTULO_SITUACAO_EQUIPE: Record<SituacaoEquipe, string> = {
+  aguardando_assinatura: "Aguardando assinatura",
+  aguardando_pagamento: "Aguardando 1º pagamento",
+  em_vigencia: "Em vigência",
+  em_acerto: "Em acerto de saída",
+  encerrado: "Encerrado",
+  cancelado: "Cancelado",
+};
+
+const GRUPO_EQUIPE: Record<ChaveEstado, SituacaoEquipe> = {
+  aguardando_assinatura: "aguardando_assinatura",
+  falta_voce: "aguardando_assinatura",
+  falta_outra_parte: "aguardando_assinatura",
+  aguardando_pagamento: "aguardando_pagamento",
+  em_vigencia: "em_vigencia",
+  em_acerto: "em_acerto",
+  concluido: "encerrado",
+  encerrado_sem_renovacao: "encerrado",
+  encerrado_periodo: "encerrado",
+  cancelado: "cancelado",
+};
+
+/** A situação do contrato para o filtro do admin: a mesma conta do selo (um contrato que terminou é "Encerrado"). */
+export function situacaoParaEquipe(c: LinhaEstadoContrato, agora: Date = new Date()): { chave: SituacaoEquipe; rotulo: string } {
+  const chave = GRUPO_EQUIPE[estadoDoContratoUnico(c, "proprietario", agora).chave];
+  return { chave, rotulo: ROTULO_SITUACAO_EQUIPE[chave] };
+}

@@ -7,7 +7,7 @@ import { capasPorImovel, emLotes } from "@/lib/admin/capas-admin";
 import { statusPorImovel } from "@/lib/documento/vigente";
 import { todasAsPaginas } from "@/lib/admin/paginas";
 import { eventoConta } from "@/lib/eventos/trafego";
-import { COLUNAS_ESTADO_CONTRATO, seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
+import { COLUNAS_ESTADO_CONTRATO, seloParaEquipe, situacaoParaEquipe, type LinhaEstadoContrato, type SituacaoEquipe } from "@/lib/contrato-estado";
 import {
   EVENTOS_HOME,
   resumoCandidaturas,
@@ -58,6 +58,8 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   assinadoInquilino: boolean;
   /** E197: o selo da equipe pela fonte única (o mesmo do detalhe do contrato). */
   selo: string;
+  /** E543: a situação do filtro, pela mesma fonte do selo (nunca o status cru). */
+  situacao: SituacaoEquipe;
   /** Conta de teste ou anúncio [TESTE…] (só aparece com o filtro "teste"). */
   teste: boolean;
   /** Data do aceite da candidatura (a taxa foi gravada nesse dia) — para o rótulo único rotuloBaseTaxa. */
@@ -127,6 +129,7 @@ export async function contratosReais(
       assinadoDono: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       selo: seloParaEquipe(c),
+      situacao: situacaoParaEquipe(c).chave,
       aluguelMensal: c.aluguel_mensal === null ? null : Number(c.aluguel_mensal),
       prazoDias: c.prazo_total_dias === null ? null : Number(c.prazo_total_dias),
       taxaValor: c.comissao_valor === null ? null : Number(c.comissao_valor),
