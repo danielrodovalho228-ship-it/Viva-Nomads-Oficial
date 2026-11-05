@@ -46,7 +46,10 @@ test.describe("T1160 — E482: o aviso de mensagem nova nomeia quem escreveu e t
       await expect(p.getByTestId("mensagem-campo")).toBeVisible({ timeout: 30_000 });
       await p.getByTestId("mensagem-campo").fill(MENSAGEM);
       await p.getByRole("button", { name: "Enviar" }).click();
-      await expect(p.getByText(MENSAGEM).first()).toBeVisible({ timeout: 20_000 });
+      // A mensagem gravada (o 1º texto igual na tela é a prévia da conversa na lista lateral, escondida no celular).
+      await expect
+        .poll(async () => ((await adm().from("messages").select("id").eq("property_id", ids.imovel!).eq("body", MENSAGEM)).data ?? []).length, { timeout: 20_000 })
+        .toBe(1);
     } finally {
       await p.context().close();
     }
