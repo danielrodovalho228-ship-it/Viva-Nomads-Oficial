@@ -2,6 +2,7 @@ import type { Property } from "./types.ts";
 import { galleryFor } from "./media.ts";
 import { temSeloPrecoJusto } from "./preco-justo.ts";
 import { calcularTudoIncluido } from "./precos.ts";
+import { graduarExemplo } from "./niveis/nivel-exemplo.ts";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -876,6 +877,12 @@ export const SAMPLE_PROPERTIES: Property[] = [
 /* Selo "Preço justo" também nos exemplos, pelo MESMO critério dos anúncios reais (nunca forçado). */
 // E399-B: o total por mês do cartão (com as contas), como a coluna gerada da 0277.
 for (const p of SAMPLE_PROPERTIES) p.precoJusto = temSeloPrecoJusto(calcularTudoIncluido(p).total, p.airbnbMonthlyPrice);
+/*
+  E620: o nível dos exemplos pelo MESMO caminho do cadastro — as respostas da Qualificação que os atributos de cada
+  exemplo sustentam, as confirmações do Passo 5 e o motor do nível (src/lib/niveis/nivel-exemplo.ts). Exemplo novo
+  já nasce graduado; nenhum nível é escrito à mão.
+*/
+for (const p of SAMPLE_PROPERTIES) p.nivel = graduarExemplo(p).nivel;
 
 export function getPropertyById(id: string): Property | undefined {
   return SAMPLE_PROPERTIES.find((p) => p.id === id);
