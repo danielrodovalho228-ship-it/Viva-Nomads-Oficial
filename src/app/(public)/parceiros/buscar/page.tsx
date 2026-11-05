@@ -137,8 +137,8 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
         {r.lista.length > 0 ? (
           <>
             <p className="text-sm text-muted">
-              {r.lista.length} {r.lista.length === 1 ? "parceiro" : "parceiros"}
-              {r.cidade ? ` em ${r.cidade}` : ""}
+              {/* E540: uma frase só ("1 parceiro em Uberlândia") — em nós separados, quem lê nó a nó colava as palavras. */}
+              {`${r.lista.length} ${r.lista.length === 1 ? "parceiro" : "parceiros"}${r.cidade ? ` em ${r.cidade}` : ""}`}
             </p>
             <ul className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {r.lista.map((p) => (
