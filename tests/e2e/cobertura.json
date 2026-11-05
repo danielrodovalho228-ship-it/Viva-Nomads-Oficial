@@ -936,7 +936,8 @@
         "t560-varredura-bloco44",
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t1116-e543-contrato-encerrado-periodo"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -955,7 +956,8 @@
         "t624-varredura-bloco58",
         "t631-e222b-renovar-aditivo",
         "t649-e246-e249-contratos-inicio",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t1116-e543-contrato-encerrado-periodo"
       ]
     },
     "/dashboard/favoritos": {
@@ -1278,7 +1280,8 @@
         "t491-e182-estadias-com-nome",
         "t557-varredura-bloco42",
         "t489-e176-menus",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1116-e543-contrato-encerrado-periodo"
       ]
     },
     "/dashboard/locacoes/[id]": {
@@ -1297,7 +1300,8 @@
         "t388-varredura-bloco23",
         "t418-varredura-bloco35",
         "t631-e222b-renovar-aditivo",
-        "t662-varredura-bloco63"
+        "t662-varredura-bloco63",
+        "t1116-e543-contrato-encerrado-periodo"
       ]
     },
     "/dashboard/mensagens": {
