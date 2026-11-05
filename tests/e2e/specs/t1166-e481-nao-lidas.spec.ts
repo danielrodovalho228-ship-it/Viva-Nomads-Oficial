@@ -24,6 +24,12 @@ async function noSino(page: Page): Promise<number> {
   return Number((await sino.getAttribute("aria-label"))?.match(/(\d+) não lidas/)?.[1] ?? 0);
 }
 
+/** No celular a conversa aberta ocupa a tela (a lista fica escondida): volta para a lista antes de ler o sino ou clicar. */
+async function voltarParaLista(page: Page) {
+  const voltar = page.getByRole("button", { name: "Voltar para a lista" });
+  if (await voltar.isVisible().catch(() => false)) await voltar.click();
+}
+
 test.describe("T1166 — E481: ler a conversa baixa o sino na hora e a lista destaca as não lidas", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
@@ -67,6 +73,7 @@ test.describe("T1166 — E481: ler a conversa baixa o sino na hora e a lista des
         await expect(item(conv.a)).toHaveAttribute("data-nao-lidas", "2", { timeout: 30_000 });
         await expect(item(conv.a).getByTestId("mensagens-nao-lidas")).toHaveText("2");
         await expect(item(conv.b)).toHaveAttribute("data-nao-lidas", "0", { timeout: 15_000 });
+        await voltarParaLista(p);
         // O sino assenta depois da leitura da B (relê pelo evento dos contadores): lê duas vezes iguais antes de medir.
         let antes = -1;
         await expect(async () => {
@@ -80,6 +87,7 @@ test.describe("T1166 — E481: ler a conversa baixa o sino na hora e a lista des
         await item(conv.a).click();
         await expect(item(conv.a)).toHaveAttribute("data-nao-lidas", "0", { timeout: 15_000 });
         await expect(item(conv.a).getByTestId("mensagens-nao-lidas")).toHaveCount(0);
+        await voltarParaLista(p);
         // Sem recarregar: o sino relê pelo evento dos contadores, bem antes do ciclo de 1 minuto.
         await expect.poll(() => noSino(p), { timeout: 20_000, message: "o sino baixa 2 ao ler a conversa" }).toBe(antes - 2);
         await expect(item(conv.b)).toHaveAttribute("data-nao-lidas", "0");
