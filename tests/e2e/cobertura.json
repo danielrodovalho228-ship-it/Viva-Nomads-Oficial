@@ -259,7 +259,8 @@
       ],
       "specs": [
         "t183-telas-logadas-390",
-        "t301-varredura-logada-bloco5"
+        "t301-varredura-logada-bloco5",
+        "t1181-e476-mes-pt-e-publico"
       ]
     },
     "/admin/parceiros": {
@@ -2070,7 +2071,8 @@
         "t229-admin-conversa-com-tudo",
         "t48-varredura",
         "t352-varredura-bloco17",
-        "t419-varredura-bloco36"
+        "t419-varredura-bloco36",
+        "t1181-e476-mes-pt-e-publico"
       ]
     },
     "/admin/contratos": {
