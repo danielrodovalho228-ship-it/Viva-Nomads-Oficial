@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useHoje } from "@/lib/use-client-state";
 import Link from "next/link";
 import { CalendarDays, Check, Loader2, CircleAlert } from "lucide-react";
+import { PASSOS_MORADOR } from "@/config/caminho-reserva";
 import type { Property } from "@/lib/types";
 import {
   inicioEfetivo,
@@ -306,12 +307,25 @@ export function AvailabilityCalendar({
               .
             </p>
           ) : isDemo ? (
-            <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-              <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.{" "}
-              <a href="#cartao-preco" className="font-medium underline">
-                Ver o caminho de reserva
-              </a>
-            </p>
+            <div className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
+              <p className="flex items-center gap-2">
+                <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.
+              </p>
+              {/* E530: o nome promete o caminho — abre ali mesmo os passos do morador (a mesma fonte do Como funciona). */}
+              <details className="mt-1" data-testid="caminho-reserva">
+                <summary className="min-h-11 cursor-pointer py-2 font-medium underline">Ver o caminho de reserva</summary>
+                <ol className="mt-1 list-decimal space-y-1 pl-4 text-ink" data-testid="caminho-reserva-passos">
+                  {PASSOS_MORADOR.map((p) => (
+                    <li key={p.titulo}>
+                      <span className="font-semibold">{p.titulo}:</span> {p.texto}
+                    </li>
+                  ))}
+                </ol>
+                <Link href="/como-funciona#para-inquilinos" className="mt-2 inline-block font-medium underline">
+                  Como funciona, passo a passo
+                </Link>
+              </details>
+            </div>
           ) : isOwner ? (
             <p className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
               <CircleAlert className="h-4 w-4 shrink-0" /> Este é o seu imóvel — você não pode
