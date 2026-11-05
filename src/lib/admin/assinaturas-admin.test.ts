@@ -51,10 +51,10 @@ test("GUARDA E197: lista e detalhe leem as mesmas colunas de estado e o mesmo se
   const detalhe = ler("src/lib/data/contrato-assinar-actions.ts");
   const lista = ler("src/lib/data/admin-indicadores.ts");
   const pagina = ler("src/app/(dashboard)/admin/contratos/page.tsx");
-  for (const [nome, fonte] of [["detalhe", detalhe], ["lista", lista]] as const) {
-    assert.match(fonte, /pagamentos_bloco\(tipo, confirmado_pelo_inquilino, anulado_em\)/, `${nome}: lê anulado_em`);
-    assert.match(fonte, /seloParaEquipe\(/, `${nome}: selo pela fonte única`);
-  }
+  assert.match(detalhe, /pagamentos_bloco\(tipo, confirmado_pelo_inquilino, anulado_em\)/, "detalhe: lê anulado_em");
+  // E543: a lista lê as MESMAS colunas de estado (COLUNAS_ESTADO_CONTRATO: status, período, assinaturas e pagamentos).
+  assert.match(lista, /\$\{COLUNAS_ESTADO_CONTRATO\}/, "lista: as colunas de estado da fonte única");
+  for (const [nome, fonte] of [["detalhe", detalhe], ["lista", lista]] as const) assert.match(fonte, /seloParaEquipe\(/, `${nome}: selo pela fonte única`);
   assert.match(pagina, /data-testid="contrato-selo">\{c\.selo\}/, "a lista mostra o selo único, não o status cru");
   assert.doesNotMatch(pagina, /\{STATUS\[c\.status\] \?\? c\.status\}/);
   assert.match(ler("src/lib/data/contrato-admin.ts"), /assinaturasDoAdmin\(/);

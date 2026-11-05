@@ -16,7 +16,7 @@ import {
   FORMULA_VALOR_TOTAL,
 } from "@/lib/admin/indicadores";
 import { fmtPct, fmtReais, rotuloPeriodo } from "@/lib/admin/visao-geral";
-import { refContratoVN } from "@/lib/fiscal/fila-falhas";
+import { numerosDaLista } from "@/lib/contrato-ref";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { estadosConferenciaEntrada } from "@/lib/data/contrato-admin";
@@ -63,6 +63,8 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
       (!inquilino || (nomes.get(c.tenantId) ?? "").toLowerCase().includes(inquilino))
   );
   const ag = agregarContratos(lista);
+  // E543: dois contratos com o mesmo número público ganham o desempate (o fim do id) — não são a mesma linha repetida.
+  const numeros = numerosDaLista(lista.map((c) => c.id));
   // Coluna "Conferência de entrada" (Prompt 35B, F5): Não aberta / Em andamento / Aguardando a outra parte / Confirmada / Contestada.
   const conferencias = admin ? await estadosConferenciaEntrada(admin, lista.map((c) => c.id)) : new Map<string, EstadoConferenciaLista>();
   const statusVistos = [...new Set(todos.map((c) => c.status))].sort();
@@ -143,7 +145,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                 <li key={c.id} className="rounded-xl border border-line p-3 text-sm" data-testid="contrato-linha">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-semibold text-ink">
-                      {refContratoVN(c.id)} · {c.imovel}
+                      {numeros.get(c.id)} · {c.imovel}
                       {c.teste && <SeloTeste />}
                       {ehRegraAnterior(c) && <span className="ml-2 rounded-full border border-line bg-white px-2 py-1 text-xs text-muted">regra anterior</span>}
                     </span>
