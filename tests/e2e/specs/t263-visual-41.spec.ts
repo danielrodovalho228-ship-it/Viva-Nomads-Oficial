@@ -30,6 +30,8 @@ import {
   (localStorage vazio = estadia mínima do imóvel); os "imóveis parecidos" (que mudam com a base) mascaram o texto dos
   cartões e mantêm a forma (como a tela 09 do t245). As telas 04 e 06–08 criam contas próprias: só no laboratório.
   Rodada L-33/L-4 (Pista C, 23/10 à noite): roda no lab-crítico do PR da vigia só para publicar o diff (esperado, obtido, diferença) para o QA do Muse; a linha de base só muda com o OK registrado.
+  Referências regeneradas em 05/11 (Pista C) a partir do próprio lab-crítico: as diferenças eram desenho novo (MENUS-5,
+  E176, E459/E460, E539, PUBLICO-A, admin em grupos) — conferidas uma a uma antes de trocar.
 */
 const LARGURAS = [390, 1280] as const;
 const altura = (l: number) => (l === 390 ? 844 : 900);
@@ -218,7 +220,7 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
           await page.getByTestId("cogumelo").click();
           const folha = page.getByRole("dialog", { name: "Ações desta estadia" });
           await expect(folha).toBeVisible();
-          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 7 : fase === "antes" ? 5 : 6);
+          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 5 : 4); // E539 (05/11): a folha não repete "Falar com…" nem as instruções
           await page.evaluate(() => document.fonts.ready);
           await page.waitForTimeout(400); // animação da folha
           const nome = `${n}-estadia-cogumelo-${quem}${fase ? `-${fase}` : ""}-${largura}.png`;
