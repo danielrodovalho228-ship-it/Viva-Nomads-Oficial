@@ -296,14 +296,15 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
       await expect(async () => {
         expect(await abas(page)).toEqual([
-          { nome: "Início", href: "/dashboard" },
+          // E459: o Início do parceiro é o topo do painel dele.
+          { nome: "Início", href: "/dashboard/parceiro#inicio" },
           { nome: "Pedidos", href: "/dashboard/parceiro#pedidos" },
           { nome: "Agenda", href: "/dashboard/parceiro#agenda" },
           { nome: "Ganhos", href: "/dashboard/parceiro#ganhos" },
           { nome: "Mensagens", href: "/dashboard/mensagens" },
         ]);
       }).toPass({ timeout: 25_000 });
-      for (const id of ["pedidos", "agenda", "ganhos"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
+      for (const id of ["inicio", "pedidos", "agenda", "ganhos"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
       await expect(page.getByTestId("topo-celular").getByTestId("conta-parceiro-celular")).toBeVisible();
       // Fora do painel do parceiro (sem a preferência ligada no Perfil), a barra volta ao modo da conta.
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
