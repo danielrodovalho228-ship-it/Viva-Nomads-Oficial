@@ -11,7 +11,7 @@ import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
-import { conferenciaAssistente, etapaDoItemProntidao, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
+import { conferenciaAssistente, etapaDoItemProntidao, faltamNaConferencia, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloPrevia } from "@/lib/anuncio/assistente-telas";
 import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
@@ -135,7 +135,7 @@ export function EtapaRevisar(p: {
   );
 
   const lista = (
-    <section className="min-w-0" aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={conf.itens.filter((i) => !i.ok).length}>
+    <section className="min-w-0" aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={faltamNaConferencia({ itens: conf.itens, pendentesNaRevisao: [] })}>
       <h3 id="lista-conferencia-titulo" className="text-base font-semibold text-ink">
         {tituloLista}
       </h3>

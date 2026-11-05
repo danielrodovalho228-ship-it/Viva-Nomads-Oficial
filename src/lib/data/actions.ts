@@ -1,5 +1,6 @@
 "use server";
 
+import { cepValido } from "@/lib/proximidades/osm";
 import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
 import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
 import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
@@ -458,6 +459,15 @@ async function qualificacaoDoImovel(
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
   const { data } = await q.order("created_at", { ascending: false }).limit(200);
   return estadoDocumentos((data ?? []) as LinhaQualificacaoDoc[]);
+}
+
+/** E593: o CEP válido do rascunho (draft_data.cep), lido pelo servidor antes de publicar; null se não houver. */
+async function cepDoRascunhoDoImovel(id: string): Promise<string | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("properties").select("draft_data").eq("id", id).maybeSingle(); // consistency-ignore: E593 — só o servidor lê o CEP do PRÓPRIO rascunho (updateProperty já conferiu o dono); nunca vai à resposta
+  const d = ((data as { draft_data: Record<string, unknown> | null } | null)?.draft_data ?? {}) as Record<string, unknown>;
+  return cepValido(typeof d.cep === "string" ? d.cep : null);
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
@@ -1312,9 +1322,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa, user.id);
       if (semAceite) return { ok: false, id, error: `${semAceite} Suas alterações foram salvas.` };
     }
+    // E593: o CEP do rascunho mora no draft_data, que é zerado aqui — ele vai para cep_proximidades (coluna privada da
+    // 0238), senão o editor do anúncio publicado chama as proximidades sem CEP.
+    const cepDoRascunho = await cepDoRascunhoDoImovel(id);
     const { error: pubErr } = await supabase
       .from("properties")
-      .update({ status: "active", draft_data: null })
+      .update({ status: "active", draft_data: null, ...(cepDoRascunho ? { cep_proximidades: cepDoRascunho } : {}) })
       .eq("id", id)
       .eq("owner_id", user.id);
     if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };

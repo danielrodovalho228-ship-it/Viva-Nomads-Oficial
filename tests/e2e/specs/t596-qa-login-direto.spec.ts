@@ -214,8 +214,10 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     ids.obs = conta!.id;
     expect(conta).toMatchObject({ is_teste: true, role: "tenant", qa_admin: false });
     // Ninguém se promove sozinho: a sessão da própria conta não muda qa_admin (gatilho da 0252).
-    const { error: ePromo } = await adm().rpc("promover_qa_admin", { p_id: ids.obs });
-    expect(ePromo).toBeNull();
+    // Só cabe um observador por vez: espera outra spec (t601, t604, t650, t655) soltar o dela.
+    await expect
+      .poll(async () => (await adm().rpc("promover_qa_admin", { p_id: ids.obs })).error?.message ?? "ok", { timeout: 180_000, intervals: [5_000] })
+      .toBe("ok");
     expect(await contaPorEmail(emailObs)).toMatchObject({ role: "admin", qa_admin: true, is_teste: true });
     // Conta real não pode ser promovida.
     const { error: eReal } = await adm().rpc("promover_qa_admin", { p_id: ids.real });
@@ -241,10 +243,10 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     await page.locator("#codigo-2fa").fill(gerarCodigoTotp(segredoTotp));
     await page.getByRole("button", { name: /confirmar e entrar/i }).click();
     await page.waitForURL(/\/admin(\?|$|\/)/, { timeout: 30_000 });
-    // Caixa dos Sócios: a página não existe para ele (notFound() dentro do layout do admin com streaming entrega a tela de
-    // "não encontrada" com status 200; o que vale é o conteúdo: nada da Caixa aparece).
+    // Caixa dos Sócios: fechada para ele. E591: no lugar do 404, o aviso com o motivo e o caminho das premissas (leitura);
+    // o que vale é o conteúdo: nada da Caixa aparece.
     await page.goto("/admin/socios");
-    await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("caixa-restrita-qa")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Novo envio")).toHaveCount(0);
     // Sistema: estado das chaves sem os botões; sem o cartão de backup; com a Porta de QA.
     await page.goto("/admin/sistema");

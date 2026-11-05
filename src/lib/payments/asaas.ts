@@ -15,6 +15,7 @@ const API_BASE =
 
 import { exigirChaveEmProducao, integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { valorComissao } from "@/lib/comissao";
+import { comissaoSobreDias } from "@/lib/cobranca/regra";
 import { erroDoFornecedor } from "@/lib/integrations/erro-fornecedor";
 
 export function isAsaasConfigured() {
@@ -60,12 +61,14 @@ export async function createCommissionCharge(params: {
   aluguelMensal: number;
   /** Meses contratados (contrato ou renovação): a comissão é taxa × aluguel × meses. */
   meses: number;
+  /** E562: a estadia em dias exatos do contrato — com ela, a taxa é a dos dias (a mesma do registro do contrato). */
+  dias?: number;
   commissionRate: number;
   ownerName: string;
   ownerEmail: string;
   ownerCpfCnpj?: string;
 }): Promise<CommissionResult> {
-  const platformCommission = valorComissao(params.aluguelMensal, params.meses, params.commissionRate);
+  const platformCommission = params.dias ? comissaoSobreDias(params.aluguelMensal, params.dias, params.commissionRate) : valorComissao(params.aluguelMensal, params.meses, params.commissionRate);
 
   if (!isAsaasConfigured()) {
     exigirChaveEmProducao("Asaas");
