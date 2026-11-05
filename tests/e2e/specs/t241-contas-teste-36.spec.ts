@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
    2. /admin/usuarios: o admin marca uma conta de laboratório (com parceiro publicado) como teste → o parceiro some
       de /parceiros/buscar; desmarca → volta. Confirmação na página (sem window.confirm). Uma conta que NÃO é admin
       repete a mesma chamada da action e é recusada (nada muda). Cada mudança fica no moderacao_log.
-   3a. /qualificar: o documento enviado COM o nome do titular → o admin vê o nome na pré-conferência; o dono troca o
+   3a. (desligada pelo E196: a /qualificar foi absorvida pela Revisão) /qualificar: o documento enviado COM o nome do titular → o admin vê o nome na pré-conferência; o dono troca o
       nome e salva → o admin vê o nome novo, e a fila continua com UMA linha (o salvar atualiza a mesma).
    3b. /admin/documentos: aprovar 1 de 2 → o selo "N aguardando" da barra lateral cai 1 sem recarregar a página.
    4. /admin/parceiros: marcar um item do checklist → "Salvo"; recarregar → continua marcado; erro simulado da
@@ -191,6 +191,9 @@ test.describe("T241 — contas de teste pelo admin, titular, selo da fila e chec
 
   // ─────────────────────────── 3a. Titular no envio e no salvar ───────────────────────────
   test("3a. 390 px envia com o titular → o admin vê; 1280 px o dono troca e salva → o admin vê o novo (mesma linha)", async ({ browser }) => {
+    // E196 (fecho): o campo "Nome do titular no documento" e o "Salvar qualificação" moravam só na /qualificar, que foi
+    // absorvida pela Revisão do assistente (o documento passa pela conferência automática, que lê o titular).
+    test.skip(true, "E196: a tela /qualificar não existe mais (absorvida pela Revisão do assistente).");
     test.setTimeout(180_000);
     const page = await entrar(browser, donoTitular.email, senha);
     semDialogo(page);

@@ -5,12 +5,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { linkQualificacao, rotaVoltarAoAnuncio } from "./qualificar-link.ts";
+import { destinoDaQualificacao, linkQualificacao, rotaVoltarAoAnuncio } from "./qualificar-link.ts";
 
 const ID = "ddf86c66-a214-463d-8563-66a5204010b5";
 
-test("com id válido leva ao checklist daquele imóvel", () => {
-  assert.equal(linkQualificacao(ID), `/qualificar?imovel=${ID}`);
+test("com id válido leva ao 'Antes de publicar' da Revisão daquele rascunho (E196: sem página à parte)", () => {
+  assert.equal(linkQualificacao(ID), `/dashboard/imoveis/novo?draft=${ID}&etapa=revisao`);
+});
+
+test("E196: /qualificar?imovel= vai ao assistente — rascunho na Revisão, publicado no editor, desconhecido a Meus imóveis", () => {
+  assert.equal(destinoDaQualificacao({ id: ID, rascunho: true }), `/dashboard/imoveis/novo?draft=${ID}&etapa=revisao`);
+  assert.equal(destinoDaQualificacao({ id: ID, rascunho: false }), `/dashboard/imoveis/novo?id=${ID}`);
+  assert.equal(destinoDaQualificacao(null), "/dashboard/imoveis");
 });
 
 test("sem id (rascunho não salvo) não devolve link", () => {

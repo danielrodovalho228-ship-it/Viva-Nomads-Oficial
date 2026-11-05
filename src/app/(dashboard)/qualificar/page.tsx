@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
 import { destinoQualificarSemImovel } from "@/lib/destino-login";
-import QualificarClient from "./qualificar-client";
+import { destinoDaQualificacao } from "@/lib/qualificar-link";
+import { resumoImovelDoDono } from "@/lib/data/actions";
 
 /**
- * A qualificação é a pendência da etapa Revisão de UM imóvel (`?imovel=<id>`).
- * Sem o parâmetro, quem chega aqui (link antigo, favorito, botão esquecido)
- * vai ao cadastro novo, que abre a Qualificação (E132-A).
+ * E196: uma "Qualificação" só. A antiga página longa ("Antes de anunciar" / "Requisitos e selo") foi absorvida pelo
+ * assistente: os requisitos legais moram no cartão "Antes de publicar" da Revisão (Passo 10, E132-A) e o documento num
+ * lugar só (E153). Esta rota fica só para links antigos (e-mail, favorito):
+ *  • sem ?imovel → o cadastro novo (E132-A, item 10: abre a Qualificação; com rascunho em andamento, oferece retomá-lo);
+ *  • com ?imovel → a Revisão daquele rascunho (publicado: o editor; não é do dono: Meus imóveis).
  */
 export default async function QualificarPage({
   searchParams,
@@ -14,7 +17,6 @@ export default async function QualificarPage({
 }) {
   const { imovel } = await searchParams;
   const id = Array.isArray(imovel) ? imovel[0] : imovel;
-  // E132-A, item 10: sem ?imovel → o cadastro novo (abre a Qualificação; com rascunho em andamento, oferece retomá-lo).
   if (!id) redirect(destinoQualificarSemImovel());
-  return <QualificarClient imovelDaPagina={id} />;
+  redirect(destinoDaQualificacao(await resumoImovelDoDono(id)));
 }

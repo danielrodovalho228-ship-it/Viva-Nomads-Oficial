@@ -317,15 +317,11 @@ export function MyPropertiesClient({
                           </ButtonLink>
                         )}
                         {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. E196: "Qualificação" abre as MESMAS 5 telas
-                            do assistente (no rascunho); a página longa de requisitos e selo tem nome próprio. */}
+                            do assistente (no rascunho) e é o único caminho — os requisitos e o documento ficam no "Antes de
+                            publicar" da Revisão (Passo 10); a antiga página longa (/qualificar) foi absorvida. */}
                         {p.status === "draft" && (
                           <ButtonLink href={`/dashboard/imoveis/novo?draft=${p.id}&qualificacao=1`} variant="outline" size="sm" data-testid="rascunho-qualificacao">
                             Qualificação
-                          </ButtonLink>
-                        )}
-                        {p.status === "draft" && (
-                          <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm" data-testid="rascunho-requisitos-selo">
-                            Requisitos e selo
                           </ButtonLink>
                         )}
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
