@@ -62,7 +62,7 @@ export default async function CompararPage({
                     Imóvel
                   </th>
                   {imoveis.map((p) => (
-                    <th key={p.id} scope="col" className="min-w-40 p-3 text-left align-top" data-testid="comparar-coluna">
+                    <th key={p.id} scope="col" style={{ width: `${100 / imoveis.length}%` }} className="min-w-40 p-3 text-left align-top" data-testid="comparar-coluna">
                       {/* E621: a coluna abre com a foto principal (4:3, raio de 12 px, como os cartões); sem foto, o espaço reservado. */}
                       <Link href={`/imoveis/${p.id}`} tabIndex={-1} aria-hidden className="mb-2 block" data-testid="comparar-foto">
                         {fotoPrincipal(p) ? (

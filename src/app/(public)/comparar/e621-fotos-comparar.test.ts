@@ -24,3 +24,10 @@ test("E621: foto principal quando há; sem foto, o espaço reservado padrão (nu
   assert.match(coluna, /<PhotoPlaceholder/);
   assert.match(s, /export function fotoPrincipal|function fotoPrincipal/);
 });
+
+test("Varredura 16 (768/1280): as colunas dos imóveis dividem a largura por igual — as fotos 4:3 ficam da mesma altura", () => {
+  // A tabela em layout automático dava a cada coluna a largura do próprio título (190/176/159 px a 768): foto mais alta
+  // numa coluna que na outra e títulos desalinhados. Cada coluna pede a mesma fração; no celular segue o min-w-40.
+  const th = s.slice(s.lastIndexOf("<th", ini), ini);
+  assert.match(th, /style=\{\{ width: `\$\{100 \/ imoveis\.length\}%` \}\}/);
+});
