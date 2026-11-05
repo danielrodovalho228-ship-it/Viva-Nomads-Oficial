@@ -9,7 +9,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *   1. candidatura de 45 dias → "Total do contrato" R$ 4.800 (3.200 × 45 ÷ 30) — antes do E562, 45 dias viravam
  *      2 meses (R$ 6.400);
  *   2. candidatura de 60 dias → R$ 6.400 (meses cheios: o mesmo de antes);
- *   3. o "Total por mês" é R$ 3.200 nas duas.
+ *   3. o "Total por mês" é R$ 3.200 nas duas;
+ *   4. (E562 telas, #2534) a montagem diz "Estadia: N dias", o rótulo do total é "Total da estadia (N dias)" e a data de
+ *      saída vem preenchida (entrada + dias).
  * Nada é enviado (só a montagem). As regras ficam com os testes de unidade.
  */
 const senha = novaSenha();
@@ -54,12 +56,16 @@ test.describe("T1120 — E562: a proposta abre com os dias da candidatura e o to
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       try {
-        for (const [lead, total] of [[ids.lead45, "4\\.800"], [ids.lead60, "6\\.400"]] as const) {
+        for (const [lead, total, dias] of [[ids.lead45, "4\\.800", 45], [ids.lead60, "6\\.400", 60]] as const) {
           await p.goto(`/dashboard/orcamentos/nova?interessado=${lead}`, { waitUntil: "domcontentloaded" });
           await expect(p.getByTestId("montagem-proposta")).toBeVisible({ timeout: 30_000 });
           await expect(p.getByTestId("resumo-total-mensal")).toHaveText(/^R\$\s3\.200(,00)?$/);
           const contrato = p.getByTestId("resumo-total-contrato");
           await expect(contrato).toHaveText(new RegExp(`^R\\$\\s${total}(,00)?$`));
+          // E562 (telas, #2534): a montagem mostra os dias da estadia e o rótulo do total em dias; a saída é entrada + dias.
+          await expect(p.getByTestId("proposta-dias")).toContainText(`Estadia: ${dias} dias`);
+          await expect(p.getByTestId("resumo-rotulo-total")).toHaveText(`Total da estadia (${dias} dias)`);
+          await expect(p.getByTestId("proposta-saida")).toHaveValue(/\d/);
           test.info().annotations.push({ type: "total", description: `${lead === ids.lead45 ? 45 : 60} dias: ${limpo(await contrato.innerText())}` });
         }
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
