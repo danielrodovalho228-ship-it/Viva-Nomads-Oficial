@@ -7,6 +7,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { SkeletonGradeCartoes } from "@/components/ui/skeleton";
 import {
   Eye,
   Users,
@@ -534,7 +535,10 @@ function TenantDashboard({
   const demo = useDashDemo();
   // Conformidade morador-inicio (matriz, 31/10): os recomendados no MESMO cartão com foto da busca e dos favoritos, em
   // grade par (2 no celular, 4 no computador) — antes eram linhas compactas.
-  const recommended = useProperties("/api/properties").properties.slice(0, 4);
+  // E503: enquanto a lista chega, a seção guarda o lugar com o esqueleto dos 4 cartões (antes a página nascia curta e
+  // terminava num vão até os recomendados aparecerem).
+  const { properties: todosRecomendados, loading: carregandoRecomendados } = useProperties("/api/properties");
+  const recommended = todosRecomendados.slice(0, 4);
   // E181: "Favoritos" conta a MESMA lista de /dashboard/favoritos (os favoritados que existem), nunca um número fixo.
   // E535: antes de "pronto" (imóveis e lista da conta carregados) o cartão não escreve número — nada de "0" falso.
   const { favoritos, pronto: favoritosProntos } = useFavoritos();
@@ -568,6 +572,12 @@ function TenantDashboard({
         {/* Dono: as Mensagens já estão no bloco de proprietário (o mesmo número). */}
         {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
       </div>
+
+      {carregandoRecomendados && recommended.length === 0 && (
+        <section className="mt-6" aria-label="Imóveis recomendados para você" data-testid="inicio-recomendados-carregando">
+          <SkeletonGradeCartoes itens={4} className="grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4 xl:grid-cols-4" />
+        </section>
+      )}
 
       {recommended.length > 0 && (
         <section className="mt-6" aria-labelledby="recomendados-titulo" data-testid="inicio-recomendados">
