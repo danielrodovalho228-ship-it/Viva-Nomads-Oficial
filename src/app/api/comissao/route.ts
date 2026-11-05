@@ -36,13 +36,14 @@ export async function POST(request: Request) {
   try {
     // Conta de teste (is_teste): cobrança SIMULADA, rótulo TESTE, nada vai ao Asaas (ordem ee7d27b8).
     if (teste) {
-      const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, commissionRate: contrato.taxa });
+      const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, dias: contrato.dias, commissionRate: contrato.taxa });
       await concluirFechamento(f.leadId, "comissao", simulada.chargeId);
       return NextResponse.json(simulada);
     }
     const result = await createCommissionCharge({
       aluguelMensal: contrato.aluguelMensal,
       meses: contrato.meses,
+      dias: contrato.dias,
       commissionRate: contrato.taxa,
       ownerName: f.ownerNome,
       ownerEmail: f.ownerEmail ?? "sem-email@vivanomads.com.br",
