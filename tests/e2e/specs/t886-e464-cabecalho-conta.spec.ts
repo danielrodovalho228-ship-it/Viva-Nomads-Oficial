@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T886 — E464: cabeçalho estável nas páginas de Conta. Conta com os papéis de proprietário (um anúncio) e parceiro
-  aprovado, com o papel ATIVO = parceiro. Abrindo Perfil, Notificações e Ajuda (cada uma por carga nova de página):
+  T886 — E464 + E534: cabeçalho estável e com o sino nas páginas de Conta. Conta com os papéis de proprietário (um anúncio) e parceiro
+  aprovado, com o papel ATIVO = parceiro. Abrindo Perfil, Privacidade, Pagamentos, Notificações e Ajuda (cada uma por carga nova de página):
     1) o cabeçalho é o do parceiro do 1º quadro ao último — nunca passa pelo do dono (antes nascia "dono" e trocava);
     2) o sino aparece em todas elas (antes sumia nas telas da Conta, no computador);
-    3) o menu Conta tem os mesmos itens nas três.
+    3) o menu Conta tem os mesmos itens em todas.
   390 e 1280, sessão real.
   Complemento (#2603 → este PR): o 1º lab-critico viu "topo:proprietario" — o ModeInitializer desligava o parceiro a cada carga.
 */
@@ -14,7 +14,8 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const pessoa = { email: `conta.t886.${sufixo}@lab.vivanomads.test`, nome: "Clara Contas", role: "owner" as const };
 const ids: Record<string, string> = {};
-const TELAS = ["/dashboard/conta/perfil", "/dashboard/notificacoes", "/dashboard/conta/ajuda"];
+// E534: o sino em TODAS as telas da Conta (Conta/Perfil, Privacidade, Pagamentos, Ajuda e Notificações).
+const TELAS = ["/dashboard/conta/perfil", "/dashboard/conta/privacidade", "/dashboard/conta/pagamentos", "/dashboard/notificacoes", "/dashboard/conta/ajuda"];
 
 test.describe("T886 — cabeçalho estável nas páginas de Conta", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -37,7 +38,7 @@ test.describe("T886 — cabeçalho estável nas páginas de Conta", () => {
   });
 
   for (const w of [1280, 390] as const) {
-    test(`a ${w} px: Perfil, Notificações e Ajuda com o mesmo cabeçalho de parceiro e o sino`, async ({ browser }) => {
+    test(`a ${w} px: telas da Conta com o mesmo cabeçalho de parceiro e o sino`, async ({ browser }) => {
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 }, isMobile: w === 390 });
       // Registra, desde o 1º quadro de cada carga, os papéis que o cabeçalho mostrou (topo do computador e sino do celular).
       await ctx.addInitScript(() => {
@@ -67,7 +68,7 @@ test.describe("T886 — cabeçalho estável nas páginas de Conta", () => {
         await p.screenshot({ path: `tests/laboratorio/saida/t886${rota.replace(/\//g, "-")}-${w}.png` });
       }
       expect(menus.length).toBe(TELAS.length);
-      for (const m of menus) expect(m, "menu Conta igual nas três telas").toEqual(menus[0]);
+      for (const m of menus) expect(m, "menu Conta igual em todas as telas").toEqual(menus[0]);
       await ctx.close();
     });
   }

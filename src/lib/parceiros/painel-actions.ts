@@ -8,6 +8,7 @@ import { cidadeDoCep, ehUuid, normalizarCep } from "@/lib/fotografos/regras";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
+import { documentoNaTela, type PerfilDocumento } from "@/lib/documento-pessoa";
 import { semMetadados } from "@/lib/foto-reconversao";
 import {
   CIDADES_MAX,
@@ -44,7 +45,8 @@ export interface PainelParceiro {
   notaPendente: boolean;
   /** Denúncia procedente tirou o selo: o motivo fica à vista e o parceiro não religa sozinho. */
   notaSeloRemovido: { em: string; motivo: string | null } | null;
-  documentoMascarado: string;
+  /** E463: o documento do perfil (fonte única, a mesma leitura de Conta → Dados); mascarado null = não informado. */
+  documento: { rotulo: "CPF" | "CNPJ"; mascarado: string | null };
   razaoSocial: string | null;
   nomePublico: string;
   categorias: string[];
@@ -84,10 +86,6 @@ async function editavel() {
   if (!m) return { erro: "Você ainda não é parceiro." } as const;
   if (m.p.status === "suspenso") return { erro: "A sua parceria está suspensa. Fale com a Viva pela Central de Ajuda." } as const;
   return m;
-}
-
-function mascararDoc(tipo: string, d: string): string {
-  return tipo === "pj" ? `${d.slice(0, 2)}.•••.•••/••••-${d.slice(-2)}` : `•••.•••.${d.slice(6, 9)}-${d.slice(-2)}`;
 }
 
 async function contar(admin: Admin, id: string) {
@@ -146,7 +144,7 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     return url ? [{ id: g.id as string, url, legenda: (g.legenda as string | null) ?? null, ordem: Number(g.ordem) }] : [];
   });
   const rec = (p.dados_recebimento ?? {}) as { chave?: string };
-  const { data: perfil } = p.user_id ? await admin.from("profiles").select("is_teste").eq("id", p.user_id as string).maybeSingle() : { data: null };
+  const { data: perfil } = p.user_id ? await admin.from("profiles").select("is_teste, person_type, cpf, cnpj").eq("id", p.user_id as string).maybeSingle() : { data: null };
   return {
     id,
     slug: p.slug as string,
@@ -157,7 +155,8 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     emiteNota: (p.emite_nota as boolean | null) ?? null,
     notaPendente: faltaRespostaNota({ tipoPessoa: p.tipo_pessoa as string, emiteNota: p.emite_nota as boolean | null }),
     notaSeloRemovido: p.nota_selo_removido_em ? { em: p.nota_selo_removido_em as string, motivo: (p.nota_selo_motivo as string | null) ?? null } : null,
-    documentoMascarado: mascararDoc(p.tipo_pessoa as string, p.documento as string),
+    // E463: o documento é o do PERFIL (o mesmo de Conta → Dados), não o do pedido de parceria.
+    documento: documentoNaTela(perfil as PerfilDocumento | null),
     razaoSocial: (p.razao_social as string | null) ?? null,
     nomePublico: p.nome_publico as string,
     categorias: (p.categorias as string[]) ?? [],

@@ -6,6 +6,7 @@
   dados do pedido. Sem "use server" e sem cliente próprio: recebe o cliente de serviço (testável com um falso).
   Roda: node --test src/lib/parceiros/e425-ativacao.test.ts
 */
+import { cpfValido, soDigitos } from "../documento-pessoa.ts";
 import { mesmoEmail, slugBase } from "./regras.ts";
 
 export interface SolicitacaoAtivavel {
@@ -98,4 +99,22 @@ export async function concluirAtivacao(admin: Cliente, sol: SolicitacaoAtivavel,
   }
   await devolver();
   return { ok: false, erro: ERRO_ATIVAR_AGORA };
+}
+
+/**
+ * E463 — fonte única do CPF: o documento da pessoa mora no perfil (Conta → Documento; contrato e cobrança). Na
+ * ativação, o CPF do pedido de parceria (PF, válido) preenche o perfil SÓ quando o perfil ainda não tem CPF e não é de
+ * empresa — nunca sobrescreve. Falha (ex.: CPF já em outra conta, 23505) não derruba a ativação: a Conta pede o CPF.
+ * Devolve true quando gravou.
+ */
+export async function preencherCpfDoPerfil(admin: Cliente, userId: string, sol: Pick<SolicitacaoAtivavel, "tipo_pessoa" | "documento">): Promise<boolean> {
+  if (sol.tipo_pessoa !== "pf" || !cpfValido(sol.documento)) return false;
+  const { data: perfil } = await admin.from("profiles").select("person_type, cpf, cnpj").eq("id", userId).maybeSingle();
+  if (!perfil || perfil.person_type === "pj" || perfil.cpf) return false;
+  const { error } = await admin.from("profiles").update({ cpf: soDigitos(sol.documento) }).eq("id", userId).is("cpf", null);
+  if (error) {
+    console.warn("[parceria] CPF do pedido não foi para o perfil:", error.code);
+    return false;
+  }
+  return true;
 }
