@@ -138,9 +138,15 @@ test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à 
       // 3) Fotos pelo passo Fotos (um "Voltar"): sobem para a galeria e a IA analisa sozinha (resposta fixa do laboratório).
       await page.getByTestId("cadastro-voltar").click();
       await noPasso(page, "fotos", 15_000);
+      // Triagem (Pista C, 05/11): instável no lab completo (fica "parada"). A falha diz se a análise chegou a ser pedida.
+      let chamadasIa = 0;
+      page.on("request", (r) => { if (r.url().includes("/api/ai/fotos")) chamadasIa++; });
       await page.getByTestId("fotos-input").first().setInputFiles(FOTOS);
       const ia = page.getByTestId("ia-fotos");
-      await expect(ia).toHaveAttribute("data-estado", "feita", { timeout: 120_000 });
+      await expect(ia).toHaveAttribute("data-estado", "feita", { timeout: 120_000 }).catch(async (e) => {
+        const locais = await page.evaluate(() => Array.from(document.querySelectorAll("img")).filter((i) => i.src.startsWith("blob:")).length);
+        throw new Error(`IA das fotos: estado=${await ia.getAttribute("data-estado")}; chamadas a /api/ai/fotos=${chamadasIa}; imagens blob: na tela=${locais}\n${e}`);
+      });
       await expect(ia).toContainText(/^Pronto: /);
       await expect(page.getByText(/^8\/40 fotos/)).toBeVisible({ timeout: 30_000 });
       // E107: o contador é o da página (uma fonte só); a faixa fixa do celular saiu.

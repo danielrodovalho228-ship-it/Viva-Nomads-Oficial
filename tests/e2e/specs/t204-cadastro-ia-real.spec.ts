@@ -199,8 +199,9 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=fotos`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("etapa-fotos")).toBeVisible({ timeout: 30_000 });
       let falhar = true;
+      let chamadasIa = 0;
       await page.route("**/api/ai/fotos", (r) =>
-        falhar
+        ++chamadasIa && falhar
           ? r.fulfill({ status: 503, json: { error: "Leitura indisponível agora — tente de novo em alguns minutos.", motivo: "indisponivel" } })
           : r.fallback(),
       );
@@ -218,7 +219,11 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       }, png8);
       await expect(page.getByTestId("etapa-fotos")).toContainText("8 / 8 fotos", { timeout: 60_000 });
       const falha = page.getByTestId("ia-fotos-falha");
-      await expect(falha).toBeVisible({ timeout: 60_000 });
+      // Triagem (Pista C, 05/11): a falha diz em que estado a IA ficou e se a rota chegou a ser chamada.
+      await expect(falha).toBeVisible({ timeout: 60_000 }).catch(async (e) => {
+        const locais = await page.evaluate(() => Array.from(document.querySelectorAll("img")).filter((i) => i.src.startsWith("blob:")).length);
+        throw new Error(`IA das fotos: estado=${await page.getByTestId("ia-fotos").getAttribute("data-estado")}; chamadas a /api/ai/fotos=${chamadasIa}; imagens blob: na tela=${locais}\n${e}`);
+      });
       await expect(falha).toContainText("indisponível agora — tente de novo");
       await expect(page.getByText("Sem sugestões automáticas agora")).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t204-ia-falha-${largura}.png`, fullPage: false });

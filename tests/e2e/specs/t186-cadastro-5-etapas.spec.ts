@@ -274,8 +274,12 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       const ate = page.getByTestId("disponivel-ate");
       for (const d of [de, ate]) await expect(d).toHaveAttribute("type", "text");
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
-      await de.pressSequentially("01112026");
-      await expect(de).toHaveValue("01/11/2026");
+      // Data futura (Pista C, 05/11): o "01/11/2026" fixo virou passado — o aviso de data passada sob o 1º campo empurrava
+      // a coluna e os dois campos deixavam de alinhar (20 px a 1280).
+      const futura = new Date(Date.now() + 30 * 86_400_000);
+      const [dd, mm, aaaa] = [String(futura.getUTCDate()).padStart(2, "0"), String(futura.getUTCMonth() + 1).padStart(2, "0"), String(futura.getUTCFullYear())];
+      await de.pressSequentially(`${dd}${mm}${aaaa}`);
+      await expect(de).toHaveValue(`${dd}/${mm}/${aaaa}`);
       // Q9: rótulo curto; no celular os dois campos ficam um embaixo do outro, com a mesma largura.
       await expect(page.getByTestId("disponibilidade")).toContainText("Disponível até");
       // As duas caixas na MESMA leitura (uma depois da outra, algo chegando entre as duas deslocava a página e a conta

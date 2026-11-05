@@ -144,7 +144,14 @@ test.describe("T227 — e-mail do recibo na caixa de teste + fila de falhas leg�
         const numeros: string[] = [];
         for (const [pg, contrato] of [[ids.f1!, ids.ca!], [ids.f2!, ids.cb!]] as const) {
           await expect.poll(async () => (await adm().from("documentos_falhas").select("id").eq("pagamento_id", pg).is("resolvido_em", null)).data?.length ?? 0, { timeout: 20_000 }).toBe(1);
-          numeros.push((await adm().from("documentos_fiscais").select("numero").eq("pagamento_id", pg).single()).data!.numero as string);
+          // E546 (0295): um pagamento pode ter mais de um documento (o repetido fica anulado) — o número vem do documento DA
+          // falha; sem ele, o mais recente do pagamento.
+          const { data: falha } = await adm().from("documentos_falhas").select("documento_id").eq("pagamento_id", pg).is("resolvido_em", null).single();
+          const doc = falha?.documento_id
+            ? (await adm().from("documentos_fiscais").select("numero").eq("id", falha.documento_id).single()).data
+            : (await adm().from("documentos_fiscais").select("numero").eq("pagamento_id", pg).order("criado_em", { ascending: false }).limit(1).maybeSingle()).data;
+          expect(doc?.numero, `documento do pagamento ${pg}`).toBeTruthy();
+          numeros.push(doc!.numero as string);
           void contrato;
         }
         await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
