@@ -2,17 +2,17 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T870 — E461: no cartão "Imóveis fixos" do painel do parceiro, "Abrir minha página" levava ao próprio painel. Agora:
+  T885 — E461: no cartão "Imóveis fixos" do painel do parceiro, "Abrir minha página" levava ao próprio painel. Agora:
     1) página PUBLICADA → abre a página pública /parceiros/<slug> (em outra aba);
     2) página em RASCUNHO → leva ao editor da página no painel (#editor-pagina, à vista).
   390 e 1280, sessão real.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const pub = { email: `pub.t870.${sufixo}@lab.vivanomads.test`, nome: "Paula Publicada", role: "owner" as const };
-const ras = { email: `ras.t870.${sufixo}@lab.vivanomads.test`, nome: "Rita Rascunho", role: "owner" as const };
+const pub = { email: `pub.t885.${sufixo}@lab.vivanomads.test`, nome: "Paula Publicada", role: "owner" as const };
+const ras = { email: `ras.t885.${sufixo}@lab.vivanomads.test`, nome: "Rita Rascunho", role: "owner" as const };
 const ids: Record<string, string> = {};
-const slugPub = `paula-t870-${sufixo}`;
+const slugPub = `paula-t885-${sufixo}`;
 
 async function parceiro(userId: string, nome: string, slug: string, status: "publicado" | "rascunho"): Promise<string> {
   const { data, error } = await adm()
@@ -25,14 +25,14 @@ async function parceiro(userId: string, nome: string, slug: string, status: "pub
   return data.id as string;
 }
 
-test.describe("T870 — 'Abrir minha página' do parceiro", () => {
+test.describe("T885 — 'Abrir minha página' do parceiro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.beforeAll(async () => {
     ids.pub = await criarConta(pub, senha);
     ids.ras = await criarConta(ras, senha);
     ids.pPub = await parceiro(ids.pub, `Paula Limpeza ${sufixo}`, slugPub, "publicado");
-    ids.pRas = await parceiro(ids.ras, `Rita Limpeza ${sufixo}`, `rita-t870-${sufixo}`, "rascunho");
+    ids.pRas = await parceiro(ids.ras, `Rita Limpeza ${sufixo}`, `rita-t885-${sufixo}`, "rascunho");
   });
   test.afterAll(async () => {
     await adm().from("parceiro_servicos").delete().in("parceiro_id", [ids.pPub, ids.pRas].filter(Boolean));
@@ -66,7 +66,7 @@ test.describe("T870 — 'Abrir minha página' do parceiro", () => {
       await b2.click();
       await expect(p2).toHaveURL(/\/dashboard\/parceiro#editor-pagina$/);
       await expect(p2.locator("#editor-pagina")).toBeInViewport();
-      await p2.screenshot({ path: `tests/laboratorio/saida/t870-editor-${w}.png` });
+      await p2.screenshot({ path: `tests/laboratorio/saida/t885-editor-${w}.png` });
       await c2.close();
     });
   }
