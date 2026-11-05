@@ -33,6 +33,7 @@ import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
 
 /** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
@@ -93,6 +94,8 @@ function Valores({ v }: { v: VersaoView }) {
  */
 export function PropostaDetalhe({ p }: { p: PropostaView }) {
   const router = useRouter();
+  // E536: "ver todas" leva à lista do papel de quem vê (morador fica na área dele).
+  const lista = listaDePropostasDoPapel(p.papel);
   const [modo, setModo] = useState<"nada" | "recusar" | "contrapropor">("nada");
   const [motivo, setMotivo] = useState("");
   const [textoRecusa, setTextoRecusa] = useState("");
@@ -412,8 +415,8 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
           )}
           <p className="text-[12px] text-muted">
             A proposta é um documento, não uma cobrança: a Viva não recebe nem guarda valores. Contato só pela plataforma.{" "}
-            <Link href="/dashboard/orcamentos" className="underline">
-              Ver todos os orçamentos
+            <Link href={lista.href} className="underline" data-testid="proposta-ver-todas">
+              {lista.rotulo}
             </Link>
           </p>
           {p.registro && (
