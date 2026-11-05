@@ -33,7 +33,8 @@ export async function faixasVigentes(admin: Admin): Promise<readonly FaixaComiss
       minImoveis: Number(l.min_imoveis),
       maxImoveis: l.max_imoveis == null ? null : Number(l.max_imoveis),
       taxa: Number(l.taxa),
-      ...(l.max_imoveis == null && Number(l.min_imoveis) >= 31 ? { negociavel: true } : {}),
+      // E564: a faixa sem teto é a do Plano Gestor (4%); a antiga faixa negociável saiu.
+      ...(l.max_imoveis == null ? { gestor: true } : {}),
     }));
   }
 }
@@ -76,8 +77,10 @@ export async function taxaDoDonoAgora(admin: Admin, ownerId: string, agora: Date
       .maybeSingle(),
     admin.from("faixa_dono").select("taxa_anterior, queda_em").eq("owner_id", ownerId).maybeSingle(),
   ]);
+  // E564: conta de administradora é Plano Gestor (4%) qualquer que seja a carteira.
+  const { data: perfil, error: e5 } = await admin.from("profiles").select("account_type").eq("id", ownerId).maybeSingle();
   // Achado 83: sem ler os imóveis ativos, a fixação do admin ou a queda de 30 dias, a taxa não é calculada (lança).
-  if (e1 || e2 || e3) throw new Error(MSG_TAXA_SEM_LEITURA);
+  if (e1 || e2 || e3 || e5) throw new Error(MSG_TAXA_SEM_LEITURA);
   const imoveisAtivos = await contarAtivosDeVerdade(admin, (publicados ?? []) as LinhaPublicado[], agora);
   const f = fix as { taxa: number | string; motivo: string; valido_ate: string } | null;
   const q = fd as { taxa_anterior: number | string | null; queda_em: string | null } | null;
@@ -88,6 +91,7 @@ export async function taxaDoDonoAgora(admin: Admin, ownerId: string, agora: Date
     faixas,
     fixadaPeloAdmin: f ? { taxa: Number(f.taxa), motivo: String(f.motivo ?? ""), validoAte: new Date(f.valido_ate) } : null,
     queda: q?.taxa_anterior != null && q.queda_em ? { taxaAnterior: Number(q.taxa_anterior), em: new Date(q.queda_em) } : null,
+    administradora: (perfil as { account_type?: string | null } | null)?.account_type === "gestor",
   });
   return { ...t, imoveisAtivos };
 }
