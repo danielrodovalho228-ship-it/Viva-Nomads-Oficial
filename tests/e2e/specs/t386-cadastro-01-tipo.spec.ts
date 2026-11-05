@@ -57,6 +57,9 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       for (const t of ["casa", "apartamento", "quarto"]) await expect(p.getByTestId(`tipo-${t}`)).toBeVisible();
       await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "true");
       await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "false");
+      // E607: os outros tipos aparecem em "Ver mais tipos" (grade completa, sem carrossel).
+      for (const t of ["studio", "loft", "cobertura", "casa_condominio", "flat"]) await expect(p.getByTestId(`tipo-${t}`)).toHaveCount(0);
+      await p.getByTestId("tipos-ver-mais").click();
       for (const t of ["studio", "loft", "cobertura", "casa_condominio", "flat"]) await expect(p.getByTestId(`tipo-${t}`)).toBeVisible();
       // As fotos dos cartões carregam de verdade.
       for (const t of ["apartamento", "quarto"]) {
@@ -93,6 +96,7 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
     await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "false");
     await expect(p.getByTestId("previa-titulo")).toHaveText("Casa");
     await expect(p.getByTestId("previa-chips")).toContainText("Casa");
+    await p.getByTestId("tipos-ver-mais").click(); // E607: Studio fica em "Ver mais tipos"
     await p.getByTestId("tipo-studio").click();
     await expect(p.getByTestId("tipo-studio")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "false");
