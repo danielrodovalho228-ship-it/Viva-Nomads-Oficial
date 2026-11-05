@@ -12,6 +12,7 @@ import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { reaisParaCampo } from "@/lib/reais";
 import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
+import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
@@ -563,10 +564,16 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
             <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF)"}</dd>
           </div>
           <div>
-            <dt className="text-muted">{p.tipoPessoa === "pj" ? "CNPJ" : "CPF"}</dt>
+            {/* E463: o documento é o do perfil (Conta → Documento), o mesmo de Conta → Dados — uma fonte só. */}
+            <dt className="text-muted">{p.documento.rotulo}</dt>
             <dd className="font-semibold text-ink" data-testid="parceiro-documento">
-              {p.documentoMascarado}
+              {p.documento.mascarado ?? "Ainda não informado"}
             </dd>
+            {!p.documento.mascarado && (
+              <a href={LINK_DOCUMENTO} data-testid="parceiro-documento-informar" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2">
+                Informar {p.documento.rotulo}
+              </a>
+            )}
           </div>
           <div>
             <dt className="text-muted">Categorias</dt>
@@ -577,7 +584,7 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
             <dd className="font-semibold text-ink">/parceiros/{p.slug}</dd>
           </div>
         </dl>
-        <p className="mt-3 text-xs text-muted">Tipo e documento não mudam por aqui. Para corrigir, fale com a Viva pela Central de Ajuda.</p>
+        <p className="mt-3 text-xs text-muted">O documento é o mesmo de Conta → Documento. Para corrigir, fale com a Viva pela Central de Ajuda.</p>
       </Panel>
       <Panel title="Recebimento">
         {!pagamentoAtivo && (
