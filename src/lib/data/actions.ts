@@ -2057,6 +2057,7 @@ export async function saveDraftData(snap: {
   city?: string;
   monthlyPrice?: number;
   neighborhood?: string;
+  bedrooms?: number;
   bathrooms?: number;
   areaM2?: number;
   description?: string;
