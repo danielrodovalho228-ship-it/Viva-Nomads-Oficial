@@ -1234,7 +1234,8 @@
       "specs": [
         "t183-telas-logadas-390",
         "t298-varredura-logada-bloco4",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t1143-statcard-ocupa-celula"
       ]
     },
     "/dashboard/leads/[id]": {
@@ -1489,7 +1490,8 @@
         "t183-telas-logadas-390",
         "t288-padrao-minimo-59a",
         "t339-varredura-bloco16",
-        "t676-varredura-bloco69"
+        "t676-varredura-bloco69",
+        "t1143-statcard-ocupa-celula"
       ]
     },
     "/dashboard/tributacao": {
