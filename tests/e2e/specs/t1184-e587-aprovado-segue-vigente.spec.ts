@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { abrirSecoesPasso10 } from "../fixtures/cadastro";
-import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 
 /**
  * T1184 — E587 (#2694, 05/11): com um documento APROVADO vigente, o envio de um documento novo não decide na hora — fica
@@ -34,6 +34,13 @@ test.describe("T1184 — E587: o documento aprovado segue vigente na tela enquan
   for (const w of [390, 1280] as const) {
     test(`aprovado segue na tela; o novo fica em análise à parte (${w})`, async ({ browser }) => {
       const imovel = await criarImovelPronto(ids.dono!, `Rascunho do documento ${w} ${sufixo}`);
+      // O envio do documento exige CEP, rua e número (documento-vinculo); a fixture grava só o bairro.
+      const { data: atual } = await adm().from("properties").select("draft_data").eq("id", imovel).single();
+      const { error } = await adm()
+        .from("properties")
+        .update({ exact_address: "Rua do Laboratório, 102", draft_data: { ...((atual?.draft_data as Record<string, unknown>) ?? {}), cep: "38400-100", street: "Rua do Laboratório", numero: "102" } })
+        .eq("id", imovel);
+      if (error) throw error;
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
       try {
         const p = await entrarNaPagina(await ctx.newPage(), dono.email, senha);
@@ -43,6 +50,7 @@ test.describe("T1184 — E587: o documento aprovado segue vigente na tela enquan
         const vinculo = p.getByTestId("documento-vinculo");
         await expect(vinculo.getByTestId("documento-estado")).toHaveAttribute("data-estado", "aprovado", { timeout: 20_000 });
 
+        await expect(vinculo, "o endereço gravado chegou").not.toContainText("Para enviar, o endereço precisa", { timeout: 20_000 });
         await vinculo.getByTestId("documento-arquivo").setInputFiles({ name: "matricula-nova.pdf", mimeType: "application/pdf", buffer: pdf() });
         const novo = vinculo.getByTestId("documento-novo");
         await expect(novo).toBeVisible({ timeout: 60_000 });
