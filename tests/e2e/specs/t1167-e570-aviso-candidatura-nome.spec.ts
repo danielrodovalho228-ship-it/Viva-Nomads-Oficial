@@ -47,7 +47,7 @@ async function candidatar(browser: Browser, email: string, largura: 390 | 1280) 
 
 test.describe("T1167 — E570: o aviso de candidatura nomeia quem se candidatou pelo primeiro nome", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial", timeout: 180_000 });
+  test.describe.configure({ mode: "serial", timeout: 300_000 }); // duas candidaturas pela tela no mesmo teste (a 1ª carga do anúncio é lenta no lab)
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
