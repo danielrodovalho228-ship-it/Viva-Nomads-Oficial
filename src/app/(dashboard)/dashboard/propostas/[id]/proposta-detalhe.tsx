@@ -31,9 +31,10 @@ import {
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
-import { precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
+import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
+import { estadiaDaProposta } from "@/lib/propostas/estadia-da-proposta";
 
 /** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
@@ -53,6 +54,8 @@ function Valores({ v }: { v: VersaoView }) {
   const t = v.termos;
   const desconto = t.descontoPct + t.descontoEstadiaPct;
   const preco = precoDaVersao(v);
+  // E600: a estadia em DIAS (não "Meses") e a data de saída, a mesma do formulário e do e-mail.
+  const estadia = estadiaDaProposta(t);
   return (
     <dl className="text-sm">
       <Linha rotulo={ROTULO_MENSAL} valor={`${formatBRL(preco.mensal)}${desconto > 0 || t.descontoValor > 0 ? ` (de ${formatBRL(t.valorBase)})` : ""}`} forte />
@@ -63,19 +66,29 @@ function Valores({ v }: { v: VersaoView }) {
           valor={t.descontoPct > 0 ? `${String(t.descontoPct).replace(".", ",")}%` : `${formatBRL(t.descontoValor)}/mês`}
         />
       )}
-      <Linha rotulo="Meses" valor={`${t.meses}`} />
+      <div data-testid="proposta-estadia">
+        <Linha rotulo="Estadia" valor={estadia.rotulo} />
+      </div>
       <Linha rotulo="Entrada" valor={dataBR(t.dataEntrada)} />
+      {estadia.saida && (
+        <div data-testid="proposta-saida">
+          <Linha rotulo="Saída" valor={dataBR(estadia.saida)} />
+        </div>
+      )}
       {t.condominio > 0 && <Linha rotulo="Condomínio" valor={`${formatBRL(t.condominio)}/mês`} />}
       {t.consumo > 0 && <Linha rotulo="Consumo estimado" valor={`${formatBRL(t.consumo)}/mês`} />}
       {t.limpezasMes > 0 && <Linha rotulo={`Limpezas (${t.limpezasMes}/mês)`} valor={`${formatBRL(t.limpezasMes * t.valorLimpeza)}/mês`} />}
       {t.taxaPet > 0 && <Linha rotulo="Taxa pet" valor={`${formatBRL(t.taxaPet)}/mês`} />}
       {t.limpezaUnica > 0 && <Linha rotulo="Limpeza de preparação (única)" valor={formatBRL(t.limpezaUnica)} />}
       <div className="mt-2 border-t border-sage-200 pt-2">
-        <Linha rotulo={ROTULO_TOTAL_MES} valor={formatBRL(preco.totalPorMes)} forte />
-        <Linha rotulo={ROTULO_TOTAL_CONTRATO} valor={formatBRL(preco.totalContrato ?? 0)} forte />
+        {/* E600: os totais com centavos, sem arredondar — o mesmo número que fecha a conta aberta abaixo. */}
+        <Linha rotulo={ROTULO_TOTAL_MES} valor={formatBRLExato(preco.totalPorMes)} forte />
+        <div data-testid="proposta-total-contrato">
+          <Linha rotulo={ROTULO_TOTAL_CONTRATO} valor={formatBRLExato(preco.totalContrato ?? 0)} forte />
+        </div>
         {/* E178: o 1º pagamento explícito (o 1º mês com tudo + a limpeza de preparação), a mesma conta do Fechamento. */}
         <div data-testid="proposta-primeiro-pagamento">
-          <Linha rotulo="1º pagamento" valor={formatBRL(primeiroPagamentoDoPreco(preco))} forte />
+          <Linha rotulo="1º pagamento" valor={formatBRLExato(primeiroPagamentoDoPreco(preco))} forte />
         </div>
         {preco.conta && (
           <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-conta">
