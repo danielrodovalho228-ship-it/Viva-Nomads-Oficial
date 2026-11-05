@@ -5,6 +5,7 @@ import { NO_LABORATORIO } from "../fixtures/laboratorio";
 /*
   T851 — Onda 5 (matriz admin-anuncios): na lista de anúncios do admin, cada linha tem a capa do anúncio (como no
   mockup) — a foto real, que carrega, ou o espaço "sem foto"; nenhuma foto do acervo. 390 e 1280, sessão de admin.
+  (#2515: o #2504 entrou sem o lab-critico — este spec roda no portão do complemento.)
 */
 test.describe("T851 — admin/imoveis: capa em cada anúncio", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (sessão de admin)");
