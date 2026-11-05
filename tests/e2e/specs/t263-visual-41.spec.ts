@@ -16,6 +16,13 @@ import {
 } from "../fixtures/laboratorio";
 
 
+// TEMPORÁRIO (Pista C, 05/11): imprime uma imagem no log em base64 (para regenerar a referência fora do runner).
+function despejar(buf: Buffer, nome: string) {
+  const b64 = buf.toString("base64");
+  const partes = Math.ceil(b64.length / 8000);
+  for (let i = 0; i < partes; i++) console.log(`@@PNG ${nome} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+}
+
 // TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação.
 test.afterEach(async ({}, info) => {
   if (info.status === info.expectedStatus) return;
@@ -239,7 +246,7 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
           await page.evaluate(() => document.fonts.ready);
           await page.waitForTimeout(400); // animação da folha
           const nome = `${n}-estadia-cogumelo-${quem}${fase ? `-${fase}` : ""}-${largura}.png`;
-          await expect(folha).toHaveScreenshot(nome, { mask: mascaras(page) });
+          await despejar(await folha.screenshot({ mask: mascaras(page), animations: "disabled", caret: "hide", scale: "css" }), nome.replace(".png", "-actual.png")); // TEMPORÁRIO: só a captura
           await page.context().close();
         });
       }

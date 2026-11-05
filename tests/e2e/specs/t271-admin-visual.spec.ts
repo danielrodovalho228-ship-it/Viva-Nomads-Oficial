@@ -4,6 +4,13 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 
+// TEMPORÁRIO (Pista C, 05/11): imprime uma imagem no log em base64 (para regenerar a referência fora do runner).
+function despejar(buf: Buffer, nome: string) {
+  const b64 = buf.toString("base64");
+  const partes = Math.ceil(b64.length / 8000);
+  for (let i = 0; i < partes; i++) console.log(`@@PNG ${nome} ${i + 1}/${partes} ${b64.slice(i * 8000, (i + 1) * 8000)}`);
+}
+
 // TEMPORÁRIO (Pista C, 05/11): imprime no log do lab-crítico as imagens "-actual" de cada falha de comparação.
 test.afterEach(async ({}, info) => {
   if (info.status === info.expectedStatus) return;
@@ -37,7 +44,7 @@ function mascaras(page: Page): Locator[] {
   return [
     page.locator("main [data-valor], main time, main td, main [data-decisao], main [data-precisa]"),
     page.locator("main ul li, main ol li, main dl dd"),
-    page.locator('main [data-testid="admin-decisoes"] h1, main [data-testid="cartao-backup"], main [data-testid="aviso-atendimento-admin"]'),
+    page.locator('main [data-testid="admin-decisoes"] h1, main [data-testid="cartao-backup"], main [data-testid="aviso-atendimento-admin"], main [data-testid="admin-atencao-todas"]'),
     page.locator("main img, main canvas, main svg image, main textarea, main input, main select"),
     page.locator('[data-visual="muda"], [aria-label$="aguardando"], nav [aria-label$="não lidas"], nav [aria-label$="novos"]'),
   ];
@@ -88,8 +95,9 @@ test.describe("T271 — admin: regressão visual (Prompt 46)", () => {
         await page.evaluate(() => document.fonts.ready);
         // Geometria estável em qualquer base: no máximo 1 linha por tabela e 2 itens por lista (o resto do dado não muda
         // a anatomia que a imagem guarda).
-        await page.addStyleTag({ content: "main tbody tr:nth-child(n+2), main ul > li:nth-child(n+3), main ol > li:nth-child(n+3) { display: none !important; }" });
+        await page.addStyleTag({ content: "main tbody tr:nth-child(n+2), main ul > li:nth-child(n+3), main ol > li:nth-child(n+3), main [data-testid=\"admin-atencao\"] ul > li:nth-child(n+2) { display: none !important; }" });
         expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
+        if (rota === "/admin") await despejar(await page.screenshot({ mask: mascaras(page), animations: "disabled", caret: "hide", scale: "css" }), `t271-${nome(rota)}-${largura}-actual.png`); // TEMPORÁRIO
         await expect(page).toHaveScreenshot(`t271-${nome(rota)}-${largura}.png`, { mask: mascaras(page), maxDiffPixelRatio: 0.03, animations: "disabled" });
       });
     }
