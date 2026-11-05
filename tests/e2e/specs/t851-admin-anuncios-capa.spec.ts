@@ -14,11 +14,14 @@ test.describe("T851 — admin/imoveis: capa em cada anúncio", () => {
   });
 
   test("cada linha com capa real carregada ou espaço sem foto (390 e 1280)", async ({ browser }) => {
+    // Duas larguras e as fotos pelo otimizador de imagem: 45 s não bastam (lab do #2515 estourou no goto).
+    test.setTimeout(120_000);
     for (const largura of [1280, 390]) {
       const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
       const page = await ctx.newPage();
       // Os anúncios de exemplo (tipo demonstração) têm foto real da demo: a lista nunca fica sem capa para conferir.
-      await page.goto("/admin/imoveis?tipo=demonstracao", { waitUntil: "networkidle" });
+      // "networkidle" nunca chega com as capas carregando; as linhas e as imagens são esperadas logo abaixo.
+      await page.goto("/admin/imoveis?tipo=demonstracao", { waitUntil: "domcontentloaded" });
       const linhas = page.getByTestId("imovel-linha");
       await expect(linhas.first()).toBeVisible({ timeout: 30_000 });
       const r = await page.evaluate(async () => {
