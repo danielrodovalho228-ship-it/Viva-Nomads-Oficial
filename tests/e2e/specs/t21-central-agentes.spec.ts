@@ -235,7 +235,7 @@ test.describe("T21 — Central de Agentes v2", () => {
     expect(count).toBe(1);
   });
 
-  test("Diário de bordo: última ronda de cada agente com chips de prioridade", async ({ page }) => {
+  test("Diário de bordo: histórico das rondas com chips de prioridade (E474: sem repetir a capa nem a última ronda da Equipe)", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Diário de bordo");

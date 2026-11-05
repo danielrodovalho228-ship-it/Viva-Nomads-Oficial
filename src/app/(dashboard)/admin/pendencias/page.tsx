@@ -127,23 +127,14 @@ function DecisoesDaCentral({
         {tituloCentral(total)}
       </h2>
       {LADOS.map(({ lado, titulo }) => {
+        // E474 (i): as decisões de outras telas (backup, parcerias, chamados…) aparecem UMA vez — como itens de "Todas as
+        // pendências", com o detalhe e a ação. Aqui no topo ficam só os atalhos das filas da Central (número + Abrir).
         const filas = FILTROS_CENTRAL.filter((f) => f.lado === lado && contagens[f.chave] > 0);
-        const extras = lado === "equipe" ? (outras?.linhas ?? []) : [];
-        if (!filas.length && !extras.length) return null;
+        if (!filas.length) return null;
         return (
           <div key={lado} className="mt-4" data-testid={`central-lado-${lado}`}>
             <p className="text-xs font-semibold text-muted">{titulo}</p>
             <ul className="mt-1 divide-y divide-line border-y border-line">
-              {extras.map((l) => (
-                <li key={`d-${l.chave}`} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={l.chave} data-ativo="0">
-                  <span className="min-w-0 font-semibold text-ink">
-                    <span className="tabular-nums">{l.n}</span> · {l.texto.replace(/^\d+\s+/, "")}
-                  </span>
-                  <ButtonLink href={l.href} variant="secondary" size="sm" data-testid={`central-decisao-${l.chave}`} data-n={l.n}>
-                    {l.acao}
-                  </ButtonLink>
-                </li>
-              ))}
               {filas.map((f) => (
                 <li key={f.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={f.chave} data-ativo={filtro === f.chave ? "1" : "0"}>
                   <span className={`min-w-0 ${filtro === f.chave ? "font-semibold text-forest" : "font-semibold text-ink"}`}>
