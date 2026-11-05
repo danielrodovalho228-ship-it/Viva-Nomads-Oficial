@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { FILTROS_AVISOS, filtrarAvisos, type AvisoTela, type FiltroAvisos } from "@/lib/notifications/sino";
+import { FILTROS_AVISOS, filtrarAvisos, ordemCronologica, type AvisoTela, type FiltroAvisos } from "@/lib/notifications/sino";
 import { MarcaLeitura, SeloPrioridade, classeDoAviso, marcarLidoEIr, marcarTodosLidos } from "@/components/painel/sino-avisos";
 
 /**
@@ -15,7 +15,8 @@ export function ListaAvisos({ avisos, falhou, filtroInicial }: { avisos: AvisoTe
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroAvisos>(filtroInicial);
   const [lidos, setLidos] = useState<Set<string>>(() => new Set());
-  const visiveis = filtrarAvisos(avisos, filtro);
+  // E586: a lista é estritamente cronológica (data/hora decrescente, desempate estável).
+  const visiveis = filtrarAvisos(ordemCronologica(avisos), filtro);
   const [erroTodas, setErroTodas] = useState(false);
   const temNaoLido = avisos.some((a) => !a.lido_em && !lidos.has(a.id));
   return (
