@@ -20,6 +20,12 @@ const dono = conta("dono", "Dina Dona", "owner");
 const morador = conta("morador", "Mário Morador");
 const avA = conta("ava", "Ana Avaliadora");
 const ids: Record<string, string> = {};
+/**
+ * Isolamento (Pista C, 05/11, diagnóstico no #2720): uma cidade SÓ deste spec para o imóvel, o avaliador e a tabela de
+ * preço. Em Uberlândia, a fila do rodízio é dividida com a t303 e com outros specs (--workers=2): a designação ia para o
+ * avaliador de outro spec e o caso do avaliador esperava 240 s por um pedido que não era dele.
+ */
+const CIDADE = `Cidade Lab T315 ${sufixo}`;
 let numeroA = "";
 let pedidoId = "";
 
@@ -59,7 +65,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
         .select("id")
         .single();
       if (error) throw error;
@@ -68,10 +74,11 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     // A já credenciado e ativo, o primeiro do rodízio (nunca designado, ativado há muito tempo).
     const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
     numeroA = n as string;
-    const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: "Uberlândia", numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
+    const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parcA, cidade: CIDADE, numero_credenciado: numeroA, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/a", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel publicado, ocupado pelo morador (contrato vigente) e a conversa entre os dois.
     ids.imovel = await criarImovelPronto(ids.dono, `Avaliação t315 ${sufixo}`, { ativo: true });
+    await adm().from("properties").update({ city: CIDADE }).eq("id", ids.imovel);
     const hoje = new Date();
     const dia = (d: number) => new Date(hoje.getTime() + d * 86_400_000).toISOString().slice(0, 10);
     const { data: c, error: eK } = await adm()
@@ -88,9 +95,9 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     const { data: precos } = await adm()
       .from("vistoria_precos")
       .insert([
-        { cidade: "Uberlândia", porte: "estudio", valor: 280 },
-        { cidade: "Uberlândia", porte: "q1_2", valor: 350 },
-        { cidade: "Uberlândia", porte: "q3_mais", valor: 420 },
+        { cidade: CIDADE, porte: "estudio", valor: 280 },
+        { cidade: CIDADE, porte: "q1_2", valor: 350 },
+        { cidade: CIDADE, porte: "q3_mais", valor: 420 },
       ])
       .select("id");
     ids.precos = ((precos ?? []) as { id: string }[]).map((x) => x.id).join(",");
