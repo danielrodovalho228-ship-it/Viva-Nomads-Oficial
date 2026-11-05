@@ -21,9 +21,12 @@ import {
   MESES_MEDIOS_CONTRATO,
   REGIMES,
   REGIME_PADRAO,
+  ROTULO_REGIME_ALTERNATIVO,
+  OPERADOR_OPCOES,
   SELO_SOCIETARIO,
   TAXA_FAIXAS,
   marketingDoMes,
+  encargosProLabore,
 } from "../../config/premissas-financeiras.ts";
 import { CUSTO_FIXO_PADRAO, cenariosContratosMes, custoFixoDe, fraseResumo, porContrato, projetar } from "./projecao.ts";
 
@@ -36,24 +39,35 @@ test("v3: contrato de referência R$ 3.000 × 3 meses, na faixa da carteira 12/1
   assert.deepEqual(TAXA_FAIXAS.map((f) => porContrato({ operador: 0, taxa: f.taxa }).receita), [1080, 900, 720, 540, 360]);
 });
 
-test("v3: regime Simples (~6%) × Lucro Presumido (~13,3%, até ~16,3% com ISS 5%); Presumido em destaque; societário em revisão", () => {
+test("E622 (veredito de 05/11): Simples 6% é o padrão; Presumido 16,33% + INSS 20% é o cenário alternativo, a confirmar com o Rodolfo", () => {
   assert.deepEqual(REGIMES.map((r) => [r.id, r.aliquota, r.inssPatronal]), [
     ["simples", 0.06, 0],
-    ["presumido", 0.1333, 0.2],
-    ["presumido_iss5", 0.1633, 0.2],
+    ["presumido", 0.1633, 0.2],
   ]);
-  assert.equal(REGIME_PADRAO, "presumido");
+  assert.equal(REGIME_PADRAO, "simples");
+  const presumido = REGIMES.find((r) => r.id === "presumido")!;
+  assert.match(presumido.detalhe, /11,33% federais \(PIS\/Cofins 3,65% \+ IRPJ 4,8% \+ CSLL 2,88%\) \+ ISS de 5% \(teto conservador, a confirmar com o Rodolfo\)/);
+  assert.match(presumido.detalhe, /INSS patronal de 20% sobre o pró-labore \(a confirmar com o Rodolfo\)/);
+  assert.equal(encargosProLabore(presumido), 1200);
+  assert.equal(encargosProLabore(REGIMES[0]), 0);
+  assert.equal(ROTULO_REGIME_ALTERNATIVO, "cenário alternativo · regime em definição");
+  assert.deepEqual([...OPERADOR_OPCOES], [0]); // sem operador pago desde 18/10
   assert.match(SELO_SOCIETARIO, /em revisão/);
 });
 
-test("v3: equilíbrio ≈ 10 (Simples) e 12–13 (Presumido); com 20 contratos ≈ R$ 8,2 mil × R$ 5,1–5,7 mil", () => {
-  const empate = (regime: (typeof REGIMES)[number]["id"]) => Math.ceil(custoFixoDe({ regime }) / porContrato({ operador: 0, regime }).margem);
-  assert.equal(empate("simples"), 10);
-  assert.equal(empate("presumido"), 12);
-  assert.equal(empate("presumido_iss5"), 13);
-  const vinte = (regime: (typeof REGIMES)[number]["id"]) => cenariosContratosMes({ operador: 0, regime })[1].resultado;
-  assert.equal(Math.round(vinte("simples")), 8189); // ≈ R$ 8,2 mil
-  for (const r of ["presumido", "presumido_iss5"] as const) assert.ok(vinte(r) >= 4700 && vinte(r) <= 5700, `${r}: ${vinte(r)}`);
+test("E622 — valores de referência do simulador oficial (aluguel 3.000 · 3 meses · 10% · Certta R$ 20 · pró-labore 6.000), ±1 contrato / ±3%", () => {
+  const ref = { simples: { empate: 10, vinte: 8199 }, presumido: { empate: 13, vinte: 5140 } } as const;
+  for (const r of ["simples", "presumido"] as const) {
+    const empate = Math.ceil(custoFixoDe({ regime: r }) / porContrato({ operador: 0, regime: r }).margem);
+    const vinte = cenariosContratosMes({ operador: 0, regime: r })[1].resultado;
+    assert.ok(Math.abs(empate - ref[r].empate) <= 1, `${r}: empate ${empate}`);
+    assert.ok(Math.abs(vinte - ref[r].vinte) / ref[r].vinte <= 0.03, `${r}: 20 contratos ${vinte}`);
+  }
+  // e os números exatos de hoje (o oficial usa médias por contrato: R$ 10 de diferença)
+  assert.equal(Math.ceil(porContrato({ operador: 0, regime: "simples" }).empate[0]), 10);
+  assert.equal(Math.ceil(porContrato({ operador: 0, regime: "presumido" }).empate[0]), 13);
+  assert.equal(Math.round(cenariosContratosMes({ operador: 0, regime: "simples" })[1].resultado), 8189);
+  assert.equal(Math.round(cenariosContratosMes({ operador: 0, regime: "presumido" })[1].resultado), 5130);
 });
 
 test("v3 (veredito do coordenador, 05/11): CDL e e-mail visíveis mas FORA da soma; parecer e consulta dentro do investimento", () => {
@@ -124,23 +138,28 @@ test("P3 (05/11): investimento único continua R$ 16.000; parecer e consulta só
   assert.match(fonte, /data-testid="a-cotar-nao-somado"/);
 });
 
-test("E622: equilíbrio do rótulo = o do KPI (mesmo custo fixo com os encargos do regime): Presumido 12, ISS 5% 13, Simples 10", () => {
+test("E622: equilíbrio do rótulo = o do KPI (mesmo custo fixo com os encargos do regime): Simples 10, Presumido 13", () => {
   const fonte = ler("src/components/financeiro/modelo-financeiro.tsx");
   assert.match(fonte, /const equilibrioFixo = unit\.margem > 0 \? Math\.ceil\(custoFixoDe\(\{ custoFixo, regime \}\) \/ unit\.margem\) : null;/);
-  // o KPI mostra um número só quando o intervalo fecha ("12", não "12 a 12")
+  // o KPI mostra um número só quando o intervalo fecha ("13", não "13 a 13")
   assert.match(fonte, /Math\.ceil\(unit\.empate\[0\]\) === Math\.ceil\(unit\.empate\[1\]\) \?/);
   const rotulo = (regime: (typeof REGIMES)[number]["id"]) => Math.ceil(custoFixoDe({ custoFixo: CUSTO_FIXO_PADRAO, regime }) / porContrato({ operador: 0, regime }).margem);
   const kpi = (regime: (typeof REGIMES)[number]["id"]) => Math.ceil(porContrato({ operador: 0, regime }).empate[0]);
-  for (const r of ["presumido", "presumido_iss5", "simples"] as const) assert.equal(rotulo(r), kpi(r), r);
-  assert.deepEqual([kpi("presumido"), kpi("presumido_iss5"), kpi("simples")], [12, 13, 10]);
+  for (const r of ["simples", "presumido"] as const) assert.equal(rotulo(r), kpi(r), r);
+  assert.deepEqual([kpi("simples"), kpi("presumido")], [10, 13]);
+  // sem seletor de operador na tela (R$ 0 fixo)
+  assert.doesNotMatch(fonte, /aria-label="Operador local"/);
+  assert.match(fonte, /const operador = 0;/);
 });
 
-test("E622: a projeção é determinística (sem estado parcial): Pessimista no Presumido = −R$ 163,2 mil, sem payback em 36 meses", () => {
+test("E622: a projeção é determinística (sem estado parcial): Pessimista no padrão (Simples) = −R$ 110,0 mil; no Presumido −R$ 169,3 mil; nenhum se paga em 36 meses", () => {
   const a = projetar("pessimista", { operador: 0 });
-  const b = projetar("pessimista", { operador: 0 });
-  assert.deepEqual(a, b);
-  assert.equal(Math.round(a.piorCaixa / 100) / 10, -163.2);
+  assert.deepEqual(a, projetar("pessimista", { operador: 0 }));
+  assert.equal(Math.round(a.piorCaixa / 100) / 10, -110);
   assert.equal(a.mesPayback, null);
+  const p = projetar("pessimista", { operador: 0, regime: "presumido" });
+  assert.equal(Math.round(p.piorCaixa / 100) / 10, -169.3);
+  assert.equal(p.mesPayback, null);
 });
 
 test("E623: a faixa do Gestor (4%, 20+ imóveis ou administradora, cadastro assistido e contato direto) aparece no seletor", () => {
