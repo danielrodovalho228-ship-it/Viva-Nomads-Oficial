@@ -536,7 +536,8 @@ function TenantDashboard({
   // grade par (2 no celular, 4 no computador) — antes eram linhas compactas.
   const recommended = useProperties("/api/properties").properties.slice(0, 4);
   // E181: "Favoritos" conta a MESMA lista de /dashboard/favoritos (os favoritados que existem), nunca um número fixo.
-  const { favoritos } = useFavoritos();
+  // E535: antes de "pronto" (imóveis e lista da conta carregados) o cartão não escreve número — nada de "0" falso.
+  const { favoritos, pronto: favoritosProntos } = useFavoritos();
   void name;
   return (
     <>
@@ -562,7 +563,7 @@ function TenantDashboard({
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
       <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", !ehDono && "sm:grid-cols-4")} data-testid="inicio-morador-kpis">
         <StatCard label="Candidaturas" value={demo ? "2" : valorContador(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
-        <StatCard label="Favoritos" value={demo ? "3" : String(favoritos.length)} icon={Heart} href="/dashboard/favoritos" />
+        <StatCard label="Favoritos" value={demo ? "3" : valorContador(favoritosProntos ? favoritos.length : null)} icon={Heart} href="/dashboard/favoritos" />
         {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : valorContador(totalBuscasSalvas)} icon={Search} href="/dashboard/buscas" />}
         {/* Dono: as Mensagens já estão no bloco de proprietário (o mesmo número). */}
         {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
@@ -587,7 +588,7 @@ function TenantDashboard({
       )}
 
       {/* "Salve seus favoritos" só para quem ainda não salvou nenhum — antes aparecia mesmo com favoritos salvos. */}
-      {(demo ? 3 : favoritos.length) === 0 && (
+      {(demo ? false : favoritosProntos && favoritos.length === 0) && (
         <div className="mt-6">
           <EmptyState
             icon={Heart}
