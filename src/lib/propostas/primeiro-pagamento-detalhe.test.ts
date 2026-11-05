@@ -12,5 +12,5 @@ test("o 1º pagamento da proposta é o 1º mês com tudo + a limpeza de prepara�
 test("o detalhe da proposta mostra a linha '1º pagamento' com essa conta", () => {
   const tela = readFileSync(new URL("../../app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx", import.meta.url), "utf8");
   assert.match(tela, /data-testid="proposta-primeiro-pagamento"/);
-  assert.match(tela, /rotulo="1º pagamento" valor=\{formatBRL\(primeiroPagamentoDoPreco\(preco\)\)\}/);
+  assert.match(tela, /rotulo="1º pagamento" valor=\{formatBRLExato\(primeiroPagamentoDoPreco\(preco\)\)\}/);
 });

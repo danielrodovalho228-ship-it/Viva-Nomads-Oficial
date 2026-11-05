@@ -45,7 +45,7 @@ import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
-import { camposQueRecebem, donoEscreveu, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
+import { camposParaUsarSugestao, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { confirmarConforto } from "@/lib/data/conforto-actions";
@@ -93,6 +93,7 @@ import {
   VERSAO_ORDEM_ETAPAS,
 } from "@/lib/etapas-anuncio";
 import { ETAPA } from "@/lib/anuncio/etapas-ids";
+import { urlComEtapa } from "@/lib/anuncio/etapa-na-url";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
@@ -553,7 +554,7 @@ export default function NewPropertyPage() {
   // nunca sobrescrever o que o dono digitou enquanto esperava.
   const textoAtual = useRef({ titulo: title, descricao: description });
   textoAtual.current = { titulo: title, descricao: description };
-  async function pedirSugestao(trocarTudo: boolean) {
+  async function pedirSugestao() {
     setEstadoSugestao("carregando");
     setAvisoSugestao(null);
     const comodidades = Object.keys(AMENITY_LABEL).filter((k) => amenityKeys[k]).map((k) => AMENITY_LABEL[k]);
@@ -591,25 +592,29 @@ export default function NewPropertyPage() {
     } catch {
       /* sem rede: o modelo fixo abaixo */
     }
-    // Sem IA (desligada, 503, limite ou erro), o passo nunca fica vazio: o modelo fixo monta com o que já foi informado.
+    // Sem IA (desligada, 503, limite ou erro), a sugestão nunca falta: o modelo fixo monta com o que já foi informado.
     if (!texto) texto = textoDoModelo(dados);
-    const recebe = trocarTudo ? { titulo: true, descricao: true } : camposQueRecebem(textoAtual.current, sugestaoTexto);
-    if (recebe.titulo) setTitle(texto.titulo);
-    if (recebe.descricao) setDescription(texto.descricao);
+    // E613: a sugestão fica no cartão à parte — NUNCA entra sozinha nos campos (preenchida sem o dono, a Revisão marcava
+    // "Título e descrição — feito" e o cartão do imóvel ganhava o título gerado). Só o "Usar esta sugestão" a aplica.
     setSugestaoTexto(texto);
     setEstadoSugestao(origem);
+    if (origem === "ia") setTextoIaOriginal(texto);
+  }
+  /** E613: o clique do dono em "Usar esta sugestão" — só nos campos ainda vazios (nunca por cima do texto dele). */
+  function usarSugestao() {
+    if (!sugestaoTexto) return;
+    const recebe = camposParaUsarSugestao(textoAtual.current);
+    if (recebe.titulo) setTitle(sugestaoTexto.titulo);
+    if (recebe.descricao) setDescription(sugestaoTexto.descricao);
     // A sugestão da IA conta para o aceite do texto gerado por IA (o modelo fixo não é IA).
-    if (origem === "ia") {
-      if (recebe.descricao) setDescricaoGeradaPorIa(true);
-      setTextoIaOriginal(texto);
-    }
+    if (estadoSugestao === "ia" && recebe.descricao) setDescricaoGeradaPorIa(true);
   }
   useEffect(() => {
     if (step !== ETAPA.descricao || editId || approved !== true) return;
     const chave = imovelId ?? "novo";
     if (sugestaoPedidaPara.current === chave || !pedeSugestaoAoEntrar(title, description)) return;
     sugestaoPedidaPara.current = chave;
-    void pedirSugestao(false);
+    void pedirSugestao();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, editId, approved, imovelId]);
   useEffect(() => {
@@ -1615,6 +1620,15 @@ export default function NewPropertyPage() {
   const mostrarQualificacao =
     (approved === true && !editId && !draftParam && !draftServerId && etapaParam === null && qualConf.status === "pendente") ||
     (approved === true && !editId && qualDoRascunho && !!draftParam && draftServerId === draftParam);
+  // E615: a URL acompanha o passo — `?etapa=` ficava no valor com que a página abriu (etapa=4 nos Passos 5 a 10), e
+  // atualizar ou abrir o link devolvia ao passo errado. Regrava a cada troca de passo (e quando o rascunho ganha id,
+  // que reescreve a URL com `?draft=`). Fora da Qualificação (senão o recarregar pularia a Qualificação) e da edição
+  // (`?id=` abre sempre no Passo 1).
+  useEffect(() => {
+    if (approved !== true || editId || mostrarQualificacao) return;
+    const busca = urlComEtapa(window.location.search, step);
+    if (busca !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${busca}`);
+  }, [step, approved, editId, mostrarQualificacao, draftServerId]);
   // E415: com rascunho salvo, o resultado da Qualificação credita as provas já feitas (foto na hora, internet medida,
   // ruído) — antes calculava só pelas respostas e o item fotografado seguia como "falta".
   const [provasQual, setProvasQual] = useState<{ id: string; provas: ProvasDoRascunho | null } | null>(null);
@@ -1846,8 +1860,11 @@ export default function NewPropertyPage() {
       estado: estadoSugestao,
       aviso: avisoSugestao,
       ehSugestao: !!sugestaoTexto && (title === sugestaoTexto.titulo || description === sugestaoTexto.descricao),
-      donoEscreveu: donoEscreveu({ titulo: title, descricao: description }, sugestaoTexto),
-      gerarDeNovo: () => void pedirSugestao(true),
+      texto: sugestaoTexto,
+      // E613: o cartão oferece a sugestão enquanto houver campo vazio que ela possa preencher.
+      podeUsar: !!sugestaoTexto && (camposParaUsarSugestao({ titulo: title, descricao: description }).titulo || camposParaUsarSugestao({ titulo: title, descricao: description }).descricao),
+      usar: usarSugestao,
+      gerarDeNovo: () => void pedirSugestao(),
     },
     title,
     setTitle,

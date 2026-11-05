@@ -322,7 +322,12 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await a.goto("/admin/parceiros?aba=pendentes", { waitUntil: "domcontentloaded" });
     const ficha = a.locator(`[data-testid="ficha-parceria"][data-email="${recusado.email}"]`);
     await expect(ficha.getByTestId("ficha-recusar")).toBeDisabled();
-    await ficha.getByTestId("ficha-modelo-recusa").selectOption({ index: 2 });
+    await ficha.getByTestId("ficha-modelo-recusa-area").check(); // E350: modelos como opções na tela
+    // E350: o modelo preenche o motivo (o texto inteiro, com o próximo passo) e a lista não cobre a tela no celular.
+    await expect(ficha.getByTestId("ficha-motivo")).toHaveValue(/Ainda não atendemos a sua cidade ou região/);
+    await expect(ficha.getByTestId("ficha-modelo-recusa-identidade")).toBeVisible();
+    await semRolagemLateral(a);
+    await ficha.getByTestId("ficha-modelo-recusa").screenshot({ path: "tests/laboratorio/saida/t236-e350-modelos-390.png" });
     await ficha.getByTestId("ficha-recusar").click();
     await ficha.getByTestId("ficha-recusar-confirmar").click();
     await expect.poll(async () => (await solicitacao(recusado.email))?.status, { timeout: 20_000 }).toBe("recusada");

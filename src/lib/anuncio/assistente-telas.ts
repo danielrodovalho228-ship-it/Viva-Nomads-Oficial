@@ -19,7 +19,7 @@ export const TELAS_ASSISTENTE: readonly TelaAssistente[] = [
   { rotulo: "Tipo", titulo: "Qual é o tipo do seu imóvel?", subtitulo: "Escolha a opção que melhor descreve seu espaço. Você pode editar depois." },
   { rotulo: "Fotos", titulo: "Adicione as fotos do imóvel", subtitulo: "Mostre o melhor do seu espaço. Você pode adicionar mais fotos depois." },
   { rotulo: "Endereço", titulo: "Onde fica o imóvel?", subtitulo: "Vamos cadastrar o endereço para que moradores encontrem seu imóvel com facilidade." },
-  { rotulo: "Detalhes", titulo: "Detalhes do imóvel", subtitulo: "Informe os detalhes do seu imóvel para finalizar o cadastro." },
+  { rotulo: "Detalhes", titulo: "Detalhes do imóvel", subtitulo: "Conte como é o imóvel: quartos, banheiros, área, quantas pessoas podem morar e vagas de garagem." },
   { rotulo: "Comodidades", titulo: "O que o imóvel oferece?", subtitulo: "Selecione todas as comodidades disponíveis no seu imóvel. Isso ajuda moradores a encontrarem o que precisam." },
   { rotulo: "Regras", titulo: "Regras da casa", subtitulo: "Configure as regras para o seu morador." },
   { rotulo: "Descrição", titulo: "Título e descrição do anúncio", subtitulo: "Escreva o título e a descrição que aparecerão no seu anúncio." },
