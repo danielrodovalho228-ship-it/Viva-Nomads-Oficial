@@ -27,7 +27,7 @@ test("a mensagem do chamado leva a conversa quando ela veio do chat", () => {
 test("no chat da página, 'Falar com uma pessoa' entrega a conversa à Central (sem formulário próprio)", () => {
   const chat = ler("components/ajuda/viva-chat.tsx");
   assert.match(chat, /<PainelChat altura="h-\[420px\]" semPromessa entregarPessoa \/>/);
-  assert.match(chat, /if \(entregarPessoa\) window\.dispatchEvent\(new CustomEvent\(EVENTO_FALAR_COM_PESSOA, \{ detail: \{ conversa: msgs \} \}\)\);\s*else setPessoa\(true\);/);
+  assert.match(chat, /if \(entregarPessoa\) window\.dispatchEvent\(new CustomEvent\(EVENTO_FALAR_COM_PESSOA, \{ detail: \{ conversa: msgs \} \}\)\);\s*(?:\/\/.*\n\s*)*else window\.location\.assign\(HREF_CHAMADO_DO_CHAT\);/); // E449: fora da página, a rota única
 });
 
 test("a Central abre o 'Abrir chamado' com a conversa anexada e pede uma pessoa", () => {
