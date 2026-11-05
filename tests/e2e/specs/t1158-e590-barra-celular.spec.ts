@@ -37,8 +37,11 @@ test("celular: Datas, Tipo, Preço, Nível e Ordenar abrem dentro da tela e apli
   // Tipo e Preço: a primeira opção com imóvel aplica (URL + pílula).
   for (const [pilula, prefixo, param] of [["tipo", "pilula-tipo-", "tipo="], ["preco", "pilula-preco-", "preco="]] as const) {
     const painel = await abrir(page, pilula);
-    const opcao = painel.locator(`[data-testid^="${prefixo}"]:not([disabled])`).first();
-    await expect(opcao, `${pilula}: há opção para tocar`).toBeVisible();
+    // Só os BOTÕES de opção (o contador "-n" é um <span> com o mesmo prefixo e nunca fica desabilitado).
+    const opcoes = painel.locator(`button[data-testid^="${prefixo}"]`);
+    await expect(opcoes.first(), `${pilula}: as opções aparecem`).toBeVisible();
+    const opcao = painel.locator(`button[data-testid^="${prefixo}"]:not([disabled])`).first();
+    if ((await opcao.count()) === 0) continue; // nenhuma opção com imóvel nesta base: o painel já foi conferido
     await opcao.tap();
     await expect(page).toHaveURL(new RegExp(param));
     await expect(page.getByTestId(`pilula-${pilula}`)).not.toHaveAttribute("data-valor", "");
@@ -47,13 +50,13 @@ test("celular: Datas, Tipo, Preço, Nível e Ordenar abrem dentro da tela e apli
   // Nível (E590): SEMPRE as 3 opções com o contador; a primeira com imóvel aplica. Sem nível na busca, todas "· 0"
   // (desabilitadas) e a nota embaixo.
   const nivel = await abrir(page, "nivel");
-  const opcoes = nivel.locator('[data-testid^="pilula-nivel-"]:not([data-testid$="-n"])');
+  const opcoes = nivel.locator('button[data-testid^="pilula-nivel-"]');
   await expect(opcoes).toHaveCount(3);
   for (const v of ["essencial", "conforto", "premium"]) {
     await expect(nivel.getByTestId(`pilula-nivel-${v}`)).toBeVisible();
     await expect(nivel.getByTestId(`pilula-nivel-${v}-n`)).toHaveText(/·\s*\d+/);
   }
-  const comImovel = nivel.locator('[data-testid^="pilula-nivel-"]:not([data-testid$="-n"]):not([disabled])').first();
+  const comImovel = nivel.locator('button[data-testid^="pilula-nivel-"]:not([disabled])').first();
   if ((await comImovel.count()) > 0) {
     await comImovel.tap();
     await expect(page).toHaveURL(/nivel=/);
