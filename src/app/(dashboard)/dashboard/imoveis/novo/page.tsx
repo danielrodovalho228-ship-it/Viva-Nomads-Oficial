@@ -1895,7 +1895,9 @@ export default function NewPropertyPage() {
 
       {/* E161: a grade da página do imóvel — conteúdo + coluna lateral do tamanho do cartão do anúncio (22rem/26rem). */}
       <div
-        className={cn("grid gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
+        // E602: a coluna única (celular e Passo 10) também é minmax(0,1fr) — sem ela, a faixa do índice de passos (que rola
+        // de lado) alargava a coluna implícita e a página inteira rolava de lado a 390 px.
+        className={cn("grid grid-cols-[minmax(0,1fr)] gap-8 lg:items-start", step !== ETAPA.revisao && "lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-12")}
         data-testid="novo-duas-colunas"
       >
         {/* E104 (mockup cadastro-imovel-03): o Passo 3 é um cartão branco sobre o fundo clean da moldura (E166; antes, areia). */}

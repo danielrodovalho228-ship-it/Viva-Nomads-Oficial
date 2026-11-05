@@ -78,3 +78,14 @@ test("E602: a tela usa o índice e não desabilita o Continuar pela contagem de 
   // a publicação continua exigindo as fotos
   assert.match(tela, /!asDraft && !passoFotos\.podeContinuar/);
 });
+
+test("E602: a grade da página tem coluna minmax(0,1fr) também no celular (a faixa do índice não alarga a página)", () => {
+  const tela = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
+  assert.match(tela, /"grid grid-cols-\[minmax\(0,1fr\)\] gap-8 lg:items-start"/);
+});
+
+test("E602: a faixa do índice não alarga a página (largura intrínseca 0, ocupa a coluna)", () => {
+  const comp = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/indice-passos.tsx", import.meta.url), "utf8");
+  assert.match(comp, /<nav[^>]*className="[^"]*\bw-0 min-w-full\b/);
+  assert.match(comp, /overflow-x-auto/);
+});
