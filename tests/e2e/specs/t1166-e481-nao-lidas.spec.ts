@@ -7,9 +7,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  * sino só relia no ciclo de 1 minuto) e a lista de Mensagens não destacava as não lidas. O E481 entrou só com teste de
  * unidade; aqui é a tela, 390 e 1280. Para cada largura, o dono recebe mensagens de duas moradoras (2 e 1 não lidas), com
  * os avisos de mensagem nova da conversa (ref_id = conversa, como desde o E533):
- *   1. na lista, cada conversa traz data-nao-lidas com a contagem e o selo mensagens-nao-lidas;
- *   2. abrir a conversa com 2 não lidas zera a contagem dela na lista e o sino baixa 2 SEM recarregar (bem antes do
- *      ciclo de 1 minuto); a outra conversa segue com 1;
+ *   1. entrando pela conversa B (aberta = lida), a A segue na lista com data-nao-lidas="2" e o selo mensagens-nao-lidas;
+ *   2. abrir a A zera a contagem dela na lista e o sino baixa 2 SEM recarregar (bem antes do ciclo de 1 minuto);
  *   3. sem estouro horizontal.
  */
 const senha = novaSenha();
@@ -61,20 +60,29 @@ test.describe("T1166 — E481: ler a conversa baixa o sino na hora e a lista des
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 }, isMobile: w === 390 });
       try {
         const p = await entrarNaPagina(await ctx.newPage(), dono.email, senha);
-        await p.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
+        // Sem ?conversa a tela abre a 1ª da lista (a de atividade mais recente, a A) e já a marca lida: entra pela B,
+        // que fica aberta (e lida), e a A segue com as 2 não lidas até o clique.
+        await p.goto(`/dashboard/mensagens?conversa=${conv.b}`, { waitUntil: "domcontentloaded" });
         const item = (id: string) => p.locator(`[data-testid="mensagens-conversa"][data-conversa="${id}"]`);
         await expect(item(conv.a)).toHaveAttribute("data-nao-lidas", "2", { timeout: 30_000 });
-        await expect(item(conv.b)).toHaveAttribute("data-nao-lidas", "1");
         await expect(item(conv.a).getByTestId("mensagens-nao-lidas")).toHaveText("2");
-        const antes = await noSino(p);
-        expect(antes, "o sino conta os avisos semeados").toBeGreaterThanOrEqual(3);
+        await expect(item(conv.b)).toHaveAttribute("data-nao-lidas", "0", { timeout: 15_000 });
+        // O sino assenta depois da leitura da B (relê pelo evento dos contadores): lê duas vezes iguais antes de medir.
+        let antes = -1;
+        await expect(async () => {
+          const um = await noSino(p);
+          await p.waitForTimeout(1_500);
+          expect(await noSino(p)).toBe(um);
+          antes = um;
+        }).toPass({ timeout: 20_000 });
+        expect(antes, "o sino ainda conta os 2 avisos da A").toBeGreaterThanOrEqual(2);
 
         await item(conv.a).click();
         await expect(item(conv.a)).toHaveAttribute("data-nao-lidas", "0", { timeout: 15_000 });
         await expect(item(conv.a).getByTestId("mensagens-nao-lidas")).toHaveCount(0);
         // Sem recarregar: o sino relê pelo evento dos contadores, bem antes do ciclo de 1 minuto.
         await expect.poll(() => noSino(p), { timeout: 20_000, message: "o sino baixa 2 ao ler a conversa" }).toBe(antes - 2);
-        await expect(item(conv.b)).toHaveAttribute("data-nao-lidas", "1");
+        await expect(item(conv.b)).toHaveAttribute("data-nao-lidas", "0");
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       } finally {
         await ctx.close();
