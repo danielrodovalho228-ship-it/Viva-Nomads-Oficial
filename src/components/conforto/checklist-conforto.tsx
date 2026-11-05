@@ -5,6 +5,7 @@ import { TITULO_PADRAO_MINIMO } from "@/lib/conforto/exibicao";
 import { Button } from "@/components/ui/button";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import type { SalvamentoConforto } from "./use-conforto-salvo";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /**
  * Prompt 59 — checklist do padrão mínimo de conforto (o dono confirma item a item). Usado no passo Comodidades do cadastro (59-A) e na
@@ -16,6 +17,7 @@ export function ChecklistConforto({
   desabilitado = false,
   salvamento = null,
   onTentarDeNovo,
+  obrigatorio = false,
 }: {
   marcados: readonly string[];
   onChange: (marcados: string[]) => void;
@@ -23,6 +25,8 @@ export function ChecklistConforto({
   /** 59-C1: o checklist grava sozinho; este é o estado da gravação (ou da carga do que já estava salvo). */
   salvamento?: SalvamentoConforto;
   onTentarDeNovo?: () => void;
+  /** E608: no assistente, o padrão mínimo é obrigatório para publicar. */
+  obrigatorio?: boolean;
 }) {
   const sel = new Set(marcados);
   const faltam = ITENS_CONFORTO.filter((i) => !sel.has(i.chave)).length;
@@ -31,7 +35,10 @@ export function ChecklistConforto({
     <div className="rounded-xl border border-sage-200 p-4" data-testid="conforto-checklist" data-faltam={faltam}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-ink">{TITULO_PADRAO_MINIMO}</p>
+          <p className="text-sm font-semibold text-ink">
+            {TITULO_PADRAO_MINIMO}
+            <MarcaObrigatorio ativo={obrigatorio} />
+          </p>
           <p className="mt-1 text-xs text-muted">
             Confirme cada item. Sem todos confirmados, o anúncio não é publicado. O morador confere na entrada.
           </p>

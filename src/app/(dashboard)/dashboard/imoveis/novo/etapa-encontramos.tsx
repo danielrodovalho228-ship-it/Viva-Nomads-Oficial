@@ -78,6 +78,8 @@ export function EtapaEncontramos(p: {
   manualProximities: Proximity[];
   setManualProximities: (p: Proximity[]) => void;
   neighborhood: string;
+  /** E608: editando anúncio já publicado (os obrigatórios do anúncio novo — internet, câmeras — não se marcam). */
+  editando?: boolean;
   /** E148-A: a sugestão de título e descrição do Passo 7. */
   sugestaoTexto?: {
     estado: "ocioso" | "carregando" | "ia" | "modelo";
@@ -233,9 +235,9 @@ export function EtapaEncontramos(p: {
         </h2>
         <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros" aria-labelledby="caracteristicas-titulo">
           <LinhaNumero label="Quartos" dica="Número de quartos" valor={p.bedrooms} onChange={(v) => { p.setBedrooms(v); p.tirarSugestao("quartos"); }} sugerido={p.sugerido("quartos")} testid="cadastro-quartos" />
-          <LinhaNumero label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
-          <LinhaNumero label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
-          <LinhaNumero label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
+          <LinhaNumero obrigatorio label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
+          <LinhaNumero obrigatorio label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
+          <LinhaNumero obrigatorio label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
           <LinhaNumero label="Vagas" dica="Vagas de garagem" valor={p.parkingSpots} onChange={p.setParkingSpots} daMatricula={p.daMatricula?.has("vagas")} testid="cadastro-vagas" />
         </div>
         {/* Mockup 04: o lembrete de que nada é definitivo (o mesmo papel do "reorganizar depois" do Passo 2). */}
@@ -260,6 +262,7 @@ export function EtapaEncontramos(p: {
         onMbps={p.setInternetMbps}
         imovelId={p.imovelId}
         semInternet={p.semInternet}
+        mbpsObrigatorio={!p.editando}
       />
       {p.qualTHome && <p className="text-xs text-forest">Da qualificação: etiqueta “Para trabalhar de casa” ativa.</p>}
 
@@ -278,7 +281,7 @@ export function EtapaEncontramos(p: {
         {grupos.filter((g) => g.category === "seguranca").map((g) => (
           <GrupoComodidades key={g.category} grupo={g} titulo={g.titulo} marcadas={p.amenityKeys} sugeridas={sugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
         ))}
-        <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} />
+        <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} obrigatorio={!p.editando} />
       </section>
 
       <ProximidadesAutomaticas

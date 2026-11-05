@@ -42,7 +42,7 @@ test("o que falta para publicar: 'Falta confirmar: [itens]' na ordem da lista; t
 test("o checklist fica no passo Comodidades, e o 'Resolver' do portão leva até ele", () => {
   const pg = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   const comodidades = pg.slice(pg.indexOf("{step === ETAPA.comodidades && ("), pg.indexOf("{step === ETAPA.regras && ("));
-  assert.match(comodidades, /<ChecklistConforto\s+marcados=\{conforto\}/);
+  assert.match(comodidades, /<ChecklistConforto\s+(obrigatorio=\{!editingId\}\s+)?marcados=\{conforto\}/);
   const p = prontidaoAnuncio({
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio", descricao: "x".repeat(80), comodidades: 5, preco: 3000,
     garantiaOk: true, operacao: "proprio", documento: "approved", selo: false, video: false, confortoFaltam: 2, sublocacaoOk: true, privacidadeOk: true,

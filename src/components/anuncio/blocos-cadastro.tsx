@@ -23,6 +23,7 @@ import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
 import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
@@ -239,6 +240,7 @@ export function ProntoParaTrabalhar({
   onMbps,
   imovelId,
   semInternet = false,
+  mbpsObrigatorio = false,
 }: {
   marcadas: Record<string, boolean>;
   onAlternar: (chave: string) => void;
@@ -249,6 +251,8 @@ export function ProntoParaTrabalhar({
   imovelId?: string | null;
   /** E102-B: o dono respondeu "Não tem internet" — a velocidade não é pedida. */
   semInternet?: boolean;
+  /** E608: anúncio novo — a velocidade é obrigatória para publicar (asterisco em vez de "(opcional)"). */
+  mbpsObrigatorio?: boolean;
 }) {
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
@@ -300,7 +304,9 @@ export function ProntoParaTrabalhar({
         </p>
       ) : marcadas.internet_fibra && (
         <label className="mt-3 block max-w-xs text-sm text-ink">
-          Velocidade da internet informada (opcional)
+          {/* E608: para o anúncio NOVO a velocidade é obrigatória (prontidão "internet"); o "(opcional)" contradizia a regra. */}
+          Velocidade da internet
+          {mbpsObrigatorio ? <MarcaObrigatorio /> : <span className="text-muted"> (opcional)</span>}
           <span className="mt-1 flex items-center gap-2">
             <input inputMode="numeric" value={mbps} onChange={(e) => onMbps(e.target.value.replace(/\D/g, "").slice(0, 5))} className="input" placeholder="500" aria-label="Velocidade da internet em Mbps" />
             <span className="text-xs text-muted">Mbps</span>

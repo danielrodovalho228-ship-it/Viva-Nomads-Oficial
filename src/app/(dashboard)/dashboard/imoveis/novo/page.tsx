@@ -117,6 +117,7 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { IndicePassos } from "./indice-passos";
+import { LegendaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 import { indicePassos } from "@/lib/anuncio/indice-passos";
 import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
@@ -1859,6 +1860,7 @@ export default function NewPropertyPage() {
     setProxDesmarcados,
     manualProximities,
     setManualProximities,
+    editando: !!editingId,
     sugestaoTexto: {
       estado: estadoSugestao,
       aviso: avisoSugestao,
@@ -1959,6 +1961,8 @@ export default function NewPropertyPage() {
           <p className="mt-2 text-base text-muted" data-testid="passo-subtitulo">
             {meta.subtitle}
           </p>
+          {/* E608: os passos com campo obrigatório (2 a 5) dizem o que o asterisco quer dizer, onde se preenche. */}
+          {step >= ETAPA.fotos && step <= ETAPA.comodidades && <LegendaObrigatorio />}
           {/* E602: o índice de passos clicável, com o estado de cada um — sem ele, quem não tinha as 8 fotos ficava preso no Passo 2. */}
           <IndicePassos
             passos={indicePassos(conferencia, step, etapaMax)}
@@ -2077,6 +2081,7 @@ export default function NewPropertyPage() {
                 <EtapaEncontramos parte="comodidades" {...camposImovel} comodidadesDetectadas={comodidadesDetectadas} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto
+                  obrigatorio={!editingId}
                   marcados={conforto}
                   onChange={conf.alterar}
                   desabilitado={publishing || !conf.carregado}
