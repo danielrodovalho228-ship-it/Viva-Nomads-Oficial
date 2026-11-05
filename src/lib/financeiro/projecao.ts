@@ -24,7 +24,6 @@ import {
   CUSTOS_FIXOS,
   CUSTOS_POR_CONTRATO,
   HORIZONTE_MESES,
-  IMPOSTO_SOBRE_RECEITA,
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
   OPERADOR_OPCOES,
@@ -42,6 +41,11 @@ import {
   marketingDoMes,
   receitaParceiroPorContrato,
   type CenarioId,
+  CUSTOS_UNICOS,
+  REGIME_PADRAO,
+  encargosProLabore,
+  regimePorId,
+  type RegimeId,
 } from "../../config/premissas-financeiras.ts";
 
 export interface Opcoes {
@@ -49,8 +53,12 @@ export interface Opcoes {
   operador: number;
   /** Custo fixo mensal (padrão: soma dos fixos ≈ R$ 6 mil, com pró-labore). */
   custoFixo?: number;
-  /** Imposto da Viva sobre a receita (padrão 6%; 15,5% no anexo V). */
+  /** Modelo v3: regime tributário (padrão: Lucro Presumido, o cenário em destaque). */
+  regime?: RegimeId;
+  /** Imposto sobre a receita — por padrão, a alíquota do regime. */
   imposto?: number;
+  /** Modelo v3: taxa da faixa da carteira (12/10/8/6%; padrão 10%). */
+  taxa?: number;
   /** Parceiros LIGADOS (ids de PARCEIROS). Padrão: nenhum — receita base pura. */
   parceiros?: readonly string[];
   /** % do prêmio que a Viva recebe como representante de seguros (0 a 15%; padrão 10%). */
@@ -143,16 +151,28 @@ export interface Projecao {
 }
 
 export const CUSTO_FIXO_PADRAO = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
+/** Modelo v3: os custos únicos (parecer, consulta) rateados nos meses da projeção. */
+export const RATEIO_UNICOS_MES = CUSTOS_UNICOS.reduce((s, c) => s + c.valor, 0) / HORIZONTE_MESES;
+
+/** Imposto sobre a receita das opções: o informado ou a alíquota do regime. */
+export function impostoDe(op: Pick<Opcoes, "imposto" | "regime">): number {
+  return op.imposto ?? regimePorId(op.regime ?? REGIME_PADRAO).aliquota;
+}
+/** Custo fixo do mês (sem rateio): fornecedores + pró-labore (ou o informado) + encargos do pró-labore no regime. */
+export function custoFixoDe(op: Pick<Opcoes, "custoFixo" | "regime">): number {
+  return (op.custoFixo ?? CUSTO_FIXO_PADRAO) + encargosProLabore(regimePorId(op.regime ?? REGIME_PADRAO));
+}
+const taxaDe = (op: Pick<Opcoes, "taxa">) => op.taxa ?? TAXA_MEDIA;
 export const CUSTO_FERRAMENTAS_POR_CONTRATO = CUSTOS_POR_CONTRATO.reduce((s, c) => s + c.valor, 0);
 
 /** Taxa de serviço média por contrato (R$): aluguel médio × meses do contrato × taxa média ponderada pelas faixas. */
-export function taxaMediaPorContrato(aluguel = ALUGUEL_MEDIO, meses = MESES_MEDIOS_CONTRATO): number {
-  return comissaoSobreContrato(aluguel, meses, TAXA_MEDIA);
+export function taxaMediaPorContrato(aluguel = ALUGUEL_MEDIO, meses = MESES_MEDIOS_CONTRATO, taxa = TAXA_MEDIA): number {
+  return comissaoSobreContrato(aluguel, meses, taxa);
 }
 
 /** Receita bruta mensal da taxa de serviço para `contratos` contratos fechados no mês. */
-export function receitaBrutaMensal(contratos: number, meses = MESES_MEDIOS_CONTRATO): number {
-  return contratos * taxaMediaPorContrato(ALUGUEL_MEDIO, meses);
+export function receitaBrutaMensal(contratos: number, meses = MESES_MEDIOS_CONTRATO, taxa = TAXA_MEDIA): number {
+  return contratos * taxaMediaPorContrato(ALUGUEL_MEDIO, meses, taxa);
 }
 
 /** Duração aceita nas simulações: inteiro de 1 a 12 meses; fora disso (ou ilegível) vale o padrão. */
@@ -187,7 +207,7 @@ export interface CenarioContratos {
 
 /** Cenários 10/20/40 contratos por mês: receita bruta e resultado do mês (depois de ferramentas, imposto e custo fixo). */
 export function cenariosContratosMes(op: Opcoes): CenarioContratos[] {
-  const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
+  const fixo = custoFixoDe(op);
   const u = porContrato(op);
   return CONTRATOS_MES_CENARIOS.map((n) => ({ contratos: n, receita: n * u.receita, resultado: n * u.margem - fixo }));
 }
@@ -241,9 +261,12 @@ function extraLigada(op: Opcoes, id: ReceitaAdicionalId): ReceitaAdicional | nul
 
 export function projetar(id: CenarioId, op: Opcoes): Projecao {
   const cen = CENARIOS[id];
-  const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
+  // Modelo v3: o custo fixo do mês na projeção leva o rateio dos custos únicos (parecer e consulta).
+  const fixo = custoFixoDe(op) + RATEIO_UNICOS_MES;
+  const imposto = impostoDe(op);
+  const taxa = taxaDe(op);
   const mesesContrato = mesesContratoValidos(op.mesesContrato);
-  const taxaContrato = taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContrato);
+  const taxaContrato = taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContrato, taxa);
   const verif = extraLigada(op, "verificacao_inquilino");
   const b2b = extraLigada(op, "b2b_alocacao");
   const publicamos = extraLigada(op, "publicamos_pago");
@@ -288,13 +311,13 @@ export function projetar(id: CenarioId, op: Opcoes): Projecao {
       let naJanela = 0;
       for (const [entrada, n] of fundadoresPorMes) if (m - entrada < FUNDADORES_REGRA.meses) naJanela += n;
       const parte = donos > 0 ? Math.min(1, naJanela / donos) : 0;
-      const diferenca = Math.max(0, TAXA_MEDIA - fundadores.valor);
+      const diferenca = Math.max(0, taxa - fundadores.valor);
       descontoFundadores = 0 - contratos * parte * ALUGUEL_MEDIO * mesesContrato * diferenca; // "0 -" evita -0 quando não há desconto
     }
 
     const receita = receitaTaxa + receitaParceiros + receitaVerificacao + receitaB2B + receitaPublicamos + receitaFerramentas + descontoFundadores;
     const custoVariavel =
-      contratos * (CUSTO_FERRAMENTAS_POR_CONTRATO + op.operador) + verificacoes * VERIFICACAO.custoCaf + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita;
+      contratos * (CUSTO_FERRAMENTAS_POR_CONTRATO + op.operador) + verificacoes * VERIFICACAO.custoCaf + imposto * receita;
     const marketing = marketingDoMes(m);
     const resultado = receita - custoVariavel - fixo - marketing;
     caixa += resultado;
@@ -428,9 +451,9 @@ export interface PorContrato {
 
 /** Conta de UM contrato típico (dono comum; parceiros só se ligados). */
 export function porContrato(op: Opcoes): PorContrato {
-  const fixo = op.custoFixo ?? CUSTO_FIXO_PADRAO;
-  const receita = taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContratoValidos(op.mesesContrato)) + parceirosPorContrato(op);
-  const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + (op.imposto ?? IMPOSTO_SOBRE_RECEITA) * receita + op.operador;
+  const fixo = custoFixoDe(op);
+  const receita = taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContratoValidos(op.mesesContrato), taxaDe(op)) + parceirosPorContrato(op);
+  const custoVariavel = CUSTO_FERRAMENTAS_POR_CONTRATO + impostoDe(op) * receita + op.operador;
   const margem = receita - custoVariavel;
   const empate = (mkt: number) => (margem > 0 ? (fixo + mkt) / margem : Infinity);
   return { receita, custoVariavel, margem, empate: [empate(marketingDoMes(12)), empate(marketingDoMes(13))] };
