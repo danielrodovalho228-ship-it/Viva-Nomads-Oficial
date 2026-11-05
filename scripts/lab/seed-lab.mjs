@@ -103,14 +103,21 @@ const COMODOS = [
   ["varanda", [160, 190, 150]], ["home-office", [190, 180, 200]], ["area-servico", [200, 190, 180]], ["fachada", [180, 180, 170]],
 ];
 
-async function urlsDasFotos() {
+/**
+ * As fotos moram na pasta do DONO no bucket (`<ownerId>/…`), como no upload de verdade: desde o E308 (01/11) Meus imóveis só
+ * mostra a foto cujo arquivo existe na pasta do dono — as fotos em `lab/…` saíam como "sem foto" no cartão.
+ */
+const fotosPorDono = new Map();
+async function urlsDasFotos(ownerId) {
+  if (fotosPorDono.has(ownerId)) return fotosPorDono.get(ownerId);
   const urls = [];
   for (const [nome, cor] of COMODOS) {
-    const caminho = `lab/${nome}.png`;
+    const caminho = `${ownerId}/lab-${nome}.png`;
     const { error } = await admin.storage.from("property-photos").upload(caminho, png(640, 480, cor), { contentType: "image/png", upsert: true });
     if (error) throw error;
     urls.push(admin.storage.from("property-photos").getPublicUrl(caminho).data.publicUrl);
   }
+  fotosPorDono.set(ownerId, urls);
   return urls;
 }
 
@@ -251,19 +258,18 @@ async function confirmarConforto(ownerId, propertyId) {
 
 async function main() {
   await limparPersonas();
-  const fotos = await urlsDasFotos();
   const ids = {};
   for (const p of PERSONAS) {
     ids[p.chave] = await garantirUsuario(p);
     console.log(`✓ ${p.chave.padEnd(22)} ${p.email}`);
   }
   // Paulo Essencial: o imóvel publicado da suíte E2E (R$ 3.200/mês).
-  const imovel1 = await criarImovel(ids.PROPRIETARIO, 1, fotos, { ready_to_live_badge: true });
-  await criarImovel(ids.PROPRIETARIO_GRATUITO, 2, fotos);
-  await criarImovel(ids.PROPRIETARIO_PRO, 3, fotos);
+  const imovel1 = await criarImovel(ids.PROPRIETARIO, 1, await urlsDasFotos(ids.PROPRIETARIO), { ready_to_live_badge: true });
+  await criarImovel(ids.PROPRIETARIO_GRATUITO, 2, await urlsDasFotos(ids.PROPRIETARIO_GRATUITO));
+  await criarImovel(ids.PROPRIETARIO_PRO, 3, await urlsDasFotos(ids.PROPRIETARIO_PRO));
   // Paulo Gestor: 20 imóveis com documentação APROVADA (elegível ao Gestor).
   for (let i = 0; i < 20; i++) {
-    const pid = await criarImovel(ids.PROPRIETARIO_GESTOR, 100 + i, fotos);
+    const pid = await criarImovel(ids.PROPRIETARIO_GESTOR, 100 + i, await urlsDasFotos(ids.PROPRIETARIO_GESTOR));
     const { error } = await admin
       .from("qualification_checklists")
       .insert({ property_id: pid, owner_id: ids.PROPRIETARIO_GESTOR, document_status: "approved", document_reviewed_at: new Date().toISOString() });
