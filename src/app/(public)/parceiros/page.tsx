@@ -13,7 +13,7 @@ import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { GESTOR_TEXTO } from "@/config/planos";
 import { comPortasDePrecos } from "@/config/precos-visivel";
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ const CARDS = [
   { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Página com portfólio, galeria, serviços e prazos. A conversa é pelas mensagens da Viva.",
     links: [{ href: "/parceiros?categoria=fotografia#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor para ${PORTA_GESTOR_TEXTO}.`,
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor: ${GESTOR_TEXTO}.`,
     // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora), não ao topo da página.
     links: comPortasDePrecos([{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }]) },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",

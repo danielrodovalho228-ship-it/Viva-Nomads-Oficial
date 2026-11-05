@@ -31,12 +31,12 @@ test("E303/E564: o Gestor é 20+ (ou administradora) e é a faixa sem teto (4%);
   assert.equal(GESTOR_PRECO.minimoImoveis, 20);
   assert.equal(FAIXAS_COMISSAO_PADRAO.find((f) => f.negociavel), undefined);
   assert.equal(FAIXAS_COMISSAO_PADRAO.find((f) => f.gestor)?.minImoveis, GESTOR_PRECO.minimoImoveis);
-  // A seção do /precos ainda mostra o texto antigo: a troca da tela é da Pista A (E564, parte de telas).
+  // E564 (parte A, telas): a seção do /precos com o texto único e os 4 diferenciais; /parceiros com o mesmo texto.
   const secao = PRECOS.slice(PRECOS.indexOf('id="plano-gestor"'), PRECOS.indexOf('data-testid="precos-botoes"'));
-  assert.match(secao, /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas/);
-  assert.match(secao, /31\+ · \{ROTULO_FAIXA_NEGOCIAVEL\}/);
-  assert.match(secao, /É outra regra/);
-  assert.match(PARCEIROS, /Plano Gestor para \$\{PORTA_GESTOR_TEXTO\}/);
+  assert.match(secao, /data-testid="plano-gestor-texto">\{GESTOR_TEXTO\}\.<\/p>/);
+  assert.match(secao, /GESTOR_DIFERENCIAIS\.map/);
+  assert.doesNotMatch(secao, /condições negociadas|ROTULO_FAIXA_NEGOCIAVEL|É outra regra/);
+  assert.match(PARCEIROS, /Plano Gestor: \$\{GESTOR_TEXTO\}/);
 });
 
 test("E304: cidade sem UF habilita o aviso quando o nome é único; indicar manda o link do pedido de parceria", () => {

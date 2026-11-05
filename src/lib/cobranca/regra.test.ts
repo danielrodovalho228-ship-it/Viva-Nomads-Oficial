@@ -259,7 +259,8 @@ test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor",
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../../app/(public)/precos/page.tsx", import.meta.url), "utf8");
   assert.match(t, /taxaPublicaTexto\(f\)/);
-  assert.match(t, /f\.negociavel \? TAXA_NEGOCIADA_TEXTO/);
+  // E564 (parte A): sem os ramos da faixa negociável; o exemplo em reais vale para todas as faixas.
+  assert.doesNotMatch(t, /negociavel|TAXA_NEGOCIADA_TEXTO/);
   assert.doesNotMatch(t, /pctTexto\(f\.taxa\)/);
   assert.match(t, /Falar sobre o Plano Gestor|PlanoGestorForm/);
 });
