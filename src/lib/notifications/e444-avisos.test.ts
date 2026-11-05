@@ -69,9 +69,10 @@ test("resumo: não lidas e a maior prioridade ainda pendente (resolvido não con
 
 test("notify grava o aviso do mesmo evento, com o título do catálogo; avisos internos não entram", () => {
   const idx = ler("./index.ts");
-  assert.match(idx, /params\.userId && !params\.interno && !EVENTOS_INTERNOS\.has\(params\.event\)\s*\? comLimite\(gravarAviso\(/);
+  // E550: e só com a central na matriz (eventoTemCentral).
+  assert.match(idx, /params\.userId && !params\.interno && !EVENTOS_INTERNOS\.has\(params\.event\) && eventoTemCentral\(params\.event\)\s*\? comLimite\(gravarAviso\(/);
   const srv = ler("./avisos-servidor.ts");
-  assert.match(srv, /titulo: p\.titulo \? tituloDoAviso\(guardContactInfo\(p\.titulo\)\.text\) : tituloDoAviso\(base\.subject\)/);
+  assert.match(srv, /let titulo = p\.titulo \? tituloDoAviso\(guardContactInfo\(p\.titulo\)\.text\) : tituloDoAviso\(base\.subject\);/);
   assert.match(srv, /prioridade: p\.prioridade \?\? prioridadeDoAviso\(p\.evento, p\.papel\)/);
   assert.doesNotMatch(srv, /p\.subject|detailsText|\bemail\s*:|telefone|phone/);
 });

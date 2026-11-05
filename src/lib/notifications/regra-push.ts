@@ -23,6 +23,16 @@ export function eventoTemPush(evento: string): boolean {
   return !!linha(evento)?.canais.includes("push");
 }
 
+/**
+ * E550 — o evento vai para a central (o sino do site)? Pela matriz: "só e-mail" (códigos, link de uso único do celular,
+ * exclusão de conta) NÃO grava aviso — antes, cada "Continuar no celular" virava um aviso idêntico no sino, sem imóvel e
+ * com o link de uso único na URL. Fora da matriz: segue gravando (como antes).
+ */
+export function eventoTemCentral(evento: string): boolean {
+  const l = linha(evento);
+  return !l || l.canais.includes("central");
+}
+
 export const JANELA_CONVERSA_ABERTA_MIN = 10;
 
 /** A pessoa abriu a conversa há menos de 10 min? (então ela está vendo: sem push). */
