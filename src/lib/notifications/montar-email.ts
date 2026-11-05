@@ -3,6 +3,7 @@
   exclusão de conta) e o teste de auditoria chamam as mesmas funções: o que o teste confere é o que sai.
   Cada uma devolve assunto (com a marca), HTML no modelo único, texto puro, a imagem do tema e o rótulo do botão.
 */
+import { primeiroNome } from "../display-name.ts";
 import { ASSUNTOS, comMarca } from "./assuntos.ts";
 import { corpoCodigo, corpoNotificacao, imagemEmail, textoNotificacao } from "./corpo-email.ts";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email.ts";
@@ -176,7 +177,8 @@ export function emailExclusaoConta(siteUrl: string, o: { url: string }): EmailMo
 export function emailParceriaAprovada(siteUrl: string, o: { url: string; nome?: string | null }): EmailMontado {
   const img = imagemDoEvento("parceria_aprovada");
   const titulo = ASSUNTOS.parceriaAprovada;
-  const nome = textoEmail(String(o.nome ?? "").split(" ")[0] ?? "", 40);
+  // E575: o primeiro nome pela fonte única (sem a marca "[TESTE QA]" das contas de teste).
+  const nome = textoEmail(primeiroNome(o.nome), 40);
   const intro = `Olá${nome ? " " + nome : ""}, a sua parceria com a Viva Nomads foi aprovada. Ative a sua página no botão abaixo: entre com a conta deste e-mail e complete o cadastro (foto, descrição, serviços e cidades). O link vale por 7 dias e só pode ser usado uma vez.`;
   return {
     evento: "parceria_aprovada",
