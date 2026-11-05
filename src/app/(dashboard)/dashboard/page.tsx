@@ -25,6 +25,9 @@ import { cartoesDeHoje } from "@/lib/painel/hoje-dono";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
 import { avisoInicioSemLeitura, type FonteDoInicio } from "@/lib/painel/sem-leitura";
+import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
+import { BOTAO_PARCERIA_APROVADA, HREF_ATIVAR_PARCERIA, TEXTO_PARCERIA_APROVADA, situacaoParceiro } from "@/lib/parceiros/situacao-conta";
+import { ButtonLink } from "@/components/ui/button";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -150,6 +153,8 @@ export default async function DashboardPage() {
   ]);
   const [pausadaEm, capaRascunho] = await Promise.all([ou("conta", contaPausadaEm(), null), capaDoRascunho(draft?.id ?? null, draft?.data ?? null)]);
   const rascunho = rascunhoDoDraft(draft);
+  // E576: parceria aprovada e página ainda não ativada → aviso no Início com o caminho para ativar.
+  const parceria = situacaoParceiro(await minhaParceria().catch(() => null));
   // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
   const fatos = await fatosDaConta(draft).catch(() => null);
   // Prompt 50: o checklist some na ativação do papel (data gravada em ativacoes; o que já aconteceu e falta gravar,
@@ -220,6 +225,14 @@ export default async function DashboardPage() {
       )}
       {/* Prompt 62-A, Parte 2: 3º passo da escada → os anúncios fora da busca, no topo do painel. */}
       {imoveisDono.length > 0 && <AvisoStrikePainel />}
+      {parceria === "aprovada_sem_pagina" && (
+        <section className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3" data-testid="inicio-parceria-aprovada">
+          <p className="text-sm text-ink">{TEXTO_PARCERIA_APROVADA}</p>
+          <ButtonLink href={HREF_ATIVAR_PARCERIA} size="sm" className="mt-2">
+            {BOTAO_PARCERIA_APROVADA}
+          </ButtonLink>
+        </section>
+      )}
       {avisoInicioSemLeitura(semLeitura) && (
         <p role="alert" data-testid="inicio-sem-leitura" className="mb-4 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           {avisoInicioSemLeitura(semLeitura)}
