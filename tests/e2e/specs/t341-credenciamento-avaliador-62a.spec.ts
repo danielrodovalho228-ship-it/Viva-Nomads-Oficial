@@ -177,7 +177,10 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     const quando = new Date(Date.now() + 2 * 86_400_000);
     const dia = new Date(quando.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
     const agendar = p.getByTestId("avaliacoes-visitas").locator(`[data-pedido="${pedidoId}"]`).getByTestId("agendar-visita");
-    await agendar.getByLabel("Data e hora da visita").fill(`${dia}T10:00`);
+    // Varredura 01/11: o campo é o do site (data dd/mm/aaaa + lista de hora, não o datetime-local); o texto aceita colar
+    // "AAAA-MM-DDTHH:MM" de uma vez (como a t211) e preenche a data e a hora.
+    await agendar.locator("[data-campo-data-hora] input").first().fill(`${dia}T10:00`);
+    await expect(agendar.locator("[data-campo-data-hora] select")).toHaveValue("10:00");
     await agendar.getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("agendado_para").eq("id", pedidoId).single()).data?.agendado_para as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
     const [a, m, d] = dia.split("-");
