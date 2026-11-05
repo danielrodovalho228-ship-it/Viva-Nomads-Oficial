@@ -11,7 +11,9 @@ import { ROTULO_ESTADO_PASSO, type PassoIndice } from "@/lib/anuncio/indice-pass
  */
 export function IndicePassos({ passos, onIr }: { passos: PassoIndice[]; onIr: (pos: number) => void }) {
   return (
-    <nav aria-label="Passos do cadastro" className="mt-3" data-testid="indice-passos">
+    // w-0 + min-w-full: a faixa não soma a sua largura à dos pais (largura intrínseca 0) e ocupa a coluna inteira — sem
+    // isso, um pai que se ajusta ao conteúdo crescia até a faixa toda e a página rolava de lado a 390 px (t468).
+    <nav aria-label="Passos do cadastro" className="mt-3 w-0 min-w-full" data-testid="indice-passos">
       <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:flex-wrap lg:overflow-visible">
         {passos.map((p) => (
           <li key={p.n} className="shrink-0">
