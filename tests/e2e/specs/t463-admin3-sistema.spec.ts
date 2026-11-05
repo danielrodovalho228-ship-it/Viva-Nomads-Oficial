@@ -1,6 +1,7 @@
 import { test, expect, type Browser } from "@playwright/test";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { authFile } from "../fixtures/auth";
+import { CHAVES_AMBIENTE } from "../../../src/config/chaves-ambiente";
 
 /*
   T463 — ADMIN-3: /admin/sistema ("Chaves e integrações"). Só no laboratório, com a sessão de admin em duas etapas.
@@ -26,7 +27,8 @@ test.describe("T463 — ADMIN-3: Chaves e integrações", () => {
       await expect(page.getByTestId("chave-sms")).toBeVisible();
       await expect(page.getByTestId("chave-parceiro-geral")).toBeVisible();
       const ambiente = page.getByTestId("chaves-ambiente");
-      await expect(ambiente.getByTestId("chave-ambiente")).toHaveCount(17);
+      // A lista inteira da config (chaves novas entram sem mexer aqui).
+      await expect(ambiente.getByTestId("chave-ambiente")).toHaveCount(CHAVES_AMBIENTE.length);
       await expect(ambiente.locator("button, input, form")).toHaveCount(0);
       // Abre a confirmação do SMS e cancela: nada muda.
       await page.getByTestId("chave-sms-trocar").click();
