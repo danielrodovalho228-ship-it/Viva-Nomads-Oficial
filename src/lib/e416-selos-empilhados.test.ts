@@ -58,6 +58,12 @@ test("E416: a vitrine (PropertyCard) e Meus anúncios usam a mesma fileira", () 
   assert.match(cartao, /\.filter\(\(i\) => i\.chave !== "nivel"\)/);
 });
 
+test("E416: a página pública do proprietário lê a negociação (o selo aparece também ali)", () => {
+  const dados = readFileSync(new URL("./data/properties.ts", import.meta.url), "utf8");
+  const fn = dados.slice(dados.indexOf("export async function listPropertiesDoProprietario"), dados.indexOf("export async function listPropertiesDoProprietario") + 2500);
+  assert.match(fn, /attachNivel\(supabase, mapped\);[\s\S]{0,160}attachNegociacao\(supabase, mapped\);/);
+});
+
 test("E416: Meus anúncios lê também o Preço justo e a negociação (antes só o nível)", () => {
   const dados = readFileSync(new URL("./data/properties.ts", import.meta.url), "utf8");
   const fn = dados.slice(dados.indexOf("export async function listMyProperties"), dados.indexOf("export async function listMyProperties") + 2500);
