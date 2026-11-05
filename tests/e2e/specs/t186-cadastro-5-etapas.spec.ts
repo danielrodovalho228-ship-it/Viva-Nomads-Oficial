@@ -26,6 +26,7 @@ import { continuarAte, noPasso, abrirCadastroNovo, abrirSecoesPasso10 } from "..
   recebido o de morador ("Quero morar" + a chave de envio): ganha "anunciar" na intenção, sem outro boas-vindas.
   Laboratório: o Supabase local é http e a regra do editor só aceita fotos https na pasta do dono; por isso as fotos
   do rascunho são trocadas pelas de teste (como em criarImovelPronto) antes de publicar.
+  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const FOTOS = ["sala", "quarto-1", "quarto-2", "cozinha", "banheiro", "home-office", "varanda", "fachada"].map((n) => `public/images/imoveis/ube/ube-001-${n}.webp`);

@@ -17,6 +17,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, p
   4. Datas: no computador digita dd/mm/aaaa e cola; no celular (toque) segue o seletor nativo.
   5. Matrícula sem leitura: a tentativa fica gravada em property_ownership_checks (em revisão, com o motivo).
   6. /admin: painel "IA do cadastro" com ligada/desligada e o último erro (sem dado pessoal).
+  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const LARGURAS = [390, 1280] as const;

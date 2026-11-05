@@ -10,6 +10,7 @@ import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, cri
    2. a fila "Documentos com falha" é legível: com 2 falhas, cada linha mostra o seu número, tipo, contrato
       (VN-CT-…), o nome curto do proprietário e do inquilino, o motivo e a data — e as duas são diferentes.
   O laboratório usa o Resend falso (LAB_RESEND_URL): só e-mail aceito entra na caixa.
+  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";

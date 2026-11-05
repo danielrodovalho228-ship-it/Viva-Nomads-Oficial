@@ -11,6 +11,7 @@ import { noPasso } from "../fixtures/cadastro";
   3. Fotos pelo passo Fotos: sobem para a galeria e a IA analisa sozinha ("Analisando…" → "Pronto: …").
   4. Celular: barra de fotos fixa no rodapé em todos os passos; no topo, "Passo X de 10" com a barra de progresso (a
      faixa de passos dos 6 passos saiu). No computador, a foto aparece na prévia ao vivo.
+  Triagem (Pista C, 05/11): vermelha no lab completo de 34cdc0d7d; roda no lab-crítico do PR de triagem para o log completo.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
