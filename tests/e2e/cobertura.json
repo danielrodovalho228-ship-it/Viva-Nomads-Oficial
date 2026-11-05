@@ -4717,6 +4717,12 @@
       ],
       "specs": []
     },
+    "src/lib/data/perfil-actions.ts#salvarMinhaNotaLocacao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/perfil-actions.ts#salvarMeuPerfilPublico": {
       "personas": [
         "inquilino",

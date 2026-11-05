@@ -17,7 +17,8 @@ import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
-import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
+import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, salvarMinhaNotaLocacao, type MeuDocumento } from "@/lib/data/perfil-actions";
+import { AJUDA_NOTA_LOCACAO, PENDENCIA_NOTA_LOCACAO, PERGUNTA_NOTA_LOCACAO } from "@/lib/fiscal/nota-locacao";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
 import { CATEGORIAS_COM_INTERRUPTOR, ROTULO_CATEGORIA, type CategoriaComInterruptor } from "@/config/matriz-notificacoes";
@@ -212,6 +213,35 @@ function CampoDados({ label, ...props }: { label: string } & React.InputHTMLAttr
 }
 
 /**
+ * E574: a pergunta da nota fiscal da locação (só PJ/MEI), Sim/Não. No documento novo é obrigatória (o servidor recusa
+ * sem resposta); com o documento já cadastrado, aparece como pendência quando falta, sem bloquear nada.
+ */
+function PerguntaNotaLocacao({ valor, onChange, pendente, desabilitado }: { valor: boolean | null; onChange: (v: boolean) => void; pendente?: boolean; desabilitado?: boolean }) {
+  return (
+    <fieldset className="mt-4 sm:col-span-2" data-testid="nota-locacao">
+      <legend className="text-sm font-medium text-ink">{PERGUNTA_NOTA_LOCACAO}</legend>
+      {pendente && (
+        <p className="mt-1 text-sm text-amber-700" data-testid="nota-locacao-pendencia">
+          {PENDENCIA_NOTA_LOCACAO}
+        </p>
+      )}
+      <div className="mt-2 flex gap-6">
+        {[
+          { v: true, rotulo: "Sim" },
+          { v: false, rotulo: "Não" },
+        ].map((o) => (
+          <label key={o.rotulo} className="flex min-h-11 items-center gap-2 text-ink">
+            <input type="radio" name="nota-locacao" checked={valor === o.v} disabled={desabilitado} onChange={() => onChange(o.v)} className="h-5 w-5 accent-forest" data-testid={`nota-locacao-${o.v ? "sim" : "nao"}`} />
+            {o.rotulo}
+          </label>
+        ))}
+      </div>
+      <p className="mt-1 text-[13px] text-muted">{AJUDA_NOTA_LOCACAO}</p>
+    </fieldset>
+  );
+}
+
+/**
  * Documento (CPF ou CNPJ) — Cadastro confiável. Vai no contrato, na cobrança e
  * na nota. Depois de salvo aparece só MASCARADO; para trocar, fala com o suporte.
  */
@@ -221,6 +251,9 @@ export function DocumentoPessoa() {
   const [cnpj, setCnpj] = useState("");
   const [razao, setRazao] = useState("");
   const [cpfRep, setCpfRep] = useState("");
+  const [notaLoc, setNotaLoc] = useState<boolean | null>(null);
+  const [salvandoNota, setSalvandoNota] = useState(false);
+  const [erroNota, setErroNota] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -251,7 +284,7 @@ export function DocumentoPessoa() {
     e.preventDefault();
     setErro(null);
     setSalvando(true);
-    const r = await salvarMeuDocumento(doc?.tipo === "pj" ? { cnpj, razaoSocial: razao, cpfRepresentante: cpfRep } : { cpf }).catch(() => ({
+    const r = await salvarMeuDocumento(doc?.tipo === "pj" ? { cnpj, razaoSocial: razao, cpfRepresentante: cpfRep, emiteNotaLocacao: notaLoc } : { cpf }).catch(() => ({
       ok: false as const,
       error: "Sem conexão. Tente de novo.",
       documento: undefined,
@@ -260,6 +293,15 @@ export function DocumentoPessoa() {
     if (!r.ok) return setErro(r.error ?? "Não foi possível salvar.");
     if (r.documento) setDoc(r.documento);
     setOk(true);
+  }
+
+  async function salvarNota(v: boolean) {
+    setErroNota(null);
+    setSalvandoNota(true);
+    const r = await salvarMinhaNotaLocacao(v).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", documento: undefined }));
+    setSalvandoNota(false);
+    if (!r.ok) return setErroNota(r.error ?? "Não foi possível salvar.");
+    if (r.documento) setDoc(r.documento);
   }
 
   if (doc === undefined || doc === null) {
@@ -322,6 +364,16 @@ export function DocumentoPessoa() {
             <p className="flex items-center gap-2 text-sm text-forest sm:col-span-2">
               <Check className="h-4 w-4" /> Documento cadastrado. Para trocar, fale com o suporte.
             </p>
+            {pj && (
+              <>
+                <PerguntaNotaLocacao valor={doc.emiteNotaLocacao} onChange={salvarNota} pendente={doc.faltaNotaLocacao} desabilitado={salvandoNota} />
+                {erroNota && (
+                  <p role="alert" className="text-sm text-red-600 sm:col-span-2">
+                    {erroNota}
+                  </p>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <form onSubmit={salvar} className="mt-4">
@@ -331,6 +383,7 @@ export function DocumentoPessoa() {
                   <Field label="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" inputMode="numeric" required />
                   <Field label="Razão social" value={razao} onChange={(e) => setRazao(e.target.value)} placeholder="Como está no cartão do CNPJ" required />
                   <Field label="CPF do representante" value={cpfRep} onChange={(e) => setCpfRep(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" required />
+                  <PerguntaNotaLocacao valor={notaLoc} onChange={setNotaLoc} />
                 </>
               ) : (
                 <Field label="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" autoComplete="off" required />

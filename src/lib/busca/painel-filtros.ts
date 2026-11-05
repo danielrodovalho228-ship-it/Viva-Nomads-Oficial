@@ -34,7 +34,10 @@ export interface FiltrosPainel {
   tipo: string;
   /** Garantia aceita ("caucao" | "seguro_fianca" | chaves antigas); "" = desligado. */
   garantia: string;
-  /** Só quem emite nota fiscal (o chip só aparece com SELO_NF_UI). */
+  /**
+   * E574: só imóveis cujo dono é PJ/MEI e DECLAROU emitir nota fiscal da locação (`?nota=1`). Selo de confiança sobre
+   * a declaração do dono — a Viva não promete documento de terceiro. (Antes lia properties.issues_invoice.)
+   */
   notaOnly: boolean;
   /**
    * @deprecated Adendo 3 (E43): saiu do painel, da /buscar e da URL — `?seguro=1` (URL e buscas salvas) vira
@@ -156,6 +159,8 @@ type ImovelFiltravel = ImovelComInternet & {
   garantiasAceitas?: string[];
   acceptsInsurance?: boolean;
   issuesInvoice?: boolean;
+  /** E574: dono PJ/MEI que declarou emitir nota fiscal da locação (calculado no servidor). */
+  emiteNotaDono?: boolean;
   ownershipType?: string;
   subleaseAuthorized?: boolean;
   /** Adendo 59.1: nível gravado pelo servidor (elo mais fraco). */
@@ -232,7 +237,7 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (!passaBloqueios(p.bloqueios, f.entrada, f.datasFlexiveis, f.periodo ? f.periodo - 30 : 30)) return false;
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
-  if (f.notaOnly && !p.issuesInvoice) return false;
+  if (f.notaOnly && p.emiteNotaDono !== true) return false;
   // Apelido legado da garantia "Seguro-fiança" (ver seguroOnly): o MESMO critério, nunca um segundo filtro.
   if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
@@ -307,7 +312,7 @@ export function resumoFiltros(f: FiltrosPainel): string {
   for (const c of comodidadesValidas(f.comodidades)) partes.push(ROTULO_COMODIDADE[c]);
   if (f.garantia) partes.push(ROTULO_GARANTIA[f.garantia] ?? "Garantia");
   else if (f.seguroOnly) partes.push(ROTULO_GARANTIA.seguro_fianca);
-  if (f.notaOnly) partes.push("Nota Fiscal");
+  if (f.notaOnly) partes.push("Emite nota fiscal");
   if (f.gestorOnly) partes.push("Gestor profissional");
   if (f.negociaOnly) partes.push("Aceita negociação");
   if (filtroPrecoJustoLigado(f)) partes.push("Preço justo");

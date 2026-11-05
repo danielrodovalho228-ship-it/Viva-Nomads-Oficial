@@ -179,6 +179,8 @@ export const MOTIVOS_DENUNCIA = [
   { chave: "imovel_nao_existe", rotulo: "Imóvel não existe" },
   { chave: "pagamento_fora", rotulo: "Pediu pagamento ou contato fora da Viva" },
   { chave: "conteudo_improprio", rotulo: "Conteúdo impróprio" },
+  // E574: só aparece no anúncio do dono PJ/MEI que declarou emitir nota fiscal da locação (0294).
+  { chave: "nota_nao_emitida", rotulo: "Não emitiu a nota fiscal declarada" },
   { chave: "outro", rotulo: "Outro" },
 ] as const;
 export type MotivoDenuncia = (typeof MOTIVOS_DENUNCIA)[number]["chave"];
@@ -225,4 +227,9 @@ export function contextoDoMotivo(motivo: string | null): ContextoMotivo | null {
   if (motivo === "pagamento" || motivo === "morador_pagamento" || motivo === "pagamento_repasse") return "pagamentos";
   if (motivo === "imovel_diferente") return "anuncio";
   return null;
+}
+
+/** E574: os motivos que o anúncio oferece — "Não emitiu a nota fiscal declarada" só com a declaração do dono. */
+export function motivosDenunciaDoAnuncio(notaDeclarada: boolean): (typeof MOTIVOS_DENUNCIA)[number][] {
+  return MOTIVOS_DENUNCIA.filter((m) => m.chave !== "nota_nao_emitida" || notaDeclarada);
 }

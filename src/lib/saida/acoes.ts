@@ -10,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { abrirCorrecoesDevidas } from "@/lib/data/qualidade";
+import { donoEmiteNota } from "@/lib/fiscal/nota-locacao";
 import { ajudaDoMotivo, motivoDenunciaValido, motivoValido, pendenciasParaSair, podeFecharCorrecao, prioridadeDenuncia, MOTIVOS_DENUNCIA, NIVEIS_SAIDA, VALORES_SURPRESA, type NivelSaida, type PapelSaida, type PendenciaSaida } from "./regras";
 
 export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string };
@@ -160,6 +161,14 @@ export async function denunciarAnuncio(form: FormData): Promise<Res> {
   if (erroIm) return { ok: false, erro: MSG_DENUNCIA_SEM_LEITURA };
   if (!im) return { ok: false, erro: "Anúncio não encontrado." };
   if (im.owner_id === s.uid) return { ok: false, erro: "Este anúncio é seu." };
+  // E574: "Não emitiu a nota fiscal declarada" só vale para o anúncio do dono PJ/MEI que declarou emitir.
+  if (motivo === "nota_nao_emitida") {
+    const { data: dono, error: erroDono } = await s.admin.from("profiles").select("person_type, emite_nota_locacao").eq("id", im.owner_id).maybeSingle();
+    if (erroDono) return { ok: false, erro: MSG_DENUNCIA_SEM_LEITURA };
+    const d = dono as { person_type?: string | null; emite_nota_locacao?: boolean | null } | null;
+    if (!donoEmiteNota({ tipoPessoa: d?.person_type ?? null, emiteNota: d?.emite_nota_locacao ?? null }))
+      return { ok: false, erro: "Este anúncio não declara emitir nota fiscal. Escolha outro motivo." };
+  }
   const { data: perfil, error: erroPerfil } = await s.admin.from("profiles").select("is_teste").eq("id", s.uid).maybeSingle();
   if (erroPerfil) return { ok: false, erro: MSG_DENUNCIA_SEM_LEITURA };
   const { data: d, error } = await s.admin.from("denuncias_anuncio").insert({ property_id: propertyId, user_id: s.uid, motivo, texto, teste: perfil?.is_teste === true }).select("id").single();
