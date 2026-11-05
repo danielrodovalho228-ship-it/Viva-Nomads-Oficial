@@ -48,7 +48,8 @@ import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
-import { CANDIDATO_MASCARADO, tituloAvisoCandidatura } from "@/lib/notifications/avisos";
+import { tituloAvisoCandidatura } from "@/lib/notifications/avisos";
+import { primeiroNome } from "@/lib/display-name";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
@@ -1833,10 +1834,11 @@ export async function requestLead(
       // E570: o clique cai no cartão DESTA candidatura (mesmo sem o corpo do e-mail).
       pushUrl: kind === "candidatura" && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
       imovelId: propertyId,
-      // E570: no sino, a candidatura nomeia o morador (máscara: "Candidato(a)" até o aceite) e o imóvel, e o clique cai
+      // E570: no sino, a candidatura nomeia o morador pelo PRIMEIRO nome (o mesmo do e-mail; sem nome, "Candidato(a)") e o
+      // imóvel, e o clique cai
       // no cartão DESTA candidatura (refId = a candidatura).
       ...(kind === "candidatura" && leadId
-        ? { tituloAviso: tituloAvisoCandidatura({ candidato: CANDIDATO_MASCARADO, imovel: propertyTitle }), refId: leadId, papelAviso: "dono" as const }
+        ? { tituloAviso: tituloAvisoCandidatura({ candidato: primeiroNome(me?.full_name), imovel: propertyTitle }), refId: leadId, papelAviso: "dono" as const }
         : {}),
       ...(corpo ? { body: corpo.body } : {}),
       detailsHtml: pessoa ? pessoa.html + (detailsHtml ?? "") : detailsHtml,
