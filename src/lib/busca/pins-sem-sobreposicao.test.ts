@@ -75,8 +75,10 @@ test("os dois motores aplicam o afastamento (por margem, sem brigar com o transl
   assert.match(src, /map\.on\("moveend resize", reorganizar\)/);
 });
 
-test("título do cartão do mapa: até 2 linhas e o nome inteiro no title (antes cortava sempre com '…')", () => {
+test("E453: título do cartão do mapa INTEIRO — sem corte de linhas nem reticências (o anúncio tem até 80 caracteres)", () => {
+  // E525 limitou a 2 linhas; o E453 (02/11) viu "Imóvel mobiliado com home…" no cartão. Até 80 caracteres cabem em 3
+  // linhas no cartão de 256 px: o título quebra linha e aparece todo.
   const card = readFileSync(new URL("../../components/busca/card-pin-mapa.tsx", import.meta.url), "utf8");
-  assert.match(card, /<p className="line-clamp-2 text-sm font-semibold text-ink" title=\{p\.title\}>\{p\.title\}<\/p>/);
-  assert.doesNotMatch(card, /line-clamp-1 text-sm font-semibold/);
+  assert.match(card, /<p className="break-words text-sm font-semibold text-ink" data-testid="card-pin-titulo">\{p\.title\}<\/p>/);
+  assert.doesNotMatch(card, /line-clamp-\d text-sm font-semibold/);
 });
