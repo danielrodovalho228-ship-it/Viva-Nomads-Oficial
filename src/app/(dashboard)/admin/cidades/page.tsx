@@ -1,3 +1,5 @@
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ButtonLink } from "@/components/ui/button";
 import { MapPinned, Users } from "lucide-react";
@@ -17,6 +19,8 @@ export const metadata = { title: tituloDoAdmin("/admin/cidades") };
  * tabela no computador. O layout de /admin já barra quem não é admin; a RLS barra de novo no banco.
  */
 export default async function AdminCidadesPage() {
+  // E477: liberar/pausar/cadastrar cidade é configuração da plataforma — o admin observador da QA só lê.
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const supabase = await createClient();
   if (!supabase) {
     return (
@@ -66,7 +70,7 @@ export default async function AdminCidadesPage() {
                     <p className="truncate font-semibold text-ink">{c.cidade} – {c.uf}</p>
                     <p className="text-xs text-muted">{c.liberada ? `Liberada em ${dataBR(c.liberada_em)}` : "Pausada"}</p>
                   </div>
-                  <CidadeBotao uf={c.uf} chave={c.chave} liberada={c.liberada} />
+                  {soLeitura ? null : <CidadeBotao uf={c.uf} chave={c.chave} liberada={c.liberada} />}
                 </li>
               ))}
             </ul>
@@ -82,7 +86,7 @@ export default async function AdminCidadesPage() {
                       <td>{c.liberada ? "Liberada" : "Pausada"}</td>
                       <td>{dataBR(c.liberada_em)}</td>
                       <td className="max-w-xs truncate text-muted">{c.observacao ?? "—"}</td>
-                      <td className="py-2 text-right"><CidadeBotao uf={c.uf} chave={c.chave} liberada={c.liberada} /></td>
+                      <td className="py-2 text-right">{soLeitura ? null : <CidadeBotao uf={c.uf} chave={c.chave} liberada={c.liberada} />}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -93,7 +97,7 @@ export default async function AdminCidadesPage() {
       </Panel>
 
       <Panel title="Cadastrar cidade" className="mb-6 scroll-mt-24" id="cadastrar-cidade">
-        <CadastroCidadeForm />
+        {soLeitura ? <SoLeituraQa /> : <CadastroCidadeForm />}
       </Panel>
 
       <Panel title="Interesse por cidade" id="interesse">

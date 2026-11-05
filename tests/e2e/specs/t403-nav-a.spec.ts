@@ -11,7 +11,8 @@ import { NO_LABORATORIO, apagarContas, criarAdmin, criarConta, criarImovelPronto
  *      dono troca a barra pelo topo (abas, sino e "Conta ▾"); a mesma conta vale no topo.
  */
 const SAIDA = "tests/laboratorio/saida";
-const CONTA = ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Segurança e verificações", "Notificações", "Pagamentos", "Ajuda"];
+// E493: a Ajuda não se repete na lista da Conta — a porta dela é o "Ajuda" do menu da Conta (avatar).
+const CONTA = ["Perfil", "Como você usa a Viva", "Avaliações", "Dados", "Privacidade", "Segurança e verificações", "Notificações", "Pagamentos"];
 const FORA_DA_CONTA = ["Seus avisos", "Ferramentas", "Painel Admin", "Equipe e aprovações", "Indicações", "Verificação", "Termos de uso", "Política de privacidade"];
 
 test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () => {
@@ -80,7 +81,8 @@ test.describe("T403 — NAV-A: Conta só a pessoa; trabalho na barra verde", () 
         const barra = await navegacao(p, w);
         // E176: o avatar é curto (Minha conta · Modo · Ajuda · Sair); as verificações moram na Conta ("Segurança e
         // verificações"). Na navegação fica o sino, que leva às Notificações (página única).
-        expect(await quantas(barra, "/dashboard/notificacoes"), `${quem}: /dashboard/notificacoes`).toBe(1);
+        // E444: o sino é um botão que abre o painel de avisos ("Ver todas" leva às Notificações) — não um link.
+        expect(await barra.locator('button[aria-label^="Notificações"]').count(), `${quem}: o sino`).toBe(1);
         // MENUS-5, item 3: as Ferramentas saíram da Conta (o dono as acha no Início).
         expect(await quantas(barra, "/dashboard/ferramentas"), `${quem}: sem Ferramentas na navegação`).toBe(0);
         const doAdmin = [await quantas(barra, "/admin"), await quantas(barra, "/admin/agentes#aprovacoes")];

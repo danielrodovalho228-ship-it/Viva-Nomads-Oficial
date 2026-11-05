@@ -46,3 +46,11 @@ export function ehCampoDeFormulario(tag: string | undefined, tipo?: string | nul
 export function flutuanteVisivel(estado: { chatAberto: boolean; campoEmFoco: boolean }): boolean {
   return estado.chatAberto || !estado.campoEmFoco;
 }
+
+/**
+ * E539 (v): no painel o flutuante não abre uma segunda janela do mesmo chat — leva à página Fale com a Viva (o chat e o
+ * "Abrir chamado" num lugar só). No site público ele continua abrindo o chat.
+ */
+export function flutuanteLevaAPagina(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}

@@ -43,6 +43,27 @@ export function normalizarBusca(qs: string): string {
   return out.toString().slice(0, 1000);
 }
 
+/**
+ * E539 (ii): a IDENTIDADE da busca salva — os filtros, sem a ordenação. A ordem não muda quais imóveis entram (nem o
+ * alerta), e duas buscas iguais com ordens diferentes ("ordem=recent" e nenhuma) apareciam como duas "Todas as cidades".
+ */
+export function chaveDaBusca(qs: string): string {
+  const sp = new URLSearchParams(normalizarBusca(qs));
+  sp.delete("ordem");
+  return sp.toString();
+}
+
+/** E539 (ii): uma busca por identidade — a primeira da lista (a mais recente) fica; as repetidas saem. */
+export function semBuscasRepetidas<T extends { parametros: string }>(lista: readonly T[]): T[] {
+  const vistas = new Set<string>();
+  return lista.filter((b) => {
+    const k = chaveDaBusca(b.parametros);
+    if (vistas.has(k)) return false;
+    vistas.add(k);
+    return true;
+  });
+}
+
 const PERIODO: Record<string, string> = { "60": "1–2 meses", "120": "3–4 meses", "180": "5–6 meses" };
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 

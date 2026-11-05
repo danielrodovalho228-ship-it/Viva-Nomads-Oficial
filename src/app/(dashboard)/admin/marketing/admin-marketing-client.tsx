@@ -7,7 +7,7 @@ import { Download, Trash2 } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { formatBRL, hojeBR } from "@/lib/utils";
-import { CANAIS_MARKETING, canalLabel, gastosCsv, totaisPorMes, type GastoMarketing } from "@/lib/marketing";
+import { CANAIS_MARKETING, canalLabel, gastosCsv, opcoesDeMes, totaisPorMes, type GastoMarketing } from "@/lib/marketing";
 import { lancarGastoMarketing, apagarGastoMarketing } from "@/lib/data/marketing-admin";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -25,7 +25,7 @@ function mesAtual(): string {
  * Gastos de marketing por mês e canal — base do CAC e do ROI (painel
  * financeiro). Lançamento simples; corrigir = apagar e lançar de novo.
  */
-export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing[]; aviso: string | null }) {
+export function AdminMarketingClient({ gastos, aviso, soLeitura = false }: { gastos: GastoMarketing[]; aviso: string | null; /** E477: admin observador da QA — sem lançar nem apagar. */ soLeitura?: boolean }) {
   const router = useRouter();
   const [mes, setMes] = useState(mesAtual());
   const [canal, setCanal] = useState("");
@@ -79,11 +79,19 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">{aviso}</p>
       )}
 
+      {!soLeitura && (
       <Panel title="Novo lançamento" className="mb-6">
         <form onSubmit={lancar} className="grid gap-3 sm:grid-cols-[10rem_10rem_10rem_1fr_auto] sm:items-end">
           <label className="block text-sm">
             <span className="mb-1 block font-semibold text-ink">Mês</span>
-            <input type="month" required value={mes} onChange={(e) => setMes(e.target.value)} className={campo} />
+            {/* E476 (ii): lista em português; o campo nativo de mês escrevia no idioma do navegador ("November 2026"). */}
+            <select required value={mes} onChange={(e) => setMes(e.target.value)} className={campo}>
+              {opcoesDeMes(mesAtual()).map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.rotulo}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-semibold text-ink">Canal</span>
@@ -126,6 +134,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
           </p>
         )}
       </Panel>
+      )}
 
       <Panel title="Total por mês" className="mb-6">
         {totais.length === 0 ? (
@@ -167,6 +176,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span className="font-semibold text-ink">{formatBRL(g.valor)}</span>
+                    {!soLeitura && (
                     <ConfirmarNaPagina
                       aviso="Apagar este lançamento?"
                       confirmar="Apagar"
@@ -177,6 +187,7 @@ export function AdminMarketingClient({ gastos, aviso }: { gastos: GastoMarketing
                     >
                       <Trash2 className="h-4 w-4" />
                     </ConfirmarNaPagina>
+                    )}
                   </span>
                 </li>
               ))}

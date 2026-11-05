@@ -1,3 +1,6 @@
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { alvosDaCentral, chaveDaLinha } from "@/lib/qa/alvos-central";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -45,6 +48,9 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
   // E330: uma fila só — as decisões de outras telas (backup, parcerias, chamados…) entram na fila como itens, e o título
   // conta a fila inteira. Antes o topo dizia "Hoje você tem 5 decisões" e a fila logo abaixo "Nada pendente agora".
   const outras = filtro ? null : decisoesForaDaCentral(decisoes);
+  // E477: o admin observador da QA não decide sobre dado real (nem roda os prazos): os botões saem dessas linhas.
+  const soLeitura = new Set(central ? await soLeituraNaTela(await alvosDaCentral(admin, [...central.linhas, ...central.teste])) : []);
+  const prazosSoLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   return (
     <div data-testid="central-pendencias">
       <PageTitle
@@ -78,7 +84,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
                   <LinhaDecisao key={`d-${l.chave}`} l={l} />
                 ))}
                 {central.linhas.map((l) => (
-                  <Linha key={`${l.filtro}-${l.id}`} l={l} agora={agora} />
+                  <Linha key={`${l.filtro}-${l.id}`} l={l} agora={agora} soLeitura={soLeitura} />
                 ))}
               </ul>
             )}
@@ -87,7 +93,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
             <Panel title={`Contas de teste · ${central.teste.length}`} className="mt-6" data-testid="central-teste">
               <ul className="divide-y divide-sage-100">
                 {central.teste.map((l) => (
-                  <Linha key={`t-${l.filtro}-${l.id}`} l={l} agora={agora} />
+                  <Linha key={`t-${l.filtro}-${l.id}`} l={l} agora={agora} soLeitura={soLeitura} />
                 ))}
               </ul>
             </Panel>
@@ -96,7 +102,7 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
       )}
       <Panel title="Prazos" className="mt-6">
         <p className="mb-3 text-sm text-muted">A rotina roda sozinha a cada 15 minutos: lembretes do padrão mínimo, anúncios fora da busca, confirmações por prazo e avisos da manutenção.</p>
-        <RodarPrazos laboratorio={integracoesSimuladas()} />
+        {prazosSoLeitura ? <SoLeituraQa /> : <RodarPrazos laboratorio={integracoesSimuladas()} />}
       </Panel>
     </div>
   );
@@ -127,23 +133,14 @@ function DecisoesDaCentral({
         {tituloCentral(total)}
       </h2>
       {LADOS.map(({ lado, titulo }) => {
+        // E474 (i): as decisões de outras telas (backup, parcerias, chamados…) aparecem UMA vez — como itens de "Todas as
+        // pendências", com o detalhe e a ação. Aqui no topo ficam só os atalhos das filas da Central (número + Abrir).
         const filas = FILTROS_CENTRAL.filter((f) => f.lado === lado && contagens[f.chave] > 0);
-        const extras = lado === "equipe" ? (outras?.linhas ?? []) : [];
-        if (!filas.length && !extras.length) return null;
+        if (!filas.length) return null;
         return (
           <div key={lado} className="mt-4" data-testid={`central-lado-${lado}`}>
             <p className="text-xs font-semibold text-muted">{titulo}</p>
             <ul className="mt-1 divide-y divide-line border-y border-line">
-              {extras.map((l) => (
-                <li key={`d-${l.chave}`} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={l.chave} data-ativo="0">
-                  <span className="min-w-0 font-semibold text-ink">
-                    <span className="tabular-nums">{l.n}</span> · {l.texto.replace(/^\d+\s+/, "")}
-                  </span>
-                  <ButtonLink href={l.href} variant="secondary" size="sm" data-testid={`central-decisao-${l.chave}`} data-n={l.n}>
-                    {l.acao}
-                  </ButtonLink>
-                </li>
-              ))}
               {filas.map((f) => (
                 <li key={f.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={f.chave} data-ativo={filtro === f.chave ? "1" : "0"}>
                   <span className={`min-w-0 ${filtro === f.chave ? "font-semibold text-forest" : "font-semibold text-ink"}`}>
@@ -187,7 +184,7 @@ function LinhaDecisao({ l }: { l: LinhaDecisaoAdmin }) {
   );
 }
 
-function Linha({ l, agora }: { l: LinhaCentral; agora: Date }) {
+function Linha({ l, agora, soLeitura }: { l: LinhaCentral; agora: Date; soLeitura: ReadonlySet<string> }) {
   const prazo = textoPrazo(l.prazoAte, agora);
   return (
     <li className="space-y-1 py-3 text-sm" data-testid={l.filtro === "conforto_contestacoes" ? "contestacao-linha" : "central-linha"} data-filtro={l.filtro} data-gravidade={l.gravidade}>
@@ -204,15 +201,16 @@ function Linha({ l, agora }: { l: LinhaCentral; agora: Date }) {
           {l.acao.rotulo}
         </Link>
       </p>
-      {l.filtro === "conforto_contestacoes" && l.ref?.pendencia && <DecidirContestacao id={l.ref.pendencia} />}
-      {l.filtro === "avaliacoes_contestadas" && l.ref?.revisao && <DecidirRevisaoAvaliacao id={l.ref.revisao} />}
+      {soLeitura.has(chaveDaLinha(l)) ? <SoLeituraQa /> : null}
+      {!soLeitura.has(chaveDaLinha(l)) && l.filtro === "conforto_contestacoes" && l.ref?.pendencia && <DecidirContestacao id={l.ref.pendencia} />}
+      {!soLeitura.has(chaveDaLinha(l)) && l.filtro === "avaliacoes_contestadas" && l.ref?.revisao && <DecidirRevisaoAvaliacao id={l.ref.revisao} />}
       {l.filtro === "fotos_nivel" && l.ref?.imovel && l.ref?.chave && (
         <div className="flex flex-wrap items-center gap-3" data-testid="foto-nivel-linha" data-chave={l.ref.chave}>
           {l.ref.foto && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={l.ref.foto} alt={`Foto: ${l.titulo}`} className="h-20 w-20 rounded-lg object-cover" />
           )}
-          <AnalisarFotoNivel imovel={l.ref.imovel} chave={l.ref.chave} />
+          {!soLeitura.has(chaveDaLinha(l)) && <AnalisarFotoNivel imovel={l.ref.imovel} chave={l.ref.chave} />}
         </div>
       )}
     </li>

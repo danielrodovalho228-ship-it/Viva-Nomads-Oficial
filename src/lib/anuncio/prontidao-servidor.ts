@@ -108,24 +108,35 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     mapa.set(p.id, f);
   }
   if (opcoes.qualificacaoDoRascunho) {
-    // C4: o draft_data vem pela RPC (coluna sensível). Sem leitura, o item fica de fora (não inventa "falta").
+    // C4: o draft_data vem pela RPC (coluna sensível). E556: ele é a FONTE do rascunho (a mesma do editor). Uma leitura
+    // que falha tenta de novo uma vez; se ainda falhar, o rascunho sai do mapa — o card não mostra um percentual de
+    // outra fonte (as colunas), que mudava de um carregamento para outro.
+    const lerRascunho = (id: string) =>
+      cliente.rpc("property_private_details", { prop_id: id }).then(
+        (r: { data: unknown; error: unknown }) => r,
+        (erro: unknown) => ({ data: null, error: erro }),
+      ) as Promise<{ data: unknown; error: unknown }>;
+    const semRascunho = new Set<string>();
     await Promise.all(
       lista
         .filter((p) => p.status === "draft")
         .map(async (p) => {
-          const { data: priv, error: e } = await cliente.rpc("property_private_details", { prop_id: p.id }).then(
-            (r: { data: unknown; error: unknown }) => r,
-            (erro: unknown) => ({ data: null, error: erro }),
-          );
+          let { data: priv, error: e } = await lerRascunho(p.id);
+          if (e) ({ data: priv, error: e } = await lerRascunho(p.id));
           const linha = Array.isArray(priv) ? priv[0] : priv;
           const draftData = (linha as { draft_data?: unknown } | null)?.draft_data;
           const f = mapa.get(p.id);
-          if (e || !f || !draftData) return;
+          if (e) {
+            semRascunho.add(p.id);
+            return;
+          }
+          if (!f || !draftData) return;
           f.qualificacaoOk = qualificacaoDoRascunho(draftData, f);
-          // E556: internet e privacidade do rascunho vêm do draft_data, com a mesma regra do editor.
+          // E556: todos os itens que o editor lê do estado vêm do draft_data, pela mesma função do editor.
           mapa.set(p.id, fatosDoRascunho(draftData, f));
         }),
     );
+    for (const id of semRascunho) mapa.delete(id);
   }
   return mapa;
 }

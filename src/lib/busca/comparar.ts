@@ -36,9 +36,30 @@ export function alternarSelecao(atual: readonly string[], id: string): { ids: st
   return { ids: [...atual, id], aviso: null };
 }
 
-/** Endereço do comparativo (com a seleção na URL). */
-export function hrefComparar(ids: readonly string[]): string {
-  return `/comparar?comparar=${ids.slice(0, MAX_COMPARAR).join(",")}`;
+/**
+ * Endereço do comparativo (com a seleção na URL). E532: `buscaAtual` é o ?… da busca (filtros e ordenação) — vai em
+ * `volta`, para "Voltar à busca" devolver a busca como estava (não /buscar limpo).
+ */
+export function hrefComparar(ids: readonly string[], buscaAtual?: string | null): string {
+  const base = `/comparar?comparar=${ids.slice(0, MAX_COMPARAR).join(",")}`;
+  const volta = consultaDaBusca(buscaAtual);
+  return volta ? `${base}&volta=${encodeURIComponent(volta)}` : base;
+}
+
+/** E532: a consulta da busca, limpa (sem "?", sem a seleção do comparar), relida pelo URLSearchParams; "" se vazia/longa. */
+export function consultaDaBusca(bruto: string | string[] | null | undefined): string {
+  const texto = (Array.isArray(bruto) ? bruto[0] : bruto ?? "").replace(/^\?/, "");
+  if (!texto || texto.length > 2000) return "";
+  const p = new URLSearchParams(texto);
+  p.delete("comparar");
+  p.delete("volta");
+  return p.toString();
+}
+
+/** E532: "Voltar à busca" — a busca com os filtros e a ordenação de antes (só /buscar, nunca outro caminho). */
+export function hrefVoltarBusca(volta: string | string[] | null | undefined): string {
+  const q = consultaDaBusca(volta);
+  return q ? `/buscar?${q}` : "/buscar";
 }
 
 const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;

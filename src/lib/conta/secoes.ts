@@ -19,6 +19,11 @@ export interface ItemSecao {
   descricao: string;
   /** NAV-A: o nome no menu, quando difere do título da tela. E490: nenhuma seção usa mais (o menu e o título são o mesmo nome). */
   rotuloMenu?: string;
+  /**
+   * E493: a seção existe (rota, título, casca) mas NÃO entra na lista de seções — a porta dela é outra. Hoje só a Ajuda,
+   * cuja porta é o "Ajuda" do menu da Conta (avatar, D2/E185); antes ela aparecia ali e de novo na lista da Conta.
+   */
+  foraDoMenu?: true;
 }
 
 export const SECOES_CONTA: readonly ItemSecao[] = [
@@ -35,8 +40,11 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
   // preferências (mockup perfil-06) e os avisos. /dashboard/conta/notificacoes redireciona para ela.
   { id: "notificacoes", rotulo: "Notificações", href: "/dashboard/notificacoes", icone: "Bell", descricao: "Seus avisos e como a Viva avisa você." },
   { id: "pagamentos", rotulo: "Pagamentos", href: "/dashboard/conta/pagamentos", icone: "CreditCard", descricao: "Para onde vai o valor mensal." },
-  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e privacidade." },
+  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e privacidade.", foraDoMenu: true },
 ] as const;
+
+/** E493: as seções que aparecem na lista da Conta (lateral no computador, lista no celular) — sem a Ajuda. */
+export const SECOES_MENU_CONTA: readonly ItemSecao[] = SECOES_CONTA.filter((s) => !s.foraDoMenu);
 
 /** Endereços antigos das subtelas que agora caem numa seção nova (links salvos, e-mails, app). */
 export const ALIAS_SECAO: Readonly<Record<string, SecaoConta>> = {

@@ -22,7 +22,7 @@ test("servidor: exige sessão, papel, aceite e grava quem/quando/IP/hash só pel
 });
 
 test("telas: título e botão levam ao detalhe nos dois painéis; Avaliar só com a janela aberta", () => {
-  assert.match(locacoes, /\/dashboard\/locacoes\/\$\{l\.id\}/);
+  assert.match(locacoes, /HREF_CONTRATO_DA_ESTADIA\(l\.id\)/); // E539 (i): o contrato do morador mora na URL da estadia
   assert.match(locacoes, /Ver e assinar contrato/);
   assert.match(locacoes, /\(l\.podeAvaliar \|\| demoOn\) &&/);
   assert.match(contratos, /\/dashboard\/contratos\/\$\{contrato\.id\}/); // dono: rota própria (ordem f375fdc1)

@@ -1294,6 +1294,16 @@
         "t686-varredura-bloco72"
       ]
     },
+    "/dashboard/estadia/[contratoId]/contrato": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t57-contrato-assinar",
+        "t48-varredura"
+      ]
+    },
     "/dashboard/locacoes/[id]": {
       "personas": [
         "inquilino",

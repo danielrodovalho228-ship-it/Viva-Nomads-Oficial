@@ -5,6 +5,8 @@
   corrige ou contesta, morador confirma ou reabre, o atendimento da Viva decide a contestação). Toda gravação passa pelo
   cliente de serviço DEPOIS de conferir quem age; as regras são as de src/lib/conforto/regras.ts.
 */
+import { recusaObservador } from "@/lib/qa/observador";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -108,6 +110,11 @@ export async function agirNaPendencia(
   // Decidir é só do atendimento da Viva (admin com 2 etapas), nunca do dono — mesmo que seja admin e dono.
   const papel: PapelPendencia | null = acao === "decidir" ? ((await ehAdmin(s.supabase, s.uid)) ? "admin" : null) : await papelNoContrato(s, p.contrato_id as string);
   if (!papel) return { ok: false, erro: acao === "decidir" ? "Só o atendimento da Viva decide a contestação." : "Sem permissão." };
+  // E477: decidir sobre imóvel real — o admin observador da QA só lê (imóvel de conta de teste segue liberado).
+  if (acao === "decidir") {
+    const recusaQa = await recusaObservador(s.uid, { imoveis: [p.property_id as string] });
+    if (recusaQa) return { ok: false, erro: recusaQa };
+  }
   const campos = transicaoPendencia(p as PendenciaConforto, acao, papel, new Date(), extra.decisao);
   if (!campos) return { ok: false, erro: acao === "decidir" ? "Só o atendimento da Viva decide a contestação." : "Essa ação não vale para a pendência agora." };
   const motivo = (extra.motivo ?? "").trim().slice(0, 500);
@@ -131,7 +138,7 @@ export async function agirNaPendencia(
   }
   await recalcularNivel(admin, p.property_id as string);
   revalidatePath(`/dashboard/contratos/${p.contrato_id}`);
-  revalidatePath(`/dashboard/locacoes/${p.contrato_id}`);
+  revalidatePath(HREF_CONTRATO_DA_ESTADIA(p.contrato_id));
   revalidatePath("/admin/conforto");
   return { ok: true, mensagem: MSG[acao] };
 }
@@ -146,6 +153,9 @@ export async function rodarPrazosAgora(agoraSimulada?: string, soImovel?: string
   const admin = createAdminClient();
   if (!s || !admin) return { ok: false, erro: "Serviço indisponível." };
   if (!(await ehAdmin(s.supabase, s.uid))) return { ok: false, erro: "Só a equipe." };
+  // E477: rodar os prazos mexe em dados reais — o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(s.uid);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const simulada = integracoesSimuladas() && typeof agoraSimulada === "string" && Number.isFinite(Date.parse(agoraSimulada)) ? new Date(agoraSimulada) : null;
   const agora = simulada ?? new Date();
   // No laboratório, o spec pode isolar um imóvel (os outros specs rodam ao mesmo tempo).

@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 /*
   T830 — E444 itens 3 e 4 (Relay 57, Pista A; a base é da Pista B: tabela "avisos", 0286). Morador, 390 e 1280.
   3. Sino no topo: número de não lidas (até "9+") na cor da maior prioridade; o clique abre o painel com os últimos 8
-     (crítico → urgente → mais recente) + "Ver todas" (/dashboard/notificacoes#avisos, que lista da tabela com filtro por
+     (E586: por data/hora decrescente — o crítico fica na faixa do topo) + "Ver todas" (/dashboard/notificacoes#avisos, que lista da tabela com filtro por
      prioridade). Clique no aviso: leva à tela do evento e marca como lido.
   4. Faixa no topo do painel para crítico não resolvido, com o botão da ação; resolvido, a faixa some.
 */
@@ -19,9 +19,9 @@ const horas = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
 async function semearAvisos() {
   await adm().from("avisos").delete().eq("usuario_id", ids.morador);
   const linhas = [
-    // O crítico é o MAIS ANTIGO: mesmo assim abre o painel (crítico → urgente → mais recente).
+    // O crítico é o MAIS ANTIGO: fica na faixa do topo; a lista do painel é cronológica (E586).
     { evento: "contract_status", prioridade: "critico", titulo: "Seu contrato está pronto para assinar", url: "/dashboard/contratos", ref_id: `c-${sufixo}`, criado_em: horas(48) },
-    { evento: "new_message", prioridade: "urgente", titulo: "Você recebeu uma mensagem", url: "/dashboard/mensagens", criado_em: horas(30) },
+    { evento: "new_message", prioridade: "urgente", titulo: "Você recebeu uma mensagem", url: "/dashboard/mensagens", criado_em: horas(1.5) },
     ...Array.from({ length: 10 }, (_, i) => ({ evento: "dica", prioridade: "normal", titulo: `Novidade ${i + 1}`, url: "/dashboard", criado_em: horas(i + 1) })),
   ].map((l) => ({ usuario_id: ids.morador, ...l }));
   const { data, error } = await adm().from("avisos").insert(linhas).select("id, evento");
@@ -72,15 +72,16 @@ test.describe("T830 — E444: sino com prioridade e faixa de crítico", () => {
       expect(await p.evaluate((l) => document.documentElement.scrollWidth - l, largura)).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t830-faixa-${largura}.png` });
 
-      // 3b. Painel: os últimos 8, crítico primeiro, depois o urgente, depois os mais recentes; "Ver todas".
+      // 3b. Painel: os últimos 8 por data/hora decrescente (E586: a prioridade não fura a lista); "Ver todas".
       await sino(p, largura).click();
       const painel = topo(p, largura).getByTestId(`sino-${px}-painel`);
       await expect(painel).toBeVisible();
       const itens = painel.getByTestId("sino-aviso");
       await expect(itens).toHaveCount(8);
-      await expect(itens.nth(0)).toContainText("Seu contrato está pronto para assinar");
+      await expect(itens.nth(0)).toContainText("Novidade 1");
       await expect(itens.nth(1)).toContainText("Você recebeu uma mensagem");
-      await expect(itens.nth(2)).toContainText("Novidade 1");
+      await expect(itens.nth(2)).toContainText("Novidade 2");
+      await expect(painel).not.toContainText("Seu contrato está pronto para assinar");
       await expect(painel.getByTestId(`sino-${px}-ver-todas`)).toHaveAttribute("href", "/dashboard/notificacoes#avisos");
       const caixa = await painel.boundingBox();
       expect(caixa!.x).toBeGreaterThanOrEqual(0);

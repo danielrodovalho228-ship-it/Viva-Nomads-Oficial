@@ -5,7 +5,7 @@ import { VoltarCelular } from "@/components/ui/voltar-celular";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 import { LINHA_FECHAMENTO_CONTA } from "@/lib/conta/secoes";
 import { Bell, CircleHelp, CreditCard, FileText, Shield, ShieldCheck, Star, UserRound, Users } from "lucide-react";
-import { SECOES_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
+import { SECOES_MENU_CONTA, itemDaSecao, type ItemSecao, type SecaoConta } from "@/lib/conta/secoes";
 import { cn } from "@/lib/utils";
 import { CASCA_SOMBRA_CARTOES, ROTULO_MENU_CONTA, SOMBRA_CARTAO_CONTA, TITULO_TELA_CONTA } from "@/lib/conta/visual-mockup";
 
@@ -82,7 +82,8 @@ export function CascaConta({
       <nav aria-label="Conta" className={cn("hidden rounded-xl bg-white p-3 lg:sticky lg:top-0 lg:block", SOMBRA_CARTAO_CONTA)} data-testid="conta-menu-lateral">
         <p className={cn("px-3 pb-2 pt-1", ROTULO_MENU_CONTA)}>Conta</p>
         <ul className="grid gap-1">
-          {SECOES_CONTA.map((s) => {
+          {/* E493: a Ajuda não se repete aqui — a porta dela é o "Ajuda" do menu da Conta. */}
+          {SECOES_MENU_CONTA.map((s) => {
             const Icone = ICONES[s.icone];
             const on = s.id === ativo;
             return (

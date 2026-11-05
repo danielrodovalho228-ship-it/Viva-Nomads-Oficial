@@ -19,3 +19,22 @@ export function transcricaoChat(msgs: MsgChat[], pedido?: string): string {
   if (corpo.length > max) corpo = "…" + corpo.slice(corpo.length - max + 1);
   return `${cab}\n${corpo}${extra}`;
 }
+
+/**
+ * E539 (iii): na página Fale com a Viva há UM formulário de chamado (o da Central). "Falar com uma pessoa" no chat da
+ * página dispara este evento com a conversa; a Central abre o "Abrir chamado" com ela anexada.
+ */
+export const EVENTO_FALAR_COM_PESSOA = "viva-chat:falar-com-pessoa";
+export const ASSUNTO_CHAMADO_DO_CHAT = "Conversa com a Viva (chat do site)";
+export const CHAVE_CONVERSA_CHAT = "vivanomads-viva-chat";
+
+/**
+ * E449: a rota ÚNICA do chamado vindo do chat. Fora da página Fale com a Viva, "Falar com uma pessoa" leva para cá; a
+ * página abre o mesmo formulário da Central ("Abrir chamado") com a conversa guardada (sessionStorage) anexada.
+ */
+export const HREF_CHAMADO_DO_CHAT = "/ajuda/fale-com-a-viva?doChat=1#abrir-chamado";
+
+/** Com conversa do chat, ela vai anexada (o texto da pessoa entra como pedido); sem, só o texto. */
+export function mensagemDoChamado(conversa: MsgChat[] | null, texto: string): string {
+  return conversa?.length ? transcricaoChat(conversa, texto) : texto.trim();
+}

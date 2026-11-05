@@ -4,6 +4,7 @@ import { CITIES } from "@/lib/constants";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
+import { EntrarNoRodape } from "@/components/layout/entrar-no-rodape";
 
 export function Footer() {
   return (
@@ -49,7 +50,8 @@ export function Footer() {
         </FooterCol>
 
         <FooterCol title="Conta">
-          <FooterLink href="/auth">Entrar ou cadastrar</FooterLink>
+          {/* E467: "Entrar ou cadastrar" só para quem não está logado (lê a sessão no navegador). */}
+          <EntrarNoRodape />
           <FooterLink href="/dashboard/imoveis/novo">Anunciar imóvel (com login)</FooterLink>
           <FooterLink href="/dashboard">Meu painel</FooterLink>
           <FooterLink href="/termos">Termos de Uso</FooterLink>

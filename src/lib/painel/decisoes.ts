@@ -24,6 +24,7 @@ import { estadoSolucao } from "../manutencao-solucao.ts";
 import { dataHoraBrasilia } from "../../config/atendimento.ts";
 import type { SOPriority, SOStatus } from "../service-orders.ts";
 import { textoVencimento } from "../propostas/regras.ts";
+import { HREF_CONTRATO_DA_ESTADIA } from "../estadia/estadia.ts";
 import type { DecisaoEstadia } from "../estadia/estadia.ts";
 import type { Prontidao } from "../anuncio/prontidao.ts";
 
@@ -370,7 +371,7 @@ export function decisoesDoMorador(d: DadosDecisoes, agora: Date = new Date()): D
       id: `pendencia-${p.id}`,
       tipo: "conforto",
       texto: `Confirme a correção de "${rotuloConforto(p.chave)}" em ${nomeImovel(p.imovel)}`,
-      href: `/dashboard/locacoes/${p.contratoId}#pendencias-conforto`,
+      href: `${HREF_CONTRATO_DA_ESTADIA(p.contratoId)}#pendencias-conforto`,
       prazo: ate.toISOString(),
       prazoTexto: `Até ${dataHoraBrasilia(ate)}`,
       atrasada: false,

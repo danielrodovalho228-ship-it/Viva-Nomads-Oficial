@@ -32,7 +32,8 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
   // Prompt 43, item 4: a agenda usa a mesma grade dos calendários do imóvel e da estadia (dias com horário marcados).
   const hoje = diaBRT(new Date());
   return (
-    <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    // E469: no computador, Pedidos não estica até a altura de Agenda + Ganhos (cada cartão com a altura do conteúdo).
+    <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
       <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
         {pedidos.length === 0 ? (
           <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.pedidosParceiro} />

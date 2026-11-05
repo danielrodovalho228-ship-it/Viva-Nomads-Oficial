@@ -75,3 +75,38 @@ export function statusDepoisDoEnvio(vigenteAprovado: boolean, statusDoNovo: Stat
 
 export const TEXTO_NOVO_EM_ANALISE = "Documento novo em análise. O aprovado continua valendo até o novo ser aprovado.";
 export const TEXTO_NOVO_RECUSADO = "O documento novo foi recusado. O aprovado continua valendo.";
+
+/*
+  E587: a TELA do cadastro segue o mesmo desenho. O resultado da conferência automática de um envio novo nunca toma o
+  lugar do aprovado vigente: a tela segue "conferida" e o novo aparece à parte (em análise ou recusado). Sem vigente,
+  o resultado do envio é o estado da tela (o fluxo de sempre).
+*/
+export type EstadoNaTela = "aprovado" | "corrija" | "revisao";
+export interface NovoEnvio {
+  estado: "corrija" | "revisao";
+  motivos: string[];
+}
+
+export function resultadoNaTela(
+  vigenteAprovado: boolean,
+  estadoDoNovo: EstadoNaTela,
+  motivosDoNovo: readonly string[],
+): { estado: EstadoNaTela; motivos: string[]; novo: NovoEnvio | null } {
+  if (!vigenteAprovado || estadoDoNovo === "aprovado") return { estado: estadoDoNovo, motivos: estadoDoNovo === "aprovado" ? [] : [...motivosDoNovo], novo: null };
+  return { estado: "aprovado", motivos: [], novo: { estado: estadoDoNovo, motivos: [...motivosDoNovo] } };
+}
+
+/** O envio novo gravado (getMyDocumentStatus: novo/motivoNovo) no formato da tela. */
+export function novoDoStatus(novo: "pending" | "rejected" | null | undefined, motivo: string | null | undefined): NovoEnvio | null {
+  if (novo === "pending") return { estado: "revisao", motivos: [] };
+  if (novo === "rejected") return { estado: "corrija", motivos: motivo ? motivo.split(" · ").filter(Boolean) : [] };
+  return null;
+}
+
+/**
+ * E587 (vigia 05/11): com aprovado vigente, a conferência automática NÃO decide o envio novo na hora (nem recusa, nem
+ * aprova): todo envio novo fica em análise para a equipe. Sem vigente, vale o veredito automático (o fluxo de sempre).
+ */
+export function decisaoComVigente(vigenteAprovado: boolean, estadoAutomatico: EstadoNaTela): EstadoNaTela {
+  return vigenteAprovado ? "revisao" : estadoAutomatico;
+}

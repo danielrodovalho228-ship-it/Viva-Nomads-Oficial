@@ -50,7 +50,8 @@ export default async function EstadiaConfirmadaPage({ params }: { params: Promis
         </div>
         <div className="border-t border-line pt-4">
           <p className="text-sm text-ink" data-testid="confirmada-texto">
-            {TEXTO_CONFIRMADA} Próximo passo:
+            {/* E540: uma frase só — em nós separados, "…pelos dois lados.Próximo passo:" aparecia colado. */}
+            {`${TEXTO_CONFIRMADA} Próximo passo:`}
           </p>
           <ul className="mt-2 divide-y divide-line rounded-xl border border-line" data-testid="confirmada-passos">
             {passos.map((p) => (

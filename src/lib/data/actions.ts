@@ -48,7 +48,8 @@ import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
-import { CANDIDATO_MASCARADO, tituloAvisoCandidatura } from "@/lib/notifications/avisos";
+import { tituloAvisoCandidatura } from "@/lib/notifications/avisos";
+import { primeiroNome } from "@/lib/display-name";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
@@ -78,6 +79,7 @@ import { SITE_URL } from "@/lib/site";
 import type { Property, Proximity } from "@/lib/types";
 import { hojeBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import {
   resumoContrato,
   resumoContratoEmDias,
@@ -1508,6 +1510,8 @@ export async function registrarContrato(
       garantia,
       // O período já nasce no contrato: o banco recusa a sobreposição antes dos blocos (o gatilho o mantém depois).
       periodo: `[${periodo.inicio},${periodo.fim}]`,
+      // E440: o contrato carrega o orçamento de origem (pedido VN-PD → orçamento ORC → contrato VN-CT).
+      proposta_id: acordada ? acordada.id : null,
     })
     .select("id")
     .single();
@@ -1551,7 +1555,7 @@ export async function registrarContrato(
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
         userId: lead.tenant_id as string,
-        pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
+        pushUrl: HREF_CONTRATO_DA_ESTADIA(contratoNovoId),
         imovelId: lead.property_id as string,
         // E444: crítico (assinar), resolvido quando o morador assinar.
         refId: contratoNovoId,
@@ -1832,10 +1836,11 @@ export async function requestLead(
       // E570: o clique cai no cartão DESTA candidatura (mesmo sem o corpo do e-mail).
       pushUrl: kind === "candidatura" && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
       imovelId: propertyId,
-      // E570: no sino, a candidatura nomeia o morador (máscara: "Candidato(a)" até o aceite) e o imóvel, e o clique cai
+      // E570: no sino, a candidatura nomeia o morador pelo PRIMEIRO nome (o mesmo do e-mail; sem nome, "Candidato(a)") e o
+      // imóvel, e o clique cai
       // no cartão DESTA candidatura (refId = a candidatura).
       ...(kind === "candidatura" && leadId
-        ? { tituloAviso: tituloAvisoCandidatura({ candidato: CANDIDATO_MASCARADO, imovel: propertyTitle }), refId: leadId, papelAviso: "dono" as const }
+        ? { tituloAviso: tituloAvisoCandidatura({ candidato: primeiroNome(me?.full_name), imovel: propertyTitle }), refId: leadId, papelAviso: "dono" as const }
         : {}),
       ...(corpo ? { body: corpo.body } : {}),
       detailsHtml: pessoa ? pessoa.html + (detailsHtml ?? "") : detailsHtml,
@@ -1971,6 +1976,8 @@ export async function sendMessage(input: {
         // E533: o aviso do sino guarda a conversa — abrir a conversa marca esses avisos como lidos.
         refId: conversationId,
         remetenteNome: senderName,
+        // E482: a prévia vira o texto do aviso no sino (limpa e com o filtro de contato no gravarAviso).
+        previaAviso: safeBody,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +

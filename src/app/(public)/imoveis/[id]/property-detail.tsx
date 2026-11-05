@@ -86,7 +86,7 @@ import { AvaliacoesExemplo } from "@/components/property/avaliacoes-exemplo";
 import { FaixaProprietario } from "@/components/property/faixa-proprietario";
 import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
-import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
+import { destinoContatoViva, parcelasDoResumo, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { SELECAO_VAZIA, comEntrada, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
@@ -322,7 +322,7 @@ export function PropertyDetail({
   // arredondados (43 dias = "1 mês + 13 dias", não 2 meses).
   const diasSelecao = diasDaSelecao(selecao);
   const estadiaSelecao = diasSelecao ? estadiaDoImovelEmDias(property, diasSelecao) : null;
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida });
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, ...parcelasDoResumo(calcularTotalMensal(property)), estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida, janela: { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, maxDias: property.maxPeriodDays } });
   // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
   const previaMensagem = validarApresentacao(apresentacao);
   function abrirSolicitacao() {
@@ -397,7 +397,7 @@ export function PropertyDetail({
     <>
       {/* Um embaixo do outro, na largura do cartão (Q3: campo de data inteiro no iPhone, como o select do motivo). */}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-        Quando quer entrar? (opcional)
+        Quando quer entrar?
         <CampoData
           data-testid={`${prefixo}-inicio`}
           min={hojeBR()}
@@ -408,7 +408,7 @@ export function PropertyDetail({
         />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-        Até quando? (opcional)
+        Até quando?
         <CampoData
           data-testid={`${prefixo}-saida`}
           min={selecao.entrada || hojeBR()}
@@ -695,7 +695,7 @@ export function PropertyDetail({
                   </div>
                 )}
                 <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
-                  {(etapa === "revisar" ? resumo.linhas.filter((l) => LINHAS_REVISAR.has(l.rotulo) || l.rotulo.startsWith("Total da estadia (")) : resumo.linhas).map((l) => (
+                  {(etapa === "revisar" ? resumo.linhas.filter((l) => l.revisar || LINHAS_REVISAR.has(l.rotulo) || l.rotulo.startsWith("Total da estadia (")) : resumo.linhas).map((l) => (
                     <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                       <dt className="text-muted">{l.rotulo}</dt>
                       <dd className="text-right font-medium text-ink">{l.valor}</dd>
@@ -716,7 +716,7 @@ export function PropertyDetail({
                     <details className="mt-3 rounded-lg border border-line px-3 py-2 text-sm" data-testid="candidatura-detalhes">
                       <summary className="cursor-pointer font-medium text-ink">Detalhes dos valores</summary>
                       <dl className="mt-2 space-y-2">
-                        {resumo.linhas.filter((l) => !LINHAS_REVISAR.has(l.rotulo) && l.rotulo !== "Entrada" && l.rotulo !== "Saída").map((l) => (
+                        {resumo.linhas.filter((l) => !l.revisar && !LINHAS_REVISAR.has(l.rotulo) && l.rotulo !== "Entrada" && l.rotulo !== "Saída").map((l) => (
                           <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                             <dt className="text-muted">{l.rotulo}</dt>
                             <dd className="text-right text-ink">{l.valor}</dd>

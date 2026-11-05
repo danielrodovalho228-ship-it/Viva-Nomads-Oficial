@@ -27,13 +27,13 @@ test("ordem da barra (instantâneo): Visão geral, Pendências e os sete grupos"
   assert.deepEqual(forma, [
     "Visão geral",
     "Pendências",
-    "Anúncios e pessoas: Anúncios · Publicamos para você · Pedidos de moradia · Usuários · Documentos · Fotos de perfil · Ofensas no chat",
-    "Estadias: Contratos · Candidaturas · Manutenção · Serviços do morador · Atendimento",
-    "Rede: Parceiros · Avaliações do imóvel",
+    "Anúncios e pessoas: Imóveis · Publicamos para você · Pedidos de moradia · Usuários · Documentos · Fotos de perfil · Ofensas no chat",
+    "Estadias: Contratos · Candidaturas · Solicitações de manutenção · Serviços do morador · Atendimento",
+    "Rede: Parceiros · Avaliadores",
     "Cidades e marketing: Cidades · Destinos · Marketing",
     "Números: Financeiro · Funil e indicadores · Eventos · Qualidade",
     "Equipe: Central de Agentes · Caixa dos Sócios",
-    "Sistema: Chaves e integrações · Dados e retenção · Testes",
+    "Sistema: Sistema e integrações · Dados e retenção · Dados de teste",
   ]);
 });
 
@@ -104,4 +104,14 @@ test("E216: a casca monta a barra do admin com a marca do observador (vinda do s
   assert.doesNotMatch(casca, /\[\.\.\.BARRA_ADMIN\]/);
   const servidor = readFileSync(new URL("../lib/painel/contadores-servidor.ts", import.meta.url), "utf8");
   assert.match(servidor, /admin \? ehObservadorQa\(user\.id\)/);
+});
+
+test("E479: cada rótulo da barra diz o que a tela é e bate com o endereço (nada de Anúncios→imoveis, Testes→dados-de-teste)", () => {
+  const por = Object.fromEntries(PAGINAS_BARRA_ADMIN.map((i) => [i.href, i.rotulo]));
+  assert.equal(por["/admin/imoveis"], "Imóveis");
+  assert.equal(por["/admin/solicitacoes"], "Solicitações de manutenção");
+  assert.equal(por["/admin/avaliadores"], "Avaliadores");
+  assert.equal(por["/admin/sistema"], "Sistema e integrações");
+  assert.equal(por["/admin/dados-de-teste"], "Dados de teste");
+  for (const r of ["Anúncios", "Manutenção", "Avaliações do imóvel", "Chaves e integrações", "Testes"]) assert.ok(!Object.values(por).includes(r), r);
 });

@@ -59,8 +59,9 @@ test.describe("T573 — E195: cadastro clean e um primário só", () => {
       await expect.poll(() => primario(p, "cadastro-continuar"), { timeout: 15_000 }).toEqual({ bg: VERDE, op: "1" });
       await p.screenshot({ path: `${SAIDA}/t573-passo4-${largura}.png` });
 
+      // E196: a antiga /qualificar foi absorvida — o link cai na Revisão do rascunho, no mesmo fundo clean.
       await p.goto(`/qualificar?imovel=${ids.rascunho}`, { waitUntil: "domcontentloaded" });
-      await expect(p.getByRole("heading", { name: "Requisitos e selo" })).toBeVisible({ timeout: 30_000 });
+      await expect(p.getByTestId("antes-de-publicar")).toBeVisible({ timeout: 30_000 });
       expect(await fundoNaLateral(p)).toBe(CLEAN);
       await p.screenshot({ path: `${SAIDA}/t573-requisitos-${largura}.png` });
       await p.context().close();

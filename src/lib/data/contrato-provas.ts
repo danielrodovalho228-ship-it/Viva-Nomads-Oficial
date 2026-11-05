@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getContratoParaAssinar } from "@/lib/data/contrato-assinar-actions";
-import { COLUNAS_PROVAS, montarDadosProvas, type DadosProvas } from "@/lib/contrato-provas";
+import { COLUNAS_PROVAS, montarDadosProvas, textoOuNulo, type DadosProvas } from "@/lib/contrato-provas";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,7 +19,7 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
   if (!visao) return null;
 
   const [{ data: contrato, error: e1 }, { data: ass, error: e2 }, { data: pags, error: e3 }, { data: confs, error: e4 }, { data: aditivos, error: e5 }] = await Promise.all([
-    supabase.from("contratos").select("created_at").eq("id", contratoId).maybeSingle(),
+    supabase.from("contratos").select("created_at, assinado_proprietario_em, assinado_inquilino_em").eq("id", contratoId).maybeSingle(),
     supabase.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     supabase.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId),
     supabase.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
@@ -48,6 +48,11 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
     prazoEntradaEm: visao.prazoConferenciaEm,
     prazoSaidaEm: visao.prazoConferenciaSaidaEm,
     assinaturas: ass ?? [],
+    // E197: as datas gravadas no contrato completam o papel sem registro com hash (a mesma fonte da lista do admin).
+    datasAssinatura: {
+      proprietario: textoOuNulo((contrato as { assinado_proprietario_em?: string | null } | null)?.assinado_proprietario_em),
+      inquilino: textoOuNulo((contrato as { assinado_inquilino_em?: string | null } | null)?.assinado_inquilino_em),
+    },
     pagamentos: pags ?? [],
     conferencias: confs ?? [],
     itens: itens ?? [],

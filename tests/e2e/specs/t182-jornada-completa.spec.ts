@@ -1,5 +1,6 @@
 // Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
 import { test, expect, type Page, type Request } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, lerSaida, novaSenha, novoSufixo, pdf, tornarContratoVigente } from "../fixtures/laboratorio";
 import { MSG_ASSINATURA_INATIVA, ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
@@ -120,6 +121,8 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await page.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first().click();
     const passo = page.getByTestId("solicitacao-passo");
     await expect(passo).toBeVisible();
+    // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+    await preencherPeriodoDaProposta(passo);
     await passo.getByRole("button", { name: "Continuar" }).click();
     await passo.getByRole("button", { name: "Continuar" }).click();
     await passo.getByRole("button", { name: "Enviar candidatura" }).click();
