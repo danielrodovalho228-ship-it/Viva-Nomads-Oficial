@@ -32,10 +32,16 @@ test.describe("T1190 — E598: a Revisão conta os mesmos itens que o cartão de
     test(`"Faltam N itens" na Revisão = os N atalhos do cartão (${w})`, async ({ browser }) => {
       const titulo = `Rascunho incompleto t1190 ${w} ${sufixo}`;
       const imovel = await criarImovelPronto(ids.dono!, titulo);
-      // Sem fotos, descrição e preço: vários itens faltando. Só as COLUNAS mudam (a fixture não grava draft_data, e o
-      // assistente lê as colunas): um draft_data parcial faria o assistente e o cartão lerem fontes diferentes.
+      // Sem fotos, descrição e preço: vários itens faltando. O rascunho real mora no draft_data, com as MESMAS chaves que
+      // o assistente grava (o cartão e o assistente leem dele); as colunas acompanham. A fixture não grava draft_data.
+      const draft = {
+        title: titulo, propertyType: "Studio", description: "", bedrooms: "1", bathrooms: "1", areaM2: "40", maxGuests: "2",
+        minPeriod: "30", maxPeriod: "180", monthlyPrice: "", street: "Rua do Laboratório", numero: "102", cep: "38400-100",
+        neighborhood: "Centro", city: "Uberlândia", uf: "MG", internetMbps: "300", tipoEntrada: "porteiro",
+        privacidade: { semCamerasInterior: true }, garantias: { caucao_avista: true }, photos: [],
+      };
       expect((await adm().from("property_photos").delete().eq("property_id", imovel)).error).toBeNull();
-      expect((await adm().from("properties").update({ description: "", monthly_price: 0, photo_count: 0 }).eq("id", imovel)).error).toBeNull();
+      expect((await adm().from("properties").update({ description: "", monthly_price: 0, photo_count: 0, draft_data: draft }).eq("id", imovel)).error).toBeNull();
 
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
       try {
@@ -53,7 +59,8 @@ test.describe("T1190 — E598: a Revisão conta os mesmos itens que o cartão de
         const motivo = p.getByTestId("publicar-motivo").first();
         await expect(motivo).toContainText(/Faltam? \d+ ite(m|ns) antes de publicar/, { timeout: 20_000 });
         const naRevisao = Number((await motivo.innerText()).match(/Faltam? (\d+) ite/)![1]);
-        expect(naRevisao, `Revisão: "${await motivo.innerText()}"; cartão: ${atalhos.join(" · ")}`).toBe(n);
+        const lista = (await p.getByTestId("lista-conferencia").innerText()).replace(/\s+/g, " ").slice(0, 600);
+        expect(naRevisao, `Revisão: "${await motivo.innerText()}" — lista: ${lista}; cartão: ${atalhos.join(" · ")}`).toBe(n);
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       } finally {
         await ctx.close();
