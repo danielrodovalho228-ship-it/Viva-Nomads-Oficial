@@ -20,7 +20,7 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
   test.use({ storageState: { cookies: [], origins: [] } });
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px — aluguel médio R$ 3.000, taxa média 10% e o quadro das lacunas`, async ({ page }) => {
+    test(`${largura}px — modelo v3: R$ 3.000 × 3 meses na faixa da carteira, regime Presumido em destaque e o quadro das lacunas`, async ({ page }) => {
       test.setTimeout(90_000);
       await page.setViewportSize({ width: largura, height: 900 });
       await entrarComoSocio(page, "/simulacao");
@@ -28,8 +28,16 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       const corpo = limpo(await page.locator("body").innerText());
       // Receita do modelo validado (o texto do "Como calculamos" lê a mesma fonte da conta).
       expect(corpo).toMatch(/aluguel médio de R\$ 3\.000/);
-      expect(corpo).toMatch(/Taxa média do modelo validado: 10%/);
+      // Modelo v3 (05/11): a taxa é a da faixa da carteira (padrão 10%), nunca 12% fixo; a projeção antiga saiu.
+      expect(corpo).toMatch(/A conta usa a faixa escolhida \(agora 10%/);
       expect(corpo).not.toMatch(/R\$ 4\.320/);
+      expect(corpo).not.toMatch(/69,3 mil|1º mês positivo no mês 14|se paga no mês 27/);
+      await expect(page.getByTestId("regime-presumido")).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByTestId("seletor-regime")).toContainText("instrumento societário em revisão");
+      await expect(page.getByTestId("faixa-10")).toHaveAttribute("aria-pressed", "true");
+      for (const f of ["12", "10", "8", "6"]) await expect(page.getByTestId(`faixa-${f}`)).toBeVisible();
+      expect(corpo).toMatch(/Stays \(channel manager\): só na fase 2 do Gestor/);
+      expect(corpo).toMatch(/a Viva não tem hoje/);
       expect(corpo).not.toMatch(/Taxa média ponderada/);
 
       // Lacunas de custo: o quadro existe e lista o que ainda não tem preço.

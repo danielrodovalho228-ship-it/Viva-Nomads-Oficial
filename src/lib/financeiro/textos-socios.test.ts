@@ -77,11 +77,11 @@ test("/modelodenegocio: seção 'Virada de chave nos condomínios' é meta, nunc
   assert.ok(texto.includes("Plataforma em fase de testes. Lançamento oficial em 2027."));
 });
 
-test("custo fixo padrão ≈ R$ 7,3 mil com pró-labore de referência (E559, modelo de custos v2)", async () => {
+test("custo fixo padrão (modelo v3): fornecedores + CDL + pró-labore de referência ≈ R$ 7,4 mil, antes dos encargos do regime", async () => {
   const { CUSTOS_FIXOS, CUSTO_FIXO_FAIXA } = await import("../../config/premissas-financeiras.ts");
   const total = CUSTOS_FIXOS.reduce((s, c) => s + c.valor, 0);
-  assert.ok(total >= 7250 && total <= 7350, `total ${total}`);
-  assert.equal(CUSTO_FIXO_FAIXA.texto, "≈ R$ 7,3 mil/mês com pró-labore de referência");
+  assert.ok(total >= 7350 && total <= 7450, `total ${total}`);
+  assert.match(CUSTO_FIXO_FAIXA.texto, /encargos do regime/);
 });
 
 // E559: nenhuma tela dos sócios mostra o custo antigo (R$ 989, pró-labore de R$ 5.000) nem chama a hipótese da Certta de preço.
