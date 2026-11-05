@@ -65,12 +65,16 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
  */
 export const FORA_DA_BARRA_OBSERVADOR: readonly string[] = ["/admin/socios"];
 
+/** E591: a entrada que a observadora da QA vê no grupo Equipe — as premissas (E559) em leitura, sem código. */
+export const ITEM_PREMISSAS_OBSERVADOR: ItemMenu = folha("admin-premissas", "Premissas (leitura)", "/admin/premissas", "socios");
+
 export function barraAdminPara(o: { observadorQa: boolean }): readonly ItemMenu[] {
   if (!o.observadorQa) return BARRA_ADMIN;
   const fora = (i: ItemMenu) => !!i.href && FORA_DA_BARRA_OBSERVADOR.includes(i.href);
   return BARRA_ADMIN.flatMap((i) => {
     if (!i.filhos) return fora(i) ? [] : [i];
     const filhos = i.filhos.filter((f) => !fora(f));
+    if (i.id === "admin-equipe") filhos.push(ITEM_PREMISSAS_OBSERVADOR);
     return filhos.length ? [{ ...i, filhos }] : [];
   });
 }
@@ -96,6 +100,7 @@ export const FORA_DA_BARRA_ADMIN: Readonly<Record<string, string>> = {
   "/admin/contratos/encerramentos": "subpágina de Contratos",
   "/admin/parceiros/pedidos": "subpágina de Parceiros",
   "/admin/parceiros/pedidos/[id]": "subpágina de Parceiros",
+  "/admin/premissas": "só a observadora da QA vê na barra (Premissas em leitura, E591); o admin comum vai ao /simulacao",
 };
 
 function folhasDe(itens: readonly ItemMenu[]): ItemMenu[] {

@@ -15,8 +15,8 @@ export function CaixaRestritaQa() {
         <div className="space-y-3 text-sm text-ink" data-testid="caixa-restrita-qa">
           <p>{TEXTO_CAIXA_RESTRITA_QA.motivo}</p>
           <p>{TEXTO_CAIXA_RESTRITA_QA.caminho}</p>
-          <Link href="/simulacao" className="inline-flex min-h-11 items-center font-semibold text-forest underline underline-offset-4">
-            Abrir as premissas (/simulacao)
+          <Link href="/admin/premissas" className="inline-flex min-h-11 items-center font-semibold text-forest underline underline-offset-4">
+            Abrir as premissas (leitura)
           </Link>
         </div>
       </Panel>
