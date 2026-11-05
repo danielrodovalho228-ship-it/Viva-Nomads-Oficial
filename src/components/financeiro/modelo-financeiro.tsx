@@ -159,7 +159,9 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
   const porContratoExtras = useMemo(() => receitaPorContrato(op, cenario), [op, cenario]);
   const porContratoSoTaxa = useMemo(() => receitaPorContrato(opSoTaxa, cenario), [opSoTaxa, cenario]);
   const sensibilidade = useMemo(() => sensibilidadeAdesao(cenario, op), [cenario, op]);
-  const equilibrioFixo = unit.margem > 0 ? Math.ceil(custoFixo / unit.margem) : null;
+  // E622: o MESMO custo fixo do KPI "Contratos/mês para empatar" — fornecedores + pró-labore + encargos do regime
+  // (custoFixoDe). Antes o rótulo dividia só fornecedores + pró-labore (sem os encargos) e dava 11 contra 12.
+  const equilibrioFixo = unit.margem > 0 ? Math.ceil(custoFixoDe({ custoFixo, regime }) / unit.margem) : null;
   const ligadas = ligados.length + extras.length;
   const frase = fraseResumo(CENARIOS[cenario].nome, projSoTaxa, proj, ligadas);
   const roiDe = (p: Projecao) => ({ r12: roi(p, 12), r24: roi(p, 24), r36: roi(p, 36) });
@@ -322,6 +324,10 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
               </button>
             ))}
           </div>
+          {/* E623: o que a faixa do Gestor traz além da taxa (estrutura aprovada em 04/11/2026). */}
+          <p className={styles.cardHelp} data-testid="faixa-gestor-detalhe">
+            {TAXA_FAIXAS.filter((f) => f.detalhe).map((f) => `${pctTexto(f.taxa)} — ${f.carteira}, com ${f.detalhe}.`).join(" ")}
+          </p>
           <div className={styles.slider} style={{ marginTop: 14 }}>
             <div className={styles.top}>
               <label className={styles.lbl} htmlFor="custo-fixo">
@@ -459,7 +465,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
           <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`taxa de serviço (${pctTexto(taxa)}) ${brl2(taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContrato, taxa))}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
           <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto${operador ? " + operador" : ""}`} />
           <Kpi k="Margem por contrato" v={brl2(unit.margem)} hint="receita − custo variável" />
-          <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint={`custo fixo ${brl(custoFixoDe({ custoFixo, regime }))} ÷ margem; marketing pago em R$ 0; sem cobrança recorrente nesta fase`} />
+          <Kpi k="Contratos/mês para empatar" v={Math.ceil(unit.empate[0]) === Math.ceil(unit.empate[1]) ? `${Math.ceil(unit.empate[0])}` : `${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint={`custo fixo ${brl(custoFixoDe({ custoFixo, regime }))} ÷ margem; marketing pago em R$ 0; sem cobrança recorrente nesta fase`} />
         </div>
 
         {/* Cenários simples: contratos por mês */}
@@ -657,7 +663,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             <ul>
               <li>
                 <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor total do contrato (aluguel médio de {brl(ALUGUEL_MEDIO)} × {mesesContrato} meses). Faixas por nº de imóveis do dono:{" "}
-                {FAIXAS_COMISSAO_PADRAO.map((f) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}`).join(" · ")}
+                {FAIXAS_COMISSAO_PADRAO.map((f) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis${f.gestor ? " ou administradora (Gestor)" : ""} ${pctTexto(f.taxa)}`).join(" · ")}
                 . A conta usa a faixa escolhida (agora <strong>{pctTexto(taxa)}</strong>; padrão {pctTexto(TAXA_MEDIA)}, carteira de 3 a 5 imóveis) — nunca 12% fixo. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
               </li>
               <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário.</li>

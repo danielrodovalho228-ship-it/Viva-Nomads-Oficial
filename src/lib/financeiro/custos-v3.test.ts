@@ -32,8 +32,8 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("v3: contrato de referência R$ 3.000 × 3 meses, na faixa da carteira 12/10/8/6 (nunca 12% fixo)", () => {
   assert.equal(ALUGUEL_MEDIO, 3000);
   assert.equal(MESES_MEDIOS_CONTRATO, 3);
-  assert.deepEqual(TAXA_FAIXAS.map((f) => f.taxa), [0.12, 0.1, 0.08, 0.06]);
-  assert.deepEqual(TAXA_FAIXAS.map((f) => porContrato({ operador: 0, taxa: f.taxa }).receita), [1080, 900, 720, 540]);
+  assert.deepEqual(TAXA_FAIXAS.map((f) => f.taxa), [0.12, 0.1, 0.08, 0.06, 0.04]); // E623: + Gestor
+  assert.deepEqual(TAXA_FAIXAS.map((f) => porContrato({ operador: 0, taxa: f.taxa }).receita), [1080, 900, 720, 540, 360]);
 });
 
 test("v3: regime Simples (~6%) × Lucro Presumido (~13,3%, até ~16,3% com ISS 5%); Presumido em destaque; societário em revisão", () => {
@@ -122,4 +122,33 @@ test("P3 (05/11): investimento único continua R$ 16.000; parecer e consulta só
   const fonte = ler("src/components/financeiro/modelo-financeiro.tsx");
   assert.match(fonte, /INVESTIMENTO_A_COTAR\.map\(/);
   assert.match(fonte, /data-testid="a-cotar-nao-somado"/);
+});
+
+test("E622: equilíbrio do rótulo = o do KPI (mesmo custo fixo com os encargos do regime): Presumido 12, ISS 5% 13, Simples 10", () => {
+  const fonte = ler("src/components/financeiro/modelo-financeiro.tsx");
+  assert.match(fonte, /const equilibrioFixo = unit\.margem > 0 \? Math\.ceil\(custoFixoDe\(\{ custoFixo, regime \}\) \/ unit\.margem\) : null;/);
+  // o KPI mostra um número só quando o intervalo fecha ("12", não "12 a 12")
+  assert.match(fonte, /Math\.ceil\(unit\.empate\[0\]\) === Math\.ceil\(unit\.empate\[1\]\) \?/);
+  const rotulo = (regime: (typeof REGIMES)[number]["id"]) => Math.ceil(custoFixoDe({ custoFixo: CUSTO_FIXO_PADRAO, regime }) / porContrato({ operador: 0, regime }).margem);
+  const kpi = (regime: (typeof REGIMES)[number]["id"]) => Math.ceil(porContrato({ operador: 0, regime }).empate[0]);
+  for (const r of ["presumido", "presumido_iss5", "simples"] as const) assert.equal(rotulo(r), kpi(r), r);
+  assert.deepEqual([kpi("presumido"), kpi("presumido_iss5"), kpi("simples")], [12, 13, 10]);
+});
+
+test("E622: a projeção é determinística (sem estado parcial): Pessimista no Presumido = −R$ 163,2 mil, sem payback em 36 meses", () => {
+  const a = projetar("pessimista", { operador: 0 });
+  const b = projetar("pessimista", { operador: 0 });
+  assert.deepEqual(a, b);
+  assert.equal(Math.round(a.piorCaixa / 100) / 10, -163.2);
+  assert.equal(a.mesPayback, null);
+});
+
+test("E623: a faixa do Gestor (4%, 20+ imóveis ou administradora, cadastro assistido e contato direto) aparece no seletor", () => {
+  const g = TAXA_FAIXAS[TAXA_FAIXAS.length - 1];
+  assert.equal(g.taxa, 0.04);
+  assert.match(g.carteira, /Gestor: 20\+ imóveis ou administradora/);
+  assert.equal(g.detalhe, "cadastro assistido e contato direto");
+  const fonte = ler("src/config/premissas-financeiras.ts");
+  assert.match(fonte, /FAIXAS_COMISSAO_PADRAO\.map\(/, "lidas da regra de cobrança, sem lista própria");
+  assert.match(ler("src/components/financeiro/modelo-financeiro.tsx"), /data-testid="faixa-gestor-detalhe"/);
 });
