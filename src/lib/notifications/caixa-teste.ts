@@ -331,3 +331,13 @@ export function filtroQaDaUrl(sp: { conta?: string | string[]; evento?: string |
     evento: opcoes.eventos.includes(evento) ? evento : null,
   };
 }
+
+/** Monta o endereço da caixa mantendo os parâmetros fixos da página (ex.: aba=emails no admin). */
+export function hrefDaCaixa(base: string, fixos: Record<string, string>, f: { conta?: string | null; evento?: string | null; pagina?: number }): string {
+  const q = new URLSearchParams(fixos);
+  if (f.conta) q.set("conta", f.conta);
+  if (f.evento) q.set("evento", f.evento);
+  if (f.pagina && f.pagina > 1) q.set("pagina", String(f.pagina));
+  const s = q.toString();
+  return s ? `${base}?${s}` : base;
+}
