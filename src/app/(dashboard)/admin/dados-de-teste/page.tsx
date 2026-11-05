@@ -14,7 +14,8 @@ import { GerarResumoSemanal } from "./gerar-resumo-semanal";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 import { ABAS_DADOS_TESTE, HREF_EMAILS_TESTE, abaDadosTeste, type AbaDadosTeste } from "@/lib/admin/dados-teste-abas";
 import { EmailsTesteLista } from "@/components/admin/emails-teste-lista";
-import { resumoContasTeste, textoContasTeste } from "@/lib/admin/contagens";
+import { separarContasTeste } from "@/lib/admin/contagens";
+import { contarUsuarios } from "@/lib/data/admin-contagens";
 
 export const metadata = { title: tituloDoAdmin("/admin/dados-de-teste") };
 export const dynamic = "force-dynamic";
@@ -42,8 +43,11 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
     ? await admin.from("profiles").select("id, full_name, email, role, anonymized_at").eq("is_teste", true).order("email")
     : { data: null };
   const contas = (perfis ?? []) as { id: string; full_name: string | null; email: string | null; role: string | null; anonymized_at: string | null }[];
-  // E334: a mesma regra da contagem de Usuários (proprietários e inquilinos não anonimizados); o resto vem à parte.
-  const resumoTeste = resumoContasTeste(contas);
+  // E475: o número é o MESMO de Usuários, pela MESMA função (contarUsuarios); as contas fora de Usuários (equipe,
+  // anonimizadas) vão num painel à parte. Falhou a contagem → o tamanho da lista pela mesma regra.
+  const { deUsuarios, outras } = separarContasTeste(contas);
+  const contagemUsuarios = admin ? await contarUsuarios(admin).catch(() => null) : null;
+  const numeroTeste = contagemUsuarios?.teste ?? deUsuarios.length;
   const idsTeste = contas.map((c) => c.id);
   const { data: props } =
     admin && idsTeste.length
@@ -137,12 +141,12 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
           </ul>
         )}
       </Panel>
-      <Panel title={`Contas de teste · ${textoContasTeste(resumoTeste)}`} className="mt-6" data-testid="contas-teste">
-        {contas.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma conta marcada como teste (is_teste).</p>
+      <Panel title={`Contas de teste · ${numeroTeste}`} className="mt-6" data-testid="contas-teste">
+        {deUsuarios.length === 0 ? (
+          <p className="text-sm text-muted">Nenhuma conta de proprietário ou morador marcada como teste (is_teste).</p>
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
-            {contas.map((c) => (
+            {deUsuarios.map((c) => (
               <li key={c.id} className="rounded-xl border border-line p-3 text-sm" data-testid="conta-teste">
                 <span className="font-semibold text-ink">
                   {c.full_name?.trim() || c.email || "Sem nome"}
@@ -168,6 +172,22 @@ export default async function AdminDadosDeTestePage({ searchParams }: { searchPa
           </ul>
         )}
       </Panel>
+      {outras.length > 0 && (
+        <Panel title={`Outras contas marcadas como teste · ${outras.length}`} className="mt-6" data-testid="contas-teste-outras">
+          <p className="mb-2 text-sm text-muted">Contas da equipe (como o admin observador da QA) ou anonimizadas: não entram em Usuários nem no número acima.</p>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {outras.map((c) => (
+              <li key={c.id} className="rounded-xl border border-line p-3 text-sm" data-testid="conta-teste-outra">
+                <span className="font-semibold text-ink">
+                  {c.full_name?.trim() || c.email || "Sem nome"}
+                  <SeloTeste />
+                </span>
+                <span className="block text-xs text-muted">{c.anonymized_at ? "Anonimizada" : c.role === "admin" ? "Admin (equipe)" : c.role}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
     </div>
   );
 }

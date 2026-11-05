@@ -92,7 +92,7 @@ test("E334: Retenção e caixa de e-mails contam os guardados pela mesma funçã
   assert.match(ret, /contarGuardados\(admin, origem\.slice\(7\)\)/);
   assert.match(ret, /Guardados agora/);
   const testes = ler("app/(dashboard)/admin/dados-de-teste/page.tsx");
-  assert.match(testes, /Contas de teste · \$\{textoContasTeste\(resumoTeste\)\}/);
+  assert.match(testes, /Contas de teste · \$\{numeroTeste\}/); // E475: o número de Usuários, pela mesma função
   // A contagem de Usuários segue a mesma regra (proprietário/inquilino não anonimizado).
   assert.match(ler("lib/data/admin-contagens.ts"), /\.is\("anonymized_at", null\)\.in\("role", \[\.\.\.PAPEIS_USUARIOS\]\)/);
 });
