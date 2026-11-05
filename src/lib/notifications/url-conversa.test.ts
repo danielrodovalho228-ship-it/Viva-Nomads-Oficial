@@ -29,6 +29,6 @@ test("produtores: a mensagem nova grava/envia o endereço da conversa (push, avi
 
 test("leitura do sino e da lista: o destino passa por urlDoAvisoComConversa (avisos já gravados também)", () => {
   const s = readFileSync("src/lib/data/avisos-actions.ts", "utf8");
-  assert.match(s, /\.select\("id, evento, prioridade, titulo, url, ref_id, criado_em, lido_em, resolvido_em"\)/);
+  assert.match(s, /ler\("id, evento, prioridade, titulo, texto, url, ref_id, criado_em, lido_em, resolvido_em"\)/); // E482: + texto
   assert.match(s, /url: urlDoAvisoComConversa\(a\)/);
 });
