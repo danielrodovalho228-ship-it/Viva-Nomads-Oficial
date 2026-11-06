@@ -456,6 +456,32 @@ export function porContrato(op: Opcoes): PorContrato {
   return { receita, custoVariavel, margem, empate: [empate(marketingDoMes(12)), empate(marketingDoMes(13))] };
 }
 
+/** E646: as durações oferecidas no simulador dos sócios (meses). */
+export const DURACOES_SIMULADOR = [1, 2, 3, 4, 5, 6] as const;
+
+export interface LinhaEquilibrioDuracao {
+  meses: number;
+  /** Contratos por mês para empatar, por regime (null = a margem não cobre o custo). */
+  simples: number | null;
+  presumido: number | null;
+}
+
+/**
+ * E646: o ponto de equilíbrio (contratos/mês) de cada duração de 1 a 6 meses, nos DOIS regimes. É a mesma conta do KPI
+ * "Contratos/mês para empatar" (custo fixo do regime com os encargos ÷ margem do contrato), com as demais escolhas da tela
+ * (faixa de taxa, custo fixo, parceiros ligados) mantidas; só o regime e a duração são o eixo da tabela.
+ */
+export function equilibrioPorDuracao(op: Opcoes): LinhaEquilibrioDuracao[] {
+  return DURACOES_SIMULADOR.map((meses) => {
+    const por = (regime: "simples" | "presumido") => {
+      const o = { ...op, regime, mesesContrato: meses };
+      const margem = porContrato(o).margem;
+      return margem > 0 ? Math.ceil(custoFixoDe(o) / margem) : null;
+    };
+    return { meses, simples: por("simples"), presumido: por("presumido") };
+  });
+}
+
 export interface LinhaInvestidor {
   operador: number;
   anos: Ano[];
