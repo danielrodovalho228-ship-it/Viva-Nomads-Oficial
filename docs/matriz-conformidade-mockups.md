@@ -603,3 +603,14 @@ Sonda das passadas 23/24/29/33. 14 rotas × 3 larguras (42 medições): `/pedido
 6. **Estados que o demo não alcança**: local da estadia no Início (E360, sem estadia ativa), cartão do pedido com destino (E371, sem pedido publicado) e o estado somente leitura do admin
    (E477, conta de observação). Cobertos por testes de unidade; ficam para a QA. Nenhum defeito novo.
 7. **Matriz × mockups**: nada novo.
+
+## Varredura geral por blocos — passada 39 (06/11; modo demonstração, 390 e 1280)
+
+Sequência da reserva das 04:00. **E357** (comodidades agrupadas) já está mesclado (#2904): pulado, sem refazer. Sem merges na `main` depois da passada 38 (#2940).
+Sonda das passadas 23/24/29/33/38/39 em 55 rotas × 2 larguras (17 públicas, 38 do painel).
+
+1. **Imagem quebrada, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo**: nenhum caso real. **Conforme.**
+2. **Falsos positivos conhecidos, conferidos um a um**: fotos `loading="lazy"` fora da vista (carrossel de `/imoveis/ube-001..003` a 390, cartões recomendados de `/dashboard` a 1280);
+   fundo `data:` SVG lido como imagem; grades de comodidades e mosaico da galeria com última linha ímpar em `/imoveis/*` (desenho); `/cidades/uberlandia` (15 em 4, B2);
+   filtros de `/parceiros/buscar` (formulário); "cartão sem foto" em `/privacidade` e `/guias/*` (texto de artigo e JSON-LD, não cartão). **Conforme.**
+3. **Matriz × mockups**: nada novo. Nenhum defeito novo a registrar; nenhuma PR de correção aberta por esta passada.
