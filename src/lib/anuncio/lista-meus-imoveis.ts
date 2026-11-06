@@ -95,3 +95,48 @@ export function juntarCopiasAoPai<T extends { id: string }>(lista: readonly T[],
   }
   return out;
 }
+
+/*
+  E624 (ressalva da prova do E511, 05/11): os contadores de Meus imóveis divergiam na mesma tela — abas 29, "Mostrar
+  mais (12 de 17)" / "(5 de 5)" e 31 com as cópias abertas. A unidade agora é UMA só, o ANÚNCIO: uma cópia de rascunho
+  aberta aparece debaixo do cartão-pai, mas não conta nem ocupa vaga da página. Toda superfície (abas, "N imóveis",
+  "Mostrando N de T", "Mostrar mais") lê `contagemDaLista`/`paginarAnuncios` — o mesmo número.
+*/
+
+/** Os anúncios da lista: tudo, menos as cópias de rascunho (que só aparecem abertas, sob o pai). */
+export function anunciosDaLista<T extends { id: string }>(itens: readonly T[], copias: ReadonlySet<string>): T[] {
+  return itens.filter((i) => !copias.has(i.id));
+}
+
+/**
+ * A página de anúncios: conta só os anúncios (POR_PAGINA por página); cada cópia aberta vem junto do seu pai, sem
+ * ocupar vaga. `lista` já vem na ordem da tela (juntarCopiasAoPai). Devolve o que desenhar e a contagem única.
+ */
+export function paginarAnuncios<T extends { id: string }>(
+  lista: readonly T[],
+  copias: ReadonlySet<string>,
+  paginas: number,
+): { visiveis: T[]; mostrados: number; total: number; restantes: number } {
+  const limite = Math.max(1, paginas) * POR_PAGINA;
+  const total = lista.filter((i) => !copias.has(i.id)).length;
+  const visiveis: T[] = [];
+  let mostrados = 0;
+  for (const i of lista) {
+    const ehCopia = copias.has(i.id);
+    if (!ehCopia && mostrados >= limite) break;
+    visiveis.push(i);
+    if (!ehCopia) mostrados += 1;
+  }
+  return { visiveis, mostrados, total, restantes: total - mostrados };
+}
+
+/** "1 imóvel" / "N imóveis" — e, quando há mais páginas, "Mostrando M de N imóveis". */
+export function textoContagemLista(p: { mostrados: number; total: number }): string {
+  const n = p.total === 1 ? "1 imóvel" : `${p.total} imóveis`;
+  return p.mostrados < p.total ? `Mostrando ${p.mostrados} de ${n}` : n;
+}
+
+/** O botão: soma até mais uma página — "Mostrar mais 12" (ou o que faltar). */
+export function textoMostrarMais(restantes: number): string {
+  return `Mostrar mais ${Math.min(restantes, POR_PAGINA)}`;
+}

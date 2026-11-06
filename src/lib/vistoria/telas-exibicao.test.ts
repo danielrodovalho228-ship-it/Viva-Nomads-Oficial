@@ -74,7 +74,9 @@ test("QA #1111 item 5: 'Avaliador designado pela Viva' aparece uma vez só", () 
 
 test("QA #1111 item 7 e um primário por tela: Nível, morador e conversa", () => {
   // E193 (30/10): o ruído virou cartões de marcar (desmarcado = não), então o salvar não espera "todas respondidas".
-  assert.match(NIVEL, /variant="secondary"\s+size="sm"\s+disabled=\{pendente\}\s+onClick=\{\(\) =>\s+iniciar\(async \(\) => \{\s+const respostas/, "Salvar ruído ficou secundário");
+  // E606: o ruído grava a cada toque — sem botão de salvar (e, portanto, sem disputar o primário da tela).
+  assert.doesNotMatch(NIVEL, /Salvar ruído/, "o ruído não tem mais botão de salvar");
+  assert.doesNotMatch(NIVEL, /<Button[^>]*variant="primary"/, "nenhum primário no bloco de ruído e extras");
   assert.equal(primarios(BLOCO_DONO), 1, "só 'Pedir avaliação do imóvel'");
   assert.equal(primarios(CARTAO_CONVERSA), 0, "o primário da conversa é o Enviar");
   assert.ok(primarios(MORADOR) <= 1);

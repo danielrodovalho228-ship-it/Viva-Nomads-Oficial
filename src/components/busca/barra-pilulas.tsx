@@ -8,7 +8,7 @@ import { OPCOES_PRECO, OPCOES_TIPO, type FiltrosPainel } from "@/lib/busca/paine
 import { ROTULO_PILULA, valorDaPilula, type IdPilula } from "@/lib/busca/pilulas";
 import { facetaUnica } from "@/lib/busca/facetas";
 import { NIVEIS, ROTULO_NIVEL, type Nivel } from "@/config/niveis";
-import { TEXTO_SEM_NIVEIS, grupoNivel } from "@/lib/busca/filtro-nivel";
+import { grupoNivel } from "@/lib/busca/filtro-nivel";
 import { ROTULO_DATAS_FLEXIVEIS } from "@/lib/busca/datas-flexiveis";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +39,10 @@ export function BarraPilulas(p: {
   mapa: boolean;
   onMapa: () => void;
 }) {
-  const [aberto, setAberto] = useState<IdPilula | null>(null);
+  const [abertoRaw, setAberto] = useState<IdPilula | null>(null);
   const caixa = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!aberto) return;
+    if (!abertoRaw) return;
     const fora = (e: MouseEvent) => {
       const alvo = e.target as Node;
       if (!alvo.isConnected || caixa.current?.contains(alvo)) return;
@@ -56,7 +56,7 @@ export function BarraPilulas(p: {
       document.removeEventListener("click", fora);
       document.removeEventListener("keydown", esc);
     };
-  }, [aberto]);
+  }, [abertoRaw]);
 
   const f = p.filtros;
   const rotuloOrdem = p.opcoesOrdem.find(([v]) => v === p.ordem)?.[1] ?? null;
@@ -68,6 +68,8 @@ export function BarraPilulas(p: {
   };
   const porNivel = Object.fromEntries(NIVEIS.map((v) => [v, p.contar({ ...f, nivelMin: v })])) as Record<Nivel, number>;
   const nivel = grupoNivel(porNivel, f.nivelMin ?? "");
+  // E452: painel do Nível aberto numa busca que ficou sem nível (filtros mudaram) fecha — nunca um painel sem opções.
+  const aberto = abertoRaw === "nivel" && !nivel.visivel ? null : abertoRaw;
 
   const pilula = (id: IdPilula) => {
     const v = valor(id);
@@ -107,7 +109,8 @@ export function BarraPilulas(p: {
         {pilula("local")}
         {pilula("tipo")}
         {pilula("preco")}
-        {pilula("nivel")}
+        {/* E452: filtro que não filtra não se mostra — a pílula só existe quando há nível para escolher (ou um já escolhido). */}
+        {nivel.visivel && pilula("nivel")}
         <Chip ativo={p.nMaisFiltros > 0} onClick={p.onMaisFiltros} aria-haspopup="dialog" data-testid="pilula-mais" className="shrink-0 gap-2 whitespace-nowrap">
           <SlidersHorizontal className="h-4 w-4" aria-hidden /> Mais filtros
           {p.nMaisFiltros > 0 && <span className="tabular-nums">({p.nMaisFiltros})</span>}
@@ -164,22 +167,15 @@ export function BarraPilulas(p: {
               })}
             </div>
           )}
-          {/* E105: o nível mora só aqui (saiu da folha "Mais filtros"). E590: as 3 opções aparecem SEMPRE, com o contador
-              (zero = desabilitada, como Tipo e Preço); sem nenhum nível na busca, a nota explica o zero embaixo delas. */}
+          {/* E105: o nível mora só aqui (saiu da folha "Mais filtros"). E452: só abre com o que escolher — as 3 opções com o
+              contador do resultado atual (zero = desabilitada, como Tipo e Preço); sem nível no resultado a pílula nem aparece. */}
           {aberto === "nivel" && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {NIVEIS.map((v) =>
-                  opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => {
-                    p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v });
-                    setAberto(null);
-                  }, v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
-                )}
-              </div>
-              {!nivel.visivel && (
-                <p className="text-sm text-muted" data-testid="painel-nivel-vazio">
-                  {TEXTO_SEM_NIVEIS}
-                </p>
+            <div className="flex flex-wrap gap-2">
+              {NIVEIS.map((v) =>
+                opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => {
+                  p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v });
+                  setAberto(null);
+                }, v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
               )}
             </div>
           )}

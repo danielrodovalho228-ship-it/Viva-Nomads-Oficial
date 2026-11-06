@@ -46,6 +46,17 @@ test.describe("T253 — Solicitar orçamento na página pública do parceiro", (
       const r = await page.goto(`/parceiros/${slug}`, { waitUntil: "domcontentloaded" });
       test.skip(!NO_LABORATORIO && r?.status() === 404, `parceiro de QA ${slug} não publicado neste ambiente`);
       await expect(page.getByTestId("pagina-parceiro")).toBeVisible();
+      await expect(page.locator("body")).not.toContainText(TEXTO_ANTIGO);
+
+      // E339 (01/11): o parceiro de QA do deploy é um parceiro de TESTE — para o visitante, a página diz que o perfil não
+      // recebe pedidos, no lugar do botão (a regra do anúncio de teste). É o desenho, não o botão quebrado: confere a
+      // faixa e para aqui. No laboratório o parceiro criado é real e o botão é conferido inteiro.
+      const pedidoTeste = page.getByTestId("parceiro-pedido-teste");
+      if (!NO_LABORATORIO && (await pedidoTeste.count()) > 0) {
+        await expect(pedidoTeste).toContainText("Este perfil não recebe pedidos");
+        await expect(page.getByTestId("solicitar-orcamento")).toHaveCount(0);
+        return;
+      }
 
       const botao = page.getByTestId("solicitar-orcamento");
       await expect(botao).toBeVisible();

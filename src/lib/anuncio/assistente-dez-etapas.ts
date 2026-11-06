@@ -100,8 +100,11 @@ export interface ItemConferencia {
 
 /** E258 (a): o CEP não segura a publicação (rua, bairro e cidade bastam), mas sem ele a busca do "por perto" não roda. */
 export const NOTA_ENDERECO_SEM_CEP = "Sem CEP: o “O que tem por perto” fica de fora do anúncio.";
-/** E258 (b): sem data de início, o anúncio mostra "Disponível agora" (o mesmo texto do cartão de preço). */
-export const NOTA_DISPONIVEL_AGORA = "Disponível agora (sem data de início).";
+/**
+ * E258 (b) / E616: sem data de início, a lista NÃO afirma "Disponível agora" pelo dono (ele não disse isso): diz que a
+ * data não foi informada, o que o anúncio vai mostrar e onde mudar.
+ */
+export const NOTA_SEM_DATA_INICIO = "Data de início não informada: o anúncio vai mostrar “Disponível agora”. Se o imóvel só fica livre depois, informe a data no Passo 9.";
 
 /** Os campos opcionais que a lista de conferência explica (o resto vem da prontidão). */
 export interface ContextoConferencia {
@@ -149,7 +152,7 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
     const ok = estado?.ok ?? true;
     const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo: e.titulo, ok, faltam: estado?.faltam ?? [] };
     if (ok && ctx && e.id === "endereco" && !ctx.cepOk) item.nota = NOTA_ENDERECO_SEM_CEP;
-    if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_DISPONIVEL_AGORA;
+    if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_SEM_DATA_INICIO;
     itens.push(item);
   }
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };

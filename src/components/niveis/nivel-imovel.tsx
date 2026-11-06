@@ -75,7 +75,7 @@ export function NivelImovel({ dados }: { dados: NivelNaFicha | null | undefined 
           <li>O nível é o da área mais fraca do imóvel: sono, clima, banho, cozinha, sala, trabalho, internet, lavanderia e ruído.</li>
           <li>Áreas acima do nível aparecem como “Acima do nível”.</li>
           <li>O morador confere os itens na entrada. Item que não confere tira o nível até o proprietário corrigir.</li>
-          <li>Nível não é selo e não muda a ordem da busca.</li>
+          <li>O nível não muda a ordem da busca.</li>
         </ul>
       </BottomSheet>
     </section>

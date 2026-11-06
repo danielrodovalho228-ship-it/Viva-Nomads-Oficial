@@ -42,7 +42,7 @@ test("o que falta para publicar: 'Falta confirmar: [itens]' na ordem da lista; t
 test("o checklist fica no passo Comodidades, e o 'Resolver' do portão leva até ele", () => {
   const pg = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
   const comodidades = pg.slice(pg.indexOf("{step === ETAPA.comodidades && ("), pg.indexOf("{step === ETAPA.regras && ("));
-  assert.match(comodidades, /<ChecklistConforto\s+marcados=\{conforto\}/);
+  assert.match(comodidades, /<ChecklistConforto\s+(obrigatorio=\{!editingId\}\s+)?marcados=\{conforto\}/);
   const p = prontidaoAnuncio({
     enderecoOk: true, detalhesOk: true, periodoOk: true, fotos: 8, titulo: "Studio", descricao: "x".repeat(80), comodidades: 5, preco: 3000,
     garantiaOk: true, operacao: "proprio", documento: "approved", selo: false, video: false, confortoFaltam: 2, sublocacaoOk: true, privacidadeOk: true,
@@ -72,7 +72,9 @@ test("taxa de manutenção no prazo: oculta abaixo de 3 chamados resolvidos", ()
   assert.equal(rotuloTaxaManutencao({ taxa: 2 / 3, resolvidos: 3 }), "Manutenção resolvida no prazo: 67%");
   assert.equal(rotuloTaxaManutencao({ taxa: 1, resolvidos: 12 }), "Manutenção resolvida no prazo: 100%");
   const pagina = ler("app/(public)/imoveis/[id]/page.tsx");
-  assert.match(pagina, /isExemplo\(property\) \? Promise\.resolve\(null\) : exibicao59DoImovel/, "exemplo nunca mostra taxa nem padrão");
+  // E620: o exemplo mostra o nível que o motor deu (e o padrão mínimo, 12 de 12), mas nunca taxa de manutenção.
+  assert.match(pagina, /isExemplo\(property\) \? Promise\.resolve\(exibicaoDoExemplo\(property\)\) : exibicao59DoImovel/);
+  assert.match(ler("lib/niveis/nivel-exemplo.ts"), /taxaManutencao: null,/, "exemplo nunca mostra taxa");
 });
 
 test("chamado: os 4 estados do prazo de solução e os botões de cada lado", () => {

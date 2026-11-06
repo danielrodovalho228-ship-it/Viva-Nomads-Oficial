@@ -2057,6 +2057,7 @@ export async function saveDraftData(snap: {
   city?: string;
   monthlyPrice?: number;
   neighborhood?: string;
+  bedrooms?: number;
   bathrooms?: number;
   areaM2?: number;
   description?: string;
@@ -2099,10 +2100,14 @@ export async function saveDraftData(snap: {
     }
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
     if (!atualizou) return { ok: true, id: rascunhoId };
-    await gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data));
-    await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
-    await ligarQualificacaoAoImovel(supabase, user.id, rascunhoId);
-    await ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId);
+    // E611: as quatro gravações não dependem umas das outras — em paralelo. O autosave roda a cada mudança e, como as
+    // Server Actions vão uma por vez por aba, cada segundo dele atrasa todas as leituras da tela.
+    await Promise.all([
+      gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data)),
+      sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data)),
+      ligarQualificacaoAoImovel(supabase, user.id, rascunhoId),
+      ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId),
+    ]);
     return { ok: true, id: rascunhoId };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();

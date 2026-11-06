@@ -22,7 +22,10 @@ import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
+import { aoDesligar } from "@/lib/ui/bloco-opcional";
+import { textoConfirmarOcultarLugar } from "@/lib/anuncio/perto-confirmar";
 import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
@@ -170,6 +173,9 @@ function ItemProximidade({
   reportar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
 }) {
   const [aberto, setAberto] = useState(false);
+  // E605: desligar "Mostrar" de um lugar que aparece no anúncio pede confirmação na própria tela (padrão TOGGLE, C9/E56)
+  // — antes desligava em silêncio. Ligar segue imediato.
+  const [confirmandoOcultar, setConfirmandoOcultar] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [estado, setEstado] = useState<"" | "enviando" | "enviado" | string>("");
   async function enviar() {
@@ -184,7 +190,7 @@ function ItemProximidade({
       <CartaoEscolha
         papel="switch"
         on={marcado}
-        onClick={onAlternar}
+        onClick={() => (aoDesligar(marcado) === "confirmar" ? setConfirmandoOcultar(true) : onAlternar())}
         aria-label={`Mostrar ${l.nome} no anúncio`}
         testid="proximidade-mostrar"
         rotulo={<span className="block truncate">{l.nome}</span>}
@@ -195,6 +201,28 @@ function ItemProximidade({
           </span>
         }
       />
+      {confirmandoOcultar && marcado && (
+        <div role="alertdialog" aria-label={`Tirar ${l.nome} do anúncio`} className="mt-2 rounded-xl border border-line bg-white p-3" data-testid="proximidade-ocultar-confirmacao">
+          <p className="text-sm text-ink">{textoConfirmarOcultarLugar(l.nome)}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setConfirmandoOcultar(false);
+                onAlternar();
+              }}
+              data-testid="proximidade-ocultar-confirmar"
+            >
+              Tirar do anúncio
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmandoOcultar(false)} data-testid="proximidade-ocultar-cancelar">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
       {reportar && (
         <div className="mt-1">
           {estado === "enviado" ? (
@@ -239,6 +267,7 @@ export function ProntoParaTrabalhar({
   onMbps,
   imovelId,
   semInternet = false,
+  mbpsObrigatorio = false,
 }: {
   marcadas: Record<string, boolean>;
   onAlternar: (chave: string) => void;
@@ -249,6 +278,8 @@ export function ProntoParaTrabalhar({
   imovelId?: string | null;
   /** E102-B: o dono respondeu "Não tem internet" — a velocidade não é pedida. */
   semInternet?: boolean;
+  /** E608: anúncio novo — a velocidade é obrigatória para publicar (asterisco em vez de "(opcional)"). */
+  mbpsObrigatorio?: boolean;
 }) {
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
@@ -300,7 +331,9 @@ export function ProntoParaTrabalhar({
         </p>
       ) : marcadas.internet_fibra && (
         <label className="mt-3 block max-w-xs text-sm text-ink">
-          Velocidade da internet informada (opcional)
+          {/* E608: para o anúncio NOVO a velocidade é obrigatória (prontidão "internet"); o "(opcional)" contradizia a regra. */}
+          Velocidade da internet
+          {mbpsObrigatorio ? <MarcaObrigatorio /> : <span className="text-muted"> (opcional)</span>}
           <span className="mt-1 flex items-center gap-2">
             <input inputMode="numeric" value={mbps} onChange={(e) => onMbps(e.target.value.replace(/\D/g, "").slice(0, 5))} className="input" placeholder="500" aria-label="Velocidade da internet em Mbps" />
             <span className="text-xs text-muted">Mbps</span>

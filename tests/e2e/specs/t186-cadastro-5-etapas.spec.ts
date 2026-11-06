@@ -210,6 +210,7 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       await expect(prox).toHaveCount(8, { timeout: 20_000 }); // PERTO-B: escola entrou (8 tipos)
       for (const p of await prox.all()) await expect(p).toHaveAttribute("data-mostrar", "1");
       await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-mostrar").click(); // PERTO-A: desliga "Mostrar" em uma
+      await prox.filter({ hasText: "Academia" }).getByTestId("proximidade-ocultar-confirmar").click(); // E605: confirmação do padrão TOGGLE
       // Nenhuma imagem decorativa no meio do formulário.
       await expect(page.getByTestId("etapa-encontramos").locator("img")).toHaveCount(0);
       // Segurança e imóvel: o grupo Segurança e a declaração das câmeras no mesmo bloco.
@@ -268,13 +269,16 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // ── Passo 9: Disponibilidade ────────────────────────────────────────
       await noPasso(page, "disponibilidade");
       // Prompt 22: no computador a data aceita digitar dd/mm/aaaa (com máscara) e o calendário fica num botão; no
-      // celular (toque) segue o seletor nativo — coberto no t204.
+      // celular (toque) o toque no campo abre o mesmo calendário do site (E136) — coberto no t204 e na t915.
       const de = page.getByTestId("disponivel-de");
       const ate = page.getByTestId("disponivel-ate");
       for (const d of [de, ate]) await expect(d).toHaveAttribute("type", "text");
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
-      await de.pressSequentially("01112026");
-      await expect(de).toHaveValue("01/11/2026");
+      // Data sempre no futuro: uma fixa (01/11/2026) virou passado e o aviso "não pode ser antes de hoje" desalinhava as caixas.
+      const futura = new Date(Date.now() + 30 * 86_400_000);
+      const [dd, mm, aaaa] = [String(futura.getDate()).padStart(2, "0"), String(futura.getMonth() + 1).padStart(2, "0"), String(futura.getFullYear())];
+      await de.pressSequentially(`${dd}${mm}${aaaa}`);
+      await expect(de).toHaveValue(`${dd}/${mm}/${aaaa}`);
       // Q9: rótulo curto; no celular os dois campos ficam um embaixo do outro, com a mesma largura.
       await expect(page.getByTestId("disponibilidade")).toContainText("Disponível até");
       // As duas caixas na MESMA leitura (uma depois da outra, algo chegando entre as duas deslocava a página e a conta

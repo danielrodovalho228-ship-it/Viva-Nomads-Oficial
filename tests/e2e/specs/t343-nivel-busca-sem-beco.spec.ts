@@ -91,17 +91,12 @@ test.describe("T343 — nível na busca sem beco sem saída", () => {
         await expect(cards(page)).toHaveCount(1, { timeout: 5_000 });
       }).toPass({ timeout: 60_000 });
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => undefined);
-      const grupo2 = await abrirNivel(page);
-      for (const v of ["essencial", "conforto", "premium"]) {
-        await expect(grupo2.getByTestId(`pilula-nivel-${v}`)).toBeDisabled();
-        await expect(grupo2.getByTestId(`pilula-nivel-${v}-n`)).toHaveText("· 0");
-      }
-      const linha = grupo2.getByTestId("painel-nivel-vazio");
-      await expect(linha).toHaveText("Nenhum anúncio desta busca tem o padrão mínimo confirmado ainda.");
-      await expect(linha.locator("a")).toHaveCount(0);
-      await linha.scrollIntoViewIfNeeded();
-      await page.screenshot({ path: `${SAIDA}/t343-folha-sem-niveis-${w}.png` });
-      await page.keyboard.press("Escape");
+      // E452: nenhum anúncio do resultado tem nível → a pílula "Nível" não aparece (filtro que não filtra não se mostra;
+      // nada de painel só com texto e "Fechar").
+      await expect(page.getByTestId("linha-pilulas")).toBeVisible();
+      await expect(page.getByTestId("pilula-nivel")).toHaveCount(0);
+      await expect(page.getByTestId("painel-pilula-nivel")).toHaveCount(0);
+      await page.screenshot({ path: `${SAIDA}/t343-sem-pilula-nivel-${w}.png` });
 
       // ?nivel=premium zera a busca: aviso próprio e "Ver todos" tira só o nível.
       await page.goto(busca(BAIRRO, "&nivel=premium"), { waitUntil: "domcontentloaded" });

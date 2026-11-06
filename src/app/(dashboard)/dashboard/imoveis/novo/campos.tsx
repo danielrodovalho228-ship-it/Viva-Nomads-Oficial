@@ -8,6 +8,7 @@ import { useToque } from "@/components/ui/use-toque";
 import { MARCA_SUGERIDO } from "@/lib/anuncio/sugestoes-cadastro";
 import { cn } from "@/lib/utils";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /** Mensagem de erro de validação sob um campo (item QA — validação por etapa). */
 export function Erro({ msg }: { msg?: string }) {
@@ -50,6 +51,7 @@ export function LinhaNumero({
   testid,
   erro,
   placeholder,
+  obrigatorio = false,
 }: {
   label: string;
   dica: string;
@@ -63,6 +65,8 @@ export function LinhaNumero({
   testid?: string;
   erro?: string;
   placeholder?: string;
+  /** E608: obrigatório para publicar (asterisco ao lado do rótulo). */
+  obrigatorio?: boolean;
 }) {
   const n = Number(valor);
   const atual = valor === "" || !Number.isFinite(n) ? null : n;
@@ -73,6 +77,7 @@ export function LinhaNumero({
         <div className="min-w-0">
           <p className="flex flex-wrap items-center text-sm font-semibold text-ink">
             <span>{label}</span>
+            <MarcaObrigatorio ativo={obrigatorio} />
             <MarcaSugerido ativo={sugerido} />
             {daMatricula && (
               <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
@@ -132,6 +137,7 @@ export function Labeled({
   sugerido = false,
   ajuda,
   daMatricula = false,
+  obrigatorio = false,
 }: {
   label: string;
   children: React.ReactNode;
@@ -141,6 +147,8 @@ export function Labeled({
   ajuda?: string;
   /** Prompt 19: o valor veio da matrícula (editável) — etiqueta "veio da matrícula". */
   daMatricula?: boolean;
+  /** E608: obrigatório para publicar (asterisco ao lado do rótulo). */
+  obrigatorio?: boolean;
 }) {
   // Além do <label> em volta, o campo ganha um nome acessível explícito
   // (leitores de tela/validadores que não seguem o rótulo implícito).
@@ -156,6 +164,7 @@ export function Labeled({
     <label className="block min-w-0">
       <span className="mb-2 flex flex-wrap items-center text-sm font-medium text-ink">
         <span className="whitespace-nowrap">{label}</span>
+        <MarcaObrigatorio ativo={obrigatorio} />
         <MarcaSugerido ativo={sugerido} />
         {daMatricula && (
           <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
@@ -209,8 +218,8 @@ export function Toggle({
 
 /**
  * Campo de data do cadastro. Valor em AAAA-MM-DD.
- *  • Celular (toque): o `input type="date"` nativo, SEM máscara (Q8/Q9) — no iPhone abre só o calendário. Ocupa 100%
- *    da largura e não sai do cartão no iOS (`appearance: none`, `min-width: 0`).
+ *  • Celular (toque), E136: o MESMO campo do computador — tocar nele abre o calendário do site (`CalendarioBR`, pt-BR),
+ *    sem teclado. O seletor nativo do aparelho saía no idioma dele ("October 2026", "Sun Mon…").
  *  • Computador (prompt 22): digitar dd/mm/aaaa com máscara, COLAR em vários formatos (01/11/2026, 2026-11-01…) e o
  *    calendário num botão ao lado (o campo nativo do computador é segmentado e não aceitava digitar nem colar). E136:
  *    o calendário é o do site, em pt-BR (`CalendarioBR`); o pop-up do navegador saía no idioma do navegador.
@@ -229,30 +238,6 @@ export function CampoDataUnico({
   testid?: string;
 }) {
   const toque = useToque();
-
-  if (toque) {
-    // E136: o campo nativo escreve a data no idioma do APARELHO ("Oct 25, 2026" num iPhone em inglês). O texto nativo
-    // fica transparente e a data aparece por cima SEMPRE em pt-BR (25/10/2026); o toque continua abrindo o calendário.
-    return (
-      <span className="relative block min-w-0">
-        <input
-          type="date"
-          lang="pt-BR"
-          value={value}
-          min={min}
-          onChange={(e) => onChange(e.target.value)}
-          aria-label={ariaLabel}
-          data-testid={testid}
-          data-vazio={value ? undefined : "1"}
-          className="input box-border block h-11 w-full min-w-0 max-w-full appearance-none text-transparent [&::-webkit-datetime-edit]:text-transparent"
-        />
-        <span className={cn("pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm tabular-nums", value ? "text-ink" : "text-muted")} aria-hidden data-testid={testid ? `${testid}-texto` : undefined}>
-          {value ? isoParaBr(value) : "dd/mm/aaaa"}
-        </span>
-      </span>
-    );
-  }
-
   const antesDoMinimo = !!value && !!min && value < min;
   return (
     <span className="block min-w-0">
@@ -262,6 +247,7 @@ export function CampoDataUnico({
         min={min}
         ariaLabel={ariaLabel}
         testid={testid}
+        abrirAoTocar={toque}
         aria-invalid={antesDoMinimo || undefined}
         className="input h-11"
       />

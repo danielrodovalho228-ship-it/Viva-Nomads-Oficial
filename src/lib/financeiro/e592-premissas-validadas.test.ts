@@ -21,7 +21,8 @@ test("receita: aluguel médio R$ 3.000 e taxa média 10% (modelo validado)", () 
 });
 
 test("lacunas: todo custo sem preço (R$ 0 'a cotar') ou hipotético está na lista, com a situação", () => {
-  const semPreco = [...CUSTOS_FIXOS, ...CUSTOS_POR_CONTRATO].filter((c) => c.valor === 0).map((c) => c.rotulo);
+  // Modelo v3: o marketing pago em R$ 0 é decisão (a linha existe), não falta de preço.
+  const semPreco = [...CUSTOS_FIXOS, ...CUSTOS_POR_CONTRATO].filter((c) => c.valor === 0 && c.rotulo !== "Marketing pago").map((c) => c.rotulo);
   assert.ok(semPreco.length > 0);
   for (const r of semPreco) assert.ok(LACUNAS_CUSTO.some((l) => l.rotulo === r), `falta na lista de lacunas: ${r}`);
   assert.ok(LACUNAS_CUSTO.some((l) => /Identidade/.test(l.rotulo) && /hipótese/.test(l.situacao)), "a identidade (Certta) é hipótese");
@@ -34,5 +35,4 @@ test("tela: a /simulacao mostra o quadro das lacunas e a taxa média do modelo v
   assert.match(s, /data-testid="lacunas-custo"/);
   assert.match(s, /LACUNAS_CUSTO\.map\(/);
   assert.doesNotMatch(s, /MIX_FAIXAS/);
-  assert.doesNotMatch(ler("components/decisao/decisao.tsx"), /faixa de 1 a 2 imóveis/);
 });

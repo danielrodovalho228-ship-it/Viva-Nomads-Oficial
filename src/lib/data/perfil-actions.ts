@@ -12,7 +12,7 @@ import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin, validarMotivoEstadia } from "@/lib/conta-validacao";
 import { validarPorQueNaCidade, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
 import { validarEspacoTrabalho, type EspacoTrabalho } from "@/lib/perfil/espaco-trabalho";
-import { validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
+import { itemTelefoneNoMedidor, pedeProfissao, validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
 import {
   isCategoriaKey,
   CATEGORIA_NAO_INFORMAR,
@@ -385,7 +385,7 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
   if (!user) return null;
   const adminDoc = createAdminClient();
   const [{ data, error }, { count, error: erroImoveis }, fone, doc] = await Promise.all([
-    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia, full_name").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia, full_name, role").eq("id", user.id).maybeSingle(),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     getTelefoneEstado().catch(() => null),
     // Documento: lido pelo servidor (cliente de serviço); só o "tem/não tem" sai daqui.
@@ -400,8 +400,9 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     temFoto: !!data?.avatar_url,
     profissao: (data?.professional_category as string | null) ?? null,
     motivo: (data?.motivo_estadia as string | null) ?? null,
-    anuncia: (count ?? 0) > 0,
-    telefone: fone?.disponivel ? fone.verificado : undefined,
+    // E403: a lista do medidor só muda por ação da pessoa — profissão pelo cadastro, celular verificado sempre conta.
+    anuncia: !pedeProfissao(data?.role as string | null),
+    telefone: itemTelefoneNoMedidor(fone),
     nome: ((data?.full_name as string | null) ?? "").trim(),
     emailConfirmado: !!user.email_confirmed_at,
     cadastro: (() => {

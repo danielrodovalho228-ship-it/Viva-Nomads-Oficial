@@ -9,7 +9,7 @@ import { diasLivres, marcarPeriodo } from "../fixtures/calendario-dono";
   T531 — E136 (#1379), guarda permanente da Pista C: a t424 olha o Passo 9 logo depois de digitar a data. Aqui, com o
   navegador em INGLÊS (en-US), a tela inteira depois de escolher as datas E de bloquear um período (a linha do
   bloqueio também mostra datas), e de novo na Revisão (Passo 10): nenhum mês em inglês ("Oct 25", "Nov", "October"…).
-  1280 px (mouse) e 390 px num iPhone (toque, o seletor nativo).
+  1280 px (mouse) e 390 px num iPhone (toque; desde o E136, o calendário do site).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -19,7 +19,7 @@ const MES_EM_INGLES = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec|J
 
 async function preencherData(page: Page, testid: string, iso: string) {
   const campo = page.getByTestId(testid);
-  await campo.fill((await campo.getAttribute("type")) === "date" ? iso : isoParaBR(iso));
+  await campo.fill(isoParaBR(iso));
 }
 
 test.describe("T531 — E136: datas em pt-BR no Passo 9 e na Revisão, navegador em inglês", () => {
@@ -47,12 +47,8 @@ test.describe("T531 — E136: datas em pt-BR no Passo 9 e na Revisão, navegador
       await preencherData(page, "disponivel-de", de);
       await preencherData(page, "disponivel-ate", ate);
       const etapa = page.getByTestId("etapa-disponibilidade");
-      // No computador a data fica no VALOR do campo de texto (dd/mm/aaaa); no toque, no texto ao lado do seletor nativo.
-      if ((await page.getByTestId("disponivel-de").getAttribute("type")) === "date") {
-        await expect(page.getByTestId("disponivel-de-texto")).toHaveText(isoParaBR(de), { timeout: 15_000 });
-      } else {
-        await expect(page.getByTestId("disponivel-de")).toHaveValue(isoParaBR(de), { timeout: 15_000 });
-      }
+      // A data fica no VALOR do campo de texto (dd/mm/aaaa) — no computador e no toque (E136: sem seletor nativo).
+      await expect(page.getByTestId("disponivel-de")).toHaveValue(isoParaBR(de), { timeout: 15_000 });
 
       // Um bloqueio: a linha dele também tem datas.
       const livres = await diasLivres(etapa);

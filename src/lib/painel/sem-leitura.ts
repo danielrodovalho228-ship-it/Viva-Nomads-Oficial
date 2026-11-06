@@ -5,7 +5,7 @@
   Roda: node --test src/lib/painel/sem-leitura.test.ts
 */
 
-export type FonteDoInicio = "propostas" | "estadias" | "candidaturas" | "conversas" | "buscas" | "conta";
+export type FonteDoInicio = "propostas" | "estadias" | "candidaturas" | "conversas" | "buscas" | "conta" | "imoveis" | "interessados" | "decisoes";
 
 const ROTULO: Record<FonteDoInicio, string> = {
   propostas: "propostas",
@@ -15,6 +15,9 @@ const ROTULO: Record<FonteDoInicio, string> = {
   buscas: "buscas salvas",
   // Achado 132: a conta pausada não lida nunca vira "conta ativa" sem aviso.
   conta: "o estado da sua conta (pausada ou ativa)",
+  imoveis: "seus anúncios",
+  interessados: "os interessados",
+  decisoes: "contratos, visitas, solicitações e pendências",
 };
 
 /** "Não foi possível ler agora: propostas e estadias. As decisões e os números abaixo podem estar incompletos." */
