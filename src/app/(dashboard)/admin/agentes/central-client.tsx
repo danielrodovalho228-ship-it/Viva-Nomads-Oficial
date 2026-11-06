@@ -646,18 +646,20 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
   const destino = a ? dados.agentes.find((x) => x.slug === destinoDaOrdem(a.slug, texto, dados.agentes)) ?? a : null;
   const podeExecutar = (x: Agente | null | undefined) => !!x && x.status === "ativo" && !!x.trigger_id;
   // ADMIN-5: o chat é lido só quando esta aba abre (e por agente), 50 mensagens por vez.
-  const [historico, setHistorico] = useState<{ slug: string; itens: Conversa[]; temMais: boolean } | null>(null);
+  const [historico, setHistorico] = useState<{ slug: string; itens: Conversa[]; temMais: boolean; falhou?: boolean } | null>(null);
+  // Achado nº 21: "Tentar de novo" relê o chat do agente aberto.
+  const [tentativaChat, setTentativaChat] = useState(0);
   const [lendoAntigas, setLendoAntigas] = useState(false);
   useEffect(() => {
     if (!slug) return;
     let vivo = true;
     carregarConversas(slug)
       .then((p) => vivo && setHistorico({ slug, ...p }))
-      .catch(() => vivo && setHistorico({ slug, itens: [], temMais: false }));
+      .catch(() => vivo && setHistorico({ slug, itens: [], temMais: false, falhou: true }));
     return () => {
       vivo = false;
     };
-  }, [slug]);
+  }, [slug, tentativaChat]);
   const carregandoChat = historico?.slug !== slug;
   /**
    * Depois de enviar: relê a página mais nova do chat (o que o servidor gravou) e SOMA ao que já está na tela (por id),
@@ -894,6 +896,13 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                   <p className="py-6 text-center text-sm text-muted" data-testid="chat-carregando">
                     Carregando a conversa…
                   </p>
+                ) : historico?.falhou && thread.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted" role="alert" data-testid="chat-falhou">
+                    <p>Não foi possível carregar a conversa com {a.nome} agora. Isso não quer dizer que ela esteja vazia.</p>
+                    <button type="button" className={`${botaoLinha} mx-auto mt-3 block min-h-11`} onClick={() => { setHistorico(null); setTentativaChat((n) => n + 1); }} data-testid="chat-tentar-de-novo">
+                      Tentar de novo
+                    </button>
+                  </div>
                 ) : thread.length === 0 ? (
                   <p className="py-6 text-center text-sm text-muted">
                     Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou peça uma correção: vira ordem.
@@ -1142,12 +1151,16 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
   // ADMIN-5: as atas são lidas quando a Sala abre, 10 por vez.
   const [atas, setAtas] = useState<{ itens: Conversa[]; temMais: boolean } | null>(null);
   const [lendoAtas, setLendoAtas] = useState(false);
+  // Achado nº 21: falha ao ler as atas não vira "nenhuma ata".
+  const [atasFalhou, setAtasFalhou] = useState(false);
   const lerAtas = useCallback(async (antesDe?: string) => {
     setLendoAtas(true);
+    setAtasFalhou(false);
     try {
       const p = await carregarAtas(antesDe ?? null);
       setAtas((a) => (antesDe && a ? { itens: [...a.itens, ...p.itens], temMais: p.temMais } : p));
     } catch {
+      setAtasFalhou(true);
       setAtas((a) => a ?? { itens: [], temMais: false });
     } finally {
       setLendoAtas(false);
@@ -1285,6 +1298,13 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
           <p className="mt-2 text-sm text-muted" data-testid="atas-carregando">
             Carregando as atas…
           </p>
+        ) : atasFalhou && atas.itens.length === 0 ? (
+          <div className="mt-2 text-sm text-muted" role="alert" data-testid="atas-falhou">
+            <p>Não foi possível carregar as atas agora. Isso não quer dizer que não haja reuniões.</p>
+            <button type="button" className={`${botaoLinha} mt-3 min-h-11`} disabled={lendoAtas} onClick={() => void lerAtas()} data-testid="atas-tentar-de-novo">
+              Tentar de novo
+            </button>
+          </div>
         ) : atas.itens.length === 0 ? (
           <p className="mt-2 text-sm text-muted">Nenhuma reunião ainda. A ata de cada reunião fica guardada aqui.</p>
         ) : (
