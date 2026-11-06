@@ -176,7 +176,11 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                 </div>
                 <FormAcao acao={enviarLaudo} className="mt-4" testid="enviar-laudo">
                   <input type="hidden" name="pedidoId" value={p.id} />
-                  <p className="text-sm text-muted">Ao enviar, a plataforma emite o laudo VIS com este resultado. Confira antes: depois de emitido, só a reverificação ou a contestação mudam o laudo.</p>
+                  <p className="text-sm text-muted">Ao enviar, o laudo VIS é emitido e assinado por você, com este resultado. Confira antes: depois de emitido, só a reverificação ou a contestação mudam o laudo.</p>
+                  <label className="mt-2 flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
+                    <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
+                    <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
+                  </label>
                   <Button type="submit" size="sm" className="mt-2">Enviar o laudo</Button>
                 </FormAcao>
               </>
@@ -208,7 +212,11 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                   </label>
                 );
               })}
-              <Button type="submit" size="sm">Confirmar a reverificação</Button>
+              <label className="flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
+                    <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
+                    <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
+                  </label>
+                  <Button type="submit" size="sm">Confirmar a reverificação</Button>
             </FormAcao>
           )}
         </Panel>

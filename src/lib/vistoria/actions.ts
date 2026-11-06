@@ -22,7 +22,6 @@ import {
   podeReagendar,
   porteDoImovel,
   precoVigente,
-  propoeDescredenciamento,
   siglaCidade,
   transicaoCredenciamento,
   validarConduta,
@@ -34,16 +33,18 @@ import {
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, comTesteConcluido, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador } from "./servidor";
+import { descredenciamentoValido, faixaDeReferencia, validarProposta } from "./escolha";
 import { recusaObservador } from "@/lib/qa/observador";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
 
 /*
   Prompt 62-B1 — ações da avaliação do imóvel. Cada ação confere QUEM é (dono do imóvel, avaliador designado, morador
-  do imóvel ou admin com duas etapas) e grava com o cliente de serviço. O dono NUNCA escolhe o avaliador: nenhuma ação
-  dele recebe avaliador (pedirAvaliacao só leva o imóvel). Com VISTORIA_ATIVA desligada, as ações do dono e do morador
-  recusam; credenciamento e admin funcionam.
+  do imóvel ou admin com duas etapas) e grava com o cliente de serviço. E648: o DONO escolhe o avaliador entre os
+  sugeridos (escolherAvaliador); o avaliador define o próprio valor e prazo (proporPrecoEPrazo) e o dono aceita
+  (aceitarProposta). A Viva não designa e não suspende sozinha. Com VISTORIA_ATIVA desligada, as ações do dono e do
+  morador recusam; credenciamento e admin funcionam.
 */
 
 export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string };
@@ -194,7 +195,25 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   const { data: c } = await a.admin.from("avaliadores_credenciamento").select("status, user_id, parceiro_id, solicitacao_id").eq("id", id).maybeSingle();
   if (!c) return { ok: false, erro: "Credenciamento não encontrado." };
   if (!transicaoCredenciamento(c.status as StatusCredenciamento, para).ok) return { ok: false, erro: "Mudança de situação não permitida." };
-  if ((para === "suspenso" || para === "descredenciado") && !motivo) return { ok: false, erro: "Escreva o motivo." };
+  if (para === "suspenso") return { ok: false, erro: "A Viva não suspende avaliador: descredenciar só por um critério público de qualidade." };
+  // E648: sem descredenciamento discricionário — um critério público + o fato concreto; o avaliador tem direito de resposta.
+  let criterio: string | null = null;
+  if (para === "descredenciado") {
+    const v = descredenciamentoValido({ criterioId: texto(form.get("criterio"), 40) || null, motivo: motivo ?? "" });
+    if (!v.ok) return { ok: false, erro: v.erro };
+    criterio = v.criterioId;
+    if (form.get("respostaRecebida") !== "1" && form.get("semResposta") !== "1") {
+      const { data: aberto } = await a.admin.from("avaliadores_credenciamento").select("resposta_ate").eq("id", id).maybeSingle();
+      const ate = (aberto?.resposta_ate as string | null) ?? null;
+      if (!ate) {
+        const prazo = new Date(Date.now() + v.direitoDeRespostaDias * 86_400_000).toISOString();
+        await a.admin.from("avaliadores_credenciamento").update({ criterio_descredenciamento: criterio, motivo, resposta_ate: prazo }).eq("id", id);
+        revalidatePath(ROTA_ADMIN);
+        return { ok: true, mensagem: `Aberto o direito de resposta do avaliador até ${prazo.slice(0, 10)}. Depois disso, confirme o descredenciamento.` };
+      }
+      if (Date.parse(ate) > Date.now()) return { ok: false, erro: "O prazo de resposta do avaliador ainda está aberto." };
+    }
+  }
   const agora = new Date().toISOString();
   // Correção 62-B3: "Aprovar para teste" é UMA aprovação — para quem ainda não é parceiro, ativa o parceiro (categoria
   // "vistoria", em rascunho, sem página pública) na mesma ação. E35-B: a identidade NÃO é exigida aqui, só na ativação.
@@ -222,10 +241,10 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   }
   await a.admin
     .from("avaliadores_credenciamento")
-    .update({ status: para, motivo, decidido_por: a.userId, decidido_em: agora, parceiro_id: parceiroId, ...(para === "ativo" && c.status === "em_teste" ? { ativado_em: agora } : {}) })
+    .update({ status: para, motivo, decidido_por: a.userId, decidido_em: agora, parceiro_id: parceiroId, ...(criterio ? { criterio_descredenciamento: criterio } : {}), ...(para === "ativo" && c.status === "em_teste" ? { ativado_em: agora } : {}) })
     .eq("id", id);
   if (para === "em_teste") await naFilaDoAdmin(a.admin, "avaliacao_teste", { avaliadorId: id }, "Marcar a avaliação de teste num imóvel de teste e revisar.");
-  if (para === "ativo") await a.admin.from("vistoria_fila_admin").update({ resolvido_em: agora, resolvido_por: a.userId }).eq("avaliador_id", id).in("tipo", ["avaliacao_teste", "suspensao_automatica"]).is("resolvido_em", null);
+  if (para === "ativo") await a.admin.from("vistoria_fila_admin").update({ resolvido_em: agora, resolvido_por: a.userId }).eq("avaliador_id", id).in("tipo", ["avaliacao_teste", "suspensao_automatica", "revisao_criterio"]).is("resolvido_em", null);
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
 }
@@ -366,9 +385,8 @@ export async function adminRevisarAuditoria(form: FormData): Promise<Res> {
     .select("avaliador_id")
     .maybeSingle();
   if (!linha) return { ok: false, erro: "Revisão já registrada." };
-  const { data: revisoes } = await a.admin.from("vistoria_auditoria").select("resultado, revisado_em").eq("avaliador_id", linha.avaliador_id).not("resultado", "is", null);
-  const lista = ((revisoes ?? []) as { resultado: "confere" | "nao_confere"; revisado_em: string }[]).map((r) => ({ resultado: r.resultado, em: r.revisado_em }));
-  if (propoeDescredenciamento(lista, agora)) await naFilaDoAdmin(a.admin, "proposta_descredenciamento", { avaliadorId: linha.avaliador_id }, "2 laudos que não conferem em 12 meses.");
+  // E648: critério público atingido só abre a REVISÃO na fila do admin (com direito de resposta); nunca muda o status.
+  await revisarCriterios(a.admin, linha.avaliador_id as string, agora);
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
 }
@@ -432,10 +450,9 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
     .select("id")
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
-  const designado = await designar(s.admin, p.id, agora);
-  if (designado) await avisar(s.admin, s.userId, "vistoria_designado_dono", rotaDono(im.id), { pedidoId: p.id, propertyId: im.id });
+  const opcoes = await abrirEscolha(s.admin, p.id, agora);
   revalidatePath(`/dashboard/imoveis/${im.id}/nivel`);
-  return { ok: true, mensagem: designado ? "Pedido registrado. A Viva designou o avaliador credenciado." : "Pedido registrado. A Viva está designando o avaliador." };
+  return { ok: true, mensagem: opcoes ? "Pedido registrado. Escolha o avaliador da lista: cada um define o próprio valor e prazo." : "Pedido registrado. Ainda não há avaliador disponível na sua cidade; avisaremos quando houver." };
 }
 
 // ── O avaliador designado ──────────────────────────────────────────────────────────────────────────────────────
@@ -452,23 +469,87 @@ async function comoAvaliador(pedidoId: string) {
   return { ...s, p };
 }
 
+/** O avaliador não quer (ou não pode) esta avaliação: o pedido volta ao dono, que escolhe outro. Sem penalidade. */
 export async function responderDesignacao(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "designado") return SEM_ACESSO;
-  const aceitar = form.get("resposta") === "aceitar";
-  const agora = new Date();
-  if (aceitar) {
-    const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora.toISOString() }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
-    if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
-    await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
-  } else {
-    await passarAoProximo(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
-  }
+  if (form.get("resposta") !== "recusar") return { ok: false, erro: "Para aceitar, informe o seu valor e o seu prazo." };
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
+  await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
+  revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   return { ok: true };
 }
 
-/** Agenda (ou reagenda) a visita. Imóvel ocupado: pede a concordância do morador antes de confirmar. */
+/** E648: o DONO escolhe o avaliador entre os sugeridos pela Viva. Nenhuma outra ação recebe avaliador. */
+export async function escolherAvaliador(form: FormData): Promise<Res> {
+  if (!(await vistoriaAtiva())) return DESLIGADA;
+  const s = await sessao();
+  if (!s) return { ok: false, erro: "Entre na sua conta." };
+  const pedidoId = String(form.get("pedidoId") ?? "");
+  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, owner_id, property_id, status").eq("id", pedidoId).maybeSingle();
+  if (!p || p.owner_id !== s.userId || p.status !== "pedido") return SEM_ACESSO;
+  const r = await escolherNoServidor(s.admin, p.id, String(form.get("avaliadorId") ?? ""));
+  if (!r.ok) return r;
+  revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
+  return { ok: true, mensagem: "Avaliador escolhido. Ele tem 24 horas para responder com o valor e o prazo dele." };
+}
+
+/**
+ * E648: o avaliador escolhido ACEITA propondo o PRÓPRIO valor e o PRÓPRIO prazo (a faixa de referência só orienta; fora
+ * dela o dono vê a sinalização). Nada é cobrado aqui: o pagamento segue direto entre as partes.
+ */
+export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
+  const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
+  if (!c || c.p.status !== "designado") return SEM_ACESSO;
+  const { data: ref } = await c.admin.from("vistoria_pedidos").select("valor_tabela, proposta_em").eq("id", c.p.id).maybeSingle();
+  if (!ref || ref.proposta_em) return { ok: false, erro: "A proposta deste pedido já foi enviada." };
+  const lido = lerReais(String(form.get("valor") ?? ""));
+  if (!lido.ok) return lido;
+  const v = validarProposta({ valor: lido.valor ?? Number.NaN, prazoDias: Number(form.get("prazoDias")) }, faixaDeReferencia(Number(ref.valor_tabela)));
+  if (!v.ok) return v;
+  const agora = new Date().toISOString();
+  const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
+  if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
+  await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
+  await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
+  revalidatePath(ROTA_AVALIADOR);
+  revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
+  return { ok: true, mensagem: v.foraDaFaixa ? "Proposta enviada. O valor está fora da faixa de referência; o proprietário verá essa sinalização." : "Proposta enviada ao proprietário." };
+}
+
+async function comoDonoDoPedido(pedidoId: string) {
+  if (!(await vistoriaAtiva())) return null;
+  const s = await sessao();
+  if (!s) return null;
+  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, owner_id, property_id, status, avaliador_id, proposta_em, proposta_aceita_em").eq("id", pedidoId).maybeSingle();
+  if (!p || p.owner_id !== s.userId || p.status !== "designado" || !p.proposta_em || p.proposta_aceita_em) return null;
+  return { ...s, p };
+}
+
+/** O dono aceita o valor e o prazo propostos: só depois disso a visita pode ser agendada. */
+export async function aceitarProposta(form: FormData): Promise<Res> {
+  const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
+  if (!c) return SEM_ACESSO;
+  const agora = new Date().toISOString();
+  await c.admin.from("vistoria_pedidos").update({ proposta_aceita_em: agora, atualizado_em: agora }).eq("id", c.p.id).is("proposta_aceita_em", null);
+  const { data: cred } = await c.admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", c.p.avaliador_id!).maybeSingle();
+  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: c.p.id, propertyId: c.p.property_id });
+  revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
+  revalidatePath(ROTA_AVALIADOR);
+  return { ok: true, mensagem: "Proposta aceita. Combinem a data da visita." };
+}
+
+/** O dono não aceita a proposta: o pedido volta à escolha e ele escolhe outro avaliador. */
+export async function recusarProposta(form: FormData): Promise<Res> {
+  const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
+  if (!c) return SEM_ACESSO;
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
+  revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
+  revalidatePath(ROTA_AVALIADOR);
+  return { ok: true, mensagem: "Proposta recusada. Escolha outro avaliador." };
+}
+
 export async function agendarVisita(form: FormData): Promise<Res> {
   const pedidoId = String(form.get("pedidoId") ?? "");
   // datetime-local vem sem fuso: é hora de Brasília (o servidor roda em UTC).
@@ -488,7 +569,9 @@ export async function agendarVisita(form: FormData): Promise<Res> {
   if (!parte || !["designado", "agendado"].includes(p.status)) return SEM_ACESSO;
   if (parte === "dono" && !(await vistoriaAtiva())) return DESLIGADA;
   const { data: aceita } = await s.admin.from("vistoria_designacoes").select("id").eq("pedido_id", p.id).eq("avaliador_id", p.avaliador_id!).eq("resposta", "aceita").maybeSingle();
-  if (!aceita) return { ok: false, erro: "O avaliador ainda não aceitou a designação." };
+  if (!aceita) return { ok: false, erro: "O avaliador ainda não respondeu com o valor e o prazo." };
+  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em").eq("id", p.id).maybeSingle();
+  if (!prop?.teste && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
   const reagendando = !!p.agendado_para;
   if (reagendando) {
     const r = podeReagendar(p.agendado_para!, new Date(), parte === "dono" ? p.reagendou_dono : p.reagendou_avaliador);
@@ -532,8 +615,8 @@ export async function concordarVisita(form: FormData): Promise<Res> {
 }
 
 /**
- * Ausência na visita agendada. Avaliador ausente (registrado pelo dono ou pelo admin): nova designação com prioridade,
- * sem custo ao dono, e conta para a suspensão automática. Dono ou morador ausente (registrado pelo avaliador): o pedido
+ * Ausência na visita agendada. Avaliador ausente (registrado pelo dono ou pelo admin): o pedido volta ao dono para escolher outro avaliador,
+ * sem custo ao dono, e a ausência conta para os critérios públicos de qualidade (revisão humana, nunca suspensão automática). Dono ou morador ausente (registrado pelo avaliador): o pedido
  * fica "ausencia" e nova visita é novo pedido pela tabela.
  */
 export async function registrarAusencia(form: FormData): Promise<Res> {
@@ -555,9 +638,9 @@ export async function registrarAusencia(form: FormData): Promise<Res> {
     if (!(s.userId === p.owner_id || ehAdmin)) return SEM_ACESSO;
     await avisar(s.admin, avaliadorUser, "vistoria_ausencia", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
     await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
-    await passarAoProximo(s.admin, p.id, p.avaliador_id!, "ausencia", new Date());
+    await devolverAoDono(s.admin, p.id, p.avaliador_id!, "ausencia", new Date());
     revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
-    return { ok: true, mensagem: c.redesignarComPrioridade ? "Ausência do avaliador registrada. A Viva designa outro avaliador, sem custo para você." : undefined };
+    return { ok: true, mensagem: c.redesignarComPrioridade ? "Ausência do avaliador registrada. Escolha outro avaliador, sem custo extra para você." : undefined };
   }
   if (!(s.userId === avaliadorUser || ehAdmin)) return SEM_ACESSO;
   await s.admin.from("vistoria_pedidos").update({ status: "ausencia", atualizado_em: new Date().toISOString() }).eq("id", p.id);

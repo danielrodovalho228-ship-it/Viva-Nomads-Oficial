@@ -12,7 +12,9 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, prazoResposta, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
-import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, registrarAusencia, responderDesignacao } from "@/lib/vistoria/actions";
+import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao } from "@/lib/vistoria/actions";
+import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import type { ChaveIdentidade } from "@/lib/identidade/estado";
 import { STATUS_TESTE_CONCLUIDO } from "@/lib/vistoria/entrada";
@@ -26,13 +28,13 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 const SITUACAO: Record<StatusCredenciamento, string> = {
   solicitado: "A Viva confere os seus dados e a experiência. Depois da aprovação, ela marca a avaliação de teste.",
   em_teste: "Em teste: faça a avaliação que a Viva marcou. Depois da revisão, você passa a ativo.",
-  ativo: "Você entra no rodízio da sua cidade.",
+  ativo: "Você aparece na lista de avaliadores da sua cidade e o proprietário escolhe quem quer. Você define o seu valor e o seu prazo em cada pedido.",
   suspenso: "A Viva vai entrar em contato.",
   descredenciado: "Você não recebe mais avaliações.",
 };
-const STATUS_PEDIDO: Record<string, string> = { pedido: "Aguardando designação", designado: "Designado a você", agendado: "Visita agendada", realizada: "Visita feita", laudo_emitido: "Laudo emitido", cancelada: "Cancelada", ausencia: "Ausência registrada" };
+const STATUS_PEDIDO: Record<string, string> = { pedido: "Aguardando a escolha do proprietário", designado: "Escolhido pelo proprietário", agendado: "Visita agendada", realizada: "Visita feita", laudo_emitido: "Laudo emitido", cancelada: "Cancelada", ausencia: "Ausência registrada" };
 
-type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
+type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
 /**
  * Avaliador credenciado (62-B1/62-B3; desenho do 62-A, Parte 1, itens 1 e 6): o pedido único com os 5 passos e o estado,
@@ -74,11 +76,11 @@ export default async function AvaliacaoParceiroPage() {
   if (!cred) {
     return (
       <>
-        <PageTitle title="Avaliação de imóveis" subtitle="Credenciamento de avaliador: a Viva designa as avaliações por rodízio." />
+        <PageTitle title="Avaliação de imóveis" subtitle="Credenciamento de avaliador: o proprietário escolhe o avaliador e você define o seu valor e o seu prazo." />
         <PassosCredenciamento status={null} identidade={identidade} teste={teste} />
         <Panel title="Pedir credenciamento" data-testid="credenciamento-form">
           <p className="text-sm text-muted">
-            Precisa da identidade verificada, CPF ou CNPJ válido, experiência comprovada e uma avaliação de teste revisada pela Viva antes da primeira real.
+            Precisa da identidade verificada, CNPJ válido (CPF não é aceito), experiência comprovada e uma avaliação de teste revisada pela Viva antes da primeira real.
             {parc ? " Você já é parceiro: mande só os dados do credenciamento." : " Um só pedido: os dados de parceiro e os do credenciamento vão juntos, e a Viva aprova os dois de uma vez."}
           </p>
           {pendencias.length > 0 && (
@@ -92,14 +94,9 @@ export default async function AvaliacaoParceiroPage() {
               <fieldset className="grid gap-3 rounded-lg border border-sage-200 p-3" data-testid="credenciamento-dados-parceiro">
                 <legend className="px-1 text-sm font-semibold text-ink">Seus dados de parceiro</legend>
                 <label className="text-sm">Nome público (o seu ou o da empresa)<input name="nome" required className={campo} /></label>
-                <label className="text-sm">
-                  Tipo de pessoa
-                  <select name="tipoPessoa" className={campo} defaultValue="pf">
-                    <option value="pf">Pessoa física (CPF)</option>
-                    <option value="pj">Pessoa jurídica (CNPJ)</option>
-                  </select>
-                </label>
-                <label className="text-sm">CPF ou CNPJ<input name="documento" inputMode="numeric" required className={campo} /></label>
+                <input type="hidden" name="tipoPessoa" value="pj" />
+                <p className="text-sm text-muted" data-testid="credenciamento-so-cnpj">{MSG_SO_CNPJ}</p>
+                <label className="text-sm">CNPJ<input name="documento" inputMode="numeric" required className={campo} /></label>
               </fieldset>
             )}
             <label className="text-sm">Cidade onde vai avaliar<input name="cidade" required className={campo} /></label>
@@ -129,7 +126,7 @@ export default async function AvaliacaoParceiroPage() {
 
   const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
-    .select("id, cidade, porte, valor_tabela, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
+    .select("id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_aceita_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
   const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
@@ -162,7 +159,17 @@ export default async function AvaliacaoParceiroPage() {
             <a href="/dashboard/verificacao" className="underline underline-offset-4">Verificar a identidade</a>
           </p>
         )}
-        <p className="mt-3 text-xs text-muted">O proprietário paga a avaliação direto a você, pelo valor da tabela da Viva. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
+        <p className="mt-3 text-xs text-muted">O proprietário paga a avaliação direto a você, pelo valor que você propôs e ele aceitou. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
+      </Panel>
+      <Panel title="Critérios públicos de qualidade" data-testid="criterios-qualidade">
+        <p className="text-sm text-muted">
+          A Viva não suspende nem descredencia por decisão própria. Só estes critérios, iguais para todos, abrem uma revisão; você tem {DIAS_DIREITO_DE_RESPOSTA} dias para responder antes de qualquer decisão.
+        </p>
+        <ul className="mt-2 list-disc pl-4 text-sm text-ink">
+          {CRITERIOS_PUBLICOS.map((c) => (
+            <li key={c.id}>{c.texto}</li>
+          ))}
+        </ul>
       </Panel>
       {leituraFalhou ? (
         <Panel title="Suas avaliações" data-testid="avaliacoes-erro">
@@ -268,7 +275,7 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
       <p>
-        <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {p.teste ? "avaliação de teste" : brl(Number(p.valor_tabela))}
+        <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {p.teste ? "avaliação de teste" : p.valor_proposto != null ? `${brl(Number(p.valor_proposto))} · ${p.prazo_proposto_dias} dia(s)` : `referência ${brl(Number(p.valor_tabela))}`}
         {semana && <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest" data-testid="visita-semana">Esta semana</span>}
       </p>
       {p.ocupado && <p className="mt-1 text-muted">Imóvel ocupado: a visita só acontece com a concordância do morador. Não fotografe pertences.</p>}
@@ -283,17 +290,25 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <span className={`w-full text-xs font-semibold ${prazo.vencido ? "text-red-700" : "text-ink"}`} data-testid="prazo-resposta">
             {prazo.texto}
           </span>
-          <FormAcao acao={responderDesignacao}><input type="hidden" name="pedidoId" value={p.id} /><input type="hidden" name="resposta" value="aceitar" /><Button type="submit" variant="secondary" size="sm" data-testid="designacao-aceitar">Aceitar</Button></FormAcao>
+          <FormAcao acao={proporPrecoEPrazo} className="flex w-full flex-wrap items-end gap-2" testid="proposta-avaliador">
+            <input type="hidden" name="pedidoId" value={p.id} />
+            <label className="text-sm">Seu valor (R$)<input name="valor" inputMode="decimal" required placeholder={`ex.: ${brl(Number(p.valor_tabela))}`} className={campo} data-testid="proposta-valor" /></label>
+            <label className="text-sm">Seu prazo (dias, até {PRAZO_PROPOSTA_MAX_DIAS})<input name="prazoDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} step={1} required className={campo} data-testid="proposta-prazo" /></label>
+            <Button type="submit" variant="secondary" size="sm" data-testid="designacao-aceitar">Aceitar e enviar proposta</Button>
+          </FormAcao>
           <FormAcao acao={responderDesignacao}><input type="hidden" name="pedidoId" value={p.id} /><input type="hidden" name="resposta" value="recusar" /><Button type="submit" variant="ghost" size="sm" data-testid="designacao-recusar">Recusar</Button></FormAcao>
         </div>
       )}
-      {["designado", "agendado"].includes(p.status) && r === "aceita" && (
+      {["designado", "agendado"].includes(p.status) && r === "aceita" && (p.proposta_aceita_em || p.teste || p.status === "agendado") && (
         <FormAcao acao={agendarVisita} className="mt-2 flex flex-wrap items-end gap-2" testid="agendar-visita">
           <input type="hidden" name="pedidoId" value={p.id} />
           <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
           <Button type="submit" variant="secondary" size="sm">{p.agendado_para ? "Reagendar" : "Agendar"}</Button>
           <span className="w-full text-xs text-muted">Horário de Brasília. Combine a data com o proprietário pelas mensagens da Viva.</span>
         </FormAcao>
+      )}
+      {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && !p.teste && (
+        <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.</p>
       )}
       {p.status === "agendado" && (
         <FormAcao acao={registrarAusencia} className="mt-2" testid="ausencia-dono">

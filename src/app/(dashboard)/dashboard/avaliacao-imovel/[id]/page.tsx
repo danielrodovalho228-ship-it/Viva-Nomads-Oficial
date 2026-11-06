@@ -34,7 +34,7 @@ export default async function ConcordanciaPage({ params }: { params: Promise<{ i
     <>
       <PageTitle title="Visita de avaliação do imóvel" />
       <Panel data-testid="concordancia">
-        <p className="text-sm text-ink">O proprietário pediu a avaliação do imóvel onde você mora. Um avaliador credenciado, designado pela Viva, confere o imóvel pelo checklist da Viva.</p>
+        <p className="text-sm text-ink">O proprietário pediu a avaliação do imóvel onde você mora. Um avaliador credenciado, escolhido por ele, confere o imóvel pelo checklist da Viva.</p>
         <p className="mt-2 text-sm text-muted">O avaliador não fotografa os seus pertences. A visita só acontece se você concordar com a data.</p>
         {p.concordancia_em ? (
           <p className="mt-4 text-sm font-semibold text-forest" data-testid="concordancia-feita">Você concordou com a visita{quando ? ` em ${quando}, ${ETIQUETA_BRASILIA}` : ""}.</p>

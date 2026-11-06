@@ -1,19 +1,7 @@
 import { test, expect, type Page, type Locator, type Browser } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import {
-  NO_LABORATORIO,
-  adm,
-  apagarContas,
-  cpfAleatorio,
-  criarConta,
-  criarImovelPronto,
-  liberarLimiteLogin,
-  liberarLimiteLoginIp,
-  novaSenha,
-  novoSufixo,
-  tornarContratoVigente,
-} from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo, tornarContratoVigente, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T263 — Regressão visual do Prompt 41 (mesmo padrão do t245: snapshotPathTemplate estável do playwright.config,
@@ -151,7 +139,7 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
       ids.parceiro = await criarConta(parceiro, senha);
       const { error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids.parceiro, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Visual", slug: `paula-t260-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+        .insert({ user_id: ids.parceiro, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: "Paula Visual", slug: `paula-t260-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
       if (error) throw error;
       ids.dono = await criarConta(dono, senha);
       ids.inq = await criarConta(inq, senha);

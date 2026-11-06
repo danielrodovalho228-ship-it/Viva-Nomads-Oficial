@@ -19,14 +19,14 @@ import { FRASE_PAGA_AVALIACAO } from "@/lib/vistoria/regras";
 export const metadata: Metadata = {
   alternates: { canonical: ROTA_RECRUTAMENTO },
   title: "Seja avaliador credenciado da Viva Nomads",
-  description: "Avaliador de imóveis: peça o credenciamento na Viva Nomads. Avaliação independente, designada por rodízio, pelo checklist da Viva.",
+  description: "Avaliador de imóveis: peça o credenciamento na Viva Nomads. Avaliação independente, escolhida pelo proprietário, pelo checklist da Viva.",
 };
 
 const PEDIR = "/dashboard/parceiro/avaliacao";
 
 const REQUISITOS = [
   "Identidade verificada na Viva.",
-  "CPF ou CNPJ válido.",
+  "CNPJ válido (a Viva só trabalha com parceiros que têm CNPJ; CPF não é aceito).",
   "Experiência comprovada em avaliação de imóveis (portfólio, referência ou link).",
   "Aceite do código de conduta da avaliação.",
   "Uma avaliação de teste, num imóvel de teste, revisada pela Viva antes da primeira avaliação real.",
@@ -34,8 +34,9 @@ const REQUISITOS = [
 
 const COMO = [
   { t: "Independente", d: "O avaliador credenciado não trabalha para o dono nem para o morador. Confere o imóvel pelo checklist da Viva e emite o laudo." },
-  { t: "Designado por rodízio", d: "A Viva designa cada avaliação pela fila da cidade. O dono nunca escolhe o avaliador; quem tem relação com o dono ou o imóvel fica de fora." },
-  { t: "Laudo em até 48 horas úteis", d: "Depois da visita, o laudo sai pela plataforma, com o resultado e o que corrigir quando houver ressalvas." },
+  { t: "Escolhido pelo proprietário", d: "A Viva sugere os avaliadores da cidade e o proprietário escolhe. Você define o seu próprio valor e prazo. Quem tem relação com o dono ou o imóvel fica de fora." },
+  { t: "Laudo assinado por você", d: "Depois da visita, você emite e assina o laudo pelo modelo da Viva, que guarda o registro (número e hash). O prazo é o que você propôs." },
+  { t: "Critérios públicos de qualidade", d: "Sem suspensão automática e sem descredenciamento por decisão da Viva: só critérios públicos e iguais para todos abrem uma revisão, com direito de resposta." },
 ] as const;
 
 export default function AvaliadoresRecrutamentoPage() {

@@ -38,7 +38,7 @@ export function linhaDoTempoPedido(p: { status: string; numero?: string | null; 
   const atual = Math.max(0, ORDEM_ETAPAS.indexOf(p.status as (typeof ORDEM_ETAPAS)[number]));
   const rotulo: Record<(typeof ORDEM_ETAPAS)[number], string> = {
     pedido: p.aguardandoAvaliador ? "Pedido · aguardando avaliador" : "Pedido",
-    designado: p.numero ? `Designado nº ${p.numero}` : "Designado",
+    designado: p.numero ? `Escolhido nº ${p.numero}` : "Escolhido",
     agendado: p.agendadoPara ? `Agendado para ${quandoVisita(p.agendadoPara)}` : "Agendado",
     realizada: "Visita feita",
     laudo_emitido: "Laudo",
@@ -47,14 +47,14 @@ export function linhaDoTempoPedido(p: { status: string; numero?: string | null; 
 }
 
 /**
- * A frase de situação do pedido do dono. "designado" não tem frase própria: a linha "Avaliador designado pela Viva: nº X"
+ * A frase de situação do pedido do dono. "designado" não tem frase própria: a linha "Avaliador escolhido por você: nº X"
  * já diz tudo (QA do #1111, item 5: a frase saía duas vezes).
  */
 export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null }): string | null {
-  if (p.aguardandoAvaliador) return "Aguardando avaliador: a Viva avisa quando designar.";
+  if (p.aguardandoAvaliador) return "Aguardando avaliador: a Viva avisa quando houver um para você escolher.";
   switch (p.status) {
     case "pedido":
-      return "Pedido registrado: a Viva está designando o avaliador.";
+      return "Pedido registrado: escolha o avaliador na lista.";
     case "designado":
       return p.ocupado && p.agendadoPara && !p.concordanciaEm ? "Data proposta: a visita fica confirmada quando o morador concordar." : null;
     case "agendado":
@@ -103,7 +103,7 @@ export function passosCumpridos(e: { status: StatusCredenciamento | null; identi
 }
 
 // ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
-export const LINHA_PUBLICA_DESIGNACAO = "A Viva designa o avaliador. O proprietário não escolhe.";
+export const LINHA_PUBLICA_DESIGNACAO = "O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.";
 
 // ── Item 6: agenda do avaliador ───────────────────────────────────────────────────────────────────────────────
 /** O contador das 24 h para aceitar: "Responda em 23 h 10 min". Vencido: passa ao próximo (a rotina faz). */

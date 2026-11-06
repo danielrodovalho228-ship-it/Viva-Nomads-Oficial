@@ -1,18 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import {
-  NO_LABORATORIO,
-  TELEFONE_LAB,
-  adm,
-  apagarContas,
-  cpfAleatorio,
-  criarConta,
-  criarImovelPronto,
-  entrar,
-  gravarMensagem,
-  novaSenha,
-  novoSufixo,
-} from "../fixtures/laboratorio";
+import { NO_LABORATORIO, TELEFONE_LAB, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 
 /*
@@ -65,7 +53,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
     ids.imovel = await criarImovelPronto(ids.tres, TITULO, { ativo: true });
     const { error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.tres, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Tereza Servicos", slug: `tereza-t280-${sufixo}`.toLowerCase() });
+      .insert({ user_id: ids.tres, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: "Tereza Servicos", slug: `tereza-t280-${sufixo}`.toLowerCase() });
     if (error) throw error;
     await gravarMensagem(ids.morador, ids.tres, ids.imovel, "Olá! O studio está livre em dezembro?", conversationId(ids.morador, ids.tres, ids.imovel));
     // Rascunho da ordem ANTIGA (5 etapas, parado em "O que encontramos"), sem a declaração das câmeras.

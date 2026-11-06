@@ -95,9 +95,7 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
     const form = page.getByTestId("seja-parceiro-form");
     await expect(form).toBeVisible({ timeout: 20_000 });
-    // PF (padrão): sem a pergunta.
-    await expect(page.getByTestId("sp-emite-nota")).toHaveCount(0);
-    await form.getByText("Empresa ou MEI (CNPJ)").click();
+    // E648: só CNPJ — a pergunta da nota aparece sempre.
     await expect(page.getByTestId("sp-emite-nota")).toContainText("Você emite nota fiscal de serviço para o cliente?");
     await form.locator("#sp-doc").fill(cnpjAleatorio());
     await page.getByTestId("sp-cat-limpeza").check();
@@ -115,21 +113,21 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     expect(sol).toEqual({ tipo_pessoa: "pj", emite_nota: true });
     await page.context().close();
 
-    // PF: mesmo formulário, sem a pergunta; grava null.
+    // E648: PF/CPF não é mais aceito — o mesmo formulário recusa o CPF com a frase da regra e nada é gravado.
     const p2 = await abrir(browser, pf.email, 1280);
     await p2.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
     const f2 = p2.getByTestId("seja-parceiro-form");
     await expect(f2).toBeVisible({ timeout: 20_000 });
-    await expect(p2.getByTestId("sp-emite-nota")).toHaveCount(0);
     await f2.locator("#sp-doc").fill(cpfAleatorio());
     await p2.getByTestId("sp-cat-limpeza").check();
     await f2.locator("#sp-cidades").fill(cidade);
     await f2.locator("#sp-descricao").fill("Limpeza de saída, emito recibo.");
     await p2.getByTestId("sp-aceite").check();
+    await f2.getByText("Sim", { exact: true }).click();
     await p2.getByTestId("seja-parceiro-enviar").click();
-    await expect(p2.getByTestId("seja-parceiro-recebido")).toBeVisible({ timeout: 20_000 });
-    const { data: solPf } = await adm().from("parceiro_solicitacoes").select("tipo_pessoa, emite_nota").eq("email", pf.email).single();
-    expect(solPf).toEqual({ tipo_pessoa: "pf", emite_nota: null });
+    await expect(p2.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+    const { count: contaPf } = await adm().from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("email", pf.email);
+    expect(contaPf, "CPF: nenhum pedido é gravado").toBe(0);
     await p2.context().close();
   });
 

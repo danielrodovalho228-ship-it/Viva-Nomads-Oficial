@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T775 — E339 (01/11): a faixa do parceiro de teste diz a verdade conforme quem vê.
@@ -34,7 +34,7 @@ test.describe("T775 — E339: faixa do parceiro de teste", () => {
     qa = await conta("tenant", `Quésia QA E339 ${sufixo}`);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: dono.id, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Foto Teste E339 ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: dono.id, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Foto Teste E339 ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

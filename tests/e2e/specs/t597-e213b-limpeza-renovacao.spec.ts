@@ -2,7 +2,7 @@
 import { test, expect, type Browser } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T597 — E213-B: limpeza automática da saída (Prompt 38) × renovação dentro da janela do D-5. A remarcação vem do
@@ -235,7 +235,7 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     for (const k of ["ana", "beto", "caio", "duda", "eva"]) ids[k] = await conta(k, `${k[0].toUpperCase()}${k.slice(1)} Renova`, "tenant");
     const { data: parc, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.limpa, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lara Limpa ${sufixo}`, slug: `lara-t597-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.limpa, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Lara Limpa ${sufixo}`, slug: `lara-t597-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

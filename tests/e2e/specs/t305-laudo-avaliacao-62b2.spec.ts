@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -104,7 +104,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     for (const [l, ativado] of [["A", "2026-01-01T00:00:00Z"], ["B", "2026-01-15T00:00:00Z"]] as const) {
       const { data: parc, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: ids[l], tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -283,7 +283,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await d.goto(`/dashboard/imoveis/${ids.im3}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("laudo-dono-resultado")).toHaveAttribute("data-resultado", "reprovado");
     // Adendo 62-B1: sem condição de retorno na tabela, a nova avaliação é pelo valor cheio e nada fala em desconto.
-    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, outro avaliador pelo rodízio, pelo valor da tabela");
+    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser");
     await expect(d.getByTestId("avaliacao-retorno")).toHaveCount(0);
     await expect(d.getByTestId("avaliacao-dono")).not.toContainText(/desconto|metade|90 dias/);
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir nova avaliação" }).click();

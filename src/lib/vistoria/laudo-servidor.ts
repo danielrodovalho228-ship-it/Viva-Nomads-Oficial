@@ -28,8 +28,10 @@ import {
   type Resultado,
 } from "./laudo";
 import { conteudoLaudo } from "./laudo-documento";
+import { assinaturaDoLaudo } from "./escolha";
+import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
-import { ROTA_AVALIADOR, avisar, avisarAdmins, designar, rotaDono } from "./servidor";
+import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, rotaDono } from "./servidor";
 
 /*
   Prompt 62-B2 — o lado do servidor do laudo: emite o VIS pela plataforma (registrarDocumento), aplica o resultado
@@ -246,7 +248,7 @@ export type ResEmissao = { ok: true; laudoId: string; numero: string; resultado:
  * completo. Aplica: nível sustentado + "· vistoriado" (aprovado), fora da busca por segurança grave, strike (só em
  * verificação reprovada), "quem perde paga" na contestação.
  */
-export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Date(), motivoVersao: "correcao" | "reverificacao" | null = null): Promise<ResEmissao> {
+export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Date(), motivoVersao: "correcao" | "reverificacao" | null = null, assinar: { declarou: boolean } = { declarou: false }): Promise<ResEmissao> {
   const { data: pd } = await admin.from("vistoria_pedidos").select(COLUNAS_PEDIDO).eq("id", pedidoId).maybeSingle();
   const p = pd as LinhaPedido | null;
   if (!p || !p.avaliador_id) return { ok: false, erro: "Pedido não encontrado." };
@@ -270,10 +272,15 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
 
   const [{ data: im }, { data: cred }, { data: fotos }] = await Promise.all([
     admin.from("properties").select("title, city").eq("id", p.property_id).maybeSingle(),
-    admin.from("avaliadores_credenciamento").select("numero_credenciado, parceiros(nome_publico, user_id)").eq("id", p.avaliador_id).maybeSingle(),
+    admin.from("avaliadores_credenciamento").select("numero_credenciado, parceiros(nome_publico, user_id, documento)").eq("id", p.avaliador_id).maybeSingle(),
     admin.from("vistoria_checklist_fotos").select("item_chave").eq("pedido_id", p.id).not("item_chave", "is", null),
   ]);
-  const parc = (cred?.parceiros as unknown as { nome_publico: string | null; user_id: string } | null) ?? null;
+  const parc = (cred?.parceiros as unknown as { nome_publico: string | null; user_id: string; documento: string | null } | null) ?? null;
+  // E648: o laudo é do avaliador — sem a declaração dele (e o CNPJ da empresa) a Viva não emite nada.
+  const nomeAssinante = String(parc?.nome_publico ?? "").trim() || "Avaliador";
+  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou };
+  const previa = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: "0".repeat(64), em: agora.toISOString() });
+  if (!previa.ok) return { ok: false, erro: previa.erro };
   const comFoto = new Set(((fotos ?? []) as { item_chave: string }[]).map((f) => f.item_chave));
   const prazo = r.resultado === "com_ressalvas" ? prazoRessalva(agora.toISOString()).toISOString() : null;
   const ehVerificacao = p.tipo === "verificacao";
@@ -312,6 +319,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
               internet: medidas.map((m) => ({ ponto: m.ponto as "quarto_principal" | "trabalho", downloadMbps: m.downloadMbps, uploadMbps: m.uploadMbps, latenciaMs: m.latenciaMs })),
               prazoRessalvaAte: prazo,
               motivoVersao: motivo,
+              termoAssinatura: previa.termo,
             },
             { numero: numeroExibido(numero, v), emitidoEm: emitidoEmBrasilia(agora.toISOString()), conferir: linhaConferir(SITE_URL, codigo) },
           ),
@@ -327,6 +335,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const up = await admin.storage.from("avaliacao-imovel").upload(pdfPath, Buffer.from(reg.bytes as Uint8Array), { contentType: "application/pdf", upsert: true });
   if (up.error) console.error("[emitirLaudo] pdf", up.error.message);
 
+  const assinatura = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: createHash("sha256").update(Buffer.from(reg.bytes as Uint8Array)).digest("hex"), em: agora.toISOString() });
+  if (!assinatura.ok) return { ok: false, erro: assinatura.erro };
   const vistoriado = r.resultado === "aprovado" ? agora.toISOString() : null;
   const { data: novo, error } = await admin
     .from("vistoria_laudos")
@@ -348,6 +358,10 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
       graves: r.graves,
       motivo_versao: motivo,
       emitido_em: agora.toISOString(),
+      assinado_por: parc?.user_id ?? null,
+      assinado_em: assinatura.em,
+      assinatura_hash: assinatura.hash,
+      assinatura_termo: assinatura.termo,
       prazo_ressalva_ate: prazo,
       vistoriado_em: vistoriado,
       teste: p.teste,
@@ -421,13 +435,13 @@ async function laudoDoPedido(admin: Admin, pedidoOriginal: string): Promise<Linh
  * Ressalvas corrigidas e reverificadas (foto ou nova visita, pelo mesmo avaliador): grava os itens conferidos e emite a
  * versão nova do laudo. Ressalva toda corrigida → "· vistoriado".
  */
-export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigidos: Record<string, ValorItem>, agora = new Date()): Promise<ResEmissao> {
+export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigidos: Record<string, ValorItem>, agora = new Date(), assinar: { declarou: boolean } = { declarou: false }): Promise<ResEmissao> {
   const l = await laudoDoPedido(admin, pedidoId);
   if (!l || l.corrigido_em || !l.ressalvas.length) return { ok: false, erro: "Não há ressalva aberta neste laudo." };
   for (const [chave, valor] of Object.entries(corrigidos)) {
     await admin.from("vistoria_checklist").upsert({ pedido_id: l.pedido_versao_id, chave, valor, salvo_em: agora.toISOString() }, { onConflict: "pedido_id,chave" });
   }
-  const r = await emitirLaudo(admin, l.pedido_versao_id, agora, "correcao");
+  const r = await emitirLaudo(admin, l.pedido_versao_id, agora, "correcao", assinar);
   if (!r.ok) return r;
   await admin.from("vistoria_laudos").update({ corrigido_em: agora.toISOString() }).eq("id", l.id);
   // A versão nova passa a valer o "· vistoriado" quando ficou aprovada.
@@ -447,7 +461,7 @@ export async function abrirContestacao(admin: Admin, laudo: LinhaLaudo, motivo: 
   await admin.from("vistoria_laudos").update({ contestado_em: agora.toISOString(), contestacao_motivo: motivo }).eq("id", laudo.id);
   await admin.from("proprietario_strikes").update({ suspenso_ate: "infinity" }).eq("pedido_id", laudo.pedido_versao_id);
   await aplicarEscadaComRetentativa(admin, laudo.owner_id, agora);
-  await designar(admin, novo.id as string, agora);
+  await abrirEscolha(admin, novo.id as string, agora);
   return { ok: true, pedidoId: novo.id as string };
 }
 

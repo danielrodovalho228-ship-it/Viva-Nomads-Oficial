@@ -1,20 +1,7 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import {
-  NO_LABORATORIO,
-  adm,
-  apagarContas,
-  cpfAleatorio,
-  criarConta,
-  criarImovelPronto,
-  entrar,
-  liberarLimiteLogin,
-  liberarLimiteLoginIp,
-  novaSenha,
-  novoSufixo,
-  tornarContratoVigente,
-} from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo, tornarContratoVigente, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T262 — Prompt 41 (funcional, a 390 e 1280 px):
@@ -282,7 +269,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       // A linha em `parceiros` nasce na aprovação: é ela que faz a parceria contar como aprovada.
       const { error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Parceira", slug: `paula-t259-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+        .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: "Paula Parceira", slug: `paula-t259-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
       if (error) throw error;
     });
     test.afterAll(async () => {

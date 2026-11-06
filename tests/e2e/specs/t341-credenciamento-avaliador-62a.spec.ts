@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T341 — Prompt 62-A, Parte 1, sobre o 62-B3: credenciamento (pedido único com os 5 passos e o estado), agenda do
@@ -55,7 +55,7 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t341-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t341-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -114,8 +114,8 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     await pub.context().close();
     const form = p.getByTestId("credenciamento-form");
     await form.getByLabel(/Nome público/).fill(novo.nome);
-    await form.getByLabel("Tipo de pessoa").selectOption("pf");
-    await form.getByLabel("CPF ou CNPJ").fill(cpfAleatorio());
+    await expect(form.getByTestId("credenciamento-so-cnpj")).toContainText("CPF não é aceito"); // E648
+    await form.getByLabel("CNPJ", { exact: true }).fill(cnpjAleatorio());
     await form.getByLabel("Cidade onde vai avaliar").fill("Uberlândia");
     await form.getByLabel(/Portfólio ou referência/).fill("https://portfolio.lab.vivanomads.test/nuno");
     await form.getByLabel(/Li e aceito o código de conduta/).check();
@@ -137,7 +137,7 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     await p.context().close();
   });
 
-  test("2. dono: chave desligada esconde o bloco; com a chave, pede e a Viva designa (sem escolher avaliador)", async ({ browser }) => {
+  test("2. dono: chave desligada esconde o bloco; com a chave, pede e o dono escolhe o avaliador entre os sugeridos", async ({ browser }) => {
     const semChave = await entrar(browser, dono.email, senha);
     await semChave.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     await expect(semChave.getByTestId("nivel-resumo")).toBeVisible({ timeout: 30_000 });
@@ -150,13 +150,15 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     const bloco = d.getByTestId("avaliacao-dono");
     await expect(bloco.getByTestId("frase-paga")).toHaveText("Você paga a avaliação, não o resultado.", { timeout: 30_000 });
-    await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
-    await expect(d.locator('select[name^="avaliador"], input[name^="avaliador"]')).toHaveCount(0);
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click();
-    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("pedido");
     pedidoId = (await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.imovel).single()).data!.id as string;
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
-    await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador designado pela Viva: nº ${numeroA}`, { timeout: 30_000 });
+    // E648: o dono escolhe o avaliador entre os sugeridos (a Viva não designa).
+    await bloco.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
+    await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${numeroA}`, { timeout: 30_000 });
     await d.context().close();
   });
 
@@ -172,7 +174,18 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await p.screenshot({ path: `${SAIDA}/t341-3-avaliador-responder-${w}.png`, fullPage: true });
     }
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
+    await item.getByTestId("proposta-valor").fill("350");
+    await item.getByTestId("proposta-prazo").fill("2");
     await item.getByTestId("designacao-aceitar").click();
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("proposta_em").eq("id", pedidoId).single()).data?.proposta_em as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
+    // O dono aceita o valor e o prazo (E648); só então a visita pode ser agendada.
+    const donoAceita = await entrar(browser, dono.email, senha);
+    await donoAceita.context().addCookies([{ name: "vn_lab_vistoria", value: "1", url: new URL(donoAceita.url()).origin }]);
+    await donoAceita.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+    await donoAceita.getByTestId("aceitar-proposta").getByRole("button", { name: "Aceitar valor e prazo" }).click();
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("proposta_aceita_em").eq("id", pedidoId).single()).data?.proposta_aceita_em as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
+    await donoAceita.context().close();
+    await p.reload();
     await expect(p.getByTestId("avaliacoes-visitas").locator(`[data-pedido="${pedidoId}"]`).getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const quando = new Date(Date.now() + 2 * 86_400_000);
     const dia = new Date(quando.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
@@ -224,14 +237,13 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       expect(await y("avaliacoes-decidir")).toBeLessThan(await y("avaliadores-chave"));
       expect(await y("avaliadores-credenciamento")).toBeLessThan(await y("avaliacoes-rodizio"));
       const itemA = p.locator(`[data-testid="credenciamento-item"][data-numero="${numeroA}"]`);
-      await expect(itemA.getByTestId("decidir-suspenso").getByRole("button")).toHaveText("Suspender");
+      await expect(itemA.getByTestId("decidir-suspenso")).toHaveCount(0); // E648: sem suspensão
       await expect(itemA.getByTestId("decidir-descredenciado").getByRole("button")).toHaveText("Descredenciar");
       const itemN = p.locator(`[data-testid="credenciamento-item"][data-numero="${numeroN}"]`);
       await expect(itemN.getByTestId("credenciamento-dados-parceiro")).toContainText("Ainda não é parceiro");
       await expect(itemN.getByTestId("credenciamento-pendencia")).toBeVisible();
       await expect(itemN.getByTestId("decidir-em_teste").getByRole("button")).toHaveText("Aprovar para teste");
       await expect(topo.getByTestId("decidir-numero-credenciamentos")).not.toHaveAttribute("data-valor", "0");
-      await expect(p.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       const rod = p.locator('[data-testid="rodizio-cidade"][data-cidade="Uberlândia"]');
       await expect(rod.getByTestId("rodizio-item").filter({ hasText: `nº ${numeroA}` })).toBeVisible();
       await expect(p.getByTestId("precos-historico").locator('[data-vigente="sim"]').first()).toContainText("vigente");

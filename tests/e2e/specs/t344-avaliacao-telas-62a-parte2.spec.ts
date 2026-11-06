@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -83,7 +83,7 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
     ids.A = await criarConta(avA, senha);
     const { data: parc, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.A, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: avA.nome, slug: `aval-t344-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+      .insert({ user_id: ids.A, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avA.nome, slug: `aval-t344-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
       .select("id")
       .single();
     if (error) throw error;
