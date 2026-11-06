@@ -567,3 +567,21 @@ nada a medir no desenho.
 2. **E454**: fotos da primeira fileira com prioridade, já mesclado (#2899; os 4 primeiros cartões com `loading="eager"` e `fetchpriority="high"`). Nada refeito.
 3. **E457**: rascunho #2767, aguardando QA; também mescla sem conflito com a `main` atual. Nada refeito.
 4. **Matriz × mockups**: nada novo. Nenhum defeito novo para registrar.
+
+## Merges depois da passada 35 — passada 36 (06/11; 390, 768 e 1280)
+
+Mesclou depois da passada 35 só o #2913 (E645, Pista B: spec `t1250` que visita `/qualificar` a 390 e 1280 com a régua de console) e o registro da passada 35 (#2912).
+`git diff` desde a passada 35: só `docs/matriz-conformidade-mockups.md`, `tests/e2e/cobertura.json` e a spec nova; **`src/` sem diferença**. **Leitura 3S**: nenhuma tela nova
+ou alterada para medir a 390, 768 ou 1280.
+
+1. **Telas novas ou alteradas**: nenhuma. Nenhum defeito novo para registrar.
+2. **Rascunhos aguardando QA**: #2765 (E455-ii) e #2767 (E457), checks verdes e mescláveis sem conflito com a `main` atual (simulação de merge limpa). Nada refeito.
+3. **Matriz × mockups**: nada novo.
+
+## Merges depois da passada 36 — passada 37 (06/11; 390 e 1280)
+
+Mesclou depois da passada 36 só o #2914 (E477, Pista B): auditoria nas ações de servidor (`lib/saida/acoes.ts`, `lib/vistoria/actions.ts`) e **uma página alterada,
+`/admin/qualidade`** (+8 linhas, o estado de ausência do E477). Medi `/admin/qualidade` (e `/admin` como controle) a 390, 768 e 1280 no demo: sem imagem quebrada, rolagem lateral, texto
+cortado, fundo bege, elemento fixo ou grade desalinhada (6 medições). O estado de ausência em si exige a conta do observador (sessão real): fica para a QA.
+Sequência da reativação conferida na `main`: **E194** (#1532 + #1660; evidência na passada 34), **E106** (#1661, `/buscar` com "Publicar pedido" na contagem e o tempo no painel Local, spec `t453`)
+e **E52** (#1710, topo da página de avaliadores no padrão das institucionais) já estão mesclados. Nenhum defeito novo.
