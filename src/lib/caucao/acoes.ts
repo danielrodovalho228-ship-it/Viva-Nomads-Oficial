@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
-import { descontoValido } from "./prazos";
+import { contratoTemCaucao, descontoValido } from "./prazos";
 import { caminhoDeComprovanteValido, podeContestar, podeDarParecer } from "./acoes-regras";
 
 /*
@@ -17,6 +17,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 type Resultado = { ok: true } | { ok: false; error: string };
 const erro = (error: string): Resultado => ({ ok: false, error });
 const ERRO_DESLIGADA = "Esta função ainda não está disponível.";
+/** E642: garantia única — contrato com seguro-fiança não tem caução. */
+const ERRO_SEM_CAUCAO = "Este contrato usa seguro-fiança: não há caução a devolver.";
 const hojeBr = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
 
 export interface ItemParecer {
@@ -35,10 +37,10 @@ async function contexto(contratoId: string) {
   if (!supabase || !admin || !UUID_RE.test(contratoId)) return null;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: c } = await admin.from("contratos").select("id, tenant_id, properties(owner_id)").eq("id", contratoId).maybeSingle();
+  const { data: c } = await admin.from("contratos").select("id, tenant_id, garantia, properties(owner_id)").eq("id", contratoId).maybeSingle();
   if (!c) return null;
   const owner_id = (c.properties as unknown as { owner_id?: string } | null)?.owner_id;
-  return { user, admin, tenant_id: c.tenant_id as string, owner_id };
+  return { user, admin, tenant_id: c.tenant_id as string, owner_id, garantia: (c.garantia as string | null) ?? null };
 }
 
 /** As fotos do item precisam ser da conferência de entrada / de saída DESTE contrato. */
@@ -60,6 +62,7 @@ export async function darParecerCaucao(contratoId: string, itens: ItemParecer[])
   if (!CAUCAO_PRAZOS_ATIVA) return erro(ERRO_DESLIGADA);
   const ctx = await contexto(contratoId);
   if (!ctx) return erro("Contrato não encontrado.");
+  if (!contratoTemCaucao(ctx.garantia)) return erro(ERRO_SEM_CAUCAO);
   const { user } = ctx;
   if (ctx.owner_id !== user.id) return erro("Só o proprietário dá o parecer da caução.");
   if (!(await consumirLimite(`caucao-parecer:${user.id}`, 20, HORA))) return erro("Muitas tentativas. Tente de novo em instantes.");
@@ -104,6 +107,7 @@ export async function contestarDescontoCaucao(itemId: string, texto: string): Pr
   if (!it) return erro("Item não encontrado.");
   const ctx = await contexto(it.contrato_id as string);
   if (!ctx) return erro("Contrato não encontrado.");
+  if (!contratoTemCaucao(ctx.garantia)) return erro(ERRO_SEM_CAUCAO);
   const { user } = ctx;
   if (ctx.tenant_id !== user.id) return erro("Só o morador contesta o desconto.");
   if (!(await consumirLimite(`caucao-contesta:${user.id}`, 30, HORA))) return erro("Muitas tentativas. Tente de novo em instantes.");
@@ -121,6 +125,7 @@ export async function registrarDevolucaoCaucao(contratoId: string): Promise<Resu
   if (!CAUCAO_PRAZOS_ATIVA) return erro(ERRO_DESLIGADA);
   const ctx = await contexto(contratoId);
   if (!ctx) return erro("Contrato não encontrado.");
+  if (!contratoTemCaucao(ctx.garantia)) return erro(ERRO_SEM_CAUCAO);
   const { user } = ctx;
   if (ctx.owner_id !== user.id) return erro("Só o proprietário registra a devolução.");
   if (!(await consumirLimite(`caucao-devolucao:${user.id}`, 20, HORA))) return erro("Muitas tentativas. Tente de novo em instantes.");

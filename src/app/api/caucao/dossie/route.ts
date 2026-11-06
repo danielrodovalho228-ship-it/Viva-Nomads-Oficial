@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
+import { contratoTemCaucao } from "@/lib/caucao/prazos";
 import { linhasDoDossie, montarDossiePdf, type ItemDossie } from "@/lib/caucao/dossie";
 
 /*
@@ -28,7 +29,9 @@ export async function GET(request: Request) {
   const { data: itensRls } = await supabase.from("caucao_desconto_itens").select("id, categoria, comodo, valor, status, contestacao_texto, foto_entrada_path, foto_saida_path, comprovante_path").eq("contrato_id", contratoId).order("criado_em");
   const linhas = (itensRls ?? []) as { id: string; categoria: string; comodo: string; valor: number; status: ItemDossie["status"]; contestacao_texto: string | null; foto_entrada_path: string; foto_saida_path: string; comprovante_path: string }[];
 
-  const { data: c } = await admin.from("contratos").select("id, tenant_id, properties(owner_id, title)").eq("id", contratoId).maybeSingle();
+  const { data: c } = await admin.from("contratos").select("id, tenant_id, garantia, properties(owner_id, title)").eq("id", contratoId).maybeSingle();
+  // E642: garantia única — contrato com seguro-fiança não tem caução, logo não tem dossiê dela.
+  if (!contratoTemCaucao(c?.garantia as string | null | undefined)) return new NextResponse("Não encontrado", { status: 404, headers: NEGADO });
   const prop = (c?.properties as unknown as { owner_id?: string; title?: string } | null) ?? {};
   const ids = [prop.owner_id, c?.tenant_id as string | undefined].filter(Boolean) as string[];
   const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", ids);

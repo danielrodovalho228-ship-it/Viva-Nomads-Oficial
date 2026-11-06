@@ -24,3 +24,16 @@ test("a rotina diária não cria linha de prazos para contrato com seguro-fianç
   assert.match(s, /\.select\("id, tenant_id, property_id, garantia, properties/);
   assert.match(s, /contratoTemCaucao\(c\.garantia\)/);
 });
+
+test("as ações da caução recusam contrato com seguro-fiança, com a mesma frase nas três", () => {
+  const a = ler("src/lib/caucao/acoes.ts");
+  assert.match(a, /select\("id, tenant_id, garantia, properties\(owner_id\)"\)/);
+  assert.match(a, /const ERRO_SEM_CAUCAO = "Este contrato usa seguro-fiança: não há caução a devolver\.";/);
+  assert.equal((a.match(/!contratoTemCaucao\(ctx\.garantia\)\) return erro\(ERRO_SEM_CAUCAO\)/g) ?? []).length, 3, "parecer, contestação e devolução");
+});
+
+test("o dossiê também não sai para contrato sem caução", () => {
+  const r = ler("src/app/api/caucao/dossie/route.ts");
+  assert.match(r, /select\("id, tenant_id, garantia, properties\(owner_id, title\)"\)/);
+  assert.match(r, /!contratoTemCaucao\(c\?\.garantia as string \| null \| undefined\)/);
+});
