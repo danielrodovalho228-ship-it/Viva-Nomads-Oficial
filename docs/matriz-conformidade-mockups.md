@@ -585,3 +585,21 @@ Mesclou depois da passada 36 só o #2914 (E477, Pista B): auditoria nas ações 
 cortado, fundo bege, elemento fixo ou grade desalinhada (6 medições). O estado de ausência em si exige a conta do observador (sessão real): fica para a QA.
 Sequência da reativação conferida na `main`: **E194** (#1532 + #1660; evidência na passada 34), **E106** (#1661, `/buscar` com "Publicar pedido" na contagem e o tempo no painel Local, spec `t453`)
 e **E52** (#1710, topo da página de avaliadores no padrão das institucionais) já estão mesclados. Nenhum defeito novo.
+
+## Telas mexidas pelos merges de 06/11 de manhã — passada 38 (06/11, modo demonstração, 390, 768 e 1280)
+
+Mesclados depois da passada 37 e medidos aqui: E370 (#2924, validade do pedido desde o início), E371 (#2925, cartão do pedido com internet, destino, transporte e tempo),
+E372 (#2926, Meus dados: telefone e CPF), E360 (#2919, local da estadia no Início), E362 (#2920, texto de /parceiros), mais #2922 (E477, telas do admin
+somente leitura, Pista B) e #2916 (E283-B, sem tela). **Leitura 3S**: nenhum elemento novo fora do que cada PR descreveu.
+Sonda das passadas 23/24/29/33. 14 rotas × 3 larguras (42 medições): `/pedidos/novo` (sem data e com data), `/parceiros`, `/parceiros/buscar`, `/buscar`, home,
+`/dashboard`, `/dashboard/pedidos`, `/dashboard/conta/dados`, `/dashboard/conta`, `/admin/contratos/encerramentos`, `/admin/imoveis`, `/admin/servicos`.
+
+1. **Imagem quebrada ou vazia, cartão sem foto, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo**: nenhum caso real. **Conforme.**
+2. **`/pedidos/novo` (E370)**: a validade aparece sem data de entrada e ganha a data exata com ela, sem rolagem lateral nas três larguras. **Conforme.**
+3. **`/dashboard/conta/dados` (E372)**: o formulário carrega, sem rolagem lateral. O "Carregando…" do telefone dura o instante da leitura (não dá para fotografar no demo). **Conforme.**
+4. **`/parceiros/buscar` a 768 e 1280**: a sonda marca "grade de 6 itens, última linha com 1": é o formulário de filtros (quatro campos, "Buscar" e a linha inteira do filtro
+   de nota fiscal), desenho de formulário e não de cartões. **Conforme (falso positivo).**
+5. **`/dashboard` a 768 e 1280**: "imagens não carregadas" nos cartões recomendados `loading="lazy"`; completam ao chegar à vista (como nas passadas 24, 29 e 33). **Conforme.**
+6. **Estados que o demo não alcança**: local da estadia no Início (E360, sem estadia ativa), cartão do pedido com destino (E371, sem pedido publicado) e o estado somente leitura do admin
+   (E477, conta de observação). Cobertos por testes de unidade; ficam para a QA. Nenhum defeito novo.
+7. **Matriz × mockups**: nada novo.
