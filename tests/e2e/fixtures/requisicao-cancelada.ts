@@ -1,5 +1,5 @@
 export const MOTIVO_ACAO_CANCELADA = "ação do servidor cancelada pelo navegador ao trocar de tela (net::ERR_ABORTED; decisão do Muse, 22/10)";
-export const MOTIVO_LEITURA_CANCELADA = "leitura do próprio site (GET /api) cancelada pela tela (net::ERR_ABORTED; rodada de 22/10)";
+export const MOTIVO_LEITURA_CANCELADA = "leitura do próprio site (GET /api) ou do banco (GET /rest/v1) cancelada pela tela (net::ERR_ABORTED; rodada de 22/10; leitura do banco: lab-crítico do #2947, 06/11)";
 export const MOTIVO_ARQUIVO_CANCELADO = "arquivo do próprio site (/_next/static ou /_next/image) cancelado pelo navegador ao trocar de tela (net::ERR_ABORTED; L-3, 22/10)";
 
 /**
@@ -14,6 +14,9 @@ export const MOTIVO_ARQUIVO_CANCELADO = "arquivo do próprio site (/_next/static
  *    continua no critério a.
  *  - "leitura": GET do próprio site em /api/ cancelado (o painel aborta /api/painel/contadores de propósito ao trocar
  *    de tela; /pedidos/novo cancela /api/conta/local-trabalho). Rodada de 22/10. Mesma lógica, mesma lista.
+ *    Vale também para a leitura do banco feita pelo navegador (GET em /rest/v1/, ex.: `profiles` do shell do painel),
+ *    cortada quando a tela segue adiante: lab-crítico do #2947 (06/11), "Aviso da prova pelo celular" a 390 px, uma vez em
+ *    várias execuções; a página é estática e o re-run passou. Só leitura (GET): escrita abortada continua acusando.
  * Só net::ERR_ABORTED: qualquer outro erro de rede (recusa, tempo, DNS) continua acusando.
  */
 export function canceladaPeloNavegador(motivo: string, metodo: string, url: string, cabecalhos: Record<string, string>): "prefetch" | "acao" | "arquivo" | "leitura" | null {
@@ -21,7 +24,7 @@ export function canceladaPeloNavegador(motivo: string, metodo: string, url: stri
   if (/[?&]_rsc=/.test(url) || cabecalhos["rsc"] === "1") return "prefetch";
   if (metodo === "POST" && cabecalhos["next-action"]) return "acao";
   if (metodo === "GET" && /^\/_next\/(static\/|image$)/.test(caminho(url))) return "arquivo";
-  if (metodo === "GET" && caminho(url).startsWith("/api/")) return "leitura";
+  if (metodo === "GET" && (caminho(url).startsWith("/api/") || caminho(url).startsWith("/rest/v1/"))) return "leitura";
   return null;
 }
 

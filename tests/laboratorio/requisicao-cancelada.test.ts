@@ -23,6 +23,14 @@ test("leitura do próprio site em /api cancelada pela tela não conta (rodada de
   assert.equal(canceladaPeloNavegador(ABORT, "GET", "http://localhost:3123/api/painel/contadores", {}), "leitura");
 });
 
+test("leitura do banco (GET /rest/v1) cortada pela tela não conta (#2947, 06/11); escrita ou outro erro continua acusando", () => {
+  const BANCO = "http://127.0.0.1:54321/rest/v1/profiles?select=*";
+  assert.equal(canceladaPeloNavegador(ABORT, "GET", BANCO, {}), "leitura");
+  assert.equal(canceladaPeloNavegador(ABORT, "POST", BANCO, {}), null);
+  assert.equal(canceladaPeloNavegador(ABORT, "PATCH", BANCO, {}), null);
+  assert.equal(canceladaPeloNavegador("net::ERR_CONNECTION_REFUSED", "GET", BANCO, {}), null);
+});
+
 test("o resto continua acusando", () => {
   // Ação do servidor que falhou por outro motivo.
   assert.equal(canceladaPeloNavegador("net::ERR_CONNECTION_REFUSED", "POST", URL_TELA, { "next-action": "7f3a" }), null);
