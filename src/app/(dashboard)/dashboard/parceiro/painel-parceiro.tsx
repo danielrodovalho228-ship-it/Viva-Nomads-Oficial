@@ -15,7 +15,8 @@ import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
-import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, PENDENCIA_CNPJ_PAINEL, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
