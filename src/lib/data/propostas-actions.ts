@@ -802,13 +802,17 @@ export async function contarPropostasAguardando(): Promise<number> {
   }).length;
 }
 
+const MSG_PROPOSTA_NAO_CARREGOU = "Não foi possível carregar esta proposta agora.";
+
 /** Detalhe da proposta (as duas partes). O interessado abrindo uma proposta "Enviada" a marca como "Vista". */
 export async function lerProposta(id: string): Promise<PropostaView | null> {
   const s = await sessao();
   if (!s || !/^[0-9a-f-]{36}$/i.test(id)) return null;
   await expirarVencidas(s.admin, s.user.id);
   // Leitura pela sessão (RLS): quem não é parte não vê nada (404).
-  const { data: pRow } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  const { data: pRow, error: erroProposta } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  // Achado 139: a falha do banco LANÇA (tela de erro com "Tentar de novo") — nunca vira "não encontrada" (404). A RLS devolve vazio, sem erro, a quem não é parte.
+  if (erroProposta) throw new Error(MSG_PROPOSTA_NAO_CARREGOU);
   let p = pRow as LinhaProposta | null;
   if (!p) return null;
   const papel: Autor = p.owner_id === s.user.id ? "owner" : "tenant";
@@ -823,7 +827,8 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       .maybeSingle();
     if (vista) p = vista as LinhaProposta;
   }
-  const { data: vs } = await s.supabase.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).order("versao");
+  const { data: vs, error: erroVersoes } = await s.supabase.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).order("versao");
+  if (erroVersoes) throw new Error(MSG_PROPOSTA_NAO_CARREGOU);
   const linhas = (vs ?? []) as LinhaVersao[];
   if (!linhas.length) return null;
   const versoes: VersaoView[] = linhas.map((v, i) => {
@@ -909,10 +914,13 @@ export type Resposta =
 
 async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof sessao>>>, id: string) {
   await expirarVencidas(s.admin, s.user.id);
-  const { data } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
   const p = data as LinhaProposta | null;
+  // Achado 140: a falha de leitura não vira "não encontrada" — quem responde vê que dá para tentar de novo.
+  if (error) return "falhou" as const;
   if (!p) return null;
-  const { data: v } = await s.admin.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+  const { data: v, error: erroV } = await s.admin.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+  if (erroV) return "falhou" as const;
   if (!v) return null;
   return { p, v: v as LinhaVersao, papel: (p.owner_id === s.user.id ? "owner" : "tenant") as Autor };
 }
@@ -924,6 +932,7 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para responder." };
   const c = await carregarParaResponder(s, id);
+  if (c === "falhou") return { ok: false, error: "Não foi possível carregar a proposta agora. Tente de novo." };
   if (!c) return { ok: false, error: "Proposta não encontrada." };
   const { p, v, papel } = c;
   if (!estaAberta(p.status)) return { ok: false, error: p.status === "expirada" ? "Esta proposta expirou." : "Esta proposta não está mais em andamento." };
