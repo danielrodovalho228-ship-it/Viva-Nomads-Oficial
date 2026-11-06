@@ -90,6 +90,10 @@ export const ASSUNTOS = {
   /** E637: o prazo de 7 dias do parecer sobre a caução terminou sem desconto (avisa o dono e o morador). */
   caucaoLiberacaoIntegral: "Caução: liberação integral registrada",
   /** E637: a devolução da caução passou de 30 dias (avisa o dono). */
+  /** E641: lembrete neutro (D-5/D-3) da parcela do aluguel, antes do vencimento. */
+  lembreteParcelaAluguel: "Lembrete: parcela do aluguel vence em breve",
+  /** E641: o morador registrou o pagamento e o dono precisa confirmar. */
+  pagamentoRegistradoMorador: "Pagamento registrado pelo morador: confirme o recebimento",
   caucaoDevolucaoAtraso: "Caução: devolução em atraso",
   contratoFaltaVoce: "Falta a sua assinatura no contrato",
   contratoAssinado: "Contrato assinado pelas duas partes",
