@@ -110,7 +110,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         </div>
         {/* E650: quem já publicou com CPF não recebe serviço (E648); o painel explica o porquê e pede o CNPJ. */}
         {!suspenso && p.status === "publicado" && p.falta.includes(PENDENCIA_CNPJ) && (
-          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-pendencia-cnpj">
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-pendencia-cnpj-publicado">
             <p className="font-semibold">Pendência: {PENDENCIA_CNPJ.charAt(0).toLowerCase()}{PENDENCIA_CNPJ.slice(1)}.</p>
             <p className="mt-1">Por isso a sua página não aparece na busca e você não recebe pedidos. A Viva só trabalha com parceiros que têm CNPJ (MEI, onde a atividade permite). Fale com a Viva pela Central de Ajuda para apresentar o CNPJ.</p>
           </div>

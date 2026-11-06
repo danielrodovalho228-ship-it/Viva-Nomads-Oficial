@@ -34,6 +34,6 @@ test("o painel passa tipoPessoa SEMPRE (e marca jaPublicou), em vez de omitir pa
 });
 test("a tela mostra a pendência do CNPJ também com a página publicada", () => {
   const src = ler("app/(dashboard)/dashboard/parceiro/painel-parceiro.tsx");
-  assert.match(src, /data-testid="parceiro-pendencia-cnpj"/);
+  assert.match(src, /data-testid="parceiro-pendencia-cnpj-publicado"/);
   assert.match(src, /PENDENCIA_CNPJ/);
 });
