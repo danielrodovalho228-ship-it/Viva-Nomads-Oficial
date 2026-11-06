@@ -614,3 +614,12 @@ Sonda das passadas 23/24/29/33/38/39 em 55 rotas × 2 larguras (17 públicas, 38
    fundo `data:` SVG lido como imagem; grades de comodidades e mosaico da galeria com última linha ímpar em `/imoveis/*` (desenho); `/cidades/uberlandia` (15 em 4, B2);
    filtros de `/parceiros/buscar` (formulário); "cartão sem foto" em `/privacidade` e `/guias/*` (texto de artigo e JSON-LD, não cartão). **Conforme.**
 3. **Matriz × mockups**: nada novo. Nenhum defeito novo a registrar; nenhuma PR de correção aberta por esta passada.
+
+## Cardápio A em ordem — passada 41 (06/11; modo demonstração, 390 e 1280)
+
+1. **Públicas (home, /buscar, imóvel, /empresas, /como-funciona, /ajuda)**: varridas nas passadas 29, 33 e 39 (55 rotas × 2 larguras). Depois da 39 a `main` só trouxe o simulador dos sócios (E646, tela com código de acesso, fora da Pista A) e os títulos de SEO das páginas de polo (#2953, sem tela): nada a repetir. **Conforme.**
+2. **Logadas alcançáveis**: passadas 38 a 40 cobrem o painel e o admin estáticos. Esta passada mediu as telas com id que o demo alcança, descobertas pelos links das listas (uma por forma): `/dashboard/imoveis/:id` (+ `/editar`, `/cartao`, `/desempenho`, `/parceiros`, `/conforto`, `/nivel`; `/publicar` redireciona para a lista),
+   `/dashboard/avaliacao-imovel/:id`, `/dashboard/visitas/:id`, `/dashboard/locacoes/:id` (vai ao contrato da estadia). 12 medições com a sonda das passadas anteriores (imagem com carregamento real, rolagem lateral, texto cortado, fundo bege, elemento fixo, cartão sem foto, grade): **nenhum defeito.**
+3. **Painéis × padrão codificado** (fundo clean, cartões uniformes, grade par, ícone por comodidade): a trava `estilo-padrao` e as de grade passam na suíte (6493 testes); a única grade ímpar real achada na volta (`/admin/financeiro`, passada 40) está na #2954.
+4. **Sem medir** (precisam de dados reais, ficam para a QA): `/dashboard/estadia/:id/*` (alteração, confirmada, convidado, encerrar, mensagens, ocupantes), `/dashboard/contratos/:id/ficha`, `/dashboard/servicos/pedidos/:id`, `/admin/parceiros/pedidos/:id`, `/admin/2fa/refazer`.
+Nenhum achado novo; nenhuma correção nesta passada.
