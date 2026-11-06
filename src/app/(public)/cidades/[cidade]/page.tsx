@@ -15,7 +15,8 @@ import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
 import { bairrosDaGrade, contaNaBusca } from "@/lib/bairros";
-import { tituloContagemCidade } from "@/lib/cidades";
+import { detalheContagemCidade } from "@/lib/cidades";
+import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
 
@@ -102,14 +103,21 @@ export default async function CityLandingPage({ params }: Params) {
       </section>
 
       <section className="container-page section-y">
-        <div className="flex items-center justify-between">
-          <h2 className="font-title text-2xl font-semibold tabular-nums text-ink">
-            {tituloContagemCidade(
-              properties.filter((p) => !isExemplo(p.id)).length,
-              properties.filter((p) => isExemplo(p.id)).length,
-              name,
-            )}
-          </h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            {/* E446: o número é o da busca (mesma função); o detalhe reais × exemplo fica embaixo. */}
+            <h2 className="font-title text-2xl font-semibold tabular-nums text-ink" data-testid="cidade-contagem">
+              {contagemDaBusca({ n: properties.length, local: name })}
+            </h2>
+            {(() => {
+              const d = detalheContagemCidade(properties.filter((p) => !isExemplo(p.id)).length, properties.filter((p) => isExemplo(p.id)).length);
+              return d ? (
+                <p className="mt-1 text-sm text-muted" data-testid="cidade-contagem-detalhe">
+                  {d}
+                </p>
+              ) : null;
+            })()}
+          </div>
           <ButtonLink href="/buscar" variant="outline" size="sm">
             Ver toda a busca
           </ButtonLink>
