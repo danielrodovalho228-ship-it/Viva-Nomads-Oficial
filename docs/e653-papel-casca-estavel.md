@@ -48,3 +48,34 @@ no meio; o servidor lança; a casca marca `indisponivel` e o `ModeInitializer` r
 
 **Não provado ao vivo** (regra do lote): as três causas explicam o conjunto de sintomas e o estado do banco, mas a reprodução com
 carga real é do QA do chat principal. Sem migração, sem chave.
+
+## Varredura de regressão da casca logada (papelAtivo / papelDaRota e persistência do modo)
+
+**Checks do #3038 (head `8e…` do E653):** verify, e2e, lab-critico e Vercel verdes.
+
+**1. Listas de áreas.** As cópias do guarda de rota (`OWNER_ONLY`/`TENANT_ONLY` em `dashboard-shell.tsx`) e `AREA_PROPRIETARIO`/`AREA_MORADOR`
+(`config/areas-por-papel.ts`) são idênticas (diferença vazia nos dois sentidos). `papelDaRota` e `modoDaRota` usam as áreas; o teste
+`papel-ativo.test.ts` já fixa a paridade.
+
+**2. Inventário de TODOS os escritores de `papel_ativo` / `preferred_mode`** (servidor):
+| Escritor | Quando grava | Situação |
+|---|---|---|
+| `usarPapel` (papel-actions) | troca explícita (selo/Conta); com `origem "area"` só o modo no 1º acesso | corrigido no F1 (`gravacaoPorArea`) |
+| `setPreferredMode` (mode-actions, via `salvarModo`) | clique em "Modo proprietário/morador", `aoNavegar` de conta sem o papel, regravação de troca pendente | só cliques explícitos ou a anotação da própria troca (10 min) |
+| `gravarIntencao` (intencao-servidor) | só no 1º acesso (intenção e papel ativo vazios); leitura falha não vira 1º acesso | correto, nada a mudar |
+Escritores do navegador (`setActiveMode`/`setState({activeMode})`): `AuthProvider` (lê o perfil; respeita troca no meio), `ModeInitializer`
+(servidor ou troca pendente; relê no F2), troca explícita, `aoNavegar` (conta sem o papel). Nenhum grava sem clique ou sem origem no servidor.
+
+**3. Achado fora do escopo da correção — guarda de rota por papel da casca é código morto desde o E497.** O efeito de
+`dashboard-shell.tsx` (`useEffect … [pathname, mode, isOwner, isTenant, router, setActiveMode]`) calcula `exclusive` como as rotas do **outro**
+modo e dispara se a URL está nelas. Mas, desde o E497, `useViewMode().mode` já vem da URL nas páginas de área (`modoDaRota`), então a URL nunca
+está na lista do outro modo: o efeito **nunca dispara**. Consequências: (a) não é escritor de modo ativo (bom, coerente com o E548); (b) a
+parte "conta que NÃO tem o papel volta ao convite (`destinoForaDoPapel`)" também deixou de acontecer em acesso por URL/deep-link (o teste
+`jornada-teste.test.ts` só confere o texto do código, não o efeito). Não corrigi porque restaurar o redirecionamento muda produto (o fluxo
+"Anunciar meu imóvel" de quem ainda não é dono usa a mesma rota de dono via `aoNavegar`) e a decisão é do chat principal. Proposta, se
+quiserem: manter o guarda só para o redirecionamento (sem `setActiveMode`/`salvarModo`), decidindo "tem o papel?" pela mesma regra do menu.
+
+**4. Persistência entre sessões.** `signOut` limpa `activeMode`/`parceiroAtivo`/anotação pendente (`vivanomads-*`). A troca pendente expira
+em 10 min e só vence o servidor se o modo pendente difere do servidor.
+
+**Conclusão:** sem outro defeito do tipo "o papel muda sozinho". A reprodução com carga real (servidor lento) segue para o QA do chat principal.
