@@ -382,3 +382,26 @@ rolagem lateral, texto cortado, controle coberto (no topo e rolando até o fim),
 - **main**: CI verde no último push (`020350e95`, #2836) e nos 18 anteriores.
 - **#2767 (E457, rascunho)**: conflito com a main resolvido; spec do laboratório corrigida; aguardando o lab-crítico rodar de novo.
 - **#2765 (E455, rascunho)**: verify, e2e e lab-crítico verdes; sem conflito com a main. Aguardando QA.
+
+## Rotas ainda não medidas nesta volta, com o carregamento real de cada imagem — passada 23 (06/11, modo demonstração, 390 toque e 1280)
+
+80 rotas (29 públicas e 51 do painel: Orçamentos, Parceiro, Pedidos da cidade, Conta e suas seções, Leads, Respostas rápidas,
+Verificação, Ferramentas, Simulador, Tributação, Fechamento, Visitas, Locações, Contratos, Garantias, Recibos, Carteira, Ganhos,
+Agenda, Mensagens, edição, desempenho, cartão e nível de anúncios, `/qualificar`, `/roi`, `/simulacao`, `/tributario`, `/auth/*`…).
+Sonda nova: rola devagar até o fim, espera `decode()` de cada imagem (com limite de 4 s) e confere também o `background-image`.
+Além de rolagem lateral, texto cortado, controle coberto, fundo bege e grade com última linha incompleta.
+
+1. **`/cidades/[cidade]`: 13 bairros em 3 colunas a 1280 deixavam "Martins" sozinho na última linha.** **Corrigido no #2851**
+   (grade de 6 colunas de 2: o que sobra preenche a linha; t921).
+2. **Carregamento das imagens**: nas 160 medições (80 rotas × 2 larguras), toda imagem visível carrega. As que aparecem "não
+   carregadas" logo depois de abrir são `loading="lazy"` fora da vista (passos do carrossel e cartões abaixo da dobra): levadas à vista,
+   carregam todas (medido em `/dashboard` a 1280 e `/imoveis/ube-002` a 390). O `src` de reserva dessas imagens aponta para `w=3840`,
+   mas o navegador escolhe o tamanho pelo `sizes` (`33vw`/`100vw`), não esse. **Conforme.**
+3. **Rolagem lateral, fundo bege, texto cortado, controle coberto**: nenhum caso. **Conforme.**
+4. **Grades com última linha incompleta que são desenho aprovado**: mosaico da galeria do anúncio, listas de comodidades e "regras da
+   estadia" de 3 itens (2 colunas, como em passadas anteriores). **Conformes.**
+5. **Rotas que redirecionam** no demo (`/dashboard/parceiro/avaliacao`, `/dashboard/assinatura` → `/dashboard`; `/qualificar` → login;
+   `/precos` → `/`): medidas na tela de destino. **Conformes.**
+6. **Matriz × mockups**: o que resta é decisão do Daniel (`cabecalho-*`, `cadastro-imovel-07-descricao`, `admin-servicos`,
+   `pouso-morador`), texto jurídico congelado (`/privacidade`, `/termos`) ou sessão real (`parceiro-ordens`, `perfil-01`, `perfil-02`,
+   `/auth/verificar-codigo`, `/dashboard/avaliacoes`). Nenhuma é alcançável pelo demo. Nada a corrigir.
