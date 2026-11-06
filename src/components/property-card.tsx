@@ -16,13 +16,19 @@ import { linhaLocalizacao } from "@/lib/localizacao";
 
 const ehFoto = (src: unknown): src is string => typeof src === "string" && (/^https?:\/\//.test(src) || src.startsWith("/"));
 
+/** E454: quantos cartões formam a primeira fileira (4 colunas no computador; 2 no celular): as fotos deles carregam com prioridade. */
+export const PRIMEIRA_FILEIRA = 4;
+
 export function PropertyCard({
   property,
   periodMonths,
+  prioridade = false,
 }: {
   property: Property;
   /** Quando a busca tem período selecionado, mostra o total estimado do período. */
   periodMonths?: number;
+  /** E454: cartão da primeira fileira: a foto principal carrega já e com prioridade alta (sem retângulo cinza na primeira pintura). */
+  prioridade?: boolean;
 }) {
   const fotos = property.photos.filter(ehFoto);
   const exemplo = isExemplo(property);
@@ -58,7 +64,7 @@ export function PropertyCard({
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-surface-2" data-testid="cartao-foto">
         {fotos.length > 0 ? (
-          <FotosCartao fotos={fotos} alt={property.title} />
+          <FotosCartao fotos={fotos} alt={property.title} prioridade={prioridade} />
         ) : (
           <PhotoPlaceholder label={property.photos[0]} className="h-full w-full" />
         )}

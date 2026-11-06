@@ -317,7 +317,7 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
   // Carrossel com pontos; E416 (05/11): os selos empilhados sobre a foto (antes: no máximo 1).
-  assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} \/>/);
+  assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} prioridade=\{prioridade\} \/>/);
   assert.match(ler("components/property/fotos-cartao.tsx"), /data-testid="cartao-pontos"/);
   assert.match(c, /<SelosFoto selos=\{selos\} \/>/);
 });
