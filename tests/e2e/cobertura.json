@@ -7231,6 +7231,18 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#listarFotosRepetidas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#liberarFotoRepetida": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   }
 }
