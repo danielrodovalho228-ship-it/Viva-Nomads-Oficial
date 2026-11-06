@@ -65,7 +65,7 @@ test.describe("T358 — CAMPOS-2: blocos opcionais no padrão E56", () => {
     await expect(d.getByTestId("detalhe-elevador")).toBeVisible();
     await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 0 de 1 preenchido · 8 não se aplicam");
     await d.getByTestId("detalhe-andar").fill("3");
-    await d.getByTestId("detalhe-elevador").getByLabel("Sim", { exact: true }).check();
+    await d.getByTestId("detalhe-elevador").getByRole("radio", { name: "Sim", exact: true }).click();
     await expect(d.getByTestId("completude-opcionais")).toHaveText("Detalhes opcionais: 1 de 1 preenchido · 8 não se aplicam");
 
     await d.getByTestId("bloco-janela-toggle").click();
