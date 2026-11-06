@@ -22,6 +22,8 @@ for (const w of [1280, 390] as const) {
       await page.goto("/buscar", { waitUntil: "networkidle" });
 
       for (const [id, chave] of [["tipo", "tipo"], ["preco", "preco"], ["nivel", "nivel"]] as const) {
+        // E452: a pílula "Nível" só existe quando o resultado tem nível; sem ele (o laboratório), nada a abrir.
+        if (id === "nivel" && (await page.getByTestId("pilula-nivel").count()) === 0) continue;
         const painel = await abrir(page, id);
         const opcao = painel.locator(`button[data-testid^="pilula-${id}-"]:not([disabled])`).first();
         if ((await opcao.count()) === 0) {
