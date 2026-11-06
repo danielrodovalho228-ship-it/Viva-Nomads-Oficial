@@ -30,6 +30,7 @@ import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/mol
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
+import { SecoesAdminEntrada } from "@/components/layout/secoes-admin-entrada";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
 import { barraAdminPara, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
 import { PapelAtivo } from "@/components/layout/papel-ativo";
@@ -427,6 +428,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
         <MarcaNavInterna />
         <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
+          {/* E349: na entrada do admin (Visão geral) no celular, as seções ficam à vista (o mesmo menu do E176, aberto). */}
+          {pathname === "/admin" && <SecoesAdminEntrada itens={barraAdminPara({ observadorQa: contadores.observadorQa })} />}
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
           {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
           {papelTopo && <FaixaCritico pathname={pathname} />}
