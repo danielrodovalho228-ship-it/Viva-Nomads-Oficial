@@ -35,6 +35,8 @@ const inventario = (p: Page) =>
     for (const el of Array.from(raiz.querySelectorAll("[role=switch]"))) if (!fora(el) && visivel(el)) achados.chave.push(rot(el.closest("label") ?? el));
     for (const el of Array.from(raiz.querySelectorAll("button[aria-pressed], button[role=radio], button[role=checkbox], [role=radio], [role=checkbox], label:has(> input.sr-only)"))) {
       if (fora(el) || !visivel(el)) continue;
+      // Passo 7: a linha "Destaques" do mockup aprovado (decisão do Muse, 06/11) é de pílulas: única exceção, por testid.
+      if ((el.getAttribute("data-testid") ?? "").startsWith("destaque-")) continue;
       const cs = getComputedStyle(el);
       const r = el.getBoundingClientRect();
       const pilula = parseFloat(cs.borderTopLeftRadius) >= r.height / 2 - 1;
