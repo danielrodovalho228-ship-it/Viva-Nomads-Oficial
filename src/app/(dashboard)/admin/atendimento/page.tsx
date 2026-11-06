@@ -3,6 +3,7 @@ import { filaAtendimento, listarMacros, metricasAtendimento } from "@/lib/data/a
 import { AtendimentoClient } from "./atendimento-client";
 import { adminDaPagina } from "@/lib/data/admin-indicadores";
 import { tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/atendimento") };
 
@@ -28,6 +29,8 @@ export default async function AdminAtendimentoPage({
     fechados: um("fechados") === "1",
     semResposta: um("sem_resposta") === "1",
   };
+  // E477: respostas prontas e o teste da Viva são configuração da plataforma — a conta observadora da QA só lê.
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const admin = await adminDaPagina();
   const [fila, aprovacao, metricas, macros, ultimo] = await Promise.all([
     aba === "fila" ? filaAtendimento(filtros, { exigir: true }) : Promise.resolve([]),
@@ -50,6 +53,7 @@ export default async function AdminAtendimentoPage({
         macros={macros}
         filtros={filtros}
         semAcesso={fila === null}
+        soLeitura={soLeitura}
         agoraISO={new Date().toISOString()}
         ultimaDecisao={(ultimo as string | null) ?? null}
       />
