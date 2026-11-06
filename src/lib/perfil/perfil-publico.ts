@@ -213,6 +213,25 @@ export function progressoPerfil(
   return { itens, pct };
 }
 
+/**
+ * E403: o item "Celular verificado" do medidor. Quem JÁ verificou tem o item feito sempre — a sonda do provedor de SMS
+ * (rede) fora do ar não tira o item da conta (era 88% → 86% sem ação nenhuma). Sem verificar, o item só entra quando dá
+ * para verificar (sem provedor, a pessoa não teria como cumprir). undefined = fora do medidor.
+ */
+export function itemTelefoneNoMedidor(fone: { disponivel: boolean; verificado: boolean } | null | undefined): boolean | undefined {
+  if (!fone) return undefined;
+  if (fone.verificado) return true;
+  return fone.disponivel ? false : undefined;
+}
+
+/**
+ * E403: "Profissão" entra no medidor pelo CADASTRO (morador), não por existir imóvel na conta — um rascunho criado
+ * tirava o item e mudava a porcentagem sem a pessoa mexer no perfil.
+ */
+export function pedeProfissao(role: string | null | undefined): boolean {
+  return role === "tenant";
+}
+
 /** Página pública do proprietário: só indexa quando há imóvel visível (anúncio de teste não conta). */
 export function robotsDoProprietario(imoveisVisiveis: number): { index: boolean; follow: boolean } {
   const indexar = imoveisVisiveis > 0;

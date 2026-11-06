@@ -80,10 +80,9 @@ async function conferirCartao(cartao: Locator, onde: string) {
   expect(titulo.peso).toBe("600");
   const fonte = await cartao.getByTestId("cartao-local").evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
   expect(fonte, `${onde}: cartão 16/600`).toBe(16);
-  // Adendo: no máximo 1 selo, em pill branca.
-  const selos = cartao.getByTestId("selos-foto").locator(":scope > *");
-  expect(await selos.count(), `${onde}: no máximo 1 selo`).toBeLessThanOrEqual(1);
-  if (await selos.count()) expect((await estilo(selos.first())).fundo).toBe(BRANCO);
+  // E416 (05/11): os selos empilhados sobre a foto, cada um em pill branca, nenhum sobre o coração.
+  const selos = cartao.getByTestId("selos-foto").locator("[data-selo]");
+  for (let i = 0; i < (await selos.count()); i++) expect((await estilo(selos.nth(i))).fundo, `${onde}: selo em pill branca`).toBe(BRANCO);
   // Adendo: ordem bairro + nota → título (até 2 linhas) → total → síntese → disponibilidade (de cima para baixo).
   const ys: number[] = [];
   for (const id of ["cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"]) {

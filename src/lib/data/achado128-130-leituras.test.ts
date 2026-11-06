@@ -15,14 +15,11 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("Achado 128: /socios distingue falha de 'nada pendente'", () => {
+// E595/E596 (05/11): a página /socios saiu; a leitura das pendências (servidor) segue distinguindo falha de "nada".
+test("Achado 128: as pendências dos sócios distinguem falha de 'nada pendente'", () => {
   const s = ler("lib/socios/pendencias-servidor.ts");
   assert.match(s, /export async function carregarPendenciasSocios\(\): Promise<Pendencia\[\] \| null>/);
   assert.match(s, /if \(error\) return null;/);
-  const c = ler("components/socios/socios.tsx");
-  assert.match(c, /pendencias === null \?/);
-  assert.match(c, /data-testid="pendencias-erro"/);
-  assert.match(c, /Não foi possível ler as pendências agora/);
 });
 
 test("Achado 129: o calendário lança na falha ao conferir o dono (com exigir)", () => {

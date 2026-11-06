@@ -66,7 +66,16 @@ test.describe("T49 portões sem login @seguranca", () => {
     });
   }
 
-  for (const rota of ["/decisao", "/modelodenegocio", "/roi", "/socios", "/tributario"]) {
+  // E595/E596 (05/11): /socios e /decisao foram eliminadas — o acesso direto vai para /modelodenegocio (que segue fechado).
+  for (const rota of ["/socios", "/decisao", "/socios/qualquer", "/decisao/qualquer"]) {
+    test(`${rota} (eliminada) redireciona para /modelodenegocio, nunca abre`, async ({ request }) => {
+      const r = await request.get(rota, { maxRedirects: 0 });
+      expect([301, 302, 303, 307, 308]).toContain(r.status());
+      expect(new URL(r.headers()["location"] ?? "", "http://x").pathname).toBe("/modelodenegocio");
+    });
+  }
+
+  for (const rota of ["/modelodenegocio", "/roi", "/tributario"]) {
     test(`${rota} (interna dos sócios) sem código não abre`, async ({ request }) => {
       const r = await request.get(rota, { maxRedirects: 0 });
       expect([301, 302, 303, 307, 308]).toContain(r.status());

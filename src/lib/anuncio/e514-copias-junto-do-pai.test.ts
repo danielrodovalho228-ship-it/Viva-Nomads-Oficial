@@ -32,5 +32,6 @@ test("E514: cópia sem o pai na lista (filtro/busca) fica onde estava; cópia fe
 test("E514: Meus imóveis junta as cópias ao pai antes de paginar", () => {
   const src = readFileSync("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx", "utf8");
   assert.match(src, /juntarCopiasAoPai\(/);
-  assert.ok(src.indexOf("juntarCopiasAoPai(") < src.indexOf("paginar(filtrada"), "junta antes de paginar");
+  // E624: a página agora conta anúncios (paginarAnuncios); continua juntando as cópias ao pai antes de paginar.
+  assert.ok(src.indexOf("juntarCopiasAoPai(") < src.indexOf("paginarAnuncios(filtrada"), "junta antes de paginar");
 });

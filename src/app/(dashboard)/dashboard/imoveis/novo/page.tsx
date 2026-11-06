@@ -118,6 +118,7 @@ import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { IndicePassos } from "./indice-passos";
 import { indicePassos } from "@/lib/anuncio/indice-passos";
+import { comodidadesComMobiliado } from "@/lib/anuncio/mobiliado-fonte-unica";
 import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
@@ -272,7 +273,10 @@ export default function NewPropertyPage() {
   const [childrenAllowed, setChildrenAllowed] = useState(true);
   // 61-B: tipo de entrada (obrigatório para publicar anúncio novo), mensagem a quem pede e o que considerar.
   const [chegada, setChegada] = useState<ChegadaEPedidoForm>(() => formDeChegada());
-  const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
+  const [amenityKeysBase, setAmenityKeys] = useState<Record<string, boolean>>({});
+  // E603: "Mobiliado" tem UMA fonte — o interruptor do Passo 6 (furnished). A comodidade "Mobiliado completo" do Passo 5, a prévia, o
+  // rascunho e a publicação leem o mesmo valor (antes o chip aparecia com o Passo 5 vazio).
+  const amenityKeys = comodidadesComMobiliado(amenityKeysBase, furnished);
   // DETECTA-B: itens de nível sugeridos pelas fotos (saem do "o que falta") e releitura do nível após confirmar.
   const [sugeridasFotos, setSugeridasFotos] = useState<string[]>([]);
   const [nivelVersao, setNivelVersao] = useState(0);
@@ -2076,7 +2080,7 @@ export default function NewPropertyPage() {
                   propertyId={imovelId}
                   comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
                   tipoImovel={propertyType}
-                  onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
+                  onComodidade={(k) => (k === "mobiliado" ? setFurnished(true) : setAmenityKeys((a) => ({ ...a, [k]: true })))}
                   onSugeridas={setSugeridasFotos}
                   onComodidadesSugeridas={setComodidadesDetectadas}
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}
