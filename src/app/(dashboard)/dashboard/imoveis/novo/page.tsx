@@ -406,6 +406,11 @@ export default function NewPropertyPage() {
   const photoBlocked = photos.length < MIN_PHOTOS;
   // E133: o Passo 2 só segue com o mínimo de fotos e sem foto/vídeo "não parece imóvel" sem tratar.
   const passoFotos = estadoPassoFotos(photos, videoArquivo ? videoConteudo : null);
+  // E387: o aviso do "Continuar" (erro gravado do Passo 2) sai quando o motivo deixa de valer (todas tratadas), em vez de ficar na tela.
+  const fotosBloqueiam = fotosBloqueiamAvanco(passoFotos);
+  useEffect(() => {
+    if (!fotosBloqueiam) setErros((e) => (e.fotos ? semErro(e, "fotos") : e));
+  }, [fotosBloqueiam]);
   const enderecoCompleto = [street.trim(), numero.trim()].filter(Boolean).join(", ");
 
   const garantiaOk = Object.values(garantias).some(Boolean);
