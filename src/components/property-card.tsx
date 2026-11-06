@@ -3,7 +3,7 @@ import { Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { estadiaDoCartao, mesesDoCartao, ROTULO_TOTAL_MES, rotuloPreco } from "@/lib/cartao-preco";
 import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -107,12 +107,15 @@ export function PropertyCard({
             {preco.valor}
           </span>
           <span className="text-sm text-ink">/mês</span>
-          {preco.estadia && (
-            <span className="text-sm text-muted" data-testid="cartao-total-estadia">
-              {" · "}
-              {preco.estadia}
-            </span>
-          )}
+          {/* E356: todo cartão mostra o total da estadia (com 1 mês, "R$ X em 1 mês"): comparação igual entre vizinhos. */}
+          <span className="text-sm text-muted" data-testid="cartao-total-estadia">
+            {" · "}
+            {estadiaDoCartao(preco)}
+          </span>
+        </p>
+        {/* E356: diz o que é o preço grande (o total do mês, com condomínio e consumo fixo). */}
+        <p className="text-xs text-apoio" data-testid="cartao-total-rotulo">
+          {ROTULO_TOTAL_MES}
         </p>
 
         {/* Linha-síntese: cada item só com o dado; a linha some se não houver nenhum (src/lib/cartao-sintese.ts). */}

@@ -60,3 +60,12 @@ export function rotuloPreco(p: { mensal: number; meses?: number | null; disponiv
 export function textoPreco(r: RotuloPreco): string {
   return r.estadia ? `${r.mes} · ${r.estadia}` : r.mes;
 }
+
+/** E356: texto do total da estadia no CARTÃO da busca. Todo cartão da mesma grade mostra a linha (com 1 mês, "R$ X em 1 mês"), para a
+ *  comparação de preço não depender de o vizinho ter ou não estadia mínima plurimensal. As demais superfícies seguem o `estadia` (null com N = 1). */
+export function estadiaDoCartao(r: RotuloPreco): string {
+  return r.estadia ?? `${formatBRL(r.total)} em 1 mês`;
+}
+
+/** E356: o rótulo que diz o que o preço grande do cartão é. */
+export const ROTULO_TOTAL_MES = "Total por mês, tudo incluído";
