@@ -1064,7 +1064,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
-        "t708-e254-estadia-minima-uma-fonte"
+        "t708-e254-estadia-minima-uma-fonte",
+        "t971-e399c-comparador-desligado"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1230,7 +1231,8 @@
         "t713-e261-avisos-titulo",
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t971-e399c-comparador-desligado"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1743,7 +1745,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t971-e399c-comparador-desligado"
       ]
     },
     "/modelodenegocio": {
@@ -2345,7 +2348,8 @@
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
         "t596-qa-login-direto",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t971-e399c-comparador-desligado"
       ]
     },
     "/admin/retencao": {
