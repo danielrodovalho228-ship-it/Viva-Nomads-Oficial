@@ -51,3 +51,24 @@ test("E394: os chamadores passam o id do imóvel (candidatura, proposta, contrat
   ];
   for (const [arq, re] of casos) assert.match(ler(arq), re, arq);
 });
+
+test("E394 (continuação): os seis e-mails que faltavam também passam o id do imóvel", () => {
+  const ler = (p: string) => readFileSync(p, "utf8");
+  const casos: [string, string, RegExp][] = [
+    ["aviso de calendário (conflito e falha)", "src/lib/calendario/importar-servidor.ts", /corpo\(\{ id: propertyId, titulo: p\?\.title/],
+    ["ordem de manutenção (e-mail da ordem)", "src/lib/data/manutencao-actions.ts", /imovel: im \? \{ id: \(ordem as unknown as \{ property_id\?: string \| null \}\)\.property_id \?\? null,/],
+    ["manutenção atrasada (cron)", "src/app/api/cron/atendimento/route.ts", /\{ id: so\.property_id, titulo: so\.properties\.title/],
+    ["lembrete ao interessado (candidatura)", "src/lib/atendimento/viva-servidor.ts", /return p \? \{ id: \(lead as \{ property_id\?: string \| null \} \| null\)\?\.property_id \?\? null,/],
+    ["resposta ao pedido de moradia", "src/lib/data/pedidos-actions.ts", /imovel: \{ id: imovelId, titulo: imovel\.title as string \| null/],
+    ["convite ao morador da estadia", "src/lib/data/estadia-convidados-actions.ts", /linhaImovel\(\{ id: ctx\.c\.property_id, titulo/],
+    ["anúncio pronto para compartilhar", "src/lib/data/contrato-assinar-actions.ts", /corpoAnuncioCompartilhar\(\{ imovel: \{ id: imovelId,/],
+    ["avisos de proposta (negociação)", "src/lib/data/propostas-actions.ts", /const imovel = \{ id: p\.property_id, titulo: \(im as/],
+    ["estadia em automação", "src/lib/automacao/servidor.ts", /return p \? \{ id: propertyId, titulo: p\.title/],
+  ];
+  for (const [nome, arq, re] of casos) assert.match(ler(arq), re, nome);
+});
+
+test("E394 (continuação): o aviso de decisão do documento diz título · bairro · código", () => {
+  const f = readFileSync("src/lib/documento/aviso-decisao.ts", "utf8");
+  assert.match(f, /o\.propertyId \? `código \$\{codigoDoImovel\(o\.propertyId\)\}` : ""/);
+});

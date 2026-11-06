@@ -54,7 +54,7 @@ export async function convidarOcupante(contratoId: string, email: string): Promi
         pushUrl: destino,
         imovelId: ctx.c.property_id,
         // E267: o imóvel por título · bairro, cidade (nunca o endereço exato). Quem é convidado ainda não tem nome na Viva.
-        body: () => `${quem} incluiu você como morador da estadia em ${linhaImovel({ titulo: ctx.c.properties?.title, bairro: ctx.c.properties?.address, cidade: ctx.c.properties?.city }) || "um imóvel da Viva"}. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.`,
+        body: () => `${quem} incluiu você como morador da estadia em ${linhaImovel({ id: ctx.c.property_id, titulo: ctx.c.properties?.title, bairro: ctx.c.properties?.address, cidade: ctx.c.properties?.city }) || "um imóvel da Viva"}. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.`,
       });
     } catch {
       /* aviso é best-effort */

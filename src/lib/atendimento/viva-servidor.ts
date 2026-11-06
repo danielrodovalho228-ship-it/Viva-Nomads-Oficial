@@ -796,7 +796,7 @@ export async function gerarResumo(chamadoId: string): Promise<{ resumo: ResumoCh
 /** E267: o imóvel da candidatura para o lembrete (título · bairro, cidade). */
 function imovelDoLead(lead: unknown) {
   const p = (lead as { properties?: { title?: string | null; address?: string | null; city?: string | null } | null } | null)?.properties;
-  return p ? { titulo: p.title, bairro: p.address, cidade: p.city } : null;
+  return p ? { id: (lead as { property_id?: string | null } | null)?.property_id ?? null, titulo: p.title, bairro: p.address, cidade: p.city } : null;
 }
 
 /** E267: só o primeiro nome do interessado (privacidade: nunca o nome inteiro nem o contato). */

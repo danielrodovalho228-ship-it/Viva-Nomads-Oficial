@@ -1054,7 +1054,7 @@ export async function responderPedido(
             { ...(inq as Recip), id: inqId },
             detalheResposta(),
             corpoPedidoResposta({
-              imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null },
+              imovel: { id: imovelId, titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null },
               quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined),
               cidade: pedido.cidade as string | null,
               inicio: pedido.data_inicio as string | null,

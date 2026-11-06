@@ -623,7 +623,7 @@ export async function assinarContrato(input: {
             userId: ownerId,
             pushUrl: `/dashboard/imoveis/${imovelId}/cartao`,
             imovelId,
-            ...paraNotify(corpoAnuncioCompartilhar({ imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),
+            ...paraNotify(corpoAnuncioCompartilhar({ imovel: { id: imovelId, titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),
           });
         }
       }
