@@ -402,7 +402,8 @@ export async function listConferidosAutomaticamente(limite = 30): Promise<Confer
 }
 
 /** Contadores da conferência automática nos últimos 7 dias: aprovados, corrija e em revisão. Só admin. */
-export async function contadoresConferencia(): Promise<{ automaticos: number; corrija: number; revisao: number }> {
+/** Achado nº 21: com `exigir`, a falha do banco LANÇA em vez de mostrar "0" nos contadores da fila. */
+export async function contadoresConferencia(opcoes: { exigir?: boolean } = {}): Promise<{ automaticos: number; corrija: number; revisao: number }> {
   const zero = { automaticos: 0, corrija: 0, revisao: 0 };
   const supabase = await createClient();
   if (!supabase) return zero;
@@ -413,12 +414,13 @@ export async function contadoresConferencia(): Promise<{ automaticos: number; co
   const adm = createAdminClient();
   if (!adm) return zero;
   const desde = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const { data } = await adm
+  const { data, error } = await adm
     .from("qualification_checklists")
     .select("conferencia")
     .not("conferencia", "is", null)
     .gte("created_at", desde)
     .limit(2000);
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_DOCUMENTOS_NAO_CARREGOU);
   const out = { ...zero };
   for (const r of data ?? []) {
     const e = (r.conferencia as { estado?: string } | null)?.estado;
