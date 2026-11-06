@@ -14,6 +14,7 @@ import {
   type EnderecoDoc,
 } from "@/lib/documento/endereco-documento";
 import { MSG_MATRICULA } from "@/lib/documento/conferencia-matricula";
+import { DICA_MATRICULA_ATUALIZADA, TEXTO_MATRICULA_OPCIONAL } from "@/lib/documento/matricula-titularidade";
 import { MatriculaResultado, type InfoMatricula } from "./matricula-resultado";
 import { resultadoNaTela, TEXTO_NOVO_EM_ANALISE, TEXTO_NOVO_RECUSADO, type NovoEnvio } from "@/lib/documento/vigente";
 
@@ -176,6 +177,12 @@ export function DocumentoVinculo({
         ))}
       </ul>
       <p className="mt-1 text-xs text-muted">No nome do proprietário e com o endereço do imóvel.</p>
+      {/* E633: a matrícula atualizada é prova de titularidade OPCIONAL por enquanto (nunca bloqueia a publicação). */}
+      <div className="mt-2 rounded-lg border border-sage-200 px-3 py-2 text-xs text-ink" data-testid="matricula-atualizada-dica">
+        <p className="font-semibold">Matrícula atualizada (opcional)</p>
+        <p className="mt-1 text-muted">{DICA_MATRICULA_ATUALIZADA}</p>
+        <p className="mt-1 text-muted">{TEXTO_MATRICULA_OPCIONAL}</p>
+      </div>
       {/* E558: as regras ANTES do envio (antes o dono as descobria por tentativa: duplicidade, tamanho, conferência). */}
       <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink" data-testid="documento-regras">
         <p className="font-semibold">Antes de enviar</p>
