@@ -24,7 +24,7 @@ Criada pela Pista A em 31/10 (não havia matriz no repositório); atualizar linh
 | `ajuda-central` | /ajuda | Conforme | #1699 (vocabulário), E84; #1711 (FAQPage em português). Passada fina 01/11: títulos dos temas e das seções em verde (mockup). Passada 9 (05/11, modo demonstração, 390 e 1280): sem rolagem lateral, um botão cheio ("Falar com a Viva"), um h1, sem fundo bege. |
 | `ajuda-privacidade` | /privacidade | Congelado | Texto aprovado — não mexer até o parecer jurídico. Passada 9 (05/11, modo demonstração, 390 e 1280): "inquilino(s)" aparece no texto jurídico; fica como está: tela congelada, texto jurídico. |
 | `ajuda-termos` | /termos | Congelado | Texto aprovado — não mexer até o parecer jurídico. Passada 9 (05/11, modo demonstração, 390 e 1280): "inquilinos" aparece no texto jurídico ("Verificação de inquilinos (em breve)"); fica como está: tela congelada, texto jurídico. |
-| `busca-card` | /buscar | Conforme | #1698 (bairro não espremido pelo selo). Passada fina 01/11: o lugar da contagem em verde. Fica: chip selecionado em tinta (regra do Prompt 40, com teste) e o cartão sem caixa (PropertyCard único). Passada 9 (05/11, modo demonstração, 390 e 1280): sem rolagem lateral, nenhum botão cheio na página; a 1280 a lista ao lado do mapa tem 3 colunas e a última linha pode ficar incompleta (16 resultados no demo) — a mesma decisão de desenho já anotada na passada 3. |
+| `busca-card` | /buscar | Conforme | #1698 (bairro não espremido pelo selo). Passada fina 01/11: o lugar da contagem em verde. Fica: chip selecionado em tinta (regra do Prompt 40, com teste) e o cartão sem caixa (PropertyCard único). Passada 9 (05/11, modo demonstração, 390 e 1280): sem rolagem lateral, nenhum botão cheio na página; a 1280 a lista ao lado do mapa tem 3 colunas e a última linha pode ficar incompleta (16 resultados no demo) — a mesma decisão de desenho já anotada na passada 3. Passada 21 (06/11): selos do cartão pelo E626 (#2829) — nível em palavra e cor, pílula de símbolos; conferido nos 10 cartões da busca e da cidade, 390 e 1280. |
 | `cabecalho-agenda` | cabeçalho de /dashboard/agenda | Decisão pendente | Passada 2 (31/10, 1280): o mockup tem barra lateral verde, fundo bege e foto grande no topo de cada tela do painel; o real segue o painel aprovado depois (topo com abas, fundo clean, sem foto). Pôr foto no topo de todas as telas do painel é decisão de desenho — com o Muse. Conteúdo de cada tela conferido sem defeito visual. |
 | `cabecalho-ajuda` | cabeçalho de /dashboard/conta/ajuda | Decisão pendente | Passada 2 (31/10, 1280): o mockup tem barra lateral verde, fundo bege e foto grande no topo de cada tela do painel; o real segue o painel aprovado depois (topo com abas, fundo clean, sem foto). Pôr foto no topo de todas as telas do painel é decisão de desenho — com o Muse. Conteúdo de cada tela conferido sem defeito visual. |
 | `cabecalho-anuncios` | cabeçalho de /dashboard/imoveis | Decisão pendente | Mockup antigo (barra lateral, foto no topo, grade de 3); real é a lista aprovada depois, cartões uniformes em #1724. Mesma decisão dos demais cabeçalhos. |
@@ -342,3 +342,19 @@ fundo bege e grade com última linha incompleta.
    comodidades e o calendário de disponibilidade (7 colunas), e a lista da cidade (decisão B2, passada 9). **Conformes.**
 5. **`/dashboard/recibos`**: o filtro (Imóvel · Mês · Ver) é uma linha só; a sonda acusou por alinhar o botão pela base.
    **Conforme.**
+
+## Telas mexidas pelos PRs de 06/11 — passada 21 (06/11, modo demonstração, 390 toque e 1280)
+
+E626 (selos do cartão, #2829), E452 (pílula Nível, #2815), E453, E403, E603/E624/E625/E513 (Pista B), /comparar e a grade do
+proprietário. Medido em 33 rotas (públicas e do painel): imagem quebrada ou vazia, rolagem lateral, texto cortado, controle
+coberto (no topo e rolando até o fim), botões cheios, fundo bege — e, nos cartões, o que o E626 prometeu.
+
+1. **E626 nos cartões reais** (`/buscar`, `/`, `/cidades/uberlandia`, `/imoveis/ube-001` — parecidos —, `/proprietario/exemplo-1`),
+   390 e 1280: no máximo 2 pílulas em todos os cartões com selo (10 na busca, 10 na cidade, 2 na home, 4 no proprietário),
+   nenhuma sobre o coração, nenhuma fora da foto, nenhuma com texto cortado. **Conforme.**
+2. **Imagem quebrada ou vazia, rolagem lateral, fundo bege, botão cheio a mais**: nenhum caso. **Conforme.**
+3. **Controle "coberto"** (`/para-proprietarios`, `/ajuda`, `/dashboard`, `/dashboard/pedidos` a 390): abaixo da dobra, atrás da barra
+   de baixo na primeira tela; rolando até o fim ficam acima dela. **Conforme.**
+4. **Textos "cortados"** ("Imóveis encontrados", "Padrão mínimo", índice do assistente): só para leitor de tela. **Conforme.**
+5. **Matriz × mockups**: sem tela nova que o modo demonstração alcance; o que resta aberto segue sendo decisão do Daniel ou
+   sessão real (passada 19, item 5). Nada a corrigir.

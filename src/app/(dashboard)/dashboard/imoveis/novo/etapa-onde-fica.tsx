@@ -166,7 +166,7 @@ export function EtapaOndeFica(p: {
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-        <Labeled label="Rua" daMatricula={p.daMatricula?.has("endereco")}>
+        <Labeled label="Rua" obrigatorio daMatricula={p.daMatricula?.has("endereco")}>
           <input
             value={p.street}
             onChange={(e) => {
@@ -182,7 +182,7 @@ export function EtapaOndeFica(p: {
           />
           <Erro msg={p.erros.rua} />
         </Labeled>
-        <Labeled label="Número">
+        <Labeled label="Número" obrigatorio>
           <input
             value={p.numero}
             onChange={(e) => p.setNumero(e.target.value.slice(0, 20))}
@@ -226,7 +226,7 @@ export function EtapaOndeFica(p: {
         />
       </Labeled>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Labeled label="Bairro">
+        <Labeled label="Bairro" obrigatorio>
           <input
             value={p.neighborhood}
             onChange={(e) => {
@@ -266,7 +266,7 @@ export function EtapaOndeFica(p: {
             </span>
           )}
         </Labeled>
-        <Labeled label={`Cidade${p.uf ? ` (${p.uf})` : ""}`}>
+        <Labeled label={`Cidade${p.uf ? ` (${p.uf})` : ""}`} obrigatorio>
           <input
             value={p.city}
             onChange={(e) => {

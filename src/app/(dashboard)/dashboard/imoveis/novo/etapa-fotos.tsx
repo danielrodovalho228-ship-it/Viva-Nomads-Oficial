@@ -15,6 +15,7 @@ import { Erro } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import type { ConteudoFoto, EstadoPassoFotos } from "@/lib/fotos/conteudo";
 import { avisoDaContagem } from "@/lib/fotos/contagem-passo";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /** Mockup cadastro-imovel-02: a dica embaixo da galeria. */
 export const DICA_FOTOS = "Dica: use fotos com boa iluminação e ambiente organizado.";
@@ -109,6 +110,8 @@ export function EtapaFotos({
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-ink">
             <span data-testid="fotos-contagem-numero">{contadas}</span> / {MIN_PHOTOS} fotos
+            {/* E608: o mínimo de 8 fotos é obrigatório para publicar. */}
+            <MarcaObrigatorio />
             {/* Conformidade fina (01/11): o "Faltam N fotos" não se repete — quando a trava já diz embaixo, sai daqui. */}
             {bloqueado && !aviso.mensagem && (
               <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>

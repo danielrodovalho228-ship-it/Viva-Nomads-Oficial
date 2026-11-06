@@ -45,7 +45,7 @@ import { SugestoesDasFotos } from "@/components/niveis/sugestoes-fotos";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
-import { camposParaUsarSugestao, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
+import { TEMPO_MAX_SUGESTAO_MS, camposParaUsarSugestao, pedeSugestaoAoEntrar, textoDoModelo } from "@/lib/anuncio/texto-sugerido";
 import { VERSAO_CONFORTO } from "@/config/conforto-minimo";
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { confirmarConforto } from "@/lib/data/conforto-actions";
@@ -62,6 +62,7 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
 import { mesclarFotosDoRascunho } from "@/lib/anuncio/fotos-do-rascunho";
+import { confirmadosAoContinuar, lerConfirmados, type CampoConfirmavel } from "@/lib/anuncio/confirmados";
 import { NOTA_PENDENCIA_AO_SAIR, pendenciaAoSair, tituloPendenciaAoSair, type PendenciaAoSair } from "@/lib/anuncio/pendencia-ao-sair";
 import { avisoDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosBloqueiamAvanco, fotosDaPrevia, motivoAvancoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
@@ -119,6 +120,7 @@ import { EtapaPreco } from "./etapa-preco";
 import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { IndicePassos } from "./indice-passos";
+import { LegendaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 import { indicePassos } from "@/lib/anuncio/indice-passos";
 import { comodidadesComMobiliado } from "@/lib/anuncio/mobiliado-fonte-unica";
 import { PreviaAnuncio } from "./previa-anuncio";
@@ -217,6 +219,10 @@ export default function NewPropertyPage() {
   const [iaLigada, setIaLigada] = useState<boolean | null>(null);
   const [iaAnalisadas, setIaAnalisadas] = useState<string[]>([]);
   const [sugeridos, setSugeridos] = useState<CampoSugerido[]>([]);
+  // E614: preço sugerido, garantia e período padrão só contam no "N% pronto" depois de o dono confirmar (mexer no campo
+  // ou "Continuar" no passo). null = rascunho anterior à regra (conta como antes).
+  const [confirmados, setConfirmados] = useState<CampoConfirmavel[] | null>([]);
+  const confirmar = (...c: CampoConfirmavel[]) => setConfirmados((s) => (s === null ? s : [...new Set([...s, ...c])]));
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
@@ -412,6 +418,7 @@ export default function NewPropertyPage() {
       {
         title, street, neighborhood, city, bathrooms, areaM2, minPeriod, monthlyPrice, garantias, privacidade, description, qual,
         videoUrl, videoArquivo, internetMbps, photos, manualProximities,
+        ...(confirmados ? { confirmados } : {}),
         ...(chegada.tipoEntrada ? { tipoEntrada: chegada.tipoEntrada } : {}),
       },
       {
@@ -542,6 +549,7 @@ export default function NewPropertyPage() {
     const e = validarEtapa(step);
     setErros(e);
     if (Object.keys(e).length === 0) {
+      confirmar(...confirmadosAoContinuar(step));
       setPendenciaSaida(pendenciaAoSair(conferencia.itens, step));
       irPara(Math.min(ULTIMA_ETAPA, step + 1));
       return;
@@ -588,6 +596,8 @@ export default function NewPropertyPage() {
       const r = await fetch("/api/ai/anuncio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // E618: sem resposta em TEMPO_MAX_SUGESTAO_MS, cai no texto pronto (o "a caminho" não fica pendurado).
+        signal: AbortSignal.timeout(TEMPO_MAX_SUGESTAO_MS),
         body: JSON.stringify({
           ...dados,
           vagas: Number(parkingSpots) || undefined,
@@ -936,6 +946,7 @@ export default function NewPropertyPage() {
     if (Array.isArray(d.proxDesmarcados)) setProxDesmarcados((d.proxDesmarcados as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.iaAnalisadas)) setIaAnalisadas((d.iaAnalisadas as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.sugeridos)) setSugeridos(d.sugeridos as CampoSugerido[]);
+    setConfirmados(lerConfirmados(d.confirmados));
     if (Array.isArray(d.comodidadesSugeridas)) setComodidadesSugeridas(d.comodidadesSugeridas as string[]);
     if (d.utilitiesMode === "fixed" || d.utilitiesMode === "real") setUtilitiesMode(d.utilitiesMode);
     if (typeof d.utilitiesEstimate === "number") setUtilitiesEstimate(d.utilitiesEstimate);
@@ -1162,7 +1173,7 @@ export default function NewPropertyPage() {
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
-    iaAnalisadas, sugeridos, comodidadesSugeridas,
+    iaAnalisadas, sugeridos, comodidadesSugeridas, ...(confirmados ? { confirmados } : {}),
     qual,
     qualificacaoConforto: qualConf,
     declaracoesPasso10: declaracoes,
@@ -1504,6 +1515,7 @@ export default function NewPropertyPage() {
     proxBuscadoRef.current = null;
     setIaAnalisadas([]);
     setSugeridos([]);
+    setConfirmados([]);
     setComodidadesSugeridas([]);
     // O botão "Começar outro" some com o aviso: o foco volta para o CEP, primeiro campo da etapa 1.
     setTimeout(() => document.querySelector<HTMLInputElement>('[data-testid="cadastro-cep"]')?.focus(), 0);
@@ -1876,6 +1888,7 @@ export default function NewPropertyPage() {
     setProxDesmarcados,
     manualProximities,
     setManualProximities,
+    editando: !!editingId,
     sugestaoTexto: {
       estado: estadoSugestao,
       aviso: avisoSugestao,
@@ -1976,6 +1989,8 @@ export default function NewPropertyPage() {
           <p className="mt-2 text-base text-muted" data-testid="passo-subtitulo">
             {meta.subtitle}
           </p>
+          {/* E608: os passos com campo obrigatório (2 a 5) dizem o que o asterisco quer dizer, onde se preenche. */}
+          {step >= ETAPA.fotos && step <= ETAPA.comodidades && <LegendaObrigatorio />}
           {/* E602: o índice de passos clicável, com o estado de cada um — sem ele, quem não tinha as 8 fotos ficava preso no Passo 2. */}
           <IndicePassos
             passos={indicePassos(conferencia, step, etapaMax)}
@@ -2118,6 +2133,7 @@ export default function NewPropertyPage() {
                 <EtapaEncontramos parte="comodidades" {...camposImovel} comodidadesDetectadas={comodidadesDetectadas} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto
+                  obrigatorio={!editingId}
                   marcados={conforto}
                   onChange={conf.alterar}
                   desabilitado={publishing || !conf.carregado}
@@ -2157,7 +2173,10 @@ export default function NewPropertyPage() {
                 sugerido={sugerido}
                 tirarSugestao={tirarSugestao}
                 monthlyPrice={monthlyPrice}
-                setMonthlyPrice={setMonthlyPrice}
+                setMonthlyPrice={(v) => {
+                  setMonthlyPrice(v);
+                  confirmar("preco");
+                }}
                 precoRegiao={precoRegiao}
                 condoFee={condoFee}
                 setCondoFee={setCondoFee}
@@ -2170,13 +2189,19 @@ export default function NewPropertyPage() {
                 availableUntil={availableUntil}
                 setAvailableUntil={setAvailableUntil}
                 minPeriod={minPeriod}
-                setMinPeriod={setMinPeriod}
+                setMinPeriod={(v) => {
+                  setMinPeriod(v);
+                  confirmar("periodo");
+                }}
                 maxPeriod={maxPeriod}
                 setMaxPeriod={setMaxPeriod}
                 faixas={faixas}
                 setFaixas={setFaixas}
                 garantias={garantias}
-                setGarantias={setGarantias}
+                setGarantias={(fn) => {
+                  setGarantias(fn);
+                  confirmar("garantia");
+                }}
                 prepFee={prepFee}
                 setPrepFee={setPrepFee}
                 issuesInvoice={issuesInvoice}

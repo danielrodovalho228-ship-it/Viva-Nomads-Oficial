@@ -8,6 +8,7 @@ import { useToque } from "@/components/ui/use-toque";
 import { MARCA_SUGERIDO } from "@/lib/anuncio/sugestoes-cadastro";
 import { cn } from "@/lib/utils";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /** Mensagem de erro de validação sob um campo (item QA — validação por etapa). */
 export function Erro({ msg }: { msg?: string }) {
@@ -50,6 +51,7 @@ export function LinhaNumero({
   testid,
   erro,
   placeholder,
+  obrigatorio = false,
 }: {
   label: string;
   dica: string;
@@ -63,6 +65,8 @@ export function LinhaNumero({
   testid?: string;
   erro?: string;
   placeholder?: string;
+  /** E608: obrigatório para publicar (asterisco ao lado do rótulo). */
+  obrigatorio?: boolean;
 }) {
   const n = Number(valor);
   const atual = valor === "" || !Number.isFinite(n) ? null : n;
@@ -73,6 +77,7 @@ export function LinhaNumero({
         <div className="min-w-0">
           <p className="flex flex-wrap items-center text-sm font-semibold text-ink">
             <span>{label}</span>
+            <MarcaObrigatorio ativo={obrigatorio} />
             <MarcaSugerido ativo={sugerido} />
             {daMatricula && (
               <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
@@ -132,6 +137,7 @@ export function Labeled({
   sugerido = false,
   ajuda,
   daMatricula = false,
+  obrigatorio = false,
 }: {
   label: string;
   children: React.ReactNode;
@@ -141,6 +147,8 @@ export function Labeled({
   ajuda?: string;
   /** Prompt 19: o valor veio da matrícula (editável) — etiqueta "veio da matrícula". */
   daMatricula?: boolean;
+  /** E608: obrigatório para publicar (asterisco ao lado do rótulo). */
+  obrigatorio?: boolean;
 }) {
   // Além do <label> em volta, o campo ganha um nome acessível explícito
   // (leitores de tela/validadores que não seguem o rótulo implícito).
@@ -156,6 +164,7 @@ export function Labeled({
     <label className="block min-w-0">
       <span className="mb-2 flex flex-wrap items-center text-sm font-medium text-ink">
         <span className="whitespace-nowrap">{label}</span>
+        <MarcaObrigatorio ativo={obrigatorio} />
         <MarcaSugerido ativo={sugerido} />
         {daMatricula && (
           <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-1 text-[11px] font-semibold text-forest" data-testid="veio-da-matricula">
