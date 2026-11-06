@@ -103,6 +103,13 @@ export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
 
 /**
+ * E633 — matrícula atualizada do imóvel como prova de titularidade. OFF por padrão = OPCIONAL: o anúncio publica sem ela
+ * e o item aparece só como melhoria. Só liga (vira obrigatória) com a confirmação POR ESCRITO da Dra. Beatriz (item 38
+ * da pauta dela); aprovado pelo Daniel em 05/11/2026.
+ */
+export const MATRICULA_OBRIGATORIA = process.env.NEXT_PUBLIC_MATRICULA_OBRIGATORIA === "on";
+
+/**
  * 63-B — "Conectar LinkedIn" (selo de confiança). OFF até o Daniel colar LINKEDIN_CLIENT_ID e LINKEDIN_CLIENT_SECRET na
  * Vercel. Desligada, a Conta não mostra o Conectar e nenhum selo aparece. No laboratório o teste liga só no próprio
  * navegador (cookie, ver src/lib/linkedin/chave.ts).

@@ -89,10 +89,10 @@ export type MotivoMatricula =
 /** Casos de "o nome da matrícula não é o meu" e o que cada um pede. */
 export const CASOS_DONO = [
   { valor: "conjuge", rotulo: "Sou cônjuge do proprietário", documentos: "Certidão de casamento (ou o cônjuge confirma a identidade dele)" },
-  { valor: "heranca", rotulo: "Recebi de herança", documentos: "Formal de partilha ou nomeação de inventariante" },
+  { valor: "heranca", rotulo: "Recebi de herança (sou inventariante ou herdeiro)", documentos: "Formal de partilha, ou nomeação de inventariante, ou documento dos herdeiros" },
   { valor: "empresa", rotulo: "O imóvel é de uma empresa minha", documentos: "Cartão CNPJ e contrato social com o seu CPF entre os sócios" },
   { valor: "gestor", rotulo: "Administro para o proprietário", documentos: "Procuração ou contrato de administração" },
-  { valor: "compra_nao_registrada", rotulo: "Comprei e ainda não registrei", documentos: "Contrato de compra e venda e IPTU no seu nome" },
+  { valor: "compra_nao_registrada", rotulo: "Comprei e ainda não registrei (contrato de gaveta)", documentos: "Contrato de compra e venda (contrato de gaveta) e IPTU no seu nome" },
 ] as const;
 export type CasoDono = (typeof CASOS_DONO)[number]["valor"];
 export const VALORES_CASO: readonly string[] = CASOS_DONO.map((c) => c.valor);
