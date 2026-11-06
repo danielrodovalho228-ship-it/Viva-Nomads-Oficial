@@ -172,6 +172,10 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.locator("#sp-portfolio").fill("https://marinalente.com.br");
     await page.getByTestId("sp-aceite").check();
     await page.getByTestId("seja-parceiro-enviar").click();
+    // E651: 11 dígitos é tentativa de CPF — recusa com a regra do CNPJ (válido ou não); CNPJ de 14 dígitos com dígito errado é "inválido".
+    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+    await page.locator("#sp-doc").fill("11.222.333/0001-82");
+    await page.getByTestId("seja-parceiro-enviar").click();
     await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CNPJ inválido");
     await pedir(page, { categorias: ["fotografia"], portfolio: "https://marinalente.com.br" });
     const s = await solicitacao(foto.email);
