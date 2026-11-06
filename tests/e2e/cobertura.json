@@ -3408,6 +3408,12 @@
       ],
       "specs": []
     },
+    "/api/cron/cobranca-mensal": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
     "/api/cron/caucao-prazos": {
       "personas": [
         "sistema"
@@ -4170,6 +4176,18 @@
       "specs": [
         "t85-conferencia-entrada-saida"
       ]
+    },
+    "src/lib/cobranca-mensal/acoes.ts#registrarPagamentoMensal": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/cobranca-mensal/acoes.ts#confirmarPagamentoMensal": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/data/conferencia-actions.ts#registrarItemConferencia": {
       "personas": [
