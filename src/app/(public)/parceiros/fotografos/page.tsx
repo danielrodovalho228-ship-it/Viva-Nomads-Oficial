@@ -51,7 +51,9 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
   const { cidade, uf } = r;
   const buscou = !!(cidade || cepBusca);
   const fotografos = cidade ? r.lista : [];
-  const geral = cidade && !fotografos.length ? await lerParceiroGeralServidor() : null;
+  const geral = cidade && !fotografos.length && !r.falhou ? await lerParceiroGeralServidor() : null;
+  // Achado 131: "Tentar de novo" volta à mesma busca.
+  const refazer = `/parceiros/fotografos?cidade=${encodeURIComponent(cidade)}${uf ? `&uf=${uf}` : ""}${cepBusca ? `&cep=${cepBusca}` : ""}${sp.imovel ? `&imovel=${encodeURIComponent(sp.imovel)}` : ""}`;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -72,7 +74,14 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
       {cidade && (
         <section aria-live="polite" className="mt-8">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-ink"><MapPin className="size-5" aria-hidden /> Fotógrafos em {cidade}</h2>
-          {fotografos.length === 0 ? (
+          {r.falhou ? (
+            <div role="alert" className="mt-3 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="fotografos-falhou">
+              <p>Não foi possível carregar os fotógrafos agora. Isso não quer dizer que não haja fotógrafos em {cidade}.</p>
+              <a href={refazer} className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-sage-200 px-4 font-semibold text-forest" data-testid="fotografos-tentar-de-novo">
+                Tentar de novo
+              </a>
+            </div>
+          ) : fotografos.length === 0 ? (
             <div data-testid="fotografos-vazio">
               <p className="mt-3 text-ink">{TITULO_SEM_FOTOGRAFO(cidade)}</p>
               <AvisoFotografo

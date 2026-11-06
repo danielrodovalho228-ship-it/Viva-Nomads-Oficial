@@ -115,7 +115,10 @@ export async function parceirosDoImovel(propertyId: string): Promise<ParceirosDo
   // Opções por categoria: parceiros publicados que atendem a cidade do imóvel, com os serviços da categoria.
   const opcoes = {} as Record<CategoriaVinculo, OpcaoParceiro[]>;
   const faltam = CATEGORIAS_VINCULO.filter((c) => !vinculos.some((v) => v.categoria === c));
-  const listas = await Promise.all(faltam.map((c) => buscarParceiros({ categoria: c, cidade: im.city }).then((r) => r.lista)));
+  const resultados = await Promise.all(faltam.map((c) => buscarParceiros({ categoria: c, cidade: im.city })));
+  // Achado 133: a falha da busca LANÇA (Achado 99) — "nenhuma opção" levaria o dono a convidar de novo quem já está ligado.
+  if (resultados.some((r) => r.falhou)) throw new Error("Não foi possível ler os parceiros do imóvel.");
+  const listas = resultados.map((r) => r.lista);
   const ids = [...new Set(listas.flat().map((p) => p.id))];
   const { data: sv } = ids.length
     ? await s.admin.from("parceiro_servicos").select("id, parceiro_id, categoria, titulo, preco_base, unidade").in("parceiro_id", ids).eq("ativo", true).order("criado_em")
@@ -359,7 +362,10 @@ export async function trocarParceiro(pedidoId: string): Promise<Res<{ id: string
   const { data: tentados, error: e2 } = await s.admin.from("parceiro_pedidos").select("parceiro_id").like("chave_automacao", `${p.chave_automacao}%`);
   if (e1 || e2) return { ok: false, erro: "Não foi possível trocar o parceiro agora. Tente de novo." };
   const excluir = new Set([p.parceiro_id, ...((tentados ?? []) as { parceiro_id: string }[]).map((x) => x.parceiro_id)]);
-  const { lista } = await buscarParceiros({ categoria: p.categoria, cidade: (im as { city: string | null } | null)?.city ?? null });
+  const busca = await buscarParceiros({ categoria: p.categoria, cidade: (im as { city: string | null } | null)?.city ?? null });
+  // Achado 133: a falha da busca não vira "não há outro parceiro" — recusa ANTES de cancelar o pedido atual.
+  if (busca.falhou) return { ok: false, erro: "Não foi possível trocar o parceiro agora. Tente de novo." };
+  const { lista } = busca;
   const proximo = lista.find((x) => !excluir.has(x.id));
   if (!proximo) return { ok: false, erro: "Não há outro parceiro dessa categoria na cidade agora. Busque na lista de parceiros." };
   const agora = new Date();
