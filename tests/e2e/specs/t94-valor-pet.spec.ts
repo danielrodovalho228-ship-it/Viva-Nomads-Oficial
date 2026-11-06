@@ -71,7 +71,7 @@ test.describe("T94 — Valor pet no anúncio", () => {
     const campo = page.getByTestId("valor-pet");
     await expect(campo).toBeVisible({ timeout: 20_000 });
     await expect(campo).toHaveValue("300");
-    await expect(page.getByTestId("valor-pet-tipo")).toHaveValue("nao_reembolsavel");
+    await expect(page.getByTestId("valor-pet-tipo-nao_reembolsavel")).toHaveAttribute("aria-checked", "true");
     // Campo único: o antigo "Reforço de Caução" não aparece mais ao lado.
     await expect(page.getByText(/Reforço de Caução/)).toHaveCount(0);
     const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

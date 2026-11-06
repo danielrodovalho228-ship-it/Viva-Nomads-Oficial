@@ -21,6 +21,9 @@ import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
+import type { ComponentProps } from "react";
 
 export const metadata = { title: tituloDoAdmin("/admin/avaliadores"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -52,10 +55,17 @@ function semFalhaDeLeitura<T extends readonly { error: { message: string } | nul
   return leituras;
 }
 
+/** E477: para a conta observadora da QA, o formulário de ação sai e entra "Só leitura" (o servidor também recusa). */
+function FormAcaoAdmin({ soLeitura, ...props }: ComponentProps<typeof FormAcao> & { soLeitura: boolean }) {
+  return soLeitura ? <SoLeituraQa className="mt-2" /> : <FormAcao {...props} />;
+}
+
 export default async function AdminAvaliadoresPage() {
   const admin = createAdminClient();
   if (!admin) return <EmptyState icon={ShieldCheck} title="Modo demonstração" text="Sem conexão com o banco." action={null} />;
   const agora = new Date();
+  // E477: a conta observadora da QA só lê (o servidor também recusa): todo formulário de ação sai e entra "Só leitura".
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = semFalhaDeLeitura(await Promise.all([
     admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, parceiros(nome_publico), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
     admin.from("vistoria_precos").select(COLUNAS_PRECO).order("vigente_desde", { ascending: false }).limit(200),
@@ -224,17 +234,17 @@ export default async function AdminAvaliadoresPage() {
                                 ))}
                               </div>
                             ) : (
-                            <FormAcao key={para} acao={adminDecidirCredenciamento} className="flex flex-wrap items-center gap-2" testid={`decidir-${para}`}>
+                            <FormAcaoAdmin soLeitura={soLeitura} key={para} acao={adminDecidirCredenciamento} className="flex flex-wrap items-center gap-2" testid={`decidir-${para}`}>
                               <input type="hidden" name="id" value={c.id} />
                               <input type="hidden" name="para" value={para} />
                               {(para === "suspenso" || para === "descredenciado") && <input name="motivo" placeholder="Motivo" aria-label="Motivo" className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base" />}
                               <Button type="submit" variant="secondary" size="sm">{rotuloDecisao(c.status, para)}</Button>
-                            </FormAcao>
+                            </FormAcaoAdmin>
                             ),
                           )}
                         </div>
                         {c.status === "em_teste" && (
-                          <FormAcao acao={adminCriarAvaliacaoTeste} className="mt-3 flex flex-wrap items-end gap-2" testid="avaliacao-teste">
+                          <FormAcaoAdmin soLeitura={soLeitura} acao={adminCriarAvaliacaoTeste} className="mt-3 flex flex-wrap items-end gap-2" testid="avaliacao-teste">
                             <input type="hidden" name="avaliadorId" value={c.id} />
                             <label className="min-w-0 flex-1 text-sm">
                               Imóvel de teste
@@ -250,7 +260,7 @@ export default async function AdminAvaliadoresPage() {
                               </select>
                             </label>
                             <Button type="submit" variant="secondary" size="sm">Marcar avaliação de teste</Button>
-                          </FormAcao>
+                          </FormAcaoAdmin>
                         )}
                       </li>
                     ))}
@@ -347,10 +357,10 @@ export default async function AdminAvaliadoresPage() {
               <li key={f.id} className="rounded-lg border border-line p-3 text-sm" data-testid="fila-item" data-tipo={f.tipo}>
                 <strong className="text-ink">{ROTULO_FILA[f.tipo] ?? f.tipo}</strong>
                 {f.motivo && <span className="block text-muted">{f.motivo}</span>}
-                <FormAcao acao={adminResolverFila} className="mt-2">
+                <FormAcaoAdmin soLeitura={soLeitura} acao={adminResolverFila} className="mt-2">
                   <input type="hidden" name="id" value={f.id} />
                   <Button type="submit" variant="secondary" size="sm">Marcar como resolvido</Button>
-                </FormAcao>
+                </FormAcaoAdmin>
               </li>
             ))}
           </ul>
@@ -386,7 +396,7 @@ export default async function AdminAvaliadoresPage() {
 
       <Panel title="Abrir verificação" className="mb-6" data-testid="avaliadores-verificacao">
         <p className="text-sm text-muted">Só a Viva abre, com motivo: denúncia procedente sobre o estado, pendência do padrão mínimo procedente ou ressalva vencida. O proprietário paga pela tabela; o rodízio designa.</p>
-        <FormAcao acao={adminAbrirVerificacao} className="mt-3 grid gap-3 sm:grid-cols-2" testid="verificacao-form">
+        <FormAcaoAdmin soLeitura={soLeitura} acao={adminAbrirVerificacao} className="mt-3 grid gap-3 sm:grid-cols-2" testid="verificacao-form">
           <label className="text-sm">Imóvel (id)<input name="propertyId" required className={campo} /></label>
           <label className="text-sm">
             Motivo
@@ -398,7 +408,7 @@ export default async function AdminAvaliadoresPage() {
           </label>
           <label className="text-sm sm:col-span-2">Descrição do motivo<input name="detalhe" required minLength={10} maxLength={500} className={campo} /></label>
           <div className="sm:col-span-2"><Button type="submit" size="sm">Abrir verificação</Button></div>
-        </FormAcao>
+        </FormAcaoAdmin>
       </Panel>
 
       <Panel title="Fora da busca e republicação" className="mb-6" data-testid="avaliadores-bloqueios">
@@ -409,10 +419,10 @@ export default async function AdminAvaliadoresPage() {
             {((bloqueios ?? []) as { id: string; property_id: string; motivo: string; criado_em: string }[]).map((b) => (
               <li key={b.id} className="rounded-lg border border-sage-200 p-3 text-sm" data-testid="bloqueio-item" data-motivo={b.motivo}>
                 {ROTULO_BLOQUEIO[b.motivo] ?? b.motivo} · imóvel {b.property_id.slice(0, 8)} · desde {dataBRT(b.criado_em)}
-                <FormAcao acao={adminResolverBloqueio} className="mt-2">
+                <FormAcaoAdmin soLeitura={soLeitura} acao={adminResolverBloqueio} className="mt-2">
                   <input type="hidden" name="id" value={b.id} />
                   <Button type="submit" variant="secondary" size="sm">Resolver (correção comprovada)</Button>
-                </FormAcao>
+                </FormAcaoAdmin>
               </li>
             ))}
           </ul>
@@ -444,7 +454,7 @@ export default async function AdminAvaliadoresPage() {
 
       <Panel id="tabela" title="Tabela de preço" className="mb-6 scroll-mt-24" data-testid="avaliadores-precos">
         <p className="text-sm text-muted">Sem valor no código: cada mudança vira uma linha nova (histórico); vale a mais recente. Sem valor na cidade, o pedido não abre.</p>
-        <FormAcao acao={adminSalvarPreco} className="mt-3 grid gap-3 sm:grid-cols-2" testid="preco-form">
+        <FormAcaoAdmin soLeitura={soLeitura} acao={adminSalvarPreco} className="mt-3 grid gap-3 sm:grid-cols-2" testid="preco-form">
           <label className="text-sm">Cidade<input name="cidade" required className={campo} /></label>
           <label className="text-sm">
             Porte
@@ -460,7 +470,7 @@ export default async function AdminAvaliadoresPage() {
           <label className="text-sm">Condição de retorno: prazo em dias (opcional)<input name="retornoDias" inputMode="numeric" className={campo} /></label>
           <label className="text-sm">Condição de retorno: desconto em % (opcional)<input name="retornoPercentual" inputMode="decimal" className={campo} /></label>
           <div className="sm:col-span-2"><Button type="submit" variant="secondary" size="sm">Salvar valor</Button></div>
-        </FormAcao>
+        </FormAcaoAdmin>
         <ul className="mt-4 grid gap-1 text-sm" data-testid="precos-historico">
           {tabela.map((l, i) => (
             <li key={i} className={vigentes.has(i) ? "text-ink" : "text-muted"} data-vigente={vigentes.has(i) ? "sim" : "nao"}>
@@ -481,7 +491,7 @@ export default async function AdminAvaliadoresPage() {
             {((auditoria ?? []) as unknown as { id: string; pedido_id: string; avaliadores_credenciamento: { numero_credenciado: string } | null }[]).map((a) => (
               <li key={a.id} className="rounded-lg border border-sage-200 p-3 text-sm">
                 Pedido {a.pedido_id.slice(0, 8)} · avaliador {a.avaliadores_credenciamento?.numero_credenciado}
-                <FormAcao acao={adminRevisarAuditoria} className="mt-2 flex flex-wrap items-end gap-2">
+                <FormAcaoAdmin soLeitura={soLeitura} acao={adminRevisarAuditoria} className="mt-2 flex flex-wrap items-end gap-2">
                   <input type="hidden" name="id" value={a.id} />
                   <select name="resultado" aria-label="Resultado da revisão" className={campo} defaultValue="confere">
                     <option value="confere">Confere</option>
@@ -489,7 +499,7 @@ export default async function AdminAvaliadoresPage() {
                   </select>
                   <input name="motivo" placeholder="Motivo (obrigatório se não confere)" aria-label="Motivo" className={campo} />
                   <Button type="submit" variant="secondary" size="sm">Registrar revisão</Button>
-                </FormAcao>
+                </FormAcaoAdmin>
               </li>
             ))}
           </ul>

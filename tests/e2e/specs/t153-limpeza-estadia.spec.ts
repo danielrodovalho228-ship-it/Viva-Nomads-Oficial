@@ -57,7 +57,7 @@ test.describe("T153 — Limpeza durante a estadia", () => {
     if ((await secao.getAttribute("aria-expanded")) !== "true") await secao.click();
     const bloco = page.getByTestId("limpeza-estadia");
     await expect(bloco).toBeVisible();
-    await bloco.getByLabel("4", { exact: true }).check();
+    await bloco.getByTestId("limpeza-por-mes-4").click();
     await page.getByTestId("limpeza-inclui").fill("Limpeza completa");
     await page.getByTestId("limpeza-valor").fill("320");
     const sobra = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
