@@ -315,6 +315,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await adm().from("vistoria_checklist_fotos").insert({ pedido_id: pedido, item_chave: "fechadura_entrada", path: `${pedido}/correcao-lab.png` });
     await p.goto(`/dashboard/parceiro/avaliacao/${pedido}`, { waitUntil: "domcontentloaded" });
     await p.getByTestId("confirmar-correcao").getByTestId("correcao-fechadura_entrada").selectOption("conforme");
+    await p.getByTestId("confirmar-correcao").getByTestId("assino-laudo").getByRole("checkbox").check(); // E648
     await p.getByTestId("confirmar-correcao").getByRole("button", { name: "Confirmar a reverificação" }).click();
     await expect.poll(() => statusImovel(ids.im4), { timeout: 30_000 }).toBe("active");
     expect(((await adm().from("vistoria_bloqueios").select("id").eq("property_id", ids.im4).is("resolvido_em", null)).data ?? []).length).toBe(0);
