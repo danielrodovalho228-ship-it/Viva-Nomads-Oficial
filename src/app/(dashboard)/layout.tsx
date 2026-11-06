@@ -6,6 +6,7 @@ import { resolveInitialMode } from "@/lib/data/mode-actions";
 import { SincronizarPapel } from "@/components/papel/sincronizar-papel";
 import { ContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { contadoresIniciaisDoPainel } from "@/lib/painel/contadores-servidor";
+import { comLimite, LIMITE_CASCA_MS } from "@/lib/painel/com-limite";
 
 // Área logada: nunca no índice de busca (/dashboard/*, /admin, /qualificar…).
 export const metadata: Metadata = {
@@ -19,7 +20,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // perfil → papel → conta nova. Evita cair em Inquilino por padrão.
   // PROP-0: o contexto do menu (dono/inquilino, imóveis, números) também sai do servidor, junto com o modo — a casca
   // pinta o menu certo de primeira (sem piscar) e só depois relê pela rota.
-  const [initialMode, contadoresIniciais] = await Promise.all([resolveInitialMode(), contadoresIniciaisDoPainel()]);
+  // E503: a casca não espera mais que LIMITE_CASCA_MS — se uma leitura atrasar, o modo vem do cliente e o menu pinta pela
+  // rota de contadores (o caminho que já existia), em vez de o painel inteiro ficar no esqueleto.
+  const [initialMode, contadoresIniciais] = await Promise.all([
+    comLimite(resolveInitialMode(), LIMITE_CASCA_MS).catch(() => null),
+    comLimite(contadoresIniciaisDoPainel(), LIMITE_CASCA_MS).catch(() => null),
+  ]);
   return (
     <AuthGuard>
       <ModeInitializer initialMode={initialMode} />

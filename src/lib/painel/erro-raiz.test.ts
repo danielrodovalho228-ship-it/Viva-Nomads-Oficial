@@ -35,6 +35,6 @@ test("app/global-error.tsx: html e body próprios em pt-BR, estilo inline, 'Tent
 
 test("o layout do painel lê dados (pode falhar) e não é coberto pelo error.tsx do próprio segmento", () => {
   // O error.tsx de /dashboard cobre as páginas; a falha do layout de (dashboard) sobe até src/app/error.tsx.
-  assert.match(ler("src/app/(dashboard)/layout.tsx"), /await Promise\.all\(\[resolveInitialMode\(\), contadoresIniciaisDoPainel\(\)\]\)/);
+  assert.match(ler("src/app/(dashboard)/layout.tsx"), /await Promise\.all\(\[\s*comLimite\(resolveInitialMode\(\)[\s\S]*comLimite\(contadoresIniciaisDoPainel\(\)/);
   assert.ok(!existsSync(new URL("src/app/(dashboard)/error.tsx", RAIZ)));
 });
