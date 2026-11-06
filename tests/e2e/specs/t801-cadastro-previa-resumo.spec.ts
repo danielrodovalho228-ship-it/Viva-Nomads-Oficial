@@ -3,7 +3,8 @@ import { authFile } from "../fixtures/auth";
 
 /*
   T801 — conformidade do cadastro (Passo 9, mockup 09, 01/11, Pista A): a prévia do anúncio fecha com o resumo da
-  disponibilidade ("Resumo: Disponível … · Mínimo N dias"); nos outros passos, não. 390 e 1280.
+  disponibilidade ("Resumo: Disponível … · Mínimo N dias"; sem data, "Data de início não informada" — E616); nos outros
+  passos, não. 390 e 1280.
 */
 const SAIDA = "tests/laboratorio/saida";
 test.use({ storageState: authFile("proprietario") });
@@ -14,7 +15,8 @@ for (const largura of [390, 1280] as const) {
     await page.goto("/dashboard/imoveis/novo?etapa=disponibilidade", { waitUntil: "domcontentloaded" });
     const resumo = page.getByTestId("previa-resumo").first();
     await expect(resumo).toBeAttached({ timeout: 20_000 });
-    await expect(resumo).toHaveText(/^Resumo: Disponível (agora|a partir de \d{2}\/\d{2})( · Mínimo \d+ dias)?$/);
+    // E616: sem data de início (cadastro novo), o resumo NÃO afirma "Disponível agora".
+    await expect(resumo).toHaveText(/^Resumo: (Data de início não informada|Disponível (agora|a partir de \d{2}\/\d{2}))( · Mínimo \d+ dias)?$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `${SAIDA}/t801-passo9-${largura}.png` });
     await page.goto("/dashboard/imoveis/novo?etapa=preco", { waitUntil: "domcontentloaded" });
