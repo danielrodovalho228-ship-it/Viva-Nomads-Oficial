@@ -118,7 +118,8 @@ export async function emitirDeNovo(falhaId: string): Promise<Res<{ numero: strin
   if (!c) return { ok: false, error: "Só admin." };
   const recusaQa = await recusaObservador(c.userId);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: f } = await c.admin.from("documentos_falhas").select("pagamento_id, acerto_id, etapa").eq("id", falhaId).maybeSingle();
+  const { data: f, error: erroF } = await c.admin.from("documentos_falhas").select("pagamento_id, acerto_id, etapa").eq("id", falhaId).maybeSingle();
+  if (erroF) return { ok: false, error: "Não foi possível ler o item agora. Tente de novo." };
   if (!f) return { ok: false, error: "Item não encontrado." };
   // O documento já existe: emitir de novo devolveria o mesmo, sem mandar o e-mail. O caminho é "Reenviar e-mail".
   if (f.etapa === "envio") return { ok: false, error: "O documento já foi emitido: use “Reenviar e-mail”." };

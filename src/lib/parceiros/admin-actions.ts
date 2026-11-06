@@ -52,7 +52,8 @@ export async function salvarChecklistParceria(id: string, entrada: Record<string
   if (!a) return { ok: false, erro: "Sem permissão." };
   const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
   if (recusaQa) return { ok: false, erro: recusaQa };
-  const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("checklist, status").eq("id", id).maybeSingle();
+  const { data: sol, error: erroSol } = await a.admin.from("parceiro_solicitacoes").select("checklist, status").eq("id", id).maybeSingle();
+  if (erroSol) return { ok: false, erro: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!sol) return { ok: false, erro: "Pedido não encontrado." };
   if (sol.status !== "pendente") return { ok: false, erro: "Só pedidos pendentes podem ser conferidos." };
   const atual = (sol.checklist ?? {}) as Record<string, unknown>;
@@ -88,7 +89,8 @@ export async function aprovarSolicitacao(id: string): Promise<Res> {
   if (!a) return { ok: false, erro: "Sem permissão." };
   const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
   if (recusaQa) return { ok: false, erro: recusaQa };
-  const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status, checklist, documento").eq("id", id).maybeSingle();
+  const { data: sol, error: erroSol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status, checklist, documento").eq("id", id).maybeSingle();
+  if (erroSol) return { ok: false, erro: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!sol) return { ok: false, erro: "Pedido não encontrado." };
   if (sol.status !== "pendente") return { ok: false, erro: "Este pedido não está pendente." };
   if (!sol.email || !sol.documento) return { ok: false, erro: "Faltam e-mail ou documento: peça para a pessoa completar o pedido." };
@@ -118,7 +120,8 @@ export async function recusarSolicitacao(id: string, motivo: string): Promise<Re
   if (!a) return { ok: false, erro: "Sem permissão." };
   const recusaQa = await recusaObservador(a.user.id, await alvoDaSolicitacao(a.admin, id));
   if (recusaQa) return { ok: false, erro: recusaQa };
-  const { data: sol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status").eq("id", id).maybeSingle();
+  const { data: sol, error: erroSol } = await a.admin.from("parceiro_solicitacoes").select("id, email, nome, user_id, status").eq("id", id).maybeSingle();
+  if (erroSol) return { ok: false, erro: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!sol) return { ok: false, erro: "Pedido não encontrado." };
   if (!["pendente", "aguardando_email", "aprovada"].includes(sol.status as string)) return { ok: false, erro: "Este pedido já foi decidido." };
   const { error } = await a.admin
@@ -177,9 +180,11 @@ export async function denunciaNotaProcedente(chamadoId: string): Promise<Res> {
   if (!a) return { ok: false, erro: "Sem permissão." };
   const recusaQa = await recusaObservador(a.user.id);
   if (recusaQa) return { ok: false, erro: recusaQa };
-  const { data: ch } = await a.admin.from("chamados").select("id, categoria, contexto_tipo, contexto_id").eq("id", chamadoId).maybeSingle();
+  const { data: ch, error: erroCh } = await a.admin.from("chamados").select("id, categoria, contexto_tipo, contexto_id").eq("id", chamadoId).maybeSingle();
+  if (erroCh) return { ok: false, erro: "Não foi possível ler o chamado agora. Tente de novo." };
   if (!ch || ch.categoria !== "nota_parceiro" || ch.contexto_tipo !== "parceiro" || !ch.contexto_id) return { ok: false, erro: "Este chamado não é uma denúncia de nota fiscal de parceiro." };
-  const { data: p } = await a.admin.from("parceiros").select("id, user_id, tipo_pessoa, emite_nota, nota_selo_removido_em").eq("id", ch.contexto_id).maybeSingle();
+  const { data: p, error: erroP } = await a.admin.from("parceiros").select("id, user_id, tipo_pessoa, emite_nota, nota_selo_removido_em").eq("id", ch.contexto_id).maybeSingle();
+  if (erroP) return { ok: false, erro: "Não foi possível ler o parceiro agora. Tente de novo." };
   if (!p) return { ok: false, erro: "Parceiro não encontrado." };
   if (p.nota_selo_removido_em) return { ok: true, valor: null };
   if (p.tipo_pessoa !== "pj" || p.emite_nota !== true) return { ok: false, erro: "Este parceiro não declara emitir nota fiscal: não há selo para tirar." };
