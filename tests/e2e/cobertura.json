@@ -92,7 +92,8 @@
         "admin"
       ],
       "specs": [
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t1299-varredura-bloco406"
       ]
     },
     "/admin/agentes": {
@@ -155,7 +156,8 @@
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t605-e217-resposta-sem-sugestao",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t1299-varredura-bloco406"
       ]
     },
     "/admin/avaliacoes": {
@@ -2186,7 +2188,8 @@
         "t271-admin-visual",
         "t329-varredura-bloco11",
         "t537-e165-admin-contrato-assinaturas",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t1299-varredura-bloco406"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
@@ -2217,7 +2220,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t1299-varredura-bloco406"
       ]
     },
     "/admin/contratos/encerramentos": {
