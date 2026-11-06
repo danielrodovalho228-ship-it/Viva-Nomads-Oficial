@@ -218,16 +218,18 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await ficha.scrollIntoViewIfNeeded();
       await semRolagemLateral(v);
       await v.screenshot({ path: `${SAIDA}/t344-ficha-${w}.png` });
-      // Cartão na busca: o nível vira "Premium · vistoriado" (a /buscar guarda cache de 60 s).
+      // Cartão na busca: o imóvel aparece (a /buscar guarda cache de 60 s). Desde a E416 o cartão não mostra mais
+      // "· vistoriado": isso só a página do imóvel conta (a ficha acima).
       await expect
         .poll(
           async () => {
             await v.goto(`/buscar?local=${encodeURIComponent(BAIRRO)}`, { waitUntil: "domcontentloaded" });
-            return v.getByTestId("grade-resultados").getByText("Premium · vistoriado").count();
+            return v.getByTestId("grade-resultados").getByTestId("cartao-imovel").count();
           },
           { timeout: 120_000, intervals: [5_000, 10_000, 20_000] },
         )
         .toBeGreaterThan(0);
+      await expect(v.getByTestId("grade-resultados").getByText("vistoriado")).toHaveCount(0);
       await semRolagemLateral(v);
       await v.screenshot({ path: `${SAIDA}/t344-cartao-${w}.png` });
       await v.context().close();
