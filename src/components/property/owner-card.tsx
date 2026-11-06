@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Building2, Check, Clock, Handshake, Languages, MapPin, MessageSquare, Star, UserRound, Wrench } from "lucide-react";
@@ -18,7 +18,7 @@ import {
   tempoNaVivaLabel,
 } from "@/config/exemplo-proprietarios";
 import { donoVerificado } from "@/lib/anuncio/dono-verificado";
-import { nomeDoDonoDepoisDoAceite } from "@/lib/data/nome-dono-actions";
+import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-aceite";
 import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
@@ -77,17 +77,7 @@ export function OwnerCard({
   // E427: a página é estática (o HTML só leva o nome abreviado). Quem tem o aceite com este dono recebe o nome COMPLETO do
   // servidor depois de abrir — o mesmo de "Quem recebe" e de /proprietario/[id]; os demais ficam com o abreviado.
   const donoId = proprietario?.id ?? property.ownerId;
-  const [nomeAceite, setNomeAceite] = useState<string | null>(null);
-  useEffect(() => {
-    if (exemplo || !donoId) return;
-    let vivo = true;
-    nomeDoDonoDepoisDoAceite(donoId)
-      .then((n) => vivo && setNomeAceite(n))
-      .catch(() => {});
-    return () => {
-      vivo = false;
-    };
-  }, [exemplo, donoId]);
+  const nomeAceite = useNomeDepoisDoAceite(donoId, exemplo);
   const hoje = hojeBR();
 
   let d: Dados | null = null;
