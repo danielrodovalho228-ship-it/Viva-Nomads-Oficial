@@ -109,7 +109,7 @@ test("guarda: a casca lê por fetch GET, aborta ao desmontar e não relê a cada
   assert.match(s, /\}, \[displayUser\?\.id, naAreaDeImoveis, releitura\]\);/);
   // O único efeito que depende do pathname é o guarda de papel (não lê nada do servidor).
   const comPathname = [...s.matchAll(/\}, \[([^\]]*)\]\);/g)].map((m) => m[1]).filter((d) => /\bpathname\b/.test(d));
-  assert.deepEqual(comPathname, ["pathname, mode, isOwner, isTenant, router, setActiveMode"]);
+  assert.deepEqual(comPathname, ["pathname, mode, isOwner, isTenant, router"]);
   assert.match(s, /window\.addEventListener\("focus", aoVoltar\)/);
   assert.match(s, /window\.setInterval\(aoVoltar, INTERVALO_CONTADORES_MS\)/);
   assert.match(s, /document\.visibilityState === "visible"/);

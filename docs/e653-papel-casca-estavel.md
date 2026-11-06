@@ -79,3 +79,12 @@ quiserem: manter o guarda só para o redirecionamento (sem `setActiveMode`/`salv
 em 10 min e só vence o servidor se o modo pendente difere do servidor.
 
 **Conclusão:** sem outro defeito do tipo "o papel muda sozinho". A reprodução com carga real (servidor lento) segue para o QA do chat principal.
+
+
+## Atualização: o guarda de rota era um 2º escritor do modo (corrigido)
+
+Achado anterior ("código morto") reavaliado: o guarda `useEffect [pathname, mode, isOwner, isTenant, router]` da casca
+chamava `setActiveMode` + `salvarModo` sozinho quando a rota era exclusiva do outro modo. Em página de área o modo vem da
+URL (E497), mas qualquer descompasso (modo lido tarde, página sem papel de rota) fazia a casca gravar o modo no perfil sem
+clique, persistindo a troca. Agora o guarda **não escreve**: quem tem o papel não é mexido; quem não tem é desviado
+(`destinoForaDoPapel`). Teste: `src/lib/papel/e653-guarda-sem-escrita.test.ts` (visto vermelho antes). Não provado ao vivo.

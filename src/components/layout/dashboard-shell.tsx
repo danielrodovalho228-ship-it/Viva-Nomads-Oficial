@@ -238,13 +238,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (!hits) return;
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
-    if (contaTemPapel) {
-      setActiveMode(target);
-      salvarModo(target).catch(() => {});
-    } else {
-      router.replace(destinoForaDoPapel(pathname));
-    }
-  }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
+    // E653: este guarda era um 2º escritor do modo (gravava no perfil sem clique da pessoa). Quem tem o papel não é
+    // mexido: a URL da área já decide o modo (E497) e a troca é só a explícita. Só quem NÃO tem o papel é desviado.
+    if (!contaTemPapel) router.replace(destinoForaDoPapel(pathname));
+  }, [pathname, mode, isOwner, isTenant, router]);
 
   // Modo demonstração (admin): aceita ?demo=1 / ?demo=0 na URL (estado é de
   // sessão — lib/demo/demo-mode). Lê window.location para não exigir Suspense.
