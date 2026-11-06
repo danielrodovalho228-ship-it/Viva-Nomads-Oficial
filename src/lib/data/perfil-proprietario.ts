@@ -21,7 +21,8 @@ export interface PerfilProprietario {
   cidade: string | null;
   bio: string | null;
   idiomas: string[];
-  imoveisAtivos: number;
+  /** E631: a contagem da lista pública do dono; null = não deu para contar (o cartão omite o número, nunca mostra a contagem crua). */
+  imoveisAtivos: number | null;
   estadiasConcluidas: number;
   /** null = menos de 3 conversas ("Novo na Viva"). */
   resposta: MetricaResposta | null;
@@ -81,8 +82,8 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       cidade: l.cidade,
       bio: l.bio,
       idiomas: l.idiomas ?? [],
-      // Só se a contagem pública falhar cai na contagem crua do banco (nunca divergir em silêncio com a lista inteira).
-      imoveisAtivos: imoveisPublicos ?? l.imoveis_ativos ?? 0,
+      // Falhou a contagem pública → null (o cartão omite o fato); a contagem crua do banco inclui anúncio de teste e divergia da lista.
+      imoveisAtivos: imoveisPublicos,
       estadiasConcluidas: l.estadias_concluidas ?? 0,
       resposta: metricaResposta(l.conversas ?? 0, l.conversas_respondidas ?? 0, l.resposta_media_min),
       reputacao,

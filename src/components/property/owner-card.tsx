@@ -112,7 +112,7 @@ export function OwnerCard({
       const desdeTxt = desdeLabel(desde);
       if (desdeTxt) fatos.push({ icone: Handshake, texto: desdeTxt });
       if (proprietario) {
-        fatos.push({ icone: Building2, texto: `${proprietario.imoveisAtivos} ${proprietario.imoveisAtivos === 1 ? "imóvel" : "imóveis"} na Viva` });
+        if (proprietario.imoveisAtivos != null) fatos.push({ icone: Building2, texto: `${proprietario.imoveisAtivos} ${proprietario.imoveisAtivos === 1 ? "imóvel" : "imóveis"} na Viva` });
         fatos.push({ icone: UserRound, texto: `${proprietario.estadiasConcluidas} ${proprietario.estadiasConcluidas === 1 ? "estadia concluída" : "estadias concluídas"}` });
         fatos.push(
           proprietario.resposta
