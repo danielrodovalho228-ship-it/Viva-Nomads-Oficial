@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recusaObservador } from "@/lib/qa/observador";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -84,6 +85,9 @@ export async function atualizarEstadoPedidoServico(id: string, novo: EstadoPedid
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  // E477: a conta observadora da QA só lê o pedido de serviço do morador.
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: atual } = await admin.from("servicos_pedidos").select("status").eq("id", id).maybeSingle();
   if (!atual) return { ok: false, error: "Pedido não encontrado." };
   if (!proximosEstados(String(atual.status)).includes(novo)) return { ok: false, error: "Esse pedido não pode ir para este estado." };

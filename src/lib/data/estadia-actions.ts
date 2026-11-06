@@ -6,6 +6,7 @@
   passam os dois). Nenhum dinheiro passa pela Viva: a taxa do aditivo é registro para o fluxo de cobrança que já existe.
 */
 import { after } from "next/server";
+import { recusaObservador } from "@/lib/qa/observador";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -658,6 +659,9 @@ export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só a equipe." };
+  // E477: conduzir/concluir encerra o contrato REAL; a conta observadora da QA só lê.
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   // Resíduo da varredura: a leitura que falha não vira "não encontrado".
   const { data: p, error: erroPedido } = await admin.from("contrato_encerramento_pedidos").select("id, contrato_id, status, papel, motivo, texto, criado_em").eq("id", pedidoId).maybeSingle();
   if (erroPedido) return { ok: false, erro: MSG_ENCERRAMENTO_SEM_LEITURA };
