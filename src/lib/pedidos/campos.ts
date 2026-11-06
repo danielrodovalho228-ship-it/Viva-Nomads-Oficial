@@ -214,3 +214,14 @@ export function dataPedidoPorExtenso(iso: string | null | undefined): string {
 export function textoInternetPedido(mbps: number | null | undefined): string | null {
   return mbps && mbps > 0 ? `Internet medida ${mbps}+ Mbps` : null;
 }
+
+/** E371: o destino do pedido (onde vai trabalhar ou estudar) com o transporte e o tempo que a pessoa digitou:
+ *  "UFU Santa Mônica · de carro · até 15 min". Sem rótulo, nada (o transporte e o tempo sozinhos não dizem para onde). */
+const MODO_NA_FRASE_PEDIDO: Record<string, string> = { carro: "de carro", a_pe: "a pé", bicicleta: "de bicicleta", onibus: "de ônibus" };
+export function textoDestinoPedido(d: { rotulo?: string | null; modo_preferido?: string | null; ate?: number | null } | null | undefined): string | null {
+  const rotulo = (d?.rotulo ?? "").trim();
+  if (!rotulo) return null;
+  const modo = d?.modo_preferido ? MODO_NA_FRASE_PEDIDO[d.modo_preferido] : undefined;
+  const ate = d?.ate && Number(d.ate) > 0 ? `até ${Math.round(Number(d.ate))} min` : null;
+  return [rotulo, modo, ate].filter(Boolean).join(" · ");
+}

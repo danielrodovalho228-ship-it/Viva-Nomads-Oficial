@@ -38,7 +38,9 @@ import {
   dataPedidoPorExtenso,
   textoAcimaDoTeto,
   textoBairros,
+  textoDestinoPedido,
   textoFaixaValor,
+  textoInternetPedido,
   textoNecessidades,
   textoPortePet,
   textoQuartos,
@@ -64,6 +66,9 @@ type Pedido = {
   pets?: boolean | null;
   porte_pet?: string | null;
   criancas?: boolean | null;
+  /** E371: o que a pessoa digitou no formulário e o cartão precisa mostrar. */
+  internet_min_mbps?: number | null;
+  destino?: { rotulo?: string | null; modo_preferido?: string | null; ate?: number | null } | null;
 };
 type Resposta = {
   id: string;
@@ -150,7 +155,7 @@ export function PedidosClient({
             const rs = respostasPorPedido(p.id);
             const expira = Date.parse(p.expira_em);
             const pertoDeVencer = p.status === "ativo" && expira > agora && expira - agora <= DIAS_AVISO_RENOVAR * 86_400_000;
-            const extras = [...textoNecessidades(p.necessidades), p.pets ? textoPortePet(p.porte_pet) : null, p.criancas ? "Com crianças" : null].filter(Boolean);
+            const extras = [...textoNecessidades(p.necessidades), textoInternetPedido(p.internet_min_mbps), p.pets ? textoPortePet(p.porte_pet) : null, p.criancas ? "Com crianças" : null].filter(Boolean);
             return (
               <Panel key={p.id} data-testid="meu-pedido" data-pedido={p.id}>
                 {pertoDeVencer && (
@@ -186,6 +191,12 @@ export function PedidosClient({
                       {textoFaixaValor(p.orcamento_min, p.orcamento_mensal)}/mês
                     </p>
                     {extras.length > 0 && <p className="mt-1 text-xs text-muted">{extras.join(" · ")}</p>}
+                    {/* E371: destino, transporte e tempo até lá (antes só estavam no formulário). */}
+                    {textoDestinoPedido(p.destino) && (
+                      <p className="mt-1 text-sm text-ink" data-testid="meu-pedido-destino">
+                        Trabalho ou estudo: {textoDestinoPedido(p.destino)}
+                      </p>
+                    )}
                     {p.apresentacao && (
                       <p className="mt-2 max-w-2xl text-sm text-ink">{p.apresentacao}</p>
                     )}
