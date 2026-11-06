@@ -140,7 +140,7 @@ async function avisoUmaVez(admin: Admin, chave: string, tipo: string, destino: s
 async function imovelParaEmail(admin: Admin, propertyId: string): Promise<DadosEstadiaEmail["imovel"]> {
   const { data } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const p = data as { title: string | null; address: string | null; city: string | null } | null;
-  return p ? { titulo: p.title, bairro: p.address, cidade: p.city } : null;
+  return p ? { id: propertyId, titulo: p.title, bairro: p.address, cidade: p.city } : null;
 }
 
 type PedidoAuto = { id: string; cliente_id: string; parceiro_id: string; status: string; aguardando_dono: boolean; descricao: string | null; parceiros: { user_id: string } | null };

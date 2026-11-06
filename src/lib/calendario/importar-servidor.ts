@@ -129,7 +129,7 @@ export async function compromissosDaViva(admin: Admin, propertyId: string): Prom
   return out;
 }
 
-async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_conflito" | "calendario_falha", propertyId: string, corpo: (imovel: { titulo: string | null; bairro: string | null; cidade: string | null }) => CorpoResidual): Promise<void> {
+async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_conflito" | "calendario_falha", propertyId: string, corpo: (imovel: { id?: string | null; titulo: string | null; bairro: string | null; cidade: string | null }) => CorpoResidual): Promise<void> {
   try {
     const [{ data }, { data: im }] = await Promise.all([
       admin.from("profiles").select("email, full_name, notif_email").eq("id", ownerId).maybeSingle(),
@@ -138,7 +138,7 @@ async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_con
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
     const p = im as { title: string | null; address: string | null; city: string | null } | null;
     // E267 (restante): o imóvel e o fato no corpo e no bloco (antes, o fato ia só na versão em texto).
-    const c = corpo({ titulo: p?.title ?? null, bairro: p?.address ?? null, cidade: p?.city ?? null });
+    const c = corpo({ id: propertyId, titulo: p?.title ?? null, bairro: p?.address ?? null, cidade: p?.city ?? null });
     await notify({
       event: evento,
       email: d?.notif_email === false ? undefined : (d?.email ?? undefined),

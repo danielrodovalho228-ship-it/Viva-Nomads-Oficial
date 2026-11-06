@@ -92,7 +92,7 @@ function contaDaProposta(termos: TermosProposta): string {
  */
 function dadosDoEmailDaProposta(
   numero: string,
-  imovel: { titulo: string | null; bairro: string | null; cidade: string | null },
+  imovel: { id?: string | null; titulo: string | null; bairro: string | null; cidade: string | null },
   c: { desfecho: Desfecho; termos: TermosProposta; responderAte?: string | null; motivo?: string | null },
   quemRecebe: "owner" | "tenant",
 ) {
@@ -329,7 +329,7 @@ async function avisarOutraParte(
     const proprio = email
       ? email({ nomeRemetente: ((r as { full_name?: string | null } | null)?.full_name as string | null) ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null })
       : null;
-    const imovel = { titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
+    const imovel = { id: p.property_id, titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
     const papelDestino = destino === p.owner_id ? "owner" : "tenant";
     const dados = contexto ? dadosDoEmailDaProposta(p.numero, imovel, contexto, papelDestino) : null;
     // E441: proposta (orçamento) do MORADOR ao dono — a foto (ou as iniciais) e o nome dele, clicáveis para o detalhe.

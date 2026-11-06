@@ -154,7 +154,7 @@ function dadosDoEmail(ordem: OrdemDaParte, papel: PapelOrdem) {
   const im = (ordem as unknown as { properties?: { title?: string | null; address?: string | null; city?: string | null } | null }).properties;
   const o = ordem as unknown as { category?: string | null; opened_at?: string | null };
   return {
-    imovel: im ? { titulo: im.title, bairro: im.address, cidade: im.city } : null,
+    imovel: im ? { id: (ordem as unknown as { property_id?: string | null }).property_id ?? null, titulo: im.title, bairro: im.address, cidade: im.city } : null,
     categoria: o.category ?? null,
     abertaEm: o.opened_at ?? null,
     quem: papel === "proprietario" ? ("proprietario" as const) : ("morador" as const),
