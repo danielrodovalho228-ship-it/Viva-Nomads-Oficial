@@ -5,6 +5,9 @@ import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/
 import { RegrasCasaCampos, estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
+import { FormaPagamentoCampo } from "@/components/anuncio/forma-pagamento-campo";
+import { ESCOLHA_PADRAO, normalizarEscolha, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
@@ -133,6 +136,8 @@ export function EditarImovelClient({
   // E56 + tela 06 dos mockups: cada regra da Convivência tem o seu toggle (o estado mora em regrasCasa.ligados).
   // CAMPOS-2: os 5 grupos opcionais do anúncio, cada um atrás do seu toggle (E56).
   const [detalhes, setDetalhes] = useState<DetalhesForm>(formDeDetalhes(property.detalhesAnuncio));
+  // E647: a forma de pagamento que o dono aceita (o desenho anterior vem pré-selecionado; só vai ao servidor com a chave ligada).
+  const [pagamento, setPagamento] = useState<EscolhaPagamento>(normalizarEscolha(property.detalhesAnuncio?.pagamento) ?? ESCOLHA_PADRAO);
   // TIPO-CHACARA-B: os campos do tipo (o ponto exato não volta ao navegador; vale o "já marcado").
   const chacaraGravada = normalizarChacara((property.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
   const [chacara, setChacara] = useState<ValorChacara>({ acesso: chacaraGravada?.acesso, internet: chacaraGravada?.internet });
@@ -280,7 +285,7 @@ export function EditarImovelClient({
       // Regra desligada = não definida (só as ligadas vão; nada ligado, o servidor grava null).
       regrasCasa: payloadDeRegrasCasa(regrasCasa),
       smokingAllowed: regrasCasa.ligados.fumo && regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
-      detalhesAnuncio: payloadDeDetalhes(detalhes),
+      detalhesAnuncio: { ...payloadDeDetalhes(detalhes), ...(FORMA_PAGAMENTO_DONO_ATIVA ? { pagamento } : {}) },
       // TIPO-CHACARA-B: o servidor grava o grupo do tipo (e usa o ponto novo, se marcado, no lugar do endereço).
       chacara: ehChacara(property.propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, ponto: chacara.ponto ?? null } : undefined,
       childrenAllowed,
@@ -786,6 +791,7 @@ export function EditarImovelClient({
             />
           )}
           <DetalhesAnuncioCampos value={detalhes} onChange={setDetalhes} tipo={property.propertyType} />
+          {FORMA_PAGAMENTO_DONO_ATIVA && <FormaPagamentoCampo value={pagamento} onChange={setPagamento} />}
         </Section>
 
         {/* Detalhes & preço */}
