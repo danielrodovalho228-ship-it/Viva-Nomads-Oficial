@@ -2,6 +2,8 @@
 
 import { PetsRegrasCampos, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
+import { DestaquesPasso7 } from "./destaques-passo7";
+import { CHAVE_WIFI_DESTAQUE } from "./destaques-logica";
 import { Baby, Cigarette, PawPrint, Sofa, Sparkles } from "lucide-react";
 import type { Proximity } from "@/lib/types";
 import type { LugarProximo } from "@/lib/proximidades/osm";
@@ -189,6 +191,15 @@ export function EtapaEncontramos(p: {
           />
           <Erro msg={p.erros.descricao} />
         </Labeled>
+        {/* Mockup cadastro-imovel-07: a linha "Destaques" abaixo da descrição (decisão do Muse, 06/11); mesmo fato dos passos 5 e 6. */}
+        <DestaquesPasso7
+          estado={{ furnished: p.furnished, petsOk: p.petsOk, amenityKeys: p.amenityKeys }}
+          onAlternar={(c) => {
+            if (c === "mobiliado") p.setFurnished((v) => !v);
+            else if (c === "pets") p.setPetsOk((v) => !v);
+            else p.setAmenityKeys((s) => ({ ...s, [CHAVE_WIFI_DESTAQUE]: !s[CHAVE_WIFI_DESTAQUE] }));
+          }}
+        />
         {/* E618: a sugestão vai para o cartão abaixo, nunca para os campos — o "a caminho" fica aqui, não no placeholder. */}
         {escrevendo && (
           <p className="text-sm text-muted" role="status" data-testid="sugestao-preparando">
