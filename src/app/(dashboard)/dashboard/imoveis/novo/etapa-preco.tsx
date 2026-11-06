@@ -1,6 +1,6 @@
 "use client";
 
-import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useState } from "react";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
@@ -234,12 +234,11 @@ export function EtapaPreco(p: {
           <div className="rounded-xl border border-sage-200 p-4">
             <p className="text-sm font-medium text-ink">Faixas de prazo aceitas</p>
             <p className="mb-3 text-xs text-muted">Cada faixa tem regras próprias. Marque as que você aceita.</p>
-            <div className="space-y-2">
+            {/* E193 (reteste de 29/10): o cartão grande da Qualificação (antes, pílula). */}
+            <div className="grid gap-2 sm:grid-cols-2">
               {FAIXAS.map((f) => (
                 <div key={f.key}>
-                  <Pilula papel="pressed" on={!!p.faixas[f.key]} onClick={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))}>
-                    {`${f.label} · ${f.resumo}`}
-                  </Pilula>
+                  <CartaoEscolha papel="pressed" on={!!p.faixas[f.key]} onClick={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))} rotulo={`${f.label} · ${f.resumo}`} />
                   {p.faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
                 </div>
               ))}
@@ -272,18 +271,16 @@ export function EtapaPreco(p: {
               Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a caução em dinheiro vai para uma
               conta poupança, como manda a lei — a plataforma não tem acesso).
             </p>
-            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {GARANTIAS_CADASTRO.map((g) =>
                 g.disabled ? (
-                  <div key={g.key} className="inline-flex min-h-11 items-center gap-3 rounded-full border border-sage-200 bg-surface-2 px-4 py-2 opacity-70">
+                  <div key={g.key} className="flex min-h-14 items-center gap-3 rounded-xl border-2 border-line bg-surface-2 p-4 opacity-70">
                     <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
                     {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
                   </div>
                 ) : (
                   <div key={g.key}>
-                    <Pilula papel="pressed" on={!!p.garantias[g.key]} onClick={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}>
-                      {`Aceito ${g.label}`}
-                    </Pilula>
+                    <CartaoEscolha papel="pressed" on={!!p.garantias[g.key]} onClick={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))} rotulo={`Aceito ${g.label}`} />
                     {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
                   </div>
                 )

@@ -70,7 +70,7 @@ test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — nenhuma caixa quadrada nem lista suspensa nas 10 etapas`, async ({ browser }) => {
+    test(`${largura} px — nenhuma caixa quadrada, lista suspensa nem pílula nas 10 etapas`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       const falhas: string[] = [];
@@ -83,6 +83,7 @@ test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
         console.log(`t620 ${largura} ${etapa}`, JSON.stringify(inv));
         if (inv.caixa.length) falhas.push(`${etapa}: caixas ${inv.caixa.join(" | ")}`);
         if (inv.lista.length) falhas.push(`${etapa}: listas ${inv.lista.join(" | ")}`);
+        if (inv.pilula.length) falhas.push(`${etapa}: pílulas ${inv.pilula.join(" | ")}`);
         if (["comodidades", "regras", "preco", "disponibilidade", "revisao"].includes(etapa)) await p.screenshot({ path: `${SAIDA}/t620-${etapa}-${largura}.png`, fullPage: true });
       }
       expect(falhas, falhas.join("\n")).toEqual([]);
