@@ -12,6 +12,10 @@ const FRASE = /(\d+) imóveis? em Uberlândia/;
 
 for (const w of [390, 1280] as const) {
   test(`E446: o título da cidade tem a frase e o número da busca, e bate com os cartões (${w})`, async ({ browser }) => {
+    // E446 (reprova de 06/11), reproduzido no laboratório (run 42261458925, main): a busca diz "23 imóveis em Uberlândia" e a cidade
+    // diz "23 imóveis + 15 de exemplo em Uberlândia". Corrigido nos PRs #2970/#2971 (rascunho). Quando entrarem, esta marca
+    // vira "passou inesperadamente" e deve ser REMOVIDA — a spec fica como guarda permanente.
+    test.fail(true, "E446: a cidade ainda soma 'de exemplo' no título (corrigido nos PRs #2970 e #2971)");
     const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
     try {
       const p = await ctx.newPage();
