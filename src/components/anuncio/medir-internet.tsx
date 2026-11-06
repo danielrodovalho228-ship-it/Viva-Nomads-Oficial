@@ -37,12 +37,15 @@ function posicao(): Promise<{ lat: number; lng: number } | null> {
 export function MedirInternet({
   imovelId,
   origem,
-  pontoInicial = "quarto_principal",
+  pontoInicial,
   onMedida,
 }: {
   imovelId: string;
   origem: Origem;
-  /** NIVEIS-MEDIR-B: o ponto que o item do nível pede (quarto principal ou ponto de trabalho). */
+  /**
+   * NIVEIS-MEDIR-B: o ponto que o item do nível pede (quarto principal ou ponto de trabalho) — o dono escolheu ao tocar
+   * no item. E609: sem ele, o ponto começa SEM escolha (antes vinha "Quarto principal", uma escolha que o dono não fez).
+   */
   pontoInicial?: PontoMedicao;
   /** Medição salva (validada ou não): quem mostra o nível relê. */
   onMedida?: (validada: boolean) => void;
@@ -50,7 +53,7 @@ export function MedirInternet({
   const [estado, setEstado] = useState<EstadoMedir | null>(null);
   const [wifi, setWifi] = useState(false);
   // Adendo 59.1: onde está medindo (o nível pede o quarto principal e o ponto de trabalho).
-  const [ponto, setPonto] = useState<PontoMedicao>(pontoInicial);
+  const [ponto, setPonto] = useState<PontoMedicao | null>(pontoInicial ?? null);
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
@@ -81,7 +84,7 @@ export function MedirInternet({
     );
 
   async function medir() {
-    if (!estado?.ok) return;
+    if (!estado?.ok || !ponto) return;
     cancelou.current = false;
     setResultado(null);
     setFase("local");
@@ -162,7 +165,7 @@ export function MedirInternet({
       </fieldset>
       <CartaoEscolha papel="checkbox" on={wifi} onClick={() => setWifi(!wifi)} disabled={ocupado} rotulo="Estou conectado ao Wi-Fi do imóvel" testid="medir-internet-wifi" className="mt-3" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button type="button" variant="primary" size="sm" disabled={ocupado || estado.restantesHoje <= 0} onClick={medir} data-testid="medir-internet-botao">
+        <Button type="button" variant="primary" size="sm" disabled={ocupado || !ponto || estado.restantesHoje <= 0} onClick={medir} data-testid="medir-internet-botao">
           {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : "Medir a internet agora"}
         </Button>
         {fase === "medindo" && (
@@ -175,6 +178,12 @@ export function MedirInternet({
         <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-sage-100" role="progressbar" aria-valuenow={Math.round(progresso * 100)} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full bg-forest transition-all" style={{ width: `${Math.round(progresso * 100)}%` }} />
         </div>
+      )}
+      {/* E609: o "Medir" espera a escolha do ponto (nada vem marcado por padrão). */}
+      {!ponto && !ocupado && (
+        <p className="mt-2 text-xs text-muted" data-testid="medir-internet-escolha-ponto">
+          Escolha onde você está medindo para liberar a medição.
+        </p>
       )}
       {estado.restantesHoje <= 0 && !ocupado && <p className="mt-2 text-xs text-muted">Limite de {INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.</p>}
       {!estado.temCoordenadas && <p className="mt-2 text-xs text-muted">Para validar, o imóvel precisa do endereço no mapa.</p>}
