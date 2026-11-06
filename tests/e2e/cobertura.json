@@ -3403,6 +3403,25 @@
       "specs": [
         "t695-e264b-proativos"
       ]
+    },
+    "/api/protegido/conferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "/api/cron/cobranca-mensal": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/caucao-prazos": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
     }
   },
   "actions": {
@@ -4161,6 +4180,18 @@
         "t85-conferencia-entrada-saida"
       ]
     },
+    "src/lib/cobranca-mensal/acoes.ts#registrarPagamentoMensal": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/cobranca-mensal/acoes.ts#confirmarPagamentoMensal": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/conferencia-actions.ts#registrarItemConferencia": {
       "personas": [
         "inquilino",
@@ -4534,6 +4565,14 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/nome-dono-actions.ts#nomeDoDonoDepoisDoAceite": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t923-e427-nome-pagina-imovel"
+      ]
     },
     "src/lib/data/ofensas-admin-actions.ts#filaDeOfensas": {
       "personas": [
@@ -7193,6 +7232,18 @@
     "src/lib/data/ficha-resumo-actions.ts#salvarContaRecebimento": {
       "personas": [
         "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#listarFotosRepetidas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#liberarFotoRepetida": {
+      "personas": [
+        "admin"
       ],
       "specs": []
     }

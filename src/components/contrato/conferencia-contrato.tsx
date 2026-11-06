@@ -34,6 +34,7 @@ import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { MedirInternet } from "@/components/anuncio/medir-internet";
 import { SecaoConfortoEntrada } from "@/components/conforto/secao-conforto-entrada";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { TEXTO_FOTOS_PROTEGIDAS } from "@/lib/protecao/visualizacao";
 
 const ROTULO_TIPO: Record<TipoConferencia, string> = { entrada: "Conferência de entrada", saida: "Conferência de saída" };
 const ROTULO_PARTE = { proprietario: "Proprietário", inquilino: "Inquilino" } as const;
@@ -153,6 +154,10 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
           {ROTULO_ESTADO[estado]}
         </span>
       </div>
+      {/* E640 (c): o que a proteção faz de verdade (privadas entre as duas partes, sem download, com identificação de quem vê). */}
+      <p className="mt-1 text-xs text-muted" data-testid="conferencia-fotos-protegidas">
+        {TEXTO_FOTOS_PROTEGIDAS}
+      </p>
       {tipo === "entrada" && dados.prazoEntradaEm && (
         <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo" data-prazo={dados.prazoEntradaEm}>
           Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoEntradaEm)} (48 h depois da entrada).
@@ -191,7 +196,14 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
             <li key={i.id} className="flex items-start gap-3 py-2">
               {i.fotoUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={i.fotoUrl} alt={`Foto: ${i.comodo}`} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                <img
+                  src={i.fotoUrl}
+                  alt={`Foto: ${i.comodo}`}
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
+                  className="h-16 w-16 shrink-0 select-none rounded-lg object-cover"
+                />
               )}
               <div className="min-w-0">
                 <p className="font-medium text-ink">{i.comodo}</p>

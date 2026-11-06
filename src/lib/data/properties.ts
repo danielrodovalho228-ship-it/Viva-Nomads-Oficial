@@ -43,6 +43,7 @@ function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } 
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import type { Medicao } from "@/lib/internet-medida";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
 
 /**
  * Perfil PÚBLICO do dono de um anúncio ativo. SERVER-ONLY: a função é SECURITY DEFINER e,
@@ -338,11 +339,12 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
     chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),
     privacidade,
-    ownerName: ownerRow?.full_name ?? base.ownerName,
+    // E427: o que chega à página pública (estática e indexável) já é o nome ABREVIADO — nunca o nome inteiro nem o e-mail.
+    ownerName: nomeCurto(ownerRow?.full_name) ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
     owner: ownerRow
       ? {
-          name: ownerRow.full_name ?? "Proprietário",
+          name: nomeCurto(ownerRow.full_name) ?? "Proprietário",
           avatarUrl: ownerAvatarUrl ?? undefined,
           memberSince: ownerRow.created_at ?? undefined,
           responseRate: ownerRow.response_rate ?? undefined,

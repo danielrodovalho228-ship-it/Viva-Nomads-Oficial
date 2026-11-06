@@ -1,6 +1,7 @@
 "use client";
 
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
+import { CartaoEscolha, EscolhaUnica } from "@/components/anuncio/escolha-assistente";
 import { AREAS_CONDOMINIO, GRUPOS_DETALHE, ITENS_INCLUIDOS, MAX_ANDAR, MAX_OBS_VAGA, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
 import { tipoSemAndar } from "@/lib/anuncio/chacara";
 import { desligarGrupo, grupoTemDados, type DetalhesForm } from "@/lib/anuncio/detalhes-form";
@@ -8,40 +9,27 @@ import { desligarGrupo, grupoTemDados, type DetalhesForm } from "@/lib/anuncio/d
 export { estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/lib/anuncio/detalhes-form";
 
 const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
-const pilula = "inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm";
 
+/** E193: várias escolhas no cartão grande, em grade (antes, caixa quadrada dentro de pílula). */
 function Marcas({ nome, itens, valor, onChange }: { nome: string; itens: readonly { chave: string; rotulo: string }[]; valor: string[]; onChange: (v: string[]) => void }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid gap-2 sm:grid-cols-2">
       {itens.map((i) => (
-        <label key={i.chave} className={pilula}>
-          <input
-            type="checkbox"
-            checked={valor.includes(i.chave)}
-            onChange={(e) => onChange(e.target.checked ? [...valor, i.chave] : valor.filter((c) => c !== i.chave))}
-            data-testid={`${nome}-${i.chave}`}
-          />
-          <span className="first-letter:uppercase">{i.rotulo}</span>
-        </label>
+        <CartaoEscolha
+          key={i.chave}
+          papel="checkbox"
+          on={valor.includes(i.chave)}
+          onClick={() => onChange(valor.includes(i.chave) ? valor.filter((c) => c !== i.chave) : [...valor, i.chave])}
+          testid={`${nome}-${i.chave}`}
+          rotulo={<span className="first-letter:uppercase">{i.rotulo}</span>}
+        />
       ))}
     </div>
   );
 }
 
 function Radios<T extends string>({ nome, legenda, opcoes, valor, onChange }: { nome: string; legenda: string; opcoes: { valor: T; rotulo: string }[]; valor: T | ""; onChange: (v: T | "") => void }) {
-  return (
-    <fieldset data-testid={nome}>
-      <legend className="text-sm font-semibold text-ink">{legenda}</legend>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {[{ valor: "" as const, rotulo: "Não informar" }, ...opcoes].map((o) => (
-          <label key={o.valor || "nd"} className={pilula}>
-            <input type="radio" name={nome} checked={valor === o.valor} onChange={() => onChange(o.valor)} />
-            {o.rotulo}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
+  return <EscolhaUnica<T | ""> testid={nome} legenda={legenda} valor={valor} onChange={onChange} opcoes={[{ valor: "", rotulo: "Não informar" }, ...opcoes]} />;
 }
 
 const SIM_NAO: { valor: "sim" | "nao"; rotulo: string }[] = [

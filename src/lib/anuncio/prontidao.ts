@@ -11,6 +11,9 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { DETALHE_FOTO_REPETIDA, ROTULO_FOTO_REPETIDA } from "../fotos/foto-repetida.ts";
+import { DETALHE_MATRICULA_FALTA, DETALHE_MATRICULA_OBRIGATORIA, ROTULO_MATRICULA_ATUALIZADA } from "../documento/matricula-titularidade.ts";
+import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -90,6 +93,23 @@ export interface FatosAnuncio {
    * publicar, mas não contam no "N% pronto". Ausente = todos confirmados (rascunho antigo, anúncio publicado).
    */
   naoConfirmados?: readonly string[];
+  /**
+   * E640 (b): uma das fotos é igual (ou quase) à de outro anúncio e a matrícula ainda não foi conferida: a publicação fica
+   * travada até a equipe conferir. Ausente/false = sem trava. O dono nunca vê de quem é a outra foto.
+   */
+  fotoRepetidaAberta?: boolean;
+  /**
+   * E633: a matrícula atualizada do imóvel (prova de titularidade) já foi enviada. Só se aplica ao anúncio que ainda vai
+   * publicar; ausente = não se aplica (o publicado segue no ar). Por padrão é OPCIONAL (item de melhoria).
+   */
+  matriculaEnviada?: boolean;
+  /** E633: a chave MATRICULA_OBRIGATORIA está ligada (só com a confirmação por escrito da Dra. Beatriz). */
+  matriculaObrigatoria?: boolean;
+  /**
+   * E637: o dono tem devolução de caução passada de 30 dias (atrás da chave CAUCAO_PRAZOS_ATIVA): anúncio novo não publica até
+   * regularizar. Ausente/false = sem bloqueio.
+   */
+  caucaoDevolucaoPendente?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -204,11 +224,25 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     const n = f.confortoFaltam;
     obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
   }
+  if (f.fotoRepetidaAberta) {
+    obrigatorios.push({ key: "foto_repetida", label: ROTULO_FOTO_REPETIDA, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_FOTO_REPETIDA });
+  }
+  // E633: a matrícula atualizada entra como OBRIGATÓRIA só com a chave ligada; senão é um opcional (nunca bloqueia).
+  const matriculaObrigatoriaAgora = f.matriculaEnviada !== undefined && f.matriculaObrigatoria === true;
+  if (matriculaObrigatoriaAgora) {
+    obrigatorios.push({ key: "matricula_atualizada", label: ROTULO_MATRICULA_ATUALIZADA, ok: f.matriculaEnviada === true, etapa: ETAPA.revisao, detalhe: f.matriculaEnviada ? undefined : DETALHE_MATRICULA_OBRIGATORIA });
+  }
+  if (f.caucaoDevolucaoPendente) {
+    obrigatorios.push({ key: "caucao_pendente", label: ROTULO_CAUCAO_PENDENTE, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_CAUCAO_PENDENTE });
+  }
   // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.endereco },
     { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
   ];
+  if (f.matriculaEnviada !== undefined && !matriculaObrigatoriaAgora) {
+    opcionais.push({ key: "matricula_atualizada", label: ROTULO_MATRICULA_ATUALIZADA, ok: f.matriculaEnviada, etapa: ETAPA.revisao, detalhe: f.matriculaEnviada ? undefined : DETALHE_MATRICULA_FALTA });
+  }
   if (f.proximidadesSemEndereco !== undefined && f.proximidadesSemEndereco > 0) {
     const n = f.proximidadesSemEndereco;
     opcionais.push({ key: "proximidades_endereco", label: ROTULO_PROXIMIDADES_SEM_ENDERECO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "1 lugar sem endereço não aparece no anúncio" : `${n} lugares sem endereço não aparecem no anúncio` });
