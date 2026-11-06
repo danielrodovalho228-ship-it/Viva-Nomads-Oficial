@@ -15,7 +15,7 @@ test("o admin tem a própria tela de erro: client, unstable_retry (ou reset) e v
   assert.ok(existsSync(new URL(TELA, RAIZ)));
   const t = ler(TELA);
   assert.match(t, /^"use client";/);
-  assert.match(t, /export default function ErroDoAdmin\(\{ unstable_retry, reset \}/);
+  assert.match(t, /export default function ErroDoAdmin\(\{ error, unstable_retry, reset \}/);
   assert.match(t, /const tentarDeNovo = \(\) => \(unstable_retry \?\? reset\)\?\.\(\);/);
   assert.match(t, /onClick=\{tentarDeNovo\}/);
   assert.match(t, /data-testid="admin-erro"/);

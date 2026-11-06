@@ -37,8 +37,8 @@ test("D2: a visão geral tem h1 (Prompt 42: o título em texto do PageTitle, sem
   assert.match(ler("src/app/(dashboard)/dashboard/visao-geral-client.tsx"), /<PageTitle/);
 });
 
-test("D5: Favoritos, Comparações e Buscas salvas mostram o título antes das abas", () => {
-  for (const r of ["favoritos", "comparar", "buscas"]) {
+test("D5: Favoritos e Comparações mostram o título antes das abas (Buscas salvas não tem a FavoritosTabs: varredura 17)", () => {
+  for (const r of ["favoritos", "comparar"]) {
     const f = ler(`src/app/(dashboard)/dashboard/${r}/page.tsx`);
     for (const m of f.matchAll(/<PageTitle/g)) {
       const antes = f.slice(0, m.index);

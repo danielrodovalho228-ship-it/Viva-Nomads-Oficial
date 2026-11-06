@@ -18,8 +18,10 @@ test("a leitura das estadias do calendário lança na falha quando a tela exige"
 
 test("o calendário pede exigir, avisa a falha e oferece tentar de novo", () => {
   const c = ler("src/components/property/block-calendar.tsx");
-  assert.match(c, /getEstadiasDoImovel\(propertyId, \{ exigir: true \}\)/);
-  assert.doesNotMatch(c, /getEstadiasDoImovel\(propertyId\)[\s\S]{0,80}\.catch\(\(\) => \{\}\)/);
+  // E611: a tela lê por GET (lerEstadias), e a rota chama getEstadiasDoImovel com exigir: true.
+  assert.match(c, /lerEstadias\(propertyId\)/);
+  assert.match(ler("src/app/api/imoveis/[id]/calendario/route.ts"), /getEstadiasDoImovel\(id, \{ exigir: true \}\)/);
+  assert.doesNotMatch(c, /lerEstadias\(propertyId\)[\s\S]{0,80}\.catch\(\(\) => \{\}\)/);
   assert.match(c, /if \(vivo\) setEstadiasFalhou\(true\)/);
   assert.match(c, /data-testid="estadias-calendario-erro"[\s\S]{0,200}os dias ocupados podem não aparecer/);
   assert.match(c, /setEstadiasFalhou\(false\);/);

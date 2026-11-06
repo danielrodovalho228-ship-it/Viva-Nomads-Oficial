@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CodigoDoErro } from "@/components/ui/codigo-do-erro";
 
 /**
  * Falha ao abrir uma tela do admin. Antes não havia error.tsx em /admin: o erro de uma tela da equipe subia até o
@@ -9,7 +10,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
  * O error.tsx não cobre o layout do mesmo segmento: o 404 do layout para quem não é admin continua subindo (a área
  * não se revela).
  */
-export default function ErroDoAdmin({ unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
+export default function ErroDoAdmin({ error, unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
   const tentarDeNovo = () => (unstable_retry ?? reset)?.();
   return (
     <div role="alert" data-testid="admin-erro" className="rounded-xl border border-sage-200 bg-white p-4 text-center sm:p-6">
@@ -23,6 +24,7 @@ export default function ErroDoAdmin({ unstable_retry, reset }: { error: unknown;
           Voltar ao início do admin
         </ButtonLink>
       </div>
+      <CodigoDoErro error={error} />
     </div>
   );
 }

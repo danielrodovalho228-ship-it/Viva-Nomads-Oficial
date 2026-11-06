@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CodigoDoErro } from "@/components/ui/codigo-do-erro";
 
 /**
  * Falha numa página do site (busca, anúncio, parceiros, pedidos…): a mensagem fica DENTRO da casca do site, com o
@@ -9,7 +10,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
  * no rodapé continua no error.tsx da raiz. Está dentro do <main id="conteudo"> do layout, por isso é um <div>.
  * O Next 16 entrega `unstable_retry` (busca e renderiza de novo) e `reset` (só renderiza) — o primeiro que vier.
  */
-export default function ErroDoSitePublico({ unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
+export default function ErroDoSitePublico({ error, unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
   const tentarDeNovo = () => (unstable_retry ?? reset)?.();
   return (
     <div role="alert" data-testid="publico-erro" className="container-page flex min-h-[50vh] flex-col items-center justify-center py-12 text-center">
@@ -26,6 +27,7 @@ export default function ErroDoSitePublico({ unstable_retry, reset }: { error: un
           Falar com a Viva
         </ButtonLink>
       </div>
+      <CodigoDoErro error={error} />
     </div>
   );
 }

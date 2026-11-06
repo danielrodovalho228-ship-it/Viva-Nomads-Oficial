@@ -143,7 +143,7 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
   const IM = { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" };
   const quadro = (l: { rotulo: string; valor: string }[], passo: string) => blocoDados(l) + `<p>${passo}</p>`;
   const lp = (prazo: string | null) =>
-    linhasProposta({ numero: "ORC-2026-0001", imovel: IM, entrada: "2026-11-01", saida: "2027-02-28", meses: 4, valorMensal: 2700, contaTotal: "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250", responderAte: prazo });
+    linhasProposta({ numero: "ORC-2026-0001", imovel: IM, entrada: "2026-11-01", saida: "2027-03-01", meses: 4, valorMensal: 2700, contaTotal: "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250", responderAte: prazo });
   const prop = (chave: string, ev: "proposta_recebida" | "proposta_respondida", assunto: string, d: Desfecho, papel: "owner" | "tenant") =>
     lista.push(
       doApp(

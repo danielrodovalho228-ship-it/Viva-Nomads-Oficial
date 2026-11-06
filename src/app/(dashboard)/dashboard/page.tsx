@@ -5,7 +5,7 @@ import { listarPropostas } from "@/lib/data/propostas-actions";
 import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
 import { estadiasDaHome } from "@/lib/data/estadia";
 import { getLatestDraft } from "@/lib/data/actions";
-import { dadosDasDecisoes } from "@/lib/data/painel-decisoes";
+import { dadosDasDecisoes, VAZIO as DECISOES_VAZIAS } from "@/lib/data/painel-decisoes";
 import { decisoesDoMorador, decisoesDoProprietario, type EstadiaParaDecisao } from "@/lib/painel/decisoes";
 import { checklistAnuncio, hrefRetomarRascunho } from "@/lib/anuncio/prontidao";
 import { fatosDaConta } from "@/lib/data/ativacao";
@@ -35,6 +35,7 @@ import { RodapeInicio } from "@/components/dashboard/rodape-inicio";
  * comparação). RLS: o dono só lê os próprios leads; sem sessão/erro → zero.
  */
 async function interessadosDoDono(): Promise<{ atual: number; anterior: number }> {
+  // Achado nº 24 (rodada 2): a falha de leitura lança — o Início avisa em vez de contar 0 interessados.
   const supabase = await createClient();
   if (!supabase) return { atual: 0, anterior: 0 };
   const {
@@ -42,11 +43,12 @@ async function interessadosDoDono(): Promise<{ atual: number; anterior: number }
   } = await supabase.auth.getUser();
   if (!user) return { atual: 0, anterior: 0 };
   const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("leads")
     .select("created_at")
     .eq("owner_id", user.id)
     .gte("created_at", desde);
+  if (error) throw new Error("Não foi possível ler os interessados agora.");
   return contarInteressados((data ?? []).map((l: { created_at: string | null }) => l.created_at));
 }
 
@@ -136,14 +138,14 @@ export default async function DashboardPage() {
       return vazio;
     });
   const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas, visualizacoes, conversas, buscasSalvas] = await Promise.all([
-    listMyProperties(),
+    ou("imoveis", listMyProperties({ exigir: true }), []),
     cidadeDoPerfil(),
-    interessadosDoDono(),
+    ou("interessados", interessadosDoDono(), { atual: 0, anterior: 0 }),
     ou("propostas", listarPropostas({ exigir: true }), []),
     // Prompt 32: estadias em vigor (topo, decisões e ações da folha do 41).
     ou("estadias", estadiasDaHome(agora, { exigir: true }), []),
     getLatestDraft().catch(() => null),
-    dadosDasDecisoes(),
+    ou("decisoes", dadosDasDecisoes({ exigir: true }), DECISOES_VAZIAS),
     // E72: o cartão "Candidaturas" conta a MESMA lista de /dashboard/candidaturas (um número, uma fonte).
     ou("candidaturas", listMinhasCandidaturas({ exigir: true }), null),
     // PROP-3 (E113): Visualizações e Mensagens da MESMA função das páginas de destino (Desempenho e Mensagens).

@@ -117,7 +117,8 @@ export function EtapaEncontramos(p: {
     set(e.target.value);
     p.tirarSugestao(c);
   };
-  const alternar = (k: string) => p.setAmenityKeys((s) => ({ ...s, [k]: !s[k] }));
+  // E603: "Mobiliado completo" é o mesmo fato do interruptor do Passo 6 (uma só fonte: furnished).
+  const alternar = (k: string) => (k === "mobiliado" ? p.setFurnished((v) => !v) : p.setAmenityKeys((s) => ({ ...s, [k]: !s[k] })));
   const aviso = p.iaEstado === "feita" && (
         <p className="flex items-start gap-2 rounded-lg bg-champagne/15 px-3 py-2 text-sm text-forest" data-testid="ia-resumo">
           <Sparkles className="mt-1 h-4 w-4 shrink-0" aria-hidden />

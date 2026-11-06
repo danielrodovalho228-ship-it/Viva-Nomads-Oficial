@@ -25,7 +25,8 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
       const linha = page.getByTestId("linha-pilulas");
       await expect(linha).toBeVisible();
       const ids = await linha.locator(":scope > [data-testid]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
-      expect(ids).toEqual(ORDEM);
+      // E452: a pílula Nível só existe quando algum anúncio do resultado tem nível; a ordem das demais não muda.
+      expect(ids).toEqual(ids.includes("pilula-nivel") ? ORDEM : ORDEM.filter((i) => i !== "pilula-nivel"));
       // Todas na mesma linha (no celular a linha rola de lado, sem quebrar).
       const ys = await linha.locator(":scope > [data-testid]").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
       expect(new Set(ys).size, `tops ${ys}`).toBe(1);

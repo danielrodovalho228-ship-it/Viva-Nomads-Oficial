@@ -1,13 +1,14 @@
 "use client";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CodigoDoErro } from "@/components/ui/codigo-do-erro";
 
 /**
  * Falha ao abrir uma tela do painel: mensagem curta e "Tentar de novo", nunca uma página sem saída.
  * O Next 16 entrega `unstable_retry` (busca e renderiza de novo) e `reset` (só renderiza). Antes o componente lia uma
  * prop `retry`, que não existe: o botão chamava `undefined()` e quebrava sem fazer nada.
  */
-export default function ErroDoPainel({ unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
+export default function ErroDoPainel({ error, unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
   const tentarDeNovo = () => (unstable_retry ?? reset)?.();
   return (
     <div role="alert" data-testid="painel-erro" className="rounded-xl border border-sage-200 bg-white p-4 sm:p-6 text-center">
@@ -21,6 +22,7 @@ export default function ErroDoPainel({ unstable_retry, reset }: { error: unknown
           Voltar ao painel
         </ButtonLink>
       </div>
+      <CodigoDoErro error={error} />
     </div>
   );
 }

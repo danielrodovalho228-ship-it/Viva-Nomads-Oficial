@@ -42,5 +42,5 @@ test("E511: a tela usa a barra (abas, busca, ordem) e o 'Mostrar mais'", () => {
   const c = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/imoveis-client.tsx", import.meta.url), "utf8");
   for (const id of ["imoveis-abas", "imoveis-busca", "imoveis-ordem", "imoveis-mostrar-mais", "imoveis-sem-resultado"]) assert.match(c, new RegExp(`data-testid="${id}"`), id);
   assert.match(c, /filtrarEOrdenar\(/);
-  assert.match(c, /paginar\(/);
+  assert.match(c, /paginarAnuncios\(/); // E624: a página conta anúncios (cópias abertas não ocupam vaga)
 });

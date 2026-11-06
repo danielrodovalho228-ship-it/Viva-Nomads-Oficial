@@ -109,8 +109,10 @@ test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte únic
   assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
 });
 
-test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () => {
-  assert.match(ler("proxy.ts"), /"\/decisao",\s*"\/decisao\/:path\*"/);
+// E595/E596 (05/11): a /decisao foi eliminada — o acesso direto redireciona para /modelodenegocio (que segue na porta).
+test("(e) /decisao não existe mais: redireciona para a área interna válida, atrás da porta dos sócios", () => {
+  assert.match(ler("../next.config.ts"), /source: "\/decisao", destination: "\/modelodenegocio", permanent: false/);
+  assert.match(ler("proxy.ts"), /"\/modelodenegocio",\s*"\/modelodenegocio\/:path\*"/);
 });
 
 test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os meses do simulador; sem seguro-fiança 'Em breve'", () => {

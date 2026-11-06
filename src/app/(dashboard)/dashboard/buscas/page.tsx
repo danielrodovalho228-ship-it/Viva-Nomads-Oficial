@@ -1,7 +1,6 @@
 import { Search, Bell } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
-import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { isSupabaseConfigured } from "@/lib/env";
 import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
 import { ListaBuscasSalvas } from "@/components/busca/lista-buscas-salvas";
@@ -27,7 +26,6 @@ export default async function SavedSearchesPage() {
           </ButtonLink>
         }
       />
-      <FavoritosTabs />
       {vazio ? (
         <EmptyState
           icon={Search}

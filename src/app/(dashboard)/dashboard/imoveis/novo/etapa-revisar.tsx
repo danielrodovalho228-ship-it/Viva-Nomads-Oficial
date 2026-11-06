@@ -13,7 +13,7 @@ import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, faltamNaConferencia, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloPrevia } from "@/lib/anuncio/assistente-telas";
-import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
+import { contaDaConferencia, precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn, formatBRL } from "@/lib/utils";
@@ -80,6 +80,7 @@ export function EtapaRevisar(p: {
   const desconto = fraseDescontoCard(p.negociacao.descontos);
   // E557: o título segue a regra do botão — "tudo certo" só com o "Publicar anúncio" liberado; travado, diz o que falta.
   const tituloLista = tituloConferencia(p.podePublicar, p.motivoTravado);
+  const conta = contaDaConferencia({ itens: conf.itens, pendentesNaRevisao: conf.pendentesNaRevisao, aceitouIa: p.aceitouIa || !!p.termoJaAceito });
   const primeiroPendente = (id: IdEtapaAssistente) => p.completude.find((i) => !i.ok && etapaDoItemProntidao(i.key).id === id);
   const [previaAberta, setPreviaAberta] = useState(false);
   const travado = !p.podePublicar || p.publishing;
@@ -139,6 +140,12 @@ export function EtapaRevisar(p: {
       <h3 id="lista-conferencia-titulo" className="text-base font-semibold text-ink">
         {tituloLista}
       </h3>
+      {/* E619: a conta do "Faltam N itens" à vista (subitens dos passos + seções do "Antes de publicar"), e o aceite. */}
+      {!p.podePublicar && conta && (
+        <p className="mt-1 text-sm text-muted" data-testid="conferencia-conta">
+          {conta}
+        </p>
+      )}
       <ul className="mt-1 divide-y divide-line">
         {conf.itens.map((i) => {
           const pendente = i.ok ? undefined : primeiroPendente(i.id);

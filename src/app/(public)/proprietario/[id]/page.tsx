@@ -17,6 +17,7 @@ import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
+import { classeGradeImoveis } from "@/lib/proprietario/grade-imoveis";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -137,7 +138,7 @@ export default async function ProprietarioPage({ params }: Params) {
         {imoveis.length === 0 ? (
           <p className="mt-3 text-muted">Nenhum imóvel ativo no momento.</p>
         ) : (
-          <div className="mt-4 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
+          <div className={`mt-4 ${classeGradeImoveis(imoveis.length)}`}>
             {imoveis.map((im) => (
               <PropertyCard key={im.id} property={im} />
             ))}
