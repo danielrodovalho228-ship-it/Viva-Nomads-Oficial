@@ -87,7 +87,7 @@ test("(b) Fechamento abre com os meses do período da candidatura aceita (1 mês
 
 test("(a) anúncio de teste: sem a faixa de visitante enquanto a sessão/perfil carregam", () => {
   const tela = ler("src/app/(public)/imoveis/[id]/property-detail.tsx");
-  assert.match(tela, /const aguardandoPerfil = modoTeste === "visitante" && \(!authChecked \|\| \(!!usuario && usuario\.isTeste === undefined\)\);/);
+  assert.match(tela, /const aguardandoPerfil = aguardandoPerfilDeTeste\(\{ modoVisitante: modoTeste === "visitante", authChecked, temUsuario: !!usuario, isTeste: usuario\?\.isTeste \}\);/);
   assert.match(tela, /\{modoTeste && !aguardandoPerfil && \(/);
   assert.match(tela, /aguardando=\{aguardandoPerfil\}/);
   // O isTeste chega com qualquer perfil lido.

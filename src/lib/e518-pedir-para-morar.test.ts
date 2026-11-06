@@ -32,6 +32,6 @@ test("AuthProvider: sem linha de perfil ou sem leitura depois das tentativas, is
 
 test("anúncio: o botão só espera enquanto isTeste é undefined (a regra que o AuthProvider agora sempre resolve)", () => {
   const d = ler("src/app/(public)/imoveis/[id]/property-detail.tsx");
-  assert.match(d, /const aguardandoPerfil = modoTeste === "visitante" && \(!authChecked \|\| \(!!usuario && usuario\.isTeste === undefined\)\);/);
+  assert.match(d, /const aguardandoPerfil = aguardandoPerfilDeTeste\(\{ modoVisitante: modoTeste === "visitante", authChecked, temUsuario: !!usuario, isTeste: usuario\?\.isTeste \}\);/);
   assert.match(d, /Enviar candidatura/);
 });

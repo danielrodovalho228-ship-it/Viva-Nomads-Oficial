@@ -79,7 +79,7 @@ test("tela: diálogo com escolha, envio na modalidade escolhida, espaço reserva
   assert.match(comp, /confirmacaoNaTela\(escolhida, horariosEnviados\)/);
   assert.match(comp, /if \(enviado && !demo && !exemplo\) onPedido\?\.\(escolhida\)/);
   const pagina = ler("src/app/(public)/imoveis/[id]/property-detail.tsx");
-  assert.match(pagina, /const carregandoVisitas = !exemplo && \(!authChecked \|\| \(!!usuarioId && visitasDe\.para !== usuarioId\)\)/);
+  assert.match(pagina, /const carregandoVisitas = carregandoDasVisitas\(\{ exemplo, authChecked, usuarioId, visitasPara: visitasDe\.para \}\)/);
   assert.match(pagina, /const destino = destinoDoRodape\(visitas\)/);
   assert.match(pagina, /abrirSinal=\{sinalVideo\}/);
   assert.equal((pagina.match(/onPedido=\{aoPedirVisita\}/g) ?? []).length, 2);

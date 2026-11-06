@@ -1,5 +1,6 @@
 "use client";
 
+import { aguardandoPerfilDeTeste, carregandoDasVisitas } from "@/lib/anuncio/carga-sessao";
 import { FRASE_CONVERSA_CHAT } from "@/config/conversa-chat";
 import { ETAPAS_CANDIDATURA, TERMOS_CANDIDATURA, LIMITE_APRESENTACAO, etapaAnterior, proximaEtapa, progressoEtapa, validarApresentacao, type EtapaCandidatura } from "@/lib/candidatura-etapas";
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
@@ -148,7 +149,7 @@ export function PropertyDetail({
   const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true });
   // QA do Muse (29/10): enquanto a sessão ou o perfil (is_teste) não chegaram, o anúncio de teste não mostra a faixa de
   // visitante — antes ela piscava para a conta de teste até o perfil carregar. O "Solicitar" fica só desativado.
-  const aguardandoPerfil = modoTeste === "visitante" && (!authChecked || (!!usuario && usuario.isTeste === undefined));
+  const aguardandoPerfil = aguardandoPerfilDeTeste({ modoVisitante: modoTeste === "visitante", authChecked, temUsuario: !!usuario, isTeste: usuario?.isTeste });
   const testeVisitante = modoTeste === "visitante" && !aguardandoPerfil;
   const [abrirVideo, setAbrirVideo] = useState(false);
   const [abrirPresencial, setAbrirPresencial] = useState(false);
@@ -212,7 +213,8 @@ export function PropertyDetail({
   const [visitasDe, setVisitasDe] = useState<{ para: string | null; estados: Partial<Record<ModalidadeVisita, EstadoVisitaAnuncio>> }>({ para: null, estados: {} });
   const usuarioId = usuario?.id ?? null;
   const visitas = visitasDe.para === usuarioId ? visitasDe.estados : {};
-  const carregandoVisitas = !exemplo && (!authChecked || (!!usuarioId && visitasDe.para !== usuarioId));
+  // E398: com o usuário já conhecido (store persistido) os botões não esperam a conferência da sessão, só as visitas dele.
+  const carregandoVisitas = carregandoDasVisitas({ exemplo, authChecked, usuarioId, visitasPara: visitasDe.para });
   // E424: pedido enviado → o botão daquela modalidade mostra "… pedida" com a explicação, sem recarregar.
   const aoPedirVisita = (m: ModalidadeVisita) => setVisitasDe((v) => ({ para: v.para, estados: { ...v.estados, [m]: "pedida" } }));
   useEffect(() => {
