@@ -674,3 +674,8 @@ body:has([data-testid="cogumelo"]) {
     transform: translateY(-50%);
   }
 }
+
+/* E398: com sessão provável (pista local de login), o "Entrar" do cabeçalho público não pisca antes de a sessão assentar. */
+html[data-sessao="1"] [data-nav-entrar] {
+  visibility: hidden;
+}

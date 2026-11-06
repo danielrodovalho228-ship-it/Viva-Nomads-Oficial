@@ -52,6 +52,11 @@ export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const mounted = useMontado();
   const loggedIn = mounted && !!user;
+  // E398: a pista de sessão (<html data-sessao>) vale até a sessão ser conferida; sem usuário, ela é velha e o "Entrar" volta.
+  const sessaoConferida = useAuthStore((s) => s.authChecked);
+  useEffect(() => {
+    if (mounted && sessaoConferida && !user) document.documentElement.removeAttribute("data-sessao");
+  }, [mounted, sessaoConferida, user]);
 
   // Foto do próprio usuário (opcional) para o "Meu painel".
   const [foto, setFoto] = useState<string | null>(null);
@@ -100,7 +105,7 @@ export function Navbar() {
           {loggedIn ? (
             <MeuPainel nome={nome} foto={foto} />
           ) : (
-            <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar">
+            <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar" data-nav-entrar="">
               Entrar
             </ButtonLink>
           )}
@@ -133,7 +138,7 @@ export function Navbar() {
               {loggedIn ? (
                 <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
               ) : (
-                <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)}>
+                <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)} data-nav-entrar="">
                   Entrar
                 </ButtonLink>
               )}
