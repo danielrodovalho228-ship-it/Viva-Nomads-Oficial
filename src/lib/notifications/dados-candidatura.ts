@@ -6,6 +6,7 @@
   Roda: node --test src/lib/notifications/dados-candidatura.test.ts
 */
 import { brl, dataBR, imovelPorExtenso, type ImovelDoEmail, type LinhaDado } from "./dados-negociacao.ts";
+import { PRAZO_RESPOSTA_CANDIDATURA } from "../candidaturas/status.ts";
 import { formatBRLExato, periodoPorExtenso, rotuloTotalDaEstadia } from "../precos.ts";
 
 export type MomentoCandidatura = "nova" | "enviada" | "aceita";
@@ -88,7 +89,7 @@ export function proximoPassoCandidatura(m: MomentoCandidatura): string {
     case "nova":
       return "Próximo passo: aprove ou recuse a candidatura em Interessados. Ao aprovar, você segue para o Fechamento.";
     case "enviada":
-      return "Próximo passo: aguarde a resposta do proprietário. Você recebe um e-mail quando ele responder; acompanhe em Minhas candidaturas.";
+      return `Próximo passo: aguarde a resposta do proprietário, que chega ${PRAZO_RESPOSTA_CANDIDATURA}. Você recebe um e-mail quando ele responder; acompanhe em Minhas candidaturas.`;
     case "aceita":
       return "Próximo passo: a conversa está liberada em Mensagens. O proprietário monta o contrato no Fechamento e você recebe um e-mail para assinar.";
   }

@@ -59,15 +59,18 @@ export interface ProximoPassoCandidatura {
   acao: { rotulo: string; href: string };
 }
 
+/** E395: o prazo oficial de resposta do proprietário, dito desde o ENVIO (tela de sucesso, cartão, lista e e-mails), não só no "Em análise". */
+export const PRAZO_RESPOSTA_CANDIDATURA = "em até 1 dia útil";
+
 export const PROXIMO_PASSO_CANDIDATURA: Partial<Record<SituacaoCandidatura, ProximoPassoCandidatura>> = {
   enviada: {
-    agora: "O proprietário recebeu a sua candidatura e ainda vai olhar.",
+    agora: `O proprietário recebeu a sua candidatura e ainda vai olhar. A resposta chega ${PRAZO_RESPOSTA_CANDIDATURA}.`,
     proximo: "Fique de olho nas mensagens: a resposta do proprietário chega pela plataforma.",
     acao: { rotulo: "Ver mensagens", href: "/dashboard/mensagens" },
   },
   em_analise: {
     // E314 (devolução 31/10): o prazo oficial de resposta do proprietário no cartão "Em análise".
-    agora: "O proprietário já viu a sua candidatura e está avaliando. A resposta chega em até 1 dia útil.",
+    agora: `O proprietário já viu a sua candidatura e está avaliando. A resposta chega ${PRAZO_RESPOSTA_CANDIDATURA}.`,
     proximo: "Responda pela conversa e tire as dúvidas do proprietário; com a candidatura aceita, você envia os documentos aqui.",
     acao: { rotulo: "Abrir conversa", href: "/dashboard/mensagens" },
   },
