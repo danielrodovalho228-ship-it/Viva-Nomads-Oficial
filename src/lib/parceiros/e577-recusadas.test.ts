@@ -28,7 +28,7 @@ test("ficha recusada: motivo e data à vista, sem checklist nem Aprovar/Recusar"
   assert.match(f, /Motivo: \{f\.motivoRecusa\?\.trim\(\) \|\| "não registrado"\}/);
   assert.match(f, /\{!aguardando && !recusada && \(\n\s+<fieldset/);
   assert.match(f, /\{!recusada && \(<>\n\s+\{soLeitura \? <SoLeituraQa className="mt-4" \/> : \(/);
-  assert.match(f, /!completo && !aguardando && !recusada && !soLeitura/);
+  assert.match(f, /!aguardando && !recusada && !soLeitura && motivoSemAprovar\(estado\.tipo, completo\)/);
   // A data vem do decidido_em gravado na recusa.
   assert.match(ler("src/app/(dashboard)/admin/parceiros/page.tsx"), /decididoEm: \(s\.decidido_em as string \| null\) \?\? null,/);
   assert.match(ler("src/lib/parceiros/admin-actions.ts"), /status: "recusada", motivo_recusa: texto, decidido_por: a\.user\.id, decidido_em:/);

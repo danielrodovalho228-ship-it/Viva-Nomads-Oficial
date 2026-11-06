@@ -7,7 +7,9 @@ import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
 import { PageTitle, Panel, EmptyState, FilaVazia } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { buttonClasses, ButtonLink } from "@/components/ui/button";
-import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
+import { estadosIdentidade, MSG_IDENTIDADE_SEM_LEITURA } from "@/lib/identidade/estado-servidor";
+import { provaDaIdentidade } from "@/lib/parceiros/prova-ficha";
+import type { LaudoCafGravado } from "@/lib/documento/conferencia-matricula";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { lerParceiroGeral, rotuloCategoria } from "@/lib/parceiros/regras";
@@ -100,10 +102,17 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   const ids = [...new Set([...lista.map((s) => s.user_id as string | null), ...((parceiros.data ?? []) as Record<string, unknown>[]).map((p) => p.user_id as string)].filter((x): x is string => !!x))];
   const avisosLinhas = (avisos.data ?? []) as { user_id: string; uf: string; chave: string; cidade: string; categoria: string; criado_em: string }[];
   const todosIds = [...new Set([...ids, ...avisosLinhas.map((a) => a.user_id)])];
-  const [identidades, { data: perfis }] = await Promise.all([
+  const [identidades, { data: perfis }, laudosRes] = await Promise.all([
     estadosIdentidade(admin, ids),
     todosIds.length ? admin.from("profiles").select("id, full_name, role, is_teste").in("id", todosIds) : Promise.resolve({ data: [] }),
+    // E348: o laudo mais recente de cada pessoa (resultado, data, protocolo, nome devolvido) para a ficha mostrar a PROVA.
+    ids.length
+      ? admin.from("tenant_verifications").select("tenant_id, caf_result, traffic_light, valid_until, created_at").in("tenant_id", ids).order("created_at", { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
   ]);
+  if ((laudosRes as { error?: unknown }).error) throw new Error(MSG_IDENTIDADE_SEM_LEITURA);
+  const laudoDe = new Map<string, LaudoCafGravado>();
+  for (const l of ((laudosRes.data ?? []) as (LaudoCafGravado & { tenant_id: string })[])) if (!laudoDe.has(l.tenant_id)) laudoDe.set(l.tenant_id, l);
   const perfil = new Map(((perfis ?? []) as { id: string; full_name: string | null; role: string | null; is_teste: boolean | null }[]).map((p) => [p.id, p]));
 
   const agora = new Date().getTime();
@@ -132,6 +141,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
       novoLinkPedidoEm: (s.novo_link_pedido_em as string | null) ?? null,
       linkVencido: !s.token_expira_em || Date.parse(s.token_expira_em as string) <= agora,
       identidade: id ? { estado: id.estado, texto: id.texto } : null,
+      prova: provaDaIdentidade(uid ? (laudoDe.get(uid) ?? null) : null, perfil.get(uid ?? "")?.full_name ?? (s.nome as string), (uid ? perfil.get(uid)?.is_teste === true : false) || id?.estado === "simulavel"),
       teste: uid ? perfil.get(uid)?.is_teste === true : false,
       diasNaFila: diasNaFila(s.criado_em as string, new Date(agora)),
       // E234: o texto "há N dias" sai da MESMA função que a Visão geral usa (idadePedidoParceria).
