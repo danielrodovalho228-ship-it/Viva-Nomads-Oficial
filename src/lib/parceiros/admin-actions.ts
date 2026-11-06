@@ -12,6 +12,7 @@ import { emailParceriaAprovada } from "@/lib/notifications/montar-email";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL } from "@/lib/site";
 import { checklistCompleto, expiraToken, ITENS_CHECKLIST, lerParceiroGeral } from "./regras";
+import { BASE_MAX } from "./prova-ficha";
 import { gerarToken, hashToken } from "./token";
 import { MOTIVO_NOTA_NAO_EMITIDA } from "./fiscal";
 import { recusaObservador } from "@/lib/qa/observador";
@@ -46,7 +47,7 @@ function revalidar() {
 }
 
 /** Marca/desmarca itens do checklist da ficha ("conferido em" do documento é gravado ao marcar). */
-export async function salvarChecklistParceria(id: string, entrada: Record<string, unknown>): Promise<Res<Record<string, unknown>>> {
+export async function salvarChecklistParceria(id: string, entrada: Record<string, unknown>, bases?: Record<string, string>): Promise<Res<Record<string, unknown>>> {
   if (!ehUuid(id)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdminParceria();
   if (!a) return { ok: false, erro: "Sem permissão." };
@@ -62,6 +63,33 @@ export async function salvarChecklistParceria(id: string, entrada: Record<string
   if (novo.documento === true && !atual.documento_conferido_em) novo.documento_conferido_em = new Date().toISOString();
   if (novo.documento !== true) delete novo.documento_conferido_em;
   novo.conferido_por = a.user.id;
+  // E348: cada item marcado guarda QUEM conferiu, QUANDO e com base em QUÊ (jsonb `registro`, sem coluna nova). Desmarcar apaga o registro.
+  const chavesItem = [...ITENS_CHECKLIST.map((i) => i.chave as string), "identidade_manual"];
+  const registro: Record<string, unknown> = { ...((atual.registro as Record<string, unknown> | undefined) ?? {}) };
+  let nomeAdmin: string | null | undefined;
+  for (const chave of chavesItem) {
+    const mexeu = typeof entrada[chave] === "boolean" || (bases && chave in bases);
+    if (!mexeu) continue;
+    if (novo[chave] !== true) {
+      delete registro[chave];
+      continue;
+    }
+    const antes = registro[chave] as { em?: string; por?: string; por_nome?: string; base?: string } | undefined;
+    const base = (bases?.[chave] ?? antes?.base ?? "").toString().trim().slice(0, BASE_MAX);
+    if (base.length < 3) return { ok: false, erro: "Diga com base em quê você conferiu este item (ex.: documento com foto, consulta da Receita)." };
+    if (nomeAdmin === undefined) {
+      const { data: perfil } = await a.admin.from("profiles").select("full_name").eq("id", a.user.id).maybeSingle();
+      nomeAdmin = ((perfil?.full_name as string | null) ?? "").trim() || null;
+    }
+    const novaMarca = typeof entrada[chave] === "boolean" && atual[chave] !== true;
+    registro[chave] = {
+      por: novaMarca || !antes?.por ? a.user.id : antes.por,
+      por_nome: novaMarca || !antes?.por ? nomeAdmin : (antes.por_nome ?? nomeAdmin),
+      em: novaMarca || !antes?.em ? new Date().toISOString() : antes.em,
+      base,
+    };
+  }
+  novo.registro = registro;
   const { error } = await a.admin.from("parceiro_solicitacoes").update({ checklist: novo, atualizado_em: new Date().toISOString() }).eq("id", id);
   if (error) return { ok: false, erro: "Não foi possível salvar." };
   revalidar();

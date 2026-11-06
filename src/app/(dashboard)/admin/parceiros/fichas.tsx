@@ -10,6 +10,7 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { checklistCompleto, ITENS_CHECKLIST, MODELOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarDocumento } from "@/lib/documento-pessoa";
 import { estadoDaFicha, type EstadoFicha } from "@/lib/parceiros/fila-pendentes";
+import { BASE_MAX, BASE_PADRAO, motivoSemAprovar, provaDoDocumento, registroDoItem, textoDoRegistro, type ProvaIdentidade } from "@/lib/parceiros/prova-ficha";
 import { cn } from "@/lib/utils";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import {
@@ -57,6 +58,8 @@ export interface Ficha {
   /** O link de ativação já venceu (calculado no servidor). */
   linkVencido: boolean;
   identidade: { estado: string; texto: string } | null;
+  /** E348: a prova da identidade (resultado, data, protocolo, nome devolvido × cadastro; DEMONSTRAÇÃO quando simulada). */
+  prova: ProvaIdentidade;
   teste: boolean;
   /** E227-B: dias desde o pedido (a aba Pendentes mostra "há N dias"). */
   diasNaFila: number;
@@ -110,6 +113,32 @@ const BORDA_ESTADO: Record<EstadoFicha["tipo"], string> = {
   recusada: "border-l-red-500",
 };
 
+/** E348: quem conferiu, quando e com base em quê — o registro fica visível; com o item marcado, a base é editável e se grava ao sair do campo. */
+function BaseDoItem({ chave, marcado, base, onBase, registro, aoSalvar }: { chave: string; marcado: boolean; base: string; onBase: (v: string) => void; registro: string | null; aoSalvar: () => void }) {
+  return (
+    <div className="ml-6 mt-1 space-y-1">
+      <label className="block text-xs text-muted" htmlFor={`base-${chave}`}>
+        Com base em
+      </label>
+      <input
+        id={`base-${chave}`}
+        type="text"
+        value={base}
+        maxLength={BASE_MAX}
+        onChange={(e) => onBase(e.target.value)}
+        onBlur={() => marcado && base.trim().length >= 3 && aoSalvar()}
+        className="w-full rounded-lg border border-sage-200 px-3 py-2 text-sm text-ink"
+        data-testid={`base-${chave}`}
+      />
+      {registro && (
+        <p className="text-xs text-forest" data-testid={`registro-${chave}`}>
+          {registro}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura?: boolean }) {
   const { rodar, pendente, aviso } = useAcao();
   const [check, setCheck] = useState<Record<string, unknown>>(f.checklist);
@@ -124,9 +153,13 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
   const [, iniciarRefresh] = useTransition();
   const [estados, setEstados] = useState<EstadosChecklist>({});
   const salvandoChecklist = algumSalvando(estados);
+  // E348: "com base em quê" de cada item (começa na base sugerida; o admin edita). Vai junto ao marcar e ao corrigir a base.
+  const [bases, setBases] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Object.keys(BASE_PADRAO).map((k) => [k, registroDoItem(f.checklist, k)?.base ?? BASE_PADRAO[k]])),
+  );
   const marcar = async (chave: string, valor: boolean) => {
     setEstados((e) => comecarSalvar(e, chave, valor));
-    const r: Res = await salvarChecklistParceria(f.id, { [chave]: valor }).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
+    const r: Res = await salvarChecklistParceria(f.id, { [chave]: valor }, valor ? { [chave]: bases[chave] ?? "" } : undefined).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
     setEstados((e) => terminarSalvar(e, chave, r));
     if (r.ok) {
       if (r.valor) setCheck(r.valor as Record<string, unknown>);
@@ -160,7 +193,10 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </span>
       </div>
 
-      <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+      <p className="mt-3 text-xs font-semibold text-muted" data-testid="ficha-declaracao-titulo">
+        Declaração do parceiro (para o seu julgamento)
+      </p>
+      <dl className="mt-1 grid gap-2 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-muted">Categorias</dt>
           <dd className="text-ink">{f.categorias.map(rotuloCategoria).join(", ") || "—"}</dd>
@@ -218,10 +254,25 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
       {!aguardando && !recusada && (
         <fieldset disabled={pendente || salvandoChecklist} className="mt-4 rounded-xl border border-line p-3" data-testid="ficha-checklist">
           <legend className="px-1 text-sm font-semibold text-ink">Checklist</legend>
-          <p className="mb-2 text-sm text-ink" data-testid="ficha-identidade">
-            Identidade: <strong>{f.identidade?.texto ?? "Sem conta ligada"}</strong>
-            {f.identidade?.estado !== "confirmada" && " — sem CAF válida, registre a conferência manual."}
-          </p>
+          <div className={cn("mb-3 rounded-lg border p-3 text-sm", f.prova.modo === "real" ? "border-line bg-white" : "border-amber-300 bg-white")} data-testid="ficha-identidade" data-modo={f.prova.modo}>
+            <p className="font-semibold text-ink" data-testid="ficha-identidade-titulo">{f.prova.titulo}</p>
+            {f.prova.aviso && (
+              <p className="mt-1 font-semibold text-amber-900" data-testid="ficha-identidade-aviso">
+                {f.prova.aviso}
+              </p>
+            )}
+            <p className="mt-1 text-muted">
+              Estado: <strong className="text-ink">{f.identidade?.texto ?? "Sem conta ligada"}</strong>
+            </p>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1" data-testid="ficha-identidade-prova">
+              {f.prova.linhas.map((l) => (
+                <div key={l.rotulo} className="contents">
+                  <dt className="text-muted">{l.rotulo}</dt>
+                  <dd className="min-w-0 break-words text-ink">{l.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
           <ul className="space-y-2">
             {ITENS_CHECKLIST.map((i) => (
               <li key={i.chave}>
@@ -240,7 +291,14 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
                     )}
                   </span>
                 </label>
+                {i.chave === "documento" && (
+                  <p className="ml-6 mt-1 text-xs text-muted" data-testid="ficha-documento-prova">
+                    {provaDoDocumento(check, registroDoItem(check, "documento")?.porNome ?? null).situacao}
+                    {provaDoDocumento(check, null).consultadoEm ? ` · consulta em ${provaDoDocumento(check, null).consultadoEm}` : ""}
+                  </p>
+                )}
                 <EstadoDoItem chave={i.chave} estado={estados[i.chave]} aoTentar={(v) => void marcar(i.chave, v)} />
+                <BaseDoItem chave={i.chave} marcado={marcado(i.chave)} base={bases[i.chave] ?? ""} onBase={(v) => setBases((b) => ({ ...b, [i.chave]: v }))} registro={textoDoRegistro(registroDoItem(check, i.chave))} aoSalvar={() => void marcar(i.chave, true)} />
               </li>
             ))}
             {f.identidade?.estado !== "confirmada" && (
@@ -250,6 +308,7 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
                   <span>Conferência manual da identidade feita (documento com foto)</span>
                 </label>
                 <EstadoDoItem chave="identidade_manual" estado={estados.identidade_manual} aoTentar={(v) => void marcar("identidade_manual", v)} />
+                <BaseDoItem chave="identidade_manual" marcado={marcado("identidade_manual")} base={bases.identidade_manual ?? ""} onBase={(v) => setBases((b) => ({ ...b, identidade_manual: v }))} registro={textoDoRegistro(registroDoItem(check, "identidade_manual"))} aoSalvar={() => void marcar("identidade_manual", true)} />
               </li>
             )}
           </ul>
@@ -265,7 +324,7 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
             aviso="Aprovar a parceria? A pessoa recebe o e-mail com o link de ativação (7 dias, uso único)."
             confirmar="Aprovar"
             onConfirmar={() => rodar(() => aprovarSolicitacao(f.id), "Aprovada. O e-mail de ativação foi enviado.")}
-            disabled={pendente || !completo}
+            disabled={pendente || !completo || estado.tipo === "incompleto"}
             variant="secondary"
             testid="ficha-aprovar"
           >
@@ -317,7 +376,11 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
       </div>
       )}
       </>)}
-      {!completo && !aguardando && !recusada && !soLeitura && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
+      {!aguardando && !recusada && !soLeitura && motivoSemAprovar(estado.tipo, completo) && (
+        <p className={cn("mt-2 text-xs", estado.tipo === "incompleto" ? "font-semibold text-red-700" : "text-muted")} data-testid="ficha-sem-aprovar">
+          {motivoSemAprovar(estado.tipo, completo)}
+        </p>
+      )}
       {aviso}
     </Panel>
   );
