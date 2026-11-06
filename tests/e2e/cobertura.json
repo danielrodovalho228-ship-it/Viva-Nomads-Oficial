@@ -4538,6 +4538,14 @@
       ],
       "specs": []
     },
+    "src/lib/data/nome-dono-actions.ts#nomeDoDonoDepoisDoAceite": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t923-e427-nome-pagina-imovel"
+      ]
+    },
     "src/lib/data/ofensas-admin-actions.ts#filaDeOfensas": {
       "personas": [
         "admin"
