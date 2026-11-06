@@ -580,6 +580,8 @@ ou alterada para medir a 390, 768 ou 1280.
 
 ## Merges depois da passada 36 — passada 37 (06/11; 390 e 1280)
 
-Mesclou depois da passada 36 só o #2914 (E477, Pista B): auditoria nas ações de servidor (`lib/saida/acoes.ts`, `lib/vistoria/actions.ts` e mais dois arquivos sem tela). **Nenhuma
-tela nova ou alterada**; nada a medir. Sequência da reativação conferida na `main`: **E194** (#1532 + #1660; evidência na passada 34), **E106** (#1661, `/buscar` com "Publicar pedido" na
-contagem e o tempo no painel Local, spec `t453`) e **E52** (#1710, topo da página de avaliadores no padrão das institucionais) já estão mesclados. Nenhum defeito novo.
+Mesclou depois da passada 36 só o #2914 (E477, Pista B): auditoria nas ações de servidor (`lib/saida/acoes.ts`, `lib/vistoria/actions.ts`) e **uma página alterada,
+`/admin/qualidade`** (+8 linhas, o estado de ausência do E477). Medi `/admin/qualidade` (e `/admin` como controle) a 390, 768 e 1280 no demo: sem imagem quebrada, rolagem lateral, texto
+cortado, fundo bege, elemento fixo ou grade desalinhada (6 medições). O estado de ausência em si exige a conta do observador (sessão real): fica para a QA.
+Sequência da reativação conferida na `main`: **E194** (#1532 + #1660; evidência na passada 34), **E106** (#1661, `/buscar` com "Publicar pedido" na contagem e o tempo no painel Local, spec `t453`)
+e **E52** (#1710, topo da página de avaliadores no padrão das institucionais) já estão mesclados. Nenhum defeito novo.
