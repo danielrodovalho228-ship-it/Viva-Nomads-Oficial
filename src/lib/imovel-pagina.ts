@@ -33,6 +33,18 @@ export function statusDisponibilidade(availableFrom: string | undefined, hoje: s
 }
 
 /** Código curto e estável do anúncio, para citar no atendimento ("Código VN-3F9A2C"). */
+/**
+ * E393: o código público ("VN-A02690", com ou sem hífen, em qualquer caixa) abre o anúncio. O código é "VN-" + os 6 primeiros
+ * caracteres do id (sem hífens), então ele vira uma FAIXA de ids (uuid é comparável): de `a02690 00-0000-…` a `a02690 ff-ffff-…`.
+ * Devolve null se o texto não é um código válido (6 hexadecimais).
+ */
+export function faixaDoCodigoPublico(texto: string): { de: string; ate: string } | null {
+  const m = /^VN-?([0-9A-F]{6})$/i.exec(String(texto ?? "").trim());
+  if (!m) return null;
+  const p = m[1].toLowerCase();
+  return { de: `${p}00-0000-0000-0000-000000000000`, ate: `${p}ff-ffff-ffff-ffff-ffffffffffff` };
+}
+
 export function codigoDoImovel(id: string): string {
   const limpo = id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
   return `VN-${limpo}`;

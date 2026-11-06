@@ -408,6 +408,12 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           {/* Prompt 43, item 5: o contexto da conversa no topo — estadia, pedido ou imóvel, com foto e datas. */}
           {(active.property || active.pedidoParceiroId) && (
             <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">
+              {/* E393: o cartão do imóvel na conversa é link para o anúncio (imóvel e estadia; pedido de serviço não tem anúncio). */}
+              {active.propertyId && !active.pedidoParceiroId && (
+                <Link href={`/imoveis/${active.propertyId}`} aria-label={`Abrir o anúncio${active.property ? `: ${active.property}` : ""}`} className="order-last ml-auto shrink-0 text-sm font-semibold text-forest underline underline-offset-2" data-testid="conversa-contexto-link">
+                  Ver anúncio
+                </Link>
+              )}
               {active.foto && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={active.foto} alt="" loading="lazy" className="h-16 w-20 shrink-0 rounded-lg object-cover" data-testid="conversa-contexto-foto" />

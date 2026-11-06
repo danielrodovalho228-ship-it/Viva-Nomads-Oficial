@@ -1,3 +1,4 @@
+import { faixaDoCodigoPublico } from "@/lib/imovel-pagina";
 import { lerProximidades } from "@/lib/data/proximidades";
 import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
@@ -544,6 +545,20 @@ export const anuncioPausadoPublico = cache(async (id: string): Promise<{ id: str
   const { data } = await admin.from("properties").select("id, title, city").eq("id", id).eq("status", "paused").maybeSingle();
   const p = data as { id: string; title: string | null; city: string | null } | null;
   return p ? { id: p.id, titulo: p.title ?? "Anúncio", cidade: p.city } : null;
+});
+
+/**
+ * E393: o código público ("VN-A02690") que o morador cita no atendimento e vê nos e-mails resolve para o anúncio ATIVO. Só devolve o
+ * id quando UM anúncio ativo bate com o código (colisão ou nenhum → null, e a página segue como 404).
+ */
+export const idDoAnuncioPeloCodigo = cache(async (codigo: string): Promise<string | null> => {
+  const faixa = faixaDoCodigoPublico(codigo);
+  if (!faixa) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("properties").select("id").eq("status", "active").gte("id", faixa.de).lte("id", faixa.ate).limit(2);
+  const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
+  return ids.length === 1 ? ids[0] : null;
 });
 
 /**
