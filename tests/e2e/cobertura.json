@@ -3401,6 +3401,13 @@
         "t695-e264b-proativos"
       ]
     },
+    "/api/protegido/conferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/cron/cobranca-mensal": {
       "personas": [
         "sistema"
@@ -7247,6 +7254,18 @@
     "src/lib/data/ficha-resumo-actions.ts#salvarContaRecebimento": {
       "personas": [
         "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#listarFotosRepetidas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#liberarFotoRepetida": {
+      "personas": [
+        "admin"
       ],
       "specs": []
     }

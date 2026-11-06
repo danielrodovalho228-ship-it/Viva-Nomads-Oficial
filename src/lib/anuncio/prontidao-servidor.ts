@@ -5,6 +5,7 @@ import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imove
 import { rotuloItem } from "@/config/niveis";
 import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { statusPorImovel } from "@/lib/documento/vigente";
+import { matriculaConfereu } from "@/lib/fotos/foto-repetida";
 import { MATRICULA_OBRIGATORIA } from "@/lib/flags";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
 import { qualificacaoDoRascunho } from "./requisitos-passo10";
@@ -82,6 +83,14 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (!x.refazer_ate || !provaAntigaNoPrazo({ fotoOrigem: x.foto_origem, refazerAte: x.refazer_ate, fotoPath: x.foto_path }, agora)) continue;
     provasPor.set(x.property_id, [...(provasPor.get(x.property_id) ?? []), { chave: x.chave, rotulo: rotuloItem(x.chave), ate: x.refazer_ate }]);
   }
+  // E640 (b): foto igual à de outro anúncio trava a publicação até a matrícula ser conferida (sem a 0309, erro → nada trava).
+  const repetidaLida = await cliente.from("properties").select("id, foto_repetida_em").in("id", idsLista).not("foto_repetida_em", "is", null);
+  const repetidaPor = new Set<string>(repetidaLida.error ? [] : ((repetidaLida.data ?? []) as { id: string }[]).map((r) => r.id));
+  const matriculaOkPor = new Set<string>();
+  if (repetidaPor.size) {
+    const m = await cliente.from("property_ownership_checks").select("property_id, resultado").eq("user_id", ownerId).in("property_id", [...repetidaPor]);
+    for (const r of (m.error ? [] : (m.data ?? [])) as { property_id: string | null; resultado: string | null }[]) if (r.property_id && matriculaConfereu(r.resultado)) matriculaOkPor.add(r.property_id);
+  }
   // E633: a matrícula atualizada enviada (qualquer conferência dela, inclusive em revisão manual). Sem a tabela/erro → nada aparece.
   const matriculasLidas = await cliente.from("property_ownership_checks").select("property_id").eq("user_id", ownerId).in("property_id", idsLista);
   const matriculaPor = new Set<string>(matriculasLidas.error ? [] : ((matriculasLidas.data ?? []) as { property_id: string | null }[]).map((r) => r.property_id).filter((x): x is string => !!x));
@@ -116,6 +125,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     // E102-B: sem internet no imóvel, não passa a publicado; o motivo é a falta de internet, não os Mbps em branco.
     if (semInternetPor.has(p.id) && p.status !== "active") f.semInternet = true;
     if (provasPor.has(p.id)) f.provasParaRefazer = provasPor.get(p.id);
+    // E640 (b): a trava vale para quem ainda vai publicar; a matrícula conferida a resolve.
+    if (p.status !== "active" && repetidaPor.has(p.id) && !matriculaOkPor.has(p.id)) f.fotoRepetidaAberta = true;
     // E633: a matrícula atualizada é prova de titularidade de quem AINDA VAI publicar; o publicado segue sem item.
     if (!matriculasLidas.error) {
       f.matriculaObrigatoria = MATRICULA_OBRIGATORIA;

@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { registrarFotoRepetida } from "@/lib/fotos/foto-repetida-servidor";
 
 /*
   Fotos do anúncio (Prompt 58): a foto sai com o anúncio (ou quando o dono a tira); o hash perceptual fica (antifraude,
@@ -24,6 +25,8 @@ export async function ligarHashesAoImovel(admin: SupabaseClient | null, property
     () => undefined,
     () => undefined,
   );
+  // E640 (b): com as fotos ligadas ao imóvel, procura foto igual ou quase igual em anúncio de outra conta real (best-effort).
+  await registrarFotoRepetida(admin, propertyId);
 }
 
 /**
