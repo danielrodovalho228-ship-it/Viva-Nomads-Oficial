@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
-import { anuncioPausadoPublico, getProperty, listProperties } from "@/lib/data/properties";
+import { anuncioPausadoPublico, getProperty, idDoAnuncioPeloCodigo, listProperties } from "@/lib/data/properties";
 import { AnuncioPausado } from "@/components/anuncio/anuncio-pausado";
 import { isDemoMode } from "@/lib/env";
 import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
@@ -69,6 +69,9 @@ export default async function PropertyDetailPage({ params }: Params) {
   if (!property) {
     const pausado = await anuncioPausadoPublico(id);
     if (pausado) return <AnuncioPausado titulo={pausado.titulo} cidade={pausado.cidade} />;
+    // E393: o código público ("VN-A02690") abre o anúncio (redireciona para o endereço de sempre, com o id).
+    const doCodigo = await idDoAnuncioPeloCodigo(id);
+    if (doCodigo) redirect(`/imoveis/${doCodigo}`);
     notFound();
   }
 

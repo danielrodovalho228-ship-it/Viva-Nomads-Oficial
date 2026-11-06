@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
@@ -30,6 +31,12 @@ export default async function VisitaDetalhePage({ params }: { params: Promise<{ 
     <div data-testid="visita-detalhe" data-papel={v.papel}>
       <VoltarLista href={dono ? HREF_VISITAS_DONO : "/dashboard/visitas"} rotulo={dono ? "Visitas nos meus imóveis" : "Visitas"} />
       <PageTitle title={`Visita ${MODALIDADE_ROTULO[v.modalidade].toLowerCase()} · ${v.imovel}`} subtitle={`Horários em ${ROTULO_FUSO}.`} />
+      {/* E393: o anúncio da visita é alcançável daqui (antes só havia o título em texto). */}
+      <p className="mb-3 text-sm">
+        <Link href={`/imoveis/${v.propertyId}`} className="inline-flex min-h-11 items-center font-semibold text-forest underline underline-offset-2" data-testid="visita-ver-anuncio">
+          Ver o anúncio
+        </Link>
+      </p>
       <Panel className="max-w-2xl">
         <CartaoVisita v={v} papel={dono ? "dono" : "morador"} />
       </Panel>
