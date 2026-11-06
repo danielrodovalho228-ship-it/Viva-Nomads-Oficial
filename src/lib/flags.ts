@@ -103,6 +103,13 @@ export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
 
 /**
+ * E637 — prazos da caução (parecer do dono em 7 dias, silêncio vira liberação integral, devolução em 30 dias, contestação em
+ * 5 dias, bloqueio de anúncio novo no dia 30). OFF por padrão: o desenho e o motor existem, nada age. Só liga com o parecer da
+ * Dra. Beatriz (desenho fechado pelo coordenador em 05/11/2026).
+ */
+export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA === "on";
+
+/**
  * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
  * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
  * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.

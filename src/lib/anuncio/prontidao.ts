@@ -11,6 +11,7 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -90,6 +91,11 @@ export interface FatosAnuncio {
    * publicar, mas não contam no "N% pronto". Ausente = todos confirmados (rascunho antigo, anúncio publicado).
    */
   naoConfirmados?: readonly string[];
+  /**
+   * E637: o dono tem devolução de caução passada de 30 dias (atrás da chave CAUCAO_PRAZOS_ATIVA): anúncio novo não publica até
+   * regularizar. Ausente/false = sem bloqueio.
+   */
+  caucaoDevolucaoPendente?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -203,6 +209,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   if (f.confortoFaltam !== undefined && f.confortoFaltam > 0) {
     const n = f.confortoFaltam;
     obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
+  }
+  if (f.caucaoDevolucaoPendente) {
+    obrigatorios.push({ key: "caucao_pendente", label: ROTULO_CAUCAO_PENDENTE, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_CAUCAO_PENDENTE });
   }
   // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [

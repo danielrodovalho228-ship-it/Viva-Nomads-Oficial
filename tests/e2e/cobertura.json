@@ -3400,6 +3400,12 @@
       "specs": [
         "t695-e264b-proativos"
       ]
+    },
+    "/api/cron/caucao-prazos": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
     }
   },
   "actions": {
