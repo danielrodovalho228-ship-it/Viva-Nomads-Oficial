@@ -38,6 +38,8 @@ test.describe("T1235 — E630: título vazio aparece como pendente na prévia e 
       try {
         const p = await entrarNaPagina(await ctx.newPage(), dono.email, senha);
         await p.goto(`/dashboard/imoveis/novo?draft=${imovel}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+        // No celular a prévia da Revisão vem recolhida atrás de "Ver como fica o anúncio"; no computador já está aberta.
+        if (w === 390) await p.getByTestId("previa-recolhida").click();
         const titulo = p.getByTestId("revisao-titulo");
         await expect(titulo).toBeVisible({ timeout: 30_000 });
         await expect(p.getByTestId("revisao-titulo-pendente")).toHaveText("Título ainda não definido");
