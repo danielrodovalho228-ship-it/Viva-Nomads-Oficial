@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, categoriasComDaUrl, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -49,7 +49,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   const sol = estado.solicitacao;
   const [c, setC] = useState<Campos>(() => ({
     nome: sol?.nome ?? estado.nome ?? "",
-    tipoPessoa: sol?.tipoPessoa === "pj" ? "pj" : "pf",
+    tipoPessoa: "pj", // E648: só empresa (CNPJ); CPF não é aceito em nenhuma categoria
     documento: "",
     categorias: sol?.categorias?.length ? sol.categorias : categoriaInicial ? [categoriaInicial] : [],
     cidades: sol?.cidades?.join(", ") ?? "",
@@ -182,23 +182,16 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         </div>
       )}
 
-      <fieldset>
-        <legend className="text-sm font-medium text-ink">Você atende como</legend>
-        <div className="mt-1 grid grid-cols-2 gap-2">
-          {(["pf", "pj"] as const).map((t) => (
-            <label key={t} className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold ${c.tipoPessoa === t ? "border-forest bg-sage-100 text-forest" : "border-sage-200 bg-white text-ink"}`}>
-              <input type="radio" name="sp-tipo" value={t} checked={c.tipoPessoa === t} onChange={() => set("tipoPessoa", t)} className="sr-only" />
-              {t === "pf" ? "Pessoa física (CPF)" : "Empresa ou MEI (CNPJ)"}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {/* E648: CNPJ para todos os parceiros, em qualquer categoria (MEI onde a atividade permite); CPF não é aceito. */}
+      <p className="rounded-lg bg-sage-100/60 px-3 py-2 text-sm text-ink" data-testid="sp-so-cnpj">
+        {MSG_SO_CNPJ}
+      </p>
       <div>
-        <label htmlFor="sp-doc" className="block text-sm font-medium text-ink">{c.tipoPessoa === "pf" ? "CPF" : "CNPJ"}</label>
-        <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder={c.tipoPessoa === "pf" ? "000.000.000-00" : "00.000.000/0000-00"} className={input} />
+        <label htmlFor="sp-doc" className="block text-sm font-medium text-ink">CNPJ</label>
+        <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder="00.000.000/0000-00" className={input} />
         <p className="mt-1 text-xs text-muted">Usado só pela equipe para conferir a parceria. Nunca aparece na sua página.</p>
       </div>
-      {c.tipoPessoa === "pj" && (
+      {(
         <fieldset data-testid="sp-emite-nota">
           <legend className="text-sm font-medium text-ink">{PERGUNTA_NOTA}</legend>
           <div className="mt-1 grid grid-cols-2 gap-2">

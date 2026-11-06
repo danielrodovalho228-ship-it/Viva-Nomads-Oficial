@@ -202,7 +202,7 @@ export interface CredenciamentoEntrada {
 export function faltaParaCredenciamento(e: CredenciamentoEntrada): string[] {
   const falta: string[] = [];
   if (!e.identidadeVerificada) falta.push("Verificar a identidade.");
-  if (!e.documentoValido) falta.push("CPF ou CNPJ válido no cadastro de parceiro.");
+  if (!e.documentoValido) falta.push("CNPJ válido no cadastro de parceiro (CPF não é aceito).");
   const link = (e.experienciaLink ?? "").trim();
   if (!e.experienciaArquivo && !/^https:\/\/\S+\.\S+/.test(link)) falta.push("Comprovar experiência (portfólio ou referência: arquivo ou link https).");
   if (!e.aceiteConduta) falta.push("Aceitar o código de conduta da avaliação.");
