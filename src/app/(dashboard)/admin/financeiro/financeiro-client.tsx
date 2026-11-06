@@ -1,7 +1,8 @@
 "use client";
 
 import { horaBRT } from "@/lib/datas-brasilia";
-import { createContext, useContext, useState } from "react";
+import { Children, createContext, useContext, useState } from "react";
+import { classeDaGrade } from "@/lib/admin/grade-cartoes";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import Link from "next/link";
 import { Download, Info } from "lucide-react";
@@ -272,7 +273,7 @@ function TaxasVencidas({ linhas }: { linhas: { leadId: string; criadoEm: string;
 }
 
 function Grade({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>;
+  return <div className={classeDaGrade(Children.count(children))}>{children}</div>;
 }
 
 function Cartao({ rotulo, valor, formula, nota }: { rotulo: string; valor: string; formula: string; nota?: string }) {

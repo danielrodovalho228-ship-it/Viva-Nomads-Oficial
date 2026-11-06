@@ -603,3 +603,19 @@ Sonda das passadas 23/24/29/33. 14 rotas × 3 larguras (42 medições): `/pedido
 6. **Estados que o demo não alcança**: local da estadia no Início (E360, sem estadia ativa), cartão do pedido com destino (E371, sem pedido publicado) e o estado somente leitura do admin
    (E477, conta de observação). Cobertos por testes de unidade; ficam para a QA. Nenhum defeito novo.
 7. **Matriz × mockups**: nada novo.
+
+## Telas ainda não varridas pelo nome — passada 40 (06/11; modo demonstração, 390 e 1280)
+
+Cruzei as 162 rotas de página do app com a matriz: 46 nunca tinham sido citadas pelo caminho. Medi as 26 estáticas alcançáveis no demo (4 públicas e 22 do painel/admin) a 390 e 1280
+(52 medições, mesma sonda das passadas 23/24/29/33/38/39, com o carregamento real de cada imagem): `/app/boas-vindas`, `/avisos/desligar`, `/excluir-conta/confirmar`, `/parceiros/ativar`,
+`/admin/{avaliacoes,candidaturas,cidades,conforto,dados-de-teste,emails-teste,eventos,financeiro,fotografos,fotos-perfil,funil,marketing,parceiros,parceiros/pedidos,premissas,retencao,sistema,socios}`,
+`/dashboard/{indicacoes,locacoes,visitas,qa/emails}`.
+
+1. **Imagem quebrada, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo, cartão sem foto**: nenhum caso nas 26 rotas.
+2. **DEFEITO — `/admin/financeiro` a 1280: grade de cartões com última linha incompleta.** A grade fixava `xl:grid-cols-4` para qualquer quantidade: o bloco de 9 cartões deixava 1 sozinho
+   na última linha e o de 6 deixava 2. **Corrigido** (PR própria): colunas por quantidade (`lib/admin/grade-cartoes.ts`: múltiplo de 3 → 3 colunas, de 4 → 4, senão 2), teste que falha sem a correção;
+   remedido: 390 e 1280 limpos.
+3. **Ainda sem medir** (dependem de id real ou de conta/sessão que o demo não tem): `/admin/2fa/refazer`, `/admin/parceiros/pedidos/[id]`, `/dashboard/avaliacao-imovel/[id]`, `/dashboard/contratos/[id]/ficha`,
+   `/dashboard/estadia/[contratoId]/*` (8 telas), `/dashboard/imoveis/[id]/*` (8 telas), `/dashboard/locacoes/[id]`, `/dashboard/servicos/pedidos/[id]`, `/dashboard/visitas/[id]`, e as de ambiente interno
+   (`/dev/emails`, `/qa/entrar`, `/prova/celular/aviso`). Ficam para a QA com dados reais.
+4. **Matriz × mockups**: nenhuma das 26 telas tem mockup próprio na lista; seguem o padrão codificado. Nada novo.
