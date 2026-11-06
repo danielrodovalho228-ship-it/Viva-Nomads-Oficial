@@ -499,7 +499,9 @@ function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
         {estadias.map((e) => (
           <li key={e.contratoId} className="py-3 first:pt-0 last:pb-0" data-testid="home-estadia" data-contrato={e.contratoId}>
             <Link href={`/dashboard/estadia/${e.contratoId}`} className="block min-w-0 hover:underline">
-              <span className="block truncate font-semibold text-ink">{e.imovel}</span>
+              <span className="block truncate font-semibold text-ink" data-testid="home-estadia-imovel">{e.imovel}</span>
+              {/* E360: onde é e o código do anúncio — o título sozinho pode ser genérico ("Carteira 3"). */}
+              {e.local && <span className="block text-sm text-muted" data-testid="home-estadia-local">{e.local}</span>}
               <span className="block text-sm text-muted">{e.topo}</span>
             </Link>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1" data-testid="home-estadia-acoes">
