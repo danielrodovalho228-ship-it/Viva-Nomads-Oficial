@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { abrirCorrecoesDevidas } from "@/lib/data/qualidade";
 import { donoEmiteNota } from "@/lib/fiscal/nota-locacao";
@@ -201,6 +202,9 @@ async function exigirAdmin() {
 export async function adminDefinirCorrecao(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Esta ação não está disponível." };
+  // E477: a conta observadora da QA só lê o dado real do atendimento (correções e denúncias).
+  const recusaQa = await recusaObservador(a.uid);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const dono = String(form.get("dono") ?? "").trim().slice(0, 80);
   const prazo = String(form.get("prazo") ?? "");
   if (dono.length < 2) return { ok: false, erro: "Informe quem é o dono da correção." };
@@ -215,6 +219,9 @@ export async function adminDefinirCorrecao(form: FormData): Promise<Res> {
 export async function adminFecharCorrecao(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Esta ação não está disponível." };
+  // E477: a conta observadora da QA só lê o dado real do atendimento (correções e denúncias).
+  const recusaQa = await recusaObservador(a.uid);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const ligacao = String(form.get("ligacao") ?? "").trim().slice(0, 300);
   const pode = podeFecharCorrecao(ligacao);
   if (!pode.ok) return { ok: false, erro: pode.motivo };
@@ -230,6 +237,9 @@ export async function adminFecharCorrecao(form: FormData): Promise<Res> {
 export async function adminEstadoDenuncia(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Esta ação não está disponível." };
+  // E477: a conta observadora da QA só lê o dado real do atendimento (correções e denúncias).
+  const recusaQa = await recusaObservador(a.uid);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const status = String(form.get("status") ?? "");
   if (!["recebida", "em_analise", "resolvida"].includes(status)) return { ok: false, erro: "Escolha o estado." };
   await a.admin.from("denuncias_anuncio").update({ status, atualizado_em: new Date().toISOString() }).eq("id", String(form.get("id") ?? ""));

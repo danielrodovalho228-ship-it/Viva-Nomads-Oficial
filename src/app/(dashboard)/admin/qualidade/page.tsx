@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { CampoDataFormulario } from "@/components/ui/campo-data";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { dataBRT } from "@/lib/datas-brasilia";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { MSG_CONTEXTO_SEM_LEITURA, contextoDaSaida, indicadorPrecoJustoDoPainel, painelQualidade } from "@/lib/data/qualidade";
 import { adminDefinirCorrecao, adminEstadoDenuncia, adminFecharCorrecao } from "@/lib/saida/acoes";
 import { ESTADOS_DENUNCIA, MOTIVOS_DENUNCIA, ROTULO_ESTADO_DENUNCIA, ROTULO_NIVEL_SAIDA, ROTULO_PAPEL_SAIDA, prioridadeDenuncia, rotuloMotivo, type EstadoDenuncia, type NivelSaida, type PapelSaida } from "@/lib/saida/regras";
@@ -26,6 +28,8 @@ const ROTULO_CONTEXTO = { chamados: "Chamados da pessoa", pagamentos: "Contratos
 export default async function AdminQualidadePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const saidaAberta = typeof sp.saida === "string" ? sp.saida : null;
+  // E477: a conta observadora da QA só lê (nada de formulário de escrita).
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const [p, ctx, pj] = await Promise.all([
     painelQualidade().catch(() => null),
     saidaAberta ? contextoDaSaida(saidaAberta).catch(() => "falhou" as const) : Promise.resolve(null),
@@ -139,6 +143,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                   {c.fechadaEm ? ` · fechada em ${dataBRT(c.fechadaEm)} (${c.ligacao})` : ""}
                 </p>
                 {!c.fechadaEm && (
+                  soLeitura ? <SoLeituraQa /> : (
                   <div className="mt-2 grid gap-3 md:grid-cols-2">
                     <FormAcao acao={adminDefinirCorrecao} className="grid gap-2" testid="correcao-definir">
                       <input type="hidden" name="id" value={c.id} />
@@ -152,6 +157,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                       <Button type="submit" variant="secondary" size="sm">Fechar a Correção</Button>
                     </FormAcao>
                   </div>
+                  )
                 )}
               </li>
             ))}
@@ -176,6 +182,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                   {d.chamado ? ` · chamado ${d.chamado}` : ""}
                 </p>
                 {d.texto && <p className="mt-1 text-ink">{d.texto}</p>}
+                {soLeitura ? <SoLeituraQa /> : (
                 <FormAcao acao={adminEstadoDenuncia} className="mt-2 flex flex-wrap items-end gap-2" testid="denuncia-estado-form">
                   <input type="hidden" name="id" value={d.id} />
                   <label className="min-w-40">
@@ -188,6 +195,7 @@ export default async function AdminQualidadePage({ searchParams }: { searchParam
                   </label>
                   <Button type="submit" variant="secondary" size="sm">Atualizar</Button>
                 </FormAcao>
+                )}
               </li>
             ))}
           </ul>

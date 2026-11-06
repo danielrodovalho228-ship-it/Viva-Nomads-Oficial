@@ -545,6 +545,11 @@ export async function registrarAusencia(form: FormData): Promise<Res> {
   const avaliadorUser = (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
   const { data: perfil } = await s.supabase.from("profiles").select("role").eq("id", s.userId).maybeSingle();
   const ehAdmin = perfil?.role === "admin" && (await sessaoAal2(s.supabase));
+  // E477: quando quem age é o admin (não o dono nem o avaliador da visita), a conta observadora só lê dado real; dado de teste segue liberado.
+  if (ehAdmin && s.userId !== p.owner_id && s.userId !== avaliadorUser) {
+    const recusaQa = await recusaObservador(s.userId, { imoveis: [p.property_id as string] });
+    if (recusaQa) return { ok: false, erro: recusaQa };
+  }
   const c = consequenciaAusencia(quem);
   if (quem === "avaliador") {
     if (!(s.userId === p.owner_id || ehAdmin)) return SEM_ACESSO;
