@@ -74,6 +74,8 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { formaInicialDaProposta, normalizarEscolha, validarFormaNaProposta, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
 import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
 
 /**
@@ -143,6 +145,8 @@ async function sessao() {
 }
 
 interface ImovelProposta {
+  /** E647: a preferência do dono em `detalhes_anuncio.pagamento` (só usada com a chave ligada). */
+  detalhes_anuncio?: { pagamento?: unknown } | null;
   id: string;
   owner_id: string;
   status?: string | null;
@@ -167,7 +171,7 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras, detalhes_anuncio",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -542,6 +546,8 @@ export interface EntradaProposta {
   limpezaUnica?: number;
   /** E562: ajuste do dono no pacote de limpezas (vazio = round(limpezas por mês × dias ÷ 30)). */
   limpezasPacote?: number | null;
+  /** E647 (refino): a forma de pagamento da proposta. Só vale com a chave ligada; sem ela, ignorada. */
+  formaPagamento?: "bloco" | "mensal" | null;
   pessoas?: number | null;
   validadeDias: number;
   mensagem?: string;
@@ -588,6 +594,14 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   const pessoas = e.pessoas == null ? null : Math.round(num(e.pessoas)) || null;
   const erro = validarTermos(termos, limitesDoImovel(im), hojeBR(), pessoas);
   if (erro) return { ok: false, error: erro };
+  // E647: a forma de pagamento da 1ª proposta é do dono: a que ele marcou, ou a recomendada pela preferência do anúncio.
+  if (FORMA_PAGAMENTO_DONO_ATIVA) {
+    const escolha = normalizarEscolha(im.detalhes_anuncio?.pagamento);
+    const forma = e.formaPagamento ?? formaInicialDaProposta(escolha, dias);
+    const v = validarFormaNaProposta({ forma, dias, escolha, quem: "owner" });
+    if (!v.ok) return { ok: false, error: v.erro };
+    termos.formaPagamento = v.forma;
+  }
 
   // Achado 83: a taxa do envio congela o teto desta proposta; sem lê-la, a proposta não sai (antes de numerar: a falha não gasta um ORC).
   const taxaEnvio = await taxaDoDonoAgora(s.admin, s.user.id).catch(() => null);
@@ -686,6 +700,8 @@ export interface PropostaView {
   /** Só o proprietário vê a taxa de serviço. */
   taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; seAceitaHoje: string | null; caiu: string | null } | null;
   fechamentoUrl: string | null;
+  /** E647: a preferência do dono no anúncio (null = sem escolha ou chave desligada). Só para a tela montar as opções. */
+  escolhaPagamento: EscolhaPagamento | null;
 }
 
 export interface PropostaResumo {
@@ -897,6 +913,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     limites: { mesesMin: lim.mesesMin, mesesMax: lim.mesesMax },
     taxa,
     fechamentoUrl: papel === "owner" && ["aceita", "em_contrato"].includes(p.status) ? `/dashboard/fechamento?c=${p.lead_id}` : null,
+    escolhaPagamento: FORMA_PAGAMENTO_DONO_ATIVA ? normalizarEscolha(im?.detalhes_anuncio?.pagamento) : null,
   };
 }
 
@@ -905,7 +922,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
 export type Resposta =
   | { acao: "aceitar" }
   | { acao: "recusar"; motivo: string; texto?: string }
-  | { acao: "contrapropor"; mudancas: Mudancas; mensagem?: string; mesmoAbaixoDoMinimo?: boolean };
+  | { acao: "contrapropor"; mudancas: Mudancas & { formaPagamento?: "bloco" | "mensal" | null }; mensagem?: string; mesmoAbaixoDoMinimo?: boolean };
 
 async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof sessao>>>, id: string) {
   await expirarVencidas(s.admin, s.user.id);
@@ -988,7 +1005,20 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   if (m.limpezasMes !== undefined) mudancas.limpezasMes = num(m.limpezasMes);
   if (m.taxaPet !== undefined) mudancas.taxaPet = num(m.taxaPet);
   const nova = aplicarContraproposta(anterior, mudancas, neg.descontos);
-  if (camposAlterados(anterior, nova).length === 0) return { ok: false, error: "Mude ao menos um valor para contrapropor." };
+  // E647: a forma de pagamento também muda na contraproposta (o dono aceita a pedida ou propõe a outra; o morador só pede
+  // o que o anúncio oferece). A forma que vinha continua valendo se ninguém mexeu, mas precisa caber nos novos dias.
+  let mudouForma = false;
+  if (FORMA_PAGAMENTO_DONO_ATIVA) {
+    const escolha: EscolhaPagamento | null = normalizarEscolha(im.detalhes_anuncio?.pagamento);
+    const pedida = (r.mudancas as { formaPagamento?: unknown }).formaPagamento;
+    const dias = diasDosTermos(nova);
+    const forma = pedida ?? anterior.formaPagamento ?? formaInicialDaProposta(escolha, dias);
+    const v = validarFormaNaProposta({ forma, dias, escolha, quem: papel });
+    if (!v.ok) return { ok: false, error: v.erro };
+    nova.formaPagamento = v.forma;
+    mudouForma = v.forma !== (anterior.formaPagamento ?? null);
+  }
+  if (camposAlterados(anterior, nova).length === 0 && !mudouForma) return { ok: false, error: "Mude ao menos um valor para contrapropor." };
   const proibidas = mudancasProibidas(anterior, nova, papel, neg.itens);
   if (proibidas.length) return { ok: false, error: `O proprietário não abriu para negociação: ${proibidas.join(", ").toLowerCase()}.` };
   const erro = validarTermos(nova, limitesDoImovel(im), hojeBR(), v.pessoas);

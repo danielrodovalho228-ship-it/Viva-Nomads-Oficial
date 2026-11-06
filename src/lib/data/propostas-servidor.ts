@@ -8,8 +8,9 @@ import { mesesDeReferencia } from "@/lib/estadia-em-dias";
   Sem "use server": são funções internas (recebem o cliente admin), nunca chamadas do navegador.
 */
 
+// E647 (0314): a coluna da forma de pagamento é anulável e só é preenchida com a chave ligada (mesmo precedente da `dias`, 0291).
 export const COLUNAS_VERSAO =
-  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em";
+  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em, forma_pagamento";
 
 export const COLUNAS_PROPOSTA =
   "id, numero, lead_id, property_id, owner_id, tenant_id, status, versao_atual, validade_dias, valida_ate, visto_em, recusada_por, recusa_motivo, recusa_texto, aceita_em, criada_em, atualizada_em";
@@ -90,6 +91,8 @@ export interface LinhaVersao {
   total_contrato: number;
   mensagem: string | null;
   criada_em: string;
+  /** E647 (0314): a forma de pagamento da versão; só vem com a chave ligada. */
+  forma_pagamento?: "bloco" | "mensal" | null;
 }
 
 export function termosDaLinha(v: LinhaVersao): TermosProposta {
@@ -109,6 +112,7 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     taxaPet: Number(v.taxa_pet),
     limpezaUnica: Number(v.limpeza_unica),
     limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
+    ...(v.forma_pagamento ? { formaPagamento: v.forma_pagamento } : {}),
   };
 }
 
@@ -141,6 +145,8 @@ export function linhaDaVersao(propostaId: string, versao: number, autor: Autor, 
     total_mensal: tot.totalMensal,
     total_contrato: tot.totalContrato,
     mensagem,
+    // E647: só grava a forma quando há uma (chave desligada = a linha idêntica à de antes).
+    ...(t.formaPagamento ? { forma_pagamento: t.formaPagamento } : {}),
   };
 }
 

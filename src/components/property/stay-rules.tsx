@@ -22,6 +22,8 @@ import { linhaPetsPublica } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { linhasDetalhes, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { linhaFormaPagamento, normalizarEscolha } from "@/lib/pagamento-forma/regras";
 
 const ICONE_DETALHE: Record<ChaveGrupoDetalhe | "chacara", React.ComponentType<{ className?: string }>> = {
   chacara: Trees,
@@ -76,6 +78,9 @@ export function StayRules({ property }: { property: Property }) {
       rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
   }
   for (const d of detalhes) rows.push({ icon: ICONE_DETALHE[d.chave], label: d.rotulo, value: d.texto });
+  // E647: a forma de pagamento que o dono aceita, clara para o morador antes da proposta (só com a chave ligada e depois do dono escolher).
+  const formaPagamento = FORMA_PAGAMENTO_DONO_ATIVA ? normalizarEscolha(property.detalhesAnuncio?.pagamento) : null;
+  if (formaPagamento) rows.push({ icon: HandCoins, label: "Forma de pagamento", value: linhaFormaPagamento(formaPagamento) ?? "" });
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">

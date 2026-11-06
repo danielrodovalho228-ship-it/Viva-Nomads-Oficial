@@ -123,6 +123,14 @@ export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA =
 export const COBRANCA_MENSAL_ATIVA = process.env.NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA === "on";
 
 /**
+ * TRAVA FORMA_PAGAMENTO_DONO (E647, Daniel, 06/11/2026): a forma de pagamento (bloco completo, mensal ou ambos, nas faixas de
+ * 30–90 e 91–180 dias) é ESCOLHA DO DONO no anúncio; a Viva não impõe. DESLIGADA por padrão e só a parte NEUTRA existe: o campo
+ * no editor, o texto ao morador e o cronograma conforme a escolha. Nada de atraso, inadimplência, encargos ou notificação formal
+ * até o parecer da Dra. Beatriz (item 59 da pauta). Só o valor "on" liga.
+ */
+export const FORMA_PAGAMENTO_DONO_ATIVA = process.env.NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA === "on";
+
+/**
  * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
  * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
  * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.

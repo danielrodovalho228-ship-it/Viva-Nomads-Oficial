@@ -13,6 +13,8 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { StatusChip } from "@/components/propostas/status-chip";
 import { responderProposta, type PropostaView, type VersaoView } from "@/lib/data/propostas-actions";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { ROTULO_FORMA, formasPermitidas, textoFormaFinal, validarFormaNaProposta } from "@/lib/pagamento-forma/regras";
 import {
   aplicarContraproposta,
   calcularTotais,
@@ -130,7 +132,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
   const [modo, setModo] = useState<"nada" | "recusar" | "contrapropor">("nada");
   const [motivo, setMotivo] = useState("");
   const [textoRecusa, setTextoRecusa] = useState("");
-  const [mud, setMud] = useState<Mudancas>({});
+  const [mud, setMud] = useState<Mudancas & { formaPagamento?: "bloco" | "mensal" | null }>({});
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -213,6 +215,15 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
             {/* E315 (QA 31/10): a validade aparece sempre no detalhe, com o mesmo rótulo da lista ("Validade: dd/mm/aaaa"),
                 inclusive depois de aceita, recusada ou expirada — antes só aparecia com a proposta em aberto. */}
+            {FORMA_PAGAMENTO_DONO_ATIVA && atual.termos.formaPagamento && (
+              <div className="mt-3 rounded-lg border border-sage-200 p-3 text-sm" data-testid="proposta-forma-final">
+                <p className="font-semibold text-ink">{textoFormaFinal(atual.termos.formaPagamento, atual.totais.dias).titulo}</p>
+                {textoFormaFinal(atual.termos.formaPagamento, atual.totais.dias).linhas.map((l) => (
+                  <p key={l} className="mt-1 text-ink">{l}</p>
+                ))}
+                <p className="mt-1 text-[13px] text-muted">{textoFormaFinal(atual.termos.formaPagamento, atual.totais.dias).nota}</p>
+              </div>
+            )}
             {p.validaAte && (
               <p className="mt-3 flex items-center gap-2 text-[13px] text-muted" data-testid="proposta-validade">
                 <Clock className="h-3.5 w-3.5" aria-hidden /> Validade: {dataBR(p.validaAte)}
@@ -342,6 +353,29 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       {fraseMaisTempo(atual.termos, nova)}
                     </p>
                   )}
+                  {FORMA_PAGAMENTO_DONO_ATIVA && (
+                    <fieldset data-testid="contra-forma">
+                      <legend className="mb-2 text-sm font-medium text-ink">Forma de pagamento</legend>
+                      <div className="flex flex-wrap gap-2">
+                        {(["bloco", "mensal"] as const).map((f) => {
+                          const diasNova = nova.dias ?? nova.meses * 30;
+                          const selecionada = (mud.formaPagamento ?? atual.termos.formaPagamento) === f;
+                          // O dono pode propor a outra forma; o morador só pede a que o anúncio oferece. A lei vale para os dois.
+                          const ok = validarFormaNaProposta({ forma: f, dias: diasNova, escolha: p.escolhaPagamento, quem: p.papel }).ok;
+                          return (
+                            <label key={f} className={`flex h-11 cursor-pointer items-center rounded-lg border px-4 text-sm font-semibold ${selecionada ? "border-forest bg-sage-100 text-forest" : "border-sage-200 bg-white text-ink"} ${ok ? "" : "opacity-50"}`}>
+                              <input type="radio" name="contra-forma" className="sr-only" checked={selecionada} disabled={!ok} onChange={() => setMud((m) => ({ ...m, formaPagamento: f }))} data-testid={`contra-forma-${f}`} />
+                              {ROTULO_FORMA[f]}
+                              {!ok && f === "bloco" && diasNova >= 91 ? " (indisponível de 91 a 180 dias)" : ""}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {p.papel === "tenant" && formasPermitidas(p.escolhaPagamento, nova.dias ?? nova.meses * 30).length === 0 && (
+                        <p className="mt-1 text-[13px] text-muted">O proprietário ainda não definiu a forma para este período.</p>
+                      )}
+                    </fieldset>
+                  )}
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-ink">Mensagem curta (opcional)</span>
                     <textarea rows={2} maxLength={500} className="input" value={mensagem} onChange={(e) => setMensagem(e.target.value)} data-testid="contra-mensagem" />
@@ -367,7 +401,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    <Button disabled={mudou.length === 0 || enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined })} data-testid="enviar-contraproposta">
+                    <Button disabled={(mudou.length === 0 && !(FORMA_PAGAMENTO_DONO_ATIVA && mud.formaPagamento && mud.formaPagamento !== atual.termos.formaPagamento)) || enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined })} data-testid="enviar-contraproposta">
                       {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar contraproposta
                     </Button>
                     {aviso && (
