@@ -221,3 +221,10 @@ Conferido em produção só com leitura, em 05/11/2026, por volta das 10h (horá
 - `destinos` pelo OSM (item 12);
 - coluna `caf_transacao_id`;
 - prazos do item 13 (parecer da Dra. Beatriz), que incluem `avisos` e `moderacao_ofensas`.
+
+## 11. Coluna nova que guarda texto de usuário (06/11/2026)
+
+Revisão das migrações 0297–0306: nenhuma tabela nova. Uma coluna nova foge da descrição do inventário: `avisos.texto`
+(0298, E482) guarda a **prévia de até 140 caracteres** da mensagem escrita por outra pessoa. O inventário dizia só
+"evento, título e link". A descrição foi corrigida. **Nada é apagado e nenhum prazo muda**: o prazo de `avisos` segue
+na lista de decisões do Daniel (item 13) e sai em cascata com a conta.
