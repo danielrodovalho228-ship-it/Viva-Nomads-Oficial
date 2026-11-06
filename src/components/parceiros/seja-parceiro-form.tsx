@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -137,6 +137,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+    // E651: o documento é conferido AQUI, antes de mandar a pessoa para criar a conta — um CPF não avança em silêncio.
+    const erroDoc = validarDocumentoParceiro(c.documento);
+    if (erroDoc) return setErro(erroDoc);
     if (!estado.logado) return irParaConta();
     const entrada = {
       ...c,

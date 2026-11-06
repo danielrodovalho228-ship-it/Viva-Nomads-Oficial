@@ -123,6 +123,19 @@ export function urlPublicaValida(u: string | null | undefined): string | null {
 }
 
 /** Validação do SERVIDOR (fonte da verdade). Campos por categoria: fotografia → portfólio; mudança → empresa e veículo; demais → descrição. */
+/**
+ * E651: o documento do pedido de parceria, conferido do mesmo jeito no passo (antes de mandar a pessoa para o /auth) e no
+ * servidor. CPF (11 dígitos, válido ou não) é a tentativa que o E648 recusa; o CNPJ precisa de 14 dígitos e dígitos
+ * verificadores corretos. Devolve a mensagem de recusa ou null quando o CNPJ confere.
+ */
+export function validarDocumentoParceiro(documento: string | null | undefined): string | null {
+  const doc = soDigitos(documento ?? "");
+  if (doc.length === 11 || cpfValido(doc)) return MSG_SO_CNPJ;
+  if (doc.length !== 14) return "Informe o CNPJ com 14 dígitos (00.000.000/0000-00).";
+  if (!cnpjValido(doc)) return "CNPJ inválido: confira os números.";
+  return null;
+}
+
 export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
   const nome = limpar(e.nome, 120);
   if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
@@ -130,8 +143,8 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
   if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
   const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
-  if (cpfValido(doc)) return { ok: false, erro: MSG_SO_CNPJ };
-  if (!cnpjValido(doc)) return { ok: false, erro: "CNPJ inválido: confira os números." };
+  const erroDoc = validarDocumentoParceiro(e.documento);
+  if (erroDoc) return { ok: false, erro: erroDoc };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
   if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
   const vistas = new Set<string>();
