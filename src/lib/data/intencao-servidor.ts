@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarBoasVindas } from "@/lib/notifications/boas-vindas-servidor";
 import { intencaoAoAnunciar, normalizarIntencoes, type Intencao } from "@/lib/auth/entrada";
-import { contaNoPrimeiroAcesso, registraIntencaoNova } from "@/lib/papel/papel-ativo";
+import { contaNoPrimeiroAcesso, moradorViraDono, registraIntencaoNova } from "@/lib/papel/papel-ativo";
 
 /*
   O caminho ÚNICO de gravar a intenção (Prompt 49 + E205-B): a tela de intenção, a Conta › Papéis e — E268-B — o
@@ -57,7 +57,17 @@ export async function registrarIntencaoDeAnunciar(supabase: SupabaseClient, user
     if (error) return;
     const bruto = (data as { intencao?: unknown } | null)?.intencao;
     const nova = intencaoAoAnunciar(bruto == null ? null : normalizarIntencoes(bruto));
-    if (nova) await gravarIntencao(supabase, userId, nova, "owner");
+    if (nova) {
+      const r = await gravarIntencao(supabase, userId, nova, "owner");
+      // E283-B (2ª reprova): quem já tinha respondido a intenção (ex.: "morar") e vira dono agora pode nunca ter recebido boas-vindas; o
+      // gravarIntencao só envia com a intenção vazia. O enviarBoasVindas grava a chave por conta antes: quem já recebeu um não recebe outro.
+      if (r.ok && moradorViraDono(bruto, nova)) {
+        after(async () => {
+          const admin = createAdminClient();
+          if (admin) await enviarBoasVindas(admin, userId, nova, "owner");
+        });
+      }
+    }
   } catch {
     /* boas-vindas é complemento */
   }

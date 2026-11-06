@@ -205,7 +205,7 @@ test("E268-B: quem vira dono pelo anúncio declara a intenção de anunciar (um 
   const srv = ler("src/lib/data/intencao-servidor.ts");
   assert.match(srv, /^import "server-only";/);
   assert.doesNotMatch(srv, /^"use server";/m, "fora do use server: não vira ação chamável pelo navegador");
-  assert.match(srv, /if \(nova\) await gravarIntencao\(supabase, userId, nova, "owner"\)/);
+  assert.match(srv, /if \(nova\) \{\s*const r = await gravarIntencao\(supabase, userId, nova, "owner"\)/);
   // O 1º rascunho chama pelo Passo 1 (saveDraftData novo), pela qualificação e pelo anúncio criado direto.
   const acoes = ler("src/lib/data/actions.ts");
   assert.equal((acoes.match(/await registrarIntencaoDeAnunciar\(supabase, user\.id\)/g) ?? []).length, 3);
