@@ -33,7 +33,7 @@ for (const largura of [390, 1280] as const) {
         href: el.querySelector('a[href^="/imoveis/"]')?.getAttribute("href") ?? null,
       }));
       const precoCartao = limpo(lido.preco);
-      expect(precoCartao).toMatch(/^R\$ [\d.]+\/mês( · R\$ [\d.]+ em \d+ meses)?$/);
+      expect(precoCartao).toMatch(/^R\$ [\d.]+\/mês( · R\$ [\d.]+ em \d+ (mês|meses))?$/);
       await expect(cartao.getByTestId("cartao-disponivel")).toHaveText(/^Disponível (agora|a partir de \d{2}\/\d{2}(\/\d{4})?)$/);
       await page.screenshot({ path: `${SAIDA}/t277-busca-${largura}.png`, fullPage: false });
 
