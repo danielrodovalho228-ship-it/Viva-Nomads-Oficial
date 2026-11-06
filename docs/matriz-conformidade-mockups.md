@@ -652,3 +652,9 @@ Diferenças (mockup → real), todas dentro do padrão codificado:
 3. **Rótulos do progresso**: o mockup mostra "Passo X de 10" em pílula no topo; o real tem o índice dos 10 passos (E602) e o "Passo X de 10 · N% pronto" no rodapé.
 4. **Tipografia e cor**: título grande em preto-tinta e subtítulo cinza, como o mockup; verde do botão e da seleção (`forest`) igual; cartão de escolha selecionado em verde-claro com borda verde e ✓ redondo, como o mockup.
 Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "Destaques") e a pergunta sobre toggle × cartão no Passo 6 (passada 42, ponto 3). Nenhum defeito novo.
+
+## Passada 44 (06/11; modo demonstração, 1080 × 720 e 390) — só o que mudou desde a 43
+
+A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
+`cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
+E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
