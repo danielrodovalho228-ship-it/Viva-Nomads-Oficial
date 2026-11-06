@@ -6,6 +6,7 @@
 import { FAQ } from "../atendimento/faq.ts";
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
+import { comPortasDePrecos } from "../../config/precos-visivel.ts";
 
 const PAGINAS: [string, string, string][] = [
   ["Como funciona", "/como-funciona", "o passo a passo para inquilinos e proprietários"],
@@ -38,7 +39,7 @@ export function llmsTxt(siteUrl: string): string {
     cabecalho(),
     "",
     "## Páginas",
-    ...PAGINAS.map(([nome, path, desc]) => `- [${nome}](${siteUrl}${path})${desc ? `: ${desc}` : ""}`),
+    ...comPortasDePrecos(PAGINAS.map(([nome, path, desc]) => ({ href: path, nome, desc }))).map(({ nome, href: path, desc }) => `- [${nome}](${siteUrl}${path})${desc ? `: ${desc}` : ""}`),
     "",
     "## Mais detalhes",
     `- [Versão completa para IA](${siteUrl}/llms-full.txt): preço, regras do contrato e perguntas frequentes`,
@@ -60,7 +61,7 @@ export function llmsFullTxt(siteUrl: string): string {
     "## Perguntas frequentes",
     ...FAQ.flatMap((p) => [`### ${p.pergunta}`, p.resposta, ""]),
     "## Páginas",
-    ...PAGINAS.map(([nome, path]) => `- [${nome}](${siteUrl}${path})`),
+    ...comPortasDePrecos(PAGINAS.map(([nome, path]) => ({ href: path, nome }))).map(({ nome, href: path }) => `- [${nome}](${siteUrl}${path})`),
     "",
   ].join("\n");
 }

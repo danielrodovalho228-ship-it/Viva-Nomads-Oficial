@@ -4,6 +4,7 @@
 */
 import { FAQ } from "../atendimento/faq.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
+import { PRECOS_VISIVEL } from "../../config/precos-visivel.ts";
 
 export const ORG = { nome: "Viva Nomads", url: "https://vivanomads.com.br" } as const;
 
@@ -126,7 +127,7 @@ export function servicoProprietarios(siteUrl: string, cidades: { name: string; s
     provider: { "@type": "Organization", "@id": `${siteUrl}/#organizacao`, name: ORG.nome, url: siteUrl },
     areaServed: cidades.map((c) => ({ "@type": "City", name: `${c.name}, ${c.state}` })),
     audience: { "@type": "Audience", audienceType: "Proprietários de imóveis mobiliados" },
-    offers: { "@type": "Offer", url: `${siteUrl}/precos`, seller: { "@type": "Organization", name: ORG.nome } },
+    offers: { "@type": "Offer", url: `${siteUrl}${PRECOS_VISIVEL ? "/precos" : "/para-proprietarios"}`, seller: { "@type": "Organization", name: ORG.nome } },
   };
 }
 

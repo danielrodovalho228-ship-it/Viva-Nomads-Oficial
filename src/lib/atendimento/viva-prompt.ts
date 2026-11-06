@@ -10,6 +10,7 @@ import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import { PROMESSA_ATENDIMENTO, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
+import { PRECOS_VISIVEL } from "../../config/precos-visivel.ts";
 
 
 const REGRA_PRECO_TEXTO =
@@ -24,7 +25,7 @@ export function fontes(): string {
     "",
     "## Preço para proprietários (fonte oficial, regra única)",
     REGRA_PRECO_TEXTO,
-    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos (só contam os publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (12% de 3 meses a R$ 3.000 por mês = R$ 1.080)\". Comparação em /precos.`,
+    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos (só contam os publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (12% de 3 meses a R$ 3.000 por mês = R$ 1.080)\".${PRECOS_VISIVEL ? " Comparação em /precos." : ""}`,
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",
@@ -47,7 +48,7 @@ export function fontes(): string {
     `- Manutenção: ${frasePrazosManutencao()}`,
     "",
     "## Páginas do site que você pode indicar (só o caminho)",
-    "/como-funciona, /seguranca, /precos (planos), /ajuda, /dashboard/contratos, /dashboard/imoveis, /dashboard/mensagens, /dashboard/conta, /auth (Entrar), /parceiros (outros serviços, em breve), /parceiros/fotografos (fotógrafo parceiro), /empresas (empresa que hospeda equipes).",
+    `/como-funciona, /seguranca, ${PRECOS_VISIVEL ? "/precos (planos), " : ""}/ajuda, /dashboard/contratos, /dashboard/imoveis, /dashboard/mensagens, /dashboard/conta, /auth (Entrar), /parceiros (outros serviços, em breve), /parceiros/fotografos (fotógrafo parceiro), /empresas (empresa que hospeda equipes).`,
   ].join("\n");
 }
 
