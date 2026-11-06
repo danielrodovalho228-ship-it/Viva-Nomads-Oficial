@@ -13,6 +13,7 @@ import { manualSemEndereco } from "./proximidades.ts";
 import { videoDoAnuncio } from "../video-anuncio.ts";
 import type { Proximity } from "../types";
 import type { FatosAnuncio } from "./prontidao.ts";
+import { lerConfirmados, naoConfirmados } from "./confirmados.ts";
 
 const tem = (d: Record<string, unknown>, ...k: string[]) => k.some((x) => x in d);
 const txt = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
@@ -39,6 +40,9 @@ export function fatosDoRascunho(draftData: unknown, f: FatosAnuncio, opcoes: { p
     // O tipo de entrada só vai ao draft_data quando preenchido (payloadDaChegada); ausente = o do banco.
     if (typeof d.tipoEntrada === "string") out.tipoEntradaOk = tipoEntradaValido(d.tipoEntrada);
     if ("internetMbps" in d && f.internetOk !== undefined) out.internetOk = (mbpsValido(d.internetMbps) ?? 0) > 0;
+    // E614: preço sugerido, garantia e período padrão só contam no % depois de o dono confirmar.
+    const conf = lerConfirmados(d.confirmados);
+    if (conf) out.naoConfirmados = naoConfirmados(conf);
   }
   return out;
 }
