@@ -59,6 +59,8 @@ import {
   parceirosPorContrato,
   taxaMediaPorContrato,
   porContrato,
+  DURACOES_SIMULADOR,
+  equilibrioPorDuracao,
   projetar,
   receitaPorContrato,
   roi,
@@ -162,6 +164,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
   const sensibilidade = useMemo(() => sensibilidadeAdesao(cenario, op), [cenario, op]);
   // E622: o MESMO custo fixo do KPI "Contratos/mês para empatar" — fornecedores + pró-labore + encargos do regime
   // (custoFixoDe). Antes o rótulo dividia só fornecedores + pró-labore (sem os encargos) e dava 11 contra 12.
+  const equilibrioDuracao = useMemo(() => equilibrioPorDuracao(op), [op]);
   const equilibrioFixo = unit.margem > 0 ? Math.ceil(custoFixoDe({ custoFixo, regime }) / unit.margem) : null;
   const ligadas = ligados.length + extras.length;
   const frase = fraseResumo(CENARIOS[cenario].nome, projSoTaxa, proj, ligadas);
@@ -330,10 +333,30 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             </div>
             <input id="custo-fixo" type="range" min={CUSTO_FIXO_FAIXA.min} max={CUSTO_FIXO_FAIXA.max} step={1} value={custoFixo} onChange={(e) => setCustoFixo(Number(e.target.value))} />
           </div>
+          {/* E646: a duração média da estadia (1 a 6 meses) e o equilíbrio dos dois regimes, recalculados na hora. */}
+          <div style={{ marginTop: 14 }}>
+            <span className={styles.lbl} id="rotulo-duracao">
+              Duração média da estadia (meses) — vale para a taxa e para os seguros
+            </span>
+            <div className={styles.toggles} role="group" aria-labelledby="rotulo-duracao" data-testid="seletor-duracao">
+              {DURACOES_SIMULADOR.map((m) => (
+                <button key={m} type="button" className={styles.pill} aria-pressed={mesesContrato === m} onClick={() => setMesesContrato(m)} data-testid={`duracao-${m}`}>
+                  {m} {m === 1 ? "mês" : "meses"}
+                </button>
+              ))}
+            </div>
+            <p className={styles.cardHelp} data-testid="equilibrio-duracao">
+              Contratos por mês para empatar com {mesesContrato} {mesesContrato === 1 ? "mês" : "meses"} de estadia:{" "}
+              <strong data-testid="equilibrio-selecionado-simples">Simples {equilibrioDuracao.find((l) => l.meses === mesesContrato)?.simples ?? "—"}</strong> ·{" "}
+              <strong data-testid="equilibrio-selecionado-presumido">Presumido {equilibrioDuracao.find((l) => l.meses === mesesContrato)?.presumido ?? "—"}</strong>.{" "}
+              Por duração (Simples / Presumido):{" "}
+              {equilibrioDuracao.map((l) => `${l.meses}: ${l.simples ?? "—"} / ${l.presumido ?? "—"}`).join(" · ")}.
+            </p>
+          </div>
           <div className={styles.slider}>
             <div className={styles.top}>
               <label className={styles.lbl} htmlFor="meses-contrato">
-                Duração média do contrato (meses) — vale para a taxa e para os seguros
+                Outra duração, até 12 meses (ajuste fino)
               </label>
               <span className={styles.val}>{mesesContrato}</span>
             </div>
