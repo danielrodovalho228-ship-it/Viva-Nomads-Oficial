@@ -66,7 +66,7 @@ export default function AvaliadoresRecrutamentoPage() {
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-ink">Como funciona</h2>
-        <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+        <ul className="mt-3 grid gap-3 sm:grid-cols-2">
           {COMO.map((c) => (
             <li key={c.t} className="rounded-xl border border-sage-200 p-4">
               <p className="font-semibold text-ink">{c.t}</p>
