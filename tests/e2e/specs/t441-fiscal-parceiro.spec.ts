@@ -136,6 +136,8 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await semear("pj", ids.pj!, { tipo: "pj", emiteNota: true, status: "publicado" });
     const { error: e1 } = await adm().from("parceiros").update({ emite_nota: true }).eq("id", parceiro.pf.id);
     expect(e1?.message ?? "").toMatch(/parceiros_emite_nota_so_pj/);
+    // E648: o formulário não grava mais pedido PF; a trava do banco segue valendo para uma linha PF legada.
+    await adm().from("parceiro_solicitacoes").insert({ user_id: ids.pf, email: pf.email, nome: pf.nome, tipo_pessoa: "pf", documento: cpfAleatorio(), categorias: ["limpeza"], cidades: ["Uberlândia"], descricao: "Legado PF.", status: "pendente", origem: "site" });
     const { error: e2 } = await adm().from("parceiro_solicitacoes").update({ emite_nota: false }).eq("email", pf.email);
     expect(e2?.message ?? "").toMatch(/parceiro_solicitacoes_emite_nota_so_pj/);
     // Selo removido exige emite_nota = false.

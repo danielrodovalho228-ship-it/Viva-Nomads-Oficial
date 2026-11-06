@@ -181,7 +181,8 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     const escolha = d.getByTestId("avaliacao-escolha");
     await expect(escolha).toBeVisible({ timeout: 20_000 });
     await expect(escolha.getByTestId("avaliacao-faixa")).toBeVisible();
-    await expect(escolha.getByTestId("avaliacao-sugerido")).toHaveCount(3);
+    // A, B e C estão entre os sugeridos (outros avaliadores ativos da cidade podem existir no laboratório).
+    for (const l of ["A", "B", "C"] as const) await expect(escolha).toContainText(`nº ${(await credenciamento(l))!.numero_credenciado}`);
     await expect(escolha).not.toContainText(x.numero_credenciado);
     await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${a.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
     await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(a.id);
@@ -240,7 +241,8 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const amanha = new Date(Date.now() + 2 * 86_400_000);
     const valor = `${amanha.toISOString().slice(0, 10)}T10:00`;
-    await item.getByTestId("agendar-visita").getByLabel("Data e hora da visita").fill(valor);
+    // O campo é o do site (data em texto "Data" + seletor de hora): colar "AAAA-MM-DDTHH:MM" no texto preenche os dois.
+    await item.getByTestId("agendar-visita").getByRole("textbox", { name: "Data", exact: true }).fill(valor);
     await item.getByTestId("agendar-visita").getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => (await pedido()).agendado_para, { timeout: 20_000 }).not.toBeNull();
     const antes = await pedido();
