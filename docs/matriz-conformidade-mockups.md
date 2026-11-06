@@ -500,3 +500,16 @@ rolagem lateral, texto cortado, fundo bege, grade).
 3. **Grades com última linha incompleta**: lista da cidade (decisão B2), mosaico da galeria e comodidades. Desenho aprovado. **Conformes.**
 4. **E193** (#2874 + #2876, mesclados): nenhuma ação; a prova ao vivo é do chat principal. O ajuste de specs do #2883 segue aberto.
 5. **Matriz × mockups**: sem tela nova alcançável pelo demo. Nada a corrigir.
+
+## /comparar e telas vizinhas de busca e cartões — passada 31 (06/11, modo demonstração, 390 toque e 1280)
+
+**E621** (colunas do /comparar sem foto) já está mesclado (#2789, 4:3 como os cartões; mais a largura igual das colunas do #2800), então não foi refeito.
+Conferi o resultado na `main` de hoje e varri /comparar (2, 3 e 4 imóveis na URL, código inexistente, vazio), /buscar (5 variações), /favoritos,
+/cidades, a home e os favoritos e o início do painel.
+
+1. **Colunas do /comparar**: cada coluna abre com a foto principal e todas as imagens completam o carregamento (2 e 3 colunas; a 390 e a 1280).
+   Com 4 códigos na URL aparecem 3 colunas: o limite é 3 imóveis por desenho (`MAX_COMPARAR`, com aviso). **Conforme.**
+2. **Imagem vazia ou quebrada, cartão sem foto, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo**: nenhum caso real. **Conforme.**
+3. **Grade desalinhada**: só a lista da cidade a 1280 (15 imóveis em 4 colunas, decisão B2). **Conforme.**
+4. **`/dashboard` a 1280**: "imagens não carregadas" são os cartões recomendados com `loading="lazy"` (completam ao chegar à vista). **Conforme.**
+5. **Matriz × mockups**: nada novo. Nada a corrigir, sem PR de correção.
