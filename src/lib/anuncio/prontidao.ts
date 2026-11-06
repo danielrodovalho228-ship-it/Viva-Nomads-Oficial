@@ -12,6 +12,7 @@
 */
 
 import { DETALHE_FOTO_REPETIDA, ROTULO_FOTO_REPETIDA } from "../fotos/foto-repetida.ts";
+import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -96,6 +97,11 @@ export interface FatosAnuncio {
    * travada até a equipe conferir. Ausente/false = sem trava. O dono nunca vê de quem é a outra foto.
    */
   fotoRepetidaAberta?: boolean;
+  /**
+   * E637: o dono tem devolução de caução passada de 30 dias (atrás da chave CAUCAO_PRAZOS_ATIVA): anúncio novo não publica até
+   * regularizar. Ausente/false = sem bloqueio.
+   */
+  caucaoDevolucaoPendente?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -212,6 +218,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   }
   if (f.fotoRepetidaAberta) {
     obrigatorios.push({ key: "foto_repetida", label: ROTULO_FOTO_REPETIDA, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_FOTO_REPETIDA });
+  }
+  if (f.caucaoDevolucaoPendente) {
+    obrigatorios.push({ key: "caucao_pendente", label: ROTULO_CAUCAO_PENDENTE, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_CAUCAO_PENDENTE });
   }
   // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [

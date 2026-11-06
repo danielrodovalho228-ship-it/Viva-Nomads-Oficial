@@ -6,6 +6,7 @@ import { rotuloItem } from "@/config/niveis";
 import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { statusPorImovel } from "@/lib/documento/vigente";
 import { matriculaConfereu } from "@/lib/fotos/foto-repetida";
+import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
 import { qualificacaoDoRascunho } from "./requisitos-passo10";
 import { fatosDoRascunho } from "./fatos-do-rascunho";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
@@ -89,6 +90,12 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     const m = await cliente.from("property_ownership_checks").select("property_id, resultado").eq("user_id", ownerId).in("property_id", [...repetidaPor]);
     for (const r of (m.error ? [] : (m.data ?? [])) as { property_id: string | null; resultado: string | null }[]) if (r.property_id && matriculaConfereu(r.resultado)) matriculaOkPor.add(r.property_id);
   }
+  // E637: devolução da caução passada de 30 dias bloqueia o anúncio NOVO do dono até regularizar (só com a chave ligada).
+  let caucaoPendente = false;
+  if (CAUCAO_PRAZOS_ATIVA) {
+    const pend = await cliente.from("caucao_prazos").select("contrato_id").not("pendencia_em", "is", null).is("devolvida_em", null).limit(1);
+    caucaoPendente = !pend.error && (pend.data ?? []).length > 0;
+  }
   const tipoEntradaPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; tipo_entrada: string | null }[]).map((e) => [e.id, e.tipo_entrada]));
   const internetPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; internet_mbps: number | null }[]).map((e) => [e.id, Number(e.internet_mbps) || 0]));
   const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
@@ -116,6 +123,8 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (provasPor.has(p.id)) f.provasParaRefazer = provasPor.get(p.id);
     // E640 (b): a trava vale para quem ainda vai publicar; a matrícula conferida a resolve.
     if (p.status !== "active" && repetidaPor.has(p.id) && !matriculaOkPor.has(p.id)) f.fotoRepetidaAberta = true;
+    // E637: quem ainda vai publicar não passa com devolução de caução em atraso; o já publicado segue no ar.
+    if (caucaoPendente && p.status !== "active") f.caucaoDevolucaoPendente = true;
     mapa.set(p.id, f);
   }
   if (opcoes.qualificacaoDoRascunho) {

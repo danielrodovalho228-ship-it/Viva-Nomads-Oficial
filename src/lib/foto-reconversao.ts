@@ -1,7 +1,10 @@
 import sharp from "sharp";
 
-/** Lado maior da foto salva: acima disso reduz (celulares mandam 4000+ px; a galeria mostra bem menos). */
-export const FOTO_LADO_MAX_PX = 2560;
+/**
+ * Lado maior da foto salva: acima disso reduz (celulares mandam 4000+ px; a galeria mostra bem menos).
+ * E640 (a): resolução de TELA (full HD) — o arquivo original nunca é guardado nem servido; só esta versão.
+ */
+export const FOTO_LADO_MAX_PX = 1920;
 export const FOTO_QUALIDADE_WEBP = 82;
 
 /**

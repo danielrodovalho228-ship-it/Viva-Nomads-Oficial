@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Building2, Check, Clock, Handshake, Languages, MapPin, MessageSquare, Star, UserRound, Wrench } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   tempoNaVivaLabel,
 } from "@/config/exemplo-proprietarios";
 import { donoVerificado } from "@/lib/anuncio/dono-verificado";
+import { nomeDoDonoDepoisDoAceite } from "@/lib/data/nome-dono-actions";
 import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
@@ -73,6 +74,20 @@ export function OwnerCard({
 }) {
   const exemplo = isExemplo(property);
   const [avisoDemo, setAvisoDemo] = useState(false);
+  // E427: a página é estática (o HTML só leva o nome abreviado). Quem tem o aceite com este dono recebe o nome COMPLETO do
+  // servidor depois de abrir — o mesmo de "Quem recebe" e de /proprietario/[id]; os demais ficam com o abreviado.
+  const donoId = proprietario?.id ?? property.ownerId;
+  const [nomeAceite, setNomeAceite] = useState<string | null>(null);
+  useEffect(() => {
+    if (exemplo || !donoId) return;
+    let vivo = true;
+    nomeDoDonoDepoisDoAceite(donoId)
+      .then((n) => vivo && setNomeAceite(n))
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [exemplo, donoId]);
   const hoje = hojeBR();
 
   let d: Dados | null = null;
@@ -137,6 +152,7 @@ export function OwnerCard({
   if (!d) return null;
 
   const podeMensagem = exemplo || !!onMensagem;
+  const nomeExibido = nomeAceite ?? d.nome;
 
   return (
     <section aria-labelledby="proprietario-title" data-testid="sobre-proprietario">
@@ -155,9 +171,9 @@ export function OwnerCard({
       <div className="mt-4 grid gap-4 rounded-xl border border-sage-200 p-4 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {/* Esquerda: o cartão. */}
         <div className="flex flex-col items-center rounded-xl bg-surface-2 p-4 text-center">
-          <AvatarDono nome={d.nome} foto={d.foto} />
+          <AvatarDono nome={nomeExibido} foto={d.foto} />
           <p className="mt-3 font-title text-lg font-semibold text-ink" data-testid="proprietario-nome">
-            {d.nome}
+            {nomeExibido}
           </p>
           {d.cidade && (
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-muted">
