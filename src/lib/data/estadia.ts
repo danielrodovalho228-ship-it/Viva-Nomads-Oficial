@@ -3,6 +3,7 @@
   Confere a sessão e o papel (morador = tenant_id; dono = properties.owner_id) e só então lê com o cliente de
   serviço: o morador nunca recebe a taxa de serviço nem as instruções antes da liberação; quem não é parte recebe null.
 */
+import { codigoDoImovel } from "@/lib/imovel-pagina";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -348,10 +349,19 @@ export function hojeEmBrasilia(agora: Date = new Date()): string {
   return diaBRT(agora) ?? agora.toISOString().slice(0, 10);
 }
 
+/** E360: "Saraiva, Uberlândia · código VN-3F9A2C" (o bairro é o campo público `address`, nunca o endereço exato). */
+export function localDaEstadia(c: { property_id?: string | null; properties?: { address?: string | null; city?: string | null } | null }): string {
+  const lugar = [c.properties?.address?.trim(), c.properties?.city?.trim()].filter(Boolean).join(", ");
+  const codigo = c.property_id ? `código ${codigoDoImovel(c.property_id)}` : "";
+  return [lugar, codigo].filter(Boolean).join(" · ");
+}
+
 export interface EstadiaNaHome {
   contratoId: string;
   papel: PapelEstadia;
   imovel: string;
+  /** E360: onde é (bairro, cidade) e o código do anúncio: o título sozinho (ex.: "Carteira 3") não identifica o imóvel. */
+  local: string;
   topo: string;
   decisoes: DecisaoEstadia[];
   acoes: { id: string; rotulo: string; href: string }[];
@@ -401,7 +411,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
       instrucoesPreenchidas: instrucoesPreenchidas(instrucoes),
       aditivo: a ? { status: a.status, propostoPorMim: a.proposto_por === user.id, euAssinei: (a.contrato_aditivo_assinaturas ?? []).some((s) => s.papel === papel) } : null,
     });
-    out.push({ contratoId: c.id, papel, imovel: c.properties?.title ?? "Imóvel", topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
+    out.push({ contratoId: c.id, papel, imovel: c.properties?.title ?? "Imóvel", local: localDaEstadia(c), topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
   }
   return out;
 }
