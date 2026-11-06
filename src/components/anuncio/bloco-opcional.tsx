@@ -40,12 +40,14 @@ export function BlocoOpcional({
     else if (acao === "desligar") onDesligar();
     else setConfirmando(true);
   };
-  // E193: dentro do assistente a pergunta do bloco é um CARTÃO GRANDE tocável (✓ redondo), como todas as outras escolhas;
-  // o interruptor (trilho) era o terceiro estilo de controle. Mesma semântica (role=switch) e mesmo testid de antes.
+  // E193 + padrão E56 (Daniel, 23/10; decisão do Muse 06/11): a pergunta do bloco é um CARTÃO GRANDE tocável (mesma caixa, mesma altura e
+  // mesmo toque das outras escolhas) COM o interruptor do mockup à direita — nasce fechado, abre com dado salvo, desligar com dado pede
+  // confirmação. Um estilo só de caixa; o trilho é o indicador de "ligado", como o ✓ nos outros cartões. role=switch e testid de antes.
   return (
     <div className="space-y-2" data-testid={`bloco-${id}`} data-ligado={ligado ? "sim" : "nao"}>
       <CartaoEscolha
         papel="switch"
+        indicador="toggle"
         on={ligado}
         onClick={tocar}
         testid={`bloco-${id}-toggle`}

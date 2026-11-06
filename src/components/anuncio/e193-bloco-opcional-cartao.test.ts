@@ -1,7 +1,7 @@
 /**
- * E193 (reprovado em 06/11): o assistente tinha um terceiro estilo de controle — o INTERRUPTOR (trilho) do bloco opcional
- * ("Convivência", comodidades extras, detalhes). A pergunta do bloco é agora o mesmo cartão grande tocável das demais
- * escolhas (role=switch e testid preservados). `npm test`.
+ * E193 (reprovado em 06/11) + padrão E56 (23/10; decisão do Muse 06/11): o bloco opcional ("Convivência", comodidades extras,
+ * detalhes) é um CARTÃO GRANDE tocável como as demais escolhas, COM o interruptor do mockup à direita (role=switch e testid
+ * preservados; nasce fechado, abre com dado, confirma ao desligar). `npm test`.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -13,7 +13,11 @@ test("o bloco opcional do assistente usa o cartão grande, sem trilho de interru
   const src = ler("./bloco-opcional.tsx");
   assert.match(src, /<CartaoEscolha\s+papel="switch"/);
   assert.doesNotMatch(src, /<button[^>]*role="switch"/);
-  assert.doesNotMatch(src, /translate-x-/, "o trilho (bolinha que desliza) saiu");
+  assert.match(src, /indicador="toggle"/, "o interruptor do mockup (padrão E56) fica à direita do cartão");
+  assert.doesNotMatch(src, /translate-x-/, "o trilho mora no CartaoEscolha, não num botão à parte");
+  const c = ler("./escolha-assistente.tsx");
+  assert.match(c, /indicador === "toggle"/);
+  assert.match(c, /h-7 w-12 shrink-0 items-center rounded-full/);
   assert.match(src, /testid=\{`bloco-\$\{id\}-toggle`\}/, "o testid dos specs continua");
 });
 
