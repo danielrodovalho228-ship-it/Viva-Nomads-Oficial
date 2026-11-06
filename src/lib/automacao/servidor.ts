@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
+import { parceiroPodeReceberServico } from "@/lib/parceiros/regras";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { aberturaEstadia, linhasEstadia, type DadosEstadiaEmail, type EventoEstadia } from "@/lib/notifications/transacionais-estadia";
 import { escaparHtml } from "@/lib/escapar-html";
@@ -176,9 +177,11 @@ export interface CriarAutomatico {
 
 /** Cria o pedido automático. A 2ª tentativa com a mesma chave não cria outro (devolve null). */
 export async function criarPedidoAutomatico(admin: Admin, { ctx, acao, agora }: CriarAutomatico): Promise<{ id: string } | null> {
-  const { data: parc } = await admin.from("parceiros").select("id, user_id, status").eq("id", acao.parceiroId).maybeSingle();
-  const parceiro = parc as { id: string; user_id: string; status: string } | null;
+  const { data: parc } = await admin.from("parceiros").select("id, user_id, status, tipo_pessoa").eq("id", acao.parceiroId).maybeSingle();
+  const parceiro = parc as { id: string; user_id: string; status: string; tipo_pessoa: string | null } | null;
   if (!parceiro || parceiro.status !== "publicado") return null;
+  // E648: parceiro com CPF (cadastro legado) não recebe serviço até apresentar CNPJ.
+  if (!parceiroPodeReceberServico(parceiro.tipo_pessoa)) return null;
   const { horarios, aviso: foraDaAgenda } = await horariosDoPedido(admin, parceiro.id, acao.janela, agora);
   const descricao = (await textoComServico(admin, acao.servicoId, acao.descricao)) + foraDaAgenda;
   let criado: { id: string } | null = null;

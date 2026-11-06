@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { parceiroPodeReceberServico } from "@/lib/parceiros/regras";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { buscarParceiros } from "@/lib/data/parceiros-publico";
@@ -163,9 +164,10 @@ export async function convidarParceiroFixo(e: EntradaVinculo): Promise<Res<{ id:
   const v = validarModoInstrucoes(e.modo, e.instrucoes);
   if ("erro" in v) return { ok: false, erro: v.erro };
   if (!UUID.test(e.parceiroId)) return { ok: false, erro: "Escolha o parceiro." };
-  const { data: parc } = await s.admin.from("parceiros").select("id, user_id, status, categorias, nome_publico").eq("id", e.parceiroId).maybeSingle();
-  const p = parc as { id: string; user_id: string; status: string; categorias: string[] | null; nome_publico: string | null } | null;
+  const { data: parc } = await s.admin.from("parceiros").select("id, user_id, status, categorias, nome_publico, tipo_pessoa").eq("id", e.parceiroId).maybeSingle();
+  const p = parc as { id: string; user_id: string; status: string; categorias: string[] | null; nome_publico: string | null; tipo_pessoa: string | null } | null;
   if (!p || p.status !== "publicado" || !(p.categorias ?? []).includes(e.categoria)) return { ok: false, erro: "Este parceiro não atende essa categoria agora." };
+  if (!parceiroPodeReceberServico(p.tipo_pessoa)) return { ok: false, erro: "Este parceiro não está recebendo pedidos agora." }; // E648: só CNPJ
   if (p.user_id === s.userId) return { ok: false, erro: "Você não pode se convidar." };
   if (e.servicoId) {
     if (!UUID.test(e.servicoId)) return { ok: false, erro: "Escolha o serviço." };
@@ -199,12 +201,12 @@ type LinhaVinculo = {
   status: string;
   parceiro_id: string;
   properties: { owner_id: string; title: string | null; city: string | null } | null;
-  parceiros: { user_id: string; nome_publico: string | null } | null;
+  parceiros: { user_id: string; nome_publico: string | null; tipo_pessoa?: string | null } | null;
 };
 
 async function carregarVinculo(admin: Admin, vinculoId: string): Promise<LinhaVinculo | null> {
   if (!UUID.test(vinculoId)) return null;
-  const { data } = await admin.from("imovel_parceiros").select("id, property_id, categoria, status, parceiro_id, properties(owner_id, title, city), parceiros(user_id, nome_publico)").eq("id", vinculoId).maybeSingle();
+  const { data } = await admin.from("imovel_parceiros").select("id, property_id, categoria, status, parceiro_id, properties(owner_id, title, city), parceiros(user_id, nome_publico, tipo_pessoa)").eq("id", vinculoId).maybeSingle();
   return (data as unknown as LinhaVinculo | null) ?? null;
 }
 
@@ -277,6 +279,8 @@ export async function responderConviteFixo(vinculoId: string, aceitar: boolean):
   if ("erro" in s) return { ok: false, erro: s.erro };
   const v = await carregarVinculo(s.admin, vinculoId);
   if (!v || v.parceiros?.user_id !== s.userId || v.status !== "pendente") return { ok: false, erro: "Convite não encontrado." };
+  // E648: parceiro com CPF (cadastro legado) não aceita serviço até apresentar CNPJ (recusar segue permitido).
+  if (aceitar && !parceiroPodeReceberServico(v.parceiros?.tipo_pessoa)) return { ok: false, erro: "Para receber serviços, apresente o seu CNPJ." };
   const { data } = await s.admin
     .from("imovel_parceiros")
     .update({ status: aceitar ? "ativo" : "recusado", respondido_em: new Date().toISOString() })
