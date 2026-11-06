@@ -7,6 +7,7 @@ import { SincronizarPapel } from "@/components/papel/sincronizar-papel";
 import { ContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { contadoresIniciaisDoPainel } from "@/lib/painel/contadores-servidor";
 import { comLimite, LIMITE_CASCA_MS } from "@/lib/painel/com-limite";
+import type { ViewMode } from "@/lib/store";
 
 // Área logada: nunca no índice de busca (/dashboard/*, /admin, /qualificar…).
 export const metadata: Metadata = {
@@ -22,13 +23,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // pinta o menu certo de primeira (sem piscar) e só depois relê pela rota.
   // E503: a casca não espera mais que LIMITE_CASCA_MS — se uma leitura atrasar, o modo vem do cliente e o menu pinta pela
   // rota de contadores (o caminho que já existia), em vez de o painel inteiro ficar no esqueleto.
-  const [initialMode, contadoresIniciais] = await Promise.all([
-    comLimite(resolveInitialMode(), LIMITE_CASCA_MS).catch(() => null),
+  // E653: modo que ATRASOU ou FALHOU (indisponivel) não é "conta nova sem papel" (null): o ModeInitializer relê o modo.
+  const [modoLido, contadoresIniciais] = await Promise.all([
+    comLimite(resolveInitialMode(), LIMITE_CASCA_MS)
+      .then((modo) => ({ modo, indisponivel: false }))
+      .catch(() => ({ modo: null as ViewMode | null, indisponivel: true })),
     comLimite(contadoresIniciaisDoPainel(), LIMITE_CASCA_MS).catch(() => null),
   ]);
   return (
     <AuthGuard>
-      <ModeInitializer initialMode={initialMode} />
+      <ModeInitializer initialMode={modoLido.modo} indisponivel={modoLido.indisponivel} />
       {/* PAPEL-B: a página de outra área troca e grava o papel ativo (selo e menu batem com a página). */}
       <SincronizarPapel />
       <ContadoresIniciais valor={contadoresIniciais}>

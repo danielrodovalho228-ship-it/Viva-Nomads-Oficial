@@ -20,19 +20,19 @@ test("a área do morador se desenha pela URL; ao sair, vale o modo escolhido (se
   assert.equal(modoDaRota("/dashboard/conta/avaliacoes"), null);
 });
 
-test("SincronizarPapel: morador/proprietário não mexem no estado local; só parceiro acerta o papel", () => {
+test("SincronizarPapel: nenhuma área mexe no estado local (E653: nem a do parceiro) e o parceiro nem chama o servidor", () => {
   const s = ler("src/components/papel/sincronizar-papel.tsx");
-  assert.match(s, /const soAreaDeModo = alvo !== "parceiro";/);
-  assert.match(s, /if \(!soAreaDeModo\) setPapel\(alvo\);/);
-  assert.doesNotMatch(s, /^\s+setPapel\(alvo\);$/m, "setPapel incondicional voltou");
+  assert.doesNotMatch(s, /setPapel\(/, "a visita a uma área não troca o papel local");
+  assert.match(s, /if \(gravacaoPorArea\(alvo, true\) === "nada"\) return;/);
 });
 
-test("servidor: abrir a área (origem 'area') só grava no 1º acesso; fora dele, morador/proprietário não gravam nada", () => {
+test("servidor: abrir a área (origem 'area') só grava o modo no 1º acesso; fora dele nenhum papel grava", () => {
   const a = ler("src/lib/data/papel-actions.ts");
   const i = a.indexOf('if (origem === "area") {');
   const bloco = a.slice(i, a.indexOf("const { error } = await supabase\n    .from(\"profiles\")", i));
   assert.match(bloco, /contaNoPrimeiroAcesso/);
-  assert.match(bloco, /if \(papel !== "parceiro"\) return \{ ok: true \};/);
+  // E653: a regra é única (gravacaoPorArea): fora do 1º acesso NENHUM papel grava — o parceiro também não.
+  assert.match(bloco, /gravacaoPorArea\(papel, contaNoPrimeiroAcesso\(a\?\.intencao, a\?\.papel_ativo\)\) === "nada" \|\| !modo\) return \{ ok: true \};/);
   // A troca explícita (selo/Conta) continua gravando: usarPapel(papel) sem origem.
   assert.match(ler("src/components/papel/use-troca-papel.ts"), /usarPapel\(papel\)/);
 });

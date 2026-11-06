@@ -127,13 +127,13 @@ test("E283/L-78: abrir uma página de outra área no 1º acesso não gasta o 1º
   assert.equal(contaNoPrimeiroAcesso(["morar"], null), false);
   assert.equal(contaNoPrimeiroAcesso(null, "proprietario"), false);
   assert.equal(contaNoPrimeiroAcesso([], null), false);
-  // O SincronizarPapel troca "pela área"; o servidor, nesse caso e no 1º acesso, grava só o modo (proxy e IA leem).
+  // O SincronizarPapel pede "pela área"; o servidor, nesse caso e no 1º acesso, grava só o modo (proxy e IA leem).
   assert.match(ler("src/components/papel/sincronizar-papel.tsx"), /usarPapel\(alvo, "area"\)/);
   const acoes = ler("src/lib/data/papel-actions.ts");
   assert.match(acoes, /export async function usarPapel\(papel: unknown, origem\?: "area"\)/);
   assert.match(
     acoes,
-    /if \(origem === "area"\) \{[\s\S]{0,300}select\("intencao, papel_ativo"\)[\s\S]{0,200}if \(contaNoPrimeiroAcesso\(a\?\.intencao, a\?\.papel_ativo\)\) \{\s*if \(!modo\) return \{ ok: true \};\s*const \{ error \} = await supabase\.from\("profiles"\)\.update\(\{ preferred_mode: modo \}\)/,
+    /if \(origem === "area"\) \{[\s\S]{0,400}select\("intencao, papel_ativo"\)[\s\S]{0,300}gravacaoPorArea\(papel, contaNoPrimeiroAcesso\(a\?\.intencao, a\?\.papel_ativo\)\) === "nada" \|\| !modo\) return \{ ok: true \};\s*const \{ error \} = await supabase\.from\("profiles"\)\.update\(\{ preferred_mode: modo \}\)/,
   );
   // A troca explícita (selo, Conta) continua gravando o papel na hora.
   assert.match(ler("src/components/papel/use-troca-papel.ts"), /usarPapel\(papel\)/);
