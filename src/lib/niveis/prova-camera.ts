@@ -30,6 +30,19 @@ export const TEXTO_CAMERA_COMPUTADOR = "Ou fotografe agora com a câmera deste c
 export function temCameraNaLista(aparelhos: readonly { kind: string }[] | null | undefined): boolean {
   return !!aparelhos?.some((a) => a.kind === "videoinput");
 }
+/** E413 (reprova "Unable to play media."): a imagem da câmera tem de aparecer em poucos segundos; senão, erro com saída. */
+export const ESPERA_IMAGEM_MS = 4000;
+export const ERRO_IMAGEM_CAMERA = "A câmera abriu, mas a imagem não apareceu. Feche e tente de novo (se outro programa estiver usando a câmera, feche-o).";
+
+/** Restrições do getUserMedia: 1ª tentativa prefere frente/trás (ideal, nunca exact); a 2ª é a câmera simples do aparelho. */
+export function restricoesDaCamera(frente: boolean, tentativa: number): { video: true | { facingMode: { ideal: "user" | "environment" } }; audio: false } {
+  return tentativa === 0 ? { video: { facingMode: { ideal: frente ? "user" : "environment" } }, audio: false } : { video: true, audio: false };
+}
+
+/** Só falha de restrição/compatibilidade pede a câmera simples; permissão negada, sem aparelho e câmera ocupada não. */
+export function deveTentarCameraSimples(nomeDoErro: string): boolean {
+  return nomeDoErro === "OverconstrainedError" || nomeDoErro === "TypeError" || nomeDoErro === "AbortError" || nomeDoErro === "NotSupportedError";
+}
 export const DICA_CAMERA = "Mostre o item inteiro, sem pessoas, com boa luz.";
 export const ERRO_SEM_TOKEN = "Esta foto não foi feita na hora. Abra a câmera e fotografe o item agora.";
 export const ERRO_FOTO_REPETIDA = "Esta foto já foi usada. Fotografe o item agora.";

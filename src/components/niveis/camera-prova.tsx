@@ -23,6 +23,10 @@ import {
   temCameraNaLista,
   textoFotoRecebida,
   type ModoProva,
+  ERRO_IMAGEM_CAMERA,
+  ESPERA_IMAGEM_MS,
+  deveTentarCameraSimples,
+  restricoesDaCamera,
 } from "@/lib/niveis/prova-camera";
 
 /**
@@ -241,12 +245,35 @@ function CameraProva({
       if (!token.current && !(await novoToken())) return;
       try {
         parar();
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: frente ? "user" : "environment" } }, audio: false });
+        let s: MediaStream | null = null;
+        for (let tentativa = 0; tentativa < 2 && !s; tentativa++) {
+          try {
+            s = await navigator.mediaDevices.getUserMedia(restricoesDaCamera(frente, tentativa));
+          } catch (e) {
+            // Webcam que recusa frente/trás: tenta a câmera simples antes de desistir (E413).
+            if (tentativa === 0 && deveTentarCameraSimples((e as { name?: string })?.name ?? "")) continue;
+            throw e;
+          }
+        }
+        if (!s) throw new Error("sem fluxo");
         if (!vivo) return s.getTracks().forEach((t) => t.stop());
         fluxo.current = s;
-        if (video.current) {
-          video.current.srcObject = s;
-          await video.current.play().catch(() => undefined);
+        const v = video.current;
+        if (v) {
+          v.srcObject = s;
+          // E413: play() que falha não pode virar tela preta calada — uma nova tentativa e, falhando, erro com saída.
+          let tocou = await v.play().then(() => true, () => false);
+          if (!tocou && vivo) {
+            await new Promise((r) => setTimeout(r, 200));
+            tocou = await v.play().then(() => true, () => false);
+          }
+          const comImagem = tocou && (await esperarImagem(v, ESPERA_IMAGEM_MS));
+          if (!vivo) return;
+          if (!comImagem) {
+            parar();
+            setErro(ERRO_IMAGEM_CAMERA);
+            return setEtapa("erro");
+          }
         }
         setEtapa("ao_vivo");
       } catch (e) {
@@ -401,6 +428,23 @@ function CameraProva({
       </div>
     </div>
   );
+}
+
+/** O vídeo já tem imagem (largura > 0)? Espera até `ms`; ouve o carregamento e confere de tempos em tempos. */
+function esperarImagem(v: HTMLVideoElement, ms: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (v.videoWidth > 0) return resolve(true);
+    const fim = Date.now() + ms;
+    const t = setInterval(() => {
+      if (v.videoWidth > 0) {
+        clearInterval(t);
+        resolve(true);
+      } else if (Date.now() >= fim) {
+        clearInterval(t);
+        resolve(false);
+      }
+    }, 100);
+  });
 }
 
 function PeloCelular({
