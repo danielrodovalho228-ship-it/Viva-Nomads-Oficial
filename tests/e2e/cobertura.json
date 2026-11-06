@@ -3004,6 +3004,15 @@
         "t293-video-anuncio"
       ]
     },
+    "/api/imoveis/[id]/calendario": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t360-calendario-etapa9-ical",
+        "t755-agenda-a-periodo-ical"
+      ]
+    },
     "/api/imoveis/[id]/video": {
       "personas": [
         "publico"
