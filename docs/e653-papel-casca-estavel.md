@@ -51,7 +51,7 @@ carga real é do QA do chat principal. Sem migração, sem chave.
 
 ## Varredura de regressão da casca logada (papelAtivo / papelDaRota e persistência do modo)
 
-**Checks do #3038 (head `8e…` do E653):** verify, e2e, lab-critico e Vercel verdes.
+**Checks do #3038 (head `50862578a` do E653, antes deste relatório):** verify, e2e, lab-critico e Vercel verdes.
 
 **1. Listas de áreas.** As cópias do guarda de rota (`OWNER_ONLY`/`TENANT_ONLY` em `dashboard-shell.tsx`) e `AREA_PROPRIETARIO`/`AREA_MORADOR`
 (`config/areas-por-papel.ts`) são idênticas (diferença vazia nos dois sentidos). `papelDaRota` e `modoDaRota` usam as áreas; o teste
