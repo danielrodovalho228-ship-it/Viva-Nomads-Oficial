@@ -187,7 +187,7 @@ test("F31: Visão geral usa a mesma consulta e a mesma regra de 'publicado' de M
   assert.deepEqual(imoveisPublicados([{ status: "active" }, { status: "paused" }]), [{ status: "active" }]);
   const pagina = ler("app/(dashboard)/dashboard/page.tsx");
   // Prompt 42: lida no servidor junto com o resto da página (Promise.all), ainda pela mesma consulta.
-  assert.match(pagina, /await Promise\.all\(\[\n\s+listMyProperties\(\),/);
+  assert.match(pagina, /await Promise\.all\(\[\n\s+ou\("imoveis", listMyProperties\(\{ exigir: true \}\), \[\]\),/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/page.tsx"), /listMyProperties\((\{ exigir: true \})?\)/);
   const visao = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
   assert.match(visao, /imoveisPublicados\(demo \? DEMO_PROPERTIES : imoveisDono\)/);
