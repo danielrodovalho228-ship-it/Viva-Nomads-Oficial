@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { isExemplo } from "@/lib/demo-listing";
 import { listPropertiesByCity } from "@/lib/data/properties";
 import { CITIES } from "@/lib/constants";
-import { POLOS, acharPolo, imoveisDoPolo, tituloDoPolo, perguntasDoPolo } from "@/lib/polos";
+import { POLOS, acharPolo, imoveisDoPolo, tituloDoPolo, tituloSeoDoPolo, perguntasDoPolo } from "@/lib/polos";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { PropertyCard } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     const b = await acharBairro(cidade, c.name, polo);
     return b ? metadadosDoBairro(c, b) : { robots: { index: false } };
   }
-  const title = `Imóveis mobiliados ${tituloDoPolo(p.nome)} · ${c.name}`;
+  const title = tituloSeoDoPolo(p);
   const description = descricaoPolo(p, c.name);
   const url = `/cidades/${cidade}/${polo}`;
   return {

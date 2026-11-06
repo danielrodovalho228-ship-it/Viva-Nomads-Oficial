@@ -48,6 +48,12 @@ export function tituloDoPolo(nome: string): string {
   return nome.charAt(0).toLowerCase() + nome.slice(1);
 }
 
+/** Título SEO (sem o sufixo " · Viva Nomads" do layout): o total fica em até 60 caracteres, sem cortar no Google. */
+export function tituloSeoDoPolo(polo: Polo): string {
+  const local = polo.referencia.split(" e ")[0];
+  return `Imóveis mobiliados perto ${/^UFU/.test(local) ? "da" : "do"} ${local}`;
+}
+
 export function polosDaCidade(cidade: string): Polo[] {
   return POLOS.filter((p) => p.cidade === cidade);
 }

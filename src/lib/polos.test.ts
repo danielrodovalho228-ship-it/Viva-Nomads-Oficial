@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/polos.test.ts */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { POLOS, acharPolo, tituloDoPolo, bairroNoPolo, imoveisDoPolo, perguntasDoPolo, polosDaCidade } from "./polos.ts";
+import { POLOS, acharPolo, tituloDoPolo, tituloSeoDoPolo, bairroNoPolo, imoveisDoPolo, perguntasDoPolo, polosDaCidade } from "./polos.ts";
 
 test("polos de Uberlândia existem e slugs são únicos", () => {
   assert.equal(polosDaCidade("uberlandia").length >= 2, true);
@@ -34,4 +34,13 @@ test("título do polo só minusculiza a 1ª letra: siglas e nomes próprios fica
   assert.equal(tituloDoPolo("Perto do HC-UFU e Umuarama"), "perto do HC-UFU e Umuarama");
   assert.equal(tituloDoPolo(POLOS[0].nome).includes("HC-UFU"), true);
   assert.equal(tituloDoPolo(""), "");
+});
+
+test("título SEO do polo: com o sufixo ' · Viva Nomads' cabe em 60 caracteres e mantém 'Imóveis mobiliados' e o local", () => {
+  for (const p of POLOS) {
+    const t = `${tituloSeoDoPolo(p)} · Viva Nomads`;
+    assert.ok(t.length <= 60, `${p.slug}: ${t.length} car. → ${t}`);
+    assert.ok(t.startsWith("Imóveis mobiliados"), p.slug);
+    assert.ok(t.includes(p.referencia.split(" e ")[0]), p.slug);
+  }
 });
