@@ -114,17 +114,21 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
     // Selo "Telefone verificado" (0150): só o sim/não, nunca o número.
     const { data: fs, error: eFs } = await admin.rpc("telefones_verificados", { p_ids: tenantIds });
     if (!eFs) for (const f of (fs ?? []) as { id: string; verificado: boolean }[]) foneOk.set(f.id, f.verificado);
-    const { data: ps } = await admin.from("pets_inquilino").select("user_id, nome, especie, porte").in("user_id", tenantIds).order("criado_em");
+    const { data: ps, error: ePets } = await admin.from("pets_inquilino").select("user_id, nome, especie, porte").in("user_id", tenantIds).order("criado_em");
+    // Achado 134: a falha ao ler os pets não vira "sem pets" (o dono decidiria sem ver o pet) — com `exigir`, lança.
+    if (ePets && opcoes.exigir) throw new Error(MSG_INTERESSADOS_NAO_CARREGARAM);
     for (const p of (ps ?? []) as ({ user_id: string } & PetResumo)[]) {
       pets.set(p.user_id, (pets.get(p.user_id) ?? 0) + 1);
       petsResumo.set(p.user_id, [...(petsResumo.get(p.user_id) ?? []), { nome: p.nome, especie: p.especie, porte: p.porte }]);
     }
     // Contrato mais recente de cada candidatura (imóvel + inquilino): encerrado ou cancelado tira a ficha do dono.
-    const { data: cs } = await admin
+    const { data: cs, error: eContratos } = await admin
       .from("contratos")
       .select("property_id, tenant_id, status, created_at")
       .in("tenant_id", tenantIds)
       .order("created_at", { ascending: false });
+    // Achado 135: é esta leitura que tira a ficha de contrato encerrado/cancelado — se falhar, não deixa a ficha à vista.
+    if (eContratos && opcoes.exigir) throw new Error(MSG_INTERESSADOS_NAO_CARREGARAM);
     for (const c of (cs ?? []) as { property_id: string; tenant_id: string; status: string }[]) {
       const k = `${c.property_id}:${c.tenant_id}`;
       if (!contratoDaCandidatura.has(k)) contratoDaCandidatura.set(k, c.status);
