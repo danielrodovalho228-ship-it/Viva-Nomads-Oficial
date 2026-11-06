@@ -111,6 +111,9 @@ export function resumoCompleto(s: { download?: number; upload?: number; latency?
   return { downloadMbps: s.download / 1e6, uploadMbps: s.upload / 1e6, latenciaMs: s.latency };
 }
 
+/** O servidor de teste da biblioteca (Cloudflare): o navegador fala direto com ele, o site da Viva não participa. */
+export const HOST_SERVIDOR_TESTE = "speed.cloudflare.com";
+
 const NOME_FASE: Record<FaseFalha, string> = { latencia: "teste de resposta", download: "download", envio: "envio", geral: "teste", desconhecida: "teste" };
 
 /** A frase da tela para cada falha, com um código curto que a QA pode citar. Puro. */
@@ -131,7 +134,11 @@ export function mensagemDaFalha(e: unknown): string {
     case "servidor":
       return `O servidor de teste respondeu com erro${f?.status ? ` (código ${f.status})` : ""}. Tente de novo mais tarde.` + cod("servidor");
     case "conexao":
-      return `Não foi possível falar com o servidor de teste no ${fase} (conexão caiu, bloqueador ou firewall). Tente de novo ou use outra rede.` + cod(`conexao-${f?.fase ?? "desconhecida"}`);
+      return (
+        `Não foi possível falar com o servidor de teste (${HOST_SERVIDOR_TESTE}) no ${fase}. O teste roda no seu navegador, direto com a Cloudflare, e não passa pelo site da Viva: ` +
+        `a causa costuma ser rede, firewall ou bloqueador que impede esse endereço. Libere ${HOST_SERVIDOR_TESTE} ou tente em outra rede (como o 4G do celular).` +
+        cod(`conexao-${f?.fase ?? "desconhecida"}`)
+      );
     default:
       return "A medição não terminou. Confira a conexão e tente de novo." + cod("rede");
   }
