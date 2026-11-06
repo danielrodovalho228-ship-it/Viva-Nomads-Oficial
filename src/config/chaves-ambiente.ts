@@ -24,6 +24,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "PAGAMENTO_PARCEIROS_ATIVO", rotulo: "Pagamento de parceiros pela plataforma", variavel: "NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO" },
   { nome: "ENCERRAMENTO_REGRAS_ATIVO", rotulo: "Regras de encerramento de contrato", variavel: "NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO" },
   { nome: "VISTORIA_ATIVA", rotulo: "Avaliação do imóvel por avaliador credenciado", variavel: "NEXT_PUBLIC_VISTORIA_ATIVA" },
+  { nome: "FICHA_RESUMO_ATIVA", rotulo: "Ficha-resumo do contrato (entra com o modelo de contrato da Dra. Beatriz)", variavel: "NEXT_PUBLIC_FICHA_RESUMO_ATIVA" },
   { nome: "VISTORIA_PARECER_14", rotulo: "Parecer jurídico do item 14 (avaliação do imóvel)", variavel: "NEXT_PUBLIC_VISTORIA_PARECER_14" },
   { nome: "LINKEDIN_CONECTAR_ATIVO", rotulo: "Conectar LinkedIn (selo de confiança)", variavel: "NEXT_PUBLIC_LINKEDIN_CONECTAR_ATIVO" },
   { nome: "REDES_USUARIO_ATIVO", rotulo: "Redes sociais da própria pessoa", variavel: "NEXT_PUBLIC_REDES_USUARIO_ATIVO" },

@@ -103,6 +103,13 @@ export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
 
 /**
+ * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
+ * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
+ * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.
+ */
+export const FICHA_RESUMO_ATIVA = process.env.NEXT_PUBLIC_FICHA_RESUMO_ATIVA === "on";
+
+/**
  * 63-B — "Conectar LinkedIn" (selo de confiança). OFF até o Daniel colar LINKEDIN_CLIENT_ID e LINKEDIN_CLIENT_SECRET na
  * Vercel. Desligada, a Conta não mostra o Conectar e nenhum selo aparece. No laboratório o teste liga só no próprio
  * navegador (cookie, ver src/lib/linkedin/chave.ts).
