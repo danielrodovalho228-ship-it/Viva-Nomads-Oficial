@@ -471,3 +471,19 @@ texto cortado, fundo bege, grade).
 6. **Comparar vazio ou com código inexistente, Favoritos sem sessão, `/conferir/<código inexistente>`**: respondem na própria tela, sem
    defeito. **Conforme.**
 7. **Matriz × mockups**: sem tela nova alcançável pelo demo. Nada a corrigir.
+
+## Varredura geral por blocos — passada 29 (06/11, modo demonstração, 390 toque e 1280)
+
+Sequência da vigia: E442, E382 e E383 já estão mesclados (E442: #2613 + #2625, hover do mapa, spec `t1156`; E382: #1978; E383: #2171 junto com o E418),
+então não foram refeitos. Conferi o E442 na `main` de hoje: no mapa da busca a 1280, o mouse sobre o preço abre o cartão do **mesmo imóvel**
+(foto, título, valor, link do anúncio) e o pino não tem `title` nativo. Depois, varredura de 28 rotas (16 públicas e 12 do painel) com a sonda das
+passadas 23/24 mais duas classes novas: **cartão sem foto** e **texto de foto ausente** ("A foto principal aparece aqui", "sem foto").
+
+1. **Cartão sem foto, texto de foto ausente, imagem vazia ou quebrada, elemento fixo sobre conteúdo, rolagem lateral, texto cortado, fundo
+   bege**: nenhum caso real. **Conforme.**
+2. **"Imagem não carregada" logo depois de abrir** em `/dashboard` (4 cartões recomendados), no carrossel de `/imoveis/ube-001` a 390
+   (fotos 6 a 8) e nos exemplos do Passo 2: são `loading="lazy"` fora da vista ou dentro de bloco recolhido, e o otimizador de imagem do servidor
+   de desenvolvimento demora na primeira vez (variante de 3840 px). Medido de novo, as fotos do `/dashboard` completam e aparecem. **Conforme.**
+3. **Grades com última linha incompleta**: lista da cidade a 1280 (decisão B2), mosaico da galeria, comodidades principais. **Conformes** (como nas passadas 9, 23 e 24).
+4. **`/dashboard/buscas-salvas`** responde 404: a lista de buscas salvas mora em `/buscar` (aba), não há rota própria. **Conforme.**
+5. **Matriz × mockups**: sem tela nova alcançável pelo demo (E640b e E640c pedem dado que o demo não tem; E513 é massa de teste). Nada a corrigir.
