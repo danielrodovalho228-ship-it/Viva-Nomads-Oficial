@@ -487,3 +487,16 @@ passadas 23/24 mais duas classes novas: **cartão sem foto** e **texto de foto a
 3. **Grades com última linha incompleta**: lista da cidade a 1280 (decisão B2), mosaico da galeria, comodidades principais. **Conformes** (como nas passadas 9, 23 e 24).
 4. **`/dashboard/buscas-salvas`** responde 404: a lista de buscas salvas mora em `/buscar` (aba), não há rota própria. **Conforme.**
 5. **Matriz × mockups**: sem tela nova alcançável pelo demo (E640b e E640c pedem dado que o demo não tem; E513 é massa de teste). Nada a corrigir.
+
+## Varredura geral a 768 (tablet) — passada 30 (06/11, modo demonstração, 768 toque)
+
+Nada novo na `main` desde a passada 29 (nenhuma tela nova para medir). A passada repete as 28 rotas da 29 no tamanho que ainda não tinha
+a varredura de página inteira, **768 px**, com a mesma sonda (imagem com `decode()`, `background-image`, cartão sem foto, texto de foto ausente,
+rolagem lateral, texto cortado, fundo bege, grade).
+
+1. **Imagem vazia ou quebrada, cartão sem foto, elemento fixo sobre conteúdo, rolagem lateral, texto cortado, fundo bege**: nenhum caso real. **Conforme.**
+2. **"Imagem não carregada" logo depois de abrir**: `/dashboard` (cartões recomendados, `loading="lazy"`) e os 4 exemplos do Passo 2 (dentro do bloco
+   recolhido "Ver dicas de foto"), como a 390 e a 1280. **Conforme.**
+3. **Grades com última linha incompleta**: lista da cidade (decisão B2), mosaico da galeria e comodidades. Desenho aprovado. **Conformes.**
+4. **E193** (#2874 + #2876, mesclados): nenhuma ação; a prova ao vivo é do chat principal. O ajuste de specs do #2883 segue aberto.
+5. **Matriz × mockups**: sem tela nova alcançável pelo demo. Nada a corrigir.
