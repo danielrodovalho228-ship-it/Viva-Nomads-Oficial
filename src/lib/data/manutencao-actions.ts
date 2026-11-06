@@ -25,6 +25,7 @@ import { notificacaoLigada } from "@/lib/notifications/preferencias";
 import { camposReabertura, moradorPodeResponder, reclassificar, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { avisarPrazoManutencao } from "@/lib/manutencao-avisos";
+import { recusaObservador } from "@/lib/qa/observador";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -421,6 +422,10 @@ export async function reclassificarOrdem(id: string, nova: string, motivo: strin
   const admin = createAdminClient();
   if (!s || !admin) return { ok: false, error: "Sessão expirada. Entre de novo." };
   const souAdmin = await ehAdmin(s.supabase, s.uid);
+  if (souAdmin) {
+    const recusaQa = await recusaObservador(s.uid);
+    if (recusaQa) return { ok: false, error: recusaQa };
+  }
   const { data: o } = await admin.from("service_orders").select("priority, prioridade_original, owner_id").eq("id", id).maybeSingle();
   if (!o) return { ok: false, error: "Solicitação não encontrada." };
   const papel = souAdmin ? "admin_aal2" : o.owner_id === s.uid ? "proprietario" : "inquilino";

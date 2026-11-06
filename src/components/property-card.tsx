@@ -64,10 +64,6 @@ export function PropertyCard({
         )}
         {/* E416: todos os selos, em fileira no canto superior esquerdo (quebra linha; nunca sobre o coração). */}
         <SelosFoto selos={selos} />
-        {/* Marca do usuário logado ("Visto" / "Você já contatou"): canto inferior esquerdo. */}
-        <div className="absolute bottom-3 left-3">
-          <MarcaImovel propertyId={property.id} />
-        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-1">
@@ -136,6 +132,9 @@ export function PropertyCard({
             {preco.disponivel}
           </p>
         )}
+
+        {/* E643: estado do usuário logado ("Visto" / "Você já contatou") no texto do cartão, fora da foto (que guarda só as 2 pílulas do E626). */}
+        <MarcaImovel propertyId={property.id} />
 
         {/* E439 → E416: o "Aceita negociação" virou selo da foto (properties.negociacao, o mesmo dado do anúncio). */}
       </div>
