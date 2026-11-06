@@ -21,14 +21,19 @@ export async function smsDisponivel(): Promise<DisponibilidadeSms> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   let pronto = false;
+  let falhou = false;
   if (url && anon) {
     try {
       const r = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: anon }, cache: "no-store", signal: AbortSignal.timeout(4000) });
-      pronto = r.ok && provedorSmsPronto(await r.json());
+      if (!r.ok) falhou = true;
+      else pronto = provedorSmsPronto(await r.json());
     } catch {
-      pronto = false;
+      falhou = true;
     }
   }
+  // E403: a sonda que falhou (rede, tempo) não vira "sem provedor" por 10 min — vale o último resultado bom, e a
+  // próxima leitura tenta de novo.
+  if (falhou) return { disponivel: cache?.pronto ?? false, simulado: false };
   cache = { em: Date.now(), pronto };
   return { disponivel: pronto, simulado: false };
 }

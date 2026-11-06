@@ -269,3 +269,76 @@ até o fim (para carregar as fotos), com recorte da página inteira.
 | `/parceiros`, `/empresas`, `/como-funciona` | 21, 10, 18 | **Conformes** (reconferidas depois do #1669) |
 
 Nenhuma página pública precisou de correção nesta reconferência.
+
+## Telas que mudaram depois da passada 15 — passada 16 (05/11, modo demonstração, 390 toque, 768 e 1280)
+
+Rotas mexidas pelos PRs mesclados depois da passada 15 (E416 selos, E595/E596, E602 índice do assistente, E607 Passo 1,
+E610, E613, E621 /comparar, E136 calendário no toque, E521 tabela do /comparar): `/`, `/buscar`, `/comparar`,
+`/imoveis/ube-001`, `/socios`, `/decisao`, `/favoritos`, painel (Início, Meus imóveis, os 10 passos do cadastro, Propostas,
+Comparar, Pedidos, Favoritos). 390 em iPhone 13 emulado (toque). Medido: rolagem lateral, imagem quebrada, texto cortado,
+botões cheios no `main`, controle coberto por barra fixa e — rolando com a roda até a página parar — se o último controle
+fica acima da barra fixa de baixo.
+
+1. **`/comparar` a 768 e 1280: colunas de larguras diferentes** — a tabela em layout automático dava a cada coluna a
+   largura do título; as fotos 4:3 do E621 saíam com 143/132/119 px de altura e os títulos desalinhados. **Corrigido no
+   #2800** (cada coluna com a mesma fração; t914 mede 768 e a altura).
+2. **Fim da página atrás da barra fixa** (390 /buscar, /dashboard e Passo 5; 768 /dashboard e Passo 5): a primeira sonda
+   (`scrollTo` direto) mediu durante a acomodação da página. Rolando de verdade até parar, o último controle fica acima da
+   barra em todas. **Conforme, sem PR.**
+3. **Textos "cortados"** (índice do assistente "1. Tipo do imóvel", "— passo atual", "— feito", "Imóveis encontrados"): são
+   textos só para leitor de tela (1 px). **Conforme.**
+4. **`/socios` e `/decisao`**: redirecionam para `/modelodenegocio`, que pede o código de acesso (`/acesso-socios`), nas três
+   larguras. **Conforme** (E595/E596).
+5. **Demais rotas**: nenhuma rolagem lateral, nenhuma imagem quebrada, no máximo um botão cheio no `main`. Selos empilhados
+   nos cartões (E416), grade do Passo 1 (E607) e índice do assistente (E602) conferidos na tela a 390 e 768. **Conformes.**
+
+## `/buscar` sem resultado e limpeza dos filtros — passada 18 (05/11, modo demonstração, 390 toque, 768 e 1280)
+
+1. **"Nenhum imóvel encontrado"** (filtros que zeram a busca: `pet=1&porte=G&nota=1&gestor=1&negocia=1&precojusto=1&homeoffice=1`,
+   e `local=Manaus`): título "Nenhum imóvel com estes filtros", um botão cheio ("Publicar um pedido de moradia"), nenhum
+   botão fora do bloco, sem rolagem lateral nas três larguras. **Conforme** (fecha o item 7 da passada 17).
+2. **E451 — "Limpar tudo" com a folha aberta**: barra, título e URL já ficam limpos na hora (corrigido no E589, #2698).
+   **Guarda do caso do relato no #2806** (t917: pílulas Tipo e Preço vindas da URL).
+3. **E453 — título do cartão do mapa**: títulos longos ainda saíam cortados na 2ª linha. **Corrigido no #2807**.
+
+## Rotas ainda não medidas e fechamento da matriz — passada 19 (05/11, modo demonstração, 390 toque e 1280)
+
+Páginas públicas que nenhuma passada tinha medido (`/precos`, `/avaliadores`, `/conferir`, `/excluir-conta`, `/guia-fotos`,
+`/alerta-busca/desligar`, `/pedidos/novo`, `/termos`, `/privacidade`, `/seguranca`, `/ajuda`, os 7 guias, `/proprietario/exemplo-1`
+e `-2`, `/parceiros/avaliadores`, `/fotografos`, `/buscar`) e 28 telas do painel (Interessados, Avaliações, Ganhos, Carteira,
+Agenda, Ferramentas, Simulador, Tributação, Fechamento, Verificação, Respostas rápidas, Serviços, Solicitações, Visitas,
+Locações, Notificações, Conta e suas seções, Propostas, Mensagens, Indicações…). Medido: imagem quebrada ou vazia, rolagem
+lateral, texto cortado, controle coberto por elemento fixo (no topo e rolando até o fim da página), botões cheios no `main` e
+fundo bege.
+
+1. **Imagem quebrada ou vazia, rolagem lateral, fundo bege, botão cheio a mais**: nenhum caso nas 46 rotas, nas duas larguras.
+   **Conforme.**
+2. **Controle coberto por elemento fixo**: a sonda acusou `/excluir-conta`, `/privacidade`, `/ajuda`, `/guias/o-que-e-a-caucao`,
+   `/parceiros/buscar` e `/dashboard/simulador`/`conta/seguranca` a 390 — são controles abaixo da dobra, atrás da barra de
+   baixo na primeira tela. Rolando até a página parar, o último controle de cada uma fica acima da barra. **Conforme, sem PR.**
+3. **Textos "cortados"** (`/pedidos/novo` "Outro local: nome do lugar ou endereço"): rótulo só para leitor de tela (1 px).
+   **Conforme.**
+4. **404 esperados** de endereços que não existem (`/avisos`, `/imoveis-perto-de/uberlandia`, `/dashboard/estadia`,
+   `/dashboard/qa`…): a página "Página não encontrada" aparece (passada 17). **Conformes.**
+5. **Matriz × mockups**: os 87 mockups do ramo `mockups` têm linha na matriz. O que resta sem fechar é só o que depende de
+   decisão do Daniel (`cabecalho-*`, `cadastro-imovel-07-descricao`, `admin-servicos`, `pouso-morador`) ou de sessão real
+   (`parceiro-ordens`, `perfil-01`, `perfil-02`, `/auth/verificar-codigo`, `/dashboard/avaliacoes`), cada uma com a guarda do
+   laboratório que a cobre. **Nada novo a conferir no modo demonstração.**
+
+## Anúncios, painel do dono e grades — passada 20 (06/11, modo demonstração, 390 toque e 1280)
+
+Os 15 anúncios (`/imoveis/ube-001` a `-015`), as telas de edição, desempenho e cartão de 6 anúncios no painel, 35 telas do
+painel medidas para grade com buraco e fundo bege, e as públicas ainda não medidas (`/precos`, `/avaliadores`, `/conferir`,
+`/guia-fotos`, guias, `/proprietario/exemplo-1`, parceiros). Medido: imagem quebrada ou vazia (rolando devagar até o fim,
+porque a rolagem rápida deixa foto "cinza" só no print), rolagem lateral, texto cortado, controle coberto, botões cheios,
+fundo bege e grade com última linha incompleta.
+
+1. **`/proprietario/[id]`: grade de imóveis com buraco a 1280** — 5 imóveis em 4 colunas deixavam o quinto sozinho na 2ª
+   linha. **Corrigido no #2826** (colunas pela quantidade: 5 → uma linha de 5; t919).
+2. **Imagem quebrada ou vazia, rolagem lateral, fundo bege, botão cheio a mais**: nenhum caso. As fotos "cinza" do print de
+   página inteira da home eram só a rolagem rápida do script (todas carregam rolando devagar). **Conforme.**
+3. **Texto "cortado"** nos anúncios ("Padrão mínimo"): título só para leitor de tela. **Conforme.**
+4. **Grades com última linha incompleta** que são desenho aprovado: mosaico da galeria do anúncio (1 grande + 4), listas de
+   comodidades e o calendário de disponibilidade (7 colunas), e a lista da cidade (decisão B2, passada 9). **Conformes.**
+5. **`/dashboard/recibos`**: o filtro (Imóvel · Mês · Ver) é uma linha só; a sonda acusou por alinhar o botão pela base.
+   **Conforme.**

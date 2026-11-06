@@ -12,6 +12,7 @@ import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
 import { getPerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { quantosDestaques } from "@/lib/home-imagens";
 import { exibicao59DoImovel } from "@/lib/data/exibicao-59";
+import { exibicaoDoExemplo } from "@/lib/niveis/nivel-exemplo";
 import { estruturaPublicaDoImovel } from "@/lib/data/estrutura-publica";
 import { autoresDasAvaliacoes } from "@/lib/data/avaliacoes-autores";
 import { linkDeVideoAprovado } from "@/lib/data/video-link";
@@ -76,7 +77,8 @@ export default async function PropertyDetailPage({ params }: Params) {
     // Exemplo nunca busca perfil (continua "Proprietário (exemplo)", sem números).
     isExemplo(property) ? Promise.resolve(null) : getPerfilProprietario(property.ownerId),
     // Prompt 59-A: padrão mínimo e taxa de manutenção — exemplo nunca mostra (nada disso existe para ele).
-    isExemplo(property) ? Promise.resolve(null) : exibicao59DoImovel(property.id, property.ownerId),
+    // E620: o exemplo mostra o MESMO nível do cartão (graduado pelo motor em properties.ts), sem dado de banco.
+    isExemplo(property) ? Promise.resolve(exibicaoDoExemplo(property)) : exibicao59DoImovel(property.id, property.ownerId),
     // Prompt 61-A: cidade e "na Viva desde" de quem avaliou (só avaliações reais publicadas).
     isExemplo(property) || !property.reviews?.length ? Promise.resolve(new Map()) : autoresDasAvaliacoes(property.id),
     // E133 (d): link do YouTube/Vimeo só aparece como tour depois que a equipe aprovou ESTE link.

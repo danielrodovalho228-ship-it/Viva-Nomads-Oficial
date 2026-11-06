@@ -62,6 +62,7 @@ import { MIN_PHOTOS } from "@/lib/listing";
 import { erroJanelaDisponivel, errosComJanelaAtual, errosDoResumo } from "@/lib/anuncio/periodo-disponivel";
 import { conferenciaAssistente, faltamNaConferencia } from "@/lib/anuncio/assistente-dez-etapas";
 import { mesclarFotosDoRascunho } from "@/lib/anuncio/fotos-do-rascunho";
+import { NOTA_PENDENCIA_AO_SAIR, pendenciaAoSair, tituloPendenciaAoSair, type PendenciaAoSair } from "@/lib/anuncio/pendencia-ao-sair";
 import { avisoDoBairro } from "@/lib/cep/bairro";
 import { estadoPassoFotos, fotosBloqueiamAvanco, fotosDaPrevia, motivoAvancoFotos, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { AMENITY_LABEL, PROPERTY_TYPES, propertyTypeLabel, amenityKeysFromLabels, comodidadeValeParaTipo, tipoEmCondominio } from "@/lib/amenities";
@@ -119,6 +120,7 @@ import { EtapaRevisar } from "./etapa-revisar";
 import { EtapaTipo } from "./etapa-tipo";
 import { IndicePassos } from "./indice-passos";
 import { indicePassos } from "@/lib/anuncio/indice-passos";
+import { comodidadesComMobiliado } from "@/lib/anuncio/mobiliado-fonte-unica";
 import { PreviaAnuncio } from "./previa-anuncio";
 import { BotaoTamanhoReal } from "./previa-tamanho-real";
 import { RodapeAssistente } from "./rodape-assistente";
@@ -273,7 +275,10 @@ export default function NewPropertyPage() {
   const [childrenAllowed, setChildrenAllowed] = useState(true);
   // 61-B: tipo de entrada (obrigatório para publicar anúncio novo), mensagem a quem pede e o que considerar.
   const [chegada, setChegada] = useState<ChegadaEPedidoForm>(() => formDeChegada());
-  const [amenityKeys, setAmenityKeys] = useState<Record<string, boolean>>({});
+  const [amenityKeysBase, setAmenityKeys] = useState<Record<string, boolean>>({});
+  // E603: "Mobiliado" tem UMA fonte — o interruptor do Passo 6 (furnished). A comodidade "Mobiliado completo" do Passo 5, a prévia, o
+  // rascunho e a publicação leem o mesmo valor (antes o chip aparecia com o Passo 5 vazio).
+  const amenityKeys = comodidadesComMobiliado(amenityKeysBase, furnished);
   // DETECTA-B: itens de nível sugeridos pelas fotos (saem do "o que falta") e releitura do nível após confirmar.
   const [sugeridasFotos, setSugeridasFotos] = useState<string[]>([]);
   const [nivelVersao, setNivelVersao] = useState(0);
@@ -531,10 +536,13 @@ export default function NewPropertyPage() {
   // E137: corrigida a data, o erro da janela gravado pelo Continuar recusado acompanha (muda ou some).
   const erros = errosComJanelaAtual(errosGravados, erroJanelaDisponivel(availableFrom, availableUntil, minPeriod));
 
+  // E612: o avanço é livre, mas sair de um passo com bloqueador de publicação mostra no passo seguinte o que ficou lá.
+  const [pendenciaSaida, setPendenciaSaida] = useState<PendenciaAoSair | null>(null);
   function avancarEtapa() {
     const e = validarEtapa(step);
     setErros(e);
     if (Object.keys(e).length === 0) {
+      setPendenciaSaida(pendenciaAoSair(conferencia.itens, step));
       irPara(Math.min(ULTIMA_ETAPA, step + 1));
       return;
     }
@@ -545,6 +553,7 @@ export default function NewPropertyPage() {
 
   function voltarEtapa() {
     setErros({});
+    setPendenciaSaida(null);
     irPara(Math.max(0, step - 1));
   }
 
@@ -1209,6 +1218,7 @@ export default function NewPropertyPage() {
           city,
           monthlyPrice: Number(monthlyPrice) || 0,
           neighborhood,
+          bedrooms: Number(bedrooms) || 0,
           bathrooms: Number(bathrooms) || 0,
           areaM2: Number(areaM2) || 0,
           description,
@@ -1971,6 +1981,7 @@ export default function NewPropertyPage() {
             passos={indicePassos(conferencia, step, etapaMax)}
             onIr={(i) => {
               setErros({});
+              setPendenciaSaida(null);
               irPara(i);
             }}
           />
@@ -1984,6 +1995,29 @@ export default function NewPropertyPage() {
                   <li key={m}>{m}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {pendenciaSaida && (
+            <div role="status" className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" data-testid="pendencia-ao-sair">
+              <p className="font-semibold">{tituloPendenciaAoSair(pendenciaSaida)}</p>
+              <ul className="mt-1 list-disc pl-4">
+                {pendenciaSaida.faltam.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+              <p className="mt-1">{NOTA_PENDENCIA_AO_SAIR}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  const destino = pendenciaSaida.passo - 1;
+                  setPendenciaSaida(null);
+                  irPara(destino);
+                }}
+                className="mt-2 inline-flex min-h-11 items-center font-semibold text-forest underline underline-offset-4"
+                data-testid="pendencia-ao-sair-voltar"
+              >
+                Voltar ao Passo {pendenciaSaida.passo}
+              </button>
             </div>
           )}
           <div className="mt-6">
@@ -2076,7 +2110,7 @@ export default function NewPropertyPage() {
                   propertyId={imovelId}
                   comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
                   tipoImovel={propertyType}
-                  onComodidade={(k) => setAmenityKeys((a) => ({ ...a, [k]: true }))}
+                  onComodidade={(k) => (k === "mobiliado" ? setFurnished(true) : setAmenityKeys((a) => ({ ...a, [k]: true })))}
                   onSugeridas={setSugeridasFotos}
                   onComodidadesSugeridas={setComodidadesDetectadas}
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}

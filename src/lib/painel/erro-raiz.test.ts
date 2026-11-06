@@ -16,7 +16,7 @@ test("app/error.tsx: em português, 'Tentar de novo' por unstable_retry (reset d
   const t = ler("src/app/error.tsx");
   assert.match(t, /^"use client";/);
   assert.match(t, /Não conseguimos abrir esta página/);
-  assert.match(t, /\{ unstable_retry, reset \}/);
+  assert.match(t, /\{ error, unstable_retry, reset \}/);
   assert.match(t, /const tentarDeNovo = \(\) => \(unstable_retry \?\? reset\)\?\.\(\);/);
   assert.match(t, /href="\/"/);
   assert.match(t, /href="\/ajuda"/);
@@ -28,7 +28,7 @@ test("app/global-error.tsx: html e body próprios em pt-BR, estilo inline, 'Tent
   assert.match(t, /^"use client";/);
   assert.match(t, /<html lang="pt-BR">/);
   assert.match(t, /<body style=/);
-  assert.match(t, /\{ unstable_retry, reset \}/);
+  assert.match(t, /\{ error, unstable_retry, reset \}/);
   assert.match(t, /Tentar de novo/);
   assert.doesNotMatch(t, /Something went wrong|Try again|Application error/);
 });

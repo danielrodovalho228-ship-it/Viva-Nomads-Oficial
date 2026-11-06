@@ -88,7 +88,23 @@ export function linhasProposta(o: {
   return linhas;
 }
 
-/** Linhas do quadro de dados de um contrato (pronto para assinar ou assinado). */
+/**
+ * E599 (reprova de 05/11): a DATA DE SAÍDA de um período cujo fim gravado é a ÚLTIMA NOITE (fim inclusivo dos blocos do
+ * contrato) — o dia seguinte. É a mesma data da proposta, da candidatura e do formulário (saída = entrada + dias): o
+ * e-mail nunca imprime a última noite como saída ("10/01 a 21/02 (43 dias)" — um dia antes e uma conta que não fecha).
+ */
+export function saidaDepoisDaUltimaNoite(fimInclusivoISO: string | null | undefined): string {
+  const f = String(fimInclusivoISO ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return "";
+  const d = new Date(`${f}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Linhas do quadro de dados de um contrato (pronto para assinar ou assinado). `fim` é o fim INCLUSIVO dos blocos (a
+ * última noite); o período impresso vai da entrada até a SAÍDA (o dia seguinte), como no e-mail da proposta.
+ */
 export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: string; meses: number; valorMensal: number; dias?: number | null }): LinhaDado[] {
   // E562: contrato em dias exatos → "R$ 3.000 × 43 dias ÷ 30 = R$ 4.300" (em meses cheios, como antes).
   const emDias = o.dias != null && o.dias > 0 && o.dias % 30 !== 0;
@@ -97,7 +113,7 @@ export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: 
     : `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}`;
   return [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
+    { rotulo: "Período", valor: textoPeriodo(o.inicio, saidaDepoisDaUltimaNoite(o.fim), o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
     { rotulo: "Total do contrato", valor: total },
   ];

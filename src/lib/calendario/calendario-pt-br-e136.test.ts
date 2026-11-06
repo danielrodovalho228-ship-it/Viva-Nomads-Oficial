@@ -20,9 +20,9 @@ function arquivos(dir: string): string[] {
 }
 
 // Só o toque usa o campo nativo (o calendário do aparelho); e formulários internos da equipe que enviam por `name`.
+// O cadastro (imoveis/novo/campos.tsx) saiu da lista: no toque também abre o calendário do site (E136, resíduo).
 const NATIVO_PERMITIDO = new Set([
   "components/ui/campo-data.tsx",
-  "app/(dashboard)/dashboard/imoveis/novo/campos.tsx",
   "app/(dashboard)/admin/documentos/emitidos-client.tsx",
   "app/(dashboard)/admin/qualidade/page.tsx",
 ]);

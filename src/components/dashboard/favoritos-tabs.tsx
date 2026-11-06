@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, GitCompare, Search } from "lucide-react";
+import { Heart, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Abas do hub "Favoritos & comparações" — reúne Favoritos, Comparações e Buscas
- * salvas num só item de menu (as rotas seguem vivas, agora como seções). Usada
- * no topo das três páginas.
+ * Abas do hub "Favoritos & comparações": Favoritos e Comparações, que a subaba "Favoritos" do menu do morador
+ * (config/abas-painel.ts) junta numa só. Buscas salvas tem a própria subaba — repetir aqui empilhava duas barras
+ * (varredura 17, 05/11). Usada no topo de Favoritos e de Comparações.
  */
 const TABS = [
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
   { href: "/dashboard/comparar", label: "Comparações", icon: GitCompare },
-  { href: "/dashboard/buscas", label: "Buscas salvas", icon: Search },
 ];
 
 export function FavoritosTabs() {

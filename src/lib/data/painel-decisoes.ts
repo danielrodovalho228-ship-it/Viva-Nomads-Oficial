@@ -40,7 +40,7 @@ export interface DadosDecisoesDoServidor {
   quedasNivel: NonNullable<DadosDecisoes["quedasNivel"]>;
 }
 
-const VAZIO: DadosDecisoesDoServidor = {
+export const VAZIO: DadosDecisoesDoServidor = {
   contratosDono: [], contratosMorador: [], visitasDono: [], visitasMorador: [], manutencoes: [], candidaturas: [],
   confortoPrazos: [], pendenciasDono: [], pendenciasMorador: [], fotosNivelRecusadas: [], quedasNivel: [],
 };
@@ -88,7 +88,10 @@ function visita(l: LinhaVisita): VisitaParaDecisao | null {
 
 const COLUNAS_VISITA = "id, status, modalidade, horarios, horario_proposto, property:properties!visitas_video_property_id_fkey ( title )";
 
-export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
+/**
+ * Com `exigir`, a falha de leitura LANÇA (a tela avisa em vez de dizer "0 decisões"); sem ele, devolve VAZIO como antes.
+ */
+export async function dadosDasDecisoes(opcoes: { exigir?: boolean } = {}): Promise<DadosDecisoesDoServidor> {
   try {
     const supabase = await createClient();
     if (!supabase) return VAZIO;
@@ -130,6 +133,11 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
       // Adendo 59.1: fotos de nível recusadas (a RLS mostra ao dono os itens dos próprios imóveis).
       supabase.from("nivel_itens").select("property_id, chave, motivo_recusa, properties!inner(title, owner_id, status)").eq("properties.owner_id", user.id).eq("foto_status", "recusada").eq("declarado", true).limit(50),
     ]);
+    // Com `exigir`, uma consulta que falhou é erro, não lista vazia.
+    if (opcoes.exigir) {
+      const falhou = [cDono, cMorador, vDono, vMorador, ordens, leads, adequacao, pDono, pMorador, fotosRec].some((r) => !!(r as { error?: unknown } | null)?.error);
+      if (falhou) throw new Error("Não foi possível ler as decisões agora.");
+    }
     // Declarações dos imóveis com prazo de adequação (consulta à parte: as duas tabelas só se ligam pelo imóvel).
     const idsAdequacao = ((adequacao.data ?? []) as { property_id: string }[]).map((a) => a.property_id);
     const { data: decl } = idsAdequacao.length
@@ -180,7 +188,8 @@ export async function dadosDasDecisoes(): Promise<DadosDecisoesDoServidor> {
         status: l.status,
       })),
     };
-  } catch {
+  } catch (e) {
+    if (opcoes.exigir) throw e;
     return VAZIO;
   }
 }

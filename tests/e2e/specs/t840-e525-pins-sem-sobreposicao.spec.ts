@@ -69,12 +69,12 @@ for (const largura of [1280, 390] as const) {
         await pin.click({ trial: true, timeout: 5_000 });
       }
 
-      // Título do cartão: até 2 linhas, sem "…" para um título que cabe em duas.
-      const titulo = card.locator("p").first();
-      await expect(titulo).toHaveClass(/line-clamp-2/);
-      await expect(titulo).toHaveAttribute("title", /.+/);
-      const r = await titulo.evaluate((e) => ({ cortado: e.scrollHeight > e.clientHeight + 1, texto: e.textContent!.length }));
-      if (r.texto <= 50) expect(r.cortado, "título de até 50 caracteres aparece inteiro").toBe(false);
+      // E453: o título do cartão aparece inteiro (sem corte de linhas nem "…"), qualquer que seja o tamanho.
+      const titulo = card.getByTestId("card-pin-titulo");
+      const r = await titulo.evaluate((e) => ({ cortado: e.scrollHeight > e.clientHeight + 1, clamp: getComputedStyle(e).webkitLineClamp, reticencias: getComputedStyle(e).textOverflow }));
+      expect(r.cortado, "título inteiro").toBe(false);
+      expect(["none", ""]).toContain(r.clamp);
+      expect(r.reticencias).not.toBe("ellipsis");
     });
   });
 }

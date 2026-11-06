@@ -12,6 +12,7 @@ import {
   type ProprietarioExemplo,
 } from "@/config/exemplo-proprietarios";
 import type { Property } from "@/lib/types";
+import { classeGradeImoveis } from "@/lib/proprietario/grade-imoveis";
 
 const MESES = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
 
@@ -79,7 +80,7 @@ export function PerfilExemplo({ p }: { p: ProprietarioExemplo }) {
         <h2 id="imoveis-proprietario" className="font-title text-2xl font-semibold text-ink">
           Imóveis de {p.nome}
         </h2>
-        <div className="mt-4 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
+        <div className={`mt-4 ${classeGradeImoveis(imoveis.length)}`}>
           {imoveis.map((im) => (
             <PropertyCard key={im.id} property={im} />
           ))}
