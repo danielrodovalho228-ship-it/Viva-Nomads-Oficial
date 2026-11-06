@@ -51,6 +51,8 @@ export function DadosPessoais() {
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [dadosFalharam, setDadosFalharam] = useState(false);
+  // E372: enquanto os dados gravados não chegam, o telefone não é editável nem o formulário salva (vazio apagaria o telefone real).
+  const [dadosCarregados, setDadosCarregados] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
@@ -59,7 +61,9 @@ export function DadosPessoais() {
     let vivo = true;
     getMeusDados()
       .then((d) => {
-        if (!vivo || !d) return;
+        if (!vivo) return;
+        setDadosCarregados(true);
+        if (!d) return;
         setNome(nomeCompletoLimpo(d.fullName));
         setTelefone(d.phone);
         setEmail(d.email);
@@ -85,6 +89,7 @@ export function DadosPessoais() {
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
+    if (!dadosCarregados) return; // E372: não salva por cima do telefone gravado antes de ele chegar.
     setErro(null);
     setOk(false);
     const nasc = nascFalhou ? ({ ok: true } as const) : validarNascimento(nascimento);
@@ -140,10 +145,16 @@ export function DadosPessoais() {
         />
         <div>
           <CampoDados label={pj ? "CNPJ" : "CPF"} value={docMascarado ?? ""} readOnly placeholder="Ainda não informado" data-testid="dados-documento" />
+          {/* E372: o documento é pedido UMA vez, no bloco "Documento" abaixo. Aqui o campo só MOSTRA o já informado; sem ele, um aviso
+              com o caminho (antes o link dizia "Informar CPF", e a tela parecia pedir o CPF duas vezes). */}
           {documento && !docMascarado && (
-            <a href="#documento" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2">
-              Informar {pj ? "CNPJ" : "CPF"}
-            </a>
+            <p className="mt-1 text-sm text-muted" data-testid="dados-documento-aviso">
+              Informe no{" "}
+              <a href="#documento" className="inline-flex min-h-11 items-center font-semibold text-forest underline underline-offset-2">
+                bloco Documento, abaixo
+              </a>
+              .
+            </p>
           )}
         </div>
         <CampoDados
@@ -160,9 +171,11 @@ export function DadosPessoais() {
           label="Telefone"
           value={telefone}
           onChange={(e) => setTelefone(e.target.value)}
-          placeholder="(34) 99999-0000 ou +1 …"
+          placeholder={dadosCarregados || dadosFalharam ? "(34) 99999-0000 ou +1 …" : "Carregando…"}
+          disabled={!dadosCarregados}
           inputMode="tel"
           autoComplete="tel"
+          data-testid="dados-telefone"
         />
         <label className="block">
           <span className="mb-1 block text-sm text-muted">E-mail:</span>
@@ -192,7 +205,7 @@ export function DadosPessoais() {
             <Check className="h-4 w-4" /> Dados salvos.
           </p>
         )}
-        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando} data-testid="dados-salvar">
+        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando || !dadosCarregados} data-testid="dados-salvar">
           {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Salvar
         </Button>
