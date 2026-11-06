@@ -358,3 +358,27 @@ coberto (no topo e rolando até o fim), botões cheios, fundo bege — e, nos ca
 4. **Textos "cortados"** ("Imóveis encontrados", "Padrão mínimo", índice do assistente): só para leitor de tela. **Conforme.**
 5. **Matriz × mockups**: sem tela nova que o modo demonstração alcance; o que resta aberto segue sendo decisão do Daniel ou
    sessão real (passada 19, item 5). Nada a corrigir.
+
+## Cadastro, anúncios e painel depois dos merges de 06/11 — passada 22 (06/11, modo demonstração, 390 toque e 1280)
+
+Merges da noite: os 10 passos do assistente (E604, E606, E608, E609, E611, E612, E614, E616, E618, E619), E603, E624, E625, E627–E629
+e o Início do painel. Medido em 30 rotas (11 públicas e 19 do painel, com os 10 passos e a qualificação): imagem quebrada ou vazia,
+rolagem lateral, texto cortado, controle coberto (no topo e rolando até o fim), botões cheios, fundo bege, grade com buraco
+(35 telas do painel) e, nos cartões reais, o que o E626 prometeu.
+
+1. **Passos 1 a 10 do cadastro e qualificação**: nenhum controle atrás do rodapé fixo ao rolar até o fim, a 390 e 1280; sem rolagem
+   lateral, sem imagem quebrada, sem fundo bege. **Conforme.**
+2. **E626 nos cartões reais** (busca, home, cidade, anúncio — parecidos —, proprietário), 390 e 1280: no máximo 2 pílulas (10, 2, 10, 2
+   e 4 cartões), nenhuma sobre o coração, nenhuma fora da foto, nenhuma com texto cortado. **Conforme.**
+3. **Grades e fundo** no painel (35 telas): nenhuma grade com buraco (o filtro do `/dashboard/recibos` é uma linha só; a sonda acusa
+   por alinhar o botão pela base) e nenhum fundo bege. **Conforme.**
+4. **Textos "cortados"** e **controles "cobertos"** acusados pela sonda: títulos só para leitor de tela e controles abaixo da dobra,
+   atrás da barra de baixo na primeira tela — rolando até o fim ficam acima dela. **Conformes.**
+5. **Lab-crítico do #2767 (E457) falhava**: o `t912` abria a pílula "Nível" sempre, e depois do E452 ela some quando o resultado não
+   tem nível (o caso do laboratório). **Corrigido no próprio #2767** (a spec pula o Nível sem a pílula; commit 16481760b).
+6. **Matriz × mockups**: sem tela nova que o demo alcance; o que resta é decisão do Daniel ou sessão real (passada 19, item 5).
+
+### Estado dos PRs da Pista A e do gate (06/11, ~01h10 UTC)
+- **main**: CI verde no último push (`020350e95`, #2836) e nos 18 anteriores.
+- **#2767 (E457, rascunho)**: conflito com a main resolvido; spec do laboratório corrigida; aguardando o lab-crítico rodar de novo.
+- **#2765 (E455, rascunho)**: verify, e2e e lab-crítico verdes; sem conflito com a main. Aguardando QA.
