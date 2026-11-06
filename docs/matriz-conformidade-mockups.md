@@ -640,3 +640,21 @@ Diferenças listadas (mockup → real), todas já conhecidas e dentro do padrão
 7. **Índice dos passos** (1 a 10, com estado): existe no real, não no mockup (E602).
 
 Nenhum defeito novo; nenhuma correção nesta passada. Varredura geral (imagem, elemento fixo, estouro lateral) nos 10 passos a 390 e 1280: sem rolagem lateral; o "N" no canto é o indicador do servidor de desenvolvimento, não da tela.
+
+## Assistente × mockups, continuação (passos 1–5, 7 e 10) — passada 43 (06/11; modo demonstração, 1280 × 720 e 390)
+
+Continua a passada 42 nos passos que ela não comparou. Telas reais a 1080 × 720 (a medida dos mockups) e 390, sonda de imagem/estouro/elemento fixo: sem rolagem lateral e sem imagem quebrada nos 10 passos (o "N" no canto é o indicador do servidor de desenvolvimento).
+**E193 (#2956)**, retomado: os Passos 6, 8 e 9 hoje só têm cartão grande para escolher (Convivência, negociação, garantias, consumo, faixas, duração) e campo para digitar (valor, condomínio, datas, horários); nenhum interruptor, caixa, lista ou pílula. Os testes de unidade passam; os specs de laboratório (t620, t677, t680) rodam no CI `lab-critico`, não aqui.
+
+Diferenças (mockup → real), todas dentro do padrão codificado:
+1. **Passo 5 (Comodidades)**: o mockup é uma grade 2 × 4 de cartões com ícone; o real agrupa em "Pronto para trabalhar de casa" (essenciais e extras, com contador "0 de 4 itens essenciais") e traz o aviso "Campos com * são obrigatórios". Mesmos cartões com ícone e ✓; o agrupamento é o do E357/E416.
+2. **Passo 10 (Revisão)**: o mockup tem "Lista de conferência" com ✓ verdes e, ao lado, o cartão do anúncio com preço e o botão "Publicar anúncio" dentro dele; o real tem "Antes de publicar" com a contagem do que falta, cada item com "Resolver", e o botão fica no rodapé fixo (liberado com a lista completa). No demo a lista sai incompleta (rascunho sem fotos/endereço), por isso os círculos vazios.
+3. **Rótulos do progresso**: o mockup mostra "Passo X de 10" em pílula no topo; o real tem o índice dos 10 passos (E602) e o "Passo X de 10 · N% pronto" no rodapé.
+4. **Tipografia e cor**: título grande em preto-tinta e subtítulo cinza, como o mockup; verde do botão e da seleção (`forest`) igual; cartão de escolha selecionado em verde-claro com borda verde e ✓ redondo, como o mockup.
+Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "Destaques") e a pergunta sobre toggle × cartão no Passo 6 (passada 42, ponto 3). Nenhum defeito novo.
+
+## Passada 44 (06/11; modo demonstração, 1080 × 720 e 390) — só o que mudou desde a 43
+
+A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
+`cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
+E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.

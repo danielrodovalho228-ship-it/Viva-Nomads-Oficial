@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T903 — E469 (PC13), acabamento do painel do parceiro, 390 e 1280, sessão real:
@@ -21,7 +21,7 @@ test.describe("T903 — E469: acabamento do painel do parceiro", () => {
     ids.pessoa = await criarConta(pessoa, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.pessoa, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `[TESTE QA] Alba Limpeza T903 ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.pessoa, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `[TESTE QA] Alba Limpeza T903 ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

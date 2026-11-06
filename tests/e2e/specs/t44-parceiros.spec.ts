@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { TAXA_PARCERIA_TEXTO } from "../../../src/lib/atendimento/parceiros-texto";
-import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * T44 — PARCEIROS (laboratório, ordem 225d0648; refeito no Prompt 31a).
@@ -26,7 +26,7 @@ async function novoParceiro(chave: keyof typeof contas, cidades: string[], statu
   ids[chave] = uid;
   const { error } = await adm()
     .from("parceiros")
-    .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: c.nome, slug: `t44-${chave}-${sufixo}`, categorias: ["fotografia"], cidades, status, publicado_em: status === "publicado" ? new Date().toISOString() : null, telefone: "34999991234" });
+    .insert({ user_id: uid, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: c.nome, slug: `t44-${chave}-${sufixo}`, categorias: ["fotografia"], cidades, status, publicado_em: status === "publicado" ? new Date().toISOString() : null, telefone: "34999991234" });
   if (error) throw error;
 }
 

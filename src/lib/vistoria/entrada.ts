@@ -40,12 +40,12 @@ export function validarPedidoAvaliador(e: PedidoAvaliadorEntrada): { ok: true; v
   let parceiro: PedidoAvaliadorValido["parceiro"] = null;
   if (!e.jaParceiro) {
     const nome = limpar(e.nome, 80);
-    const tipo = e.tipoPessoa === "pj" ? "pj" : e.tipoPessoa === "pf" ? "pf" : null;
     const doc = soDigitos(e.documento);
     if (nome.length < 3) falta.push("Informar o nome público (o seu ou o da empresa).");
-    if (!tipo) falta.push("Escolher pessoa física ou jurídica.");
-    else if (tipo === "pf" ? !cpfValido(doc) : !cnpjValido(doc)) falta.push(tipo === "pf" ? "CPF válido." : "CNPJ válido.");
-    if (nome.length >= 3 && tipo && (tipo === "pf" ? cpfValido(doc) : cnpjValido(doc))) parceiro = { nome, tipoPessoa: tipo, documento: doc };
+    // E648: só empresa. CPF (tipo "pf" ou CPF no campo) não é aceito em nenhuma categoria de parceiro.
+    if (e.tipoPessoa === "pf" || cpfValido(doc)) falta.push("CNPJ válido (CPF não é aceito: abra o seu CNPJ, MEI onde a atividade permite).");
+    else if (!cnpjValido(doc)) falta.push("CNPJ válido.");
+    else if (nome.length >= 3) parceiro = { nome, tipoPessoa: "pj", documento: doc };
   }
   const cidade = limpar(e.cidade, 80);
   if (!chaveCidade(cidade)) falta.push("Informar a cidade onde vai avaliar.");

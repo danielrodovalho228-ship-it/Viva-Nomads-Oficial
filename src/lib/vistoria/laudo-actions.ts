@@ -14,7 +14,7 @@ import { vistoriaAtiva } from "./chave";
 import { podeContestar, valorValido } from "./laudo";
 import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLaudo } from "./laudo-servidor";
 import { COLUNAS_PRECO, linhaDaTabela, porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, designar, rotaDono } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
 import { recusaObservador } from "@/lib/qa/observador";
 
@@ -165,11 +165,11 @@ export async function concluirVisita(form: FormData): Promise<Res> {
   return { ok: true, mensagem: "Visita concluída. Envie o laudo em até 48 horas úteis." };
 }
 
-/** O avaliador envia: a PLATAFORMA emite o laudo VIS (o checklist precisa estar completo). */
+/** O avaliador envia e ASSINA (E648): a plataforma fornece o modelo e guarda o registro; o laudo é dele. O checklist precisa estar completo. */
 export async function enviarLaudo(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "realizada") return SEM_ACESSO;
-  const r = await emitirLaudo(c.admin, c.p.id, new Date());
+  const r = await emitirLaudo(c.admin, c.p.id, new Date(), null, { declarou: form.get("assino") === "on" });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
@@ -200,7 +200,7 @@ export async function confirmarCorrecao(form: FormData): Promise<Res> {
     const v = String(form.get(`item_${g}`) ?? "");
     if (valorValido(g, v)) corrigidos[g] = v as ValorItem;
   }
-  const r = await registrarCorrecao(s.admin, l.pedido_id, corrigidos, new Date());
+  const r = await registrarCorrecao(s.admin, l.pedido_id, corrigidos, new Date(), { declarou: form.get("assino") === "on" });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: r.resultado === "aprovado" ? "Correção confirmada: o laudo ganhou nova versão, aprovado." : "Nova versão do laudo emitida." };
@@ -293,10 +293,10 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
     .select("id")
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
-  await designar(a.admin, p.id as string, agora);
+  await abrirEscolha(a.admin, p.id as string, agora);
   await avisar(a.admin, im.owner_id as string, "vistoria_verificacao", rotaDono(im.id as string), { propertyId: im.id as string });
   revalidatePath(ROTA_ADMIN);
-  return { ok: true, mensagem: "Verificação aberta e designada pelo rodízio." };
+  return { ok: true, mensagem: "Verificação aberta. O proprietário escolhe o avaliador." };
 }
 
 /** Saída manual de um bloqueio (ex.: correção de segurança comprovada fora do fluxo do avaliador), com registro. */

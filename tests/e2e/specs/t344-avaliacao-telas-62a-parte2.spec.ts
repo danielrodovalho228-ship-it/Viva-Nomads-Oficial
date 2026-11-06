@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -83,7 +83,7 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
     ids.A = await criarConta(avA, senha);
     const { data: parc, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.A, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: avA.nome, slug: `aval-t344-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+      .insert({ user_id: ids.A, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avA.nome, slug: `aval-t344-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
       .select("id")
       .single();
     if (error) throw error;
@@ -158,6 +158,7 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(p.getByTestId("laudo-delimitacao")).toContainText("Retrato do estado do imóvel na data da avaliação");
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t344-revisao-laudo-${w}.png`, fullPage: true });
+      await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
       await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
       await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
       await p.context().close();
@@ -217,16 +218,18 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await ficha.scrollIntoViewIfNeeded();
       await semRolagemLateral(v);
       await v.screenshot({ path: `${SAIDA}/t344-ficha-${w}.png` });
-      // Cartão na busca: o nível vira "Premium · vistoriado" (a /buscar guarda cache de 60 s).
+      // Cartão na busca: o imóvel aparece (a /buscar guarda cache de 60 s). Desde a E416 o cartão não mostra mais
+      // "· vistoriado": isso só a página do imóvel conta (a ficha acima).
       await expect
         .poll(
           async () => {
             await v.goto(`/buscar?local=${encodeURIComponent(BAIRRO)}`, { waitUntil: "domcontentloaded" });
-            return v.getByTestId("grade-resultados").getByText("Premium · vistoriado").count();
+            return v.getByTestId("grade-resultados").getByTestId("cartao-imovel").count();
           },
           { timeout: 120_000, intervals: [5_000, 10_000, 20_000] },
         )
         .toBeGreaterThan(0);
+      await expect(v.getByTestId("grade-resultados").getByText("vistoriado")).toHaveCount(0);
       await semRolagemLateral(v);
       await v.screenshot({ path: `${SAIDA}/t344-cartao-${w}.png` });
       await v.context().close();

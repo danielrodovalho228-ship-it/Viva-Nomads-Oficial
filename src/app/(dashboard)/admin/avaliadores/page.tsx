@@ -19,6 +19,7 @@ import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
+import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
 import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
@@ -32,8 +33,8 @@ const mascararDocumento = (d: string | null) => (d ? `${"•".repeat(Math.max(0,
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
 const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", expirada: "Sem resposta em 24 horas", ausencia: "Não foi à visita" };
-const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["suspenso", "descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
-const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática a rever", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
+const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
+const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática antiga (não é mais criada)", revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
 type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; parceiros: { nome_publico: string } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
@@ -144,7 +145,7 @@ export default async function AdminAvaliadoresPage() {
 
   return (
     <>
-      <PageTitle title={TITULO_ADMIN} subtitle="Avaliação do imóvel por avaliador credenciado: o que decidir, a rede, o rodízio e a tabela de preço." />
+      <PageTitle title={TITULO_ADMIN} subtitle="Avaliação do imóvel por avaliador credenciado: o que decidir, a rede, os sugeridos e a tabela de referência." />
       <Panel title="Para decidir" className="mb-6" data-testid="avaliacoes-decidir">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {numeros.map((n) => (
@@ -199,7 +200,7 @@ export default async function AdminAvaliadoresPage() {
                         </strong>{" "}
                         · {c.cidade} · {ROTULO_STATUS[c.status]}
                         {c.user_id && contasTeste.has(c.user_id) && (
-                          <span className="text-muted" data-testid="credenciamento-conta-teste"> · Conta de teste: fora do rodízio real e da contagem da chave</span>
+                          <span className="text-muted" data-testid="credenciamento-conta-teste"> · Conta de teste: fora da lista real e da contagem da chave</span>
                         )}
                         {!c.parceiros && c.parceiro_solicitacoes && (
                           <span className="block text-muted" data-testid="credenciamento-dados-parceiro">
@@ -237,7 +238,18 @@ export default async function AdminAvaliadoresPage() {
                             <FormAcaoAdmin soLeitura={soLeitura} key={para} acao={adminDecidirCredenciamento} className="flex flex-wrap items-center gap-2" testid={`decidir-${para}`}>
                               <input type="hidden" name="id" value={c.id} />
                               <input type="hidden" name="para" value={para} />
-                              {(para === "suspenso" || para === "descredenciado") && <input name="motivo" placeholder="Motivo" aria-label="Motivo" className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base" />}
+                              {para === "descredenciado" && (
+                                <>
+                                  <select name="criterio" required defaultValue="" aria-label="Critério público de qualidade" className="w-full min-w-0 max-w-full truncate rounded-lg border border-sage-200 px-3 py-2 text-base" data-testid="descredenciar-criterio">
+                                    <option value="" disabled>Critério público atingido</option>
+                                    {CRITERIOS_PUBLICOS.map((cr) => (
+                                      <option key={cr.id} value={cr.id}>{cr.texto}</option>
+                                    ))}
+                                  </select>
+                                  <input name="motivo" required placeholder="Fato concreto que atingiu o critério" aria-label="Fato concreto" className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base" />
+                                </>
+                              )}
+                              {para === "suspenso" && <input name="motivo" placeholder="Motivo" aria-label="Motivo" className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base" />}
                               <Button type="submit" variant="secondary" size="sm">{rotuloDecisao(c.status, para)}</Button>
                             </FormAcaoAdmin>
                             ),
@@ -367,8 +379,8 @@ export default async function AdminAvaliadoresPage() {
         )}
       </Panel>
 
-      <Panel id="rodizio" title="Fila de rodízio por cidade" className="mb-6 scroll-mt-24" data-testid="avaliacoes-rodizio">
-        <p className="text-sm text-muted">Quem está há mais tempo sem designação vem primeiro. Impedimentos ligados ao pedido (serviço ao proprietário, relação declarada) aparecem na hora da designação.</p>
+      <Panel id="rodizio" title="Avaliadores sugeridos por cidade" className="mb-6 scroll-mt-24" data-testid="avaliacoes-rodizio">
+        <p className="text-sm text-muted">A Viva não designa: o proprietário escolhe entre os sugeridos. A ordem é só de exibição (quem foi menos procurado primeiro). Impedimentos ligados ao pedido (serviço ao proprietário, relação declarada) aparecem na hora da escolha.</p>
         {cidades.length === 0 && <p className="mt-2 text-sm text-muted">Nenhuma cidade ainda.</p>}
         <div className="mt-3 grid gap-4 lg:grid-cols-2">
           {cidades.map((cidade) => {
@@ -395,7 +407,7 @@ export default async function AdminAvaliadoresPage() {
       </Panel>
 
       <Panel title="Abrir verificação" className="mb-6" data-testid="avaliadores-verificacao">
-        <p className="text-sm text-muted">Só a Viva abre, com motivo: denúncia procedente sobre o estado, pendência do padrão mínimo procedente ou ressalva vencida. O proprietário paga pela tabela; o rodízio designa.</p>
+        <p className="text-sm text-muted">Só a Viva abre, com motivo: denúncia procedente sobre o estado, pendência do padrão mínimo procedente ou ressalva vencida. O proprietário escolhe o avaliador e paga o valor que o avaliador propôs.</p>
         <FormAcaoAdmin soLeitura={soLeitura} acao={adminAbrirVerificacao} className="mt-3 grid gap-3 sm:grid-cols-2" testid="verificacao-form">
           <label className="text-sm">Imóvel (id)<input name="propertyId" required className={campo} /></label>
           <label className="text-sm">

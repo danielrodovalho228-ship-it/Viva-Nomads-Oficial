@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { jpegComGps } from "../fixtures/exif";
 import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 import { authFile } from "../fixtures/auth";
@@ -8,7 +8,7 @@ import { authFile } from "../fixtures/auth";
   T236 — Parceiros, ciclo 31a (390 e 1280 px), laboratório:
    1. visitante: "Seja parceiro" pede conta (vai ao cadastro e volta); regras claras com "Pagamento pela plataforma
       em breve." (chave PAGAMENTO_PARCEIROS_ATIVO desligada);
-   2. conta com e-mail confirmado → pedido (fotografia, Uberlândia, PF, CPF válido, portfólio) → "Recebemos" + e-mail;
+   2. conta com e-mail confirmado → pedido (fotografia, Uberlândia, CNPJ válido, portfólio) → "Recebemos" + e-mail;
    3. admin em AAL2: ficha com checklist → Aprovar → e-mail "Sua parceria foi aprovada" com o link de ativação;
    4. link → ativa (mesmo e-mail) → cadastro completo: foto, capa, 3 fotos na galeria, serviço, redes → Publicar;
    5. /parceiros/[slug] no ar (sem telefone, e-mail ou documento) e na busca ?categoria=fotografia&cidade=Uberlândia;
@@ -57,7 +57,8 @@ async function pedir(page: Page, o: { categorias: string[]; portfolio?: string; 
   await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
   const form = page.getByTestId("seja-parceiro-form");
   await expect(form).toBeVisible({ timeout: 20_000 });
-  await form.locator("#sp-doc").fill(cpfAleatorio());
+  await form.locator("#sp-doc").fill(cnpjAleatorio());
+  await form.getByText("Sim", { exact: true }).click(); // E648: só CNPJ; a pergunta da nota é sempre feita
   for (const c of o.categorias) await page.getByTestId(`sp-cat-${c}`).check();
   await form.locator("#sp-cidades").fill("Uberlândia");
   if (o.portfolio) await form.locator("#sp-portfolio").fill(o.portfolio);
@@ -155,9 +156,9 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     });
   }
 
-  test("390px: conta com e-mail confirmado pede a parceria (fotografia, Uberlândia, PF, CPF, portfólio)", async ({ browser }) => {
+  test("390px: conta com e-mail confirmado pede a parceria (fotografia, Uberlândia, CNPJ, portfólio)", async ({ browser }) => {
     const page = await abrir(browser, foto.email, 390);
-    // CPF inválido é barrado na tela e no servidor.
+    // Documento inválido é barrado na tela e no servidor (E648: só CNPJ; CPF válido também é recusado).
     await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
     await page.locator("#sp-doc").fill("111.111.111-11");
     await page.getByTestId("sp-cat-fotografia").check();
@@ -165,12 +166,12 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.locator("#sp-portfolio").fill("https://marinalente.com.br");
     await page.getByTestId("sp-aceite").check();
     await page.getByTestId("seja-parceiro-enviar").click();
-    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CPF inválido");
+    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CNPJ inválido");
     await pedir(page, { categorias: ["fotografia"], portfolio: "https://marinalente.com.br" });
     const s = await solicitacao(foto.email);
     expect(s?.status).toBe("pendente");
     expect(s?.origem).toBe("site");
-    expect(s?.documento).toMatch(/^\d{11}$/);
+    expect(s?.documento).toMatch(/^\d{14}$/);
     await expect.poll(async () => (await lerSaida()).some((e) => e.para === foto.email && /Recebemos o seu pedido de parceria/.test(String(e.assunto))), { timeout: 15_000 }).toBe(true);
     // Uma solicitação aberta por conta: o formulário mostra o andamento, não um segundo pedido.
     await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
@@ -352,7 +353,8 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
     const form = page.getByTestId("seja-parceiro-form");
-    await form.locator("#sp-doc").fill(cpfAleatorio());
+    await form.locator("#sp-doc").fill(cnpjAleatorio());
+    await form.getByText("Sim", { exact: true }).click(); // E648: só CNPJ
     await page.getByTestId("sp-cat-mudanca").check();
     await form.locator("#sp-cidades").fill("Uberlândia");
     await form.locator("#sp-empresa").fill("Sara Mudanças");

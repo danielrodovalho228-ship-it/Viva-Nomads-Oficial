@@ -107,7 +107,7 @@ test("adendo 62-B1: a reverificação nunca gera cobrança; a fronteira está es
   for (const preco of [{ valor: 350, retornoDias: null, retornoPercentual: null }, { valor: 350, retornoDias: 60, retornoPercentual: 30 }])
     assert.deepEqual(valorDoPedido("reverificacao", preco, dias(5), AGORA), { valor: 0, retorno: null });
   assert.match(TEXTO_REVERIFICACAO_INCLUIDA, /mesmo avaliador.*incluída no valor já pago/);
-  assert.match(TEXTO_NOVA_AVALIACAO, /novo pedido, outro avaliador pelo rodízio, pelo valor da tabela/);
+  assert.match(TEXTO_NOVA_AVALIACAO, /novo pedido, avaliador à sua escolha \(outro que não o da avaliação anterior\), pelo valor que o avaliador propuser/);
   assert.doesNotMatch(TEXTO_NOVA_AVALIACAO, /desconto|metade/);
   assert.match(INCLUI_SEMPRE[2], /com ressalvas.*15 dias, pelo mesmo avaliador/);
 });

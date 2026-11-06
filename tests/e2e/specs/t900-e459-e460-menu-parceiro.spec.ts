@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T900 — E459 + E460: menu do parceiro aprovado (topo do computador e barra do celular).
@@ -26,7 +26,7 @@ test.describe("T900 — menu do parceiro: Início certo e a área atual acesa", 
     ids.pessoa = await criarConta(pessoa, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.pessoa, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Paola Limpeza ${sufixo}`, slug: `paola-t900-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.pessoa, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Paola Limpeza ${sufixo}`, slug: `paola-t900-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

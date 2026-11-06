@@ -59,6 +59,17 @@ export const PAGAMENTO_EM_BREVE = "Pagamento pela plataforma em breve.";
 export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberados só depois do aceite, pelas mensagens da Viva.";
 
 // ── Solicitação de parceria ────────────────────────────────────────────────────────────────────────────────────
+/**
+ * E648 — CNPJ para TODOS os parceiros, sem exceção de categoria (decisão do Daniel, 06/11/2026). CPF não é aceito em nenhuma
+ * categoria: quem quiser ser parceiro abre empresa (MEI onde a atividade permite). Cadastros que ficaram com CPF (só massa de
+ * teste hoje) não recebem serviço até apresentarem o CNPJ.
+ */
+export const MSG_SO_CNPJ = "A Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito: abra o seu CNPJ (MEI, onde a atividade permite) e cadastre a empresa.";
+export const PENDENCIA_CNPJ = "Apresentar o CNPJ (cadastros com CPF não recebem serviço)";
+
+/** Só empresa (CNPJ) recebe serviço: pedido de orçamento, busca pública e designação. Sem tipo registrado = não recebe. */
+export const parceiroPodeReceberServico = (tipoPessoa: string | null | undefined): boolean => tipoPessoa === "pj";
+
 export const CIDADES_MAX = 10;
 export const DESCRICAO_MAX = 600;
 
@@ -115,10 +126,12 @@ export function urlPublicaValida(u: string | null | undefined): string | null {
 export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
   const nome = limpar(e.nome, 120);
   if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
-  const tipo = e.tipoPessoa === "pj" ? "pj" : e.tipoPessoa === "pf" ? "pf" : null;
-  if (!tipo) return { ok: false, erro: "Escolha pessoa física ou jurídica." };
+  // E648: só empresa. O tipo "pf" e qualquer CPF no campo do documento são recusados em todas as categorias.
+  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
+  const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
-  if (tipo === "pf" ? !cpfValido(doc) : !cnpjValido(doc)) return { ok: false, erro: tipo === "pf" ? "CPF inválido: confira os números." : "CNPJ inválido: confira os números." };
+  if (cpfValido(doc)) return { ok: false, erro: MSG_SO_CNPJ };
+  if (!cnpjValido(doc)) return { ok: false, erro: "CNPJ inválido: confira os números." };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
   if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
   const vistas = new Set<string>();
@@ -261,6 +274,7 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (p.servicosAtivos < 1) f.push("Pelo menos 1 serviço");
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
+  if (p.tipoPessoa !== undefined && !parceiroPodeReceberServico(p.tipoPessoa)) f.push(PENDENCIA_CNPJ);
   if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }
@@ -362,6 +376,8 @@ export function filtrarParceiros<T extends ParceiroNaBusca>(
   const cid = chaveCidade(f.cidade ?? "");
   return lista
     .filter((p) => p.status === "publicado" && (!p.teste || f.verTeste === true))
+    // E648: cadastro que ficou só com CPF não aparece (não recebe serviço) até apresentar o CNPJ.
+    .filter((p) => parceiroPodeReceberServico(p.tipoPessoa))
     .filter((p) => !f.categoria || p.categorias.includes(f.categoria))
     .filter((p) => passaFiltroNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota }, f.soNota === true))
     .filter((p) => {

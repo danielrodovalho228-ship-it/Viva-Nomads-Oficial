@@ -29,14 +29,17 @@ function corpo(fonte: string, nome: string): string {
   return fonte.slice(i, j < 0 ? undefined : j);
 }
 
-test("o dono não escolhe o avaliador, nem por API: o pedido só leva o imóvel e a designação vem do rodízio", () => {
+test("E648: o pedido só leva o imóvel; quem escolhe o avaliador é o dono, entre os sugeridos — a Viva não designa", () => {
   const pedir = corpo(ACOES, "pedirAvaliacao");
   assert.deepEqual([...pedir.matchAll(/form\.get\("(\w+)"\)/g)].map((m) => m[1]), ["propertyId"]);
   assert.doesNotMatch(pedir, /avaliador_id|avaliadorId/);
-  assert.match(pedir, /await designar\(s\.admin, p\.id, agora\)/);
-  // A designação usa só a regra pura do rodízio.
-  assert.match(corpo(SERVIDOR, "designar"), /proximoAvaliador\(fila, pedido, historico, agora\)/);
-  assert.doesNotMatch(BLOCO_DONO, /name="avaliador/);
+  assert.match(pedir, /await abrirEscolha\(s\.admin, p\.id, agora\)/);
+  // A escolha confere o dono do pedido e só aceita quem a regra pura sugeriu.
+  const escolher = corpo(ACOES, "escolherAvaliador");
+  assert.match(escolher, /p\.owner_id !== s\.userId/);
+  assert.match(escolher, /escolherNoServidor\(/);
+  assert.match(SERVIDOR, /sugerirAvaliadores\(fila, pedido, historico, agora\)/);
+  assert.match(SERVIDOR, /l\.sugestoes\.sugeridos\.find\(\(x\) => x\.id === avaliadorId\)/);
 });
 
 test("chave VISTORIA_ATIVA desligada: nada para o dono nem para o morador; credenciamento e admin seguem", () => {
@@ -80,7 +83,7 @@ test("catálogo: 'vistoria' é categoria de credenciamento, nunca contratável d
 test("vocabulário: 'avaliação do imóvel' e 'avaliador credenciado'; nunca inspeção, perícia ou engenharia na tela", () => {
   for (const f of TELAS) assert.doesNotMatch(semComentarios(f), /inspe[çc][ãa]o|per[íi]cia|engenharia|vistoria(?!\.|_|\/|-|"|Ativa)/i);
   assert.match(BLOCO_DONO, /Pedir avaliação do imóvel/);
-  assert.match(BLOCO_DONO, /Avaliador designado pela Viva: nº/);
+  assert.match(BLOCO_DONO, /Avaliador escolhido por você: nº/);
 });
 
 test("credenciamento em teste → ativo só pelo admin com duas etapas", () => {

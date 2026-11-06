@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * T871 — E462: pedido de parceiro em "Orçamento aceito" tem saída. 390 e 1280 px, só no laboratório.
@@ -63,7 +63,7 @@ test.describe("T871 — E462: saídas do parceiro no orçamento aceito", () => {
     ids.prestador = await criarConta(prestador, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.prestador, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Paulo Limpa ${sufixo}`, slug: `limpa-t871-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.prestador, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Paulo Limpa ${sufixo}`, slug: `limpa-t871-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

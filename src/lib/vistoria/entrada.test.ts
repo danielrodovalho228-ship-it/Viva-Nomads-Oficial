@@ -9,6 +9,7 @@ import { PENDENCIA_IDENTIDADE, contaComoAvaliadorAtivo, ehPedidoDeAvaliador, fal
 import { CATEGORIAS_CATALOGO, categoriaValida, validarSolicitacao } from "../parceiros/regras.ts";
 
 const CPF = "52998224725";
+const CNPJ = "11222333000181";
 const base = { cidade: "Uberlândia", experienciaLink: "https://portfolio.exemplo.com", experienciaArquivo: false, aceiteConduta: true };
 
 test("'vistoria' só pelo caminho do credenciamento: a solicitação comum e o catálogo continuam recusando", () => {
@@ -23,12 +24,14 @@ test("'vistoria' só pelo caminho do credenciamento: a solicitação comum e o c
 });
 
 test("quem NÃO é parceiro manda os dados de parceiro + os do credenciamento", () => {
-  const ok = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pf", documento: "529.982.247-25" });
+  const ok = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pj", documento: "11.222.333/0001-81" });
   assert.equal(ok.ok, true);
-  if (ok.ok) assert.deepEqual(ok.valor.parceiro, { nome: "Ana Avaliadora", tipoPessoa: "pf", documento: CPF });
-  const falta = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "A", tipoPessoa: "pf", documento: "11111111111" });
+  if (ok.ok) assert.deepEqual(ok.valor.parceiro, { nome: "Ana Avaliadora", tipoPessoa: "pj", documento: CNPJ });
+  const pf = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pf", documento: "529.982.247-25" });
+  assert.equal(pf.ok, false, "E648: CPF não é aceito");
+  const falta = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "A", tipoPessoa: "pj", documento: "11111111111111" });
   assert.equal(falta.ok, false);
-  if (!falta.ok) assert.deepEqual(falta.falta, ["Informar o nome público (o seu ou o da empresa).", "CPF válido."]);
+  if (!falta.ok) assert.match(falta.falta.join(" "), /CNPJ válido/);
 });
 
 test("quem JÁ é parceiro não repete dados (os campos de parceiro são ignorados)", () => {
