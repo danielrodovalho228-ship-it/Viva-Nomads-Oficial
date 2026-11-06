@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { listProperties } from "@/lib/data/properties";
 
 // 404: só o noindex do Next (sem canonical nem o robots da raiz).
@@ -46,8 +46,8 @@ export default async function NotFound() {
             <h2 className="mb-4 font-title text-lg font-semibold text-ink">Imóveis em destaque</h2>
             {/* Grade par: em 2 colunas (tablet) aparecem 2 destaques — um 3º esticado viraria uma foto enorme; em 1 e 3 colunas, os três. */}
             <div className="grid gap-6 text-left sm:grid-cols-2 sm:max-lg:[&>:nth-child(3)]:hidden lg:grid-cols-3" data-testid="nao-encontrada-destaques">
-              {featured.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+              {featured.map((p, i) => (
+                <PropertyCard key={p.id} property={p} prioridade={i < PRIMEIRA_FILEIRA} />
               ))}
             </div>
           </section>

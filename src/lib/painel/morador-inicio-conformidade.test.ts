@@ -13,7 +13,7 @@ test("morador-inicio: 'Peça na Viva' com os textos aprovados, sem botão cheio 
 
 test("morador-inicio: recomendados com o cartão da busca, em grade par (2/4), 4 imóveis", () => {
   assert.match(inicio, /\.slice\(0, 4\)/);
-  assert.match(inicio, /<PropertyCard key=\{p\.id\} property=\{p\} \/>/);
+  assert.match(inicio, /<PropertyCard key=\{p\.id\} property=\{p\} prioridade=\{i < PRIMEIRA_FILEIRA\} \/>/); // E374: a 1ª fileira com prioridade
   assert.match(inicio, /grid-cols-2[^"]*lg:grid-cols-4/);
   assert.doesNotMatch(inicio, /PropertyRow/);
 });
