@@ -17,9 +17,9 @@ test("varredura 01/11: o Logo (que já é link) nunca vai dentro de outro <Link>
   assert.deepEqual(achados, []);
 });
 
-test("varredura 01/11: o topo do painel leva ao Início do painel pelo próprio Logo, com nome que contém o texto visível", () => {
+test("varredura 01/11 + E443: o topo do painel usa o próprio Logo como saída (página inicial), com nome que contém o texto visível", () => {
   const topo = readFileSync(join(raiz, "components/layout/topo-dono.tsx"), "utf8");
-  assert.match(topo, /<Logo href="\/dashboard" rotulo="VivaNomads — início do painel" className="shrink-0" \/>/);
+  assert.match(topo, /<Logo href=\{HREF_LOGO_PAINEL\} className="shrink-0" \/>/);
   const logo = readFileSync(join(raiz, "components/ui/logo.tsx"), "utf8");
   assert.match(logo, /rotulo = "VivaNomads — página inicial"/);
   assert.match(logo, /aria-label=\{rotulo\} data-logo/);

@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
 import { SinoAvisos } from "@/components/painel/sino-avisos";
-import { abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
+import { HREF_LOGO_PAINEL, abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
 
 /**
  * Topo do painel no computador. PROP-1 (dono, mockup painel-proprietario-desktop) e MENUS-5/MORADOR-NAV (morador e
@@ -40,8 +40,8 @@ export function TopoPainel(p: {
   return (
     <header className="web-only hidden border-b border-line bg-white lg:block print:hidden" data-testid={`topo-${px}`} data-papel={p.papel}>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-8">
-        {/* Varredura 01/11: o Logo já é um link — antes ficava dentro de outro <Link> (<a> dentro de <a>: erro de hidratação). */}
-        <Logo href="/dashboard" rotulo="VivaNomads — início do painel" className="shrink-0" />
+        {/* Varredura 01/11: o Logo já é um link — antes ficava dentro de outro <Link> (<a> dentro de <a>: erro de hidratação). E443: ele é a saída do painel (página inicial); o "Início" da aba leva ao painel. */}
+        <Logo href={HREF_LOGO_PAINEL} className="shrink-0" />
         <nav aria-label={AREA[p.papel]} className="flex h-full min-w-0 flex-1 items-stretch gap-6" data-testid={`abas-${px}`}>
           {p.abas.map((a) => {
             const on = ativa?.id === a.id;
