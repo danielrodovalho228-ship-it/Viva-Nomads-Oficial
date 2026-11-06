@@ -35,6 +35,7 @@ import {
   type StatusCredenciamento,
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, comTesteConcluido, designar, naFilaDoAdmin, passarAoProximo, rotaDono, rotaMorador } from "./servidor";
+import { recusaObservador } from "@/lib/qa/observador";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
 
@@ -185,6 +186,8 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
 export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const id = String(form.get("id") ?? "");
   const para = String(form.get("para") ?? "") as StatusCredenciamento;
   const motivo = texto(form.get("motivo"), 500) || null;
@@ -310,6 +313,8 @@ export async function adminCriarAvaliacaoTeste(form: FormData): Promise<Res> {
 export async function adminSalvarPreco(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const cidade = texto(form.get("cidade"), 80);
   const porte = String(form.get("porte") ?? "") as Porte;
   const valorLido = lerReais(String(form.get("valor") ?? ""));
