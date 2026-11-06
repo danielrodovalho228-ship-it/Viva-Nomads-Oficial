@@ -114,5 +114,12 @@ export function estadoDosPrazos(f: FatosPrazo): EstadoPrazos {
 /** Qualquer contrato do dono em pendência de devolução trava a publicação de anúncio novo, até regularizar. */
 export const bloqueiaNovosAnuncios = (estados: readonly Pick<EstadoPrazos, "pendenciaDevolucao">[]): boolean => estados.some((e) => e.pendenciaDevolucao);
 
+/**
+ * E642 — garantia ÚNICA (Lei 8.245/91, art. 37): caução OU seguro-fiança, nunca os dois. Contrato com seguro-fiança não tem
+ * caução; os prazos, avisos, devolução e o bloqueio de anúncio da caução só valem para contrato com caução. Contrato sem a
+ * coluna preenchida é caução (o padrão do banco, 0076).
+ */
+export const contratoTemCaucao = (garantia: string | null | undefined): boolean => garantia !== "seguro_fianca";
+
 export const ROTULO_CAUCAO_PENDENTE = "Regularizar a devolução da caução";
 export const DETALHE_CAUCAO_PENDENTE = "a devolução de um contrato passou de 30 dias; devolva e confirme para voltar a publicar";
