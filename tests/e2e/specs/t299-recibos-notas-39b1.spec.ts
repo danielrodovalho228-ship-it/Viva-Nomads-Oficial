@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T299 — Prompt 39-B1, "Recibos e notas" nos três papéis (390 e 1280 px). Só no laboratório.
@@ -129,7 +129,7 @@ test.describe("T299 — Recibos e notas (39-B1)", () => {
     // Parceiro com um serviço concluído SEM a nota dele.
     const { data: p, error: eP } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.parc, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: parc.nome, slug: `limpeza-t299-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.parc, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: parc.nome, slug: `limpeza-t299-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (eP) throw eP;

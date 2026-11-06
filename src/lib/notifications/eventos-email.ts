@@ -117,8 +117,8 @@ export type NotificationEvent =
   | "internet_remedir" // 57: a medição da internet vence em ~2 semanas → dono
   | "internet_abaixo_medida" // 57: a medição do morador ficou abaixo de 50% da do dono → dono
   // Avaliação do imóvel por avaliador credenciado (Prompt 62-B1), atrás de VISTORIA_ATIVA
-  | "vistoria_designada" // a Viva designou o avaliador → avaliador (aceitar ou recusar em 24 h)
-  | "vistoria_designado_dono" // avaliador designado pela Viva → dono (combinar a agenda pelas mensagens)
+  | "vistoria_designada" // o proprietário escolheu o avaliador → avaliador (responder com valor e prazo, ou recusar, em 24 h)
+  | "vistoria_designado_dono" // novidade na escolha do avaliador → dono (proposta de valor e prazo recebida, ou escolher outro)
   | "vistoria_agendada" // visita agendada → dono e avaliador
   | "vistoria_concordancia" // imóvel ocupado: a visita espera a concordância → morador
   | "vistoria_lembrete" // D-1 da visita → dono, avaliador e morador
@@ -240,8 +240,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_auto_cancelado: { subject: "Pedido cancelado", body: (n) => `Olá${n ? " " + n : ""}, o contrato do imóvel foi encerrado e o pedido foi cancelado. Nada a fazer.`, cta: "Ver os pedidos", path: "/dashboard/parceiro" },
   saida_sem_parceiro: { subject: "Saída em 5 dias: quer agendar a limpeza?", body: (n) => `Olá${n ? " " + n : ""}, o morador sai em 5 dias e o imóvel não tem limpeza fixa. Peça um orçamento a um parceiro da cidade.`, cta: "Buscar limpeza", path: "/parceiros/buscar?categoria=limpeza" },
   internet_remedir: { subject: "Meça de novo a internet do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a medição da internet do seu imóvel vence em cerca de 2 semanas. Meça de novo, conectado ao Wi-Fi do imóvel, para o anúncio continuar mostrando o número.`, cta: "Medir a internet", path: "/dashboard/imoveis" },
-  vistoria_designada: { subject: "Nova avaliação de imóvel designada a você", body: (n) => `Olá${n ? " " + n : ""}, a Viva designou você para avaliar um imóvel. Aceite ou recuse em até 24 horas; sem resposta, a avaliação passa ao próximo avaliador.`, cta: "Responder", path: "/dashboard/parceiro/avaliacao" },
-  vistoria_designado_dono: { subject: "O avaliador do seu imóvel foi designado", body: (n) => `Olá${n ? " " + n : ""}, a Viva designou o avaliador credenciado do seu imóvel. Combine a data da visita pelas mensagens da Viva.`, cta: "Ver a avaliação", path: "/dashboard/imoveis" },
+  vistoria_designada: { subject: "Um proprietário escolheu você para avaliar um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário escolheu você para avaliar um imóvel. Responda em até 24 horas com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`, cta: "Responder", path: "/dashboard/parceiro/avaliacao" },
+  vistoria_designado_dono: { subject: "Novidade na escolha do avaliador do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, há novidade na avaliação do seu imóvel: o avaliador que você escolheu respondeu com o valor e o prazo dele (ou recusou). Abra a avaliação para aceitar ou escolher outro avaliador.`, cta: "Ver a avaliação", path: "/dashboard/imoveis" },
   vistoria_agendada: { subject: "Visita de avaliação agendada", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel está agendada. Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.`, cta: "Ver a visita", path: "/dashboard/imoveis" },
   vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: (n) => `Olá${n ? " " + n : ""}, o proprietário pediu a avaliação do imóvel onde você mora. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`, cta: "Responder", path: "/dashboard/locacoes" },
   vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel é amanhã. Se precisar mudar, avise pelas mensagens da Viva.`, cta: "Ver a visita", path: "/dashboard" },

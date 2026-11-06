@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T314 — Correção 62-B3: a porta de entrada do avaliador credenciado (laboratório; VISTORIA_ATIVA continua desligada:
@@ -43,7 +43,7 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     ids.limpeza = await criarConta(limpeza, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.limpeza, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: limpeza.nome, slug: `limpeza-t314-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"] })
+      .insert({ user_id: ids.limpeza, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: limpeza.nome, slug: `limpeza-t314-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"] })
       .select("id")
       .single();
     if (error) throw error;
@@ -96,8 +96,8 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     await expect(form.getByTestId("credenciamento-dados-parceiro")).toBeVisible();
     await expect(form.getByTestId("credenciamento-pendencia")).toContainText("verificar a sua identidade");
     await form.getByLabel(/Nome público/).fill(nova.nome);
-    await form.getByLabel("Tipo de pessoa").selectOption("pf");
-    await form.getByLabel("CPF ou CNPJ").fill(cpfAleatorio());
+    await expect(form.getByTestId("credenciamento-so-cnpj")).toContainText("CPF não é aceito"); // E648
+    await form.getByLabel("CNPJ", { exact: true }).fill(cnpjAleatorio());
     await form.getByLabel("Cidade onde vai avaliar").fill("Uberlândia");
     await form.getByLabel(/Portfólio ou referência/).fill("https://portfolio.lab.vivanomads.test/nadia");
     await form.getByLabel(/Li e aceito o código de conduta/).check();

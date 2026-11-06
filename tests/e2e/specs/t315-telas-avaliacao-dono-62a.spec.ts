@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
 
 /*
@@ -7,7 +7,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
   do 62-B3). Laboratório; a chave VISTORIA_ATIVA liga só no navegador do teste, pelo cookie de laboratório. 390 e 1280 px,
   sem rolagem lateral, com print.
    1. Dono: as duas rotas lado a lado, frase fixa, um primário só (QA #1111 item 7); pedir → linha do tempo com o nº,
-      "Avaliador designado pela Viva" uma vez só (item 5); nenhum botão de escolher avaliador.
+      "Avaliador escolhido por você" uma vez só (item 5); o dono escolhe o avaliador entre os sugeridos (E648).
    2. Morador: o cartão na conversa da estadia — "Prefiro outro horário" escreve na caixa; "Concordo" confirma.
       Dono: visita com "horário de Brasília", sem segundos (item 6). Chave desligada: nada para dono nem morador.
 */
@@ -35,7 +35,9 @@ async function comChave(page: Page) {
 }
 /** Botões e links com o fundo do primário dentro do conteúdo (o "Fale com a Viva" flutuante fica fora do main). */
 async function primariosNoMain(page: Page): Promise<number> {
-  return page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible").count();
+  // O cartão "Medir a internet no imóvel" (Prompt 57, NIVEIS-MEDIR-B) é outra ferramenta, com o seu próprio primário na mesma tela;
+  // o que esta regra (QA #1111 item 7) guarda é o bloco da avaliação.
+  return page.locator("main").locator('button.bg-forest:visible:not([data-testid="medir-internet-botao"]), a.bg-forest:visible').count();
 }
 
 test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
@@ -49,7 +51,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     for (const [l, uid, nome] of [["A", ids.A, avA.nome]] as const) {
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: uid, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug: `aval-${l.toLowerCase()}-t315-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -115,23 +117,28 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
       if (w === 1280) expect(Math.abs(f!.y - a!.y), "lado a lado a 1280").toBeLessThan(2);
       else expect(a!.y, "uma embaixo da outra a 390").toBeGreaterThan(f!.y + f!.height - 1);
       expect(await primariosNoMain(d), "um primário só na tela (QA #1111 item 7)").toBe(1);
-      await expect(d.getByText(/escolh(er|a) o avaliador/i)).toHaveCount(0);
       await bloco.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
       await d.screenshot({ path: `${SAIDA}/t315-2-dono-pedir-${w}.png` });
     }
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click();
-    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("pedido");
     pedidoId = ((await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.imovel).single()).data!.id as string);
+    // E648: o dono escolhe o avaliador entre os sugeridos (a Viva não designa).
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
+    const escolha = d.getByTestId("avaliacao-escolha");
+    await expect(escolha).toBeVisible({ timeout: 30_000 });
+    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
     for (const w of LARGURAS) {
       await largura(d, w);
       // Sem a âncora: a página já está em …/nivel#avaliacao e o mesmo endereço seria só um salto de âncora, sem recarregar.
       await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
       const bloco = d.getByTestId("avaliacao-dono");
-      await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador designado pela Viva: nº ${numeroA}`, { timeout: 30_000 });
-      await expect(bloco.getByText("Avaliador designado pela Viva")).toHaveCount(1);
+      await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${numeroA}`, { timeout: 30_000 });
+      await expect(bloco.getByText("Avaliador escolhido por você")).toHaveCount(1);
       await expect(bloco.getByTestId("etapa-designado")).toHaveAttribute("data-estado", "atual");
-      await expect(bloco.getByTestId("etapa-designado")).toHaveText(`Designado nº ${numeroA}`);
+      await expect(bloco.getByTestId("etapa-designado")).toHaveText(`Escolhido nº ${numeroA}`);
       await expect(bloco.getByTestId("etapa-pedido")).toHaveAttribute("data-estado", "feito");
       await expect(bloco.getByTestId("avaliacao-mensagens")).toHaveAttribute("href", "/dashboard/mensagens");
       await bloco.scrollIntoViewIfNeeded();
@@ -147,11 +154,23 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     // Espera a hidratação: o clique antes dela não chega à ação (o pedido sai de "Para responder" para "Visitas").
     await p.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
+    // E648: o avaliador responde com o PRÓPRIO valor e prazo; o dono aceita; só então a visita pode ser agendada.
+    await item.getByTestId("proposta-valor").fill("350");
+    await item.getByTestId("proposta-prazo").fill("2");
     await item.getByTestId("designacao-aceitar").click();
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("proposta_em").eq("id", pedidoId).single()).data?.proposta_em as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
+    const donoAceita = await entrar(browser, dono.email, senha);
+    await comChave(donoAceita);
+    await donoAceita.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+    await donoAceita.getByTestId("aceitar-proposta").getByRole("button", { name: "Aceitar valor e prazo" }).click();
+    await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("proposta_aceita_em").eq("id", pedidoId).single()).data?.proposta_aceita_em as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
+    await donoAceita.context().close();
+    await p.reload();
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const quando = new Date(Date.now() + 2 * 86_400_000);
     const dia = new Date(quando.getTime() - 3 * 3_600_000).toISOString().slice(0, 10);
-    await item.getByTestId("agendar-visita").getByLabel("Data e hora da visita").fill(`${dia}T10:00`);
+    // O campo é o do site (data em texto "Data" + seletor de hora): colar "AAAA-MM-DDTHH:MM" no texto preenche os dois.
+    await item.getByTestId("agendar-visita").getByRole("textbox", { name: "Data", exact: true }).fill(`${dia}T10:00`);
     await item.getByTestId("agendar-visita").getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("agendado_para").eq("id", pedidoId).single()).data?.agendado_para as string | null) ?? null, { timeout: 20_000 }).not.toBeNull();
     await p.context().close();

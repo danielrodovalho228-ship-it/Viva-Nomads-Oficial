@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * T303 — Prompt 62-B1: avaliação do imóvel por avaliador credenciado (laboratório; a chave VISTORIA_ATIVA liga só no
@@ -33,8 +33,8 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     return data as { id: string; numero_credenciado: string; status: string } | null;
   }
   async function pedido() {
-    const { data } = await adm().from("vistoria_pedidos").select("id, status, avaliador_id, agendado_para, concordancia_em, ocupado").eq("id", pedidoId).single();
-    return data as { id: string; status: string; avaliador_id: string | null; agendado_para: string | null; concordancia_em: string | null; ocupado: boolean };
+    const { data } = await adm().from("vistoria_pedidos").select("id, status, avaliador_id, agendado_para, concordancia_em, ocupado, valor_proposto, prazo_proposto_dias, proposta_aceita_em").eq("id", pedidoId).single();
+    return data as { id: string; status: string; avaliador_id: string | null; agendado_para: string | null; concordancia_em: string | null; ocupado: boolean; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null };
   }
   async function admin(browser: Browser): Promise<Page> {
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
@@ -50,7 +50,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
       ids[l] = await criarConta(av[l], senha);
       const { data, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: av[l].nome, slug: `aval-${l.toLowerCase()}-t303-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: ids[l], tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: av[l].nome, slug: `aval-${l.toLowerCase()}-t303-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -61,7 +61,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     for (const l of ["A", "B"] as const) {
       await adm().from("tenant_verifications").insert({ tenant_id: ids[l], caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", valid_until: ate });
     }
-    // C e X já credenciados (ativos). X é o 1º do rodízio, mas prestou serviço ao dono há 2 meses (impedido).
+    // C e X já credenciados (ativos). X seria o 1º da lista, mas prestou serviço ao dono há 2 meses (impedido).
     for (const [l, ativado, ultima] of [["X", "2026-01-01T00:00:00Z", null], ["C", "2026-01-15T00:00:00Z", new Date(Date.now() - 86_400_000).toISOString()]] as const) {
       const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
       await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids[`parc${l}`], cidade: "Uberlândia", numero_credenciado: n, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test", conduta_versao: "2026-10-23", ativado_em: ativado, ultima_designacao_em: ultima });
@@ -137,7 +137,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await expect.poll(async () => (await credenciamento("A"))?.status, { timeout: 20_000 }).toBe("ativo");
     // O pedido de teste sai de cena: o resto do teste lê o pedido real deste imóvel.
     await adm().from("vistoria_pedidos").delete().eq("id", pTeste!.id);
-    // B aprovado direto (mesmo caminho do A, coberto acima); ordem do rodízio: X (impedido) → A → B → C.
+    // B aprovado direto (mesmo caminho do A, coberto acima); sugeridos: A, B e C (X, impedido, fica de fora).
     await adm().from("avaliadores_credenciamento").update({ status: "ativo", ativado_em: "2026-03-01T00:00:00Z" }).eq("id", (await credenciamento("B"))!.id);
     await adm().from("avaliadores_credenciamento").update({ ativado_em: "2026-02-01T00:00:00Z" }).eq("id", a.id);
     // Tabela sem o porte do imóvel: a condição mostra "tabela sem valor"; o admin salva e a condição fica cumprida.
@@ -159,7 +159,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await adm1.context().close();
   });
 
-  test("2. o dono pede a avaliação: valor da tabela, frase fixa e a designação pula o impedido", async ({ browser }) => {
+  test("2. o dono pede a avaliação: referência da tabela, frase fixa; os sugeridos NÃO incluem o impedido e o dono escolhe", async ({ browser }) => {
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await comChave(d);
@@ -170,42 +170,79 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await bloco.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click();
     await expect
       .poll(async () => ((await adm().from("vistoria_pedidos").select("id, status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 })
-      .toBe("designado");
+      .toBe("pedido");
     const { data: p } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.imovel).single();
     pedidoId = p!.id as string;
     const a = (await credenciamento("A"))!;
     const x = (await credenciamento("X"))!;
-    expect((await pedido()).avaliador_id).toBe(a.id);
+    // E648: a Viva não designa ninguém — o pedido espera a escolha do dono entre os sugeridos (o impedido X não aparece).
+    expect((await pedido()).avaliador_id).toBeNull();
+    await d.reload();
+    const escolha = d.getByTestId("avaliacao-escolha");
+    await expect(escolha).toBeVisible({ timeout: 20_000 });
+    await expect(escolha.getByTestId("avaliacao-faixa")).toBeVisible();
+    // A, B e C estão entre os sugeridos (outros avaliadores ativos da cidade podem existir no laboratório).
+    for (const l of ["A", "B", "C"] as const) await expect(escolha).toContainText(`nº ${(await credenciamento(l))!.numero_credenciado}`);
+    await expect(escolha).not.toContainText(x.numero_credenciado);
+    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${a.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(a.id);
     const { data: designados } = await adm().from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", pedidoId);
     expect((designados ?? []).map((r) => r.avaliador_id)).not.toContain(x.id);
     await d.reload();
-    await expect(d.getByTestId("avaliador-designado")).toHaveText(`Avaliador designado pela Viva: nº ${a.numero_credenciado}`);
+    await expect(d.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${a.numero_credenciado}`);
     await d.setViewportSize({ width: 390, height: 844 });
     expect(await d.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
     await d.screenshot({ path: "tests/laboratorio/saida/t303-dono-390.png", fullPage: true });
     await d.context().close();
   });
 
-  test("3. o avaliador recusa: passa ao próximo da fila", async ({ browser }) => {
+  test("3. o avaliador recusa: o pedido volta ao dono, que escolhe outro (B)", async ({ browser }) => {
     test.setTimeout(120_000);
     const p = await entrar(browser, av.A.email, senha);
     await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
     await p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`).getByTestId("designacao-recusar").click();
-    const b = (await credenciamento("B"))!;
-    await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(b.id);
+    await expect.poll(async () => (await pedido()).status, { timeout: 20_000 }).toBe("pedido");
+    expect((await pedido()).avaliador_id).toBeNull();
     await p.context().close();
+    // O dono escolhe B.
+    const b = (await credenciamento("B"))!;
+    const d = await entrar(browser, dono.email, senha);
+    await comChave(d);
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${b.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(b.id);
+    await d.context().close();
   });
 
-  test("4. B aceita e agenda; imóvel ocupado: a visita espera a concordância do morador", async ({ browser }) => {
+  test("4. B propõe o próprio valor e prazo, o dono aceita; B agenda; imóvel ocupado: a visita espera a concordância do morador", async ({ browser }) => {
     test.setTimeout(150_000);
     const p = await entrar(browser, av.B.email, senha);
     await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
     const item = p.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidoId}"]`);
+    // E648: o avaliador define o PRÓPRIO valor e prazo (aqui fora da faixa: só é sinalizado ao dono).
+    await item.getByTestId("proposta-valor").fill("900");
+    await item.getByTestId("proposta-prazo").fill("3");
     await item.getByTestId("designacao-aceitar").click();
+    await expect.poll(async () => Number((await pedido()).valor_proposto), { timeout: 20_000 }).toBe(900);
+    expect((await pedido()).prazo_proposto_dias).toBe(3);
+    await p.reload();
+    await expect(item.getByTestId("agendar-visita")).toHaveCount(0);
+    await expect(item.getByTestId("aguarda-aceite-proprietario")).toBeVisible();
+    // O dono vê a proposta (fora da faixa de referência) e aceita.
+    const dono2 = await entrar(browser, dono.email, senha);
+    await comChave(dono2);
+    await dono2.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
+    await expect(dono2.getByTestId("avaliacao-proposta")).toContainText("900");
+    await expect(dono2.getByTestId("avaliacao-proposta-fora")).toBeVisible();
+    await dono2.getByTestId("aceitar-proposta").getByRole("button", { name: "Aceitar valor e prazo" }).click();
+    await expect.poll(async () => (await pedido()).proposta_aceita_em, { timeout: 20_000 }).not.toBeNull();
+    await dono2.context().close();
+    await p.reload();
     await expect(item.getByTestId("agendar-visita")).toBeVisible({ timeout: 20_000 });
     const amanha = new Date(Date.now() + 2 * 86_400_000);
     const valor = `${amanha.toISOString().slice(0, 10)}T10:00`;
-    await item.getByTestId("agendar-visita").getByLabel("Data e hora da visita").fill(valor);
+    // O campo é o do site (data em texto "Data" + seletor de hora): colar "AAAA-MM-DDTHH:MM" no texto preenche os dois.
+    await item.getByTestId("agendar-visita").getByRole("textbox", { name: "Data", exact: true }).fill(valor);
     await item.getByTestId("agendar-visita").getByRole("button", { name: "Agendar" }).click();
     await expect.poll(async () => (await pedido()).agendado_para, { timeout: 20_000 }).not.toBeNull();
     const antes = await pedido();
@@ -227,7 +264,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await m.context().close();
   });
 
-  test("5. o avaliador não aparece: o dono registra a ausência e a Viva designa outro, sem custo", async ({ browser }) => {
+  test("5. o avaliador não aparece: o dono registra a ausência e o pedido volta para ele escolher outro, sem custo", async ({ browser }) => {
     test.setTimeout(150_000);
     // A visita passou (data simulada no banco).
     await adm().from("vistoria_pedidos").update({ agendado_para: new Date(Date.now() - 2 * 3_600_000).toISOString() }).eq("id", pedidoId);
@@ -236,11 +273,13 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
     await d.getByTestId("ausencia-avaliador").getByRole("button", { name: "O avaliador não veio" }).click();
     const b = (await credenciamento("B"))!;
-    const c = (await credenciamento("C"))!;
-    await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(c.id);
+    await expect.poll(async () => (await pedido()).status, { timeout: 20_000 }).toBe("pedido");
+    expect((await pedido()).avaliador_id).toBeNull();
+    expect((await pedido()).valor_proposto).toBeNull();
     const { data: desB } = await adm().from("vistoria_designacoes").select("resposta").eq("pedido_id", pedidoId).eq("avaliador_id", b.id).single();
     expect(desB?.resposta).toBe("ausencia");
-    expect((await pedido()).status).toBe("designado");
+    // Uma ausência só não suspende ninguém: o status do avaliador não muda sozinho (E648).
+    expect((await credenciamento("B"))?.status).toBe("ativo");
     await d.context().close();
   });
 });

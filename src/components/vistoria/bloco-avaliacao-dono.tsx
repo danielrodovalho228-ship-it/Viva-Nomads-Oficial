@@ -12,7 +12,9 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
-import { agendarVisita, avaliarConduta, confirmarRecebido, pedirAvaliacao, registrarAusencia } from "@/lib/vistoria/actions";
+import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
+import { faixaDeReferencia } from "@/lib/vistoria/escolha";
+import { sugeridosDoPedido } from "@/lib/vistoria/servidor";
 import {
   COLUNAS_PRECO,
   CONDUTA_DONO,
@@ -34,8 +36,7 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 
 /**
  * "Pedir avaliação do imóvel" em Meus imóveis › imóvel › Nível, ruído e extras (62-B1; desenho do 62-A, Parte 1: as duas
- * rotas lado a lado, a linha do tempo do pedido, a agenda pelas mensagens e o pagamento direto registrado). Com VISTORIA_ATIVA desligada, não aparece nada. O dono não escolhe o avaliador: o formulário só leva o
- * imóvel; a Viva designa por rodízio e mostra o número de credenciado. Com a chave desligada, só o dono de conta de
+ * rotas lado a lado, a linha do tempo do pedido, a agenda pelas mensagens e o pagamento direto registrado). Com VISTORIA_ATIVA desligada, não aparece nada. E648: a Viva SUGERE os avaliadores e o dono ESCOLHE; o avaliador responde com o próprio valor e prazo e o dono aceita. Com a chave desligada, só o dono de conta de
  * teste vê o bloco, só leitura (massa do QA ao vivo, E235).
  */
 export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string }) {
@@ -58,7 +59,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? ""),
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, avaliadores_credenciamento(numero_credenciado)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -81,8 +82,28 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     concordancia_em: string | null;
     recebido_marcado_em: string | null;
     recebido_confirmado_em: string | null;
+    valor_proposto: number | string | null;
+    prazo_proposto_dias: number | null;
+    proposta_em: string | null;
+    proposta_aceita_em: string | null;
+    teste: boolean;
     avaliadores_credenciamento: { numero_credenciado: string } | null;
   } | null;
+  // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
+  let sugeridos: { id: string; numero: string; nome: string }[] | null = [];
+  if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
+    try {
+      const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
+      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, parceiros(nome_publico)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
+      if (erroDados) throw new Error(erroDados.message);
+      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; parceiros: { nome_publico: string | null } | null }[]).map((d) => [d.id, d]));
+      sugeridos = lista.map((a) => ({ id: a.id, numero: porId.get(a.id)?.numero_credenciado ?? "", nome: porId.get(a.id)?.parceiros?.nome_publico ?? "Avaliador" }));
+    } catch {
+      sugeridos = null;
+    }
+  }
+  const faixa = atual && preco ? faixaDeReferencia(Number(preco.valor)) : null;
+  const propostaForaDaFaixa = atual?.valor_proposto != null && faixa ? Number(atual.valor_proposto) < faixa.min || Number(atual.valor_proposto) > faixa.max : false;
   // Prompt 62-B2: com o laudo emitido, o pedido fecha e "Pedir nova avaliação" volta (o laudo aparece acima).
   const aberto = atual && ["pedido", "designado", "agendado", "realizada"].includes(atual.status);
 
@@ -122,10 +143,71 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             )}
             {atual.avaliadores_credenciamento && (
               <p className="text-ink" data-testid="avaliador-designado">
-                Avaliador designado pela Viva: nº{" "}
+                Avaliador escolhido por você: nº{" "}
                 <Link href={hrefAvaliador(atual.avaliadores_credenciamento.numero_credenciado)} className="underline" data-testid="avaliador-designado-link">
                   {atual.avaliadores_credenciamento.numero_credenciado}
                 </Link>
+              </p>
+            )}
+            {atual.status === "pedido" && !atual.aguardando_avaliador && (
+              <div className="rounded-lg border border-line p-3" data-testid="avaliacao-escolha">
+                <p className="font-semibold text-ink">Escolha o avaliador</p>
+                {faixa && (
+                  <p className="mt-1 text-muted" data-testid="avaliacao-faixa">
+                    Referência da cidade: {brl(faixa.referencia)} (faixa de {brl(faixa.min)} a {brl(faixa.max)}). Cada avaliador define o próprio valor e prazo e você aceita ou escolhe outro.
+                  </p>
+                )}
+                {sugeridos === null ? (
+                  <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
+                ) : sugeridos.length === 0 ? (
+                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora. A Viva avisa quando houver.</p>
+                ) : (
+                  <ul className="mt-2 grid gap-2">
+                    {sugeridos.map((a) => (
+                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2" data-testid="avaliacao-sugerido">
+                        <span className="text-ink">
+                          {a.nome} · nº{" "}
+                          <Link href={hrefAvaliador(a.numero)} className="underline">
+                            {a.numero}
+                          </Link>
+                        </span>
+                        <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
+                          <input type="hidden" name="pedidoId" value={atual.id} />
+                          <input type="hidden" name="avaliadorId" value={a.id} />
+                          <Button type="submit" variant="secondary" size="sm">Escolher este avaliador</Button>
+                        </FormAcao>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            {atual.status === "designado" && !atual.proposta_em && (
+              <p className="text-muted" data-testid="avaliacao-aguarda-proposta">O avaliador tem 24 horas para responder com o valor e o prazo dele. Sem resposta, você escolhe outro.</p>
+            )}
+            {atual.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em && (
+              <div className="rounded-lg border border-line p-3" data-testid="avaliacao-proposta">
+                <p className="font-semibold text-ink">
+                  Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
+                </p>
+                {propostaForaDaFaixa && faixa && (
+                  <p className="mt-1 text-muted" data-testid="avaliacao-proposta-fora">Fora da faixa de referência da cidade ({brl(faixa.min)} a {brl(faixa.max)}). Você decide.</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <FormAcao acao={aceitarProposta} testid="aceitar-proposta">
+                    <input type="hidden" name="pedidoId" value={atual.id} />
+                    <Button type="submit" variant="secondary" size="sm">Aceitar valor e prazo</Button>
+                  </FormAcao>
+                  <FormAcao acao={recusarProposta} testid="recusar-proposta">
+                    <input type="hidden" name="pedidoId" value={atual.id} />
+                    <Button type="submit" variant="secondary" size="sm">Escolher outro avaliador</Button>
+                  </FormAcao>
+                </div>
+              </div>
+            )}
+            {atual.status === "designado" && atual.proposta_aceita_em && (
+              <p className="text-ink" data-testid="avaliacao-proposta-aceita">
+                Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}.
               </p>
             )}
             <ol className="grid gap-2" data-testid="avaliacao-linha-tempo">
@@ -149,7 +231,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </Link>
               .
             </p>
-            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (
+            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (atual.proposta_aceita_em || atual.teste) && (
               <FormAcao acao={agendarVisita} className="flex flex-wrap items-end gap-2" testid="dono-agendar">
                 <input type="hidden" name="pedidoId" value={atual.id} />
                 <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
@@ -190,7 +272,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 <>
                   {desdeNova && <p className="mt-2 text-ink" data-testid="avaliacao-nova">{TEXTO_NOVA_AVALIACAO}</p>}
                   <p className="mt-1 font-semibold text-ink" data-testid="avaliacao-valor">
-                    {desdeNova ? "Valor da nova avaliação" : "Valor da avaliação"}: {brl(cobranca?.valor ?? preco.valor)}
+                    {desdeNova ? "Referência da nova avaliação" : "Referência da avaliação"}: {brl(cobranca?.valor ?? preco.valor)}
                     {condicao ? ` (tabela: ${brl(preco.valor)})` : ""}
                   </p>
                   {condicao && <p className="mt-1 text-muted" data-testid="avaliacao-retorno">{condicao}</p>}
@@ -200,6 +282,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                     ))}
                     {preco.incluiTexto && <li>{preco.incluiTexto}</li>}
                   </ul>
+                  <p className="mt-1 text-muted" data-testid="avaliacao-valor-proprio">Você escolhe o avaliador; ele define o próprio valor e prazo. Você só aceita depois de ver a proposta.</p>
                   <p className="mt-2 font-semibold text-ink" data-testid="frase-paga">{FRASE_PAGA_AVALIACAO}</p>
                   <p className="mt-1 text-xs text-muted">Você paga direto ao avaliador; a Viva registra. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
                 </>

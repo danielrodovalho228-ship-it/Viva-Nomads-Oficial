@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T885 — E461: no cartão "Imóveis fixos" do painel do parceiro, "Abrir minha página" levava ao próprio painel. Agora:
@@ -17,7 +17,7 @@ const slugPub = `paula-t885-${sufixo}`;
 async function parceiro(userId: string, nome: string, slug: string, status: "publicado" | "rascunho"): Promise<string> {
   const { data, error } = await adm()
     .from("parceiros")
-    .insert({ user_id: userId, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status, publicado_em: status === "publicado" ? new Date().toISOString() : null })
+    .insert({ user_id: userId, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status, publicado_em: status === "publicado" ? new Date().toISOString() : null })
     .select("id")
     .single();
   if (error) throw error;

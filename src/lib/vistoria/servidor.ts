@@ -5,11 +5,11 @@ import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
+import { criteriosAtingidos, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
 import {
   designacaoVencida,
-  proximoAvaliador,
+  notaConduta,
   sorteadoParaAuditoria,
-  suspendePorAusencias,
   visitaAmanha,
   type AvaliadorFila,
   type HistoricoDesignacao,
@@ -19,9 +19,10 @@ import {
 } from "./regras";
 
 /*
-  Prompt 62-B1 — o lado do servidor da avaliação do imóvel: lê a fila da cidade e o histórico, pede à regra pura o
-  próximo avaliador e grava a designação. Roda com o cliente de serviço (ações depois do portão de cada parte, e o cron).
-  Nunca lança: aviso é complemento. O dono nunca escolhe o avaliador: nenhuma função aqui recebe avaliador do dono.
+  Prompt 62-B1 / E648 — o lado do servidor da avaliação do imóvel: lê a fila da cidade e o histórico, pede à regra pura os
+  avaliadores SUGERIDOS e grava a escolha do DONO. A Viva não designa ninguém (E648, anti-subordinação) e não suspende
+  ninguém sozinha: critérios públicos de qualidade só abrem uma revisão humana. Roda com o cliente de serviço (ações
+  depois do portão de cada parte, e o cron). Nunca lança: aviso é complemento.
 */
 
 type Admin = SupabaseClient;
@@ -99,7 +100,7 @@ export async function avisarAdmins(admin: Admin, ev: NotificationEvent): Promise
 }
 
 /** Item na fila do admin (um aberto por tipo e referência). */
-export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<void> {
+export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento" | "revisao_criterio", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<void> {
   await admin.from("vistoria_fila_admin").insert({ tipo, pedido_id: ref.pedidoId ?? null, avaliador_id: ref.avaliadorId ?? null, motivo });
 }
 
@@ -180,31 +181,19 @@ type LinhaPedido = {
   origem_pedido_id: string | null;
 };
 
-/**
- * Designa o próximo avaliador elegível (rodízio). Sem ninguém: o pedido fica "aguardando avaliador" e o admin é avisado.
- * Devolve o id do credenciamento designado (ou null).
- */
-export async function designar(admin: Admin, pedidoId: string, agora = new Date()): Promise<string | null> {
+type LeituraEscolha = { p: LinhaPedido; sugestoes: Sugestoes };
+
+/** Lê o pedido, a fila e o histórico e devolve os sugeridos. Qualquer leitura que falha LANÇA (nunca vira "ninguém elegível"). */
+async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date): Promise<LeituraEscolha | null> {
   const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id").eq("id", pedidoId).maybeSingle();
   const p = data as LinhaPedido | null;
-  if (!p || !["pedido", "designado"].includes(p.status)) return null;
-  // Achado 39: se alguma leitura falha, NÃO designa nem diz "Nenhum avaliador elegível" (o admin seria avisado à toa e
-  // os impedimentos/recusas poderiam ser ignorados). O pedido fica aguardando e a rotina do cron tenta de novo.
-  let leituras: [{ avaliador_id: string }[], AvaliadorFila[], HistoricoDesignacao];
-  try {
-    const [jaLeitura, filaLida, historicoLido] = await Promise.all([
-      admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
-      filaDaCidade(admin),
-      historicoDoPedido(admin, p.owner_id, p.property_id),
-    ]);
-    if (jaLeitura.error) throw new Error(`[vistoria] designações do pedido: ${jaLeitura.error.message}`);
-    leituras = [(jaLeitura.data ?? []) as { avaliador_id: string }[], filaLida, historicoLido];
-  } catch (e) {
-    console.error("[vistoria] designar: leitura falhou; o pedido fica para a próxima rotina:", e instanceof Error ? e.message : e);
-    await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, atualizado_em: agora.toISOString() }).eq("id", p.id).eq("status", "pedido");
-    return null;
-  }
-  const [ja, fila, historico] = leituras;
+  if (!p || p.status !== "pedido") return null;
+  const [jaLeitura, fila, historico] = await Promise.all([
+    admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
+    filaDaCidade(admin),
+    historicoDoPedido(admin, p.owner_id, p.property_id),
+  ]);
+  if (jaLeitura.error) throw new Error(`[vistoria] designações do pedido: ${jaLeitura.error.message}`);
   let primeiro: string | null = null;
   if (p.tipo === "contestacao" && p.origem_pedido_id) {
     const { data: o } = await admin.from("vistoria_pedidos").select("avaliador_id").eq("id", p.origem_pedido_id).maybeSingle();
@@ -218,42 +207,133 @@ export async function designar(admin: Admin, pedidoId: string, agora = new Date(
     tipo: p.tipo,
     teste: p.teste,
     primeiroAvaliadorId: primeiro,
-    jaDesignados: ja.map((d) => d.avaliador_id),
+    jaDesignados: ((jaLeitura.data ?? []) as { avaliador_id: string }[]).map((d) => d.avaliador_id),
   };
-  const r = proximoAvaliador(fila, pedido, historico, agora);
-  const quando = agora.toISOString();
-  if (!r.avaliador) {
-    await admin.from("vistoria_pedidos").update({ status: "pedido", avaliador_id: null, designado_em: null, aguardando_avaliador: true, atualizado_em: quando }).eq("id", p.id);
-    await naFilaDoAdmin(admin, "sem_avaliador", { pedidoId: p.id }, `Nenhum avaliador elegível em ${p.cidade}.`);
-    await avisarAdmins(admin, "vistoria_sem_avaliador");
-    return null;
-  }
-  const a = r.avaliador;
-  const { error } = await admin.from("vistoria_designacoes").insert({ pedido_id: p.id, avaliador_id: a.id, designado_em: quando });
-  if (error) return null;
-  await admin.from("vistoria_pedidos").update({ status: "designado", avaliador_id: a.id, designado_em: quando, aguardando_avaliador: false, atualizado_em: quando }).eq("id", p.id);
-  await admin.from("avaliadores_credenciamento").update({ ultima_designacao_em: quando }).eq("id", a.id);
-  await admin.from("vistoria_fila_admin").update({ resolvido_em: quando }).eq("tipo", "sem_avaliador").eq("pedido_id", p.id).is("resolvido_em", null);
-  await avisar(admin, a.userId, "vistoria_designada", ROTA_AVALIADOR, { pedidoId: p.id });
-  return a.id;
+  return { p, sugestoes: sugerirAvaliadores(fila, pedido, historico, agora) };
 }
 
-/** Recusa, silêncio de 24 h ou ausência do avaliador: fecha a designação e passa ao próximo da fila. */
-export async function passarAoProximo(admin: Admin, pedidoId: string, avaliadorId: string, resposta: "recusada" | "expirada" | "ausencia", agora = new Date()): Promise<string | null> {
+/**
+ * E648: abre a ESCOLHA do dono. Não designa ninguém: calcula quem pode ser escolhido. Sem nenhum sugerido, o pedido fica
+ * "aguardando avaliador" e o admin é avisado (para credenciar mais gente). Devolve quantos o dono pode escolher (null se a
+ * leitura falhou: o pedido fica aguardando e a rotina do cron tenta de novo, sem avisar o admin à toa).
+ */
+export async function abrirEscolha(admin: Admin, pedidoId: string, agora = new Date()): Promise<number | null> {
+  let l: LeituraEscolha | null;
+  try {
+    l = await leituraDaEscolha(admin, pedidoId, agora);
+  } catch (e) {
+    console.error("[vistoria] abrirEscolha: leitura falhou; o pedido fica para a próxima rotina:", e instanceof Error ? e.message : e);
+    await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, atualizado_em: agora.toISOString() }).eq("id", pedidoId).eq("status", "pedido");
+    return null;
+  }
+  if (!l) return null;
+  const quando = agora.toISOString();
+  if (!l.sugestoes.sugeridos.length) {
+    await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, atualizado_em: quando }).eq("id", l.p.id);
+    await naFilaDoAdmin(admin, "sem_avaliador", { pedidoId: l.p.id }, `Nenhum avaliador disponível para o dono escolher em ${l.p.cidade}.`);
+    await avisarAdmins(admin, "vistoria_sem_avaliador");
+    return 0;
+  }
+  await admin.from("vistoria_pedidos").update({ aguardando_avaliador: false, atualizado_em: quando }).eq("id", l.p.id);
+  await admin.from("vistoria_fila_admin").update({ resolvido_em: quando }).eq("tipo", "sem_avaliador").eq("pedido_id", l.p.id).is("resolvido_em", null);
+  return l.sugestoes.sugeridos.length;
+}
+
+/** Os sugeridos do pedido (o que o dono vê para escolher). Lança se uma leitura falha. */
+export async function sugeridosDoPedido(admin: Admin, pedidoId: string, agora = new Date()): Promise<AvaliadorFila[] | null> {
+  const l = await leituraDaEscolha(admin, pedidoId, agora);
+  return l ? l.sugestoes.sugeridos : null;
+}
+
+/**
+ * E648: o DONO escolheu o avaliador. Só vale quem está entre os sugeridos (os impedimentos de independência seguem
+ * valendo). O avaliador é avisado e responde com o próprio preço e prazo (ou recusa); nada é imposto a ele.
+ */
+export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliadorId: string, agora = new Date()): Promise<{ ok: true } | { ok: false; erro: string }> {
+  let l: LeituraEscolha | null;
+  try {
+    l = await leituraDaEscolha(admin, pedidoId, agora);
+  } catch {
+    return { ok: false, erro: "Não foi possível conferir os avaliadores agora. Tente de novo." };
+  }
+  if (!l) return { ok: false, erro: "Este pedido não está aguardando a escolha do avaliador." };
+  const a = l.sugestoes.sugeridos.find((x) => x.id === avaliadorId);
+  if (!a) return { ok: false, erro: "Este avaliador não pode avaliar este imóvel. Escolha outro da lista." };
+  const quando = agora.toISOString();
+  const { error } = await admin.from("vistoria_designacoes").insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando });
+  if (error) return { ok: false, erro: "Não foi possível registrar a escolha. Tente de novo." };
+  const { data: mudou } = await admin
+    .from("vistoria_pedidos")
+    .update({ status: "designado", avaliador_id: a.id, designado_em: quando, escolhido_em: quando, aguardando_avaliador: false, atualizado_em: quando })
+    .eq("id", l.p.id)
+    .eq("status", "pedido")
+    .select("id");
+  if (!mudou?.length) return { ok: false, erro: "Este pedido não está aguardando a escolha do avaliador." };
+  await admin.from("avaliadores_credenciamento").update({ ultima_designacao_em: quando }).eq("id", a.id);
+  await admin.from("vistoria_fila_admin").update({ resolvido_em: quando }).eq("tipo", "sem_avaliador").eq("pedido_id", l.p.id).is("resolvido_em", null);
+  await avisar(admin, a.userId, "vistoria_designada", ROTA_AVALIADOR, { pedidoId: l.p.id });
+  return { ok: true };
+}
+
+/**
+ * Recusa, silêncio de 24 h, ausência do avaliador ou proposta recusada pelo dono: fecha a escolha e DEVOLVE o pedido ao
+ * dono para escolher outro (a Viva não passa ao "próximo da fila"). Ausência confere os critérios públicos (revisão
+ * humana; nada de suspensão automática).
+ */
+export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId: string, resposta: "recusada" | "expirada" | "ausencia", agora = new Date()): Promise<void> {
   const quando = agora.toISOString();
   await admin.from("vistoria_designacoes").update({ resposta, respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).is("resposta", null);
-  // Ausência do avaliador conta para a suspensão automática (2 em 90 dias; o admin revê).
   if (resposta === "ausencia") {
     await admin.from("vistoria_designacoes").update({ resposta: "ausencia", respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId);
-    const { data: aus } = await admin.from("vistoria_designacoes").select("respondido_em").eq("avaliador_id", avaliadorId).eq("resposta", "ausencia");
-    const datas = ((aus ?? []) as { respondido_em: string | null }[]).map((x) => x.respondido_em).filter((x): x is string => !!x);
-    if (suspendePorAusencias(datas, agora)) {
-      await admin.from("avaliadores_credenciamento").update({ status: "suspenso", motivo: "Suspensão automática: 2 ausências em 90 dias.", decidido_em: quando }).eq("id", avaliadorId).eq("status", "ativo");
-      await naFilaDoAdmin(admin, "suspensao_automatica", { avaliadorId }, "2 ausências em 90 dias: rever a suspensão.");
+  }
+  await admin
+    .from("vistoria_pedidos")
+    .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, atualizado_em: quando })
+    .eq("id", pedidoId);
+  await abrirEscolha(admin, pedidoId, agora);
+  if (resposta === "ausencia") await revisarCriterios(admin, avaliadorId, agora);
+}
+
+/**
+ * E648: confere os critérios PÚBLICOS de qualidade do avaliador. Atingir um critério só coloca um item na fila do admin
+ * (revisão humana, com direito de resposta do avaliador). O status do avaliador nunca muda por aqui.
+ */
+export async function revisarCriterios(admin: Admin, avaliadorId: string, agora = new Date()): Promise<string[]> {
+  const dia = 86_400_000;
+  const desde = (d: number) => new Date(agora.getTime() - d * dia).toISOString();
+  const [aus, rev, ped, cond] = await Promise.all([
+    admin.from("vistoria_designacoes").select("respondido_em").eq("avaliador_id", avaliadorId).eq("resposta", "ausencia").gte("respondido_em", desde(90)),
+    admin.from("vistoria_auditoria").select("resultado").eq("avaliador_id", avaliadorId).eq("resultado", "nao_confere").gte("revisado_em", desde(365)),
+    admin.from("vistoria_pedidos").select("id, proposta_aceita_em, prazo_proposto_dias").eq("avaliador_id", avaliadorId).not("proposta_aceita_em", "is", null).gte("proposta_aceita_em", desde(180)),
+    admin.from("vistoria_conduta").select("pontualidade, cordialidade, cuidado").eq("avaliador_id", avaliadorId).eq("autor", "dono"),
+  ]);
+  if ([aus, rev, ped, cond].some((r) => r.error)) return [];
+  const pedidos = (ped.data ?? []) as { id: string; proposta_aceita_em: string; prazo_proposto_dias: number | null }[];
+  let foraDoPrazo = 0;
+  if (pedidos.length) {
+    const { data: laudos } = await admin.from("vistoria_laudos").select("pedido_id, emitido_em, versao").in("pedido_id", pedidos.map((x) => x.id)).eq("versao", 1);
+    const emitido = new Map(((laudos ?? []) as { pedido_id: string; emitido_em: string }[]).map((l) => [l.pedido_id, l.emitido_em]));
+    for (const x of pedidos) {
+      const em = emitido.get(x.id);
+      if (!em || !x.prazo_proposto_dias) continue;
+      if (Date.parse(em) > Date.parse(x.proposta_aceita_em) + x.prazo_proposto_dias * dia) foraDoPrazo++;
     }
   }
-  await admin.from("vistoria_pedidos").update({ status: "pedido", avaliador_id: null, designado_em: null, agendado_para: null, atualizado_em: quando }).eq("id", pedidoId);
-  return designar(admin, pedidoId, agora);
+  const notas = ((cond.data ?? []) as { pontualidade: number; cordialidade: number; cuidado: number }[]).map((c) => ({ ...c }) as Record<string, number>);
+  const atingidos = criteriosAtingidos({
+    ausenciasSemAviso90d: (aus.data ?? []).length,
+    naoConfere12m: (rev.data ?? []).length,
+    laudosForaDoPrazo180d: foraDoPrazo,
+    notaConduta: notaConduta(notas),
+    avaliacoesConduta: notas.length,
+  });
+  if (!atingidos.length) return [];
+  const { data: aberto } = await admin.from("vistoria_fila_admin").select("id").eq("tipo", "revisao_criterio").eq("avaliador_id", avaliadorId).is("resolvido_em", null).limit(1);
+  if (!aberto?.length) {
+    const textos = atingidos.map((id) => CRITERIOS_PUBLICOS.find((c) => c.id === id)!.texto);
+    await naFilaDoAdmin(admin, "revisao_criterio", { avaliadorId }, `Critério público atingido: ${textos.join(" | ")} Rever com o avaliador (direito de resposta) antes de qualquer decisão.`);
+  }
+  return atingidos;
 }
 
 /** Cron: designações sem resposta em 24 h passam ao próximo; lembrete D-1 da visita; sorteio da auditoria. */
@@ -267,13 +347,13 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     if (!designacaoVencida(d.designado_em, agora)) continue;
     const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id").eq("id", d.pedido_id).maybeSingle();
     if (p?.status !== "designado" || p.avaliador_id !== d.avaliador_id) continue;
-    await passarAoProximo(admin, d.pedido_id, d.avaliador_id, "expirada", agora);
+    await devolverAoDono(admin, d.pedido_id, d.avaliador_id, "expirada", agora);
     expiradas++;
   }
-  // Pedidos parados sem avaliador: tenta de novo (alguém pode ter sido credenciado).
+  // Pedidos sem nenhum avaliador para o dono escolher: tenta de novo (alguém pode ter sido credenciado).
   const { data: parados } = await admin.from("vistoria_pedidos").select("id").eq("status", "pedido").eq("aguardando_avaliador", true);
   for (const p of (parados ?? []) as { id: string }[]) {
-    if (await designar(admin, p.id, agora)) reprocessados++;
+    if (await abrirEscolha(admin, p.id, agora)) reprocessados++;
   }
   const hoje = hojeEmBrasilia(agora);
   const { data: agendados } = await admin

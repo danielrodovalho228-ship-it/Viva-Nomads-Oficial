@@ -135,7 +135,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           </div>
           <div className="min-w-0 px-6 pt-4 sm:py-6">
             <h3 className="font-title text-lg font-semibold text-ink">É avaliador de imóveis?</h3>
-            <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.</p>
+            <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, escolhida pelo proprietário. Peça o credenciamento numa página própria.</p>
           </div>
           <div className="px-6 pb-6 pt-3 sm:py-6">
             <Link href="/parceiros/avaliadores" className="alvo-toque text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>

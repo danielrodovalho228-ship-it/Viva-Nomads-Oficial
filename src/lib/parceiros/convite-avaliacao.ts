@@ -4,6 +4,6 @@
 */
 export const CONVITE_SEJA_PARCEIRO = {
   titulo: "Avaliação de imóveis",
-  texto: "Credenciamento à parte: identidade, experiência, código de conduta, declaração de relações e uma avaliação de teste. A Viva designa as avaliações por rodízio.",
+  texto: "Credenciamento à parte: identidade, experiência, código de conduta, declaração de relações e uma avaliação de teste. O proprietário escolhe o avaliador, e você define o seu valor e o seu prazo.",
   link: "Ver os passos do credenciamento",
 };
