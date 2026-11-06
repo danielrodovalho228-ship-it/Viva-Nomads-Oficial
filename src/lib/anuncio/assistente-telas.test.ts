@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { TELAS_ASSISTENTE, TEXTOS_REVISAO, TIPOS_ASSISTENTE, linhaPrevia, linhaRevisao, localPrevia, progressoPasso, textoPasso, tituloPrevia } from "./assistente-telas.ts";
+import { TELAS_ASSISTENTE, TEXTOS_REVISAO, TIPOS_ASSISTENTE, linhaPrevia, linhaRevisao, localPrevia, progressoPasso, textoPasso, tituloDaPrevia, TITULO_PREVIA_PENDENTE } from "./assistente-telas.ts";
 import { ETAPAS_ASSISTENTE } from "./assistente-dez-etapas.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { PHOTOS } from "../media.ts";
@@ -47,11 +47,10 @@ test("E102-A: subtítulo do Passo 9 sem 'aluguel'", () => {
   assert.doesNotMatch(TELAS_ASSISTENTE.map((t) => `${t.titulo} ${t.subtitulo}`).join(" "), /alugu/i);
 });
 
-test("prévia: o título do dono; sem título, tipo + bairro como no desenho", () => {
-  assert.equal(tituloPrevia("", "apartamento", "Santa Mônica"), "Apartamento no Santa Mônica");
-  assert.equal(tituloPrevia("  Studio no Centro ", "studio", "Centro"), "Studio no Centro");
-  assert.equal(tituloPrevia("", "quarto", ""), "Quarto privativo");
-  assert.equal(tituloPrevia("", "", ""), "Seu imóvel");
+test("prévia (E630): o título do dono; sem título, pendente — nunca tipo + bairro como se fosse o título", () => {
+  assert.deepEqual(tituloDaPrevia("  Studio no Centro "), { texto: "Studio no Centro", pendente: false });
+  for (const vazio of ["", "   ", "\n\t"]) assert.deepEqual(tituloDaPrevia(vazio), { texto: TITULO_PREVIA_PENDENTE, pendente: true });
+  assert.equal(TITULO_PREVIA_PENDENTE, "Título ainda não definido");
 });
 
 test("prévia: '2 quartos · 65 m²' só com o que existe; lugar com a UF", () => {
