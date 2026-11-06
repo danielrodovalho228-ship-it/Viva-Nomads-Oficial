@@ -526,3 +526,21 @@ observador, então o estado somente leitura em si exige a conta de observação 
 2. **Estado somente leitura (observador)**: não alcançável no demo; cobertura é dos testes de unidade e laboratório do E477. Fica para a QA com a conta de observação.
 3. **E442** (hover do mapa, #2613) e **E443** (logo do cabeçalho logado, #2858): já mesclados, não refeitos.
 4. **Matriz × mockups**: sem tela nova de morador, dono ou parceiro. Nada a corrigir.
+
+## Cartões, comodidades e cabeçalho do anúncio depois dos merges de 06/11 — passada 33 (06/11, modo demonstração, 390 toque e 1280)
+
+Mesclados desde a passada 32 e medidos aqui: E643 (#2894, estado do cartão fora da foto), E454 (#2899, fotos da primeira fileira com prioridade),
+E427 resíduo (#2897, nome no cartão do cabeçalho), E356 (#2903, "Total por mês" e linha da estadia em todo cartão) e E357 (#2904, comodidades
+agrupadas por categoria). **Leitura 3S**: nenhum elemento novo fora do que cada PR disse; o E394 (#2905) mexe só em texto de e-mail.
+Sonda das passadas 23/24/29 com duas classes novas: **cartão sem o rótulo "Total por mês"** e **categoria de comodidades sem ícone**.
+15 rotas × 2 larguras.
+
+1. **Imagem quebrada ou vazia, cartão sem foto, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo**: nenhum caso real. **Conforme.**
+2. **Cartões da busca, home, cidade, favoritos e vitrine do dono**: todos com o rótulo "Total por mês, tudo incluído" e a linha do total da estadia; a foto
+   guarda no máximo as 2 pílulas do E626. **Conforme.**
+3. **Comodidades do anúncio** (4 anúncios): categorias com ícone e itens com ícone em grade de 2 colunas. As categorias de número ímpar de itens
+   (Cozinha com 5, por exemplo) deixam o último item na primeira coluna, à esquerda: é a regra do E313, não um buraco. **Conforme.**
+4. **"Imagens não carregadas"**: carrossel do anúncio (fotos 6 a 8, fora da vista) e cartões lazy do `/dashboard`; completam ao chegar à vista. **Conforme.**
+5. **Estado "Visto" / "Você já contatou" no texto do cartão** e **nome completo no cabeçalho depois do aceite**: exigem usuário com marca e visita confirmada (sessão real);
+   cobertos pelas specs `t166` e `t923`. Ficam para a QA.
+6. **Matriz × mockups**: nada novo. Nada a corrigir.
