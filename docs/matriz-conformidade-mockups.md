@@ -623,3 +623,32 @@ Sonda das passadas 23/24/29/33/38/39 em 55 rotas × 2 larguras (17 públicas, 38
 3. **Painéis × padrão codificado** (fundo clean, cartões uniformes, grade par, ícone por comodidade): a trava `estilo-padrao` e as de grade passam na suíte (6493 testes); a única grade ímpar real achada na volta (`/admin/financeiro`, passada 40) está na #2954.
 4. **Sem medir** (precisam de dados reais, ficam para a QA): `/dashboard/estadia/:id/*` (alteração, confirmada, convidado, encerrar, mensagens, ocupantes), `/dashboard/contratos/:id/ficha`, `/dashboard/servicos/pedidos/:id`, `/admin/parceiros/pedidos/:id`, `/admin/2fa/refazer`.
 Nenhum achado novo; nenhuma correção nesta passada.
+
+## Assistente de cadastro × mockups, elemento por elemento — passada 42 (06/11; modo demonstração, 390 e 1280)
+
+Sequência da vigia: **E193** segue no rascunho #2956 (aguarda a QA; não há outro PR dele nem merge); **E194** já está na `main` (#1532 e #1660, spec t565; medido de novo em 390 e 1280: a qualificação traz o selo "Anunciar imóvel" e o rodapé
+"Antes do Passo 1 · Qualificação 1 de 5" com a mesma barra do "Passo X de 10"). Mockups da branch `mockups` comparados lado a lado com a tela real nos passos da reprova (6, 8 e 9), a 1280 (e a 390 nos mesmos passos).
+Inventário dos 10 passos (blocos abertos): nenhuma caixa quadrada, lista suspensa, pílula nem interruptor fora de cartão (com a #2956).
+
+Diferenças listadas (mockup → real), todas já conhecidas e dentro do padrão codificado:
+1. **Fundo**: mockup bege; real fundo clean (E166, o bege foi retirado de propósito). Cartão branco com sombra: igual.
+2. **Cabeçalho**: mockup com marca e "60% · Passo 6 de 10" no topo; real tem a marca com "Precisa de ajuda?" e "Sair" no topo e o progresso no rodapé fixo ("Passo 6 de 10 · 7% pronto", barra verde contínua). Botão "Continuar" verde-escuro cheio, igual (rótulo com seta no real).
+3. **Passo 6 (Regras)**: o mockup traz **interruptores** (Permite visitas, Visitas podem pernoitar, Aceita fumantes, Permite festas) e os horários do silêncio já abertos; o real traz **cartões grandes** (Mobiliado, Pets, Crianças, Fumar) e os blocos de Convivência (Silêncio, Festas, Visitas) como cartão que abre o grupo. **Conflito a decidir**: o mockup desenha toggle; a reprova do E193 (06/11) e a decisão de "padrão único de cartões" mandam cartão. Segui o E193; se o Daniel preferir o toggle do mockup nesse passo, é decisão de desenho (e voltaria o terceiro estilo).
+4. **Passo 8 (Preço)**: título e subtítulo iguais ("Quanto custa por mês?"); mockup tem Aluguel, Condomínio, Contas e Caução em linhas e o "Total por mês" num cartão verde-claro com o botão dentro; real tem Valor mensal, Condomínio, Despesas de consumo (escolha em cartão), "O que vai para o seu bolso" e o botão no rodapé fixo. Mais campos que o mockup (consumo e bolso), mantidos.
+5. **Passo 9 (Disponibilidade)**: datas em campo de digitar com calendário do site e escolha em cartão; o mockup também desenha campos de data.
+6. **Prévia do anúncio**: igual em posição (coluna à direita); no demo o cartão sai sem foto ("A foto principal aparece aqui") porque o rascunho de demonstração não tem fotos; com foto, mostra a capa.
+7. **Índice dos passos** (1 a 10, com estado): existe no real, não no mockup (E602).
+
+Nenhum defeito novo; nenhuma correção nesta passada. Varredura geral (imagem, elemento fixo, estouro lateral) nos 10 passos a 390 e 1280: sem rolagem lateral; o "N" no canto é o indicador do servidor de desenvolvimento, não da tela.
+
+## Assistente × mockups, continuação (passos 1–5, 7 e 10) — passada 43 (06/11; modo demonstração, 1280 × 720 e 390)
+
+Continua a passada 42 nos passos que ela não comparou. Telas reais a 1080 × 720 (a medida dos mockups) e 390, sonda de imagem/estouro/elemento fixo: sem rolagem lateral e sem imagem quebrada nos 10 passos (o "N" no canto é o indicador do servidor de desenvolvimento).
+**E193 (#2956)**, retomado: os Passos 6, 8 e 9 hoje só têm cartão grande para escolher (Convivência, negociação, garantias, consumo, faixas, duração) e campo para digitar (valor, condomínio, datas, horários); nenhum interruptor, caixa, lista ou pílula. Os testes de unidade passam; os specs de laboratório (t620, t677, t680) rodam no CI `lab-critico`, não aqui.
+
+Diferenças (mockup → real), todas dentro do padrão codificado:
+1. **Passo 5 (Comodidades)**: o mockup é uma grade 2 × 4 de cartões com ícone; o real agrupa em "Pronto para trabalhar de casa" (essenciais e extras, com contador "0 de 4 itens essenciais") e traz o aviso "Campos com * são obrigatórios". Mesmos cartões com ícone e ✓; o agrupamento é o do E357/E416.
+2. **Passo 10 (Revisão)**: o mockup tem "Lista de conferência" com ✓ verdes e, ao lado, o cartão do anúncio com preço e o botão "Publicar anúncio" dentro dele; o real tem "Antes de publicar" com a contagem do que falta, cada item com "Resolver", e o botão fica no rodapé fixo (liberado com a lista completa). No demo a lista sai incompleta (rascunho sem fotos/endereço), por isso os círculos vazios.
+3. **Rótulos do progresso**: o mockup mostra "Passo X de 10" em pílula no topo; o real tem o índice dos 10 passos (E602) e o "Passo X de 10 · N% pronto" no rodapé.
+4. **Tipografia e cor**: título grande em preto-tinta e subtítulo cinza, como o mockup; verde do botão e da seleção (`forest`) igual; cartão de escolha selecionado em verde-claro com borda verde e ✓ redondo, como o mockup.
+Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "Destaques") e a pergunta sobre toggle × cartão no Passo 6 (passada 42, ponto 3). Nenhum defeito novo.
