@@ -70,7 +70,8 @@ export default async function PoloPage({ params }: Params) {
     return <BairroPagina cidade={c} bairro={b} vizinhos={vizinhos} totalCidade={daCidade.length} />;
   }
 
-  const todos = await listPropertiesByCity(c.name);
+  // E446: a página do polo ("N anúncios nesta região") lê a MESMA base da vitrine que a busca, a cidade e o bairro.
+  const todos = baseDaVitrine(await listPropertiesByCity(c.name), (i) => isExemplo(i.id));
   const imoveis = imoveisDoPolo(p, todos);
   const medias = calcularPrecosMedios(imoveis);
   const reais = imoveis.filter((i) => !isExemplo(i.id));

@@ -23,6 +23,13 @@ test("a lista da cidade lê a base única da vitrine (Pista B, #2970): mesmo con
   assert.match(ler("app/(public)/buscar/search-client.tsx"), /baseDaVitrine\(base,/);
 });
 
+test("a página do polo (HC-UFU, UFU Santa Mônica) e a do bairro também leem a base da vitrine", () => {
+  const polo = ler("app/(public)/cidades/[cidade]/[polo]/page.tsx");
+  assert.match(polo, /const todos = baseDaVitrine\(await listPropertiesByCity\(c\.name\), \(i\) => isExemplo\(i\.id\)\);/);
+  assert.match(polo, /imoveisDoBairro\(slug, baseDaVitrine\(/);
+  assert.doesNotMatch(polo, /const todos = await listPropertiesByCity/);
+});
+
 test("reais e exemplos aparecem no detalhe, sem mudar o número do título", () => {
   assert.equal(detalheContagemCidade(0, 0), null);
   assert.equal(detalheContagemCidade(9, 0), null);
