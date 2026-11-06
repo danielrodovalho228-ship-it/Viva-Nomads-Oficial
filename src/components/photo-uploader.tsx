@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, X, Loader2, Star, AlertTriangle, Undo2, Camera } from "lucide-react";
 import {
   uploadPropertyPhoto,
@@ -95,6 +95,21 @@ export function PhotoUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [soltando, setSoltando] = useState(false);
   const temArquivos = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
+  /*
+    A lista mais recente da galeria. O envio é assíncrono (upload + conferência): um segundo envio começado antes de o
+    primeiro gravar (ex.: arrastar mais uma foto enquanto o lote anterior ainda é conferido — a contagem do passo já
+    anda com o progresso) gravava sobre a lista ANTIGA e apagava o lote anterior (lab do t204 a 390 px: 7 fotos → 1).
+    Cada envio grava agora sobre a lista mais recente.
+  */
+  const fotosRef = useRef(photos);
+  useEffect(() => {
+    fotosRef.current = photos;
+  }, [photos]);
+  function gravarSobreAtual(montar: (atual: PhotoItem[]) => PhotoItem[]) {
+    const next = montar(fotosRef.current);
+    fotosRef.current = next;
+    onChange(next);
+  }
 
   /** Reordena a galeria movendo `from` para a posição `to` (a[0] = capa). */
   function reorder(from: number, to: number) {
@@ -114,7 +129,7 @@ export function PhotoUploader({
     try {
       // Um caminho só para enviar fotos (prompt 20): o mesmo do cartão "Preencher com IA" e da barra do celular.
       const r = await enviarFotos(Array.from(files), {
-        atuais: photos,
+        atuais: fotosRef.current,
         max,
         ownerId,
         tratar,
@@ -134,7 +149,7 @@ export function PhotoUploader({
         novas = novas.map((n, i) => (urls[i] ? { ...n, conteudo: res[k++] ?? null } : n));
         setConferindo(false);
       }
-      onChange(comPrincipalBoa([...photos, ...novas]));
+      gravarSobreAtual((atual) => comPrincipalBoa([...atual, ...novas]));
       setOriginais((o) => ({ ...o, ...r.originais }));
       if (r.erro) setError(r.erro);
     } finally {
