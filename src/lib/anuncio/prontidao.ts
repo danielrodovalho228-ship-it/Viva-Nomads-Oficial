@@ -11,6 +11,7 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { DETALHE_FOTO_REPETIDA, ROTULO_FOTO_REPETIDA } from "../fotos/foto-repetida.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -90,6 +91,11 @@ export interface FatosAnuncio {
    * publicar, mas não contam no "N% pronto". Ausente = todos confirmados (rascunho antigo, anúncio publicado).
    */
   naoConfirmados?: readonly string[];
+  /**
+   * E640 (b): uma das fotos é igual (ou quase) à de outro anúncio e a matrícula ainda não foi conferida: a publicação fica
+   * travada até a equipe conferir. Ausente/false = sem trava. O dono nunca vê de quem é a outra foto.
+   */
+  fotoRepetidaAberta?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -203,6 +209,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   if (f.confortoFaltam !== undefined && f.confortoFaltam > 0) {
     const n = f.confortoFaltam;
     obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
+  }
+  if (f.fotoRepetidaAberta) {
+    obrigatorios.push({ key: "foto_repetida", label: ROTULO_FOTO_REPETIDA, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_FOTO_REPETIDA });
   }
   // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [
