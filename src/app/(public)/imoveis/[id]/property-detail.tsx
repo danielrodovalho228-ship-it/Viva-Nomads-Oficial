@@ -37,7 +37,8 @@ import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candid
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
 import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
-import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
+import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { SelosAnuncio } from "@/components/property/selos-anuncio";
 import { ComparacaoAirbnbFicha } from "@/components/precos/comparacao-airbnb-ficha";
 import { SELO_NF_UI } from "@/lib/flags";
 import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
@@ -929,7 +930,10 @@ export function PropertyDetail({
               )}
               {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
               {property.acceptsInsurance && <InsuranceBadge />}
-              {property.precoJusto && <PrecoJustoBadge />}
+            </div>
+            {/* E626: a lista completa dos selos do cartão, com símbolo + texto (o bloco do nível segue como está). */}
+            <div className="mt-3">
+              <SelosAnuncio tem={{ verificado: !exemplo && property.owner?.verified === true, precoJusto: !!property.precoJusto, pets: !!property.petsAllowed, negocia: !!property.negociacao?.aceita }} />
             </div>
             {/* E399-C pacote 3: com a chave ligada e o selo, a comparação com 30 noites no Airbnb (nunca o link). */}
             {property.precoJusto && property.comparacaoAirbnb && <ComparacaoAirbnbFicha comparacao={property.comparacaoAirbnb} />}

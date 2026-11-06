@@ -1,7 +1,8 @@
 import * as React from "react";
-import { Award, BadgePercent, FileText, ShieldCheck, Zap, Laptop, MapPin, Building2 } from "lucide-react";
+import { Award, FileText, ShieldCheck, Zap, Laptop, MapPin, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SELOS } from "@/config/selos";
+import { IconePrecoJusto } from "@/components/ui/icone-preco-justo";
 
 /** Selo "Preço justo" (ordem 4c74ac38): aluguel abaixo do equivalente no Airbnb informado pelo dono. Critério em /como-funciona#preco-justo. */
 export function PrecoJustoBadge({ className }: { className?: string }) {
@@ -13,7 +14,7 @@ export function PrecoJustoBadge({ className }: { className?: string }) {
         className
       )}
     >
-      <BadgePercent className="h-3.5 w-3.5" aria-hidden />
+      <IconePrecoJusto className="h-3.5 w-3.5" />
       Preço justo
     </span>
   );

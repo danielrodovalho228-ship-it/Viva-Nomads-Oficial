@@ -12,7 +12,7 @@ test("cartão do anúncio mostra a patinha só quando o imóvel aceita pet (orde
   assert.match(selos, /pets: PawPrint/);
 });
 
-test("a patinha tem texto (não só ícone): o selo escreve 'Aceita pets'", () => {
-  assert.match(selos, /<span className="truncate" title=\{s\.rotulo\}>\s*\{s\.rotulo\.split\(" · "\)\[0\]\}/);
-  assert.match(selos, /<Icone className="h-3 w-3 shrink-0[^"]*" aria-hidden \/>/);
+test("a patinha tem o texto completo (aria-label e title): 'Aceita pets' (E626: só símbolo na pílula)", () => {
+  assert.match(selos, /role="img" aria-label=\{s\.rotulo\} title=\{s\.rotulo\}/);
+  assert.match(selos, /pets: PawPrint/);
 });
