@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T680 — E193 (reteste de 30/10, ordem do Daniel de 25/10): o Passo 5 inteiro no padrão único de cartões grandes
   tocáveis da Qualificação. Com os blocos opcionais abertos, inventaria os controles de escolha à vista:
    - nenhuma pílula (botão arredondado de chip) e nenhuma caixa quadrada;
-   - interruptor só o do bloco opcional (padrão E56: data-testid "bloco-…-toggle");
+   - nenhum interruptor: o bloco opcional também é o cartão grande (E193, reprova de 06/11);
    - o Ruído sem pares Sim/Não (um cartão de marcar por pergunta).
   1280 e 390, com prints.
 */
@@ -25,8 +25,6 @@ const inventario = (p: Page) =>
     for (const el of Array.from(raiz.querySelectorAll("input[type=checkbox], input[type=radio]"))) if (!fora(el) && visivel(el)) r.caixa.push(rot(el.closest("label") ?? el));
     for (const el of Array.from(raiz.querySelectorAll("[role=switch]"))) {
       if (fora(el) || !visivel(el)) continue;
-      const id = el.getAttribute("data-testid") ?? "";
-      if (/^bloco-.*-toggle$/.test(id)) continue; // padrão E56 (bloco opcional atrás de interruptor): exceção aprovada
       // Cartão de "mostrar no anúncio" usa role=switch, mas é o cartão grande: conta como cartão.
       if (el.hasAttribute("data-cartao-assistente")) { r.cartao.push(rot(el)); continue; }
       r.chave.push(rot(el));
@@ -79,7 +77,7 @@ test.describe("T680 — E193: Passo 5 em cartões", () => {
       console.log(`t680 ${largura}`, JSON.stringify(inv));
       expect(inv.pilula, `pílulas: ${inv.pilula.join(" | ")}`).toEqual([]);
       expect(inv.caixa, `caixas: ${inv.caixa.join(" | ")}`).toEqual([]);
-      expect(inv.chave, `interruptores fora do bloco opcional: ${inv.chave.join(" | ")}`).toEqual([]);
+      expect(inv.chave, `interruptores (só cartão grande vale): ${inv.chave.join(" | ")}`).toEqual([]);
       expect(inv.cartao.length).toBeGreaterThan(10);
       // Ruído: um cartão de marcar por pergunta, sem "Sim"/"Não".
       const ruido = p.getByTestId("ruido-form");
