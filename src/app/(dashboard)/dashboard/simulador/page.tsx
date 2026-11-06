@@ -48,7 +48,7 @@ export default function SimuladorPage() {
   // Regra única: taxa de serviço por contrato fechado, pela faixa do nº de imóveis ativos (o preço da Viva).
   const faixa = faixaPorImoveisAtivos(imoveisAtivos);
   const taxaTexto = taxaPublicaTexto(faixa);
-  // E628: o simulador do dono nomeia a faixa — inclusive a do Gestor (20+ imóveis), com o mesmo detalhe da /simulacao.
+  // E628: o simulador do dono nomeia a faixa — inclusive a do Gestor, com o mesmo detalhe da /simulacao.
   const faixaNome = faixaDoDono(faixa);
   const calc = useMemo(() => calcularImovel(e, faixa.taxa), [e, faixa.taxa]);
   const res = calc.rentabilidade;

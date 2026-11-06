@@ -14,7 +14,7 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("E628: cada faixa do dono tem nome; só a do Gestor traz o detalhe", () => {
   const nomes = FAIXAS_COMISSAO_PADRAO.map((f) => faixaDoDono(f).nome);
   assert.deepEqual(nomes, ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16–19 imóveis", "20+ imóveis · Plano Gestor"]);
-  for (const f of FAIXAS_COMISSAO_PADRAO) assert.equal(faixaDoDono(f).gestor !== null, f.gestor === true, f.minImoveis);
+  for (const f of FAIXAS_COMISSAO_PADRAO) assert.equal(faixaDoDono(f).gestor !== null, f.gestor === true, String(f.minImoveis));
 });
 
 test("E628: com 20 imóveis ativos (o fim do controle) o dono vê o Gestor, 4%, com o texto da /simulacao", () => {
