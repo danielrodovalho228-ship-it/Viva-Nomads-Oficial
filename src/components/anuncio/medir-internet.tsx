@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { isAppUserAgent } from "@/lib/app-mode";
 import { INTERNET, TEXTO_PARA_VALIDAR_NO_APP } from "@/config/internet";
 import { aproveitarRodadas, juntarRodadas, textoInternet, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
-import { medirUmaRodada, motivoDaFalha, type Medidor } from "@/lib/internet-motor";
+import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, type Medidor } from "@/lib/internet-motor";
 import type { EstadoMedir, ResultadoMedicao, Origem } from "@/lib/internet-medida-servidor";
 
 const MOTIVO: Record<MotivoInvalida, string> = {
@@ -113,16 +113,15 @@ export function MedirInternet({
     const aproveitadas = aproveitarRodadas(rodadas, INTERNET.rodadas);
     if (!aproveitadas || !juntarRodadas(aproveitadas.rodadas)) {
       setFase("parado");
-      const motivo = motivoDaFalha(falha);
-      return setResultado({
-        ok: false,
-        erro:
-          motivo === "demorou"
-            ? "A medição demorou demais e parou. Confira o Wi-Fi e tente de novo."
-            : motivo === "incompleto"
-              ? "A medição não conseguiu medir o envio, o download ou a resposta da conexão por completo. Tente de novo."
-              : "A medição não terminou. Confira a conexão e tente de novo.",
-      });
+      // E414: o motivo (e o sentido que travou) aparece na frase e vai para o registro do servidor, sem dado pessoal.
+      if (falha instanceof FalhaMedicao) {
+        void fetch("/api/internet/falhas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ motivo: falha.motivo, fase: falha.fase, ms: falha.ms, status: falha.status ?? null, rodada: rodadas.length + 1 }),
+        }).catch(() => {});
+      }
+      return setResultado({ ok: false, erro: mensagemDaFalha(falha) });
     }
     setParcial(aproveitadas.parcial);
     setFase("salvando");
