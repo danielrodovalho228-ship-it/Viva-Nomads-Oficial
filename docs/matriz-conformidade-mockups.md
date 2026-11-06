@@ -433,3 +433,15 @@ Ordenar) e a folha "Mais filtros", calendário do cadastro (Passo 9), sino de av
 3. **Chat flutuante ausente a 390**: some abaixo de 768 px por desenho (E246). **Conforme.**
 4. **Calendário do cadastro** (E136): abre o `CalendarioBR` no toque e no computador, dentro da tela. **Conforme.**
 5. **Matriz × mockups**: sem tela nova que o demo alcance (passada 23, item 6). Nada a corrigir.
+
+## Estados abertos a 768 (tablet) — passada 26 (06/11, modo demonstração)
+
+Nada foi mesclado na `main` desde a passada 25 (a ponta é o merge da passada 24), então não há tela nova para medir. A passada repete os
+estados abertos da 25 no eixo que faltava, **768 px** (toque): painéis da busca (Datas, Local, Tipo, Preço, Ordenar), folha "Mais
+filtros", chat "Fale com a Viva" (aparece a partir de 768, E246), sino, menu Conta e calendário do cadastro.
+
+1. **Painel, folha, menu ou chat cortado, maior que a tela, com rolagem lateral, texto cortado ou fundo bege**: nenhum caso nas 10
+   medições (as duas "ausente" da primeira rodada eram seletor da sonda; refeitas com o seletor certo, conformes). **Conforme.**
+2. **Chat a 768**: painel de 380 px de largura, dentro da tela e sem rolagem lateral; o fechar fora/Esc está no #2765 (rascunho, aguarda QA). **Conforme.**
+3. **Painel Local a 768**: 520 px de altura, dentro da tela (E526). **Conforme.**
+4. **Matriz × mockups**: sem tela nova. Nada a corrigir.
