@@ -1,3 +1,4 @@
+import { SESSAO_PREPAINT_SCRIPT } from "@/lib/sessao-prepaint";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -72,6 +73,8 @@ export default function RootLayout({
       <head>
         {/* Modo app (Android/iPhone): marca <html data-app> antes da 1ª pintura. */}
         <script dangerouslySetInnerHTML={{ __html: APP_PREPAINT_SCRIPT }} />
+        {/* E398: com pista local de sessão, o "Entrar" fica invisível até a sessão assentar (sem piscar o cabeçalho de visitante). */}
+        <script dangerouslySetInnerHTML={{ __html: SESSAO_PREPAINT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-surface text-ink">
         <AuthProvider>
