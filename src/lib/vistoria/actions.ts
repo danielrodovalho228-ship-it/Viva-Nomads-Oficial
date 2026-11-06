@@ -288,6 +288,8 @@ async function ativarParceiroDoAvaliador(
 export async function adminCriarAvaliacaoTeste(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const avaliadorId = String(form.get("avaliadorId") ?? "");
   const propertyId = String(form.get("propertyId") ?? "");
   const { data: c } = await a.admin.from("avaliadores_credenciamento").select("status, parceiros(user_id)").eq("id", avaliadorId).maybeSingle();
@@ -348,6 +350,8 @@ export async function adminSalvarPreco(form: FormData): Promise<Res> {
 export async function adminRevisarAuditoria(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const id = String(form.get("id") ?? "");
   const resultado = String(form.get("resultado") ?? "");
   const motivo = texto(form.get("motivo"), 500) || null;
@@ -372,6 +376,8 @@ export async function adminRevisarAuditoria(form: FormData): Promise<Res> {
 export async function adminResolverFila(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   await a.admin.from("vistoria_fila_admin").update({ resolvido_em: new Date().toISOString(), resolvido_por: a.userId }).eq("id", String(form.get("id") ?? "")).is("resolvido_em", null);
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
