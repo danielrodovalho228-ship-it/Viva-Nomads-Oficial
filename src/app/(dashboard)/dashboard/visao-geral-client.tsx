@@ -31,7 +31,7 @@ import {
 import { primeiroNomeExibicao } from "@/lib/roles";
 import { StatCard, Panel, EmptyState, PageTitle } from "@/components/dashboard/primitives";
 import { ConviteFotoPerfil } from "@/components/account/convite-foto-perfil";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { ChecklistAtivacaoBloco } from "@/components/onboarding/checklist-ativacao";
 import type { ChecklistAtivacao } from "@/lib/onboarding/ativacao";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
@@ -592,8 +592,8 @@ function TenantDashboard({
             </Link>
           </div>
           <div className="mt-4 grid auto-rows-fr grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-6 lg:grid-cols-4">
-            {recommended.map((p) => (
-              <PropertyCard key={p.id} property={p} />
+            {recommended.map((p, i) => (
+              <PropertyCard key={p.id} property={p} prioridade={i < PRIMEIRA_FILEIRA} />
             ))}
           </div>
         </section>

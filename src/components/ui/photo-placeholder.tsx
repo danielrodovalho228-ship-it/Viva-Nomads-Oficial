@@ -1,3 +1,4 @@
+import { rotuloSeguroDaFoto } from "@/lib/fotos/rotulo-placeholder";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +21,8 @@ export function PhotoPlaceholder({
       )}
     >
       <ImageIcon className="h-6 w-6" aria-hidden />
-      {label && (
-        <span className="px-3 text-center text-xs font-medium text-muted">{label}</span>
+      {rotuloSeguroDaFoto(label) && (
+        <span className="px-3 text-center text-xs font-medium text-muted">{rotuloSeguroDaFoto(label)}</span>
       )}
     </div>
   );

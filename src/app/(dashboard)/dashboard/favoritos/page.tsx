@@ -5,7 +5,7 @@ import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 
 import { GitCompare } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { FavoritosTabs } from "@/components/dashboard/favoritos-tabs";
 import { useFavoritos } from "@/lib/use-favoritos";
@@ -39,8 +39,8 @@ export default function FavoritesPage() {
         <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.favoritos} />
       ) : (
         <div className="grid auto-rows-fr gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
-          {favorites.map((p) => (
-            <PropertyCard key={p.id} property={p} />
+          {favorites.map((p, i) => (
+            <PropertyCard key={p.id} property={p} prioridade={i < PRIMEIRA_FILEIRA} />
           ))}
         </div>
       )}
