@@ -64,7 +64,8 @@ test("(iii) linha: real sim/não, teste não, demonstração 'como exemplo' (ou 
 
 test("(i) a fila de fotos mostra o arquivo enviado (URL assinada), nunca uma silhueta no lugar", () => {
   const f = ler("app/(dashboard)/admin/fotos-perfil/fila-fotos-cliente.tsx");
-  assert.match(f, /<img src=\{f\.url\}/);
+  assert.match(f, /<PreviaFoto url=\{f\.url\}/);
+  assert.match(f, /<img\s+src=\{url\}/);
   assert.match(f, /Sem arquivo/);
   assert.doesNotMatch(f, /UserRound|silhueta|placeholder/i);
 });
