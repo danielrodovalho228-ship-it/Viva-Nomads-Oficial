@@ -324,3 +324,21 @@ fundo bege.
    decisão do Daniel (`cabecalho-*`, `cadastro-imovel-07-descricao`, `admin-servicos`, `pouso-morador`) ou de sessão real
    (`parceiro-ordens`, `perfil-01`, `perfil-02`, `/auth/verificar-codigo`, `/dashboard/avaliacoes`), cada uma com a guarda do
    laboratório que a cobre. **Nada novo a conferir no modo demonstração.**
+
+## Anúncios, painel do dono e grades — passada 20 (06/11, modo demonstração, 390 toque e 1280)
+
+Os 15 anúncios (`/imoveis/ube-001` a `-015`), as telas de edição, desempenho e cartão de 6 anúncios no painel, 35 telas do
+painel medidas para grade com buraco e fundo bege, e as públicas ainda não medidas (`/precos`, `/avaliadores`, `/conferir`,
+`/guia-fotos`, guias, `/proprietario/exemplo-1`, parceiros). Medido: imagem quebrada ou vazia (rolando devagar até o fim,
+porque a rolagem rápida deixa foto "cinza" só no print), rolagem lateral, texto cortado, controle coberto, botões cheios,
+fundo bege e grade com última linha incompleta.
+
+1. **`/proprietario/[id]`: grade de imóveis com buraco a 1280** — 5 imóveis em 4 colunas deixavam o quinto sozinho na 2ª
+   linha. **Corrigido no #2826** (colunas pela quantidade: 5 → uma linha de 5; t919).
+2. **Imagem quebrada ou vazia, rolagem lateral, fundo bege, botão cheio a mais**: nenhum caso. As fotos "cinza" do print de
+   página inteira da home eram só a rolagem rápida do script (todas carregam rolando devagar). **Conforme.**
+3. **Texto "cortado"** nos anúncios ("Padrão mínimo"): título só para leitor de tela. **Conforme.**
+4. **Grades com última linha incompleta** que são desenho aprovado: mosaico da galeria do anúncio (1 grande + 4), listas de
+   comodidades e o calendário de disponibilidade (7 colunas), e a lista da cidade (decisão B2, passada 9). **Conformes.**
+5. **`/dashboard/recibos`**: o filtro (Imóvel · Mês · Ver) é uma linha só; a sonda acusou por alinhar o botão pela base.
+   **Conforme.**
