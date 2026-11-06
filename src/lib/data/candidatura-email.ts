@@ -23,7 +23,7 @@ export async function corpoDoEmailDaCandidatura(admin: SupabaseClient, leadId: s
   // cai na conta da linha (aluguel + condomínio + contas).
   const publico = await getProperty(lead.property_id as string).catch(() => undefined);
   const totalMensal = publico ? calcularTotalMensal(publico).total : totalMesDaLinha(im);
-  const imovel = { titulo: (im.title as string | null) ?? null, bairro: (im.address as string | null) ?? null, cidade: (im.city as string | null) ?? null };
+  const imovel = { id: lead.property_id as string, titulo: (im.title as string | null) ?? null, bairro: (im.address as string | null) ?? null, cidade: (im.city as string | null) ?? null };
   // Primeiro nome só (o contato nunca sai; o nome completo é revelado ao dono depois do aceite, na tela).
   const interessado = String((quem?.full_name as string | null) ?? "").includes("@") ? "" : String(quem?.full_name ?? "").trim().split(/\s+/)[0] ?? "";
   // E583: o total da estadia pela MESMA função da tela do "Pedir para morar" (em dias, com preparação e saída).

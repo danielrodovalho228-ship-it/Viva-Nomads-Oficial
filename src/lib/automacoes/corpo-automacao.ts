@@ -21,7 +21,7 @@ export const TIPOS_COM_CORPO: ReadonlySet<string> = new Set<TipoCorpoAutomacao>(
 ]);
 
 export interface DadosAutomacao {
-  imovel: { titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
+  imovel: { id?: string | null; titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
   /** O dia do fato (yyyy-mm-dd): saída, fim do período, entrada. */
   data?: string | null;
   /** Horário do imóvel (saída até / entrada a partir de), como cadastrado ("11:00"). */

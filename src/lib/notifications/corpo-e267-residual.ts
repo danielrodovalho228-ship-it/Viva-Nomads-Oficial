@@ -20,7 +20,7 @@ export interface CorpoResidual {
   linhas: LinhaEmail[];
 }
 
-type Imovel = { titulo?: string | null; bairro?: string | null; cidade?: string | null } | null | undefined;
+type Imovel = { id?: string | null; titulo?: string | null; bairro?: string | null; cidade?: string | null } | null | undefined;
 
 const limpo = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").trim();
 const ola = (n?: string) => `Olá${n ? " " + n : ""}`;

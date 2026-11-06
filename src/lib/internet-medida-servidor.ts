@@ -231,7 +231,7 @@ export async function registrarMedicao(entrada: {
           "internet_abaixo_medida",
           `/dashboard/imoveis/${imovelId}/editar#internet`,
           corpoInternetAbaixo({
-            imovel: { titulo: pp.title, bairro: pp.address, cidade: pp.city },
+            imovel: { id: imovelId, titulo: pp.title, bairro: pp.address, cidade: pp.city },
             morador: { download: junta.downloadMbps, upload: junta.uploadMbps },
             dono: dono ? { download: dono.downloadMbps, upload: dono.uploadMbps } : null,
           }),
@@ -290,7 +290,7 @@ export async function avisosDeRemedicao(admin: Admin, agora: Date, simular = fal
       l.properties.owner_id,
       "internet_remedir",
       `/dashboard/imoveis/${l.property_id}/editar#internet`,
-      corpoInternetRemedir({ imovel: { titulo: l.properties.title, bairro: l.properties.address, cidade: l.properties.city }, validoAte: l.valido_ate }),
+      corpoInternetRemedir({ imovel: { id: l.property_id, titulo: l.properties.title, bairro: l.properties.address, cidade: l.properties.city }, validoAte: l.valido_ate }),
       l.property_id
     );
     avisos += 1;

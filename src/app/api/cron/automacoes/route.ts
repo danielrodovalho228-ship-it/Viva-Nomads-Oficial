@@ -170,10 +170,10 @@ export async function GET(request: Request) {
     const blocos = ((c.contrato_blocos as Bloco[] | null) ?? []).filter((b) => b.fim);
     if (!blocos.length) continue;
     const prop = c.properties as unknown as { owner_id?: string; title?: string; address?: string | null; city?: string | null; checkout_before?: string | null } | null;
-    const imovelEmail = prop ? { titulo: prop.title, bairro: prop.address, cidade: prop.city } : null;
+    const imovelEmail = prop ? { id: c.property_id as string, titulo: prop.title, bairro: prop.address, cidade: prop.city } : null;
     const partes = [prop?.owner_id, c.tenant_id as string].filter((u): u is string => !!u);
     // E267: título · bairro, cidade (o "bairro" é o campo público; nunca o endereço exato).
-    const imovel = linhaImovel({ titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
+    const imovel = linhaImovel({ id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
     if (lembreteDeSaida(fimFinal, hoje)) {
       // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
@@ -226,7 +226,7 @@ export async function GET(request: Request) {
     const vez = daVez(ultima.autor);
     const pp = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
     // E344: a linha do imóvel com bairro e cidade, como nos outros e-mails do cron (linhaImovel), não só o título.
-    const imovelProposta = pp ? linhaImovel({ titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "";
+    const imovelProposta = pp ? linhaImovel({ id: p.property_id as string, titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "";
     alvos.push({
       tipo: "proposta_vencendo",
       usuarioId: (vez === "owner" ? p.owner_id : p.tenant_id) as string,
@@ -234,7 +234,7 @@ export async function GET(request: Request) {
       variante: String(p.versao_atual),
       url: `/dashboard/propostas/${p.id}`,
       detalhe: detalheAutomacao("proposta_vencendo", { imovel: imovelProposta || undefined, numero: p.numero as string }),
-      ...comFatos("proposta_vencendo", { imovel: pp ? { titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, ...valoresProposta, prazo: p.valida_ate as string }),
+      ...comFatos("proposta_vencendo", { imovel: pp ? { id: p.property_id as string, titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, ...valoresProposta, prazo: p.valida_ate as string }),
       // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
       decisao: { imovel: pp?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
       imovelId: p.property_id as string | null,
@@ -253,14 +253,14 @@ export async function GET(request: Request) {
     const url = `/dashboard/servicos/pedidos/${p.id}`;
     // E267: o serviço e o imóvel do pedido no corpo (não só o número).
     const pi = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
-    const imovelPedido = pi ? linhaImovel({ titulo: pi.title, bairro: pi.address, cidade: pi.city }) || undefined : undefined;
+    const imovelPedido = pi ? linhaImovel({ id: p.property_id as string, titulo: pi.title, bairro: pi.address, cidade: pi.city }) || undefined : undefined;
     const servico = (p.parceiro_servicos as unknown as { titulo?: string | null } | null)?.titulo || rotuloCategoria(p.categoria as string);
     // E267 (vigia 30/10): o lembrete e a conclusão pendente usam o MESMO corpo dos outros e-mails do pedido
     // (aberturaDoPedido + bloco): serviço, imóvel, horário e, para o cliente, o nome público do parceiro.
     const pedidoEmail: PedidoParaEmail = {
       codigo: p.codigo as string,
       servico,
-      imovel: pi ? { titulo: pi.title, bairro: pi.address, cidade: pi.city } : null,
+      imovel: pi ? { id: p.property_id as string, titulo: pi.title, bairro: pi.address, cidade: pi.city } : null,
       horarioConfirmado: (p.horario_confirmado as string | null) ?? null,
       valorCombinado: (p.valor_combinado as number | null) ?? null,
     };
@@ -296,7 +296,7 @@ export async function GET(request: Request) {
     const inicio = blocos.map((b) => b.inicio).sort()[0];
     if (!inicio || inicio < hoje || inicio > dia(LEMBRETE_DONO_DIAS)) continue;
     const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
-    const imovel = linhaImovel({ titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
+    const imovel = linhaImovel({ id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const url = HREF_ESTADIA(c.id as string);
     const condicao = {
       inicio,
@@ -313,7 +313,7 @@ export async function GET(request: Request) {
       const ckl = ck as { instrucoes?: string | null; horario?: string | null } | null;
       const instrucoes = erroIm || erroCk ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, ckl?.instrucoes);
       const estadia = {
-        imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
+        imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
         saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
         horarioEntrada: ckl?.horario || prop?.checkin_after,
@@ -339,7 +339,7 @@ export async function GET(request: Request) {
       ]);
       const efetivas = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, (ck as { instrucoes?: string } | null)?.instrucoes);
       if (!erroIm && !erroCk && lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
-        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, imovelId: c.property_id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
+        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, imovelId: c.property_id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { id: c.property_id as string, titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
       }
     }
   }

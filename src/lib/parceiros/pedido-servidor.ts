@@ -80,7 +80,7 @@ export async function pedidoParaEmail(admin: Admin, pedidoId: string, destino?: 
   return {
     codigo: d.codigo,
     servico: d.parceiro_servicos?.titulo || rotuloCategoria(d.categoria),
-    imovel: d.properties ? { titulo: d.properties.title, bairro: d.properties.address, cidade: d.properties.city } : null,
+    imovel: d.properties ? { id: d.property_id, titulo: d.properties.title, bairro: d.properties.address, cidade: d.properties.city } : null,
     janela: d.janela_inicio && d.janela_fim ? { inicio: d.janela_inicio, fim: d.janela_fim } : null,
     horarios: d.horarios_propostos,
     horarioConfirmado: d.horario_confirmado,

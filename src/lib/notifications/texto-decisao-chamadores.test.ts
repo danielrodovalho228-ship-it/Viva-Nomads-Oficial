@@ -12,7 +12,7 @@ import { textoDaDecisao } from "./regra-push.ts";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
 const CHAMADORES: Record<string, { arquivo: string; trecho: RegExp }> = {
-  proposta_vencendo: { arquivo: "src/app/api/cron/automacoes/route.ts", trecho: /tipo: "proposta_vencendo",[\s\S]{0,600}?decisao: \{ imovel:[\s\S]{0,120}?prazo: p\.valida_ate/ },
+  proposta_vencendo: { arquivo: "src/app/api/cron/automacoes/route.ts", trecho: /tipo: "proposta_vencendo",[\s\S]{0,700}?decisao: \{ imovel:[\s\S]{0,120}?prazo: p\.valida_ate/ },
   visita_pedida: { arquivo: "src/lib/data/visitas-video-actions.ts", trecho: /"visita_pedida",[\s\S]{0,400}?\{ imovel: \(prop\?\.title[\s\S]{0,80}?prazo: \[\.\.\.v\.horarios\]\.sort\(\)\[0\]/ },
   visita_remarcada: { arquivo: "src/lib/data/visitas-video-actions.ts", trecho: /"visita_remarcada",[\s\S]{0,300}?prazo: campos\.horario_proposto/ },
   manutencao_nova: { arquivo: "src/lib/atendimento/servidor.ts", trecho: /event: "manutencao_nova",[\s\S]{0,600}?decisao: \{ imovel:[\s\S]{0,120}?prazo: prazoManutencao\(/ },

@@ -118,7 +118,7 @@ function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent,
 function dadosDaEstadia(c: LinhaContratoEstadia): Pick<DadosEstadiaEmail, "imovel" | "entrada" | "saida"> {
   const b = blocosOrdenados(c).filter((x) => x.status !== "nao_aceito");
   return {
-    imovel: { titulo: c.properties?.title, bairro: c.properties?.address, cidade: c.properties?.city },
+    imovel: { id: (c as { property_id?: string | null }).property_id ?? null, titulo: c.properties?.title, bairro: c.properties?.address, cidade: c.properties?.city },
     entrada: b.map((x) => x.inicio).sort()[0] ?? null,
     saida: b.map((x) => x.fim).sort().at(-1) ?? null,
   };
