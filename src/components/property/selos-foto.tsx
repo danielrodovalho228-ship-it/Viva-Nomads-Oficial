@@ -1,54 +1,63 @@
-import { Award, BadgeCheck, BadgePercent, Handshake, PawPrint } from "lucide-react";
-import type { SeloFoto } from "@/lib/cartao-selos-foto";
+import { BadgeCheck, Handshake, PawPrint } from "lucide-react";
+import { IconePrecoJusto } from "@/components/ui/icone-preco-justo";
+import { pilulasDoCartao, type SelosDoCartao, type SimboloFoto } from "@/lib/cartao-selos-foto";
+import type { Nivel } from "@/config/niveis";
+import { cn } from "@/lib/utils";
 
-const ICONE: Record<SeloFoto, React.ComponentType<{ className?: string }>> = {
+const ICONE: Record<SimboloFoto, React.ComponentType<{ className?: string }>> = {
   verificado: BadgeCheck,
-  precoJusto: BadgePercent,
+  precoJusto: IconePrecoJusto,
   pets: PawPrint,
-  nivel: Award,
   negocia: Handshake,
 };
 
-// Os test ids de antes continuam valendo (selo-preco-justo, selo-pets, selo-verificado; card-nivel e cartao-negocia, que
-// eram texto do cartão e viraram selo).
-const TESTID: Record<SeloFoto, string> = {
+// Os test ids de antes seguem valendo (selo-preco-justo, selo-pets, selo-verificado, cartao-negocia; card-nivel é a pílula do nível).
+const TESTID: Record<SimboloFoto, string> = {
   verificado: "selo-verificado",
   precoJusto: "selo-preco-justo",
   pets: "selo-pets",
-  nivel: "card-nivel",
   negocia: "cartao-negocia",
 };
 
+/** Cor da pílula do nível (estudo E626): Essencial branco com borda cinza, Conforto verde-marca, Premium preto-marca. */
+const COR_NIVEL: Record<Nivel, string> = {
+  essencial: "border-[#b8b8b8] bg-white text-ink",
+  conforto: "border-transparent bg-forest text-white",
+  premium: "border-transparent bg-night text-white",
+};
+
 /**
- * E416 (05/11): os selos do cartão empilhados em fileira no canto superior esquerdo da foto, cada um com ícone + texto
- * (pill branca, sem sombra). A fileira quebra linha quando não cabe; só a 1ª linha divide a altura com o coração (canto
- * direito) — um espaçador flutuante do tamanho dele reserva o canto, e as linhas de baixo usam a largura toda da foto.
- * Em cartão estreito (fileira < 16rem: celular de 2 colunas, busca ao lado do mapa) o selo fica mais compacto, para não
- * cobrir a foto de forma desproporcional. Sem selo, nada é desenhado.
+ * E626 (06/11): no máximo 2 pílulas no canto superior esquerdo da foto. Pílula 1: o nível em palavra, com a cor do nível.
+ * Pílula 2: branca, só símbolos (verificado, preço justo, pets, negociação), cada um com aria-label e title com o texto
+ * completo — o leitor de tela lê os 4 nomes. O coração (canto direito) mantém o canto: um espaçador flutuante do tamanho
+ * dele reserva o lugar, e o que não couber na 1ª linha desce para a de baixo, que usa a largura toda. Sem selo, nada.
  */
-export function SelosFoto({ selos, semCoracao = false }: { selos: { id: SeloFoto; rotulo: string }[]; /** Meus anúncios: sem o coração no canto, a fileira vai até a borda. */ semCoracao?: boolean }) {
-  if (selos.length === 0) return null;
+export function SelosFoto({ selos, semCoracao = false }: { selos: SelosDoCartao; /** Meus anúncios: sem o coração no canto, a fileira vai até a borda. */ semCoracao?: boolean }) {
+  if (pilulasDoCartao(selos) === 0) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-3 top-3 @container" data-testid="selos-foto">
+    <div className="pointer-events-none absolute inset-x-3 top-3 @container" data-testid="selos-foto" data-pilulas={pilulasDoCartao(selos)}>
       {!semCoracao && <span aria-hidden className="float-right h-11 w-12" data-testid="selos-foto-canto-coracao" />}
-      {selos.map((s) => {
-        const Icone = ICONE[s.id];
-        return (
-          <span
-            key={s.id}
-            className="mb-1 mr-1 inline-flex max-w-full items-center gap-1 rounded-full bg-white px-1 py-1 align-top text-[11px] font-semibold leading-3 text-ink @[16rem]:px-2 @[16rem]:text-xs @[16rem]:leading-4"
-            data-testid={TESTID[s.id]}
-            data-selo={s.id}
-          >
-            <Icone className="h-3 w-3 shrink-0 @[16rem]:h-3.5 @[16rem]:w-3.5" aria-hidden />
-            {/* Cartão estreito: o nível sem o "· vistoriado" (fica no title e volta a partir de 16rem). */}
-            <span className="truncate" title={s.rotulo}>
-              {s.rotulo.split(" · ")[0]}
-              {s.rotulo.includes(" · ") && <span className="hidden @[16rem]:inline"> · {s.rotulo.split(" · ").slice(1).join(" · ")}</span>}
-            </span>
-          </span>
-        );
-      })}
+      {selos.nivel && (
+        <span
+          className={cn("mb-1 mr-1 inline-flex items-center rounded-full border px-2 py-1 align-top text-[11px] font-semibold leading-3 @[16rem]:text-xs @[16rem]:leading-4", COR_NIVEL[selos.nivel.id])}
+          data-testid="card-nivel"
+          data-nivel={selos.nivel.id}
+        >
+          {selos.nivel.rotulo}
+        </span>
+      )}
+      {selos.simbolos.length > 0 && (
+        <span role="group" aria-label="Selos do anúncio" className="mb-1 mr-1 inline-flex items-center gap-2 rounded-full border border-transparent bg-white px-2 py-1 align-top text-ink" data-testid="selos-simbolos">
+          {selos.simbolos.map((s) => {
+            const Icone = ICONE[s.id];
+            return (
+              <span key={s.id} role="img" aria-label={s.rotulo} title={s.rotulo} className="pointer-events-auto inline-flex" data-testid={TESTID[s.id]} data-selo={s.id}>
+                <Icone className="h-4 w-4" />
+              </span>
+            );
+          })}
+        </span>
+      )}
     </div>
   );
 }

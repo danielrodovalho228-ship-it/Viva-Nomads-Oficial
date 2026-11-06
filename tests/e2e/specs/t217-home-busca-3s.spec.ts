@@ -9,7 +9,7 @@ for (const largura of [390, 1280]) {
   test.describe(`T217 — Home e busca (${largura} px)`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
-    // E416 (05/11): todos os selos do imóvel empilhados sobre a foto (antes, no máximo 2) — nenhum sobre o coração.
+    // E626 (06/11): no máximo 2 pílulas sobre a foto (nível + símbolos) — nenhuma sobre o coração.
     test("/buscar: os selos de cada cartão ficam fora do coração", async ({ page }) => {
       await page.goto("/buscar", { waitUntil: "networkidle" });
       // Sem selo nenhum, a fileira não é desenhada (E416): sem nada a conferir, nada falha.
@@ -19,12 +19,13 @@ for (const largura of [390, 1280]) {
         const sobre = await grupos.nth(i).evaluate((fila) => {
           const cor = fila.closest('[data-testid="cartao-imovel"]')?.querySelector('[data-testid="coracao"]')?.getBoundingClientRect();
           if (!cor) return 0;
-          return [...fila.querySelectorAll("[data-selo]")].filter((s) => {
+          return [...fila.querySelectorAll("[data-selo], [data-nivel]")].filter((s) => {
             const r = s.getBoundingClientRect();
             return !(r.right <= cor.left || r.left >= cor.right || r.bottom <= cor.top || r.top >= cor.bottom);
           }).length;
         });
         expect(sobre).toBe(0);
+        expect(Number(await grupos.nth(i).getAttribute("data-pilulas")), "no máximo 2 pílulas").toBeLessThanOrEqual(2);
       }
     });
 
