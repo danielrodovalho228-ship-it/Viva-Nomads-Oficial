@@ -1797,6 +1797,7 @@ export default function NewPropertyPage() {
         tela={telaQual}
         respostas={qualConf.respostas}
         provas={provasDaQualificacao}
+        confirmados={conf.marcados}
         onResponder={responderQualificacao}
         onTela={(t) => {
           setTelaQual(t);
