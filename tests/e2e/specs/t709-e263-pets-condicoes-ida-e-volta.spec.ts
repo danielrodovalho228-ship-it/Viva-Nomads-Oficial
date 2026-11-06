@@ -117,17 +117,17 @@ test.describe("T709 — E263-A: condições de pets, ida e volta (editor, págin
       if (largura === 1280) {
         await especie(bloco, "gato").uncheck();
         await especie(bloco, "outro animal").uncheck();
-        await bloco.getByTestId("pets-porte").selectOption("P");
-        await bloco.getByTestId("pets-qtd").selectOption("1");
+        await bloco.getByTestId("pets-porte-P").click();
+        await bloco.getByTestId("pets-qtd-1").click();
         await bloco.getByTestId("valor-pet").fill("300");
-        await bloco.getByTestId("valor-pet-tipo").selectOption("reembolsavel");
+        await bloco.getByTestId("valor-pet-tipo-reembolsavel").click();
         await bloco.getByLabel("Regra do condomínio sobre pets (opcional)").fill(COND_1280);
         await bloco.getByTestId("pets-observacao").fill(OBS_1280);
       } else {
         // Nenhuma espécie marcada = qualquer animal (a tela avisa; não é erro).
         for (const e of ["cão", "gato", "outro animal"] as const) await especie(bloco, e).uncheck();
         await expect(bloco.getByText("Sem nenhum marcado, vale qualquer animal.")).toBeVisible();
-        await bloco.getByTestId("pets-qtd").selectOption("3");
+        await bloco.getByTestId("pets-qtd-3").click();
         await bloco.getByTestId("pets-taxa-mensal").fill("95");
         await bloco.getByTestId("pets-observacao").fill("Gatos castrados.");
       }
@@ -144,18 +144,18 @@ test.describe("T709 — E263-A: condições de pets, ida e volta (editor, págin
         await expect(especie(b2, "cão")).toBeChecked();
         await expect(especie(b2, "gato")).not.toBeChecked();
         await expect(especie(b2, "outro animal")).not.toBeChecked();
-        await expect(b2.getByTestId("pets-porte")).toHaveValue("P");
-        await expect(b2.getByTestId("pets-qtd")).toHaveValue("1");
+        await expect(b2.getByTestId("pets-porte-P")).toHaveAttribute("aria-checked", "true");
+        await expect(b2.getByTestId("pets-qtd-1")).toHaveAttribute("aria-checked", "true");
         await expect(b2.getByTestId("valor-pet")).toHaveValue(/^300(,00)?$/);
-        await expect(b2.getByTestId("valor-pet-tipo")).toHaveValue("reembolsavel");
+        await expect(b2.getByTestId("valor-pet-tipo-reembolsavel")).toHaveAttribute("aria-checked", "true");
         await expect(b2.getByLabel("Regra do condomínio sobre pets (opcional)")).toHaveValue(COND_1280);
         await expect(b2.getByTestId("pets-observacao")).toHaveValue(OBS_1280);
         await expect(b2.getByTestId("pets-taxa-mensal")).toHaveValue("");
       } else {
         // "Qualquer animal" volta como as três marcadas; porte sem limite; "3 ou mais".
         for (const e of ["cão", "gato", "outro animal"] as const) await expect(especie(b2, e)).toBeChecked();
-        await expect(b2.getByTestId("pets-porte")).toHaveValue("");
-        await expect(b2.getByTestId("pets-qtd")).toHaveValue("3");
+        await expect(b2.getByTestId("pets-porte-nd")).toHaveAttribute("aria-checked", "true");
+        await expect(b2.getByTestId("pets-qtd-3")).toHaveAttribute("aria-checked", "true");
         await expect(b2.getByTestId("pets-taxa-mensal")).toHaveValue(/^95(,00)?$/);
         await expect(b2.getByTestId("pets-observacao")).toHaveValue("Gatos castrados.");
         await expect(b2.getByTestId("pets-observacao-conta")).toHaveText("16/140");
@@ -216,8 +216,8 @@ test.describe("T709 — E263-A: condições de pets, ida e volta (editor, págin
     const b2 = s2.getByTestId("pets-regras");
     await expect(b2).toBeVisible();
     for (const e of ["cão", "gato", "outro animal"] as const) await expect(especie(b2, e)).toBeChecked();
-    await expect(b2.getByTestId("pets-porte")).toHaveValue("");
-    await expect(b2.getByTestId("pets-qtd")).toHaveValue("");
+    await expect(b2.getByTestId("pets-porte-nd")).toHaveAttribute("aria-checked", "true");
+    await expect(b2.getByTestId("pets-qtd-nd")).toHaveAttribute("aria-checked", "true");
     await expect(b2.getByTestId("pets-taxa-mensal")).toHaveValue("");
     await expect(b2.getByTestId("pets-observacao")).toHaveValue("");
     await expect(b2.getByTestId("pets-observacao-conta")).toHaveText("0/140");

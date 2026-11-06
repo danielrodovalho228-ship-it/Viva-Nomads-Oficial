@@ -16,6 +16,7 @@ import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLa
 import { COLUNAS_PRECO, linhaDaTabela, porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, avisar, designar, rotaDono } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
+import { recusaObservador } from "@/lib/qa/observador";
 
 /*
   Prompt 62-B2 — ações da execução da avaliação. O avaliador designado preenche o checklist no celular (salvando a cada
@@ -271,6 +272,8 @@ async function exigirAdmin() {
 export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const motivo = String(form.get("motivo") ?? "") as MotivoVerificacao;
   const detalhe = texto(form.get("detalhe"), 500);
   if (!MOTIVOS_VERIFICACAO.includes(motivo)) return { ok: false, erro: "Escolha o motivo da verificação." };
@@ -300,6 +303,8 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
 export async function adminResolverBloqueio(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
+  const recusaQa = await recusaObservador(a.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const { data: b } = await a.admin.from("vistoria_bloqueios").select("property_id, motivo").eq("id", String(form.get("id") ?? "")).is("resolvido_em", null).maybeSingle();
   if (!b) return SEM_ACESSO;
   const falhou = await liberar(a.admin, b.property_id as string, [b.motivo as "seguranca_grave" | "strike_2" | "strike_3"], new Date()).then(() => false, () => true);

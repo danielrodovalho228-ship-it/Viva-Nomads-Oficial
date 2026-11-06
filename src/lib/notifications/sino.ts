@@ -52,9 +52,38 @@ const recente = (a: AvisoTela, b: AvisoTela) => Date.parse(b.criado_em) - Date.p
 // E586: desempate estável (mesma hora → a mesma ordem em qualquer carregamento).
 const porId = (a: AvisoTela, b: AvisoTela) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0);
 
-/** E586: a lista de avisos é estritamente cronológica — data/hora decrescente, desempate pelo id. */
+/** E586: dois avisos IDÊNTICOS (mesmo evento, título, texto e destino) a menos de 2 min um do outro são o mesmo aviso. */
+export const JANELA_REPETIDO_MS = 120_000;
+
+/**
+ * E586 (reprova de 05/11): o histórico ainda trazia três avisos idênticos no mesmo minuto (gravados antes da junção do
+ * #2666). Não apagamos nada: na exibição, o repetido da janela some e fica o mais recente; se algum do grupo está
+ * pendente, fica um pendente (nunca esconde um aviso que ainda pede ação). Avisos distintos ou distantes ficam todos.
+ */
+export function semRepetidos<T extends AvisoTela>(avisos: readonly T[]): T[] {
+  const ordem = [...avisos].sort((a, b) => recente(a, b) || porId(a, b));
+  const chave = (a: AvisoTela) => [a.evento, a.titulo, a.texto ?? "", a.url ?? ""].join("\u0001");
+  const pendente = (a: AvisoTela) => !a.lido_em && !a.resolvido_em;
+  const ultimo = new Map<string, { aviso: T }>();
+  const fora = new Set<string>();
+  for (const a of ordem) {
+    const k = chave(a);
+    const visto = ultimo.get(k);
+    const t = Date.parse(a.criado_em);
+    if (visto && Math.abs(Date.parse(visto.aviso.criado_em) - t) <= JANELA_REPETIDO_MS) {
+      // Já há um mais recente no grupo: este sai, a menos que só ele esteja pendente.
+      if (pendente(a) && !pendente(visto.aviso)) {
+        fora.add(visto.aviso.id);
+        visto.aviso = a;
+      } else fora.add(a.id);
+    } else ultimo.set(k, { aviso: a });
+  }
+  return ordem.filter((a) => !fora.has(a.id));
+}
+
+/** E586: a lista de avisos é estritamente cronológica — data/hora decrescente, desempate pelo id, sem repetido. */
 export function ordemCronologica<T extends AvisoTela>(avisos: readonly T[]): T[] {
-  return [...avisos].sort((a, b) => recente(a, b) || porId(a, b));
+  return semRepetidos(avisos);
 }
 
 /**

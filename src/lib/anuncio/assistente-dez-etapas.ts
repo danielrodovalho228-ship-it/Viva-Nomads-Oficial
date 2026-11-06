@@ -78,7 +78,7 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     prontidao: ["periodo"],
   },
   // E104: quem opera, o documento da operação e o documento do imóvel ficam no cartão "Antes de publicar" da Revisão.
-  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao", "qualificacao", "matricula_atualizada", "caucao_pendente"] },
+  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao", "qualificacao", "matricula_atualizada", "foto_repetida", "caucao_pendente"] },
 ];
 
 /** Etapa onde um item da prontidão se resolve; item desconhecido cai na revisão (nunca some da lista). */

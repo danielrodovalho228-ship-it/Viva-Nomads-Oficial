@@ -34,3 +34,17 @@ test("meses do cartão: duração da busca ou estadia mínima", () => {
   assert.equal(mesesDoCartao(undefined, 90), 3);
   assert.equal(mesesDoCartao(undefined, undefined), 1);
 });
+
+import { estadiaDoCartao, ROTULO_TOTAL_MES } from "./cartao-preco.ts";
+
+test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1 mês'), igual entre vizinhos", () => {
+  const um = rotuloPreco({ mensal: 3960, meses: 1 });
+  const dois = rotuloPreco({ mensal: 5620, meses: 2 });
+  assert.equal(um.estadia, null); // as demais superfícies seguem sem a linha com 1 mês
+  assert.match(estadiaDoCartao(um), /^R\$\s?3\.960,00 em 1 mês$|^R\$\s?3\.960 em 1 mês$/);
+  assert.equal(estadiaDoCartao(dois), dois.estadia);
+});
+
+test("E356: o rótulo diz que o preço grande é o total do mês, tudo incluído", () => {
+  assert.equal(ROTULO_TOTAL_MES, "Total por mês, tudo incluído");
+});

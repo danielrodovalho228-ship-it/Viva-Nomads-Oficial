@@ -7,7 +7,7 @@ import { getAvaliacoesRecebidas, getPerfilProprietario, nomeCompletoParaQuemTemA
 import { listPropertiesDoProprietario } from "@/lib/data/properties";
 import { desdeLabel, robotsDoProprietario } from "@/lib/perfil/perfil-publico";
 import { corAvatar, iniciais } from "@/lib/avatar";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { buttonClasses } from "@/components/ui/button";
 import { dataBR } from "@/lib/utils";
 import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
@@ -139,8 +139,8 @@ export default async function ProprietarioPage({ params }: Params) {
           <p className="mt-3 text-muted">Nenhum imóvel ativo no momento.</p>
         ) : (
           <div className={`mt-4 ${classeGradeImoveis(imoveis.length)}`}>
-            {imoveis.map((im) => (
-              <PropertyCard key={im.id} property={im} />
+            {imoveis.map((im, n) => (
+              <PropertyCard key={im.id} property={im} prioridade={n < PRIMEIRA_FILEIRA} />
             ))}
           </div>
         )}

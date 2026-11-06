@@ -11,6 +11,7 @@ import { mudarStatusAjudaPublicacao, type PedidoAjuda } from "@/lib/data/ajuda-p
 import { proximosStatus, ROTULO_STATUS, type StatusAjuda } from "@/lib/ajuda-publicacao/ajuda";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 const TOM: Record<StatusAjuda, string> = {
   recebido: "border border-line bg-white text-amber-800",
@@ -30,7 +31,7 @@ function data(iso: string) {
   return dataBRT(iso);
 }
 
-export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
+export function AjudaPublicacaoClient({ fila, soLeitura = false }: { fila: PedidoAjuda[]; soLeitura?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [erro, setErro] = useState<Record<string, string>>({});
@@ -89,11 +90,15 @@ export function AjudaPublicacaoClient({ fila }: { fila: PedidoAjuda[] }) {
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                   <span className={cn("rounded-full px-2 py-1 text-xs font-semibold", TOM[p.status])}>{ROTULO_STATUS[p.status]}</span>
-                  {proximosStatus(p.status).map((s) => (
-                    <Button key={s} size="sm" variant="secondary" disabled={busy === p.id} onClick={() => mover(p.id, s)}>
-                      {s === "em_montagem" ? "Começar a montar" : ACAO[s]}
-                    </Button>
-                  ))}
+                  {soLeitura ? (
+                    <SoLeituraQa />
+                  ) : (
+                    proximosStatus(p.status).map((s) => (
+                      <Button key={s} size="sm" variant="secondary" disabled={busy === p.id} onClick={() => mover(p.id, s)}>
+                        {s === "em_montagem" ? "Começar a montar" : ACAO[s]}
+                      </Button>
+                    ))
+                  )}
                 </div>
               </li>
             ))}

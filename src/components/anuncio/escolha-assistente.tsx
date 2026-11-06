@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 
 /*
   E193 (auditoria de 28/10): UM jeito de escolher no assistente de cadastro inteiro.
-   - Várias escolhas → Pilula (o chip arredondado das telas aprovadas).
-   - Uma escolha ou sim/não → CartaoEscolha (o mesmo cartão grande tocável da Qualificação: borda dupla, ✓ redondo).
-  Nada de caixa quadrada nem lista suspensa dentro do assistente. A semântica continua a de antes (checkbox, radio ou
+   - Toda escolha (uma, várias, sim/não) → CartaoEscolha: o mesmo cartão grande tocável da Qualificação (borda dupla, ✓ redondo).
+     Uma escolha = papel "radio" (EscolhaUnica); várias = papel "checkbox" ou "pressed".
+   - Pilula (chip arredondado) NÃO é mais usada no assistente: ela fica só para fora dele (ex.: proximidades manuais).
+  Nada de caixa quadrada, lista suspensa nem pílula dentro do assistente (E193, reteste de 29/10). A semântica continua a de antes (checkbox, radio ou
   switch com aria-checked, ou botão com aria-pressed onde já era assim), para leitor de tela e para os testes.
 */
 
@@ -99,5 +100,44 @@ export function CartaoEscolha({
       </span>
       {on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white" aria-hidden />}
     </button>
+  );
+}
+
+/** Grupo de escolha única em cartões grandes (substitui rádio redondo e lista suspensa). `testid` fica no grupo; cada cartão é `${testid}-${valor}` ("nd" = vazio). */
+export function EscolhaUnica<T extends string | number | null>({
+  testid,
+  legenda,
+  opcoes,
+  valor,
+  onChange,
+  colunas = 2,
+}: {
+  testid: string;
+  legenda?: React.ReactNode;
+  opcoes: readonly { valor: T; rotulo: React.ReactNode; dica?: React.ReactNode }[];
+  valor: T;
+  onChange: (v: T) => void;
+  colunas?: 1 | 2;
+}) {
+  return (
+    <fieldset data-testid={testid}>
+      {legenda && <legend className="text-sm font-semibold text-ink">{legenda}</legend>}
+      <div
+        role="radiogroup"
+        aria-label={typeof legenda === "string" ? legenda : undefined}
+        className={cn("mt-2 grid gap-2", colunas === 2 && "sm:grid-cols-2")}
+      >
+        {opcoes.map((o) => (
+          <CartaoEscolha
+            key={String(o.valor ?? "nd")}
+            on={valor === o.valor}
+            onClick={() => onChange(o.valor)}
+            rotulo={o.rotulo}
+            dica={o.dica}
+            testid={`${testid}-${o.valor === null || o.valor === "" ? "nd" : o.valor}`}
+          />
+        ))}
+      </div>
+    </fieldset>
   );
 }

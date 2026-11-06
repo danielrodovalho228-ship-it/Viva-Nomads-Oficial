@@ -29,7 +29,7 @@ import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
 import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { BuscaPrincipal } from "@/components/home/busca-principal";
 import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
 import { HeroVideoBg } from "@/components/hero-video-bg";
@@ -343,8 +343,8 @@ export default async function HomePage() {
           </div>
           {featured.length > 0 ? (
             <div className="mt-6 md:mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-4" data-testid="destaques-home">
-              {featured.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+              {featured.map((p, i) => (
+                <PropertyCard key={p.id} property={p} prioridade={i < PRIMEIRA_FILEIRA} />
               ))}
             </div>
           ) : (

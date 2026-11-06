@@ -11,6 +11,7 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { DETALHE_FOTO_REPETIDA, ROTULO_FOTO_REPETIDA } from "../fotos/foto-repetida.ts";
 import { DETALHE_MATRICULA_FALTA, DETALHE_MATRICULA_OBRIGATORIA, ROTULO_MATRICULA_ATUALIZADA } from "../documento/matricula-titularidade.ts";
 import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
@@ -92,6 +93,11 @@ export interface FatosAnuncio {
    * publicar, mas não contam no "N% pronto". Ausente = todos confirmados (rascunho antigo, anúncio publicado).
    */
   naoConfirmados?: readonly string[];
+  /**
+   * E640 (b): uma das fotos é igual (ou quase) à de outro anúncio e a matrícula ainda não foi conferida: a publicação fica
+   * travada até a equipe conferir. Ausente/false = sem trava. O dono nunca vê de quem é a outra foto.
+   */
+  fotoRepetidaAberta?: boolean;
   /**
    * E633: a matrícula atualizada do imóvel (prova de titularidade) já foi enviada. Só se aplica ao anúncio que ainda vai
    * publicar; ausente = não se aplica (o publicado segue no ar). Por padrão é OPCIONAL (item de melhoria).
@@ -217,6 +223,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   if (f.confortoFaltam !== undefined && f.confortoFaltam > 0) {
     const n = f.confortoFaltam;
     obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
+  }
+  if (f.fotoRepetidaAberta) {
+    obrigatorios.push({ key: "foto_repetida", label: ROTULO_FOTO_REPETIDA, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_FOTO_REPETIDA });
   }
   // E633: a matrícula atualizada entra como OBRIGATÓRIA só com a chave ligada; senão é um opcional (nunca bloqueia).
   const matriculaObrigatoriaAgora = f.matriculaEnviada !== undefined && f.matriculaObrigatoria === true;

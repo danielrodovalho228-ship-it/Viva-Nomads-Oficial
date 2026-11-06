@@ -3,7 +3,7 @@ import { Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { estadiaDoCartao, mesesDoCartao, ROTULO_TOTAL_MES, rotuloPreco } from "@/lib/cartao-preco";
 import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -16,13 +16,19 @@ import { linhaLocalizacao } from "@/lib/localizacao";
 
 const ehFoto = (src: unknown): src is string => typeof src === "string" && (/^https?:\/\//.test(src) || src.startsWith("/"));
 
+/** E454: quantos cartões formam a primeira fileira (4 colunas no computador; 2 no celular): as fotos deles carregam com prioridade. */
+export const PRIMEIRA_FILEIRA = 4;
+
 export function PropertyCard({
   property,
   periodMonths,
+  prioridade = false,
 }: {
   property: Property;
   /** Quando a busca tem período selecionado, mostra o total estimado do período. */
   periodMonths?: number;
+  /** E454: cartão da primeira fileira: a foto principal carrega já e com prioridade alta (sem retângulo cinza na primeira pintura). */
+  prioridade?: boolean;
 }) {
   const fotos = property.photos.filter(ehFoto);
   const exemplo = isExemplo(property);
@@ -58,16 +64,12 @@ export function PropertyCard({
     >
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-surface-2" data-testid="cartao-foto">
         {fotos.length > 0 ? (
-          <FotosCartao fotos={fotos} alt={property.title} />
+          <FotosCartao fotos={fotos} alt={property.title} prioridade={prioridade} />
         ) : (
           <PhotoPlaceholder label={property.photos[0]} className="h-full w-full" />
         )}
         {/* E416: todos os selos, em fileira no canto superior esquerdo (quebra linha; nunca sobre o coração). */}
         <SelosFoto selos={selos} />
-        {/* Marca do usuário logado ("Visto" / "Você já contatou"): canto inferior esquerdo. */}
-        <div className="absolute bottom-3 left-3">
-          <MarcaImovel propertyId={property.id} />
-        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-1">
@@ -105,12 +107,15 @@ export function PropertyCard({
             {preco.valor}
           </span>
           <span className="text-sm text-ink">/mês</span>
-          {preco.estadia && (
-            <span className="text-sm text-muted" data-testid="cartao-total-estadia">
-              {" · "}
-              {preco.estadia}
-            </span>
-          )}
+          {/* E356: todo cartão mostra o total da estadia (com 1 mês, "R$ X em 1 mês"): comparação igual entre vizinhos. */}
+          <span className="text-sm text-muted" data-testid="cartao-total-estadia">
+            {" · "}
+            {estadiaDoCartao(preco)}
+          </span>
+        </p>
+        {/* E356: diz o que é o preço grande (o total do mês, com condomínio e consumo fixo). */}
+        <p className="text-xs text-apoio" data-testid="cartao-total-rotulo">
+          {ROTULO_TOTAL_MES}
         </p>
 
         {/* Linha-síntese: cada item só com o dado; a linha some se não houver nenhum (src/lib/cartao-sintese.ts). */}
@@ -136,6 +141,9 @@ export function PropertyCard({
             {preco.disponivel}
           </p>
         )}
+
+        {/* E643: estado do usuário logado ("Visto" / "Você já contatou") no texto do cartão, fora da foto (que guarda só as 2 pílulas do E626). */}
+        <MarcaImovel propertyId={property.id} />
 
         {/* E439 → E416: o "Aceita negociação" virou selo da foto (properties.negociacao, o mesmo dado do anúncio). */}
       </div>

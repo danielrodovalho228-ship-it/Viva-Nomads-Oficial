@@ -45,9 +45,8 @@ test("ação de servidor: devolve o nome completo só pela função fail-closed 
 
 test("OwnerCard: pede o nome do aceite depois de abrir, só em anúncio real, e usa o MESMO nome no cartão, na foto e no título", () => {
   const src = ler("src/components/property/owner-card.tsx");
-  assert.match(src, /import \{ nomeDoDonoDepoisDoAceite \} from "@\/lib\/data\/nome-dono-actions";/);
-  assert.match(src, /const \[nomeAceite, setNomeAceite\] = useState<string \| null>\(null\);/);
-  assert.match(src, /useEffect\(\(\) => \{[\s\S]*?if \(exemplo \|\| !donoId\) return;[\s\S]*?nomeDoDonoDepoisDoAceite\(donoId\)/);
+  assert.match(src, /import \{ useNomeDepoisDoAceite \} from "@\/components\/property\/use-nome-depois-do-aceite";/);
+  assert.match(src, /const nomeAceite = useNomeDepoisDoAceite\(donoId, exemplo\);/);
   assert.match(src, /const nomeExibido = nomeAceite \?\? d\.nome;/);
   assert.match(src, /<AvatarDono nome=\{nomeExibido\}/);
   assert.match(src, /data-testid="proprietario-nome"[^>]*>\s*\{nomeExibido\}/);
@@ -57,5 +56,27 @@ test("OwnerCard: pede o nome do aceite depois de abrir, só em anúncio real, e 
 test("a página do anúncio segue estática: o servidor dela não lê a sessão para o nome", () => {
   const page = ler("src/app/(public)/imoveis/[id]/page.tsx");
   assert.match(page, /export const revalidate = 60;/);
+  assert.doesNotMatch(page, /nomeCompletoParaQuemTemAceite|nomeDoDonoDepoisDoAceite/);
+});
+
+test("E427 (resíduo): o hook pede o nome do aceite só em anúncio real e devolve null sem aceite (fica o abreviado)", () => {
+  const h = ler("src/components/property/use-nome-depois-do-aceite.ts");
+  assert.match(h, /import \{ nomeDoDonoDepoisDoAceite \} from "@\/lib\/data\/nome-dono-actions";/);
+  assert.match(h, /if \(exemplo \|\| !donoId\) return;[\s\S]*?nomeDoDonoDepoisDoAceite\(donoId\)/);
+  assert.match(h, /useState<string \| null>\(null\)/);
+});
+
+test("E427 (resíduo): o cartão do cabeçalho do anúncio (\"Proprietário: …\") usa a mesma regra: nome do aceite, senão o abreviado", () => {
+  const f = ler("src/components/property/faixa-proprietario.tsx");
+  assert.match(f, /^"use client";/);
+  assert.match(f, /const nomeAceite = useNomeDepoisDoAceite\(real\?\.id, !!exemplo\);/);
+  assert.match(f, /const nome = exemplo\?\.nome \?\? nomeAceite \?\? real!\.nome;/);
+  // o nome (e as iniciais do avatar) saem da mesma variável
+  assert.match(f, /data-testid="faixa-nome">\{nome\}/);
+  assert.match(f, /\{iniciais\(nome\)\}/);
+});
+
+test("E427 (resíduo): o servidor do anúncio segue sem ler sessão (o cabeçalho também recebe o nome depois de abrir)", () => {
+  const page = ler("src/app/(public)/imoveis/[id]/page.tsx");
   assert.doesNotMatch(page, /nomeCompletoParaQuemTemAceite|nomeDoDonoDepoisDoAceite/);
 });
