@@ -66,13 +66,17 @@ export const TIPOS_ASSISTENTE: readonly { valor: string; rotulo: string; alt: st
   { valor: "chacara", rotulo: "Chácara/Sítio", alt: "Foto de uma chácara" },
 ];
 
-/** Título da prévia: o do dono; sem título, "Apartamento no Santa Mônica" (tipo + bairro), como no desenho. */
-export function tituloPrevia(titulo: string, tipo: string, bairro: string): string {
+/** E630: o que o cartão mostra enquanto o dono não escreveu o título (pendente, como a Revisão aponta). */
+export const TITULO_PREVIA_PENDENTE = "Título ainda não definido";
+
+/**
+ * Título da prévia: o do dono, e SÓ o do dono. Antes, sem título, o cartão inventava "Apartamento no Santa Mônica" (tipo + bairro) e
+ * a prévia parecia ter título — mascarando a falta que a Revisão aponta (E613: a sugestão não entra sozinha nos campos). Agora o campo
+ * vazio aparece como pendente (E630).
+ */
+export function tituloDaPrevia(titulo: string): { texto: string; pendente: boolean } {
   const t = titulo.trim();
-  if (t) return t;
-  const rotulo = tipo ? propertyTypeLabel(tipo) : "Seu imóvel";
-  const b = bairro.trim();
-  return b ? `${rotulo} no ${b}` : rotulo;
+  return t ? { texto: t, pendente: false } : { texto: TITULO_PREVIA_PENDENTE, pendente: true };
 }
 
 /** "2 quartos · 65 m²" (o que estiver preenchido; studio com 0 quartos não diz "0 quartos"). */

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, faltamNaConferencia, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
-import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloPrevia } from "@/lib/anuncio/assistente-telas";
+import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloDaPrevia } from "@/lib/anuncio/assistente-telas";
 import { contaDaConferencia, precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
@@ -76,6 +76,7 @@ export function EtapaRevisar(p: {
   const precos = precosDaPrevia(p.previewProperty);
   // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram preço.
   const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
+  const titulo = tituloDaPrevia(p.titulo);
   const linha = linhaRevisao(p.previewProperty.bedrooms, p.previewProperty.bathrooms, p.previewProperty.areaM2);
   const desconto = fraseDescontoCard(p.negociacao.descontos);
   // E557: o título segue a regra do botão — "tudo certo" só com o "Publicar anúncio" liberado; travado, diz o que falta.
@@ -99,7 +100,13 @@ export function EtapaRevisar(p: {
       </div>
       {p.tamanhoReal}
       <p className="mt-4 font-title text-xl font-semibold text-ink" data-testid="revisao-titulo">
-        {tituloPrevia(p.titulo, p.tipo, p.bairro)}
+        {titulo.pendente ? (
+          <span className="font-normal italic text-muted" data-testid="revisao-titulo-pendente">
+            {titulo.texto}
+          </span>
+        ) : (
+          titulo.texto
+        )}
       </p>
       {linha && (
         <p className="mt-1 text-base text-muted" data-testid="revisao-linha">
