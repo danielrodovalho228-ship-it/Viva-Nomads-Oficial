@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { rotaDetalheContrato } from "@/lib/contrato-rota";
-import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
+import { destinoDaLeitura, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import {
   isInternalPath,
@@ -251,8 +251,10 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
   // aba "E-mails" de /admin/dados-de-teste (lá valem o papel e o 2FA dele); as demais contas recebem 404 DE VERDADE.
   // A página confere de novo e a RLS é a trava real da leitura.
   if (user && rotaLeitorQa(pathname)) {
-    const { data: perfilQa } = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
-    const destino = destinoLeitorQa(perfilQa);
+    // E366: falha de leitura não é 404 — uma nova tentativa e, se persistir, a página reler (ela lança, nunca abre).
+    let leituraQa = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
+    if (leituraQa.error) leituraQa = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
+    const destino = destinoDaLeitura(leituraQa);
     // E354: a conta de teste sem qa_leitor vai para a caixa dela (Conta → Ajuda), como o admin vai para a dele.
     if (destino.tipo === "admin" || destino.tipo === "propria") {
       const [semAncora, ancora] = destino.href.split("#");

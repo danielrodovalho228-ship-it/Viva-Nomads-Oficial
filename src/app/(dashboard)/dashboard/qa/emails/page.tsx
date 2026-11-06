@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { CaixaEmailsQa, type ParamsCaixaQa } from "@/components/admin/caixa-emails-qa";
-import { destinoLeitorQa } from "@/lib/notifications/caixa-teste";
+import { destinoDaLeitura } from "@/lib/notifications/caixa-teste";
 
 export const metadata = { title: "E-mails das contas de teste" };
 export const dynamic = "force-dynamic";
@@ -20,9 +20,11 @@ export default async function QaEmailsPage({ searchParams }: { searchParams: Pro
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) notFound();
-  const { data: perfil } = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
+  const leitura = await supabase.from("profiles").select("qa_leitor, is_teste, role").eq("id", user.id).maybeSingle();
   // E199: o admin vai para a lista dele (aba E-mails de /admin/dados-de-teste); quem não é leitor de QA recebe 404.
-  const destino = destinoLeitorQa(perfil);
+  const destino = destinoDaLeitura(leitura);
+  // E366: falha ao ler o perfil não é "sem permissão" — lança (o painel oferece tentar de novo) em vez de 404.
+  if (destino.tipo === "indisponivel") throw new Error("Não foi possível abrir a caixa agora. Tente de novo.");
   if (destino.tipo === "admin") redirect(destino.href);
   // E354: conta de teste sem qa_leitor → a caixa dela; conta real → 404.
   if (destino.tipo === "propria") redirect(destino.href);
