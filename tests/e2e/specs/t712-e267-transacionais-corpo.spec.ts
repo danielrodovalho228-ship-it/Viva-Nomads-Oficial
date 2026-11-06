@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T712 — E267 (#1600): os transacionais de ESTADIA e de SERVIÇO nomeiam no corpo a pessoa ("Olá <primeiro nome>"), o
@@ -159,7 +159,7 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
     for (const [k, nome] of [["bia", "Bia Transacional"], ["caio", "Caio Transacional"], ["duda", "Duda Transacional"], ["eva", "Eva Transacional"]] as const) ids[k] = await conta(k, nome, "tenant");
     const { data: parc, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.lara, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: PARCEIRO, slug: `lara-t712-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.lara, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: PARCEIRO, slug: `lara-t712-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

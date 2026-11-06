@@ -35,7 +35,9 @@ async function comChave(page: Page) {
 }
 /** Botões e links com o fundo do primário dentro do conteúdo (o "Fale com a Viva" flutuante fica fora do main). */
 async function primariosNoMain(page: Page): Promise<number> {
-  return page.locator("main").locator("button.bg-forest:visible, a.bg-forest:visible").count();
+  // O cartão "Medir a internet no imóvel" (Prompt 57, NIVEIS-MEDIR-B) é outra ferramenta, com o seu próprio primário na mesma tela;
+  // o que esta regra (QA #1111 item 7) guarda é o bloco da avaliação.
+  return page.locator("main").locator('button.bg-forest:visible:not([data-testid="medir-internet-botao"]), a.bg-forest:visible').count();
 }
 
 test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {

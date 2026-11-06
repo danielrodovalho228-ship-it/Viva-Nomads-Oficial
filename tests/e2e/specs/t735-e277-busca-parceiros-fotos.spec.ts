@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Locator, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T735 — E277 (mockup aprovado em 30/10), busca de parceiros, a 1280 e 390, como visitante:
@@ -33,7 +33,7 @@ test.describe("T735 — E277: busca de parceiros com fotos", () => {
     ids.conta = await criarConta(parceiro, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Lena Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado, antes da entrada e na saída.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lena Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado, antes da entrada e na saída.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;
