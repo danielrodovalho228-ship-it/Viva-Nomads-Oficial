@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       const { data: im, error: erroIm } = await admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle();
       const instrucoes = erroIm ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, linha?.instrucoes);
       const estadia = {
-        imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
+        imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
         saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
         horarioEntrada: linha?.horario || prop?.checkin_after,

@@ -11,8 +11,10 @@ import { CAMPOS_INSTRUCOES, type Instrucoes } from "./instrucoes.ts";
 import { blocoDados } from "../notifications/modelo-email.ts";
 import { escaparHtml } from "../escapar-html.ts";
 
+import { codigoDoImovel } from "../imovel-pagina.ts";
+
 export interface EstadiaParaEmail {
-  imovel: { titulo?: string | null; bairro?: string | null; cidade?: string | null };
+  imovel: { id?: string | null; titulo?: string | null; bairro?: string | null; cidade?: string | null };
   /** AAAA-MM-DD */
   entrada: string;
   /** AAAA-MM-DD */
@@ -32,7 +34,8 @@ const hora = (h: string | null | undefined) => (/^\d{1,2}:\d{2}/.test(limpo(h)) 
 
 export function imovelPorExtenso(im: EstadiaParaEmail["imovel"]): string {
   const lugar = [limpo(im.bairro), limpo(im.cidade)].filter(Boolean).join(", ");
-  return [limpo(im.titulo), lugar].filter(Boolean).join(" · ");
+  const codigo = limpo(im.id) ? `código ${codigoDoImovel(limpo(im.id))}` : ""; // E394
+  return [limpo(im.titulo), lugar, codigo].filter(Boolean).join(" · ");
 }
 
 /** Imóvel, Entrada e Saída (com os horários quando o anúncio tem). */

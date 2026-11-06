@@ -1562,7 +1562,7 @@ export async function registrarContrato(
       ]);
       // E202: o e-mail do contrato pronto diz o imóvel, o período, o valor mensal e o total (não só "Há uma atualização").
       const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
-      const imovelEmail = { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
+      const imovelEmail = { id: lead.property_id as string, titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
       const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias });
       await notify({
         event: "contract_status",

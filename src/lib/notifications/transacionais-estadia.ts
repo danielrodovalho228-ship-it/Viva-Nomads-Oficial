@@ -25,6 +25,8 @@ export const EVENTOS_DA_ESTADIA: ReadonlySet<string> = new Set<EventoEstadia>([
 ]);
 
 export interface ImovelEmail {
+  /** E394: o id do anúncio (vira o código VN-… no e-mail). */
+  id?: string | null;
   titulo?: string | null;
   bairro?: string | null;
   cidade?: string | null;

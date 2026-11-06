@@ -6,7 +6,11 @@
   Roda: node --test src/lib/notifications/dados-negociacao.test.ts
 */
 
+import { codigoDoImovel } from "../imovel-pagina.ts";
+
 export interface ImovelDoEmail {
+  /** E394: o id do anúncio (vira o código VN-… no e-mail). */
+  id?: string | null;
   titulo: string | null | undefined;
   /** Bairro (properties.address). */
   bairro?: string | null;
@@ -26,7 +30,9 @@ const limpo = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").t
 export function imovelPorExtenso(im: ImovelDoEmail): string {
   const titulo = limpo(im.titulo) || "Imóvel";
   const lugar = [limpo(im.bairro), limpo(im.cidade)].filter(Boolean).join(", ");
-  return lugar ? `${titulo} · ${lugar}` : titulo;
+  // E394: título + lugar + código (VN-…): o mesmo "Imóvel" em todos os e-mails transacionais.
+  const codigo = limpo(im.id) ? `código ${codigoDoImovel(limpo(im.id))}` : "";
+  return [titulo, lugar, codigo].filter(Boolean).join(" · ");
 }
 
 export const brl = (v: number) => `R$ ${Number(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: Number.isInteger(Number(v)) ? 0 : 2, maximumFractionDigits: 2 })}`;

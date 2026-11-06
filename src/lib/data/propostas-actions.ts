@@ -386,7 +386,7 @@ async function emailsDoAceite(
       admin.from("properties").select("title, address, city").eq("id", p.property_id).maybeSingle(),
     ]);
     const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
-    const imovel = { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
+    const imovel = { id: p.property_id, titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
     const d = (dono ?? {}) as { email?: string | null; full_name?: string | null };
     const m = (morador ?? {}) as { email?: string | null; full_name?: string | null };
     const quadroDono = dadosDoEmailDaProposta(p.numero, imovel, { desfecho: "aceita", termos }, "owner");

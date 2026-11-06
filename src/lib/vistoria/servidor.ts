@@ -53,7 +53,7 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
   if (!propertyId) return { imovel: null, visita, avaliador };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
-  return { imovel: i ? { titulo: i.title, bairro: i.address, cidade: i.city } : null, visita, avaliador };
+  return { imovel: i ? { id: propertyId, titulo: i.title, bairro: i.address, cidade: i.city } : null, visita, avaliador };
 }
 
 /**

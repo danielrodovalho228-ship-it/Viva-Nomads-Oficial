@@ -42,7 +42,7 @@ export const EVENTOS_VISTORIA_COM_FATOS: ReadonlySet<string> = new Set<EventoVis
 ]);
 
 export interface FatosVistoria {
-  imovel: { titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
+  imovel: { id?: string | null; titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
   /** Data e hora da visita (instante ISO), quando o pedido já tem. */
   visita?: string | null;
   /** Nome público do avaliador designado. */

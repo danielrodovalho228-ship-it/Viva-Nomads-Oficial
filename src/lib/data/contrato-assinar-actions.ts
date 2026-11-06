@@ -564,7 +564,7 @@ export async function assinarContrato(input: {
       const detalhes = linhas ? `<p>${linhas.map(escaparHtml).join("<br>")}</p>` : undefined;
       // E202: imóvel (título + bairro/cidade), período e valores no corpo, e o próximo passo de quem recebe.
       const props = (c.properties ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
-      const imovelEmail = { titulo: props.title ?? null, bairro: props.address ?? null, cidade: props.city ?? null };
+      const imovelEmail = { id: (c as { property_id?: string | null }).property_id ?? null, titulo: props.title ?? null, bairro: props.address ?? null, cidade: props.city ?? null };
       const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
       const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / 30));
       const quadro = linhasContrato({ imovel: imovelEmail, inicio: inicio ?? "", fim: fim ?? "", meses: mesesContrato, valorMensal: Number(c.aluguel_mensal ?? 0), dias: Number(c.prazo_total_dias ?? 0) || null });
