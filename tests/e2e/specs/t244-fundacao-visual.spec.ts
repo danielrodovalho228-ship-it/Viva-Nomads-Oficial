@@ -92,8 +92,8 @@ async function conferirCartao(cartao: Locator, onde: string) {
   expect(ys, `${onde}: ordem do cartão`).toEqual([...ys].sort((a, b) => a - b));
   const linhasTitulo = await cartao.getByTestId("cartao-titulo").evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)));
   expect(linhasTitulo, `${onde}: título em até 2 linhas`).toBeLessThanOrEqual(2);
-  // "R$ Y em N meses" só com N ≥ 2 (com N = 1, só "R$ X/mês").
-  if (await cartao.getByTestId("cartao-total-estadia").count()) await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/·\s*R\$\s?[\d.,]+ em \d+ meses/);
+  // E356: todo cartão mostra "R$ Y em N mês/meses" (com N = 1, "em 1 mês").
+  if (await cartao.getByTestId("cartao-total-estadia").count()) await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/·\s*R\$\s?[\d.,]+ em \d+ (mês|meses)/);
   await expect(cartao.getByTestId("cartao-sintese")).toContainText(/\d+ quartos?/);
   expect((await estilo(cartao.getByTestId("cartao-titulo"))).cor, `${onde}: texto secundário #3F3F3F`).toBe(SECUNDARIO);
 }
