@@ -145,9 +145,9 @@ test.describe("T358 — CAMPOS-2: blocos opcionais no padrão E56", () => {
     // Ligar uma regra abre só ela (como na tela 06: visitas aberta, fumo e festas fechados).
     await d.getByTestId("bloco-visitas-toggle").click();
     await expect(d.getByTestId("regras-casa-visitas")).toBeVisible();
-    await d.getByTestId("regras-casa-visitas").getByLabel("Sim", { exact: true }).check();
+    await d.getByTestId("regras-casa-visitas").getByRole("radio", { name: "Sim", exact: true }).click();
     await d.getByTestId("bloco-festas-toggle").click();
-    await d.getByTestId("regras-casa-festas").getByLabel("Proibidas", { exact: true }).check();
+    await d.getByTestId("regras-casa-festas").getByRole("radio", { name: "Proibidas", exact: true }).click();
     expect(await ligado(d, "fumo")).toBe(false);
     await d.getByTestId("regras-casa").screenshot({ path: `${SAIDA}/t358-convivencia-1280.png` });
     await secao.getByRole("button", { name: "Salvar seção" }).click();

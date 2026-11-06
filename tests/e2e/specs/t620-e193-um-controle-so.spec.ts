@@ -43,6 +43,18 @@ const inventario = (p: Page) =>
     return Object.fromEntries(Object.entries(achados).map(([k, v]) => [k, [...new Set(v)]]));
   });
 
+/** E193 (reteste de 29/10): liga os blocos opcionais um de cada vez, para o inventário ver os controles de dentro deles (pets, festas, visitas). */
+async function abrirBlocos(p: Page) {
+  const desligados = p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]');
+  for (let i = 0; i < 12 && (await desligados.count()) > 0; i++) {
+    const id = (await desligados.first().getAttribute("data-testid"))!;
+    await p.getByTestId(id).evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await p.getByTestId(id).click({ timeout: 10_000 });
+    await expect(p.getByTestId(id)).toHaveAttribute("aria-checked", "true", { timeout: 10_000 });
+  }
+  await p.waitForTimeout(400);
+}
+
 test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   // Sem "serial": a 390 roda mesmo se a 1280 falhar (a rodada "antes" mostra as duas larguras).
@@ -66,6 +78,7 @@ test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
         await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=${etapa}`, { waitUntil: "domcontentloaded" });
         await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
         await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+        await abrirBlocos(p);
         const inv = await inventario(p);
         console.log(`t620 ${largura} ${etapa}`, JSON.stringify(inv));
         if (inv.caixa.length) falhas.push(`${etapa}: caixas ${inv.caixa.join(" | ")}`);
