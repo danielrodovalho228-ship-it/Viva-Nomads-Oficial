@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAdminAal2 } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { consumirLimite } from "@/lib/limites";
 import { reenviarEmailDoDocumento } from "@/lib/fiscal/emitir";
@@ -110,6 +111,8 @@ export async function reenviarEmitido(registroId: string): Promise<Res<{ numero:
   if (!UUID.test(String(registroId))) return { ok: false, error: "Documento inválido." };
   const c = await contexto();
   if (!c) return { ok: false, error: "Só admin." };
+  const recusaQa = await recusaObservador(c.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: reg } = await c.admin.from("documentos_registro").select("id, numero, ref_tabela, ref_id, status").eq("id", registroId).maybeSingle();
   if (!reg) return { ok: false, error: "Documento não encontrado." };
   const situacao = situacaoEnvio(reg.ref_tabela as string, null, reg.status as string);

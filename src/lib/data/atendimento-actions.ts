@@ -8,6 +8,7 @@ import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
@@ -645,6 +646,8 @@ export async function chamadoAdmin(id: string): Promise<{
 export async function responderComoAdmin(id: string, texto: string, interno: boolean): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(id)) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const corpo = (texto ?? "").trim().slice(0, 5000);
   if (!corpo) return { ok: false, error: "Escreva a resposta." };
   const { data: c } = await ctx.admin
@@ -675,6 +678,8 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
 export async function aprovarSugestao(chamadoId: string, mensagemId: number): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId) || !Number.isInteger(mensagemId)) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: m } = await ctx.admin.from("chamado_mensagens").select("id, chamado_id, autor, interno, simulacao, corpo").eq("id", mensagemId).maybeSingle();
   const texto = m && m.chamado_id === chamadoId && m.autor === "ia" && m.interno ? respostaDaSugestao(m.corpo as string) : null;
   if (!texto) return { ok: false, error: "Sugestão não encontrada neste chamado." };
@@ -691,6 +696,8 @@ export async function alterarChamado(
 ): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(id)) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: c } = await ctx.admin
     .from("chamados")
     .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome, criado_em")
@@ -744,6 +751,8 @@ export async function listarMacros(): Promise<Macro[]> {
 export async function salvarMacro(m: { id?: string; titulo: string; corpo: string }): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const titulo = (m.titulo ?? "").trim().slice(0, 80);
   const corpo = (m.corpo ?? "").trim().slice(0, 3000);
   if (!titulo || !corpo) return { ok: false, error: "Preencha título e texto." };
@@ -758,6 +767,8 @@ export async function salvarMacro(m: { id?: string; titulo: string; corpo: strin
 export async function apagarMacro(id: string): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(id)) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { error } = await ctx.admin.from("chamado_macros").delete().eq("id", id);
   return error ? { ok: false, error: "Não foi possível apagar." } : { ok: true };
 }
@@ -766,6 +777,8 @@ export async function apagarMacro(id: string): Promise<Res> {
 export async function avaliarRespostaIA(chamadoId: string, mensagemId: number, nota: "boa" | "corrigir", correcao?: string): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId) || !Number.isInteger(mensagemId)) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: m } = await ctx.admin.from("chamado_mensagens").select("id").eq("id", mensagemId).eq("chamado_id", chamadoId).eq("autor", "ia").maybeSingle();
   if (!m) return { ok: false, error: "Resposta não encontrada." };
   const texto = (correcao ?? "").trim().slice(0, 2000);
@@ -806,6 +819,8 @@ export async function testarViva(
 ): Promise<{ ok: true; modelo: string; cotacao: number; resultados: ResultadoCenario[] } | { ok: false; error: string }> {
   const ctx = await exigirAdmin();
   if (!ctx) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   // Para comparar: qualquer modelo da tabela de preços; sem escolha, o configurado.
   const modelo = modeloEscolhido && PRECOS_USD[modeloEscolhido] ? modeloEscolhido : modeloViva();
   const cotacao = cotacaoDolar();
@@ -1037,6 +1052,8 @@ export async function enviarSugestaoEditada(chamadoId: string, texto: string, ba
 export async function devolverParaViva(chamadoId: string): Promise<Res> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(chamadoId)) return { ok: false, error: "Sem acesso." };
+  const recusaQa = await recusaObservador(ctx.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const r = await devolverChamadoParaViva(chamadoId, ctx.userId);
   if (!r.ok) return r;
   if (r.respondeAgora) after(() => rodarViva(chamadoId));

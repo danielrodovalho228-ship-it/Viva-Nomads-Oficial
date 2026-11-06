@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { PRAZOS, type Prioridade } from "@/config/atendimento";
 import { primeiroNome } from "@/lib/display-name";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { alterarChamado, aprovarSugestao, avaliarRespostaIA, devolverParaViva, enviarSugestaoEditada, responderComoAdmin, sugerirResposta, type chamadoAdmin, type Macro } from "@/lib/data/atendimento-actions";
 import { ehNotaResumo } from "@/lib/atendimento/resumo";
 import { ResumoEAcoes } from "./resumo-acoes";
@@ -173,7 +174,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
                   <span className="whitespace-pre-wrap text-ink">{m.corpo}</span>
                   {m.interno && (
                     <span className="mt-2 flex flex-wrap items-center gap-3">
-                      {m.autor === "ia" && respostaDaSugestao(m.corpo) && !aprovadas.has(m.id) && !respondidaDepois(m.id) && (
+                      {m.autor === "ia" && !observadorQa && respostaDaSugestao(m.corpo) && !aprovadas.has(m.id) && !respondidaDepois(m.id) && (
                         <Button
                           size="sm"
                           variant="secondary"
@@ -190,7 +191,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
                       </button>
                     </span>
                   )}
-                  {m.autor === "ia" && !m.interno && (
+                  {m.autor === "ia" && !m.interno && !observadorQa && (
                     <span className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                       {avaliadas.has(m.id) ? (
                         <span className="text-muted">{avaliadas.get(m.id) === "ia_boa_resposta" ? "Marcada como boa resposta" : "Correção registrada"}</span>
@@ -235,7 +236,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
             </ol>
           </Panel>
 
-          {c.status !== "encerrado" && (
+          {c.status !== "encerrado" && !observadorQa && (
             <Panel title="Responder" className="mt-6">
               {macros.length > 0 && (
                 <label className="mb-2 block text-xs text-muted">
@@ -363,6 +364,8 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
             <QuemEAPessoa chamadoId={c.id} />
           </Panel>
           <Panel title="Ações">
+            {observadorQa ? <SoLeituraQa /> : (
+            <>
             <label className="block text-xs text-muted">
               Prioridade
               <select
@@ -410,6 +413,8 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
                 </ConfirmarNaPagina>
               )}
             </div>
+            </>
+            )}
           </Panel>
           <Panel title="Histórico">
             <ul className="space-y-1 text-xs text-muted">

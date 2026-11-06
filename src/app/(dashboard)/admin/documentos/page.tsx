@@ -55,15 +55,18 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
   const sp = await searchParams;
   if (sp.aba === ABA_EMITIDOS) {
     const filtros = filtrosEmitidos(sp);
+    // E477: reenviar documento manda e-mail a pessoas reais — a conta observadora da QA só lê.
+    const soLeituraConfig = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
     const itens = await listarEmitidos(filtros);
     const tipos = (Object.keys(PREFIXOS) as Prefixo[]).map((k) => ({ valor: k, rotulo: PREFIXOS[k].rotulo }));
     return (
       <>
         <Abas atual="emitidos" />
-        <EmitidosAdmin itens={itens} filtros={filtros} tipos={tipos} />
+        <EmitidosAdmin itens={itens} filtros={filtros} tipos={tipos} soLeitura={soLeituraConfig} />
       </>
     );
   }
+  const soLeituraConfig = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const admin = await adminDaPagina();
   // Prompt 52: a fila do vínculo só existe com a chave TRIAGEM_VINCULO_ATIVA.
   const triagemLigada = await triagemVinculoAtiva();
@@ -90,9 +93,9 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
       <Abas atual="fila" />
       <AdminDocumentosClient docs={docs} auto={auto ?? []} autoFalhou={auto === null} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} soLeitura={soLeitura} />
       <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} soLeitura={soLeitura} />
-      <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} />
+      <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} soLeitura={soLeituraConfig} />
       <VerificacoesRevisao />
-      {triagemLigada ? <VinculosAdmin itens={vinculos?.itens ?? []} metricas={vinculos?.metricas ?? { pendentes: 0, aprovados: 0, recusados: 0 }} /> : null}
+      {triagemLigada ? <VinculosAdmin itens={vinculos?.itens ?? []} metricas={vinculos?.metricas ?? { pendentes: 0, aprovados: 0, recusados: 0 }} soLeitura={soLeituraConfig} /> : null}
     </>
   );
 }
