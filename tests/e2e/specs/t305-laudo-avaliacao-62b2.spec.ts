@@ -383,10 +383,11 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
       pages[l] ??= await avaliador(browser, l);
       await concluirEEnviar(pages[l]!, pedidoId);
     };
-    const { data: v1 } = await adm().from("vistoria_pedidos").select("id, avaliador_id").eq("property_id", ids.im6a).eq("tipo", "verificacao").single();
-    const l1: "A" | "B" = v1!.avaliador_id === cred.A.id ? "A" : "B";
-    await adm().from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: new Date().toISOString() }).eq("pedido_id", v1!.id);
-    await adm().from("vistoria_pedidos").update({ status: "agendado", agendado_para: new Date(Date.now() - 3_600_000).toISOString() }).eq("id", v1!.id);
+    const { data: v1 } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im6a).eq("tipo", "verificacao").single();
+    // E648: a verificação aberta pelo admin espera o dono escolher; aqui o avaliador A é atribuído direto no banco.
+    const l1: "A" | "B" = "A";
+    await adm().from("vistoria_designacoes").insert({ pedido_id: v1!.id, avaliador_id: cred.A.id, resposta: "aceita", respondido_em: new Date().toISOString() });
+    await adm().from("vistoria_pedidos").update({ avaliador_id: cred.A.id, status: "agendado", agendado_para: new Date(Date.now() - 3_600_000).toISOString() }).eq("id", v1!.id);
     await rodar(v1!.id as string, l1);
     await expect.poll(async () => ((await adm().from("proprietario_strikes").select("ordem").eq("owner_id", ids.dono2)).data ?? []).length, { timeout: 15_000 }).toBe(1);
     // 2º strike: republicar só com laudo; ainda publicado.
