@@ -104,7 +104,9 @@ export function VerComoOutrosVeem() {
   );
 }
 
-type Situacao = "ok" | "falta" | "em_breve";
+type Situacao = "ok" | "falta" | "em_breve" | "indisponivel";
+/** Achados 141–142: leitura que falhou não afirma "falta" — fica neutra, sem pedir nada. */
+const TEXTO_INDISPONIVEL = "Não foi possível verificar agora";
 interface ItemConfianca {
   chave: string;
   icone: React.ComponentType<{ className?: string }>;
@@ -149,11 +151,11 @@ export function ConfiancaLista() {
     const sb = createClient();
     const leituras: Promise<unknown>[] = [];
     if (sb) {
-      leituras.push(sb.auth.getUser().then(({ data }) => vivo && setEmailOk(Boolean(data.user?.email_confirmed_at))));
+      leituras.push(sb.auth.getUser().then(({ data, error }) => vivo && setEmailOk(error || !data.user ? null : Boolean(data.user.email_confirmed_at))));
       leituras.push(
         sb.auth.mfa
           .listFactors()
-          .then(({ data }) => vivo && setDuasEtapas(Boolean(data?.totp?.some((f) => f.status === "verified"))))
+          .then(({ data, error }) => vivo && setDuasEtapas(error ? null : Boolean(data?.totp?.some((f) => f.status === "verified"))))
           .catch(() => {}),
       );
     }
@@ -179,8 +181,8 @@ export function ConfiancaLista() {
       chave: "email",
       icone: Mail,
       rotulo: "E-mail",
-      situacao: emailOk ? "ok" : "falta",
-      detalhe: emailOk ? "Confirmado" : "Confirme pelo link que enviamos",
+      situacao: emailOk === null ? "indisponivel" : emailOk ? "ok" : "falta",
+      detalhe: emailOk === null ? TEXTO_INDISPONIVEL : emailOk ? "Confirmado" : "Confirme pelo link que enviamos",
     },
     {
       chave: "celular",
@@ -226,9 +228,9 @@ export function ConfiancaLista() {
       chave: "duas-etapas",
       icone: ShieldCheck,
       rotulo: "Verificação em duas etapas",
-      situacao: duasEtapas ? "ok" : "falta",
-      detalhe: duasEtapas ? "Ativa" : "Desativada",
-      acao: { texto: duasEtapas ? "Gerenciar" : "Ativar", href: "/dashboard/conta/seguranca" },
+      situacao: duasEtapas === null ? "indisponivel" : duasEtapas ? "ok" : "falta",
+      detalhe: duasEtapas === null ? TEXTO_INDISPONIVEL : duasEtapas ? "Ativa" : "Desativada",
+      acao: { texto: duasEtapas === null ? "Abrir" : duasEtapas ? "Gerenciar" : "Ativar", href: "/dashboard/conta/seguranca" },
     },
     {
       chave: "senha",
