@@ -26,6 +26,8 @@ import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
 import { aditivoEmTela } from "@/lib/estadia/aditivo-em-tela";
 import { localDaEstadia } from "@/lib/data/estadia-local";
 import { VoltarLista } from "@/components/ui/voltar-lista";
+import { numerosDoContrato } from "@/lib/data/pedido-orcamento-actions";
+import { linhaNumerosDoContrato } from "@/lib/pedido-ref";
 
 export const metadata: Metadata = {
   title: "Estadia",
@@ -66,13 +68,15 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
   const encerrar = encerrarDaEstadia(e.papel, contrato);
   const aberto = aditivoEmTela(e.aditivos);
   const assinados = e.aditivos.filter((a) => a.status === "assinado");
-  const [depois, sugestao, local, convidados] = await Promise.all([
+  const [depois, sugestao, local, convidados, numeros] = await Promise.all([
     dono ? depoisDaSaida(e.id, e.imovel.id) : Promise.resolve(null),
     !dono && e.topo.fase !== "encerrada" ? sugestaoMorador(e.periodo, e.imovel.cidade) : Promise.resolve(null),
     // Prompt 61-A: o endereço exato só com o contrato assinado pelas duas partes; antes, a região aproximada.
     localDaEstadia(e.imovel.id, e.assinadoPorAmbos),
     // 61-B: só o morador vê e mexe nos convidados (sem a 0225, null e o bloco some).
     e.podeEditarOcupantes ? convidadosParaOMorador(e.id) : Promise.resolve(null),
+    // E440: o último elo da cadeia pedido → orçamento → contrato → estadia (mesma fonte da tela do contrato; a RLS decide o que cada parte lê).
+    numerosDoContrato(e.id).catch(() => "falhou" as const),
   ]);
   // Prompt 61-A: a linha do tempo com os horários do imóvel (checkin_after / checkout_before), a mesma fonte do prazo
   // da conferência; nada recalculado aqui.
@@ -88,6 +92,16 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
       {/* E176: "← <lista>" no topo — o morador volta às estadias; o dono, aos contratos. */}
       {e.papel === "proprietario" ? <VoltarLista href="/dashboard/contratos" rotulo="Contratos" /> : <VoltarLista href="/dashboard/locacoes" rotulo="Minhas estadias" />}
       <PageTitle title={e.imovel.titulo} subtitle={`Contrato ${e.numero}`} />
+      {numeros === "falhou" ? (
+        <p className="-mt-2 text-sm text-red-700" data-testid="estadia-numeros-falhou">Não foi possível carregar o número do pedido e do orçamento agora.</p>
+      ) : (
+        numeros &&
+        linhaNumerosDoContrato(numeros.pedido, numeros.orcamento) && (
+          <p className="-mt-2 text-sm text-muted [overflow-wrap:anywhere]" data-testid="estadia-numeros">
+            {linhaNumerosDoContrato(numeros.pedido, numeros.orcamento)}
+          </p>
+        )
+      )}
 
       <Panel className="flex flex-col gap-4 sm:flex-row sm:items-center" data-testid="estadia-topo">
         {e.imovel.foto && (
