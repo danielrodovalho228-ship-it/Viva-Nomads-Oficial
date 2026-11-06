@@ -116,24 +116,33 @@ export function paginarAnuncios<T extends { id: string }>(
   lista: readonly T[],
   copias: ReadonlySet<string>,
   paginas: number,
-): { visiveis: T[]; mostrados: number; total: number; restantes: number } {
+): { visiveis: T[]; mostrados: number; total: number; restantes: number; copiasAbertas: number } {
   const limite = Math.max(1, paginas) * POR_PAGINA;
   const total = lista.filter((i) => !copias.has(i.id)).length;
   const visiveis: T[] = [];
   let mostrados = 0;
+  let copiasAbertas = 0;
   for (const i of lista) {
     const ehCopia = copias.has(i.id);
     if (!ehCopia && mostrados >= limite) break;
     visiveis.push(i);
-    if (!ehCopia) mostrados += 1;
+    if (ehCopia) copiasAbertas += 1;
+    else mostrados += 1;
   }
-  return { visiveis, mostrados, total, restantes: total - mostrados };
+  // visiveis.length === mostrados + copiasAbertas: a frase de contagem nomeia as duas parcelas (E624, 2ª prova).
+  return { visiveis, mostrados, total, restantes: total - mostrados, copiasAbertas };
 }
 
-/** "1 imóvel" / "N imóveis" — e, quando há mais páginas, "Mostrando M de N imóveis". */
-export function textoContagemLista(p: { mostrados: number; total: number }): string {
+/**
+ * "1 imóvel" / "N imóveis" — e, quando há mais páginas, "Mostrando M de N imóveis". Com cópias de rascunho abertas na tela, a
+ * mesma frase as nomeia: "29 imóveis (+ 3 cópias de rascunho abertas)" — os cartões na tela sempre batem com o que ela diz.
+ */
+export function textoContagemLista(p: { mostrados: number; total: number; copiasAbertas?: number }): string {
   const n = p.total === 1 ? "1 imóvel" : `${p.total} imóveis`;
-  return p.mostrados < p.total ? `Mostrando ${p.mostrados} de ${n}` : n;
+  const base = p.mostrados < p.total ? `Mostrando ${p.mostrados} de ${n}` : n;
+  const c = p.copiasAbertas ?? 0;
+  if (c <= 0) return base;
+  return `${base} (+ ${c === 1 ? "1 cópia de rascunho aberta" : `${c} cópias de rascunho abertas`})`;
 }
 
 /** O botão: soma até mais uma página — "Mostrar mais 12" (ou o que faltar). */
