@@ -3421,6 +3421,13 @@
       ],
       "specs": []
     },
+    "/api/caucao/dossie": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/cron/caucao-prazos": {
       "personas": [
         "sistema"
@@ -4191,6 +4198,24 @@
       "specs": []
     },
     "src/lib/cobranca-mensal/acoes.ts#confirmarPagamentoMensal": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/caucao/acoes.ts#darParecerCaucao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/caucao/acoes.ts#contestarDescontoCaucao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/caucao/acoes.ts#registrarDevolucaoCaucao": {
       "personas": [
         "proprietario"
       ],
