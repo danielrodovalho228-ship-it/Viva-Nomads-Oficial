@@ -26,6 +26,7 @@ function arquivos(dir: string, out: string[] = []): string[] {
 const EXCECOES: Record<string, string> = {
   "/api/webhooks/asaas": "webhook: quem chama é o Asaas (URL cadastrada no painel do Asaas), não o app",
   "/api/lab/mensagens-programadas": "rota do laboratório: só os specs E2E a chamam, e ela recusa fora do lab",
+  "/api/caucao/dossie": "E637 (b): dossiê em PDF da caução, atrás da chave CAUCAO_PRAZOS_ATIVA (desligada); a tela do painel que o chama entra quando o parecer da Dra. Beatriz liberar a chave",
 };
 
 /** "/api/x/[id]/y" a partir de "src/app/api/x/[id]/y/route.ts" (grupos "(…)" não entram na URL). */
