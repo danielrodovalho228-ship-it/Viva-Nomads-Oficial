@@ -1230,7 +1230,9 @@
         "t713-e261-avisos-titulo",
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
-        "t710-e265-sem-selo-em-todo-cartao"
+        "t710-e265-sem-selo-em-todo-cartao",
+        "t1224-e619-e612-revisao-e-pendencia",
+        "t1225-e604-extras-sem-duplicata"
       ]
     },
     "/dashboard/indicacoes": {
@@ -2418,7 +2420,8 @@
         "t415-varredura-bloco32",
         "t623-varredura-bloco57",
         "t657-e235-link-avaliador",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t1225-e604-extras-sem-duplicata"
       ]
     },
     "/dashboard/recibos": {
