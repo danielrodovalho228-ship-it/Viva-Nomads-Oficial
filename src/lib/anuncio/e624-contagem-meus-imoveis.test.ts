@@ -36,10 +36,12 @@ test("E624: a página conta anúncios; as cópias abertas vêm com o pai e não 
 
 test("E624: o mesmo número em toda superfície — 'Mostrando 12 de 29 imóveis', 'Mostrar mais 12', depois '29 imóveis'", () => {
   const aberta = juntarCopiasAoPai(todas, copiasDe);
-  assert.equal(textoContagemLista(paginarAnuncios(aberta, copias, 1)), "Mostrando 12 de 29 imóveis");
+  // 2ª prova: com as cópias abertas a frase as nomeia (os cartões na tela = anúncios + cópias).
+  assert.equal(textoContagemLista(paginarAnuncios(aberta, copias, 1)), "Mostrando 12 de 29 imóveis (+ 2 cópias de rascunho abertas)");
   assert.equal(textoMostrarMais(paginarAnuncios(aberta, copias, 1).restantes), "Mostrar mais 12");
   assert.equal(textoMostrarMais(paginarAnuncios(aberta, copias, 2).restantes), "Mostrar mais 5");
-  assert.equal(textoContagemLista(paginarAnuncios(aberta, copias, 3)), "29 imóveis");
+  assert.equal(textoContagemLista(paginarAnuncios(aberta, copias, 3)), "29 imóveis (+ 2 cópias de rascunho abertas)");
+  assert.equal(textoContagemLista(paginarAnuncios(anuncios, copias, 3)), "29 imóveis");
   assert.equal(textoContagemLista({ mostrados: 1, total: 1 }), "1 imóvel");
 });
 
@@ -51,4 +53,41 @@ test("E624: a tela lê a contagem única (abas, contagem e botão)", () => {
   assert.match(c, /\{textoContagemLista\(pagina\)\}/);
   assert.match(c, /\{textoMostrarMais\(pagina\.restantes\)\}/);
   assert.doesNotMatch(c, /filtrada\.length/);
+});
+
+/*
+  E624 (reprovado de novo em 05/11): com as 3 cópias reveladas a tela tinha 32 cartões, mas a contagem dizia 29 e nenhuma
+  superfície mencionava as cópias ("as cópias reveladas não entram em contagem nenhuma"). A fonte é uma só: paginarAnuncios
+  devolve também quantas cópias estão abertas, e a MESMA frase de contagem as nomeia — 29 anúncios + 3 cópias = 32 cartões.
+*/
+const aVinte9Mais3: It[] = [...anuncios, { id: "c1", status: "draft", title: "Imóvel 10" }, { id: "c2", status: "draft", title: "Imóvel 10" }, { id: "c3", status: "draft", title: "Imóvel 10" }];
+const copias3 = new Set(["c1", "c2", "c3"]);
+const copiasDe3 = new Map([["a10", ["c1", "c2", "c3"]]]);
+
+test("E624: a página diz quantas cópias abertas aparecem — os cartões desenhados batem com anúncios + cópias", () => {
+  const aberta = juntarCopiasAoPai(aVinte9Mais3, copiasDe3);
+  const p1 = paginarAnuncios(aberta, copias3, 1);
+  assert.equal(p1.copiasAbertas, 3);
+  assert.equal(p1.mostrados + p1.copiasAbertas, p1.visiveis.length);
+  const p3 = paginarAnuncios(aberta, copias3, 3);
+  assert.deepEqual([p3.total, p3.copiasAbertas, p3.visiveis.length], [29, 3, 32]);
+  // fechadas: a lista nem recebe as cópias → 0, e o texto é o de sempre
+  const fechada = paginarAnuncios(anuncios, copias3, 3);
+  assert.equal(fechada.copiasAbertas, 0);
+  assert.equal(textoContagemLista(fechada), "29 imóveis");
+});
+
+test("E624: a frase de contagem nomeia as cópias abertas, no singular e no plural", () => {
+  const aberta = juntarCopiasAoPai(aVinte9Mais3, copiasDe3);
+  assert.equal(textoContagemLista(paginarAnuncios(aberta, copias3, 3)), "29 imóveis (+ 3 cópias de rascunho abertas)");
+  assert.equal(textoContagemLista(paginarAnuncios(aberta, copias3, 1)), "Mostrando 12 de 29 imóveis (+ 3 cópias de rascunho abertas)");
+  assert.equal(textoContagemLista({ mostrados: 5, total: 5, copiasAbertas: 1 }), "5 imóveis (+ 1 cópia de rascunho aberta)");
+  assert.equal(textoContagemLista({ mostrados: 5, total: 5, copiasAbertas: 0 }), "5 imóveis");
+  assert.equal(textoContagemLista({ mostrados: 5, total: 5 }), "5 imóveis");
+});
+
+test("E624: a tela só repassa o objeto da página à frase (nenhuma conta própria de cartões)", () => {
+  const c = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/imoveis-client.tsx", import.meta.url), "utf8");
+  assert.match(c, /\{textoContagemLista\(pagina\)\}/);
+  assert.doesNotMatch(c, /pagina\.visiveis\.length|properties\.length\s*\+/);
 });
