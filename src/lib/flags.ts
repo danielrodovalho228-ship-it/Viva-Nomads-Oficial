@@ -110,6 +110,13 @@ export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 =
 export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA === "on";
 
 /**
+ * TRAVA COBRANCA_MENSAL (E641, desenho do coordenador de 05/11/2026): cobrança mensal para contratos de 91 a 180 dias. DESLIGADA por
+ * padrão e só a parte NEUTRA existe: cronograma, livro de pagamentos (registro do morador, confirmação do dono) e lembretes D-5/D-3.
+ * Nada de atraso, encargos, mensagem depois do vencimento ou consequência ao morador até o parecer da Dra. Beatriz. Só o valor "on" liga.
+ */
+export const COBRANCA_MENSAL_ATIVA = process.env.NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA === "on";
+
+/**
  * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
  * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
  * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.
