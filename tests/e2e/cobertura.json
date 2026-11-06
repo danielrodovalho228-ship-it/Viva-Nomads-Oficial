@@ -2631,6 +2631,13 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "/dashboard/contratos/[id]/ficha": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
     }
   },
   "rotas": {
@@ -7169,6 +7176,18 @@
       "specs": []
     },
     "src/lib/comparador-airbnb/link-actions.ts#salvarLinkAirbnb": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ficha-resumo-actions.ts#getFichaResumo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ficha-resumo-actions.ts#salvarContaRecebimento": {
       "personas": [
         "proprietario"
       ],
