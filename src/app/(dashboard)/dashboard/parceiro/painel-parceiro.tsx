@@ -17,7 +17,6 @@ import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao"
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
 import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
-import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
   adicionarAgenda,
   legendarFotoGaleria,
   moverFotoGaleria,
@@ -34,6 +33,7 @@ import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
   salvarServico,
   type PainelParceiro,
 } from "@/lib/parceiros/painel-actions";
+import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
 
 const ABAS = [
   { id: "pagina", rotulo: "Página" },
