@@ -20,6 +20,43 @@ export function FilaFotosCliente({ fila, soLeitura = [] }: { fila: FotoNaFila[];
   );
 }
 
+/**
+ * E476 (i): o moderador precisa VER a foto — prévia quadrada inteira (sem cortar em círculo), abre em tamanho real em
+ * nova aba, e diz quando a imagem não carrega em vez de deixar o ícone de imagem quebrada.
+ */
+function PreviaFoto({ url, nome }: { url: string | null; nome: string }) {
+  const [falhou, setFalhou] = useState(false);
+  if (!url) {
+    return (
+      <span className="grid aspect-square w-full max-w-[240px] place-items-center rounded-xl border border-line bg-white text-xs text-muted" data-testid="foto-previa-erro">
+        Sem arquivo
+      </span>
+    );
+  }
+  if (falhou) {
+    return (
+      <span role="alert" className="grid aspect-square w-full max-w-[240px] place-items-center rounded-xl border border-line bg-white p-3 text-center text-xs text-amber-800" data-testid="foto-previa-erro">
+        Não foi possível carregar a imagem. Atualize a página; se continuar, não aprove nem remova esta foto.
+      </span>
+    );
+  }
+  return (
+    <span className="block">
+      {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada do bucket privado, curta duração */}
+      <img
+        src={url}
+        alt={`Foto de perfil de ${nome}`}
+        onError={() => setFalhou(true)}
+        className="aspect-square w-full max-w-[240px] rounded-xl border border-line bg-surface-2 object-contain"
+        data-testid="foto-previa"
+      />
+      <a href={url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-forest underline" data-testid="foto-abrir">
+        Abrir em tamanho real
+      </a>
+    </span>
+  );
+}
+
 function ItemFoto({ f, soLeitura }: { f: FotoNaFila; soLeitura: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState("");
@@ -36,13 +73,8 @@ function ItemFoto({ f, soLeitura }: { f: FotoNaFila; soLeitura: boolean }) {
   return (
     <li data-testid="fila-foto" data-user={f.userId} data-denunciada={f.denunciadaEm ? "1" : "0"}>
       <Panel>
-        <div className="flex items-center gap-4">
-          {f.url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL assinada do bucket privado, curta duração
-            <img src={f.url} alt={`Foto de perfil de ${f.nome}`} width={96} height={96} className="h-24 w-24 shrink-0 rounded-full object-cover" />
-          ) : (
-            <span className="grid h-24 w-24 shrink-0 place-items-center rounded-full border border-line bg-white text-xs text-muted">Sem arquivo</span>
-          )}
+        <div className="flex flex-col gap-3">
+          <PreviaFoto url={f.url} nome={f.nome} />
           <div className="min-w-0">
             <p className="truncate font-semibold text-ink">{f.nome}</p>
             <p className="text-sm text-muted">Enviada em {dataHoraBRT(f.enviadaEm)}</p>
