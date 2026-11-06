@@ -5,7 +5,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrarNaPagina, novaSenha, no
  * T1257 — E362 (#2920) e E372 (#2926), 06/11. Os dois entraram só com teste de unidade que lê o código-fonte; aqui é a tela.
  *   E362 — o "Como funciona" de /parceiros só promete conferir o que o pedido pede: "Identidade e CPF ou CNPJ; para
  *          fotografia, também o portfólio." (sem a frase antiga "Identidade, CPF ou CNPJ e portfólio" para todo parceiro).
- *   E372 — "Meus dados" (/dashboard/conta): o documento (CPF/CNPJ) é só mostrado, nunca pedido ali ("Informar CPF" saiu), e o
+ *   E372 — "Meus dados" (/dashboard/conta/dados): o documento (CPF/CNPJ) é só mostrado, nunca pedido ali ("Informar CPF" saiu), e o
  *          botão de salvar só destrava depois que os dados gravados chegaram (o telefone nasce travado em "Carregando…").
  * 390 e 1280 px.
  */
@@ -45,7 +45,7 @@ test.describe("T1257 — E362 (portfólio só em fotografia) e E372 (Meus dados)
       const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 } });
       try {
         const p = await entrarNaPagina(await ctx.newPage(), conta.email, senha);
-        await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+        await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
         const salvar = p.getByTestId("dados-salvar");
         await expect(salvar).toBeVisible({ timeout: 30_000 });
         // Os dados gravados chegaram: o salvar destrava.
