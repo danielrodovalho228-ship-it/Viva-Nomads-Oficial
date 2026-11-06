@@ -544,3 +544,14 @@ Sonda das passadas 23/24/29 com duas classes novas: **cartão sem o rótulo "Tot
 5. **Estado "Visto" / "Você já contatou" no texto do cartão** e **nome completo no cabeçalho depois do aceite**: exigem usuário com marca e visita confirmada (sessão real);
    cobertos pelas specs `t166` e `t923`. Ficam para a QA.
 6. **Matriz × mockups**: nada novo. Nada a corrigir.
+
+## Qualificação na moldura do assistente (E194) e o que mesclou depois da passada 33 — passada 34 (06/11, modo demonstração, 390 toque e 1280)
+
+Depois da passada 33 mesclou só o #2905 (E394: texto de e-mail e ligação do id nos crons), sem nenhuma tela. **Leitura 3S**: nada visual para medir.
+A passada confere o **E194** (🔴 na lista-master) na `main`: já está implementado (#1532, spec `t565`; reconferido no #1660, "nada a corrigir").
+
+1. **Qualificação na moldura do assistente**, em `/dashboard/imoveis/novo` a 390 e a 1280: aparece o selo "Anunciar imóvel", o rodapé fixo do assistente
+   ("Antes do Passo 1 · Qualificação 1 de 5", com "Pular") e a barra de progresso contínua; sem rolagem lateral. A Qualificação não abre mais como um
+   segundo cadastro. **Conforme.**
+2. **E-mails com título + código** (#2905 e #2908): sem tela; coberto por `e394-imovel-nos-emails.test.ts`. Nada a medir.
+3. **Matriz × mockups**: nada novo. Nada a corrigir.
