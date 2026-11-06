@@ -405,3 +405,20 @@ Além de rolagem lateral, texto cortado, controle coberto, fundo bege e grade co
 6. **Matriz × mockups**: o que resta é decisão do Daniel (`cabecalho-*`, `cadastro-imovel-07-descricao`, `admin-servicos`,
    `pouso-morador`), texto jurídico congelado (`/privacidade`, `/termos`) ou sessão real (`parceiro-ordens`, `perfil-01`, `perfil-02`,
    `/auth/verificar-codigo`, `/dashboard/avaliacoes`). Nenhuma é alcançável pelo demo. Nada a corrigir.
+
+## Telas mexidas pelos merges de 06/11 de madrugada — passada 24 (06/11, modo demonstração, 390 toque e 1280)
+
+E640a (fotos públicas leves), E503 (esqueleto da home), E476 (prévia da foto de perfil), E630 (prévia do título), E631 (contagem dos
+imóveis do dono), E634 (ficha-resumo do contrato), E637 (prazos da caução), E443 (logo do cabeçalho logado) e a grade dos bairros.
+36 rotas (18 públicas e 18 do painel, incluindo os Passos 2, 5 e 10 do cadastro), com a sonda da passada 23 (rola devagar, espera o
+`decode()` de cada imagem, confere `background-image`, rolagem lateral, texto cortado, fundo bege e grade).
+
+1. **Imagem quebrada ou vazia, rolagem lateral, texto cortado, fundo bege, botão cheio a mais, elemento fixo sobre conteúdo**:
+   nenhum caso nas 72 medições. **Conforme.**
+2. **Imagens "não carregadas" logo depois de abrir** — 4 fotos de exemplo do Passo 2 (`/guia-fotos/*.webp`, "Ver dicas de foto") e
+   cartões `loading="lazy"` abaixo da dobra de `/dashboard`: as fotos do Passo 2 estão dentro de um `<details>` recolhido (os 4
+   arquivos existem e respondem 200; abertos, carregam a 390 e a 1280), e as do `/dashboard` carregam ao chegar à vista. **Conforme.**
+3. **Logo do cabeçalho logado** (E443, #2858): a 1280 e a 390, em `/dashboard`, `/mensagens`, `/conta` e `/imoveis`, o logo visível
+   aponta para `/`. **Conforme.**
+4. **Grade com última linha incompleta** que sobra: a lista de imóveis da cidade a 1280 (decisão B2, passada 9). **Conforme.**
+5. **Matriz × mockups**: sem tela nova que o demo alcance (passada 23, item 6). Nada a corrigir.
