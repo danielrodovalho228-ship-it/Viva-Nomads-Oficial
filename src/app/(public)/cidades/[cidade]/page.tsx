@@ -15,6 +15,7 @@ import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
 import { bairrosDaGrade, contaNaBusca } from "@/lib/bairros";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
 import { tituloContagemCidade } from "@/lib/cidades";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
@@ -71,7 +72,8 @@ export default async function CityLandingPage({ params }: Params) {
   const { cidade } = await params;
   if (!(await cidadeValida(cidade))) notFound();
   const name = cityFromSlug(cidade);
-  const properties = await listPropertiesByCity(name);
+  // E446: a MESMA base da busca (com imóvel real os exemplos saem; sem nenhum, aparecem): lista, total e bairros leem esta.
+  const properties = baseDaVitrine(await listPropertiesByCity(name), (p) => isExemplo(p.id));
   const infoCidade = CITIES.find((c) => c.slug === cidade);
   const precosMedios = calcularPrecosMedios(properties);
   // E446: os bairros contam o mesmo que a lista acima e a busca (exemplos inclusos com a vitrine ligada).
