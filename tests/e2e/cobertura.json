@@ -3255,6 +3255,12 @@
         "t264-viva-automatico"
       ]
     },
+    "/api/internet/falhas": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/internet/medicoes": {
       "personas": [
         "proprietario",

@@ -54,11 +54,12 @@ test("rodada que terminou vale mesmo quando a seguinte falha — e o resultado d
 
 test("a tela usa o motivo e o aproveitamento parcial, sem prometer o que não mediu", () => {
   const t = ler("../components/anuncio/medir-internet.tsx");
-  assert.match(t, /motivoDaFalha\(falha\)/);
+  assert.match(t, /mensagemDaFalha\(falha\)/); // E414c: a frase de cada motivo mora no motor (internet-motor.ts)
   assert.match(t, /aproveitarRodadas\(rodadas, INTERNET\.rodadas\)/);
   assert.match(t, /data-testid="medir-internet-parcial"/);
   assert.match(t, /Só uma das duas rodadas terminou/);
-  assert.match(t, /não conseguiu medir o envio/);
+  const motor = ler("./internet-motor.ts");
+  assert.match(motor, /não conseguiu medir o envio/);
   // a frase genérica continua, só para o que não tem motivo próprio
-  assert.match(t, /A medição não terminou\. Confira a conexão e tente de novo\./);
+  assert.match(motor, /A medição não terminou\. Confira a conexão e tente de novo\./);
 });
