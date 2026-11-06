@@ -39,6 +39,13 @@ export interface ContextoAbas {
   comContrato: boolean;
 }
 
+/**
+ * E443: o LOGO do cabeçalho logado é a saída do painel — leva à página inicial pública ("/"). O "Início" do menu (INICIO,
+ * abaixo) leva ao painel. Antes o logo do computador apontava para o próprio /dashboard e lia como botão morto; o do
+ * celular e o da equipe já iam à página inicial. No modo app, "/" cai na aba inicial do papel (proxy.ts).
+ */
+export const HREF_LOGO_PAINEL = "/";
+
 const INICIO: AbaPainel = { id: "inicio", rotulo: "Início", href: "/dashboard", icone: "inicio", authRequired: true, hrefSemLogin: "/" };
 const MENSAGENS: AbaPainel = { id: "mensagens", rotulo: "Mensagens", href: "/dashboard/mensagens", icone: "mensagens", authRequired: true, badge: "mensagens" };
 
