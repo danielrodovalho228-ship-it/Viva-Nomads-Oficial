@@ -25,6 +25,8 @@ export interface DadosLaudoDocumento {
   prazoRessalvaAte: string | null;
   /** Versão nova: o que mudou (correção da ressalva, contestação, reverificação). */
   motivoVersao: "correcao" | "contestacao" | "reverificacao" | null;
+  /** E648: o termo de assinatura do avaliador (o laudo é DELE; a Viva fornece o modelo e guarda o registro). */
+  termoAssinatura?: string;
 }
 
 const ROTULO_NIVEL_LAUDO = { em_adequacao: "Em adequação", ...ROTULO_NIVEL } as const;
@@ -82,7 +84,13 @@ export function conteudoLaudo(d: DadosLaudoDocumento, cabecalho?: Omit<Cabecalho
       "PRÓXIMO PASSO",
       proximoPasso(r.resultado, d.prazoRessalvaAte),
       ...(r.ressalvas.length ? r.ressalvas.map((x) => `Corrigir: ${itemChecklist(x.chave)?.rotulo ?? x.chave} (reverificação por ${x.reverificacao === "foto" ? "foto" : "nova visita"}).`) : []),
+      ...(d.termoAssinatura ? ["ASSINATURA DO AVALIADOR", d.termoAssinatura] : []),
     ],
-    rodape: [DELIMITACAO_LAUDO, "Emitido pela plataforma Viva Nomads a partir do checklist preenchido na visita. A Viva não recebe o valor da avaliação."],
+    rodape: [
+      DELIMITACAO_LAUDO,
+      d.termoAssinatura
+        ? "Laudo assinado pelo avaliador, a partir do checklist preenchido na visita. A plataforma Viva Nomads forneceu o modelo e guarda o registro (número e hash); não interferiu no conteúdo. A Viva não recebe o valor da avaliação."
+        : "Emitido pela plataforma Viva Nomads a partir do checklist preenchido na visita. A Viva não recebe o valor da avaliação.",
+    ],
   };
 }

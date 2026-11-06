@@ -69,6 +69,19 @@ export function cpfAleatorio(): string {
   return d.join("");
 }
 
+/** CNPJ válido aleatório (E648: parceiro só com CNPJ), 14 dígitos. */
+export function cnpjAleatorio(): string {
+  const n = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).concat([0, 0, 0, 1]);
+  const dv = (base: number[]) => {
+    const pesos = base.length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const r = base.reduce((s, d, i) => s + d * pesos[i], 0) % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  const d1 = dv(n);
+  const d2 = dv([...n, d1]);
+  return [...n, d1, d2].join("");
+}
+
 /** PDF mínimo válido (assinatura %PDF) acima do tamanho mínimo aceito (10 KB). */
 export const pdf = (): Buffer => Buffer.concat([Buffer.from("%PDF-1.4\n% laboratório\n"), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
 

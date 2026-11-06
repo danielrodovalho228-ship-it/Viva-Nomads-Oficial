@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * T272 — Defeito de produção (QA 22/10): a busca de parceiros não achava o parceiro publicado de fotografia em
@@ -25,7 +25,7 @@ test.describe("T272 — parceiro publicado de fotografia em Uberlândia/MG apare
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.foto]);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.foto, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paulo Fotos — TESTE QA", slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Fotos de imóvel para anúncio.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.foto, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: "Paulo Fotos — TESTE QA", slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Fotos de imóvel para anúncio.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

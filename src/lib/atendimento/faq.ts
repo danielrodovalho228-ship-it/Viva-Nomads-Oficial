@@ -67,7 +67,7 @@ export const FAQ: Pergunta[] = [
     id: "como-ser-avaliador",
     pergunta: "Como ser avaliador credenciado",
     resposta:
-      "O avaliador credenciado faz a avaliação do imóvel pelo checklist da Viva. É independente: a Viva designa cada avaliação por rodízio e o dono nunca escolhe quem vai. Para pedir o credenciamento, abra a página Seja avaliador credenciado (em Parceiros) e toque em Pedir credenciamento: é um só pedido, mesmo para quem ainda não é parceiro. A Viva pede a identidade verificada, CPF ou CNPJ válido, experiência comprovada, o aceite do código de conduta e uma avaliação de teste revisada antes da primeira real.",
+      "O avaliador credenciado faz a avaliação do imóvel pelo checklist da Viva. É independente: a Viva sugere os avaliadores da cidade, o dono escolhe quem quer e o avaliador define o próprio valor e prazo. Para pedir o credenciamento, abra a página Seja avaliador credenciado (em Parceiros) e toque em Pedir credenciamento: é um só pedido, mesmo para quem ainda não é parceiro. A Viva pede a identidade verificada, CNPJ válido (CPF não é aceito), experiência comprovada, o aceite do código de conduta e uma avaliação de teste revisada antes da primeira real.",
     termos: ["avaliador", "avaliador credenciado", "credenciamento", "avaliacao de imovel", "avaliar imoveis", "laudo"],
   },
   {

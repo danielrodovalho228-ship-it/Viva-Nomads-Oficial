@@ -65,10 +65,10 @@ test("QA #1111 item 6: a visita sai sem segundos e com o fuso (dono, morador e c
   assert.match(MORADOR, /quandoVisita\(p\.agendado_para\)/);
 });
 
-test("QA #1111 item 5: 'Avaliador designado pela Viva' aparece uma vez só", () => {
+test("QA #1111 item 5: 'Avaliador escolhido por você' aparece uma vez só", () => {
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: false, concordanciaEm: null, agendadoPara: null }), null);
-  assert.equal((BLOCO_DONO.match(/Avaliador designado pela Viva/g) ?? []).length, 1);
-  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Aguardando avaliador: a Viva avisa quando designar.");
+  assert.equal((BLOCO_DONO.match(/Avaliador escolhido por você/g) ?? []).length, 1);
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Aguardando avaliador: a Viva avisa quando houver um para você escolher.");
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: true, concordanciaEm: null, agendadoPara: "2026-10-25T13:00:00Z" }), "Data proposta: a visita fica confirmada quando o morador concordar.");
 });
 
@@ -82,9 +82,9 @@ test("QA #1111 item 7 e um primário por tela: Nível, morador e conversa", () =
   assert.ok(primarios(MORADOR) <= 1);
 });
 
-test("linha do tempo do pedido: pedido → designado nº X → agendado → visita feita → laudo", () => {
+test("linha do tempo do pedido: pedido → escolhido nº X → agendado → visita feita → laudo", () => {
   const e = linhaDoTempoPedido({ status: "agendado", numero: "UDI-007", agendadoPara: "2026-10-25T13:00:00Z" });
-  assert.deepEqual(e.map((x) => x.rotulo), ["Pedido", "Designado nº UDI-007", "Agendado para 25/10/2026 às 10:00", "Visita feita", "Laudo"]);
+  assert.deepEqual(e.map((x) => x.rotulo), ["Pedido", "Escolhido nº UDI-007", "Agendado para 25/10/2026 às 10:00", "Visita feita", "Laudo"]);
   assert.deepEqual(e.map((x) => x.estado), ["feito", "feito", "atual", "futuro", "futuro"]);
   assert.equal(linhaDoTempoPedido({ status: "pedido", aguardandoAvaliador: true })[0].rotulo, "Pedido · aguardando avaliador");
   assert.match(BLOCO_DONO, /data-testid="avaliacao-linha-tempo"/);
@@ -101,7 +101,9 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
   for (const f of [BLOCO_DONO, NIVEL, ...ROTAS_NIVEL.map((r) => r.texto)]) {
     assert.doesNotMatch(semComentarios(f), /\d+\s?% (a mais|mais reservas|de aumento)|ganh[ae] (mais|até)|R\$\s?\d[^"]*a mais/i);
   }
-  for (const f of [BLOCO_DONO, MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
+  // E648: o DONO escolhe o avaliador (bloco do dono); o morador e a conversa nunca escolhem.
+  for (const f of [MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
+  assert.match(semComentarios(BLOCO_DONO), /Escolher este avaliador/);
 });
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {
@@ -147,7 +149,7 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
 });
 
 test("página pública: linha fixa, sem contratar, sem link, sem escolher avaliador", () => {
-  assert.equal(LINHA_PUBLICA_DESIGNACAO, "A Viva designa o avaliador. O proprietário não escolhe.");
+  assert.equal(LINHA_PUBLICA_DESIGNACAO, "O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.");
   assert.doesNotMatch(LINHA_PUBLICA_DESIGNACAO, TEXTO_PROIBIDO);
   assert.match(PUBLICA, /\{LINHA_PUBLICA_DESIGNACAO\}/);
   for (const id of ["avaliador-numero", "avaliador-cidade", "avaliador-feitas", "avaliador-nota"]) assert.match(PUBLICA, new RegExp(`data-testid="${id}"`));

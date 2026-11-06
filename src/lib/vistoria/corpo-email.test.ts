@@ -37,8 +37,8 @@ test("lembrete (véspera): o horário no assunto e a data completa no corpo", ()
 
 test("designado ao dono: o nome público do avaliador; ausência: a visita que não aconteceu", () => {
   const d = corpoVistoria("vistoria_designado_dono", { imovel: IMOVEL, avaliador: "Rui Avalia" });
-  assert.equal(d.subject, "O avaliador de Apto Santa Mônica foi designado");
-  assert.match(d.body("Lara"), /^Olá Lara, a Viva designou Rui Avalia, avaliador credenciado, para a avaliação de Apto Santa Mônica\./);
+  assert.equal(d.subject, "Novidade na escolha do avaliador de Apto Santa Mônica");
+  assert.match(d.body("Lara"), /^Olá Lara, Rui Avalia, avaliador credenciado que você escolheu, respondeu sobre a avaliação de Apto Santa Mônica\./);
   assert.deepEqual(d.linhas.at(-1), { rotulo: "Avaliador", valor: "Rui Avalia" });
   const a = corpoVistoria("vistoria_ausencia", { imovel: IMOVEL, visita: VISITA });
   assert.match(a.body("Lara"), /a visita de avaliação de Apto Santa Mônica em 05\/11\/2026 às 10:00 \(horário de Brasília\) não aconteceu por ausência/);
@@ -77,7 +77,7 @@ test("ponto de envio: todo avisar() da avaliação passa a referência (pedido o
       n++;
     }
   }
-  assert.equal(n, 23);
+  assert.equal(n, 24);
   const srv = arquivos[1];
   assert.match(srv, /select\("property_id, agendado_para, avaliadores_credenciamento\(parceiros\(nome_publico\)\)"\)/);
   assert.match(srv, /corpoVistoria\(ev as EventoVistoria, await fatosDaVistoria\(admin, ref\)\)/);

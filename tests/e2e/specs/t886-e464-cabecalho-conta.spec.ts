@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T886 — E464 + E534: cabeçalho estável e com o sino nas páginas de Conta. Conta com os papéis de proprietário (um anúncio) e parceiro
@@ -25,7 +25,7 @@ test.describe("T886 — cabeçalho estável nas páginas de Conta", () => {
     await criarImovelPronto(ids.pessoa, `Studio T886 ${sufixo}`, { ativo: true });
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.pessoa, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Clara Limpeza ${sufixo}`, slug: `clara-t886-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.pessoa, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Clara Limpeza ${sufixo}`, slug: `clara-t886-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

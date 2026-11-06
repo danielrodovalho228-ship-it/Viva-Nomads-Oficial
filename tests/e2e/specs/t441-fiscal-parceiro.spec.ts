@@ -95,9 +95,7 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
     const form = page.getByTestId("seja-parceiro-form");
     await expect(form).toBeVisible({ timeout: 20_000 });
-    // PF (padrão): sem a pergunta.
-    await expect(page.getByTestId("sp-emite-nota")).toHaveCount(0);
-    await form.getByText("Empresa ou MEI (CNPJ)").click();
+    // E648: só CNPJ — a pergunta da nota aparece sempre.
     await expect(page.getByTestId("sp-emite-nota")).toContainText("Você emite nota fiscal de serviço para o cliente?");
     await form.locator("#sp-doc").fill(cnpjAleatorio());
     await page.getByTestId("sp-cat-limpeza").check();
@@ -115,21 +113,21 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     expect(sol).toEqual({ tipo_pessoa: "pj", emite_nota: true });
     await page.context().close();
 
-    // PF: mesmo formulário, sem a pergunta; grava null.
+    // E648: PF/CPF não é mais aceito — o mesmo formulário recusa o CPF com a frase da regra e nada é gravado.
     const p2 = await abrir(browser, pf.email, 1280);
     await p2.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
     const f2 = p2.getByTestId("seja-parceiro-form");
     await expect(f2).toBeVisible({ timeout: 20_000 });
-    await expect(p2.getByTestId("sp-emite-nota")).toHaveCount(0);
     await f2.locator("#sp-doc").fill(cpfAleatorio());
     await p2.getByTestId("sp-cat-limpeza").check();
     await f2.locator("#sp-cidades").fill(cidade);
     await f2.locator("#sp-descricao").fill("Limpeza de saída, emito recibo.");
     await p2.getByTestId("sp-aceite").check();
+    await f2.getByText("Sim", { exact: true }).click();
     await p2.getByTestId("seja-parceiro-enviar").click();
-    await expect(p2.getByTestId("seja-parceiro-recebido")).toBeVisible({ timeout: 20_000 });
-    const { data: solPf } = await adm().from("parceiro_solicitacoes").select("tipo_pessoa, emite_nota").eq("email", pf.email).single();
-    expect(solPf).toEqual({ tipo_pessoa: "pf", emite_nota: null });
+    await expect(p2.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+    const { count: contaPf } = await adm().from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("email", pf.email);
+    expect(contaPf, "CPF: nenhum pedido é gravado").toBe(0);
     await p2.context().close();
   });
 
@@ -138,6 +136,8 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await semear("pj", ids.pj!, { tipo: "pj", emiteNota: true, status: "publicado" });
     const { error: e1 } = await adm().from("parceiros").update({ emite_nota: true }).eq("id", parceiro.pf.id);
     expect(e1?.message ?? "").toMatch(/parceiros_emite_nota_so_pj/);
+    // E648: o formulário não grava mais pedido PF; a trava do banco segue valendo para uma linha PF legada.
+    await adm().from("parceiro_solicitacoes").insert({ user_id: ids.pf, email: pf.email, nome: pf.nome, tipo_pessoa: "pf", documento: cpfAleatorio(), categorias: ["limpeza"], cidades: ["Uberlândia"], descricao: "Legado PF.", status: "pendente", origem: "site" });
     const { error: e2 } = await adm().from("parceiro_solicitacoes").update({ emite_nota: false }).eq("email", pf.email);
     expect(e2?.message ?? "").toMatch(/parceiro_solicitacoes_emite_nota_so_pj/);
     // Selo removido exige emite_nota = false.
@@ -178,8 +178,8 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/parceiros/buscar?cidade=${encodeURIComponent(cidade)}`, { waitUntil: "domcontentloaded" });
     const res = page.getByTestId("busca-parceiros-resultado");
-    // No ar nesta cidade: pf (recibo), pj (Sim) e antigo (respondeu Não) — o novato segue em rascunho.
-    await expect(res).toHaveAttribute("data-total", "3");
+    // No ar nesta cidade: pj (Sim) e antigo (respondeu Não) — o pf legado sai da busca (E648: só CNPJ) e o novato segue em rascunho.
+    await expect(res).toHaveAttribute("data-total", "2");
     await expect(page.getByTestId("busca-parceiros-nota")).toHaveAttribute("data-qtd", "1");
     await expect(page.getByTestId("busca-parceiros-nota")).toContainText("Emite nota fiscal (1)");
     await page.getByTestId("busca-parceiros-nota-check").check();

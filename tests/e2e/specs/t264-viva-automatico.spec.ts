@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo, pngDeTeste, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * L-43 (vigia, 24/10): o painel não assenta em "networkidle" (t183, L-40); espera até 10 s e segue para o elemento.
@@ -80,7 +80,7 @@ async function rodarAutomacao(browser: Browser) {
 async function parceiro(userId: string, nome: string, slug: string, categoria: string): Promise<string> {
   const { data, error } = await adm()
     .from("parceiros")
-    .insert({ user_id: userId, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug, categorias: [categoria], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+    .insert({ user_id: userId, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug, categorias: [categoria], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;

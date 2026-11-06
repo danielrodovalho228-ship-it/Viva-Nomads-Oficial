@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -86,6 +86,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
     await p.reload({ waitUntil: "domcontentloaded" });
+    await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
     await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
   }
@@ -104,7 +105,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     for (const [l, ativado] of [["A", "2026-01-01T00:00:00Z"], ["B", "2026-01-15T00:00:00Z"]] as const) {
       const { data: parc, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids[l], tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: ids[l], tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
         .select("id")
         .single();
       if (error) throw error;
@@ -251,6 +252,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     const form = p.getByTestId("confirmar-correcao");
     await form.getByTestId("correcao-iluminacao").selectOption("conforme");
     await form.getByTestId("correcao-tomadas_risco").selectOption("conforme");
+    await form.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: a nova versão também é assinada pelo avaliador
     await form.getByRole("button", { name: "Confirmar a reverificação" }).click();
     await expect.poll(async () => (await laudoDe(pedido)).versao, { timeout: 30_000 }).toBe(2);
     await p.context().close();
@@ -283,7 +285,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await d.goto(`/dashboard/imoveis/${ids.im3}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("laudo-dono-resultado")).toHaveAttribute("data-resultado", "reprovado");
     // Adendo 62-B1: sem condição de retorno na tabela, a nova avaliação é pelo valor cheio e nada fala em desconto.
-    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, outro avaliador pelo rodízio, pelo valor da tabela");
+    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser");
     await expect(d.getByTestId("avaliacao-retorno")).toHaveCount(0);
     await expect(d.getByTestId("avaliacao-dono")).not.toContainText(/desconto|metade|90 dias/);
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir nova avaliação" }).click();
@@ -313,6 +315,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await adm().from("vistoria_checklist_fotos").insert({ pedido_id: pedido, item_chave: "fechadura_entrada", path: `${pedido}/correcao-lab.png` });
     await p.goto(`/dashboard/parceiro/avaliacao/${pedido}`, { waitUntil: "domcontentloaded" });
     await p.getByTestId("confirmar-correcao").getByTestId("correcao-fechadura_entrada").selectOption("conforme");
+    await p.getByTestId("confirmar-correcao").getByTestId("assino-laudo").getByRole("checkbox").check(); // E648
     await p.getByTestId("confirmar-correcao").getByRole("button", { name: "Confirmar a reverificação" }).click();
     await expect.poll(() => statusImovel(ids.im4), { timeout: 30_000 }).toBe("active");
     expect(((await adm().from("vistoria_bloqueios").select("id").eq("property_id", ids.im4).is("resolvido_em", null)).data ?? []).length).toBe(0);
@@ -334,6 +337,12 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     const contestar = d.getByTestId("contestar-laudo");
     await contestar.locator("textarea").fill("O chuveiro e as tomadas estavam funcionando; peço outra avaliação.");
     await contestar.getByRole("button", { name: "Contestar" }).click();
+    // E648: a Viva não designa o 2º avaliador — o pedido da contestação espera a escolha do dono (o 1º avaliador está impedido).
+    await expect.poll(async () => (await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im5).eq("tipo", "contestacao").maybeSingle()).data?.id ?? null, { timeout: 20_000 }).not.toBeNull();
+    const { data: credB } = await adm().from("avaliadores_credenciamento").select("numero_credenciado").eq("id", cred.B.id).single();
+    await d.reload({ waitUntil: "domcontentloaded" });
+    await expect(d.getByTestId("avaliacao-escolha")).not.toContainText(String((await adm().from("avaliadores_credenciamento").select("numero_credenciado").eq("id", cred.A.id).single()).data?.numero_credenciado));
+    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${credB!.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("avaliador_id").eq("property_id", ids.im5).eq("tipo", "contestacao").maybeSingle()).data?.avaliador_id ?? null, { timeout: 20_000 }).toBe(cred.B.id);
     const { data: pc } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im5).eq("tipo", "contestacao").single();
     // B aceitou e agendou (62-B1): faz a 2ª e aprova.
@@ -374,10 +383,11 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
       pages[l] ??= await avaliador(browser, l);
       await concluirEEnviar(pages[l]!, pedidoId);
     };
-    const { data: v1 } = await adm().from("vistoria_pedidos").select("id, avaliador_id").eq("property_id", ids.im6a).eq("tipo", "verificacao").single();
-    const l1: "A" | "B" = v1!.avaliador_id === cred.A.id ? "A" : "B";
-    await adm().from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: new Date().toISOString() }).eq("pedido_id", v1!.id);
-    await adm().from("vistoria_pedidos").update({ status: "agendado", agendado_para: new Date(Date.now() - 3_600_000).toISOString() }).eq("id", v1!.id);
+    const { data: v1 } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im6a).eq("tipo", "verificacao").single();
+    // E648: a verificação aberta pelo admin espera o dono escolher; aqui o avaliador A é atribuído direto no banco.
+    const l1: "A" | "B" = "A";
+    await adm().from("vistoria_designacoes").insert({ pedido_id: v1!.id, avaliador_id: cred.A.id, resposta: "aceita", respondido_em: new Date().toISOString() });
+    await adm().from("vistoria_pedidos").update({ avaliador_id: cred.A.id, status: "agendado", agendado_para: new Date(Date.now() - 3_600_000).toISOString() }).eq("id", v1!.id);
     await rodar(v1!.id as string, l1);
     await expect.poll(async () => ((await adm().from("proprietario_strikes").select("ordem").eq("owner_id", ids.dono2)).data ?? []).length, { timeout: 15_000 }).toBe(1);
     // 2º strike: republicar só com laudo; ainda publicado.

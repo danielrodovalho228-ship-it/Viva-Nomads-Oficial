@@ -149,7 +149,7 @@ test("E235: o nº do avaliador é link para /avaliadores/[numero] nos dois ponto
   const laudo = semComentarios(ler("src/components/vistoria/laudo-dono.tsx"));
   assert.match(laudo, /\{prefixoAvaliadoEm\(l\.vistoriado_em\)\}\s*<Link href=\{hrefAvaliador\(String\(cred\.numero_credenciado\)\)\}[^>]*>\{String\(cred\.numero_credenciado\)\}<\/Link>/);
   const bloco = semComentarios(ler("src/components/vistoria/bloco-avaliacao-dono.tsx"));
-  assert.match(bloco, /Avaliador designado pela Viva: nº\{" "\}\s*<Link href=\{hrefAvaliador\(atual\.avaliadores_credenciamento\.numero_credenciado\)\}[^>]*>\s*\{atual\.avaliadores_credenciamento\.numero_credenciado\}\s*<\/Link>/);
+  assert.match(bloco, /Avaliador escolhido por você: nº\{" "\}\s*<Link href=\{hrefAvaliador\(atual\.avaliadores_credenciamento\.numero_credenciado\)\}[^>]*>\s*\{atual\.avaliadores_credenciamento\.numero_credenciado\}\s*<\/Link>/);
   // A página pública existe e aceita o formato do número.
   assert.match(ler("src/app/(public)/avaliadores/[numero]/page.tsx"), /\^\[A-Z\]\{3\}-\\d\{3,\}\$/);
 });

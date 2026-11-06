@@ -20,9 +20,11 @@ export interface ParceiroFiscal {
   emiteNota?: boolean | null;
 }
 
-/** O que o cliente recebe do parceiro: PF → recibo; PJ que declarou emitir → nota; PJ sem resposta ou "não" → null. */
+/**
+ * O que o cliente recebe do parceiro: PJ que declarou emitir → nota; PJ sem resposta ou "não" → null. E648: CPF não é mais aceito,
+ * então não existe "recibo" de parceiro PF (cadastro PF legado não recebe serviço e não gera documento).
+ */
 export function documentoDoServico(p: ParceiroFiscal): DocumentoServico {
-  if (p.tipoPessoa === "pf") return "recibo";
   if (p.tipoPessoa === "pj" && p.emiteNota === true) return "nota";
   return null;
 }
