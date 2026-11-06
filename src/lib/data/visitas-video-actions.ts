@@ -270,7 +270,9 @@ export async function listVisitasDono(opcoes: { exigir?: boolean } = {}): Promis
     const nomePorTenant = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((pf) => [pf.id, nomeDepoisDoAceite(pf.full_name)]));
     for (const q of (quem ?? []) as { id: string; tenant_id: string }[]) nomePorVisita.set(q.id, nomePorTenant.get(q.tenant_id) ?? null);
   }
-  const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", ids).eq("owner_id", user.id); // consistency-ignore: E211 — o endereço exato do imóvel do PRÓPRIO dono, na presencial confirmada
+  const { data: props, error: erroProps } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", ids).eq("owner_id", user.id); // consistency-ignore: E211 — o endereço exato do imóvel do PRÓPRIO dono, na presencial confirmada
+  // Achado 137: a falha ao ler o imóvel não vira "sem endereço" — com `exigir` (a tela da lista), lança.
+  if (erroProps && opcoes.exigir) throw new Error(MSG_VISITAS_NAO_CARREGARAM);
   const porId = new Map(((props ?? []) as { id: string; exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null }[]).map((p) => [p.id, p]));
   const agora = new Date();
   return linhas.map((v) => {
@@ -307,7 +309,9 @@ export async function listMinhasVisitas(opcoes: { exigir?: boolean } = {}): Prom
   const confirmadas = linhas.filter((v) => mostraEnderecoDaVisita(v, agora)).map((v) => v.propertyId);
   const enderecos = new Map<string, EnderecoVisita>();
   if (confirmadas.length) {
-    const { data: props } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+    const { data: props, error: erroProps } = await admin.from("properties").select("id, exact_address, address, city, state, draft_data").in("id", confirmadas); // consistency-ignore: prompt 23 — endereço exato só ao morador da visita presencial CONFIRMADA
+    // Achado 136: a falha não faz sumir o endereço de uma visita já confirmada — com `exigir`, lança.
+    if (erroProps && opcoes.exigir) throw new Error(MSG_VISITAS_NAO_CARREGARAM);
     for (const p of props ?? []) {
       const e = enderecoDaVisita(p);
       if (e) enderecos.set(p.id as string, e);
