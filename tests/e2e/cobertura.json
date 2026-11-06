@@ -3401,7 +3401,7 @@
         "t695-e264b-proativos"
       ]
     },
-    "/api/cron/caucao-prazos": {
+    "/api/cron/cobranca-mensal": {
       "personas": [
         "sistema"
       ],
@@ -3411,6 +3411,12 @@
       "personas": [
         "inquilino",
         "proprietario"
+      ],
+      "specs": []
+    },
+    "/api/cron/caucao-prazos": {
+      "personas": [
+        "sistema"
       ],
       "specs": []
     }
@@ -4171,6 +4177,18 @@
         "t85-conferencia-entrada-saida"
       ]
     },
+    "src/lib/cobranca-mensal/acoes.ts#registrarPagamentoMensal": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/cobranca-mensal/acoes.ts#confirmarPagamentoMensal": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/caucao/acoes.ts#darParecerCaucao": {
       "personas": [
         "proprietario"
@@ -4562,6 +4580,14 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/nome-dono-actions.ts#nomeDoDonoDepoisDoAceite": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t923-e427-nome-pagina-imovel"
+      ]
     },
     "src/lib/data/ofensas-admin-actions.ts#filaDeOfensas": {
       "personas": [

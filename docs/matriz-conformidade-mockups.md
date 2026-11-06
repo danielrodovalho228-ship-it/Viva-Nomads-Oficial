@@ -405,3 +405,43 @@ Além de rolagem lateral, texto cortado, controle coberto, fundo bege e grade co
 6. **Matriz × mockups**: o que resta é decisão do Daniel (`cabecalho-*`, `cadastro-imovel-07-descricao`, `admin-servicos`,
    `pouso-morador`), texto jurídico congelado (`/privacidade`, `/termos`) ou sessão real (`parceiro-ordens`, `perfil-01`, `perfil-02`,
    `/auth/verificar-codigo`, `/dashboard/avaliacoes`). Nenhuma é alcançável pelo demo. Nada a corrigir.
+
+## Telas mexidas pelos merges de 06/11 de madrugada — passada 24 (06/11, modo demonstração, 390 toque e 1280)
+
+E640a (fotos públicas leves), E503 (esqueleto da home), E476 (prévia da foto de perfil), E630 (prévia do título), E631 (contagem dos
+imóveis do dono), E634 (ficha-resumo do contrato), E637 (prazos da caução), E443 (logo do cabeçalho logado) e a grade dos bairros.
+36 rotas (18 públicas e 18 do painel, incluindo os Passos 2, 5 e 10 do cadastro), com a sonda da passada 23 (rola devagar, espera o
+`decode()` de cada imagem, confere `background-image`, rolagem lateral, texto cortado, fundo bege e grade).
+
+1. **Imagem quebrada ou vazia, rolagem lateral, texto cortado, fundo bege, botão cheio a mais, elemento fixo sobre conteúdo**:
+   nenhum caso nas 72 medições. **Conforme.**
+2. **Imagens "não carregadas" logo depois de abrir** — 4 fotos de exemplo do Passo 2 (`/guia-fotos/*.webp`, "Ver dicas de foto") e
+   cartões `loading="lazy"` abaixo da dobra de `/dashboard`: as fotos do Passo 2 estão dentro de um `<details>` recolhido (os 4
+   arquivos existem e respondem 200; abertos, carregam a 390 e a 1280), e as do `/dashboard` carregam ao chegar à vista. **Conforme.**
+3. **Logo do cabeçalho logado** (E443, #2858): a 1280 e a 390, em `/dashboard`, `/mensagens`, `/conta` e `/imoveis`, o logo visível
+   aponta para `/`. **Conforme.**
+4. **Grade com última linha incompleta** que sobra: a lista de imóveis da cidade a 1280 (decisão B2, passada 9). **Conforme.**
+5. **Matriz × mockups**: sem tela nova que o demo alcance (passada 23, item 6). Nada a corrigir.
+
+## Sobreposições, painéis, menus e folhas — passada 25 (06/11, modo demonstração, 390 toque e 1280)
+
+Estados abertos (não só a página parada): menu do site público (390), painéis da barra de busca (Datas, Local, Tipo, Preço,
+Ordenar) e a folha "Mais filtros", calendário do cadastro (Passo 9), sino de avisos, menu "Conta" do painel e painel do chat.
+
+1. **Painel ou folha maior que a tela, cortado pela borda, rolagem lateral, texto cortado, fundo bege**: nenhum caso. **Conforme.**
+2. **Painel Local a 390**: passa da dobra, mas está no fluxo da página e rola com ela (E526, desenho aprovado). **Conforme.**
+3. **Chat flutuante ausente a 390**: some abaixo de 768 px por desenho (E246). **Conforme.**
+4. **Calendário do cadastro** (E136): abre o `CalendarioBR` no toque e no computador, dentro da tela. **Conforme.**
+5. **Matriz × mockups**: sem tela nova que o demo alcance (passada 23, item 6). Nada a corrigir.
+
+## Estados abertos a 768 (tablet) — passada 26 (06/11, modo demonstração)
+
+Nada foi mesclado na `main` desde a passada 25 (a ponta é o merge da passada 24), então não há tela nova para medir. A passada repete os
+estados abertos da 25 no eixo que faltava, **768 px** (toque): painéis da busca (Datas, Local, Tipo, Preço, Ordenar), folha "Mais
+filtros", chat "Fale com a Viva" (aparece a partir de 768, E246), sino, menu Conta e calendário do cadastro.
+
+1. **Painel, folha, menu ou chat cortado, maior que a tela, com rolagem lateral, texto cortado ou fundo bege**: nenhum caso nas 10
+   medições (as duas "ausente" da primeira rodada eram seletor da sonda; refeitas com o seletor certo, conformes). **Conforme.**
+2. **Chat a 768**: painel de 380 px de largura, dentro da tela e sem rolagem lateral; o fechar fora/Esc está no #2765 (rascunho, aguarda QA). **Conforme.**
+3. **Painel Local a 768**: 520 px de altura, dentro da tela (E526). **Conforme.**
+4. **Matriz × mockups**: sem tela nova. Nada a corrigir.
