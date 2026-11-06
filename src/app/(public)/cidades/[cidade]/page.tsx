@@ -161,8 +161,8 @@ export default async function CityLandingPage({ params }: Params) {
         {bairros.length > 0 && (
           <div className="mt-12" data-testid="bairros-grade">
             <h2 className="font-title text-2xl font-semibold text-ink">Bairros de {name}</h2>
-            {/* Grade par (varredura 02/11, tablet): em 2 colunas, o último bairro ímpar ocupa a linha inteira; em 1 e 3 colunas, nada muda. */}
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:max-lg:[&>:last-child:nth-child(odd)]:col-span-full lg:grid-cols-3" data-testid="bairros-lista">
+            {/* Grade par (varredura 02/11, tablet): em 2 colunas, o último bairro ímpar ocupa a linha inteira; no computador (3 colunas), o que sobra preenche a linha (varredura 23). */}
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:max-lg:[&>:last-child:nth-child(odd)]:col-span-full lg:grid-cols-6 lg:[&>*]:col-span-2 lg:[&>:last-child:nth-child(3n+1)]:col-span-6 lg:[&>:last-child:nth-child(3n+2)]:col-span-3 lg:[&>:nth-last-child(2):nth-child(3n+1)]:col-span-3" data-testid="bairros-lista">
               {bairros.map((b) => (
                 <li key={b.slug}>
                   <Link
