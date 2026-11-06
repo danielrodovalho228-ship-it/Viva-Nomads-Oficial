@@ -258,7 +258,7 @@ test("6. propostas antigas: a 0171 preenche taxa_no_envio (aceita → a congelad
 test("7/8. contraproposta (do morador ou do dono, v2/v3) nunca muda taxa_no_envio: só o envio da v1 grava", () => {
   const acoes = ler("./data/propostas-actions.ts");
   assert.equal((acoes.match(/taxa_no_envio:/g) ?? []).length, 1);
-  const envio = acoes.slice(acoes.indexOf("export async function enviarProposta"), acoes.indexOf("export async function enviarProposta") + 4000);
+  const envio = acoes.slice(acoes.indexOf("export async function enviarProposta"), acoes.indexOf("export async function enviarProposta") + 5000);
   assert.match(envio, /const taxaEnvio = await taxaDoDonoAgora\(s\.admin, s\.user\.id\)\.catch\(\(\) => null\);[\s\S]{0,900}taxa_no_envio: taxaEnvio\.taxa/ /* achado 83: lida antes de numerar; sem ela, não envia */);
 });
 

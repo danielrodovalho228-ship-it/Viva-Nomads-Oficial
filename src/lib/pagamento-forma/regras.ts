@@ -102,3 +102,61 @@ export function cronogramaPorForma(f: {
   if (dias < MIN_DIAS_FORMA || dias > 180) return { ok: false, motivo: `A estadia precisa ter de ${MIN_DIAS_FORMA} a 180 dias.` };
   return { ok: true, dias, parcelas: [{ numero: 1, venceEm: "assinatura", tipo: "bloco", dias: null, adiantada: false, valor: f.valorBloco, taxaViva: taxaDaParcela(f.valorBloco, f.taxa) }] };
 }
+
+// ── O SEGUNDO momento da escolha: NA HORA DA PROPOSTA (refino do Daniel, 06/11/2026) ─────────────────────────
+/**
+ * Trava legal: em estadias de 91 a 180 dias o BLOCO COMPLETO nasce bloqueado (só o mensal vale) até o parecer da Dra. Beatriz.
+ * Quando o parecer sair, desligar esta constante é a única mudança (os testes dizem o que muda).
+ */
+export const BLOCO_91_180_BLOQUEADO = true;
+
+const MENSAGEM_BLOCO_BLOQUEADO = "Em estadias de 91 a 180 dias a forma de pagamento é o mensal. O bloco completo ainda não está liberado nessa faixa.";
+
+/** As formas que podem valer numa estadia: a preferência do dono no anúncio, já tirada a forma que a lei bloqueia. */
+export function formasPermitidas(escolha: EscolhaPagamento | null | undefined, dias: number): FormaUsada[] {
+  return formasDaEstadia(escolha, dias).filter((f) => !(f === "bloco" && BLOCO_91_180_BLOQUEADO && faixaDaEstadia(dias) === "de_91"));
+}
+
+export function formaAlternativa(forma: FormaUsada): FormaUsada {
+  return forma === "bloco" ? "mensal" : "bloco";
+}
+
+/** A forma com que a proposta do dono começa: a primeira permitida (com "ambos", a recomendada da faixa). */
+export function formaInicialDaProposta(escolha: EscolhaPagamento | null | undefined, dias: number): FormaUsada | null {
+  const permitidas = formasPermitidas(escolha, dias);
+  if (permitidas[0]) return permitidas[0];
+  // O dono só tinha marcado o bloco numa faixa bloqueada: a única forma legal é o mensal; é ele quem confirma ao enviar.
+  return BLOCO_91_180_BLOQUEADO && faixaDaEstadia(dias) === "de_91" ? "mensal" : null;
+}
+
+export type ResultadoForma = { ok: true; forma: FormaUsada } | { ok: false; erro: string };
+
+/**
+ * Confere a forma que vai numa proposta/contraproposta. A proposta final tem UMA forma só. Dono ("owner"): aceita a pedida ou
+ * propõe a outra — a escolha é dele também na hora, então só a lei limita. Morador ("tenant"): só pede o que o proprietário
+ * aceita no anúncio (e dentro da lei).
+ */
+export function validarFormaNaProposta(e: { forma: unknown; dias: number; escolha: EscolhaPagamento | null | undefined; quem: "owner" | "tenant" }): ResultadoForma {
+  if (e.forma !== "bloco" && e.forma !== "mensal") return { ok: false, erro: "Escolha uma forma de pagamento: bloco completo ou mensal." };
+  const faixa = faixaDaEstadia(e.dias);
+  if (!faixa) return { ok: false, erro: `A estadia precisa ter de ${MIN_DIAS_FORMA} a 180 dias.` };
+  if (e.forma === "bloco" && BLOCO_91_180_BLOQUEADO && faixa === "de_91") return { ok: false, erro: MENSAGEM_BLOCO_BLOQUEADO };
+  if (e.quem === "tenant" && !formasPermitidas(e.escolha, e.dias).includes(e.forma)) return { ok: false, erro: "O proprietário não aceita essa forma de pagamento para este período. Escolha a que ele oferece." };
+  return { ok: true, forma: e.forma };
+}
+
+/** O que o morador lê, antes de aceitar, sobre a forma FINAL da proposta. */
+export function textoFormaFinal(forma: FormaUsada, dias: number): TextoFormaPagamento {
+  const periodo = faixaDaEstadia(dias) === "de_91" ? "91 a 180 dias" : "30 a 90 dias";
+  return forma === "mensal"
+    ? {
+        titulo: "Forma de pagamento: Mensal",
+        linhas: [`Estadia de ${periodo}. Você paga mês a mês, direto ao proprietário, no vencimento de cada parcela.`, "A taxa da Viva também é mês a mês, junto de cada parcela."],
+        nota: "O pagamento é feito diretamente ao proprietário; a Viva não recebe o dinheiro.",
+      }
+    : {
+        titulo: "Forma de pagamento: Bloco completo",
+        linhas: [`Estadia de ${periodo}. Você paga o valor do período numa parcela só, direto ao proprietário.`, "A taxa da Viva é paga na assinatura do contrato."],
+        nota: "O pagamento é feito diretamente ao proprietário; a Viva não recebe o dinheiro.",
+      };
+}
