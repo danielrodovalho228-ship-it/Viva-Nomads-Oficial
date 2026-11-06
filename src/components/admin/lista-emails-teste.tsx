@@ -31,8 +31,9 @@ function ExtrasQa({ l }: { l: LinhaEmailTeste }) {
       {l.html && (
         <details className="mt-2" data-testid="emails-teste-html">
           <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-forest">Ver a versão HTML</summary>
+          {/* E632: um iframe por e-mail na mesma página — o título e o data-email-id dizem de QUAL e-mail é este HTML. */}
           {/* sandbox sem allow-scripts: o HTML guardado não roda script nem acessa a sessão do site. */}
-          <iframe title="Versão HTML do e-mail" sandbox="" srcDoc={l.html} className="h-[600px] w-full rounded-lg border border-sage-200 bg-white" />
+          <iframe title={`Versão HTML do e-mail: ${l.assunto}`} data-email-id={l.id} sandbox="" srcDoc={l.html} className="h-[600px] w-full rounded-lg border border-sage-200 bg-white" />
         </details>
       )}
     </>

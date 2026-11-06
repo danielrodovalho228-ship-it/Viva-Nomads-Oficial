@@ -12,6 +12,7 @@
 */
 
 import { DETALHE_MATRICULA_FALTA, DETALHE_MATRICULA_OBRIGATORIA, ROTULO_MATRICULA_ATUALIZADA } from "../documento/matricula-titularidade.ts";
+import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -98,6 +99,11 @@ export interface FatosAnuncio {
   matriculaEnviada?: boolean;
   /** E633: a chave MATRICULA_OBRIGATORIA está ligada (só com a confirmação por escrito da Dra. Beatriz). */
   matriculaObrigatoria?: boolean;
+  /**
+   * E637: o dono tem devolução de caução passada de 30 dias (atrás da chave CAUCAO_PRAZOS_ATIVA): anúncio novo não publica até
+   * regularizar. Ausente/false = sem bloqueio.
+   */
+  caucaoDevolucaoPendente?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -216,6 +222,9 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   const matriculaObrigatoriaAgora = f.matriculaEnviada !== undefined && f.matriculaObrigatoria === true;
   if (matriculaObrigatoriaAgora) {
     obrigatorios.push({ key: "matricula_atualizada", label: ROTULO_MATRICULA_ATUALIZADA, ok: f.matriculaEnviada === true, etapa: ETAPA.revisao, detalhe: f.matriculaEnviada ? undefined : DETALHE_MATRICULA_OBRIGATORIA });
+  }
+  if (f.caucaoDevolucaoPendente) {
+    obrigatorios.push({ key: "caucao_pendente", label: ROTULO_CAUCAO_PENDENTE, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_CAUCAO_PENDENTE });
   }
   // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [

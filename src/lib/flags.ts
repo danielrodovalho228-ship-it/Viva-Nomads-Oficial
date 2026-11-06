@@ -54,7 +54,6 @@ export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "
  */
 export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";
 
-
 /**
  * Login com Google. OFF por padrão: o provedor Google NÃO está ativado no
  * Supabase (Auth → Providers) — com o botão visível, quem clicava caía num JSON
@@ -108,6 +107,20 @@ export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 =
  * da pauta dela); aprovado pelo Daniel em 05/11/2026.
  */
 export const MATRICULA_OBRIGATORIA = process.env.NEXT_PUBLIC_MATRICULA_OBRIGATORIA === "on";
+
+/**
+ * E637 — prazos da caução (parecer do dono em 7 dias, silêncio vira liberação integral, devolução em 30 dias, contestação em
+ * 5 dias, bloqueio de anúncio novo no dia 30). OFF por padrão: o desenho e o motor existem, nada age. Só liga com o parecer da
+ * Dra. Beatriz (desenho fechado pelo coordenador em 05/11/2026).
+ */
+export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA === "on";
+
+/**
+ * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
+ * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
+ * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.
+ */
+export const FICHA_RESUMO_ATIVA = process.env.NEXT_PUBLIC_FICHA_RESUMO_ATIVA === "on";
 
 /**
  * 63-B — "Conectar LinkedIn" (selo de confiança). OFF até o Daniel colar LINKEDIN_CLIENT_ID e LINKEDIN_CLIENT_SECRET na

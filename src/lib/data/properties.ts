@@ -43,6 +43,7 @@ function negociacaoDaLinha(l: { negociacao?: unknown; internet_mbps?: unknown } 
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import type { Medicao } from "@/lib/internet-medida";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
 
 /**
  * Perfil PÚBLICO do dono de um anúncio ativo. SERVER-ONLY: a função é SECURITY DEFINER e,
@@ -338,11 +339,12 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
     chegadaEPedido: chegadaEPedidoDaLinha(chegadaLinha as LinhaChegadaEPedido | null),
     privacidade,
-    ownerName: ownerRow?.full_name ?? base.ownerName,
+    // E427: o que chega à página pública (estática e indexável) já é o nome ABREVIADO — nunca o nome inteiro nem o e-mail.
+    ownerName: nomeCurto(ownerRow?.full_name) ?? base.ownerName,
     ownerId: ownerId ?? base.ownerId,
     owner: ownerRow
       ? {
-          name: ownerRow.full_name ?? "Proprietário",
+          name: nomeCurto(ownerRow.full_name) ?? "Proprietário",
           avatarUrl: ownerAvatarUrl ?? undefined,
           memberSince: ownerRow.created_at ?? undefined,
           responseRate: ownerRow.response_rate ?? undefined,
@@ -447,19 +449,30 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
   }
 }
 
+/**
+ * E631: a lista pública de um proprietário, num lugar só — status ativo e o MESMO filtro de vitrine (sem anúncio de
+ * teste nem de conta de teste). A página do proprietário lista isto e o cartão do anúncio conta isto: o número não pode
+ * divergir entre as superfícies (antes o cartão lia a contagem crua do banco e mostrava "10" onde a página mostrava "0").
+ */
+async function linhasPublicasDoDono(supabase: NonNullable<ReturnType<typeof createPublicClient>>, donoId: string): Promise<Property[] | null> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select(PROPERTY_PUBLIC_COLUMNS)
+    .eq("owner_id", donoId)
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+  if (error || !data) return null;
+  const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
+  return mapped;
+}
+
 /** Imóveis ATIVOS de um proprietário, para a página pública dele (prompt 6). Anúncio de teste fica de fora. */
 export async function listPropertiesDoProprietario(donoId: string): Promise<Property[]> {
   const supabase = createPublicClient();
   if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return [];
   try {
-    const { data, error } = await supabase
-      .from("properties")
-      .select(PROPERTY_PUBLIC_COLUMNS)
-      .eq("owner_id", donoId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
-    if (error || !data) return [];
-    const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
+    const mapped = await linhasPublicasDoDono(supabase, donoId);
+    if (!mapped) return [];
     await attachCoverPhotos(supabase, mapped);
     await attachReviewAggregates(supabase, mapped);
     // E416 (01/11): o cartão do anúncio é o mesmo da busca — nível (Essencial/Conforto/Premium) e selo Preço justo
@@ -471,6 +484,17 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
     return mapped;
   } catch {
     return [];
+  }
+}
+
+/** E631: quantos imóveis a página pública do proprietário lista (a mesma consulta e o mesmo filtro). null = não deu para contar. */
+export async function contarImoveisPublicosDoDono(donoId: string): Promise<number | null> {
+  const supabase = createPublicClient();
+  if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return null;
+  try {
+    return (await linhasPublicasDoDono(supabase, donoId))?.length ?? null;
+  } catch {
+    return null;
   }
 }
 

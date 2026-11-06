@@ -2631,6 +2631,13 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "/dashboard/contratos/[id]/ficha": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": []
     }
   },
   "rotas": {
@@ -3393,6 +3400,12 @@
       "specs": [
         "t695-e264b-proativos"
       ]
+    },
+    "/api/cron/caucao-prazos": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
     }
   },
   "actions": {
@@ -4524,6 +4537,14 @@
         "proprietario"
       ],
       "specs": []
+    },
+    "src/lib/data/nome-dono-actions.ts#nomeDoDonoDepoisDoAceite": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t923-e427-nome-pagina-imovel"
+      ]
     },
     "src/lib/data/ofensas-admin-actions.ts#filaDeOfensas": {
       "personas": [
@@ -7169,6 +7190,18 @@
       "specs": []
     },
     "src/lib/comparador-airbnb/link-actions.ts#salvarLinkAirbnb": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ficha-resumo-actions.ts#getFichaResumo": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/ficha-resumo-actions.ts#salvarContaRecebimento": {
       "personas": [
         "proprietario"
       ],
