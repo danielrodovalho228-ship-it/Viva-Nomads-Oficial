@@ -29,6 +29,7 @@ import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { BOTAO_PARCERIA_APROVADA, HREF_ATIVAR_PARCERIA, TEXTO_PARCERIA_APROVADA, situacaoParceiro } from "@/lib/parceiros/situacao-conta";
 import { ButtonLink } from "@/components/ui/button";
 import { RodapeInicio } from "@/components/dashboard/rodape-inicio";
+import { comLimite, LIMITE_LEITURA_INICIO_MS } from "@/lib/painel/com-limite";
 
 /**
  * Datas das candidaturas recebidas nos últimos 60 dias (30 atuais + 30 de
@@ -133,23 +134,23 @@ export default async function DashboardPage() {
   // de virar lista vazia ("0 decisões", "0 mensagens") sem aviso.
   const semLeitura: FonteDoInicio[] = [];
   const ou = <T,>(fonte: FonteDoInicio, p: Promise<T>, vazio: T): Promise<T> =>
-    p.catch(() => {
+    comLimite(p, LIMITE_LEITURA_INICIO_MS).catch(() => {
       semLeitura.push(fonte);
       return vazio;
     });
   const [imoveisDono, cidadePerfil, interessados, propostas, estadias, draft, dados, candidaturas, visualizacoes, conversas, buscasSalvas] = await Promise.all([
     ou("imoveis", listMyProperties({ exigir: true }), []),
-    cidadeDoPerfil(),
+    comLimite(cidadeDoPerfil(), LIMITE_LEITURA_INICIO_MS).catch(() => null),
     ou("interessados", interessadosDoDono(), { atual: 0, anterior: 0 }),
     ou("propostas", listarPropostas({ exigir: true }), []),
     // Prompt 32: estadias em vigor (topo, decisões e ações da folha do 41).
     ou("estadias", estadiasDaHome(agora, { exigir: true }), []),
-    getLatestDraft().catch(() => null),
+    comLimite(getLatestDraft(), LIMITE_LEITURA_INICIO_MS).catch(() => null),
     ou("decisoes", dadosDasDecisoes({ exigir: true }), DECISOES_VAZIAS),
     // E72: o cartão "Candidaturas" conta a MESMA lista de /dashboard/candidaturas (um número, uma fonte).
     ou("candidaturas", listMinhasCandidaturas({ exigir: true }), null),
     // PROP-3 (E113): Visualizações e Mensagens da MESMA função das páginas de destino (Desempenho e Mensagens).
-    visualizacoesDoDono(agora).catch(() => null),
+    comLimite(visualizacoesDoDono(agora), LIMITE_LEITURA_INICIO_MS).catch(() => null),
     ou("conversas", listConversations({ exigir: true }), null),
     // E181: "Buscas salvas" conta a MESMA lista de /dashboard/buscas (um número, uma fonte).
     ou("buscas", listarBuscasSalvas({ exigir: true }), null),
@@ -157,19 +158,19 @@ export default async function DashboardPage() {
   // E503: o que depende só do 1º lote sai num 2º lote, junto — antes eram quatro esperas em série (conta pausada e capa,
   // parceria, fatos da conta, agenda), e o esqueleto do painel ficava na tela a soma delas a cada volta ao Início.
   const [[pausadaEm, capaRascunho], parceriaLida, fatos, agendaHoje] = await Promise.all([
-    Promise.all([ou("conta", contaPausadaEm(), null), capaDoRascunho(draft?.id ?? null, draft?.data ?? null)]),
+    Promise.all([ou("conta", contaPausadaEm(), null), comLimite(capaDoRascunho(draft?.id ?? null, draft?.data ?? null), LIMITE_LEITURA_INICIO_MS).catch(() => null)]),
     // E576: parceria aprovada e página ainda não ativada → aviso no Início com o caminho para ativar.
-    minhaParceria().catch(() => null),
+    comLimite(minhaParceria(), LIMITE_LEITURA_INICIO_MS).catch(() => null),
     // Prompt 43: checklist de ativação de cada papel até a ativação (some sozinho).
-    fatosDaConta(draft).catch(() => null),
+    comLimite(fatosDaConta(draft), LIMITE_LEITURA_INICIO_MS).catch(() => null),
     // E190 (parte 2): quem entra e quem sai HOJE (a mesma leitura da Agenda), só para quem tem imóvel.
-    imoveisDono.length ? carregarAgendaDoDono().catch(() => null) : Promise.resolve(null),
+    imoveisDono.length ? comLimite(carregarAgendaDoDono(), LIMITE_LEITURA_INICIO_MS).catch(() => null) : Promise.resolve(null),
   ]);
   const rascunho = rascunhoDoDraft(draft);
   const parceria = situacaoParceiro(parceriaLida);
   // Prompt 50: o checklist some na ativação do papel (data gravada em ativacoes; o que já aconteceu e falta gravar,
   // grava agora — rede de segurança dos pontos de gravação).
-  const ativados = fatos ? await ativacoesDaSessao(fatos).catch(() => ({})) : {};
+  const ativados = fatos ? await comLimite(ativacoesDaSessao(fatos), LIMITE_LEITURA_INICIO_MS).catch(() => ({})) : {};
   const checklists = fatos ? checklistsDoInicio(fatos, ativados) : [];
   const estadiasDe = (papel: "proprietario" | "inquilino"): EstadiaParaDecisao[] =>
     estadias.filter((e) => e.papel === papel).map((e) => ({ contratoId: e.contratoId, imovel: e.imovel, decisoes: e.decisoes }));

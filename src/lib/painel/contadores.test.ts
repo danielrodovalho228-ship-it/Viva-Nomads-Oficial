@@ -137,7 +137,7 @@ test("a rota é GET, sem cache, autentica pela sessão do servidor e só conta o
 
 test("PROP-0: o layout do painel resolve o contexto do menu no servidor e entrega à casca na 1ª pintura", () => {
   const l = ler(LAYOUT);
-  assert.match(l, /const \[initialMode, contadoresIniciais\] = await Promise\.all\(\[resolveInitialMode\(\), contadoresIniciaisDoPainel\(\)\]\);/);
+  assert.match(l, /const \[initialMode, contadoresIniciais\] = await Promise\.all\(\[\s*comLimite\(resolveInitialMode\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),\s*comLimite\(contadoresIniciaisDoPainel\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),\s*\]\);/);
   assert.match(l, /<ContadoresIniciais valor=\{contadoresIniciais\}>\s*<DashboardShell>\{children\}<\/DashboardShell>\s*<\/ContadoresIniciais>/);
   const s = ler(SERVIDOR);
   // Falha ou sem sessão: null (a casca segue com a rota); nunca derruba o painel.

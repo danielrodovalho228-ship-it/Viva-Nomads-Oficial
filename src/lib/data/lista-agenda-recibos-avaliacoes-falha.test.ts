@@ -29,7 +29,7 @@ test("as telas pedem com exigir; home e bloco do celular não (a exportação ex
   assert.match(ler("src/app/(dashboard)/dashboard/recibos/page.tsx"), /await recibosDaPessoa\("dono", \{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/avaliacoes/page.tsx"), /await avaliacoesRecebidas\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /await avaliacoesRecebidas\(\{ exigir: true \}\)/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /carregarAgendaDoDono\(\)\.catch\(\(\) => null\)/);
+  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /carregarAgendaDoDono\(\), LIMITE_LEITURA_INICIO_MS\)\.catch\(\(\) => null\)/);
   assert.doesNotMatch(ler("src/components/recibos/blocos-recibos.tsx"), /exigir: true/);
   // Exportação (PDF do carnê-leão, informe, reembolso): falha nunca vira relatório com zero — exige e responde 503.
   assert.match(ler("src/app/api/recibos/[relatorio]/route.ts"), /recibosDaPessoa\(papel, \{ exigir: true \}\)\.catch\(\(\) => "falhou" as const\)/);
