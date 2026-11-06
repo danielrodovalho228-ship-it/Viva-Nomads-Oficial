@@ -173,7 +173,7 @@ export const EVENTO_ABRIR_SECAO = "vn:passo10-abrir-secao";
 
 /** A seção do "Antes de publicar" que resolve um item da prontidão (null = o item mora noutro passo). */
 export function secaoDoItem(chave: string): SecaoAntesDePublicar | null {
-  if (chave === "documento") return "documento";
+  if (chave === "documento" || chave === "matricula_atualizada") return "documento";
   if (chave === "sublocacao") return "operacao";
   if (chave === "qualificacao") return "declaracoes";
   return null;

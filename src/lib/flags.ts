@@ -54,7 +54,6 @@ export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "
  */
 export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";
 
-
 /**
  * Login com Google. OFF por padrão: o provedor Google NÃO está ativado no
  * Supabase (Auth → Providers) — com o botão visível, quem clicava caía num JSON
@@ -101,6 +100,13 @@ export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_RE
  */
 export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
+
+/**
+ * E633 — matrícula atualizada do imóvel como prova de titularidade. OFF por padrão = OPCIONAL: o anúncio publica sem ela
+ * e o item aparece só como melhoria. Só liga (vira obrigatória) com a confirmação POR ESCRITO da Dra. Beatriz (item 38
+ * da pauta dela); aprovado pelo Daniel em 05/11/2026.
+ */
+export const MATRICULA_OBRIGATORIA = process.env.NEXT_PUBLIC_MATRICULA_OBRIGATORIA === "on";
 
 /**
  * E637 — prazos da caução (parecer do dono em 7 dias, silêncio vira liberação integral, devolução em 30 dias, contestação em
