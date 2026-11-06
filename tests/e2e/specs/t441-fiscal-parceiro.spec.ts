@@ -178,8 +178,8 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/parceiros/buscar?cidade=${encodeURIComponent(cidade)}`, { waitUntil: "domcontentloaded" });
     const res = page.getByTestId("busca-parceiros-resultado");
-    // No ar nesta cidade: pf (recibo), pj (Sim) e antigo (respondeu Não) — o novato segue em rascunho.
-    await expect(res).toHaveAttribute("data-total", "3");
+    // No ar nesta cidade: pj (Sim) e antigo (respondeu Não) — o pf legado sai da busca (E648: só CNPJ) e o novato segue em rascunho.
+    await expect(res).toHaveAttribute("data-total", "2");
     await expect(page.getByTestId("busca-parceiros-nota")).toHaveAttribute("data-qtd", "1");
     await expect(page.getByTestId("busca-parceiros-nota")).toContainText("Emite nota fiscal (1)");
     await page.getByTestId("busca-parceiros-nota-check").check();

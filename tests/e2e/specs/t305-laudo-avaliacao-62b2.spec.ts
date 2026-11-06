@@ -252,6 +252,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     const form = p.getByTestId("confirmar-correcao");
     await form.getByTestId("correcao-iluminacao").selectOption("conforme");
     await form.getByTestId("correcao-tomadas_risco").selectOption("conforme");
+    await form.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: a nova versão também é assinada pelo avaliador
     await form.getByRole("button", { name: "Confirmar a reverificação" }).click();
     await expect.poll(async () => (await laudoDe(pedido)).versao, { timeout: 30_000 }).toBe(2);
     await p.context().close();

@@ -240,7 +240,7 @@ export default async function AdminAvaliadoresPage() {
                               <input type="hidden" name="para" value={para} />
                               {para === "descredenciado" && (
                                 <>
-                                  <select name="criterio" required defaultValue="" aria-label="Critério público de qualidade" className="rounded-lg border border-sage-200 px-3 py-2 text-base" data-testid="descredenciar-criterio">
+                                  <select name="criterio" required defaultValue="" aria-label="Critério público de qualidade" className="w-full min-w-0 max-w-full truncate rounded-lg border border-sage-200 px-3 py-2 text-base" data-testid="descredenciar-criterio">
                                     <option value="" disabled>Critério público atingido</option>
                                     {CRITERIOS_PUBLICOS.map((cr) => (
                                       <option key={cr.id} value={cr.id}>{cr.texto}</option>
