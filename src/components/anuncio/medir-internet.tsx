@@ -7,8 +7,8 @@ import { Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAppUserAgent } from "@/lib/app-mode";
 import { INTERNET, TEXTO_PARA_VALIDAR_NO_APP } from "@/config/internet";
-import { juntarRodadas, textoInternet, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
-import { medirUmaRodada, type Medidor } from "@/lib/internet-motor";
+import { aproveitarRodadas, juntarRodadas, textoInternet, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
+import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, type Medidor } from "@/lib/internet-motor";
 import type { EstadoMedir, ResultadoMedicao, Origem } from "@/lib/internet-medida-servidor";
 
 const MOTIVO: Record<MotivoInvalida, string> = {
@@ -57,6 +57,8 @@ export function MedirInternet({
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
+  // E414: só uma das rodadas terminou — a medida vale, mas o resultado diz que veio de menos rodadas.
+  const [parcial, setParcial] = useState(false);
   const atual = useRef<Medidor | null>(null);
   const cancelou = useRef(false);
 
@@ -87,38 +89,47 @@ export function MedirInternet({
     if (!estado?.ok || !ponto) return;
     cancelou.current = false;
     setResultado(null);
+    setParcial(false);
     setFase("local");
     const local = await posicao();
     if (cancelou.current) return setFase("parado");
     setFase("medindo");
     setProgresso(0);
     const rodadas: Rodada[] = [];
-    try {
-      for (let i = 0; i < INTERNET.rodadas; i++) {
+    let falha: unknown = null;
+    for (let i = 0; i < INTERNET.rodadas; i++) {
+      try {
         const m = medirUmaRodada(estado.simulado, (f) => setProgresso((i + f) / INTERNET.rodadas));
         atual.current = m;
         rodadas.push(await m.promessa);
+      } catch (e) {
+        falha = e;
+        break;
       }
-    } catch (e) {
-      atual.current = null;
-      setFase("parado");
-      // E414: a rodada que passa do prazo para e avisa (antes ficava em "Medindo… 95%" sem fim).
-      const demorou = e instanceof Error && e.message === "demorou";
-      if (!cancelou.current)
-        setResultado({ ok: false, erro: demorou ? "A medição demorou demais e parou. Confira o Wi-Fi e tente de novo." : "A medição não terminou. Confira a conexão e tente de novo." });
-      return;
     }
     atual.current = null;
-    if (!juntarRodadas(rodadas)) {
+    if (cancelou.current) return setFase("parado");
+    // E414: a rodada que terminou vale mesmo quando a seguinte falha (antes se perdia tudo); sem nenhuma completa, o motivo aparece.
+    const aproveitadas = aproveitarRodadas(rodadas, INTERNET.rodadas);
+    if (!aproveitadas || !juntarRodadas(aproveitadas.rodadas)) {
       setFase("parado");
-      return setResultado({ ok: false, erro: "A medição não terminou. Tente de novo." });
+      // E414: o motivo (e o sentido que travou) aparece na frase e vai para o registro do servidor, sem dado pessoal.
+      if (falha instanceof FalhaMedicao) {
+        void fetch("/api/internet/falhas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ motivo: falha.motivo, fase: falha.fase, ms: falha.ms, status: falha.status ?? null, rodada: rodadas.length + 1 }),
+        }).catch(() => {});
+      }
+      return setResultado({ ok: false, erro: mensagemDaFalha(falha) });
     }
+    setParcial(aproveitadas.parcial);
     setFase("salvando");
     try {
       const resp = await fetch("/api/internet/medicoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imovel: imovelId, origem, rodadas, local, confirmouWifi: wifi, ponto }),
+        body: JSON.stringify({ imovel: imovelId, origem, rodadas: aproveitadas.rodadas, local, confirmouWifi: wifi, ponto }),
       });
       const r = (await resp.json()) as ResultadoMedicao;
       setResultado(r);
@@ -190,6 +201,11 @@ export function MedirInternet({
       {resultado && !resultado.ok && (
         <p className="mt-2 text-sm text-red-700" role="alert" data-testid="medir-internet-erro">
           {resultado.erro}
+        </p>
+      )}
+      {resultado?.ok && parcial && (
+        <p className="mt-2 text-xs text-muted" data-testid="medir-internet-parcial">
+          Só uma das duas rodadas terminou: a medida usa essa rodada.
         </p>
       )}
       {resultado?.ok && (

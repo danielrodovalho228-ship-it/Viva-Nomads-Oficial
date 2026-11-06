@@ -1,6 +1,7 @@
 "use client";
 
 import { CampoReais } from "@/components/ui/campo-reais";
+import { EscolhaUnica } from "@/components/anuncio/escolha-assistente";
 import { reaisOu } from "@/lib/reais";
 import { QTDS_LIMPEZA, MAX_TEXTO_LIMPEZA, type LimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 
@@ -24,17 +25,13 @@ export function LimpezaEstadiaCampos({ value, onChange }: { value: LimpezaEstadi
         <h2 className="text-sm font-semibold text-ink">Limpeza durante a estadia</h2>
         <p className="mt-1 text-xs text-muted">Opcional. Aparece no anúncio, na proposta e no resumo do contrato, com a quantidade por mês.</p>
       </div>
-      <fieldset>
-        <legend className="text-sm font-semibold text-ink">Limpezas incluídas por mês</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {QTDS_LIMPEZA.map((q) => (
-            <label key={q} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm">
-              <input type="radio" name="limpeza-por-mes" checked={value.porMes === q} onChange={() => onChange({ ...value, porMes: q })} />
-              {q === 0 ? "Nenhuma" : q}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <EscolhaUnica<number>
+        testid="limpeza-por-mes"
+        legenda="Limpezas incluídas por mês"
+        valor={value.porMes}
+        onChange={(porMes) => onChange({ ...value, porMes })}
+        opcoes={QTDS_LIMPEZA.map((q) => ({ valor: q, rotulo: q === 0 ? "Nenhuma" : String(q) }))}
+      />
       {value.porMes > 0 && (
         <>
           <label className="grid gap-1 text-sm font-semibold text-ink">

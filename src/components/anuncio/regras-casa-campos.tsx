@@ -2,6 +2,7 @@
 
 import { Cigarette, Moon, PartyPopper, UsersRound } from "lucide-react";
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
+import { EscolhaUnica } from "@/components/anuncio/escolha-assistente";
 import { MAX_OUTRAS_REGRAS, OPCOES_FESTAS, OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { REGRAS_CONVIVENCIA, desligarRegra, regraTemDados, type RegraConvivencia, type RegrasCasaForm } from "@/lib/anuncio/regras-casa-form";
 
@@ -30,19 +31,8 @@ function Escolha<T extends string>({
   valor: "" | T;
   onChange: (v: T) => void;
 }) {
-  return (
-    <fieldset data-testid={`regras-casa-${nome}`}>
-      <legend className="text-sm font-semibold text-ink">{legenda}</legend>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {opcoes.map((o) => (
-          <label key={o.valor} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm">
-            <input type="radio" name={`regras-casa-${nome}`} value={o.valor} checked={valor === o.valor} onChange={() => onChange(o.valor)} />
-            {o.rotulo}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
+  /* E193: escolha única no cartão grande (antes, rádio dentro de pílula). */
+  return <EscolhaUnica<"" | T> testid={`regras-casa-${nome}`} legenda={legenda} opcoes={opcoes} valor={valor} onChange={(v) => v !== "" && onChange(v)} />;
 }
 
 const SIM_NAO = [

@@ -1,3 +1,5 @@
+"use client";
+
 import { BadgeCheck } from "lucide-react";
 import type { PerfilProprietario } from "@/lib/data/perfil-proprietario";
 import { respostaExemploLabel, tempoNaVivaLabel, type ProprietarioExemplo } from "@/config/exemplo-proprietarios";
@@ -7,6 +9,7 @@ import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
+import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-aceite";
 
 /**
  * Proprietário (Prompt 41, item 1; vocabulário da casa: "proprietário", nunca "anfitrião"), logo depois da linha-síntese: foto, nome curto e selos numa linha; embaixo, em miúdo,
@@ -26,8 +29,10 @@ export function FaixaProprietario({
   /** AAAA-MM-DD */
   hoje: string;
 }) {
+  // E427: depois do aceite (visita confirmada), o nome COMPLETO; antes, e para anônimo/público, o abreviado (privacidade).
+  const nomeAceite = useNomeDepoisDoAceite(real?.id, !!exemplo);
   if (!real && !exemplo) return null;
-  const nome = exemplo?.nome ?? real!.nome;
+  const nome = exemplo?.nome ?? nomeAceite ?? real!.nome;
   const desde = exemplo?.desde ?? real?.desde?.slice(0, 7) ?? null;
   const resposta = exemplo
     ? respostaExemploLabel(exemplo.respostaHoras)

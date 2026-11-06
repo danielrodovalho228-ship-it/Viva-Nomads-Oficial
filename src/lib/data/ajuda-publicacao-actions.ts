@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { dentroDoLimite, DIA } from "@/lib/limites";
+import { recusaObservador } from "@/lib/qa/observador";
 import {
   donoPodeDecidir,
   ehDecisaoDono,
@@ -137,6 +138,8 @@ export async function mudarStatusAjudaPublicacao(id: string, para: string): Prom
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: atual } = await supabase.from("pedidos_ajuda_publicacao").select("status").eq("id", id).maybeSingle();
   if (!atual || !ehStatusAjuda(atual.status)) return { ok: false, error: "Pedido não encontrado." };
   if (!transicaoValida(atual.status, para)) return { ok: false, error: "Essa mudança de etapa não é permitida." };

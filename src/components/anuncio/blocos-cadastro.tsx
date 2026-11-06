@@ -18,7 +18,7 @@ import { cn, formatBRL } from "@/lib/utils";
 import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, buscaNaoRespondeu, textoDistancia } from "@/lib/anuncio/proximidades";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
@@ -398,19 +398,18 @@ export function BlocoNegociacao({
       {valor.aceita && (
         <fieldset className="mt-3">
           <legend className="text-xs font-semibold text-muted">O que pode ser negociado</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {itens.map((i) => {
               const on = valor.itens.includes(i.chave);
               return (
-                <Pilula
+                <CartaoEscolha
                   key={i.chave}
                   papel="pressed"
                   on={on}
                   onClick={() => onValor({ ...valor, itens: on ? valor.itens.filter((x) => x !== i.chave) : [...valor.itens, i.chave] })}
                   testid={`negociavel-${i.chave}`}
-                >
-                  {i.rotulo}
-                </Pilula>
+                  rotulo={i.rotulo}
+                />
               );
             })}
           </div>
@@ -467,15 +466,13 @@ export function BlocoNegociacao({
             {/* E193: escolha única numa escala curta → pílulas (antes, lista suspensa). */}
             <fieldset className="text-sm text-ink" data-testid="limite-limpezas">
               <legend>Limpezas por mês que posso incluir</legend>
-              <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label="Limpezas por mês que posso incluir">
+              <div className="mt-1 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Limpezas por mês que posso incluir">
                 {[
                   { v: null, r: "Sem limite" },
                   { v: 0, r: "Nenhuma" },
                   ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ v: n, r: `Até ${n}` })),
                 ].map((o) => (
-                  <Pilula key={o.r} papel="radio" on={(limites.limpezasMax ?? null) === o.v} onClick={() => onLimites({ ...limites, limpezasMax: o.v })} testid={`limite-limpezas-${o.v ?? "sem"}`}>
-                    {o.r}
-                  </Pilula>
+                  <CartaoEscolha key={o.r} on={(limites.limpezasMax ?? null) === o.v} onClick={() => onLimites({ ...limites, limpezasMax: o.v })} testid={`limite-limpezas-${o.v ?? "sem"}`} rotulo={o.r} />
                 ))}
               </div>
             </fieldset>

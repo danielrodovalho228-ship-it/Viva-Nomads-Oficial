@@ -471,3 +471,58 @@ texto cortado, fundo bege, grade).
 6. **Comparar vazio ou com código inexistente, Favoritos sem sessão, `/conferir/<código inexistente>`**: respondem na própria tela, sem
    defeito. **Conforme.**
 7. **Matriz × mockups**: sem tela nova alcançável pelo demo. Nada a corrigir.
+
+## Varredura geral por blocos — passada 29 (06/11, modo demonstração, 390 toque e 1280)
+
+Sequência da vigia: E442, E382 e E383 já estão mesclados (E442: #2613 + #2625, hover do mapa, spec `t1156`; E382: #1978; E383: #2171 junto com o E418),
+então não foram refeitos. Conferi o E442 na `main` de hoje: no mapa da busca a 1280, o mouse sobre o preço abre o cartão do **mesmo imóvel**
+(foto, título, valor, link do anúncio) e o pino não tem `title` nativo. Depois, varredura de 28 rotas (16 públicas e 12 do painel) com a sonda das
+passadas 23/24 mais duas classes novas: **cartão sem foto** e **texto de foto ausente** ("A foto principal aparece aqui", "sem foto").
+
+1. **Cartão sem foto, texto de foto ausente, imagem vazia ou quebrada, elemento fixo sobre conteúdo, rolagem lateral, texto cortado, fundo
+   bege**: nenhum caso real. **Conforme.**
+2. **"Imagem não carregada" logo depois de abrir** em `/dashboard` (4 cartões recomendados), no carrossel de `/imoveis/ube-001` a 390
+   (fotos 6 a 8) e nos exemplos do Passo 2: são `loading="lazy"` fora da vista ou dentro de bloco recolhido, e o otimizador de imagem do servidor
+   de desenvolvimento demora na primeira vez (variante de 3840 px). Medido de novo, as fotos do `/dashboard` completam e aparecem. **Conforme.**
+3. **Grades com última linha incompleta**: lista da cidade a 1280 (decisão B2), mosaico da galeria, comodidades principais. **Conformes** (como nas passadas 9, 23 e 24).
+4. **`/dashboard/buscas-salvas`** responde 404: a lista de buscas salvas mora em `/buscar` (aba), não há rota própria. **Conforme.**
+5. **Matriz × mockups**: sem tela nova alcançável pelo demo (E640b e E640c pedem dado que o demo não tem; E513 é massa de teste). Nada a corrigir.
+
+## Varredura geral a 768 (tablet) — passada 30 (06/11, modo demonstração, 768 toque)
+
+Nada novo na `main` desde a passada 29 (nenhuma tela nova para medir). A passada repete as 28 rotas da 29 no tamanho que ainda não tinha
+a varredura de página inteira, **768 px**, com a mesma sonda (imagem com `decode()`, `background-image`, cartão sem foto, texto de foto ausente,
+rolagem lateral, texto cortado, fundo bege, grade).
+
+1. **Imagem vazia ou quebrada, cartão sem foto, elemento fixo sobre conteúdo, rolagem lateral, texto cortado, fundo bege**: nenhum caso real. **Conforme.**
+2. **"Imagem não carregada" logo depois de abrir**: `/dashboard` (cartões recomendados, `loading="lazy"`) e os 4 exemplos do Passo 2 (dentro do bloco
+   recolhido "Ver dicas de foto"), como a 390 e a 1280. **Conforme.**
+3. **Grades com última linha incompleta**: lista da cidade (decisão B2), mosaico da galeria e comodidades. Desenho aprovado. **Conformes.**
+4. **E193** (#2874 + #2876, mesclados): nenhuma ação; a prova ao vivo é do chat principal. O ajuste de specs do #2883 segue aberto.
+5. **Matriz × mockups**: sem tela nova alcançável pelo demo. Nada a corrigir.
+
+## /comparar e telas vizinhas de busca e cartões — passada 31 (06/11, modo demonstração, 390 toque e 1280)
+
+**E621** (colunas do /comparar sem foto) já está mesclado (#2789, 4:3 como os cartões; mais a largura igual das colunas do #2800), então não foi refeito.
+Conferi o resultado na `main` de hoje e varri /comparar (2, 3 e 4 imóveis na URL, código inexistente, vazio), /buscar (5 variações), /favoritos,
+/cidades, a home e os favoritos e o início do painel.
+
+1. **Colunas do /comparar**: cada coluna abre com a foto principal e todas as imagens completam o carregamento (2 e 3 colunas; a 390 e a 1280).
+   Com 4 códigos na URL aparecem 3 colunas: o limite é 3 imóveis por desenho (`MAX_COMPARAR`, com aviso). **Conforme.**
+2. **Imagem vazia ou quebrada, cartão sem foto, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo**: nenhum caso real. **Conforme.**
+3. **Grade desalinhada**: só a lista da cidade a 1280 (15 imóveis em 4 colunas, decisão B2). **Conforme.**
+4. **`/dashboard` a 1280**: "imagens não carregadas" são os cartões recomendados com `loading="lazy"` (completam ao chegar à vista). **Conforme.**
+5. **Matriz × mockups**: nada novo. Nada a corrigir, sem PR de correção.
+
+## Telas de administração mexidas pelo E477 — passada 32 (06/11, modo demonstração, 390 toque e 1280)
+
+Mesclados desde a passada 31: E477 (telas do admin somente leitura para o observador: #2885 e #2888) e E642 (garantia única na caução, sem tela).
+**Leitura 3S**: o E477 só acrescenta o estado somente leitura (aviso e controles desligados) às telas de agentes, ajuda de publicação, avaliadores,
+moderação de ofensas e solicitações; o E642 é regra de servidor. Nenhum elemento novo no desenho comum. O demo entra como administrador, não como
+observador, então o estado somente leitura em si exige a conta de observação (sessão real). Medi as 6 telas tocadas a 390 e 1280.
+
+1. **Imagem quebrada, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo, grade desalinhada** em `/admin`, `/admin/agentes`,
+   `/admin/ajuda-publicacao`, `/admin/avaliadores`, `/admin/moderacao/ofensas` e `/admin/solicitacoes`: nenhum caso (12 medições). **Conforme.**
+2. **Estado somente leitura (observador)**: não alcançável no demo; cobertura é dos testes de unidade e laboratório do E477. Fica para a QA com a conta de observação.
+3. **E442** (hover do mapa, #2613) e **E443** (logo do cabeçalho logado, #2858): já mesclados, não refeitos.
+4. **Matriz × mockups**: sem tela nova de morador, dono ou parceiro. Nada a corrigir.

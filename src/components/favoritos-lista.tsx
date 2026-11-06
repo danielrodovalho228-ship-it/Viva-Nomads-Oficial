@@ -1,7 +1,7 @@
 "use client";
 
 import { GitCompare } from "lucide-react";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { ButtonLink } from "@/components/ui/button";
 import { useFavoritos } from "@/lib/use-favoritos";
 import { SkeletonCartao } from "@/components/ui/skeleton";
@@ -31,7 +31,7 @@ export function FavoritosLista() {
           {/* Carregando: esqueleto no formato do cartão, um por favorito guardado (Prompt 40). */}
           {loading && favoritos.length === 0
             ? ids.map((id) => <SkeletonCartao key={id} />)
-            : favoritos.map((p) => <PropertyCard key={p.id} property={p} />)}
+            : favoritos.map((p, i) => <PropertyCard key={p.id} property={p} prioridade={i < PRIMEIRA_FILEIRA} />)}
         </div>
       )}
     </div>

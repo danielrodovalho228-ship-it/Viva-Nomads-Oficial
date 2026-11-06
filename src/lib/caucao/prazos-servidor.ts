@@ -4,7 +4,7 @@ import { notify } from "@/lib/notifications";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
-import { estadoDosPrazos, type ItemDesconto } from "./prazos";
+import { contratoTemCaucao, estadoDosPrazos, type ItemDesconto } from "./prazos";
 
 /*
   E637 — roda os prazos da caução (1×/dia). ATRÁS DA CHAVE CAUCAO_PRAZOS_ATIVA (desligada): sem ela, não faz nada.
@@ -30,9 +30,11 @@ export async function rodarCaucaoPrazos(admin: SupabaseClient, agora: Date = new
   // Contratos cujos blocos já acabaram (todos terminaram antes de hoje) e ainda não têm linha de prazos.
   const { data: contratos } = await admin
     .from("contratos")
-    .select("id, tenant_id, property_id, properties(owner_id, title), contrato_blocos(fim)")
+    .select("id, tenant_id, property_id, garantia, properties(owner_id, title), contrato_blocos(fim)")
     .in("status", ["concluido", "encerrado_sem_renovacao", "encerrado_em_acerto"]);
-  for (const c of (contratos ?? []) as unknown as { id: string; tenant_id: string; properties: { owner_id?: string; title?: string } | null; contrato_blocos: { fim: string }[] | null }[]) {
+  for (const c of (contratos ?? []) as unknown as { id: string; tenant_id: string; garantia?: string | null; properties: { owner_id?: string; title?: string } | null; contrato_blocos: { fim: string }[] | null }[]) {
+    // E642: contrato com seguro-fiança não tem caução — nada de prazo de devolução, aviso nem bloqueio.
+    if (!contratoTemCaucao(c.garantia)) continue;
     const fins = (c.contrato_blocos ?? []).map((b) => b.fim).sort();
     if (!fins.length || fins[fins.length - 1] >= hoje) continue;
     await admin.from("caucao_prazos").upsert({ contrato_id: c.id, saida_em: fins[fins.length - 1] }, { onConflict: "contrato_id", ignoreDuplicates: true });

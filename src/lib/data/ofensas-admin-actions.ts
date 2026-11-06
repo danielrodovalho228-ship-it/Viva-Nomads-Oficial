@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 
 /*
   E445 (item 3) — a fila de moderação das ofensas no chat (só admin, com a verificação em duas etapas): quem, a
@@ -63,6 +64,7 @@ export async function filaDeOfensas(opcoes: { exigir?: boolean } = {}): Promise<
 export async function marcarOfensaRevisada(id: string): Promise<{ ok: boolean }> {
   const a = await exigirAdmin();
   if (!a || !/^[0-9a-f-]{36}$/i.test(id)) return { ok: false };
+  if (await recusaObservador(a.userId)) return { ok: false };
   const { error } = await a.admin.from("moderacao_ofensas").update({ revisado_em: new Date().toISOString(), revisado_por: a.userId }).eq("id", id).is("revisado_em", null);
   return { ok: !error };
 }
