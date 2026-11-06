@@ -66,6 +66,8 @@ export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberado
  */
 export const MSG_SO_CNPJ = "A Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito: abra o seu CNPJ (MEI, onde a atividade permite) e cadastre a empresa.";
 export const PENDENCIA_CNPJ = "Apresentar o CNPJ (cadastros com CPF não recebem serviço)";
+/** E649: o que o PARCEIRO com cadastro legado (CPF) lê no painel dele: a pendência e o que fazer para voltar a receber serviço. */
+export const PENDENCIA_CNPJ_PAINEL = "Pendência: apresente o CNPJ para voltar a receber serviço (cadastros com CPF não recebem serviço).";
 
 /** Só empresa (CNPJ) recebe serviço: pedido de orçamento, busca pública e designação. Sem tipo registrado = não recebe. */
 export const parceiroPodeReceberServico = (tipoPessoa: string | null | undefined): boolean => tipoPessoa === "pj";
@@ -194,7 +196,7 @@ export function emailMascarado(e: string | null | undefined): string {
 // ── Checklist do admin ─────────────────────────────────────────────────────────────────────────────────────────
 export const ITENS_CHECKLIST = [
   { chave: "identidade", rotulo: "Identidade conferida (CAF) ou conferência manual registrada" },
-  { chave: "documento", rotulo: "CPF/CNPJ com dígitos válidos e situação conferida na Receita" },
+  { chave: "documento", rotulo: "CNPJ com dígitos válidos e situação conferida na Receita" },
   { chave: "area", rotulo: "Categorias e área de atendimento definidas" },
   { chave: "categoria", rotulo: "Item da categoria conferido (portfólio, empresa/veículo ou descrição)" },
 ] as const;
@@ -216,8 +218,8 @@ export const MODELOS_RECUSA_PARCERIA = [
   },
   {
     chave: "documento",
-    rotulo: "CPF ou CNPJ não conferido",
-    texto: "O CPF ou CNPJ informado não pôde ser conferido na Receita Federal (número inválido ou situação irregular). Confira o número e a situação do documento e envie um novo pedido de parceria.",
+    rotulo: "CNPJ não conferido",
+    texto: "O CNPJ informado não pôde ser conferido na Receita Federal (número inválido ou situação irregular). Confira o número e a situação do CNPJ e envie um novo pedido de parceria.",
   },
   {
     chave: "area",

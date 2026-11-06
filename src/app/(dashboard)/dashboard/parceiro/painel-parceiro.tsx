@@ -15,7 +15,7 @@ import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
-import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, PENDENCIA_CNPJ_PAINEL, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
@@ -567,7 +567,13 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted">Tipo</dt>
-            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF)"}</dd>
+            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF) — cadastro antigo"}</dd>
+            {/* E649: o cadastro legado com CPF mostra a pendência ao lado (a Viva só trabalha com CNPJ, E648). */}
+            {p.tipoPessoa !== "pj" && (
+              <p className="mt-1 text-sm font-semibold text-red-700" data-testid="parceiro-pendencia-cnpj">
+                {PENDENCIA_CNPJ_PAINEL}
+              </p>
+            )}
           </div>
           <div>
             {/* E463: o documento é o do perfil (Conta → Documento), o mesmo de Conta → Dados — uma fonte só. */}

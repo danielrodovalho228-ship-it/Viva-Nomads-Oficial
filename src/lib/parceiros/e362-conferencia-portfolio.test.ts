@@ -11,7 +11,7 @@ const regras = readFileSync("src/lib/parceiros/regras.ts", "utf8");
 
 test("E362: a página não promete portfólio para todo parceiro", () => {
   assert.doesNotMatch(pagina, /Identidade, CPF ou CNPJ e portfólio/);
-  assert.match(pagina, /Identidade e CPF ou CNPJ; para fotografia, também o portfólio\./);
+  assert.match(pagina, /Identidade e CNPJ; para fotografia, também o portfólio\./);
 });
 
 test("E362: o formulário tem o campo de portfólio só em fotografia, e o servidor exige o link nessa categoria", () => {
