@@ -23,10 +23,10 @@ import { filaDaCategoria } from "../atendimento/filas.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("documentoDoServico em todos os estados: PF → recibo; PJ Sim → nota; PJ Não ou sem resposta → null", () => {
-  assert.equal(documentoDoServico({ tipoPessoa: "pf", emiteNota: null }), "recibo");
-  // PF com valor (o banco recusa; a função não confia): continua recibo.
-  assert.equal(documentoDoServico({ tipoPessoa: "pf", emiteNota: true }), "recibo");
+test("documentoDoServico em todos os estados: PF → null (E648); PJ Sim → nota; PJ Não ou sem resposta → null", () => {
+  assert.equal(documentoDoServico({ tipoPessoa: "pf", emiteNota: null }), null);
+  // PF com valor (o banco recusa; a função não confia): não há mais recibo de parceiro PF.
+  assert.equal(documentoDoServico({ tipoPessoa: "pf", emiteNota: true }), null);
   assert.equal(documentoDoServico({ tipoPessoa: "pj", emiteNota: true }), "nota");
   assert.equal(documentoDoServico({ tipoPessoa: "pj", emiteNota: false }), null);
   assert.equal(documentoDoServico({ tipoPessoa: "pj", emiteNota: null }), null);

@@ -7,7 +7,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
-import { checklistCompleto, ITENS_CHECKLIST, MODELOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
+import { checklistCompleto, ITENS_CHECKLIST, MODELOS_RECUSA_PARCERIA, PENDENCIA_CNPJ, parceiroPodeReceberServico, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarDocumento } from "@/lib/documento-pessoa";
 import { estadoDaFicha, type EstadoFicha } from "@/lib/parceiros/fila-pendentes";
 import { cn } from "@/lib/utils";
@@ -160,6 +160,12 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </span>
       </div>
 
+      {/* E648: cadastro com CPF segue visível aqui, mas não recebe serviço até apresentar CNPJ. */}
+      {f.tipoPessoa !== null && !parceiroPodeReceberServico(f.tipoPessoa) && (
+        <p className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink" data-testid="ficha-sem-cnpj">
+          Sem CNPJ: {PENDENCIA_CNPJ.charAt(0).toLowerCase()}{PENDENCIA_CNPJ.slice(1)}.
+        </p>
+      )}
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-muted">Categorias</dt>
