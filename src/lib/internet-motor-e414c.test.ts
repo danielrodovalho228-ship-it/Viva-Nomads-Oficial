@@ -16,7 +16,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { CONFIG_MOTOR, FalhaMedicao, classificarErroDaBiblioteca, motivoDaFalha, resumoCompleto, mensagemDaFalha } from "./internet-motor.ts";
+import { CONFIG_MOTOR, FalhaMedicao, HOST_SERVIDOR_TESTE, classificarErroDaBiblioteca, motivoDaFalha, resumoCompleto, mensagemDaFalha } from "./internet-motor.ts";
 
 const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
@@ -75,4 +75,21 @@ test("o motor usa tudo isso: erro com resumo completo vale, erro sem resumo vira
   assert.match(rota, /origin !== new URL\(request\.url\)\.origin/);
   assert.match(rota, /console\.warn\("\[internet-falha\]"/);
   assert.doesNotMatch(rota, /headers\.get\("(x-forwarded-for|x-real-ip|user-agent|cookie)"\)/i, "nenhum dado pessoal no registro");
+});
+
+test("E414 (4ª reprova, 06/11): falha de conexão com o servidor de teste diz QUAL é o servidor e o caminho — o teste não passa pelo site da Viva", () => {
+  const t = mensagemDaFalha(new FalhaMedicao("conexao", "latencia", 1545));
+  assert.match(t, /speed\.cloudflare\.com/);
+  assert.match(t, /teste de resposta/);
+  assert.match(t, /direto|não passa pelo site da Viva/i);
+  assert.match(t, /libere|outra rede/i);
+  assert.match(t, /Código: E414-conexao-latencia\./);
+  assert.equal(HOST_SERVIDOR_TESTE, "speed.cloudflare.com");
+  // As outras frases não citam o host (só a falha de conexão/bloqueio).
+  for (const m of ["demorou", "incompleto", "limite", "rede"] as const) assert.doesNotMatch(mensagemDaFalha(new FalhaMedicao(m, "geral", 1)), /speed\.cloudflare/);
+});
+
+test("E414: o host vem da biblioteca e do que a QA vê — o motor aponta para o mesmo servidor que a mensagem cita", () => {
+  const motor = ler("./internet-motor.ts");
+  assert.match(motor, /export const HOST_SERVIDOR_TESTE = "speed\.cloudflare\.com";/);
 });
