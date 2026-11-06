@@ -6,7 +6,8 @@ import { TrendingUp, Home, Download, Info, Scale } from "lucide-react";
 import { imprimirSimulacao } from "@/lib/print-simulacao";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { useProperties } from "@/lib/use-properties";
-import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto, rotuloTaxaServico, taxaPublicaTexto } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_GESTOR, faixaPorImoveisAtivos, pctTexto, rotuloTaxaServico, taxaPublicaTexto } from "@/lib/cobranca/regra";
+import { faixaDoDono } from "@/lib/cobranca/faixa-do-dono";
 import { calcularImovel, entradaVazia, type EntradaImovel, type TradicionalDigitado } from "@/lib/calculo-imovel";
 import { COMPARE_RODAPE, RETORNO_AIRBNB_UBERLANDIA, canaisDaCalculadora } from "@/config/compare-precos";
 import { formatBRL, numBR } from "@/lib/utils";
@@ -47,6 +48,8 @@ export default function SimuladorPage() {
   // Regra única: taxa de serviço por contrato fechado, pela faixa do nº de imóveis ativos (o preço da Viva).
   const faixa = faixaPorImoveisAtivos(imoveisAtivos);
   const taxaTexto = taxaPublicaTexto(faixa);
+  // E628: o simulador do dono nomeia a faixa — inclusive a do Gestor (20+ imóveis), com o mesmo detalhe da /simulacao.
+  const faixaNome = faixaDoDono(faixa);
   const calc = useMemo(() => calcularImovel(e, faixa.taxa), [e, faixa.taxa]);
   const res = calc.rentabilidade;
   const cmp = calc.comparacao;
@@ -76,7 +79,7 @@ export default function SimuladorPage() {
         titulo="Simule o seu imóvel com os seus números"
         subtitulo="Digite os valores do seu imóvel. Nada vem preenchido: a conta usa só o que você informar, já descontada a taxa de serviço da sua faixa."
         stats={[
-          { label: "Taxa de serviço da sua faixa", valor: taxaTexto },
+          { label: "Taxa de serviço da sua faixa", valor: faixa.gestor ? `${taxaTexto} · ${ROTULO_FAIXA_GESTOR}` : taxaTexto },
           { label: "Média mensal no bolso (sua simulação)", valor: calc.pronto ? formatBRL(res.mediaMensal) : "—" },
         ]}
       />
@@ -149,6 +152,14 @@ export default function SimuladorPage() {
                   onChange={(ev) => setImoveisAtivos(Number(ev.target.value))}
                   className="h-11 w-full accent-forest"
                 />
+                <p className="mt-1 text-xs text-muted" data-testid="faixa-nome">
+                  Sua faixa: <strong className="text-forest">{faixaNome.nome}</strong>
+                </p>
+                {faixaNome.gestor && (
+                  <p className="mt-1 text-xs text-muted" data-testid="faixa-gestor-detalhe">
+                    {faixaNome.gestor.carteira} · {faixaNome.gestor.detalhe}.
+                  </p>
+                )}
               </div>
             </div>
           </div>
