@@ -337,6 +337,12 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     const contestar = d.getByTestId("contestar-laudo");
     await contestar.locator("textarea").fill("O chuveiro e as tomadas estavam funcionando; peço outra avaliação.");
     await contestar.getByRole("button", { name: "Contestar" }).click();
+    // E648: a Viva não designa o 2º avaliador — o pedido da contestação espera a escolha do dono (o 1º avaliador está impedido).
+    await expect.poll(async () => (await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im5).eq("tipo", "contestacao").maybeSingle()).data?.id ?? null, { timeout: 20_000 }).not.toBeNull();
+    const { data: credB } = await adm().from("avaliadores_credenciamento").select("numero_credenciado").eq("id", cred.B.id).single();
+    await d.reload({ waitUntil: "domcontentloaded" });
+    await expect(d.getByTestId("avaliacao-escolha")).not.toContainText(String((await adm().from("avaliadores_credenciamento").select("numero_credenciado").eq("id", cred.A.id).single()).data?.numero_credenciado));
+    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${credB!.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("avaliador_id").eq("property_id", ids.im5).eq("tipo", "contestacao").maybeSingle()).data?.avaliador_id ?? null, { timeout: 20_000 }).toBe(cred.B.id);
     const { data: pc } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im5).eq("tipo", "contestacao").single();
     // B aceitou e agendou (62-B1): faz a 2ª e aprova.
