@@ -15,6 +15,22 @@ export interface ItemDossie {
   contestacao: string | null;
 }
 
+/** E640 (3): dado do SERVIDOR sobre a foto (nunca do aparelho): quando o arquivo chegou e quem o enviou. */
+export interface MetaFoto {
+  registradaEm: string | null;
+  por: string | null;
+}
+
+/** Legenda de cada foto no dossiê: hora do servidor (Brasília), quem enviou e o local (o imóvel do contrato). Dado ausente diz que não há. */
+export function legendaDaFoto(meta: MetaFoto | null, local: string): string {
+  const t = meta?.registradaEm ? Date.parse(meta.registradaEm) : NaN;
+  const quando = Number.isFinite(t)
+    ? `Registrada em ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(t)).replace(", ", " ")} (Brasília, hora do servidor)`
+    : "Hora de registro não disponível";
+  const por = meta?.por ? `enviada por ${meta.por}` : "autor não identificado";
+  return `${quando} · ${por} · Local: ${local}`;
+}
+
 const BRL = (n: number) => `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const br = (iso: string) => iso.split("-").reverse().join("/");
 const ROTULO_CATEGORIA: Record<string, string> = { dano: "Dano", sujeira_excessiva: "Sujeira excessiva", item_faltando: "Item faltando" };
@@ -65,7 +81,7 @@ async function embutir(doc: PDFDocument, bytes: Uint8Array | null) {
   }
 }
 
-export async function montarDossiePdf(d: { resumo: string[]; itens: readonly (ItemDossie & { fotoEntrada: Uint8Array | null; fotoSaida: Uint8Array | null; comprovante: string | null })[] }): Promise<Uint8Array> {
+export async function montarDossiePdf(d: { resumo: string[]; local?: string; itens: readonly (ItemDossie & { fotoEntrada: Uint8Array | null; fotoSaida: Uint8Array | null; comprovante: string | null; metaEntrada?: MetaFoto | null; metaSaida?: MetaFoto | null })[] }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const fonte = await doc.embedFont(StandardFonts.Helvetica);
   const negrito = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -93,8 +109,11 @@ export async function montarDossiePdf(d: { resumo: string[]; itens: readonly (It
         const esc = Math.min(caixa.w / img.width, caixa.h / img.height);
         pg.drawImage(img, { x: x + (caixa.w - img.width * esc) / 2, y: caixa.y + (caixa.h - img.height * esc) / 2, width: img.width * esc, height: img.height * esc });
       } else pg.drawText("Foto não pôde ser lida", { x: x + 12, y: caixa.y + caixa.h / 2, size: 10, font: fonte, color: rgb(0.5, 0.2, 0.2) });
+      // E640 (3): hora do servidor, quem enviou e o local, sob cada foto (o EXIF do aparelho não entra).
+      const legenda = legendaDaFoto((idx === 0 ? i.metaEntrada : i.metaSaida) ?? null, d.local ?? "Imóvel do contrato");
+      quebrar(limpo(legenda), fonte, 7, caixa.w).slice(0, 4).forEach((parte, n) => pg.drawText(parte, { x, y: caixa.y - 10 - n * 9, size: 7, font: fonte, color: rgb(0.35, 0.35, 0.35) }));
     }
-    let yy = 395;
+    let yy = 375;
     pg.drawText(limpo(`Comprovante: ${i.comprovante ?? "não anexado"}`), { x: M, y: yy, size: 10, font: fonte });
     if (i.contestacao) {
       yy -= 22;

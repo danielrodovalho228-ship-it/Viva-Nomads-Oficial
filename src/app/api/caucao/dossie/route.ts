@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
 import { contratoTemCaucao } from "@/lib/caucao/prazos";
-import { linhasDoDossie, montarDossiePdf, type ItemDossie } from "@/lib/caucao/dossie";
+import { linhasDoDossie, montarDossiePdf, type ItemDossie, type MetaFoto } from "@/lib/caucao/dossie";
 
 /*
   E637 (b) — dossiê da caução em PDF (?contrato=<id>). Atrás da chave CAUCAO_PRAZOS_ATIVA. Só as duas partes do contrato
@@ -41,10 +41,26 @@ export async function GET(request: Request) {
     const { data } = await admin.storage.from("conferencia").download(caminho);
     return data ? new Uint8Array(await data.arrayBuffer()) : null;
   };
+  // E640 (3): metadados do SERVIDOR, nunca do aparelho (o EXIF é removido no upload): a hora em que o arquivo chegou ao Storage (created_at) e quem
+  // o enviou (a pasta do arquivo é o id de quem enviou; só as duas partes do contrato têm nome aqui).
+  const metaDaFoto = async (caminho: string): Promise<MetaFoto> => {
+    const [pasta, arquivo] = caminho.split("/");
+    let registradaEm: string | null = null;
+    try {
+      const { data } = await admin.storage.from("conferencia").list(pasta, { search: arquivo, limit: 5 });
+      const achado = (data ?? []).find((o) => o.name === arquivo) as { created_at?: string | null } | undefined;
+      registradaEm = achado?.created_at ?? null;
+    } catch {
+      registradaEm = null;
+    }
+    const por = ids.includes(pasta) ? nome(pasta) : null;
+    return { registradaEm, por: por && por !== "—" ? por : null };
+  };
   const itens = await Promise.all(
     linhas.map(async (i) => ({
       id: i.id, categoria: i.categoria, comodo: i.comodo, valor: Number(i.valor), status: i.status, contestacao: i.contestacao_texto,
       fotoEntrada: await baixar(i.foto_entrada_path), fotoSaida: await baixar(i.foto_saida_path), comprovante: i.comprovante_path.split("/").pop() ?? null,
+      metaEntrada: await metaDaFoto(i.foto_entrada_path), metaSaida: await metaDaFoto(i.foto_saida_path),
     })),
   );
   const resumo = linhasDoDossie({
@@ -56,7 +72,7 @@ export async function GET(request: Request) {
     parecerEm: (prazo.parecer_em as string | null) ?? null,
     itens,
   });
-  const pdf = await montarDossiePdf({ resumo, itens });
+  const pdf = await montarDossiePdf({ resumo, itens, local: prop.title ?? "Imóvel do contrato" });
   return new NextResponse(Buffer.from(pdf), {
     headers: { "Content-Type": "application/pdf", "Content-Disposition": `inline; filename="dossie-caucao-${contratoId.slice(0, 8)}.pdf"`, "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" },
   });
