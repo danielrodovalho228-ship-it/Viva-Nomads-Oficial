@@ -422,3 +422,14 @@ imóveis do dono), E634 (ficha-resumo do contrato), E637 (prazos da caução), E
    aponta para `/`. **Conforme.**
 4. **Grade com última linha incompleta** que sobra: a lista de imóveis da cidade a 1280 (decisão B2, passada 9). **Conforme.**
 5. **Matriz × mockups**: sem tela nova que o demo alcance (passada 23, item 6). Nada a corrigir.
+
+## Sobreposições, painéis, menus e folhas — passada 25 (06/11, modo demonstração, 390 toque e 1280)
+
+Estados abertos (não só a página parada): menu do site público (390), painéis da barra de busca (Datas, Local, Tipo, Preço,
+Ordenar) e a folha "Mais filtros", calendário do cadastro (Passo 9), sino de avisos, menu "Conta" do painel e painel do chat.
+
+1. **Painel ou folha maior que a tela, cortado pela borda, rolagem lateral, texto cortado, fundo bege**: nenhum caso. **Conforme.**
+2. **Painel Local a 390**: passa da dobra, mas está no fluxo da página e rola com ela (E526, desenho aprovado). **Conforme.**
+3. **Chat flutuante ausente a 390**: some abaixo de 768 px por desenho (E246). **Conforme.**
+4. **Calendário do cadastro** (E136): abre o `CalendarioBR` no toque e no computador, dentro da tela. **Conforme.**
+5. **Matriz × mockups**: sem tela nova que o demo alcance (passada 23, item 6). Nada a corrigir.
