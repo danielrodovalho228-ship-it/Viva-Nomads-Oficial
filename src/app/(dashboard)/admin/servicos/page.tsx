@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ListaNumeros, NumeroHeroi } from "@/components/admin/numeros";
 import { pedidosServicoAdmin } from "@/lib/data/servicos-morador-actions";
@@ -15,6 +17,8 @@ const dataBR = (iso: string) => iso.split("-").reverse().join("/");
 export default async function AdminServicosPage() {
   const pedidos = await pedidosServicoAdmin();
   if (pedidos === null) notFound();
+  // E477: a conta observadora da QA só lê o pedido de serviço do morador.
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const novos = pedidos.filter((p) => p.status === "enviado").length;
   const andamento = pedidos.filter((p) => p.status === "confirmado").length;
   return (
@@ -39,7 +43,7 @@ export default async function AdminServicosPage() {
                   {codigoDoPedido(p.id)} · {dataBR(p.dataDesejada)} · {FAIXAS_HORARIO.find((f) => f.id === p.faixa)?.rotulo ?? p.faixa} · {p.prestador}
                 </p>
                 {p.observacao && <p className="mt-1 text-sm text-ink">{p.observacao}</p>}
-                <MudarEstado id={p.id} status={p.status} />
+                {soLeitura ? <SoLeituraQa /> : <MudarEstado id={p.id} status={p.status} />}
               </li>
             ))}
           </ul>

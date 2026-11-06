@@ -56,6 +56,8 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   ]);
   const linksFalharam = linksLidos === null;
   const linksVideo = linksLidos ?? [];
+  // E477: o observador só lê os vídeos de anúncio real (anúncio de teste segue liberado, como na pausa).
+  const soLeituraLinks = new Set(await soLeituraNaTela(linksVideo.map((l) => ({ id: l.propertyId, alvo: { imoveis: [l.propertyId] } }))));
   const exemplos: ImovelLinhaAdmin[] = SAMPLE_PROPERTIES.map((e) => ({
     id: e.id,
     titulo: e.title,
@@ -108,7 +110,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
           Não foi possível ler os links de vídeo pendentes agora. Tente de novo em instantes.
         </p>
       )}
-      <LinksDeVideoPendentes links={linksVideo} />
+      <LinksDeVideoPendentes links={linksVideo} soLeitura={soLeituraLinks} />
       <form action="/admin/imoveis" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {p && <input type="hidden" name="de" value={p.inicio} />}
         {p && <input type="hidden" name="ate" value={p.fim} />}
