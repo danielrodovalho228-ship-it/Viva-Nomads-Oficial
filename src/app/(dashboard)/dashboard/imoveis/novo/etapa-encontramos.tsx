@@ -12,7 +12,7 @@ import type { Privacidade } from "@/lib/anuncio/privacidade";
 import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anuncio/blocos-cadastro";
 import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
-import { cn } from "@/lib/utils";
+import { TEXTO_PREPARANDO_SUGESTAO } from "@/lib/anuncio/texto-sugerido";
 import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
@@ -169,9 +169,8 @@ export function EtapaEncontramos(p: {
             value={p.title}
             onChange={campo("titulo", p.setTitle)}
             maxLength={80}
-            placeholder={escrevendo ? "Escrevendo uma sugestão…" : "Ex.: Studio mobiliado no Centro"}
-            className={cn("input", escrevendo && !p.title && "animate-pulse bg-surface-2")}
-            aria-busy={escrevendo || undefined}
+            placeholder="Ex.: Studio mobiliado no Centro"
+            className="input"
             data-testid="cadastro-titulo"
           />
           <Erro msg={p.erros.titulo} />
@@ -182,13 +181,18 @@ export function EtapaEncontramos(p: {
             rows={5}
             value={p.description}
             onChange={campo("descricao", p.setDescription)}
-            className={cn("input", escrevendo && !p.description && "animate-pulse bg-surface-2")}
-            placeholder={escrevendo ? "Escrevendo uma sugestão…" : "Descreva o imóvel…"}
-            aria-busy={escrevendo || undefined}
+            className="input"
+            placeholder="Descreva o imóvel…"
             data-testid="cadastro-descricao"
           />
           <Erro msg={p.erros.descricao} />
         </Labeled>
+        {/* E618: a sugestão vai para o cartão abaixo, nunca para os campos — o "a caminho" fica aqui, não no placeholder. */}
+        {escrevendo && (
+          <p className="text-sm text-muted" role="status" data-testid="sugestao-preparando">
+            {TEXTO_PREPARANDO_SUGESTAO}
+          </p>
+        )}
         {sugestao?.aviso && (
           <p className="text-sm text-muted" role="status" data-testid="sugestao-aviso">
             {sugestao.aviso}
