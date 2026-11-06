@@ -36,7 +36,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   const r = await buscarParceiros({ categoria, cidade: sp.cidade, uf: sp.uf, cep: sp.cep, soNota });
   const supabase = await createClient();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  const geral = r.lista.length ? null : await lerParceiroGeralServidor();
+  const geral = r.lista.length || r.falhou ? null : await lerParceiroGeralServidor();
   // Vindo da página da estadia (Prompt 41, "Pedir limpeza"/"Pedir manutenção"): o imóvel e a categoria seguem até o
   // "Solicitar orçamento" do parceiro (o mesmo caminho do /parceiros/fotografos).
   const imovel = sp.imovel && /^[0-9a-f-]{36}$/i.test(sp.imovel) ? sp.imovel : "";
@@ -46,6 +46,14 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   if (qImovel && descricao) qImovel.set("descricao", descricao);
   const consultaDoImovel = qImovel?.toString();
   const qs = new URLSearchParams({ ...(categoria ? { categoria } : {}), ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}) }).toString();
+
+  // Achado 131: "Tentar de novo" volta à mesma busca (categoria, local, CEP, nota e o imóvel de origem).
+  const refazer = `/parceiros/buscar${(() => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (typeof v === "string" && v) q.set(k, v);
+    const t = q.toString();
+    return t ? `?${t}` : "";
+  })()}`;
 
   const titulo = `Encontre um parceiro${categoria ? `: ${rotuloCategoria(categoria).toLowerCase()}` : ""}`;
   const subtitulo = "Profissionais aprovados pela Viva. Você combina e agenda tudo pelas mensagens da Viva; contato e endereço só depois do aceite.";
@@ -134,7 +142,14 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
       <FaixaCategorias atual={categoria} consulta={consultaFaixa} />
 
       <section aria-live="polite" className="mt-8" data-testid="busca-parceiros-resultado" data-total={r.lista.length}>
-        {r.lista.length > 0 ? (
+        {r.falhou ? (
+          <div role="alert" className="rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="busca-parceiros-falhou">
+            <p>Não foi possível carregar os parceiros agora. Isso não quer dizer que não haja parceiros {r.cidade ? `em ${r.cidade}` : "para a sua busca"}.</p>
+            <a href={refazer} className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-sage-200 px-4 font-semibold text-forest" data-testid="busca-parceiros-tentar-de-novo">
+              Tentar de novo
+            </a>
+          </div>
+        ) : r.lista.length > 0 ? (
           <>
             <p className="text-sm text-muted">
               {/* E540: uma frase só ("1 parceiro em Uberlândia") — em nós separados, quem lê nó a nó colava as palavras. */}
