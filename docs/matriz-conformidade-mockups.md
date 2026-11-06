@@ -555,3 +555,15 @@ A passada confere o **E194** (🔴 na lista-master) na `main`: já está impleme
    segundo cadastro. **Conforme.**
 2. **E-mails com título + código** (#2905 e #2908): sem tela; coberto por `e394-imovel-nos-emails.test.ts`. Nada a medir.
 3. **Matriz × mockups**: nada novo. Nada a corrigir.
+
+## Merges depois da passada 34 — passada 35 (06/11)
+
+Mesclou depois da passada 34 só o #2908 (E394: o `id` do imóvel passado aos e-mails restantes) e o registro da passada 34 (#2910). Os dois são texto de
+e-mail, consulta de cron e documentação: **nenhuma tela mudou** (`git diff` de `src/app` e `src/components` desde a passada 34 vazio). **Leitura 3S**:
+nada a medir no desenho.
+
+1. **E455**: (i) a barra "Comparar" sobre a 2ª fileira, já mesclada (#2463, E529, guarda `t844`); (ii) o chat "Fale com a Viva" que fecha ao tocar fora e com Esc
+   está no rascunho #2765, aguardando QA. Mesclável sem conflito com a `main` atual (simulação de merge limpa). Nada refeito.
+2. **E454**: fotos da primeira fileira com prioridade, já mesclado (#2899; os 4 primeiros cartões com `loading="eager"` e `fetchpriority="high"`). Nada refeito.
+3. **E457**: rascunho #2767, aguardando QA; também mescla sem conflito com a `main` atual. Nada refeito.
+4. **Matriz × mockups**: nada novo. Nenhum defeito novo para registrar.
