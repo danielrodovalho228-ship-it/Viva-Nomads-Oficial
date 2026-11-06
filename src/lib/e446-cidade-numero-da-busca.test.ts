@@ -17,6 +17,12 @@ test("a cidade usa contagemDaBusca com o total da lista (mesmo número da busca)
   assert.match(ler("app/(public)/buscar/search-client.tsx"), /contagemDaBusca\(\{ n: results\.length/);
 });
 
+test("a lista da cidade lê a base única da vitrine (Pista B, #2970): mesmo conjunto da busca", () => {
+  const pg = ler("app/(public)/cidades/[cidade]/page.tsx");
+  assert.match(pg, /baseDaVitrine\(await listPropertiesByCity\(name\), \(p\) => isExemplo\(p\.id\)\)/);
+  assert.match(ler("app/(public)/buscar/search-client.tsx"), /baseDaVitrine\(base,/);
+});
+
 test("reais e exemplos aparecem no detalhe, sem mudar o número do título", () => {
   assert.equal(detalheContagemCidade(0, 0), null);
   assert.equal(detalheContagemCidade(9, 0), null);
