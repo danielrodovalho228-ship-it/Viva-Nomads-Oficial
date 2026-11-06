@@ -59,6 +59,17 @@ export function registraIntencaoNova(antes: unknown, nova: readonly string[]): b
   return antes == null || nova.length > 0;
 }
 
+/**
+ * E283-B (2ª reprova): a conta que JÁ tinha respondido a intenção (ex.: "morar", gravada antes de o boas-vindas existir) e agora vira dono pelo
+ * 1º rascunho (a intenção ganha "anunciar"). O registraIntencaoNova não cobre (a intenção não estava vazia), mas ela pode nunca ter recebido
+ * nenhum boas-vindas: quem manda é o enviarBoasVindas, que grava a chave boas_vindas:<conta> ANTES de enviar — quem já recebeu o de morador
+ * não recebe o de dono. Intenção vazia segue pelo registraIntencaoNova (não entra aqui).
+ */
+export function moradorViraDono(antes: unknown, nova: readonly string[]): boolean {
+  if (!Array.isArray(antes) || antes.length === 0) return false;
+  return !antes.includes("anunciar") && nova.includes("anunciar");
+}
+
 export function modoDoPapel(papel: Papel): Modo | null {
   return papel === "proprietario" ? "owner" : papel === "morador" ? "tenant" : null;
 }

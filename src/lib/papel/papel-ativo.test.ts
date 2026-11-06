@@ -139,7 +139,7 @@ test("E283/L-78: abrir uma página de outra área no 1º acesso não gasta o 1º
   assert.match(ler("src/components/papel/use-troca-papel.ts"), /usarPapel\(papel\)/);
   // O 1º rascunho decide pelo MESMO caminho: gravarIntencao com "owner" grava o papel e manda as boas-vindas.
   const intencao = ler("src/lib/data/intencao-servidor.ts");
-  assert.match(intencao, /if \(nova\) await gravarIntencao\(supabase, userId, nova, "owner"\)/);
+  assert.match(intencao, /if \(nova\) \{\s*const r = await gravarIntencao\(supabase, userId, nova, "owner"\)/);
   assert.match(intencao, /if \(registraIntencaoNova\(a\?\.intencao, intencao\)\) \{[\s\S]{0,300}enviarBoasVindas\(admin, userId, intencao, modo\)/);
 });
 
