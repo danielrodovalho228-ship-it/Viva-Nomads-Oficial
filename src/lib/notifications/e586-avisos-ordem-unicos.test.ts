@@ -59,3 +59,32 @@ test("(a) o servidor junta os pendentes da mesma chave depois de gravar; (b) as 
   assert.match(ler("lib/data/avisos-actions.ts"), /\.order\("criado_em", \{ ascending: false \}\)\.order\("id", \{ ascending: false \}\)/);
   assert.match(ler("components/account/lista-avisos.tsx"), /filtrarAvisos\(ordemCronologica\(avisos\), filtro\)/);
 });
+
+import { semRepetidos } from "./sino.ts";
+
+test("E586 histórico: três avisos idênticos no mesmo minuto viram um (o mais recente); o resto fica", () => {
+  const t = (s: string) => `2026-11-04T23:25:${s}Z`;
+  const base = { evento: "pedido_compativel", titulo: "Pedido de moradia compatível com o seu imóvel", url: "/dashboard/pedidos-cidade" };
+  const lista = [
+    { ...av("9b7e", "normal", t("21")), ...base, lido_em: "2026-11-05T01:00:00Z" },
+    { ...av("a784", "normal", t("22")), ...base, lido_em: "2026-11-05T01:00:00Z" },
+    { ...av("b653", "normal", t("24")), ...base, lido_em: "2026-11-05T01:00:00Z" },
+    { ...av("depois", "normal", "2026-11-05T11:00:49Z"), ...base },
+    av("outro", "normal", t("23")),
+  ];
+  const ids = ordemCronologica(lista).map((a) => a.id);
+  assert.deepEqual(ids, ["depois", "b653", "outro"]);
+  assert.deepEqual(ordenarParaOSino(lista).map((a) => a.id), ids);
+  assert.equal(semRepetidos(lista).length, 3);
+});
+
+test("E586 histórico: só um do grupo pendente → o pendente fica; a lista segue em ordem decrescente", () => {
+  const base = { evento: "x", titulo: "igual", url: null };
+  const lista = [
+    { ...av("p", "normal", "2026-11-04T10:00:00Z"), ...base },
+    { ...av("l", "normal", "2026-11-04T10:00:30Z"), ...base, lido_em: "2026-11-04T11:00:00Z" },
+  ];
+  assert.deepEqual(semRepetidos(lista).map((a) => a.id), ["p"]);
+  const longe = [{ ...av("a", "normal", "2026-11-04T10:00:00Z"), ...base }, { ...av("b", "normal", "2026-11-04T10:10:00Z"), ...base }];
+  assert.deepEqual(semRepetidos(longe).map((a) => a.id), ["b", "a"]);
+});

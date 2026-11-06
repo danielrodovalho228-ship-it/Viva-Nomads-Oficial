@@ -34,3 +34,15 @@ test("o cartão do anúncio não confia na contagem crua do banco: usa a contage
 test("a página pública segue contando a lista que ela mesma mostra", () => {
   assert.match(pagina, /\$\{imoveis\.length\} \$\{imoveis\.length === 1 \? "imóvel" : "imóveis"\} na Viva/);
 });
+
+test("E631 (reprova de 06/11): se a contagem pública falha, o cartão NÃO cai na contagem crua do banco — some o número", () => {
+  assert.doesNotMatch(perfil, /imoveisPublicos \?\? l\.imoveis_ativos/);
+  assert.match(perfil, /imoveisAtivos: imoveisPublicos,/);
+  assert.match(perfil, /imoveisAtivos: number \| null;/);
+  const card = ler("components/property/owner-card.tsx");
+  assert.match(card, /proprietario\.imoveisAtivos != null/);
+  // o cartão só mostra o número que a página pública lista; nenhuma outra superfície lê imoveis_ativos
+  for (const f of ["components/property/owner-card.tsx", "components/property/faixa-proprietario.tsx", "app/(public)/proprietario/[id]/page.tsx"]) {
+    assert.doesNotMatch(ler(f), /imoveis_ativos/);
+  }
+});

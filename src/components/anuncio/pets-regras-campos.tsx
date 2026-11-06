@@ -1,6 +1,7 @@
 "use client";
 
 import { CampoReais } from "@/components/ui/campo-reais";
+import { CartaoEscolha, EscolhaUnica } from "@/components/anuncio/escolha-assistente";
 import { reaisOu } from "@/lib/reais";
 import {
   ESPECIES_PET,
@@ -56,36 +57,28 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
     <div className="mt-4 grid gap-4 rounded-xl border border-line bg-white p-4" data-testid="pets-regras">
       <fieldset>
         <legend className="text-sm font-semibold text-ink">Quais animais você aceita?</legend>
-        <div className="mt-2 flex flex-wrap gap-2">
+        {/* E193: várias escolhas = o cartão grande, em grade (antes, caixa quadrada dentro de pílula). */}
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {ESPECIES_PET.map((e) => (
-            <label key={e} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm">
-              <input type="checkbox" checked={value.especies.includes(e)} onChange={() => alternar(e)} />
-              {ROTULO_ESPECIE[e]}
-            </label>
+            <CartaoEscolha key={e} papel="checkbox" on={value.especies.includes(e)} onClick={() => alternar(e)} rotulo={ROTULO_ESPECIE[e]} testid={`pets-especie-${e}`} />
           ))}
         </div>
         {value.especies.length === 0 && <p className="mt-1 text-xs text-muted">Sem nenhum marcado, vale qualquer animal.</p>}
       </fieldset>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="grid gap-1 text-sm font-semibold text-ink">
-          Porte máximo
-          <select className={campo} data-testid="pets-porte" value={value.porteMax} onChange={(e) => onChange({ ...value, porteMax: e.target.value as PortePet | "" })}>
-            <option value="">Sem limite de porte</option>
-            {PORTES_PET.map((p) => (
-              <option key={p} value={p}>{ROTULO_PORTE[p]}</option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 text-sm font-semibold text-ink">
-          Quantos animais, no máximo?
-          <select className={campo} data-testid="pets-qtd" value={value.qtdMax} onChange={(e) => onChange({ ...value, qtdMax: e.target.value })}>
-            <option value="">Sem limite</option>
-            {Array.from({ length: MAX_PETS }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={String(n)}>{rotuloQtdPets(n)}</option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <EscolhaUnica<PortePet | "">
+        testid="pets-porte"
+        legenda="Porte máximo"
+        valor={value.porteMax}
+        onChange={(porteMax) => onChange({ ...value, porteMax })}
+        opcoes={[{ valor: "", rotulo: "Sem limite de porte" }, ...PORTES_PET.map((p) => ({ valor: p, rotulo: ROTULO_PORTE[p] }))]}
+      />
+      <EscolhaUnica<string>
+        testid="pets-qtd"
+        legenda="Quantos animais, no máximo?"
+        valor={value.qtdMax}
+        onChange={(qtdMax) => onChange({ ...value, qtdMax })}
+        opcoes={[{ valor: "", rotulo: "Sem limite" }, ...Array.from({ length: MAX_PETS }, (_, i) => i + 1).map((n) => ({ valor: String(n), rotulo: rotuloQtdPets(n) }))]}
+      />
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Taxa mensal de pet (R$/mês, opcional)
         <CampoReais
@@ -112,19 +105,14 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
             onChange={(v) => onChange({ ...value, valorPet: v == null ? "" : String(v) })}
           />
         </label>
-        <label className="grid gap-1 text-sm font-semibold text-ink">
-          Esse valor é
-          <select
-            className={campo}
-            data-testid="valor-pet-tipo"
-            value={value.valorPetTipo}
-            onChange={(e) => onChange({ ...value, valorPetTipo: e.target.value as TipoValorPet })}
-          >
-            {TIPOS_VALOR_PET.map((t) => (
-              <option key={t} value={t}>{ROTULO_TIPO_VALOR_PET[t]}</option>
-            ))}
-          </select>
-        </label>
+        <EscolhaUnica<TipoValorPet>
+          testid="valor-pet-tipo"
+          legenda="Esse valor é"
+          colunas={1}
+          valor={value.valorPetTipo}
+          onChange={(valorPetTipo) => onChange({ ...value, valorPetTipo })}
+          opcoes={TIPOS_VALOR_PET.map((t) => ({ valor: t, rotulo: ROTULO_TIPO_VALOR_PET[t] }))}
+        />
       </div>
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Regra do condomínio sobre pets (opcional)

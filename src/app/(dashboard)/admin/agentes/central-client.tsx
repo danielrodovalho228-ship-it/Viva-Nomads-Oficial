@@ -2,7 +2,7 @@
 
 import { ABAS_AGENTES, abaDaUrl, type AbaAgentes } from "@/lib/admin/agentes-abas";
 import { dataHoraBRT, horaBRT } from "@/lib/datas-brasilia";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -41,6 +41,7 @@ import styles from "@/components/admin/agentes/central.module.css";
 import { estadoDaCentral } from "@/lib/agentes/selo-vivo";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { MSG_ATRASO_NAO_LIDO } from "@/lib/atendimento/aviso-topo-admin";
+import { SoLeituraQa, TEXTO_SO_LEITURA_QA } from "@/components/admin/so-leitura-qa";
 
 /*
   Central de Agentes v2 — ADMIN-5: nos tokens do admin (fundo claro, sem o tema escuro do QG), avatares hexagonais
@@ -194,7 +195,18 @@ const botaoLinha = `${botao} border border-line text-ink hover:bg-surface-2`;
 const campoBase = "rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-forest focus:outline-none";
 const campo = `w-full ${campoBase}`;
 
-export function CentralAgentes({ dados, vermelhos = [], abaInicial = "Equipe" }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[] | null; abaInicial?: Aba }) {
+/** E477: a conta observadora da QA só lê — os botões que criam ordem ou decidem aceite saem e entra "Só leitura". */
+const SoLeituraCtx = createContext(false);
+
+export function CentralAgentes(props: { dados: DadosCentral; vermelhos?: ChamadoVermelho[] | null; abaInicial?: Aba; soLeitura?: boolean }) {
+  return (
+    <SoLeituraCtx.Provider value={!!props.soLeitura}>
+      <CentralAgentesInterna dados={props.dados} vermelhos={props.vermelhos} abaInicial={props.abaInicial} />
+    </SoLeituraCtx.Provider>
+  );
+}
+
+function CentralAgentesInterna({ dados, vermelhos = [], abaInicial = "Equipe" }: { dados: DadosCentral; vermelhos?: ChamadoVermelho[] | null; abaInicial?: Aba }) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   // O link antigo /admin/agentes#aprovacoes (o hash não chega ao servidor) abre a aba Aprovações.
@@ -614,6 +626,7 @@ function Rondas({ dados, porSlug, agora }: { dados: DadosCentral; porSlug: Recor
 
 // ── Conversar ──────────────────────────────────────────────────────────────
 function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: string | null; agora: Date | null }) {
+  const soLeitura = useContext(SoLeituraCtx);
   const router = useRouter();
   const [slug, setSlug] = useState<string>(inicial ?? dados.agentes[0]?.slug ?? "");
   const [texto, setTexto] = useState("");
@@ -967,6 +980,11 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                 </p>
               )}
               {erro && <p className="rounded-lg bg-white px-3 py-2 text-sm text-red-700">{erro}</p>}
+              {soLeitura && (
+                <p className="text-xs text-muted" data-testid="agentes-so-leitura">
+                  {TEXTO_SO_LEITURA_QA} Pedidos de ação não são registrados.
+                </p>
+              )}
               <form
                 className="flex items-end gap-2"
                 onSubmit={(e) => {
@@ -1063,6 +1081,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
 /** Aceite de quem pediu (ordem 3c3d8a9e, parte 2): "Aceito" ou "Reabrir" dizendo o que falta. Os outros só veem que aguarda. */
 function AceiteOrdem({ ordemId, podeDecidir }: { ordemId: string; podeDecidir: boolean }) {
   const router = useRouter();
+  const soLeitura = useContext(SoLeituraCtx);
   const [reabrindo, setReabrindo] = useState(false);
   const [falta, setFalta] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -1075,6 +1094,7 @@ function AceiteOrdem({ ordemId, podeDecidir }: { ordemId: string; podeDecidir: b
       router.refresh();
     });
   if (!podeDecidir) return <p className="mt-2 text-xs text-muted" data-testid="aceite-ordem">Aguardando o aceite de quem criou a ordem.</p>;
+  if (soLeitura) return <SoLeituraQa className="mt-2" />;
   return (
     <div className="mt-2 rounded-lg border border-line p-3 text-sm" data-testid="aceite-ordem">
       <p className="font-semibold text-ink">Aguardando seu aceite</p>
@@ -1110,6 +1130,7 @@ interface ResultadoReuniao {
 }
 
 function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string, Agente> }) {
+  const soLeitura = useContext(SoLeituraCtx);
   const router = useRouter();
   const ativos = dados.agentes.filter((a) => a.status !== "planejado");
   const [pauta, setPauta] = useState("");
@@ -1216,7 +1237,7 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
                 <div className="mt-2">
                   {virou[chave] ? (
                     <p className="text-xs text-forest">{virou[chave]}</p>
-                  ) : (
+                  ) : soLeitura ? <SoLeituraQa /> : (
                     <button className="text-xs font-semibold text-forest hover:underline" onClick={() => virarOrdem(chave, f.slug, f.texto)}>
                       Virar ordem
                     </button>
@@ -1242,6 +1263,8 @@ function Sala({ dados, porSlug }: { dados: DadosCentral; porSlug: Record<string,
                       {dono &&
                         (virou[chave] ? (
                           <span className="text-xs text-forest">{virou[chave]}</span>
+                        ) : soLeitura ? (
+                          <SoLeituraQa />
                         ) : (
                           <button className="text-xs font-semibold text-forest hover:underline" onClick={() => virarOrdem(chave, p.dono, p.acao)}>
                             Virar ordem

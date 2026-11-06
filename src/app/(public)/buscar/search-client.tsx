@@ -7,7 +7,7 @@ import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
 import { CHAVE_VOLTAR_BUSCA, registroVoltarBusca } from "@/lib/imovel/voltar-busca";
 import { ChevronDown, ArrowRight, Megaphone } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { BarraComparar } from "@/components/busca/barra-comparar";
 import { alternarSelecao } from "@/lib/busca/comparar";
 // O mapa (Mapbox com chave; senão Leaflet + CARTO) só carrega no navegador e
@@ -882,7 +882,7 @@ export function SearchClient({
             <div className="grid auto-rows-fr gap-x-4 gap-y-8 sm:grid-cols-2 sm:gap-x-6 lg:gap-x-4 xl:grid-cols-3" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
-              {results.map((p) => (
+              {results.map((p, indice) => (
                 <div
                   key={p.id}
                   data-testid="card-resultado"
@@ -899,6 +899,7 @@ export function SearchClient({
                     <PropertyCard
                       property={p}
                       periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
+                      prioridade={indice < PRIMEIRA_FILEIRA}
                     />
                   </div>
                   {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}

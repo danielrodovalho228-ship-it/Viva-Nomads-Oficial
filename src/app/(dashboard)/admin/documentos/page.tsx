@@ -1,5 +1,7 @@
 import { contadoresConferencia, listConferidosAutomaticamente, listDocumentosPendentes } from "@/lib/data/documentos-admin";
 import { contadoresMatriculas, listMatriculasFila } from "@/lib/data/matriculas-admin";
+import { listarFotosRepetidas } from "@/lib/data/foto-repetida-admin-actions";
+import { FotosRepetidasAdmin } from "@/components/admin/fotos-repetidas-admin";
 import { AdminDocumentosClient } from "./admin-documentos-client";
 import { MatriculasAdmin } from "./matriculas-admin-client";
 import { listarFalhasDocumentos } from "@/lib/data/documentos-falhas-actions";
@@ -71,7 +73,7 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
   // Prompt 52: a fila do vínculo só existe com a chave TRIAGEM_VINCULO_ATIVA.
   const triagemLigada = await triagemVinculoAtiva();
   const vinculos = triagemLigada ? await listarVinculosPendentes() : null;
-  const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora, ultimaDoc, ultimaMatricula] = await Promise.all([
+  const [docs, auto, contadores, matriculas, contMatriculas, falhas, filaAgora, ultimaDoc, ultimaMatricula, fotosRepetidas] = await Promise.all([
     listDocumentosPendentes({ exigir: true }),
     // Achado 63: falhou → a aba avisa (null), sem derrubar a fila de revisão.
     listConferidosAutomaticamente().catch(() => null),
@@ -82,6 +84,8 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
     admin ? filaDocumentos(admin).catch(() => null) : Promise.resolve(null),
     ultimaDecisao(admin, "properties", "document_reviewed_at").catch(() => null),
     ultimaDecisao(admin, "property_ownership_checks", "revisado_em").catch(() => null),
+    // E640 (b): imóveis com foto igual à de outro anúncio (publicação travada até conferir a matrícula).
+    listarFotosRepetidas().catch(() => []),
   ]);
   // Pendência 3 do QA-LOGIN-B v2: o admin observador da QA vê as linhas de dado real sem os botões (o servidor recusa).
   const soLeitura = await soLeituraNaTela([
@@ -92,6 +96,7 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
     <>
       <Abas atual="fila" />
       <AdminDocumentosClient docs={docs} auto={auto ?? []} autoFalhou={auto === null} contadores={contadores} filaAgora={filaAgora} ultimaDecisao={ultimaDoc} soLeitura={soLeitura} />
+      <FotosRepetidasAdmin itens={fotosRepetidas} soLeitura={soLeituraConfig} />
       <MatriculasAdmin itens={matriculas} contadores={contMatriculas} ultimaDecisao={ultimaMatricula} soLeitura={soLeitura} />
       <FalhasDocumentos falhas={falhas.falhas} pendentes={falhas.pendentes} soLeitura={soLeituraConfig} />
       <VerificacoesRevisao />

@@ -65,11 +65,11 @@ test.describe("T356 — CAMPOS-1: regras da casa estruturadas", () => {
     for (const id of ["silencio", "fumo", "festas", "visitas"]) await ligarRegra(d, id);
     await secao.getByTestId("regras-casa-silencio-inicio").fill("22:00");
     await secao.getByTestId("regras-casa-silencio-fim").fill("08:00");
-    await secao.getByTestId("regras-casa-fumo").getByLabel("Só na área externa", { exact: true }).check();
-    await secao.getByTestId("regras-casa-festas").getByLabel("Proibidas", { exact: true }).check();
-    await secao.getByTestId("regras-casa-visitas").getByLabel("Sim", { exact: true }).check();
+    await secao.getByTestId("regras-casa-fumo").getByRole("radio", { name: "Só na área externa", exact: true }).click();
+    await secao.getByTestId("regras-casa-festas").getByRole("radio", { name: "Proibidas", exact: true }).click();
+    await secao.getByTestId("regras-casa-visitas").getByRole("radio", { name: "Sim", exact: true }).click();
     await secao.getByTestId("regras-casa-visitas-ate").fill("22:00");
-    await secao.getByTestId("regras-casa-pernoite").getByLabel("Não", { exact: true }).check();
+    await secao.getByTestId("regras-casa-pernoite").getByRole("radio", { name: "Não", exact: true }).click();
     await semRolagemLateral(d);
     await secao.getByTestId("regras-casa").screenshot({ path: `${SAIDA}/t356-editor-regras-1280.png` });
     await secao.getByRole("button", { name: "Salvar seção" }).click();

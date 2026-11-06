@@ -55,6 +55,9 @@ test.describe("T923 — E427: o nome do dono na página do anúncio segue a mesm
         await page.waitForTimeout(1500); // o pedido do nome do aceite já respondeu: sem aceite, segue curto
         await expect(nome).toHaveText(CURTO);
         await expect(page.getByTestId("sobre-proprietario")).not.toContainText("Prado Lima");
+        // Cartão do cabeçalho ("Proprietário: …"): sem aceite, também o abreviado.
+        await expect(page.getByTestId("faixa-nome")).toHaveText(CURTO);
+        await expect(page.getByTestId("faixa-proprietario")).not.toContainText("Prado Lima");
       }
     }
     await anon.close();
@@ -74,6 +77,8 @@ test.describe("T923 — E427: o nome do dono na página do anúncio segue a mesm
       await pi.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
       const nome = pi.getByTestId("proprietario-nome");
       await expect(nome, "página do anúncio = visita").toHaveText(COMPLETO, { timeout: 30_000 });
+      // E427 (resíduo): o cartão do cabeçalho do anúncio mostra o MESMO nome completo (antes ficava "Dora L.").
+      await expect(pi.getByTestId("faixa-nome"), "cartão do cabeçalho = visita").toHaveText(COMPLETO, { timeout: 30_000 });
       expect(await pi.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await pi.screenshot({ path: `tests/laboratorio/saida/t923-anuncio-depois-${w}.png` });
 
@@ -82,6 +87,7 @@ test.describe("T923 — E427: o nome do dono na página do anúncio segue a mesm
       await expect(po.getByTestId("proprietario-nome")).toHaveText(CURTO, { timeout: 30_000 });
       await po.waitForTimeout(1500);
       await expect(po.getByTestId("proprietario-nome")).toHaveText(CURTO);
+      await expect(po.getByTestId("faixa-nome")).toHaveText(CURTO);
     }
     await pi.context().close();
     await po.context().close();

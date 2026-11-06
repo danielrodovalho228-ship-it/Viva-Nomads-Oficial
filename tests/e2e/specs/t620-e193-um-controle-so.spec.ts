@@ -43,6 +43,18 @@ const inventario = (p: Page) =>
     return Object.fromEntries(Object.entries(achados).map(([k, v]) => [k, [...new Set(v)]]));
   });
 
+/** E193 (reteste de 29/10): liga os blocos opcionais um de cada vez, para o inventário ver os controles de dentro deles (pets, festas, visitas). */
+async function abrirBlocos(p: Page) {
+  const desligados = p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]');
+  for (let i = 0; i < 12 && (await desligados.count()) > 0; i++) {
+    const id = (await desligados.first().getAttribute("data-testid"))!;
+    await p.getByTestId(id).evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await p.getByTestId(id).click({ timeout: 10_000 });
+    await expect(p.getByTestId(id)).toHaveAttribute("aria-checked", "true", { timeout: 10_000 });
+  }
+  await p.waitForTimeout(400);
+}
+
 test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   // Sem "serial": a 390 roda mesmo se a 1280 falhar (a rodada "antes" mostra as duas larguras).
@@ -58,7 +70,7 @@ test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — nenhuma caixa quadrada nem lista suspensa nas 10 etapas`, async ({ browser }) => {
+    test(`${largura} px — nenhuma caixa quadrada, lista suspensa nem pílula nas 10 etapas`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       const falhas: string[] = [];
@@ -66,10 +78,12 @@ test.describe("T620 — E193: um só estilo de controle no cadastro", () => {
         await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=${etapa}`, { waitUntil: "domcontentloaded" });
         await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
         await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+        await abrirBlocos(p);
         const inv = await inventario(p);
         console.log(`t620 ${largura} ${etapa}`, JSON.stringify(inv));
         if (inv.caixa.length) falhas.push(`${etapa}: caixas ${inv.caixa.join(" | ")}`);
         if (inv.lista.length) falhas.push(`${etapa}: listas ${inv.lista.join(" | ")}`);
+        if (inv.pilula.length) falhas.push(`${etapa}: pílulas ${inv.pilula.join(" | ")}`);
         if (["comodidades", "regras", "preco", "disponibilidade", "revisao"].includes(etapa)) await p.screenshot({ path: `${SAIDA}/t620-${etapa}-${largura}.png`, fullPage: true });
       }
       expect(falhas, falhas.join("\n")).toEqual([]);

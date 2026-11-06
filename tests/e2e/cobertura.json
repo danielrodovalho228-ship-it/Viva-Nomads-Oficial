@@ -3256,6 +3256,12 @@
         "t264-viva-automatico"
       ]
     },
+    "/api/internet/falhas": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/api/internet/medicoes": {
       "personas": [
         "proprietario",
@@ -3401,6 +3407,13 @@
       "specs": [
         "t695-e264b-proativos"
       ]
+    },
+    "/api/protegido/conferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "/api/cron/cobranca-mensal": {
       "personas": [
@@ -7223,6 +7236,18 @@
     "src/lib/data/ficha-resumo-actions.ts#salvarContaRecebimento": {
       "personas": [
         "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#listarFotosRepetidas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
+    "src/lib/data/foto-repetida-admin-actions.ts#liberarFotoRepetida": {
+      "personas": [
+        "admin"
       ],
       "specs": []
     }
