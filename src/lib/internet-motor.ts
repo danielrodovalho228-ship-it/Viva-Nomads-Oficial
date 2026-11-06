@@ -10,14 +10,21 @@
 */
 import type { Rodada } from "./internet-medida";
 
-/** Fases curtas: cada rodada fica em ~15–20 s numa conexão comum (2 rodadas ≈ 40 s). */
+/**
+ * Fases curtas: cada rodada fica em ~15–20 s numa conexão comum (2 rodadas ≈ 40 s). A biblioteca só conta pedidos que duram
+ * 10 ms ou mais (bandwidthMinRequestDuration): numa conexão rápida os pedidos pequenos não valem e o sentido ficava VAZIO
+ * ("incompleto", E414). Por isso os tamanhos sobem (em ordem crescente) até 10 MB no envio e 25 MB no download; a própria
+ * biblioteca encerra o sentido quando os pedidos passam de 1 s, então numa conexão lenta os grandes nem chegam a rodar.
+ */
 const FASES = [
   { type: "latency", numPackets: 20 },
   { type: "download", bytes: 1e5, count: 8 },
   { type: "download", bytes: 1e6, count: 6 },
+  { type: "download", bytes: 1e7, count: 2 },
+  { type: "download", bytes: 2.5e7, count: 2 },
   { type: "upload", bytes: 1e5, count: 6 },
   { type: "upload", bytes: 1e6, count: 4 },
-  { type: "download", bytes: 1e7, count: 2 },
+  { type: "upload", bytes: 1e7, count: 2 },
 ] as const;
 
 export const CONFIG_MOTOR = {
@@ -49,6 +56,14 @@ export function comPrazo<T>(promessa: Promise<T>, ms: number, cancelar: () => vo
     }, ms);
   });
   return Promise.race([promessa, limite]).finally(() => t && clearTimeout(t));
+}
+
+export type MotivoFalha = "demorou" | "incompleto" | "cancelado" | "rede";
+
+/** Por que a rodada falhou (cada motivo tem a sua mensagem na tela). Puro. */
+export function motivoDaFalha(e: unknown): MotivoFalha {
+  const m = e instanceof Error ? e.message : "";
+  return m === "demorou" || m === "incompleto" || m === "cancelado" ? m : "rede";
 }
 
 /** Uma rodada. `progresso` recebe 0..1 ao longo da rodada. */

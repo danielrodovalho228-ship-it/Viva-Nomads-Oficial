@@ -33,6 +33,16 @@ export function juntarRodadas(rodadas: Rodada[]): Rodada | null {
   };
 }
 
+/**
+ * E414: o que vale das rodadas que terminaram. Uma rodada concluída não se perde porque a seguinte falhou — mas o resultado
+ * diz que veio de menos rodadas (`parcial`). Sem nenhuma rodada completa (download, upload e latência), não há medição.
+ */
+export function aproveitarRodadas(rodadas: Rodada[], total: number): { rodadas: Rodada[]; parcial: boolean } | null {
+  const ok = rodadas.filter((r) => r && r.downloadMbps > 0 && r.uploadMbps > 0 && r.latenciaMs > 0);
+  if (!ok.length) return null;
+  return { rodadas: ok, parcial: ok.length < total };
+}
+
 /** Resultado vindo do navegador: números finitos, positivos e plausíveis (nada de 0 ou 1e9). */
 export function rodadaValida(x: unknown): x is Rodada {
   if (!x || typeof x !== "object") return false;
