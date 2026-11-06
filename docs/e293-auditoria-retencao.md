@@ -228,3 +228,44 @@ Revisão das migrações 0297–0306: nenhuma tabela nova. Uma coluna nova foge 
 (0298, E482) guarda a **prévia de até 140 caracteres** da mensagem escrita por outra pessoa. O inventário dizia só
 "evento, título e link". A descrição foi corrigida. **Nada é apagado e nenhum prazo muda**: o prazo de `avisos` segue
 na lista de decisões do Daniel (item 13) e sai em cascata com a conta.
+
+## 12. Migrações 0307 a 0312 e relatório numerado (06/11/2026)
+
+Revisão das migrações 0307–0312 e conferência em produção **só com leitura**, em 06/11/2026. Nada foi apagado e nenhum
+prazo mudou. As seis migrações estão registradas em produção (versões `20261105000307` a `20261105000312`) e a rotina
+`e293-limpeza-retencao` (0281) rodou com sucesso hoje (01h17 BRT) e ontem.
+
+**Tabelas novas e o que entrou no inventário** (todas já constam em `src/config/retencao.ts`; a guarda
+`inventario.test.ts` segue verde):
+
+| Tabela | Migração | O que guarda | Inventário | Linhas em produção |
+|---|---|---|---|---|
+| `contrato_ficha_resumo` | 0308 (E634) | dia de vencimento; da conta de recebimento, só o titular, o final do documento e da conta/Pix, e a autorização expressa quando a conta é de terceiro (nunca documento nem conta inteiros) | fase 2, prazo pendente | 0 (chave `FICHA_RESUMO_ATIVA` desligada) |
+| `fotos_repetidas_alertas` | 0309 (E640 b) | caminhos das duas fotos, as duas contas, distância do hash e estado do alerta; só o admin lê | fase 2, prazo pendente | 0 |
+| `caucao_prazos` | 0310 (E637) | check-out, datas do parecer, da liberação integral, da devolução e da pendência | fase 2, prazo pendente | 0 (chave `CAUCAO_PRAZOS_ATIVA` desligada) |
+| `caucao_desconto_itens` | 0310 (E637) | cômodo, valor, caminhos das fotos e do comprovante, contestação do morador | fase 2, prazo pendente | 0 |
+| `cobranca_mensal_parcelas` | 0311 (E641) | vencimento, valor da parcela, taxa e o registro do pagamento (morador) e da confirmação (dono) | fase 2, prazo pendente | 0 (chave `COBRANCA_MENSAL_ATIVA` desligada) |
+
+- A 0307 e a 0312 são massa de teste (dados da conta de teste); não criam tabela nem coluna.
+- Todas as tabelas novas estão atrás de chave **desligada**: hoje não recebem linha nenhuma. O prazo de cada uma entra na
+  lista de decisões do item 13 (parecer da Dra. Beatriz), junto com `avisos` e `moderacao_ofensas`.
+- `fotos_repetidas_alertas` e `caucao_desconto_itens` apontam para arquivos do armazenamento (fotos e comprovantes). Quando
+  o prazo for decidido, a rotina que apagar a linha precisa apagar também o arquivo (não há essa rotina ainda).
+
+**Relatório numerado (itens que mudaram desde o §10):**
+
+| # | Item (inventário) | Prazo declarado | Linhas (05/11 → 06/11) | Vencidas hoje | Situação |
+|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | 17.775 → 18.868 | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | 287 → 292 | 0 | as primeiras vencem em 16/01/2027; passar à fase 1 é decisão do Daniel |
+| 13 | `avisos` | pendente (item 13) | 34 → 47 | — | prazo pendente (Daniel) |
+| — | `eliminacoes_registro` | — | 111 → 112 | — | livro de eliminações |
+| 15 | `contrato_ficha_resumo` | pendente (item 13) | 0 | — | sem dados (chave desligada) |
+| 16 | `fotos_repetidas_alertas` | pendente (item 13) | 0 | — | sem dados |
+| 17 | `caucao_prazos` e `caucao_desconto_itens` | pendente (item 13) | 0 e 0 | — | sem dados (chave desligada) |
+| 18 | `cobranca_mensal_parcelas` | pendente (item 13) | 0 | — | sem dados (chave desligada) |
+
+Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
+
+**Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
+apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
