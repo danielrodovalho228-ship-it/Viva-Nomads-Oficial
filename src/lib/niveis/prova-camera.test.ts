@@ -168,7 +168,9 @@ test("GUARDA: a câmera não tem campo de arquivo nem galeria e ignora arquivo a
   const c = ler("src/components/niveis/camera-prova.tsx");
   assert.doesNotMatch(c, /type="file"|<input/);
   assert.match(c, /window\.addEventListener\("drop", parar, true\)/);
-  assert.match(c, /facingMode: \{ ideal: frente \? "user" : "environment" \}/);
+  // E413: as restrições moram em restricoesDaCamera (ideal, nunca exact); a tela as usa.
+  assert.match(ler("src/lib/niveis/prova-camera.ts"), /facingMode: \{ ideal: frente \? "user" : "environment" \}/);
+  assert.match(c, /restricoesDaCamera\(frente, tentativa\)/);
   assert.match(c, /\{aberto && celular && \(\s*<CameraProva/);
   assert.match(c, /\{aberto && !celular && modo && \(\s*<PeloCelular/);
 });
