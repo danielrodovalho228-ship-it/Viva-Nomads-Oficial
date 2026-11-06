@@ -282,3 +282,5 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
     }
   });
 });
+
+// diagnóstico: rodada da t344 na main (sem E648)
