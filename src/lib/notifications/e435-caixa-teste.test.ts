@@ -50,7 +50,7 @@ test("tela do leitor de QA: paginada, com HTML isolado, destinatário, descadast
   assert.doesNotMatch(pagina, /\.limit\(LISTA_MAX\)/);
   assert.match(pagina, /<ListaEmailsTeste\s+qa\s+rodape=\{navegacao\}/);
   const lista = readFileSync(new URL("../../components/admin/lista-emails-teste.tsx", import.meta.url), "utf8");
-  assert.match(lista, /<iframe title="Versão HTML do e-mail" sandbox="" srcDoc=\{l\.html\}/);
+  assert.match(lista, /<iframe title=\{`Versão HTML do e-mail: \$\{l\.assunto\}`\} data-email-id=\{l\.id\} sandbox="" srcDoc=\{l\.html\}/);
   assert.match(lista, /data-testid="emails-teste-descadastro"/);
   assert.equal((lista.match(/qa && l\.destinatario \? l\.destinatario : l\.destinatario_mascarado/g) ?? []).length, 2, "celular e computador");
   assert.equal((lista.match(/<ImovelPorExtenso corpo=\{l\.corpo\} \/>/g) ?? []).length, 2, "celular e computador");
