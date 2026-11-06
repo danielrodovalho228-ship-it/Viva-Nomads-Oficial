@@ -162,7 +162,8 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     const admin = createAdminClient();
     if (!admin) return { ok: false, erro: "Serviço indisponível." };
     // O contrato precisa ser deste imóvel (e o imóvel, do dono, conferido acima).
-    const { data: k } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    const { data: k, error: erroK } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    if (erroK) return { ok: false, erro: "Não foi possível ler o contrato agora. Tente de novo." };
     if (!k) return { ok: false, erro: "Contrato não encontrado." };
     const [{ data: ck, error: erroCk }, { data: atual, error: erroAtual }] = await Promise.all([
       admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", contratoId).maybeSingle(),
