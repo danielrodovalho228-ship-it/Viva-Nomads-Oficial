@@ -5,6 +5,7 @@ import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { cepValido, distanciaMetros, PROXIMIDADES_LAB, type LugarProximo } from "@/lib/proximidades/osm";
 import { buscarLugares, geocodificarEndereco, geocodificarLugar, type FonteProximidades, type Ponto } from "@/lib/proximidades/osm-servidor";
+import { escolherPontoDeMedida } from "@/lib/proximidades/ponto-de-medida";
 import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximidades/ancoras";
 
 /*
@@ -128,10 +129,10 @@ async function destinosAncora(admin: ReturnType<typeof createAdminClient>): Prom
 /** E259: o ponto PÚBLICO de um anúncio do PRÓPRIO dono (o mesmo que a página usa), ou null. Nunca vai à resposta. */
 async function pontoPublicoDoAnuncio(admin: ReturnType<typeof createAdminClient>, id: string | null, userId: string): Promise<Ponto | null> {
   if (!admin || !id || !/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { data } = await admin.from("properties").select("owner_id, lat, lng").eq("id", id).maybeSingle();
-  if (!data || data.owner_id !== userId || data.lat == null || data.lng == null) return null;
-  const p = { lat: Number(data.lat), lng: Number(data.lng) };
-  return Number.isFinite(p.lat) && Number.isFinite(p.lng) ? p : null;
+  const { data } = await admin.from("properties").select("owner_id, lat, lng, lat_exata, lng_exata").eq("id", id).maybeSingle();
+  if (!data || data.owner_id !== userId) return null;
+  // E389: o mesmo ponto de medida do "Tempo até" e do lugar adicionado à mão (o EXATO do próprio dono; sem ele, o público).
+  return escolherPontoDeMedida({ lat: data.lat_exata, lng: data.lng_exata }, { lat: data.lat, lng: data.lng });
 }
 
 /** O ponto do endereço do anúncio: o do cache do CEP; sem cache, geocodifica agora. */
@@ -171,10 +172,7 @@ async function enderecoDoAnuncio(
   const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
   const cep = cepValido(txt(d.cep)) ?? cepValido(p.cep_proximidades) ?? null;
   const num = (v: number | null) => (v == null ? NaN : Number(v));
-  const exato = { lat: num(p.lat_exata), lng: num(p.lng_exata) };
-  const publico = { lat: num(p.lat), lng: num(p.lng) };
-  const valido = (q: Ponto) => Number.isFinite(q.lat) && Number.isFinite(q.lng) && (q.lat !== 0 || q.lng !== 0);
-  const ponto = valido(exato) ? exato : valido(publico) ? publico : null;
+  const ponto = escolherPontoDeMedida({ lat: num(p.lat_exata), lng: num(p.lng_exata) }, { lat: num(p.lat), lng: num(p.lng) });
   if (!cep && !ponto) return null;
   return { cep, rua: txt(d.street) || (p.exact_address ?? "").split(",")[0].trim(), numero: txt(d.numero), cidade: txt(d.city) || p.city || "", uf: txt(d.uf) || p.state || "", ponto };
 }
