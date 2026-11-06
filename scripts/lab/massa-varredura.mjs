@@ -142,6 +142,9 @@ async function criarImovel(owner, titulo, status, qtdFotos, extra = {}) {
       max_period_days: 180,
       monthly_price: status === "draft" ? 0 : 3200,
       status,
+      // Anúncio publicado tem o ponto gravado (o E593 usa o ponto quando o CEP se perdeu na publicação); sem ele, o editor
+      // do anúncio da massa pedia /api/proximidades sem CEP e sem ponto e levava 400 (L-99). Centro de Uberlândia.
+      ...(status === "draft" ? {} : { lat: -18.918, lng: -48.258 }),
       ...extra,
     })
     .select("id")
