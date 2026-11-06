@@ -109,8 +109,8 @@ export function tomDoSelo(e: Pick<EstadoContrato, "chave" | "ativo">): string {
  * O selo para a EQUIPE (admin › contrato e pacote de provas gerado pelo admin): a mesma fonte única, sem o
  * "falta você" de quem é parte — na assinatura diz quem falta.
  */
-export function seloParaEquipe(c: LinhaEstadoContrato): string {
-  const e = estadoDoContratoUnico(c, "proprietario");
+export function seloParaEquipe(c: LinhaEstadoContrato, agora: Date = new Date()): string {
+  const e = estadoDoContratoUnico(c, "proprietario", agora);
   if (e.etapa !== "aguardando_assinatura") return e.selo;
   const prop = !!c.assinado_proprietario_em;
   const inq = !!c.assinado_inquilino_em;
