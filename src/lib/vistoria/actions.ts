@@ -98,7 +98,7 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
   if (!v.ok) return { ok: false, erro: `Falta: ${v.falta.join(" ")}` };
   if (parc) {
     const doc = String(parc.documento ?? "");
-    if (!(parc.tipo_pessoa === "pj" ? cnpjValido(doc) : cpfValido(doc))) return { ok: false, erro: "Falta: CPF ou CNPJ válido no cadastro de parceiro." };
+    if (!(parc.tipo_pessoa === "pj" && cnpjValido(doc))) return { ok: false, erro: "Falta: CNPJ válido no cadastro de parceiro (CPF não é aceito)." };
   }
   const { cidade, experienciaLink: link } = v.valor;
 

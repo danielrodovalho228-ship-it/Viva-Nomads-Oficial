@@ -37,7 +37,7 @@ test("E339: a faixa diz a verdade conforme quem vê (conta de teste o vê; o don
 });
 
 test("busca pública: os três parceiros de teste de produção somem para o visitante e aparecem para a equipe", () => {
-  const base = { categorias: ["limpeza"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-30T00:00:00Z", status: "publicado" };
+  const base = { categorias: ["limpeza"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-30T00:00:00Z", status: "publicado", tipoPessoa: "pj" };
   const lista: ParceiroNaBusca[] = [
     { ...base, slug: "teste-qa-limpeza-e213", teste: true },
     { ...base, slug: "teste-qa-limpeza-d5", teste: true },

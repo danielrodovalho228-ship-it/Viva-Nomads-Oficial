@@ -15,7 +15,7 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
-import { PEDIDO_PARCEIRO_TESTE_RECUSADO, categoriaValida, rotuloCategoria } from "./regras";
+import { PEDIDO_PARCEIRO_TESTE_RECUSADO, categoriaValida, parceiroPodeReceberServico, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import { EVENTOS_DE_HORARIO, reagendamentoPendente } from "@/lib/automacao/remarcacao";
@@ -170,9 +170,11 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
   if ("erro" in s) return { ok: false, erro: s.erro };
   const { admin, userId } = s;
   if (!UUID.test(e.parceiroId) || !categoriaValida(e.categoria)) return { ok: false, erro: "Escolha o serviço." };
-  const { data: parc } = await admin.from("parceiros").select("id, user_id, status, categorias").eq("id", e.parceiroId).maybeSingle();
-  const parceiro = parc as { id: string; user_id: string; status: string; categorias: string[] | null } | null;
+  const { data: parc } = await admin.from("parceiros").select("id, user_id, status, categorias, tipo_pessoa").eq("id", e.parceiroId).maybeSingle();
+  const parceiro = parc as { id: string; user_id: string; status: string; categorias: string[] | null; tipo_pessoa: string | null } | null;
   if (!parceiro || parceiro.status !== "publicado") return { ok: false, erro: "Este parceiro não está recebendo pedidos agora." };
+  // E648: cadastro que ficou só com CPF não recebe serviço até apresentar o CNPJ.
+  if (!parceiroPodeReceberServico(parceiro.tipo_pessoa)) return { ok: false, erro: "Este parceiro não está recebendo pedidos agora." };
   if (parceiro.user_id === userId) return { ok: false, erro: "Você não pode pedir orçamento para a sua própria página." };
   // E297: parceiro de conta de teste só recebe pedido da equipe (conta de teste ou admin) — o QA fecha o ciclo; um
   // usuário real que chegue pelo link não cria pedido para um prestador que não existe.
