@@ -23,7 +23,10 @@ function Fonte({ l }: { l: Pick<LinhaCompare, "fonte" | "conferidoEm"> | CartaoC
   const interna = l.fonte.url.startsWith("/");
   return (
     <>
-      {interna ? (
+      {interna && !PRECOS_VISIVEL ? (
+        // E555/E563: com os preços suspensos a fonte interna (/precos) não vira link — vai só o nome.
+        <>{l.fonte.nome}</>
+      ) : interna ? (
         <Link href={l.fonte.url} className="underline">{l.fonte.nome}</Link>
       ) : (
         <a href={l.fonte.url} target="_blank" rel="noopener noreferrer" className="underline">{l.fonte.nome}</a>
