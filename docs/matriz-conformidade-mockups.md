@@ -513,3 +513,16 @@ Conferi o resultado na `main` de hoje e varri /comparar (2, 3 e 4 imóveis na UR
 3. **Grade desalinhada**: só a lista da cidade a 1280 (15 imóveis em 4 colunas, decisão B2). **Conforme.**
 4. **`/dashboard` a 1280**: "imagens não carregadas" são os cartões recomendados com `loading="lazy"` (completam ao chegar à vista). **Conforme.**
 5. **Matriz × mockups**: nada novo. Nada a corrigir, sem PR de correção.
+
+## Telas de administração mexidas pelo E477 — passada 32 (06/11, modo demonstração, 390 toque e 1280)
+
+Mesclados desde a passada 31: E477 (telas do admin somente leitura para o observador: #2885 e #2888) e E642 (garantia única na caução, sem tela).
+**Leitura 3S**: o E477 só acrescenta o estado somente leitura (aviso e controles desligados) às telas de agentes, ajuda de publicação, avaliadores,
+moderação de ofensas e solicitações; o E642 é regra de servidor. Nenhum elemento novo no desenho comum. O demo entra como administrador, não como
+observador, então o estado somente leitura em si exige a conta de observação (sessão real). Medi as 6 telas tocadas a 390 e 1280.
+
+1. **Imagem quebrada, rolagem lateral, texto cortado, fundo bege, elemento fixo sobre conteúdo, grade desalinhada** em `/admin`, `/admin/agentes`,
+   `/admin/ajuda-publicacao`, `/admin/avaliadores`, `/admin/moderacao/ofensas` e `/admin/solicitacoes`: nenhum caso (12 medições). **Conforme.**
+2. **Estado somente leitura (observador)**: não alcançável no demo; cobertura é dos testes de unidade e laboratório do E477. Fica para a QA com a conta de observação.
+3. **E442** (hover do mapa, #2613) e **E443** (logo do cabeçalho logado, #2858): já mesclados, não refeitos.
+4. **Matriz × mockups**: sem tela nova de morador, dono ou parceiro. Nada a corrigir.
