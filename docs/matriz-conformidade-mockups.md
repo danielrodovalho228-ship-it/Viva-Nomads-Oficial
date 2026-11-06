@@ -445,3 +445,29 @@ filtros", chat "Fale com a Viva" (aparece a partir de 768, E246), sino, menu Con
 2. **Chat a 768**: painel de 380 px de largura, dentro da tela e sem rolagem lateral; o fechar fora/Esc está no #2765 (rascunho, aguarda QA). **Conforme.**
 3. **Painel Local a 768**: 520 px de altura, dentro da tela (E526). **Conforme.**
 4. **Matriz × mockups**: sem tela nova. Nada a corrigir.
+
+## Estados de erro, vazio e sem sessão — passada 27 (06/11, modo demonstração, 390 toque, 768 toque e 1280)
+
+Entraram na `main` desde a passada 26: E633 (matrícula opcional), E641 (cobrança mensal, atrás de chave desligada, sem tela), E624 (contagem
+das cópias em "Meus imóveis") e o registro da passada 26 (#2868). **Leitura 3S**: E641 não tem tela (chave desligada); E633 só troca regra
+de prontidão e o texto do bloco de documento do Passo 10; E624 só nomeia as cópias na frase de contagem. Nenhum acrescenta elemento novo
+ao desenho. A passada mede os estados que ainda não tinham sido vistos nesta volta: 404, "sem resultados", "sem sessão" e página
+inexistente do painel (28 rotas × 3 larguras, com a sonda da passada 23: imagens com `decode()`, `background-image`, rolagem lateral,
+texto cortado, fundo bege, grade).
+
+1. **404 públicos** (`/rota-que-nao-existe`, `/imoveis/…`, `/cidades/…`, `/proprietario/…`, `/guias/…`, `/parceiros/…`): respondem 404 com a
+   página de "não encontrada" do site, sem rolagem lateral, sem imagem quebrada, texto cortado ou fundo bege. **Conforme.**
+2. **Sem sessão** (`/dashboard`, `/dashboard/imoveis`, `/dashboard/mensagens`, `/dashboard/conta`, `/dashboard/avaliacoes`): vão para `/auth`.
+   **Conforme.**
+3. **Sem resultados da busca** (`/buscar?local=Atlantida`): "Nenhum imóvel com estes filtros", cartão "Ainda não temos imóvel para essa busca",
+   botões "Publicar um pedido de moradia" e "Ampliar a busca", sem rolagem lateral a 390, 768 e 1280; painel Datas aberto nesse estado cabe
+   na tela. A fileira de pílulas rola de lado de propósito (carrossel). Filtros que a busca não conhece (`cidade=`, `tipo=castelo`) são
+   descartados e mostram a lista inteira, por desenho. **Conforme.**
+4. **Painel, imóvel inexistente** (`/dashboard/imoveis/…` e `/mensagens/…` → 404; `/dashboard/contratos/…` → "Página não encontrada" dentro da
+   estadia, com o menu da estadia): sem defeito visual. Observação: o contrato inexistente responde HTTP 200 com a mensagem; é página
+   privada, fora de índice, sem efeito visível. **Conforme.**
+5. **Estados vazios do painel** (notificações, interessados, contratos, garantias, orçamentos) e Passos 10 e Revisão do cadastro: sem
+   defeito nas 3 larguras. **Conforme.**
+6. **Comparar vazio ou com código inexistente, Favoritos sem sessão, `/conferir/<código inexistente>`**: respondem na própria tela, sem
+   defeito. **Conforme.**
+7. **Matriz × mockups**: sem tela nova alcançável pelo demo. Nada a corrigir.
