@@ -20,7 +20,11 @@ for (const largura of [390, 1280]) {
       await expect(svg).toHaveCount(1);
       await expect(svg).toHaveAttribute("aria-hidden", "true");
     }
-    const colunas = await principais.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(" ").length);
+    // E357: com "Tem" × "Não tem" a lista é agrupada por categoria (cada categoria é uma grade par); sem "Não tem", é a grade única.
+    const colunas = await principais.evaluate((el) => {
+      const ul = el.tagName === "UL" ? el : el.querySelector("ul")!;
+      return getComputedStyle(ul).gridTemplateColumns.split(" ").length;
+    });
     expect(colunas % 2).toBe(0);
 
     const verTodas = page.getByTestId("comodidades-ver-todas");

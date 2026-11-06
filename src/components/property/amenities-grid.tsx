@@ -31,6 +31,24 @@ const CATEGORY_META: Record<AmenityCategory, { label: string; icon: React.Compon
   seguranca: { label: "Segurança", icon: ShieldCheck },
 };
 
+/** E357: uma categoria da lista agrupada (título com o ícone da categoria + itens com ícone, em grade de 2 colunas). */
+function GrupoDeComodidades({ grupo, testid }: { grupo: { category: AmenityCategory; items: string[] }; testid?: string }) {
+  const meta = CATEGORY_META[grupo.category];
+  const Icon = meta?.icon ?? Check;
+  return (
+    <div data-testid={testid} data-categoria={grupo.category}>
+      <h4 className="flex items-center gap-2 text-sm font-semibold text-forest" data-testid="comodidades-categoria">
+        <Icon className="h-4 w-4 text-sage" aria-hidden /> {meta?.label ?? grupo.category}
+      </h4>
+      <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        {grupo.items.map((item) => (
+          <ItemComodidade key={item} item={item} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /**
  * Comodidades: as 5 principais na página e "Ver todas as N comodidades", que abre a lista
  * completa agrupada por categoria. Sem comodidade nenhuma, a seção inteira some.
@@ -54,11 +72,20 @@ export function AmenitiesGrid({ property }: { property: Property }) {
       <div className={naoTem.length > 0 ? "mt-4 grid gap-6 md:grid-cols-2" : "mt-4"}>
         <div data-testid="comodidades-tem">
           {naoTem.length > 0 && <h3 className="text-sm font-semibold text-forest">Tem</h3>}
-          <ul className={`${naoTem.length > 0 ? "mt-3 " : ""}grid grid-cols-2 gap-x-4 gap-y-3`} data-testid="comodidades-principais">
-            {principais.map((item) => (
-              <ItemComodidade key={item} item={item} />
-            ))}
-          </ul>
+          {comTemNaoTem ? (
+            // E357: com "Tem" × "Não tem", o "Tem" é a lista completa AGRUPADA por categoria (ícone por item, grade par), como na folha.
+            <div className="mt-3 grid gap-6" data-testid="comodidades-principais">
+              {agrupadas.grupos.map((g) => (
+                <GrupoDeComodidades key={g.category} grupo={g} />
+              ))}
+            </div>
+          ) : (
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-3" data-testid="comodidades-principais">
+              {principais.map((item) => (
+                <ItemComodidade key={item} item={item} />
+              ))}
+            </ul>
+          )}
         </div>
         {naoTem.length > 0 && (
           <div data-testid="comodidades-nao-tem" className="rounded-xl bg-surface-2 p-4">
@@ -86,22 +113,9 @@ export function AmenitiesGrid({ property }: { property: Property }) {
           </button>
           <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Comodidades">
             <div className="grid gap-6" data-testid="comodidades-lista-completa">
-              {agrupadas.grupos.map((g) => {
-                const meta = CATEGORY_META[g.category];
-                const Icon = meta?.icon ?? Check;
-                return (
-                  <div key={g.category}>
-                    <h3 className="flex items-center gap-2 text-sm font-semibold text-forest">
-                      <Icon className="h-4 w-4 text-sage" aria-hidden /> {meta?.label ?? g.category}
-                    </h3>
-                    <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-                      {g.items.map((item) => (
-                        <ItemComodidade key={item} item={item} />
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
+              {agrupadas.grupos.map((g) => (
+                <GrupoDeComodidades key={g.category} grupo={g} />
+              ))}
             </div>
           </BottomSheet>
         </>
