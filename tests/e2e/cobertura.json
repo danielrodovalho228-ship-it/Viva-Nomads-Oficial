@@ -3406,6 +3406,13 @@
         "sistema"
       ],
       "specs": []
+    },
+    "/api/caucao/dossie": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     }
   },
   "actions": {
@@ -4163,6 +4170,24 @@
       "specs": [
         "t85-conferencia-entrada-saida"
       ]
+    },
+    "src/lib/caucao/acoes.ts#darParecerCaucao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/caucao/acoes.ts#contestarDescontoCaucao": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
+    "src/lib/caucao/acoes.ts#registrarDevolucaoCaucao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/data/conferencia-actions.ts#registrarItemConferencia": {
       "personas": [
