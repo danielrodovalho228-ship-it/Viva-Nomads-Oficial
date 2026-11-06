@@ -1,5 +1,6 @@
 "use server";
 
+import { linkProtegidoDe } from "@/lib/protecao/servidor";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -138,7 +139,8 @@ export async function registrarItemConferencia(input: {
   if (error) return erro("Não foi possível salvar o item. Tente de novo.");
   revalidatePath("/dashboard/locacoes");
   revalidatePath("/dashboard/contratos");
-  const fotoUrl = input.fotoPath ? ((await admin.storage.from(BUCKET).createSignedUrl(input.fotoPath, URL_SEGUNDOS)).data?.signedUrl ?? null) : null;
+  // E640 (c): a foto sai pelo link protegido (login, expira, sem download, marca com o nome de quem vê), não pela URL do armazenamento.
+  const fotoUrl = linkProtegidoDe(input.fotoPath, ctx.uid);
   const item: ItemTela = { id: data.id as string, parte: ctx.parte, comodo: input.comodo.trim(), descricao: input.descricao.trim(), fotoUrl, criadoEm: String(data.criado_em), precisaReparo: input.tipo === "saida" && ctx.parte === "proprietario" && input.precisaReparo === true };
   return { ok: true, id: item.id, item };
 }
@@ -281,7 +283,6 @@ export interface ConferenciasContrato {
 }
 
 const BUCKET = "conferencia";
-const URL_SEGUNDOS = 600;
 
 type EnvioArquivo = { ok: true; path: string } | { ok: false; error: string };
 
@@ -371,10 +372,9 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
     supabase.from("conferencia_laudos").select("conferencia_id, path, parte, criado_em").in("conferencia_id", ids),
     supabase.from("conferencia_conforto").select("conferencia_id, chave, confere, texto, foto_path, respondido_em").in("conferencia_id", ids),
   ]);
-  // Links temporários (10 min) só para quem já passou pelo RLS acima.
-  const admin = createAdminClient();
-  const assinar = async (path: string | null) =>
-    path && admin ? ((await admin.storage.from(BUCKET).createSignedUrl(path, URL_SEGUNDOS)).data?.signedUrl ?? null) : null;
+  // E640 (c): foto e laudo saem pelo link protegido (login, expira, sem download, marca com o nome de quem vê).
+  const uidAtual = ctx?.uid ?? null;
+  const assinar = async (path: string | null) => linkProtegidoDe(path, uidAtual);
   const conferencias = await Promise.all(
     confs.map(async (c) => {
       const rs = (respostas ?? []).filter((r) => r.conferencia_id === c.id) as unknown as (RespostaConferencia & { decidido_em: string })[];

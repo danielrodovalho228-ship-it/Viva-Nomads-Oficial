@@ -3400,6 +3400,13 @@
       "specs": [
         "t695-e264b-proativos"
       ]
+    },
+    "/api/protegido/conferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     }
   },
   "actions": {
