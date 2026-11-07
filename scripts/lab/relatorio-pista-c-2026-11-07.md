@@ -513,3 +513,7 @@ t1446 / E697 + E698 (#3321) **verde** (run 42422586647): a galeria do exemplo `u
 ## Blocos 514 e 515 verdes (main `2ac418ec8`)
 
 Bloco 514 (t1448, #3332, grupo do 497: início, buscar, imóvel, ajuda, painel do proprietário) **verde** (run 42425138013) e bloco 515 (t1449, #3333, grupo do 498: admin, visitas, serviços, públicas de parceiros) **verde** (run 42425164158), a 390 e 1280 px; os dois já mesclados. Nenhum merge de produto novo na main. Aberto no produto: L-104; próximo livre: **L-107**. Próximo da fila: bloco 516 (grupo do 499). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 516 aberto (vigia 17:30; main `1ca739d24`)
+
+Estado conferido antes de seguir: main `1ca739d24` (o #3332 entrou depois do #3333); run de `2ac418ec8` verde (42425684428), o de `1ca739d24` em andamento. Nenhum merge de produto novo desde `6832dd107` (só meus blocos/specs e documentação da Pista QA): sem spec de merge a escrever. Bloco 516 (t1450, grupo do 499: painéis do morador e do dono, notificações, `/empresas`, `/para-proprietarios`) aberto, a 390 e 1280 px, em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
