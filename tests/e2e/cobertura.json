@@ -6075,6 +6075,22 @@
         "t250-parceiros-contratacao"
       ]
     },
+    "src/lib/parceiros/pedido-actions.ts#pedirRevisaoDoPedido": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
+    "src/lib/parceiros/pedido-actions.ts#responderAvaliacaoDoPedido": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t250-parceiros-contratacao"
+      ]
+    },
     "src/lib/parceiros/pedido-actions.ts#enviarMensagemDoPedido": {
       "personas": [
         "proprietario",
