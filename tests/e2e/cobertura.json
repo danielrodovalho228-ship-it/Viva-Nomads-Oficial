@@ -675,7 +675,8 @@
         "t306-varredura-bloco7",
         "t311-marco-principal-unico",
         "t1389-varredura-bloco478",
-        "t1421-varredura-bloco495"
+        "t1421-varredura-bloco495",
+        "t1445-varredura-bloco512"
       ]
     },
     "/conferir/[codigo]": {
@@ -691,7 +692,8 @@
         "t311-marco-principal-unico",
         "t312-varredura-bloco9",
         "t1389-varredura-bloco478",
-        "t1421-varredura-bloco495"
+        "t1421-varredura-bloco495",
+        "t1445-varredura-bloco512"
       ]
     },
     "/dashboard": {
@@ -1551,7 +1553,8 @@
         "t1389-varredura-bloco478",
         "t1404-varredura-bloco482",
         "t1421-varredura-bloco495",
-        "t1425-varredura-bloco499"
+        "t1425-varredura-bloco499",
+        "t1445-varredura-bloco512"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -2600,7 +2603,8 @@
         "t596-qa-login-direto",
         "t615-varredura-bloco54",
         "t1389-varredura-bloco478",
-        "t1421-varredura-bloco495"
+        "t1421-varredura-bloco495",
+        "t1445-varredura-bloco512"
       ]
     },
     "/admin/retencao": {
