@@ -754,3 +754,11 @@ Rotas: `/dashboard/carteira`, `/comparar`, `/conta/excluir`, `/indicacoes`, `/or
 - **Imagens, h1, estouro, corte:** 0 imagens quebradas, um h1 por tela, scrollWidth = largura da janela, nada cortado, nenhum elemento além da borda, alvos de toque ok nas 9 telas medidas.
 - **Achados:** nenhum novo. (O link do logo de `/auth` a 390 ainda mede 32 px na `main`: já corrigido no #3172.)
 - **Correção de registro:** na passada 57 eu disse que `/roi-imovel` e `/tributacao` davam 404; na verdade redirecionam (acima).
+
+## Passada 59 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — estados abertos da /buscar e da candidatura
+
+Estados abertos medidos (não só a tela parada): folhas e popovers de **Mais filtros, Preço, Tipo, Datas, Ordenar, Local** na `/buscar` e o diálogo **"Pedir para morar"** do anúncio (ube-001). Em todos: sem rolagem lateral, nada além da borda, diálogo dentro da janela (folha de baixo a 390: 584 de 664 px; painel lateral a 1280: 448 px), nenhum texto cortado (o único "cortado" é o rótulo `sr-only` do campo Local, de propósito).
+1. **Achado:** filtro **Datas** — os botões − / + de adultos e crianças medem 32 px a 390. Corrigido no #3184 (`alvo-toque`).
+2. **Observação (decisão do Muse, sem correção):** o campo "Cidade ou bairro" do filtro Local mede 23 px dentro de uma pílula de 40 px (`h-10`, a mesma de outras telas); subir a 44 muda o desenho dessas telas.
+3. **Observação:** "Alterar o motivo" (20 px) no diálogo de candidatura é link de texto.
+- **Conformidade mockup × real:** sem diferença nos estados medidos.
