@@ -271,7 +271,9 @@ export async function removerFotoGaleria(fotoId: string): Promise<Res> {
   if (!ehUuid(fotoId)) return { ok: false, erro: "Foto inválida." };
   const m = await editavel();
   if ("erro" in m) return { ok: false, erro: m.erro };
-  const { data: f } = await m.admin.from("parceiro_galeria").select("path").eq("id", fotoId).eq("parceiro_id", m.p.id).maybeSingle();
+  const { data: f, error: erroFoto } = await m.admin.from("parceiro_galeria").select("path").eq("id", fotoId).eq("parceiro_id", m.p.id).maybeSingle();
+  // Auditoria 176: a falha de leitura não vira "foto não encontrada" (e nada é apagado sem ler).
+  if (erroFoto) return { ok: false, erro: "Não foi possível ler a foto agora. Tente de novo." };
   if (!f) return { ok: false, erro: "Foto não encontrada." };
   await m.admin.from("parceiro_galeria").delete().eq("id", fotoId);
   await m.admin.storage.from(BUCKET_PARCEIROS).remove([f.path as string]);
