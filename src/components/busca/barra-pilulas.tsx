@@ -61,7 +61,11 @@ export function BarraPilulas(p: {
   const f = p.filtros;
   const rotuloOrdem = p.opcoesOrdem.find(([v]) => v === p.ordem)?.[1] ?? null;
   const valor = (id: IdPilula) => valorDaPilula(id, f, { local: p.local, perto: p.perto, ordem: p.ordem === "relevance" ? null : rotuloOrdem });
-  const alterna = <K extends "maxPrice" | "tipo">(k: K, v: FiltrosPainel[K], vazio: FiltrosPainel[K]) => p.aplicar({ ...f, [k]: f[k] === v ? vazio : v });
+  // E457: painel de escolha única (Tipo, Preço, Nível — como o Ordenar): escolheu, aplica e fecha, e o resultado aparece.
+  const alterna = <K extends "maxPrice" | "tipo">(k: K, v: FiltrosPainel[K], vazio: FiltrosPainel[K]) => {
+    p.aplicar({ ...f, [k]: f[k] === v ? vazio : v });
+    setAberto(null);
+  };
   const porNivel = Object.fromEntries(NIVEIS.map((v) => [v, p.contar({ ...f, nivelMin: v })])) as Record<Nivel, number>;
   const nivel = grupoNivel(porNivel, f.nivelMin ?? "");
   // E452: painel do Nível aberto numa busca que ficou sem nível (filtros mudaram) fecha — nunca um painel sem opções.
@@ -168,7 +172,10 @@ export function BarraPilulas(p: {
           {aberto === "nivel" && (
             <div className="flex flex-wrap gap-2">
               {NIVEIS.map((v) =>
-                opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v }), v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
+                opcao(v, f.nivelMin === v, porNivel[v], nivel.desabilitado[v], () => {
+                  p.aplicar({ ...f, nivelMin: f.nivelMin === v ? "" : v });
+                  setAberto(null);
+                }, v === "premium" ? ROTULO_NIVEL[v] : `${ROTULO_NIVEL[v]} ou acima`, `pilula-nivel-${v}`),
               )}
             </div>
           )}
@@ -193,8 +200,9 @@ export function BarraPilulas(p: {
             </div>
           )}
           <div className="mt-4 flex justify-end">
+            {/* E457: o filtro já vale enquanto se escolhe; o botão diz a ação — fecha o painel e mostra a lista. */}
             <button type="button" onClick={() => setAberto(null)} className="inline-flex min-h-11 items-center text-sm font-semibold text-ink underline underline-offset-4" data-testid="painel-pilula-fechar">
-              Fechar
+              Ver resultados
             </button>
           </div>
         </div>
