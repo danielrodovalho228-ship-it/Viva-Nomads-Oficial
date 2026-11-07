@@ -802,3 +802,9 @@ Rotas: `/dashboard`, `/imoveis`, `/leads`, `/mensagens`, `/contratos`, `/pedidos
 - 0 imagens quebradas (o Início tem 20, todas carregadas), um h1, scrollWidth = 768, nada além da borda, nada cortado, 10 de 10 telas.
 - **Alvos de toque:** só o selo "Ativo/Pausado" de `/dashboard/imoveis` (24 px) — já corrigido no #3176 (rascunho). Sem achado novo.
 - Conformidade mockup × real: sem diferença.
+
+## Passada 64 (07/11; modo demonstração local, `main` em #3218; 390 e 1280) — menus abertos do topo do painel
+
+Sem tela nova na `main` (só blocos de testes da Pista C). Bloco seguinte: os estados abertos do topo do painel (não só a tela parada): o **painel de avisos do sino** (E444) e o **menu da Conta**.
+- **Sino:** a 390, painel de 358 px (16 a 374), a 1280, 384 px; **Conta:** 256 px nos dois tamanhos. Em todos: dentro da janela (esquerda, direita, topo e base), sem rolagem lateral, nenhum texto cortado, nenhum alvo abaixo de 40 px fora dos que têm `alvo-toque`.
+- **Achados novos:** nenhum. Conformidade mockup × real: sem diferença nos estados medidos.
