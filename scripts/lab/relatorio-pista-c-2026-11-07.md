@@ -277,3 +277,11 @@ Specs novas para merges sem guarda de tela: t1413 (E665, modelos de respostas r�
 - E658, E659, E504, E506, E193: só têm unitário/sem tela nova a testar sem prova ao vivo; sem spec nova.
 
 Defeitos de produto novos: nenhum além do L-103.
+
+## Checagem do L-103 (main `5f76206c8`) e t1416
+
+**L-103 segue aberto.** O #3164 continua aberto (não mesclado) e `tsc` na main `5f76206c8` ainda dá o mesmo `TS2739` em `src/lib/estadia/instrucoes.ts(140,14)` (faltam `condominio_wifi_rede`, `condominio_wifi_senha`, `condominio_recepcao`, `condominio_fechadura`, `instrucao_saida`). O lab segue **bloqueado pelo L-103**: sem rerun dos dez runs bloqueados, sem retarget do #3238 (continua sobre a branch do #3164, verde no run 42386516939) e **sem bloco 491** (sairia vermelho só pelo build quebrado).
+
+**t1416 (E287, #3240).** Run 42387810339 vermelho, e **só** no passo 12 "Build do site" — o mesmo L-103, não a spec. Status: bloqueado-pela-main, sem rerun.
+
+**Merge novo desde `e0ee5ff29`:** E669 (#3135). A spec t1358 (#3139), que estava sobre esse draft, foi promovida (main mesclada, cobertura reaplicada, base trocada, fora de draft); o run novo falhará no build enquanto o L-103 durar. Nenhuma outra spec nova a escrever; defeitos de produto novos: nenhum além do L-103.
