@@ -963,6 +963,8 @@ export async function oferecerImovel(pedidoId: string, imovelId: string, mensage
   return responderPedido(pedidoId, imovelId, texto);
 }
 
+const MSG_PEDIDO_SEM_LEITURA = "Não foi possível abrir o pedido agora. Tente de novo em instantes.";
+
 /**
  * Proprietário RESPONDE um pedido com um imóvel seu. Validação no SERVIDOR:
  * o imóvel é dele e está publicado (também exigido pela RLS), e a capacidade do
@@ -985,19 +987,21 @@ export async function responderPedido(
   if (msg && detectarContato(msg)) return { ok: false, error: CONTATO_AVISO };
 
   // Pedido precisa estar ATIVO (lido pela view pública) — e traz os ocupantes.
-  const { data: pedido } = await supabase
+  const { data: pedido, error: erroPedido } = await supabase
     .from("pedidos_publicos")
     .select("id, qtd_ocupantes, cidade, data_inicio")
     .eq("id", pedidoId)
     .maybeSingle();
+  if (erroPedido) return { ok: false, error: MSG_PEDIDO_SEM_LEITURA };
   if (!pedido) return { ok: false, error: "Pedido não está mais disponível." };
 
   // Imóvel precisa ser do dono e estar publicado; capacidade ≥ ocupantes.
-  const { data: imovel } = await supabase
+  const { data: imovel, error: erroImovel } = await supabase
     .from("properties")
     .select("id, owner_id, status, max_guests, title, address, city")
     .eq("id", imovelId)
     .maybeSingle();
+  if (erroImovel) return { ok: false, error: MSG_PEDIDO_SEM_LEITURA };
   if (!imovel || imovel.owner_id !== user.id)
     return { ok: false, error: "Selecione um imóvel seu." };
   if (imovel.status !== "active")
