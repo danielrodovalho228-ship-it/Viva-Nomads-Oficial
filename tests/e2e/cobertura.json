@@ -568,7 +568,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t1401-e446-contagem-da-cidade"
       ]
     },
     "/cidades/[cidade]/[polo]": {
