@@ -350,3 +350,7 @@ Bloco 499 (t1425, #3262, grupo do 482: candidaturas, favoritos, propostas, loca�
 ## Bloco 500 aberto (main `f0762e3cd`)
 
 Bloco 499 (#3262) mesclado; main em `f0762e3cd` verde (run 42399678239). Único commit novo além do 499: documentação do E679 (mockups de Avaliações, #3264), sem código de produto: sem spec de merge. Bloco 500 (t1426, grupo do 483: cidade, buscar, comparar, institucionais, parceiros/buscar, admin atendimento/contratos/candidaturas) aberto no #3267; resultado na próxima atualização. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum.
+
+## Bloco 500 verde (main `5ca95bc9b`)
+
+Bloco 500 (t1426, #3267, grupo do 483) **verde** (run 42401538290), a 390 e 1280 px, e já mesclado por você; inclui as telas dos merges E446 e E529. Nenhum merge de produto novo desde `f0762e3cd`: sem spec de merge. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum. Próximo da fila: bloco 501 (grupo do 484).
