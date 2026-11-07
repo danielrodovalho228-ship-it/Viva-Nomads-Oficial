@@ -823,3 +823,10 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Menu do site no celular** (botão "Abrir menu", 44 px): abre em linha, empurrando a página — Imóveis, Anunciar, Empresas, Parceiros, Fale com a Viva e o botão "Entrar", itens de ~52 px, dentro dos 390, sem rolagem lateral; o botão vira "X". Conforme. A 1280 o topo mostra os links na linha (20 px de altura: mouse).
 - **Observação:** o link do logo mede 32 px a 390 na `main` (corrigido no #3172, rascunho). A barra inferior de abas aparece no celular também na página inicial, com o botão flutuante sobre o "Início"; é o desenho atual, sem achado.
 - **Achados novos:** nenhum.
+
+## Passada 67 (07/11; modo demonstração local, `main` em #3241; 390 e 1280) — E660 (ficha de dentro) e conferência de E665/E666
+
+- **E665 e E666:** já estão na `main` (#3086 e #3087, mesclados). Nada a refazer; só conferência de estado.
+- **Ficha de dentro do imóvel (`/dashboard/imoveis/novo?etapa=comodidades`, #3085):** os 14 controles da ficha (campos de cama por quarto, Sim/Não de ar-condicionado, roupa de cama e cozinha) medem 44 px ou mais a 390 e a 1280; sem rolagem lateral (390 e 1280 de largura de documento). Conforme.
+- **Achados novos:** nenhum.
+- **Bloqueado, pulado:** E679 visual (mockups fora do repo na hora da passada).
