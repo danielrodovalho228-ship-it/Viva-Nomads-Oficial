@@ -73,7 +73,9 @@ function EspelhoDono({ publico, foto }: { publico: MeuPerfilPublico; foto: strin
           )}
           {publico.resposta && (
             <p className="mt-1 flex items-center gap-1 text-sm text-muted lg:justify-center" data-testid="espelho-resposta">
-              <Clock className="h-4 w-4" aria-hidden /> Responde {publico.resposta.taxa}% das conversas, {publico.resposta.tempo}
+              <Clock className="h-4 w-4" aria-hidden />
+              {/* E504: UM texto só (template) — em flex, pedaços de texto soltos saíam colados na leitura/cópia ("Responde45%…conversas,em"). */}
+              <span>{`Responde ${publico.resposta.taxa}% das conversas, ${publico.resposta.tempo}`}</span>
             </p>
           )}
           {publico.selos.length > 0 && (
