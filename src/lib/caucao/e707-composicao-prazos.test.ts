@@ -72,3 +72,26 @@ test("E707: tudo segue atrás de CAUCAO_PRAZOS_ATIVA (desligada) e o cron avisa 
   assert.match(srv, /devolução é devida agora/);
   assert.match(srv, /teto externo/);
 });
+
+test("E707 (c) — antes do fim da janela, se o morador já respondeu a TODOS os itens (aceitou ou contestou), a parte indiscutível é liberada na hora", () => {
+  const f = { ...base, caucao: 1000, parecerEm: "2026-11-09", hoje: "2026-11-11" };
+  // aceitou tudo: não há disputa; o que sobra depois dos descontos aceitos é devido já
+  const aceitou = estadoDosPrazos({ ...f, descontos: [{ ...item, status: "aceito" as const }, { ...item, id: "i2", valor: 200, status: "aceito" as const }] });
+  assert.equal(aceitou.chave, "em_contestacao", "a janela ainda existe no calendário");
+  assert.deepEqual(aceitou.liberarParteIndiscutivel, { valor: 500, desde: "2026-11-11" });
+  // aceitou um e contestou o outro: disputa no restante, mas todos respondidos → libera antes do dia 14
+  const misto = estadoDosPrazos({ ...f, descontos: [{ ...item, status: "aceito" as const }, { ...item, id: "i2", valor: 200, status: "contestado" as const }] });
+  assert.equal(misto.chave, "em_disputa");
+  assert.deepEqual(misto.liberarParteIndiscutivel, { valor: 500, desde: "2026-11-11" });
+  // ainda há item sem resposta: espera o fim da janela
+  const pendente = estadoDosPrazos({ ...f, descontos: [{ ...item, status: "aceito" as const }, { ...item, id: "i2", valor: 200, status: "proposto" as const }] });
+  assert.equal(pendente.liberarParteIndiscutivel, null);
+  const pendenteContestado = estadoDosPrazos({ ...f, descontos: [{ ...item, status: "contestado" as const }, { ...item, id: "i2", valor: 200, status: "proposto" as const }] });
+  assert.equal(pendenteContestado.liberarParteIndiscutivel, null);
+});
+
+test("E707 (c) — passada a janela sem contestação, o valor indiscutível também é informado (desconto valendo)", () => {
+  const e = estadoDosPrazos({ ...base, caucao: 1000, parecerEm: "2026-11-09", descontos: [item], hoje: "2026-11-15" });
+  assert.equal(e.chave, "desconto_valendo");
+  assert.deepEqual(e.liberarParteIndiscutivel, { valor: 700, desde: "2026-11-15" });
+});

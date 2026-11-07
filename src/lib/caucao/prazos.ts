@@ -121,14 +121,14 @@ export function estadoDosPrazos(f: FatosPrazo): EstadoPrazos {
     return de("liberacao_integral", { motivo: "silencio", avisarOsDois: true, pendenciaDevolucao: atrasada, devolucaoDevida: true, devidaDesde: addDias(parecerAte, 1) });
   }
   if (!comDesconto) return de("liberacao_integral", { motivo: "parecer_sem_desconto", avisarOsDois: true, pendenciaDevolucao: atrasada, devolucaoDevida: true, devidaDesde: f.parecerEm });
-  if (f.descontos.some((d) => d.status === "contestado")) {
-    // E707 (c): fim da janela de contestação (hoje > contestarAte) libera o que ninguém discute.
-    const fimDaJanela = contestarAte ? addDias(contestarAte, 1) : null;
-    const libera = f.caucao != null && fimDaJanela && f.hoje >= fimDaJanela ? { valor: parteIndiscutivel(f.caucao, f.descontos), desde: fimDaJanela } : null;
-    return de("em_disputa", { liberarParteIndiscutivel: libera });
-  }
-  if (contestarAte && f.hoje <= contestarAte) return de("em_contestacao");
-  return de("desconto_valendo", { pendenciaDevolucao: atrasada });
+  // E707 (c): a janela de contestação termina no dia 5 OU antes, quando o morador já respondeu a TODOS os itens (aceitou ou contestou).
+  const fimDaJanela = contestarAte ? addDias(contestarAte, 1) : null;
+  const todosResponderam = f.descontos.every((d) => d.status !== "proposto");
+  const janelaEncerrada = (!!fimDaJanela && f.hoje >= fimDaJanela) || todosResponderam;
+  const libera = f.caucao != null && janelaEncerrada ? { valor: parteIndiscutivel(f.caucao, f.descontos), desde: !!fimDaJanela && f.hoje >= fimDaJanela ? fimDaJanela : f.hoje } : null;
+  if (f.descontos.some((d) => d.status === "contestado")) return de("em_disputa", { liberarParteIndiscutivel: libera });
+  if (contestarAte && f.hoje <= contestarAte) return de("em_contestacao", { liberarParteIndiscutivel: libera });
+  return de("desconto_valendo", { pendenciaDevolucao: atrasada, liberarParteIndiscutivel: libera });
 }
 
 /** Qualquer contrato do dono em pendência de devolução trava a publicação de anúncio novo, até regularizar. */
