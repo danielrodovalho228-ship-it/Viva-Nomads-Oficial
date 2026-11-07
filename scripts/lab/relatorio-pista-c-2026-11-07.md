@@ -227,3 +227,11 @@ Runs que estavam pendentes, todos verdes: t1395/E676 com o caso de expiração (
 ## Bloco 487 verde, 488 em andamento, bloco 489 (main `769f258c6`)
 
 Bloco 487 (#3226) verde (run 42381032660). Bloco 488 (#3227) ainda em andamento (run 42381486072) ao abrir o 489: registrado, sem vermelho. Main em `769f258c6` verde, sem merge novo desde então; nada a rodar além do que já passou (migração 0321, 4 de 4 locais). Bloco 489 (t1411, grupo do 472: morador sem id na URL) aberto no #3229. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Merges de 07/11, blocos 487–489 mesclados e bloco 490 (main `e45408216`)
+
+Blocos 487 (#3226), 488 (#3227, run 42381486072) e 489 (#3229, run 42381912736) verdes e mesclados; main em `e45408216` verde (run 42382068919). Nenhum merge de produto novo desde `769f258c6`.
+
+Conferência de cobertura dos merges de produto do dia (E414, E446, E477, E427, E528/E529, E649–E657, E662 migração, E670, E678, E287): as specs de E653–E657, E650, E651, E414 e E477 existem, mas estão em PRs de spec ainda abertos em draft (#3077, #3078, #3081, #3082, #3092, #3123, #3124, #3125, #3186) — não mesclados por regra da pista. Sete deles (#3077, #3081, #3082, #3092, #3123, #3124, #3125) estavam em conflito com a main (só o `cobertura.json`, que os blocos mexem a cada rodada); mesclei a main em cada ramo, reapliquei o registro de cobertura, os testes de numeração/cobertura passam (13/13) e os runs novos foram disparados. #3078 (E656) e #3186 (E477) não tinham conflito. E649 (#3015, CPF do parceiro), E662 (migração) e E287 (migração de dados) têm só teste unitário/de migração; spec de tela do E662 espera o draft #3164. Specs de E670/E678/E446 já estão na main (#3193, #3192, #3205); E674/E676/E677 seguem sobre os drafts (#3202, #3194, #3188), conferidas e não duplicadas.
+
+Bloco 490 (t1412, grupo do 473: públicas com parâmetro) aberto no #3232. Defeitos de produto novos: nenhum (L-103 livre).
