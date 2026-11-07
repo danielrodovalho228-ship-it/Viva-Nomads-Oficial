@@ -16,7 +16,8 @@ const ICONE_REGRA: Record<RegraConvivencia, React.ComponentType<{ className?: st
   visitas: UsersRound,
 };
 
-const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
+// E193: o campo (texto, data, número) tem a moldura, o tamanho e o estado do cartão grande do assistente.
+const campo = "w-full min-h-14 rounded-xl border-2 border-line bg-white px-4 text-sm text-ink outline-none transition-colors hover:border-sage focus:border-forest";
 
 function Escolha<T extends string>({
   nome,
@@ -119,7 +120,7 @@ export function RegrasCasaCampos({
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Outras regras (opcional)
         <textarea
-          className="min-h-[88px] w-full rounded-lg border border-line bg-white px-3 py-2 text-sm font-normal text-ink"
+          className="min-h-[88px] w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-sm font-normal text-ink outline-none transition-colors hover:border-sage focus:border-forest"
           value={value.outras}
           maxLength={MAX_OUTRAS_REGRAS}
           placeholder="Ex.: tirar os sapatos na sala, manter a varanda limpa"

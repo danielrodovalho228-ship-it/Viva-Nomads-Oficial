@@ -82,7 +82,7 @@ export function ModeloNegocio() {
 
   // Quanto a Viva fatura por faixa neste cenário (cada faixa usa a mesma carteira).
   const receitaPorFaixa = FAIXAS_COMISSAO_PADRAO.map((f) => ({
-    label: f.maxImoveis === null ? "31+" : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`,
+    label: f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`, // E667: a faixa sem teto leva o mínimo do Gestor (decisão de 04/11)
     value: taxaSobreContrato(valorMes, meses, f.taxa) * contratos * f.minImoveis,
   }));
 
@@ -186,7 +186,7 @@ export function ModeloNegocio() {
 
           <div className={`${styles.chartCard} ${styles.chartFull}`}>
             <h3>Receita da Viva por faixa de imóveis</h3>
-            <p className={styles.chartSub}>Com o mesmo cenário, no limite inferior de cada faixa (31+ segue em 6% até negociar).</p>
+            <p className={styles.chartSub}>Com o mesmo cenário, no limite inferior de cada faixa. Plano Gestor: {GESTOR_TEXTO}.</p>
             <SimpleBars bars={receitaPorFaixa.map((c) => ({ label: c.label, value: c.value, color: C.forest }))} />
           </div>
         </div>
