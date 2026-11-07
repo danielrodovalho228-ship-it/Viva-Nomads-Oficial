@@ -465,3 +465,7 @@ PR #3306 (`claude-c/l106-t323-seguranca`) **verde** (run 42412032783): com a lis
 ## #3309 mesclado antes da correção do t93 — correção levada à main no #3317
 
 O #3309 (L-105, seis specs) foi mesclado no head `ecabbd2bf` (run 42413362496, 68 passaram e 1 falhou: o último passo do t93). Meu commit de correção `ec8c88a22` foi empurrado depois do merge e ficou órfão (sem run). Para não deixar a main com o t93 quebrado, o mesmo commit foi cherry-picked num ramo novo (`claude-c/t93-central`, **#3317**, head `025195554`): só `t93-avaliacao-tela.spec.ts`, a decisão do admin passa a ser provada pelo registro no banco, não pelo texto "Mantida" (que a Central de Pendências nunca escreve desde o ADMIN-2). Run em andamento. Bloco 510 (#3310) mesclado. Único commit novo na main fora os meus: #3315 (Pista QA, documentação e capturas, sem código de produto). L-104 e L-56 abertos; próximo livre: **L-106**. Sem merge e sem fechar PR.
+
+## t93 verde e na main — L-105 fechado no lab
+
+#3317 (t93, a decisão do admin provada pelo registro no banco) **verde** (run 42418234029) e **mesclado** na main (`58afe82e1`). Com isso, as seis specs de avaliação do L-105 (t93, t91, t362, t369, t351, t28) e o t323 estão na main e passaram no lab-crítico. **L-105 encerrado no lab.** Nenhum merge de produto novo. L-104 e L-56 seguem abertos no produto (Pistas A/B); próximo livre: **L-106**. Próximo da fila: bloco 511 (grupo do 494). Sem merge e sem fechar PR.
