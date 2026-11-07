@@ -846,3 +846,17 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Sem correção, para decisão:** botões `size="sm"` do sistema (40 px, ex.: "Buscar imóveis" em Favoritos, "Ver meus anúncios" em Ganhos); controles de Notificações medem 24 px no trilho, mas a linha inteira é o alvo (a conferir por QA com toque real).
 - **Não alcançáveis no demo:** `/dashboard/estadia/[id]/*`, `/dashboard/contratos/[id]/ficha`, `/admin/*` (papel ou dado real) — laboratório.
 - **Antes desta passada:** #3256 (E685/E686) verde; #3250 (E666) e #3251 (passada 68) verdes e sem conflito com a `main`.
+
+## Passada 70 (07/11; modo demonstração local, `main` em #3254; 390 e 1280) — carregamento real de imagens e elementos fixos (site público)
+
+- **Método:** cada página rolada de ponta a ponta (dispara o carregamento sob demanda); contagem das imagens visíveis com `complete` e `naturalWidth = 0` (quebradas), respostas HTTP 4xx/5xx de imagem, imagens sem `alt`, estouro horizontal, cartões de imóvel sem foto e elementos `fixed`.
+- **Páginas:** `/`, `/buscar`, `/imoveis/[id]`, `/parceiros`, `/parceiros/fotografos`, `/parceiros/avaliadores`, `/empresas`, `/ajuda`, `/cidades`, `/para-proprietarios`, `/anunciar`, `/como-funciona`, `/seguranca`, `/precos`.
+- **Resultado:** 0 imagens quebradas, 0 respostas de imagem com erro, 0 sem `alt`, 0 cartões sem foto, 0 estouro lateral. As imagens "pendentes" a 390 são slides de carrossel fora da tela (posição 1950 px ou mais), com carregamento sob demanda de propósito (confirmado em `/imoveis/ube-001`).
+- **Elementos fixos:** barra de abas inferior (celular), barra fixa do anúncio e botão "Fale com a Viva" (computador) não cobrem título nem conteúdo.
+- **Achados novos:** nenhum.
+
+## Passada 71 (07/11; modo demonstração local; 390 e 1280) — painel logado
+
+- **Páginas:** `/dashboard`, `imoveis`, `favoritos`, `locacoes`, `mensagens`, `conta/perfil`, `parceiro`, `leads`, `contratos`, `candidaturas`, `comparar`.
+- **Resultado:** 0 imagens quebradas ou com erro HTTP, nenhum título coberto por elemento fixo, 0 estouro lateral. Achados novos: nenhum.
+- **E679 visual:** continua bloqueado — não há mockups `avaliacoes-*.webp` no repo (só `public/images/painel/painel-avaliacoes.webp` e `parceiros-passo-avaliado.webp`, imagens do site, não os mockups). Nenhuma tela foi inventada.
