@@ -11,8 +11,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 505 (registro de cobertura: última
   varredura no bloco 489, t1411): as do MORADOR sem id na URL — painel, avaliações, buscas salvas, comparar, conta
   (avaliações, excluir, segurança), fechamento, garantias, reembolsos, solicitações e verificação —, com a conta
-  INQUILINA da massa da varredura. Defeito novo entra como test.fail ligado a um item (L-103 é o próximo
-  livre).
+  INQUILINA da massa da varredura. Defeito novo entra como test.fail ligado a um item (L-105 é o próximo livre; L-103 foi o build quebrado E661×E662 e L-104, o 400 em /api/proximidades no Qualificar o imóvel).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
 interface Tela {
