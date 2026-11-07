@@ -136,9 +136,10 @@ export function lembrarDono(inicio: string | null, preenchidas: boolean, agora: 
   condomínio, lixo, contatos do prédio; texto "informado pelo proprietário, pode variar"). Só reagrupa campos que já
   existem (sem coluna nova); um Wi-Fi do condomínio hoje vai no campo de regras/contatos do prédio.
 */
-export type GrupoInstrucao = "entrada" | "imovel" | "condominio";
+export type GrupoInstrucao = "entrada" | "saida" | "imovel" | "condominio";
 export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
   como_entrar: "entrada",
+  instrucao_saida: "saida", // E662: a instrução ÚNICA de saída, em bloco próprio, igual para morador, dono e convidado
   wifi_rede: "imovel",
   wifi_senha: "imovel",
   vaga: "imovel",
@@ -149,6 +150,7 @@ export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
 };
 export const TITULO_GRUPO_INSTRUCAO: Record<GrupoInstrucao, string> = {
   entrada: "Como entrar",
+  saida: "Como sair (check-out)",
   imovel: "O imóvel e o que está incluso",
   condominio: "Estrutura do condomínio",
 };
@@ -162,10 +164,10 @@ export interface CampoDaInstrucao {
 
 /** Os campos COM texto, por grupo, na ordem do catálogo. Grupo sem texto some. */
 export function agruparInstrucoes(campos: Instrucoes | null | undefined): { grupo: GrupoInstrucao; titulo: string; campos: CampoDaInstrucao[] }[] {
-  const porGrupo: Record<GrupoInstrucao, CampoDaInstrucao[]> = { entrada: [], imovel: [], condominio: [] };
+  const porGrupo: Record<GrupoInstrucao, CampoDaInstrucao[]> = { entrada: [], saida: [], imovel: [], condominio: [] };
   for (const c of CAMPOS_INSTRUCOES) {
     const valor = (campos?.[c.chave] ?? "").trim();
     if (valor) porGrupo[GRUPO_DA_INSTRUCAO[c.chave]].push({ chave: c.chave, rotulo: c.rotulo, valor: campos![c.chave]! });
   }
-  return (["entrada", "imovel", "condominio"] as const).filter((g) => porGrupo[g].length > 0).map((g) => ({ grupo: g, titulo: TITULO_GRUPO_INSTRUCAO[g], campos: porGrupo[g] }));
+  return (["entrada", "saida", "imovel", "condominio"] as const).filter((g) => porGrupo[g].length > 0).map((g) => ({ grupo: g, titulo: TITULO_GRUPO_INSTRUCAO[g], campos: porGrupo[g] }));
 }
