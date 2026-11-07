@@ -63,6 +63,17 @@ export function mascararCnpj(v: string | null | undefined): string | null {
   return d.length === 14 ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/****-**` : null;
 }
 
+/**
+ * E685: o documento do parceiro ATIVO para o admin auditar a regra "parceiro só com CNPJ" — tipo + número mascarado
+ * (raiz do CNPJ; miolo do CPF). O tipo vem do pedido; sem ele, pelos dígitos.
+ */
+export function documentoDoParceiroAtivo(tipoPessoa: string | null | undefined, documento: string | null | undefined): { tipo: "CNPJ" | "CPF" | "Documento"; texto: string } {
+  const d = soDigitos(documento);
+  const tipo = tipoPessoa === "pj" || d.length === 14 ? "CNPJ" : tipoPessoa === "pf" || d.length === 11 ? "CPF" : "Documento";
+  const texto = (tipo === "CNPJ" ? mascararCnpj(documento) : tipo === "CPF" ? mascararCpf(documento) : null) ?? "não informado";
+  return { tipo, texto };
+}
+
 export interface DocumentoInput {
   tipo: TipoPessoa;
   cpf?: string;
