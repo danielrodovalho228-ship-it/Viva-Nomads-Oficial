@@ -317,6 +317,36 @@ export async function enviarFotoConferencia(formData: FormData): Promise<Resulta
   return { ok: true, path: r.path };
 }
 
+/** E669: o que cada resposta de `trocar_laudo_conferencia` significa para a pessoa. */
+const ERRO_TROCA_LAUDO: Record<string, string> = {
+  sem_laudo: "Não há laudo anexado nesta conferência.",
+  nao_autor: "Só quem anexou o laudo pode removê-lo ou trocá-lo.",
+  fechada: ERRO_FECHADA,
+};
+
+/**
+ * E669: o AUTOR retira o laudo que anexou, enquanto a conferência está aberta. O ato fica registrado (quem, quando, o
+ * arquivo) em `conferencia_laudos_retirados`; as fotos voltam a valer. A outra parte e a equipe não retiram por aqui.
+ */
+export async function retirarLaudoConferencia(entrada: { contratoId: string; tipo: TipoConferencia }): Promise<Resultado> {
+  const contratoId = String(entrada?.contratoId ?? "");
+  const tipo = entrada?.tipo;
+  if (tipo !== "entrada" && tipo !== "saida") return erro("Tipo de conferência inválido.");
+  const ctx = await parteDoContrato(contratoId);
+  if (!ctx) return erro("Você não faz parte deste contrato.");
+  if (!(await consumirLimite(`conferencia-arquivo:${ctx.uid}`, 60, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
+  const admin = createAdminClient()!;
+  const { data: conf, error: erroConf } = await admin.from("conferencias").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
+  if (erroConf) return erro("Não foi possível ler a conferência agora. Tente de novo.");
+  if (!conf) return erro("Não há laudo anexado nesta conferência.");
+  const { data: resultado, error } = await admin.rpc("trocar_laudo_conferencia", { p_conferencia: conf.id, p_user: ctx.uid, p_novo_path: null, p_novo_tamanho: null, p_parte: ctx.parte });
+  if (error) return erro("Não foi possível remover o laudo agora. Tente de novo.");
+  if (resultado !== "ok") return erro(ERRO_TROCA_LAUDO[String(resultado)] ?? "Não foi possível remover o laudo.");
+  revalidatePath("/dashboard/locacoes");
+  revalidatePath("/dashboard/contratos");
+  return { ok: true };
+}
+
 /** Anexa o laudo de parceiro independente (PDF, até 15 MB) à conferência. Um por conferência; imutável. */
 export async function anexarLaudoConferencia(formData: FormData): Promise<Resultado> {
   const contratoId = String(formData.get("contratoId") ?? "");
@@ -334,11 +364,31 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   const { data: ja } = await admin.from("conferencia_laudos").select("conferencia_id").eq("conferencia_id", conf.id).maybeSingle();
-  if (ja) return erro("Esta conferência já tem um laudo independente anexado.");
+  // E669: com `substituir=1` o AUTOR troca o laudo (enquanto a conferência está aberta); sem a marca, um laudo por conferência.
+  const substituir = formData.get("substituir") === "1";
+  if (ja && !substituir) return erro("Esta conferência já tem um laudo independente anexado.");
+  if (!ja && substituir) return erro("Não há laudo anexado para trocar.");
 
+  // O arquivo novo é validado e subido ANTES de mexer no antigo: um arquivo recusado nunca apaga o laudo que já estava lá.
   const file = formData.get("arquivo");
   const r = await subirArquivo(ctx.uid, file, validarLaudo);
   if (!r.ok) return erro(r.error);
+  if (ja && substituir) {
+    const { data: resultado, error: erroTroca } = await admin.rpc("trocar_laudo_conferencia", {
+      p_conferencia: conf.id,
+      p_user: ctx.uid,
+      p_novo_path: r.path,
+      p_novo_tamanho: (file as File).size,
+      p_parte: ctx.parte,
+    });
+    if (erroTroca || resultado !== "ok") {
+      await admin.storage.from(BUCKET).remove([r.path]);
+      return erro(erroTroca ? "Não foi possível trocar o laudo agora. Tente de novo." : ERRO_TROCA_LAUDO[String(resultado)] ?? "Não foi possível trocar o laudo.");
+    }
+    revalidatePath("/dashboard/locacoes");
+    revalidatePath("/dashboard/contratos");
+    return { ok: true, laudo: { url: null, parte: ctx.parte, criadoEm: new Date().toISOString() } };
+  }
   const { error } = await admin
     .from("conferencia_laudos")
     .insert({ conferencia_id: conf.id, path: r.path, tamanho: (file as File).size, enviado_por: ctx.uid, parte: ctx.parte });
