@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   aceitarOrcamento,
   avaliarPedido,
+  pedirRevisaoDoPedido,
+  responderAvaliacaoDoPedido,
   cancelarPedido,
   concluirPedido,
   confirmarHorario,
@@ -34,7 +36,19 @@ const ACOES: Record<string, (id: string, a: Record<string, unknown>) => Promise<
   "marcar-entregue": (id) => marcarEntregue(id),
   concluir: (id) => concluirPedido(id),
   "usar-fotos": (id) => usarFotosNoAnuncio(id),
-  avaliar: (id, a) => avaliarPedido(id, Number(a.nota), texto(a.texto)),
+  avaliar: (id, a) =>
+    avaliarPedido(id, {
+      nota: Number(a.nota),
+      criterios: a.criterios && typeof a.criterios === "object" && !Array.isArray(a.criterios) ? (a.criterios as Record<string, unknown>) : {},
+      etiquetas: Array.isArray(a.etiquetas) ? a.etiquetas.filter((t): t is string => typeof t === "string") : [],
+      recomendaria: typeof a.recomendaria === "boolean" ? a.recomendaria : null,
+      texto: texto(a.texto),
+      notaPrivadaParte: texto(a.notaPrivadaParte),
+      notaPrivadaViva: texto(a.notaPrivadaViva),
+    }),
+  // E679-B: resposta pública e pedido de revisão do parceiro avaliado (mesma trilha da estadia).
+  "responder-avaliacao": (id, a) => responderAvaliacaoDoPedido(id, texto(a.texto)),
+  "revisar-avaliacao": (id, a) => pedirRevisaoDoPedido(id, texto(a.motivo), texto(a.detalhe)),
   "confirmar-automatico": (id) => confirmarPedidoAutomatico(id),
   "trocar-parceiro": (id) => trocarParceiro(id),
   // E213-B: reagendamento depois do aditivo — o parceiro recusa a nova data (confirmar é o "confirmar-horario").

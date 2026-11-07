@@ -15,6 +15,8 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { podeLerAvaliacaoDoPedido, validarAvaliacaoCompleta, validarFatoFalso } from "@/lib/avaliacoes-criterios";
+import { validarContestacao, validarResposta } from "@/lib/avaliacoes-resposta";
 import { PEDIDO_PARCEIRO_TESTE_RECUSADO, categoriaValida, parceiroPodeReceberServico, rotuloCategoria } from "./regras";
 import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
@@ -573,25 +575,104 @@ export async function usarFotosNoAnuncio(pedidoId: string): Promise<Res<{ copiad
 
 // ── 5. Avaliação (cega até as duas partes ou 14 dias) ────────────────────────────────────────────────────────
 
-export async function avaliarPedido(pedidoId: string, nota: number, texto: string): Promise<Res> {
+export interface EntradaAvaliacaoPedido {
+  nota: number;
+  /** Nota de 1 a 5 em cada critério FIXO do par (src/lib/avaliacoes-criterios.ts). */
+  criterios: Record<string, unknown>;
+  etiquetas: string[];
+  recomendaria: boolean | null;
+  texto: string;
+  notaPrivadaParte?: string;
+  notaPrivadaViva?: string;
+}
+
+/**
+ * E679-B: o MESMO modelo da estadia. Janela de 14 dias depois da conclusão, critérios fixos do par, sem edição depois
+ * de enviada, publicação cega (os dois enviam OU a janela fecha). Telefone/e-mail/documento ou ofensa não são
+ * recusados: o banco manda a avaliação para a moderação (0323).
+ */
+export async function avaliarPedido(pedidoId: string, e: EntradaAvaliacaoPedido): Promise<Res> {
   const c = await carregar(pedidoId);
   if ("erro" in c) return { ok: false, erro: c.erro };
   if (c.p.status !== "concluido") return { ok: false, erro: "A avaliação abre quando o serviço é concluído." };
-  if (!Number.isInteger(nota) || nota < 1 || nota > 5) return { ok: false, erro: "Escolha de 1 a 5 estrelas." };
-  const t = (texto ?? "").trim();
-  if (t.length > 500) return { ok: false, erro: "O texto pode ter até 500 caracteres." };
-  const g = guardContactInfo(t);
+  const v = validarAvaliacaoCompleta(c.papel === "cliente" ? "cliente_avalia_parceiro" : "parceiro_avalia_cliente", {
+    notaGeral: e.nota,
+    criterios: e.criterios,
+    etiquetas: e.etiquetas,
+    recomendaria: e.recomendaria,
+    comentarioPublico: e.texto,
+  });
+  if (!v.ok) return { ok: false, erro: v.erro };
+  for (const t of [e.notaPrivadaParte, e.notaPrivadaViva]) {
+    if ((t ?? "").trim().length > 500) return { ok: false, erro: "A nota privada pode ter até 500 caracteres." };
+  }
   const { error } = await c.admin.from("parceiro_avaliacoes").insert({
     pedido_id: c.p.id,
     autor_id: c.userId,
     papel_autor: c.papel,
-    nota,
-    texto: g.text || null,
-    status: g.masked ? "em_moderacao" : "enviada",
+    nota: v.notaGeral,
+    texto: v.comentarioPublico,
+    notas_categorias: v.criterios,
+    etiquetas: v.etiquetas,
+    recomendaria: v.recomendaria,
+    nota_privada_parte: e.notaPrivadaParte?.trim() || null,
+    nota_privada_viva: e.notaPrivadaViva?.trim() || null,
+    status: "enviada",
   });
-  if (error) return { ok: false, erro: error.code === "23505" ? "Você já avaliou este serviço." : "Não foi possível enviar a avaliação." };
+  if (error) {
+    if (error.code === "23505") return { ok: false, erro: "Você já avaliou este serviço." };
+    if (error.code === "23514" || error.code === "42501") return { ok: false, erro: "Não foi possível enviar: a avaliação abre na conclusão e fica aberta por 14 dias." };
+    return { ok: false, erro: "Não foi possível enviar a avaliação." };
+  }
   await c.admin.rpc("publicar_avaliacoes_parceiro", { p_pedido: c.p.id });
-  await evento(c.admin, c.p.id, c.userId, "avaliacao", { nota });
+  await evento(c.admin, c.p.id, c.userId, "avaliacao", { nota: v.notaGeral });
+  revalidatePath(rota(c.p.id));
+  return { ok: true, valor: null };
+}
+
+/** A avaliação PUBLICADA do cliente sobre o parceiro deste pedido (a única que recebe resposta e pedido de revisão). */
+async function avaliacaoPublicadaDoCliente(admin: Admin, pedidoId: string): Promise<{ id: string } | null | "falha"> {
+  const { data, error } = await admin.from("parceiro_avaliacoes").select("id").eq("pedido_id", pedidoId).eq("papel_autor", "cliente").eq("status", "publicada").maybeSingle();
+  if (error) return "falha";
+  return (data as { id: string } | null) ?? null;
+}
+
+/** UMA resposta pública do parceiro avaliado, até 500 caracteres, sem edição (mesma trilha de avaliacao_respostas). */
+export async function responderAvaliacaoDoPedido(pedidoId: string, texto: string): Promise<Res> {
+  const c = await carregar(pedidoId);
+  if ("erro" in c) return { ok: false, erro: c.erro };
+  if (c.papel !== "parceiro") return { ok: false, erro: "Só o parceiro avaliado responde." };
+  const err = validarResposta(texto);
+  if (err) return { ok: false, erro: err };
+  const av = await avaliacaoPublicadaDoCliente(c.admin, c.p.id);
+  if (av === "falha") return { ok: false, erro: "Não foi possível ler a avaliação agora. Tente de novo." };
+  if (!av) return { ok: false, erro: "Só é possível responder a uma avaliação publicada." };
+  const { error } = await c.admin.from("avaliacao_respostas").insert({ parceiro_avaliacao_id: av.id, autor_id: c.userId, texto: texto.trim() });
+  if (error) return { ok: false, erro: error.code === "23505" ? "Você já respondeu a esta avaliação." : "Não foi possível publicar a resposta." };
+  revalidatePath(rota(c.p.id));
+  return { ok: true, valor: null };
+}
+
+/** Pedido de revisão do parceiro avaliado: motivo objetivo (ofensa, dado pessoal, fato falso conferível). Vai para a fila do admin. */
+export async function pedirRevisaoDoPedido(pedidoId: string, motivo: string, detalhe: string): Promise<Res> {
+  const c = await carregar(pedidoId);
+  if ("erro" in c) return { ok: false, erro: c.erro };
+  if (c.papel !== "parceiro") return { ok: false, erro: "Só o parceiro avaliado pede revisão." };
+  const err = validarContestacao(motivo, detalhe);
+  if (err) return { ok: false, erro: err };
+  if (motivo === "fato_falso") {
+    const ff = validarFatoFalso(detalhe);
+    if (!ff.ok) return { ok: false, erro: ff.erro };
+  }
+  const av = await avaliacaoPublicadaDoCliente(c.admin, c.p.id);
+  if (av === "falha") return { ok: false, erro: "Não foi possível ler a avaliação agora. Tente de novo." };
+  if (!av) return { ok: false, erro: "Só é possível pedir revisão de uma avaliação publicada." };
+  const { error } = await c.admin.from("avaliacao_contestacoes").insert({ parceiro_avaliacao_id: av.id, autor_id: c.userId, motivo, detalhe: detalhe.trim() });
+  if (error) {
+    if (error.code === "23505") return { ok: false, erro: "Já existe um pedido de revisão aberto para esta avaliação." };
+    return { ok: false, erro: error.code === "23514" ? error.message : "Não foi possível enviar o pedido." };
+  }
+  revalidatePath("/admin/pendencias");
   revalidatePath(rota(c.p.id));
   return { ok: true, valor: null };
 }
@@ -641,7 +722,10 @@ export interface DetalhePedido {
   linkOutroParceiro: string;
   mensagens: { id: string; minha: boolean; texto: string; em: string }[];
   minhaAvaliacao: { nota: number; status: string } | null;
+  /** E679-B: só a nota do cliente sobre o parceiro (ao parceiro). A do parceiro sobre o cliente NUNCA chega ao cliente. */
   avaliacaoDoOutro: { nota: number; texto: string | null } | null;
+  /** Para o parceiro avaliado: a avaliação publicada do cliente, com a resposta e o pedido de revisão (mesma trilha da estadia). */
+  avaliacaoRecebida: { nota: number; texto: string | null; resposta: string | null; revisaoAberta: boolean } | null;
   ehDonoDoImovel: boolean;
   /** Prompt 38: pedido gerado pela regra do imóvel; o dono confirma (modo "confirmar") ou troca de parceiro. */
   automatico: boolean;
@@ -668,7 +752,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
       .in("sender_id", [p.cliente_id, parceiroUser])
       .order("created_at")
       .limit(300),
-    admin.from("parceiro_avaliacoes").select("autor_id, nota, texto, status").eq("pedido_id", p.id),
+    admin.from("parceiro_avaliacoes").select("id, autor_id, papel_autor, nota, texto, status").eq("pedido_id", p.id),
     admin.from("parceiro_pedido_eventos").select("dados").eq("pedido_id", p.id).eq("tipo", "propor_horario").order("criado_em", { ascending: false }).limit(1).maybeSingle(),
     p.origem === "automatico" && p.status === "aceito"
       ? admin.from("parceiro_pedido_eventos").select("tipo").eq("pedido_id", p.id).in("tipo", EVENTOS_DE_HORARIO as unknown as string[]).order("criado_em", { ascending: false }).limit(1)
@@ -689,9 +773,20 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
   const imovelBase = im ? { bairro: im.address, cidade: im.city, areaM2: im.area_m2, quartos: im.bedrooms, endereco } : null;
   // Privacidade: o parceiro só vê endereço e nome completo depois do aceite.
   const visao = papel === "parceiro" ? visaoDoParceiro(p.status, imovelBase, { nomeCompleto: nomeCliente }) : { nome: nomeCliente ?? "Você", imovel: imovelBase };
-  const avaliacoes = (avs.data ?? []) as { autor_id: string; nota: number; texto: string | null; status: string }[];
+  const avaliacoes = (avs.data ?? []) as { id: string; autor_id: string; papel_autor: "cliente" | "parceiro"; nota: number; texto: string | null; status: string }[];
   const minha = avaliacoes.find((a) => a.autor_id === userId) ?? null;
-  const outra = avaliacoes.find((a) => a.autor_id !== userId && a.status === "publicada") ?? null;
+  // E679-B: a nota do parceiro sobre o cliente só é lida entre parceiros: o cliente NUNCA a recebe aqui.
+  const outra = avaliacoes.find((a) => a.autor_id !== userId && a.status === "publicada" && podeLerAvaliacaoDoPedido(papel, a.papel_autor)) ?? null;
+  // Resposta pública e pedido de revisão (mesma trilha da estadia): lidos só para o parceiro avaliado.
+  let avaliacaoRecebida: DetalhePedido["avaliacaoRecebida"] = null;
+  if (papel === "parceiro" && outra) {
+    const [resp, rev] = await Promise.all([
+      admin.from("avaliacao_respostas").select("texto").eq("parceiro_avaliacao_id", outra.id).maybeSingle(),
+      admin.from("avaliacao_contestacoes").select("id").eq("parceiro_avaliacao_id", outra.id).eq("status", "aberta").maybeSingle(),
+    ]);
+    if (resp.error || rev.error) throw new Error("Não foi possível abrir o pedido agora.");
+    avaliacaoRecebida = { nota: outra.nota, texto: outra.texto, resposta: (resp.data as { texto: string } | null)?.texto ?? null, revisaoAberta: !!rev.data };
+  }
   const n = (v: number | string | null) => (v == null ? null : Number(v));
   const teste = papel === "cliente" ? await contaTeste(admin, userId) : false;
   const contato = await contatoDaOutraParte(admin, p, papel);
@@ -720,6 +815,7 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     mensagens: ((msgs.data ?? []) as { id: string; sender_id: string; body: string; created_at: string }[]).map((m) => ({ id: m.id, minha: m.sender_id === userId, texto: m.body, em: m.created_at })),
     minhaAvaliacao: minha ? { nota: minha.nota, status: minha.status } : null,
     avaliacaoDoOutro: outra ? { nota: outra.nota, texto: outra.texto } : null,
+    avaliacaoRecebida,
     ehDonoDoImovel: !!im && im.owner_id === userId,
     automatico: p.origem === "automatico",
     aguardandoDono: p.aguardando_dono,

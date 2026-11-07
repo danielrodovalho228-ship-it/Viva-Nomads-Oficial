@@ -87,13 +87,13 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
     case "vistoria_designada":
       return {
         subject: assuntoComTitulo("Um proprietário escolheu você: ", titulo),
-        body: (n) => `${ola(n)}, um proprietário escolheu você para avaliar ${titulo ? `${im}` : "um imóvel"}. Responda em até 24 horas com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`,
+        body: (n) => `${ola(n)}, um proprietário escolheu você para avaliar ${titulo ? `${im}` : "um imóvel"}. Responda no prazo que você declarou (padrão: 24 horas) com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`,
         linhas,
       };
     case "vistoria_designado_dono":
       return {
         subject: assuntoComTitulo("Novidade na escolha do avaliador de ", titulo),
-        body: (n) => `${ola(n)}, ${avaliador ? `${avaliador}, avaliador credenciado que você escolheu,` : "o avaliador credenciado que você escolheu"} respondeu sobre a avaliação ${doImovel(true)}. Abra a avaliação para ver o valor e o prazo propostos e aceitar, ou escolher outro avaliador.`,
+        body: (n) => `${ola(n)}, ${avaliador ? `${avaliador}, avaliador credenciado que você escolheu,` : "o avaliador credenciado que você escolheu"} respondeu, recusou ou não respondeu no prazo sobre a avaliação ${doImovel(true)}. Abra a avaliação para ver o valor e o prazo propostos e aceitar (você tem 72 horas depois da proposta), ou escolher outro avaliador.`,
         linhas,
       };
     case "vistoria_agendada":
