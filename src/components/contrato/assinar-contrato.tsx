@@ -49,6 +49,9 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         return;
       }
       setEnviado(true);
+    } catch {
+      // E654: falha na chamada ao servidor (rede, versão nova no ar): nunca "gira e volta" calado.
+      setErro("Não foi possível enviar o código agora. Recarregue a página e tente de novo.");
     } finally {
       setPedindo(false);
     }
@@ -101,7 +104,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         <Button type="button" variant="outline" onClick={pedir} disabled={pedindo} className="mt-1" data-testid="assinar-pedir-codigo">
           {pedindo ? <Loader2 className="h-4 w-4 animate-spin" /> : enviado ? "Enviar outro código" : "Enviar código por e-mail"}
         </Button>
-        {enviado && <p className="mt-1 text-xs text-muted">Enviamos 6 números para o e-mail da sua conta. Valem por 15 minutos.</p>}
+        {enviado && <p className="mt-1 text-xs text-muted" data-testid="assinar-codigo-enviado">Enviamos 6 números para o e-mail da sua conta. Valem por 15 minutos.</p>}
         <label htmlFor="assinar-codigo" className="mt-3 block text-sm font-medium text-ink">
           Código recebido por e-mail
         </label>

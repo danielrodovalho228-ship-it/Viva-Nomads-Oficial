@@ -312,6 +312,16 @@ async function nomesDasPartes(ownerId: string, tenantId: string): Promise<{ prop
 
 /** Envia ao e-mail da conta um código de 6 dígitos, de uso único, que vale 15 minutos (conferido no servidor). */
 export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    return await pedirCodigoAssinaturaInterno(contratoId);
+  } catch (e) {
+    // E654: a ação nunca lança — uma exceção fazia o botão "girar e voltar" sem mensagem. A causa vai para o log.
+    console.error("[assinatura] pedir código falhou:", e instanceof Error ? e.message : String(e));
+    return { ok: false, error: "Não foi possível enviar o código agora. Tente de novo em instantes." };
+  }
+}
+
+async function pedirCodigoAssinaturaInterno(contratoId: string): Promise<{ ok: boolean; error?: string }> {
   if (!UUID_RE.test(String(contratoId))) return { ok: false, error: "Contrato inválido." };
   const supabase = await createClient();
   const admin = createAdminClient();
