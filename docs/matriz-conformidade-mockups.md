@@ -658,3 +658,215 @@ Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "
 A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
+
+## Passada 46 (07/11; modo demonstração, 390 e 1280) — assistente, Passos 6, 8 e 9 (ramo do #2956)
+
+Os Passos 6 (Regras da casa), 8 (Preço) e 9 (Disponibilidade) só existem no padrão único no ramo do E193 (#2956, rascunho); medidos nele.
+- **Passo 6:** os três interruptores de "Convivência" (Horário de silêncio, Festas e eventos, Visitas) são cartões grandes com o interruptor à direita (padrão E56); entrada, mensagem e "o que considerar" em cartões de escolha; áreas de texto com a moldura do cartão. Nenhum checkbox ou rádio solto.
+- **Passos 8 e 9:** campos de preço e data com 56 px de altura e a moldura do cartão (5 campos no Passo 8, 2 no Passo 9); zero checkbox ou rádio nativo visível; escolhas em cartão.
+- Sem rolagem lateral a 390 (scrollWidth = 390) e a 1280. Nenhum defeito novo.
+- Pendente: prova ao vivo no laboratório (QA do Muse). E649 sem nova mudança: #3015 sem conflito com a `main`.
+
+## Passada 47 (07/11; modo demonstração, 390 e 1280) — telas mexidas pelos merges de 06/11 à noite (E648, E653–E657)
+
+Rotas medidas (um h1, sem rolagem lateral, nada cortado fora de faixa rolável): `/parceiros`, `/parceiros/avaliadores`, `/dashboard/candidaturas`, `/dashboard/fechamento`, `/dashboard/parceiro`, `/dashboard/mensagens`. `/dashboard/parceiro/avaliacao` redireciona ao Início no demo (sem papel de parceiro): precisa de sessão real (QA).
+1. **Achado:** Fechamento — pílulas do passo a passo (36 px), nº de ocupantes e prazo abaixo de 44 px de toque. Corrigido no #3096.
+2. Nenhum outro defeito: `/parceiros` e `/parceiros/avaliadores` com os textos de CNPJ do #3015 já corrigem a superfície; candidaturas vazia conforme o padrão (cartão com ação única).
+3. Fora do demo (dependem de dado real): telas do dono que escolhe o avaliador (E648), código de assinatura (E654), data de envio (E657).
+
+## Passada 48 (07/11; modo demonstração, 390 e 1280) — páginas públicas ainda sem medida recente, com carregamento real das imagens
+
+Rotas: `/guias`, `/guia-fotos`, `/para-proprietarios`, `/seguranca`, `/conferir`, `/pedidos`, `/favoritos`, `/empresas`, `/parceiros/fotografos`, `/parceiros/buscar`, `/como-funciona`, `/precos`, `/avaliadores`, `/ajuda`, `/cidades`. Rolagem até o fim de cada página antes de medir (imagens preguiçosas).
+- **Imagens:** 0 quebradas em todas (naturalWidth > 0 depois do carregamento); as sem `alt` são decorativas com `alt=""` (fotos de categoria em `/parceiros/buscar`, poster em `/precos`), de propósito.
+- **Estouro e corte:** um h1 por página, scrollWidth = largura da janela nas 30 medições, nenhum texto cortado sem reticências.
+- **Alvos de toque:** só ficaram abaixo de 44 px as setas "Foto anterior/Próxima foto" (32 px), que existem só com mouse (`hidden` e aparecem no hover do computador; no toque a foto passa por deslizar), e o link "Ver todos os imóveis" (`alvo-toque`, área de toque ampliada pela classe). Nenhum defeito novo.
+- Sem elemento fixo sobrepondo conteúdo nas rotas medidas.
+
+## Passada 49 (07/11; modo demonstração, 390 e 1280) — rotas mexidas pelos merges depois da passada 48 (E649, E650, E651, E414, E477)
+
+Rotas: `/parceiros?categoria=fotografia`, `/dashboard/parceiro`, `/dashboard/imoveis/novo?etapa=detalhes` (`/dashboard/nivel` não existe: 404, fora da matriz). A `main` já traz o #3015 (E649).
+- **E649 na `main`:** `/parceiros` e `/dashboard/parceiro` só falam de CPF para dizer "O CPF não é aceito — abra o seu CNPJ"; nenhuma superfície oferece CPF ao parceiro. Conforme.
+- **Imagens, estouro e h1:** 0 imagens quebradas; um h1; scrollWidth = largura da janela nas 6 medições.
+- **Alvos de toque:** os botões −/+ dos contadores do assistente medem 36 px e as setas de foto 32 px, mas ambos têm a classe `alvo-toque` (área de toque ampliada, E442) ou só existem com mouse; o link "Ver os passos do credenciamento" (20 px) é link de texto no corpo. Nenhum defeito novo.
+- **Estado dos rascunhos (07/11):** todos os PRs da Pista A (#2956, #3050, #3051, #3052, #3065, #3066, #3084, #3086, #3087, #3096, #3114, #3117, #3079, #3088 e este) sem conflito com a `main`.
+- **E662:** continua bloqueado — não há coluna de instrução de saída na `main` (busca por `instrucao_saida` e variantes em `supabase/` e `src/`: nada). Ver `docs/e662-instrucao-unica-de-saida.md` (#3088).
+
+## Passada 50 (07/11; modo demonstração, 768 × 1024 e 1920 × 1080) — tamanhos ainda não medidos nesta volta
+
+A `main` não andou desde a passada 49 (#3025). Rotas públicas principais: `/`, `/buscar`, `/imoveis/ube-001`, `/cidades`, `/precos`, `/parceiros`, `/como-funciona`, `/ajuda`, `/empresas`, `/para-proprietarios`, rolando a página inteira antes de medir.
+- **Imagens, h1 e estouro:** 0 imagens quebradas; um h1 por página; scrollWidth = largura da janela nas 20 medições.
+- **Elementos além da borda:** só decoração cortada por ancestral `overflow-hidden` (fundo desfocado do herói com `scale-110` em `/` e `/precos`; ícone SVG em `/imoveis/ube-001` a 768). Nada visível fora da janela.
+- **Fixos:** botão "Fale com a Viva" (180 × 48 no computador, 48 × 48 no anúncio a 768) e o atalho de pular ao conteúdo; a barra fixa do anúncio a 768 (`vn-barra-fixa`, 159 px) é a mesma do celular, de propósito (abaixo do computador). Nada fixo na `/buscar` e na `/ajuda`.
+- **/buscar a 1920:** painel do mapa termina dentro da margem só com o #3066; na `main` ainda cola na borda (E659, em rascunho aguardando QA). Nenhum defeito novo.
+
+## Passada 51 (07/11; modo demonstração, 390 toque e 1280) — rotas dinâmicas ainda não medidas nos dois tamanhos
+
+A `main` não andou desde o #3025. Rotas: os 7 guias (`/guias/*`), `/cidades/uberlandia` e seus 2 polos (`hc-ufu-umuarama`, `ufu-santa-monica`), anúncios `ube-002`, `ube-005`, `ube-008`, `ube-010`, `/parceiros/fotografos`; rolagem até o fim antes de medir (imagens preguiçosas).
+- **Imagens:** 0 quebradas nas 30 medições (naturalWidth > 0 de todas as visíveis, 2 a 32 por página).
+- **Estouro e corte:** um h1 por página; scrollWidth = largura da janela; nenhum elemento além da borda fora de faixa rolável; nenhum texto cortado sem reticências.
+- **Toque (390):** nenhum alvo abaixo de 40 px fora dos que têm `alvo-toque`. No computador (1280, mouse) a galeria tem "+N mais" (36 px) e os dias do calendário 27 px de altura — só com mouse, abaixo do critério de toque de propósito; no toque são maiores. Sem defeito.
+- **Achados:** nenhum novo. Estados dos rascunhos (E193, E427, E504, E528, E529, E658, E659, E661, E665, E666, E667, E670) inalterados; E662 segue sem tela, à espera da migração da Pista B (#3149 em rascunho).
+
+## Passada 52 (07/11; modo demonstração, servido da `main` no #3025; 390 e 1280) — telas dos merges mais recentes (E648, E649, E650, E651)
+
+A `main` não andou desde o #3025, então as telas alteradas pelos merges mais recentes são as do cadastro e do painel do parceiro; medidas a 390 e 1280 com a `main` servida (não os rascunhos).
+- **Diferenças mockup × real, uma a uma:**
+  1. Formulário "Seja parceiro" (`/parceiros?categoria=fotografia`, `/dashboard/parceiro`): o seletor "Pessoa física (CPF)" × "Empresa ou MEI (CNPJ)" **saiu** — só CNPJ (E648); o rótulo do documento é "CNPJ"; as únicas escolhas em cartão são "Sim/Não" da pergunta da nota (PJ). Conforme a regra vigente; nenhuma diferença visual com o padrão de cartão.
+  2. `/parceiros/avaliadores`: sem seletor de pessoa e sem texto de CPF fora do aviso "CPF não é aceito". Conforme.
+  3. Digitar 11 dígitos no CNPJ (tentativa de CPF) não estoura a página nem corta o texto (E651 recusa no passo; o texto da recusa vem do servidor e precisa de conta real — QA).
+- **Imagens, estouro, fixos:** 0 imagens quebradas; scrollWidth = largura da janela nas 4 medições; nada fixo sobre conteúdo.
+- **Defeitos novos:** nenhum — nada a corrigir nesta passada. Telas dos merges E414 (degradação da medição de internet) e E477 (observadora sem escrita no admin) dependem de dado real/sessão de admin: ficam para o QA.
+
+## Passada 53 (07/11; modo demonstração, servido da `main` no #3025; 390 toque e 1280) — telas de entrada, jurídicas, 404 e fluxos públicos curtos
+
+A `main` não andou desde o #3025. Rotas: `/auth`, `/auth?senha=1`, `/termos`, `/privacidade` (congeladas: só medidas, sem mexer), `/ajuda/morador`, `/pedidos/novo`, `/comparar`, `/parceiros/ativar`, `/excluir-conta`, e os dois 404 (`/rota-que-nao-existe`, `/imoveis/id-que-nao-existe`).
+- **Imagens, estouro, corte:** 0 imagens quebradas nas 24 medições (os 404 têm 7 a 9 imagens de sugestão, todas carregadas); um h1 por página; scrollWidth = largura da janela; nenhum texto cortado; nada fixo sobre conteúdo; cartões de sugestão do 404 todos com foto.
+- **404 por rota inexistente:** `/ajuda/proprietario` não é tema real (404 correto, com a página de erro da casa).
+1. **Achado:** o link do logo ("VivaNomads — página inicial") mede 32 px de altura a 390 em `/auth` e no topo do painel — abaixo de 44 px de toque. Corrigido no PR `claude-a/f53-logo-alvo` (classe `alvo-toque`, que amplia a área a 44 px em ponteiro de toque sem mexer no desenho; a versão sem link do assistente fica como está).
+- **Conformidade mockup × real:** sem diferença nas telas medidas.
+
+## Passadas 54, 55 e 56 (07/11; modo demonstração local, logado como o usuário de exemplo; 390 toque e 1280) — painel
+
+A `main` só ganhou ajustes de spec do laboratório desde a passada 53 (#3173); nenhuma tela mudou. Rolagem até o fim de cada página antes de medir; imagens, estouro, texto cortado, elementos além da borda e alvos de toque.
+
+**Passada 54 — telas comuns do painel** (`/dashboard`, `/buscas`, `/candidaturas`, `/conta` → `/conta/perfil`, `/contratos`, `/favoritos`, `/locacoes`, `/mensagens`, `/pedidos`, `/propostas`, `/recibos`, `/visitas`): 0 imagens quebradas (o Início tem 20, todas carregadas), um h1 por página, sem rolagem lateral, nada cortado. Conforme; **sem defeito**. (A 1280, "Alertas ativos" mede 36 px, só com mouse.)
+
+**Passada 55 — telas do dono** (`/dashboard/imoveis`, `/leads`, `/ganhos`, `/garantias`, `/orcamentos`, `/servicos`, `/solicitacoes`, `/pedidos-cidade`): 0 imagens quebradas, sem estouro.
+1. **Achado:** o selo "Ativo/Pausado" que abre o menu de pausa em `/dashboard/imoveis` mede 24 px a 390.
+2. **Achado:** as abas de `/dashboard/pedidos-cidade` medem 36 px a 390.
+→ Os dois corrigidos no #3176 (`alvo-toque`).
+
+**Passada 56 — ferramentas e conta** (`/dashboard/ferramentas`, `/notificacoes`, `/respostas-rapidas`, `/conta/perfil`, `/conta/seguranca`, `/agenda`): 0 imagens quebradas, sem estouro, nada cortado, alvos ok. **Sem defeito.** (`/dashboard/niveis` e `/dashboard/financeiro` não existem: 404 com a página de erro da casa.)
+
+**CI dos rascunhos (07/11):** #3065 e #3084 estavam com `verify` vermelho por testes antigos (e531 e tem-completo) que liam o texto de antes das mudanças; #2956 com `lab-critico` vermelho por t677 (esperava um interruptor que já tinha sumido) e t680 (contava 4 cartões de ruído, são 4 + "Nenhum destes"). Os três corrigidos nos próprios PRs. Demais rascunhos verdes.
+
+## Passada 57 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — cabeçalhos do painel (as 15 linhas `cabecalho-*` e o pouso)
+
+Padrão aprovado pelo Muse (fundo clean claro, cartões uniformes, grade par, **um botão cheio por tela**, um h1) medido nas rotas `/dashboard/agenda`, `/conta/ajuda`, `/imoveis`, `/contratos`, `/fechamento`, `/ferramentas`, `/leads`, `/orcamentos`, `/pedidos`, `/recibos`, `/simulador` e `/dashboard`; `/dashboard/caucao` e `/conferencia` não são rotas do painel nesta `main` (404 da casa); `/roi-imovel` e `/tributacao` redirecionam ao Simulador/Ferramentas (correção da passada 58). Ficam fora.
+- **Fundo:** branco/claro em todas. **h1:** um por tela, 24 px no celular e 28 px no computador (padrão do `PageTitle`). **Botão cheio:** um por tela (Anunciar imóvel, Novo anúncio, Novo pedido, Falar com a Viva, Anunciar meu imóvel…); os escuros extras que a medição acusou são estados marcados de rádio, não ações.
+- **Diferença registrada, sem correção:** o h1 de `/dashboard/conta/ajuda` mede 36/48 px porque o cabeçalho da Conta usa a casca própria (`TITULO_TELA_CONTA`), de propósito (linha `perfil-08-ajuda-sair`, conferida sem achado).
+1. **Achado:** `/dashboard/simulador` — os botões de rádio "Cobrado à parte" / "Incluído no valor mensal" (≈34 px pelas classes) ficam abaixo de 44 px de toque a 390. Corrigido no #3180 (`min-h-11`).
+- **Fora desta passada:** `cadastro-imovel-07-descricao` (linha de "Destaques", #3020) e as linhas que dependem de sessão de parceiro/real.
+
+## Passada 58 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — demais rotas do painel ainda sem medida
+
+Rotas: `/dashboard/carteira`, `/comparar`, `/conta/excluir`, `/indicacoes`, `/orcamentos/nova`, `/reembolsos`, `/verificacao`, `/ferramentas` e `/simulador` (para onde `/roi-imovel`, `/tributacao` e `/viabilidade` redirecionam). `/assinatura` volta ao Início; `/avaliacoes` e `/conta/avaliacoes` pedem entrada própria no demo (redirecionam a `/auth`): ficam para sessão real.
+- **Imagens, h1, estouro, corte:** 0 imagens quebradas, um h1 por tela, scrollWidth = largura da janela, nada cortado, nenhum elemento além da borda, alvos de toque ok nas 9 telas medidas.
+- **Achados:** nenhum novo. (O link do logo de `/auth` a 390 ainda mede 32 px na `main`: já corrigido no #3172.)
+- **Correção de registro:** na passada 57 eu disse que `/roi-imovel` e `/tributacao` davam 404; na verdade redirecionam (acima).
+
+## Passada 59 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — estados abertos da /buscar e da candidatura
+
+Estados abertos medidos (não só a tela parada): folhas e popovers de **Mais filtros, Preço, Tipo, Datas, Ordenar, Local** na `/buscar` e o diálogo **"Pedir para morar"** do anúncio (ube-001). Em todos: sem rolagem lateral, nada além da borda, diálogo dentro da janela (folha de baixo a 390: 584 de 664 px; painel lateral a 1280: 448 px), nenhum texto cortado (o único "cortado" é o rótulo `sr-only` do campo Local, de propósito).
+1. **Achado:** filtro **Datas** — os botões − / + de adultos e crianças medem 32 px a 390. Corrigido no #3184 (`alvo-toque`).
+2. **Observação (decisão do Muse, sem correção):** o campo "Cidade ou bairro" do filtro Local mede 23 px dentro de uma pílula de 40 px (`h-10`, a mesma de outras telas); subir a 44 muda o desenho dessas telas.
+3. **Observação:** "Alterar o motivo" (20 px) no diálogo de candidatura é link de texto.
+- **Conformidade mockup × real:** sem diferença nos estados medidos.
+
+## E678 — cabeçalho fixo da edição do imóvel (07/11; `main` em #3083; demo, 390 e 1280) — não reproduzido, sem alteração de código
+
+Achado da varredura do lote 11 (proprietario2, imóvel ativo `4a693a63`): "o cabeçalho fixo cobre o título 'Regras da casa' ao rolar". Investigação:
+- A tela de edição (`/dashboard/imoveis/[id]/editar`) **não tem elemento `sticky` nem `fixed` próprio**; os componentes que ela importa também não. No demo (`ube-001/editar`), a 390 e 1280 px, o único elemento fixo é o botão flutuante "Fale com a Viva" (canto inferior); a 1280 quem rola é o `<main>`, abaixo do topo do painel, e o topo não entra na área que rola.
+- Os únicos cabeçalhos presos do produto são o `AppHeader` (só no modo app, 48 px, `top-0`), a moldura do assistente (64 px) e o `MobileHeader` (56 px, só em telas de fluxo). Todos os alvos de âncora das telas longas (`bloco-video`, seções do editor, painel do parceiro, serviços) usam `scroll-mt-24` (96 px), maior que qualquer um deles: pular para um título pela âncora ou por `scrollIntoView` deixa o título livre.
+- Rolar a página pelas mãos faz o título passar por baixo do cabeçalho preso — isso é o comportamento normal de um cabeçalho preso, não a sobreposição que o achado descreve.
+**Para reproduzir, preciso do QA:** o tamanho de janela (ou aparelho), se estava no modo app, e o ponto exato de rolagem/ação (clique no menu, foco em erro, hash) em que o título "Regras da casa" ficou parcialmente coberto. Sem isso, qualquer mudança seria no escuro (não inventei um `scroll-padding` global).
+
+## Passada 60 (07/11; modo demonstração local, `main` no #3083; 390 e 1280) — telas dos merges E657, E414 e E477
+
+Merges depois da passada 59: E657 (selo "Reenviada" e "Enviada em"), E414 (botão "Medir depois"), E477 (observadora só leitura no admin). Telas medidas: `/dashboard/leads`, `/dashboard/leads/1`, `/dashboard/candidaturas` e o assistente (`/dashboard/imoveis/novo`, onde fica a medição de internet).
+- 0 imagens quebradas, um h1, sem rolagem lateral, nada além da borda, nada cortado, alvos de toque ok nas 8 medições; conformidade: sem diferença.
+- **Sem achado.** As linhas "Enviada em" e "Reenviada" só aparecem com candidatura real (o demo não tem data de envio): ficam para o QA. As páginas do admin (`fotos-perfil`, `imoveis`, `pendencias`) pedem sessão de admin: ficam para o QA.
+- **CI (07/11):** #3191 (E678) com `e2e`, `lab-critico` e `verify` verdes; #3065 verde depois da correção do teste do E531.
+
+## Passada 61 (07/11; modo demonstração local, `main` em #3051; 390 e 1280) — merges E529, E528, E678, E670, E427
+
+Merges depois da passada 60: #3051 (E529, barra Comparar), #3050 (E528, painel de preço), #3191 (E678, respiro de topo do assistente), #3148 (E670, resumo do candidato), #2978 (E427, nome completo após o aceite).
+- **E529 — `/buscar` com 2 imóveis marcados** (15 caixinhas "Comparar"): a barra "Comparar (2) · Limpar" é `static` (faixa da página, acima da lista); rolando a lista inteira, **0** sobreposições com cartões, a 390 e 1280; sem rolagem lateral. Conforme.
+- **E528 — anúncio `ube-001` a 1280** (janela de 800 e de 1080 px): o painel de preço mede 1.479 px (mais alto que a janela) e fica `relative` (`data-preso="nao"`): rola com a página, inteiro, com o "Total por mês" no topo dele e de novo junto da ação; não some acima de "Imóveis parecidos". Conforme com o desenho do #3050.
+- **E678, E670, E427:** já medidos nos PRs; sem tela nova a medir no demo (E427 pede sessão de morador aceito).
+- **Achados novos:** nenhum.
+- **CI:** #3164 (E662) ficou com `verify` vermelho por um teste de cobertura que exige a ação nova no mapa (`tests/e2e/cobertura.json`); entrada acrescentada (sem spec ainda). #3191, #3148, #3050, #3051, #2978 já estão na `main`; resta de rascunho do bloco de mapas o #3066 (E659), sem conflito com a `main`.
+
+## Passada 62 (07/11; modo demonstração local, `main` em #3051; 390 e 1280) — E446 (a cidade e a busca contam igual)
+
+A `main` não andou desde a passada 61. Bloco seguinte: as páginas de cidade e polo depois do #2971 (E446, número único da vitrine).
+- **Número:** `/cidades/uberlandia` diz "15 imóveis em Uberlândia", igual à `/buscar` ("15 imóveis em Uberlândia"); os cartões dos polos dizem "2 imóveis" cada. Conforme, a 390 e 1280.
+- **Imagens, estouro, cartão sem foto:** 32 imagens na cidade e na busca, 4 e 6 nos polos (`hc-ufu-umuarama`, `ufu-santa-monica`), 0 quebradas, 0 cartões sem foto, scrollWidth = largura da janela.
+- **Observação:** as páginas dos polos não repetem a contagem em texto (só a lista); não é defeito (o desenho do E446 põe o número na cidade).
+- **Achados novos:** nenhum.
+
+## Passada 63 (07/11; modo demonstração local, `main` em #3218; 768 × 1024, logado) — painel no tamanho de tablet
+
+A `main` só ganhou blocos de testes da Pista C desde a passada 62 (nenhum arquivo de tela). Tamanho ainda sem medida com a conta logada: 768.
+Rotas: `/dashboard`, `/imoveis`, `/leads`, `/mensagens`, `/contratos`, `/pedidos`, `/ferramentas`, `/conta/perfil`, `/imoveis/ube-001/editar` e o assistente (`/imoveis/novo?etapa=regras`).
+- 0 imagens quebradas (o Início tem 20, todas carregadas), um h1, scrollWidth = 768, nada além da borda, nada cortado, 10 de 10 telas.
+- **Alvos de toque:** só o selo "Ativo/Pausado" de `/dashboard/imoveis` (24 px) — já corrigido no #3176 (rascunho). Sem achado novo.
+- Conformidade mockup × real: sem diferença.
+
+## Passada 64 (07/11; modo demonstração local, `main` em #3218; 390 e 1280) — menus abertos do topo do painel
+
+Sem tela nova na `main` (só blocos de testes da Pista C). Bloco seguinte: os estados abertos do topo do painel (não só a tela parada): o **painel de avisos do sino** (E444) e o **menu da Conta**.
+- **Sino:** a 390, painel de 358 px (16 a 374), a 1280, 384 px; **Conta:** 256 px nos dois tamanhos. Em todos: dentro da janela (esquerda, direita, topo e base), sem rolagem lateral, nenhum texto cortado, nenhum alvo abaixo de 40 px fora dos que têm `alvo-toque`.
+- **Achados novos:** nenhum. Conformidade mockup × real: sem diferença nos estados medidos.
+
+## Passada 65 (07/11; modo demonstração local, `main` em #3220; 390 e 1280) — diálogos do anúncio (Agendar visita e Pedir para morar)
+
+Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar** (mesmo formulário de visita/candidatura). Em ambos, a 390 (tela cheia, 390 × 664) e a 1280: dentro da janela, sem rolagem lateral, nenhum texto cortado.
+1. **Achado:** "+ Outro horário" mede 20 px a 390 (ação solta no formulário). Corrigido no #3225 (`min-h-11`).
+2. **Observação (sem correção):** a 1280, com mouse, o ícone "Abrir calendário" dos campos de data mede 36 px.
+- **Não medidos nesta passada:** "Salvar busca" (na `/buscar` ele não abre diálogo no demo), "Descrever o que procuro" e "Publicar pedido" (sem gatilho visível no demo) e o menu do site no celular (o gatilho do demo não abre um diálogo medível): ficam para a próxima.
+- Conformidade mockup × real: sem diferença nos estados medidos.
+
+## Passada 66 (07/11; modo demonstração local, `main` em #3223; 390 e 1280) — o que ficou da passada 65: busca, pedido e menu do site
+
+- **`/buscar` — "Salvar busca", "Descrever o que procuro", "Publicar pedido":** os três medem 44 px de altura a 390 e a 1280 (botão, botão, link para `/pedidos/novo`), na barra de ações abaixo do título. "Salvar busca" sem entrada leva a `/auth?motivo=busca&redirect=/buscar` (portão de login, de propósito; sem diálogo e sem estouro). Conforme.
+- **Menu do site no celular** (botão "Abrir menu", 44 px): abre em linha, empurrando a página — Imóveis, Anunciar, Empresas, Parceiros, Fale com a Viva e o botão "Entrar", itens de ~52 px, dentro dos 390, sem rolagem lateral; o botão vira "X". Conforme. A 1280 o topo mostra os links na linha (20 px de altura: mouse).
+- **Observação:** o link do logo mede 32 px a 390 na `main` (corrigido no #3172, rascunho). A barra inferior de abas aparece no celular também na página inicial, com o botão flutuante sobre o "Início"; é o desenho atual, sem achado.
+- **Achados novos:** nenhum.
+
+## Passada 67 (07/11; modo demonstração local, `main` em #3241; 390 e 1280) — E660 (ficha de dentro) e conferência de E665/E666
+
+- **E665 e E666:** já estão na `main` (#3086 e #3087, mesclados). Nada a refazer; só conferência de estado.
+- **Ficha de dentro do imóvel (`/dashboard/imoveis/novo?etapa=comodidades`, #3085):** os 14 controles da ficha (campos de cama por quarto, Sim/Não de ar-condicionado, roupa de cama e cozinha) medem 44 px ou mais a 390 e a 1280; sem rolagem lateral (390 e 1280 de largura de documento). Conforme.
+- **Achados novos:** nenhum.
+- **Bloqueado, pulado:** E679 visual (mockups fora do repo na hora da passada).
+
+## Passada 68 (07/11; modo demonstração local, `main` em #3241; 390 e 1280) — subpáginas do imóvel, indicações e avisos
+
+- **Telas conferidas** (sem estouro lateral a 390 e a 1280): `/dashboard/indicacoes`, `/avisos/desligar`, `/excluir-conta/confirmar` (link incompleto), `/dashboard/imoveis/[id]/editar`, `desempenho`, `nivel`, `parceiros`, `cartao`.
+- **Achado 1 (corrigido, PR `claude-a/varredura-alvos-imovel`):** o link "← Meus imóveis" das subpáginas parceiros, desempenho, nível, cartão e conforto media 20 px; "Ver como aparece na busca" no editar anúncio, 20 px. Agora `min-h-11`.
+- **Observações sem correção:** botões `size="sm"` do sistema (40 px: "Voltar aos imóveis", "Compartilhar", "Ver", "Editar" na lista de imóveis) e links dentro de frase (ex.: "padrão mínimo", 17 px) seguem o padrão atual; mudar o tamanho do botão é decisão de sistema de desenho, não defeito de tela.
+- **Não alcançáveis no demo:** `/admin/*`, `/dashboard/estadia/[id]/*`, `/dashboard/contratos/[id]/ficha` (exigem papel ou dado real) — ficam para o laboratório.
+- **E666 (calendário público):** PR #3250 separa Ocupado de Bloqueado pelo proprietário.
+
+## Passada 69 (07/11; modo demonstração local, `main` em #3254; 390 e 1280) — rotas ainda não varridas
+
+- **Telas conferidas** (sem estouro lateral, sem erro de página a 390 e a 1280): `/ajuda/fale-com-a-viva`, `/alerta-busca/desligar`, `/parceiros/ativar`, `/dashboard/comparar`, `conta/seguranca`, `conta/excluir`, `favoritos`, `ganhos`, `garantias`, `locacoes`, `notificacoes`, `orcamentos/nova`, `propostas`, `respostas-rapidas`, `solicitacoes`, `verificacao`, `visitas`.
+- **Achado (corrigido, PR `claude-a/varredura-passada-69`):** links de ação soltos de 17–20 px: "Ver minhas candidaturas" (Propostas), "Ver contratos" (Caução), "Voltar para Orçamentos" (Nova proposta) e "Ativar"/"Alterar senha" (Segurança e verificações). Agora `min-h-11`.
+- **Sem correção, para decisão:** botões `size="sm"` do sistema (40 px, ex.: "Buscar imóveis" em Favoritos, "Ver meus anúncios" em Ganhos); controles de Notificações medem 24 px no trilho, mas a linha inteira é o alvo (a conferir por QA com toque real).
+- **Não alcançáveis no demo:** `/dashboard/estadia/[id]/*`, `/dashboard/contratos/[id]/ficha`, `/admin/*` (papel ou dado real) — laboratório.
+- **Antes desta passada:** #3256 (E685/E686) verde; #3250 (E666) e #3251 (passada 68) verdes e sem conflito com a `main`.
+
+## Passada 70 (07/11; modo demonstração local, `main` em #3254; 390 e 1280) — carregamento real de imagens e elementos fixos (site público)
+
+- **Método:** cada página rolada de ponta a ponta (dispara o carregamento sob demanda); contagem das imagens visíveis com `complete` e `naturalWidth = 0` (quebradas), respostas HTTP 4xx/5xx de imagem, imagens sem `alt`, estouro horizontal, cartões de imóvel sem foto e elementos `fixed`.
+- **Páginas:** `/`, `/buscar`, `/imoveis/[id]`, `/parceiros`, `/parceiros/fotografos`, `/parceiros/avaliadores`, `/empresas`, `/ajuda`, `/cidades`, `/para-proprietarios`, `/anunciar`, `/como-funciona`, `/seguranca`, `/precos`.
+- **Resultado:** 0 imagens quebradas, 0 respostas de imagem com erro, 0 sem `alt`, 0 cartões sem foto, 0 estouro lateral. As imagens "pendentes" a 390 são slides de carrossel fora da tela (posição 1950 px ou mais), com carregamento sob demanda de propósito (confirmado em `/imoveis/ube-001`).
+- **Elementos fixos:** barra de abas inferior (celular), barra fixa do anúncio e botão "Fale com a Viva" (computador) não cobrem título nem conteúdo.
+- **Achados novos:** nenhum.
+
+## Passada 71 (07/11; modo demonstração local; 390 e 1280) — painel logado
+
+- **Páginas:** `/dashboard`, `imoveis`, `favoritos`, `locacoes`, `mensagens`, `conta/perfil`, `parceiro`, `leads`, `contratos`, `candidaturas`, `comparar`.
+- **Resultado:** 0 imagens quebradas ou com erro HTTP, nenhum título coberto por elemento fixo, 0 estouro lateral. Achados novos: nenhum.
+- **E679 visual:** continua bloqueado — não há mockups `avaliacoes-*.webp` no repo (só `public/images/painel/painel-avaliacoes.webp` e `parceiros-passo-avaliado.webp`, imagens do site, não os mockups). Nenhuma tela foi inventada.
+
+## Passada 72 (07/11; modo demonstração local, `main` em #3254 + `e099ae6b6`; 390 e 1280) — rotas que faltavam das passadas 70 e 71
+
+- **Critérios:** imagem quebrada (`complete` com `naturalWidth = 0`) e resposta HTTP de imagem com erro, imagem sem `alt`, cartão de imóvel sem foto, estouro horizontal, título coberto por elemento fixo. Páginas roladas de ponta a ponta antes da medição.
+- **Rotas (29):** `/avaliadores`, `/comparar`, `/conferir`, `/favoritos`, `/guia-fotos`, `/guias`, `/pedidos`, `/pedidos/novo`, `/parceiros/buscar`, `/privacidade`, `/termos` (só leitura; páginas legais congeladas), `/excluir-conta`; painel: `agenda`, `assinatura`, `avaliacoes`, `buscas`, `carteira`, `conta`, `conta/avaliacoes`, `fechamento`, `ferramentas`, `orcamentos`, `parceiro/avaliacao`, `pedidos`, `pedidos-cidade`, `recibos`, `reembolsos`, `servicos`, `imoveis/novo`.
+- **Resultado:** 0 imagens quebradas, 0 erros HTTP de imagem, 0 sem `alt`, 0 cartões sem foto, 0 estouro lateral. Achados novos: nenhum.
+- **Falso positivo do método (390):** em `/privacidade`, `/avaliadores`, `reembolsos` e `recibos` um subtítulo que fica na borda inferior da primeira tela aparece "sob" a barra de abas fixa. É o conteúdo antes de rolar; a barra reserva o espaço no fim da página (conferido nas passadas 64 a 66). Não é defeito.
+- **Observações (não são defeito de tela):** `/dashboard/assinatura` e `/dashboard/parceiro/avaliacao` caem no Início do painel no demo (portão por papel); `/dashboard/avaliacoes` e `/dashboard/conta/avaliacoes` pedem sessão real ("Entre ou crie sua conta") — ficam para o laboratório, junto da duplicação E85 (E679).
+- **E679 visual:** segue bloqueado — verificado de novo: nenhum `avaliacoes-*.webp` nem `mockups/avaliacoes/` na `main` nem em branch remoto. Nada foi construído.
+- **CI e conflitos nesta passada:** #3245, #3250, #3251, #3256 e #3259 com verify, lab-critico, e2e e prévia verdes; sem conflito com a `main`.
