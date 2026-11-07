@@ -41,21 +41,26 @@ async function papelDa(s: Sessao): Promise<PapelSaida> {
 export async function estadoSaida(): Promise<{ papel: PapelSaida; pausadaEm: string | null; pendencias: PendenciaSaida[] } | null> {
   const s = await sessao();
   if (!s) return null;
-  const [papel, { data: perfil }, comoMorador, comoDono, { data: pedidos }] = await Promise.all([
+  const [papel, { data: perfil, error: erroPerfil }, comoMorador, comoDono, { data: pedidos, error: erroPedidos }] = await Promise.all([
     papelDa(s),
     s.admin.from("profiles").select("pausada_em").eq("id", s.uid).maybeSingle(),
     s.admin.from("contratos").select("id, properties(title)").eq("tenant_id", s.uid).eq("status", "ativo"),
     s.admin.from("contratos").select("id, properties!inner(title, owner_id)").eq("properties.owner_id", s.uid).eq("status", "ativo"),
     s.admin.from("parceiro_pedidos").select("id, parceiros(nome_publico)").eq("cliente_id", s.uid).in("status", ["solicitado", "orcado", "aceito", "agendado", "em_execucao", "entregue"]),
   ]);
+  // Achado 162: leitura que falha LANÇA — a tela diz que não conseguiu conferir (nunca "você não tem pendências").
+  if (erroPerfil || comoMorador.error || comoDono.error || erroPedidos) {
+    throw new Error(`estadoSaida: ${erroPerfil?.message ?? comoMorador.error?.message ?? comoDono.error?.message ?? erroPedidos?.message}`);
+  }
   const contratos = [...((comoMorador.data ?? []) as unknown[]), ...((comoDono.data ?? []) as unknown[])] as { id: string; properties: { title: string | null } | null }[];
   const ids = contratos.map((c) => c.id);
-  const [{ data: caucoes }, { data: encerramentos }] = ids.length
+  const [{ data: caucoes, error: erroCaucoes }, { data: encerramentos, error: erroEncerramentos }] = ids.length
     ? await Promise.all([
         s.admin.from("caucao_acertos").select("contrato_id").in("contrato_id", ids).eq("status", "aguardando_confirmacao"),
         s.admin.from("contrato_encerramento_pedidos").select("contrato_id").in("contrato_id", ids).in("status", ["aberto", "em_conducao"]),
       ])
-    : [{ data: [] }, { data: [] }];
+    : [{ data: [], error: null }, { data: [], error: null }];
+  if (erroCaucoes || erroEncerramentos) throw new Error(`estadoSaida: ${erroCaucoes?.message ?? erroEncerramentos?.message}`);
   const titulo = new Map(contratos.map((c) => [c.id, c.properties?.title || "Imóvel"]));
   return {
     papel,
@@ -89,8 +94,14 @@ export async function pausarConta(): Promise<Res> {
     console.error("[pausarConta]", error.code, error.message);
     return { ok: false, erro: "Não foi possível pausar agora. Tente de novo." };
   }
-  await s.admin.from("properties").update({ status: "paused", pausado_pela_conta: true, pausa_motivo: "conta" }).eq("owner_id", s.uid).eq("status", "active");
-  await s.admin.from("parceiros").update({ status: "pausado", pausado_pela_conta: true }).eq("user_id", s.uid).eq("status", "publicado");
+  const { error: erroAnuncios } = await s.admin.from("properties").update({ status: "paused", pausado_pela_conta: true, pausa_motivo: "conta" }).eq("owner_id", s.uid).eq("status", "active");
+  const { error: erroParceiro } = await s.admin.from("parceiros").update({ status: "pausado", pausado_pela_conta: true }).eq("user_id", s.uid).eq("status", "publicado");
+  // Achado 162: se a retirada dos anúncios/página falhou, não diz "Conta pausada" (os anúncios continuariam na busca).
+  if (erroAnuncios || erroParceiro) {
+    console.error("[pausarConta] retirada falhou:", erroAnuncios?.message ?? erroParceiro?.message);
+    revalidarConta();
+    return { ok: false, erro: "A pausa começou, mas não conseguimos tirar tudo do ar. Toque em pausar de novo para terminar." };
+  }
   revalidarConta();
   return { ok: true, mensagem: "Conta pausada. Para voltar, toque em \"Reativar minha conta\" no topo do painel." };
 }
@@ -225,10 +236,12 @@ export async function adminFecharCorrecao(form: FormData): Promise<Res> {
   const ligacao = String(form.get("ligacao") ?? "").trim().slice(0, 300);
   const pode = podeFecharCorrecao(ligacao);
   if (!pode.ok) return { ok: false, erro: pode.motivo };
-  const { data: c } = await a.admin.from("qualidade_correcoes").select("dono, prazo").eq("id", String(form.get("id") ?? "")).is("fechada_em", null).maybeSingle();
+  const { data: c, error: erroLeitura } = await a.admin.from("qualidade_correcoes").select("dono, prazo").eq("id", String(form.get("id") ?? "")).is("fechada_em", null).maybeSingle();
+  if (erroLeitura) return { ok: false, erro: "Não foi possível ler a correção agora. Tente de novo." };
   if (!c) return { ok: false, erro: "Correção não encontrada." };
   if (!c.dono || !c.prazo) return { ok: false, erro: "Defina o dono e o prazo antes de fechar." };
-  await a.admin.from("qualidade_correcoes").update({ fechada_em: new Date().toISOString(), fechada_por: a.uid, ligacao }).eq("id", String(form.get("id") ?? "")).is("fechada_em", null);
+  const { error: erroFecha } = await a.admin.from("qualidade_correcoes").update({ fechada_em: new Date().toISOString(), fechada_por: a.uid, ligacao }).eq("id", String(form.get("id") ?? "")).is("fechada_em", null);
+  if (erroFecha) return { ok: false, erro: "Não foi possível fechar a correção agora. Tente de novo." };
   revalidatePath("/admin/qualidade");
   return { ok: true, mensagem: "Correção fechada." };
 }
@@ -242,7 +255,8 @@ export async function adminEstadoDenuncia(form: FormData): Promise<Res> {
   if (recusaQa) return { ok: false, erro: recusaQa };
   const status = String(form.get("status") ?? "");
   if (!["recebida", "em_analise", "resolvida"].includes(status)) return { ok: false, erro: "Escolha o estado." };
-  await a.admin.from("denuncias_anuncio").update({ status, atualizado_em: new Date().toISOString() }).eq("id", String(form.get("id") ?? ""));
+  const { error: erroEstado } = await a.admin.from("denuncias_anuncio").update({ status, atualizado_em: new Date().toISOString() }).eq("id", String(form.get("id") ?? ""));
+  if (erroEstado) return { ok: false, erro: "Não foi possível atualizar o estado agora. Tente de novo." };
   revalidatePath("/admin/qualidade");
   return { ok: true, mensagem: "Estado atualizado." };
 }

@@ -26,6 +26,9 @@ const CLASSE_BOTAO = buttonClasses({ variant: "outline", size: "md" });
 
 export function SairDaViva() {
   const [estado, setEstado] = useState<Estado | null>(null);
+  // Achado 162: a leitura das pendências falhou — a tela diz isso e oferece tentar de novo (nunca "você não tem pendências").
+  const [falhaLeitura, setFalhaLeitura] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   const [etapa, setEtapa] = useState<Etapa>("escolha");
   const [nivel, setNivel] = useState<NivelSaida>("pausar");
   const [motivo, setMotivo] = useState("");
@@ -38,12 +41,16 @@ export function SairDaViva() {
   useEffect(() => {
     let vivo = true;
     estadoSaida()
-      .then((e) => vivo && setEstado(e))
-      .catch(() => null);
+      .then((e) => {
+        if (!vivo) return;
+        setEstado(e);
+        setFalhaLeitura(false);
+      })
+      .catch(() => vivo && setFalhaLeitura(true));
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tentativa]);
 
   const escolher = (n: NivelSaida) => {
     setNivel(n);
@@ -189,10 +196,17 @@ export function SairDaViva() {
                 ))}
               </ul>
             </>
+          ) : falhaLeitura ? (
+            <div role="alert" data-testid="saida-falha-leitura">
+              <p className="text-ink">Não conseguimos conferir as suas pendências agora. Tente de novo antes de apagar os dados.</p>
+              <button type="button" className={`mt-3 ${CLASSE_BOTAO}`} onClick={() => setTentativa((n) => n + 1)} data-testid="saida-tentar-de-novo">
+                Tentar de novo
+              </button>
+            </div>
           ) : (
             <p className="text-ink" data-testid="saida-sem-pendencias">Você não tem pendências. Se quiser, pode apagar seus dados.</p>
           )}
-          <button type="button" className={`mt-4 ${CLASSE_BOTAO}`} onClick={() => setEtapa("apagar")} data-testid="saida-ir-apagar">
+          <button type="button" className={`mt-4 ${CLASSE_BOTAO}`} onClick={() => setEtapa("apagar")} disabled={falhaLeitura} data-testid="saida-ir-apagar">
             Apagar meus dados
           </button>
         </div>
