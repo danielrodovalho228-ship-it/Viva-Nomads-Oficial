@@ -105,13 +105,17 @@ export function assinadoPelasDuas(c: Pick<LinhaContratoEstadia, "assinado_propri
 
 /** Instruções do imóvel com a sobrescrita do contrato (contratos_checkin.instrucoes). */
 export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null; doContrato: string | null }> {
-  const [{ data: im }, { data: ck }] = await Promise.all([
+  const [{ data: im }, { data: ck }, { data: cs, error: erroSaida }] = await Promise.all([
     admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id).maybeSingle(),
     admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id).maybeSingle(),
+    // E662: a cópia da instrução de saída congelada na 1ª assinatura. Leitura à parte e tolerante (coluna da migração 0320): sem
+    // ela, vale a do imóvel.
+    admin.from("contratos").select("instrucao_saida").eq("id", c.id).maybeSingle(),
   ]);
   const doImovel = im ? normalizarInstrucoes(im as Record<string, unknown>) : null;
   const doContrato = ((ck as { instrucoes?: string | null } | null)?.instrucoes ?? "").trim() || null;
-  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato), doContrato };
+  const saidaDoContrato = erroSaida ? null : ((cs as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? null);
+  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato, saidaDoContrato), doContrato };
 }
 
 export interface OcupanteView {

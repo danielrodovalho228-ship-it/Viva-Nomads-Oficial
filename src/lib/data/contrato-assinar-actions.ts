@@ -390,6 +390,21 @@ async function lerContrato(admin: AdminAssinatura, contratoId: string): Promise<
 }
 
 /**
+ * E662: copia a instrução de saída do imóvel para o contrato na 1ª assinatura (uma vez só), para o texto não mudar no meio da
+ * estadia. Melhor esforço: a assinatura NUNCA depende dela (a coluna é da migração 0320 e, sem cópia, o guia usa a do imóvel).
+ */
+async function congelarInstrucaoSaida(admin: AdminAssinatura, contratoId: string, propertyId: string): Promise<void> {
+  try {
+    const { data: im, error } = await admin.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    const texto = ((im as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+    if (error || !texto) return;
+    await admin.from("contratos").update({ instrucao_saida: texto }).eq("id", contratoId).is("instrucao_saida", null);
+  } catch {
+    // sem cópia: vale a do imóvel
+  }
+}
+
+/**
  * Lê o contrato para ASSINAR: congela as regras na 1ª assinatura e completa os valores vivos — tudo estrito (lança
  * LeituraDaAssinaturaFalhou), porque o que sai daqui vai para o hash e para o contrato.
  */
@@ -411,6 +426,7 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
       .eq("id", c.id)
       .is("pets_regras_congeladas", null);
     if (erroCongela) throw new LeituraDaAssinaturaFalhou(`congelar: ${erroCongela.message}`);
+    await congelarInstrucaoSaida(admin, c.id, c.property_id as string);
     c = await lerContrato(admin, contratoId);
   }
   // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
