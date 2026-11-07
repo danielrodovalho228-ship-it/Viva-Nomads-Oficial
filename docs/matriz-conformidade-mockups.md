@@ -860,3 +860,13 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Páginas:** `/dashboard`, `imoveis`, `favoritos`, `locacoes`, `mensagens`, `conta/perfil`, `parceiro`, `leads`, `contratos`, `candidaturas`, `comparar`.
 - **Resultado:** 0 imagens quebradas ou com erro HTTP, nenhum título coberto por elemento fixo, 0 estouro lateral. Achados novos: nenhum.
 - **E679 visual:** continua bloqueado — não há mockups `avaliacoes-*.webp` no repo (só `public/images/painel/painel-avaliacoes.webp` e `parceiros-passo-avaliado.webp`, imagens do site, não os mockups). Nenhuma tela foi inventada.
+
+## Passada 72 (07/11; modo demonstração local, `main` em #3254 + `e099ae6b6`; 390 e 1280) — rotas que faltavam das passadas 70 e 71
+
+- **Critérios:** imagem quebrada (`complete` com `naturalWidth = 0`) e resposta HTTP de imagem com erro, imagem sem `alt`, cartão de imóvel sem foto, estouro horizontal, título coberto por elemento fixo. Páginas roladas de ponta a ponta antes da medição.
+- **Rotas (29):** `/avaliadores`, `/comparar`, `/conferir`, `/favoritos`, `/guia-fotos`, `/guias`, `/pedidos`, `/pedidos/novo`, `/parceiros/buscar`, `/privacidade`, `/termos` (só leitura; páginas legais congeladas), `/excluir-conta`; painel: `agenda`, `assinatura`, `avaliacoes`, `buscas`, `carteira`, `conta`, `conta/avaliacoes`, `fechamento`, `ferramentas`, `orcamentos`, `parceiro/avaliacao`, `pedidos`, `pedidos-cidade`, `recibos`, `reembolsos`, `servicos`, `imoveis/novo`.
+- **Resultado:** 0 imagens quebradas, 0 erros HTTP de imagem, 0 sem `alt`, 0 cartões sem foto, 0 estouro lateral. Achados novos: nenhum.
+- **Falso positivo do método (390):** em `/privacidade`, `/avaliadores`, `reembolsos` e `recibos` um subtítulo que fica na borda inferior da primeira tela aparece "sob" a barra de abas fixa. É o conteúdo antes de rolar; a barra reserva o espaço no fim da página (conferido nas passadas 64 a 66). Não é defeito.
+- **Observações (não são defeito de tela):** `/dashboard/assinatura` e `/dashboard/parceiro/avaliacao` caem no Início do painel no demo (portão por papel); `/dashboard/avaliacoes` e `/dashboard/conta/avaliacoes` pedem sessão real ("Entre ou crie sua conta") — ficam para o laboratório, junto da duplicação E85 (E679).
+- **E679 visual:** segue bloqueado — verificado de novo: nenhum `avaliacoes-*.webp` nem `mockups/avaliacoes/` na `main` nem em branch remoto. Nada foi construído.
+- **CI e conflitos nesta passada:** #3245, #3250, #3251, #3256 e #3259 com verify, lab-critico, e2e e prévia verdes; sem conflito com a `main`.
