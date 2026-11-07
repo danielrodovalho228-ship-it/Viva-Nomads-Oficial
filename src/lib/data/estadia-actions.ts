@@ -158,7 +158,8 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre para continuar." };
-  const { data: imovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data: imovel, error: erroImovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (erroImovel) return { ok: false, erro: "Não foi possível conferir o imóvel agora. Tente de novo." };
   if ((imovel as { owner_id?: string } | null)?.owner_id !== user.id) return { ok: false, erro: "Só o proprietário edita as instruções." };
   const normalizadas = normalizarInstrucoes(campos);
   let imovelCampos: Instrucoes = normalizadas;
@@ -209,7 +210,8 @@ export async function salvarInstrucaoSaidaDoImovel(propertyId: string, texto: st
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre para continuar." };
-  const { data: imovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data: imovel, error: erroImovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (erroImovel) return { ok: false, erro: "Não foi possível conferir o imóvel agora. Tente de novo." };
   if ((imovel as { owner_id?: string } | null)?.owner_id !== user.id) return { ok: false, erro: "Só o proprietário edita a instrução de saída." };
   const { error } = await supabase
     .from("imovel_instrucoes_chegada")
@@ -454,7 +456,8 @@ export async function pedirCodigoAditivo(aditivoId: string): Promise<Res> {
   const { ctx, a } = r;
   if (a.status !== "aceito") return { ok: false, erro: "Este aditivo não está aguardando assinatura." };
   if (!ctx.email) return { ok: false, erro: "A conta precisa de um e-mail para receber o código." };
-  const { data: ja } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
+  const { data: ja, error: erroJa } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
+  if (erroJa) return { ok: false, erro: "Não foi possível conferir a assinatura agora. Tente de novo." };
   if (ja) return { ok: false, erro: "Você já assinou este aditivo." };
   const agora = Date.now();
   const { data: atual, error: erroAtual } = await ctx.admin.from("contrato_aditivo_codigos").select("enviado_em").eq("aditivo_id", a.id).eq("user_id", ctx.userId).maybeSingle();
