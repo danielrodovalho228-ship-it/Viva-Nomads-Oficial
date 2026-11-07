@@ -142,11 +142,11 @@ function DecisoesDaCentral({
             <p className="text-xs font-semibold text-muted">{titulo}</p>
             <ul className="mt-1 divide-y divide-line border-y border-line">
               {filas.map((f) => (
-                <li key={f.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={f.chave} data-ativo={filtro === f.chave ? "1" : "0"}>
+                <li key={f.chave} className="flex flex-wrap items-center justify-between gap-3 py-3" data-decisao={f.chave} data-precisa={f.chave} data-ativo={filtro === f.chave ? "1" : "0"}>
                   <span className={`min-w-0 ${filtro === f.chave ? "font-semibold text-forest" : "font-semibold text-ink"}`}>
                     <span className="tabular-nums">{contagens[f.chave]}</span> · {f.rotulo}
                   </span>
-                  <ButtonLink href={hrefCentral(f.chave)} variant="secondary" size="sm" data-testid={`central-filtro-${f.chave}`} data-n={contagens[f.chave]}>
+                  <ButtonLink href={hrefCentral(f.chave)} variant="secondary" size="sm" data-testid={`central-filtro-${f.chave}`} data-n={contagens[f.chave]} data-href={hrefCentral(f.chave)} data-valor={contagens[f.chave]}>
                     Abrir
                   </ButtonLink>
                 </li>
@@ -172,11 +172,11 @@ function DecisoesDaCentral({
 /** E330: decisão de outra tela como item da fila — o que é, o contexto e o botão que leva à decisão. */
 function LinhaDecisao({ l }: { l: LinhaDecisaoAdmin }) {
   return (
-    <li className="space-y-1 py-3 text-sm" data-testid="central-linha-decisao" data-decisao={l.chave}>
+    <li className="space-y-1 py-3 text-sm" data-testid="central-linha-decisao" data-decisao={l.chave} data-precisa={l.chave}>
       <p className="min-w-0 font-semibold text-ink">{l.texto}</p>
       {l.detalhe && <p className="break-words text-muted">{l.detalhe}</p>}
       <p className="text-xs text-muted">
-        <Link href={l.href} className="text-forest underline">
+        <Link href={l.href} className="text-forest underline" data-href={l.href} data-valor={l.n}>
           {l.acao}
         </Link>
       </p>

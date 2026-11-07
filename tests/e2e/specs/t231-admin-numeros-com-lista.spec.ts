@@ -147,7 +147,7 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         alvos.push({ nome: `funil ${rotulo}`, valor: n(f.valor), href: f.href, esperado });
       }
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("central-decisoes")).toBeVisible({ timeout: 30_000 });
       for (const chave of ["candidaturas_sem_resposta_48h", "chamados_urgentes_sem_resposta", "comissoes_vencidas", "pedidos_sem_resposta_expirando"]) {
         const f = await fila(chave);
         alvos.push({ nome: `fila ${chave}`, valor: f.valor, href: f.href });
