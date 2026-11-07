@@ -201,3 +201,7 @@ Verdes: t1393 (#3192, run 42375213154), t1394 (#3193, run 42375216804), bloco 48
 ## Bloco 482 verde e bloco 483 (main `8eaf146be`)
 
 Bloco 482 (#3210) verde (run 42376349669) e mesclado; main em `2efa62001` verde (run 42376262301), run de `8eaf146be` em andamento. Nenhum merge de produto novo desde `2efa62001`, então sem spec de merge nova. Bloco 483 (t1405, grupo do 466: cidade, buscar, comparar, institucionais, parceiros/buscar, admin atendimento/contratos/candidaturas) aberto no #3218. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Bloco 483 verde e bloco 484 (main `df7417787`)
+
+Bloco 483 (#3218, grupo do 466, com as telas do E446 e do E529) verde (run 42377481986) e mesclado; main em `8eaf146be` verde (run 42377405929), run de `df7417787` em andamento. Nenhum merge de produto novo na foto, então sem spec nova; t1395–t1399 seguem bloqueadas pelos drafts de produto (E676/E677/E672/E674/E675 não mesclados) e puladas. Bloco 484 (t1406, grupo do 467: avisos/desligar, prévia de e-mails, caixa do leitor de QA) aberto no #3220. Defeitos de produto novos: nenhum (L-103 livre).
