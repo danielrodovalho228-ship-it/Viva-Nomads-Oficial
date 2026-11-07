@@ -44,6 +44,8 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 465 | t1376 | #3165 | 448 (t1359) | verde, run 42359328089 |
 | 466 | t1377 | #3168 | 449 (t1360) | verde, run 42360285365 |
 | 467 | t1378 | #3170 | 450 (t1361) | verde, run 42360837202 |
+| 468 | t1379 | #3174 | 451 (t1362) | verde, run 42362324361 |
+| 469 | t1380 | #3175 | 452 (t1363) | verde, run 42362348976 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
@@ -86,3 +88,15 @@ Nenhum item L novo. **L-103 segue livre.**
 
 ### Merge novo na `main` desde a46ab219e (E414)
 - **#3173** ([Faixa D] t162 e t266 alinhadas ao E452 e ao E495, `27855dc92`): só ajusta duas specs de laboratório existentes; nenhum comportamento de produto novo, logo sem spec nova. Registrado; a varredura segue.
+
+### Specs de draft — estado (conferido em 07/11, nenhuma foi fechada nem alterada)
+Todas estão com o lab-crítico verde no PR de spec (base = branch do draft) e **aguardam o QA do chat principal e o merge do draft correspondente**; depois do merge do draft, a spec é rebaseada na `main`.
+| Spec | Item | PR da spec (base) | Draft de produto | Estado do draft |
+|---|---|---|---|---|
+| t1340 | E664 emergência no dia da chegada | #3104 (`claude-b/e664-emergencia-chegada`) | #3090 | aberto, rascunho |
+| t1343 | F47 alvos de toque do Fechamento | #3111 (`claude-a/f47-fechamento-alvos`) | #3096 | aberto, rascunho |
+| t1344 | E660 ficha congela no contrato (migração 0316) | #3112 (`claude-b/e660-ficha-dentro`) | #3085 | aberto, rascunho |
+| t1345 | E663 jornada de mensagens | #3113 (`claude-b/e663-jornada-mensagens`) | #3089 | aberto, rascunho |
+| t1349 | E667 modelo de negócio sem faixa 31+ | #3119 (`claude-a/e667-modelo-31`) | #3117 | aberto, rascunho |
+| t1357 | E668 papel parceiro só se escolhido (migração 0318) | #3138 (`claude-b/e668`) | #3134 | aberto, rascunho |
+| t1358 | E669 laudo validado e removível (migração 0319) | #3139 (`claude-b/e669`) | #3135 | aberto, rascunho |
