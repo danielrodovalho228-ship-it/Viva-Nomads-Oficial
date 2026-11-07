@@ -346,3 +346,7 @@ Bloco 498 (t1424, #3261, grupo do 481) **verde** (run 42395956892), a 390 e 1280
 ## Bloco 499 verde (main `e099ae6b6`)
 
 Bloco 499 (t1425, #3262, grupo do 482: candidaturas, favoritos, propostas, locações, mensagens, contratos, leads, orçamentos, públicas) **verde** (run 42396972859), a 390 e 1280 px; inclui telas dos merges E670, E677 e E675. Bloco 498 (#3261) já mesclado. Nenhum merge de produto novo na main desde `c6f776acd` (só blocos meus): sem spec de merge. Sem merge e sem fechar PR. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum. Próximo da fila: bloco 500 (grupo do 483).
+
+## Bloco 500 aberto (main `f0762e3cd`)
+
+Bloco 499 (#3262) mesclado; main em `f0762e3cd` verde (run 42399678239). Único commit novo além do 499: documentação do E679 (mockups de Avaliações, #3264), sem código de produto: sem spec de merge. Bloco 500 (t1426, grupo do 483: cidade, buscar, comparar, institucionais, parceiros/buscar, admin atendimento/contratos/candidaturas) aberto no #3267; resultado na próxima atualização. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum.
