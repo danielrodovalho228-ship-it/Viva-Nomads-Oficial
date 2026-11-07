@@ -33,6 +33,7 @@ import {
   salvarServico,
   type PainelParceiro,
 } from "@/lib/parceiros/painel-actions";
+import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
 
 const ABAS = [
   { id: "pagina", rotulo: "Página" },
@@ -574,7 +575,13 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted">Tipo</dt>
-            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF)"}</dd>
+            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF) — cadastro antigo"}</dd>
+            {/* E649: o cadastro legado com CPF mostra a pendência ao lado (a Viva só trabalha com CNPJ, E648). */}
+            {p.tipoPessoa !== "pj" && (
+              <p className="mt-1 text-sm font-semibold text-red-700" data-testid="parceiro-pendencia-cnpj">
+                {PENDENCIA_CNPJ_PAINEL}
+              </p>
+            )}
           </div>
           <div>
             {/* E463: o documento é o do perfil (Conta → Documento), o mesmo de Conta → Dados — uma fonte só. */}
