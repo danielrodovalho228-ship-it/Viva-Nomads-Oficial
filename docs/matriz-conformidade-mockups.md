@@ -816,3 +816,10 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 2. **Observação (sem correção):** a 1280, com mouse, o ícone "Abrir calendário" dos campos de data mede 36 px.
 - **Não medidos nesta passada:** "Salvar busca" (na `/buscar` ele não abre diálogo no demo), "Descrever o que procuro" e "Publicar pedido" (sem gatilho visível no demo) e o menu do site no celular (o gatilho do demo não abre um diálogo medível): ficam para a próxima.
 - Conformidade mockup × real: sem diferença nos estados medidos.
+
+## Passada 66 (07/11; modo demonstração local, `main` em #3223; 390 e 1280) — o que ficou da passada 65: busca, pedido e menu do site
+
+- **`/buscar` — "Salvar busca", "Descrever o que procuro", "Publicar pedido":** os três medem 44 px de altura a 390 e a 1280 (botão, botão, link para `/pedidos/novo`), na barra de ações abaixo do título. "Salvar busca" sem entrada leva a `/auth?motivo=busca&redirect=/buscar` (portão de login, de propósito; sem diálogo e sem estouro). Conforme.
+- **Menu do site no celular** (botão "Abrir menu", 44 px): abre em linha, empurrando a página — Imóveis, Anunciar, Empresas, Parceiros, Fale com a Viva e o botão "Entrar", itens de ~52 px, dentro dos 390, sem rolagem lateral; o botão vira "X". Conforme. A 1280 o topo mostra os links na linha (20 px de altura: mouse).
+- **Observação:** o link do logo mede 32 px a 390 na `main` (corrigido no #3172, rascunho). A barra inferior de abas aparece no celular também na página inicial, com o botão flutuante sobre o "Início"; é o desenho atual, sem achado.
+- **Achados novos:** nenhum.
