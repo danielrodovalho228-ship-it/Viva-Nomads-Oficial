@@ -11,6 +11,8 @@ import { CampoReais } from "@/components/ui/campo-reais";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { CRITERIOS, ETIQUETAS, MAX_ETIQUETAS, type ParAvaliacao } from "@/lib/avaliacoes-criterios";
+import { MOTIVOS_REVISAO } from "@/lib/avaliacoes-resposta";
 import {
   AVISO_ATUALIZAR_ACEITO,
   AVISO_RECUSAR_ORCAMENTO,
@@ -487,6 +489,13 @@ function EnviarArquivos({
 function Avaliacao({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: Rodar }) {
   const [nota, setNota] = useState(0);
   const [texto, setTexto] = useState("");
+  const par: ParAvaliacao = d.papel === "cliente" ? "cliente_avalia_parceiro" : "parceiro_avalia_cliente";
+  const [criterios, setCriterios] = useState<Record<string, number>>({});
+  const [etiquetas, setEtiquetas] = useState<string[]>([]);
+  const [recomendaria, setRecomendaria] = useState<boolean | null>(null);
+  const [notaPrivadaParte, setNotaPrivadaParte] = useState("");
+  const [notaPrivadaViva, setNotaPrivadaViva] = useState("");
+  const completo = nota > 0 && recomendaria !== null && CRITERIOS[par].every((c) => criterios[c.chave]);
   return (
     <Panel title={d.papel === "cliente" ? "Avalie o serviço" : "Avalie o cliente"} data-testid="pedido-avaliacao">
       {d.minhaAvaliacao ? (
@@ -495,25 +504,97 @@ function Avaliacao({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean
         </p>
       ) : (
         <div className="grid gap-2">
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Nota de 1 a 5">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Nota geral de 1 a 5">
             {[1, 2, 3, 4, 5].map((n) => (
               <Chip key={n} ativo={nota === n} onClick={() => setNota(n)} data-testid={`pedido-nota-${n}`}>
                 {n}
               </Chip>
             ))}
           </div>
-          <textarea className={campo} rows={3} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Conte como foi (opcional)" data-testid="pedido-avaliacao-texto" />
-          <Button variant="primary" disabled={pendente || nota === 0} onClick={() => rodar("avaliar", { nota, texto }, "Avaliação enviada.")} data-testid="pedido-avaliar">
+          {CRITERIOS[par].map((c) => (
+            <div key={c.chave} className="flex flex-wrap items-center justify-between gap-2" data-testid={`pedido-criterio-${c.chave}`}>
+              <span className="text-sm text-ink">{c.rotulo}</span>
+              <div className="flex gap-1" role="group" aria-label={`${c.rotulo}, de 1 a 5`}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Chip key={n} ativo={criterios[c.chave] === n} onClick={() => setCriterios((x) => ({ ...x, [c.chave]: n }))}>
+                    {n}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Etiquetas rápidas">
+            {ETIQUETAS[par].map((t) => (
+              <Chip key={t} ativo={etiquetas.includes(t)} onClick={() => setEtiquetas((x) => (x.includes(t) ? x.filter((y) => y !== t) : x.length >= MAX_ETIQUETAS ? x : [...x, t]))}>
+                {t}
+              </Chip>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Recomendaria">
+            <span className="text-sm text-ink">{d.papel === "cliente" ? "Recomendaria este parceiro?" : "Receberia este cliente de novo?"}</span>
+            <Chip ativo={recomendaria === true} onClick={() => setRecomendaria(true)} data-testid="pedido-recomendaria-sim">Sim</Chip>
+            <Chip ativo={recomendaria === false} onClick={() => setRecomendaria(false)} data-testid="pedido-recomendaria-nao">Não</Chip>
+          </div>
+          <textarea className={campo} rows={3} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Comentário público (opcional, até 500 caracteres)" data-testid="pedido-avaliacao-texto" />
+          <textarea className={campo} rows={2} maxLength={500} value={notaPrivadaParte} onChange={(e) => setNotaPrivadaParte(e.target.value)} placeholder="Recado privado para a outra parte (opcional)" />
+          <textarea className={campo} rows={2} maxLength={500} value={notaPrivadaViva} onChange={(e) => setNotaPrivadaViva(e.target.value)} placeholder="Recado privado para a Viva (opcional)" />
+          <Button
+            variant="primary"
+            disabled={pendente || !completo}
+            onClick={() => rodar("avaliar", { nota, criterios, etiquetas, recomendaria, texto, notaPrivadaParte, notaPrivadaViva }, "Avaliação enviada.")}
+            data-testid="pedido-avaliar"
+          >
             Enviar avaliação
           </Button>
         </div>
       )}
       {d.avaliacaoDoOutro && (
         <p className="mt-3 text-sm text-muted" data-testid="pedido-avaliacao-outro">
-          {d.papel === "cliente" ? "O parceiro" : "O cliente"} avaliou: {d.avaliacaoDoOutro.nota} de 5{d.avaliacaoDoOutro.texto ? ` — ${d.avaliacaoDoOutro.texto}` : ""}
+          O cliente avaliou: {d.avaliacaoDoOutro.nota} de 5{d.avaliacaoDoOutro.texto ? ` — ${d.avaliacaoDoOutro.texto}` : ""}
         </p>
       )}
+      {d.avaliacaoRecebida && <RespostaDoParceiro d={d} pendente={pendente} rodar={rodar} />}
     </Panel>
+  );
+}
+
+/** Resposta pública (uma, sem edição) e pedido de revisão do parceiro avaliado: mesma trilha da estadia. */
+function RespostaDoParceiro({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: Rodar }) {
+  const [resposta, setResposta] = useState("");
+  const [motivo, setMotivo] = useState<keyof typeof MOTIVOS_REVISAO>("ofensa");
+  const [detalhe, setDetalhe] = useState("");
+  const av = d.avaliacaoRecebida!;
+  return (
+    <div className="mt-3 grid gap-2" data-testid="pedido-avaliacao-recebida">
+      {av.resposta ? (
+        <p className="text-sm text-ink">Sua resposta pública: {av.resposta}</p>
+      ) : (
+        <>
+          <textarea className={campo} rows={2} maxLength={500} value={resposta} onChange={(e) => setResposta(e.target.value)} placeholder="Responda em público (uma vez, até 500 caracteres, sem edição)" data-testid="pedido-resposta-texto" />
+          <Button variant="secondary" disabled={pendente || !resposta.trim()} onClick={() => rodar("responder-avaliacao", { texto: resposta }, "Resposta publicada.")} data-testid="pedido-responder">
+            Publicar resposta
+          </Button>
+        </>
+      )}
+      {av.revisaoAberta ? (
+        <p className="text-sm text-muted">Pedido de revisão em análise pela equipe.</p>
+      ) : (
+        <details>
+          <summary className="min-h-11 cursor-pointer text-sm font-semibold text-forest">Pedir revisão desta avaliação</summary>
+          <div className="mt-2 grid gap-2">
+            <select className={campo} value={motivo} onChange={(e) => setMotivo(e.target.value as keyof typeof MOTIVOS_REVISAO)} aria-label="Motivo do pedido de revisão">
+              {Object.entries(MOTIVOS_REVISAO).map(([k, v]) => (
+                <option key={k} value={k}>{v}</option>
+              ))}
+            </select>
+            <textarea className={campo} rows={3} maxLength={500} value={detalhe} onChange={(e) => setDetalhe(e.target.value)} placeholder="Explique em pelo menos 20 caracteres. Nota baixa legítima não é removida." />
+            <Button variant="secondary" disabled={pendente || detalhe.trim().length < 20} onClick={() => rodar("revisar-avaliacao", { motivo, detalhe }, "Pedido enviado à equipe.")} data-testid="pedido-revisar">
+              Enviar pedido de revisão
+            </Button>
+          </div>
+        </details>
+      )}
+    </div>
   );
 }
 

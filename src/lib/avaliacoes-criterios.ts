@@ -119,3 +119,13 @@ export function validarFatoFalso(detalhe: string | null | undefined): { ok: true
   if (RE_ASSUNTO_CAUCAO.test(d)) return { ok: false, erro: TEXTO_FATO_FALSO_CAUCAO };
   return { ok: true };
 }
+
+/**
+ * Quem lê o quê no pedido de parceiro. A nota do CLIENTE sobre o PARCEIRO aparece às duas partes depois de publicada.
+ * A nota do PARCEIRO sobre o CLIENTE só é lida por outros parceiros (premissa fechada do Daniel): o cliente avaliado
+ * não a vê na tela do pedido, e ela nunca aparece no perfil público nem para proprietário/morador.
+ */
+export function podeLerAvaliacaoDoPedido(leitor: "cliente" | "parceiro", papelAutor: "cliente" | "parceiro"): boolean {
+  // Nota do cliente: as duas partes. Nota do parceiro: só o próprio parceiro (autor) dentro do pedido.
+  return papelAutor === "cliente" || leitor === "parceiro";
+}
