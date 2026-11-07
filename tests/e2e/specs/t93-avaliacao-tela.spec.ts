@@ -1,4 +1,4 @@
-import { camposDoPar, preencherCriterios } from "../fixtures/avaliacao-criterios";
+import { criteriosDaAvaliacao, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
@@ -42,8 +42,8 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       .select("id")
       .single();
     try {
-      await inq.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: dono.id, papel_autor: "inquilino", nota_geral: 4, comentario_publico: `Estadia boa ${marca}`, status: "enviada", ...camposDoPar("inquilino") });
-      await dono.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada", ...camposDoPar("proprietario") });
+      await inq.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ct!.id, alvo_id: dono.id, papel_autor: "inquilino", nota_geral: 4, comentario_publico: `Estadia boa ${marca}`, status: "enviada" });
+      await dono.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
 
       // 1) O avaliado responde pela tela.
       await page.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "networkidle" });
