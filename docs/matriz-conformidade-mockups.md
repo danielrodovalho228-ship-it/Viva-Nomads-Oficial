@@ -762,3 +762,11 @@ Estados abertos medidos (não só a tela parada): folhas e popovers de **Mais fi
 2. **Observação (decisão do Muse, sem correção):** o campo "Cidade ou bairro" do filtro Local mede 23 px dentro de uma pílula de 40 px (`h-10`, a mesma de outras telas); subir a 44 muda o desenho dessas telas.
 3. **Observação:** "Alterar o motivo" (20 px) no diálogo de candidatura é link de texto.
 - **Conformidade mockup × real:** sem diferença nos estados medidos.
+
+## E678 — cabeçalho fixo da edição do imóvel (07/11; `main` em #3083; demo, 390 e 1280) — não reproduzido, sem alteração de código
+
+Achado da varredura do lote 11 (proprietario2, imóvel ativo `4a693a63`): "o cabeçalho fixo cobre o título 'Regras da casa' ao rolar". Investigação:
+- A tela de edição (`/dashboard/imoveis/[id]/editar`) **não tem elemento `sticky` nem `fixed` próprio**; os componentes que ela importa também não. No demo (`ube-001/editar`), a 390 e 1280 px, o único elemento fixo é o botão flutuante "Fale com a Viva" (canto inferior); a 1280 quem rola é o `<main>`, abaixo do topo do painel, e o topo não entra na área que rola.
+- Os únicos cabeçalhos presos do produto são o `AppHeader` (só no modo app, 48 px, `top-0`), a moldura do assistente (64 px) e o `MobileHeader` (56 px, só em telas de fluxo). Todos os alvos de âncora das telas longas (`bloco-video`, seções do editor, painel do parceiro, serviços) usam `scroll-mt-24` (96 px), maior que qualquer um deles: pular para um título pela âncora ou por `scrollIntoView` deixa o título livre.
+- Rolar a página pelas mãos faz o título passar por baixo do cabeçalho preso — isso é o comportamento normal de um cabeçalho preso, não a sobreposição que o achado descreve.
+**Para reproduzir, preciso do QA:** o tamanho de janela (ou aparelho), se estava no modo app, e o ponto exato de rolagem/ação (clique no menu, foco em erro, hash) em que o título "Regras da casa" ficou parcialmente coberto. Sem isso, qualquer mudança seria no escuro (não inventei um `scroll-padding` global).
