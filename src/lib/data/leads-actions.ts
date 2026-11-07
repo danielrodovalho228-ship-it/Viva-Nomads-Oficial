@@ -1,5 +1,6 @@
 "use server";
 
+import { envioDaCandidatura } from "@/lib/candidaturas-envio";
 import { diasValidos } from "@/lib/estadia-em-dias";
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
@@ -192,6 +193,9 @@ export interface MinhaCandidatura {
   createdAt: string | null;
   /** E657: último envio (reenviada_em, senão a criação). */
   enviadaEm: string | null;
+  /** E657: a candidatura foi reenviada (selo "Reenviada") e quando foi o primeiro envio. */
+  reenviada: boolean;
+  primeiroEnvioEm: string | null;
   /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
   contrato: { id: string; status: string } | null;
 }
@@ -258,7 +262,7 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     situacao: situacaoCandidatura(r.status, engajou.has(`${r.owner_id}_${r.property_id}`)),
     createdAt: r.created_at,
     // E657: a data de envio que a pessoa vê é a do último envio (o reenvio, se houve); a criação segue em createdAt.
-    enviadaEm: r.reenviada_em ?? r.created_at,
+    ...envioDaCandidatura(r.created_at, r.reenviada_em),
     contrato: contratoDoLead.get(r.id) ?? null,
   }));
 }

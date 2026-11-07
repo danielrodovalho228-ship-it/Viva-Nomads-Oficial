@@ -38,7 +38,7 @@ test("a candidatura repetida grava o reenvio", () => {
 test("a lista do morador mostra o reenvio quando houver (senão a criação)", () => {
   const src = ler("src/lib/data/leads-actions.ts");
   assert.match(src, /id, status, owner_id, property_id, created_at, reenviada_em,/);
-  assert.match(src, /enviadaEm: r\.reenviada_em \?\? r\.created_at,/);
+  assert.match(src, /\.\.\.envioDaCandidatura\(r\.created_at, r\.reenviada_em\),/); // a regra única: reenviada_em ?? created_at (src/lib/candidaturas-envio.ts)
   const pg = ler("src/app/(dashboard)/dashboard/candidaturas/page.tsx");
   assert.match(pg, /Enviada em \{dataBRT\(c\.enviadaEm\)\}/);
 });

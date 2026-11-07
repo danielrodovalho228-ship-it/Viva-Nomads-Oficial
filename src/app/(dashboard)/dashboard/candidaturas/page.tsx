@@ -61,7 +61,17 @@ export default async function CandidaturasPage() {
                 <div className="min-w-0">
                   <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
                   {c.enviadaEm && (
-                    <p className="text-xs text-muted">Enviada em {dataBRT(c.enviadaEm)}</p>
+                    <p className="text-xs text-muted">
+                      Enviada em {dataBRT(c.enviadaEm)}
+                      {c.reenviada && (
+                        <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 font-semibold text-forest" data-testid="candidatura-reenviada">
+                          Reenviada
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {c.reenviada && c.primeiroEnvioEm && (
+                    <p className="text-xs text-muted">Enviada pela primeira vez em {dataBRT(c.primeiroEnvioEm)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
