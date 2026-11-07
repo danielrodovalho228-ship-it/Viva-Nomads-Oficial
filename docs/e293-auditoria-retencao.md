@@ -269,3 +269,18 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## Rodada 0322–0326 (07/11)
+
+Nenhuma tabela nova nesta faixa; o que mudou são **colunas** de tabelas já inventariadas. Contagens de produção (somente leitura, 07/11):
+
+| Tabela | Migração | O que entrou | Linhas | Situação |
+|---|---|---|---|---|
+| `parceiro_avaliacoes` | 0323 (E679) | notas por critério, etiquetas, "recomendaria", nota privada da parte, nota privada da Viva, motivo da moderação | 0 | descrição do inventário completada (antes só dizia "texto da avaliação"); prazo segue o da tabela |
+| `avaliacao_respostas` / `avaliacao_contestacoes` | 0323 (E679) | vínculo com `parceiro_avaliacoes` | 0 | sem dado pessoal novo |
+| `vistoria_conduta` | 0324 (E679) | `publicada_em` (data) | — | sem dado pessoal novo |
+| `avaliadores_credenciamento` | 0325 (E682) | valor próprio e prazos de entrega e de resposta declarados pelo avaliador | 2 (nenhum com termos) | descrição completada; dado comercial do próprio avaliador |
+| `parceiros` | 0326 (E687, PR aberto) | `dados_categoria` (empresa e veículo da Mudança) | — | já classificada em `JSONB_PROPRIO`; entra com o merge |
+
+As notas privadas (`nota_privada_parte`, `nota_privada_viva`) são texto livre sobre outra pessoa: se o prazo da tabela for decidido (item 13), elas devem sair junto com a linha. Nada executado nesta rodada além das descrições do inventário.
+
