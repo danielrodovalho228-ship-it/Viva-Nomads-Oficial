@@ -192,7 +192,8 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   const id = String(form.get("id") ?? "");
   const para = String(form.get("para") ?? "") as StatusCredenciamento;
   const motivo = texto(form.get("motivo"), 500) || null;
-  const { data: c } = await a.admin.from("avaliadores_credenciamento").select("status, user_id, parceiro_id, solicitacao_id").eq("id", id).maybeSingle();
+  const { data: c, error: erroCred } = await a.admin.from("avaliadores_credenciamento").select("status, user_id, parceiro_id, solicitacao_id").eq("id", id).maybeSingle();
+  if (erroCred) return { ok: false, erro: "Não foi possível ler o credenciamento agora. Tente de novo." };
   if (!c) return { ok: false, erro: "Credenciamento não encontrado." };
   if (!transicaoCredenciamento(c.status as StatusCredenciamento, para).ok) return { ok: false, erro: "Mudança de situação não permitida." };
   if (para === "suspenso") return { ok: false, erro: "A Viva não suspende avaliador: descredenciar só por um critério público de qualidade." };
@@ -311,11 +312,13 @@ export async function adminCriarAvaliacaoTeste(form: FormData): Promise<Res> {
   if (recusaQa) return { ok: false, erro: recusaQa };
   const avaliadorId = String(form.get("avaliadorId") ?? "");
   const propertyId = String(form.get("propertyId") ?? "");
-  const { data: c } = await a.admin.from("avaliadores_credenciamento").select("status, parceiros(user_id)").eq("id", avaliadorId).maybeSingle();
+  const { data: c, error: erroAval } = await a.admin.from("avaliadores_credenciamento").select("status, parceiros(user_id)").eq("id", avaliadorId).maybeSingle();
+  const { data: im, error: erroIm } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", propertyId).maybeSingle();
+  const { data: dono, error: erroDono } = im ? await a.admin.from("profiles").select("is_teste").eq("id", im.owner_id).maybeSingle() : { data: null, error: null };
+  // Achado 164: falha de leitura não vira "precisa estar em teste", "imóvel não encontrado" nem "só em conta de teste".
+  if (erroAval || erroIm || erroDono) return { ok: false, erro: "Não foi possível ler os dados da avaliação agora. Tente de novo." };
   if (c?.status !== "em_teste") return { ok: false, erro: "O avaliador precisa estar em teste." };
-  const { data: im } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", propertyId).maybeSingle();
   if (!im) return { ok: false, erro: "Imóvel não encontrado." };
-  const { data: dono } = await a.admin.from("profiles").select("is_teste").eq("id", im.owner_id).maybeSingle();
   if (!dono?.is_teste) return { ok: false, erro: "A avaliação de teste é só em imóvel de conta de teste." };
   const agora = new Date().toISOString();
   const { data: p, error } = await a.admin

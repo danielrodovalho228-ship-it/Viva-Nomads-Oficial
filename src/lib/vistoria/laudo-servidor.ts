@@ -450,7 +450,8 @@ export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigid
 
 /** Contestação (7 dias, com motivo): 2ª avaliação a OUTRO avaliador; o strike dela fica suspenso até lá. */
 export async function abrirContestacao(admin: Admin, laudo: LinhaLaudo, motivo: string, agora = new Date()): Promise<{ ok: true; pedidoId: string } | { ok: false; erro: string }> {
-  const { data: orig } = await admin.from("vistoria_pedidos").select("cidade, porte, valor_tabela, ocupado, morador_id, teste").eq("id", laudo.pedido_versao_id).maybeSingle();
+  const { data: orig, error: erroOrig } = await admin.from("vistoria_pedidos").select("cidade, porte, valor_tabela, ocupado, morador_id, teste").eq("id", laudo.pedido_versao_id).maybeSingle();
+  if (erroOrig) return { ok: false, erro: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!orig) return { ok: false, erro: "Pedido não encontrado." };
   const { data: novo, error } = await admin
     .from("vistoria_pedidos")
