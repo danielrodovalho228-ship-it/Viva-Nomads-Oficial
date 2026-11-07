@@ -829,6 +829,9 @@ export function SearchClient({
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+          {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
+          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
+
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
@@ -972,9 +975,6 @@ export function SearchClient({
             </div>
           )}
 
-          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
-          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
-          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
           <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
