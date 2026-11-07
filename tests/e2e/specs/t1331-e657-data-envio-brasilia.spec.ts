@@ -11,7 +11,7 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1331.${sufixo}@lab.vivanomads.test`, nome: "Dora Dona", role: "owner" as const };
 const inq = { email: `inq.t1331.${sufixo}@lab.vivanomads.test`, nome: "Ivo Inquilino", role: "tenant" as const };
-const ids: { dono?: string; inq?: string; imovelA?: string; imovelB?: string; leads: string[] } = { leads: [] };
+const ids: { dono?: string; inq?: string; imovelA?: string; imovelB?: string; imovelC?: string; leads: string[] } = { leads: [] };
 
 test.describe("T1331 — E657: data de envio da candidatura em horário de Brasília", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -22,6 +22,7 @@ test.describe("T1331 — E657: data de envio da candidatura em horário de Bras�
     ids.inq = await criarConta(inq, senha);
     ids.imovelA = await criarImovelPronto(ids.dono, `Studio T1331 A ${sufixo}`, { ativo: true });
     ids.imovelB = await criarImovelPronto(ids.dono, `Studio T1331 B ${sufixo}`, { ativo: true });
+    ids.imovelC = await criarImovelPronto(ids.dono, `Studio T1331 C ${sufixo}`, { ativo: true });
     for (const [imovel, criadoEm] of [
       [ids.imovelA, "2026-11-07T01:30:00+00:00"],
       [ids.imovelB, "2026-11-07T03:30:00+00:00"],
@@ -30,6 +31,10 @@ test.describe("T1331 — E657: data de envio da candidatura em horário de Bras�
       expect(error).toBeNull();
       ids.leads.push(data!.id as string);
     }
+    // E657 (#3083, migração 0315): candidatura criada em 04/11 e REENVIADA em 06/11 (15:00 UTC = 12:00 em Brasília) mostra o reenvio.
+    const { data: reenv, error: eReenv } = await adm().from("leads").insert({ property_id: ids.imovelC, owner_id: ids.dono, tenant_id: ids.inq, status: "new", created_at: "2026-11-04T12:00:00+00:00", reenviada_em: "2026-11-06T15:00:00+00:00" }).select("id").single();
+    expect(eReenv).toBeNull();
+    ids.leads.push(reenv!.id as string);
   });
   test.afterAll(async () => {
     if (ids.leads.length) await adm().from("leads").delete().in("id", ids.leads);
@@ -50,6 +55,13 @@ test.describe("T1331 — E657: data de envio da candidatura em horário de Bras�
       await expect(a).not.toContainText("Enviada em 07/11/2026");
       // 03:30 UTC de 07/11 = 00:30 de 07/11 em Brasília.
       await expect(b).toContainText("Enviada em 07/11/2026");
+      // Reenvio: a data mostrada é a do último envio (06/11), com a marca "Reenviada"; as outras duas não são reenvios.
+      const c = p.locator(`#candidatura-${ids.leads[2]}`);
+      await expect(c).toContainText("Enviada em 06/11/2026");
+      await expect(c).not.toContainText("Enviada em 04/11/2026");
+      await expect(c.getByTestId("candidatura-reenviada")).toBeVisible();
+      await expect(a.getByTestId("candidatura-reenviada")).toHaveCount(0);
+      await expect(b.getByTestId("candidatura-reenviada")).toHaveCount(0);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       await ctx.close();
     });
