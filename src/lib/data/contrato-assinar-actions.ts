@@ -561,6 +561,11 @@ export async function assinarContrato(input: {
 
   // E444: quem assinou resolve o aviso crítico "assinar o contrato" no sino.
   after(() => resolverAvisos({ usuarioId: user.id, eventos: ["contract_status"], refId: c.id }));
+  // E676: com as duas assinaturas, nenhuma das duas partes mantém o crítico "assinar o contrato" (a outra parte também sai).
+  if (visao.papel && (visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em)) {
+    const outro = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
+    if (outro) after(() => resolverAvisos({ usuarioId: outro, eventos: ["contract_status"], refId: c.id }));
+  }
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
   const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
