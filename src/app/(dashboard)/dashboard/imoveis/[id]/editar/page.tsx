@@ -48,6 +48,8 @@ export default async function EditarImovelPage({
   let enderecoExato = "";
   // 64-B: o motivo da pausa (o selo do topo vira o menu de pausa do anúncio publicado ou pausado).
   let pausaMotivo: string | null = null;
+  // E662: a instrução única de saída já cadastrada (tabela privada das instruções; só o dono lê, pela RLS).
+  let instrucaoSaida = "";
   const supabase = await createClient();
   if (supabase) {
     const {
@@ -61,6 +63,8 @@ export default async function EditarImovelPage({
         pausaMotivo = (m as { pausa_motivo?: string | null } | null)?.pausa_motivo ?? null;
       }
       // Achado 130: sem o endereço exato, o editor não abre com a rua vazia (a falha cai no error.tsx: "Tente de novo").
+      const { data: saida } = await supabase.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", id).maybeSingle();
+      instrucaoSaida = (saida as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "";
       const { data: priv, error: erroPriv } = await supabase.rpc("property_private_details", { prop_id: id });
       if (erroPriv) throw new Error("Não foi possível ler o endereço do anúncio agora.");
       const linha = (Array.isArray(priv) ? priv[0] : priv) as { exact_address?: string | null } | null;
@@ -93,7 +97,7 @@ export default async function EditarImovelPage({
           </Link>
         </p>
       )}
-      <EditarImovelClient property={property} demo={demo} fatos={fatos} enderecoExatoInicial={enderecoExato} />
+      <EditarImovelClient property={property} demo={demo} fatos={fatos} enderecoExatoInicial={enderecoExato} instrucaoSaidaInicial={instrucaoSaida} />
     </>
   );
 }
