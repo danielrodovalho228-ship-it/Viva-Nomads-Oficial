@@ -36,6 +36,7 @@ test("formulário: valida o documento ANTES de mandar para a conta (deslogado) e
   assert.ok(iDoc > -1, "chama a validação do documento");
   assert.ok(iConta > -1 && iDoc < iConta, "a validação vem antes de avançar para a conta");
   assert.match(fn, /setErroDocumento\(erroDoc\)/);
+  assert.match(fn, /estado\.logado \|\| c\.documento\.trim\(\) \? erroDocumentoParceiro\(c\.documento\) : null/, "visitante com o campo vazio segue para a conta (o documento é pedido na volta)");
   assert.match(form, /data-testid="sp-doc-erro"/);
 });
 

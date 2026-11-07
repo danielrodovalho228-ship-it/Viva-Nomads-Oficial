@@ -140,7 +140,8 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
     setErro(null);
     setErroDocumento(null);
     // E651: o documento é validado ANTES de mandar para a conta (CPF, número incompleto e dígito errado param aqui).
-    const erroDoc = erroDocumentoParceiro(c.documento);
+    // Visitante sem nada digitado segue para a conta (o documento nunca é guardado na ida: é pedido na volta); com algo digitado, valida já.
+    const erroDoc = estado.logado || c.documento.trim() ? erroDocumentoParceiro(c.documento) : null;
     if (erroDoc) return setErroDocumento(erroDoc);
     if (!estado.logado) return irParaConta();
     const entrada = {
