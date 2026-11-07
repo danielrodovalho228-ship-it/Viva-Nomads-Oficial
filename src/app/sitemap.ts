@@ -6,6 +6,7 @@ import { caminhosDeBairros } from "@/lib/bairros";
 import { listProperties } from "@/lib/data/properties";
 import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { GUIAS } from "@/lib/guias/guias";
+import { TEMAS_AJUDA, hrefDoTema } from "@/lib/ajuda/temas";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { chaveCidade } from "@/lib/cidades";
 import { comPortasDePrecos } from "@/config/precos-visivel";
@@ -31,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/precos",
     "/seguranca",
     "/ajuda",
+    ...TEMAS_AJUDA.map((t) => hrefDoTema(t.id)), // E84: uma página por tema, com canonical e FAQPage
     "/guias",
     ...GUIAS.map((g) => `/guias/${g.slug}`),
     "/termos",
