@@ -11,6 +11,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
 import { acharBairroCurado, bairrosDaGrade, contaNaBusca, imoveisDoBairro } from "@/lib/bairros";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
 import { BairroPagina, metadadosDoBairro, type BairroDados } from "@/components/cidades/bairro-pagina";
 import { descricaoPolo } from "@/lib/seo/meta-descricao";
 import { destinosAtivos } from "@/lib/data/tempos";
@@ -28,7 +29,7 @@ export function generateStaticParams() {
 /** O 2º trecho da URL é um polo (lista fixa) ou um BAIRRO com anúncio real (ordem 7000fbe0). */
 async function acharBairro(cidadeSlug: string, cidadeNome: string, slug: string): Promise<BairroDados | null> {
   // E446: o mesmo conjunto da busca (exemplos inclusos com a vitrine ligada); o noindex segue pelo anúncio real.
-  const imoveis = imoveisDoBairro(slug, await listPropertiesByCity(cidadeNome), contaNaBusca);
+  const imoveis = imoveisDoBairro(slug, baseDaVitrine(await listPropertiesByCity(cidadeNome), (p) => isExemplo(p.id)), contaNaBusca);
   if (imoveis.length > 0) return { slug, nome: imoveis[0].neighborhood.trim(), imoveis };
   // Bairro da lista curada sem anúncio real: página com estado vazio (noindex), nunca 404.
   const curado = acharBairroCurado(cidadeSlug, slug);
@@ -64,12 +65,13 @@ export default async function PoloPage({ params }: Params) {
   if (!p) {
     const b = await acharBairro(cidade, c.name, polo);
     if (!b) notFound();
-    const daCidade = await listPropertiesByCity(c.name);
+    const daCidade = baseDaVitrine(await listPropertiesByCity(c.name), (p) => isExemplo(p.id));
     const vizinhos = bairrosDaGrade(cidade, daCidade, contaNaBusca).filter((x) => x.total > 0 && x.slug !== b.slug);
     return <BairroPagina cidade={c} bairro={b} vizinhos={vizinhos} totalCidade={daCidade.length} />;
   }
 
-  const todos = await listPropertiesByCity(c.name);
+  // E446: a página do polo ("N anúncios nesta região") lê a MESMA base da vitrine que a busca, a cidade e o bairro.
+  const todos = baseDaVitrine(await listPropertiesByCity(c.name), (i) => isExemplo(i.id));
   const imoveis = imoveisDoPolo(p, todos);
   const medias = calcularPrecosMedios(imoveis);
   const reais = imoveis.filter((i) => !isExemplo(i.id));

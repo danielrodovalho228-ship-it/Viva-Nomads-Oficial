@@ -1808,7 +1808,7 @@ export async function requestLead(
       if (!adm) return { ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU };
       const { data: atualizado, error: erroAtualiza } = await adm
         .from("leads")
-        .update(campos)
+        .update({ ...campos, reenviada_em: new Date().toISOString() })
         .eq("id", existing.id)
         .eq("tenant_id", user.id)
         .eq("status", "new")

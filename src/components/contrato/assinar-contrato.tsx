@@ -59,12 +59,16 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
 
   async function assinar(e: React.FormEvent) {
     e.preventDefault();
+    // E675: um envio por vez (o botão desabilita, mas o toque duplo chega antes do re-render).
+    if (enviando) return;
     setErro(null);
     setEnviando(true);
     try {
       const r = await assinarContrato({ contratoId, aceite, codigo });
       if (!r.ok) {
         setErro(r.error ?? "Não foi possível assinar.");
+        // A assinatura pode ter entrado (outro envio, outra aba): relê o contrato; se estiver assinado, o formulário some.
+        router.refresh();
         return;
       }
       setAssinado(true);
@@ -79,6 +83,10 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         router.push(HREF_CONFIRMADA(contratoId));
         return;
       }
+      router.refresh();
+    } catch {
+      // E675: falha na chamada (rede, versão nova no ar) depois de a assinatura poder ter sido gravada: nunca tela muda.
+      setErro("Não conseguimos confirmar a resposta agora. Atualize a página: se a assinatura foi registrada, ela aparece no contrato.");
       router.refresh();
     } finally {
       setEnviando(false);
