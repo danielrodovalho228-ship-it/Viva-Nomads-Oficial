@@ -2360,7 +2360,8 @@
         "t684-varredura-bloco71",
         "t712-e267-transacionais-corpo",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1427-e681-calendario-da-estadia-todos-os-meses"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
