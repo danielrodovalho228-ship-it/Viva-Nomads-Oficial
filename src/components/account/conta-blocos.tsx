@@ -295,7 +295,7 @@ export function ConfiancaLista() {
                     {i.acao.texto}
                   </a>
                 ) : (
-                  <Link href={i.acao.href} className="shrink-0 text-sm font-medium text-forest underline underline-offset-2">
+                  <Link href={i.acao.href} className="inline-flex min-h-11 shrink-0 items-center text-sm font-medium text-forest underline underline-offset-2">
                     {i.acao.texto}
                   </Link>
                 ))}

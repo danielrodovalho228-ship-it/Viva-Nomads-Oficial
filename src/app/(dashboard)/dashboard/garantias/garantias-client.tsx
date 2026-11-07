@@ -42,7 +42,7 @@ export function GarantiasClient({ contratos, temContratoDeMorador = false }: { c
               : "Quando você fechar um contrato com caução, cada bloco aparece aqui com o status."
           }
           action={
-            <Link href="/dashboard/contratos" className="text-sm font-medium text-forest underline">
+            <Link href="/dashboard/contratos" className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline">
               Ver contratos
             </Link>
           }
