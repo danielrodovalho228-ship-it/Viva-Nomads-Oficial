@@ -144,3 +144,16 @@ Main: só o #3195 (ajuste de lab da Pista D, t181) entrou desde `301624b00`; nen
 | Bloco 476 (t1387, grupo do bloco 459) | #3196 | em andamento |
 
 Defeitos de produto novos: nenhum (L-103 segue livre). Drafts da Pista B ainda sem spec: E672 (#3162), E674 (#3166), E675 (#3171); o caminho do aditivo do E676 também fica pendente.
+
+## Lote das specs sobre drafts (E667, E675) e blocos 476/477 (main `95dade132`)
+
+Main verde em `95dade132` (run 42371785428). Nenhum merge de produto novo desde `301624b00`: só ajustes de lab (#3195, `f3f3b8ff6`) e o bloco 476 (#3196).
+
+| Item | PR | Resultado |
+|---|---|---|
+| Bloco 476 (t1387) | #3196 | verde; mesclado |
+| Bloco 477 (t1388, grupo do bloco 460: detalhe da proposta e da visita) | #3197 | verde (run 42371849987) |
+| t1396 — E667, /modelodenegocio sem "31+ segue em 6%" (sobre o draft #3117) | #3198 | em andamento |
+| t1397 — E675, reenvio de quem já assinou vira sucesso (sobre o draft #3171) | #3199 | em andamento |
+
+Defeitos de produto novos: nenhum (L-103 livre). Drafts ainda sem spec: E672 (#3162), E674 (#3166), E662 tela (#3164), E661 (#3114/#3133), E668 (#3134), E530b (#3132); os de alvo de toque 44 px (#3096, #3172, #3176, #3180, #3184) e as auditorias 160–177 (leitura que falha não vira "não encontrado") ficam para triagem.
