@@ -469,3 +469,7 @@ O #3309 (L-105, seis specs) foi mesclado no head `ecabbd2bf` (run 42413362496, 6
 ## t93 verde e na main — L-105 fechado no lab
 
 #3317 (t93, a decisão do admin provada pelo registro no banco) **verde** (run 42418234029) e **mesclado** na main (`58afe82e1`). Com isso, as seis specs de avaliação do L-105 (t93, t91, t362, t369, t351, t28) e o t323 estão na main e passaram no lab-crítico. **L-105 encerrado no lab.** Nenhum merge de produto novo. L-104 e L-56 seguem abertos no produto (Pistas A/B); próximo livre: **L-106**. Próximo da fila: bloco 511 (grupo do 494). Sem merge e sem fechar PR.
+
+## Bloco 511 aberto (main `58afe82e1`)
+
+Nada pendente da sessão: o #3317 (t93) já estava verde e mesclado (run 42418234029) e a main em `58afe82e1` está verde (run 42418702131). Nenhum merge novo, então nenhuma spec de merge a escrever. Bloco 511 (t1444, grupo do 494: detalhe da proposta e da visita, pelos dois lados) aberto no #PR do bloco, em andamento. Abertos no produto: L-104 (400 em `/api/proximidades` no "Qualificar o imóvel") e L-56 (volta do LinkedIn em Privacidade); próximo livre: L-106. Sem merge e sem fechar PR; PR com conflito é da pista dona.
