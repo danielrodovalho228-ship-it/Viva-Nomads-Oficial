@@ -817,7 +817,8 @@
         "t489-e176-menus",
         "t591-varredura-bloco48",
         "t674-e255-enquadramento-reforma",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t1410-varredura-bloco488"
       ]
     },
     "/dashboard/carteira": {
@@ -834,7 +835,8 @@
         "t221-contrato-estado-periodo",
         "t339-varredura-bloco16",
         "t631-e222b-renovar-aditivo",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t1410-varredura-bloco488"
       ]
     },
     "/dashboard/comparar": {
@@ -1054,7 +1056,8 @@
         "t339-varredura-bloco16",
         "t482-e170-caixas-vazias",
         "t549-varredura-bloco39",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t1410-varredura-bloco488"
       ]
     },
     "/dashboard/garantias": {
@@ -1546,7 +1549,8 @@
         "t183-telas-logadas-390",
         "t212-ferramentas-proprietario",
         "t302-varredura-logada-bloco6",
-        "t675-varredura-bloco68"
+        "t675-varredura-bloco68",
+        "t1410-varredura-bloco488"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -2092,7 +2096,8 @@
         "t298-varredura-logada-bloco4",
         "t388-varredura-bloco23",
         "t613-varredura-bloco52",
-        "t626-varredura-bloco60"
+        "t626-varredura-bloco60",
+        "t1410-varredura-bloco488"
       ]
     },
     "/dashboard/propostas": {
@@ -2530,7 +2535,8 @@
         "t302-varredura-logada-bloco6",
         "t310-vao-fim-de-pagina",
         "t418-varredura-bloco35",
-        "t684-varredura-bloco71"
+        "t684-varredura-bloco71",
+        "t1410-varredura-bloco488"
       ]
     },
     "/auth/intencao": {
@@ -2652,7 +2658,8 @@
         "t335-varredura-bloco13",
         "t379-55e2-filtro-contato-um-toque",
         "t385-varredura-bloco21",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t1410-varredura-bloco488"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
