@@ -739,3 +739,11 @@ A `main` só ganhou ajustes de spec do laboratório desde a passada 53 (#3173); 
 **Passada 56 — ferramentas e conta** (`/dashboard/ferramentas`, `/notificacoes`, `/respostas-rapidas`, `/conta/perfil`, `/conta/seguranca`, `/agenda`): 0 imagens quebradas, sem estouro, nada cortado, alvos ok. **Sem defeito.** (`/dashboard/niveis` e `/dashboard/financeiro` não existem: 404 com a página de erro da casa.)
 
 **CI dos rascunhos (07/11):** #3065 e #3084 estavam com `verify` vermelho por testes antigos (e531 e tem-completo) que liam o texto de antes das mudanças; #2956 com `lab-critico` vermelho por t677 (esperava um interruptor que já tinha sumido) e t680 (contava 4 cartões de ruído, são 4 + "Nenhum destes"). Os três corrigidos nos próprios PRs. Demais rascunhos verdes.
+
+## Passada 57 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — cabeçalhos do painel (as 15 linhas `cabecalho-*` e o pouso)
+
+Padrão aprovado pelo Muse (fundo clean claro, cartões uniformes, grade par, **um botão cheio por tela**, um h1) medido nas rotas `/dashboard/agenda`, `/conta/ajuda`, `/imoveis`, `/contratos`, `/fechamento`, `/ferramentas`, `/leads`, `/orcamentos`, `/pedidos`, `/recibos`, `/simulador` e `/dashboard`; `/dashboard/caucao`, `/conferencia`, `/roi-imovel` e `/tributacao` não são rotas do painel nesta `main` (404 da casa) e ficam fora.
+- **Fundo:** branco/claro em todas. **h1:** um por tela, 24 px no celular e 28 px no computador (padrão do `PageTitle`). **Botão cheio:** um por tela (Anunciar imóvel, Novo anúncio, Novo pedido, Falar com a Viva, Anunciar meu imóvel…); os escuros extras que a medição acusou são estados marcados de rádio, não ações.
+- **Diferença registrada, sem correção:** o h1 de `/dashboard/conta/ajuda` mede 36/48 px porque o cabeçalho da Conta usa a casca própria (`TITULO_TELA_CONTA`), de propósito (linha `perfil-08-ajuda-sair`, conferida sem achado).
+1. **Achado:** `/dashboard/simulador` — os botões de rádio "Cobrado à parte" / "Incluído no valor mensal" (≈34 px pelas classes) ficam abaixo de 44 px de toque a 390. Corrigido no #3180 (`min-h-11`).
+- **Fora desta passada:** `cadastro-imovel-07-descricao` (linha de "Destaques", #3020) e as linhas que dependem de sessão de parceiro/real.
