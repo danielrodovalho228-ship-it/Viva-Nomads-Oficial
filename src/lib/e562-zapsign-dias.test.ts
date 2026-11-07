@@ -25,7 +25,7 @@ test("sem proposta: os meses do Fechamento × 30; meses cheios ficam iguais", ()
 test("rota e integração: dias da proposta aceita no servidor; a ZapSign recebe dias, texto e meses derivados", () => {
   const r = ler("app/api/contrato/route.ts");
   assert.match(r, /propostaAcordadaDoLead\(admin, f\.leadId\)/);
-  assert.match(r, /prazoDoContratoEmDias\(\{ diasAcordados: acordada \? acordada\.dias : null, mesesDoFechamento: prazo \}\)/);
+  assert.match(r, /prazoDoContratoEmDias\(\{ diasAcordados: acordada \? acordada\.dias : diasJanela, mesesDoFechamento: prazo \}\)/);
   assert.match(r, /termDays: periodo\.dias/);
   assert.match(r, /termMonths: periodo\.meses/);
   const z = ler("lib/integrations/zapsign.ts");

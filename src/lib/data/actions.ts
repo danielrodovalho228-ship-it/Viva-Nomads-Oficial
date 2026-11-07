@@ -1,5 +1,6 @@
 "use server";
 
+import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
 import { cepValido } from "@/lib/proximidades/osm";
 import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
 import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
@@ -1399,6 +1400,8 @@ export interface ContratoInput {
   leadId: string;
   faixa: string; // temporada | media_estadia | longa
   prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
+  /** E655: sem proposta, os dias EXATOS da janela da candidatura (o servidor confere contra a candidatura). */
+  prazoTotalDias?: number;
   tamanhoBlocoMeses?: number; // padrão 2 (≤ 3 = 90 dias)
   qtdOcupantes: number;
   capacidadeSnapshot?: number | null;
@@ -1471,12 +1474,20 @@ export async function registrarContrato(
     return { ok: false, error: "Imóvel sem valor de aluguel." };
   }
 
+  // E655: sem proposta, a janela EXATA da candidatura (confirmada aqui, não pelo navegador) vale em dias.
+  let diasCandidatura: number | null = null;
+  if (!acordada && input.prazoTotalDias != null) {
+    const { data: janela, error: erroJanela } = await admin.from("leads").select("inicio_desejado, fim_desejado").eq("id", lead.id).maybeSingle();
+    if (erroJanela) return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+    diasCandidatura = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: input.prazoTotalDias, valido: (d) => diasValidos(d) });
+  }
+  const diasExatos = acordada ? acordada.dias : diasCandidatura;
   const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
   // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
   // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
   const tetoDias = diasMaxEstadiaVigente();
   const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / 30));
-  if (acordada ? !diasValidos(acordada.dias) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
+  if (diasExatos != null ? !diasValidos(diasExatos) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
     return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${tetoMeses} meses, até ${Math.min(PRAZO_MAX_DIAS, tetoDias)} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
@@ -1493,7 +1504,7 @@ export async function registrarContrato(
   const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   // E562: pela proposta, blocos de até 90 dias contados em dias (valor, caução e taxa proporcionais aos dias).
-  const resumo = acordada ? resumoContratoEmDias(acordada.dias, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
+  const resumo = diasExatos != null ? resumoContratoEmDias(diasExatos, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
   // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
   const garantia: GarantiaContrato = input.garantia === "seguro_fianca" ? "seguro_fianca" : "caucao";
   const okGarantia = validarGarantia(garantia, resumo.prazoTotalDias);

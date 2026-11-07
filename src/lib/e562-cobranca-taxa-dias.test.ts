@@ -32,7 +32,7 @@ test("a rota e o Asaas passam e usam os dias do contrato", () => {
 
 test("Fechamento com proposta aceita: prazo, blocos, base e taxa nos DIAS da proposta (sem proposta, os meses de antes)", () => {
   const f = ler("app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
-  assert.match(f, /const DIAS_ACORDO = ACORDO\?\.termos\?\.dias && ACORDO\.termos\.dias > 0 \? ACORDO\.termos\.dias : null;/);
+  assert.match(f, /const DIAS_ACORDO = ACORDO\?\.termos\?\.dias && ACORDO\.termos\.dias > 0 \? ACORDO\.termos\.dias : DIAS_CANDIDATURA;/);
   assert.match(f, /DIAS_ACORDO \? resumoContratoEmDias\(DIAS_ACORDO, PROPERTY\.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO\)/);
   assert.match(f, /data-testid="fechamento-prazo-dias"/);
   assert.match(f, /<Row label="Prazo" value=\{PRAZO_TEXTO\} \/>/);
