@@ -125,7 +125,7 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await p2.getByTestId("sp-aceite").check();
     await f2.getByText("Sim", { exact: true }).click();
     await p2.getByTestId("seja-parceiro-enviar").click();
-    await expect(p2.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+    await expect(p2.getByTestId("sp-doc-erro")).toContainText("CPF não é aceito");
     const { count: contaPf } = await adm().from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("email", pf.email);
     expect(contaPf, "CPF: nenhum pedido é gravado").toBe(0);
     await p2.context().close();

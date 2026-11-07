@@ -122,6 +122,20 @@ export function urlPublicaValida(u: string | null | undefined): string | null {
   }
 }
 
+/**
+ * E651 — o documento do formulário de parceria, validado no PASSO (antes de mandar para a conta) e no servidor: só CNPJ, com
+ * 14 números e dígitos verificadores. CPF completo recebe a recusa de CPF; número incompleto ou com dígito errado, a mensagem
+ * própria. null = documento aceito.
+ */
+export function erroDocumentoParceiro(valor: string | null | undefined): string | null {
+  const doc = soDigitos(valor ?? "");
+  if (!doc) return "Informe o CNPJ da empresa.";
+  if (cpfValido(doc)) return MSG_SO_CNPJ;
+  if (doc.length !== 14) return "CNPJ incompleto: informe os 14 números do CNPJ da empresa.";
+  if (!cnpjValido(doc)) return "CNPJ inválido: confira os números.";
+  return null;
+}
+
 /** Validação do SERVIDOR (fonte da verdade). Campos por categoria: fotografia → portfólio; mudança → empresa e veículo; demais → descrição. */
 export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
   const nome = limpar(e.nome, 120);
@@ -130,8 +144,8 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
   if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
   const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
-  if (cpfValido(doc)) return { ok: false, erro: MSG_SO_CNPJ };
-  if (!cnpjValido(doc)) return { ok: false, erro: "CNPJ inválido: confira os números." };
+  const erroDoc = erroDocumentoParceiro(doc);
+  if (erroDoc) return { ok: false, erro: erroDoc };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
   if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
   const vistas = new Set<string>();
@@ -264,6 +278,8 @@ export interface PaginaParaPublicar {
   /** FISCAL-PARCEIRO-B: PJ sem resposta não publica a primeira vez (quem já está no ar não sai). */
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: só a checagem do CNPJ, para o painel de quem JÁ publicou (publicado ou não, PF mostra a pendência). */
+  tipoPessoaCnpj?: string | null;
 }
 
 /** O que falta para publicar (vazio = pode publicar). */
@@ -274,7 +290,9 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (p.servicosAtivos < 1) f.push("Pelo menos 1 serviço");
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
-  if (p.tipoPessoa !== undefined && !parceiroPodeReceberServico(p.tipoPessoa)) f.push(PENDENCIA_CNPJ);
+  // E650: o painel de quem JÁ publicou também mostra a pendência de CNPJ (só ela: a nota não é cobrada de quem esteve no ar).
+  const tipoParaCnpj = p.tipoPessoa !== undefined ? p.tipoPessoa : "tipoPessoaCnpj" in p ? p.tipoPessoaCnpj : undefined;
+  if (tipoParaCnpj !== undefined && !parceiroPodeReceberServico(tipoParaCnpj)) f.push(PENDENCIA_CNPJ);
   if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }

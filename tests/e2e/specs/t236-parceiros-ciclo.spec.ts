@@ -166,7 +166,8 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.locator("#sp-portfolio").fill("https://marinalente.com.br");
     await page.getByTestId("sp-aceite").check();
     await page.getByTestId("seja-parceiro-enviar").click();
-    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CNPJ inválido");
+    // E651: o documento é barrado no PASSO, junto do campo (antes de mandar para o servidor).
+    await expect(page.getByTestId("sp-doc-erro")).toContainText("CNPJ incompleto");
     await pedir(page, { categorias: ["fotografia"], portfolio: "https://marinalente.com.br" });
     const s = await solicitacao(foto.email);
     expect(s?.status).toBe("pendente");

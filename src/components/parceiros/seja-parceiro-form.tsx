@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarSolicitacao, erroDocumentoParceiro } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -71,6 +71,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   }
   const [armadilha, setArmadilha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [erroDocumento, setErroDocumento] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
   const [pendente, iniciar] = useTransition();
 
@@ -137,6 +138,10 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+    setErroDocumento(null);
+    // E651: o documento é validado ANTES de mandar para a conta (CPF, número incompleto e dígito errado param aqui).
+    const erroDoc = erroDocumentoParceiro(c.documento);
+    if (erroDoc) return setErroDocumento(erroDoc);
     if (!estado.logado) return irParaConta();
     const entrada = {
       ...c,
@@ -188,7 +193,12 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       </p>
       <div>
         <label htmlFor="sp-doc" className="block text-sm font-medium text-ink">CNPJ</label>
-        <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder="00.000.000/0000-00" className={input} />
+        <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => { set("documento", e.target.value); setErroDocumento(null); }} placeholder="00.000.000/0000-00" aria-invalid={erroDocumento ? true : undefined} aria-describedby={erroDocumento ? "sp-doc-erro" : undefined} className={input} />
+        {erroDocumento && (
+          <p id="sp-doc-erro" role="alert" className="mt-1 text-sm text-red-700" data-testid="sp-doc-erro">
+            {erroDocumento}
+          </p>
+        )}
         <p className="mt-1 text-xs text-muted">Usado só pela equipe para conferir a parceria. Nunca aparece na sua página.</p>
       </div>
       {(
