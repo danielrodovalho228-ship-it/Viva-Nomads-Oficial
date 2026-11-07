@@ -48,8 +48,8 @@ export default async function CentralDePendenciasPage({ searchParams }: { search
   // E330: uma fila só — as decisões de outras telas (backup, parcerias, chamados…) entram na fila como itens, e o título
   // conta a fila inteira. Antes o topo dizia "Hoje você tem 5 decisões" e a fila logo abaixo "Nada pendente agora".
   const outras = filtro ? null : decisoesForaDaCentral(decisoes);
-  // E477: o admin observador da QA não decide sobre dado real (nem roda os prazos): os botões saem dessas linhas.
-  const soLeitura = new Set(central ? await soLeituraNaTela(await alvosDaCentral(admin, [...central.linhas, ...central.teste])) : []);
+  // E477: o admin observador da QA não decide nada nesta fila (dado real ou de teste, nem roda os prazos): os botões saem de toda linha.
+  const soLeitura = new Set(central ? await soLeituraNaTela(await alvosDaCentral(admin, [...central.linhas, ...central.teste], true)) : []);
   const prazosSoLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   return (
     <div data-testid="central-pendencias">

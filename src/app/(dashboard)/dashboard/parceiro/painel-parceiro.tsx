@@ -15,7 +15,7 @@ import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
-import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, PENDENCIA_CNPJ, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
@@ -33,6 +33,7 @@ import {
   salvarServico,
   type PainelParceiro,
 } from "@/lib/parceiros/painel-actions";
+import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
 
 const ABAS = [
   { id: "pagina", rotulo: "Página" },
@@ -108,6 +109,13 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
             )}
           </div>
         </div>
+        {/* E650: quem já publicou com CPF não recebe serviço (E648); o painel explica o porquê e pede o CNPJ. */}
+        {!suspenso && p.status === "publicado" && p.falta.includes(PENDENCIA_CNPJ) && (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-pendencia-cnpj-publicado">
+            <p className="font-semibold">Pendência: {PENDENCIA_CNPJ.charAt(0).toLowerCase()}{PENDENCIA_CNPJ.slice(1)}.</p>
+            <p className="mt-1">Por isso a sua página não aparece na busca e você não recebe pedidos. A Viva só trabalha com parceiros que têm CNPJ (MEI, onde a atividade permite). Fale com a Viva pela Central de Ajuda para apresentar o CNPJ.</p>
+          </div>
+        )}
         {!suspenso && p.status !== "publicado" && p.falta.length > 0 && (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-falta">
             <p className="font-semibold">Falta para publicar:</p>
@@ -567,7 +575,13 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted">Tipo</dt>
-            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF)"}</dd>
+            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF) — cadastro antigo"}</dd>
+            {/* E649: o cadastro legado com CPF mostra a pendência ao lado (a Viva só trabalha com CNPJ, E648). */}
+            {p.tipoPessoa !== "pj" && (
+              <p className="mt-1 text-sm font-semibold text-red-700" data-testid="parceiro-pendencia-cnpj">
+                {PENDENCIA_CNPJ_PAINEL}
+              </p>
+            )}
           </div>
           <div>
             {/* E463: o documento é o do perfil (Conta → Documento), o mesmo de Conta → Dados — uma fonte só. */}

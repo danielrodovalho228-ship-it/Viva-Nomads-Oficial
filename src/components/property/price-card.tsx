@@ -134,7 +134,12 @@ export function PriceCard({ property, actions, meses = 1, dias = null }: { prope
         )}
       </ul>
 
-      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página */}
+      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página. E528: o total mensal de novo logo acima, para
+          quem preenche o formulário (embaixo do painel, que não prende quando é mais alto que a janela) não perder o valor. */}
+      <p className="mt-3 flex items-baseline justify-between gap-3 border-t border-line pt-3 text-sm" data-testid="total-junto-da-acao">
+        <span className="font-semibold text-ink">Total por mês</span>{" "}
+        <span className="text-lg font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
+      </p>
       <div className="mt-3">{actions}</div>
 
       <p className="mt-4 inline-flex items-center gap-2 text-sm text-sage">
