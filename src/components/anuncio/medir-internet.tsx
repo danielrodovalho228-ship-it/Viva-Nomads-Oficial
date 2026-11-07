@@ -60,6 +60,8 @@ export function MedirInternet({
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
+  // E414: o dono escolheu "Medir depois" — nada foi registrado; o aviso some ao medir de novo.
+  const [adiada, setAdiada] = useState(false);
   // E414: só uma das rodadas terminou — a medida vale, mas o resultado diz que veio de menos rodadas.
   const [parcial, setParcial] = useState(false);
   const atual = useRef<Medidor | null>(null);
@@ -88,10 +90,19 @@ export function MedirInternet({
       </p>
     );
 
+  // E414: "Medir depois" vale em toda tela que mede (cadastro, edição, conferência, nível): dispensa a falha, não grava nada e o
+  // cadastro segue. Quem passa `onDepois` (o painel do nível no celular) ainda fecha o painel.
+  const medirDepois = () => {
+    setResultado(null);
+    setAdiada(true);
+    onDepois?.();
+  };
+
   async function medir() {
     if (!estado?.ok || !ponto) return;
     cancelou.current = false;
     setResultado(null);
+    setAdiada(false);
     setParcial(false);
     setFase("local");
     const local = await posicao();
@@ -209,13 +220,16 @@ export function MedirInternet({
           {/* E414: a falha não trava nada e não marca o imóvel — o dono tenta de novo ou segue e mede depois. */}
           <div className="mt-2 flex flex-wrap items-center gap-2" data-testid="medir-internet-depois">
             <p className="text-xs text-muted">{TEXTO_MEDIR_DEPOIS}</p>
-            {onDepois && (
-              <Button type="button" variant="secondary" size="sm" onClick={onDepois} disabled={ocupado} data-testid="medir-internet-depois-botao">
-                Medir depois
-              </Button>
-            )}
+            <Button type="button" variant="secondary" size="sm" onClick={medirDepois} disabled={ocupado} data-testid="medir-internet-depois-botao">
+              Medir depois
+            </Button>
           </div>
         </>
+      )}
+      {adiada && !resultado && (
+        <p className="mt-2 text-xs text-muted" role="status" data-testid="medir-internet-adiada">
+          Medição adiada: nada foi registrado no imóvel. Siga com o cadastro e meça quando quiser.
+        </p>
       )}
       {resultado?.ok && parcial && (
         <p className="mt-2 text-xs text-muted" data-testid="medir-internet-parcial">

@@ -7,16 +7,17 @@ import { hrefComparar, MIN_COMPARAR } from "@/lib/busca/comparar";
 
 /**
  * Barra "Comparar (N)" da busca (ordem fdd61de0). Só aparece com algo marcado.
- * E529 (D15): era uma pílula FIXA no meio da tela, flutuando sobre os cartões. Agora fica encaixada na coluna de
- * resultados: sticky no pé da coluna (acima das abas do celular, pela .vn-barra-comparar), na largura toda da coluna,
- * com fundo branco opaco e borda — no fim da lista ela vem DEPOIS do último cartão.
+ * E529 (D15; 3ª reprova de 06/11): era uma pílula FIXA, depois uma barra sticky no pé da coluna — as duas ficavam
+ * FLUTUANDO sobre os cartões que passavam por baixo ao rolar. Agora é uma faixa NORMAL da página, logo acima da lista de
+ * resultados (sem sticky nem fixed, sem sombra): ocupa o próprio espaço e nunca cobre cartão nenhum. O feedback de cada
+ * marcação continua no próprio cartão (a caixinha "Comparar").
  */
 export function BarraComparar({ ids, aviso, onLimpar }: { ids: string[]; aviso: string | null; onLimpar: () => void }) {
   const router = useRouter();
   if (ids.length === 0) return null;
   const pronto = ids.length >= MIN_COMPARAR;
   return (
-    <div className="vn-barra-comparar sticky z-30 -mx-4 mt-6 border-t border-line bg-white px-4 py-3 shadow-flutuante sm:mx-0 sm:rounded-xl sm:border" data-testid="barra-comparar">
+    <div className="mt-3 rounded-xl border border-line bg-white px-4 py-3" data-testid="barra-comparar">
       <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-1">
         {aviso ? (
           <p role="status" className="text-sm text-ink" data-testid="comparar-aviso">{aviso}</p>
