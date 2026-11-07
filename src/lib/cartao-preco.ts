@@ -33,7 +33,7 @@ export interface RotuloPreco {
   /** Y em reais (o total do período; com N ≤ 1, o próprio mensal). */
   total: number;
   meses: number;
-  /** "Disponível a partir de 15/11", "Disponível agora" ou null (sem data). */
+  /** "Disponível a partir de 15/11/2026", "Disponível agora" ou null (sem data). */
   disponivel: string | null;
 }
 
@@ -69,3 +69,16 @@ export function estadiaDoCartao(r: RotuloPreco): string {
 
 /** E356: o rótulo que diz o que o preço grande do cartão é. */
 export const ROTULO_TOTAL_MES = "Total por mês, tudo incluído";
+
+/**
+ * E702: a data "Disponível a partir de" da página do imóvel é CALCULADA (primeira entrada em que cabe a estadia mínima,
+ * olhando os períodos ocupados). Quando ela difere da data do cadastro, o cartão diz de onde vem; quando é a mesma, nada.
+ */
+export function notaDataCalculada(calculada: string | null | undefined, doCadastro: string | null | undefined, minDias: number | null | undefined): string | null {
+  const a = calculada?.slice(0, 10);
+  if (!a || !/^\d{4}-\d{2}-\d{2}$/.test(a)) return null;
+  if (a === (doCadastro ?? "").slice(0, 10)) return null;
+  const n = Number(minDias);
+  const dias = Number.isFinite(n) && n > 0 ? ` de ${n} ${n === 1 ? "dia" : "dias"}` : "";
+  return `Data calculada para a estadia mínima${dias}, olhando os períodos já ocupados.`;
+}
