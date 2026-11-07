@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
+import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
 
 /**
  * T91 — RESPOSTA PÚBLICA e PEDIDO DE REVISÃO de avaliação (0129, ordem 404cd213 item 4). Direto no PostgREST:
@@ -38,8 +39,8 @@ test.describe("T91 — Resposta e revisão de avaliação (0128)", () => {
     const marca = Array.from({ length: 8 }, () => "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]).join("");
     try {
       // As duas partes avaliam (às cegas) → a do inquilino sobre o dono fica publicada.
-      await inq.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: dono.id, papel_autor: "inquilino", nota_geral: 4, comentario_publico: `Bom imóvel ${marca}`, status: "enviada" });
-      await dono.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+      await inq.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ct!.id, alvo_id: dono.id, papel_autor: "inquilino", nota_geral: 4, comentario_publico: `Bom imóvel ${marca}`, status: "enviada" });
+      await dono.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
       const { data: av } = await adm.from("avaliacoes").select("id, status").eq("contrato_id", ct!.id).eq("alvo_id", dono.id).single();
       expect(av!.status).toBe("publicada");
 
