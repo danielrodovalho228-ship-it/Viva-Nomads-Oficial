@@ -489,12 +489,14 @@ export async function assinarContrato(input: {
   if (faltam) return { ok: false, error: faltam };
 
   // Confirmação de identidade NO SERVIDOR: código de e-mail de uso único, com validade e limite de falhas.
-  const { data: linhaCodigo } = await admin
+  const { data: linhaCodigo, error: erroCodigo } = await admin
     .from("contrato_assinatura_codigos")
     .select("codigo_hash, expira_em, falhas, usado_em, enviado_em")
     .eq("contrato_id", c.id)
     .eq("user_id", user.id)
     .maybeSingle();
+  // E675: leitura falha não vira "Peça o código por e-mail" (o código existe; só não deu para ler agora).
+  if (erroCodigo) return { ok: false, error: "Não foi possível conferir o código agora. Tente de novo." };
   const lc = (linhaCodigo as LinhaCodigo | null) ?? null;
   const conf = conferirCodigo(lc, input.codigo, user.id, c.id, Date.now());
   if (!conf.ok) {

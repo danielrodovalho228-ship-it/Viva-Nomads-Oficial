@@ -36,3 +36,14 @@ test("E675: resposta de erro também relê o contrato (se a assinatura entrou, a
   const erroRamo = assinar.slice(assinar.indexOf("if (!r.ok)"), assinar.indexOf("setAssinado(true)"));
   assert.match(erroRamo, /router\.refresh\(\)/);
 });
+
+test("E675 (i): leitura falha do código de assinatura não vira 'Peça o código por e-mail' — para antes de conferir", () => {
+  const i = corpo.indexOf('.from("contrato_assinatura_codigos")\n    .select("codigo_hash, expira_em, falhas, usado_em, enviado_em")');
+  assert.ok(i >= 0);
+  const trecho = corpo.slice(Math.max(0, i - 80), i + 600);
+  assert.match(trecho, /error: erroCodigo/);
+  const g = corpo.indexOf("if (erroCodigo)");
+  assert.ok(g > i);
+  assert.ok(g < corpo.indexOf("conferirCodigo(lc,"));
+  assert.match(corpo.slice(g, g + 160), /Não foi possível conferir o código agora/);
+});

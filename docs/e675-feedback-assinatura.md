@@ -18,3 +18,14 @@ registrada; a confirmação inline era inconsistente.
 
 **Dúvida:** não reproduzi o primeiro clique; as duas causas são as que o código mostra. Se a QA ainda vir o erro, preciso
 do texto exato da mensagem e do horário (o log da ação mostra qual ramo respondeu).
+
+## Complemento (07/11, relato com texto exato)
+O 1º clique do Paulo mostrou "Peça o código por e-mail e digite os 6 números para assinar." Esse texto sai de
+`conferirCodigo` quando NÃO há linha de código. `assinarContrato` lia `contrato_assinatura_codigos` sem olhar o `error`:
+uma leitura que falha virava "sem linha" e, portanto, "peça o código", mesmo com o código pedido. Agora a leitura com
+erro responde "Não foi possível conferir o código agora. Tente de novo." antes de conferir (teste novo em
+`e675-feedback-assinatura.test.ts`, visto vermelho).
+
+Sobre a confirmação "Enviamos 6 números…" aparecer na página do Lucas e não na do Paulo: o aviso é estado local da
+página de quem clicou em "Enviar código", e o código fica preso à pessoa e ao contrato (hash por usuário). Os dois
+sintomas combinam com a troca de conta do E674 (#3166): a aba do Paulo agindo com a sessão do Lucas. Sem prova ao vivo.
