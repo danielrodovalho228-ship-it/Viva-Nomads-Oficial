@@ -3280,7 +3280,9 @@
       "personas": [
         "admin"
       ],
-      "specs": []
+      "specs": [
+        "t1416-e287-rota-envio-so-admin"
+      ]
     },
     "/c/[curto]": {
       "personas": [
