@@ -342,3 +342,7 @@ Bloco 497 (#3257) mesclado por você, sem outra mudança de produto na main (só
 ## Bloco 498 verde
 
 Bloco 498 (t1424, #3261, grupo do 481) **verde** (run 42395956892), a 390 e 1280 px. Aguarda a mesclagem do Daniel; sem merge e sem fechar PR. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum. Próximo da fila: bloco 499 (grupo do 482).
+
+## Bloco 499 verde (main `e099ae6b6`)
+
+Bloco 499 (t1425, #3262, grupo do 482: candidaturas, favoritos, propostas, locações, mensagens, contratos, leads, orçamentos, públicas) **verde** (run 42396972859), a 390 e 1280 px; inclui telas dos merges E670, E677 e E675. Bloco 498 (#3261) já mesclado. Nenhum merge de produto novo na main desde `c6f776acd` (só blocos meus): sem spec de merge. Sem merge e sem fechar PR. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum. Próximo da fila: bloco 500 (grupo do 483).
