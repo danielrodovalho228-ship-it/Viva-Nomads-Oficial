@@ -78,6 +78,7 @@
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
   --folga-rodape-imovel: 16rem;
+  --faixa-flutuante: 5rem; /* E709: a faixa onde mora o "Fale com a Viva" redondo (48 px a 1,5 rem da borda) */
   --background: #ffffff;
   --foreground: #222222;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */

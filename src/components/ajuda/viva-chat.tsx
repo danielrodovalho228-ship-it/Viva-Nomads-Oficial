@@ -188,12 +188,12 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={levaAPagina ? undefined : aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
+        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "w-12 rounded-full px-0 sm:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
         data-compacto={(compacto || painel) && !aberto ? "1" : undefined}
       >
-        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-4 w-4 max-lg:h-5 max-lg:w-5" : "h-4 w-4"} />}
-        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "max-lg:sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
+        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-5 w-5" : "h-4 w-4"} />}
+        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
     </div>
   );
