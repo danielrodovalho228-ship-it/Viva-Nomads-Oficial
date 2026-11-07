@@ -706,3 +706,13 @@ A `main` não andou desde o #3025. Rotas: os 7 guias (`/guias/*`), `/cidades/ube
 - **Estouro e corte:** um h1 por página; scrollWidth = largura da janela; nenhum elemento além da borda fora de faixa rolável; nenhum texto cortado sem reticências.
 - **Toque (390):** nenhum alvo abaixo de 40 px fora dos que têm `alvo-toque`. No computador (1280, mouse) a galeria tem "+N mais" (36 px) e os dias do calendário 27 px de altura — só com mouse, abaixo do critério de toque de propósito; no toque são maiores. Sem defeito.
 - **Achados:** nenhum novo. Estados dos rascunhos (E193, E427, E504, E528, E529, E658, E659, E661, E665, E666, E667, E670) inalterados; E662 segue sem tela, à espera da migração da Pista B (#3149 em rascunho).
+
+## Passada 52 (07/11; modo demonstração, servido da `main` no #3025; 390 e 1280) — telas dos merges mais recentes (E648, E649, E650, E651)
+
+A `main` não andou desde o #3025, então as telas alteradas pelos merges mais recentes são as do cadastro e do painel do parceiro; medidas a 390 e 1280 com a `main` servida (não os rascunhos).
+- **Diferenças mockup × real, uma a uma:**
+  1. Formulário "Seja parceiro" (`/parceiros?categoria=fotografia`, `/dashboard/parceiro`): o seletor "Pessoa física (CPF)" × "Empresa ou MEI (CNPJ)" **saiu** — só CNPJ (E648); o rótulo do documento é "CNPJ"; as únicas escolhas em cartão são "Sim/Não" da pergunta da nota (PJ). Conforme a regra vigente; nenhuma diferença visual com o padrão de cartão.
+  2. `/parceiros/avaliadores`: sem seletor de pessoa e sem texto de CPF fora do aviso "CPF não é aceito". Conforme.
+  3. Digitar 11 dígitos no CNPJ (tentativa de CPF) não estoura a página nem corta o texto (E651 recusa no passo; o texto da recusa vem do servidor e precisa de conta real — QA).
+- **Imagens, estouro, fixos:** 0 imagens quebradas; scrollWidth = largura da janela nas 4 medições; nada fixo sobre conteúdo.
+- **Defeitos novos:** nenhum — nada a corrigir nesta passada. Telas dos merges E414 (degradação da medição de internet) e E477 (observadora sem escrita no admin) dependem de dado real/sessão de admin: ficam para o QA.
