@@ -11,3 +11,10 @@ Na edição do anúncio (`BlockCalendar`) o dono já via "Estadia com contrato" 
 - barra: **"Ocupado: estadia com contrato (toque para abrir)"**;
 - uma linha fixa: "Ocupado: estadia com contrato. Bloqueado: dia que você fechou (ou que veio do calendário de outro site)."
 - `LegendaCalendario` ganhou o parâmetro opcional `rotulos` (rótulo próprio por marca numa tela); as outras telas seguem com o da grade única.
+
+## Resíduo: distinção por DIA na grade do dono
+- Cada dia de estadia com contrato agora é marcado na grade como **"Ocupado (estadia com contrato)"** (verde-pálido), separado do **"Bloqueado por você ou de outro site"** (vermelho, riscado). Antes só havia a barra verde sobre a grade e o dia ficava sem marca própria.
+- Um dia bloqueado e ocupado ao mesmo tempo mostra o bloqueado (maior prioridade) e o leitor de tela diz as duas coisas.
+- O leitor de tela lê as mesmas palavras da legenda (`CalendarioMes` ganhou `rotulos`, como a legenda).
+- A barra verde continua; sua legenda virou "Barra verde: estadia com contrato (toque para abrir)".
+- Não consegui ver a grade do dono renderizada: ela não aparece no demo local (precisa de imóvel real). A prova é por teste e tipos; conferência visual fica para o laboratório e a QA.

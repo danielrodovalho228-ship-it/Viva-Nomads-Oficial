@@ -33,6 +33,8 @@ export function CalendarioMes(p: {
   sobreposicao?: ReactNode;
   /** E466: no lugar do título do mês (ex.: o título com as setas de mês anterior/próximo). */
   cabecalho?: ReactNode;
+  /** E666: rótulo próprio de uma marca nesta tela (leitor de tela e legenda): "Ocupado", "Bloqueado por você". */
+  rotulos?: Partial<Record<MarcaDia, string>>;
 }) {
   const celulas = celulasDoMes(p.ano, p.mes);
   return (
@@ -56,7 +58,7 @@ export function CalendarioMes(p: {
           const marcas = [...(p.marcas[iso] ?? []), ...(p.hoje === iso ? (["hoje"] as const) : [])];
           const marca = marcaPrincipal(marcas);
           const desab = p.desabilitado?.(iso) ?? false;
-          const rotulo = `${dia} de ${NOMES_MES[p.mes]}${marcas.length ? ` — ${marcas.map((m) => ROTULO_MARCA[m]).join(", ")}` : ""}`;
+          const rotulo = `${dia} de ${NOMES_MES[p.mes]}${marcas.length ? ` — ${marcas.map((m) => p.rotulos?.[m] ?? ROTULO_MARCA[m]).join(", ")}` : ""}`;
           const classe = cn(
             "grid aspect-square place-items-center rounded-lg text-xs",
             marca ? CLASSE_MARCA[marca] : "text-ink",
