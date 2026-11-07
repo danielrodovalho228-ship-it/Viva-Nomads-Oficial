@@ -818,7 +818,8 @@
         "t336-varredura-bloco14",
         "t602-e181-familia-contadores",
         "t607-varredura-bloco51",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/ganhos": {
@@ -994,7 +995,8 @@
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
         "t662-varredura-bloco63",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1029,7 +1031,8 @@
         "t339-varredura-bloco16",
         "t602-e181-familia-contadores",
         "t676-varredura-bloco69",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/fechamento": {
@@ -1306,7 +1309,8 @@
         "t183-telas-logadas-390",
         "t298-varredura-logada-bloco4",
         "t675-varredura-bloco68",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/leads/[id]": {
@@ -1342,7 +1346,8 @@
         "t854-interessado-responder",
         "t1402-varredura-bloco480",
         "t1404-varredura-bloco482",
-        "t1423-varredura-bloco497"
+        "t1423-varredura-bloco497",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/locacoes": {
@@ -1364,7 +1369,8 @@
         "t557-varredura-bloco42",
         "t489-e176-menus",
         "t686-varredura-bloco72",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/estadia/[contratoId]/contrato": {
@@ -1428,7 +1434,8 @@
         "t662-varredura-bloco63",
         "t672-e190-troca-de-modo",
         "t854-interessado-responder",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/notificacoes": {
@@ -1450,7 +1457,8 @@
         "t686-varredura-bloco72",
         "t1402-varredura-bloco480",
         "t1404-varredura-bloco482",
-        "t1423-varredura-bloco497"
+        "t1423-varredura-bloco497",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1465,7 +1473,8 @@
         "t298-varredura-logada-bloco4",
         "t559-varredura-bloco43",
         "t686-varredura-bloco72",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/orcamentos/nova": {
@@ -1503,7 +1512,8 @@
         "t686-varredura-bloco72",
         "t1389-varredura-bloco478",
         "t1404-varredura-bloco482",
-        "t1421-varredura-bloco495"
+        "t1421-varredura-bloco495",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -1699,7 +1709,8 @@
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/excluir-conta": {
@@ -1878,7 +1889,8 @@
         "t543-e166-fundo-clean-publico",
         "t559-varredura-bloco43",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1425-varredura-bloco499"
       ]
     },
     "/parceiros": {
@@ -2153,7 +2165,8 @@
         "t559-varredura-bloco43",
         "t686-varredura-bloco72",
         "t1404-varredura-bloco482",
-        "t1391-e677-ordem-estavel-propostas"
+        "t1391-e677-ordem-estavel-propostas",
+        "t1425-varredura-bloco499"
       ]
     },
     "/dashboard/servicos": {
