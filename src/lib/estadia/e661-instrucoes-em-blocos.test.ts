@@ -29,3 +29,12 @@ test("E661: guia do morador/dono e do convidado usam o mesmo componente", async 
     assert.match(readFileSync(p, "utf8"), /<InstrucoesEmBlocos /, p);
   }
 });
+
+test("E661/E660: Wi-Fi, recepção e fechadura DO CONDOMÍNIO vão para 'Estrutura do condomínio'; o Wi-Fi do apartamento fica no imóvel", async () => {
+  const { CAMPOS_CONDOMINIO } = await import("./instrucoes.ts");
+  for (const c of CAMPOS_CONDOMINIO) assert.equal(GRUPO_DA_INSTRUCAO[c], "condominio", c);
+  const g = agruparInstrucoes({ wifi_rede: "Casa", condominio_wifi_rede: "Areas", condominio_recepcao: "24 h", condominio_fechadura: "Biometria" });
+  const por = Object.fromEntries(g.map((x) => [x.grupo, x.campos.map((c) => c.chave)]));
+  assert.deepEqual(por.imovel, ["wifi_rede"]);
+  assert.deepEqual(por.condominio, ["condominio_wifi_rede", "condominio_recepcao", "condominio_fechadura"]);
+});

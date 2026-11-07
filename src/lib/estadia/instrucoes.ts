@@ -134,7 +134,7 @@ export function lembrarDono(inicio: string | null, preenchidas: boolean, agora: 
   E661 — no guia da estadia, as instruções saem em blocos: "Como entrar" (a chegada), "O imóvel e o que está incluso"
   (o que o dono declara do apartamento — Wi-Fi do APARTAMENTO, vaga, observações) e "Estrutura do condomínio" (regras do
   condomínio, lixo, contatos do prédio; texto "informado pelo proprietário, pode variar"). Só reagrupa campos que já
-  existem (sem coluna nova); um Wi-Fi do condomínio hoje vai no campo de regras/contatos do prédio.
+  existem (sem coluna nova); o Wi-Fi, a recepção e a fechadura do condomínio têm campos próprios (`CAMPOS_CONDOMINIO`) e vão para o bloco do condomínio.
 */
 export type GrupoInstrucao = "entrada" | "saida" | "imovel" | "condominio";
 export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
@@ -147,6 +147,11 @@ export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
   regras_condominio: "condominio",
   lixo: "condominio",
   contatos_predio: "condominio",
+  // E661 (Pista B, 0317): a estrutura do condomínio tem campos próprios — Wi-Fi, recepção e fechadura DO CONDOMÍNIO.
+  condominio_wifi_rede: "condominio",
+  condominio_wifi_senha: "condominio",
+  condominio_recepcao: "condominio",
+  condominio_fechadura: "condominio",
 };
 export const TITULO_GRUPO_INSTRUCAO: Record<GrupoInstrucao, string> = {
   entrada: "Como entrar",
