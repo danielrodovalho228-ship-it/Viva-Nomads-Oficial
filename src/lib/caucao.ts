@@ -99,3 +99,13 @@ export function totalDescontos(descontos: DescontoReembolso[]): number {
 export function calcularReembolso(caucao: number, descontos: DescontoReembolso[]): number {
   return Math.max(0, caucao - totalDescontos(descontos));
 }
+
+/**
+ * E707 — prazo limite que o simulador de reembolso mostra. Com a trava dos prazos da caução DESLIGADA, é o de sempre (30 dias a
+ * partir de hoje). Ligada, é o teto externo contado do check-out confirmado (marco único) — e sem check-out válido, nenhum prazo.
+ */
+export function prazoLimiteDoReembolso(e: { prazosAtivos: boolean; hoje: string; checkout: string }): string | null {
+  if (!e.prazosAtivos) return addDiasCorridos(e.hoje, PRAZO_REEMBOLSO_DIAS);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.checkout) || Number.isNaN(Date.parse(`${e.checkout}T00:00:00Z`))) return null;
+  return tetoExternoDevolucao(e.checkout);
+}

@@ -12,3 +12,7 @@ Tudo atrás de `CAUCAO_PRAZOS_ATIVA` (desligada) até o parecer da Dra. Beatriz.
 3. (c) só calcula e expõe o valor; aviso aos dois e registro no livro aguardam o parecer. Sem pendência/bloqueio novo para disputa.
 
 Testes: `src/lib/caucao/e707-composicao-prazos.test.ts`. Sem prova ao vivo.
+
+## Simulador /dashboard/reembolsos (resíduo)
+Contava 30 dias a partir do CLIQUE. Agora `prazoLimiteDoReembolso` (`lib/caucao.ts`): com `CAUCAO_PRAZOS_ATIVA` **desligada**, igual a antes (30 dias a partir de hoje, mesmo texto); **ligada**, a tela pede a "Data do check-out", o prazo é o teto externo contado dali (`tetoExternoDevolucao`, marco único), sem check-out informado não mostra prazo, e o texto diz que a devolução é devida de imediato nos casos sem desconto. Teste: `src/lib/caucao/e707-simulador-reembolso.test.ts`.
+
