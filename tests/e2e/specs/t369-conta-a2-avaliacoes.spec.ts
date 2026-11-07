@@ -1,3 +1,4 @@
+import { camposDoPar, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
@@ -41,7 +42,7 @@ test.describe("T369 — CONTA-A A2: Avaliações (perfil-02)", () => {
     ] as const) {
       const sb = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
       await sb.auth.signInWithPassword({ email: quem.email, password: senha });
-      const { error: e } = await sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: alvo, papel_autor: papel, nota_geral: nota, comentario_publico: txt, status: "enviada" });
+      const { error: e } = await sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: alvo, papel_autor: papel, nota_geral: nota, comentario_publico: txt, status: "enviada", ...camposDoPar(papel) });
       if (e) throw e;
     }
   }
