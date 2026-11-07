@@ -463,6 +463,20 @@ export async function assinarContrato(input: {
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 
   const jaAssinou = visao.papel === "inquilino" ? c.assinado_inquilino_em : c.assinado_proprietario_em;
+  // E675: quem já assinou e envia de novo (toque duplo, reenvio depois de a resposta demorar) recebe SUCESSO: a assinatura
+  // existe. Antes recebia "Você já assinou" como erro, e a tela parecia ter falhado. Nada é gravado nem gasto de novo.
+  if (jaAssinou && visao.papel && c.status === "ativo") {
+    const nomesJa = await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id);
+    const outraJa = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
+    return {
+      ok: true,
+      aviso: avisoAssinatura(visao.papel, {
+        proprietario: { nome: nomesJa.proprietario, em: c.assinado_proprietario_em },
+        inquilino: { nome: nomesJa.inquilino, em: c.assinado_inquilino_em },
+      }),
+      ambos: outraJa,
+    };
+  }
   const motivo = motivoNaoPodeAssinar({
     status: c.status,
     papel: visao.papel,
