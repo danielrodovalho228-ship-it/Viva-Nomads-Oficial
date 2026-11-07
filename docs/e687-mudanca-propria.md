@@ -19,3 +19,7 @@ Empresa e veículo ficam só na **solicitação**. Depois da aprovação não v�
 2. A lacuna acima (empresa/veículo na página pública e no painel) é o que o E687 quer? Se sim, abro a migração 0326 + telas num próximo PR.
 
 Nenhuma mudança de código neste PR.
+
+## Atualização (despacho de 07/11, "fluxo-parceiros-completo §2, fases 0 e 4")
+
+Esse documento não está no repositório nem no Drive acessível a esta sessão (busca por título sem resultado), então não sei o que as fases 0 e 4 da matriz exigem de Mudança. Sem ele, não vou inventar migração. Pelo código, o que falta é só a lacuna acima (empresa/veículo não chegam à página pública nem ao painel do parceiro aprovado). Pedido: o trecho §2 e as fases 0 e 4 (ou confirmação de que a lacuna é o escopo). Com isso, o PR de código sai com a migração 0326.
