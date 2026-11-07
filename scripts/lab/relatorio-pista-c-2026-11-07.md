@@ -128,3 +128,19 @@ t1391/E677 (#3188): 1ª rodada (run 42367518202) vermelha por **infra** — "Sub
 | E674 troca de conta | #3166 | — | — | fica para depois (porta de QA com duas contas) |
 | E675 feedback da assinatura | #3171 | — | — | fica para depois (duplo envio de assinatura com código) |
 | E676 faixa de crítico | #3167 | — | — | fica para depois (contrato pendente + sino) |
+
+## Lote seguinte (main `cf52190ca`)
+
+Main: só o #3195 (ajuste de lab da Pista D, t181) entrou desde `301624b00`; nenhum merge de produto novo, então nenhuma spec de merge a criar.
+
+| Item | PR | Resultado |
+|---|---|---|
+| Bloco 475 (t1386) | #3190 | verde (run 42368603159) |
+| t1391 — E677, ordem estável das propostas (sobre draft) | #3188 | verde (run 42369498067) após correção da fixture (`lead_id` por proposta) |
+| t1392 — E673, disponível a partir de (sobre draft) | #3189 | verde (run 42369470690) após `periodo` no contrato semeado |
+| t1393 — E678, scroll-padding-top do assistente (sobre draft) | #3192 | verde (run 42369627441) |
+| t1394 — E670, resumo do candidato sem traço solto (sobre draft) | #3193 | verde (run 42370237800) |
+| t1395 — E676, faixa de crítico confere a situação do contrato (sobre draft) | #3194 | verde (run 42370297097) |
+| Bloco 476 (t1387, grupo do bloco 459) | #3196 | em andamento |
+
+Defeitos de produto novos: nenhum (L-103 segue livre). Drafts da Pista B ainda sem spec: E672 (#3162), E674 (#3166), E675 (#3171); o caminho do aditivo do E676 também fica pendente.
