@@ -777,3 +777,12 @@ Merges depois da passada 59: E657 (selo "Reenviada" e "Enviada em"), E414 (botã
 - 0 imagens quebradas, um h1, sem rolagem lateral, nada além da borda, nada cortado, alvos de toque ok nas 8 medições; conformidade: sem diferença.
 - **Sem achado.** As linhas "Enviada em" e "Reenviada" só aparecem com candidatura real (o demo não tem data de envio): ficam para o QA. As páginas do admin (`fotos-perfil`, `imoveis`, `pendencias`) pedem sessão de admin: ficam para o QA.
 - **CI (07/11):** #3191 (E678) com `e2e`, `lab-critico` e `verify` verdes; #3065 verde depois da correção do teste do E531.
+
+## Passada 61 (07/11; modo demonstração local, `main` em #3051; 390 e 1280) — merges E529, E528, E678, E670, E427
+
+Merges depois da passada 60: #3051 (E529, barra Comparar), #3050 (E528, painel de preço), #3191 (E678, respiro de topo do assistente), #3148 (E670, resumo do candidato), #2978 (E427, nome completo após o aceite).
+- **E529 — `/buscar` com 2 imóveis marcados** (15 caixinhas "Comparar"): a barra "Comparar (2) · Limpar" é `static` (faixa da página, acima da lista); rolando a lista inteira, **0** sobreposições com cartões, a 390 e 1280; sem rolagem lateral. Conforme.
+- **E528 — anúncio `ube-001` a 1280** (janela de 800 e de 1080 px): o painel de preço mede 1.479 px (mais alto que a janela) e fica `relative` (`data-preso="nao"`): rola com a página, inteiro, com o "Total por mês" no topo dele e de novo junto da ação; não some acima de "Imóveis parecidos". Conforme com o desenho do #3050.
+- **E678, E670, E427:** já medidos nos PRs; sem tela nova a medir no demo (E427 pede sessão de morador aceito).
+- **Achados novos:** nenhum.
+- **CI:** #3164 (E662) ficou com `verify` vermelho por um teste de cobertura que exige a ação nova no mapa (`tests/e2e/cobertura.json`); entrada acrescentada (sem spec ainda). #3191, #3148, #3050, #3051, #2978 já estão na `main`; resta de rascunho do bloco de mapas o #3066 (E659), sem conflito com a `main`.
