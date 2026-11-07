@@ -75,7 +75,7 @@ import type { Property, Proximity } from "@/lib/types";
 import { cn, dataBR, hojeBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { isEligible } from "@/lib/qualification";
-import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
+import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoImovelOk, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento, registrarEventoUmaVez } from "@/lib/eventos/registrar";
 import { TERMO_IA_VERSAO, camposDaIa, precisaAceitarTermo } from "@/lib/anuncio/termo-ia";
@@ -447,7 +447,7 @@ export default function NewPropertyPage() {
         selo: false,
         video: false,
         // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
-        qualificacaoOk: editingId ? undefined : qualificado,
+        qualificacaoOk: editingId ? undefined : declaracoesDoImovelOk(elegibilidade),
         // 61-B / FILTROS-1: tipo de entrada e velocidade da internet só se exigem do anúncio NOVO (o draft_data decide).
         tipoEntradaOk: editingId ? undefined : false,
         internetOk: editingId ? undefined : false,
