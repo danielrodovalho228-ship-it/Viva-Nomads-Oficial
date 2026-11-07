@@ -798,9 +798,7 @@
         "inquilino",
         "proprietario"
       ],
-      "specs": [
-        "t182-jornada-completa"
-      ]
+      "specs": []
     },
     "/dashboard/buscas": {
       "personas": [
