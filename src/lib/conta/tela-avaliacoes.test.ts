@@ -27,11 +27,14 @@ test("'Responder avaliações' leva à primeira sem resposta; sem nenhuma, some"
 });
 
 test("a tela usa os dados e as regras da Pista B e o mesmo Responder/Pedir revisão do painel", () => {
-  const t = readFileSync(new URL("../../app/(dashboard)/dashboard/conta/avaliacoes/page.tsx", import.meta.url), "utf8");
-  assert.match(t, /avaliacoesRecebidas\(\)/);
+  // E679: a tela da Conta virou a aba "Recebidas" do painel unificado (a rota antiga só redireciona).
+  const t = readFileSync(new URL("../../components/avaliacoes/recebidas-lista.tsx", import.meta.url), "utf8");
+  const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/avaliacoes/page.tsx", import.meta.url), "utf8");
+  assert.match(pagina, /avaliacoesRecebidas\(/);
   assert.match(t, /filtrarAvaliacoes\(/);
   assert.match(t, /linhaContextoAvaliacao\(a\)/);
   assert.match(t, /<AcoesAvaliacao\b/);
-  assert.match(t, /<CascaConta ativo="avaliacoes"/);
+  const antiga = readFileSync(new URL("../../app/(dashboard)/dashboard/conta/avaliacoes/page.tsx", import.meta.url), "utf8");
+  assert.match(antiga, /redirect\(`\/dashboard\/avaliacoes\?aba=recebidas/);
   for (const id of ["avaliacoes-aba-", "avaliacoes-busca", "avaliacao-estrelas", "avaliacoes-responder"]) assert.match(t, new RegExp(id), id);
 });
