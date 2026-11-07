@@ -698,3 +698,11 @@ A `main` não andou desde a passada 49 (#3025). Rotas públicas principais: `/`,
 - **Elementos além da borda:** só decoração cortada por ancestral `overflow-hidden` (fundo desfocado do herói com `scale-110` em `/` e `/precos`; ícone SVG em `/imoveis/ube-001` a 768). Nada visível fora da janela.
 - **Fixos:** botão "Fale com a Viva" (180 × 48 no computador, 48 × 48 no anúncio a 768) e o atalho de pular ao conteúdo; a barra fixa do anúncio a 768 (`vn-barra-fixa`, 159 px) é a mesma do celular, de propósito (abaixo do computador). Nada fixo na `/buscar` e na `/ajuda`.
 - **/buscar a 1920:** painel do mapa termina dentro da margem só com o #3066; na `main` ainda cola na borda (E659, em rascunho aguardando QA). Nenhum defeito novo.
+
+## Passada 51 (07/11; modo demonstração, 390 toque e 1280) — rotas dinâmicas ainda não medidas nos dois tamanhos
+
+A `main` não andou desde o #3025. Rotas: os 7 guias (`/guias/*`), `/cidades/uberlandia` e seus 2 polos (`hc-ufu-umuarama`, `ufu-santa-monica`), anúncios `ube-002`, `ube-005`, `ube-008`, `ube-010`, `/parceiros/fotografos`; rolagem até o fim antes de medir (imagens preguiçosas).
+- **Imagens:** 0 quebradas nas 30 medições (naturalWidth > 0 de todas as visíveis, 2 a 32 por página).
+- **Estouro e corte:** um h1 por página; scrollWidth = largura da janela; nenhum elemento além da borda fora de faixa rolável; nenhum texto cortado sem reticências.
+- **Toque (390):** nenhum alvo abaixo de 40 px fora dos que têm `alvo-toque`. No computador (1280, mouse) a galeria tem "+N mais" (36 px) e os dias do calendário 27 px de altura — só com mouse, abaixo do critério de toque de propósito; no toque são maiores. Sem defeito.
+- **Achados:** nenhum novo. Estados dos rascunhos (E193, E427, E504, E528, E529, E658, E659, E661, E665, E666, E667, E670) inalterados; E662 segue sem tela, à espera da migração da Pista B (#3149 em rascunho).
