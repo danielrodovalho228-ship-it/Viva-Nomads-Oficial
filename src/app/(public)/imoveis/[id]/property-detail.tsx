@@ -573,11 +573,18 @@ export function PropertyDetail({
         <h3 className="font-title text-lg font-semibold text-ink">
           Tirar uma dúvida
         </h3>
+        {/* E694: no exemplo o aviso vem ANTES da caixa de texto, e a caixa e o "Enviar" ficam desligados. */}
+        {exemplo && (
+          <p data-testid="mensagem-exemplo-aviso" className="mt-2 rounded-lg bg-sage-100 px-3 py-2 text-xs font-medium text-forest">
+            Este anúncio é de exemplo: nenhuma mensagem é enviada. A caixa abaixo só mostra como é.
+          </p>
+        )}
         <p className="mt-1 text-sm text-muted">
           Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma.
         </p>
         <textarea
           rows={4}
+          disabled={exemplo}
           autoFocus
           value={composeText}
           onChange={(e) => setComposeText(e.target.value)}
@@ -591,12 +598,12 @@ export function PropertyDetail({
         {leadErro && <p className="mt-2 text-sm text-red-600">{leadErro}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={() => setComposeKind(null)} disabled={pending !== null}>
-            Cancelar
+            {exemplo ? "Entendi" : "Cancelar"}
           </Button>
           <Button
             variant="primary"
             size="sm"
-            disabled={pending !== null || composeText.trim().length < 3}
+            disabled={exemplo || pending !== null || composeText.trim().length < 3}
             onClick={async () => {
               const ok = await handleLead(composeKind, composeText);
               if (ok) setComposeKind(null);
@@ -653,6 +660,7 @@ export function PropertyDetail({
           </div>
         ) : (
           <>
+            {!exemplo && (
             <div className="mb-3 pr-12" data-testid="candidatura-progresso">
               <div className="flex justify-between text-xs font-medium text-muted">
                 {ETAPAS_CANDIDATURA.map((e, i) => (
@@ -663,10 +671,17 @@ export function PropertyDetail({
                 <div className="h-full bg-forest transition-all" style={{ width: `${progressoEtapa(etapa)}%` }} />
               </div>
             </div>
+            )}
             <h3 id="solicitacao-titulo" className="font-title text-lg font-semibold text-ink">
               {etapa === "revisar" ? "Revisar solicitação" : etapa === "mensagem" ? "Mensagem ao proprietário" : "Confirmar candidatura"}
             </h3>
             <p className="mt-1 text-sm text-muted">{property.title}</p>
+            {/* E694: o caráter de exemplo se declara AQUI, antes de qualquer campo — nunca só no fim. */}
+            {exemplo && (
+              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+              </p>
+            )}
             {etapa === "mensagem" ? (
               <>
               {/* 61-B: a mensagem do dono para quem vai pedir, lida antes da apresentação (mascarada ao salvar e ao ler). */}
@@ -743,11 +758,6 @@ export function PropertyDetail({
                 {etapa === "confirmar" && <p className="mt-3 text-xs text-muted">{TERMOS_CANDIDATURA} <Link href="/termos" className="underline">Ler os termos</Link></p>}
               </>
             )}
-            {exemplo && (
-              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
-              </p>
-            )}
             {(resumo.erro ?? solicitacaoErro) && (
               <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
                 {resumo.erro ?? solicitacaoErro}
@@ -764,9 +774,11 @@ export function PropertyDetail({
                 {etapa === "revisar" ? (exemplo ? "Entendi" : "Cancelar") : "Voltar"}
               </Button>
               {etapa !== "confirmar" ? (
+                !exemplo && (
                 <Button variant="primary" size="sm" disabled={!!resumo.erro} onClick={() => setEtapa(proximaEtapa(etapa))}>
                   Continuar
                 </Button>
+                )
               ) : (
                 !exemplo && (
                   <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
