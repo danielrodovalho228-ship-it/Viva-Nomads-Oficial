@@ -6,7 +6,7 @@ import { TAMANHOS, escutarErros } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1333 — VARREDURA DA PÁGINA INTEIRA, BLOCO 435 (Pista C, 05/11), 16ª volta do ciclo (repete o grupo do bloco 401, t1293; antes, o 384, t1274, e o 367, t1255). O protocolo do bloco 21 (t385):
+  T1333 — VARREDURA DA PÁGINA INTEIRA, BLOCO 435 (Pista C, 07/11), 16ª volta do ciclo (repete o grupo do bloco 418, t1313; antes, os blocos 401, 384 e 367). O protocolo do bloco 21 (t385):
   seis classes, página toda rolada, carregamento real de cada imagem, elemento fixo sobre conteúdo, 390 e 1280 px, HTTP
   abaixo de 400; e o console (erro de console ou de página, régua da t249) no relatório. As telas varridas há mais tempo
   depois do bloco 434 (registro de cobertura: última varredura no bloco 418, t1313): as do ADMIN sem id na URL — ajuda
