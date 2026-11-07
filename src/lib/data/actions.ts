@@ -94,6 +94,7 @@ import {
 } from "@/lib/contrato-blocos";
 import { diasMaxEstadiaVigente, diasValidos } from "@/lib/estadia-em-dias";
 import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
@@ -541,6 +542,8 @@ export interface PropertyInput {
   petsAllowed?: boolean;
   /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
   petsRegras?: unknown;
+  /** E660: ficha do que tem dentro (camas/ar por quarto, enxoval, cozinha); normalizada no servidor (0316). */
+  fichaDentro?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
   /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
@@ -577,6 +580,14 @@ export interface PropertyInput {
   /** Proximidades manuais (nome + distância digitados). */
   /** PERTO-B: lugares do OSM (origem "osm", conferidos no servidor pela busca do CEP) e manuais (com o endereço do lugar). */
   proximities?: Proximity[];
+}
+
+/** E660: grava a ficha do que tem dentro. Sem ficha no envio (edição antiga) = não mexe na que já existe. */
+async function gravarFichaDentro(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string, propertyId: string, bruto: unknown) {
+  if (bruto === undefined) return;
+  const ficha = normalizarFicha(bruto);
+  const { error } = await supabase.from("properties").update({ ficha_dentro: ficha }).eq("id", propertyId).eq("owner_id", ownerId);
+  if (error) console.error("[ficha-dentro] gravar falhou:", error.message);
 }
 
 /**
@@ -919,6 +930,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
   await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
+  await gravarFichaDentro(supabase, user.id, data.id as string, input.fichaDentro);
   // E263-A: o anúncio criado já leva as condições de pets (antes, só a edição gravava).
   try {
     const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
@@ -1216,6 +1228,8 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   }
   await gravarPrivacidade(supabase, user.id, id, input);
   await gravarChegadaEPedido(supabase, user.id, id, input);
+
+  await gravarFichaDentro(supabase, user.id, id, input.fichaDentro);
 
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {

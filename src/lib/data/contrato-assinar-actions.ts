@@ -14,6 +14,7 @@ import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
 import { garantirCartao } from "@/lib/data/cartoes-servidor";
 import { SITE_URL } from "@/lib/site";
+import { congelarFicha, normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
@@ -426,8 +427,37 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
     if (erroPacote) throw new LeituraDaAssinaturaFalhou(`congelar limpeza: ${erroPacote.message}`);
     c = await lerContrato(admin, contratoId);
   }
+  if (c) await congelarFichaDentro(admin, c);
   if (c) await completarPets(c, true);
   return c;
+}
+
+/**
+ * E660: na 1ª assinatura a ficha "o que tem dentro" do anúncio congela no contrato (uma vez só), como as regras de pets: a
+ * outra parte assina a mesma ficha mesmo que o dono edite o anúncio depois, e é ela que se confere na entrada. Leitura à
+ * parte (sem a 0316 a coluna não existe: segue sem a ficha). Anúncio anterior à ficha não congela nada.
+ */
+async function congelarFichaDentro(admin: AdminAssinatura, c: LinhaContrato): Promise<void> {
+  if (c.assinado_proprietario_em || c.assinado_inquilino_em || !c.property_id) return;
+  const { data: atual, error: erroLe } = await admin.from("contratos").select("ficha_dentro_congelada").eq("id", c.id).maybeSingle();
+  if (erroLe) {
+    console.error("[ficha-dentro] ler congelada falhou:", erroLe.message);
+    return;
+  }
+  if ((atual as { ficha_dentro_congelada?: unknown } | null)?.ficha_dentro_congelada != null) return;
+  const { data: imovel, error: erroImovel } = await admin.from("properties").select("ficha_dentro").eq("id", c.property_id).maybeSingle();
+  if (erroImovel) {
+    console.error("[ficha-dentro] ler ficha do anúncio falhou:", erroImovel.message);
+    return;
+  }
+  const ficha = normalizarFicha((imovel as { ficha_dentro?: unknown } | null)?.ficha_dentro);
+  if (!ficha) return;
+  const { error } = await admin
+    .from("contratos")
+    .update({ ficha_dentro_congelada: congelarFicha(ficha, new Date()) })
+    .eq("id", c.id)
+    .is("ficha_dentro_congelada", null);
+  if (error) throw new LeituraDaAssinaturaFalhou(`congelar ficha: ${error.message}`);
 }
 
 export async function assinarContrato(input: {
