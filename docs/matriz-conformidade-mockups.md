@@ -658,3 +658,10 @@ Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "
 A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
+
+## Passada 47 (07/11; modo demonstração, 390 e 1280) — telas mexidas pelos merges de 06/11 à noite (E648, E653–E657)
+
+Rotas medidas (um h1, sem rolagem lateral, nada cortado fora de faixa rolável): `/parceiros`, `/parceiros/avaliadores`, `/dashboard/candidaturas`, `/dashboard/fechamento`, `/dashboard/parceiro`, `/dashboard/mensagens`. `/dashboard/parceiro/avaliacao` redireciona ao Início no demo (sem papel de parceiro): precisa de sessão real (QA).
+1. **Achado:** Fechamento — pílulas do passo a passo (36 px), nº de ocupantes e prazo abaixo de 44 px de toque. Corrigido no #3096.
+2. Nenhum outro defeito: `/parceiros` e `/parceiros/avaliadores` com os textos de CNPJ do #3015 já corrigem a superfície; candidaturas vazia conforme o padrão (cartão com ação única).
+3. Fora do demo (dependem de dado real): telas do dono que escolhe o avaliador (E648), código de assinatura (E654), data de envio (E657).
