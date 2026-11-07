@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import Link from "next/link";
 import { FileSignature, MessageSquare } from "lucide-react";
@@ -25,13 +26,6 @@ const TOM: Record<RotuloCandidatura["tom"], string> = {
   sucesso: "bg-emerald-100 text-emerald-700",
   encerrado: "bg-slate-100 text-muted",
 };
-
-function dataBR(iso: string | null): string {
-  if (!iso) return "";
-  // Sem depender de locale do runtime: YYYY-MM-DD → DD/MM/AAAA.
-  const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
-}
 
 /** E440: pedido aceito e ainda sem contrato — aí o cartão mostra o número junto do "Pedir orçamento". */
 const podePedir = (c: { id: string; situacao: { chave: string }; contrato?: unknown }) => c.situacao.chave === "aceita" && !c.contrato && !!numeroPublicoPedido(c.id);
@@ -67,7 +61,7 @@ export default async function CandidaturasPage() {
                 <div className="min-w-0">
                   <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
                   {c.createdAt && (
-                    <p className="text-xs text-muted">Enviada em {dataBR(c.createdAt)}</p>
+                    <p className="text-xs text-muted">Enviada em {dataBRT(c.createdAt)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
