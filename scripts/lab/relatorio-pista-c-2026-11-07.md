@@ -223,3 +223,7 @@ Caminho negativo (expiração) acrescentado à t1395 (E676, #3194, sobre o draft
 ## Colheita final da rodada e bloco 488 (main `769f258c6`)
 
 Runs que estavam pendentes, todos verdes: t1395/E676 com o caso de expiração (#3194, run 42380905569; o run anterior `c5c6c1eac` foi cancelado por novo push, não falhou); main em `74a33330c` (run 42379724697) e `769f258c6` (run 42380624163). Nenhum merge novo desde `769f258c6`. Migração 0321 (E287, #3223): `tests/migracoes/marca-boas-vindas-0321.test.ts` rodou local, 4 de 4 verdes; sem regressão, sem spec nova. Bloco 487 (#3226) em andamento; bloco 488 (t1410, grupo do 471: painel do proprietário sem id) aberto no #3227. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Bloco 487 verde, 488 em andamento, bloco 489 (main `769f258c6`)
+
+Bloco 487 (#3226) verde (run 42381032660). Bloco 488 (#3227) ainda em andamento (run 42381486072) ao abrir o 489: registrado, sem vermelho. Main em `769f258c6` verde, sem merge novo desde então; nada a rodar além do que já passou (migração 0321, 4 de 4 locais). Bloco 489 (t1411, grupo do 472: morador sem id na URL) aberto no #3229. Defeitos de produto novos: nenhum (L-103 livre).
