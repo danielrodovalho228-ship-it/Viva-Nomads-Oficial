@@ -32,6 +32,7 @@ test.describe("T1395 — E676: faixa de crítico confere a situação real do co
   });
   test.afterAll(async () => {
     await adm().from("avisos").delete().eq("usuario_id", ids.inq ?? "");
+    if (ids.contrato) await adm().from("contrato_aditivos").delete().eq("contrato_id", ids.contrato);
     if (ids.contrato) await adm().from("contratos").delete().eq("id", ids.contrato);
     await apagarContas([ids.dono, ids.inq]);
   });
@@ -54,6 +55,33 @@ test.describe("T1395 — E676: faixa de crítico confere a situação real do co
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("faixa-critico")).toHaveCount(0, { timeout: 30_000 });
       expect(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+      await p.context().close();
+    });
+  }
+
+  // Caminho negativo (expiração): a proposta de alteração só vale enquanto o aditivo espera resposta DENTRO do prazo.
+  for (const w of [390, 1280] as const) {
+    test(`a ${w} px: proposta de alteração vencida não mantém a faixa de crítico`, async ({ browser }) => {
+      const c = ids.contrato!;
+      await adm().from("contratos").update({ assinado_inquilino_em: new Date().toISOString() }).eq("id", c);
+      await adm().from("contrato_aditivos").delete().eq("contrato_id", c);
+      const emHoras = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
+      const { error: eAd } = await adm().from("contrato_aditivos").insert({ contrato_id: c, numero: 1, proposto_por: ids.dono, papel_proponente: "proprietario", mudancas: {}, resumo: "Meses: de 2 para 3", status: "proposto", expira_em: emHoras(48) });
+      expect(eAd).toBeNull();
+      await adm().from("avisos").delete().eq("usuario_id", ids.inq!);
+      const { error } = await adm().from("avisos").insert({ usuario_id: ids.inq, evento: "estadia_aditivo_proposto", prioridade: "critico", titulo: "Proposta de alteração da estadia", url: `/dashboard/estadia/${c}`, ref_id: c });
+      expect(error).toBeNull();
+      const p = await entrar(browser, inq.email, senha);
+      await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+      await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      // Dentro do prazo: a faixa pede a resposta.
+      await expect(p.getByTestId("faixa-critico")).toContainText("Proposta de alteração da estadia", { timeout: 30_000 });
+      await expect(p.getByTestId("faixa-critico-acao")).toHaveText("Responder a proposta");
+      expect(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+      // Vencida (o aviso segue sem resolvido_em): a faixa some.
+      await adm().from("contrato_aditivos").update({ expira_em: emHoras(-2) }).eq("contrato_id", c);
+      await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      await expect(p.getByTestId("faixa-critico")).toHaveCount(0, { timeout: 30_000 });
       await p.context().close();
     });
   }
