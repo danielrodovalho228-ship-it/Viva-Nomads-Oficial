@@ -149,11 +149,8 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
       await p.getByTestId("confianca-linkedin-acao").click();
       await p.waitForURL(/linkedin=/, { timeout: 30_000 });
       const volta = new URL(p.url());
-      if (volta.pathname === "/dashboard/conta/privacidade") {
-        // L-56 (Pista A): o retorno do LinkedIn ainda cai em Privacidade, onde a lista (e o aviso do retorno) não está mais.
-        test.info().annotations.push({ type: "L-56", description: `retorno do LinkedIn em ${volta.pathname}${volta.search}` });
-        await p.goto(`${SEGURANCA}${volta.search}`, { waitUntil: "domcontentloaded" });
-      }
+      // E708 (L-106): a volta do LinkedIn cai em Segurança, onde a lista e o aviso do retorno moram.
+      expect(volta.pathname).toBe(SEGURANCA);
       return volta.searchParams.get("linkedin");
     };
     await identidade(`sub-t351-nome-${sufixo}`, "Bruno", "Lima");
