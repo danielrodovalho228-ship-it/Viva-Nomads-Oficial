@@ -786,3 +786,11 @@ Merges depois da passada 60: #3051 (E529, barra Comparar), #3050 (E528, painel d
 - **E678, E670, E427:** já medidos nos PRs; sem tela nova a medir no demo (E427 pede sessão de morador aceito).
 - **Achados novos:** nenhum.
 - **CI:** #3164 (E662) ficou com `verify` vermelho por um teste de cobertura que exige a ação nova no mapa (`tests/e2e/cobertura.json`); entrada acrescentada (sem spec ainda). #3191, #3148, #3050, #3051, #2978 já estão na `main`; resta de rascunho do bloco de mapas o #3066 (E659), sem conflito com a `main`.
+
+## Passada 62 (07/11; modo demonstração local, `main` em #3051; 390 e 1280) — E446 (a cidade e a busca contam igual)
+
+A `main` não andou desde a passada 61. Bloco seguinte: as páginas de cidade e polo depois do #2971 (E446, número único da vitrine).
+- **Número:** `/cidades/uberlandia` diz "15 imóveis em Uberlândia", igual à `/buscar` ("15 imóveis em Uberlândia"); os cartões dos polos dizem "2 imóveis" cada. Conforme, a 390 e 1280.
+- **Imagens, estouro, cartão sem foto:** 32 imagens na cidade e na busca, 4 e 6 nos polos (`hc-ufu-umuarama`, `ufu-santa-monica`), 0 quebradas, 0 cartões sem foto, scrollWidth = largura da janela.
+- **Observação:** as páginas dos polos não repetem a contagem em texto (só a lista); não é defeito (o desenho do E446 põe o número na cidade).
+- **Achados novos:** nenhum.
