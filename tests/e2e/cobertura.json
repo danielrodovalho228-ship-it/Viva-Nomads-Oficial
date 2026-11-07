@@ -845,7 +845,8 @@
         "t591-varredura-bloco48",
         "t674-e255-enquadramento-reforma",
         "t673-varredura-bloco67",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1436-varredura-bloco505"
       ]
     },
     "/dashboard/carteira": {
@@ -863,7 +864,8 @@
         "t339-varredura-bloco16",
         "t631-e222b-renovar-aditivo",
         "t675-varredura-bloco68",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1436-varredura-bloco505"
       ]
     },
     "/dashboard/comparar": {
@@ -1091,7 +1093,8 @@
         "t482-e170-caixas-vazias",
         "t549-varredura-bloco39",
         "t684-varredura-bloco71",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1436-varredura-bloco505"
       ]
     },
     "/dashboard/garantias": {
@@ -1605,7 +1608,8 @@
         "t212-ferramentas-proprietario",
         "t302-varredura-logada-bloco6",
         "t675-varredura-bloco68",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1436-varredura-bloco505"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -2175,7 +2179,8 @@
         "t388-varredura-bloco23",
         "t613-varredura-bloco52",
         "t626-varredura-bloco60",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1436-varredura-bloco505"
       ]
     },
     "/dashboard/propostas": {
@@ -2650,7 +2655,8 @@
         "t310-vao-fim-de-pagina",
         "t418-varredura-bloco35",
         "t684-varredura-bloco71",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1436-varredura-bloco505"
       ]
     },
     "/auth/intencao": {
@@ -2786,7 +2792,8 @@
         "t385-varredura-bloco21",
         "t679-varredura-bloco70",
         "t1410-varredura-bloco488",
-        "t1413-e665-modelos-respostas-rapidas"
+        "t1413-e665-modelos-respostas-rapidas",
+        "t1436-varredura-bloco505"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
