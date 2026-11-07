@@ -5,7 +5,7 @@ import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
-import { criteriosAtingidos, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
+import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
 import {
   designacaoVencida,
   notaConduta,
@@ -337,18 +337,30 @@ export async function revisarCriterios(admin: Admin, avaliadorId: string, agora 
   return atingidos;
 }
 
-/** Cron: designações sem resposta em 24 h passam ao próximo; lembrete D-1 da visita; sorteio da auditoria. */
+/** Cron: designação sem resposta no prazo do avaliador, ou proposta que o dono não aceitou em 72 h, volta ao dono (sem rodízio); lembrete D-1 da visita; sorteio da auditoria. */
 export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<{ expiradas: number; lembretes: number; sorteadas: number; reprocessados: number }> {
   let expiradas = 0;
   let lembretes = 0;
   let sorteadas = 0;
   let reprocessados = 0;
   const { data: abertas } = await admin.from("vistoria_designacoes").select("pedido_id, avaliador_id, designado_em").is("resposta", null);
+  // E682: o prazo para o avaliador responder é o que ELE declarou (padrão 24 h).
+  const { data: prazos } = await admin.from("avaliadores_credenciamento").select("id, prazo_resposta_horas");
+  const horasDe = new Map(((prazos ?? []) as { id: string; prazo_resposta_horas: number | null }[]).map((x) => [x.id, x.prazo_resposta_horas ?? undefined]));
   for (const d of (abertas ?? []) as { pedido_id: string; avaliador_id: string; designado_em: string }[]) {
-    if (!designacaoVencida(d.designado_em, agora)) continue;
-    const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id").eq("id", d.pedido_id).maybeSingle();
+    if (!designacaoVencida(d.designado_em, agora, horasDe.get(d.avaliador_id))) continue;
+    const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id, owner_id, property_id").eq("id", d.pedido_id).maybeSingle();
     if (p?.status !== "designado" || p.avaliador_id !== d.avaliador_id) continue;
     await devolverAoDono(admin, d.pedido_id, d.avaliador_id, "expirada", agora);
+    await avisar(admin, p.owner_id, "vistoria_designado_dono", rotaDono(p.property_id), { pedidoId: d.pedido_id, propertyId: p.property_id });
+    expiradas++;
+  }
+  // E682: proposta que o dono não aceitou no prazo dele (72 h) volta a ele para escolher de novo — sem rodízio.
+  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
+  for (const q of (propostas ?? []) as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string }[]) {
+    if (!q.avaliador_id || !propostaVencida(q.proposta_em, agora)) continue;
+    await devolverAoDono(admin, q.id, q.avaliador_id, "expirada", agora);
+    await avisar(admin, q.owner_id, "vistoria_designado_dono", rotaDono(q.property_id), { pedidoId: q.id, propertyId: q.property_id });
     expiradas++;
   }
   // Pedidos sem nenhum avaliador para o dono escolher: tenta de novo (alguém pode ter sido credenciado).

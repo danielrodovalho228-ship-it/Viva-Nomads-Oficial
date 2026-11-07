@@ -134,3 +134,38 @@ export function descredenciamentoValido(e: { criterioId: string | null; motivo: 
   if (e.motivo.trim().length < 20) return { ok: false, erro: "Descreva o fato concreto que atingiu o critério (mínimo de 20 caracteres)." };
   return { ok: true, criterioId: c.id, direitoDeRespostaDias: DIAS_DIREITO_DE_RESPOSTA };
 }
+
+// ── 5. Os termos do avaliador (E682): valor, prazo de entrega e prazo de resposta são DELE ────────────────────────
+export const PRAZO_RESPOSTA_PADRAO_HORAS = 24;
+export const PRAZO_RESPOSTA_MAX_HORAS = 72;
+/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, referência a confirmar). Passado, a escolha volta ao dono. */
+export const PRAZO_DONO_ACEITAR_HORAS = 72;
+
+/** A proposta do avaliador está parada, sem aceite do dono, há mais que o prazo do dono? */
+export function propostaVencida(propostaEm: string | null, agora: Date, horas = PRAZO_DONO_ACEITAR_HORAS): boolean {
+  if (!propostaEm) return false;
+  const t = Date.parse(propostaEm);
+  return Number.isFinite(t) && agora.getTime() >= t + horas * 3_600_000;
+}
+
+export type ResultadoTermos = { ok: true; valor: number; prazoEntregaDias: number; prazoRespostaHoras: number } | { ok: false; erro: string };
+
+/** O avaliador declara o próprio valor, o prazo de entrega do laudo e em quantas horas responde a um pedido. Nada é imposto pela Viva. */
+export function validarTermos(e: { valor: number; prazoEntregaDias: number; prazoRespostaHoras: number }): ResultadoTermos {
+  if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o seu valor (maior que zero)." };
+  if (!Number.isInteger(e.prazoEntregaDias) || e.prazoEntregaDias < 1 || e.prazoEntregaDias > PRAZO_PROPOSTA_MAX_DIAS) return { ok: false, erro: `Informe o prazo de entrega em dias inteiros (de 1 a ${PRAZO_PROPOSTA_MAX_DIAS}).` };
+  if (!Number.isInteger(e.prazoRespostaHoras) || e.prazoRespostaHoras < 1 || e.prazoRespostaHoras > PRAZO_RESPOSTA_MAX_HORAS) return { ok: false, erro: `Informe em quantas horas você responde a um pedido (de 1 a ${PRAZO_RESPOSTA_MAX_HORAS}).` };
+  return { ok: true, valor: Math.round(e.valor * 100) / 100, prazoEntregaDias: e.prazoEntregaDias, prazoRespostaHoras: e.prazoRespostaHoras };
+}
+
+const reais = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+
+/** A linha de cada avaliador na lista de escolha do dono: termos próprios + conduta publicada (avaliações de conduta). */
+export function linhaDeTermos(a: { valor: number | null; prazoEntregaDias: number | null; prazoRespostaHoras: number | null; notaConduta: number | null; avaliacoesConduta: number }): string {
+  const termos =
+    a.valor != null && a.prazoEntregaDias != null
+      ? `${reais(a.valor)} · entrega em ${a.prazoEntregaDias} ${a.prazoEntregaDias === 1 ? "dia" : "dias"} · responde em até ${a.prazoRespostaHoras ?? PRAZO_RESPOSTA_PADRAO_HORAS} h`
+      : "valor e prazo: ele informa ao responder";
+  const conduta = a.notaConduta != null && a.avaliacoesConduta > 0 ? `conduta ${a.notaConduta.toFixed(1).replace(".", ",")} · ${a.avaliacoesConduta} ${a.avaliacoesConduta === 1 ? "avaliação feita" : "avaliações feitas"}` : "sem avaliações de conduta ainda";
+  return `${termos} · ${conduta}`;
+}

@@ -6801,6 +6801,14 @@
         "t315-telas-avaliacao-dono-62a"
       ]
     },
+    "src/lib/vistoria/actions.ts#salvarMeusTermos": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t303-avaliadores-credenciados-62b1"
+      ]
+    },
     "src/lib/data/video-link-actions.ts#conferirLinkVideo": {
       "personas": [
         "proprietario"
