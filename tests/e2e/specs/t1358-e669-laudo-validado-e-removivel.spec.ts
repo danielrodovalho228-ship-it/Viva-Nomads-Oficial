@@ -6,7 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    1. um PDF de 193 bytes (o do relato) é RECUSADO com mensagem de tamanho e nada é gravado;
    2. um PDF completo (%PDF … %%EOF, 2 KB) é aceito: o aviso do laudo aparece e o autor vê "Remover laudo";
    3. o autor remove (com confirmação): o laudo some, "Anexar laudo independente" volta e o ato fica registrado em
-      conferencia_laudos_retirados; a outra parte (dono) não vê os controles de remover/trocar do laudo alheio.
+      conferencia_laudos_retirados. (O lado da outra parte, que não vê os controles do laudo alheio, fica no teste unitário do draft.)
   Inquilino autor, 390 e 1280 px. Spec preparada sobre a branch do draft; só roda verde com a migração 0319 e o E669.
 */
 const senha = novaSenha();
