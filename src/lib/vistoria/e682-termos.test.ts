@@ -27,7 +27,7 @@ test("a linha da lista mostra valor, entrega, resposta e a conduta publicada; se
   assert.match(com, /R\$\s?350/);
   assert.match(com, /entrega em 5 dias/);
   assert.match(com, /responde em até 12 h/);
-  assert.match(com, /conduta 4,5 \(7\)/);
+  assert.match(com, /conduta 4,5 · 7 avaliações feitas/);
   const sem = linhaDeTermos({ valor: null, prazoEntregaDias: null, prazoRespostaHoras: null, notaConduta: null, avaliacoesConduta: 0 });
   assert.match(sem, /valor e prazo: ele informa ao responder/);
   assert.match(sem, /sem avaliações de conduta ainda/);

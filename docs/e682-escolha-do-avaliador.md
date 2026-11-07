@@ -23,3 +23,13 @@ O servidor já assinava (E648). O painel do avaliador JÁ tem onde assinar (caix
 
 # E687 — não alterado
 A categoria **Mudança** já é própria: `CATEGORIAS_PARCEIRO` tem "mudanca"; o cadastro pede empresa e veículo (`validarSolicitacao`, `dadosCategoria`); `/parceiros` tem os links "Atender mudança" e "Procurar mudança". Não achei o ponto em que ela "cai em Outro serviço"; preciso do caminho exato (tela e URL) para corrigir sem chutar.
+
+## Refino: completar a E648 parte 1 (sem refazer a tela)
+
+1. **Lista**: cada avaliador mostra conduta e "N avaliações feitas" (dados públicos de `avaliadores_publicos()`).
+2. **Prazo do dono**: `PRAZO_DONO_ACEITAR_HORAS = 72` (referência, **a confirmar**). Proposta sem aceite em 72 h volta ao dono (cron, `propostaVencida`); a tela mostra o prazo.
+3. **Silêncio do avaliador**: o código já devolvia ao dono (`devolverAoDono`, sem rodízio); só os comentários diziam "passa ao próximo". Textos corrigidos; a tela usa o prazo declarado pelo avaliador (padrão 24 h).
+4. **Avisos**: avaliador ao ser escolhido (`vistoria_designada`, "no prazo que você declarou"); dono na recusa, no silêncio e no vencimento do próprio prazo (`vistoria_designado_dono`, e-mail e sino).
+5. **Chave desligada**: teste de guarda prova que o bloco retorna `null` antes de qualquer leitura (conta real) e que as ações do dono recusam.
+
+Teste: `src/lib/vistoria/e682-completar-e648.test.ts`.

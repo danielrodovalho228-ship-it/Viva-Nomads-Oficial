@@ -138,6 +138,15 @@ export function descredenciamentoValido(e: { criterioId: string | null; motivo: 
 // ── 5. Os termos do avaliador (E682): valor, prazo de entrega e prazo de resposta são DELE ────────────────────────
 export const PRAZO_RESPOSTA_PADRAO_HORAS = 24;
 export const PRAZO_RESPOSTA_MAX_HORAS = 72;
+/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, referência a confirmar). Passado, a escolha volta ao dono. */
+export const PRAZO_DONO_ACEITAR_HORAS = 72;
+
+/** A proposta do avaliador está parada, sem aceite do dono, há mais que o prazo do dono? */
+export function propostaVencida(propostaEm: string | null, agora: Date, horas = PRAZO_DONO_ACEITAR_HORAS): boolean {
+  if (!propostaEm) return false;
+  const t = Date.parse(propostaEm);
+  return Number.isFinite(t) && agora.getTime() >= t + horas * 3_600_000;
+}
 
 export type ResultadoTermos = { ok: true; valor: number; prazoEntregaDias: number; prazoRespostaHoras: number } | { ok: false; erro: string };
 
@@ -157,6 +166,6 @@ export function linhaDeTermos(a: { valor: number | null; prazoEntregaDias: numbe
     a.valor != null && a.prazoEntregaDias != null
       ? `${reais(a.valor)} · entrega em ${a.prazoEntregaDias} ${a.prazoEntregaDias === 1 ? "dia" : "dias"} · responde em até ${a.prazoRespostaHoras ?? PRAZO_RESPOSTA_PADRAO_HORAS} h`
       : "valor e prazo: ele informa ao responder";
-  const conduta = a.notaConduta != null && a.avaliacoesConduta > 0 ? `conduta ${a.notaConduta.toFixed(1).replace(".", ",")} (${a.avaliacoesConduta})` : "sem avaliações de conduta ainda";
+  const conduta = a.notaConduta != null && a.avaliacoesConduta > 0 ? `conduta ${a.notaConduta.toFixed(1).replace(".", ",")} · ${a.avaliacoesConduta} ${a.avaliacoesConduta === 1 ? "avaliação feita" : "avaliações feitas"}` : "sem avaliações de conduta ainda";
   return `${termos} · ${conduta}`;
 }

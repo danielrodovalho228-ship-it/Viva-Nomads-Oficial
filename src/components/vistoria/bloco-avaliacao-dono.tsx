@@ -13,7 +13,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
-import { faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { sugeridosDoPedido } from "@/lib/vistoria/servidor";
 import {
   COLUNAS_PRECO,
@@ -59,7 +59,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? ""),
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -87,7 +87,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     proposta_em: string | null;
     proposta_aceita_em: string | null;
     teste: boolean;
-    avaliadores_credenciamento: { numero_credenciado: string } | null;
+    avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
   let sugeridos: { id: string; numero: string; nome: string; termos: string }[] | null = [];
@@ -204,13 +204,14 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </div>
             )}
             {atual.status === "designado" && !atual.proposta_em && (
-              <p className="text-muted" data-testid="avaliacao-aguarda-proposta">O avaliador tem 24 horas para responder com o valor e o prazo dele. Sem resposta, você escolhe outro.</p>
+              <p className="text-muted" data-testid="avaliacao-aguarda-proposta">O avaliador tem {atual.avaliadores_credenciamento?.prazo_resposta_horas ?? PRAZO_RESPOSTA_PADRAO_HORAS} horas para responder com o valor e o prazo dele. Sem resposta, você escolhe outro.</p>
             )}
             {atual.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-proposta">
                 <p className="font-semibold text-ink">
                   Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
                 </p>
+                <p className="mt-1 text-muted" data-testid="avaliacao-proposta-prazo">Aceite em até {PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta; passado o prazo, você escolhe outro avaliador.</p>
                 {propostaForaDaFaixa && faixa && (
                   <p className="mt-1 text-muted" data-testid="avaliacao-proposta-fora">Fora da faixa de referência da cidade ({brl(faixa.min)} a {brl(faixa.max)}). Você decide.</p>
                 )}
