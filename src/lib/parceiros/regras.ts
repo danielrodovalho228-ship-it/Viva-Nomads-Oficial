@@ -277,6 +277,8 @@ export interface PaginaParaPublicar {
   /** FISCAL-PARCEIRO-B: PJ sem resposta não publica a primeira vez (quem já está no ar não sai). */
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: quem já esteve no ar não é barrado pela pergunta da nota, mas a pendência do CNPJ vale para todos. */
+  jaPublicou?: boolean;
 }
 
 /** O que falta para publicar (vazio = pode publicar). */
@@ -288,7 +290,7 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
   if (p.tipoPessoa !== undefined && !parceiroPodeReceberServico(p.tipoPessoa)) f.push(PENDENCIA_CNPJ);
-  if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
+  if (p.tipoPessoa !== undefined && !p.jaPublicou && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }
 
@@ -343,6 +345,8 @@ export interface ParceiroNaBusca {
   raioKm?: number | null;
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: quem já esteve no ar não é barrado pela pergunta da nota, mas a pendência do CNPJ vale para todos. */
+  jaPublicou?: boolean;
 }
 
 /*
