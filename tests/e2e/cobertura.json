@@ -2460,7 +2460,8 @@
         "t1407-varredura-bloco485",
         "t1415-e661-e662-guia-em-blocos-e-saida",
         "t1422-varredura-bloco496",
-        "t1433-varredura-bloco502"
+        "t1433-varredura-bloco502",
+        "t1427-e681-calendario-da-estadia-todos-os-meses"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
