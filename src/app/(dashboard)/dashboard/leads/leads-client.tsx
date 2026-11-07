@@ -219,7 +219,7 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
                       </span>
                     </div>
                     {/* Resumo do candidato em uma linha */}
-                    <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
+                    {leadSummary(l) && <p className="mt-1 text-sm font-medium text-ink" data-testid="candidato-resumo">{leadSummary(l)}</p>}
                     <p className="text-xs text-muted">interesse em {l.property}</p>
                     {l.enviadaEm && (
                       <p className="text-xs text-muted" data-testid="lead-enviada-em">
