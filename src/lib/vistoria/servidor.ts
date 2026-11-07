@@ -305,7 +305,8 @@ export async function revisarCriterios(admin: Admin, avaliadorId: string, agora 
     admin.from("vistoria_designacoes").select("respondido_em").eq("avaliador_id", avaliadorId).eq("resposta", "ausencia").gte("respondido_em", desde(90)),
     admin.from("vistoria_auditoria").select("resultado").eq("avaliador_id", avaliadorId).eq("resultado", "nao_confere").gte("revisado_em", desde(365)),
     admin.from("vistoria_pedidos").select("id, proposta_aceita_em, prazo_proposto_dias").eq("avaliador_id", avaliadorId).not("proposta_aceita_em", "is", null).gte("proposta_aceita_em", desde(180)),
-    admin.from("vistoria_conduta").select("pontualidade, cordialidade, cuidado").eq("avaliador_id", avaliadorId).eq("autor", "dono"),
+    // E679-B: conduta é cega — só a PUBLICADA (os dois enviaram ou a janela de 14 dias fechou) entra na revisão.
+    admin.from("vistoria_conduta").select("pontualidade, cordialidade, cuidado").eq("avaliador_id", avaliadorId).eq("autor", "dono").not("publicada_em", "is", null),
   ]);
   if ([aus, rev, ped, cond].some((r) => r.error)) return [];
   const pedidos = (ped.data ?? []) as { id: string; proposta_aceita_em: string; prazo_proposto_dias: number | null }[];
