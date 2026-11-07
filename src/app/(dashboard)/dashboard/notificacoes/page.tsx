@@ -96,9 +96,8 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
               <strong data-testid="avisos-pedidos-total">
                 {pedidosNovos.total}
               </strong>{" "}
-              {pedidosNovos.total === 1 ? "pedido combina" : "pedidos combinam"}{" "}
-              com um imóvel seu e ainda não{" "}
-              {pedidosNovos.total === 1 ? "teve" : "tiveram"} a sua oferta.
+              {/* E504: a frase inteira num texto só (antes: pedaços com {" "} saíam colados na leitura/cópia: "combinamcom", "nãotiverama"). */}
+              {` ${pedidosNovos.total === 1 ? "pedido combina" : "pedidos combinam"} com um imóvel seu e ainda não ${pedidosNovos.total === 1 ? "teve" : "tiveram"} a sua oferta.`}
             </p>
             <Link
               href="/dashboard/pedidos-cidade"
