@@ -1840,6 +1840,7 @@ export default function NewPropertyPage() {
     return (
       <Qualificacao
         aviso={avisoRascunho}
+        travas={<TravasDePublicacao documento={docEstado} />}
         tela={telaQual}
         respostas={qualConf.respostas}
         provas={provasDaQualificacao}
