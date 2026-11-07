@@ -269,3 +269,25 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## Relatório de 07/11/2026 (migrações 0313, 0315 e 0320) — só leitura em produção, nada apagado
+
+Desde o relatório de 06/11 (migrações 0307 a 0312) entraram na produção a **0313** (E648), a **0315** (E657) e a **0320** (E662). As
+0318 (E668) e 0319 (E669) seguem em PR, ainda não aplicadas, e entram no próximo relatório quando forem mescladas.
+
+| Migração | Coluna / tabela nova | O que guarda | Dado pessoal? | Linhas hoje | Prazo |
+|---|---|---|---|---|---|
+| 0313 (E648) | `vistoria_pedidos.escolhido_em`, `valor_proposto`, `prazo_proposto_dias`, `proposta_em`, `proposta_aceita_em` | a escolha do avaliador pelo dono e a proposta de valor e prazo do avaliador | valor e datas do pedido (negócio, sem documento) | 0 | vale o prazo do pedido de vistoria (pendente, item 13) |
+| 0313 (E648) | `vistoria_laudos.assinado_por`, `assinado_em`, `assinatura_hash`, `assinatura_termo` | a assinatura do avaliador no laudo | identificador do avaliador, hash e termo | 0 | vale o prazo do laudo (pendente, item 13) |
+| 0313 (E648) | `avaliadores_credenciamento.criterio_descredenciamento`, `resposta_ate`, `resposta_avaliador` | critério da proposta de descredenciamento e a resposta do avaliador | texto livre do avaliador | 0 | pendente (item 13) |
+| 0315 (E657) | `leads.reenviada_em` | quando a candidatura foi reenviada | só data | 1 (massa de teste) | acompanha o prazo de `leads` |
+| 0320 (E662) | `imovel_instrucoes_chegada.instrucao_saida` e `contratos.instrucao_saida` | a instrução de saída (check-out) escrita pelo dono, e a cópia congelada no contrato | texto livre do dono (pode citar endereço e horários do imóvel) | 0 e 0 | a do contrato acompanha o prazo do contrato; a do imóvel, o do cadastro |
+
+- Nenhuma tabela nova nesta rodada: só colunas em tabelas que já estão no inventário. Não há arquivo no armazenamento ligado a elas.
+- As colunas de texto livre (`resposta_avaliador`, `criterio_descredenciamento`, `instrucao_saida`) vão para a lista de campos que
+  a rotina de eliminação precisa limpar junto com a linha-mãe, no item 13.
+- `contratos.instrucao_saida` é cópia congelada na 1ª assinatura: **não** é apagada nem editada depois (mesma regra do restante
+  do contrato assinado). O contrato-semente VN-CT-D5D50247 não foi tocado.
+
+**Decisões em aberto (não executadas):** as mesmas das rodadas anteriores (prazos das tabelas e colunas novas, item 13, parecer
+da Dra. Beatriz) e a rotina de eliminação que também limpe os campos de texto livre acima. Nada foi apagado.
