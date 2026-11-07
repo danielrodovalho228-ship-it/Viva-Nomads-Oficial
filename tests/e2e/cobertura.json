@@ -3278,6 +3278,12 @@
         "t207-cep-matricula-identidade"
       ]
     },
+    "/api/admin/pioneiras-e287": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "/c/[curto]": {
       "personas": [
         "publico"
@@ -4290,6 +4296,15 @@
       ],
       "specs": [
         "t83-checkin-garantido"
+      ]
+    },
+    "src/lib/data/conferencia-actions.ts#retirarLaudoConferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t85-conferencia-entrada-saida"
       ]
     },
     "src/lib/data/conferencia-actions.ts#anexarLaudoConferencia": {
