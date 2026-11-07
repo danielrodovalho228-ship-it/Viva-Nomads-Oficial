@@ -2246,7 +2246,8 @@
         "t597-e213b-limpeza-renovacao",
         "t600-e200-conversa-da-estadia",
         "t684-varredura-bloco71",
-        "t712-e267-transacionais-corpo"
+        "t712-e267-transacionais-corpo",
+        "t1345-e663-jornada-de-mensagens"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
