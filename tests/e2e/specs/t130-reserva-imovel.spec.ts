@@ -44,9 +44,13 @@ test.describe("T130 — Reserva no imóvel", () => {
     await expect(page.getByTestId("solicitacao-demo")).toBeVisible();
     await page.getByRole("dialog").getByRole("button", { name: "Entendi" }).click();
     await card.getByRole("button", { name: "Enviar mensagem" }).click();
-    await page.getByRole("dialog").locator("textarea").fill("Posso entrar em dezembro?");
-    await page.getByRole("dialog").getByRole("button", { name: "Enviar" }).click();
-    await expect(page.getByRole("dialog").getByText(AVISO)).toBeVisible();
+    // E694: o exemplo se declara ANTES de digitar: aviso no topo, caixa de texto e "Enviar" desligados (nada para digitar à toa).
+    const dialogo = page.getByRole("dialog");
+    await expect(dialogo.getByTestId("mensagem-exemplo-aviso")).toBeVisible();
+    await expect(dialogo.locator("textarea")).toBeDisabled();
+    await expect(dialogo.getByRole("button", { name: "Enviar", exact: true })).toBeDisabled();
+    await dialogo.getByRole("button", { name: "Entendi" }).click();
+    await expect(dialogo).toHaveCount(0);
     expect(gravacoes).toEqual([]);
   });
 
