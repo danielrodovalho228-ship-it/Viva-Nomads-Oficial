@@ -1,5 +1,6 @@
 "use server";
 
+import { envioDaCandidatura } from "@/lib/candidaturas-envio";
 import { diasValidos } from "@/lib/estadia-em-dias";
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
@@ -190,6 +191,11 @@ export interface MinhaCandidatura {
   propertyTitle: string;
   situacao: RotuloCandidatura;
   createdAt: string | null;
+  /** E657: último envio (reenviada_em, senão a criação). */
+  enviadaEm: string | null;
+  /** E657: a candidatura foi reenviada (selo "Reenviada") e quando foi o primeiro envio. */
+  reenviada: boolean;
+  primeiroEnvioEm: string | null;
   /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
   contrato: { id: string; status: string } | null;
 }
@@ -214,7 +220,7 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `id, status, owner_id, property_id, created_at,
+      `id, status, owner_id, property_id, created_at, reenviada_em,
        property:properties!leads_property_id_fkey ( title )`,
     )
     .eq("tenant_id", user.id)
@@ -247,6 +253,7 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     owner_id: string;
     property_id: string;
     created_at: string | null;
+    reenviada_em: string | null;
     property: { title: string | null } | null;
   };
   return (data as unknown as Row[]).map((r) => ({
@@ -254,6 +261,8 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     propertyTitle: r.property?.title ?? "Imóvel",
     situacao: situacaoCandidatura(r.status, engajou.has(`${r.owner_id}_${r.property_id}`)),
     createdAt: r.created_at,
+    // E657: a data de envio que a pessoa vê é a do último envio (o reenvio, se houve); a criação segue em createdAt.
+    ...envioDaCandidatura(r.created_at, r.reenviada_em),
     contrato: contratoDoLead.get(r.id) ?? null,
   }));
 }
