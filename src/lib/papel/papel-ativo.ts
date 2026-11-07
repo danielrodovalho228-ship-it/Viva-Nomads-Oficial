@@ -93,6 +93,18 @@ export function estadoDoPapelGravado(gravado: unknown, modoAtual: Modo): { modo:
   return { modo: modoDoPapel(gravado)!, parceiro: false };
 }
 
+/**
+ * E668 — o papel gravado que VALE. "Parceiro" só vale se foi ESCOLHIDO (selo do topo ou Conta): o carimbo
+ * profiles.papel_ativo_escolhido_em. Antes do E653 a área do parceiro gravava papel_ativo = "parceiro" sozinha, sem clique, e
+ * esse valor antigo fazia o morador abrir a casca em "Áreas do parceiro". Sem o carimbo, a conta abre no modo dela
+ * (morador/proprietário) e troca para parceiro com um toque. Morador e proprietário valem sempre; o resto vira nulo.
+ */
+export function papelGravadoEfetivo(gravado: unknown, escolhidoEm: unknown): Papel | null {
+  if (!papelValido(gravado)) return null;
+  if (gravado === "parceiro" && !(typeof escolhidoEm === "string" && escolhidoEm.length > 0)) return null;
+  return gravado;
+}
+
 /** Os papéis para os quais dá para trocar: os que a pessoa tem, menos o ativo. */
 export function opcoesDeTroca(ativo: Papel | null, papeisQueTem: Papel[]): Papel[] {
   return PAPEIS.filter((p) => papeisQueTem.includes(p) && p !== ativo);

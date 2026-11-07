@@ -25,7 +25,7 @@ test("E382 — o rodapé mostra as respostas numa 2ª linha; a 1ª segue 'Antes 
   const tela = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/qualificacao.tsx", import.meta.url), "utf8");
   assert.match(tela, /const respondidas = contarRespondidas\(p\.respostas\);/);
   assert.match(tela, /detalhe=\{resultado \? null : textoRespondidas\(respondidas\)\}/);
-  assert.match(tela, /pct=\{progressoQualificacao\(resultado \? TOTAL_TELAS : p\.tela, TOTAL_TELAS, 10, respondidas\.feitas \/ respondidas\.total\)\}/);
+  assert.match(tela, /pct=\{progressoQualificacao\(resultado \? TOTAL_TELAS : p\.tela, TOTAL_TELAS, 10, fracaoDaQualificacao\(respondidas, confortoAgora\.length\)\)\}/); // E506: a fração também conta o essencial já confirmado
   const rodape = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/rodape-assistente.tsx", import.meta.url), "utf8");
   assert.match(rodape, /data-testid="passo-detalhe"/);
 });
