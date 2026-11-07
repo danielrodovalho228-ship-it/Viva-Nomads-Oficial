@@ -400,3 +400,7 @@ Bloco 502 (t1433, #3279, grupo do 485: contrato, imóvel, estadia, locação, s�
 ## t1432, blocos 503/504 verdes e bloco 505 (main `2fd8659d8`)
 
 Verdes e já mesclados por você: t1432 / E679 no head corrigido (#3278, run 42406334809), bloco 503 (#3281, 42406365423) e bloco 504 (#3283, 42406484002); bloco 502 (#3279) já registrado. Nenhum merge de produto novo desde `9e08c86c6`. O erro anterior da t1432 era só o seletor do botão "Enviar avaliação". Bloco 505 (t1436, grupo do 488: painel do proprietário sem id, com as respostas rápidas do E665) aberto. Ainda sem spec de tela: avaliações do parceiro (0323), conduta cega (0324), termos do avaliador (E682, 0325). Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
+
+## Bloco 505 verde
+
+Bloco 505 (t1436, #3286, grupo do 488: painel do proprietário sem id, incluindo as respostas rápidas do E665) **verde** (run 42407211303), a 390 e 1280 px. Sem merge de produto novo na main desde `9e08c86c6` (só PRs meus). Sem merge e sem fechar PR; o #3286 aguarda a mesclagem do Daniel. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105. Próximo da fila: bloco 506 (grupo do 489).
