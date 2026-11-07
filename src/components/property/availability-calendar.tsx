@@ -24,14 +24,21 @@ import { cn } from "@/lib/utils";
  * E527 (D13): cor do dia no calendário — a MESMA na grade e na legenda. Antes, Disponível (sage-100) e Indisponível
  * (sage-200/60) eram dois verdes-pálidos quase iguais. Indisponível passa ao cinza da linha (outra cor, não outro tom).
  */
-export const COR_DIA = { disponivel: "bg-sage-100", indisponivel: "bg-line" } as const;
+export const COR_DIA = {
+  disponivel: "bg-sage-100",
+  /** Ocupado: já reservado (contrato ou agenda importada) — cinza cheio. */
+  ocupado: "bg-line",
+  /** Bloqueado pelo dono: mesmo cinza, mas listrado — outra forma, não só outro tom. */
+  bloqueado: "bg-[repeating-linear-gradient(135deg,var(--color-line)_0_3px,transparent_3px_7px)] ring-1 ring-inset ring-line",
+} as const;
 
 /**
  * E666: "Indisponível" sozinho não dizia SE era estadia em andamento ou data fechada pelo proprietário — para quem pede dá no
  * mesmo (não dá para pedir), então a legenda diz as duas causas e o que fazer com as outras datas.
  */
-export const ROTULO_INDISPONIVEL = "Indisponível (já reservado ou fechado pelo proprietário)";
-export const NOTA_DATAS_LIVRES = "Dias na cor clara estão livres para pedir. Os demais não estão disponíveis; para outras datas, pergunte ao proprietário antes de pedir.";
+export const ROTULO_OCUPADO = "Ocupado (já reservado)";
+export const ROTULO_BLOQUEADO = "Bloqueado pelo proprietário";
+export const NOTA_DATAS_LIVRES = "Dias na cor clara estão livres para pedir. Os demais, ocupados ou bloqueados, não estão disponíveis; para outras datas, pergunte ao proprietário antes de pedir.";
 import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -77,6 +84,8 @@ export function AvailabilityCalendar({
   const user = useAuthStore((s) => s.user);
   const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
+  // E666: dos dias indisponíveis, os que são "ocupado" (reserva/contrato); o resto (fechado pelo dono, fora do período) é "bloqueado".
+  const [ocupadoDias, setOcupadoDias] = useState<string[]>([]);
   // Achado 48: a leitura das datas ocupadas falhou → o calendário avisa (antes ficava todo livre, em silêncio).
   const [datasFalharam, setDatasFalharam] = useState(false);
   const [tentativaDatas, setTentativaDatas] = useState(0);
@@ -87,6 +96,7 @@ export function AvailabilityCalendar({
       .then((r) => {
         if (!vivo) return;
         setBlockDays(expandirBloqueios(r as Bloqueio[]));
+        setOcupadoDias(expandirBloqueios(r.filter((x) => x.tipo === "ocupado") as Bloqueio[]));
         setDatasFalharam(false);
         setDatasCarregadas(true);
       })
@@ -131,6 +141,7 @@ export function AvailabilityCalendar({
 
   const fromEff = inicioEfetivo(from, today ?? anchorStr);
   const bloqSet = new Set(bloqueados);
+  const ocupSet = new Set(ocupadoDias);
 
   // Um dia é SELECIONÁVEL se está na janela, não é passado e não está bloqueado.
   const estadoDia = (iso: string) =>
@@ -243,13 +254,14 @@ export function AvailabilityCalendar({
                       type="button"
                       disabled={!podeSelecionar}
                       onClick={() => clicarDia(iso)}
-                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível: reservado ou fechado pelo proprietário)" : ""}`}
+                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? (ocupSet.has(iso) ? " (ocupado: já reservado)" : " (bloqueado pelo proprietário)") : ""}`}
                       data-estado-dia={estado}
+                      data-tipo-dia={estado === "indisponivel" ? (ocupSet.has(iso) ? "ocupado" : "bloqueado") : undefined}
                       data-dia={iso}
                       className={cn(
                         "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
                         estado === "passado" && "cursor-not-allowed text-muted/40",
-                        estado === "indisponivel" && cn("cursor-not-allowed text-muted line-through", COR_DIA.indisponivel),
+                        estado === "indisponivel" && cn("cursor-not-allowed text-muted line-through", ocupSet.has(iso) ? COR_DIA.ocupado : COR_DIA.bloqueado),
                         podeSelecionar && "text-forest hover:bg-sage-200",
                         podeSelecionar && !isIn && !isOut && !noIntervalo && cn(COR_DIA.disponivel, "font-medium"),
                         noIntervalo && "bg-sage-200 font-medium",
@@ -276,7 +288,10 @@ export function AvailabilityCalendar({
           <span className="h-3 w-3 rounded-lg bg-forest" /> Selecionado
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.indisponivel)} aria-hidden /> {ROTULO_INDISPONIVEL}
+          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.ocupado)} aria-hidden /> {ROTULO_OCUPADO}
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.bloqueado)} aria-hidden /> {ROTULO_BLOQUEADO}
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-lg ring-2 ring-champagne" /> Hoje
