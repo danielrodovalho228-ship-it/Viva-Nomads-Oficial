@@ -32,7 +32,8 @@ export async function meuCartaoDoAnuncio(propertyId: string): Promise<Res<Pacote
   if (!UUID_RE.test(String(propertyId))) return { ok: false, error: "Imóvel inválido." };
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre na sua conta." };
-  const { data: p } = await s.admin.from("properties").select("owner_id, status").eq("id", propertyId).maybeSingle();
+  const { data: p, error: erroImovel } = await s.admin.from("properties").select("owner_id, status").eq("id", propertyId).maybeSingle();
+  if (erroImovel) return { ok: false, error: "Não foi possível ler o imóvel agora. Tente de novo." };
   if (!p || p.owner_id !== s.user.id) return { ok: false, error: "Imóvel não encontrado." };
   if (p.status !== "active") return { ok: false, error: "O cartão aparece quando o anúncio está publicado." };
   const c = await garantirCartao(s.admin, { tipo: "ownercard", usuarioId: s.user.id, propertyId });
@@ -45,11 +46,12 @@ export async function meuCartaoPostal(contratoId: string): Promise<Res<PacoteDeC
   if (!UUID_RE.test(String(contratoId))) return { ok: false, error: "Contrato inválido." };
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre na sua conta." };
-  const { data: c } = await s.admin
+  const { data: c, error: erroContrato } = await s.admin
     .from("contratos")
     .select("id, tenant_id, property_id, status, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(fim)")
     .eq("id", contratoId)
     .maybeSingle();
+  if (erroContrato) return { ok: false, error: "Não foi possível ler o contrato agora. Tente de novo." };
   if (!c || c.tenant_id !== s.user.id) return { ok: false, error: "Contrato não encontrado." };
   const fins = ((c.contrato_blocos ?? []) as { fim: string | null }[]).map((b) => b.fim).filter((f): f is string => !!f).sort();
   const terminou = estadiaTerminou(
