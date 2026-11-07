@@ -103,6 +103,19 @@ export function painelDoPapel(papel: Papel): string {
   return papel === "parceiro" ? "/dashboard/parceiro" : "/dashboard";
 }
 
+/**
+ * E653 — o que abrir uma página de ÁREA grava no perfil. Regra única (servidor e casca): o papel nunca muda sozinho.
+ *   "nada"    — a página se desenha pela URL (modoDaRota / papelDaRota) e, ao sair, vale o papel escolhido;
+ *   "so_modo" — só o 1º acesso (E283): grava o modo (o proxy e a IA o leem), nunca o papel ativo.
+ * Antes, a área do PARCEIRO gravava papel_ativo = "parceiro" (o E548 só poupava morador/proprietário): o papel guardado
+ * mudava sem clique e a casca alternava entre "Áreas do proprietário" e "Áreas do parceiro".
+ */
+export type GravacaoPorArea = "nada" | "so_modo";
+export function gravacaoPorArea(papel: Papel, primeiroAcesso: boolean): GravacaoPorArea {
+  if (papel === "parceiro") return "nada";
+  return primeiroAcesso ? "so_modo" : "nada";
+}
+
 /** Precisa gravar? A página pede um papel diferente do que está escolhido. */
 export function trocaPelaArea(area: Papel | null, escolhido: Papel | null): Papel | null {
   return area && area !== escolhido ? area : null;

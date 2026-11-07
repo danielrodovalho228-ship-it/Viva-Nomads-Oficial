@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fatosDaConta } from "@/lib/data/ativacao";
 import { papeisDaConta } from "@/lib/onboarding/ativacao";
 import { ehParceiroAprovado } from "@/lib/parceiros/painel-actions";
-import { contaNoPrimeiroAcesso, modoDoPapel, papelValido, type Papel } from "@/lib/papel/papel-ativo";
+import { contaNoPrimeiroAcesso, gravacaoPorArea, modoDoPapel, papelValido, type Papel } from "@/lib/papel/papel-ativo";
 
 /**
  * PAPEL-B — papel ativo gravado no perfil (profiles.papel_ativo, 0222). Só muda o menu e o painel que aparecem primeiro;
@@ -51,18 +51,14 @@ export async function usarPapel(papel: unknown, origem?: "area"): Promise<{ ok: 
   // boas-vindas — é a intenção (a tela, ou o 1º rascunho de anúncio). Antes, abrir "Anunciar" gastava o 1º acesso e o
   // morador que virava dono pelo rascunho ficava sem as boas-vindas de dono.
   if (origem === "area") {
+    // E653: abrir uma página de área NUNCA grava o papel (parceiro incluído) — só o 1º acesso grava o modo (E283).
     // Estados vazios: sem a leitura, a conta passaria por "1º acesso" (só o modo, e ok sem trocar o papel). Nada grava.
     const { data: atual, error: erroAtual } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", user.id).maybeSingle();
     if (erroAtual) return { ok: false, erro: "Não foi possível trocar agora." };
     const a = atual as { intencao?: unknown; papel_ativo?: unknown } | null;
-    if (contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo)) {
-      if (!modo) return { ok: true };
-      const { error } = await supabase.from("profiles").update({ preferred_mode: modo }).eq("id", user.id);
-      return error ? { ok: false, erro: "Não foi possível trocar agora." } : { ok: true };
-    }
-    // E548: fora do 1º acesso, abrir a área do morador/proprietário não troca o papel nem o modo gravados — a página se
-    // desenha pela URL e o painel volta ao modo escolhido ao sair. A troca é sempre explícita (selo ou Conta).
-    if (papel !== "parceiro") return { ok: true };
+    if (gravacaoPorArea(papel, contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo)) === "nada" || !modo) return { ok: true };
+    const { error } = await supabase.from("profiles").update({ preferred_mode: modo }).eq("id", user.id);
+    return error ? { ok: false, erro: "Não foi possível trocar agora." } : { ok: true };
   }
   const { error } = await supabase
     .from("profiles")

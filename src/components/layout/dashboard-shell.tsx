@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
 import { usePathname, useRouter } from "next/navigation";
@@ -39,6 +39,7 @@ import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/comp
 import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
+import { esperaRetentativaContadores } from "@/lib/painel/retentativa-contadores";
 import { FaixaCritico } from "@/components/painel/sino-avisos";
 import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
 
@@ -142,18 +143,33 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [lido, setLido] = useState(contadoresIniciais !== null);
   useSomDeMensagemNova(lido ? contadores.mensagensRecebidas : null);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
+  // E653: a falha seguida da leitura tenta de novo logo (esperas crescentes) — antes ficava "vazio" (selo do sino em 0, menu
+  // de conta nova) até o próximo minuto ou foco.
+  const falhasContadores = useRef(0);
   useEffect(() => {
     if (!displayUser?.id) return;
     const controle = new AbortController();
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    const falhou = () => {
+      const ms = esperaRetentativaContadores(falhasContadores.current++);
+      if (ms !== null) espera = setTimeout(() => setReleitura((n) => n + 1), ms);
+    };
     fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (!json) return;
+        if (!json) return falhou();
+        falhasContadores.current = 0;
         setContadores(normalizarContadores(json));
         setLido(true);
       })
-      .catch(() => {});
-    return () => controle.abort();
+      .catch((e: unknown) => {
+        // O abort da limpeza do efeito (troca de rota) não é falha da leitura.
+        if ((e as { name?: string } | null)?.name !== "AbortError") falhou();
+      });
+    return () => {
+      controle.abort();
+      if (espera) clearTimeout(espera);
+    };
   }, [displayUser?.id, naAreaDeImoveis, releitura]);
   useEffect(() => {
     // Foco e "aba visível" chegam juntos ao voltar para a aba: uma leitura só a cada 2 s por esse caminho.
@@ -222,13 +238,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (!hits) return;
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
-    if (contaTemPapel) {
-      setActiveMode(target);
-      salvarModo(target).catch(() => {});
-    } else {
-      router.replace(destinoForaDoPapel(pathname));
-    }
-  }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
+    // E653: este guarda era um 2º escritor do modo (gravava no perfil sem clique da pessoa). Quem tem o papel não é
+    // mexido: a URL da área já decide o modo (E497) e a troca é só a explícita. Só quem NÃO tem o papel é desviado.
+    if (!contaTemPapel) router.replace(destinoForaDoPapel(pathname));
+  }, [pathname, mode, isOwner, isTenant, router]);
 
   // Modo demonstração (admin): aceita ?demo=1 / ?demo=0 na URL (estado é de
   // sessão — lib/demo/demo-mode). Lê window.location para não exigir Suspense.

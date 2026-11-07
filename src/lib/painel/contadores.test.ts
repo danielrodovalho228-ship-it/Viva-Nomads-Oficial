@@ -103,12 +103,13 @@ test("guarda: a casca não importa mais as server actions dos contadores nem do 
 test("guarda: a casca lê por fetch GET, aborta ao desmontar e não relê a cada troca de rota", () => {
   const s = ler(SHELL);
   assert.match(s, /fetch\(ROTA_CONTADORES, \{ cache: "no-store", credentials: "same-origin", signal: controle\.signal \}\)/);
-  assert.match(s, /return \(\) => controle\.abort\(\);/);
+  // E653: a limpeza também cancela a espera da retentativa (controle.abort + clearTimeout).
+  assert.match(s, /controle\.abort\(\);\s*if \(espera\) clearTimeout\(espera\);/);
   // A leitura depende do usuário, da área de imóveis e do pedido de releitura — nunca do pathname inteiro.
   assert.match(s, /\}, \[displayUser\?\.id, naAreaDeImoveis, releitura\]\);/);
   // O único efeito que depende do pathname é o guarda de papel (não lê nada do servidor).
   const comPathname = [...s.matchAll(/\}, \[([^\]]*)\]\);/g)].map((m) => m[1]).filter((d) => /\bpathname\b/.test(d));
-  assert.deepEqual(comPathname, ["pathname, mode, isOwner, isTenant, router, setActiveMode"]);
+  assert.deepEqual(comPathname, ["pathname, mode, isOwner, isTenant, router"]);
   assert.match(s, /window\.addEventListener\("focus", aoVoltar\)/);
   assert.match(s, /window\.setInterval\(aoVoltar, INTERVALO_CONTADORES_MS\)/);
   assert.match(s, /document\.visibilityState === "visible"/);
@@ -137,7 +138,8 @@ test("a rota é GET, sem cache, autentica pela sessão do servidor e só conta o
 
 test("PROP-0: o layout do painel resolve o contexto do menu no servidor e entrega à casca na 1ª pintura", () => {
   const l = ler(LAYOUT);
-  assert.match(l, /const \[initialMode, contadoresIniciais\] = await Promise\.all\(\[\s*comLimite\(resolveInitialMode\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),\s*comLimite\(contadoresIniciaisDoPainel\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),\s*\]\);/);
+  // E653: o modo que atrasa/falha vira { modo: null, indisponivel: true } (a casca relê), não um null igual a "conta nova".
+  assert.match(l, /const \[modoLido, contadoresIniciais\] = await Promise\.all\(\[\s*comLimite\(resolveInitialMode\(\), LIMITE_CASCA_MS\)\s*\.then\(\(modo\) => \(\{ modo, indisponivel: false \}\)\)\s*\.catch\(\(\) => \(\{ modo: null as ViewMode \| null, indisponivel: true \}\)\),\s*comLimite\(contadoresIniciaisDoPainel\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),\s*\]\);/);
   assert.match(l, /<ContadoresIniciais valor=\{contadoresIniciais\}>\s*<DashboardShell>\{children\}<\/DashboardShell>\s*<\/ContadoresIniciais>/);
   const s = ler(SERVIDOR);
   // Falha ou sem sessão: null (a casca segue com a rota); nunca derruba o painel.
