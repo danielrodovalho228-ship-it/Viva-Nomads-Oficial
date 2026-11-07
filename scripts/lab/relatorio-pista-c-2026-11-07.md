@@ -318,3 +318,7 @@ Defeitos de produto novos: nenhum além do L-103.
 **#3164 mesclado (E662 tela + mapa de grupos).** A t1415 (E661/E662, #3238) foi retargetada para a main (main mesclada no ramo, diff só da spec e da cobertura, fora de draft); run novo em andamento. Mesclados também por você: t1391, t1396, t1397, t1398, t1399, t1413/t1414, t1416, blocos 491 e 492. Nenhum outro merge de produto na foto (`4ffdb7572`); o run da main em `f795c5c5b` deu verde, o de `4ffdb7572` estava em andamento.
 
 **Bloco 493 (#3246).** Estava sem run porque conflitava com a main (só `cobertura.json`, que muda a cada bloco mesclado); mesclei a main e reapliquei o registro. Run novo em andamento. **Bloco 494** (t1420, grupo do 477: detalhe da proposta e da visita, com a ordem do E677) aberto no #3249. Defeitos de produto novos além do L-104: nenhum.
+
+## Colheita final e bloco 495 (main `4ffdb7572`)
+
+Verdes: t1415 (E661/E662, #3238, run 42392179474), L-104 anotado na t1418 (#3248, run 42392154371), bloco 493 (#3246, run 42392196249) e bloco 494 (#3249, run 42392234820). Main em `4ffdb7572` verde (run 42391830751); nenhum merge novo desde então, então sem spec de merge a escrever. L-104 segue aberto (produto, Pistas A/B); próximo número livre: L-105. Bloco 495 (t1421, grupo do 478: conferir, pedidos, admin/sistema) aberto no #3254. Defeitos de produto novos: nenhum.
