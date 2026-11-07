@@ -17,7 +17,7 @@ export function TravasDePublicacao({ documento }: { documento: EstadoDocumentoTr
       <p className="flex items-center gap-2 text-sm font-medium text-ink">
         <ShieldCheck className="h-4 w-4 text-forest" aria-hidden /> Para publicar, a Viva pede duas coisas
       </p>
-      <ul className="mt-2 space-y-1.5 text-sm">
+      <ul className="mt-2 space-y-2 text-sm">
         {itens.map((i) => (
           <li key={i.chave} className="flex items-center gap-2" data-testid={`trava-${i.chave}`} data-estado={i.estado}>
             {i.estado === "ok" ? (
