@@ -437,6 +437,8 @@ export interface InteressadoParaProposta {
 }
 
 /** "Nova proposta": só interessados REAIS do proprietário (nada de nome ou contato digitado à mão). */
+const MSG_CANDIDATURA_SEM_LEITURA = "Não foi possível ler a candidatura agora. Tente de novo em instantes.";
+
 export async function interessadosParaProposta(): Promise<InteressadoParaProposta[]> {
   const s = await sessao();
   if (!s) return [];
@@ -553,7 +555,8 @@ const num = (v: unknown) => (Number.isFinite(Number(v)) ? Math.max(0, Number(v))
 export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id: string; numero: string }>> {
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para enviar a proposta." };
-  const { data: lead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status").eq("id", e.leadId).maybeSingle();
+  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status").eq("id", e.leadId).maybeSingle();
+  if (erroLead) return { ok: false, error: MSG_CANDIDATURA_SEM_LEITURA };
   if (!lead || lead.owner_id !== s.user.id) return { ok: false, error: "Escolha um interessado da sua lista." };
   if (!["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   // O aceite da proposta pode valer como aceite da candidatura: o documento do dono vai no contrato.
@@ -1057,7 +1060,8 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   if (!hoje) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const taxa = taxaEfetivaDaProposta(tx.taxa_no_envio, hoje.taxa);
   const origem = origemDaTaxaDaProposta(tx.taxa_no_envio, hoje);
-  const { data: lead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
+  const { data: lead, error: erroLeadAceite } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
+  if (erroLeadAceite) return { ok: false, error: MSG_CANDIDATURA_SEM_LEITURA };
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
