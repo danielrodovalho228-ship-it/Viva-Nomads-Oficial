@@ -497,3 +497,7 @@ Bloco 512 (t1445, #3320, grupo do 495: `/conferir`, pedidos do morador, Admin �
 **Sem spec de tela ainda:** E704 (pinos do mapa com rótulo de cidade) e E706 (título da avaliação do nível), além dos de antes (E694, E696/E702/E704-fórmula, E699, E700, E701, E680, avaliações do parceiro/conduta cega/termos do avaliador).
 
 **Bloco 513** (t1447, grupo do 496: estadia, cartão, desempenho, contrato) aberto. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## t1446 e bloco 513 verdes
+
+t1446 / E697 + E698 (#3321) **verde** (run 42422586647): a galeria do exemplo `ube-015` não repete foto e a primeira pintura de `/buscar` não tem foto quebrada nem mapa vazio, a 390 e 1280 px. Bloco 513 (t1447, #3322, grupo do 496) **verde** (run 42422614415). Nenhum merge de produto novo além dos já tratados. Aberto no produto: L-104 (400 em `/api/proximidades` no "Qualificar o imóvel"); próximo livre: **L-107**. Próximo da fila: bloco 514 (grupo do 497). Sem prova ao vivo, sem merge e sem fechar PR.
