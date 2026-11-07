@@ -56,7 +56,7 @@ test.describe("T1432 — E679: formulário de avaliação com critérios fixos",
       for (const c of CRITERIOS) await expect(form).toContainText(c);
       expect(await form.getByRole("radiogroup").count()).toBe(3);
 
-      const enviar = p.getByTestId("avaliacao-enviar");
+      const enviar = p.getByRole("button", { name: "Enviar avaliação" });
       // Caminho negativo: só a nota → o envio segue desabilitado.
       await p.getByRole("radio", { name: "5 estrelas" }).click();
       await expect(enviar).toBeDisabled();
