@@ -332,11 +332,13 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: v } = await admin
+  const { data: v, error: erroPedido } = await admin
     .from("visitas_video")
     .select("id, owner_id, tenant_id, property_id, status, modalidade, horario_proposto, link_chamada")
     .eq("id", entrada.id)
     .maybeSingle();
+  // Achado 165: falha de leitura não é "pedido não encontrado".
+  if (erroPedido) return { ok: false, error: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!v) return { ok: false, error: "Pedido não encontrado." };
   const quem = v.owner_id === user.id ? "dono" : v.tenant_id === user.id ? "morador" : null;
   if (!quem) return { ok: false, error: "Sem permissão." };
