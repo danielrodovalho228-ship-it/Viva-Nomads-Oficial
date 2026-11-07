@@ -50,6 +50,7 @@ import {
   blocosDepoisDoAditivo,
   expiraEmDe,
   expirou,
+  comparativoDoAditivo,
   linhasDoAditivo,
   resumoDasMudancas,
   taxaDoAditivo,
@@ -273,12 +274,15 @@ function paraAditivo(c: LinhaContratoEstadia): ContratoParaAditivo {
   };
 }
 
-export async function proporAlteracao(contratoId: string, proposta: PropostaAditivo): Promise<Res<{ id: string }>> {
+export async function proporAlteracao(contratoId: string, proposta: PropostaAditivo, motivoLivre?: string | null): Promise<Res<{ id: string }>> {
   const ctx = await contextoDaEstadia(contratoId);
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
   if (ctx.c.status !== "ativo" || !assinadoPelasDuas(ctx.c)) return { ok: false, erro: "A alteração vale para contrato assinado pelas duas partes e em vigor." };
   const v = validarProposta(paraAditivo(ctx.c), proposta, hojeEmBrasilia());
   if (!v.ok) return { ok: false, erro: v.erro };
+  // E672: o comparativo antes × depois (dias exatos, saída, total, diferença) e o motivo entram no aditivo — e no texto assinado.
+  const motivo = String(motivoLivre ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+  const mudancasCompletas = { ...v.valor, comparativo: comparativoDoAditivo(paraAditivo(ctx.c), v.valor, hojeEmBrasilia()), ...(motivo ? { motivo } : {}) };
   await expirarVencidos(ctx.admin, ctx.c.id);
   const { data: ultimo, error: erroUltimo } = await ctx.admin.from("contrato_aditivos").select("numero").eq("contrato_id", ctx.c.id).order("numero", { ascending: false }).limit(1).maybeSingle();
   // Estados vazios: sem o último número, nasceria outro "Aditivo nº 1" (não há índice único em contrato + número).
@@ -292,8 +296,8 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
       numero,
       proposto_por: ctx.userId,
       papel_proponente: ctx.papel,
-      mudancas: v.valor,
-      resumo: resumoDasMudancas(v.valor),
+      mudancas: mudancasCompletas,
+      resumo: resumoDasMudancas(mudancasCompletas),
       expira_em: expiraEm,
     })
     .select("id")
@@ -305,7 +309,7 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
     ...dadosDaEstadia(ctx.c),
     quem: await primeiroNomeDe(ctx.admin, ctx.userId),
     numeroAditivo: numero,
-    mudancas: resumoDasMudancas(v.valor),
+    mudancas: resumoDasMudancas(mudancasCompletas),
     prazo: expiraEm,
   }, ctx.c.property_id);
   revalidar(ctx.c.id);
