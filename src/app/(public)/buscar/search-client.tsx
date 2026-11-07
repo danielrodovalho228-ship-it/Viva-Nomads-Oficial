@@ -42,7 +42,8 @@ import { BarraPilulas } from "@/components/busca/barra-pilulas";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { baseDaBusca, contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
+import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
@@ -446,7 +447,7 @@ export function SearchClient({
 
   // E131: a lista e todas as contagens partem da MESMA base (a regra dos exemplos decidida uma vez, sem os filtros da
   // folha). Assim nenhuma pílula ou faceta conta mais imóveis do que a lista sem filtro mostra.
-  const baseVisivel = useMemo(() => baseDaBusca(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  const baseVisivel = useMemo(() => baseDaVitrine(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
   const contarComPainel = useCallback((f: FiltrosPainel) => contarNaBase(baseVisivel, (p) => passaNoPainel(p, f)), [baseVisivel]);
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
