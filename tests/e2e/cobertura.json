@@ -3175,7 +3175,8 @@
       ],
       "specs": [
         "t33-documentos-inquilino",
-        "t36-cadastro-ponta-a-ponta"
+        "t36-cadastro-ponta-a-ponta",
+        "t1332-e656-recusa-por-tamanho"
       ]
     },
     "/api/viva/chat": {
