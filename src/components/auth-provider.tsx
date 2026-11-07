@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ESCOPO_EXPIRACAO_24H } from "@/lib/sessao/escopo-saida";
-import { estadoDoPapelGravado } from "@/lib/papel/papel-ativo";
+import { estadoDoPapelGravado, papelGravadoEfetivo } from "@/lib/papel/papel-ativo";
 import { useAuthStore } from "@/lib/store";
 import type { UserRole } from "@/lib/types";
 import { lerPendente } from "@/lib/modo-pendente";
@@ -121,13 +121,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setActiveMode(pm);
         }
         // PAPEL-B: o papel ativo gravado (fonte única) vence o modo derivado — inclusive "Parceiro", que não tem modo.
-        const gravado = (profile as { papel_ativo?: string | null } | null)?.papel_ativo;
+        const gravadoBruto = (profile as { papel_ativo?: string | null } | null)?.papel_ativo;
+        // E668: "parceiro" só vale se foi escolhido (carimbo). Leitura à parte e tolerante: se a coluna ainda não existe (migração
+        // atrasada) ou a leitura falha, vale o comportamento de antes — o login nunca depende da coluna nova.
+        let escolhidoEm: string | null = gravadoBruto === "parceiro" ? "?" : null;
+        if (gravadoBruto === "parceiro") {
+          const { data: esc, error: erroEsc } = await supabase!.from("profiles").select("papel_ativo_escolhido_em").eq("id", u.id).maybeSingle();
+          if (!erroEsc) escolhidoEm = (esc as { papel_ativo_escolhido_em?: string | null } | null)?.papel_ativo_escolhido_em ?? null;
+        }
+        const gravado = papelGravadoEfetivo(gravadoBruto, escolhidoEm);
         if (gravado && semTrocaNoMeio) {
           const atualModo = useAuthStore.getState().activeMode;
           const e = estadoDoPapelGravado(gravado, atualModo === "owner" ? "owner" : "tenant");
           // Parceiro mantém o modo de baixo como estava (o painel morador/proprietário volta igual ao trocar).
           useAuthStore.setState(e.parceiro ? { parceiroAtivo: true } : { activeMode: e.modo, parceiroAtivo: false });
         }
+        // E668: "parceiro" antigo, sem escolha, não vale — e limpa o "parceiro ativo" que o aparelho tenha guardado.
+        else if (gravadoBruto === "parceiro" && semTrocaNoMeio) useAuthStore.setState({ parceiroAtivo: false });
       } catch {
         perfilLido.delete(u.id); // tenta de novo no próximo evento — e, sem evento, pela nova tentativa (E518)
         if (tentativa < TENTATIVAS_PERFIL) setTimeout(() => void hydrate(session, true, tentativa + 1), ESPERA_TENTATIVA_MS);

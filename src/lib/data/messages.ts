@@ -11,6 +11,8 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { conversasDeContratos, type ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
 import { conversationId } from "@/lib/messages/conversation-id";
+import { emergenciaDisponivel } from "@/lib/estadia/emergencia-chegada";
+import { hojeEmBrasilia } from "@/lib/checkin";
 import { anexoDaMensagem, type AnexoNaBolha } from "@/lib/messages/anexo-tela";
 
 export interface ChatMessage {
@@ -41,6 +43,8 @@ export interface Conversation {
   /** Foto de capa do imóvel e período da estadia (quando há contrato). */
   foto?: string;
   periodo?: string;
+  /** E664: contrato do morador (eu) com a entrada HOJE, ativo e assinado pelas duas partes — habilita o botão de emergência. */
+  emergenciaChegadaContratoId?: string;
   /** Contrato ASSINADO pelas duas partes desta conversa (o alerta antigolpe só vale antes disso). */
   contratoFechado?: boolean;
   /** Conversa de pedido de serviço de parceiro (Prompt 31b): a resposta vai pela rota do pedido. */
@@ -294,6 +298,13 @@ async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string)
       const bl = doPar?.contrato_blocos ?? [];
       c.periodo = bl.length ? formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)) || undefined : undefined;
       if (doPar) c.contratoId = doPar.id;
+      if (doPar && emergenciaDisponivel({
+        souMorador: doPar.tenant_id === eu,
+        status: (doPar as unknown as { status?: string }).status,
+        assinadoPelasDuas: !!doPar.assinado_proprietario_em && !!doPar.assinado_inquilino_em,
+        entrada: bl.map((b) => b.inicio).sort()[0],
+        hoje: hojeEmBrasilia(new Date()),
+      })) c.emergenciaChegadaContratoId = doPar.id;
       c.contratoFechado = contratoAssinadoEntrePartes(lista, { propertyId: c.propertyId, eu, outroId: c.otherId });
     }
   } catch {

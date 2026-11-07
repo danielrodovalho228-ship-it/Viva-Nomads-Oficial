@@ -19,6 +19,8 @@ export interface AvisoDoSino {
   criado_em: string;
   lido_em: string | null;
   resolvido_em: string | null;
+  /** E676: o objeto do aviso (nos avisos do contrato e da estadia, o id do contrato). */
+  ref_id: string | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -63,6 +65,7 @@ export async function meusAvisos(limite = 30): Promise<AvisoDoSino[] | null> {
     criado_em: a.criado_em,
     lido_em: a.lido_em,
     resolvido_em: a.resolvido_em,
+    ref_id: a.ref_id ?? null,
   }));
 }
 

@@ -25,9 +25,17 @@ import { cn } from "@/lib/utils";
  * (sage-200/60) eram dois verdes-pálidos quase iguais. Indisponível passa ao cinza da linha (outra cor, não outro tom).
  */
 export const COR_DIA = { disponivel: "bg-sage-100", indisponivel: "bg-line" } as const;
+
+/**
+ * E666: "Indisponível" sozinho não dizia SE era estadia em andamento ou data fechada pelo proprietário — para quem pede dá no
+ * mesmo (não dá para pedir), então a legenda diz as duas causas e o que fazer com as outras datas.
+ */
+export const ROTULO_INDISPONIVEL = "Indisponível (já reservado ou fechado pelo proprietário)";
+export const NOTA_DATAS_LIVRES = "Dias na cor clara estão livres para pedir. Os demais não estão disponíveis; para outras datas, pergunte ao proprietário antes de pedir.";
 import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { primeiraEntradaPossivel } from "@/lib/imovel/disponivel-a-partir";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -58,10 +66,13 @@ export function AvailabilityCalendar({
   property,
   selecao,
   onSelecao,
+  onDisponivelDesde,
 }: {
   property: Property;
   selecao: SelecaoEstadia;
   onSelecao: (s: SelecaoEstadia) => void;
+  /** E673: avisa a página da primeira entrada possível (o cartão de preço diz a mesma data). */
+  onDisponivelDesde?: (iso: string | null) => void;
 }) {
   const user = useAuthStore((s) => s.user);
   const today = useHoje();
@@ -77,6 +88,7 @@ export function AvailabilityCalendar({
         if (!vivo) return;
         setBlockDays(expandirBloqueios(r as Bloqueio[]));
         setDatasFalharam(false);
+        setDatasCarregadas(true);
       })
       .catch(() => vivo && setDatasFalharam(true));
     return () => {
@@ -93,6 +105,17 @@ export function AvailabilityCalendar({
   const from = property.availableFrom?.slice(0, 10) || null;
   const until = property.availableUntil?.slice(0, 10) || null;
   const bloqueados = blockDays;
+  // E673: "Disponível a partir de" = a primeira entrada em que cabe a estadia mínima, olhando os períodos ocupados (contratos e
+  // bloqueios, aditivos incluídos) — não só a data escolhida no cadastro. Enquanto as datas não carregam (ou se falharam), a do cadastro.
+  const [datasCarregadas, setDatasCarregadas] = useState(false);
+  const desde = useMemo(
+    () => (datasCarregadas && !datasFalharam ? primeiraEntradaPossivel({ from, until, minDias: property.minPeriodDays, hoje: today, ocupados: bloqueados }) : null),
+    [datasCarregadas, datasFalharam, from, until, property.minPeriodDays, today, bloqueados],
+  );
+  const desdeEfetivo = desde ?? (from && today ? (from > today ? from : today) : from);
+  useEffect(() => {
+    onDisponivelDesde?.(desde);
+  }, [desde, onDisponivelDesde]);
 
   // Anúncio de demonstração (id não-UUID, ex.: ube-001): não é reservável.
   const isDemo = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(property.id);
@@ -152,7 +175,7 @@ export function AvailabilityCalendar({
       <p className="mt-2 text-ink/90">
         {from ? (
           <>
-            Disponível a partir de <strong>{brDate(from)}</strong>
+            Disponível a partir de <strong data-testid="disponivel-a-partir" data-desde={desdeEfetivo ?? ""}>{brDate(desdeEfetivo ?? from)}</strong>
             {until && (
               <>
                 {" "}até <strong>{brDate(until)}</strong>
@@ -220,7 +243,7 @@ export function AvailabilityCalendar({
                       type="button"
                       disabled={!podeSelecionar}
                       onClick={() => clicarDia(iso)}
-                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível)" : ""}`}
+                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível: reservado ou fechado pelo proprietário)" : ""}`}
                       data-estado-dia={estado}
                       data-dia={iso}
                       className={cn(
@@ -253,12 +276,16 @@ export function AvailabilityCalendar({
           <span className="h-3 w-3 rounded-lg bg-forest" /> Selecionado
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.indisponivel)} aria-hidden /> Indisponível
+          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.indisponivel)} aria-hidden /> {ROTULO_INDISPONIVEL}
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-lg ring-2 ring-champagne" /> Hoje
         </span>
       </div>
+      {/* E666: a pergunta "as datas estão livres?" aparecia mesmo com o calendário à vista — a legenda agora responde. */}
+      <p className="mt-2 text-xs text-muted" data-testid="calendario-resposta-livres">
+        {NOTA_DATAS_LIVRES}
+      </p>
 
       {/* Resumo da seleção + solicitar reserva */}
       {checkIn && (

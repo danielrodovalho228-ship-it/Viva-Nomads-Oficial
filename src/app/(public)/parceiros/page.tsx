@@ -45,14 +45,14 @@ const CARDS = [
 
 const PASSOS = [
   { t: "Peça a parceria", d: "Com a sua conta: conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: "Identidade e CPF ou CNPJ; para fotografia, também o portfólio. A resposta chega por e-mail, com o link para ativar a sua página.", foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  { t: "A Viva confere", d: "Identidade e CNPJ; para fotografia, também o portfólio. A resposta chega por e-mail, com o link para ativar a sua página.", foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
   { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
   { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];
 
 
 const DUVIDAS = [
-  { p: "Preciso de CNPJ?", r: "Não: pessoa física (CPF) ou empresa e MEI (CNPJ). A equipe confere o documento antes de aprovar." },
+  { p: "Preciso de CNPJ?", r: "Sim: a Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito — se ainda não tem, abra o seu CNPJ (MEI, onde a atividade permite). A equipe confere o documento antes de aprovar." },
   { p: "Quanto custa?", r: "O pedido e a página são grátis, sem mensalidade e sem exclusividade. Você só paga a taxa de serviço quando há serviço contratado." },
   { p: "Em quais cidades?", r: "Começando por Uberlândia (MG). Cadastre-se de qualquer cidade e avisamos quando chegarmos aí." },
 ];

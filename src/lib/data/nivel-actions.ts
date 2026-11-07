@@ -215,7 +215,7 @@ export async function analisarFotoNivel(propertyId: string, chave: string, decis
   if (!s || !admin || !UUID.test(propertyId ?? "")) return { ok: false, erro: "Sem permissão." };
   if (!(await ehAdmin(s.supabase, s.uid))) return { ok: false, erro: "Só o atendimento da Viva analisa as fotos." };
   // E477: imóvel real — o admin observador da QA só lê (imóvel de conta de teste segue liberado).
-  const recusaQa = await recusaObservador(s.uid, { imoveis: [propertyId] });
+  const recusaQa = await recusaObservador(s.uid);
   if (recusaQa) return { ok: false, erro: recusaQa };
   if (!ehChaveNivel(chave) || (decisao !== "aceita" && decisao !== "recusada")) return { ok: false, erro: "Pedido inválido." };
   const m = (motivo ?? "").trim().slice(0, 300);

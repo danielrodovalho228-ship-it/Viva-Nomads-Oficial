@@ -54,7 +54,7 @@ test("valor: 'R$ X/mês · R$ Y em N meses' pela regra do cartão e 'a Viva não
   // E53: o período escolhido no calendário/caixa/diálogo vem primeiro; sem ele, a duração da busca ou a estadia mínima.
   assert.match(d, /const meses = mesesDaSelecao\(selecao\) \?\? mesesDoCartao\(mesesBusca \|\| undefined, property\.minPeriodDays\);/);
   assert.match(ler("lib/barra-fixa-imovel.ts"), /rotuloPreco\(\{ mensal: total, meses: p\.meses \?\? 1 \}\)/);
-  assert.match(ler("components/property/price-card.tsx"), /const preco = rotuloPreco\(\{ mensal: mes\.total, meses, disponivelEm: property\.availableFrom \}\);/);
+  assert.match(ler("components/property/price-card.tsx"), /const preco = rotuloPreco\(\{ mensal: mes\.total, meses, disponivelEm: disponivelDesde \?\? property\.availableFrom \}\);/);
   assert.match(ler("components/property/price-card.tsx"), /FRASE_NAO_SEGURA_DINHEIRO/);
   // Barra do celular (decisão do Muse, 31/10): a frase oficial do IMÓVEL-CTA sob o botão diz que o pagamento vai direto
   // ao proprietário; a linha "não segura dinheiro" saiu para a barra não repetir a mesma ideia.
