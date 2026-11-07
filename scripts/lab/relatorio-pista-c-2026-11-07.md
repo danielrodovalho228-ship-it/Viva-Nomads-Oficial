@@ -209,3 +209,7 @@ Bloco 483 (#3218, grupo do 466, com as telas do E446 e do E529) verde (run 42377
 ## Bloco 484 verde e bloco 485 (main `df7417787`)
 
 Bloco 484 (#3220, grupo do 467) verde (run 42378741647); main em `df7417787` verde (run 42378530990). Nenhum merge de produto novo na foto; t1395–t1399 seguem bloqueadas pelos drafts de produto. Bloco 485 (t1407, grupo do 468: contrato, imóvel, estadia, locação, sócios, autenticação) aberto no #3222. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Bloco 486 (main `df7417787`, 07:50)
+
+Bloco 485 (#3222) ainda em andamento (run 42379411068) ao abrir o 486; main sem merge novo desde `df7417787` (verde). Bloco 486 (t1408, grupo do 469: admin sem id na URL) aberto no #3224. Defeitos de produto novos: nenhum (L-103 livre).
