@@ -1,5 +1,6 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import {
@@ -232,7 +233,7 @@ function ReembolsoPreview() {
             {CAUCAO_PRAZOS_ATIVA && (
               <label className="mt-3 block text-sm font-medium text-ink">
                 Data do check-out
-                <input type="date" value={checkout} onChange={(e) => setCheckout(e.target.value)} className="mt-1 block w-full max-w-xs rounded-lg border border-line bg-white px-3 py-2 text-ink" data-testid="reembolso-checkout" />
+                <CampoData value={checkout} onChange={(e) => setCheckout(e.target.value)} aria-label="Data do check-out" data-testid="reembolso-checkout" className="mt-1 block w-full max-w-xs rounded-lg border border-line bg-white px-3 py-2 text-ink" />
               </label>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
