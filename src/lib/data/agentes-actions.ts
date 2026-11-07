@@ -130,7 +130,9 @@ export async function deixarOrdem(slug: string, texto: string): Promise<{ ok: bo
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só admin." };
   const recusaQa = await recusaObservador(user.id);
   if (recusaQa) return { ok: false, erro: recusaQa };
-  const { data: ag } = await supabase.from("agentes").select("nome, rotina_texto").eq("slug", slug).maybeSingle();
+  const { data: ag, error: erroAg } = await supabase.from("agentes").select("nome, rotina_texto").eq("slug", slug).maybeSingle();
+  // Auditoria 175: a falha de leitura não vira "Agente não encontrado".
+  if (erroAg) return { ok: false, erro: "Não foi possível ler o agente agora. Tente de novo." };
   if (!ag) return { ok: false, erro: "Agente não encontrado." };
   const { error } = await supabase.from("agentes_ordens").insert({ agente_slug: slug, texto: t });
   if (error) return { ok: false, erro: "Não consegui gravar a ordem." };

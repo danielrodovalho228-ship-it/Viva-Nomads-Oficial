@@ -35,11 +35,13 @@ export async function solicitarReserva(
   if (!UUID_RE.test(propertyId))
     return { ok: false, error: "Este é um anúncio de demonstração — a reserva fica disponível nos imóveis reais." };
 
-  const { data: imovel } = await supabase
+  const { data: imovel, error: erroImovel } = await supabase
     .from("properties")
     .select("owner_id")
     .eq("id", propertyId)
     .maybeSingle();
+  // Auditoria 175: a falha de leitura não vira "Imóvel não encontrado".
+  if (erroImovel) return { ok: false, error: "Não foi possível ler o imóvel agora. Tente de novo." };
   const ownerId = imovel?.owner_id as string | undefined;
   if (!ownerId) return { ok: false, error: "Imóvel não encontrado." };
   if (ownerId === user.id)
