@@ -2,6 +2,8 @@
 
 import { novoDoStatus, statusDepoisDoEnvio, type NovoEnvio } from "@/lib/documento/vigente";
 import { formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
+import { FichaDentroCampos } from "@/components/anuncio/ficha-dentro-campos";
+import { fichaCompleta, fichaVazia, normalizarFicha, type FichaDentro } from "@/lib/ficha-dentro/ficha-dentro";
 import { RegrasCasaCampos, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { AVISO_TEXTO_MUDOU, aceiteParaRascunho, aceiteRestaurado, impressaoDoTexto } from "@/lib/anuncio/aceite-ia-rascunho";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +25,7 @@ import {
   saveDraftData,
   abrirRascunho,
   enderecoGravadoDoImovel,
+  fichaDentroDoImovel,
   getLatestDraft,
   carregarLimitesNegociacao,
   salvarLimitesNegociacao,
@@ -271,6 +274,14 @@ export default function NewPropertyPage() {
   const [availableUntil, setAvailableUntil] = useState("");
   const [furnished, setFurnished] = useState(true);
   const [petsOk, setPetsOk] = useState(false);
+  // E660: ficha "o que tem dentro" (camas/ar por quarto, enxoval, cozinha). Obrigatória para publicar anúncio novo.
+  const [fichaDentro, setFichaDentro] = useState<FichaDentro>(() => fichaVazia(1));
+  const [mostrarFaltasFicha, setMostrarFaltasFicha] = useState(false);
+  // O número de quartos do passo "Detalhes" manda: a ficha ganha/perde quartos, mantendo o que já foi respondido.
+  useEffect(() => {
+    const n = Math.max(1, Math.min(20, Math.floor(Number(bedrooms)) || 1));
+    setFichaDentro((f) => (f.quartos.length === n ? f : { ...f, quartos: Array.from({ length: n }, (_, i) => f.quartos[i] ?? fichaVazia(n).quartos[i]) }));
+  }, [bedrooms]);
   // E263-A: "Aceita pets" ligado abre as condições do dono (as mesmas do editor), todas opcionais.
   const [petsRegras, setPetsRegras] = useState<RegrasPetsForm>(() => formDeRegras());
   // Conformidade (mockup cadastro-imovel-06): silêncio, festas, visitas e "Outras regras" no próprio Passo 6.
@@ -744,6 +755,22 @@ export default function NewPropertyPage() {
         return;
       }
     }
+    // E660: a ficha "o que tem dentro" é obrigatória para publicar um anúncio novo (rascunho e edição de anúncio antigo seguem livres).
+    // A ficha da tela pode ainda não ter chegado do servidor (rascunho retomado): antes de recusar, vale a já gravada no imóvel.
+    let fichaParaPublicar = fichaDentro;
+    if (!asDraft && !editingId && !fichaCompleta(fichaDentro) && draftIdRef.current) {
+      const gravada = await fichaDentroDoImovel(draftIdRef.current).catch(() => null);
+      if (gravada && fichaCompleta(gravada)) {
+        fichaParaPublicar = gravada;
+        setFichaDentro(gravada);
+      }
+    }
+    if (!asDraft && !editingId && !fichaCompleta(fichaParaPublicar)) {
+      setMostrarFaltasFicha(true);
+      setPublishError("Falta a ficha “O que tem dentro”: camas e ar-condicionado por quarto, roupa de cama e banho e cozinha.");
+      irPara(ETAPA.comodidades);
+      return;
+    }
     if (!asDraft && photoBlocked) {
       setPublishError(`Adicione pelo menos ${MIN_PHOTOS} fotos para publicar. Faltam ${photosMissing}.`);
       return;
@@ -829,6 +856,7 @@ export default function NewPropertyPage() {
       furnished,
       petsAllowed: petsOk,
       petsRegras: petsOk ? petsRegras : undefined,
+      fichaDentro: fichaParaPublicar,
       regrasCasa: payloadDeRegrasCasa(regrasCasa),
       semCamerasInterior: privacidade.semCamerasInterior,
       camerasExternas: privacidade.camerasExternas,
@@ -922,6 +950,7 @@ export default function NewPropertyPage() {
     if (d.chacara && typeof d.chacara === "object") setChacara(d.chacara as ValorChacara);
     if (typeof d.furnished === "boolean") setFurnished(d.furnished);
     if (typeof d.petsOk === "boolean") setPetsOk(d.petsOk);
+    { const f = normalizarFicha(d.fichaDentro); if (f) setFichaDentro(f); }
     if (d.petsRegras && typeof d.petsRegras === "object") setPetsRegras({ ...formDeRegras(), ...(d.petsRegras as Partial<RegrasPetsForm>) });
     if (d.regrasCasa && typeof d.regrasCasa === "object") {
       const base = formDeRegrasCasa();
@@ -1000,6 +1029,8 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      // E660: sem ficha no rascunho, vale a já gravada no imóvel (nunca sobrescreve uma ficha já completa na tela).
+      fichaDentroDoImovel(draftParam).then((f) => alive && f && setFichaDentro((atual) => (fichaCompleta(atual) ? atual : f))).catch(() => {});
       enderecoGravadoDoImovel(draftParam).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
       carregarLimitesNegociacao(draftParam).then((l) => alive && setLimites(l)).catch(() => {});
       if (etapaParam !== null) {
@@ -1103,6 +1134,7 @@ export default function NewPropertyPage() {
       setFurnished(p.furnished ?? true);
       setPetsOk(p.petsAllowed ?? false);
       setPetsRegras(formDeRegras(p.petsRegras));
+      if (p.fichaDentro) setFichaDentro(p.fichaDentro);
       setRegrasCasa(formDeRegrasCasa(p.regrasCasa));
       setSmokingAllowed(p.smokingAllowed ?? false);
       setChildrenAllowed(p.childrenAllowed ?? true);
@@ -1162,7 +1194,7 @@ export default function NewPropertyPage() {
     title, propertyType, description, bedrooms, bathrooms, areaM2, parkingSpots, maxGuests,
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
-    privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
+    privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, fichaDentro, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
     amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
@@ -2124,6 +2156,8 @@ export default function NewPropertyPage() {
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}
                 />
                 <EtapaEncontramos parte="comodidades" {...camposImovel} comodidadesDetectadas={comodidadesDetectadas} />
+                {/* E660: camas/ar por quarto, enxoval e cozinha equipada (a ficha que congela no contrato). */}
+                <FichaDentroCampos ficha={fichaDentro} onChange={setFichaDentro} mostrarFaltas={mostrarFaltasFicha} />
                 {/* Prompt 59-A: o padrão mínimo da Viva é confirmado junto das comodidades. */}
                 <ChecklistConforto
                   obrigatorio={!editingId}

@@ -4,6 +4,7 @@
   "como entrar" (decisão do Muse, 21/10). O morador vê 7 dias antes da entrada, só com o contrato assinado pelas duas
   partes e o 1º pagamento registrado. Antes disso: "Liberadas em [data]".
 */
+import { INSTRUCAO_SAIDA_MAX } from "./instrucao-saida.ts";
 import { diaBRT } from "../datas-brasilia.ts";
 import { ddmmaaaa, diasAte } from "./estadia.ts";
 
@@ -17,11 +18,21 @@ export const CAMPOS_INSTRUCOES = [
   { chave: "wifi_rede", rotulo: "Wi-Fi: rede", ajuda: "", max: 100 },
   { chave: "wifi_senha", rotulo: "Wi-Fi: senha", ajuda: "", max: 100 },
   { chave: "regras_condominio", rotulo: "Regras do condomínio", ajuda: "", max: 1500 },
+  // E661 (apoio): a estrutura do CONDOMÍNIO, separada do Wi-Fi do apartamento. A Pista A agrupa em "Estrutura do condomínio".
+  { chave: "condominio_wifi_rede", rotulo: "Wi-Fi do condomínio: rede", ajuda: "Áreas comuns, quando houver.", max: 100 },
+  { chave: "condominio_wifi_senha", rotulo: "Wi-Fi do condomínio: senha", ajuda: "", max: 100 },
+  { chave: "condominio_recepcao", rotulo: "Recepção do condomínio", ajuda: "Horário e como funciona a portaria ou recepção.", max: 500 },
+  { chave: "condominio_fechadura", rotulo: "Fechadura do condomínio", ajuda: "Portão, eclusa ou porta comum: código, biometria ou chave.", max: 500 },
   { chave: "lixo", rotulo: "Lixo", ajuda: "Onde e quando descartar.", max: 500 },
   { chave: "vaga", rotulo: "Vaga", ajuda: "", max: 500 },
   { chave: "contatos_predio", rotulo: "Contatos úteis do prédio", ajuda: "Portaria, zelador, síndico.", max: 500 },
+  // E662: a instrução ÚNICA de saída — o mesmo texto para o morador e para o dono (a cópia do contrato é congelada na 1ª assinatura).
+  { chave: "instrucao_saida", rotulo: "Como sair (check-out)", ajuda: "Horário, o que deixar, chaves e a regra de devolução do condomínio.", max: INSTRUCAO_SAIDA_MAX },
   { chave: "observacoes", rotulo: "Observações", ajuda: "", max: 1500 },
 ] as const;
+
+/** Os campos da "Estrutura do condomínio" (E661): quem agrupa a tela lê daqui, sem repetir as chaves. */
+export const CAMPOS_CONDOMINIO = ["condominio_wifi_rede", "condominio_wifi_senha", "condominio_recepcao", "condominio_fechadura"] as const;
 
 export type ChaveInstrucao = (typeof CAMPOS_INSTRUCOES)[number]["chave"];
 export type Instrucoes = Partial<Record<ChaveInstrucao, string | null>>;
@@ -42,10 +53,12 @@ export function normalizarInstrucoes(entrada: Record<string, unknown>): Instruco
 }
 
 /** O texto por contrato (contratos_checkin.instrucoes) sobrescreve "como entrar" quando presente. */
-export function instrucoesEfetivas(doImovel: Instrucoes | null, doContrato: string | null | undefined): Instrucoes | null {
+export function instrucoesEfetivas(doImovel: Instrucoes | null, doContrato: string | null | undefined, saidaDoContrato?: string | null): Instrucoes | null {
   const sobrescrita = (doContrato ?? "").trim();
-  if (!doImovel && !sobrescrita) return null;
-  return { ...(doImovel ?? {}), ...(sobrescrita ? { como_entrar: sobrescrita } : {}) };
+  const saida = (saidaDoContrato ?? "").trim();
+  if (!doImovel && !sobrescrita && !saida) return null;
+  // E662: a cópia da instrução de saída congelada no contrato vence a do imóvel.
+  return { ...(doImovel ?? {}), ...(sobrescrita ? { como_entrar: sobrescrita } : {}), ...(saida ? { instrucao_saida: saida } : {}) };
 }
 
 /**
@@ -115,4 +128,44 @@ export function lembrarDono(inicio: string | null, preenchidas: boolean, agora: 
   if (!inicio || preenchidas) return false;
   const hoje = diaBRT(agora);
   return !!hoje && diasAte(hoje, inicio) === LEMBRETE_DONO_DIAS;
+}
+
+/*
+  E661 — no guia da estadia, as instruções saem em blocos: "Como entrar" (a chegada), "O imóvel e o que está incluso"
+  (o que o dono declara do apartamento — Wi-Fi do APARTAMENTO, vaga, observações) e "Estrutura do condomínio" (regras do
+  condomínio, lixo, contatos do prédio; texto "informado pelo proprietário, pode variar"). Só reagrupa campos que já
+  existem (sem coluna nova); um Wi-Fi do condomínio hoje vai no campo de regras/contatos do prédio.
+*/
+export type GrupoInstrucao = "entrada" | "imovel" | "condominio";
+export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
+  como_entrar: "entrada",
+  wifi_rede: "imovel",
+  wifi_senha: "imovel",
+  vaga: "imovel",
+  observacoes: "imovel",
+  regras_condominio: "condominio",
+  lixo: "condominio",
+  contatos_predio: "condominio",
+};
+export const TITULO_GRUPO_INSTRUCAO: Record<GrupoInstrucao, string> = {
+  entrada: "Como entrar",
+  imovel: "O imóvel e o que está incluso",
+  condominio: "Estrutura do condomínio",
+};
+export const NOTA_ESTRUTURA_CONDOMINIO_GUIA = "Informado pelo proprietário, pode variar.";
+
+export interface CampoDaInstrucao {
+  chave: ChaveInstrucao;
+  rotulo: string;
+  valor: string;
+}
+
+/** Os campos COM texto, por grupo, na ordem do catálogo. Grupo sem texto some. */
+export function agruparInstrucoes(campos: Instrucoes | null | undefined): { grupo: GrupoInstrucao; titulo: string; campos: CampoDaInstrucao[] }[] {
+  const porGrupo: Record<GrupoInstrucao, CampoDaInstrucao[]> = { entrada: [], imovel: [], condominio: [] };
+  for (const c of CAMPOS_INSTRUCOES) {
+    const valor = (campos?.[c.chave] ?? "").trim();
+    if (valor) porGrupo[GRUPO_DA_INSTRUCAO[c.chave]].push({ chave: c.chave, rotulo: c.rotulo, valor: campos![c.chave]! });
+  }
+  return (["entrada", "imovel", "condominio"] as const).filter((g) => porGrupo[g].length > 0).map((g) => ({ grupo: g, titulo: TITULO_GRUPO_INSTRUCAO[g], campos: porGrupo[g] }));
 }

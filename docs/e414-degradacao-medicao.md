@@ -18,3 +18,7 @@ Escopo: `node --test src/lib/internet*.test.ts src/lib/niveis/*.test.ts` 95/95; 
 
 **Fora de escopo (decisão do Daniel):** fazer a medição concluir no ambiente da QA exige liberar `speed.cloudflare.com` na
 rede deles ou medir contra o servidor da Viva (gasto novo) — ver #2955.
+
+## Complemento (re-prova de 06/11 23:31): "Medir depois" como botão em toda tela
+Na re-prova, a tela de falha tinha "Tentar de novo" e o texto "Nada foi registrado no imóvel…", mas o "Medir depois" só aparecia **dentro da frase**, sem controle. Causa: o botão só era desenhado quando a tela chamadora passava `onDepois` — e só o painel do nível no celular passa. O cadastro (`blocos-cadastro`), a edição e a conferência de entrada chamam `MedirInternet` sem ele.
+**Correção:** o botão "Medir depois" é desenhado sempre, ao lado de "Tentar de novo". Ele dispensa a falha (`resultado` volta a vazio), mostra "Medição adiada: nada foi registrado no imóvel. Siga com o cadastro e meça quando quiser." e **não grava nada**; quem passa `onDepois` (nível no celular) continua fechando o painel. Medir de novo apaga o aviso. Teste: `internet-degradacao-e414.test.ts` (novo caso).

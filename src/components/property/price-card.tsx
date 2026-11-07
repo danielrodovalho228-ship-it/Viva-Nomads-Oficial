@@ -36,17 +36,17 @@ function disponivelFuturo(iso?: string): string | null {
  * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
-export function PriceCard({ property, actions, meses = 1, dias = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null }) {
+export function PriceCard({ property, actions, meses = 1, dias = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
-  const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: property.availableFrom });
+  const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: disponivelDesde ?? property.availableFrom });
   // E254-A: o total do período pela mesma função da prévia do Passo 10 e do cartão de Meus anúncios — com a limpeza de
   // saída somada e discriminada na conta (ela segue fora do "Total por mês", na linha própria abaixo).
   // E562 (telas): com as datas escolhidas, o total da estadia em DIAS exatos (a mesma regra da proposta):
   // "Total da estadia (43 dias): R$ 4.671,67 · 1 mês + 13 dias". Sem datas, a duração da busca/estadia mínima em meses.
   const estadiaDias = dias ? estadiaDoImovelEmDias(property, dias) : null;
   const estadia = !estadiaDias && meses > 1 ? estadiaDoImovel(property, meses) : null;
-  const availableFrom = disponivelFuturo(property.availableFrom);
+  const availableFrom = disponivelFuturo(disponivelDesde ?? property.availableFrom);
 
   return (
     // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
@@ -134,7 +134,12 @@ export function PriceCard({ property, actions, meses = 1, dias = null }: { prope
         )}
       </ul>
 
-      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página */}
+      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página. E528: o total mensal de novo logo acima, para
+          quem preenche o formulário (embaixo do painel, que não prende quando é mais alto que a janela) não perder o valor. */}
+      <p className="mt-3 flex items-baseline justify-between gap-3 border-t border-line pt-3 text-sm" data-testid="total-junto-da-acao">
+        <span className="font-semibold text-ink">Total por mês</span>{" "}
+        <span className="text-lg font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
+      </p>
       <div className="mt-3">{actions}</div>
 
       <p className="mt-4 inline-flex items-center gap-2 text-sm text-sage">

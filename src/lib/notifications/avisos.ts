@@ -49,6 +49,7 @@ const URGENTES: readonly NotificationEvent[] = [
   "conforto_prazo",
   "conforto_pendencia",
   "checkin_lembrete",
+  "emergencia_chegada",
   "saida_lembrete",
   "chamado_respondido",
   "estadia_aditivo_respondido",
