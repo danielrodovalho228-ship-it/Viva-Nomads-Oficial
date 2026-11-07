@@ -856,7 +856,7 @@ export function EditarImovelClient({
       <div className="mt-6">
         <Link
           href={publicUrl}
-          className="inline-flex items-center gap-2 text-sm font-medium text-forest hover:underline"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-forest hover:underline"
         >
           <ExternalLink className="h-4 w-4" /> Ver como aparece na busca
         </Link>
