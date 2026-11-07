@@ -17,6 +17,16 @@ export function normalizarCanais(b: { email?: unknown; push?: unknown; whatsapp?
   return { email: b.email !== false, push: b.push !== false, whatsapp: b.whatsapp !== false };
 }
 
+/**
+ * E703: canal sem o dado necessário nasce desligado. O WhatsApp precisa do celular cadastrado; sem ele a preferência
+ * "ligada" prometia um aviso que não poderia chegar. Os outros canais não dependem de dado novo.
+ */
+export function canaisComDado(c: CanaisAviso, d: { temCelular: boolean }): CanaisAviso {
+  return { ...c, whatsapp: c.whatsapp && d.temCelular };
+}
+
+export const CONVITE_CELULAR_WHATSAPP = { texto: "Cadastre o seu celular para receber avisos no WhatsApp.", rotulo: "Cadastrar celular", href: "/dashboard/conta/perfil" } as const;
+
 export const TIPOS_AVISO: readonly { categoria: CategoriaComInterruptor; titulo: string; texto: string }[] = [
   { categoria: "mensagens", titulo: "Novas mensagens", texto: "Receba quando alguém te enviar uma mensagem" },
   { categoria: "lembretes", titulo: "Lembretes da estadia", texto: "Alertas sobre a conferência de entrada e de saída e os detalhes da estadia" },
@@ -28,7 +38,7 @@ export const TIPOS_AVISO: readonly { categoria: CategoriaComInterruptor; titulo:
 export const CANAIS_AVISO: readonly { canal: keyof CanaisAviso; titulo: string; texto: string }[] = [
   { canal: "email", titulo: "E-mail", texto: "Enviaremos notificações no seu e-mail cadastrado" },
   { canal: "push", titulo: "Notificação no celular (push)", texto: "Receba notificações push no seu celular" },
-  { canal: "whatsapp", titulo: "WhatsApp", texto: "Receba atualizações e lembretes via WhatsApp" },
+  { canal: "whatsapp", titulo: "WhatsApp", texto: "Receba avisos e lembretes no WhatsApp" },
 ];
 
 /** E549: a lista de desligadas (gravada) vira o estado dos interruptores — ligado = fora da lista. */
@@ -39,7 +49,7 @@ export function tiposDeDesligadas(desligadas: readonly string[]): Record<Categor
 /** E549: as preferências lidas pela página (no servidor) — a tela já nasce com o estado desenhado. */
 export interface PreferenciasIniciais {
   desligadas: CategoriaComInterruptor[];
-  canais: CanaisAviso;
+  canais: CanaisAviso & { temCelular?: boolean };
   equipe: boolean | null;
 }
 
