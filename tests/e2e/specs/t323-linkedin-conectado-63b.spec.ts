@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, CHAVE_ANON, criteriosDaAvaliacao, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
@@ -25,13 +25,23 @@ async function ligarChave(page: Page) {
   if (page.url() === "about:blank") await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.context().addCookies([{ name: "vn_lab_linkedin", value: "1", url: new URL(page.url()).origin }]);
 }
+/** E66 (24/10): a lista de confiança, com a linha do LinkedIn e o aviso do resultado, mora em /dashboard/conta/seguranca. */
+const TELA_DA_LINHA = "/dashboard/conta/seguranca";
 async function conectar(page: Page): Promise<string> {
-  await page.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+  await page.goto(TELA_DA_LINHA, { waitUntil: "domcontentloaded" });
   const linha = page.getByTestId("confianca-linkedin");
   await expect(linha).toHaveAttribute("data-situacao", "falta", { timeout: 20_000 });
   await linha.getByTestId("confianca-linkedin-acao").click();
   await page.waitForURL(/linkedin=/, { timeout: 30_000 });
-  return new URL(page.url()).searchParams.get("linkedin") ?? "";
+  const url = new URL(page.url());
+  const resultado = url.searchParams.get("linkedin") ?? "";
+  // L-56 (produto, Pista A; o t351 já registra o mesmo): as rotas /api/conta/linkedin/conectar e /retorno ainda voltam para /dashboard/conta/privacidade, onde a linha
+  // e o aviso do resultado não existem mais. Anotado; o resto do teste confere o comportamento na tela que tem a linha.
+  if (url.pathname === "/dashboard/conta/privacidade") {
+    test.info().annotations.push({ type: "L-56", description: `a volta do LinkedIn (?linkedin=${resultado}) cai em ${url.pathname}, sem a linha nem o aviso (a lista está em ${TELA_DA_LINHA})` });
+    await page.goto(`${TELA_DA_LINHA}?linkedin=${encodeURIComponent(resultado)}`, { waitUntil: "domcontentloaded" });
+  }
+  return resultado;
 }
 const linhaDe = async (uid: string) => (await adm().from("confianca_linkedin").select("sub_hash, conectado_em, valido_ate").eq("user_id", uid).maybeSingle()).data;
 
@@ -126,8 +136,10 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
       await sb.auth.signInWithPassword({ email, password: senha });
       return sb;
     };
-    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
-    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    const { error: eAv1 } = await (await cliente(ana.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
+    expect(eAv1, "a avaliação semeada entra (L-105: critérios do E679)").toBeNull();
+    const { error: eAv2 } = await (await cliente(dono.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    expect(eAv2, "a avaliação semeada entra (L-105: critérios do E679)").toBeNull();
     const visitante = await browser.newPage();
     await ligarChave(visitante);
     await expect
@@ -153,7 +165,7 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
   test("5. desconectar apaga a linha e o selo some na hora (para o dono também)", async ({ browser }) => {
     const p = await entrar(browser, ana.email, senha);
     await ligarChave(p);
-    await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+    await p.goto(TELA_DA_LINHA, { waitUntil: "domcontentloaded" });
     const linha = p.getByTestId("confianca-linkedin");
     await expect(linha).toHaveAttribute("data-situacao", "ok", { timeout: 20_000 });
     await linha.getByTestId("confianca-linkedin-botao").click();
