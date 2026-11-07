@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { validarFatoFalso } from "@/lib/avaliacoes-criterios";
 import { ehMotivoRevisao, validarContestacao, validarResposta } from "@/lib/avaliacoes-resposta";
 
 type Resultado = { ok: boolean; error?: string };
@@ -43,6 +44,11 @@ export async function responderAvaliacao(avaliacaoId: string, texto: string): Pr
 export async function pedirRevisaoAvaliacao(avaliacaoId: string, motivo: string, detalhe: string): Promise<Resultado> {
   const err = validarContestacao(motivo, detalhe);
   if (err) return { ok: false, error: err };
+  // E679: "fato falso" só para fato que a Viva confere; dano, sujeira e caução não entram (o banco recusa igual).
+  if (motivo === "fato_falso") {
+    const ff = validarFatoFalso(detalhe);
+    if (!ff.ok) return { ok: false, error: ff.erro };
+  }
   if (!UUID_RE.test(avaliacaoId)) return { ok: false, error: "Avaliação inválida." };
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "Sem conexão com o banco." };
