@@ -103,6 +103,22 @@ export function assinadoPelasDuas(c: Pick<LinhaContratoEstadia, "assinado_propri
   return !!c.assinado_proprietario_em && !!c.assinado_inquilino_em;
 }
 
+/**
+ * E662: copia a instrução de saída do imóvel para o contrato na 1ª assinatura (uma vez só), para o texto não mudar no meio da
+ * estadia. Mora aqui, com os demais leitores de `imovel_instrucoes_chegada` (a tabela privada só é lida por estes arquivos).
+ * Melhor esforço: a assinatura NUNCA depende dela (a coluna é da migração 0320 e, sem cópia, o guia usa a do imóvel).
+ */
+export async function congelarInstrucaoSaida(admin: SupabaseClient, contratoId: string, propertyId: string): Promise<void> {
+  try {
+    const { data: im, error } = await admin.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    const texto = ((im as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+    if (error || !texto) return;
+    await admin.from("contratos").update({ instrucao_saida: texto }).eq("id", contratoId).is("instrucao_saida", null);
+  } catch {
+    // sem cópia: vale a do imóvel
+  }
+}
+
 /** Instruções do imóvel com a sobrescrita do contrato (contratos_checkin.instrucoes). */
 export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null; doContrato: string | null }> {
   const [{ data: im }, { data: ck }, { data: cs, error: erroSaida }] = await Promise.all([

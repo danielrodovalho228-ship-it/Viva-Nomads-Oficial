@@ -40,15 +40,19 @@ test("o campo entra nas instruções da estadia (editor do dono, leitura do mora
 });
 
 test("a 1ª assinatura copia o texto para o contrato (uma vez só), sem quebrar a assinatura se a leitura falhar", () => {
-  const a = ler("src/lib/data/contrato-assinar-actions.ts");
-  assert.match(a, /congelarInstrucaoSaida\(/);
-  const i = a.indexOf("async function congelarInstrucaoSaida");
+  // A função mora em estadia.ts: a tabela privada das instruções só é lida pelos leitores da estadia (guarda da chegada-e-pedido).
+  const e = ler("src/lib/data/estadia.ts");
+  const i = e.indexOf("export async function congelarInstrucaoSaida");
   assert.ok(i > 0);
-  const corpo = a.slice(i, i + 1400);
+  const corpo = e.slice(i, i + 900);
   assert.match(corpo, /\.is\("instrucao_saida", null\)/);
-  assert.match(corpo, /catch|\.error/);
+  assert.match(corpo, /catch/);
+  const a = ler("src/lib/data/contrato-assinar-actions.ts");
+  assert.match(a, /import \{ congelarInstrucaoSaida \} from "@\/lib\/data\/estadia";/);
+  assert.match(a, /await congelarInstrucaoSaida\(/);
+  assert.doesNotMatch(a, /imovel_instrucoes_chegada/);
   // o guia lê a cópia do contrato junto das instruções
-  assert.match(ler("src/lib/data/estadia.ts"), /instrucao_saida/);
+  assert.match(e, /select\("instrucao_saida"\)\.eq\("id", c\.id\)/);
 });
 
 test("migração 0320: aditiva, idempotente, só colunas novas, registrada e com rollback; nada na tabela pública do imóvel", () => {
