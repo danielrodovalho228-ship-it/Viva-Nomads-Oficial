@@ -51,10 +51,13 @@ test.describe("T1335 — E654: o pedido do código de assinatura sempre responde
       const confirmacao = page.getByTestId("assinar-codigo-enviado");
       const erro = page.getByTestId("form-assinar").getByRole("alert");
       await expect(confirmacao.or(erro).first()).toBeVisible({ timeout: 45_000 });
-      // No laboratório o envio funciona: a confirmação é a resposta esperada, e o botão volta a servir.
-      await expect(confirmacao).toContainText("Enviamos 6 números");
       await expect(botao).toBeEnabled();
-      await expect(botao).toContainText("Enviar outro código");
+      if (w === 1280) {
+        // 1º pedido da inquilina: no laboratório o envio funciona e a confirmação é a resposta esperada.
+        await expect(confirmacao).toContainText("Enviamos 6 números");
+        await expect(botao).toContainText("Enviar outro código");
+      }
+      // 2º pedido (390 px) pode cair no intervalo mínimo entre códigos: aí a resposta é um erro visível, que também vale.
       await expect.poll(async () => (await adm().from("emails_teste").select("evento", { count: "exact", head: true }).eq("usuario_id", ids.inq!).eq("evento", "contract_signature_code")).count ?? 0, { timeout: 30_000 }).toBeGreaterThan(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       await page.context().close();
