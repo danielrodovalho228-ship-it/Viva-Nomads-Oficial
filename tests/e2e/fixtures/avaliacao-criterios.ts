@@ -17,5 +17,5 @@ export function camposDoPar(papel: "inquilino" | "proprietario") {
 export async function preencherCriterios(p: Page) {
   const fieldset = p.getByTestId("avaliacao-criterios");
   for (const radio of await fieldset.getByRole("radio", { name: /: 5$/ }).all()) await radio.click();
-  await p.getByTestId("avaliacao-recomenda").getByRole("radio", { name: "Sim" }).click();
+  await p.getByRole("radiogroup", { name: "Recomendaria" }).getByRole("radio", { name: "Sim" }).click();
 }

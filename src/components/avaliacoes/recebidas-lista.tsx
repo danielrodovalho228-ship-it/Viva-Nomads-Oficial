@@ -5,7 +5,7 @@ import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { podeContestar, podeResponder } from "@/lib/avaliacoes-resposta";
 import type { AvaliacaoRecebidaComRevisao } from "@/lib/data/avaliacoes-recebidas";
 import { ABAS_AVALIACOES, filtrarAvaliacoes, linhaContextoAvaliacao, type AbaAvaliacoes } from "@/lib/conta/avaliacoes-recebidas";
-import { estrelasDaNota, primeiraSemResposta } from "@/lib/conta/tela-avaliacoes";
+import { SUBTITULO_AVALIACOES, estrelasDaNota, primeiraSemResposta } from "@/lib/conta/tela-avaliacoes";
 import { cn } from "@/lib/utils";
 import { AcoesAvaliacao } from "@/app/(dashboard)/dashboard/avaliacoes/acoes";
 
@@ -30,6 +30,7 @@ export function AvaliacoesRecebidasLista({
   const proxima = primeiraSemResposta(lista);
   return (
     <div data-testid="tela-avaliacoes">
+        <p className="mb-4 text-sm text-muted">{SUBTITULO_AVALIACOES}</p>
         {/* E63 (QA 24/10): a estrutura do desenho fica sempre — abas e busca — mesmo sem nenhuma avaliação ainda. */}
         <>
           <nav className="flex flex-wrap gap-3" aria-label="Filtrar avaliações">
@@ -107,6 +108,9 @@ export function AvaliacoesRecebidasLista({
                               ))}
                             </span>
                           </div>
+                          <p className="text-sm text-muted" data-testid="avaliacao-papel">
+                            {a.papelAutor === "proprietario" ? "Proprietário" : "Morador"}
+                          </p>
                           <p className="mt-1 text-base text-ink">{a.comentario || "Sem comentário."}</p>
                           {linhaContextoAvaliacao(a) && (
                             <p className="mt-2 text-sm text-muted" data-testid="avaliacao-contexto">
