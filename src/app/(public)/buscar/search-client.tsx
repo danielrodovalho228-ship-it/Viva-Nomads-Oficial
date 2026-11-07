@@ -1042,7 +1042,7 @@ function Stepper({
           aria-label={`Menos ${label.toLowerCase()}`}
           disabled={value <= min}
           onClick={() => onChange(Math.max(min, value - 1))}
-          className="grid h-8 w-8 place-items-center rounded-lg border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className="alvo-toque grid h-8 w-8 place-items-center rounded-lg border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
         >
           −
         </button>
@@ -1052,7 +1052,7 @@ function Stepper({
           aria-label={`Mais ${label.toLowerCase()}`}
           disabled={value >= max}
           onClick={() => onChange(Math.min(max, value + 1))}
-          className="grid h-8 w-8 place-items-center rounded-lg border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
+          className="alvo-toque grid h-8 w-8 place-items-center rounded-lg border border-line text-lg leading-none text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-40"
         >
           +
         </button>
