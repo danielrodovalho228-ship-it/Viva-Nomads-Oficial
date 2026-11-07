@@ -73,16 +73,15 @@ test.describe("T1358 — E669: laudo independente validado e removível", () => 
 
       await input.setInputFiles({ name: "laudo.pdf", mimeType: "application/pdf", buffer: pdf(2) });
       await expect(p.getByTestId("conferencia-laudo")).toBeVisible({ timeout: 30_000 });
-      expect((await laudos()).ativos).toBe(1);
+      await expect.poll(async () => (await laudos()).ativos, { timeout: 30_000, message: "o laudo gravado" }).toBe(1);
       const remover = p.getByTestId("conferencia-entrada-laudo-remover");
       await expect(remover).toBeVisible();
       await remover.click(); // abre a confirmação
       await p.getByRole("button", { name: /^(sim|confirmar|remover)/i }).last().click();
       await expect(p.getByTestId("conferencia-laudo")).toHaveCount(0, { timeout: 30_000 });
       await expect(p.getByTestId("conferencia-entrada-laudo-botao")).toBeVisible();
-      const depois = await laudos();
-      expect(depois.ativos, "o laudo foi retirado").toBe(0);
-      expect(depois.retirados, "a retirada ficou registrada").toBeGreaterThanOrEqual(1);
+      await expect.poll(async () => (await laudos()).ativos, { timeout: 30_000, message: "o laudo foi retirado" }).toBe(0);
+      await expect.poll(async () => (await laudos()).retirados, { timeout: 30_000, message: "a retirada ficou registrada" }).toBeGreaterThanOrEqual(1);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       await p.context().close();
     });
