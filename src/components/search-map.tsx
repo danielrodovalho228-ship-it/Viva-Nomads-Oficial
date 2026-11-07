@@ -433,7 +433,10 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   const onSelectRef = useRef(onSelect);
   const selRef = useRef(selectedId);
   const focusRef = useRef(focus);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  // E698: o quadro do mapa nasce cinza até chegar o 1º tile; o aviso honesto cobre esse intervalo (e some sozinho).
+  const [quadro, setQuadro] = useState<HTMLDivElement | null>(null);
+  const [tilesProntos, setTilesProntos] = useState(!TILES_CARTO);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLElement }>>(new Map());
   const reorganizarRef = useRef<(() => void) | null>(null);
@@ -478,10 +481,15 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
     L.control.zoom({ position: "topright" }).addTo(map);
     if (TILES_CARTO) {
-      L.tileLayer(TILES_CARTO, {
+      const camada = L.tileLayer(TILES_CARTO, {
         maxZoom: 19,
         attribution: ATRIBUICAO_MAPA,
-      }).addTo(map);
+        // E698: pede os tiles já durante o arrasto/zoom e guarda uma margem — a base chega antes de os pinos parecerem soltos.
+        updateWhenIdle: false,
+        keepBuffer: 3,
+      });
+      camada.once("load", () => setTilesProntos(true));
+      camada.addTo(map);
     } else {
       avisarMapaSemChave();
     }
@@ -503,7 +511,10 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     });
     ro.observe(containerRef.current);
     const markers = markersRef.current;
+    // Rede lenta ou tiles que não chegam: o aviso não fica para sempre (o erro de tile é tratado à parte, E419).
+    const limite = window.setTimeout(() => setTilesProntos(true), 10_000);
     return () => {
+      window.clearTimeout(limite);
       ro.disconnect();
       map.remove();
       mapRef.current = null;
@@ -640,8 +651,27 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
 
   return (
     <>
-      <div ref={containerRef} data-testid="mapa-busca" data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"} className={cn("z-0 overflow-hidden bg-surface-2", className)} />
+      <div
+        ref={(el) => {
+          containerRef.current = el;
+          setQuadro(el);
+        }}
+        data-testid="mapa-busca"
+        data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
+        data-mapa-tiles={tilesProntos ? "pronto" : "carregando"}
+        className={cn("z-0 overflow-hidden bg-surface-2", className)}
+      />
+      {!tilesProntos && quadro && createPortal(<AvisoMapaCarregando />, quadro)}
       {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={fechar} />, popupEl)}
     </>
+  );
+}
+
+/** E698: aviso discreto sobre o quadro do mapa enquanto a base (ruas) ainda não chegou — o pino sozinho num fundo cinza parecia quebrado. */
+function AvisoMapaCarregando() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[450] grid place-items-center bg-surface-2/60" data-testid="mapa-carregando" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
   );
 }

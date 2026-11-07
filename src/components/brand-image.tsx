@@ -36,9 +36,12 @@ export function BrandImage({
   // A tentativa vale para ESTA foto: trocar o src recomeça do otimizado.
   const [estado, setEstado] = useState<{ src: string; tentativa: TentativaImagem }>({ src, tentativa: "otimizada" });
   const tentativa = estado.src === src ? estado.tentativa : "otimizada";
+  // E698: enquanto a foto baixa, o quadro "respira" (brilho leve, só com movimento permitido) — não parece buraco quebrado.
+  const [carregadaSrc, setCarregadaSrc] = useState<string | null>(null);
+  const carregada = carregadaSrc === src;
   return (
     // E640 (a): proteção LEVE das fotos públicas — sem clique-direito e sem arrastar. Não promete (nem tenta) bloquear print.
-    <div className={cn("relative select-none overflow-hidden bg-surface-2", raio, className)} onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
+    <div className={cn("relative select-none overflow-hidden bg-surface-2", !carregada && tentativa !== "falhou" && "motion-safe:animate-pulse", raio, className)} data-foto-estado={tentativa === "falhou" ? "falhou" : carregada ? "pronta" : "carregando"} onContextMenu={(e) => e.preventDefault()} onDragStart={(e) => e.preventDefault()}>
       {tentativa === "falhou" ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted" role="img" aria-label={alt || ROTULO_FOTO_INDISPONIVEL} data-testid="foto-indisponivel">
           <ImageOff className="h-6 w-6" aria-hidden />
@@ -60,6 +63,7 @@ export function BrandImage({
           unoptimized={tentativa === "direta"}
           draggable={false}
           data-tentativa={tentativa}
+          onLoad={() => setCarregadaSrc(src)}
           onError={() => setEstado({ src, tentativa: proximaTentativa(tentativa) })}
         />
       )}
