@@ -34,7 +34,7 @@ import {
   type StatusCredenciamento,
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador } from "./servidor";
-import { descredenciamentoValido, faixaDeReferencia, validarProposta } from "./escolha";
+import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { recusaObservador } from "@/lib/qa/observador";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
@@ -492,7 +492,7 @@ export async function escolherAvaliador(form: FormData): Promise<Res> {
   const r = await escolherNoServidor(s.admin, p.id, String(form.get("avaliadorId") ?? ""));
   if (!r.ok) return r;
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
-  return { ok: true, mensagem: "Avaliador escolhido. Ele tem 24 horas para responder com o valor e o prazo dele." };
+  return { ok: true, mensagem: "Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: 24 horas); sem resposta, o pedido volta para você escolher outro." };
 }
 
 /**
@@ -685,4 +685,29 @@ export async function avaliarConduta(form: FormData): Promise<Res> {
   if (error) return { ok: false, erro: "Você já avaliou esta visita." };
   revalidatePath(autor === "dono" ? `/dashboard/imoveis/${p.property_id}/nivel` : ROTA_AVALIADOR);
   return { ok: true };
+}
+
+
+/**
+ * E682: o avaliador declara os PRÓPRIOS termos — valor, prazo de entrega e em quantas horas responde a um pedido. A lista
+ * de escolha do dono mostra isso. A Viva não fixa nem negocia nada; sem resposta no prazo dele, o pedido volta ao dono.
+ */
+export async function salvarMeusTermos(form: FormData): Promise<Res> {
+  if (!(await vistoriaAtiva())) return DESLIGADA;
+  const s = await sessao();
+  if (!s) return { ok: false, erro: "Entre na sua conta." };
+  const lido = lerReais(String(form.get("valor") ?? ""));
+  if (!lido.ok) return lido;
+  const v = validarTermos({ valor: lido.valor ?? Number.NaN, prazoEntregaDias: Number(form.get("prazoEntregaDias")), prazoRespostaHoras: Number(form.get("prazoRespostaHoras")) });
+  if (!v.ok) return v;
+  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data, error } = await s.admin
+    .from("avaliadores_credenciamento")
+    .update({ preco_proprio: v.valor, prazo_entrega_dias: v.prazoEntregaDias, prazo_resposta_horas: v.prazoRespostaHoras })
+    .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${s.userId}` : `user_id.eq.${s.userId}`)
+    .in("status", ["em_teste", "ativo"])
+    .select("id");
+  if (error || !data?.length) return { ok: false, erro: "Só avaliador em teste ou ativo define os próprios termos." };
+  revalidatePath(ROTA_AVALIADOR);
+  return { ok: true, mensagem: "Termos salvos. O proprietário os vê na lista de escolha." };
 }
