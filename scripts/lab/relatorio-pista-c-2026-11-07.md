@@ -396,3 +396,7 @@ Em andamento ao abrir o 504: t1432 reenviada (#3278, run 42406334809), bloco 502
 ## Bloco 502 verde
 
 Bloco 502 (t1433, #3279, grupo do 485: contrato, imóvel, estadia, locação, sócios, autenticação, com a estadia do E681 e a saída do E662) **verde** (run 42405598419), a 390 e 1280 px. t1432 (E679, #3278) no head corrigido `e626b725e` (run 42406334809) e blocos 503 (#3281) e 504 (#3283) ainda em andamento, sem vermelho. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
+
+## t1432, blocos 503/504 verdes e bloco 505 (main `2fd8659d8`)
+
+Verdes e já mesclados por você: t1432 / E679 no head corrigido (#3278, run 42406334809), bloco 503 (#3281, 42406365423) e bloco 504 (#3283, 42406484002); bloco 502 (#3279) já registrado. Nenhum merge de produto novo desde `9e08c86c6`. O erro anterior da t1432 era só o seletor do botão "Enviar avaliação". Bloco 505 (t1436, grupo do 488: painel do proprietário sem id, com as respostas rápidas do E665) aberto. Ainda sem spec de tela: avaliações do parceiro (0323), conduta cega (0324), termos do avaliador (E682, 0325). Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
