@@ -1374,7 +1374,8 @@
         "t489-e176-menus",
         "t686-varredura-bloco72",
         "t1404-varredura-bloco482",
-        "t1425-varredura-bloco499"
+        "t1425-varredura-bloco499",
+        "t1432-e679-formulario-de-avaliacao-criterios"
       ]
     },
     "/dashboard/estadia/[contratoId]/contrato": {
