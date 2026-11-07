@@ -879,3 +879,10 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **E649:** nenhuma superfície oferece CPF ao parceiro (só o rótulo interno "CPF/CNPJ" da fila admin, fora do pedido).
 - **E704:** o mecanismo (Mapbox) não é provável aqui, pois os tiles do mapa não carregam neste ambiente; a prova visual fica para o QA.
 - **CI e conflitos:** PRs abertos da Pista A (pilha E679, #3291, #3301, #3305, #3250, #3256) sem conflito com a `main`; #3291 e #3305 com 4/4 verificações verdes.
+
+## Passada 74 (07/11; modo demonstração local, `main` em `5b4757580`; 390 e 1280) — E194, E699 e varredura geral
+
+- **E194 (qualificação na moldura do assistente):** reconferido na `main` (#1532, #1660, spec `t565`). A 390 e 1280 a Qualificação traz o selo "Anunciar imóvel", o rodapé fixo ("Antes do Passo 1 · Qualificação N de 5", depois "Resultado da qualificação") e a barra de progresso contínua até o Passo 1 ("Passo 1 de 10 · 7% pronto"). Nada a corrigir. Observação: a 390, no resultado, o rótulo "Resultado da qualificação" encosta no botão "Começar o cadastro" (sem sobrepor); fica como anotação, não é defeito.
+- **E699 (cartão de travas no passo 1):** o cartão `travas-publicacao` **não aparece** na conta demo — por desenho ele some quando identidade e documento do imóvel estão resolvidos, e a conta demo não tem como ficar pendente. Por isso a aparência a 390 e 1280 segue sem prova visual. O que foi verificado por outro meio: componente e condição lidos (`travas-de-publicacao.tsx`, `travas-publicacao.ts`), espaçamento dentro da escala do estilo (guarda `estilo-padrao`), teste `travas-publicacao.test.ts`. A prova visual precisa de conta de proprietário com pendência (laboratório).
+- **Varredura geral:** rotas públicas e do painel, 390 e 1280: 0 imagens quebradas, 0 sem `alt`, 0 estouro lateral, nenhum título coberto por elemento fixo. Só `/sobre` e `/blog` respondem 404 (rotas inexistentes).
+- **PRs:** #3301 (E706) e #3291 (E704) sem conflito com a `main` e com CI verde; nenhum ajuste necessário.
