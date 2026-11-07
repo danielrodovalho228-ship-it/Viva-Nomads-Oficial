@@ -46,6 +46,7 @@ export function PerfilTela() {
   const mostraPainelMorador = mode === "tenant" || cadastroMorador;
   // E55: o espelho segue o papel em uso (a mesma fonte da barra: o modo da conta).
   const papelEspelho = mode === "owner" ? "proprietario" : "morador";
+  const usuarioPronto = useAuthStore((s) => !!s.user);
   const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
   // Achado 70: leitura falhou → aviso com "Tentar de novo", nunca o formulário vazio (salvar apagaria o perfil).
   const [leituraFalhou, setLeituraFalhou] = useState(false);
@@ -247,7 +248,13 @@ export function PerfilTela() {
         </section>
 
         <div className="xl:hidden">
+          {/* E504 (c): o enquadramento só aparece com o papel JÁ conhecido (a conta carregada) — antes, o 1º quadro saía com o papel
+            padrão (morador) e trocava para proprietário depois, e o rótulo lateral ficava fixo. Enquanto não há conta, o espaço é guardado. */}
+        {usuarioPronto ? (
           <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+        ) : (
+          <div aria-hidden className="min-h-[24rem]" data-testid="espelho-aguardando" />
+        )}
         </div>
 
         <PetsFicha />
@@ -330,7 +337,7 @@ export function PerfilTela() {
         </div>
       </div>
 
-      <aside className="hidden min-w-0 gap-6 xl:grid" aria-label="Como o proprietário te vê">
+      <aside className="hidden min-w-0 gap-6 xl:grid" aria-label={papelEspelho === "proprietario" ? "Como o morador te vê" : "Como o proprietário te vê"}>
         <TituloSecaoLateral ativo="perfil" subtitulo={SUBTITULO_PERFIL} />
         <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
       </aside>
