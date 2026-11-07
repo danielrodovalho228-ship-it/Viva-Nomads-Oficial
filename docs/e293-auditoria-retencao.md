@@ -269,3 +269,43 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 13. Migração 0313 e relatório numerado (07/11/2026)
+
+Revisão da migração **0313** (E648, a única nova na `main` desde a 0312; a 0314 do E647 ainda está em PR e não entra) e conferência
+em produção **só com leitura**, em 07/11/2026 (01h UTC). **Nada foi apagado e nenhum prazo mudou.** A rotina
+`e293-limpeza-retencao` (0281, `17 4 * * *`) terminou com sucesso nas três últimas rodadas (04, 05 e 06/11) e a de hoje roda às 04h17 UTC.
+
+**0313 (E648, atrás de `VISTORIA_ATIVA` desligada)** — só colunas novas e a ampliação de um check; nenhuma tabela nova:
+
+| Tabela | Colunas novas | Dado pessoal? | Inventário |
+|---|---|---|---|
+| `vistoria_pedidos` | `escolhido_em`, `valor_proposto`, `prazo_proposto_dias`, `proposta_em`, `proposta_aceita_em` | datas e o valor/prazo que o avaliador propõe; sem dado novo de pessoa além do vínculo que a tabela já tem | entra no item `vistoria_pedidos` já existente (fase 2, prazo pendente) |
+| `vistoria_laudos` | `assinado_por` (id da conta), `assinado_em`, `assinatura_hash`, `assinatura_termo` | id do avaliador que assinou e o hash do laudo (a Viva guarda o hash, não o conteúdo assinado) | item `vistoria_laudos` já existente |
+| `avaliadores_credenciamento` | `criterio_descredenciamento`, `resposta_ate`, `resposta_avaliador` | **texto livre do avaliador** (direito de resposta) | item `avaliadores_credenciamento` já existente; prazo no item 13 |
+
+Sem tabela nova e sem fornecedor novo: o inventário (`inventario.test.ts`) não pede entrada nova. A coluna `resposta_avaliador`
+guarda texto escrito pela pessoa; fica na lista de decisões do item 13 junto com o resto do módulo de avaliação.
+
+**Relatório numerado (itens que mudaram desde o §12; os demais não foram reconferidos):**
+
+| # | Item (inventário) | Prazo declarado | Linhas (06/11 → 07/11) | Vencidas hoje | Situação |
+|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | 18.868 → 19.418 | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | 292 → 295 | 0 | as primeiras vencem em 16/01/2027; passar à fase 1 é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | 0 | 0 | em dia |
+| 9 | `tempos_deslocamento` / `proximidades_cep` (P6) | 30 dias | 0 / 7 | 0 | em dia |
+| 11 | `property_workspaces` (Google Places, P4) | — | 0 | — | decisão a/b pendente (Daniel) |
+| 13 | `avisos` | pendente (item 13) | 47 → 55 | — | prazo pendente (Daniel) |
+| 14 | `moderacao_ofensas` | pendente (item 13) | 0 → **1** | — | primeira linha real; prazo pendente (Daniel) |
+| — | `eliminacoes_registro` (livro) | — | 112 | — | sem mudança desde 06/11 |
+| — | `eliminacoes_simulado` | — | 1.716 | — | só conta (fase 2); cresceu porque o relatório simulado conta a cada rodada |
+
+**Deleções executadas por esta auditoria: nenhuma.** O que apaga de verdade continua sendo só o que a §7 lista (aprovado pelo Daniel em
+01/11), pela rotina `0281`, com cada linha no livro `eliminacoes_registro`. Tudo o que depende do item 13 da Dra. Beatriz, da escolha a/b
+do P4 ou do OSM para `destinos` segue como **relatório**, sem execução.
+
+**Decisões em aberto (não executadas):** passar `ia_chamadas` à fase 1 antes de 16/01/2027; P4 (Google Places a/b); `destinos` pelo OSM;
+coluna `caf_transacao_id`; os prazos do item 13 (incluem `avisos`, `moderacao_ofensas`, o módulo de avaliação e as tabelas novas de
+caução, cobrança mensal, ficha e fotos repetidas); e a rotina que apague também os arquivos ligados a `fotos_repetidas_alertas` e
+`caucao_desconto_itens` quando houver prazo.
