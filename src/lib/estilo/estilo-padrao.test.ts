@@ -274,7 +274,6 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
     "components/admin/motivo-dialog.tsx", // diálogo sobre a página (Prompt 45)
     "components/ajuda/viva-chat.tsx", // botão flutuante e a janela do chat
     "components/app/links-do-app.tsx", // diálogo sobre a página (Prompt 45)
-    "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
     "components/busca/barra-pilulas.tsx", // painel pequeno de cada pílula da busca (E82-A)
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões

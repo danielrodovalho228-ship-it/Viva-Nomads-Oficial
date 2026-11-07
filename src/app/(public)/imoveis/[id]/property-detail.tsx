@@ -130,6 +130,8 @@ export function PropertyDetail({
   // E53: entrada, saída e pessoas são UMA seleção — o calendário de Disponibilidade, a caixa de reserva e o diálogo do
   // "Solicitar" leem e escrevem a mesma (regras em selecao-estadia).
   const [selecao, setSelecao] = useState<SelecaoEstadia>(SELECAO_VAZIA);
+  // E673: a primeira entrada possível (o calendário lê os períodos ocupados); o cartão de preço e a barra dizem a mesma data.
+  const [disponivelDesde, setDisponivelDesde] = useState<string | null>(null);
   const inicioDesejado = selecao.entrada;
   // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
   const [motivoEstadia, setMotivoEstadia] = useState("");
@@ -825,7 +827,7 @@ export function PropertyDetail({
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : meses > 1 ? estadiaDoImovel(property, meses)?.total : null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : meses > 1 ? estadiaDoImovel(property, meses)?.total : null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}
@@ -987,7 +989,7 @@ export function PropertyDetail({
                 {avisoDataBusca}
               </p>
             )}
-            <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} />
+            <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} onDisponivelDesde={setDisponivelDesde} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}
           <div id="localizacao" className="scroll-mt-36 space-y-12">
@@ -1021,7 +1023,7 @@ export function PropertyDetail({
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
         <aside>
-          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} />
+          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} disponivelDesde={disponivelDesde} />
         </aside>
       </div>
 

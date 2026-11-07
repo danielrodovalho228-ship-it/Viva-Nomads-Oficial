@@ -18,6 +18,7 @@ import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
+import { EmergenciaChegada } from "@/components/estadia/emergencia-chegada";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
 import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio";
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
@@ -426,6 +427,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               </div>
             </div>
           )}
+          {/* E664: no dia da entrada, o morador aciona um aviso urgente ao proprietário (a Viva intermedia; sem contato). */}
+          {!demo && active.emergenciaChegadaContratoId && <EmergenciaChegada key={`emerg-${active.id}`} contratoId={active.emergenciaChegadaContratoId} />}
           {!demo && active.propertyId && active.otherId && (
             <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
           )}

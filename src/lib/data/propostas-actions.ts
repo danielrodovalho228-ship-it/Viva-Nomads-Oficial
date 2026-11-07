@@ -738,7 +738,11 @@ async function registroDaProposta(admin: Admin, propostaId: string): Promise<Pro
   return data ? { numero: numeroExibido(data.numero as string, Number(data.versao)), conferir: linhaConferir(SITE_URL, data.codigo_verificacao as string) } : null;
 }
 
-/** Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). */
+/**
+ * Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). E677: a ordem é a do ENVIO (criada_em),
+ * que só muda quando nasce uma proposta; ordenar por atualizada_em reembaralhava as linhas a cada "vista"/resposta, e a
+ * linha de uma posição passava a ser outra proposta (as do mesmo imóvel só se distinguem pelo número).
+ */
 const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas agora.";
 
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
@@ -749,7 +753,7 @@ export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promis
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.
-  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("atualizada_em", { ascending: false }).limit(200);
+  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("criada_em", { ascending: false }).order("numero", { ascending: false }).limit(200);
   if (error && opcoes.exigir) throw new Error(MSG_PROPOSTAS_NAO_CARREGARAM);
   const ps = (data ?? []) as LinhaProposta[];
   if (!ps.length) return [];

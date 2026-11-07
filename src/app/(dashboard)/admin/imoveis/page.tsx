@@ -90,9 +90,9 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   );
   const campo = "h-10 rounded-xl border border-line px-3 py-2 text-sm text-ink";
 
-  // Pendência 3 do QA-LOGIN-B v2: anúncio de dono real → o admin observador da QA não vê o "Pausar" (o servidor recusa).
+  // E477 (resíduo): o admin observador da QA não vê o "Pausar" em anúncio nenhum, de teste ou real (o servidor recusa).
   const pausaveis = lista.filter((i) => i.tipo !== "demonstracao" && i.status === "active");
-  const soLeitura = new Set(await soLeituraNaTela(pausaveis.map((i) => ({ id: i.id, alvo: { imoveis: [i.id] } }))));
+  const soLeitura = new Set(await soLeituraNaTela(pausaveis.map((i) => ({ id: i.id }))));
   return (
     <div data-testid="admin-imoveis">
       <PageTitle

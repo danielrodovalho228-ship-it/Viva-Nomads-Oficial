@@ -34,6 +34,25 @@ export interface MudancasAditivo {
   meses?: Antes<number>;
   ocupantes?: Antes<number>;
   valorMensal?: Antes<number>;
+  /** E672: o comparativo antes × depois (entrada, saída, dias exatos, total) e a diferença; gravado na proposta. */
+  comparativo?: ComparativoAditivo;
+  /** E672: por que a alteração foi pedida (texto livre, curto). */
+  motivo?: string;
+}
+
+export interface FotoDoContrato {
+  entrada: string;
+  saida: string;
+  dias: number;
+  /** Soma dos valores dos blocos válidos (aluguel; a taxa de serviço tem linha própria). */
+  total: number;
+}
+
+export interface ComparativoAditivo {
+  antes: FotoDoContrato;
+  depois: FotoDoContrato;
+  /** depois.total − antes.total: positivo = a pagar a mais; negativo = a devolver. */
+  diferenca: number;
 }
 
 export interface BlocoAtual {
@@ -117,6 +136,30 @@ export function validarProposta(c: ContratoParaAditivo, p: PropostaAditivo, hoje
   return { ok: true, valor: m };
 }
 
+/**
+ * E672: o comparativo do contrato antes e depois do aditivo, com os dias exatos. A saída é o fim gravado nos blocos (a
+ * mesma data da página do contrato, E671); os dias vão do início ao fim, inclusive (2 meses = 60 dias).
+ */
+export function comparativoDoAditivo(c: ContratoParaAditivo, m: MudancasAditivo, hojeISO: string): ComparativoAditivo {
+  const foto = (blocos: { inicio: string; fim: string; valor: number }[]): FotoDoContrato => {
+    const lista = [...blocos].sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const entrada = lista[0]?.inicio ?? "";
+    const saida = lista[lista.length - 1]?.fim ?? "";
+    const dias = entrada && saida ? Math.round((Date.parse(`${saida}T00:00:00Z`) - Date.parse(`${entrada}T00:00:00Z`)) / 86_400_000) + 1 : 0;
+    const total = Math.round(lista.reduce((s, b) => s + Number(b.valor), 0) * 100) / 100;
+    return { entrada, saida, dias, total };
+  };
+  const antes = foto(c.blocos.filter(blocoValido));
+  const { manter, novos } = blocosDepoisDoAditivo(c, m, hojeISO);
+  const depois = foto([...manter, ...novos]);
+  return { antes, depois, diferenca: Math.round((depois.total - antes.total) * 100) / 100 };
+}
+
+function textoDiferenca(d: number): string {
+  if (d === 0) return "sem diferença a pagar ou devolver";
+  return d > 0 ? `${brl(d)} a pagar a mais` : `${brl(-d)} a devolver`;
+}
+
 /** "Entrada: de 13/11/2026 para 20/11/2026 · Meses: de 3 para 4" — o texto do aditivo (antes e depois). */
 export function resumoDasMudancas(m: MudancasAditivo): string {
   const partes: string[] = [];
@@ -124,6 +167,14 @@ export function resumoDasMudancas(m: MudancasAditivo): string {
   if (m.meses) partes.push(`Meses: de ${m.meses.antes} para ${m.meses.depois}`);
   if (m.ocupantes) partes.push(`Ocupantes: de ${m.ocupantes.antes} para ${m.ocupantes.depois}`);
   if (m.valorMensal) partes.push(`Valor mensal: de ${brl(m.valorMensal.antes)} para ${brl(m.valorMensal.depois)}`);
+  const k = m.comparativo;
+  if (k) {
+    if (k.antes.saida !== k.depois.saida) partes.push(`Saída: de ${ddmmaaaa(k.antes.saida)} para ${ddmmaaaa(k.depois.saida)}`);
+    partes.push(`Dias: de ${k.antes.dias} para ${k.depois.dias}`);
+    partes.push(`Total: de ${brl(k.antes.total)} para ${brl(k.depois.total)}`);
+    partes.push(`Diferença: ${textoDiferenca(k.diferenca)}`);
+  }
+  if (m.motivo) partes.push(`Motivo: ${m.motivo}`);
   return partes.join(" · ");
 }
 
