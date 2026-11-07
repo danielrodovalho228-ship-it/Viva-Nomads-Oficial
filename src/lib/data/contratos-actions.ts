@@ -227,6 +227,8 @@ export async function contarContratosParaAssinar(): Promise<number> {
 /** Locação do INQUILINO (visão simplificada) para avaliar o proprietário. */
 export interface LocacaoView {
   id: string; // contrato_id
+  /** E680: a conta para quem a lista foi montada (o cliente só mostra a lista da conta que está nele). */
+  paraUsuario?: string;
   propertyId: string;
   propertyTitle: string;
   ownerId: string;
@@ -288,6 +290,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
     const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
+      paraUsuario: user.id,
       propertyId: String(c.property_id),
       propertyTitle: prop.title ?? "Imóvel",
       ownerId: String(prop.owner_id ?? ""),

@@ -23,7 +23,8 @@ export const AREA_PROPRIETARIO = [
   "/dashboard/garantias",
 ] as const;
 
-export const AREA_MORADOR = ["/dashboard/favoritos", "/dashboard/comparar", "/dashboard/buscas", "/dashboard/locacoes"] as const;
+/** E701: "Meus pedidos" e "Candidaturas" são só do morador (o menu do dono nem as lista): a URL decide, nunca o modo guardado. */
+export const AREA_MORADOR = ["/dashboard/favoritos", "/dashboard/comparar", "/dashboard/buscas", "/dashboard/locacoes", "/dashboard/pedidos", "/dashboard/candidaturas"] as const;
 
 /** Só vale como área de parceiro com a parceria aprovada (antes disso, é a página do convite). */
 export const AREA_PARCEIRO = ["/dashboard/parceiro"] as const;

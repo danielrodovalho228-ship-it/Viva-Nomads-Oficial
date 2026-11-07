@@ -1,3 +1,4 @@
+import { FormulaDoTotal } from "@/components/property/formula-total";
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
@@ -5,7 +6,7 @@ import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLE
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { rotuloPreco } from "@/lib/cartao-preco";
+import { notaDataCalculada, rotuloPreco } from "@/lib/cartao-preco";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -47,6 +48,8 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
   const estadiaDias = dias ? estadiaDoImovelEmDias(property, dias) : null;
   const estadia = !estadiaDias && meses > 1 ? estadiaDoImovel(property, meses) : null;
   const availableFrom = disponivelFuturo(disponivelDesde ?? property.availableFrom);
+  // E702: a data calculada (E673) diz de onde vem quando difere da do cadastro.
+  const notaData = availableFrom ? notaDataCalculada(disponivelDesde, property.availableFrom, property.minPeriodDays) : null;
 
   return (
     // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
@@ -68,15 +71,11 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
           <p className="text-sm text-ink tabular-nums" data-testid="cartao-lateral-estadia">
             {estadiaDias.rotulo}: <strong>{formatBRLExato(estadiaDias.total)}</strong> · {estadiaDias.periodo}
           </p>
-          <p className="text-xs text-muted" data-testid="cartao-lateral-estadia-conta">
-            {estadiaDias.conta} = {formatBRLExato(estadiaDias.total)}
-          </p>
+          <FormulaDoTotal conta={estadiaDias.conta} total={formatBRLExato(estadiaDias.total)} testid="cartao-lateral-estadia-conta" />
         </>
       )}
       {estadia && (
-        <p className="text-xs text-muted" data-testid="cartao-lateral-estadia-conta">
-          {estadia.conta}
-        </p>
+        <FormulaDoTotal conta={estadia.conta} testid="cartao-lateral-estadia-conta" />
       )}
       <p className="mb-4 text-xs text-muted" data-testid="cartao-nao-segura">
         {FRASE_NAO_SEGURA_DINHEIRO}: o valor vai direto ao proprietário.
@@ -146,6 +145,11 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
         <span className="h-2 w-2 rounded-full bg-sage" />
         {availableFrom ? `Disponível a partir de ${availableFrom}` : "Disponível agora"}
       </p>
+      {notaData && (
+        <p className="mt-1 text-xs text-muted" data-testid="cartao-data-calculada">
+          {notaData}
+        </p>
+      )}
 
       <p className="mt-4 flex items-start gap-2 text-xs text-muted">
         <MapPinned className="mt-1 h-3.5 w-3.5 shrink-0" />

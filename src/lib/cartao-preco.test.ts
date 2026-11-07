@@ -13,7 +13,7 @@ test("rotuloPreco: 6 casos — mensal, período, data futura, data passada, sem 
   assert.equal(um.total, 3130);
   const seis = rotuloPreco({ mensal: 3130, meses: 6, disponivelEm: "2026-11-15", hoje: HOJE });
   assert.equal(limpo(textoPreco(seis)), "R$ 3.130/mês · R$ 18.780 em 6 meses");
-  assert.equal(seis.disponivel, "Disponível a partir de 15/11");
+  assert.equal(seis.disponivel, "Disponível a partir de 15/11/2026");
   assert.equal(rotuloPreco({ mensal: 2500, meses: 3, disponivelEm: "2027-02-01", hoje: HOJE }).disponivel, "Disponível a partir de 01/02/2027");
   assert.equal(rotuloPreco({ mensal: 2500, meses: 3, disponivelEm: "2026-10-01", hoje: HOJE }).disponivel, "Disponível agora");
   assert.equal(rotuloPreco({ mensal: 2500, meses: 3 }).disponivel, null);
@@ -47,4 +47,16 @@ test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1
 
 test("E356: o rótulo diz que o preço grande é o total do mês, tudo incluído", () => {
   assert.equal(ROTULO_TOTAL_MES, "Total por mês, tudo incluído");
+});
+
+test("E702: quando a data foi calculada para a estadia mínima, o cartão diz isso; igual à do cadastro, não", async () => {
+  const { notaDataCalculada } = await import("./cartao-preco.ts");
+  assert.equal(
+    notaDataCalculada("2027-01-13", "2026-12-20", 30),
+    "Data calculada para a estadia mínima de 30 dias, olhando os períodos já ocupados.",
+  );
+  assert.equal(notaDataCalculada("2026-12-20", "2026-12-20", 30), null);
+  assert.equal(notaDataCalculada(null, "2026-12-20", 30), null);
+  assert.equal(notaDataCalculada("2027-01-13", "2026-12-20", null), "Data calculada para a estadia mínima, olhando os períodos já ocupados.");
+  assert.equal(notaDataCalculada("2027-01-13", "2026-12-20", 1), "Data calculada para a estadia mínima de 1 dia, olhando os períodos já ocupados.");
 });
