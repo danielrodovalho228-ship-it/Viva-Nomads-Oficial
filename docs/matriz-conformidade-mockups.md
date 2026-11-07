@@ -724,3 +724,18 @@ A `main` não andou desde o #3025. Rotas: `/auth`, `/auth?senha=1`, `/termos`, `
 - **404 por rota inexistente:** `/ajuda/proprietario` não é tema real (404 correto, com a página de erro da casa).
 1. **Achado:** o link do logo ("VivaNomads — página inicial") mede 32 px de altura a 390 em `/auth` e no topo do painel — abaixo de 44 px de toque. Corrigido no PR `claude-a/f53-logo-alvo` (classe `alvo-toque`, que amplia a área a 44 px em ponteiro de toque sem mexer no desenho; a versão sem link do assistente fica como está).
 - **Conformidade mockup × real:** sem diferença nas telas medidas.
+
+## Passadas 54, 55 e 56 (07/11; modo demonstração local, logado como o usuário de exemplo; 390 toque e 1280) — painel
+
+A `main` só ganhou ajustes de spec do laboratório desde a passada 53 (#3173); nenhuma tela mudou. Rolagem até o fim de cada página antes de medir; imagens, estouro, texto cortado, elementos além da borda e alvos de toque.
+
+**Passada 54 — telas comuns do painel** (`/dashboard`, `/buscas`, `/candidaturas`, `/conta` → `/conta/perfil`, `/contratos`, `/favoritos`, `/locacoes`, `/mensagens`, `/pedidos`, `/propostas`, `/recibos`, `/visitas`): 0 imagens quebradas (o Início tem 20, todas carregadas), um h1 por página, sem rolagem lateral, nada cortado. Conforme; **sem defeito**. (A 1280, "Alertas ativos" mede 36 px, só com mouse.)
+
+**Passada 55 — telas do dono** (`/dashboard/imoveis`, `/leads`, `/ganhos`, `/garantias`, `/orcamentos`, `/servicos`, `/solicitacoes`, `/pedidos-cidade`): 0 imagens quebradas, sem estouro.
+1. **Achado:** o selo "Ativo/Pausado" que abre o menu de pausa em `/dashboard/imoveis` mede 24 px a 390.
+2. **Achado:** as abas de `/dashboard/pedidos-cidade` medem 36 px a 390.
+→ Os dois corrigidos no #3176 (`alvo-toque`).
+
+**Passada 56 — ferramentas e conta** (`/dashboard/ferramentas`, `/notificacoes`, `/respostas-rapidas`, `/conta/perfil`, `/conta/seguranca`, `/agenda`): 0 imagens quebradas, sem estouro, nada cortado, alvos ok. **Sem defeito.** (`/dashboard/niveis` e `/dashboard/financeiro` não existem: 404 com a página de erro da casa.)
+
+**CI dos rascunhos (07/11):** #3065 e #3084 estavam com `verify` vermelho por testes antigos (e531 e tem-completo) que liam o texto de antes das mudanças; #2956 com `lab-critico` vermelho por t677 (esperava um interruptor que já tinha sumido) e t680 (contava 4 cartões de ruído, são 4 + "Nenhum destes"). Os três corrigidos nos próprios PRs. Demais rascunhos verdes.
