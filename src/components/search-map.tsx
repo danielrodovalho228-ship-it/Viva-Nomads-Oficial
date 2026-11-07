@@ -14,6 +14,7 @@ import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { usePreviaNoHover } from "@/components/busca/previa-hover";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 import { afastarPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
+import { obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -583,7 +584,9 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
           const pt = map.latLngToContainerPoint(marker.getLatLng());
           return { id, x: pt.x, y: pt.y, el };
         }),
-        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
+        // E704: o nome da cidade vem no tile; o ponto dela é um obstáculo fixo (o pino de preço não o cobre).
+        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight })
       );
     reorganizar();
     reorganizarRef.current = reorganizar;
