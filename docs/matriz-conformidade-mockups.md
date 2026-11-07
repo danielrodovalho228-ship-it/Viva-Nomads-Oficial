@@ -690,3 +690,11 @@ Rotas: `/parceiros?categoria=fotografia`, `/dashboard/parceiro`, `/dashboard/imo
 - **Alvos de toque:** os botões −/+ dos contadores do assistente medem 36 px e as setas de foto 32 px, mas ambos têm a classe `alvo-toque` (área de toque ampliada, E442) ou só existem com mouse; o link "Ver os passos do credenciamento" (20 px) é link de texto no corpo. Nenhum defeito novo.
 - **Estado dos rascunhos (07/11):** todos os PRs da Pista A (#2956, #3050, #3051, #3052, #3065, #3066, #3084, #3086, #3087, #3096, #3114, #3117, #3079, #3088 e este) sem conflito com a `main`.
 - **E662:** continua bloqueado — não há coluna de instrução de saída na `main` (busca por `instrucao_saida` e variantes em `supabase/` e `src/`: nada). Ver `docs/e662-instrucao-unica-de-saida.md` (#3088).
+
+## Passada 50 (07/11; modo demonstração, 768 × 1024 e 1920 × 1080) — tamanhos ainda não medidos nesta volta
+
+A `main` não andou desde a passada 49 (#3025). Rotas públicas principais: `/`, `/buscar`, `/imoveis/ube-001`, `/cidades`, `/precos`, `/parceiros`, `/como-funciona`, `/ajuda`, `/empresas`, `/para-proprietarios`, rolando a página inteira antes de medir.
+- **Imagens, h1 e estouro:** 0 imagens quebradas; um h1 por página; scrollWidth = largura da janela nas 20 medições.
+- **Elementos além da borda:** só decoração cortada por ancestral `overflow-hidden` (fundo desfocado do herói com `scale-110` em `/` e `/precos`; ícone SVG em `/imoveis/ube-001` a 768). Nada visível fora da janela.
+- **Fixos:** botão "Fale com a Viva" (180 × 48 no computador, 48 × 48 no anúncio a 768) e o atalho de pular ao conteúdo; a barra fixa do anúncio a 768 (`vn-barra-fixa`, 159 px) é a mesma do celular, de propósito (abaixo do computador). Nada fixo na `/buscar` e na `/ajuda`.
+- **/buscar a 1920:** painel do mapa termina dentro da margem só com o #3066; na `main` ainda cola na borda (E659, em rascunho aguardando QA). Nenhum defeito novo.
