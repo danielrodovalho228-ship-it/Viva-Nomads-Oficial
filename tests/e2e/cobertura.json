@@ -151,7 +151,8 @@
         "t339-varredura-bloco16",
         "t419-varredura-bloco36",
         "t615-varredura-bloco54",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -566,7 +567,8 @@
         "t853-busca-conta-teste",
         "t1402-varredura-bloco480",
         "t1405-varredura-bloco483",
-        "t1423-varredura-bloco497"
+        "t1423-varredura-bloco497",
+        "t1426-varredura-bloco500"
       ]
     },
     "/cidades": {
@@ -595,7 +597,8 @@
         "t557-varredura-bloco42",
         "t591-varredura-bloco48",
         "t1401-e446-contagem-da-cidade",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -641,7 +644,8 @@
         "t48-varredura",
         "t311-marco-principal-unico",
         "t408-varredura-bloco27",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/conferir": {
@@ -2017,7 +2021,8 @@
         "t557-varredura-bloco42",
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/proprietario/[id]": {
@@ -2086,7 +2091,8 @@
         "t438-vocab-a",
         "t543-e166-fundo-clean-publico",
         "t557-varredura-bloco42",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/simulacao": {
@@ -2116,7 +2122,8 @@
         "t598-e84-central-de-ajuda",
         "t607-varredura-bloco51",
         "t661-varredura-bloco62",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/tributario": {
@@ -2214,7 +2221,8 @@
         "t419-varredura-bloco36",
         "t537-e165-admin-contrato-assinaturas",
         "t589-varredura-bloco47",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/admin/solicitacoes": {
@@ -2239,7 +2247,8 @@
         "t48-varredura",
         "t297-varredura-logada-bloco3",
         "t388-varredura-bloco23",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/admin/eventos": {
@@ -2326,7 +2335,8 @@
         "t368-varredura-bloco20",
         "t408-varredura-bloco27",
         "t560-varredura-bloco44",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1426-varredura-bloco500"
       ]
     },
     "/admin/contratos/[id]": {
