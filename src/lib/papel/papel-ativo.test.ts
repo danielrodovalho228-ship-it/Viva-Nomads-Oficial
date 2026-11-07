@@ -103,7 +103,7 @@ test("fonte única: selo, barra, Conta, login e troca leem/gravam profiles.papel
   assert.match(ler("src/lib/use-papel-barra.ts"), /useAuthStore\(\(s\) => s\.parceiroAtivo\)/);
   assert.match(ler("src/components/auth-provider.tsx"), /select\("full_name, role, preferred_mode, papel_ativo(, is_teste)?"\)/);
   const acoes = ler("src/lib/data/papel-actions.ts");
-  assert.match(acoes, /update\(modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \}\)/);
+  assert.match(acoes, /const base = modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \};/);
   assert.match(acoes, /papel === "parceiro" && !\(await ehParceiroAprovado/);
   assert.match(ler("src/lib/data/mode-actions.ts"), /papel_ativo: mode === "owner" \? "proprietario" : "morador"/);
   // E268-B: o caminho único de gravar a intenção (a ação, a Conta e o 1º rascunho de anúncio).
