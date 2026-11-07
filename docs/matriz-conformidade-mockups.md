@@ -716,3 +716,11 @@ A `main` não andou desde o #3025, então as telas alteradas pelos merges mais r
   3. Digitar 11 dígitos no CNPJ (tentativa de CPF) não estoura a página nem corta o texto (E651 recusa no passo; o texto da recusa vem do servidor e precisa de conta real — QA).
 - **Imagens, estouro, fixos:** 0 imagens quebradas; scrollWidth = largura da janela nas 4 medições; nada fixo sobre conteúdo.
 - **Defeitos novos:** nenhum — nada a corrigir nesta passada. Telas dos merges E414 (degradação da medição de internet) e E477 (observadora sem escrita no admin) dependem de dado real/sessão de admin: ficam para o QA.
+
+## Passada 53 (07/11; modo demonstração, servido da `main` no #3025; 390 toque e 1280) — telas de entrada, jurídicas, 404 e fluxos públicos curtos
+
+A `main` não andou desde o #3025. Rotas: `/auth`, `/auth?senha=1`, `/termos`, `/privacidade` (congeladas: só medidas, sem mexer), `/ajuda/morador`, `/pedidos/novo`, `/comparar`, `/parceiros/ativar`, `/excluir-conta`, e os dois 404 (`/rota-que-nao-existe`, `/imoveis/id-que-nao-existe`).
+- **Imagens, estouro, corte:** 0 imagens quebradas nas 24 medições (os 404 têm 7 a 9 imagens de sugestão, todas carregadas); um h1 por página; scrollWidth = largura da janela; nenhum texto cortado; nada fixo sobre conteúdo; cartões de sugestão do 404 todos com foto.
+- **404 por rota inexistente:** `/ajuda/proprietario` não é tema real (404 correto, com a página de erro da casa).
+1. **Achado:** o link do logo ("VivaNomads — página inicial") mede 32 px de altura a 390 em `/auth` e no topo do painel — abaixo de 44 px de toque. Corrigido no PR `claude-a/f53-logo-alvo` (classe `alvo-toque`, que amplia a área a 44 px em ponteiro de toque sem mexer no desenho; a versão sem link do assistente fica como está).
+- **Conformidade mockup × real:** sem diferença nas telas medidas.
