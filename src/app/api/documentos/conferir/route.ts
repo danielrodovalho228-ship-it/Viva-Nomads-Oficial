@@ -73,7 +73,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Muitas conferências hoje. Tente novamente amanhã." }, { status: 429 });
   }
   if (imovelId) {
-    const { data: prop } = await supabase.from("properties").select("id").eq("id", imovelId).eq("owner_id", user.id).maybeSingle();
+    const { data: prop, error: erroProp } = await supabase.from("properties").select("id").eq("id", imovelId).eq("owner_id", user.id).maybeSingle();
+    if (erroProp) return NextResponse.json({ error: "Não foi possível ler o imóvel agora. Tente de novo." }, { status: 503 });
     if (!prop) return NextResponse.json({ error: "Imóvel não encontrado." }, { status: 404 });
   }
 
