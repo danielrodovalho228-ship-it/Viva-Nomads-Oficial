@@ -1811,7 +1811,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1392-e673-disponivel-a-partir"
       ]
     },
     "/modelodenegocio": {
