@@ -1763,7 +1763,9 @@ export async function requestLead(
       const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
       motivoLead = escolhido.ok ? escolhido.valor : null;
       if (!motivoLead) {
-        const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+        const { data: perfil, error: erroPerfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+        // Leitura falha não vira "sem motivo": a candidatura seguiria sem o motivo e o dono veria "não informado" por erro nosso.
+        if (erroPerfil) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
         const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
         motivoLead = doPerfil.ok ? doPerfil.valor : null;
       }
