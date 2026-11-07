@@ -22,7 +22,12 @@ export type TipoAutomacao =
   | "parceiro_conclusao_pendente"
   // Página da estadia (Prompt 32)
   | "estadia_instrucoes_liberadas"
-  | "estadia_instrucoes_pendentes";
+  | "estadia_instrucoes_pendentes"
+  // Jornada de mensagens da estadia (E663)
+  | "jornada_confirmacao"
+  | "jornada_chegada"
+  | "jornada_semana_saida"
+  | "jornada_meio_estadia";
 
 const DIA_MS = 86_400_000;
 
@@ -102,6 +107,12 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
       return `${imovel} Entrada em ${ctx.fim ? dataBr(ctx.fim) : "7 dias"}. As instruções de chegada estão na página da estadia.`.trim();
     case "estadia_instrucoes_pendentes":
       return `${imovel} Entrada do morador em ${ctx.fim ? dataBr(ctx.fim) : "10 dias"}. Preencha as instruções de chegada: o morador recebe 7 dias antes.`.trim();
+    // E663: o texto da jornada vem pronto de estadia/jornada-mensagens (corpoDaJornada); aqui só o imóvel, se faltar.
+    case "jornada_confirmacao":
+    case "jornada_chegada":
+    case "jornada_semana_saida":
+    case "jornada_meio_estadia":
+      return imovel;
   }
 }
 
