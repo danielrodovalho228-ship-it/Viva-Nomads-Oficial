@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, CHAVE_ANON, criteriosDaAvaliacao, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
@@ -126,8 +126,10 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
       await sb.auth.signInWithPassword({ email, password: senha });
       return sb;
     };
-    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
-    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    const { error: eAv1 } = await (await cliente(ana.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
+    expect(eAv1, "a avaliação semeada entra (L-105: critérios do E679)").toBeNull();
+    const { error: eAv2 } = await (await cliente(dono.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    expect(eAv2, "a avaliação semeada entra (L-105: critérios do E679)").toBeNull();
     const visitante = await browser.newPage();
     await ligarChave(visitante);
     await expect
