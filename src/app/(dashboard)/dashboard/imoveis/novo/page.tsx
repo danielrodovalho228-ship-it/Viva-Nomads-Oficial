@@ -113,6 +113,7 @@ import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
 import { MatriculaNoInicio } from "./matricula-no-inicio";
+import { TravasDePublicacao } from "./travas-de-publicacao";
 import { camposDaMatriculaNoInicio, linhaDocumentoDoInicio, resumoDoPreenchimento } from "@/lib/documento/matricula-no-inicio";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
@@ -2064,6 +2065,7 @@ export default function NewPropertyPage() {
           <div className="mt-6">
             {step === ETAPA.tipo && (
               <div className="space-y-6">
+                <TravasDePublicacao documento={docEstado} />
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
                 {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} onComecePelaMatricula={() => setMatriculaInicioAberta(true)} />}
                 {matriculaInicioAberta && (
