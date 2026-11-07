@@ -372,3 +372,13 @@ Bloco 500 (t1426, #3267, grupo do 483) **verde** (run 42401538290), a 390 e 1280
 ## Resultado: t1427–t1430 e bloco 501 — todos verdes
 
 Runs concluídos, **todos verdes**: t1427/E681 (#3269, 42403976707), t1428/E686 (#3270, 42404055257), t1429/E691 (#3271, 42404178157), t1430/E674 resíduo (#3272, 42404235764) e bloco 501 (t1431, #3273, grupo do 484, 42404299505). Como as specs rodam sobre as branches dos drafts, os quatro verdes são a prova de lab de que cada draft faz o que a spec descreve; o #3245, #3256, #3253 e #3263 seguem em draft aguardando QA/merge. Sem merge e sem fechar PR. Defeitos de produto novos: nenhum; L-104 segue aberto; próximo livre: L-105. Pendentes: spec de tela dos merges E679 (0322–0324) e E682 (0325), e a parte E685/visão do avaliador do E691. Próximo bloco da fila: 502 (grupo do 485).
+
+## E679 (tela do formulário) e bloco 502 (main `9e08c86c6`)
+
+**Foto.** Main em `9e08c86c6` (só o meu bloco 501 entrou desde `6867b211e`; run da main na fila). Sem merge de produto novo além de E679 (#3231/#3233/#3234) e E682 (#3252), já tratados abaixo.
+
+**t1432 / E679 (#3278).** Spec de tela do formulário de avaliação do morador para o proprietário (critérios fixos do par `morador_avalia_dono`, etiquetas rápidas limitadas a 5, "Recomendaria este imóvel?"): o envio só habilita com nota + três critérios + "recomendaria" (caminho negativo: só a nota deixa o botão desabilitado). Locação `concluido` com `encerrado_em` de ontem (janela de 14 dias de `podeAvaliarLocacao`); não envia a avaliação. 390 e 1280 px. Run em andamento.
+
+**Ainda sem spec de tela (item pulado):** avaliações do parceiro (0323: `servicos/pedidos/[id]/pedido-tela.tsx`, `/dashboard/parceiro/avaliacao`), conduta cega do avaliador (0324) e termos do avaliador (E682, 0325). Cada uma exige semear parceiro/avaliador credenciado/pedido; entram nas próximas rodadas, uma por vez. Regras puras do E679 já têm teste unitário.
+
+**Bloco 502** (t1433, grupo do 485: contrato, imóvel, estadia, locação, sócios, autenticação; inclui a estadia com o calendário E681 e a saída E662) aberto no #3279. Defeitos de produto novos: nenhum. L-104 segue aberto; próximo livre: L-105.
