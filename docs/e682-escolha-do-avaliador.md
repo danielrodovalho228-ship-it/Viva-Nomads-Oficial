@@ -33,3 +33,15 @@ A categoria **Mudança** já é própria: `CATEGORIAS_PARCEIRO` tem "mudanca"; o
 5. **Chave desligada**: teste de guarda prova que o bloco retorna `null` antes de qualquer leitura (conta real) e que as ações do dono recusam.
 
 Teste: `src/lib/vistoria/e682-completar-e648.test.ts`.
+
+## Prova de renderização com a chave desligada (refino 2)
+
+`src/components/vistoria/bloco-avaliacao-dono.render.test.ts` carrega o `.tsx` REAL do bloco no `node --test` e o renderiza com `react-dom/server`. Só as bordas são dublês (`render-harness/loader.mjs`): Supabase (banco falso em memória), a chave `vistoriaAtiva()` (valor posto pelo teste, nunca no código do produto), as ações e a UI de terceiros. Nada de produção, nada ao vivo; `AUTOMACOES_ATIVO` e `PRAZO_DONO_ACEITAR_HORAS` (72 h, a confirmar) intactos.
+
+| Caso | Resultado provado |
+| --- | --- |
+| Chave off + conta real | O bloco devolve `null` (HTML vazio) e NENHUMA leitura de avaliador acontece (nem `avaliadores_credenciamento`, nem `avaliadores_publicos`, nem a lista de sugeridos): nome e número do avaliador não vazam. |
+| Chave off + conta de teste | Só leitura (faixa "Conta de teste"), sem lista de avaliadores, sem botão Escolher, sem pedir a lista. |
+| Chave on (controle) | A lista aparece com "conduta 4,5 · 7 avaliações feitas" e o botão Escolher: o teste não passa por estar vazio. |
+
+Verificado por mutação: trocando `if (!visivel) return null;` por `if (false) ...`, o caso 1 fica vermelho (revertido).
