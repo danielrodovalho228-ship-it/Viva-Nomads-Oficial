@@ -420,7 +420,9 @@ export async function pedirCodigoAditivo(aditivoId: string): Promise<Res> {
   const { ctx, a } = r;
   if (a.status !== "aceito") return { ok: false, erro: "Este aditivo não está aguardando assinatura." };
   if (!ctx.email) return { ok: false, erro: "A conta precisa de um e-mail para receber o código." };
-  const { data: ja } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
+  const { data: ja, error: erroJa } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
+  // Leitura falha não vira "ainda não assinou": quem já assinou não recebe outro código.
+  if (erroJa) return { ok: false, erro: "Não foi possível gerar o código. Tente de novo." };
   if (ja) return { ok: false, erro: "Você já assinou este aditivo." };
   const agora = Date.now();
   const { data: atual, error: erroAtual } = await ctx.admin.from("contrato_aditivo_codigos").select("enviado_em").eq("aditivo_id", a.id).eq("user_id", ctx.userId).maybeSingle();
@@ -454,7 +456,9 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
   if (a.status !== "aceito" || !a.hash_documento) return { ok: false, erro: "Este aditivo não está aguardando assinatura." };
   if (!aceite) return { ok: false, erro: "Marque que leu e concorda com o aditivo." };
   const chave = { aditivo_id: a.id, user_id: ctx.userId };
-  const { data: linha } = await ctx.admin.from("contrato_aditivo_codigos").select("codigo_hash, expira_em, falhas, usado_em, enviado_em").match(chave).maybeSingle();
+  const { data: linha, error: erroLinha } = await ctx.admin.from("contrato_aditivo_codigos").select("codigo_hash, expira_em, falhas, usado_em, enviado_em").match(chave).maybeSingle();
+  // Leitura falha não vira "Peça o código por e-mail": o código existe, só não deu para ler agora.
+  if (erroLinha) return { ok: false, erro: "Não foi possível conferir o código agora. Tente de novo." };
   const lc = (linha as LinhaCodigo | null) ?? null;
   const conf = conferirCodigo(lc, codigo, ctx.userId, `aditivo:${a.id}`, Date.now());
   if (!conf.ok) {
