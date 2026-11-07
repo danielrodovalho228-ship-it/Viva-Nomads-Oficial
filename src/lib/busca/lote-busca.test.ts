@@ -65,9 +65,10 @@ test("#544b148a: a home conta os atalhos pelo total do mês", () => {
   assert.match(ler("components/home/atalhos-categoria.tsx"), /imoveis\.map\(\(p\) => comTotalMes\(p\)\)/);
 });
 
-test("#544b148a: respiro no fim da lista com itens no comparador", () => {
+test("#544b148a (E529): sem respiro de rodapé — a barra do comparador é faixa da página, não flutua sobre os cartões", () => {
   const cli = ler("app/(public)/buscar/search-client.tsx");
-  assert.match(cli, /comparar\.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro"/);
+  assert.doesNotMatch(cli, /comparar-respiro/);
+  assert.match(cli, /<BarraComparar ids=\{comparar\}/);
 });
 
 test("#544b148a D1: pino = cartão para todos os imóveis de exemplo (inclui os 4 casos medidos)", async () => {
