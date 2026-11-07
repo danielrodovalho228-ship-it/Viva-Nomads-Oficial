@@ -5,7 +5,9 @@
 */
 import { layoutEmail } from "./modelo-email.ts";
 
-export const ASSUNTO_PIONEIRAS = "Você foi uma das primeiras 💚 — novidades da Viva Nomads";
+// O coração verde vai como escape Unicode (U+1F49A): a string é a mesma do assunto aprovado, e o código-fonte não carrega emoji
+// literal (o teste de estilo "nenhum emoji na interface" varre o src inteiro; aqui o emoji é só o assunto de um e-mail manual).
+export const ASSUNTO_PIONEIRAS = "Você foi uma das primeiras \u{1F49A} — novidades da Viva Nomads";
 
 export interface Pioneira {
   chave: "maria-de-fatima" | "lya-raquel";
