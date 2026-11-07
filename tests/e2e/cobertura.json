@@ -625,7 +625,8 @@
         "t23-pacote-seguranca",
         "t260-documentos-registro",
         "t306-varredura-bloco7",
-        "t311-marco-principal-unico"
+        "t311-marco-principal-unico",
+        "t1372-varredura-bloco461"
       ]
     },
     "/conferir/[codigo]": {
@@ -639,7 +640,8 @@
         "t23-pacote-seguranca",
         "t260-documentos-registro",
         "t311-marco-principal-unico",
-        "t312-varredura-bloco9"
+        "t312-varredura-bloco9",
+        "t1372-varredura-bloco461"
       ]
     },
     "/dashboard": {
@@ -1422,7 +1424,8 @@
         "t329-varredura-bloco11",
         "t416-varredura-bloco33",
         "t559-varredura-bloco43",
-        "t686-varredura-bloco72"
+        "t686-varredura-bloco72",
+        "t1372-varredura-bloco461"
       ]
     },
     "/dashboard/pedidos-cidade": {
@@ -2345,7 +2348,8 @@
         "t463-admin3-sistema",
         "t419-varredura-bloco36",
         "t596-qa-login-direto",
-        "t615-varredura-bloco54"
+        "t615-varredura-bloco54",
+        "t1372-varredura-bloco461"
       ]
     },
     "/admin/retencao": {
