@@ -447,3 +447,11 @@ PR do ajuste do t323: `claude-c/l106-t323-seguranca` (run em andamento). Sem mer
 ## t323 verde (L-105 + L-106 anotado)
 
 PR #3306 (`claude-c/l106-t323-seguranca`) **verde** (run 42412032783): com a lista de confiança lida em `/dashboard/conta/seguranca` e as avaliações semeadas com os critérios do E679, o t323 inteiro passa no lab-crítico (os cinco testes do arquivo, incluindo o selo do LinkedIn no card de avaliação). L-106 (volta do LinkedIn em Privacidade) segue **aberto no produto**; o t323 anota `L-106` enquanto as rotas redirecionarem para Privacidade. Pendentes do L-105: t28, t362, t93, t91, t351 e t369 (semeiam `enviada` sem critérios). Próximo livre: **L-107**. Sem merge e sem fechar PR.
+
+## L-105 fechado no lab (seis specs), L-106 aposentado e bloco 510 (main `713f8291b`)
+
+**Correção de numeração.** Ao ajustar o t351 vi que ele já registra a volta do LinkedIn em Privacidade como **L-56** (Pista A, 24/10; `test.info().annotations.push({ type: "L-56" ... })`). O "L-106" que abri na rodada anterior era **duplicata do L-56**: o defeito de produto continua o mesmo (rotas `/api/conta/linkedin/conectar` e `/retorno` e o cron `linkedin_vencendo` ainda voltam para `/dashboard/conta/privacidade`, onde a lista de confiança, a linha do LinkedIn e o `linkedin-aviso` não existem desde o E66). O t323 passa a anotar `L-56`. **L-106 volta a ser número livre.**
+
+**L-105 (lab), as seis specs pendentes, um commit por spec (PR #3309, `claude-c/l105-avaliacoes-specs`):** t93, t91, t362, t369, t351 e t28 agora semeiam a avaliação com `...criteriosDaAvaliacao(papel)`. O helper foi para `tests/e2e/fixtures/avaliacao-criterios.ts` (sem dependência de ambiente: t93, t91 e t28 não importam o `laboratorio.ts`), e `laboratorio.ts` só o reexporta. No t28 o helper `nova()` e o insert do proprietário levam os critérios; os casos de recusa (não-parte, duplicada, status publicada, fora do prazo) seguem recusados pelos próprios motivos. O lab-crítico roda as specs alteradas e valida as seis; resultado abaixo quando voltar.
+
+**Bloco 510** (t1443, grupo do 493: conta, parceiro, orçamento, pedido de serviço do morador e três papéis) aberto no PR do bloco. Sem merge de produto novo na main desde `713f8291b`. Sem merge e sem fechar PR. Defeitos de produto novos: nenhum; L-104 e L-56 abertos; próximo livre: **L-106**.
