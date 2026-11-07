@@ -466,6 +466,20 @@ export async function assinarContrato(input: {
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 
   const jaAssinou = visao.papel === "inquilino" ? c.assinado_inquilino_em : c.assinado_proprietario_em;
+  // E675: quem já assinou e envia de novo (toque duplo, reenvio depois de a resposta demorar) recebe SUCESSO: a assinatura
+  // existe. Antes recebia "Você já assinou" como erro, e a tela parecia ter falhado. Nada é gravado nem gasto de novo.
+  if (jaAssinou && visao.papel && c.status === "ativo") {
+    const nomesJa = await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id);
+    const outraJa = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
+    return {
+      ok: true,
+      aviso: avisoAssinatura(visao.papel, {
+        proprietario: { nome: nomesJa.proprietario, em: c.assinado_proprietario_em },
+        inquilino: { nome: nomesJa.inquilino, em: c.assinado_inquilino_em },
+      }),
+      ambos: outraJa,
+    };
+  }
   const motivo = motivoNaoPodeAssinar({
     status: c.status,
     papel: visao.papel,
@@ -478,12 +492,14 @@ export async function assinarContrato(input: {
   if (faltam) return { ok: false, error: faltam };
 
   // Confirmação de identidade NO SERVIDOR: código de e-mail de uso único, com validade e limite de falhas.
-  const { data: linhaCodigo } = await admin
+  const { data: linhaCodigo, error: erroCodigo } = await admin
     .from("contrato_assinatura_codigos")
     .select("codigo_hash, expira_em, falhas, usado_em, enviado_em")
     .eq("contrato_id", c.id)
     .eq("user_id", user.id)
     .maybeSingle();
+  // E675: leitura falha não vira "Peça o código por e-mail" (o código existe; só não deu para ler agora).
+  if (erroCodigo) return { ok: false, error: "Não foi possível conferir o código agora. Tente de novo." };
   const lc = (linhaCodigo as LinhaCodigo | null) ?? null;
   const conf = conferirCodigo(lc, input.codigo, user.id, c.id, Date.now());
   if (!conf.ok) {
