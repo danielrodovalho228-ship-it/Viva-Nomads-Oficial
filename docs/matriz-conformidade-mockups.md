@@ -870,3 +870,12 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Observações (não são defeito de tela):** `/dashboard/assinatura` e `/dashboard/parceiro/avaliacao` caem no Início do painel no demo (portão por papel); `/dashboard/avaliacoes` e `/dashboard/conta/avaliacoes` pedem sessão real ("Entre ou crie sua conta") — ficam para o laboratório, junto da duplicação E85 (E679).
 - **E679 visual:** segue bloqueado — verificado de novo: nenhum `avaliacoes-*.webp` nem `mockups/avaliacoes/` na `main` nem em branch remoto. Nada foi construído.
 - **CI e conflitos nesta passada:** #3245, #3250, #3251, #3256 e #3259 com verify, lab-critico, e2e e prévia verdes; sem conflito com a `main`.
+
+## Passada 73 (07/11; modo demonstração local, `main` em `713f8291b`; 390 e 1280) — guarda permanente após E649/E661/E704
+
+- **Páginas:** todas as rotas públicas e as do painel logado das passadas 70 a 72, agora com E679 (painel de avaliações), E706 e E666 já na fila de PRs.
+- **Critérios:** imagem quebrada ou com erro HTTP, imagem sem `alt`, elemento fixo cobrindo título, estouro horizontal.
+- **Resultado:** 0 imagens quebradas, 0 estouro lateral, 0 elemento fixo sobreposto. Só `/sobre` e `/blog` respondem 404 — rotas que não existem no produto, não são defeito. Achados novos: nenhum.
+- **E649:** nenhuma superfície oferece CPF ao parceiro (só o rótulo interno "CPF/CNPJ" da fila admin, fora do pedido).
+- **E704:** o mecanismo (Mapbox) não é provável aqui, pois os tiles do mapa não carregam neste ambiente; a prova visual fica para o QA.
+- **CI e conflitos:** PRs abertos da Pista A (pilha E679, #3291, #3301, #3305, #3250, #3256) sem conflito com a `main`; #3291 e #3305 com 4/4 verificações verdes.
