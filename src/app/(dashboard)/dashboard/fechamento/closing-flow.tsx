@@ -116,7 +116,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Derivações do prazo (dinâmicas). Nomes espelham os antigos p/ o JSX seguir.
   // E562 (reprova 05/11): com proposta aceita, o prazo são os DIAS dela (o contrato no servidor já é em dias); a tela
   // mostrava "2 meses" para uma proposta de 43 dias. Sem proposta, os meses do Fechamento, como antes.
-  const DIAS_ACORDO = ACORDO?.termos?.dias && ACORDO.termos.dias > 0 ? ACORDO.termos.dias : null;
+  // E655: sem proposta, a janela EXATA da candidatura (45 dias, não 2 meses = 60) vale enquanto o dono não escolher outros
+  // meses de propósito; o servidor confere os dias contra a candidatura.
+  const DIAS_CANDIDATURA = !ACORDO && ctx.diasSugerido && prazoMeses === Math.max(1, Math.ceil(ctx.diasSugerido / 30)) ? ctx.diasSugerido : null;
+  const DIAS_ACORDO = ACORDO?.termos?.dias && ACORDO.termos.dias > 0 ? ACORDO.termos.dias : DIAS_CANDIDATURA;
   const STAY_MESES = prazoMeses;
   const STAY_DAYS = DIAS_ACORDO ?? prazoMeses * 30;
   const PRAZO_TEXTO = DIAS_ACORDO ? `${DIAS_ACORDO} dias (${periodoPorExtenso(DIAS_ACORDO)})` : `${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"}`;
@@ -289,6 +292,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         body: JSON.stringify({
           leadId: ctx.leadId,
           termMonths: prazoMeses,
+          ...(DIAS_CANDIDATURA ? { termDays: DIAS_CANDIDATURA } : {}),
           guarantee: selectedGarantia?.nome ?? "",
           costSplit: split,
         }),
@@ -317,6 +321,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         leadId: ctx.leadId,
         faixa: FAIXA,
         prazoTotalMeses: prazoMeses,
+        ...(DIAS_CANDIDATURA ? { prazoTotalDias: DIAS_CANDIDATURA } : {}),
         tamanhoBlocoMeses: TAMANHO_BLOCO,
         qtdOcupantes: qtdOcupantes,
         capacidadeSnapshot: CAPACIDADE,

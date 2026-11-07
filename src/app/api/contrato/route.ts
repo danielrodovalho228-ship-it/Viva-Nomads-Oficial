@@ -8,7 +8,8 @@ import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
 import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA } from "@/lib/data/fechamento-servidor";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
-import { prazoDoContratoEmDias } from "@/lib/contrato-prazo-dias";
+import { prazoDoContratoEmDias, diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
+import { diasValidos } from "@/lib/estadia-em-dias";
 
 /**
  * Contrato no ZapSign. A5: recebe o id da candidatura aceita + escolhas do
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     leadId?: unknown;
     termMonths?: unknown;
+    termDays?: unknown;
     guarantee?: unknown;
     costSplit?: unknown;
   };
@@ -50,7 +52,14 @@ export async function POST(request: Request) {
   // taxa; sem proposta, os meses do Fechamento × 30. Falha de leitura não vira "sem proposta" (sairia com outro prazo).
   const acordada = admin ? await propostaAcordadaDoLead(admin, f.leadId).catch(() => "falhou" as const) : null;
   if (acordada === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
-  const periodo = prazoDoContratoEmDias({ diasAcordados: acordada ? acordada.dias : null, mesesDoFechamento: prazo });
+  // E655: sem proposta, a janela exata da candidatura (conferida aqui contra a candidatura) vale em dias.
+  let diasJanela: number | null = null;
+  if (!acordada && admin && body.termDays != null) {
+    const { data: janela, error: erroJanela } = await admin.from("leads").select("inicio_desejado, fim_desejado").eq("id", f.leadId).maybeSingle();
+    if (erroJanela) return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+    diasJanela = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: Number(body.termDays), valido: (d) => diasValidos(d) });
+  }
+  const periodo = prazoDoContratoEmDias({ diasAcordados: acordada ? acordada.dias : diasJanela, mesesDoFechamento: prazo });
   // Achado 82: sem ler a reserva, não decide (nem "em andamento" nem gerar de novo).
   const reserva = await lerReservaFechamento(f.leadId, "contrato").catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
