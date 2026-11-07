@@ -338,6 +338,10 @@ input.foco-na-barra:focus-visible {
 .app-only {
   display: none !important;
 }
+/* E678: no modo app o AppHeader (48 px) é preso no topo — a rolagem programática (foco, âncora) para abaixo dele. */
+html[data-app] {
+  scroll-padding-top: 5rem;
+}
 html[data-app] .web-only {
   display: none !important;
 }
