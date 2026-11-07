@@ -13,7 +13,20 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 434 | t1330 | #3076 | 417 (t1312) | verde, run 42326724882 |
 | 435 | t1333 | #3080 | 418 (t1313) | verde, run 42327937113 |
 | 436 | t1336 | #3091 | 419 (t1314) | verde, run 42330829683 |
-| 437 | t1338 | #3094 | 420 (t1315) | em andamento |
+| 437 | t1338 | #3094 | 420 (t1315) | verde, run 42332827229 |
+| 438 | t1339 | #3102 | 421 (t1316) | verde, run 42334015848 |
+| 439 | t1342 | #3110 | 422 (t1317) | verde, run 42335446406 |
+| 440 | t1346 | #3115 | 423 (t1318), admin com id | verde, run 42336442969 |
+| 441 | t1347 | #3116 | 424 (t1319), compartilhadas sem id | verde, run 42336504771 |
+| 442 | t1348 | #3118 | 425 (t1320) | verde, run 42337566620 |
+| 443 | t1352 | #3126 | 426 (t1321) | verde, run 42338943386 |
+| 444 | t1353 | #3130 | 427 (t1322) | verde, run 42339536862 |
+| 445 | t1354 | #3131 | 428 (t1323) | verde, run 42340010694 |
+| 446 | t1355 | #3136 | 429 (t1325) | verde, run 42341800370 |
+| 447 | t1356 | #3137 | 430 (t1326) | verde, run 42343316653 |
+| 448 | t1359 | #3140 | 431 (t1327) | verde, run 42344128965 |
+| 449 | t1360 | #3141 | 432 (t1328) | verde, run 42345926425 |
+| 450 | t1361 | #3142 | 433 (t1329) | verde, run 42347366048 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
@@ -35,3 +48,21 @@ Fora de escopo de tela, cobertos só por teste unitário do produto: E653 F2/F3 
 - Decidir #2949 (régua de requisição cancelada) e um PR só com o commit `e1ef8e805` (lat/lng da massa).
 - Remover o `test.fail` da t1285 quando #2970/#2971 forem para a `main`.
 - Produto aberto que toca telas já cobertas: #3083 (data de reenvio da candidatura, tela da t1331), #3084 (E661) e #3085 (E660). Reavaliar t1331 se #3083 mergear.
+
+## Atualização (blocos 438–450 e specs dos merges E414/E650/E651)
+Specs na `main` (base `main`): E651 t1341 (#3123, verde), E650 t1350 (#3124, verde), E414 t1351 (#3125, verde).
+Specs preparadas sobre drafts (base = branch do draft; rebasear na `main` quando o draft for mesclado): E664 t1340 (#3104), F47 t1343 (#3111), E660 t1344 (#3112), E663 t1345 (#3113), E667 t1349 (#3119), E668 t1357 (#3138), E669 t1358 (#3139) — todas verdes. A t1341 antiga (#3107) está superada pela do #3123.
+
+### Triagem dos vermelhos desta rodada (todos spec, nenhum produto)
+| Spec | Sintoma | Causa | Classe |
+|---|---|---|---|
+| t1334 (E655) | `fechamento-prazo-dias` inexistente | candidatura criada como `new`; o Fechamento só abre com `accepted` | spec errada |
+| t1335 (E654) | 2º pedido de código (390 px) não mostrou confirmação | intervalo mínimo entre códigos responde erro visível — é o contrato do E654 | expectativa estreita demais |
+| t1341 (E651) | `sp-doc-erro` ausente | o draft #3093 e a versão mesclada (#3023) divergem: erro em `seja-parceiro-erro`, texto "Informe o CNPJ com 14 dígitos" | spec escrita sobre draft superado |
+| t1358 (E669) | contagem de laudos sempre 0 | `conferencia_laudos` não tem coluna `id` (chave `conferencia_id`); a consulta falhava | spec errada (e leitura sem `poll` na 1ª tentativa) |
+
+### Auditorias 160–174 (#3098–#3129)
+Corrigem a mensagem exibida quando a LEITURA do banco falha. Reproduzir exige derrubar o banco no lab (escopo novo); cobertura = testes unitários escritos antes e vistos vermelhos em cada PR. Sem spec de tela.
+
+### Defeitos de produto
+Nenhum item L novo. **L-103 segue livre.**
