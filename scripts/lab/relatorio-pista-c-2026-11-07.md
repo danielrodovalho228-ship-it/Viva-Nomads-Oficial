@@ -368,3 +368,7 @@ Bloco 500 (t1426, #3267, grupo do 483) **verde** (run 42401538290), a 390 e 1280
 **Sem spec ainda (merges na main): E679 (0322–0324) e E682 (0325).** Mudanças em actions/migrações grandes (critérios de avaliação, avaliações do parceiro, conduta cega, termos do avaliador); a spec de tela depende de ler as telas novas — próxima da fila. Item pulado nesta rodada: E679/E682.
 
 **Bloco 501** (t1431, grupo do 484: avisos, prévia de e-mails, caixa do leitor de QA) aberto no #3273. Defeitos de produto novos: nenhum. L-104 segue aberto; próximo livre: L-105.
+
+## Resultado: t1427–t1430 e bloco 501 — todos verdes
+
+Runs concluídos, **todos verdes**: t1427/E681 (#3269, 42403976707), t1428/E686 (#3270, 42404055257), t1429/E691 (#3271, 42404178157), t1430/E674 resíduo (#3272, 42404235764) e bloco 501 (t1431, #3273, grupo do 484, 42404299505). Como as specs rodam sobre as branches dos drafts, os quatro verdes são a prova de lab de que cada draft faz o que a spec descreve; o #3245, #3256, #3253 e #3263 seguem em draft aguardando QA/merge. Sem merge e sem fechar PR. Defeitos de produto novos: nenhum; L-104 segue aberto; próximo livre: L-105. Pendentes: spec de tela dos merges E679 (0322–0324) e E682 (0325), e a parte E685/visão do avaliador do E691. Próximo bloco da fila: 502 (grupo do 485).
