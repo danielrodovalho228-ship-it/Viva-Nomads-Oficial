@@ -154,11 +154,12 @@ export async function decidirMatriculaAdmin(id: string, acao: "aprovar" | "pedir
   const motivoLimpo = (motivo ?? "").trim().slice(0, 500);
   if (acao !== "aprovar" && !motivoLimpo) return { ok: false, error: "Escolha o motivo." };
 
-  const { data: alvo } = await admin
+  const { data: alvo, error: erroAlvo } = await admin
     .from("property_ownership_checks")
     .select("id, user_id, property_id, arquivo_path, resultado")
     .eq("id", id)
     .maybeSingle();
+  if (erroAlvo) return { ok: false, error: "Não foi possível ler a matrícula agora. Tente de novo." };
   if (!alvo) return { ok: false, error: "Matrícula não encontrada." };
   const recusaQa = await recusaObservador(user.id, { perfis: [alvo.user_id as string | null], imoveis: [alvo.property_id as string | null] });
   if (recusaQa) return { ok: false, error: recusaQa };

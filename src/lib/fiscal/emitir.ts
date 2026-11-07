@@ -263,11 +263,12 @@ export async function reenviarEmailDoDocumento(
 ): Promise<{ ok: true; numero: string; envio: EnvioDestinatario[] } | { ok: false; motivo: string }> {
   const admin = createAdminClient();
   if (!admin) return { ok: false, motivo: "sem servidor" };
-  const { data: d } = await admin
+  const { data: d, error: erroDocumento } = await admin
     .from("documentos_fiscais")
     .select("id, tipo, numero, contrato_id, contrato_ref, codigo_verificacao, pdf_path, envio, anulado_em, pagamento_id, acerto_id")
     .eq("id", documentoId)
     .maybeSingle();
+  if (erroDocumento) return { ok: false, motivo: "falha ao ler o documento" };
   if (!d) return { ok: false, motivo: "documento não encontrado" };
   if (d.anulado_em) return { ok: false, motivo: "documento anulado" };
   const partes = await partesDoContrato(admin, d.contrato_id as string);
