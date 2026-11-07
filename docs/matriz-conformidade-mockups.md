@@ -681,3 +681,12 @@ Rotas: `/guias`, `/guia-fotos`, `/para-proprietarios`, `/seguranca`, `/conferir`
 - **Estouro e corte:** um h1 por página, scrollWidth = largura da janela nas 30 medições, nenhum texto cortado sem reticências.
 - **Alvos de toque:** só ficaram abaixo de 44 px as setas "Foto anterior/Próxima foto" (32 px), que existem só com mouse (`hidden` e aparecem no hover do computador; no toque a foto passa por deslizar), e o link "Ver todos os imóveis" (`alvo-toque`, área de toque ampliada pela classe). Nenhum defeito novo.
 - Sem elemento fixo sobrepondo conteúdo nas rotas medidas.
+
+## Passada 49 (07/11; modo demonstração, 390 e 1280) — rotas mexidas pelos merges depois da passada 48 (E649, E650, E651, E414, E477)
+
+Rotas: `/parceiros?categoria=fotografia`, `/dashboard/parceiro`, `/dashboard/imoveis/novo?etapa=detalhes` (`/dashboard/nivel` não existe: 404, fora da matriz). A `main` já traz o #3015 (E649).
+- **E649 na `main`:** `/parceiros` e `/dashboard/parceiro` só falam de CPF para dizer "O CPF não é aceito — abra o seu CNPJ"; nenhuma superfície oferece CPF ao parceiro. Conforme.
+- **Imagens, estouro e h1:** 0 imagens quebradas; um h1; scrollWidth = largura da janela nas 6 medições.
+- **Alvos de toque:** os botões −/+ dos contadores do assistente medem 36 px e as setas de foto 32 px, mas ambos têm a classe `alvo-toque` (área de toque ampliada, E442) ou só existem com mouse; o link "Ver os passos do credenciamento" (20 px) é link de texto no corpo. Nenhum defeito novo.
+- **Estado dos rascunhos (07/11):** todos os PRs da Pista A (#2956, #3050, #3051, #3052, #3065, #3066, #3084, #3086, #3087, #3096, #3114, #3117, #3079, #3088 e este) sem conflito com a `main`.
+- **E662:** continua bloqueado — não há coluna de instrução de saída na `main` (busca por `instrucao_saida` e variantes em `supabase/` e `src/`: nada). Ver `docs/e662-instrucao-unica-de-saida.md` (#3088).
