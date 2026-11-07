@@ -162,7 +162,8 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     const admin = createAdminClient();
     if (!admin) return { ok: false, erro: "Serviço indisponível." };
     // O contrato precisa ser deste imóvel (e o imóvel, do dono, conferido acima).
-    const { data: k } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    const { data: k, error: erroContrato } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    if (erroContrato) return { ok: false, erro: "Não foi possível ler o contrato agora. Tente de novo." };
     if (!k) return { ok: false, erro: "Contrato não encontrado." };
     const [{ data: ck, error: erroCk }, { data: atual, error: erroAtual }] = await Promise.all([
       admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", contratoId).maybeSingle(),
@@ -330,7 +331,8 @@ async function carregarAditivo(aditivoId: string): Promise<{ ctx: Contexto; a: L
   if (!UUID_RE.test(String(aditivoId))) return { erro: "Proposta não encontrada." };
   const admin = createAdminClient();
   if (!admin) return { erro: "Serviço indisponível." };
-  const { data } = await admin.from("contrato_aditivos").select("id, contrato_id, numero, status, proposto_por, papel_proponente, mudancas, resumo, expira_em, criado_em, hash_documento").eq("id", aditivoId).maybeSingle();
+  const { data, error: erroAditivo } = await admin.from("contrato_aditivos").select("id, contrato_id, numero, status, proposto_por, papel_proponente, mudancas, resumo, expira_em, criado_em, hash_documento").eq("id", aditivoId).maybeSingle();
+  if (erroAditivo) return { erro: "Não foi possível ler a proposta agora. Tente de novo." };
   const a = data as LinhaAditivo | null;
   if (!a) return { erro: "Proposta não encontrada." };
   const ctx = await contextoDaEstadia(a.contrato_id);
