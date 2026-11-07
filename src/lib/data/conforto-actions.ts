@@ -77,10 +77,15 @@ export async function pendenciasDoContrato(contratoId: string): Promise<{ papel:
   return { papel, pendencias: await pendenciasConforto(createAdminClient() ?? s.supabase, contratoId) };
 }
 
+class LeituraConfortoFalhou extends Error {}
+const MSG_CONFORTO_SEM_LEITURA = "Não foi possível ler esta pendência agora. Tente de novo.";
+
 async function papelNoContrato(s: NonNullable<Awaited<ReturnType<typeof sessao>>>, contratoId: string): Promise<PapelPendencia | null> {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data: c } = await admin.from("contratos").select("tenant_id, properties(owner_id)").eq("id", contratoId).maybeSingle();
+  const { data: c, error: erroContrato } = await admin.from("contratos").select("tenant_id, properties(owner_id)").eq("id", contratoId).maybeSingle();
+  // Achado 161: falha de leitura não é "sem permissão" nem "não encontrado" — lança; quem chama diz a frase certa.
+  if (erroContrato) throw new LeituraConfortoFalhou(erroContrato.message);
   if (!c) return null;
   const dono = (c.properties as unknown as { owner_id?: string } | null)?.owner_id;
   if (c.tenant_id === s.uid) return "inquilino";
@@ -105,10 +110,17 @@ export async function agirNaPendencia(
   const s = await sessao();
   const admin = createAdminClient();
   if (!s || !admin || !/^[0-9a-f-]{36}$/i.test(pendenciaId)) return { ok: false, erro: "Sem permissão." };
-  const { data: p } = await admin.from("conforto_pendencias").select("*").eq("id", pendenciaId).maybeSingle();
+  const { data: p, error: erroPendencia } = await admin.from("conforto_pendencias").select("*").eq("id", pendenciaId).maybeSingle();
+  if (erroPendencia) return { ok: false, erro: MSG_CONFORTO_SEM_LEITURA };
   if (!p?.contrato_id) return { ok: false, erro: "Pendência não encontrada." };
   // Decidir é só do atendimento da Viva (admin com 2 etapas), nunca do dono — mesmo que seja admin e dono.
-  const papel: PapelPendencia | null = acao === "decidir" ? ((await ehAdmin(s.supabase, s.uid)) ? "admin" : null) : await papelNoContrato(s, p.contrato_id as string);
+  let papel: PapelPendencia | null;
+  try {
+    papel = acao === "decidir" ? ((await ehAdmin(s.supabase, s.uid)) ? "admin" : null) : await papelNoContrato(s, p.contrato_id as string);
+  } catch (e) {
+    if (e instanceof LeituraConfortoFalhou) return { ok: false, erro: MSG_CONFORTO_SEM_LEITURA };
+    throw e;
+  }
   if (!papel) return { ok: false, erro: acao === "decidir" ? "Só o atendimento da Viva decide a contestação." : "Sem permissão." };
   // E477: decidir sobre imóvel real — o admin observador da QA só lê (imóvel de conta de teste segue liberado).
   if (acao === "decidir") {
