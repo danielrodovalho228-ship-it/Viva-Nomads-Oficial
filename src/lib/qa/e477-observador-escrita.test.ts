@@ -39,9 +39,10 @@ test("servidor: configuração da plataforma recusa o observador sempre (sem alv
 });
 
 test("servidor: decisões da Central de Pendências recusam o observador sobre dado real (alvo do item)", () => {
-  assert.match(ler("lib/data/nivel-actions.ts"), /recusaObservador\(s\.uid, \{ imoveis: \[propertyId\] \}\)/);
-  assert.match(ler("lib/data/conforto-actions.ts"), /recusaObservador\(s\.uid, \{ imoveis: \[p\.property_id as string\] \}\)/);
-  assert.match(ler("lib/data/avaliacoes-resposta-actions.ts"), /recusaObservador\(user\.id, \{ perfis: \[av\?\.autor_id, av\?\.alvo_id\], semPerfil: av \? 0 : 1 \}\)/);
+  // E477 (resíduo): na Central a observadora é só leitura em TODA linha (teste incluído): a recusa não olha o alvo.
+  assert.match(ler("lib/data/nivel-actions.ts"), /recusaObservador\(s\.uid\)/);
+  assert.match(ler("lib/data/conforto-actions.ts"), /recusaObservador\(s\.uid\)/);
+  assert.match(ler("lib/data/avaliacoes-resposta-actions.ts"), /recusaObservador\(user\.id\)/);
 });
 
 test("tela: Cidades, Destinos, Marketing e Pendências tiram os controles onde o servidor recusaria", () => {
