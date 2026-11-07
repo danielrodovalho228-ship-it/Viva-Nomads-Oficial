@@ -24,7 +24,7 @@ export default async function PropostasPage() {
           title="Nenhuma proposta por enquanto"
           text="Quando um proprietário enviar uma proposta para a sua candidatura, ela aparece aqui e você recebe um aviso."
           action={
-            <Link href="/dashboard/candidaturas" className="text-sm font-medium text-forest underline">
+            <Link href="/dashboard/candidaturas" className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline">
               Ver minhas candidaturas
             </Link>
           }
