@@ -157,3 +157,20 @@ Main verde em `95dade132` (run 42371785428). Nenhum merge de produto novo desde 
 | t1397 — E675, reenvio de quem já assinou vira sucesso (sobre o draft #3171) | #3199 | em andamento |
 
 Defeitos de produto novos: nenhum (L-103 livre). Drafts ainda sem spec: E672 (#3162), E674 (#3166), E662 tela (#3164), E661 (#3114/#3133), E668 (#3134), E530b (#3132); os de alvo de toque 44 px (#3096, #3172, #3176, #3180, #3184) e as auditorias 160–177 (leitura que falha não vira "não encontrado") ficam para triagem.
+
+## Lote t1397–t1399 e blocos 478/479 (main `57d2a5503`)
+
+Main: só blocos meus (#3197, #3200) entraram; nenhum merge de produto novo. Run da main em `57d2a5503` em andamento ao fechar este lote (o de `a96a7a8e0` deu verde).
+
+| Item | PR | Resultado |
+|---|---|---|
+| Bloco 478 (t1389, grupo do 461: conferir, pedidos, admin/sistema) | #3200 | verde (run 42372952868); mesclado |
+| t1396 — E667 (sobre #3117) | #3198 | verde (run 42372803589) |
+| t1397 — E675 (sobre #3171) | #3199 | verde (run 42372888517) |
+| t1398 — E672 (sobre #3162) | #3201 | verde (run 42373485653) |
+| t1399 — E674, troca de conta no navegador (sobre #3166) | #3202 | em andamento; cobre o store, não a porta de QA (`/qa/entrar`, exige servidor extra como a t596) |
+| Bloco 479 (t1400, grupo do 462: solicitações, cartão, estadia, desempenho, contrato) | #3203 | em andamento |
+
+Risco registrado na t1399: se a tela de entrada gravar `user: null` no guardado antes da conta B entrar, `estadoAoTrocarDeConta` não enxerga a troca. Se o run vier vermelho por isso, é lacuna do draft #3166 (item novo L-103, origem: t1399), não da spec.
+
+Defeitos de produto novos: nenhum. Drafts ainda sem spec: E662 tela (#3164), E661 (#3114, #3133), E668 (#3134), E530b (#3132), E671 (#3161, coberto pelo ajuste da t57 no próprio PR).
