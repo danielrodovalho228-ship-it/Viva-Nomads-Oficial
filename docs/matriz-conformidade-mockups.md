@@ -742,8 +742,15 @@ A `main` só ganhou ajustes de spec do laboratório desde a passada 53 (#3173); 
 
 ## Passada 57 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — cabeçalhos do painel (as 15 linhas `cabecalho-*` e o pouso)
 
-Padrão aprovado pelo Muse (fundo clean claro, cartões uniformes, grade par, **um botão cheio por tela**, um h1) medido nas rotas `/dashboard/agenda`, `/conta/ajuda`, `/imoveis`, `/contratos`, `/fechamento`, `/ferramentas`, `/leads`, `/orcamentos`, `/pedidos`, `/recibos`, `/simulador` e `/dashboard`; `/dashboard/caucao`, `/conferencia`, `/roi-imovel` e `/tributacao` não são rotas do painel nesta `main` (404 da casa) e ficam fora.
+Padrão aprovado pelo Muse (fundo clean claro, cartões uniformes, grade par, **um botão cheio por tela**, um h1) medido nas rotas `/dashboard/agenda`, `/conta/ajuda`, `/imoveis`, `/contratos`, `/fechamento`, `/ferramentas`, `/leads`, `/orcamentos`, `/pedidos`, `/recibos`, `/simulador` e `/dashboard`; `/dashboard/caucao` e `/conferencia` não são rotas do painel nesta `main` (404 da casa); `/roi-imovel` e `/tributacao` redirecionam ao Simulador/Ferramentas (correção da passada 58). Ficam fora.
 - **Fundo:** branco/claro em todas. **h1:** um por tela, 24 px no celular e 28 px no computador (padrão do `PageTitle`). **Botão cheio:** um por tela (Anunciar imóvel, Novo anúncio, Novo pedido, Falar com a Viva, Anunciar meu imóvel…); os escuros extras que a medição acusou são estados marcados de rádio, não ações.
 - **Diferença registrada, sem correção:** o h1 de `/dashboard/conta/ajuda` mede 36/48 px porque o cabeçalho da Conta usa a casca própria (`TITULO_TELA_CONTA`), de propósito (linha `perfil-08-ajuda-sair`, conferida sem achado).
 1. **Achado:** `/dashboard/simulador` — os botões de rádio "Cobrado à parte" / "Incluído no valor mensal" (≈34 px pelas classes) ficam abaixo de 44 px de toque a 390. Corrigido no #3180 (`min-h-11`).
 - **Fora desta passada:** `cadastro-imovel-07-descricao` (linha de "Destaques", #3020) e as linhas que dependem de sessão de parceiro/real.
+
+## Passada 58 (07/11; modo demonstração local, `main` no #3173; 390 e 1280) — demais rotas do painel ainda sem medida
+
+Rotas: `/dashboard/carteira`, `/comparar`, `/conta/excluir`, `/indicacoes`, `/orcamentos/nova`, `/reembolsos`, `/verificacao`, `/ferramentas` e `/simulador` (para onde `/roi-imovel`, `/tributacao` e `/viabilidade` redirecionam). `/assinatura` volta ao Início; `/avaliacoes` e `/conta/avaliacoes` pedem entrada própria no demo (redirecionam a `/auth`): ficam para sessão real.
+- **Imagens, h1, estouro, corte:** 0 imagens quebradas, um h1 por tela, scrollWidth = largura da janela, nada cortado, nenhum elemento além da borda, alvos de toque ok nas 9 telas medidas.
+- **Achados:** nenhum novo. (O link do logo de `/auth` a 390 ainda mede 32 px na `main`: já corrigido no #3172.)
+- **Correção de registro:** na passada 57 eu disse que `/roi-imovel` e `/tributacao` davam 404; na verdade redirecionam (acima).
