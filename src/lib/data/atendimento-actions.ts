@@ -650,11 +650,12 @@ export async function responderComoAdmin(id: string, texto: string, interno: boo
   if (recusaQa) return { ok: false, error: recusaQa };
   const corpo = (texto ?? "").trim().slice(0, 5000);
   if (!corpo) return { ok: false, error: "Escreva a resposta." };
-  const { data: c } = await ctx.admin
+  const { data: c, error: erroChamado } = await ctx.admin
     .from("chamados")
     .select("id, numero_publico, assunto, prioridade, usuario_id, visitante_email, visitante_nome, status, primeira_resposta_em")
     .eq("id", id)
     .maybeSingle();
+  if (erroChamado) return { ok: false, error: "Não foi possível ler o chamado agora. Tente de novo." };
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   await ctx.admin.from("chamado_mensagens").insert({ chamado_id: id, autor: "admin", autor_id: ctx.userId, corpo, interno });
   if (!interno) {
@@ -698,11 +699,12 @@ export async function alterarChamado(
   if (!ctx || !UUID_RE.test(id)) return { ok: false, error: "Sem permissão." };
   const recusaQa = await recusaObservador(ctx.userId);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: c } = await ctx.admin
+  const { data: c, error: erroChamado } = await ctx.admin
     .from("chamados")
     .select("id, numero_publico, assunto, prioridade, status, usuario_id, visitante_email, visitante_nome, criado_em")
     .eq("id", id)
     .maybeSingle();
+  if (erroChamado) return { ok: false, error: "Não foi possível ler o chamado agora. Tente de novo." };
   if (!c) return { ok: false, error: "Chamado não encontrado." };
   const upd: Record<string, unknown> = { atualizado_em: new Date().toISOString() };
   const eventos: Record<string, unknown>[] = [];
@@ -779,7 +781,8 @@ export async function avaliarRespostaIA(chamadoId: string, mensagemId: number, n
   if (!ctx || !UUID_RE.test(chamadoId) || !Number.isInteger(mensagemId)) return { ok: false, error: "Sem permissão." };
   const recusaQa = await recusaObservador(ctx.userId);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: m } = await ctx.admin.from("chamado_mensagens").select("id").eq("id", mensagemId).eq("chamado_id", chamadoId).eq("autor", "ia").maybeSingle();
+  const { data: m, error: erroMsg } = await ctx.admin.from("chamado_mensagens").select("id").eq("id", mensagemId).eq("chamado_id", chamadoId).eq("autor", "ia").maybeSingle();
+  if (erroMsg) return { ok: false, error: "Não foi possível ler a resposta agora. Tente de novo." };
   if (!m) return { ok: false, error: "Resposta não encontrada." };
   const texto = (correcao ?? "").trim().slice(0, 2000);
   if (nota === "corrigir" && texto.length < 3) return { ok: false, error: "Escreva como a resposta deveria ser." };
@@ -969,7 +972,8 @@ export async function sugerirResposta(
   let custo: string | null = null;
   if (lab) {
     // Laboratório (sem IA): rascunho só com textos oficiais, marcado como simulado.
-    const { data: c } = await ctx.admin.from("chamados").select("usuario_id, visitante_nome").eq("id", chamadoId).maybeSingle();
+    const { data: c, error: erroRegra } = await ctx.admin.from("chamados").select("usuario_id, visitante_nome").eq("id", chamadoId).maybeSingle();
+    if (erroRegra) return { ok: false, error: "Não foi possível ler o chamado agora. Tente de novo." };
     if (!c) return { ok: false, error: "Chamado não encontrado." };
     const { data: ms } = await ctx.admin.from("chamado_mensagens").select("corpo").eq("chamado_id", chamadoId).eq("autor", "usuario").order("criado_em");
     texto = sugestaoPorRegra((ms ?? []).map((m) => m.corpo as string).join("\n"), primeiroNome(c.visitante_nome as string | null), !c.usuario_id);
