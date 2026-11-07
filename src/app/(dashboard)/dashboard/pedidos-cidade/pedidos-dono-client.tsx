@@ -72,7 +72,7 @@ export function PedidosDonoClient({ pedidos, myProperties }: { pedidos: PedidoPa
               aria-selected={aba === a.chave}
               onClick={() => setAba(a.chave)}
               data-testid={`aba-${a.chave}`}
-              className={cn("whitespace-nowrap rounded-full px-3 py-2 font-medium transition-colors sm:px-4", aba === a.chave ? "bg-forest text-white" : "text-muted")}
+              className={cn("alvo-toque whitespace-nowrap rounded-full px-3 py-2 font-medium transition-colors sm:px-4", aba === a.chave ? "bg-forest text-white" : "text-muted")}
             >
               {a.rotulo} (<span data-testid={`aba-${a.chave}-total`}>{contagem(a.chave)}</span>)
             </button>

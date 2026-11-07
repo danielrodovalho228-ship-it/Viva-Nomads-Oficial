@@ -134,7 +134,7 @@ export function EstadoDoAnuncio({ id, status, motivo }: { id: string; status: St
       <div ref={raiz} className="relative">
         <button
           type="button"
-          className={classeSelo}
+          className={cn("alvo-toque", classeSelo)}
           data-testid="estado-anuncio"
           data-status={status}
           data-motivo={motivo ?? ""}
