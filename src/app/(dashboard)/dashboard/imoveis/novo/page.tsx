@@ -756,7 +756,16 @@ export default function NewPropertyPage() {
       }
     }
     // E660: a ficha "o que tem dentro" é obrigatória para publicar um anúncio novo (rascunho e edição de anúncio antigo seguem livres).
-    if (!asDraft && !editingId && !fichaCompleta(fichaDentro)) {
+    // A ficha da tela pode ainda não ter chegado do servidor (rascunho retomado): antes de recusar, vale a já gravada no imóvel.
+    let fichaParaPublicar = fichaDentro;
+    if (!asDraft && !editingId && !fichaCompleta(fichaDentro) && draftIdRef.current) {
+      const gravada = await fichaDentroDoImovel(draftIdRef.current).catch(() => null);
+      if (gravada && fichaCompleta(gravada)) {
+        fichaParaPublicar = gravada;
+        setFichaDentro(gravada);
+      }
+    }
+    if (!asDraft && !editingId && !fichaCompleta(fichaParaPublicar)) {
       setMostrarFaltasFicha(true);
       setPublishError("Falta a ficha “O que tem dentro”: camas e ar-condicionado por quarto, roupa de cama e banho e cozinha.");
       irPara(ETAPA.comodidades);
@@ -847,7 +856,7 @@ export default function NewPropertyPage() {
       furnished,
       petsAllowed: petsOk,
       petsRegras: petsOk ? petsRegras : undefined,
-      fichaDentro,
+      fichaDentro: fichaParaPublicar,
       regrasCasa: payloadDeRegrasCasa(regrasCasa),
       semCamerasInterior: privacidade.semCamerasInterior,
       camerasExternas: privacidade.camerasExternas,

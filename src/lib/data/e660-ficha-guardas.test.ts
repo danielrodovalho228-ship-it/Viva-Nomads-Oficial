@@ -28,9 +28,10 @@ test("a 1ª assinatura congela a ficha uma vez só, antes de qualquer assinatura
 });
 
 test("publicar anúncio novo exige a ficha completa; rascunho e edição de anúncio antigo seguem livres", () => {
-  assert.match(pagina, /if \(!asDraft && !editingId && !fichaCompleta\(fichaDentro\)\) \{/);
+  assert.match(pagina, /if \(!asDraft && !editingId && !fichaCompleta\(fichaParaPublicar\)\) \{/);
+  assert.match(pagina, /const gravada = await fichaDentroDoImovel\(draftIdRef\.current\)/, "antes de recusar, vale a ficha já gravada no imóvel");
+  assert.match(pagina, /fichaDentro: fichaParaPublicar,/);
   assert.match(pagina, /<FichaDentroCampos ficha=\{fichaDentro\}/);
-  assert.match(pagina, /fichaDentro,\n/);
 });
 
 test("migração 0316: colunas aditivas, aplicar idempotente com registro e rollback", () => {
