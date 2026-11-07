@@ -161,6 +161,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("anuncio-videos", "bucket:anuncio-videos", "vídeo curto do anúncio (privado; público só se o anúncio está publicado)", "anúncio (ordem 8681ae95)", { prazoDias: 0, gatilho: "remocao_anuncio", modo: "apagar", base: "proposta", fase: 2 }, "nada: sai com o anúncio"),
   i("property-photos", "bucket:property-photos", "fotos do anúncio (públicas)", "anúncio", { prazoDias: 0, gatilho: "remocao_anuncio", modo: "apagar", base: "proposta", fase: 1 }, "o hash da foto (antifraude, exceção aprovada)"),
   i("imovel_instrucoes_chegada", "public.imovel_instrucoes_chegada", "observações de chegada", "a estadia", CONTA),
+  i("conferencia_laudos_retirados", "public.conferencia_laudos_retirados", "registro dos laudos retirados ou trocados pelo autor (caminho do PDF, quem, quando)", "a estadia", CONTA),
   i("chamados", "public.chamados", "nome e e-mail do visitante", "atendimento", CONTA),
   i("chamado_mensagens", "public.chamado_mensagens", "mensagens e anexos do atendimento", "atendimento", CONTA),
   i("chamados-bucket", "bucket:chamados", "anexos do atendimento (sem uso no código)", "atendimento", CONTA),

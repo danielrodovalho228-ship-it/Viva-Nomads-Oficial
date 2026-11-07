@@ -6,6 +6,7 @@ import { Camera, FileCheck2, FileUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   anexarLaudoConferencia,
+  retirarLaudoConferencia,
   enviarFotoConferencia,
   registrarItemConferencia,
   responderConferencia,
@@ -77,6 +78,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const [locais, setLocais] = useState<ItemTela[]>([]);
   const [respostasLocais, setRespostasLocais] = useState<RespostaTela[]>([]);
   const [laudoLocal, setLaudoLocal] = useState<LaudoTela | null>(null);
+  // E669: depois de remover, o laudo some na hora (o servidor confirma no refresh).
+  const [laudoRetirado, setLaudoRetirado] = useState(false);
+  const [confirmandoRetirada, setConfirmandoRetirada] = useState(false);
 
   const parte = dados.minhaParte;
   const respostas = mesclarRespostas(conf?.respostas ?? [], respostasLocais);
@@ -85,7 +89,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   const travada = respondeu || new Set(respostas.map((r) => r.parte)).size >= 2;
   const estado = conf ? estadoConferencia(respostas) : "em_andamento";
   const itens = mesclarItens(conf?.itens ?? [], locais);
-  const laudo = mesclarLaudo(conf?.laudo ?? null, laudoLocal);
+  const laudo = laudoRetirado ? null : mesclarLaudo(conf?.laudo ?? null, laudoLocal);
   const itensPorParte = { proprietario: itens.filter((i) => i.parte === "proprietario").length, inquilino: itens.filter((i) => i.parte === "inquilino").length };
   // F1 (Opção B): responde ao registro da OUTRA parte; os próprios itens são opcionais. Com o prazo (entrada ou saída) encerrado, libera.
   const encerrada = tipo === "entrada" ? dados.janelaEntradaEncerrada : dados.janelaSaidaEncerrada;
@@ -101,7 +105,10 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       if (!r.ok) return setErro(r.error ?? "Não foi possível concluir.");
       if (r.item) setLocais((l) => [...l, r.item!]);
       if (r.resposta) setRespostasLocais((l) => [...l, r.resposta!]);
-      if (r.laudo) setLaudoLocal(r.laudo);
+      if (r.laudo) {
+        setLaudoLocal(r.laudo);
+        setLaudoRetirado(false);
+      }
       setComodo("");
       setDescricao("");
       setReparo(false);
@@ -146,6 +153,32 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
     });
   };
 
+  // E669: o laudo novo entra no lugar do antigo (o servidor valida e sobe o arquivo ANTES de retirar o anterior).
+  const trocarLaudo = (arquivo: File | undefined) => {
+    if (!arquivo) return;
+    const recusa = erroTamanhoLaudo(arquivo.size);
+    if (recusa) return setErro(recusa);
+    rodar(() => {
+      const fd = new FormData();
+      fd.set("contratoId", contratoId);
+      fd.set("tipo", tipo);
+      fd.set("arquivo", arquivo);
+      fd.set("substituir", "1");
+      return anexarLaudoConferencia(fd);
+    });
+  };
+
+  const removerLaudo = () =>
+    rodar(async () => {
+      const r = await semQuedaDeRede(retirarLaudoConferencia({ contratoId, tipo }));
+      if (r.ok) {
+        setLaudoRetirado(true);
+        setLaudoLocal(null);
+        setConfirmandoRetirada(false);
+      }
+      return r;
+    });
+
   return (
     <section className="rounded-xl border border-line p-4" data-testid={`conferencia-${tipo}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -188,6 +221,32 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
             )}
           </span>
         </p>
+      )}
+      {/* E669: quem anexou o laudo pode remover ou trocar enquanto a conferência está aberta; o ato fica registrado. */}
+      {laudo && parte && laudo.parte === parte && !travada && (
+        <div className="mt-2 flex flex-wrap items-center gap-2" data-testid={`conferencia-${tipo}-laudo-acoes`}>
+          {confirmandoRetirada ? (
+            <>
+              <span className="text-xs text-ink">Remover o laudo? As fotos voltam a valer. O ato fica registrado.</span>
+              <Button type="button" variant="secondary" disabled={ocupado} onClick={removerLaudo} data-testid={`conferencia-${tipo}-laudo-remover`}>
+                Sim, remover laudo
+              </Button>
+              <Button type="button" variant="outline" disabled={ocupado} onClick={() => setConfirmandoRetirada(false)}>
+                Voltar
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button type="button" variant="outline" disabled={ocupado} onClick={() => setConfirmandoRetirada(true)} data-testid={`conferencia-${tipo}-laudo-remover`}>
+                Remover laudo
+              </Button>
+              <label className={SELETOR_ARQUIVO} data-testid={`conferencia-${tipo}-laudo-trocar`}>
+                <FileUp className="h-4 w-4" aria-hidden /> Trocar laudo
+                <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => trocarLaudo(e.target.files?.[0])} aria-label="Trocar o laudo independente (PDF, até 15 MB)" className="sr-only" />
+              </label>
+            </>
+          )}
+        </div>
       )}
 
       {itens.length > 0 ? (
@@ -274,7 +333,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
             <FileUp className="h-4 w-4" aria-hidden /> Anexar laudo independente
             <input type="file" accept="application/pdf" disabled={ocupado} onChange={(e) => anexarLaudo(e.target.files?.[0])} aria-label="Anexar laudo independente (PDF, até 15 MB)" className="sr-only" data-testid={`conferencia-${tipo}-laudo-input`} />
           </label>
-          <p className="mt-1 text-xs text-muted">PDF, até 15 MB.</p>
+          <p className="mt-1 text-xs text-muted">PDF completo do laudo, de 1 KB a 15 MB.</p>
         </div>
       )}
 
