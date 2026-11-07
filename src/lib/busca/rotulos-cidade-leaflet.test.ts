@@ -35,3 +35,21 @@ test("o mapa Leaflet passa esses obstáculos ao afastamento de pinos", () => {
   const leaflet = fonte.slice(fonte.indexOf("function SearchMapLeaflet"));
   assert.match(leaflet, /obstaculosDeCidades\(/);
 });
+
+test("E704 (2/2): a busca usa tiles sem rótulos e desenha o nome da cidade com a mesma caixa do obstáculo", () => {
+  const base = readFileSync("src/lib/mapa-base.ts", "utf8");
+  const fonte = readFileSync("src/components/search-map.tsx", "utf8");
+  const leaflet = fonte.slice(fonte.indexOf("function SearchMapLeaflet"));
+  assert.match(base, /voyager_nolabels/);
+  assert.match(leaflet, /L\.tileLayer\(TILES_CARTO_SEM_ROTULOS/);
+  assert.match(leaflet, /caixaDoRotulo\(c\.nome\)/);
+  assert.match(leaflet, /data-testid="rotulo-cidade-mapa"/);
+  // o mapa do imóvel e o de marcar ponto seguem com os rótulos normais (a mudança é só da busca)
+  assert.doesNotMatch(readFileSync("src/components/property-map.tsx", "utf8"), /SEM_ROTULOS/);
+});
+
+test("com zoom de rua (≥ 15) o nome da cidade some e não é obstáculo", () => {
+  const projetar = () => ({ x: 400, y: 300 });
+  assert.equal(obstaculosDeCidades(projetar, { w: 800, h: 600 }, 14).length, 1);
+  assert.deepEqual(obstaculosDeCidades(projetar, { w: 800, h: 600 }, 15), []);
+});

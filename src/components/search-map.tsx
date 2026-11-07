@@ -12,9 +12,9 @@ import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { usePreviaNoHover } from "@/components/busca/previa-hover";
-import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
+import { ATRIBUICAO_MAPA, TILES_CARTO, TILES_CARTO_SEM_ROTULOS, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
 import { afastarPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
-import { obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
+import { CIDADES_ROTULADAS, ZOOM_MAXIMO_DO_ROTULO, caixaDoRotulo, obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -507,8 +507,8 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
     L.control.zoom({ position: "topright" }).addTo(map);
-    if (TILES_CARTO) {
-      const camada = L.tileLayer(TILES_CARTO, {
+    if (TILES_CARTO && TILES_CARTO_SEM_ROTULOS) {
+      const camada = L.tileLayer(TILES_CARTO_SEM_ROTULOS, {
         maxZoom: 19,
         attribution: ATRIBUICAO_MAPA,
         // E698: pede os tiles já durante o arrasto/zoom e guarda uma margem — a base chega antes de os pinos parecerem soltos.
@@ -517,6 +517,23 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
       });
       camada.once("load", () => setTilesProntos(true));
       camada.addTo(map);
+      // E704: tiles sem rótulos; o nome da cidade é desenhado aqui, com o tamanho que o afastamento de pinos respeita.
+      const rotulos = CIDADES_ROTULADAS.map((c) => {
+        const { w, h } = caixaDoRotulo(c.nome);
+        return L.marker([c.lat, c.lng], {
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -1000,
+          icon: L.divIcon({
+            className: "",
+            iconSize: [w, h],
+            html: `<div data-testid="rotulo-cidade-mapa" class="pointer-events-none flex items-center justify-center text-sm font-semibold text-muted" style="width:${w}px;height:${h}px;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff">${c.nome}</div>`,
+          }),
+        }).addTo(map);
+      });
+      const mostrarRotulos = () => rotulos.forEach((m) => m.getElement()?.style.setProperty("display", map.getZoom() > ZOOM_MAXIMO_DO_ROTULO ? "none" : ""));
+      mostrarRotulos();
+      map.on("zoomend", mostrarRotulos);
     } else {
       avisarMapaSemChave();
     }
@@ -586,7 +603,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         }),
         { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
         // E704: o nome da cidade vem no tile; o ponto dela é um obstáculo fixo (o pino de preço não o cobre).
-        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight })
+        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }, map.getZoom())
       );
     reorganizar();
     reorganizarRef.current = reorganizar;
