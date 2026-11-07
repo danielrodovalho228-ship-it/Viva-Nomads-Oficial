@@ -33,6 +33,7 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 455 | t1366 | #3151 | 438 (t1339) | verde, run 42351735688 |
 | 454 | t1365 | #3150 | 437 (t1338) | em andamento (verify e e2e verdes; lab-critico run 42351696195 ainda rodando, sem rerun) |
 | 456 | t1367 | #3152 | 439 (t1342) | verde, run 42352665121 |
+| 457 | t1368 | #3153 | 440 (t1346) | verde, run 42353447927 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
