@@ -14,7 +14,7 @@ export default async function ParceirosDoImovelPage({ params }: { params: Promis
   const dados = await parceirosDoImovel(id);
   return (
     <div>
-      <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
+      <Link href="/dashboard/imoveis" className="inline-flex min-h-11 items-center gap-1 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Meus imóveis
       </Link>
       <h1 className="mt-3 font-title text-2xl font-semibold text-ink">Parceiros do imóvel</h1>
