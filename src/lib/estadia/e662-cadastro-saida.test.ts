@@ -20,7 +20,9 @@ test("edição do imóvel: seção 'Como sair (check-out)' com o texto atual e o
   assert.match(cliente, /<SecaoInstrucaoSaida propertyId=\{property\.id\} inicial=\{instrucaoSaidaInicial\} demo=\{demo\} \/>/);
   assert.match(cliente, /title="Como sair \(check-out\)" testid="secao-instrucao-saida"/);
   assert.match(cliente, /Se o condomínio tem regra própria de devolução, escreva-a aqui, no mesmo texto/);
-  assert.match(pagina, /\.from\("imovel_instrucoes_chegada"\)\.select\("instrucao_saida"\)\.eq\("property_id", id\)/);
+  // A tabela privada só é lida por leitores da estadia (guarda de chegada-e-pedido): a página chama o leitor, não a tabela.
+  assert.match(pagina, /instrucaoSaida = await instrucaoSaidaParaEditar\(supabase, id\)/);
+  assert.doesNotMatch(pagina, /imovel_instrucoes_chegada/);
   assert.match(pagina, /instrucaoSaidaInicial=\{instrucaoSaida\}/);
 });
 

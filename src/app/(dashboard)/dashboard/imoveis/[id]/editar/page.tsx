@@ -2,6 +2,7 @@ import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
 import Link from "next/link";
 import { emCadastro, hrefPassoDoRascunho } from "@/lib/anuncio/destino-pendencia";
 import { loadPropertyForEdit } from "@/lib/data/actions";
+import { instrucaoSaidaParaEditar } from "@/lib/data/estadia";
 import { createClient } from "@/lib/supabase/server";
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import type { FatosAnuncio } from "@/lib/anuncio/prontidao";
@@ -63,8 +64,7 @@ export default async function EditarImovelPage({
         pausaMotivo = (m as { pausa_motivo?: string | null } | null)?.pausa_motivo ?? null;
       }
       // Achado 130: sem o endereço exato, o editor não abre com a rua vazia (a falha cai no error.tsx: "Tente de novo").
-      const { data: saida } = await supabase.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", id).maybeSingle();
-      instrucaoSaida = (saida as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "";
+      instrucaoSaida = await instrucaoSaidaParaEditar(supabase, id);
       const { data: priv, error: erroPriv } = await supabase.rpc("property_private_details", { prop_id: id });
       if (erroPriv) throw new Error("Não foi possível ler o endereço do anúncio agora.");
       const linha = (Array.isArray(priv) ? priv[0] : priv) as { exact_address?: string | null } | null;
