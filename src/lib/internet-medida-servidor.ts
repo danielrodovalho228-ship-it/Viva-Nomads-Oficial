@@ -37,13 +37,17 @@ const medicaoDaLinha = (l: Linha): Medicao => ({
   validoAte: l.valido_ate,
 });
 
-/** Papel de quem mede: o dono (cadastro/edição) ou o morador do contrato ativo (conferência de entrada). */
-async function papelNoImovel(admin: Admin, userId: string, imovelId: string, origem: Origem): Promise<"dono" | "morador" | null> {
-  const { data: p } = await admin.from("properties").select("owner_id").eq("id", imovelId).maybeSingle();
+const MSG_MEDICAO_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo.";
+
+/** Papel de quem mede: o dono (cadastro/edição) ou o morador do contrato ativo (conferência de entrada). "falhou" = a leitura não deu: nunca vira "não é parte". */
+async function papelNoImovel(admin: Admin, userId: string, imovelId: string, origem: Origem): Promise<"dono" | "morador" | null | "falhou"> {
+  const { data: p, error: erroImovel } = await admin.from("properties").select("owner_id").eq("id", imovelId).maybeSingle();
+  if (erroImovel) return "falhou";
   if (!p) return null;
   if (origem !== "conferencia_entrada") return (p as { owner_id: string }).owner_id === userId ? "dono" : null;
   // Morador: inquilino de contrato ATIVO do imóvel (é quando a conferência de entrada aparece).
-  const { data: c } = await admin.from("contratos").select("id").eq("property_id", imovelId).eq("tenant_id", userId).eq("status", "ativo").limit(1);
+  const { data: c, error: erroContrato } = await admin.from("contratos").select("id").eq("property_id", imovelId).eq("tenant_id", userId).eq("status", "ativo").limit(1);
+  if (erroContrato) return "falhou";
   return (c ?? []).length ? "morador" : null;
 }
 
@@ -139,6 +143,7 @@ export async function estadoParaMedir(imovelId: string, origem: Origem): Promise
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre na sua conta para medir." };
   const papel = await papelNoImovel(admin, user.id, imovelId, origem);
+  if (papel === "falhou") return { ok: false, erro: MSG_MEDICAO_SEM_LEITURA };
   if (!papel) return { ok: false, erro: "Só o proprietário do imóvel (ou o morador, na conferência de entrada) mede a internet." };
   const agora = new Date();
   return {
@@ -185,6 +190,7 @@ export async function registrarMedicao(entrada: {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre na sua conta para medir." };
   const papel = await papelNoImovel(admin, user.id, imovelId, origem);
+  if (papel === "falhou") return { ok: false, erro: MSG_MEDICAO_SEM_LEITURA };
   if (!papel) return { ok: false, erro: "Só o proprietário do imóvel (ou o morador, na conferência de entrada) mede a internet." };
   const agora = new Date();
   const feitasHoje = await medicoesHoje(admin, imovelId, agora);
