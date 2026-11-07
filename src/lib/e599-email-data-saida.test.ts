@@ -57,21 +57,21 @@ test("E599: a saída depois da última noite é o dia seguinte; vazio/inválido 
   assert.equal(saidaDepoisDaUltimaNoite(null), "");
 });
 
-test("E599: e-mail do contrato da estadia de 43 dias (10/01/2027) diz 10/01/2027 a 22/02/2027 (43 dias) — a conta fecha", () => {
+test("E599→E671: e-mail do contrato da estadia de 43 dias (10/01/2027) diz o fim gravado, 21/02/2027, como a página do contrato", () => {
   const blocos = encadearDatas("2027-01-10", [{ meses: 2, dias: 43 } as never]);
   const { inicio, fim } = periodoDosBlocos(blocos);
   assert.equal(fim, "2027-02-21"); // a última noite, como gravado nos blocos
   const l = linhasContrato({ imovel: { titulo: "Apto" }, inicio: inicio!, fim: fim!, meses: 2, valorMensal: 3260, dias: 43 });
-  assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "10/01/2027 a 22/02/2027 (43 dias)");
+  assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "10/01/2027 a 21/02/2027 (43 dias)");
   assert.equal(diasDaSelecao({ entrada: "2027-01-10", saida: "2027-02-22" }), 43);
 });
 
-test("E599: proposta, contrato e candidatura da mesma estadia imprimem a MESMA saída (22/02/2027)", () => {
+test("E599: proposta e candidatura da mesma estadia imprimem a MESMA saída (22/02/2027); o contrato segue o fim gravado (E671)", () => {
   const prop = linhasProposta({ numero: "ORC-2026-0010", imovel: { titulo: "Apto" }, entrada: "2027-01-10", saida: dataDeSaida("2027-01-10", 43), meses: 2, dias: 43, valorMensal: 3260, contaTotal: "x" });
   const contr = linhasContrato({ imovel: { titulo: "Apto" }, inicio: "2027-01-10", fim: "2027-02-21", meses: 2, valorMensal: 3260, dias: 43 });
   const cand = linhasCandidatura({ imovel: { titulo: "Apto" }, interessado: "Ana", entrada: "2027-01-10", saida: "2027-02-22", valorMensal: 3260, totalMensal: 3260 } as never);
   assert.match(prop.find((x) => x.rotulo === "Período")!.valor, /a 22\/02\/2027 \(43 dias\)/);
-  assert.match(contr.find((x) => x.rotulo === "Período")!.valor, /a 22\/02\/2027 \(43 dias\)/);
+  assert.match(contr.find((x) => x.rotulo === "Período")!.valor, /a 21\/02\/2027 \(43 dias\)/);
   assert.equal(cand.find((x) => x.rotulo === "Saída")!.valor, "22/02/2027 (43 dias)");
 });
 
