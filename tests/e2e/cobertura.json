@@ -95,7 +95,8 @@
         "admin"
       ],
       "specs": [
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t1417-varredura-bloco491"
       ]
     },
     "/admin/agentes": {
@@ -160,7 +161,8 @@
         "t24-atendimento-acolhimento",
         "t25-chamado-resumo",
         "t605-e217-resposta-sem-sugestao",
-        "t599-varredura-bloco49"
+        "t599-varredura-bloco49",
+        "t1417-varredura-bloco491"
       ]
     },
     "/admin/avaliacoes": {
@@ -743,7 +745,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t672-e190-troca-de-modo",
-        "t1411-varredura-bloco489"
+        "t1411-varredura-bloco489",
+        "t1399-e674-troca-de-conta-no-navegador"
       ]
     },
     "/dashboard/assinatura": {
@@ -935,7 +938,8 @@
         "t588-varredura-bloco46",
         "t656-e224-plano-gestor",
         "t644-conta-menu-alinhado",
-        "t1387-varredura-bloco476"
+        "t1387-varredura-bloco476",
+        "t1418-varredura-bloco492"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1375,7 +1379,8 @@
         "t418-varredura-bloco35",
         "t631-e222b-renovar-aditivo",
         "t662-varredura-bloco63",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1397-e675-assinatura-duplicada-sucesso"
       ]
     },
     "/dashboard/mensagens": {
@@ -1461,7 +1466,8 @@
         "t312-varredura-bloco9",
         "t676-varredura-bloco69",
         "t709-e263-pets-condicoes-ida-e-volta",
-        "t1387-varredura-bloco476"
+        "t1387-varredura-bloco476",
+        "t1418-varredura-bloco492"
       ]
     },
     "/dashboard/pedidos": {
@@ -1494,7 +1500,8 @@
         "t232-pedido-moradia-completo",
         "t298-varredura-logada-bloco4",
         "t416-varredura-bloco33",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t1418-varredura-bloco492"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -1812,7 +1819,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1414-e666-legenda-calendario"
       ]
     },
     "/modelodenegocio": {
@@ -1824,7 +1832,8 @@
         "t3-isolamento-papeis",
         "t307-varredura-bloco8",
         "t661-varredura-bloco62",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1396-e667-modelo-sem-31-segue"
       ]
     },
     "/para-proprietarios": {
@@ -2013,7 +2022,8 @@
         "t312-varredura-bloco9",
         "t481-e132a-qualificacao",
         "t535-e153-documento-um-lugar",
-        "t1250-e645-qualificar-console-390"
+        "t1250-e645-qualificar-console-390",
+        "t1418-varredura-bloco492"
       ]
     },
     "/roi": {
@@ -2116,7 +2126,8 @@
         "t553-varredura-bloco41",
         "t559-varredura-bloco43",
         "t686-varredura-bloco72",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1391-e677-ordem-estavel-propostas"
       ]
     },
     "/dashboard/servicos": {
@@ -2225,7 +2236,8 @@
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
         "t679-varredura-bloco70",
-        "t1387-varredura-bloco476"
+        "t1387-varredura-bloco476",
+        "t1418-varredura-bloco492"
       ]
     },
     "/parceiros/[slug]": {
@@ -2282,7 +2294,8 @@
         "t271-admin-visual",
         "t329-varredura-bloco11",
         "t537-e165-admin-contrato-assinaturas",
-        "t588-varredura-bloco46"
+        "t588-varredura-bloco46",
+        "t1417-varredura-bloco491"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
@@ -2315,7 +2328,8 @@
       ],
       "specs": [
         "t250-parceiros-contratacao",
-        "t368-varredura-bloco20"
+        "t368-varredura-bloco20",
+        "t1417-varredura-bloco491"
       ]
     },
     "/admin/contratos/encerramentos": {
@@ -2364,7 +2378,8 @@
         "t631-e222b-renovar-aditivo",
         "t676-varredura-bloco69",
         "t712-e267-transacionais-corpo",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1398-e672-comparativo-aditivo"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
@@ -2582,7 +2597,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t341-credenciamento-avaliador-62a",
         "t387-varredura-bloco22",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t1418-varredura-bloco492"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -2672,7 +2688,8 @@
         "t379-55e2-filtro-contato-um-toque",
         "t385-varredura-bloco21",
         "t679-varredura-bloco70",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1413-e665-modelos-respostas-rapidas"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
@@ -2725,7 +2742,8 @@
       ],
       "specs": [
         "t397-foto-na-hora",
-        "t407-varredura-bloco26"
+        "t407-varredura-bloco26",
+        "t1418-varredura-bloco492"
       ]
     },
     "/dashboard/qa/emails": {
@@ -3276,6 +3294,14 @@
       ],
       "specs": [
         "t207-cep-matricula-identidade"
+      ]
+    },
+    "/api/admin/pioneiras-e287": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t1416-e287-rota-envio-so-admin"
       ]
     },
     "/c/[curto]": {
@@ -4290,6 +4316,15 @@
       ],
       "specs": [
         "t83-checkin-garantido"
+      ]
+    },
+    "src/lib/data/conferencia-actions.ts#retirarLaudoConferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t85-conferencia-entrada-saida"
       ]
     },
     "src/lib/data/conferencia-actions.ts#anexarLaudoConferencia": {

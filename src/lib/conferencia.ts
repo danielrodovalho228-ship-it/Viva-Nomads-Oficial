@@ -217,10 +217,26 @@ function tipoFoto(b: Uint8Array): { tipo: string; ext: string } | null {
 
 export const ERRO_LAUDO_GRANDE = "O laudo deve ter até 15 MB.";
 
+/**
+ * E669: um laudo de verdade tem conteúdo. Abaixo disto o arquivo é um esqueleto de PDF (o teste da QA tinha 193 bytes) e não
+ * pode "prevalecer sobre as fotos" das partes.
+ */
+export const LAUDO_MIN_BYTES = 1024;
+export const ERRO_LAUDO_PEQUENO = "O arquivo é pequeno demais para ser um laudo. Anexe o PDF completo do laudo.";
+export const ERRO_LAUDO_INCOMPLETO = "Este PDF parece incompleto ou corrompido. Anexe o PDF completo do laudo.";
+
+/** O PDF termina com "%%EOF" (dentro dos últimos 1 KB, como manda o formato). */
+function terminaComoPdf(b: Uint8Array): boolean {
+  const fim = new TextDecoder("latin1").decode(b.subarray(Math.max(0, b.length - 1024)));
+  return fim.includes("%%EOF");
+}
+
 /** Confere o tamanho antes de enviar: acima do limite do corpo das Server Actions o Next recusa sem chegar à validação. */
 export function erroTamanhoLaudo(tamanho: number): string | null {
   if (tamanho <= 0) return "Arquivo vazio.";
-  return tamanho > LAUDO_MAX_BYTES ? ERRO_LAUDO_GRANDE : null;
+  if (tamanho > LAUDO_MAX_BYTES) return ERRO_LAUDO_GRANDE;
+  if (tamanho < LAUDO_MIN_BYTES) return ERRO_LAUDO_PEQUENO;
+  return null;
 }
 
 /** Laudo de parceiro independente: PDF de verdade, até 15 MB. */
@@ -228,6 +244,7 @@ export function validarLaudo(a: { bytes: Uint8Array; tamanho: number }): Arquivo
   const tam = erroTamanhoLaudo(a.tamanho);
   if (tam) return { ok: false, erro: tam };
   if (!ehPdf(a.bytes)) return { ok: false, erro: "Envie o laudo em PDF." };
+  if (!terminaComoPdf(a.bytes)) return { ok: false, erro: ERRO_LAUDO_INCOMPLETO };
   return { ok: true, tipo: "application/pdf", ext: "pdf" };
 }
 

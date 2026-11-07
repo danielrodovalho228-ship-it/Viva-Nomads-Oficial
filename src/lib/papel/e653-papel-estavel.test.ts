@@ -50,7 +50,7 @@ test("F1: a casca não troca nem grava o papel ao abrir a área do parceiro", ()
   const a = ler("src/lib/data/papel-actions.ts");
   assert.match(a, /gravacaoPorArea\(papel, contaNoPrimeiroAcesso\(/, "o servidor decide pela mesma regra");
   // a troca explícita segue gravando (sem origem "area")
-  assert.match(a, /\.update\(modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \}\)/);
+  assert.match(a, /const base = modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \};/); // E668: a troca explícita grava papel e modo (e carimba a escolha)
 });
 
 test("F2: 'indisponível' é diferente de 'conta nova' — só o indisponível relê o modo", () => {
