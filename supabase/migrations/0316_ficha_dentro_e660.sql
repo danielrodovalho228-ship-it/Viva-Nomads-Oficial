@@ -8,3 +8,6 @@ alter table public.contratos add column if not exists ficha_dentro_congelada jso
 
 comment on column public.properties.ficha_dentro is 'E660: ficha do que tem dentro (quartos/camas/ar, enxoval, cozinha, utensílios opcionais). null = anúncio anterior à ficha.';
 comment on column public.contratos.ficha_dentro_congelada is 'E660: ficha congelada na 1ª assinatura ({ficha, congeladaEm}); é o que se confere na entrada.';
+
+-- properties tem grants de coluna (0053): a nova coluna precisa de grant para o dono (rascunho) e a página do imóvel lerem.
+grant select (ficha_dentro) on public.properties to anon, authenticated;

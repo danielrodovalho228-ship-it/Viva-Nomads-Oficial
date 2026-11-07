@@ -37,9 +37,11 @@ test("migração 0316: colunas aditivas, aplicar idempotente com registro e roll
   const mig = ler("../../../supabase/migrations/0316_ficha_dentro_e660.sql");
   assert.match(mig, /alter table public\.properties add column if not exists ficha_dentro jsonb;/);
   assert.match(mig, /alter table public\.contratos add column if not exists ficha_dentro_congelada jsonb;/);
+  assert.match(mig, /grant select \(ficha_dentro\) on public\.properties to anon, authenticated;/, "properties tem grants de coluna");
   const ap = ler("../../../supabase/producao/aplicar-0316.sql");
   assert.match(ap, /^begin;/m);
   assert.match(ap, /'0316_ficha_dentro_e660'/);
+  assert.match(ap, /grant select \(ficha_dentro\) on public\.properties to anon, authenticated;/);
   assert.match(ap, /where not exists/);
   assert.match(ap, /commit;\s*$/);
   assert.ok(existsSync(new URL("../../../supabase/producao/rollback/0316_rollback.sql", import.meta.url)));
