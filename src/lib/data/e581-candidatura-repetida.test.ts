@@ -36,7 +36,7 @@ test("requestLead: lead existente + candidatura + status new → atualiza o per�
   assert.match(fn, /\.select\("id, status"\)\s*\.eq\("property_id", propertyId\)\s*\.eq\("tenant_id", user\.id\)/);
   assert.match(fn, /if \(existing && kind === "candidatura"\) \{/);
   assert.match(fn, /if \(existing\.status !== "new"\) return \{ ok: false, error: MSG_CANDIDATURA_JA_RESPONDIDA \};/);
-  assert.match(fn, /\.update\(campos\)\s*\.eq\("id", existing\.id\)\s*\.eq\("tenant_id", user\.id\)\s*\.eq\("status", "new"\)/);
+  assert.match(fn, /\.update\(\{ \.\.\.campos, reenviada_em: new Date\(\)\.toISOString\(\) \}\)\s*\.eq\("id", existing\.id\)\s*\.eq\("tenant_id", user\.id\)\s*\.eq\("status", "new"\)/);
   assert.match(fn, /if \(erroAtualiza \|\| !atualizado\?\.length\) return \{ ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU \};/);
   // A nova escolha também vai para a conversa (o dono vê o período novo).
   assert.match(fn, /await abrirConversa\(\);/);
