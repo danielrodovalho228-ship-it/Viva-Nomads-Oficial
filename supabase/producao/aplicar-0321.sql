@@ -6,8 +6,19 @@ set local lock_timeout = '5s';
 
 do $$
 declare
+  existentes integer;
   achadas integer;
 begin
+  -- Banco sem nenhuma das duas contas (laboratório, CI, banco novo): não há o que marcar. Avisa e segue, sem gravar.
+  select count(*) into existentes
+    from public.profiles p
+   where lower(p.email) in ('fatima.alves.campanha@gmail.com', 'lyamercaldi@gmail.com');
+  if existentes = 0 then
+    raise notice 'E287: nenhuma das duas contas existe neste banco — nada a marcar (laboratório ou banco novo)';
+    return;
+  end if;
+
+  -- Alguma existe: então as DUAS têm de conferir por e-mail e papel; se não, PARA (exceção) e não grava nada.
   select count(*) into achadas
     from public.profiles p
    where p.is_teste is not true

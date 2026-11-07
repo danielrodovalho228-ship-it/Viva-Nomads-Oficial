@@ -6,12 +6,24 @@
 -- Contas (achadas por e-mail E papel em profiles; nunca por id colado):
 --   1. Maria de Fátima — fatima.alves.campanha@gmail.com — proprietária (role = 'owner')
 --   2. Lya Raquel      — lyamercaldi@gmail.com           — inquilina (role = 'tenant')
--- Se alguma das duas não existir, tiver outro papel ou for conta de teste, a migração PARA (exceção) e não grava nada.
+-- Se nenhuma das duas existir (laboratório, banco novo), avisa e segue sem gravar. Se alguma existir mas as duas não conferirem
+-- (falta uma, outro papel, conta de teste), a migração PARA (exceção) e não grava nada.
 -- Se a marca já existir, não duplica (a chave é a chave primária). Nenhuma outra conta é tocada.
 do $$
 declare
+  existentes integer;
   achadas integer;
 begin
+  -- Banco sem nenhuma das duas contas (laboratório, CI, banco novo): não há o que marcar. Avisa e segue, sem gravar.
+  select count(*) into existentes
+    from public.profiles p
+   where lower(p.email) in ('fatima.alves.campanha@gmail.com', 'lyamercaldi@gmail.com');
+  if existentes = 0 then
+    raise notice 'E287: nenhuma das duas contas existe neste banco — nada a marcar (laboratório ou banco novo)';
+    return;
+  end if;
+
+  -- Alguma existe: então as DUAS têm de conferir por e-mail e papel; se não, PARA (exceção) e não grava nada.
   select count(*) into achadas
     from public.profiles p
    where p.is_teste is not true

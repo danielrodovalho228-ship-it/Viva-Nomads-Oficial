@@ -32,6 +32,15 @@ test("só as duas contas reais, achadas por e-mail E papel; para (exceção) se 
   }
 });
 
+test("banco sem as duas contas (laboratório, CI, banco novo): avisa e segue sem gravar; se alguma existir e não conferir, para", () => {
+  for (const s of [mig, apl]) {
+    assert.match(s, /select count\(\*\) into existentes\s+from public\.profiles p\s+where lower\(p\.email\) in \('fatima\.alves\.campanha@gmail\.com', 'lyamercaldi@gmail\.com'\);/);
+    assert.match(s, /if existentes = 0 then\s+raise notice 'E287:[^']*';\s+return;\s+end if;/);
+    // a parada por divergência vem DEPOIS do atalho do banco sem as contas
+    assert.ok(s.indexOf("if existentes = 0") < s.indexOf("if achadas <> 2"));
+  }
+});
+
 test("0321: aplicar entre begin/commit e registrado; rollback tira só as duas marcas e o registro", () => {
   assert.match(aplRaw, /^-- [^\n]*\n-- [^\n]*\n-- [^\n]*\nbegin;/);
   assert.match(aplRaw, /commit;\s*$/);
