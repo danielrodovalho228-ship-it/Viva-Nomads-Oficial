@@ -13,7 +13,7 @@ import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { usePreviaNoHover } from "@/components/busca/previa-hover";
 import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
-import { afastarPins } from "@/lib/busca/pins-sem-sobreposicao";
+import { afastarPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -90,15 +90,37 @@ interface SearchMapProps {
  * E525 (D11): afasta os pins que se cobrem (cada um vai à posição livre mais próxima). Por MARGEM, não por transform:
  * o pin já usa o translate do Tailwind (Leaflet) e o transform do próprio marcador (Mapbox).
  */
-function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLElement }[], quadro: { w: number; h: number }) {
+function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLElement }[], quadro: { w: number; h: number }, obstaculos: Obstaculo[] = []) {
   const desloc = afastarPins(
     itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
-    quadro
+    quadro,
+    obstaculos
   );
   for (const { id, el } of itens) {
     const { dx, dy } = desloc.get(id) ?? { dx: 0, dy: 0 };
     el.style.marginLeft = `${dx}px`;
     el.style.marginTop = `${dy}px`;
+  }
+}
+
+/**
+ * E704: os nomes de cidade que o Mapbox desenha (camadas "settlement-*-label" do estilo) viram obstáculos fixos do
+ * afastamento de pinos — o pin de preço não cobre o nome da cidade. A posição vem do próprio mapa
+ * (`queryRenderedFeatures`), nunca de um palpite; a largura do texto é estimada pelo tamanho do nome. Sem camada ou com
+ * erro, nenhum obstáculo (o comportamento de antes).
+ */
+function rotulosDeCidade(map: mapboxgl.Map): Obstaculo[] {
+  try {
+    const camadas = ["settlement-major-label", "settlement-minor-label"].filter((id) => map.getLayer(id));
+    if (camadas.length === 0) return [];
+    return map.queryRenderedFeatures({ layers: camadas }).flatMap((f) => {
+      if (f.geometry.type !== "Point") return [];
+      const pt = map.project(f.geometry.coordinates as [number, number]);
+      const nome = String(f.properties?.name_pt ?? f.properties?.name ?? "");
+      return [{ x: pt.x, y: pt.y, w: Math.max(80, nome.length * 10), h: 22 }];
+    });
+  } catch {
+    return [];
   }
 }
 
@@ -244,13 +266,17 @@ function SearchMapbox({
           const pt = map.project(marker.getLngLat());
           return { id, x: pt.x, y: pt.y, el };
         }),
-        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
+        rotulosDeCidade(map)
       );
     reorganizar();
     // E525: também ao ganhar tamanho (no celular o mapa nasce escondido e os pins mediam 0 × 0).
+    // E704: e quando o mapa termina de desenhar (é aí que os nomes de cidade existem para serem lidos).
     map.on("moveend resize", reorganizar);
+    map.once("idle", reorganizar);
     return () => {
       map.off("moveend resize", reorganizar);
+      map.off("idle", reorganizar);
     };
     // O enquadramento (fitBounds) fica num efeito próprio keyed em [sig, focusKey]
     // para um único ajuste de câmera — evita animações concorrentes quando lista
