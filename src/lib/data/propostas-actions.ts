@@ -808,7 +808,9 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   if (!s || !/^[0-9a-f-]{36}$/i.test(id)) return null;
   await expirarVencidas(s.admin, s.user.id);
   // Leitura pela sessão (RLS): quem não é parte não vê nada (404).
-  const { data: pRow } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  const { data: pRow, error: erroProposta } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  // Achado 156: leitura que falha não vira 404 ("proposta não encontrada"): lança e a página mostra "Tentar de novo".
+  if (erroProposta) throw new Error("Não foi possível abrir a proposta agora.");
   let p = pRow as LinhaProposta | null;
   if (!p) return null;
   const papel: Autor = p.owner_id === s.user.id ? "owner" : "tenant";
