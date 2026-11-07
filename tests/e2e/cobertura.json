@@ -6247,6 +6247,12 @@
         "t256-pagina-da-estadia"
       ]
     },
+    "src/lib/data/estadia-actions.ts#salvarInstrucaoSaidaDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/estadia-actions.ts#salvarNota": {
       "personas": [
         "proprietario"
