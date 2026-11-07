@@ -338,3 +338,7 @@ Bloco 497 (#3257, grupo do 480, incluindo interessados, novo anúncio e editar o
 ## Bloco 498 (main `c6f776acd`)
 
 Bloco 497 (#3257) mesclado por você, sem outra mudança de produto na main (só blocos meus desde `70e2ba5d1`): nenhuma spec de merge escrita. Bloco 498 (t1424, grupo do 481: admin visão geral/eventos/funil, visitas, serviços, públicas de parceiros) aberto no #3261, a 390 e 1280 px; resultado do run entra na próxima atualização. Sem merge e sem fechar PR nesta rodada. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum.
+
+## Bloco 498 verde
+
+Bloco 498 (t1424, #3261, grupo do 481) **verde** (run 42395956892), a 390 e 1280 px. Aguarda a mesclagem do Daniel; sem merge e sem fechar PR. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum. Próximo da fila: bloco 499 (grupo do 482).
