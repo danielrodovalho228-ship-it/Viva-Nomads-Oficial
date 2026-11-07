@@ -2125,7 +2125,8 @@
         "t553-varredura-bloco41",
         "t559-varredura-bloco43",
         "t686-varredura-bloco72",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1391-e677-ordem-estavel-propostas"
       ]
     },
     "/dashboard/servicos": {
