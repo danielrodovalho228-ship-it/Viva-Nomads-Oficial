@@ -88,7 +88,8 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
         await expect(pedido).toBeVisible();
         await pedido.getByLabel(/justificativa/i).fill("Conferido: o comentário é opinião sobre a estadia.");
         await pedido.getByRole("button", { name: /manter no ar/i }).click();
-        await expect(pedido).toContainText("Mantida", { timeout: 30_000 });
+        // ADMIN-2: decidido, o pedido sai da fila da Central (a conferência do estado é a do banco, logo abaixo).
+        await expect(pedido).toHaveCount(0, { timeout: 30_000 });
       } finally {
         await ctxAdmin.close();
       }
