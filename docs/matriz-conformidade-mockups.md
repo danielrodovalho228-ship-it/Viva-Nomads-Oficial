@@ -838,3 +838,11 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Observações sem correção:** botões `size="sm"` do sistema (40 px: "Voltar aos imóveis", "Compartilhar", "Ver", "Editar" na lista de imóveis) e links dentro de frase (ex.: "padrão mínimo", 17 px) seguem o padrão atual; mudar o tamanho do botão é decisão de sistema de desenho, não defeito de tela.
 - **Não alcançáveis no demo:** `/admin/*`, `/dashboard/estadia/[id]/*`, `/dashboard/contratos/[id]/ficha` (exigem papel ou dado real) — ficam para o laboratório.
 - **E666 (calendário público):** PR #3250 separa Ocupado de Bloqueado pelo proprietário.
+
+## Passada 69 (07/11; modo demonstração local, `main` em #3254; 390 e 1280) — rotas ainda não varridas
+
+- **Telas conferidas** (sem estouro lateral, sem erro de página a 390 e a 1280): `/ajuda/fale-com-a-viva`, `/alerta-busca/desligar`, `/parceiros/ativar`, `/dashboard/comparar`, `conta/seguranca`, `conta/excluir`, `favoritos`, `ganhos`, `garantias`, `locacoes`, `notificacoes`, `orcamentos/nova`, `propostas`, `respostas-rapidas`, `solicitacoes`, `verificacao`, `visitas`.
+- **Achado (corrigido, PR `claude-a/varredura-passada-69`):** links de ação soltos de 17–20 px: "Ver minhas candidaturas" (Propostas), "Ver contratos" (Caução), "Voltar para Orçamentos" (Nova proposta) e "Ativar"/"Alterar senha" (Segurança e verificações). Agora `min-h-11`.
+- **Sem correção, para decisão:** botões `size="sm"` do sistema (40 px, ex.: "Buscar imóveis" em Favoritos, "Ver meus anúncios" em Ganhos); controles de Notificações medem 24 px no trilho, mas a linha inteira é o alvo (a conferir por QA com toque real).
+- **Não alcançáveis no demo:** `/dashboard/estadia/[id]/*`, `/dashboard/contratos/[id]/ficha`, `/admin/*` (papel ou dado real) — laboratório.
+- **Antes desta passada:** #3256 (E685/E686) verde; #3250 (E666) e #3251 (passada 68) verdes e sem conflito com a `main`.
