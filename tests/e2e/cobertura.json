@@ -7098,6 +7098,12 @@
         "t390-destino-pessoal"
       ]
     },
+    "src/lib/data/emergencia-chegada-actions.ts#acionarEmergenciaChegada": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": []
+    },
     "src/lib/data/emitidos-actions.ts#listarEmitidos": {
       "personas": [
         "admin"
