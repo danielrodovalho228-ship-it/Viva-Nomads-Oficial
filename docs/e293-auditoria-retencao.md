@@ -269,3 +269,21 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## Rodada E293 de 07/11 — migrações 0313 a 0321 e descrições do inventário
+
+Conferido nesta rodada (leitura das migrações; sem apagar nada, sem prazo novo, sem mudar classe). A guarda `inventario.test.ts` já passava; o que estava defasado eram os **textos** do inventário, que descreviam a tabela como era antes de colunas novas com dado pessoal ou sensível.
+
+| Migração | Coluna / tabela nova | Dado | Onde está no inventário | Texto corrigido? |
+| --- | --- | --- | --- | --- |
+| 0313 (E648) | `vistoria_pedidos`: valor e prazo propostos, datas da escolha, da proposta e do aceite | valor e datas do pedido | `vistoria_pedidos` (DISPUTA) | sim |
+| 0313 (E648) | `vistoria_laudos`: assinado por, quando, hash, termo | identidade do avaliador e hash | `vistoria_laudos` (DISPUTA) | sim |
+| 0315 (E657) | `leads.reenviada_em` | só data | `leads` (ESTADIA) | sim |
+| 0316 (E660) | `properties.ficha_dentro`, `contratos.ficha_dentro_congelada` | ficha do imóvel, sem dado pessoal | `JSONB_PROPRIO` (já classificadas) | já estava |
+| 0317 (E661) | `imovel_instrucoes_chegada`: Wi-Fi do condomínio (rede e **senha**), recepção, fechadura | acesso ao imóvel (sensível) | `imovel_instrucoes_chegada` (CONTA) | sim: antes dizia só "observações de chegada" |
+| 0318 (E668) | `profiles.papel_ativo_escolhido_em` | só data | `profiles` (CONTA) | sim |
+| 0319 (E669) | `conferencia_laudos_retirados` | caminho do PDF, quem, quando | já listada | já estava |
+| 0320 (E662) | `imovel_instrucoes_chegada.instrucao_saida`, `contratos.instrucao_saida` | texto do dono | `imovel_instrucoes_chegada` (CONTA) | sim |
+| 0321 (E287) | linhas em `automacoes_envios` (2 contas reais) | marca de boas-vindas | tabela já inventariada | n/a |
+
+Pendências (não executadas, com o Daniel): a senha do Wi-Fi do condomínio e a fechadura ficam na classe CONTA (saem com a conta); se o Daniel quiser que saiam antes (por exemplo, no fim da estadia), é decisão de prazo do item 13. As migrações 0322 a 0325 (E679-B, E682) estão em PRs abertos e entram na próxima rodada, quando mesclarem.
