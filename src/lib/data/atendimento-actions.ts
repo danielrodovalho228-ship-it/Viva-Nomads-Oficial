@@ -590,7 +590,9 @@ export async function chamadoAdmin(id: string): Promise<{
 } | null> {
   const ctx = await exigirAdmin();
   if (!ctx || !UUID_RE.test(id)) return null;
-  const { data: c } = await ctx.admin.from("chamados").select(COLS_ADMIN).eq("id", id).maybeSingle();
+  const { data: c, error: erroChamado } = await ctx.admin.from("chamados").select(COLS_ADMIN).eq("id", id).maybeSingle();
+  // Achado 157: leitura que falha não vira 404 ("chamado não encontrado"): lança e a página mostra "Tentar de novo".
+  if (erroChamado) throw new Error("Não foi possível abrir o chamado agora.");
   if (!c) return null;
   const conta = (q: PromiseLike<{ count: number | null }>) => Promise.resolve(q).then((r) => r.count ?? 0);
   const [anuncios, pedidos, chamadosAnteriores] = c.usuario_id
