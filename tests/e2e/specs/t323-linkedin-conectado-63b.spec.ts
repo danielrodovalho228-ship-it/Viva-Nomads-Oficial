@@ -25,13 +25,23 @@ async function ligarChave(page: Page) {
   if (page.url() === "about:blank") await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.context().addCookies([{ name: "vn_lab_linkedin", value: "1", url: new URL(page.url()).origin }]);
 }
+/** E66 (24/10): a lista de confiança, com a linha do LinkedIn e o aviso do resultado, mora em /dashboard/conta/seguranca. */
+const TELA_DA_LINHA = "/dashboard/conta/seguranca";
 async function conectar(page: Page): Promise<string> {
-  await page.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+  await page.goto(TELA_DA_LINHA, { waitUntil: "domcontentloaded" });
   const linha = page.getByTestId("confianca-linkedin");
   await expect(linha).toHaveAttribute("data-situacao", "falta", { timeout: 20_000 });
   await linha.getByTestId("confianca-linkedin-acao").click();
   await page.waitForURL(/linkedin=/, { timeout: 30_000 });
-  return new URL(page.url()).searchParams.get("linkedin") ?? "";
+  const url = new URL(page.url());
+  const resultado = url.searchParams.get("linkedin") ?? "";
+  // L-106 (produto): as rotas /api/conta/linkedin/conectar e /retorno ainda voltam para /dashboard/conta/privacidade, onde a linha
+  // e o aviso do resultado não existem mais. Anotado; o resto do teste confere o comportamento na tela que tem a linha.
+  if (url.pathname === "/dashboard/conta/privacidade") {
+    test.info().annotations.push({ type: "L-106", description: `a volta do LinkedIn (?linkedin=${resultado}) cai em ${url.pathname}, sem a linha nem o aviso (a lista está em ${TELA_DA_LINHA})` });
+    await page.goto(`${TELA_DA_LINHA}?linkedin=${encodeURIComponent(resultado)}`, { waitUntil: "domcontentloaded" });
+  }
+  return resultado;
 }
 const linhaDe = async (uid: string) => (await adm().from("confianca_linkedin").select("sub_hash, conectado_em, valido_ate").eq("user_id", uid).maybeSingle()).data;
 
@@ -155,7 +165,7 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
   test("5. desconectar apaga a linha e o selo some na hora (para o dono também)", async ({ browser }) => {
     const p = await entrar(browser, ana.email, senha);
     await ligarChave(p);
-    await p.goto("/dashboard/conta/privacidade", { waitUntil: "domcontentloaded" });
+    await p.goto(TELA_DA_LINHA, { waitUntil: "domcontentloaded" });
     const linha = p.getByTestId("confianca-linkedin");
     await expect(linha).toHaveAttribute("data-situacao", "ok", { timeout: 20_000 });
     await linha.getByTestId("confianca-linkedin-botao").click();
