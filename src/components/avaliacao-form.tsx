@@ -5,6 +5,7 @@ import { Star, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { avaliar } from "@/lib/data/avaliacoes-actions";
 import { CRITERIOS, ETIQUETAS, MAX_ETIQUETAS, type ParAvaliacao } from "@/lib/avaliacoes-criterios";
+import { TEXTOS_AVALIAR } from "@/lib/avaliacoes-pagina";
 import { LIMITE_COMENTARIO, TEXTO_AVALIACAO_FECHADA, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -24,6 +25,7 @@ export function AvaliacaoForm({
   demo,
   encerradoEm,
   fechada = false,
+  abertoInicial = false,
 }: {
   contratoId: string;
   alvoId: string;
@@ -39,6 +41,8 @@ export function AvaliacaoForm({
    * NÃO oferece o botão — o servidor recusaria (0089: só contrato encerrado, até 14 dias depois do fim).
    */
   fechada?: boolean;
+  /** E679: na página própria de avaliar o formulário já nasce aberto (sem o botão "Avaliar…"). */
+  abertoInicial?: boolean;
 }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -49,14 +53,15 @@ export function AvaliacaoForm({
   const [recomendaria, setRecomendaria] = useState<boolean | null>(null);
   const [notaPrivadaParte, setNotaPrivadaParte] = useState("");
   const [notaPrivadaViva, setNotaPrivadaViva] = useState("");
-  const [aberto, setAberto] = useState(false);
+  const [aberto, setAberto] = useState(abertoInicial);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [moderacao, setModeracao] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   // Sem leitura no servidor ao abrir a tela (Prompt 42: nenhuma server action na navegação do painel); o estado
   // "Aguardando a outra parte" vem do envio desta visita, e o banco recusa uma segunda avaliação do mesmo contrato.
-  const partes = <PartesAvaliacao euEnviei={enviado} prazo={prazoAvaliacao(encerradoEm)} />;
+  // Na página própria (abertoInicial) a faixa de sigilo do mockup já diz o prazo; o bloco das duas partes só volta depois do envio.
+  const partes = abertoInicial && !enviado ? null : <PartesAvaliacao euEnviei={enviado} prazo={prazoAvaliacao(encerradoEm)} />;
 
   async function enviar() {
     setErro(null);
@@ -117,11 +122,17 @@ export function AvaliacaoForm({
     );
   }
 
+  const textos = TEXTOS_AVALIAR[par];
+  // Marcada: dourado do mockup com contorno amber-600 (≥ 3:1 no branco); vazia: contorno sage (~5,2:1), o próprio controle.
+  const estrela = (ativa: boolean) => (ativa ? "fill-amber-500 stroke-amber-600 text-amber-600" : "text-sage");
   return (
     <div>
       {partes}
-      <p className="mt-3 text-sm font-semibold text-ink">{titulo}</p>
-      <div className="mt-2 flex items-center gap-1" role="radiogroup" aria-label="Nota de 1 a 5">
+      {titulo && <p className="mt-3 text-sm font-semibold text-ink">{titulo}</p>}
+      {/* E679 (mockup avaliacoes-avaliar-*): nota geral grande, três critérios com as estrelas à direita, tags rápidas,
+          texto público com contador, recomendaria e o botão cheio. */}
+      <h3 className="mt-4 text-xl font-semibold text-forest">{textos.geral}</h3>
+      <div className="mt-2 flex items-center gap-1" role="radiogroup" aria-label="Nota de 1 a 5" data-testid="avaliacao-geral">
         {[1, 2, 3, 4, 5].map((n) => (
           <button
             key={n}
@@ -132,24 +143,18 @@ export function AvaliacaoForm({
             onMouseEnter={() => setHover(n)}
             onMouseLeave={() => setHover(0)}
             onClick={() => setRating(n)}
+            className="min-h-11 min-w-11"
           >
-            <Star
-              className={cn(
-                "h-6 w-6 transition-colors",
-                // Varredura 01/11: a estrela vazia é o próprio controle da nota — contorno sage (~5:1) em vez de sage-200
-                // (1,25:1); a marcada ganha contorno champagne-600 (≥3:1) além do preenchimento.
-                (hover || rating) >= n ? "fill-champagne text-champagne-600" : "text-sage"
-              )}
-            />
+            <Star className={cn("mx-auto h-8 w-8 transition-colors", estrela((hover || rating) >= n))} />
           </button>
         ))}
       </div>
-      <fieldset className="mt-3 space-y-2" data-testid="avaliacao-criterios">
-        <legend className="text-xs font-semibold text-muted">Avalie cada ponto</legend>
+      <fieldset className="mt-4 divide-y divide-line border-t border-line" data-testid="avaliacao-criterios">
+        <legend className="sr-only">Avalie cada ponto</legend>
         {CRITERIOS[par].map((c) => (
-          <div key={c.chave} className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm text-ink">{c.rotulo}</span>
-            <div className="flex items-center gap-1" role="radiogroup" aria-label={`${c.rotulo}, de 1 a 5`}>
+          <div key={c.chave} className="flex flex-wrap items-center justify-between gap-2 py-1">
+            <span className="text-base text-ink">{c.rotulo}</span>
+            <div className="flex items-center" role="radiogroup" aria-label={`${c.rotulo}, de 1 a 5`}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
                   key={n}
@@ -160,14 +165,15 @@ export function AvaliacaoForm({
                   onClick={() => setCriterios((x) => ({ ...x, [c.chave]: n }))}
                   className="min-h-11 min-w-11"
                 >
-                  <Star className={cn("mx-auto h-5 w-5", (criterios[c.chave] ?? 0) >= n ? "fill-champagne text-champagne-600" : "text-sage")} />
+                  <Star className={cn("mx-auto h-6 w-6", estrela((criterios[c.chave] ?? 0) >= n))} />
                 </button>
               ))}
             </div>
           </div>
         ))}
       </fieldset>
-      <div className="mt-3 flex flex-wrap gap-2" aria-label="Etiquetas rápidas">
+      <h3 className="mt-4 text-xl font-semibold text-forest">{textos.etiquetas}</h3>
+      <div className="mt-2 flex flex-wrap gap-2" aria-label="Etiquetas rápidas">
         {ETIQUETAS[par].map((t) => {
           const on = etiquetas.includes(t);
           return (
@@ -177,64 +183,74 @@ export function AvaliacaoForm({
               aria-pressed={on}
               disabled={!on && etiquetas.length >= MAX_ETIQUETAS}
               onClick={() => setEtiquetas((x) => (on ? x.filter((y) => y !== t) : [...x, t]))}
-              className={cn("min-h-11 rounded-full border px-3 text-xs font-semibold", on ? "border-forest bg-forest/10 text-forest" : "border-sage-200 text-muted")}
+              className={cn("min-h-11 rounded-full border px-4 text-sm font-semibold", on ? "border-forest bg-forest text-white" : "border-sage-200 bg-sage-100 text-forest")}
             >
               {t}
             </button>
           );
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Recomendaria">
-        <span className="text-sm text-ink">{papelAutor === "inquilino" ? "Recomendaria este imóvel?" : "Receberia de novo?"}</span>
-        {[true, false].map((v) => (
-          <button
-            key={String(v)}
-            type="button"
-            role="radio"
-            aria-checked={recomendaria === v}
-            onClick={() => setRecomendaria(v)}
-            className={cn("min-h-11 rounded-full border px-4 text-sm font-semibold", recomendaria === v ? "border-forest bg-forest/10 text-forest" : "border-sage-200 text-muted")}
-          >
-            {v ? "Sim" : "Não"}
-          </button>
-        ))}
+      <h3 className="mt-4 text-xl font-semibold text-forest">{textos.texto}</h3>
+      <div className="relative mt-2">
+        <textarea
+          rows={3}
+          value={comentario}
+          onChange={(e) => setComentario(e.target.value)}
+          maxLength={LIMITE_COMENTARIO}
+          placeholder={placeholder}
+          aria-label={textos.texto}
+          className="w-full rounded-xl border border-sage-200 px-3 pb-6 pt-2 text-base outline-none focus:border-sage"
+        />
+        <span className="pointer-events-none absolute bottom-2 right-3 text-xs text-muted" data-testid="avaliacao-contador">
+          {comentario.length}/{LIMITE_COMENTARIO}
+        </span>
       </div>
-      <textarea
-        rows={2}
-        value={comentario}
-        onChange={(e) => setComentario(e.target.value)}
-        maxLength={LIMITE_COMENTARIO}
-        placeholder={placeholder}
-        className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
-      />
-      <textarea
-        rows={2}
-        value={notaPrivadaParte}
-        onChange={(e) => setNotaPrivadaParte(e.target.value)}
-        maxLength={LIMITE_COMENTARIO}
-        placeholder="Recado privado para a outra parte (só ela vê; opcional)"
-        className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
-      />
-      <textarea
-        rows={2}
-        value={notaPrivadaViva}
-        onChange={(e) => setNotaPrivadaViva(e.target.value)}
-        maxLength={LIMITE_COMENTARIO}
-        placeholder="Recado privado para a Viva (só a equipe vê; opcional)"
-        className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
-      />
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2" role="radiogroup" aria-label="Recomendaria" data-testid="avaliacao-recomenda">
+        <span className="text-lg font-semibold text-forest">{textos.recomenda}</span>
+        <div className="flex gap-2">
+          {[true, false].map((v) => (
+            <button
+              key={String(v)}
+              type="button"
+              role="radio"
+              aria-checked={recomendaria === v}
+              onClick={() => setRecomendaria(v)}
+              className={cn("min-h-11 min-w-16 rounded-full border px-4 text-base font-semibold", recomendaria === v ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-forest")}
+            >
+              {v ? "Sim" : "Não"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <details className="mt-4 rounded-xl border border-line p-3" data-testid="avaliacao-recados-privados">
+        <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-ink">Recados privados (opcional)</summary>
+        <textarea
+          rows={2}
+          value={notaPrivadaParte}
+          onChange={(e) => setNotaPrivadaParte(e.target.value)}
+          maxLength={LIMITE_COMENTARIO}
+          placeholder="Recado privado para a outra parte (só ela vê; opcional)"
+          className="mt-2 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+        />
+        <textarea
+          rows={2}
+          value={notaPrivadaViva}
+          onChange={(e) => setNotaPrivadaViva(e.target.value)}
+          maxLength={LIMITE_COMENTARIO}
+          placeholder="Recado privado para a Viva (só a equipe vê; opcional)"
+          className="mt-2 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+        />
+      </details>
       {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
-      <div className="mt-3 flex items-center gap-3">
-        <Button variant="gold" size="sm" onClick={enviar} disabled={enviando || rating === 0 || recomendaria === null || CRITERIOS[par].some((c) => !criterios[c.chave])}>
+      <div className="mt-4 grid gap-2">
+        <Button variant="primary" size="lg" className="w-full" onClick={enviar} disabled={enviando || rating === 0 || recomendaria === null || CRITERIOS[par].some((c) => !criterios[c.chave])}>
           {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar avaliação
         </Button>
-        <button
-          type="button"
-          onClick={() => setAberto(false)}
-          className="text-xs font-semibold text-muted underline hover:text-ink"
-        >
-          Cancelar
-        </button>
+        {!abertoInicial && (
+          <button type="button" onClick={() => setAberto(false)} className="min-h-11 text-sm font-semibold text-muted underline hover:text-ink">
+            Cancelar
+          </button>
+        )}
       </div>
     </div>
   );
