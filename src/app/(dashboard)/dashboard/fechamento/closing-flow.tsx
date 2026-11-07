@@ -1,5 +1,6 @@
 "use client";
 
+import { dataBRT } from "@/lib/datas-brasilia";
 import { prazoInicial } from "@/lib/inicio-estadia";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
@@ -1201,7 +1202,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 )}
                 {!demo && contratoExistente && estadoContrato && (
                   <p className="text-xs text-muted" data-testid="fechamento-contrato-gerado-em">
-                    Este contrato foi gerado em {estadoContrato.criadoEm.slice(0, 10).split("-").reverse().join("/")}.
+                    Este contrato foi gerado em {dataBRT(estadoContrato.criadoEm)}.
                   </p>
                 )}
                 {contratoId && (
@@ -1300,7 +1301,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               />
               {!demo && generated && contratoId && (
                 <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
-                  {contratoExistente && estadoContrato ? `Gerado em ${estadoContrato.criadoEm.slice(0, 10).split("-").reverse().join("/")} · ` : ""}
+                  {contratoExistente && estadoContrato ? `Gerado em ${dataBRT(estadoContrato.criadoEm)} · ` : ""}
                   <a href={`/dashboard/contratos/${contratoId}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
                     Ver contrato
                   </a>
