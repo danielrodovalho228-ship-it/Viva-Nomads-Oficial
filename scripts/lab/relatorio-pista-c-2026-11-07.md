@@ -254,3 +254,13 @@ Specs novas para merges sem guarda de tela: t1413 (E665, modelos de respostas r�
 **Efeito.** O lab-crítico fica vermelho em todo PR e em toda push na main até o conserto; os blocos de varredura e as specs novas não rodam. Parei de abrir blocos (o 491 só ficaria vermelho pelo mesmo motivo).
 
 **Item para a lista-master (L-103, produto, Pistas A/B — não corrigido por esta pista).** Incluir as cinco chaves em `GRUPO_DA_INSTRUCAO` (as `condominio_*` no grupo `condominio`; `instrucao_saida` no grupo que o guia da estadia definir) e, se o guia deve mostrá-las, em `TITULO_GRUPO_INSTRUCAO`/ordem dos blocos. Assim que o conserto entrar na main, reencadeio: um único rerun dos runs que ficaram vermelhos e depois o bloco 491, a spec do E661 e o acompanhamento de t1413/t1414.
+
+## Veredito do #3164 pelo lab (L-103) e destravamento
+
+**Veredito: VERDE.** Branch `claude-a/e662-tela-saida` (head `83b11bb3b`, 5 commits à frente da main `305cb9bd5` e 0 atrás): lab-crítico, run **42386061247**, `completed success`; o passo 12 "Build do site (modo simulado)", que falhava na main, **passou**. Conferido também localmente: `tsc --noEmit` na branch sem erro em `src/` nem `tests/` — o `TS2739` em `src/lib/estadia/instrucoes.ts(140,14)` (cinco chaves faltando em `GRUPO_DA_INSTRUCAO`) **sumiu**; a branch tem as chaves `condominio_wifi_rede`, `condominio_wifi_senha`, `condominio_recepcao`, `condominio_fechadura` (grupo `condominio`) e `instrucao_saida` (grupo `saida`, com título "Como sair (check-out)"). Pode mesclar o #3164 antes dos demais.
+
+**Runs bloqueados pela main (só pelo L-103, sem rerun em loop).** Os dez runs vermelhos falharam todos e apenas no passo 12 (build): main `305cb9bd5` (42383221233); t1413/t1414 (#3236, 42383824141); E677 (#3188, 42383632714); E673 (#3189, 42383636552); E676 (#3194, 42383640870); E675 (#3199, 42383645348); E672 (#3201, 42383649578); E674 (#3202, 42383653397); E664 (#3104, 42383657511); E660 (#3112, 42383662161); E663 (#3113, 42383665803). Nenhuma outra causa; nenhum item novo. Status: **bloqueado-pela-main**. Rerun só depois do #3164 na main (um por run, e só do que seguir vermelho).
+
+**Spec nova sobre o #3164.** t1415 (E661 guia em blocos + nota do condomínio; E662 instrução única de saída no guia do morador, lembretes do dono e gravação pela edição do imóvel), PR #3238 em draft com base `claude-a/e662-tela-saida`; não mesclar antes do #3164. Run em andamento.
+
+**Destrava quando o #3164 mergear.** (1) Rerun único dos dez runs acima. (2) t1415 passa a mirar a main (retarget do #3238). (3) Retomo o bloco 491 e o acompanhamento de t1413/t1414. Defeitos de produto novos: nenhum além do L-103.
