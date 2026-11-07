@@ -46,6 +46,7 @@ import {
 import { ENCERRAMENTO_REGRAS_ATIVO } from "@/lib/flags";
 import { HREF_ESTADIA, type PapelEstadia } from "@/lib/estadia/estadia";
 import { normalizarInstrucoes, separarSalvamento, type Instrucoes } from "@/lib/estadia/instrucoes";
+import { INSTRUCAO_SAIDA_MAX, normalizarInstrucaoSaida } from "@/lib/estadia/instrucao-saida";
 import { podeAdicionarOcupante, textoListaPortaria, textoTetoOcupantes, validarOcupante, type OcupanteEntrada } from "@/lib/estadia/ocupantes";
 import {
   blocosDepoisDoAditivo,
@@ -190,6 +191,30 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     .from("imovel_instrucoes_chegada")
     .upsert({ property_id: propertyId, ...imovelCampos, atualizado_em: new Date().toISOString() }, { onConflict: "property_id" });
   if (error) return { ok: false, erro: "Não foi possível salvar as instruções." };
+  revalidatePath("/dashboard/estadia/[contratoId]", "page");
+  return { ok: true, valor: undefined };
+}
+
+/**
+ * E662 — o dono cadastra, no cadastro do imóvel, a instrução ÚNICA de saída (check-out). Grava só a coluna `instrucao_saida`
+ * da tabela privada das instruções (RLS: só o dono); o contrato guarda a cópia na 1ª assinatura (congelarInstrucaoSaida).
+ * Vazio apaga. O morador e o dono leem o mesmo texto (instrucaoDeSaida: contrato primeiro, imóvel de reserva).
+ */
+export async function salvarInstrucaoSaidaDoImovel(propertyId: string, texto: string): Promise<Res> {
+  if (!UUID_RE.test(String(propertyId))) return { ok: false, erro: "Imóvel inválido." };
+  if (typeof texto === "string" && texto.trim().length > INSTRUCAO_SAIDA_MAX) return { ok: false, erro: `A instrução de saída tem até ${INSTRUCAO_SAIDA_MAX} caracteres.` };
+  const supabase = await createClient();
+  if (!supabase) return { ok: false, erro: "Serviço indisponível." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, erro: "Entre para continuar." };
+  const { data: imovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if ((imovel as { owner_id?: string } | null)?.owner_id !== user.id) return { ok: false, erro: "Só o proprietário edita a instrução de saída." };
+  const { error } = await supabase
+    .from("imovel_instrucoes_chegada")
+    .upsert({ property_id: propertyId, instrucao_saida: normalizarInstrucaoSaida(texto), atualizado_em: new Date().toISOString() }, { onConflict: "property_id" });
+  if (error) return { ok: false, erro: "Não foi possível salvar a instrução de saída." };
   revalidatePath("/dashboard/estadia/[contratoId]", "page");
   return { ok: true, valor: undefined };
 }

@@ -119,6 +119,20 @@ export async function congelarInstrucaoSaida(admin: SupabaseClient, contratoId: 
   }
 }
 
+/**
+ * E662: o texto atual da instrução de saída, para o EDITOR do dono na edição do imóvel (sessão do dono; a RLS da tabela
+ * privada só deixa o dono ler). Mora aqui, com os demais leitores de `imovel_instrucoes_chegada`. Falha de leitura = vazio
+ * (o campo abre em branco; a gravação continua exigindo o dono).
+ */
+export async function instrucaoSaidaParaEditar(supabase: SupabaseClient, propertyId: string): Promise<string> {
+  try {
+    const { data } = await supabase.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    return ((data as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
 /** Instruções do imóvel com a sobrescrita do contrato (contratos_checkin.instrucoes). */
 export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null; doContrato: string | null }> {
   const [{ data: im }, { data: ck }, { data: cs, error: erroSaida }] = await Promise.all([
