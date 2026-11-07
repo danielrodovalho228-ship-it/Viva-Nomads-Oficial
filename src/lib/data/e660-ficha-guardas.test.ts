@@ -44,3 +44,10 @@ test("migração 0316: colunas aditivas, aplicar idempotente com registro e roll
   assert.match(ap, /commit;\s*$/);
   assert.ok(existsSync(new URL("../../../supabase/producao/rollback/0316_rollback.sql", import.meta.url)));
 });
+
+test("rascunho retomado sem ficha no draft_data usa a ficha gravada no imóvel (e o laboratório já semeia uma completa)", () => {
+  assert.match(acoes, /export async function fichaDentroDoImovel\(id: string\)/);
+  assert.match(acoes, /\.eq\("id", id\)\.eq\("owner_id", user\.id\)\.maybeSingle\(\)/);
+  assert.match(pagina, /fichaDentroDoImovel\(draftParam\)\.then\(\(f\) => alive && f && setFichaDentro\(\(atual\) => \(fichaCompleta\(atual\) \? atual : f\)\)\)/);
+  assert.match(ler("../../../tests/e2e/fixtures/laboratorio.ts"), /ficha_dentro: \{\s*versao: 1,/);
+});

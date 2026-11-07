@@ -94,7 +94,7 @@ import {
 } from "@/lib/contrato-blocos";
 import { diasMaxEstadiaVigente, diasValidos } from "@/lib/estadia-em-dias";
 import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
-import { normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
+import { normalizarFicha, type FichaDentro } from "@/lib/ficha-dentro/ficha-dentro";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
@@ -2209,6 +2209,22 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
   return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
+}
+
+/**
+ * E660: a ficha "o que tem dentro" já gravada na coluna do imóvel do dono (rascunho retomado sem ficha no draft_data).
+ * Só o dono lê (filtro por owner_id). Sem ficha, sem coluna (migração 0316 ausente) ou erro: null.
+ */
+export async function fichaDentroDoImovel(id: string): Promise<FichaDentro | null> {
+  const supabase = await createClient();
+  if (!supabase || !idDeRascunhoValido(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from("properties").select("ficha_dentro").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (error) return null;
+  return normalizarFicha((data as { ficha_dentro?: unknown } | null)?.ficha_dentro);
 }
 
 /** E426: o draft_data sem as fotos cujo arquivo já saiu do bucket (nada de miniatura quebrada ao retomar). */

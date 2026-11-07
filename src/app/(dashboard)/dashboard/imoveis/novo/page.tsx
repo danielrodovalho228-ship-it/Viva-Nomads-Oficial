@@ -25,6 +25,7 @@ import {
   saveDraftData,
   abrirRascunho,
   enderecoGravadoDoImovel,
+  fichaDentroDoImovel,
   getLatestDraft,
   carregarLimitesNegociacao,
   salvarLimitesNegociacao,
@@ -1019,6 +1020,8 @@ export default function NewPropertyPage() {
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      // E660: sem ficha no rascunho, vale a já gravada no imóvel (nunca sobrescreve uma ficha já completa na tela).
+      fichaDentroDoImovel(draftParam).then((f) => alive && f && setFichaDentro((atual) => (fichaCompleta(atual) ? atual : f))).catch(() => {});
       enderecoGravadoDoImovel(draftParam).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
       carregarLimitesNegociacao(draftParam).then((l) => alive && setLimites(l)).catch(() => {});
       if (etapaParam !== null) {
