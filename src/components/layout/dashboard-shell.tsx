@@ -83,6 +83,8 @@ const TENANT_ONLY = [
   "/dashboard/comparar",
   "/dashboard/buscas",
   "/dashboard/locacoes",
+  "/dashboard/pedidos",
+  "/dashboard/candidaturas",
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
