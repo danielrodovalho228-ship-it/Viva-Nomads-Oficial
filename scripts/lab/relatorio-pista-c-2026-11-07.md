@@ -416,3 +416,7 @@ Bloco 505 (t1436, #3286, grupo do 488: painel do proprietário sem id, incluindo
 **Sem spec de tela ainda (item pulado):** E694 (exemplo sem beco), E696/E702/E704 (fórmula do total no cartão de preço), E699 (travas de publicação) e E700 (checklist do passo 10) — todos no assistente/cartão e dependem de semear imóvel em estado específico; E701 (área estável) e E680 (estadia alheia). Mais os de antes: avaliações do parceiro (0323), conduta cega (0324) e termos do avaliador (0325). **Pendentes:** t1428 (E685/E686, #3270) e t1429 (E691, #3271) seguem sobre drafts não mesclados (#3256, #3253).
 
 **Bloco 506** (t1439, grupo do 489: morador sem id) aberto. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
+
+## Resultado: t1427, t1430, t1437, t1438 e bloco 506 — todos verdes
+
+Runs concluídos, **todos verdes**: t1427 / E681 (#3269, 42408332120), t1430 / E674 resíduo (#3272, 42408336611), t1437 / E695 (#3293, 42408404421), t1438 / E703 (#3294, 42408469983) e bloco 506 (t1439, #3295, grupo do 489, 42408529791). Sem vermelho, sem rerun. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105. Sem merge e sem fechar PR; os cinco PRs aguardam a mesclagem do Daniel. Pendentes: spec de tela de E694, E696/E702/E704, E699, E700, E701, E680, e das avaliações do parceiro/conduta cega/termos do avaliador; t1428 e t1429 seguem sobre drafts. Próximo bloco da fila: 507 (grupo do 490).
