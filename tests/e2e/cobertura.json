@@ -90,7 +90,8 @@
         "t588-varredura-bloco46",
         "t615-varredura-bloco54",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/admin/2fa/refazer": {
@@ -1720,7 +1721,8 @@
         "t589-varredura-bloco47",
         "t686-varredura-bloco72",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/dashboard/visitas/[id]": {
@@ -1965,7 +1967,8 @@
         "t559-varredura-bloco43",
         "t661-varredura-bloco62",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/parceiros/avaliadores": {
@@ -1977,7 +1980,8 @@
         "t319-varredura-bloco10",
         "t591-varredura-bloco48",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/parceiros/fotografos": {
@@ -1994,7 +1998,8 @@
         "t353-varredura-bloco18",
         "t560-varredura-bloco44",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/pedidos": {
@@ -2243,7 +2248,8 @@
         "t298-varredura-logada-bloco4",
         "t675-varredura-bloco68",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/admin/servicos": {
@@ -2320,7 +2326,8 @@
         "t48-varredura",
         "t301-varredura-logada-bloco5",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -2381,7 +2388,8 @@
         "t236-parceiros-ciclo",
         "t312-varredura-bloco9",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/parceiros/buscar": {
@@ -2803,7 +2811,8 @@
         "t319-varredura-bloco10",
         "t419-varredura-bloco36",
         "t1403-varredura-bloco481",
-        "t1424-varredura-bloco498"
+        "t1424-varredura-bloco498",
+        "t1449-varredura-bloco515"
       ]
     },
     "/admin/qualidade": {
