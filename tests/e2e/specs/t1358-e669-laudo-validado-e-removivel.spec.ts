@@ -19,7 +19,7 @@ const laudos = async () => {
   const { data: confs } = await adm().from("conferencias").select("id").eq("contrato_id", ids.contrato!);
   const confIds = (confs ?? []).map((c) => c.id as string);
   if (!confIds.length) return { ativos: 0, retirados: 0, confIds };
-  const a = await adm().from("conferencia_laudos").select("id", { count: "exact", head: true }).in("conferencia_id", confIds);
+  const a = await adm().from("conferencia_laudos").select("conferencia_id", { count: "exact", head: true }).in("conferencia_id", confIds);
   const r = await adm().from("conferencia_laudos_retirados").select("conferencia_id", { count: "exact", head: true }).in("conferencia_id", confIds);
   return { ativos: a.count ?? 0, retirados: r.count ?? 0, confIds };
 };
