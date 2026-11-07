@@ -1254,7 +1254,8 @@
         "proprietario"
       ],
       "specs": [
-        "t862-e553-perfil-candidato"
+        "t862-e553-perfil-candidato",
+        "t1394-e670-resumo-candidato-sem-traco"
       ]
     },
     "/dashboard/leads": {
@@ -1279,7 +1280,8 @@
         "t486-e174b-selo-vinculo",
         "t553-varredura-bloco41",
         "t686-varredura-bloco72",
-        "t854-interessado-responder"
+        "t854-interessado-responder",
+        "t1394-e670-resumo-candidato-sem-traco"
       ]
     },
     "/dashboard/locacoes": {
