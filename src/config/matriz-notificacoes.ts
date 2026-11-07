@@ -165,6 +165,11 @@ export const MATRIZ_NOTIFICACOES = {
   parceiro_orcamento_aceito: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_horario_confirmado: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   estadia_instrucoes_liberadas: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
+  // E663: jornada de mensagens da estadia (confirmação, chegada, semana da saída, meio da estadia longa).
+  jornada_confirmacao: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
+  jornada_chegada: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  jornada_semana_saida: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  jornada_meio_estadia: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
   // 61-B: o convidado pode não ter conta ainda — só e-mail (a central e o push dependem da conta).
   estadia_convite_ocupante: { categoria: "outros", papeis: ["morador"], canais: SO_EMAIL },
   estadia_remarcada: { categoria: "outros", papeis: DUAS_PARTES, canais: SEM_PUSH },
