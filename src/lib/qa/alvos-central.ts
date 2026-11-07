@@ -15,7 +15,15 @@ type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
 export const chaveDaLinha = (l: Pick<LinhaCentral, "filtro" | "id">) => `${l.filtro}:${l.id}`;
 
-export async function alvosDaCentral(admin: Admin | null, linhas: readonly LinhaCentral[]): Promise<LinhaDaTela[]> {
+/**
+ * `semAlvo` (E477, resíduo): a Central é só leitura para a observadora em TODA linha — de dado real ou de teste. As linhas com
+ * ação entram sem alvo (a regra do observador trata como "proibida sempre") e nenhuma leitura de dono é feita.
+ */
+const TEM_ACAO = (l: LinhaCentral) =>
+  (l.filtro === "fotos_nivel" && !!l.ref?.imovel) || (l.filtro === "conforto_contestacoes" && !!l.ref?.pendencia) || (l.filtro === "avaliacoes_contestadas" && !!l.ref?.revisao);
+
+export async function alvosDaCentral(admin: Admin | null, linhas: readonly LinhaCentral[], semAlvo = false): Promise<LinhaDaTela[]> {
+  if (semAlvo) return linhas.filter(TEM_ACAO).map((l) => ({ id: chaveDaLinha(l) }));
   const pendencias = linhas.filter((l) => l.filtro === "conforto_contestacoes" && l.ref?.pendencia);
   const revisoes = linhas.filter((l) => l.filtro === "avaliacoes_contestadas" && l.ref?.revisao);
   const imovelDaPendencia = new Map<string, string>();

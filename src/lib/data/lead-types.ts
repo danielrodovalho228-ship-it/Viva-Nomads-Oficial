@@ -22,6 +22,10 @@ export interface Lead {
   moradorVerificado?: string | null;
   /** Avaliações de outros proprietários (só com pelo menos 1 publicada). */
   reputacao?: { media: number; n: number } | null;
+  /** E657: último envio da candidatura (reenviada_em, senão a criação), o selo de reenvio e o primeiro envio. */
+  enviadaEm?: string | null;
+  reenviada?: boolean;
+  primeiroEnvioEm?: string | null;
   property: string;
   category: string;
   riskCategories: string[];
@@ -55,9 +59,27 @@ export function leadScore(l: Lead): number {
   return (l.verified ? 0 : 100) + lightOrder * 10 + (l.budgetMatch ? 0 : 1);
 }
 
-/** Resumo do candidato em uma linha. */
+/** E670: categoria profissional que o servidor não soube dizer chega como "—"; vazia, não entra no resumo. */
+function categoriaDoResumo(c: string | null | undefined): string {
+  const t = (c ?? "").trim();
+  return t === "—" || t === "-" ? "" : t;
+}
+
+/**
+ * Resumo do candidato em uma linha. E670: nada de campo vazio como traço ("— · atenção"): categoria vazia some, e "atenção" só
+ * aparece com o MOTIVO concreto (os pontos do perfil de risco); sem motivo, o semáforo amarelo não vira palavra solta.
+ * Sem nada a dizer, devolve "" (a tela esconde a linha).
+ */
 export function leadSummary(l: Lead): string {
-  const parts = [l.category, LIGHT_SHORT[l.light]];
+  const parts: string[] = [];
+  const categoria = categoriaDoResumo(l.category);
+  if (categoria) parts.push(categoria);
+  if (l.light === "yellow") {
+    const motivos = (l.riskCategories ?? []).map((m) => m.trim()).filter(Boolean).slice(0, 2);
+    if (motivos.length) parts.push(`atenção: ${motivos.join(", ")}`);
+  } else {
+    parts.push(LIGHT_SHORT[l.light]);
+  }
   if (l.motivo) parts.push(`motivo: ${l.motivo}`);
   if (l.desiredPeriodDays) parts.push(`quer ${l.desiredPeriodDays} dias`);
   if (l.budgetMatch !== undefined) parts.push(l.budgetMatch ? "orçamento ok" : "orçamento a confirmar");
