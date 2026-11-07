@@ -19,3 +19,10 @@ export async function preencherCriterios(p: Page) {
   for (const radio of await fieldset.getByRole("radio", { name: /: 5$/ }).all()) await radio.click();
   await p.getByTestId("avaliacao-recomenda").getByRole("radio", { name: "Sim" }).click();
 }
+
+/** Tela do pedido de serviço (E679, PR 5): 5 estrelas em cada critério do par e "Sim" em "recomendaria". */
+export async function preencherCriteriosDoPedido(p: Page, papel: "cliente" | "parceiro") {
+  const chaves = papel === "cliente" ? ["qualidade", "pontualidade", "cuidado_imovel"] : ["comunicacao", "imovel_pronto", "combinado_cumprido"];
+  for (const chave of chaves) await p.getByTestId(`pedido-criterio-${chave}-5`).click();
+  await p.getByTestId("pedido-recomendaria-sim").click();
+}
