@@ -985,12 +985,13 @@ export function SearchClient({
           </p>
         </div>
 
-        {/* Mapa (só lg+): fixo sob a faixa de filtros, ocupa a altura visível e
-            encosta na borda direita da tela. */}
+        {/* Mapa (só lg+): fixo sob a faixa de filtros e ocupa a altura visível. E659: termina DENTRO da margem da página
+            (sem margem negativa): colado na borda da janela, os rótulos dos bairros e a atribuição do mapa (canto
+            inferior direito) eram cortados. */}
         <div
           data-testid="busca-mapa"
           className={cn(
-            "lg:sticky lg:top-18 lg:-mr-6 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
+            "lg:sticky lg:top-18 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
             mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : verMapa ? "hidden lg:block lg:bg-surface-2" : "hidden",
           )}
         >
@@ -1003,7 +1004,7 @@ export function SearchClient({
               onSelect={setSelecionadoId}
               focus={geoCenter}
               radiusKm={radiusKm}
-              className="h-full w-full rounded-none border-0 border-l border-line"
+              className="h-full w-full rounded-none border-0 border-l border-line lg:rounded-xl lg:border"
             />
           )}
         </div>
