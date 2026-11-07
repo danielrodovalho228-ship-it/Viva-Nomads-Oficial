@@ -770,3 +770,10 @@ Achado da varredura do lote 11 (proprietario2, imóvel ativo `4a693a63`): "o cab
 - Os únicos cabeçalhos presos do produto são o `AppHeader` (só no modo app, 48 px, `top-0`), a moldura do assistente (64 px) e o `MobileHeader` (56 px, só em telas de fluxo). Todos os alvos de âncora das telas longas (`bloco-video`, seções do editor, painel do parceiro, serviços) usam `scroll-mt-24` (96 px), maior que qualquer um deles: pular para um título pela âncora ou por `scrollIntoView` deixa o título livre.
 - Rolar a página pelas mãos faz o título passar por baixo do cabeçalho preso — isso é o comportamento normal de um cabeçalho preso, não a sobreposição que o achado descreve.
 **Para reproduzir, preciso do QA:** o tamanho de janela (ou aparelho), se estava no modo app, e o ponto exato de rolagem/ação (clique no menu, foco em erro, hash) em que o título "Regras da casa" ficou parcialmente coberto. Sem isso, qualquer mudança seria no escuro (não inventei um `scroll-padding` global).
+
+## Passada 60 (07/11; modo demonstração local, `main` no #3083; 390 e 1280) — telas dos merges E657, E414 e E477
+
+Merges depois da passada 59: E657 (selo "Reenviada" e "Enviada em"), E414 (botão "Medir depois"), E477 (observadora só leitura no admin). Telas medidas: `/dashboard/leads`, `/dashboard/leads/1`, `/dashboard/candidaturas` e o assistente (`/dashboard/imoveis/novo`, onde fica a medição de internet).
+- 0 imagens quebradas, um h1, sem rolagem lateral, nada além da borda, nada cortado, alvos de toque ok nas 8 medições; conformidade: sem diferença.
+- **Sem achado.** As linhas "Enviada em" e "Reenviada" só aparecem com candidatura real (o demo não tem data de envio): ficam para o QA. As páginas do admin (`fotos-perfil`, `imoveis`, `pendencias`) pedem sessão de admin: ficam para o QA.
+- **CI (07/11):** #3191 (E678) com `e2e`, `lab-critico` e `verify` verdes; #3065 verde depois da correção do teste do E531.
