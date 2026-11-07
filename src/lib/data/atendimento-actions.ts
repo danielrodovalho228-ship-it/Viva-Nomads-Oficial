@@ -680,7 +680,9 @@ export async function aprovarSugestao(chamadoId: string, mensagemId: number): Pr
   if (!ctx || !UUID_RE.test(chamadoId) || !Number.isInteger(mensagemId)) return { ok: false, error: "Sem permissão." };
   const recusaQa = await recusaObservador(ctx.userId);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: m } = await ctx.admin.from("chamado_mensagens").select("id, chamado_id, autor, interno, simulacao, corpo").eq("id", mensagemId).maybeSingle();
+  const { data: m, error: erroSugestao } = await ctx.admin.from("chamado_mensagens").select("id, chamado_id, autor, interno, simulacao, corpo").eq("id", mensagemId).maybeSingle();
+  // Leitura falha não vira "a sugestão sumiu": a equipe tenta de novo em vez de descartá-la.
+  if (erroSugestao) return { ok: false, error: "Não foi possível ler a sugestão agora. Tente de novo." };
   const texto = m && m.chamado_id === chamadoId && m.autor === "ia" && m.interno ? respostaDaSugestao(m.corpo as string) : null;
   if (!texto) return { ok: false, error: "Sugestão não encontrada neste chamado." };
   const r = await responderComoAdmin(chamadoId, texto, false);
