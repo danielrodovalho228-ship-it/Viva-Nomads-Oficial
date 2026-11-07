@@ -41,6 +41,8 @@ export interface PainelParceiro {
   tipoPessoa: string;
   /** FISCAL-PARCEIRO-B: Sim/Não do PJ (null = não respondeu; PF sempre null). */
   emiteNota: boolean | null;
+  /** E687: empresa/veículo da categoria Mudança (vêm do pedido aprovado). */
+  dadosCategoria: { empresa?: string; veiculo?: string };
   /** PJ sem resposta: pendência no painel (não tira do ar o que já está publicado). */
   notaPendente: boolean;
   /** Denúncia procedente tirou o selo: o motivo fica à vista e o parceiro não religa sozinho. */
@@ -156,6 +158,7 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     teste: (perfil as { is_teste?: boolean } | null)?.is_teste === true,
     tipoPessoa: p.tipo_pessoa as string,
     emiteNota: (p.emite_nota as boolean | null) ?? null,
+    dadosCategoria: (p.dados_categoria as { empresa?: string; veiculo?: string } | null) ?? {},
     notaPendente: faltaRespostaNota({ tipoPessoa: p.tipo_pessoa as string, emiteNota: p.emite_nota as boolean | null }),
     notaSeloRemovido: p.nota_selo_removido_em ? { em: p.nota_selo_removido_em as string, motivo: (p.nota_selo_motivo as string | null) ?? null } : null,
     // E463: o documento é o do PERFIL (o mesmo de Conta → Dados), não o do pedido de parceria.

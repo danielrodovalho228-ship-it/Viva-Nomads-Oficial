@@ -449,3 +449,14 @@ export function recorteImagem(w: number, h: number, tipo: TipoImagemParceiro): {
   const escala = Math.min(1, maxLado / Math.max(sw, sh));
   return { sx: Math.floor((w - sw) / 2), sy: Math.floor((h - sh) / 2), sw, sh, ow: Math.max(1, Math.round(sw * escala)), oh: Math.max(1, Math.round(sh * escala)) };
 }
+
+/** E687 — empresa e veículo da categoria Mudança, como linhas para mostrar ao parceiro. Outras categorias: nada. */
+export function linhasDadosDaCategoria(categorias: readonly string[], dados: { empresa?: unknown; veiculo?: unknown } | null | undefined): { rotulo: string; valor: string }[] {
+  if (!dados || !categorias.includes("mudanca")) return [];
+  const linhas: { rotulo: string; valor: string }[] = [];
+  const empresa = typeof dados.empresa === "string" ? dados.empresa.trim() : "";
+  const veiculo = typeof dados.veiculo === "string" ? dados.veiculo.trim() : "";
+  if (empresa) linhas.push({ rotulo: "Empresa de mudança", valor: empresa });
+  if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
+  return linhas;
+}
