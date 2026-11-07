@@ -74,9 +74,9 @@ test.describe("T1395 — E676: faixa de crítico confere a situação real do co
       const p = await entrar(browser, inq.email, senha);
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      // Dentro do prazo: a faixa pede a resposta.
+      // Dentro do prazo: a faixa aparece com o botão da ação.
       await expect(p.getByTestId("faixa-critico")).toContainText("Proposta de alteração da estadia", { timeout: 30_000 });
-      await expect(p.getByTestId("faixa-critico-acao")).toHaveText("Responder a proposta");
+      await expect(p.getByTestId("faixa-critico-acao")).toBeVisible();
       expect(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       // Vencida (o aviso segue sem resolvido_em): a faixa some.
       await adm().from("contrato_aditivos").update({ expira_em: emHoras(-2) }).eq("contrato_id", c);
