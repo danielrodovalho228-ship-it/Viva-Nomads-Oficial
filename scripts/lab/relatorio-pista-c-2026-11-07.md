@@ -330,3 +330,7 @@ Bloco 495 (#3254) verde (run 42393066883). Mesclados por você desde `4ffdb7572`
 ## Bloco 496 verde e bloco 497 (main `70e2ba5d1`)
 
 Bloco 496 (#3255) verde (run 42393784036) e mesclado, junto com o 495. Nenhum merge de produto novo desde `7b5d30e28`; sem spec nova. Bloco 497 (t1423, grupo do 480: visitante e painel do proprietário, incluindo editar o anúncio) aberto no #3257; se o editor repetir o 400 em `/api/proximidades`, é o L-104, não item novo. Próximo livre: L-105. Defeitos de produto novos: nenhum.
+
+## Bloco 497 verde (main `70e2ba5d1`)
+
+Bloco 497 (#3257, grupo do 480, incluindo interessados, novo anúncio e editar o anúncio) verde (run 42394617497): o editor do anúncio **não** repetiu o 400 em `/api/proximidades`, então o L-104 fica restrito ao "Qualificar o imóvel" (`/qualificar?imovel=`). Nenhum merge de produto novo. L-104 segue aberto (produto); próximo livre: L-105. Próximo bloco da fila: 498 (grupo do 481: admin, visitas, serviços, parceiros).
