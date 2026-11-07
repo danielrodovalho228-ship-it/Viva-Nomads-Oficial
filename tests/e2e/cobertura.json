@@ -2418,7 +2418,8 @@
         "t415-varredura-bloco32",
         "t623-varredura-bloco57",
         "t657-e235-link-avaliador",
-        "t673-varredura-bloco67"
+        "t673-varredura-bloco67",
+        "t1324-e648-dono-escolhe-avaliador"
       ]
     },
     "/dashboard/recibos": {
