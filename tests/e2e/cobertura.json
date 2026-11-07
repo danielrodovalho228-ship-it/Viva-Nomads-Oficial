@@ -970,7 +970,8 @@
         "t644-conta-menu-alinhado",
         "t1387-varredura-bloco476",
         "t1418-varredura-bloco492",
-        "t1419-varredura-bloco493"
+        "t1419-varredura-bloco493",
+        "t1442-varredura-bloco509"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1523,7 +1524,8 @@
         "t709-e263-pets-condicoes-ida-e-volta",
         "t1387-varredura-bloco476",
         "t1418-varredura-bloco492",
-        "t1419-varredura-bloco493"
+        "t1419-varredura-bloco493",
+        "t1442-varredura-bloco509"
       ]
     },
     "/dashboard/pedidos": {
@@ -1559,7 +1561,8 @@
         "t298-varredura-logada-bloco4",
         "t416-varredura-bloco33",
         "t591-varredura-bloco48",
-        "t1418-varredura-bloco492"
+        "t1418-varredura-bloco492",
+        "t1442-varredura-bloco509"
       ]
     },
     "/dashboard/propostas/[id]": {
@@ -2098,7 +2101,8 @@
         "t481-e132a-qualificacao",
         "t535-e153-documento-um-lugar",
         "t1250-e645-qualificar-console-390",
-        "t1418-varredura-bloco492"
+        "t1418-varredura-bloco492",
+        "t1442-varredura-bloco509"
       ]
     },
     "/roi": {
@@ -2328,7 +2332,8 @@
         "t679-varredura-bloco70",
         "t1387-varredura-bloco476",
         "t1418-varredura-bloco492",
-        "t1419-varredura-bloco493"
+        "t1419-varredura-bloco493",
+        "t1442-varredura-bloco509"
       ]
     },
     "/parceiros/[slug]": {
@@ -2710,7 +2715,8 @@
         "t341-credenciamento-avaliador-62a",
         "t387-varredura-bloco22",
         "t679-varredura-bloco70",
-        "t1418-varredura-bloco492"
+        "t1418-varredura-bloco492",
+        "t1442-varredura-bloco509"
       ]
     },
     "/dashboard/avaliacao-imovel/[id]": {
@@ -2866,7 +2872,8 @@
       "specs": [
         "t397-foto-na-hora",
         "t407-varredura-bloco26",
-        "t1418-varredura-bloco492"
+        "t1418-varredura-bloco492",
+        "t1442-varredura-bloco509"
       ]
     },
     "/dashboard/qa/emails": {
