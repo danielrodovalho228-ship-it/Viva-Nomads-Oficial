@@ -9,14 +9,19 @@ export function InstrucoesEmBlocos({ campos, testid }: { campos: Instrucoes | nu
         <section key={g.grupo} data-testid={`instrucoes-grupo-${g.grupo}`} aria-label={g.titulo}>
           {g.grupo !== "entrada" && <h3 className="font-title text-base font-semibold text-ink">{g.titulo}</h3>}
           {g.grupo === "condominio" && <p className="text-xs text-muted" data-testid="instrucoes-condominio-nota">{NOTA_ESTRUTURA_CONDOMINIO_GUIA}</p>}
-          <dl className="mt-2 space-y-3">
-            {g.campos.map((c) => (
-              <div key={c.chave}>
-                <dt className="text-sm font-semibold text-ink">{c.rotulo}</dt>
-                <dd className="whitespace-pre-line text-sm text-ink">{c.valor}</dd>
-              </div>
-            ))}
-          </dl>
+          {g.grupo === "saida" ? (
+            // E662: UMA instrução de saída, o mesmo texto para morador, dono e convidado (sem segundo título).
+            <p className="mt-2 whitespace-pre-line text-sm text-ink" data-testid="instrucao-saida-texto">{g.campos[0].valor}</p>
+          ) : (
+            <dl className="mt-2 space-y-3">
+              {g.campos.map((c) => (
+                <div key={c.chave}>
+                  <dt className="text-sm font-semibold text-ink">{c.rotulo}</dt>
+                  <dd className="whitespace-pre-line text-sm text-ink">{c.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </section>
       ))}
     </div>
