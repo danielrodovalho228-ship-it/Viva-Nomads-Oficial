@@ -99,7 +99,7 @@ export interface EstadoPrazos {
 }
 
 /** E707 (c) — o que sobra da caução depois de tudo o que o dono pleiteia (aceito, proposto ou contestado). Nunca negativo. */
-export function parteIndiscutivel(caucao: number, descontos: readonly Pick<ItemDesconto, "valor">[]): number {
+export function parteIndiscutivel<T extends { valor: number }>(caucao: number, descontos: readonly T[]): number {
   const pleiteado = descontos.reduce((s, d) => s + Math.max(0, Number(d.valor) || 0), 0);
   return Math.max(0, Math.round((caucao - pleiteado) * 100) / 100);
 }
