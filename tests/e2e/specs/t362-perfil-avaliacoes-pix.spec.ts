@@ -1,4 +1,4 @@
-import { camposDoPar, preencherCriterios } from "../fixtures/avaliacao-criterios";
+import { criteriosDaAvaliacao, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
@@ -50,7 +50,7 @@ test.describe("T362 — PERFIL-B: chave Pix de recebimento e avaliações recebi
     ] as const) {
       const sb = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
       await sb.auth.signInWithPassword({ email: quem.email, password: senha });
-      const { error: e } = await sb.from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: alvo, papel_autor: papel, nota_geral: nota, comentario_publico: texto, status: "enviada", ...camposDoPar(papel) });
+      const { error: e } = await sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao(papel as "inquilino" | "proprietario"), contrato_id: ids.contrato, alvo_id: alvo, papel_autor: papel, nota_geral: nota, comentario_publico: texto, status: "enviada" });
       if (e) throw e;
     }
   });

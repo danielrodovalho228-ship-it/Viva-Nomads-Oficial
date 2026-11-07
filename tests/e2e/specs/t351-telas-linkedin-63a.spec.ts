@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, CHAVE_ANON, criteriosDaAvaliacao, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * Rodada da vigia 24/10 (Pista C): a lista de confiança mudou para /dashboard/conta/seguranca (E66, #1263); o retorno
@@ -86,8 +86,8 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
       await sb.auth.signInWithPassword({ email, password: senha });
       return sb;
     };
-    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
-    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    await (await cliente(ana.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
+    await (await cliente(dono.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
   });
 
   test.afterAll(async () => {
