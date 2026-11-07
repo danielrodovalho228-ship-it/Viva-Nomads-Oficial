@@ -443,3 +443,7 @@ Runs concluídos, **todos verdes**: t1427 / E681 (#3269, 42408332120), t1430 / E
 **Numeração.** L-105 = avaliação semeada sem critérios (E679/0322; t323 corrigido; t28, t362, t93, t91, t351 e t369 ainda por ajustar); L-106 = volta do LinkedIn em Privacidade; **próximo livre: L-107** (os cabeçalhos dos blocos 507–509 ainda dizem L-106).
 
 PR do ajuste do t323: `claude-c/l106-t323-seguranca` (run em andamento). Sem merge e sem fechar PR.
+
+## t323 verde (L-105 + L-106 anotado)
+
+PR #3306 (`claude-c/l106-t323-seguranca`) **verde** (run 42412032783): com a lista de confiança lida em `/dashboard/conta/seguranca` e as avaliações semeadas com os critérios do E679, o t323 inteiro passa no lab-crítico (os cinco testes do arquivo, incluindo o selo do LinkedIn no card de avaliação). L-106 (volta do LinkedIn em Privacidade) segue **aberto no produto**; o t323 anota `L-106` enquanto as rotas redirecionarem para Privacidade. Pendentes do L-105: t28, t362, t93, t91, t351 e t369 (semeiam `enviada` sem critérios). Próximo livre: **L-107**. Sem merge e sem fechar PR.
