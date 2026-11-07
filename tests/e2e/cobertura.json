@@ -27,7 +27,8 @@
         "t669-ms1-topo-publico",
         "t671-varredura-bloco66",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/acesso-socios": {
@@ -368,7 +369,8 @@
         "t607-varredura-bloco51",
         "t671-varredura-bloco66",
         "t673-varredura-bloco67",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/ajuda/[tema]": {
@@ -382,7 +384,8 @@
         "t20-p1-agentes",
         "t673-varredura-bloco67",
         "t694-varredura-bloco73",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -401,7 +404,8 @@
         "t607-varredura-bloco51",
         "t669-ms1-topo-publico",
         "t671-varredura-bloco66",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/alerta-busca/desligar": {
@@ -560,7 +564,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t853-busca-conta-teste",
         "t1402-varredura-bloco480",
-        "t1405-varredura-bloco483"
+        "t1405-varredura-bloco483",
+        "t1423-varredura-bloco497"
       ]
     },
     "/cidades": {
@@ -897,7 +902,8 @@
         "t661-varredura-bloco62",
         "t672-e190-troca-de-modo",
         "t694-varredura-bloco73",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1114,7 +1120,8 @@
         "t664-e230-sem-score",
         "t703-e254-estadia-minima",
         "t708-e254-estadia-minima-uma-fonte",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1147,7 +1154,8 @@
         "t713-e261-avisos-titulo",
         "t709-e263-pets-condicoes-ida-e-volta",
         "t1402-varredura-bloco480",
-        "t1415-e661-e662-guia-em-blocos-e-saida"
+        "t1415-e661-e662-guia-em-blocos-e-saida",
+        "t1423-varredura-bloco497"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1283,7 +1291,8 @@
         "t707-e262-galeria-destaques-previa",
         "t708-e254-estadia-minima-uma-fonte",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1423-varredura-bloco497"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1331,7 +1340,8 @@
         "t686-varredura-bloco72",
         "t854-interessado-responder",
         "t1402-varredura-bloco480",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1423-varredura-bloco497"
       ]
     },
     "/dashboard/locacoes": {
@@ -1438,7 +1448,8 @@
         "t672-e190-troca-de-modo",
         "t686-varredura-bloco72",
         "t1402-varredura-bloco480",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1423-varredura-bloco497"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1829,7 +1840,8 @@
         "t709-e263-pets-condicoes-ida-e-volta",
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
-        "t1414-e666-legenda-calendario"
+        "t1414-e666-legenda-calendario",
+        "t1423-varredura-bloco497"
       ]
     },
     "/modelodenegocio": {
