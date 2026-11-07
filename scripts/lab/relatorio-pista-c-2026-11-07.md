@@ -50,6 +50,7 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 471 | t1382 | #3179 | 454 (t1365) | verde, run 42364888902 |
 | 472 | t1383 | #3181 | 455 (t1366) | verde, run 42365089033 |
 | 473 | t1384 | #3185 | 456 (t1367) | verde, run 42366225064 |
+| 474 | t1385 | #3187 | 457 (t1368) | verde, run 42367145795 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
@@ -112,3 +113,18 @@ Todas estão com o lab-crítico verde no PR de spec (base = branch do draft) e *
 | #3145 (`0b7916bce`) | E414 complemento: "Medir depois" como botão próprio em toda tela que mede | t1351 estendida (PR #3125): botão visível, "Medição adiada…", nada gravado |
 | #3144 (`2c411b3c6`) | E477 resíduo: observadora da QA só leitura em Pendências, Fotos de perfil e Imóveis | t1390 nova (PR do branch `claude-c/t1390-e477`): Imóveis (sem "Pausar", com "Só leitura"; admin comum mantém "Pausar"). Pendências e Fotos de perfil: só teste unitário do PR |
 Lab da `main`: #3144 (`2c411b3c6`) verde; #3145 cancelado pelo push seguinte; #3083 (`301624b00`) conferido ao fechar o bloco.
+
+### Lote das 11:10 (07/11) — resultado
+Verdes: bloco 474 (#3187, run 42367145795); t1331/E657 (#3077, run 42367029779); t1351/E414 (#3125, run 42367014027); t1390/E477 (#3186, run 42367090634).
+t1391/E677 (#3188): 1ª rodada (run 42367518202) vermelha por **infra** — "Subir o Supabase local" caiu em ~1 min e os fluxos foram pulados (a spec nem rodou). Rerun único disparado.
+
+### Specs sobre drafts da Pista B (base = branch do draft; não mesclar antes do draft)
+| Item | PR do draft | Spec | PR da spec | Observação |
+|---|---|---|---|---|
+| E677 ordem das propostas | branch `claude-b/e677-numero-orcamento` | t1391 | #3188 | rerun único em curso |
+| E673 "Disponível a partir de" | #3163 | t1392 | #3189 | em andamento |
+| E671 saída no e-mail | #3161 | — | — | o próprio PR já ajusta a t57; sem spec nova |
+| E672 comparativo do aditivo | #3162 | — | — | fica para depois (precisa de aditivo proposto pela tela) |
+| E674 troca de conta | #3166 | — | — | fica para depois (porta de QA com duas contas) |
+| E675 feedback da assinatura | #3171 | — | — | fica para depois (duplo envio de assinatura com código) |
+| E676 faixa de crítico | #3167 | — | — | fica para depois (contrato pendente + sino) |
