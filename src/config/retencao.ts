@@ -231,6 +231,7 @@ export const JSONB_PROPRIO: Record<string, string> = {
   "_backup_p0_draft_data.draft_data": "cópia de migração do rascunho do anúncio",
   "agentes_rondas.achados": "relatório interno das rondas dos agentes da equipe",
   "avaliacoes.notas_categorias": "notas que a pessoa deu",
+  "parceiro_avaliacoes.notas_categorias": "notas que a pessoa deu em cada critério do serviço",
   "chamado_mensagens.anexos": "caminhos dos anexos do chamado (arquivo no bucket inventariado)",
   "chaves_plataforma.valor": "valor de configuração da plataforma",
   "contracts.cost_split": "divisão de custos acordada no contrato",

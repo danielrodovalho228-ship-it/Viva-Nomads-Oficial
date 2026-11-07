@@ -79,7 +79,7 @@ export const MODELOS: Record<Quando, { rotulo: string; hora: number; texto: stri
   saida: {
     rotulo: "No dia da saída",
     hora: 9,
-    texto: "Bom dia! Hoje é o dia da sua saída. Obrigado pela estadia. Lembre de fazer a conferência de saída na página da estadia.",
+    texto: "Bom dia! Hoje é o dia da sua saída. Obrigado pela estadia. A instrução de saída e a conferência de saída estão na página da estadia.",
   },
 };
 

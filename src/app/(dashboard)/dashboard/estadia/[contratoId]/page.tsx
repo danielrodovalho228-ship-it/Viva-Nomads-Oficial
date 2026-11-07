@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { HREF_ESTADIA, textoEntrada, textoSaida } from "@/lib/estadia/estadia";
 import { acoesDaEstadia, encerrarDaEstadia, mensagemDaEstadia, type ContratoDaEstadia } from "@/lib/estadia/acoes";
+import { lembretesDeEntrega } from "@/lib/estadia/lembretes-entrega";
 import { InstrucoesEmBlocos } from "@/components/estadia/instrucoes-em-blocos";
 import { ROTULO_STATUS_ENCERRAMENTO, rotuloMotivo } from "@/lib/estadia/encerramento";
 import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
@@ -161,6 +162,20 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
               </li>
             ))}
           </ul>
+          {/* E662: lembretes do dono — não são itens do checklist, não bloqueiam nada. */}
+          {dono && (
+            <div className="mt-4 border-t border-line pt-4" data-testid="estadia-lembretes">
+              <h3 className="font-title text-base font-semibold text-ink">Lembretes (opcional)</h3>
+              <ul className="mt-2 space-y-3">
+                {lembretesDeEntrega({ instrucaoSaidaPreenchida: !!(e.instrucoes.campos?.instrucao_saida ?? "").trim() }).map((l) => (
+                  <li key={l.chave} data-testid={`lembrete-${l.chave}`}>
+                    <span className="block text-sm font-semibold text-ink">{l.rotulo}</span>
+                    <span className="block text-sm text-muted">{l.texto}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Panel>
       )}
 

@@ -7,12 +7,13 @@ test("E661: todo campo das instruções pertence a um grupo", () => {
 });
 
 test("E661: Wi-Fi do apartamento e vaga ficam no bloco do imóvel; regras, lixo e contatos do prédio no do condomínio", () => {
-  const g = agruparInstrucoes({ como_entrar: "Portaria 24h", wifi_rede: "Casa", wifi_senha: "x", vaga: "12", regras_condominio: "Silêncio", lixo: "Subsolo", contatos_predio: "Zelador", observacoes: "Obs" });
+  const g = agruparInstrucoes({ como_entrar: "Portaria 24h", instrucao_saida: "Deixe a chave na recepção", wifi_rede: "Casa", wifi_senha: "x", vaga: "12", regras_condominio: "Silêncio", lixo: "Subsolo", contatos_predio: "Zelador", observacoes: "Obs" });
   const por = Object.fromEntries(g.map((x) => [x.grupo, x.campos.map((c) => c.chave)]));
   assert.deepEqual(por.entrada, ["como_entrar"]);
+  assert.deepEqual(por.saida, ["instrucao_saida"]);
   assert.deepEqual(por.imovel, ["wifi_rede", "wifi_senha", "vaga", "observacoes"]);
   assert.deepEqual(por.condominio, ["regras_condominio", "lixo", "contatos_predio"]);
-  assert.deepEqual(g.map((x) => x.grupo), ["entrada", "imovel", "condominio"]);
+  assert.deepEqual(g.map((x) => x.grupo), ["entrada", "saida", "imovel", "condominio"]);
 });
 
 test("E661: grupo sem texto some e campo em branco não aparece", () => {
@@ -27,4 +28,13 @@ test("E661: guia do morador/dono e do convidado usam o mesmo componente", async 
   for (const p of ["src/app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx", "src/app/(dashboard)/dashboard/estadia/[contratoId]/convidado/page.tsx"]) {
     assert.match(readFileSync(p, "utf8"), /<InstrucoesEmBlocos /, p);
   }
+});
+
+test("E661/E660: Wi-Fi, recepção e fechadura DO CONDOMÍNIO vão para 'Estrutura do condomínio'; o Wi-Fi do apartamento fica no imóvel", async () => {
+  const { CAMPOS_CONDOMINIO } = await import("./instrucoes.ts");
+  for (const c of CAMPOS_CONDOMINIO) assert.equal(GRUPO_DA_INSTRUCAO[c], "condominio", c);
+  const g = agruparInstrucoes({ wifi_rede: "Casa", condominio_wifi_rede: "Areas", condominio_recepcao: "24 h", condominio_fechadura: "Biometria" });
+  const por = Object.fromEntries(g.map((x) => [x.grupo, x.campos.map((c) => c.chave)]));
+  assert.deepEqual(por.imovel, ["wifi_rede"]);
+  assert.deepEqual(por.condominio, ["condominio_wifi_rede", "condominio_recepcao", "condominio_fechadura"]);
 });

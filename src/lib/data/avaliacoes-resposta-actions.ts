@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
+import { validarFatoFalso } from "@/lib/avaliacoes-criterios";
 import { ehMotivoRevisao, validarContestacao, validarResposta } from "@/lib/avaliacoes-resposta";
 
 type Resultado = { ok: boolean; error?: string };
@@ -43,6 +44,11 @@ export async function responderAvaliacao(avaliacaoId: string, texto: string): Pr
 export async function pedirRevisaoAvaliacao(avaliacaoId: string, motivo: string, detalhe: string): Promise<Resultado> {
   const err = validarContestacao(motivo, detalhe);
   if (err) return { ok: false, error: err };
+  // E679: "fato falso" só para fato que a Viva confere; dano, sujeira e caução não entram (o banco recusa igual).
+  if (motivo === "fato_falso") {
+    const ff = validarFatoFalso(detalhe);
+    if (!ff.ok) return { ok: false, error: ff.erro };
+  }
   if (!UUID_RE.test(avaliacaoId)) return { ok: false, error: "Avaliação inválida." };
   const supabase = await createClient();
   if (!supabase) return { ok: false, error: "Sem conexão com o banco." };
@@ -82,7 +88,7 @@ export async function decidirRevisaoAvaliacao(contestacaoId: string, decisao: st
   if (!adm) return { ok: false, error: "Sem conexão com o banco." };
   const { data: c } = await adm
     .from("avaliacao_contestacoes")
-    .select("id, avaliacao_id, status, motivo")
+    .select("id, avaliacao_id, parceiro_avaliacao_id, status, motivo")
     .eq("id", contestacaoId)
     .maybeSingle();
   if (!c || c.status !== "aberta" || !ehMotivoRevisao(c.motivo)) return { ok: false, error: "Pedido não está mais aberto." };
@@ -96,11 +102,12 @@ export async function decidirRevisaoAvaliacao(contestacaoId: string, decisao: st
     .eq("status", "aberta");
   if (error) return { ok: false, error: "Não foi possível registrar a decisão." };
   if (decisao === "removida") {
-    const { error: e2 } = await adm
-      .from("avaliacoes")
-      .update({ status: "removida", moderacao_motivo: `revisão: ${c.motivo}` })
-      .eq("id", c.avaliacao_id as string);
+    // Mesma trilha para a avaliação do parceiro (E679-B): sai do ar e a nota da página do parceiro é recalculada.
+    const { error: e2 } = c.parceiro_avaliacao_id
+      ? await adm.from("parceiro_avaliacoes").update({ status: "removida", moderacao_motivo: `revisão: ${c.motivo}` }).eq("id", c.parceiro_avaliacao_id as string)
+      : await adm.from("avaliacoes").update({ status: "removida", moderacao_motivo: `revisão: ${c.motivo}` }).eq("id", c.avaliacao_id as string);
     if (e2) return { ok: false, error: "Decisão gravada, mas a avaliação não saiu do ar. Tente de novo." };
+    if (c.parceiro_avaliacao_id) await adm.rpc("publicar_avaliacoes_parceiro");
   }
   revalidatePath("/admin/pendencias");
   return { ok: true };
