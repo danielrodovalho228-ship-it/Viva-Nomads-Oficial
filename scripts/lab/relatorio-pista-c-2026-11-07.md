@@ -193,3 +193,7 @@ Cobertura dos demais merges: E427 já tem t804/t923 (nome igual e nome na págin
 ## Merges E528/E529 e bloco 481 (main `56a62b079`)
 
 Novos na main: E528 (#3050, painel de preço sem rolagem) e E529 (#3051, barra de comparar). Os dois já trazem as specs atualizadas no próprio merge (t843 e t844) e rodam no lab-crítico da main; sem spec nova a criar. t1401 (E446, #3205) verde (run 42375339282). t1393 (#3192), t1394 (#3193), bloco 480 (#3206) e a main em `56a62b079` ficaram em andamento ao fechar este registro. Bloco 481 (t1403, grupo do 464: admin, visitas, serviços, parceiros) aberto no #3207. Defeitos de produto novos: nenhum (L-103 livre). Spec de tela do E662 aguarda o draft #3164.
+
+## Colheita e bloco 482 (main `2efa62001`)
+
+Verdes: t1393 (#3192, run 42375213154), t1394 (#3193, run 42375216804), bloco 480 (#3206, run 42375384858); t1401 (#3205), bloco 480 e bloco 481 (#3207) já mesclados na main. Runs da main em `56a62b079`/`2c0853c4a` substituídos por mais novos (cancelados, não vermelhos); o de `2efa62001` pendente ao fechar. Bloco 482 (t1404, grupo do 465: candidaturas, favoritos, propostas, locações, mensagens, contratos, leads, orçamentos, públicas; inclui telas do E670/E677/E675) aberto no #3210. Defeitos de produto novos: nenhum (L-103 livre).
