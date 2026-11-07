@@ -431,3 +431,15 @@ Runs concluídos, **todos verdes**: t1427 / E681 (#3269, 42408332120), t1430 / E
 - Próximo número livre: **L-106**.
 
 **Blocos desta rodada (todos em andamento ao registrar):** 507 (t1440, #3302, grupo do 490: públicas com parâmetro), 508 (t1441, #3303, grupo do 491: admin com id e refazer 2FA) e 509 (t1442, #3304, grupo do 492: compartilhadas sem id, com a tolerância do L-104). Sem merge de produto novo na main desde `73fd0c336`. Sem merge e sem fechar PR. Um erro de operação meu foi corrigido sem perda: o t1440 foi parar por engano num commit do ramo do L-105, tirei com commit novo e o bloco 507 foi refeito em ramo próprio.
+
+## Resultado dos blocos 507–509 e do #3300; achado L-106 (LinkedIn)
+
+**Verdes:** bloco 507 (t1440, #3302, run 42411005642), bloco 508 (t1441, #3303, 42411047733) e bloco 509 (t1442, #3304, 42411076756); todos mesclados por você. O #3300 (L-105, t323 com os critérios do E679) foi mesclado com o run 42410943208 **vermelho**: o único teste que falhou foi o 1 do t323 ("nome divergente"), por outra causa, descrita abaixo. As avaliações semeadas passaram (49 de 50 no run).
+
+**Diagnóstico do teste 1 do t323 (continuação do L-105).** `confianca-linkedin` não existe em `/dashboard/conta/privacidade`. O E66 (24/10, `74592d6e1`) moveu a lista de confiança (`ConfiancaLista`, com a linha do LinkedIn e o aviso `linkedin-aviso`) para `/dashboard/conta/seguranca`; o teste unitário `conta-blocos.test.ts` fixa isso (a lista "não está" em Privacidade; Privacidade só tem o link para Segurança). O t323 ficou apontando para a tela antiga. Só apareceu agora porque o lab-crítico roda apenas specs alteradas. Erro de spec; corrigido no #novo (ver abaixo).
+
+**L-106 (produto — Pistas A/B; não corrigido por esta pista).** As rotas `src/app/api/conta/linkedin/conectar/route.ts` e `.../retorno/route.ts` (constante `CONTA = "/dashboard/conta/privacidade"`) e o cron `src/app/api/cron/linkedin/route.ts` (link do aviso `linkedin_vencendo`) ainda levam a pessoa para Privacidade. Quem volta do LinkedIn cai numa tela sem a linha do LinkedIn e **sem o aviso do resultado** (`?linkedin=nome|falha|cancelado|…`). Correção sugerida (das A/B): apontar `CONTA` e o link do aviso para `/dashboard/conta/seguranca`. Lab: t323 passa a abrir Segurança e anota `L-106` quando a volta cai em Privacidade (a anotação some sozinha quando o produto corrigir); t351 (linha 152) tem a mesma expectativa e deve ser ajustado depois do L-106.
+
+**Numeração.** L-105 = avaliação semeada sem critérios (E679/0322; t323 corrigido; t28, t362, t93, t91, t351 e t369 ainda por ajustar); L-106 = volta do LinkedIn em Privacidade; **próximo livre: L-107** (os cabeçalhos dos blocos 507–509 ainda dizem L-106).
+
+PR do ajuste do t323: `claude-c/l106-t323-seguranca` (run em andamento). Sem merge e sem fechar PR.
