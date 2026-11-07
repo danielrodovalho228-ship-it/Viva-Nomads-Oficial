@@ -1,5 +1,6 @@
 "use client";
 
+import { dataBRT } from "@/lib/datas-brasilia";
 import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
 import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 
@@ -218,8 +219,14 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
                       </span>
                     </div>
                     {/* Resumo do candidato em uma linha */}
-                    <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
+                    {leadSummary(l) && <p className="mt-1 text-sm font-medium text-ink" data-testid="candidato-resumo">{leadSummary(l)}</p>}
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {l.enviadaEm && (
+                      <p className="text-xs text-muted" data-testid="lead-enviada-em">
+                        Enviada em {dataBRT(l.enviadaEm)}
+                        {l.reenviada && l.primeiroEnvioEm ? ` · reenviada (primeiro envio em ${dataBRT(l.primeiroEnvioEm)})` : ""}
+                      </p>
+                    )}
                     {l.moradorVerificado && (
                       <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-forest" data-testid="selo-morador-verificado">
                         <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {l.moradorVerificado}

@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
 import { lembreteDeBlocoNoAceite } from "@/lib/estadia/lembrete-bloco-servidor";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { sendEmail } from "@/lib/notifications/email";
@@ -50,6 +51,7 @@ import {
   blocosDepoisDoAditivo,
   expiraEmDe,
   expirou,
+  comparativoDoAditivo,
   linhasDoAditivo,
   resumoDasMudancas,
   taxaDoAditivo,
@@ -101,6 +103,8 @@ function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent,
         userId,
         pushUrl: HREF_ESTADIA(contratoId),
         imovelId,
+        // E676: o aviso leva o contrato; é por ele que a ação do aditivo o resolve (e a faixa de crítico some).
+        refId: contratoId,
         ...(dados
           ? {
               body: (nome?: string) => aberturaEstadia(event as EventoEstadia, dados, nome),
@@ -273,12 +277,15 @@ function paraAditivo(c: LinhaContratoEstadia): ContratoParaAditivo {
   };
 }
 
-export async function proporAlteracao(contratoId: string, proposta: PropostaAditivo): Promise<Res<{ id: string }>> {
+export async function proporAlteracao(contratoId: string, proposta: PropostaAditivo, motivoLivre?: string | null): Promise<Res<{ id: string }>> {
   const ctx = await contextoDaEstadia(contratoId);
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
   if (ctx.c.status !== "ativo" || !assinadoPelasDuas(ctx.c)) return { ok: false, erro: "A alteração vale para contrato assinado pelas duas partes e em vigor." };
   const v = validarProposta(paraAditivo(ctx.c), proposta, hojeEmBrasilia());
   if (!v.ok) return { ok: false, erro: v.erro };
+  // E672: o comparativo antes × depois (dias exatos, saída, total, diferença) e o motivo entram no aditivo — e no texto assinado.
+  const motivo = String(motivoLivre ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+  const mudancasCompletas = { ...v.valor, comparativo: comparativoDoAditivo(paraAditivo(ctx.c), v.valor, hojeEmBrasilia()), ...(motivo ? { motivo } : {}) };
   await expirarVencidos(ctx.admin, ctx.c.id);
   const { data: ultimo, error: erroUltimo } = await ctx.admin.from("contrato_aditivos").select("numero").eq("contrato_id", ctx.c.id).order("numero", { ascending: false }).limit(1).maybeSingle();
   // Estados vazios: sem o último número, nasceria outro "Aditivo nº 1" (não há índice único em contrato + número).
@@ -292,8 +299,8 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
       numero,
       proposto_por: ctx.userId,
       papel_proponente: ctx.papel,
-      mudancas: v.valor,
-      resumo: resumoDasMudancas(v.valor),
+      mudancas: mudancasCompletas,
+      resumo: resumoDasMudancas(mudancasCompletas),
       expira_em: expiraEm,
     })
     .select("id")
@@ -305,7 +312,7 @@ export async function proporAlteracao(contratoId: string, proposta: PropostaAdit
     ...dadosDaEstadia(ctx.c),
     quem: await primeiroNomeDe(ctx.admin, ctx.userId),
     numeroAditivo: numero,
-    mudancas: resumoDasMudancas(v.valor),
+    mudancas: resumoDasMudancas(mudancasCompletas),
     prazo: expiraEm,
   }, ctx.c.property_id);
   revalidar(ctx.c.id);
@@ -389,6 +396,8 @@ export async function responderAditivo(aditivoId: string, resposta: "aceitar" | 
     await evento(ctx.admin, a.contrato_id, ctx.userId, "aditivo_aceito", { aditivo: a.id });
     if (ctx.papel === "proprietario") taxaBase = t.baseTexto;
   }
+  // E676: quem respondeu à proposta não a vê mais como pendente (a faixa de crítico "Proposta de alteração" some).
+  after(() => resolverAvisos({ usuarioId: ctx.userId, eventos: ["estadia_aditivo_proposto"], refId: a.contrato_id }));
   avisar(ctx.admin, a.proposto_por, "estadia_aditivo_respondido", a.contrato_id, {
     ...dadosDaEstadia(ctx.c),
     quem: await primeiroNomeDe(ctx.admin, ctx.userId),
@@ -488,6 +497,8 @@ export async function assinarAditivo(aditivoId: string, codigo: string, aceite: 
   if (completo) {
     const aplicado = await aplicarAditivo(ctx, a);
     if (!aplicado.ok) return aplicado;
+    // E676: aditivo assinado pelas duas partes — nenhuma das duas vê a proposta como pendente.
+    for (const quem of [ctx.userId, outraParte(ctx)]) after(() => resolverAvisos({ usuarioId: quem, eventos: ["estadia_aditivo_proposto"], refId: a.contrato_id }));
     // Prompt 56: com as duas assinaturas, o aditivo entra no registro único como VN-CT-…-ADn, com o MESMO hash que as
     // duas partes assinaram (o conteúdo é o documento do aditivo). A falha fica no log; o aditivo já valeu.
     await registrarDocumento(ctx.admin, {

@@ -28,7 +28,7 @@ test("as páginas da cidade e do bairro contam pela mesma regra da busca", () =>
   const cidade = ler("app/(public)/cidades/[cidade]/page.tsx");
   assert.match(cidade, /bairrosDaGrade\(cidade, properties, contaNaBusca\)/);
   const polo = ler("app/(public)/cidades/[cidade]/[polo]/page.tsx");
-  assert.match(polo, /imoveisDoBairro\(slug, await listPropertiesByCity\(cidadeNome\), contaNaBusca\)/);
+  assert.match(polo, /imoveisDoBairro\(slug, baseDaVitrine\(await listPropertiesByCity\(cidadeNome\), \(p\) => isExemplo\(p\.id\)\), contaNaBusca\)/);
   assert.match(polo, /bairrosDaGrade\(cidade, daCidade, contaNaBusca\)/);
   assert.match(polo, /totalCidade=\{daCidade\.length\}/);
   const pagina = ler("components/cidades/bairro-pagina.tsx");

@@ -52,3 +52,22 @@ test("a tela oferece 'Tentar de novo' e 'Medir depois' após a falha, sem bloque
   const n = ler("components/niveis/medir-no-imovel.tsx");
   assert.match(n, /onDepois=\{\(\) => setAberto\(false\)\}/, "no celular o painel fecha e o item fica pendente");
 });
+
+// E414 (complemento, re-prova de 06/11): o "Medir depois" aparecia só quando a tela chamadora passava `onDepois` (o painel do nível
+// no celular). No cadastro, na edição e na conferência faltava o botão — só o texto "…medir depois…" dentro da frase.
+test("'Medir depois' é um botão próprio em TODA tela que mede, ao lado de 'Tentar de novo'; sem onDepois, ele dispensa a falha", () => {
+  const f = ler("components/anuncio/medir-internet.tsx");
+  // O botão não depende mais de onDepois.
+  assert.doesNotMatch(f, /\{onDepois && \(\s*<Button[^>]*medir-internet-depois-botao/);
+  assert.match(f, /data-testid="medir-internet-depois-botao"/);
+  assert.match(f, /const medirDepois = \(\) => \{\s*setResultado\(null\);\s*setAdiada\(true\);\s*onDepois\?\.\(\);\s*\}/);
+  // Fica visível junto do "Tentar de novo" (mesma linha de botões), e não grava nada ao ser usado.
+  const iBotoes = f.indexOf('data-testid="medir-internet-botao"');
+  const iDepois = f.indexOf('data-testid="medir-internet-depois-botao"');
+  assert.ok(iBotoes > -1 && iDepois > iBotoes);
+  assert.match(f, /data-testid="medir-internet-adiada"/);
+  const corpo = f.slice(f.indexOf("const medirDepois"), f.indexOf("const medirDepois") + 200);
+  assert.doesNotMatch(corpo, /fetch\(/);
+  // Começar a medir de novo apaga o aviso de "adiada".
+  assert.match(f, /setAdiada\(false\);/);
+});

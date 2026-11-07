@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { HREF_ESTADIA, textoEntrada, textoSaida } from "@/lib/estadia/estadia";
 import { acoesDaEstadia, encerrarDaEstadia, mensagemDaEstadia, type ContratoDaEstadia } from "@/lib/estadia/acoes";
-import { CAMPOS_INSTRUCOES } from "@/lib/estadia/instrucoes";
+import { InstrucoesEmBlocos } from "@/components/estadia/instrucoes-em-blocos";
 import { ROTULO_STATUS_ENCERRAMENTO, rotuloMotivo } from "@/lib/estadia/encerramento";
 import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
 import { CartaoAjudaMudanca, CartaoDepoisDaSaida } from "@/components/automacao/cartoes-estadia";
@@ -232,14 +232,7 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
         {dono ? (
           <EditorInstrucoes propertyId={e.imovel.id} contratoId={e.id} inicial={e.instrucoes.campos ?? {}} comoEntrarDoContrato={e.instrucoes.comoEntrarDoContrato} />
         ) : e.instrucoes.liberadas && e.instrucoes.campos ? (
-          <dl className="space-y-3" data-testid="instrucoes-liberadas">
-            {CAMPOS_INSTRUCOES.filter((c) => (e.instrucoes.campos?.[c.chave] ?? "").trim()).map((c) => (
-              <div key={c.chave}>
-                <dt className="text-sm font-semibold text-ink">{c.rotulo}</dt>
-                <dd className="whitespace-pre-line text-sm text-ink">{e.instrucoes.campos?.[c.chave]}</dd>
-              </div>
-            ))}
-          </dl>
+          <InstrucoesEmBlocos campos={e.instrucoes.campos} testid="instrucoes-liberadas" />
         ) : (
           <p className="text-sm text-muted" data-testid="instrucoes-bloqueadas">
             {e.instrucoes.texto || "O proprietário ainda não publicou as instruções."}
