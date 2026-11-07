@@ -1448,7 +1448,9 @@ export async function registrarContrato(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
+  const { data: existente, error: erroExistente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
+  // Auditoria 177: a falha de leitura não vira "não existe contrato" (a ação seguiria para criar outro).
+  if (erroExistente) return { ok: false, error: "Não foi possível conferir o contrato agora. Tente de novo." };
   // Prompt 28: avisa que o contrato JÁ existia (o Resumo mostra "gerado em" e o estado real dele).
   if (existente) return { ok: true, id: existente.id as string, blocos: 0, existente: true };
 
