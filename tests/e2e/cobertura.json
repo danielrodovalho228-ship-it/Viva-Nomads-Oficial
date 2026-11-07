@@ -994,7 +994,8 @@
         "t567-e188-contratos-do-papel",
         "t649-e246-e249-contratos-inicio",
         "t662-varredura-bloco63",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1430-e674-carga-direta-nao-cai-em-auth"
       ]
     },
     "/dashboard/contratos/[id]": {
@@ -1364,7 +1365,8 @@
         "t557-varredura-bloco42",
         "t489-e176-menus",
         "t686-varredura-bloco72",
-        "t1404-varredura-bloco482"
+        "t1404-varredura-bloco482",
+        "t1430-e674-carga-direta-nao-cai-em-auth"
       ]
     },
     "/dashboard/estadia/[contratoId]/contrato": {
