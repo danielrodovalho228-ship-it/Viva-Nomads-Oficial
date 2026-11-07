@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T1391 — E677 (draft Pista B, branch claude-b/e677-numero-orcamento): a lista de propostas (Orçamentos) ordena pelo ENVIO
-  (criada_em), não pela última atualização. Duas propostas do mesmo dono para a mesma moradora, no mesmo imóvel: a A foi
+  (criada_em), não pela última atualização. Duas propostas do mesmo dono para a mesma moradora (cada uma com seu lead e imóvel): a A foi
   enviada antes, a B depois; depois a A é "atualizada" (vista/resposta). A lista da moradora segue com a B em cima e a A
   embaixo — a linha de uma posição não vira outra proposta. 390 e 1280 px. Spec preparada sobre a branch do draft.
 */
@@ -11,13 +11,13 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1391.${sufixo}@lab.vivanomads.test`, nome: "Dora Dona Ordem", role: "owner" as const };
 const inq = { email: `inq.t1391.${sufixo}@lab.vivanomads.test`, nome: "Ivo Inquilino Ordem", role: "tenant" as const };
-const ids: { dono?: string; inq?: string; imovel?: string; a?: string; b?: string } = {};
+const ids: { dono?: string; inq?: string; imovelA?: string; imovelB?: string; leadA?: string; leadB?: string; a?: string; b?: string } = {};
 
-async function proposta(criadaEm: string): Promise<string> {
+async function proposta(criadaEm: string, imovel: string, lead: string): Promise<string> {
   const { data: numero } = await adm().rpc("next_document_number", { p_type: "orcamento", p_year: new Date().getFullYear() });
   const { data, error } = await adm()
     .from("propostas")
-    .insert({ numero, lead_id: null, property_id: ids.imovel, owner_id: ids.dono, tenant_id: ids.inq, status: "enviada", versao_atual: 1, validade_dias: 7, valida_ate: new Date(Date.now() + 7 * 86_400_000).toISOString(), criada_em: criadaEm, atualizada_em: criadaEm })
+    .insert({ numero, lead_id: lead, property_id: imovel, owner_id: ids.dono, tenant_id: ids.inq, status: "enviada", versao_atual: 1, validade_dias: 7, valida_ate: new Date(Date.now() + 7 * 86_400_000).toISOString(), criada_em: criadaEm, atualizada_em: criadaEm })
     .select("id")
     .single();
   if (error) throw error;
@@ -34,9 +34,13 @@ test.describe("T1391 — E677: a lista de propostas segue a ordem do envio", () 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inq = await criarConta(inq, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Studio T1391 ${sufixo}`, { ativo: true });
-    ids.a = await proposta("2026-11-01T12:00:00Z");
-    ids.b = await proposta("2026-11-05T12:00:00Z");
+    // Um imóvel (e um lead) por proposta: propostas.lead_id é obrigatório.
+    ids.imovelA = await criarImovelPronto(ids.dono, `Studio T1391 A ${sufixo}`, { ativo: true });
+    ids.imovelB = await criarImovelPronto(ids.dono, `Studio T1391 B ${sufixo}`, { ativo: true });
+    ids.leadA = await criarLead(ids.dono, ids.inq, ids.imovelA, true);
+    ids.leadB = await criarLead(ids.dono, ids.inq, ids.imovelB, true);
+    ids.a = await proposta("2026-11-01T12:00:00Z", ids.imovelA, ids.leadA);
+    ids.b = await proposta("2026-11-05T12:00:00Z", ids.imovelB, ids.leadB);
     // A proposta A (a mais antiga) é "atualizada" agora: antes do E677 ela subia para o topo.
     const { error } = await adm().from("propostas").update({ atualizada_em: new Date().toISOString() }).eq("id", ids.a);
     if (error) throw error;
@@ -44,6 +48,7 @@ test.describe("T1391 — E677: a lista de propostas segue a ordem do envio", () 
   test.afterAll(async () => {
     await adm().from("proposta_versoes").delete().in("proposta_id", [ids.a ?? "", ids.b ?? ""]);
     await adm().from("propostas").delete().in("id", [ids.a ?? "", ids.b ?? ""]);
+    await adm().from("leads").delete().in("id", [ids.leadA ?? "", ids.leadB ?? ""]);
     await apagarContas([ids.dono, ids.inq]);
   });
 
