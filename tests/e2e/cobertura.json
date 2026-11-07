@@ -2346,7 +2346,8 @@
         "t684-varredura-bloco71",
         "t712-e267-transacionais-corpo",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1345-e663-jornada-de-mensagens"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
