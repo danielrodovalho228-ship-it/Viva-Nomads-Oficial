@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { isAppUserAgent } from "@/lib/app-mode";
 import { INTERNET, TEXTO_PARA_VALIDAR_NO_APP } from "@/config/internet";
 import { aproveitarRodadas, juntarRodadas, textoInternet, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
-import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, type Medidor } from "@/lib/internet-motor";
+import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, ROTULO_TENTAR_DE_NOVO, TEXTO_MEDIR_DEPOIS, type Medidor } from "@/lib/internet-motor";
 import type { EstadoMedir, ResultadoMedicao, Origem } from "@/lib/internet-medida-servidor";
 
 const MOTIVO: Record<MotivoInvalida, string> = {
@@ -39,6 +39,7 @@ export function MedirInternet({
   origem,
   pontoInicial,
   onMedida,
+  onDepois,
 }: {
   imovelId: string;
   origem: Origem;
@@ -49,6 +50,8 @@ export function MedirInternet({
   pontoInicial?: PontoMedicao;
   /** Medição salva (validada ou não): quem mostra o nível relê. */
   onMedida?: (validada: boolean) => void;
+  /** E414: "Medir depois" — fecha o painel sem medir; o item fica pendente e o cadastro segue. */
+  onDepois?: () => void;
 }) {
   const [estado, setEstado] = useState<EstadoMedir | null>(null);
   const [wifi, setWifi] = useState(false);
@@ -177,7 +180,7 @@ export function MedirInternet({
       <CartaoEscolha papel="checkbox" on={wifi} onClick={() => setWifi(!wifi)} disabled={ocupado} rotulo="Estou conectado ao Wi-Fi do imóvel" testid="medir-internet-wifi" className="mt-3" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button type="button" variant="primary" size="sm" disabled={ocupado || !ponto || estado.restantesHoje <= 0} onClick={medir} data-testid="medir-internet-botao">
-          {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : "Medir a internet agora"}
+          {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : resultado && !resultado.ok ? ROTULO_TENTAR_DE_NOVO : "Medir a internet agora"}
         </Button>
         {fase === "medindo" && (
           <Button type="button" variant="secondary" size="sm" onClick={cancelar} data-testid="medir-internet-cancelar">
@@ -199,9 +202,20 @@ export function MedirInternet({
       {estado.restantesHoje <= 0 && !ocupado && <p className="mt-2 text-xs text-muted">Limite de {INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.</p>}
       {!estado.temCoordenadas && <p className="mt-2 text-xs text-muted">Para validar, o imóvel precisa do endereço no mapa.</p>}
       {resultado && !resultado.ok && (
-        <p className="mt-2 text-sm text-red-700" role="alert" data-testid="medir-internet-erro">
-          {resultado.erro}
-        </p>
+        <>
+          <p className="mt-2 text-sm text-red-700" role="alert" data-testid="medir-internet-erro">
+            {resultado.erro}
+          </p>
+          {/* E414: a falha não trava nada e não marca o imóvel — o dono tenta de novo ou segue e mede depois. */}
+          <div className="mt-2 flex flex-wrap items-center gap-2" data-testid="medir-internet-depois">
+            <p className="text-xs text-muted">{TEXTO_MEDIR_DEPOIS}</p>
+            {onDepois && (
+              <Button type="button" variant="secondary" size="sm" onClick={onDepois} disabled={ocupado} data-testid="medir-internet-depois-botao">
+                Medir depois
+              </Button>
+            )}
+          </div>
+        </>
       )}
       {resultado?.ok && parcial && (
         <p className="mt-2 text-xs text-muted" data-testid="medir-internet-parcial">
