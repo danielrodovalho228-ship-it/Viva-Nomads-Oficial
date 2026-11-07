@@ -3276,6 +3276,12 @@
         "t207-cep-matricula-identidade"
       ]
     },
+    "/api/admin/pioneiras-e287": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "/c/[curto]": {
       "personas": [
         "publico"
