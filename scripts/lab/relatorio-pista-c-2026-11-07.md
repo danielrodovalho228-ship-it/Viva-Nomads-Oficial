@@ -473,3 +473,7 @@ O #3309 (L-105, seis specs) foi mesclado no head `ecabbd2bf` (run 42413362496, 6
 ## Bloco 511 aberto (main `58afe82e1`)
 
 Nada pendente da sessão: o #3317 (t93) já estava verde e mesclado (run 42418234029) e a main em `58afe82e1` está verde (run 42418702131). Nenhum merge novo, então nenhuma spec de merge a escrever. Bloco 511 (t1444, grupo do 494: detalhe da proposta e da visita, pelos dois lados) aberto no #PR do bloco, em andamento. Abertos no produto: L-104 (400 em `/api/proximidades` no "Qualificar o imóvel") e L-56 (volta do LinkedIn em Privacidade); próximo livre: L-106. Sem merge e sem fechar PR; PR com conflito é da pista dona.
+
+## Bloco 511 verde (main `1dc15a295`)
+
+Bloco 511 (t1444, #3319, grupo do 494: detalhe da proposta e da visita, pelos dois lados) **verde** (run 42419435472), a 390 e 1280 px, e já mesclado. O outro commit novo na main (#3318, Pista QA) é documentação, sem código de produto: nenhuma spec de merge a escrever. L-104 e L-56 abertos no produto; próximo livre: L-106. Próximo da fila: bloco 512 (grupo do 495). Sem merge e sem fechar PR.
