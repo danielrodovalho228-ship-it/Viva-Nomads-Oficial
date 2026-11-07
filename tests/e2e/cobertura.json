@@ -2132,7 +2132,8 @@
         "t236-parceiros-ciclo",
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
-        "t679-varredura-bloco70"
+        "t679-varredura-bloco70",
+        "t1337-e653-area-parceiro-nao-troca-papel"
       ]
     },
     "/parceiros/[slug]": {
