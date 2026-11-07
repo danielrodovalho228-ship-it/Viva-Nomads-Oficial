@@ -659,9 +659,25 @@ A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
 
+## Passada 46 (07/11; modo demonstração, 390 e 1280) — assistente, Passos 6, 8 e 9 (ramo do #2956)
+
+Os Passos 6 (Regras da casa), 8 (Preço) e 9 (Disponibilidade) só existem no padrão único no ramo do E193 (#2956, rascunho); medidos nele.
+- **Passo 6:** os três interruptores de "Convivência" (Horário de silêncio, Festas e eventos, Visitas) são cartões grandes com o interruptor à direita (padrão E56); entrada, mensagem e "o que considerar" em cartões de escolha; áreas de texto com a moldura do cartão. Nenhum checkbox ou rádio solto.
+- **Passos 8 e 9:** campos de preço e data com 56 px de altura e a moldura do cartão (5 campos no Passo 8, 2 no Passo 9); zero checkbox ou rádio nativo visível; escolhas em cartão.
+- Sem rolagem lateral a 390 (scrollWidth = 390) e a 1280. Nenhum defeito novo.
+- Pendente: prova ao vivo no laboratório (QA do Muse). E649 sem nova mudança: #3015 sem conflito com a `main`.
+
 ## Passada 47 (07/11; modo demonstração, 390 e 1280) — telas mexidas pelos merges de 06/11 à noite (E648, E653–E657)
 
 Rotas medidas (um h1, sem rolagem lateral, nada cortado fora de faixa rolável): `/parceiros`, `/parceiros/avaliadores`, `/dashboard/candidaturas`, `/dashboard/fechamento`, `/dashboard/parceiro`, `/dashboard/mensagens`. `/dashboard/parceiro/avaliacao` redireciona ao Início no demo (sem papel de parceiro): precisa de sessão real (QA).
 1. **Achado:** Fechamento — pílulas do passo a passo (36 px), nº de ocupantes e prazo abaixo de 44 px de toque. Corrigido no #3096.
 2. Nenhum outro defeito: `/parceiros` e `/parceiros/avaliadores` com os textos de CNPJ do #3015 já corrigem a superfície; candidaturas vazia conforme o padrão (cartão com ação única).
 3. Fora do demo (dependem de dado real): telas do dono que escolhe o avaliador (E648), código de assinatura (E654), data de envio (E657).
+
+## Passada 48 (07/11; modo demonstração, 390 e 1280) — páginas públicas ainda sem medida recente, com carregamento real das imagens
+
+Rotas: `/guias`, `/guia-fotos`, `/para-proprietarios`, `/seguranca`, `/conferir`, `/pedidos`, `/favoritos`, `/empresas`, `/parceiros/fotografos`, `/parceiros/buscar`, `/como-funciona`, `/precos`, `/avaliadores`, `/ajuda`, `/cidades`. Rolagem até o fim de cada página antes de medir (imagens preguiçosas).
+- **Imagens:** 0 quebradas em todas (naturalWidth > 0 depois do carregamento); as sem `alt` são decorativas com `alt=""` (fotos de categoria em `/parceiros/buscar`, poster em `/precos`), de propósito.
+- **Estouro e corte:** um h1 por página, scrollWidth = largura da janela nas 30 medições, nenhum texto cortado sem reticências.
+- **Alvos de toque:** só ficaram abaixo de 44 px as setas "Foto anterior/Próxima foto" (32 px), que existem só com mouse (`hidden` e aparecem no hover do computador; no toque a foto passa por deslizar), e o link "Ver todos os imóveis" (`alvo-toque`, área de toque ampliada pela classe). Nenhum defeito novo.
+- Sem elemento fixo sobrepondo conteúdo nas rotas medidas.
