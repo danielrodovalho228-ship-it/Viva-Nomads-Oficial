@@ -243,3 +243,14 @@ Entraram na main: E672 (#3162), E673 (#3163), E674 (#3166), E675 (#3171), E676 (
 Specs que estavam sobre esses drafts e foram promovidas (main mesclada no ramo, cobertura reaplicada, base trocada para a main, fora de draft): t1391/E677 (#3188), t1392/E673 (#3189), t1395/E676 (#3194), t1397/E675 (#3199), t1398/E672 (#3201), t1399/E674 (#3202), t1340/E664 (#3104), t1344/E660 (#3112), t1345/E663 (#3113). Runs novos disparados. As sete specs de E414/E477/E650–E657 atualizadas na rodada anterior deram verde (runs 42382779107 a 42382803725).
 
 Specs novas para merges sem guarda de tela: t1413 (E665, modelos de respostas rápidas) e t1414 (E666, legenda do calendário), no #3236. Ainda sem spec de tela: E661 (guia da estadia em blocos, comodidades e condomínio) e E662 tela (#3164 não mesclado). Bloco 490 (#3232) já mesclado. Defeitos de produto novos: nenhum (L-103 livre).
+
+## L-103 — a main não compila: conflito semântico entre E661 (guia/condomínio) e E662 (instrução de saída) — achado de produto
+
+**Sintoma.** Todos os runs do lab-crítico ficaram vermelhos ao mesmo tempo: o da main em `305cb9bd5` (run 42383221233) e os dez PRs de spec recém-atualizados (t1391, t1392, t1395, t1397, t1398, t1399, t1340, t1344, t1345 e t1413/t1414), todos no passo 12, "Build do site (modo simulado)". Nenhuma spec chegou a rodar.
+
+**Diagnóstico (log lido, reproduzido no código da main).**
+`src/lib/estadia/instrucoes.ts(140,14): error TS2739` — `GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao>` não tem cinco chaves de `ChaveInstrucao`: `condominio_wifi_rede`, `condominio_wifi_senha`, `condominio_recepcao`, `condominio_fechadura` (E661 apoio, #3133, commit `3ca4085bd`) e `instrucao_saida` (E662, #3149, commit `f0d49dab7`). Cada PR passou sozinho; a combinação dos merges de #3114 (guia da estadia, que cria o mapa de grupos), #3133 e #3149 quebra o tipo. Não é infra, não é flaky: não faço rerun.
+
+**Efeito.** O lab-crítico fica vermelho em todo PR e em toda push na main até o conserto; os blocos de varredura e as specs novas não rodam. Parei de abrir blocos (o 491 só ficaria vermelho pelo mesmo motivo).
+
+**Item para a lista-master (L-103, produto, Pistas A/B — não corrigido por esta pista).** Incluir as cinco chaves em `GRUPO_DA_INSTRUCAO` (as `condominio_*` no grupo `condominio`; `instrucao_saida` no grupo que o guia da estadia definir) e, se o guia deve mostrá-las, em `TITULO_GRUPO_INSTRUCAO`/ordem dos blocos. Assim que o conserto entrar na main, reencadeio: um único rerun dos runs que ficaram vermelhos e depois o bloco 491, a spec do E661 e o acompanhamento de t1413/t1414.
