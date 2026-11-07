@@ -285,3 +285,17 @@ Defeitos de produto novos: nenhum além do L-103.
 **t1416 (E287, #3240).** Run 42387810339 vermelho, e **só** no passo 12 "Build do site" — o mesmo L-103, não a spec. Status: bloqueado-pela-main, sem rerun.
 
 **Merge novo desde `e0ee5ff29`:** E669 (#3135). A spec t1358 (#3139), que estava sobre esse draft, foi promovida (main mesclada, cobertura reaplicada, base trocada, fora de draft); o run novo falhará no build enquanto o L-103 durar. Nenhuma outra spec nova a escrever; defeitos de produto novos: nenhum além do L-103.
+
+## L-103 RESOLVIDO (#3241) — retomada (main `20e6203e8`)
+
+**Foto nova.** O #3241 (`claude-b/fix-tsc-instrucoes`, Pista B) entrou na main; `tsc --noEmit` em `20e6203e8` está **limpo** (sem erro em `src/` nem `tests/`): o `TS2739` de `src/lib/estadia/instrucoes.ts` sumiu. **L-103 encerrado.** Não peço mais o merge do #3164 como desbloqueio (ficou como via anterior; o destino dele é do chat principal). O próximo número livre da lista passa a ser **L-104**.
+
+**Rerun.** Um rerun de run antigo de PR reaproveita o merge-ref feito com a main quebrada e falharia de novo; por isso o "rerun" foi mesclar a main em cada ramo de spec (uma única vez), o que gera um run novo e correto. Quinze ramos: #3188 (t1391/E677), #3189 (t1392/E673), #3194 (t1395/E676), #3199 (t1397/E675), #3201 (t1398/E672), #3202 (t1399/E674), #3104 (t1340/E664), #3112 (t1344/E660), #3113 (t1345/E663), #3236 (t1413/t1414, E665/E666), #3240 (t1416/E287, reavaliada aqui), #3138 (t1357/E668), #3198 (t1396/E667), #3119 (t1349/E667) e #3139 (t1358/E669). Os resultados vão na coleta abaixo.
+
+**t1415 (#3238) NÃO foi retargetada para a main — e por quê.** A spec exercita a tela do E662 (seção "Como sair (check-out)" na edição do imóvel, `estadia-lembretes`), que **só existe na branch do #3164**; `grep` na main não acha `secao-instrucao-saida` nem `estadia-lembretes`. Retargetar traria os 5 commits de produto do #3164 para dentro de um PR de spec. Ela fica com base na branch do #3164 (verde, run 42386516939) e só pode ir à main junto com a tela do E662. Item pulado: t1415 — depende do destino do #3164.
+
+**Bloco 491 retomado.** t1417, grupo do 474 (admin com id: atendimento, contrato, pedido de parceiro, refazer 2FA), #3243.
+
+**Merges novos depois da foto anterior.** Só o #3241 (correção de tipo, sem tela). E669 (#3135) segue coberto pela t1358 (#3139, promovida). E680 (#3239) ainda em draft: sem spec até a CI dele fechar e o PR mesclar (item pulado: E680).
+
+**Duplicidade t1349 (#3119) × t1396 (#3198), ambas do E667 — recomendação, sem fechar PR.** Recomendo **manter a t1396 (#3198)**: lê o mínimo do Gestor e o texto da legenda das fontes únicas (`FAIXAS_COMISSAO_PADRAO`, `GESTOR_TEXTO`), então não quebra se o mínimo mudar, e confere a frase removida ("31+ segue em 6%"). A t1349 tem os mesmos 390/1280 mas hardcoda "20+" e a regex da legenda. Única coisa que só a t1349 checa: nenhuma ocorrência de "31+" na página; se a decisão for manter só uma, vale levar esse `not.toMatch(/\b31\s*\+/)` para a t1396. A decisão final é do chat principal/rotina de merge.
