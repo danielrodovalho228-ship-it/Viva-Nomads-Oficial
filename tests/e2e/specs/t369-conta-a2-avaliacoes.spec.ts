@@ -93,7 +93,7 @@ test.describe("T369 — CONTA-A A2: Avaliações (perfil-02)", () => {
     const p = await como(browser, 1280);
     await p.goto(ROTA, { waitUntil: "domcontentloaded" });
     await p.getByTestId("avaliacoes-aba-positivas").click();
-    await expect(p).toHaveURL(/aba=positivas/);
+    await expect(p).toHaveURL(/filtro=positivas/);
     await expect(p.getByTestId("avaliacao-recebida")).toHaveCount(1);
     await expect(p.getByTestId("avaliacao-recebida")).toContainText("Carlos M.");
     await p.goto(ROTA, { waitUntil: "domcontentloaded" });
