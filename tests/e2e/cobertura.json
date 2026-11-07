@@ -4296,6 +4296,15 @@
         "t83-checkin-garantido"
       ]
     },
+    "src/lib/data/conferencia-actions.ts#retirarLaudoConferencia": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t85-conferencia-entrada-saida"
+      ]
+    },
     "src/lib/data/conferencia-actions.ts#anexarLaudoConferencia": {
       "personas": [
         "inquilino",
