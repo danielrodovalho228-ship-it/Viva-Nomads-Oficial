@@ -354,3 +354,17 @@ Bloco 499 (#3262) mesclado; main em `f0762e3cd` verde (run 42399678239). Único 
 ## Bloco 500 verde (main `5ca95bc9b`)
 
 Bloco 500 (t1426, #3267, grupo do 483) **verde** (run 42401538290), a 390 e 1280 px, e já mesclado por você; inclui as telas dos merges E446 e E529. Nenhum merge de produto novo desde `f0762e3cd`: sem spec de merge. L-104 segue aberto (produto); próximo livre: L-105. Defeitos de produto novos: nenhum. Próximo da fila: bloco 501 (grupo do 484).
+
+## Specs sobre os drafts E681/E685-E686/E691/E674 e bloco 501 (main `6867b211e`)
+
+**Foto.** Main em `6867b211e` (run em andamento; o de `061694cf1` foi cancelado por substituição). Merges de produto novos: E679 (#3231 critérios de avaliação, #3233 parceiro-avaliações, #3234 conduta cega; migrações 0322 a 0324) e E682 (#3252 termos do avaliador; migração 0325). Os quatro PRs que você citou continuam **em draft**: #3245 (E681), #3256 (E685/E686), #3253 (E691), #3263 (E674 resíduo).
+
+**Specs preparadas sobre os drafts (todas com base na branch do draft; não mesclar antes dele):**
+- t1427 / E681 (#3269): a página da estadia mostra um cartão de mês para cada mês da entrada à saída (~90 dias), sem faltar o do meio.
+- t1428 / E686 (#3270): "Como é pago" dos avaliadores diz que o avaliador define valor e prazo e que a tabela é referência. **Parte E685 sem spec de tela**: documento mascarado do parceiro ativo no admin exige semear parceiro ativo + pedido ativado + sessão de admin; fica pendente (máscara coberta por teste unitário no draft).
+- t1429 / E691 (#3271): laudo assinado mostra data, nº e registro curto do hash ao dono; laudo sem assinatura não mostra a linha (caminho negativo). **Visão do avaliador sem spec** (exige sessão de avaliador credenciado com pedido em andamento).
+- t1430 / E674 resíduo (#3272): três cargas diretas em paralelo, com sessão viva, ficam no painel e não caem em `/auth`. É guarda de comportamento, não prova do mecanismo (a leitura transitória "sem sessão" não é reproduzível de forma determinística).
+
+**Sem spec ainda (merges na main): E679 (0322–0324) e E682 (0325).** Mudanças em actions/migrações grandes (critérios de avaliação, avaliações do parceiro, conduta cega, termos do avaliador); a spec de tela depende de ler as telas novas — próxima da fila. Item pulado nesta rodada: E679/E682.
+
+**Bloco 501** (t1431, grupo do 484: avisos, prévia de e-mails, caixa do leitor de QA) aberto no #3273. Defeitos de produto novos: nenhum. L-104 segue aberto; próximo livre: L-105.
