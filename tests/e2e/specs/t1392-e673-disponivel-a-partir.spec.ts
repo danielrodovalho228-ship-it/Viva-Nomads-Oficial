@@ -31,7 +31,7 @@ test.describe("T1392 — E673: 'Disponível a partir de' olha os períodos ocupa
     }
     const { data, error } = await adm()
       .from("contratos")
-      .insert({ property_id: ids.ocupado, tenant_id: ids.inq, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 30, aluguel_mensal: 3200, tamanho_bloco_meses: 1, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao" })
+      .insert({ property_id: ids.ocupado, tenant_id: ids.inq, owner_plan: "essential", faixa: "temporada", prazo_total_dias: 30, aluguel_mensal: 3200, tamanho_bloco_meses: 1, comissao_percent: 0.08, comissao_valor: 256, qtd_ocupantes: 1, status: "ativo", garantia: "caucao", periodo: `[${emDias(10)},${emDias(41)})` })
       .select("id")
       .single();
     if (error) throw error;
@@ -62,6 +62,8 @@ test.describe("T1392 — E673: 'Disponível a partir de' olha os períodos ocupa
       await expect(ocupado).toBeVisible({ timeout: 30_000 });
       // O calendário carrega os dias ocupados depois do primeiro desenho: espera a data sair da do cadastro.
       await expect.poll(async () => (await ocupado.getAttribute("data-desde")) ?? "", { timeout: 30_000, message: "a data passa a olhar o bloqueio" }).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // data-desde nasce com a data do cadastro: espera sair dela (os dias ocupados vêm de contratos.periodo, lidos depois).
+      await expect.poll(async () => (await ocupado.getAttribute("data-desde")) ?? "", { timeout: 30_000, message: "a data passa a olhar o contrato ocupando" }).not.toBe(emDias(10));
       const desde = (await ocupado.getAttribute("data-desde"))!;
       expect(desde > emDias(40), `a primeira entrada (${desde}) vem depois do bloqueio que termina em ${emDias(40)}`).toBe(true);
       expect(desde).not.toBe(emDias(10));
