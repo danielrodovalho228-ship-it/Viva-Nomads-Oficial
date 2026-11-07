@@ -338,6 +338,10 @@ input.foco-na-barra:focus-visible {
 .app-only {
   display: none !important;
 }
+/* E678: no modo app o AppHeader (48 px) é preso no topo — a rolagem programática (foco, âncora) para abaixo dele. */
+html[data-app] {
+  scroll-padding-top: 5rem;
+}
 html[data-app] .web-only {
   display: none !important;
 }
@@ -377,30 +381,8 @@ html[data-app] .vn-tabbar-spacer {
     --viva-piso: var(--ajuda-bottom, 5.25rem);
   }
 }
-/* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
-   no computador, 12 px do rodapé. O "Fale com a Viva" sobe acima dela e o fim da página ganha folga. */
-.vn-barra-comparar {
-  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
-}
-@media (min-width: 768px) {
-  .vn-barra-comparar {
-    bottom: 0.75rem;
-  }
-}
-/* E529 (D15): com a barra Comparar encaixada no pé da coluna, o que rola até a vista para acima dela, nunca por baixo. */
-html:has([data-testid="barra-comparar"]) {
-  scroll-padding-bottom: 8rem;
-}
-html[data-app] .vn-barra-comparar {
-  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
-}
-@media (max-width: 767px) {
-  body:has([data-testid="barra-comparar"]) {
-    --ajuda-bottom: 10rem;
-    --viva-piso: 10rem; /* piso também para o botão arrastado (posição inline) */
-    padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
+/* Barra "Comparar" da busca: desde o E529 (3ª reprova) é uma faixa normal da página, acima da lista — sem posição própria, sem
+   elevar o "Fale com a Viva" nem dar folga no fim da página. */
 /* CADASTRO-MOLDURA: o rodapé do fluxo do assistente (sem barra de abas lá) encosta no fim da tela. E107: a barra de
    fotos do celular saiu; as fotos moram só no Passo 2. */
 .vn-rodape-fluxo {

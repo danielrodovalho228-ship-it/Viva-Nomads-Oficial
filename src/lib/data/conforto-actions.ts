@@ -112,7 +112,7 @@ export async function agirNaPendencia(
   if (!papel) return { ok: false, erro: acao === "decidir" ? "Só o atendimento da Viva decide a contestação." : "Sem permissão." };
   // E477: decidir sobre imóvel real — o admin observador da QA só lê (imóvel de conta de teste segue liberado).
   if (acao === "decidir") {
-    const recusaQa = await recusaObservador(s.uid, { imoveis: [p.property_id as string] });
+    const recusaQa = await recusaObservador(s.uid);
     if (recusaQa) return { ok: false, erro: recusaQa };
   }
   const campos = transicaoPendencia(p as PendenciaConforto, acao, papel, new Date(), extra.decisao);
