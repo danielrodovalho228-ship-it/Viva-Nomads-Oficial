@@ -213,3 +213,9 @@ Bloco 484 (#3220, grupo do 467) verde (run 42378741647); main em `df7417787` ver
 ## Bloco 486 (main `df7417787`, 07:50)
 
 Bloco 485 (#3222) ainda em andamento (run 42379411068) ao abrir o 486; main sem merge novo desde `df7417787` (verde). Bloco 486 (t1408, grupo do 469: admin sem id na URL) aberto no #3224. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Blocos 484–486 mesclados, E287, caminho negativo do E676 e bloco 487 (main `769f258c6`)
+
+Verdes e mesclados: blocos 484 (#3220), 485 (#3222, run 42379411068) e 486 (#3224, run 42379562391). Merge de produto novo: E287 (#3223, migração 0321 só de dados, com teste de migração próprio em `tests/migracoes/marca-boas-vindas-0321.test.ts`); sem tela, sem spec de lab a criar. Runs da main em `74a33330c`/`769f258c6` pendentes ao fechar.
+
+Caminho negativo (expiração) acrescentado à t1395 (E676, #3194, sobre o draft #3167): proposta de alteração com prazo vencido não mantém a faixa de crítico; dentro do prazo a faixa aparece. Não repeti specs dos demais drafts da Pista B (E671–E677): os caminhos negativos já cobertos são código inventado recusado (t57), faixa que persiste enquanto falta assinatura (t1395) e reenvio de quem já assinou (t1397). Bloco 487 (t1409, grupo do 470: avaliação do imóvel, avaliadora, página pública da avaliadora, intenção) aberto no #3226. Defeitos de produto novos: nenhum (L-103 livre).
