@@ -3659,6 +3659,12 @@
         "t241-contas-teste-36"
       ]
     },
+    "src/lib/data/actions.ts#fichaDentroDoImovel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/actions.ts#getLatestDraft": {
       "personas": [
         "inquilino",
