@@ -25,7 +25,7 @@ export default async function PerfilCandidatoPage({ params }: { params: Promise<
     <div data-testid="perfil-candidato" data-candidatura={l.id}>
       <PageTitle title={l.name} subtitle={`Candidatura para ${l.property}`} />
       <Panel title="Resumo" className="mb-4">
-        <p className="text-sm text-ink" data-testid="perfil-candidato-resumo">{leadSummary(l)}</p>
+        {leadSummary(l) && <p className="text-sm text-ink" data-testid="perfil-candidato-resumo">{leadSummary(l)}</p>}
         {l.enviadaEm && (
           <p className="mt-2 text-sm text-ink" data-testid="lead-enviada-em">
             Enviada em {dataBRT(l.enviadaEm)}
