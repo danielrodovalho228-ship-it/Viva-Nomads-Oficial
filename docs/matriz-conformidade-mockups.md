@@ -658,3 +658,11 @@ Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "
 A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
+
+## Passada 46 (07/11; modo demonstração, 390 e 1280) — assistente, Passos 6, 8 e 9 (ramo do #2956)
+
+Os Passos 6 (Regras da casa), 8 (Preço) e 9 (Disponibilidade) só existem no padrão único no ramo do E193 (#2956, rascunho); medidos nele.
+- **Passo 6:** os três interruptores de "Convivência" (Horário de silêncio, Festas e eventos, Visitas) são cartões grandes com o interruptor à direita (padrão E56); entrada, mensagem e "o que considerar" em cartões de escolha; áreas de texto com a moldura do cartão. Nenhum checkbox ou rádio solto.
+- **Passos 8 e 9:** campos de preço e data com 56 px de altura e a moldura do cartão (5 campos no Passo 8, 2 no Passo 9); zero checkbox ou rádio nativo visível; escolhas em cartão.
+- Sem rolagem lateral a 390 (scrollWidth = 390) e a 1280. Nenhum defeito novo.
+- Pendente: prova ao vivo no laboratório (QA do Muse). E649 sem nova mudança: #3015 sem conflito com a `main`.
