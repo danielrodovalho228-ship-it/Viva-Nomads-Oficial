@@ -682,7 +682,12 @@ export async function avaliarConduta(form: FormData): Promise<Res> {
   const v = validarConduta(autor, notas, String(form.get("comentario") ?? ""), contemContato);
   if (!v.ok) return { ok: false, erro: v.erro };
   const { error } = await s.admin.from("vistoria_conduta").insert({ pedido_id: p.id, autor, avaliador_id: p.avaliador_id, ...v.notas, comentario: v.texto });
-  if (error) return { ok: false, erro: "Você já avaliou esta visita." };
+  if (error) {
+    if (error.code === "23514") return { ok: false, erro: "A avaliação de conduta fica aberta por 14 dias depois do laudo, e esse prazo terminou." };
+    return { ok: false, erro: "Você já avaliou esta visita." };
+  }
+  // E679-B: cega, como a da estadia. Aparece ao outro lado quando os dois enviam ou quando vencem os 14 dias do laudo.
+  await s.admin.rpc("publicar_conduta_avaliador", { p_pedido: p.id });
   revalidatePath(autor === "dono" ? `/dashboard/imoveis/${p.property_id}/nivel` : ROTA_AVALIADOR);
   return { ok: true };
 }
