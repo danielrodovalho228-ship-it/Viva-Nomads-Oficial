@@ -2366,7 +2366,10 @@ export default function NewPropertyPage() {
                 }
         }
       />
-      <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid var(--color-sage-200);background:#fff;padding:0.625rem 0.875rem;font-size:0.875rem;outline:none}.input:focus{border-color:var(--color-sage)}`}</style>
+      {/* E193: onde o campo é genuinamente texto, data ou número, ele segue campo, mas com a MOLDURA, o tamanho e o estado do cartão
+          grande do assistente (CartaoEscolha): 56 px de altura, borda de 2 px, canto de 0,75 rem, hover em sálvia e, preenchido ou
+          com foco, o verde-marca (o cartão marcado é verde-claro com borda verde). */}
+      <style>{`.input{width:100%;min-height:3.5rem;border-radius:0.75rem;border:2px solid var(--color-line);background:#fff;padding:0.875rem 1rem;font-size:0.875rem;outline:none;transition:border-color .15s,background-color .15s}.input:hover{border-color:var(--color-sage)}.input:focus{border-color:var(--color-forest)}.input:not(:placeholder-shown):not(:focus){border-color:var(--color-forest);background:var(--color-sage-100)}`}</style>
     </div>
   );
 }
