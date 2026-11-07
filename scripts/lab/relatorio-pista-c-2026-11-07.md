@@ -382,3 +382,9 @@ Runs concluídos, **todos verdes**: t1427/E681 (#3269, 42403976707), t1428/E686 
 **Ainda sem spec de tela (item pulado):** avaliações do parceiro (0323: `servicos/pedidos/[id]/pedido-tela.tsx`, `/dashboard/parceiro/avaliacao`), conduta cega do avaliador (0324) e termos do avaliador (E682, 0325). Cada uma exige semear parceiro/avaliador credenciado/pedido; entram nas próximas rodadas, uma por vez. Regras puras do E679 já têm teste unitário.
 
 **Bloco 502** (t1433, grupo do 485: contrato, imóvel, estadia, locação, sócios, autenticação; inclui a estadia com o calendário E681 e a saída E662) aberto no #3279. Defeitos de produto novos: nenhum. L-104 segue aberto; próximo livre: L-105.
+
+## t1432 vermelha (erro de spec), reenviada; bloco 503 aberto
+
+**t1432 / E679 (#3278), run 42405563808 — vermelho, diagnóstico: erro da spec, não defeito de produto.** O build passou e só falhou "Rodar os fluxos críticos": `getByTestId('avaliacao-enviar')` não existe no formulário de avaliação (esse testid é do formulário de *resposta*, usado na T93); o botão "Enviar avaliação" do `avaliacao-form.tsx` não tem testid. A tela abriu normalmente e os critérios foram achados. Correção só na spec: o botão passa a ser buscado por nome (`getByRole("button", { name: "Enviar avaliação" })`). Reenviada no head `e626b725e`; run novo em andamento. Nenhum rerun foi usado.
+
+**Bloco 502 (#3279)** ainda em andamento ao registrar. **Bloco 503** (t1434, grupo do 486: admin sem id na URL) aberto. Sem merge novo na main desde `9e08c86c6`. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
