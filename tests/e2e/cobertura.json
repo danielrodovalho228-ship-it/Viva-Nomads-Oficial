@@ -2219,7 +2219,8 @@
         "t239-cartao-parceiro",
         "t408-varredura-bloco27",
         "t679-varredura-bloco70",
-        "t1387-varredura-bloco476"
+        "t1387-varredura-bloco476",
+        "t1350-e650-pendencia-cnpj-publicado"
       ]
     },
     "/parceiros/[slug]": {
