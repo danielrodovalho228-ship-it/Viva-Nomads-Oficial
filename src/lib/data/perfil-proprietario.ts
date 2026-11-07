@@ -103,25 +103,31 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
  * sempre: antes do aceite, a privacidade atual. FAIL-CLOSED: sem sessão, sem chave de serviço ou erro → null.
  */
 export async function nomeCompletoParaQuemTemAceite(donoId: string): Promise<string | null> {
-  if (!UUID_RE.test(donoId)) return null;
+  return (await nomeCompletoDoAceite(donoId)).nome;
+}
+
+/** Como `nomeCompletoParaQuemTemAceite`, mas diz se foi uma FALHA (leitura/sessão que não respondeu) ou "sem aceite" de verdade — a tela tenta de novo só na falha. */
+export async function nomeCompletoDoAceite(donoId: string): Promise<{ nome: string | null; falhou: boolean }> {
+  if (!UUID_RE.test(donoId)) return { nome: null, falhou: false };
   try {
     const supabase = await createClient();
     const admin = createAdminClient();
-    if (!supabase || !admin) return null;
+    if (!supabase || !admin) return { nome: null, falhou: true };
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user || user.id === donoId) return null;
+    // Sem sessão (anônimo) não é falha: a regra manda o abreviado. O próprio dono também.
+    if (!user || user.id === donoId) return { nome: null, falhou: false };
     let aceite = await relacaoAceitaEntreServidor(donoId, user.id);
     if (!aceite) {
       const { data: visitas } = await admin.from("visitas_video").select("status").eq("owner_id", donoId).eq("tenant_id", user.id);
       aceite = ((visitas ?? []) as { status: string | null }[]).some((v) => nomeLiberadoNaVisita(v.status));
     }
-    if (!aceite) return null;
+    if (!aceite) return { nome: null, falhou: false };
     const { data } = await admin.from("profiles").select("full_name").eq("id", donoId).maybeSingle();
-    return nomeCompleto((data as { full_name?: string | null } | null)?.full_name ?? null);
+    return { nome: nomeCompleto((data as { full_name?: string | null } | null)?.full_name ?? null), falhou: false };
   } catch {
-    return null;
+    return { nome: null, falhou: true };
   }
 }
 

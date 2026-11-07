@@ -66,8 +66,10 @@ test.describe("T181 — quantas pessoas vão morar", () => {
       await d.setViewportSize({ width: largura, height: 900 });
       await d.goto("/dashboard/leads", { waitUntil: "networkidle" });
       await expect(d.locator("main")).toContainText(`Para ${pessoas} pessoas`, { timeout: 20_000 });
-      // O token "Sobrenomeoculto" é só do inquilino (o nome do dono não o repete: ele aparece na tela do dono).
-      await expect(d.locator("main")).not.toContainText("Sobrenomeoculto");
+      // Só o inquilino DESTA execução segue oculto: o teste de 390 px, que roda antes com o mesmo dono,
+      // já aceitou a candidatura dele (nome liberado depois do aceite), então o token genérico daria falso alarme.
+      await expect(d.locator("main")).not.toContainText(`Ivo${largura} Pessoas`);
+      await expect(d.locator("main")).not.toContainText(`Ivo${largura}`);
       await d.screenshot({ path: `${SAIDA}/t181-interessados-${largura}.png`, fullPage: true });
 
       // Aceite (o que o servidor grava) → Fechamento abre com o número da candidatura.
