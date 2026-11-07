@@ -64,6 +64,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   pedido_compativel: "busca",
   pedido_resumo: "busca",
   pedido_imovel_novo: "busca",
+  emergencia_chegada: "contrato",
   resumo_semanal: "busca",
   pedido_resposta: "pedido-resposta",
   pedido_aceito: "nova-mensagem",

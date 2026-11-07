@@ -45,12 +45,12 @@ test("ANTES do aceite: privacidade atual — 'Candidato(a)' para o dono, nome cu
 test("página pública: nome curto para todos; nome completo só para quem tem o aceite (fail-closed)", () => {
   const src = ler("src/lib/data/perfil-proprietario.ts");
   assert.match(src, /nome: nomeCurto\(\(perfil\.data as \{ full_name\?: string \| null \} \| null\)\?\.full_name\) \?\? nomeCurto\(l\.nome_curto\) \?\? "Proprietário",/);
-  const fn = src.slice(src.indexOf("export async function nomeCompletoParaQuemTemAceite"));
-  assert.match(fn, /if \(!user \|\| user\.id === donoId\) return null;/);
+  const fn = src.slice(src.indexOf("export async function nomeCompletoDoAceite"));
+  assert.match(fn, /if \(!user \|\| user\.id === donoId\) return \{ nome: null, falhou: false \};/);
   assert.match(fn, /relacaoAceitaEntreServidor\(donoId, user\.id\)/);
   assert.match(fn, /nomeLiberadoNaVisita\(v\.status\)/);
-  assert.match(fn, /return nomeCompleto\(/);
-  assert.match(fn, /catch \{\n\s*return null;/);
+  assert.match(fn, /nome: nomeCompleto\(/);
+  assert.match(fn, /catch \{\n\s*return \{ nome: null, falhou: true \};/);
   const page = ler("src/app/(public)/proprietario/[id]/page.tsx");
   assert.match(page, /const p = \{ \.\.\.perfil, nome: nomeAceite \?\? perfil\.nome \};/);
   // Metadados (indexáveis) nunca com o nome completo.

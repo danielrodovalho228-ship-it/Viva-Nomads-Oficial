@@ -14,7 +14,7 @@ export const MODOS_CONTA =
   "Uma conta só: quem aluga ou anuncia pode ser parceiro na mesma conta. O pedido é feito em /parceiros (\"Seja parceiro\") ou na Conta (\"Quero ser parceiro\"), com o e-mail da conta confirmado. Aprovado, o item \"Parceiro\" aparece no menu do painel.";
 
 export const CADASTRO_PARCEIRO =
-  "O pedido pede nome, pessoa física (CPF) ou empresa/MEI (CNPJ), categorias, cidades e uma descrição; para fotografia, o link do portfólio; para mudança, a empresa e o veículo. A equipe confere identidade e documento e responde por e-mail. Aprovado, chega um link para ativar a página (vale 7 dias, uma vez): foto, capa, descrição, serviços com preço ou \"sob consulta\", galeria, redes, cidades e agenda. A página só vai ao ar quando o parceiro publica.";
+  "O pedido pede nome, empresa com CNPJ (MEI, onde a atividade permite; o CPF não é aceito), categorias, cidades e uma descrição; para fotografia, o link do portfólio; para mudança, a empresa e o veículo. A equipe confere identidade e documento e responde por e-mail. Aprovado, chega um link para ativar a página (vale 7 dias, uma vez): foto, capa, descrição, serviços com preço ou \"sob consulta\", galeria, redes, cidades e agenda. A página só vai ao ar quando o parceiro publica.";
 
 export const TAXA_PARCERIA_TEXTO = `${TEXTO_TAXA_SERVICO_PARCEIROS} Sem mensalidade e sem exclusividade. Enquanto o pagamento pela plataforma não estiver ativo, o valor do serviço é combinado e pago direto entre parceiro e proprietário.`;
 

@@ -19,7 +19,7 @@ for (const largura of [1280, 390] as const) {
         const risco = [...leg.querySelectorAll("*"), leg].some((e) => getComputedStyle(e).textDecorationLine.includes("line-through"));
         return {
           amostraDisp: cor(item("Disponível").firstElementChild),
-          amostraIndisp: cor(item("Indisponível").firstElementChild),
+          amostraIndisp: cor(item("Indisponível (já reservado ou fechado pelo proprietário)").firstElementChild),
           diaDisp: cor(document.querySelector('[data-estado-dia="disponivel"]')),
           diaIndisp: cor(document.querySelector('[data-estado-dia="indisponivel"]')),
           risco,

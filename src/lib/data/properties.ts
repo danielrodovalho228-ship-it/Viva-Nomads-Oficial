@@ -44,6 +44,7 @@ import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import type { Medicao } from "@/lib/internet-medida";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
 
 /**
  * Perfil PÚBLICO do dono de um anúncio ativo. SERVER-ONLY: a função é SECURITY DEFINER e,
@@ -248,7 +249,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha, detalhesLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha, detalhesLinha, fichaLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -272,6 +273,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("regras_casa").eq("id", base.id).maybeSingle()),
     // CAMPOS-2 (0235): detalhes opcionais do anúncio, leitura à parte — sem a migração o anúncio abre igual.
     safe(supabase.from("properties").select("detalhes_anuncio").eq("id", base.id).maybeSingle()),
+    // E660 (0316): ficha do que tem dentro, leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("ficha_dentro").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -334,6 +337,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
     regrasCasa: normalizarRegrasCasa((regrasLinha as { regras_casa?: unknown } | null)?.regras_casa) ?? undefined,
+    fichaDentro: normalizarFicha((fichaLinha as { ficha_dentro?: unknown } | null)?.ficha_dentro) ?? undefined,
     detalhesAnuncio: normalizarDetalhes((detalhesLinha as { detalhes_anuncio?: unknown } | null)?.detalhes_anuncio) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),

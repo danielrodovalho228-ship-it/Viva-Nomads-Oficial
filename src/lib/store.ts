@@ -4,6 +4,7 @@ import type { UserRole } from "./types";
 import { limparChavesLocais } from "./local-keys";
 import { useFavoritesStore } from "./favorites-store";
 import { mesclarGuardadosDoConvidado } from "./convidado/mesclar";
+import { estadoAoTrocarDeConta } from "./sessao/troca-de-conta";
 
 /** Planos de assinatura do proprietário (constants.PLANS). */
 export type SubscriptionPlan = "free" | "essential" | "pro" | "gestor";
@@ -87,7 +88,7 @@ interface AuthState {
  */
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       activeMode: null,
       parceiroAtivo: false,
@@ -100,7 +101,10 @@ export const useAuthStore = create<AuthState>()(
         // T11: favoritos pertencem a UMA conta — outra conta no mesmo navegador
         // começa do zero (a fonte de verdade é o banco).
         useFavoritesStore.getState().bindUser(user?.id ?? null);
-        set({ user, authChecked: true });
+        // E674: outra conta no mesmo navegador não herda o modo ativo nem o papel "parceiro" da anterior (a casca abria
+        // para o Paulo como a do Lucas), e o relógio de 24h recomeça para ela.
+        const troca = estadoAoTrocarDeConta(get().user?.id, user?.id);
+        set(troca.trocou ? { user, authChecked: true, activeMode: troca.activeMode, parceiroAtivo: troca.parceiroAtivo, sessionStartedAt: Date.now() } : { user, authChecked: true });
         // Prompt 49: o que o convidado guardou no aparelho vai para a conta (sem duplicar).
         mesclarGuardadosDoConvidado(user?.id);
       },

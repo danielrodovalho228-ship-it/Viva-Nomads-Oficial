@@ -50,7 +50,7 @@ export function MedirNoImovel({
       </Button>
       {aberto && celular && (
         <div className="w-full" data-testid={`${testid}-medir`}>
-          <MedirInternet imovelId={propertyId} origem={origem} pontoInicial={ponto} onMedida={(validada) => validada && onMedida()} />
+          <MedirInternet imovelId={propertyId} origem={origem} pontoInicial={ponto} onMedida={(validada) => validada && onMedida()} onDepois={() => setAberto(false)} />
         </div>
       )}
       {aberto && !celular && modo && <MedirPeloCelular propertyId={propertyId} ponto={ponto} onFechar={() => setAberto(false)} onMedida={onMedida} testid={testid} />}
