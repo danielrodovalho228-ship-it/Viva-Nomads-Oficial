@@ -50,6 +50,15 @@ export const progressoQualificacao = (tela: number, telas = 5, total = TELAS_ASS
 };
 
 /**
+ * E506: a barra do /qualificar também reflete o progresso REAL do rascunho (a prontidão, fonte única do "X% completo"):
+ * nunca fica abaixo dele. Rascunho vazio = o comportamento de antes (passos e respostas). Limitada a 0–100.
+ */
+export const progressoQualificacaoComRascunho = (tela: number, telas = 5, total = TELAS_ASSISTENTE.length, fracaoRespondida = 0, pctRascunho = 0) => {
+  const doRascunho = Number.isFinite(pctRascunho) ? Math.min(100, Math.max(0, Math.round(pctRascunho))) : 0;
+  return Math.max(progressoQualificacao(tela, telas, total, fracaoRespondida), doRascunho);
+};
+
+/**
  * Passo 1 (Cadastro 01-b / E87, mockup cadastro-imovel-01): os NOVE tipos, todos em cartões-foto numa linha única
  * rolável, nesta ordem — um só array (saíram os três cartões grandes, a seção "Outros tipos" e os chips). `alt` descreve
  * o tipo da foto em descrição neutra (E271: "Foto de uma casa", sem "ilustrativa").

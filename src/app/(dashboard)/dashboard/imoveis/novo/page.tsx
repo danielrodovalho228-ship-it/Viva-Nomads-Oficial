@@ -1844,6 +1844,7 @@ export default function NewPropertyPage() {
         respostas={qualConf.respostas}
         provas={provasDaQualificacao}
         confirmados={conf.marcados}
+        progressoRascunho={prontidao.pct}
         onResponder={responderQualificacao}
         onTela={(t) => {
           setTelaQual(t);
