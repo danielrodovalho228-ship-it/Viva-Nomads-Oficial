@@ -2631,7 +2631,8 @@
         "t300-entrada-sem-senha-49",
         "t317-email-unico-49c1",
         "t599-varredura-bloco49",
-        "t1409-varredura-bloco487"
+        "t1409-varredura-bloco487",
+        "t1435-varredura-bloco504"
       ]
     },
     "/admin/avaliadores": {
@@ -2669,7 +2670,8 @@
         "t303-avaliadores-credenciados-62b1",
         "t315-telas-avaliacao-dono-62a",
         "t606-varredura-bloco50",
-        "t1409-varredura-bloco487"
+        "t1409-varredura-bloco487",
+        "t1435-varredura-bloco504"
       ]
     },
     "/avaliadores": {
@@ -2690,7 +2692,8 @@
         "t341-credenciamento-avaliador-62a",
         "t591-varredura-bloco48",
         "t657-e235-link-avaliador",
-        "t1409-varredura-bloco487"
+        "t1409-varredura-bloco487",
+        "t1435-varredura-bloco504"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
@@ -2701,7 +2704,8 @@
         "t305-laudo-avaliacao-62b2",
         "t344-avaliacao-telas-62a-parte2",
         "t606-varredura-bloco50",
-        "t1409-varredura-bloco487"
+        "t1409-varredura-bloco487",
+        "t1435-varredura-bloco504"
       ]
     },
     "/admin/funil": {
