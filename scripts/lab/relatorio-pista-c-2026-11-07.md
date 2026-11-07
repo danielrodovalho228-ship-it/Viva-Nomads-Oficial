@@ -326,3 +326,7 @@ Verdes: t1415 (E661/E662, #3238, run 42392179474), L-104 anotado na t1418 (#3248
 ## Bloco 495 verde e bloco 496 (main `7b5d30e28`)
 
 Bloco 495 (#3254) verde (run 42393066883). Mesclados por você desde `4ffdb7572`: t1415 (#3238), blocos 493 (#3246) e 494 (#3249) e o ajuste L-104 da t1418 (#3248); nenhum merge de produto, então sem spec nova. L-104 segue aberto (produto); próximo livre: L-105. Bloco 496 (t1422, grupo do 479: estadia, cartão, desempenho, contrato) aberto no #3255. Defeitos de produto novos: nenhum.
+
+## Bloco 496 verde e bloco 497 (main `70e2ba5d1`)
+
+Bloco 496 (#3255) verde (run 42393784036) e mesclado, junto com o 495. Nenhum merge de produto novo desde `7b5d30e28`; sem spec nova. Bloco 497 (t1423, grupo do 480: visitante e painel do proprietário, incluindo editar o anúncio) aberto no #3257; se o editor repetir o 400 em `/api/proximidades`, é o L-104, não item novo. Próximo livre: L-105. Defeitos de produto novos: nenhum.
