@@ -88,7 +88,8 @@ export async function atualizarEstadoPedidoServico(id: string, novo: EstadoPedid
   // E477: a conta observadora da QA só lê o pedido de serviço do morador.
   const recusaQa = await recusaObservador(user.id);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: atual } = await admin.from("servicos_pedidos").select("status").eq("id", id).maybeSingle();
+  const { data: atual, error: erroLeitura } = await admin.from("servicos_pedidos").select("status").eq("id", id).maybeSingle();
+  if (erroLeitura) return { ok: false, error: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!atual) return { ok: false, error: "Pedido não encontrado." };
   if (!proximosEstados(String(atual.status)).includes(novo)) return { ok: false, error: "Esse pedido não pode ir para este estado." };
   const { error } = await admin
