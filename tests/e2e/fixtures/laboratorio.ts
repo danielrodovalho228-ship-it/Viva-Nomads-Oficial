@@ -461,3 +461,5 @@ export async function blocoSemValorMensal(contratoId: string): Promise<string> {
   if (error) throw error;
   return data.id as string;
 }
+
+export { criteriosDaAvaliacao } from "./avaliacao-criterios";

@@ -19,3 +19,11 @@ export async function preencherCriterios(p: Page) {
   for (const radio of await fieldset.getByRole("radio", { name: /: 5$/ }).all()) await radio.click();
   await p.getByRole("radiogroup", { name: "Recomendaria" }).getByRole("radio", { name: "Sim" }).click();
 }
+
+/*
+  L-105 (Pista C, mesma regra da 0322): forma equivalente a `camposDoPar`, usada pelos specs que já a importam.
+*/
+export function criteriosDaAvaliacao(papelAutor: "inquilino" | "proprietario", nota = 5): { notas_categorias: Record<string, number>; recomendaria: boolean } {
+  const chaves = papelAutor === "inquilino" ? ["imovel_como_anuncio", "limpeza_chegada", "comunicacao"] : ["cuidado_imovel", "regras_casa", "comunicacao"];
+  return { notas_categorias: Object.fromEntries(chaves.map((k) => [k, nota])), recomendaria: true };
+}
