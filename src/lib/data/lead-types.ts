@@ -22,6 +22,10 @@ export interface Lead {
   moradorVerificado?: string | null;
   /** Avaliações de outros proprietários (só com pelo menos 1 publicada). */
   reputacao?: { media: number; n: number } | null;
+  /** E657: último envio da candidatura (reenviada_em, senão a criação), o selo de reenvio e o primeiro envio. */
+  enviadaEm?: string | null;
+  reenviada?: boolean;
+  primeiroEnvioEm?: string | null;
   property: string;
   category: string;
   riskCategories: string[];
