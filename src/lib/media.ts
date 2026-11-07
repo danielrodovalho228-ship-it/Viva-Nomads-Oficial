@@ -172,6 +172,14 @@ export const PROPERTY_PHOTOS: Record<string, string[]> = {
   ],
 };
 
+/** E697: tira fotos repetidas (mesmo endereço) preservando a ordem. Sem repetição, devolve a MESMA lista. */
+export function fotosUnicas(fotos: readonly string[]): string[] {
+  const vistas = new Set(fotos);
+  if (vistas.size === fotos.length) return fotos as string[];
+  const vistos = new Set<string>();
+  return fotos.filter((f) => (vistos.has(f) ? false : (vistos.add(f), true)));
+}
+
 /**
  * Monta uma galeria com `n` fotos ciclando os ambientes disponíveis.
  * Demonstra a galeria adaptável e os tiers de qualidade enquanto as fotos
@@ -191,7 +199,8 @@ export function gallery(n: number): string[] {
 export function galleryFor(propertyId: string, n: number): string[] {
   const real = PROPERTY_PHOTOS[propertyId];
   if (real && real.length > 0) {
-    return Array.from({ length: n }, (_, i) => real[i % real.length]);
+    // E697: sem ciclar — antes, 2 fotos reais viravam 10 posições (a foto 4 = a foto 2). Só as fotos distintas que existem, até n.
+    return fotosUnicas(real).slice(0, Math.max(0, n));
   }
   // Fallback ilustrativo (ambientes genéricos): rotaciona o início por um hash do
   // id para que imóveis sem fotos próprias não mostrem todos a MESMA capa.
