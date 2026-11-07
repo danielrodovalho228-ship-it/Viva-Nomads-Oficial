@@ -79,10 +79,10 @@ test.describe("T680 — E193: Passo 5 em cartões", () => {
       expect(inv.caixa, `caixas: ${inv.caixa.join(" | ")}`).toEqual([]);
       expect(inv.chave, `interruptores (só cartão grande vale): ${inv.chave.join(" | ")}`).toEqual([]);
       expect(inv.cartao.length).toBeGreaterThan(10);
-      // Ruído: um cartão de marcar por pergunta, sem "Sim"/"Não".
+      // Ruído: um cartão de marcar por pergunta (4) + "Nenhum destes", todos de marcar, sem "Sim"/"Não".
       const ruido = p.getByTestId("ruido-form");
       if (await ruido.count()) {
-        await expect(ruido.getByRole("checkbox")).toHaveCount(4);
+        await expect(ruido.getByRole("checkbox")).toHaveCount(5);
         await expect(ruido.getByRole("radio")).toHaveCount(0);
       }
       await p.screenshot({ path: `${SAIDA}/t680-passo5-${largura}.png`, fullPage: true });

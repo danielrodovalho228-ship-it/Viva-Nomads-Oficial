@@ -64,7 +64,14 @@ test.describe("T677 — E193: Passo 6 em cartões", () => {
       await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // Abre os blocos opcionais (ruído, extras, acessibilidade…) para ver o que há dentro.
-      for (const t of await p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]').all()) await t.click().catch(() => {});
+      // Um de cada vez, relendo a tela (o `.all()` de antes guardava índices: ao abrir o 1º, o 3º deixava de existir e o clique esperava até o teto de 4 min).
+      const desligados = p.locator('[data-testid^="bloco-"][data-testid$="-toggle"][aria-checked="false"]');
+      for (let i = 0; i < 10 && (await desligados.count()) > 0; i++) {
+        const id = await desligados.first().getAttribute("data-testid");
+        await p.getByTestId(id!).evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await p.getByTestId(id!).click({ timeout: 10_000 });
+        await expect(p.getByTestId(id!)).toHaveAttribute("aria-checked", "true", { timeout: 10_000 });
+      }
       await p.waitForTimeout(500);
       const inv = await inventario(p);
       console.log(`t677 ${largura}`, JSON.stringify(inv));
