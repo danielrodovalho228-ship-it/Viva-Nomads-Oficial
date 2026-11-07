@@ -743,7 +743,8 @@
         "t663-varredura-bloco64",
         "t664-e230-sem-score",
         "t672-e190-troca-de-modo",
-        "t1411-varredura-bloco489"
+        "t1411-varredura-bloco489",
+        "t1395-e676-faixa-critica-confere-situacao"
       ]
     },
     "/dashboard/assinatura": {
