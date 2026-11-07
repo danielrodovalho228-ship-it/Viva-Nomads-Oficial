@@ -278,8 +278,6 @@ export interface PaginaParaPublicar {
   /** FISCAL-PARCEIRO-B: PJ sem resposta não publica a primeira vez (quem já está no ar não sai). */
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
-  /** E650: só a checagem do CNPJ, para o painel de quem JÁ publicou (publicado ou não, PF mostra a pendência). */
-  tipoPessoaCnpj?: string | null;
 }
 
 /** O que falta para publicar (vazio = pode publicar). */
@@ -290,9 +288,7 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (p.servicosAtivos < 1) f.push("Pelo menos 1 serviço");
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
-  // E650: o painel de quem JÁ publicou também mostra a pendência de CNPJ (só ela: a nota não é cobrada de quem esteve no ar).
-  const tipoParaCnpj = p.tipoPessoa !== undefined ? p.tipoPessoa : "tipoPessoaCnpj" in p ? p.tipoPessoaCnpj : undefined;
-  if (tipoParaCnpj !== undefined && !parceiroPodeReceberServico(tipoParaCnpj)) f.push(PENDENCIA_CNPJ);
+  if (p.tipoPessoa !== undefined && !parceiroPodeReceberServico(p.tipoPessoa)) f.push(PENDENCIA_CNPJ);
   if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }

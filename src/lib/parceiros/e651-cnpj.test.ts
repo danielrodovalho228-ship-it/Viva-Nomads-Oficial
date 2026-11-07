@@ -2,13 +2,13 @@
   E651 — a recusa do CPF no formulário público de parceiro NÃO disparava: o botão "Continuar: criar conta ou entrar" ia
   para o login ANTES de validar o documento. Agora o documento é validado no passo (14 dígitos + dígitos verificadores de
   CNPJ) com mensagem clara ANTES de avançar; o servidor continua recusando (validarSolicitacao).
-  E650 — o painel do parceiro PF já publicado também mostra a pendência de CNPJ (publicado ou não).
+  (A pendência de CNPJ no painel de PF já publicado — E650 — é do PR #3013.)
   Roda: node --test src/lib/parceiros/e651-e650-cnpj.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MSG_SO_CNPJ, PENDENCIA_CNPJ, erroDocumentoParceiro, faltaParaPublicar, validarSolicitacao } from "./regras.ts";
+import { MSG_SO_CNPJ, erroDocumentoParceiro, validarSolicitacao } from "./regras.ts";
 
 const CNPJ_OK = "11.222.333/0001-81";
 const CPF_OK = "529.982.247-25";
@@ -46,22 +46,4 @@ test("servidor segue recusando CPF e CNPJ inválido", () => {
   assert.equal(cpf.ok, false);
   const ruim = validarSolicitacao({ ...base, documento: "11222333000180" } as never);
   assert.equal(ruim.ok, false);
-});
-
-const pagina = { avatarPath: "a", descricao: "d".repeat(40), servicosAtivos: 1, cidades: ["Uberlândia"], categorias: ["limpeza"], fotosGaleria: 0 };
-
-test("E650: a pendência de CNPJ aparece para PF publicado (só ela, sem cobrar a nota de quem já esteve no ar)", () => {
-  assert.ok(faltaParaPublicar({ ...pagina, tipoPessoaCnpj: "pf" }).includes(PENDENCIA_CNPJ));
-  assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoaCnpj: "pj" }), []);
-  assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoaCnpj: null }).includes(PENDENCIA_CNPJ), true, "sem tipo registrado = não recebe");
-  // Quem ainda não publicou segue com a regra completa, sem duplicar a linha.
-  const f = faltaParaPublicar({ ...pagina, tipoPessoa: "pf", emiteNota: null });
-  assert.equal(f.filter((x) => x === PENDENCIA_CNPJ).length, 1);
-});
-
-test("painel: parceiro publicado ou não recebe a pendência de CNPJ", () => {
-  const src = readFileSync(new URL("./painel-actions.ts", import.meta.url), "utf8");
-  const fn = src.slice(src.indexOf("function faltaDe("), src.indexOf("Sem revalidatePath"));
-  assert.match(fn, /tipoPessoaCnpj: \(p\.tipo_pessoa as string \| null\) \?\? null/);
-  assert.match(fn, /\.\.\.\(p\.publicado_em \? \{\} : \{ tipoPessoa:/);
 });
