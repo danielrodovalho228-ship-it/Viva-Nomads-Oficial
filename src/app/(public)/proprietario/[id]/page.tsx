@@ -3,13 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Building2, Clock, Handshake, Languages, MapPin, Star, UserRound } from "lucide-react";
+import { PerfilAvaliacoes } from "@/components/avaliacoes/perfil-avaliacoes";
+import { resumoDasNotas } from "@/lib/avaliacoes-perfil";
 import { getAvaliacoesRecebidas, getPerfilProprietario, nomeCompletoParaQuemTemAceite } from "@/lib/data/perfil-proprietario";
 import { listPropertiesDoProprietario } from "@/lib/data/properties";
 import { desdeLabel, robotsDoProprietario } from "@/lib/perfil/perfil-publico";
 import { corAvatar, iniciais } from "@/lib/avatar";
 import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { buttonClasses } from "@/components/ui/button";
-import { dataBR } from "@/lib/utils";
 import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
 import { PerfilExemplo } from "./perfil-exemplo";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
@@ -146,36 +147,29 @@ export default async function ProprietarioPage({ params }: Params) {
         )}
       </section>
 
-      <section id="avaliacoes" className="mt-12 scroll-mt-28" aria-labelledby="avaliacoes-proprietario">
-        <h2 id="avaliacoes-proprietario" className="font-title text-2xl font-semibold text-ink">
-          Avaliações recebidas
-        </h2>
+      <div className="mt-12">
         {/* Achado 59: falhou a leitura → aviso honesto, nunca "Ainda sem avaliações publicadas". */}
         {avaliacoes === null ? (
-          <p role="alert" className="mt-3 text-muted" data-testid="avaliacoes-falha">
-            Não foi possível carregar as avaliações agora. Recarregue a página para ver.
-          </p>
+          <section id="avaliacoes" className="scroll-mt-28">
+            <h2 className="font-title text-2xl font-semibold text-forest">Avaliações recebidas</h2>
+            <p role="alert" className="mt-3 text-muted" data-testid="avaliacoes-falha">
+              Não foi possível carregar as avaliações agora. Recarregue a página para ver.
+            </p>
+          </section>
         ) : avaliacoes.length === 0 ? (
-          <p className="mt-3 text-muted">Ainda sem avaliações publicadas.</p>
+          <section id="avaliacoes" className="scroll-mt-28">
+            <h2 className="font-title text-2xl font-semibold text-forest">Avaliações recebidas</h2>
+            <p className="mt-3 text-muted">Ainda sem avaliações publicadas.</p>
+          </section>
         ) : (
-          <ul className="mt-4 grid gap-4">
-            {avaliacoes.map((a) => (
-              <li key={a.id} className="rounded-xl border border-sage-200 bg-white p-4">
-                <p className="flex items-center gap-1 text-sm font-semibold text-ink">
-                  <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden /> {a.nota.toLocaleString("pt-BR")}
-                  {a.data && <span className="ml-2 font-normal text-muted">{dataBR(a.data.slice(0, 10))}</span>}
-                </p>
-                {a.comentario && <p className="mt-2 text-sm text-ink">{a.comentario}</p>}
-                {a.resposta && (
-                  <p className="mt-3 rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted">
-                    <strong className="text-ink">Resposta de {p.nome}:</strong> {a.resposta}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
+          <PerfilAvaliacoes
+            avaliacoes={avaliacoes.map((a) => ({ id: a.id, autorNome: a.autorNome, nota: a.nota, comentario: a.comentario, data: a.data, resposta: a.resposta }))}
+            resumo={resumoDasNotas("morador_avalia_dono", avaliacoes.map((a) => a.notasCategorias))}
+            nomeResposta={p.nome.split(" ")[0]}
+            rotuloTotal={`${avaliacoes.length} ${avaliacoes.length === 1 ? "avaliação" : "avaliações"} de moradores`}
+          />
         )}
-      </section>
+      </div>
     </div>
   );
 }
