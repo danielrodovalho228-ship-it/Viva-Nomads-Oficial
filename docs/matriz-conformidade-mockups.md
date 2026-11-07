@@ -808,3 +808,11 @@ Rotas: `/dashboard`, `/imoveis`, `/leads`, `/mensagens`, `/contratos`, `/pedidos
 Sem tela nova na `main` (só blocos de testes da Pista C). Bloco seguinte: os estados abertos do topo do painel (não só a tela parada): o **painel de avisos do sino** (E444) e o **menu da Conta**.
 - **Sino:** a 390, painel de 358 px (16 a 374), a 1280, 384 px; **Conta:** 256 px nos dois tamanhos. Em todos: dentro da janela (esquerda, direita, topo e base), sem rolagem lateral, nenhum texto cortado, nenhum alvo abaixo de 40 px fora dos que têm `alvo-toque`.
 - **Achados novos:** nenhum. Conformidade mockup × real: sem diferença nos estados medidos.
+
+## Passada 65 (07/11; modo demonstração local, `main` em #3220; 390 e 1280) — diálogos do anúncio (Agendar visita e Pedir para morar)
+
+Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar** (mesmo formulário de visita/candidatura). Em ambos, a 390 (tela cheia, 390 × 664) e a 1280: dentro da janela, sem rolagem lateral, nenhum texto cortado.
+1. **Achado:** "+ Outro horário" mede 20 px a 390 (ação solta no formulário). Corrigido no #3225 (`min-h-11`).
+2. **Observação (sem correção):** a 1280, com mouse, o ícone "Abrir calendário" dos campos de data mede 36 px.
+- **Não medidos nesta passada:** "Salvar busca" (na `/buscar` ele não abre diálogo no demo), "Descrever o que procuro" e "Publicar pedido" (sem gatilho visível no demo) e o menu do site no celular (o gatilho do demo não abre um diálogo medível): ficam para a próxima.
+- Conformidade mockup × real: sem diferença nos estados medidos.
