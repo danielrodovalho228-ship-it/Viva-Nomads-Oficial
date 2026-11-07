@@ -42,7 +42,8 @@ import { BarraPilulas } from "@/components/busca/barra-pilulas";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { baseDaBusca, contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
+import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
@@ -446,7 +447,7 @@ export function SearchClient({
 
   // E131: a lista e todas as contagens partem da MESMA base (a regra dos exemplos decidida uma vez, sem os filtros da
   // folha). Assim nenhuma pílula ou faceta conta mais imóveis do que a lista sem filtro mostra.
-  const baseVisivel = useMemo(() => baseDaBusca(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  const baseVisivel = useMemo(() => baseDaVitrine(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
   const contarComPainel = useCallback((f: FiltrosPainel) => contarNaBase(baseVisivel, (p) => passaNoPainel(p, f)), [baseVisivel]);
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
@@ -829,6 +830,9 @@ export function SearchClient({
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+          {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
+          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
+
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
@@ -972,9 +976,6 @@ export function SearchClient({
             </div>
           )}
 
-          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
-          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
-          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
           <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
@@ -985,12 +986,13 @@ export function SearchClient({
           </p>
         </div>
 
-        {/* Mapa (só lg+): fixo sob a faixa de filtros, ocupa a altura visível e
-            encosta na borda direita da tela. */}
+        {/* Mapa (só lg+): fixo sob a faixa de filtros e ocupa a altura visível. E659: termina DENTRO da margem da página
+            (sem margem negativa): colado na borda da janela, os rótulos dos bairros e a atribuição do mapa (canto
+            inferior direito) eram cortados. */}
         <div
           data-testid="busca-mapa"
           className={cn(
-            "lg:sticky lg:top-18 lg:-mr-6 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
+            "lg:sticky lg:top-18 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
             mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : verMapa ? "hidden lg:block lg:bg-surface-2" : "hidden",
           )}
         >
@@ -1003,7 +1005,7 @@ export function SearchClient({
               onSelect={setSelecionadoId}
               focus={geoCenter}
               radiusKm={radiusKm}
-              className="h-full w-full rounded-none border-0 border-l border-line"
+              className="h-full w-full rounded-none border-0 border-l border-line lg:rounded-xl lg:border"
             />
           )}
         </div>

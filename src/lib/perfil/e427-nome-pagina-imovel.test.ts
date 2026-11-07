@@ -37,10 +37,10 @@ test("origem do anúncio: o nome do dono que vai para a página pública já sai
 test("ação de servidor: devolve o nome completo só pela função fail-closed de /proprietario/[id]", () => {
   const src = ler("src/lib/data/nome-dono-actions.ts");
   assert.match(src, /^"use server";/);
-  assert.match(src, /import \{ nomeCompletoParaQuemTemAceite \} from "@\/lib\/data\/perfil-proprietario";/);
-  assert.match(src, /export async function nomeDoDonoDepoisDoAceite\(donoId: string\): Promise<string \| null> \{/);
-  assert.match(src, /return await nomeCompletoParaQuemTemAceite\(donoId\)/);
-  assert.match(src, /catch \{\s*return null;/);
+  assert.match(src, /import \{ nomeCompletoDoAceite \} from "@\/lib\/data\/perfil-proprietario";/);
+  assert.match(src, /export async function nomeDoDonoDepoisDoAceite\(donoId: string\): Promise<\{ nome: string \| null; falhou: boolean \}> \{/);
+  assert.match(src, /return await nomeCompletoDoAceite\(donoId\)/);
+  assert.match(src, /catch \{\s*return \{ nome: null, falhou: true \};/);
 });
 
 test("OwnerCard: pede o nome do aceite depois de abrir, só em anúncio real, e usa o MESMO nome no cartão, na foto e no título", () => {
