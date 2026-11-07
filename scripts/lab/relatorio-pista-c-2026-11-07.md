@@ -264,3 +264,16 @@ Specs novas para merges sem guarda de tela: t1413 (E665, modelos de respostas r�
 **Spec nova sobre o #3164.** t1415 (E661 guia em blocos + nota do condomínio; E662 instrução única de saída no guia do morador, lembretes do dono e gravação pela edição do imóvel), PR #3238 em draft com base `claude-a/e662-tela-saida`; não mesclar antes do #3164. Run em andamento.
 
 **Destrava quando o #3164 mergear.** (1) Rerun único dos dez runs acima. (2) t1415 passa a mirar a main (retarget do #3238). (3) Retomo o bloco 491 e o acompanhamento de t1413/t1414. Defeitos de produto novos: nenhum além do L-103.
+
+## Despacho "Code 3": merges E287/E668/E671/E667/E658/E659/E504/E506/E193 e a main ainda bloqueada (L-103)
+
+**Lab (a).** A main avançou para `e0ee5ff29` (dez merges novos, incluindo #3228/#3235 do E287, E668, E671, E667, E658, E659, E504, E506, E193), mas o #3164 **não** foi mesclado: `tsc` na main reproduz o mesmo TS2739 de `src/lib/estadia/instrucoes.ts(140,14)` (cinco chaves faltando). Os runs da main em `1f8f792d1` e `a94306738` foram cancelados por serem substituídos; o de `e0ee5ff29` estava pendente e vai falhar no build pelo mesmo motivo. Sem falha nova: o único vermelho continua sendo o L-103. O veredito verde do #3164 (run 42386061247) segue de pé, e a t1415 sobre ele também deu **verde** (run 42386516939, #3238). Os rerun dos dez runs bloqueados continuam esperando o #3164 na main.
+
+**Varredura (b).** Bloco 491 não aberto: sairia vermelho pelo mesmo build quebrado. Sem achado visual novo.
+
+**Specs dos merges novos (c).**
+- #3235/#3228 (E287): t1416 (#3240) cobre a rota `POST /api/admin/pioneiras-e287` só de admin, caminhos negativos (visitante 403, conta comum 403, GET 405), sem enviar nada; o envio e a montagem têm teste unitário (`pioneiras-e287*.test.ts`) e a migração 0321 tem teste próprio. Não há tela nova do E287.
+- E668 (#3134), E667 (#3117) e E671 (#3161): as specs que estavam sobre esses drafts foram promovidas à main (main mesclada, cobertura reaplicada, base trocada, fora de draft): t1357/E668 (#3138), t1396/E667 (#3198) e t1349/E667 (#3119). **Atenção:** t1349 e t1396 cobrem o mesmo E667 (a t1396 foi escrita depois e checa o gráfico; a t1349 é a anterior). Não fecho PR por regra da pista; fica para decisão de quem mescla qual delas. E671 já está coberto pelo ajuste da t57 no próprio PR.
+- E658, E659, E504, E506, E193: só têm unitário/sem tela nova a testar sem prova ao vivo; sem spec nova.
+
+Defeitos de produto novos: nenhum além do L-103.
