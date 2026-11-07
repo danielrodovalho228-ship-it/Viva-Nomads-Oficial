@@ -517,3 +517,7 @@ Bloco 514 (t1448, #3332, grupo do 497: início, buscar, imóvel, ajuda, painel d
 ## Bloco 516 aberto (vigia 17:30; main `1ca739d24`)
 
 Estado conferido antes de seguir: main `1ca739d24` (o #3332 entrou depois do #3333); run de `2ac418ec8` verde (42425684428), o de `1ca739d24` em andamento. Nenhum merge de produto novo desde `6832dd107` (só meus blocos/specs e documentação da Pista QA): sem spec de merge a escrever. Bloco 516 (t1450, grupo do 499: painéis do morador e do dono, notificações, `/empresas`, `/para-proprietarios`) aberto, a 390 e 1280 px, em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 516 verde (main `c1ae2d65c`)
+
+Bloco 516 (t1450, #3334, grupo do 499: painéis do morador e do dono, notificações, `/empresas`, `/para-proprietarios`) **verde** (run 42426267647), a 390 e 1280 px, e já mesclado. O outro commit novo (#3335, Pista QA) é documentação: nenhuma spec de merge a escrever. Aberto no produto: L-104; próximo livre: **L-107**. Próximo da fila: bloco 517 (grupo do 500). Sem prova ao vivo, sem merge e sem fechar PR.
