@@ -420,3 +420,14 @@ Bloco 505 (t1436, #3286, grupo do 488: painel do proprietário sem id, incluindo
 ## Resultado: t1427, t1430, t1437, t1438 e bloco 506 — todos verdes
 
 Runs concluídos, **todos verdes**: t1427 / E681 (#3269, 42408332120), t1430 / E674 resíduo (#3272, 42408336611), t1437 / E695 (#3293, 42408404421), t1438 / E703 (#3294, 42408469983) e bloco 506 (t1439, #3295, grupo do 489, 42408529791). Sem vermelho, sem rerun. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105. Sem merge e sem fechar PR; os cinco PRs aguardam a mesclagem do Daniel. Pendentes: spec de tela de E694, E696/E702/E704, E699, E700, E701, E680, e das avaliações do parceiro/conduta cega/termos do avaliador; t1428 e t1429 seguem sobre drafts. Próximo bloco da fila: 507 (grupo do 490).
+
+## L-105 — t323 e as avaliações semeadas sem critérios (E679); blocos 507, 508 e 509 (main `6cbae9c24`)
+
+**L-105 (lab; origem: E679, migração 0322; encaminhado pela Pista A).** O t323 (selo "LinkedIn conectado" no card de avaliação) seguia quebrado por uma causa que **não** tem relação com a linha do LinkedIn em `/dashboard/conta/privacidade` (a A reverteu esse spec para a main). Diagnóstico:
+- O gatilho de `avaliacoes` da migração 0322 rejeita (erro 23514) qualquer avaliação com status diferente de `rascunho` que não traga **exatamente os três critérios fixos do par** em `notas_categorias` (inquilino: `imovel_como_anuncio`, `limpeza_chegada`, `comunicacao`; proprietário: `cuidado_imovel`, `regras_casa`, `comunicacao`) e `recomendaria` preenchido.
+- O t323 insere duas avaliações `enviada` só com `nota_geral` e **não confere o erro do insert** (`await ....insert(...)` sem olhar o retorno). As avaliações nunca existem, e o `poll` por `avaliacao-real` → `selo-linkedin` estoura o tempo. Não é defeito de produto: é fixture que ficou velha depois do E679.
+- **Correção só de lab, PR #3300** (`claude-c/l105-t323`): helper `criteriosDaAvaliacao(papel)` em `tests/e2e/fixtures/laboratorio.ts`; o t323 passa a usá-lo e a conferir o erro do insert.
+- **Mesmo defeito, ainda não corrigido (parte do L-105, uma a uma):** t28 (7 inserts; alguns podem testar a inserção inválida de propósito), t362, t93, t91, t351 e t369 semeiam `enviada` sem critérios. Podem estar vermelhas no lab completo; o lab-crítico só roda as alteradas.
+- Próximo número livre: **L-106**.
+
+**Blocos desta rodada (todos em andamento ao registrar):** 507 (t1440, #3302, grupo do 490: públicas com parâmetro), 508 (t1441, #3303, grupo do 491: admin com id e refazer 2FA) e 509 (t1442, #3304, grupo do 492: compartilhadas sem id, com a tolerância do L-104). Sem merge de produto novo na main desde `73fd0c336`. Sem merge e sem fechar PR. Um erro de operação meu foi corrigido sem perda: o t1440 foi parar por engano num commit do ramo do L-105, tirei com commit novo e o bloco 507 foi refeito em ramo próprio.
