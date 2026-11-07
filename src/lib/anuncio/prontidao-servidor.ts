@@ -8,7 +8,7 @@ import { statusPorImovel } from "@/lib/documento/vigente";
 import { matriculaConfereu } from "@/lib/fotos/foto-repetida";
 import { MATRICULA_OBRIGATORIA } from "@/lib/flags";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
-import { qualificacaoDoRascunho } from "./requisitos-passo10";
+import { declaracoesDoRascunhoOk } from "./requisitos-passo10";
 import { fatosDoRascunho } from "./fatos-do-rascunho";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
@@ -160,7 +160,7 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
             return;
           }
           if (!f || !draftData) return;
-          f.qualificacaoOk = qualificacaoDoRascunho(draftData, f);
+          f.qualificacaoOk = declaracoesDoRascunhoOk(draftData, f);
           // E556: todos os itens que o editor lê do estado vêm do draft_data, pela mesma função do editor.
           mapa.set(p.id, fatosDoRascunho(draftData, f));
         }),
