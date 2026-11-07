@@ -1816,7 +1816,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t709-e263-pets-condicoes-ida-e-volta",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t1402-varredura-bloco480"
+        "t1402-varredura-bloco480",
+        "t1414-e666-legenda-calendario"
       ]
     },
     "/modelodenegocio": {
@@ -2680,7 +2681,8 @@
         "t379-55e2-filtro-contato-um-toque",
         "t385-varredura-bloco21",
         "t679-varredura-bloco70",
-        "t1410-varredura-bloco488"
+        "t1410-varredura-bloco488",
+        "t1413-e665-modelos-respostas-rapidas"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
