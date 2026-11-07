@@ -392,3 +392,7 @@ Runs concluídos, **todos verdes**: t1427/E681 (#3269, 42403976707), t1428/E686 
 ## Bloco 504 aberto (main `9e08c86c6`)
 
 Em andamento ao abrir o 504: t1432 reenviada (#3278, run 42406334809), bloco 502 (#3279, run 42405598419) e bloco 503 (#3281, run 42406365423); nenhum vermelho até o momento. Sem merge novo na main desde `9e08c86c6`. Bloco 504 (t1435, grupo do 487: avaliação do imóvel, avaliadora, página pública da avaliadora, intenção; inclui telas dos merges do E679) aberto. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
+
+## Bloco 502 verde
+
+Bloco 502 (t1433, #3279, grupo do 485: contrato, imóvel, estadia, locação, sócios, autenticação, com a estadia do E681 e a saída do E662) **verde** (run 42405598419), a 390 e 1280 px. t1432 (E679, #3278) no head corrigido `e626b725e` (run 42406334809) e blocos 503 (#3281) e 504 (#3283) ainda em andamento, sem vermelho. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
