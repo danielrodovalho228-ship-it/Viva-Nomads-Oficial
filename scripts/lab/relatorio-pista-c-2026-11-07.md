@@ -42,6 +42,8 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 463 | t1374 | #3159 | 446 (t1355) | verde, run 42357374849 |
 | 464 | t1375 | #3160 | 447 (t1356) | verde, run 42358114145 |
 | 465 | t1376 | #3165 | 448 (t1359) | verde, run 42359328089 |
+| 466 | t1377 | #3168 | 449 (t1360) | verde, run 42360285365 |
+| 467 | t1378 | #3170 | 450 (t1361) | verde, run 42360837202 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
@@ -81,3 +83,6 @@ Corrigem a mensagem exibida quando a LEITURA do banco falha. Reproduzir exige de
 
 ### Defeitos de produto
 Nenhum item L novo. **L-103 segue livre.**
+
+### Merge novo na `main` desde a46ab219e (E414)
+- **#3173** ([Faixa D] t162 e t266 alinhadas ao E452 e ao E495, `27855dc92`): só ajusta duas specs de laboratório existentes; nenhum comportamento de produto novo, logo sem spec nova. Registrado; a varredura segue.
