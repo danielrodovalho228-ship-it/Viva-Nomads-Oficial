@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/dashboard/primitives";
 import { AvaliacoesRecebidasLista } from "@/components/avaliacoes/recebidas-lista";
 import { hrefPaginaAvaliar } from "@/lib/avaliacoes-pagina";
+import { hrefResponder } from "@/lib/avaliacoes-responder";
 import type { AvaliacaoRecebidaComRevisao } from "@/lib/data/avaliacoes-recebidas";
 import type { AvaliacaoFeita } from "@/lib/data/avaliacoes-painel";
 import type { AbaAvaliacoes } from "@/lib/conta/avaliacoes-recebidas";
@@ -142,7 +143,7 @@ export function PainelAvaliacoes({
                     </div>
                   </div>
                   {!a.resposta && (
-                    <Link href={`${ROTA}?aba=recebidas#avaliacao-${a.id}`} className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline underline-offset-2" data-testid="painel-responder">
+                    <Link href={hrefResponder(a.id)} className="inline-flex min-h-11 items-center text-sm font-medium text-forest underline underline-offset-2" data-testid="painel-responder">
                       Responder
                     </Link>
                   )}

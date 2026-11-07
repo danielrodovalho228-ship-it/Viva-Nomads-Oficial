@@ -800,6 +800,13 @@
       ],
       "specs": []
     },
+    "/dashboard/avaliacoes/responder/[avaliacaoId]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/dashboard/buscas": {
       "personas": [
         "inquilino"

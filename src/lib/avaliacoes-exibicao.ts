@@ -11,7 +11,7 @@ export const REGRAS_AVALIACOES: readonly string[] = [
   "Só avalia quem morou no imóvel, com contrato assinado pela Viva.",
   "Morador e proprietário avaliam sem ver a avaliação um do outro.",
   `A avaliação é publicada depois que os dois avaliam, ou ${DIAS_PRAZO_AVALIACAO} dias depois do fim da estadia.`,
-  "O proprietário pode responder em público, embaixo da avaliação.",
+  "O avaliado responde em público, uma vez, embaixo da avaliação; a resposta não se edita nem se apaga.",
 ];
 
 /** "Uberlândia · na Viva desde 2025" — só o que existe; sem nada, null. */
