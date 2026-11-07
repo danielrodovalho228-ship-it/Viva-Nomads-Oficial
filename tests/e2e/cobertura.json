@@ -793,6 +793,15 @@
         "t1411-varredura-bloco489"
       ]
     },
+    "/dashboard/avaliacoes/avaliar/[contratoId]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t182-jornada-completa"
+      ]
+    },
     "/dashboard/buscas": {
       "personas": [
         "inquilino"
