@@ -330,7 +330,8 @@ async function pedirCodigoAssinaturaInterno(contratoId: string): Promise<{ ok: b
     data: { user },
   } = await supabase.auth.getUser();
   if (!user?.email) return { ok: false, error: "Entre para assinar." };
-  const { data } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  const { data, error: erroContrato } = await admin.from("contratos").select(COLUNAS).eq("id", contratoId).maybeSingle();
+  if (erroContrato) return { ok: false, error: "Não foi possível ler o contrato agora. Tente de novo." };
   const c = data as unknown as LinhaContrato | null;
   if (c) await completarPets(c);
   const visao = c ? montar(c, user.id) : null;
