@@ -189,3 +189,7 @@ Foto: main passou por `f64e4c671` (E670 #3148), `4a254567d` (E678 #3191), `a9f43
 | Bloco 480 (t1402, grupo do 463, inclui interessados e novo anúncio) | #3206 | em andamento |
 
 Cobertura dos demais merges: E427 já tem t804/t923 (nome igual e nome na página do imóvel); a nova tentativa de leitura do nome (E427 nova-tentativa) só tem unitário; E662 (migração 0320, instrução única de saída) ganha spec de tela quando o draft da tela (#3164) mesclar. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Merges E528/E529 e bloco 481 (main `56a62b079`)
+
+Novos na main: E528 (#3050, painel de preço sem rolagem) e E529 (#3051, barra de comparar). Os dois já trazem as specs atualizadas no próprio merge (t843 e t844) e rodam no lab-crítico da main; sem spec nova a criar. t1401 (E446, #3205) verde (run 42375339282). t1393 (#3192), t1394 (#3193), bloco 480 (#3206) e a main em `56a62b079` ficaram em andamento ao fechar este registro. Bloco 481 (t1403, grupo do 464: admin, visitas, serviços, parceiros) aberto no #3207. Defeitos de produto novos: nenhum (L-103 livre). Spec de tela do E662 aguarda o draft #3164.
