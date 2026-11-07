@@ -93,6 +93,27 @@ export function VivaChatFlutuante() {
     };
   }, [escondido]);
 
+  // E455 (ii): aberto, o painel cobria o lado direito do rodapé e só saía pelo "Fechar". Tocar/clicar fora dele (no
+  // conteúdo, no rodapé) ou Esc fecha — o que estava por baixo volta a ficar livre. A conversa segue guardada na sessão.
+  useEffect(() => {
+    if (!aberto) return;
+    const aoTocarFora = (e: PointerEvent) => {
+      if (!raiz.current?.contains(e.target as Node)) setAberto(false);
+    };
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAberto(false);
+        botao.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", aoTocarFora);
+    document.addEventListener("keydown", aoTeclar);
+    return () => {
+      document.removeEventListener("pointerdown", aoTocarFora);
+      document.removeEventListener("keydown", aoTeclar);
+    };
+  }, [aberto]);
+
   // F49: some só enquanto a pessoa digita num campo (celular); volta ao sair do campo.
   useEffect(() => {
     if (escondido) return;
