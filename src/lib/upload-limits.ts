@@ -11,6 +11,8 @@ export const DOC_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 // Piso: abaixo disso não é uma matrícula/contrato real (fechou o furo do QA —
 // "PDF de 2 KB aceito"). Validado NO SERVIDOR (route /api/upload/documento).
 export const DOC_MIN_BYTES = 10 * 1024; // 10 KB
+/** E656: a recusa por tamanho fala só do tamanho e do caminho — nunca rotula o arquivo como documento inválido. */
+export const mensagemArquivoPequeno = (): string => `Arquivo pequeno demais: o tamanho mínimo é ${Math.round(DOC_MIN_BYTES / 1024)} KB. Envie um arquivo maior.`;
 export const DOC_MIME = ["application/pdf", "image/jpeg", "image/png"] as const;
 
 /**
