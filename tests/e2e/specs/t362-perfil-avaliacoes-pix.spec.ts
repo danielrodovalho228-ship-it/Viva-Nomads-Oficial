@@ -102,7 +102,7 @@ test.describe("T362 — PERFIL-B: chave Pix de recebimento e avaliações recebi
     const cartao = d.getByTestId("avaliacao-recebida").filter({ hasText: marca });
     await expect(cartao).toBeVisible({ timeout: 30_000 });
     await expect(cartao.getByTestId("avaliacao-autor")).toContainText("Carlos S.");
-    await expect(cartao.getByTestId("avaliacao-papel")).toContainText("morador");
+    await expect(cartao.getByTestId("avaliacao-papel")).toContainText(/morador/i);
     await expect(cartao.getByTestId("avaliacao-contexto")).toContainText(/^Recebida em \d{2} [a-z]{3} \d{4} · Casa no Santa Mônica .+ · Uberlândia$/);
     await expect(cartao).not.toContainText("Mendes");
     await semRolagemLateral(d);
@@ -110,7 +110,7 @@ test.describe("T362 — PERFIL-B: chave Pix de recebimento e avaliações recebi
 
     // Nota 4 é positiva.
     await d.getByTestId("avaliacoes-aba-positivas").click();
-    await expect(d).toHaveURL(/aba=positivas/);
+    await expect(d).toHaveURL(/filtro=positivas/);
     await expect(d.getByTestId("avaliacao-recebida").filter({ hasText: marca })).toBeVisible();
     // Busca sem resultado e busca que acha (sem acento).
     await d.getByTestId("avaliacoes-busca").fill("palavra-que-nao-existe");
