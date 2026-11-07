@@ -13,7 +13,7 @@ import { proximoPasso } from "@/lib/vistoria/laudo-documento";
 import { degrauDoProprietario } from "@/lib/vistoria/strikes";
 import { MSG_STRIKES_SEM_LEITURA, strikesDoDono } from "@/lib/vistoria/laudo-servidor";
 import { confirmarDevolucao, contestarLaudo, enviarFotoCorrecao } from "@/lib/vistoria/laudo-actions";
-import { ROTULO_ACAO, acoesDoResultado, avisoStrike, linhaResumoGrupo, prefixoAvaliadoEm } from "@/lib/vistoria/telas-laudo";
+import { ROTULO_ACAO, acoesDoResultado, avisoStrike, linhaResumoGrupo, prefixoAvaliadoEm, textoAssinatura } from "@/lib/vistoria/telas-laudo";
 
 const BUCKET_FOTOS = "avaliacao-imovel";
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -41,6 +41,8 @@ type Laudo = {
   vistoriado_em: string | null;
   contestado_em: string | null;
   documento_id: string | null;
+  assinatura_hash: string | null;
+  assinado_em: string | null;
 };
 
 /**
@@ -50,7 +52,7 @@ type Laudo = {
 export async function LaudoDono({ admin, propertyId, ownerId }: { admin: SupabaseClient; propertyId: string; ownerId: string }) {
   const agora = new Date();
   const [{ data: ls }, { data: bloqueios }, { data: devolucoes }, strikes, { data: imoveis }] = await Promise.all([
-    admin.from("vistoria_laudos").select("id, pedido_id, avaliador_id, resumo, numero, versao, resultado, nivel_sustentado, ressalvas, graves, emitido_em, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, vistoriado_em, contestado_em, documento_id").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1),
+    admin.from("vistoria_laudos").select("id, pedido_id, avaliador_id, resumo, numero, versao, resultado, nivel_sustentado, ressalvas, graves, emitido_em, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, vistoriado_em, contestado_em, documento_id, assinatura_hash, assinado_em").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_bloqueios").select("motivo").eq("property_id", propertyId).is("resolvido_em", null),
     admin.from("vistoria_devolucoes").select("id, valor, prazo_ate").eq("owner_id", ownerId).is("recebido_confirmado_em", null),
     // Leitura que falha: aviso na tela, nunca "sem strike" (degrau 0) por engano.
@@ -91,6 +93,14 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
               <Link href={hrefAvaliador(String(cred.numero_credenciado))} className="underline" data-testid="laudo-avaliador-link">{String(cred.numero_credenciado)}</Link>
             </p>
           )}
+          {(() => {
+            const a = textoAssinatura({ numero: l.numero, hash: l.assinatura_hash, em: l.assinado_em });
+            return a ? (
+              <p className="text-xs text-muted" data-testid="laudo-assinatura">
+                {a.linha} · registro <span title={a.hash} className="font-mono">{a.hashCurto}</span>
+              </p>
+            ) : null;
+          })()}
           <p className="mt-1 text-ink">{proximoPasso(l.resultado, l.prazo_ressalva_ate)}</p>
           {acoes.length > 0 && (
             <p className="mt-1" data-testid="laudo-acoes" data-acoes={acoes.join(" ")}>

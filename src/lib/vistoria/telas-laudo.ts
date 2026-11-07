@@ -101,3 +101,15 @@ export function contagemContestacoes(e: { contestacoes: number; devolucoes: numb
     { chave: "auditoria", rotulo: "laudos sorteados para auditoria", valor: e.auditoria, ancora: "#auditoria" },
   ];
 }
+
+// ── E691: a assinatura do laudo é visível ao avaliador e ao dono ──────────────────────────────────────────────────
+const dmaBRT = (iso: string) => {
+  const d = new Date(Date.parse(iso) - 3 * 3_600_000); // Brasília (UTC-3, sem horário de verão)
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+};
+
+/** Linha da assinatura: o número do laudo, o dia e o hash guardado pela Viva. Sem hash válido (64 hex) ou sem data → nada (nunca inventa). */
+export function textoAssinatura(e: { numero: string; hash: string | null; em: string | null }): { linha: string; hash: string; hashCurto: string } | null {
+  if (!e.hash || !/^[0-9a-f]{64}$/.test(e.hash) || !e.em || Number.isNaN(Date.parse(e.em))) return null;
+  return { linha: `Assinado pelo avaliador em ${dmaBRT(e.em)} · laudo ${e.numero}`, hash: e.hash, hashCurto: `${e.hash.slice(0, 8)}…${e.hash.slice(-8)}` };
+}
