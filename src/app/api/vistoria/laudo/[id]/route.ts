@@ -13,9 +13,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return NextResponse.json({ error: "Indisponível." }, { status: 503 });
-  const { data: l } = await supabase.from("vistoria_laudos").select("numero, versao, pdf_path").eq("id", id).maybeSingle();
+  const { data: l, error: erroLaudo } = await supabase.from("vistoria_laudos").select("numero, versao, pdf_path").eq("id", id).maybeSingle();
+  // Achado 164: falha de leitura/download é 503 (tente de novo), não 404 "não encontrado".
+  if (erroLaudo) return NextResponse.json({ error: "Não foi possível abrir o laudo agora. Tente de novo." }, { status: 503 });
   if (!l?.pdf_path) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
-  const { data: arq } = await admin.storage.from("avaliacao-imovel").download(l.pdf_path as string);
+  const { data: arq, error: erroArquivo } = await admin.storage.from("avaliacao-imovel").download(l.pdf_path as string);
+  if (erroArquivo) return NextResponse.json({ error: "Não foi possível abrir o laudo agora. Tente de novo." }, { status: 503 });
   if (!arq) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
   return new NextResponse(Buffer.from(await arq.arrayBuffer()), {
     headers: {
