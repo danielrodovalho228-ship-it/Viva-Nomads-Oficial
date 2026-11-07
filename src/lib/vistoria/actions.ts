@@ -406,15 +406,19 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const propertyId = String(form.get("propertyId") ?? "");
   const s = await sessao();
   if (!s) return { ok: false, erro: "Entre na sua conta." };
-  const { data: im } = await s.admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
+  const { data: im, error: erroImovel } = await s.admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
+  // Leitura falha não vira "sem acesso": o dono tenta de novo em vez de achar que o imóvel não é dele.
+  if (erroImovel) return { ok: false, erro: MSG_VISTORIA_SEM_LEITURA };
   if (!im || im.owner_id !== s.userId) return SEM_ACESSO;
   const agora = new Date();
-  const { data: tabela } = await s.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
+  const { data: tabela, error: erroTabela } = await s.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
   const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
-  const { data: bloq } = await s.admin.from("vistoria_bloqueios").select("id").eq("property_id", im.id).is("resolvido_em", null).limit(1);
+  const { data: bloq, error: erroBloq } = await s.admin.from("vistoria_bloqueios").select("id").eq("property_id", im.id).is("resolvido_em", null).limit(1);
+  // Sem a tabela, o pedido diria "ainda não há preço"; sem os bloqueios, "anúncio não publicado". Não abre.
+  if (erroTabela || erroBloq) return { ok: false, erro: MSG_VISTORIA_SEM_LEITURA };
   const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   if (!pode.ok) return { ok: false, erro: pode.motivo };
   // Imóvel ocupado agora: a visita só acontece com a concordância do morador.
