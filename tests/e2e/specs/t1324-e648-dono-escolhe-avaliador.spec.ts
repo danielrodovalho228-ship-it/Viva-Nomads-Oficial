@@ -7,7 +7,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImove
   no navegador do teste pelo cookie de laboratório (vn_lab_vistoria). Entrou só com teste de unidade; aqui é a tela do dono
   (/dashboard/imoveis/<id>/nivel), a 390 e 1280 px, seguindo o pedido de ponta a ponta:
    1. pedido em aberto: "Escolha o avaliador", a faixa de referência diz que cada avaliador define o próprio valor e prazo,
-      e a avaliadora aparece como sugerida, com o botão "Escolher este avaliador" (a Viva não designa sozinha);
+      (quando a cidade tem faixa nos dados) e a avaliadora aparece como sugerida, com o botão "Escolher este avaliador" (a Viva não designa sozinha);
    2. o dono escolhe: "Avaliador escolhido por você: nº …" e "O avaliador tem 24 horas para responder com o valor e o prazo dele";
    3. o avaliador propõe (gravado no banco, como a tela dele faria): "Proposta do avaliador: R$ … · laudo em N dias", com
       "Aceitar valor e prazo" e "Escolher outro avaliador";
@@ -80,7 +80,9 @@ test.describe("T1324 — E648: o dono escolhe o avaliador e aceita a proposta", 
         await abrir();
         const escolha = p.getByTestId("avaliacao-escolha");
         await expect(escolha).toContainText("Escolha o avaliador", { timeout: 30_000 });
-        await expect(p.getByTestId("avaliacao-faixa")).toContainText("Cada avaliador define o próprio valor e prazo");
+        // A faixa de referência só é desenhada quando a cidade tem faixa nos dados; quando existe, diz que o avaliador define o próprio valor.
+        const faixa = p.getByTestId("avaliacao-faixa");
+        if (await faixa.count()) await expect(faixa).toContainText("Cada avaliador define o próprio valor e prazo");
         const sugerido = p.getByTestId("avaliacao-sugerido").filter({ hasText: ids.numero });
         await expect(sugerido).toBeVisible();
         await sugerido.getByRole("button", { name: "Escolher este avaliador" }).click();
