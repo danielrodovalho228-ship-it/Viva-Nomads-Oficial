@@ -404,6 +404,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
           <Logo className="lg:hidden" />
           <div className="flex items-center gap-2">
+            {/* E478: o operador tem o sino de avisos em TODAS as páginas do /admin (computador e celular), o mesmo do E444. */}
+            {naAreaAdmin && <Sino px="admin" />}
             {contaCelular ?? papelChip}
             {chipModo}
             {/* Só na área da equipe: o menu lateral (no resto, a barra de baixo e a Conta no avatar — MENUS-5). */}
