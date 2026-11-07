@@ -322,3 +322,7 @@ Defeitos de produto novos: nenhum além do L-103.
 ## Colheita final e bloco 495 (main `4ffdb7572`)
 
 Verdes: t1415 (E661/E662, #3238, run 42392179474), L-104 anotado na t1418 (#3248, run 42392154371), bloco 493 (#3246, run 42392196249) e bloco 494 (#3249, run 42392234820). Main em `4ffdb7572` verde (run 42391830751); nenhum merge novo desde então, então sem spec de merge a escrever. L-104 segue aberto (produto, Pistas A/B); próximo número livre: L-105. Bloco 495 (t1421, grupo do 478: conferir, pedidos, admin/sistema) aberto no #3254. Defeitos de produto novos: nenhum.
+
+## Bloco 495 verde e bloco 496 (main `7b5d30e28`)
+
+Bloco 495 (#3254) verde (run 42393066883). Mesclados por você desde `4ffdb7572`: t1415 (#3238), blocos 493 (#3246) e 494 (#3249) e o ajuste L-104 da t1418 (#3248); nenhum merge de produto, então sem spec nova. L-104 segue aberto (produto); próximo livre: L-105. Bloco 496 (t1422, grupo do 479: estadia, cartão, desempenho, contrato) aberto no #3255. Defeitos de produto novos: nenhum.
