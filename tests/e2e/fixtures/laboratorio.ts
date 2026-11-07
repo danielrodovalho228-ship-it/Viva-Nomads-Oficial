@@ -187,6 +187,14 @@ export async function criarImovelPronto(
       tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
       // FILTROS-1 (E39): publicar exige a velocidade da internet (padrão do laboratório: 300 Mbps informados).
       internet_mbps: opts.semInternet ? null : 300,
+      // E660: a ficha "o que tem dentro" é obrigatória para publicar anúncio novo (padrão do laboratório: completa, 1 quarto).
+      ficha_dentro: {
+        versao: 1,
+        quartos: [{ nome: "Quarto 1", camas: [{ tipo: "casal", qtd: 1 }], solteirosJuntam: null, arCondicionado: true }],
+        enxoval: true,
+        cozinhaEquipada: true,
+        utensilios: null,
+      },
     })
     .select("id")
     .single();

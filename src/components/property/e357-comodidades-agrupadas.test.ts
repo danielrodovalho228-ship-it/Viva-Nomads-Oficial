@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 const src = readFileSync("src/components/property/amenities-grid.tsx", "utf8");
 
 test("E357: com 'Tem' × 'Não tem', o 'Tem' renderiza um grupo por categoria", () => {
-  assert.match(src, /comTemNaoTem \? \(\s*[\s\S]{0,200}data-testid="comodidades-principais">\s*\{agrupadas\.grupos\.map\(\(g\) => \(\s*<GrupoDeComodidades key=\{g\.category\} grupo=\{g\} \/>/);
+  assert.match(src, /comTemNaoTem \? \(\s*[\s\S]{0,200}data-testid="comodidades-principais">\s*\{blocos\.imovel\.map\(\(g\) => \(\s*<GrupoDeComodidades key=\{g\.category\} grupo=\{g\} \/>/);
 });
 
 test("E357: o grupo tem título com o ícone da categoria e itens com ícone em grade de 2 colunas; a folha usa o mesmo componente", () => {

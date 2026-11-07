@@ -39,8 +39,8 @@ test("item 4: só a barra de abas usa fixed + bottom-* direto; os demais fixos d
   assert.deepEqual(fora, []);
 });
 
-test("item 4: cada fixo de rodapé (vn-barra-fixa, vn-barra-comparar) parte de --altura-abas no celular", () => {
-  for (const classe of ["vn-barra-fixa", "vn-barra-comparar"]) {
+test("item 4: cada fixo de rodapé (vn-barra-fixa; a barra do comparador saiu do rodapé no E529) parte de --altura-abas no celular", () => {
+  for (const classe of ["vn-barra-fixa"]) {
     const bloco = css.match(new RegExp(`^\\.${classe}\\s*\\{[^}]*\\}`, "m"))?.[0] ?? "";
     assert.match(bloco, /bottom: calc\(var\(--altura-abas\)/, classe);
     const app = css.match(new RegExp(`html\\[data-app\\] \\.${classe}\\s*\\{[^}]*\\}`))?.[0] ?? "";

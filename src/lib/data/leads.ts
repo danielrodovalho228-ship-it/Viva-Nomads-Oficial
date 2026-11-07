@@ -4,6 +4,7 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { categoriaLabelParaDono } from "@/config/categorias-profissionais";
 import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
+import { envioDaCandidatura } from "@/lib/candidaturas-envio";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
 import { sinaisPorQueParaDono, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
@@ -29,6 +30,7 @@ interface LeadRow {
   status: string;
   tenant_id: string;
   property_id: string;
+  created_at: string | null;
   property: { title: string | null; pets_allowed?: boolean | null } | null;
 }
 
@@ -66,7 +68,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `id, status, tenant_id, property_id,
+      `id, status, tenant_id, property_id, created_at,
        property:properties!leads_property_id_fkey ( title, pets_allowed )`
     )
     .eq("owner_id", user.id)
@@ -185,6 +187,12 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       if (m.inicio_desejado) inicios.set(m.id, m.inicio_desejado);
     }
   }
+  // E657: o reenvio da candidatura, lido À PARTE e tolerante (a coluna é da migração 0315: se atrasar, a lista não quebra).
+  const reenviadas = new Map<string, string>();
+  if (admin && rows.length > 0) {
+    const { data: rs, error: erroRs } = await admin.from("leads").select("id, reenviada_em").in("id", rows.map((r) => r.id));
+    if (!erroRs) for (const x of (rs ?? []) as { id: string; reenviada_em: string | null }[]) if (x.reenviada_em) reenviadas.set(x.id, x.reenviada_em);
+  }
   // Foto só depois do aceite (podeVerAvatar: foto do inquilino só com relação aceita).
   const fotos = new Map<string, string | null>();
   await Promise.all(
@@ -253,6 +261,8 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       moradorVerificado: seloTriagem.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
       fichaPet,
+      // E657: quando a candidatura chegou (último envio), com o selo de reenvio — o dono também vê "Enviada em".
+      ...envioDaCandidatura(r.created_at, reenviadas.get(r.id) ?? null),
     };
   });
 }
