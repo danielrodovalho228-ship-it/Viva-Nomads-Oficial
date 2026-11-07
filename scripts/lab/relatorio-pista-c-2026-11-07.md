@@ -174,3 +174,18 @@ Main: só blocos meus (#3197, #3200) entraram; nenhum merge de produto novo. Run
 Risco registrado na t1399: se a tela de entrada gravar `user: null` no guardado antes da conta B entrar, `estadoAoTrocarDeConta` não enxerga a troca. Se o run vier vermelho por isso, é lacuna do draft #3166 (item novo L-103, origem: t1399), não da spec.
 
 Defeitos de produto novos: nenhum. Drafts ainda sem spec: E662 tela (#3164), E661 (#3114, #3133), E668 (#3134), E530b (#3132), E671 (#3161, coberto pelo ajuste da t57 no próprio PR).
+
+## Merges novos na main (E670, E678, E662 migração, E446, E427) — specs e blocos 479/480
+
+Foto: main passou por `f64e4c671` (E670 #3148), `4a254567d` (E678 #3191), `a9f43e813` (E662 migração #3149, 0320), `62a813196` (E446 #2971), `82f11dedf` (E427 #2978) e o bloco 479 (#3203). Os runs da main em `62a813196` e `82f11dedf` terminaram **cancelados** (substituídos por run mais novo, não vermelho); o seguinte (`762046015`) estava pendente ao fechar.
+
+| Item | PR | Resultado |
+|---|---|---|
+| t1399 — E674 (sobre #3166) | #3202 | verde (run 42374399771): a conta seguinte não herda o modo da anterior; o risco do `user: null` na tela de entrada não se confirmou |
+| Bloco 479 (t1400) | #3203 | verde (run 42374440915); mesclado |
+| t1393 — E678, agora na main | #3192 | base trocada para a main, branch com a main mesclada; run novo em andamento |
+| t1394 — E670, agora na main | #3193 | idem |
+| t1401 — E446, contagem da cidade (spec nova, merge #2971) | #3205 | em andamento |
+| Bloco 480 (t1402, grupo do 463, inclui interessados e novo anúncio) | #3206 | em andamento |
+
+Cobertura dos demais merges: E427 já tem t804/t923 (nome igual e nome na página do imóvel); a nova tentativa de leitura do nome (E427 nova-tentativa) só tem unitário; E662 (migração 0320, instrução única de saída) ganha spec de tela quando o draft da tela (#3164) mesclar. Defeitos de produto novos: nenhum (L-103 livre).
