@@ -115,7 +115,9 @@ async function carregar(pedidoId: string): Promise<{ admin: Admin; userId: strin
   if (!UUID.test(pedidoId)) return { erro: "Pedido não encontrado." };
   const s = await sessao();
   if ("erro" in s) return s;
-  const { data } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("id", pedidoId).maybeSingle();
+  const { data, error: erroPedido } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("id", pedidoId).maybeSingle();
+  // Leitura falha não vira "não encontrado": quem é parte do pedido tenta de novo em vez de achar que ele sumiu.
+  if (erroPedido) return { erro: "Não foi possível ler o pedido agora. Tente de novo." };
   const p = data as unknown as LinhaPedido | null;
   if (!p || !p.parceiros) return { erro: "Pedido não encontrado." };
   const papel: PapelNoPedido | null = p.cliente_id === s.userId ? "cliente" : p.parceiros.user_id === s.userId ? "parceiro" : null;
@@ -170,7 +172,9 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
   if ("erro" in s) return { ok: false, erro: s.erro };
   const { admin, userId } = s;
   if (!UUID.test(e.parceiroId) || !categoriaValida(e.categoria)) return { ok: false, erro: "Escolha o serviço." };
-  const { data: parc } = await admin.from("parceiros").select("id, user_id, status, categorias, tipo_pessoa").eq("id", e.parceiroId).maybeSingle();
+  const { data: parc, error: erroParceiro } = await admin.from("parceiros").select("id, user_id, status, categorias, tipo_pessoa").eq("id", e.parceiroId).maybeSingle();
+  // Leitura falha não vira "o parceiro não recebe pedidos": o pedido não é recusado por engano.
+  if (erroParceiro) return { ok: false, erro: "Não foi possível ler o parceiro agora. Tente de novo." };
   const parceiro = parc as { id: string; user_id: string; status: string; categorias: string[] | null; tipo_pessoa: string | null } | null;
   if (!parceiro || parceiro.status !== "publicado") return { ok: false, erro: "Este parceiro não está recebendo pedidos agora." };
   // E648: cadastro que ficou só com CPF não recebe serviço até apresentar o CNPJ.
@@ -182,7 +186,8 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
   if (!(parceiro.categorias ?? []).includes(e.categoria)) return { ok: false, erro: "Este parceiro não atende essa categoria." };
   if (e.servicoId) {
     if (!UUID.test(e.servicoId)) return { ok: false, erro: "Escolha o serviço." };
-    const { data: sv } = await admin.from("parceiro_servicos").select("id").eq("id", e.servicoId).eq("parceiro_id", parceiro.id).eq("ativo", true).maybeSingle();
+    const { data: sv, error: erroServico } = await admin.from("parceiro_servicos").select("id").eq("id", e.servicoId).eq("parceiro_id", parceiro.id).eq("ativo", true).maybeSingle();
+    if (erroServico) return { ok: false, erro: "Não foi possível ler o serviço agora. Tente de novo." };
     if (!sv) return { ok: false, erro: "Escolha um serviço da lista do parceiro." };
   }
   if (e.propertyId) {
