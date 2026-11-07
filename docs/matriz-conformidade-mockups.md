@@ -830,3 +830,11 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Ficha de dentro do imóvel (`/dashboard/imoveis/novo?etapa=comodidades`, #3085):** os 14 controles da ficha (campos de cama por quarto, Sim/Não de ar-condicionado, roupa de cama e cozinha) medem 44 px ou mais a 390 e a 1280; sem rolagem lateral (390 e 1280 de largura de documento). Conforme.
 - **Achados novos:** nenhum.
 - **Bloqueado, pulado:** E679 visual (mockups fora do repo na hora da passada).
+
+## Passada 68 (07/11; modo demonstração local, `main` em #3241; 390 e 1280) — subpáginas do imóvel, indicações e avisos
+
+- **Telas conferidas** (sem estouro lateral a 390 e a 1280): `/dashboard/indicacoes`, `/avisos/desligar`, `/excluir-conta/confirmar` (link incompleto), `/dashboard/imoveis/[id]/editar`, `desempenho`, `nivel`, `parceiros`, `cartao`.
+- **Achado 1 (corrigido, PR `claude-a/varredura-alvos-imovel`):** o link "← Meus imóveis" das subpáginas parceiros, desempenho, nível, cartão e conforto media 20 px; "Ver como aparece na busca" no editar anúncio, 20 px. Agora `min-h-11`.
+- **Observações sem correção:** botões `size="sm"` do sistema (40 px: "Voltar aos imóveis", "Compartilhar", "Ver", "Editar" na lista de imóveis) e links dentro de frase (ex.: "padrão mínimo", 17 px) seguem o padrão atual; mudar o tamanho do botão é decisão de sistema de desenho, não defeito de tela.
+- **Não alcançáveis no demo:** `/admin/*`, `/dashboard/estadia/[id]/*`, `/dashboard/contratos/[id]/ficha` (exigem papel ou dado real) — ficam para o laboratório.
+- **E666 (calendário público):** PR #3250 separa Ocupado de Bloqueado pelo proprietário.
