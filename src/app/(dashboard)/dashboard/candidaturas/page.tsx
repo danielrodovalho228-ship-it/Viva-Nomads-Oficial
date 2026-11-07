@@ -60,8 +60,8 @@ export default async function CandidaturasPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
-                  {c.createdAt && (
-                    <p className="text-xs text-muted">Enviada em {dataBRT(c.createdAt)}</p>
+                  {c.enviadaEm && (
+                    <p className="text-xs text-muted">Enviada em {dataBRT(c.enviadaEm)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
