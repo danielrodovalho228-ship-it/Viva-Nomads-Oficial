@@ -35,10 +35,10 @@ async function conectar(page: Page): Promise<string> {
   await page.waitForURL(/linkedin=/, { timeout: 30_000 });
   const url = new URL(page.url());
   const resultado = url.searchParams.get("linkedin") ?? "";
-  // L-106 (produto): as rotas /api/conta/linkedin/conectar e /retorno ainda voltam para /dashboard/conta/privacidade, onde a linha
+  // L-56 (produto, Pista A; o t351 já registra o mesmo): as rotas /api/conta/linkedin/conectar e /retorno ainda voltam para /dashboard/conta/privacidade, onde a linha
   // e o aviso do resultado não existem mais. Anotado; o resto do teste confere o comportamento na tela que tem a linha.
   if (url.pathname === "/dashboard/conta/privacidade") {
-    test.info().annotations.push({ type: "L-106", description: `a volta do LinkedIn (?linkedin=${resultado}) cai em ${url.pathname}, sem a linha nem o aviso (a lista está em ${TELA_DA_LINHA})` });
+    test.info().annotations.push({ type: "L-56", description: `a volta do LinkedIn (?linkedin=${resultado}) cai em ${url.pathname}, sem a linha nem o aviso (a lista está em ${TELA_DA_LINHA})` });
     await page.goto(`${TELA_DA_LINHA}?linkedin=${encodeURIComponent(resultado)}`, { waitUntil: "domcontentloaded" });
   }
   return resultado;
