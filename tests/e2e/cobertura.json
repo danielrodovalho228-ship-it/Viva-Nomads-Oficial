@@ -1006,7 +1006,8 @@
         "t649-e246-e249-contratos-inicio",
         "t662-varredura-bloco63",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/favoritos": {
@@ -1579,7 +1580,8 @@
         "t339-varredura-bloco16",
         "t676-varredura-bloco69",
         "t1400-varredura-bloco479",
-        "t1411-varredura-bloco489"
+        "t1411-varredura-bloco489",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/tributacao": {
@@ -2227,7 +2229,8 @@
         "t388-varredura-bloco23",
         "t679-varredura-bloco70",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/parceiro": {
@@ -2368,7 +2371,8 @@
         "t712-e267-transacionais-corpo",
         "t1400-varredura-bloco479",
         "t1407-varredura-bloco485",
-        "t1415-e661-e662-guia-em-blocos-e-saida"
+        "t1415-e661-e662-guia-em-blocos-e-saida",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/estadia/[contratoId]/alteracao": {
@@ -2410,7 +2414,8 @@
         "t676-varredura-bloco69",
         "t712-e267-transacionais-corpo",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/estadia/[contratoId]/convidado": {
@@ -2431,7 +2436,8 @@
         "t329-varredura-bloco11",
         "t676-varredura-bloco69",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1422-varredura-bloco496"
       ]
     },
     "/admin/destinos": {
@@ -2681,7 +2687,8 @@
         "t334-varredura-bloco12",
         "t675-varredura-bloco68",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/respostas-rapidas": {
@@ -2708,7 +2715,8 @@
         "t385-varredura-bloco21",
         "t679-varredura-bloco70",
         "t1400-varredura-bloco479",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1422-varredura-bloco496"
       ]
     },
     "/dashboard/conta/excluir": {
