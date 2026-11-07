@@ -10,6 +10,8 @@ import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { contarPorGatilho, ROTULO_GATILHO, type Gatilho } from "@/lib/automacao/pedidos-do-evento";
 import { RodarAutomacao } from "@/components/automacao/rodar-automacao";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { FORMULAS_PEDIDOS_PARCEIRO, STATUS_ABERTOS, numerosPedidosParceiro, rotuloStatus, type PedidoParaNumeros } from "@/lib/parceiros/pedido";
 
 export const metadata = { title: "Pedidos de parceiros — Admin" };
@@ -38,6 +40,8 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
   const filtro = (sp.filtro && sp.filtro in FILTROS ? sp.filtro : null) as Filtro | null;
   const admin = createAdminClient();
   if (!admin) return <EmptyState icon={ClipboardList} title="Modo demonstração" text="Sem conexão com o banco: nenhum dado real para mostrar." action={<ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>} />;
+  // E477: "Rodar a automação de hoje" grava de verdade (com AUTOMACOES_ATIVO=1) — o admin observador da QA só lê.
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const [{ data, error }, testes, { data: parcs, error: erroParceiros }] = await Promise.all([
     admin
       .from("parceiro_pedidos")
@@ -102,7 +106,7 @@ export default async function AdminPedidosParceirosPage({ searchParams }: { sear
         </dl>
         <p className="mt-2 text-xs text-muted">Pedidos com origem automática, por gatilho, sem contas de teste.</p>
         <div className="mt-3">
-          <RodarAutomacao />
+          {soLeitura ? <SoLeituraQa /> : <RodarAutomacao />}
         </div>
       </Panel>
       <Panel title={filtro ? FILTROS[filtro].titulo : soAutomaticos ? "Pedidos gerados automaticamente" : "Todos os pedidos"} className="mt-6 scroll-mt-24" id="lista">

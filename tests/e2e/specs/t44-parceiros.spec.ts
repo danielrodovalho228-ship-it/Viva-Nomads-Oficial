@@ -50,6 +50,7 @@ test.describe("T44 — Parceiros", () => {
     await page.goto("/parceiros?categoria=mudanca#quero-ser-parceiro", { waitUntil: "networkidle" });
     await expect(page.getByTestId("seja-parceiro-precisa-conta")).toBeVisible();
     await expect(page.getByTestId("sp-cat-mudanca")).toBeChecked(); // categoria vinda do cartão
+    await page.locator("#sp-doc").fill(cnpjAleatorio()); // E651: o documento é conferido antes de ir para a conta
     await page.getByTestId("seja-parceiro-enviar").click();
     await page.waitForURL(/\/auth\?cadastro=1/, { timeout: 15_000 });
   });

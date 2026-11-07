@@ -73,7 +73,7 @@ test("uma fonte só: o calendário não guarda datas; caixa e diálogo usam os m
   const pagina = ler("app/(public)/imoveis/[id]/property-detail.tsx");
   assert.match(pagina, /useState<SelecaoEstadia>\(SELECAO_VAZIA\)/);
   assert.doesNotMatch(pagina, /setInicioDesejado|setPessoas/, "nenhum estado paralelo de data ou pessoas");
-  assert.match(pagina, /<AvailabilityCalendar property=\{property\} selecao=\{selecao\} onSelecao=\{setSelecao\} \/>/);
+  assert.match(pagina, /<AvailabilityCalendar property=\{property\} selecao=\{selecao\} onSelecao=\{setSelecao\} onDisponivelDesde=\{setDisponivelDesde\} \/>/);
   assert.match(pagina, /\{camposPeriodo\("candidatura"\)\}/);
   assert.match(pagina, /\{camposPeriodo\("solicitacao"\)\}/);
   assert.match(pagina, /fimDesejado: selecao\.saida/);

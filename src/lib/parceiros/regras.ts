@@ -66,6 +66,8 @@ export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberado
  */
 export const MSG_SO_CNPJ = "A Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito: abra o seu CNPJ (MEI, onde a atividade permite) e cadastre a empresa.";
 export const PENDENCIA_CNPJ = "Apresentar o CNPJ (cadastros com CPF não recebem serviço)";
+/** E649: o que o PARCEIRO com cadastro legado (CPF) lê no painel dele: a pendência e o que fazer para voltar a receber serviço. */
+export const PENDENCIA_CNPJ_PAINEL = "Pendência: apresente o CNPJ para voltar a receber serviço (cadastros com CPF não recebem serviço).";
 
 /** Só empresa (CNPJ) recebe serviço: pedido de orçamento, busca pública e designação. Sem tipo registrado = não recebe. */
 export const parceiroPodeReceberServico = (tipoPessoa: string | null | undefined): boolean => tipoPessoa === "pj";
@@ -123,6 +125,19 @@ export function urlPublicaValida(u: string | null | undefined): string | null {
 }
 
 /** Validação do SERVIDOR (fonte da verdade). Campos por categoria: fotografia → portfólio; mudança → empresa e veículo; demais → descrição. */
+/**
+ * E651: o documento do pedido de parceria, conferido do mesmo jeito no passo (antes de mandar a pessoa para o /auth) e no
+ * servidor. CPF (11 dígitos, válido ou não) é a tentativa que o E648 recusa; o CNPJ precisa de 14 dígitos e dígitos
+ * verificadores corretos. Devolve a mensagem de recusa ou null quando o CNPJ confere.
+ */
+export function validarDocumentoParceiro(documento: string | null | undefined): string | null {
+  const doc = soDigitos(documento ?? "");
+  if (doc.length === 11 || cpfValido(doc)) return MSG_SO_CNPJ;
+  if (doc.length !== 14) return "Informe o CNPJ com 14 dígitos (00.000.000/0000-00).";
+  if (!cnpjValido(doc)) return "CNPJ inválido: confira os números.";
+  return null;
+}
+
 export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
   const nome = limpar(e.nome, 120);
   if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
@@ -130,8 +145,8 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
   if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
   const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
-  if (cpfValido(doc)) return { ok: false, erro: MSG_SO_CNPJ };
-  if (!cnpjValido(doc)) return { ok: false, erro: "CNPJ inválido: confira os números." };
+  const erroDoc = validarDocumentoParceiro(e.documento);
+  if (erroDoc) return { ok: false, erro: erroDoc };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
   if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
   const vistas = new Set<string>();
@@ -194,7 +209,7 @@ export function emailMascarado(e: string | null | undefined): string {
 // ── Checklist do admin ─────────────────────────────────────────────────────────────────────────────────────────
 export const ITENS_CHECKLIST = [
   { chave: "identidade", rotulo: "Identidade conferida (CAF) ou conferência manual registrada" },
-  { chave: "documento", rotulo: "CPF/CNPJ com dígitos válidos e situação conferida na Receita" },
+  { chave: "documento", rotulo: "CNPJ com dígitos válidos e situação conferida na Receita" },
   { chave: "area", rotulo: "Categorias e área de atendimento definidas" },
   { chave: "categoria", rotulo: "Item da categoria conferido (portfólio, empresa/veículo ou descrição)" },
 ] as const;
@@ -216,8 +231,8 @@ export const MODELOS_RECUSA_PARCERIA = [
   },
   {
     chave: "documento",
-    rotulo: "CPF ou CNPJ não conferido",
-    texto: "O CPF ou CNPJ informado não pôde ser conferido na Receita Federal (número inválido ou situação irregular). Confira o número e a situação do documento e envie um novo pedido de parceria.",
+    rotulo: "CNPJ não conferido",
+    texto: "O CNPJ informado não pôde ser conferido na Receita Federal (número inválido ou situação irregular). Confira o número e a situação do CNPJ e envie um novo pedido de parceria.",
   },
   {
     chave: "area",
@@ -264,6 +279,8 @@ export interface PaginaParaPublicar {
   /** FISCAL-PARCEIRO-B: PJ sem resposta não publica a primeira vez (quem já está no ar não sai). */
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: quem já esteve no ar não é barrado pela pergunta da nota, mas a pendência do CNPJ vale para todos. */
+  jaPublicou?: boolean;
 }
 
 /** O que falta para publicar (vazio = pode publicar). */
@@ -275,7 +292,7 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
   if (p.tipoPessoa !== undefined && !parceiroPodeReceberServico(p.tipoPessoa)) f.push(PENDENCIA_CNPJ);
-  if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
+  if (p.tipoPessoa !== undefined && !p.jaPublicou && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }
 
@@ -330,6 +347,8 @@ export interface ParceiroNaBusca {
   raioKm?: number | null;
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: quem já esteve no ar não é barrado pela pergunta da nota, mas a pendência do CNPJ vale para todos. */
+  jaPublicou?: boolean;
 }
 
 /*

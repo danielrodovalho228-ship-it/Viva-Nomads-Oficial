@@ -99,6 +99,10 @@ export type NotificationEvent =
   | "estadia_instrucoes_liberadas" // D-7, com o contrato assinado e o 1º pagamento → morador
   | "estadia_convite_ocupante" // 61-B: o morador convidou quem vai morar junto → o convidado (só leitura)
   | "estadia_instrucoes_pendentes" // D-10 sem instruções de chegada → proprietário
+  | "jornada_confirmacao" // E663: contrato assinado pelas duas partes → morador (pede os documentos pela plataforma)
+  | "jornada_chegada" // E663: dia da entrada → as duas partes
+  | "jornada_semana_saida" // E663: uma semana antes da saída → as duas partes
+  | "jornada_meio_estadia" // E663: meio de estadia longa (60+ dias) → morador (tudo certo? algo quebrou? avaliação parcial)
   | "estadia_aditivo_proposto" // proposta de alteração → a outra parte (7 dias para responder)
   | "estadia_aditivo_respondido" // aceita (assinar) ou recusada → quem propôs
   | "estadia_remarcada" // aditivo assinado pelas duas partes: blocos e datas mudaram → as duas partes
@@ -226,6 +230,10 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   parceiro_avaliacao: { subject: "Conte como foi o serviço", body: (n) => `Olá${n ? " " + n : ""}, o serviço foi concluído. A sua avaliação ajuda outras pessoas e só aparece depois que as duas partes avaliarem.`, cta: "Avaliar", path: "/dashboard/servicos" },
   estadia_convite_ocupante: { subject: "Você foi incluído em uma estadia na Viva", body: () => "O morador incluiu você na estadia. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.", cta: "Ver a estadia", path: "/auth" },
   estadia_instrucoes_liberadas: { subject: "As instruções de chegada estão liberadas", body: (n) => `Olá${n ? " " + n : ""}, a sua entrada está chegando. Como entrar, o Wi-Fi e as regras do prédio já estão na página da estadia.`, cta: "Ver as instruções", path: "/dashboard/locacoes" },
+  jornada_confirmacao: { subject: "Contrato assinado: envie seus documentos", body: (n) => `Olá${n ? " " + n : ""}, seu contrato está assinado. Envie seus documentos pela plataforma, na página da estadia.`, cta: "Enviar documentos", path: "/dashboard/locacoes" },
+  jornada_chegada: { subject: "Hoje é o dia da entrada", body: (n) => `Olá${n ? " " + n : ""}, hoje é o dia da entrada no imóvel do contrato. As instruções estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
+  jornada_semana_saida: { subject: "A saída é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a saída. Combine a conferência de saída pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
+  jornada_meio_estadia: { subject: "Como está a estadia?", body: (n) => `Olá${n ? " " + n : ""}, a estadia chegou à metade. Está tudo certo? Se algo quebrou, avise pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   estadia_instrucoes_pendentes: { subject: "Preencha as instruções de chegada", body: (n) => `Olá${n ? " " + n : ""}, a entrada do morador é daqui a 10 dias. Preencha as instruções de chegada do imóvel: o morador recebe 7 dias antes.`, cta: "Preencher as instruções", path: "/dashboard/contratos" },
   estadia_aditivo_proposto: { subject: "Proposta de alteração da estadia", body: (n) => `Olá${n ? " " + n : ""}, a outra parte propôs uma alteração no contrato. Confira o que muda e aceite ou recuse em até 7 dias.`, cta: "Ver a proposta", path: "/dashboard/contratos" },
   estadia_aditivo_respondido: { subject: "Sua proposta de alteração foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a outra parte respondeu à sua proposta de alteração. Veja a resposta na página da estadia.`, cta: "Ver a resposta", path: "/dashboard/contratos" },

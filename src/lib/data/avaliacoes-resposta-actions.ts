@@ -87,8 +87,7 @@ export async function decidirRevisaoAvaliacao(contestacaoId: string, decisao: st
     .maybeSingle();
   if (!c || c.status !== "aberta" || !ehMotivoRevisao(c.motivo)) return { ok: false, error: "Pedido não está mais aberto." };
   // E477: avaliação entre contas reais — o admin observador da QA só lê (entre contas de teste segue liberado).
-  const { data: av } = await adm.from("avaliacoes").select("autor_id, alvo_id").eq("id", c.avaliacao_id).maybeSingle();
-  const recusaQa = await recusaObservador(user.id, { perfis: [av?.autor_id, av?.alvo_id], semPerfil: av ? 0 : 1 });
+  const recusaQa = await recusaObservador(user.id);
   if (recusaQa) return { ok: false, error: recusaQa };
   const { error } = await adm
     .from("avaliacao_contestacoes")

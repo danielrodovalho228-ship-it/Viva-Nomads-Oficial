@@ -30,6 +30,7 @@ import {
 } from "@/lib/automacoes/regras";
 import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { chaveDaJornada, confirmacaoDevida, corpoDaJornada, momentosDeHoje } from "@/lib/estadia/jornada-mensagens";
 import { corpoDaChegada } from "@/lib/estadia/emails-chegada";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
@@ -340,6 +341,38 @@ export async function GET(request: Request) {
       const efetivas = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, (ck as { instrucoes?: string } | null)?.instrucoes);
       if (!erroIm && !erroCk && lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
         alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, imovelId: c.property_id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { id: c.property_id as string, titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
+      }
+    }
+  }
+
+  // 8) Jornada de mensagens da estadia (E663): confirmação (logo após a assinatura das duas partes), chegada, semana da
+  // saída e meio da estadia longa. As datas saem dos blocos ATUAIS: remarcou por aditivo (E652), recalcula e reenvia nas
+  // datas novas (a data entra na chave). O D-7 das instruções (bloco 7) segue o mesmo, sem duplicar.
+  for (const c of estadias ?? []) {
+    const blocos = ((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string }[]).filter((b) => b.status !== "nao_aceito" && b.inicio && b.fim);
+    if (!blocos.length || !c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
+    const datas = { entrada: blocos.map((b) => b.inicio).sort()[0], fim: blocos.map((b) => b.fim).sort().at(-1) as string };
+    const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
+    const dadosCorpo = { ...datas, imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }, horario: prop?.checkin_after, horarioSaida: prop?.checkout_before };
+    const assinadoEm = [c.assinado_proprietario_em as string, c.assinado_inquilino_em as string].sort().at(-1);
+    const doDia = momentosDeHoje({ ...datas, hoje });
+    const hojeMomentos = confirmacaoDevida({ assinadoEm, hoje }) ? (["jornada_confirmacao", ...doDia] as const) : doDia;
+    // Chegada e semana da saída só com o 1º pagamento (a mesma condição do D-7); a confirmação não depende dele.
+    const pago = primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]);
+    for (const momento of hojeMomentos) {
+      if (momento !== "jornada_confirmacao" && !pago) continue;
+      const paraDono = momento === "jornada_chegada" || momento === "jornada_semana_saida";
+      const quem = [c.tenant_id as string, ...(paraDono && prop?.owner_id ? [prop.owner_id] : [])];
+      for (const u of quem) {
+        alvos.push({
+          tipo: momento,
+          usuarioId: u,
+          refId: c.id as string,
+          variante: chaveDaJornada(momento, datas),
+          imovelId: c.property_id as string,
+          url: HREF_ESTADIA(c.id as string),
+          detalhe: corpoDaJornada(momento, dadosCorpo).texto,
+        });
       }
     }
   }
