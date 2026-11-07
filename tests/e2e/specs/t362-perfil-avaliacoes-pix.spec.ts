@@ -97,7 +97,7 @@ test.describe("T362 — PERFIL-B: chave Pix de recebimento e avaliações recebi
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.setViewportSize({ width: 390, height: 844 });
-    await d.goto("/dashboard/avaliacoes", { waitUntil: "domcontentloaded" });
+    await d.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "domcontentloaded" });
     const cartao = d.getByTestId("avaliacao-recebida").filter({ hasText: marca });
     await expect(cartao).toBeVisible({ timeout: 30_000 });
     await expect(cartao.getByTestId("avaliacao-autor")).toContainText("Carlos S.");

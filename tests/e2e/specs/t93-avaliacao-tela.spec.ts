@@ -45,7 +45,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       await dono.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
 
       // 1) O avaliado responde pela tela.
-      await page.goto("/dashboard/avaliacoes", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "networkidle" });
       const cartao = page.getByTestId("avaliacao-recebida").filter({ hasText: marca });
       await expect(cartao).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

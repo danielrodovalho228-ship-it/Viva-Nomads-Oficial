@@ -303,7 +303,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
 
     // Às cegas: o dono ainda não vê a avaliação, nem na tela dele nem na página pública.
     const pd = await comoDono(browser);
-    await abrir(pd, "/dashboard/avaliacoes");
+    await abrir(pd, "/dashboard/avaliacoes?aba=recebidas");
     await expect(pd.getByText("Nenhuma avaliação publicada ainda")).toBeVisible({ timeout: 20_000 });
     await expect(pd.locator("main")).not.toContainText(marcaInq);
     const anon = await browser.newContext({ viewport: { width: 1280, height: 900 }, storageState: { cookies: [], origins: [] } });
@@ -324,12 +324,12 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
       .toEqual(["publicada", "publicada"]);
 
     // Cada lado vê a do outro em "Avaliações recebidas".
-    await abrir(pd, "/dashboard/avaliacoes");
+    await abrir(pd, "/dashboard/avaliacoes?aba=recebidas");
     await expect(pd.getByTestId("avaliacao-recebida").filter({ hasText: marcaInq })).toBeVisible({ timeout: 20_000 });
     await foto(pd, "6-dono-recebeu", [1280, 390]);
     await pd.context().close();
     const pi2 = await entrar(browser, inq.email, senha);
-    await abrir(pi2, "/dashboard/avaliacoes");
+    await abrir(pi2, "/dashboard/avaliacoes?aba=recebidas");
     await expect(pi2.getByTestId("avaliacao-recebida").filter({ hasText: marcaDono })).toBeVisible({ timeout: 20_000 });
     await foto(pi2, "6-inquilina-recebeu");
     await pi2.context().close();
