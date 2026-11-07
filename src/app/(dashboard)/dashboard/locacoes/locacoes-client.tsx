@@ -1,5 +1,7 @@
 "use client";
 
+import { useAuthStore } from "@/lib/store";
+import { soDaConta } from "@/lib/sessao/lista-da-conta";
 import { useMemo } from "react";
 import Link from "next/link";
 import { HREF_ESTADIA, HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
@@ -55,7 +57,9 @@ export function LocacoesClient({
 }) {
   const { on: demoOn } = useDemoMode();
   const demoLocacoes = useMemo(() => buildDemoLocacoes(), []);
-  const locacoes = demoOn ? demoLocacoes : real;
+  // E680: a lista é da conta para quem o servidor a montou; com outra conta no navegador ela não aparece.
+  const contaDoNavegador = useAuthStore((s) => s.user?.id);
+  const locacoes = demoOn ? demoLocacoes : soDaConta(real, contaDoNavegador);
 
   return (
     <>

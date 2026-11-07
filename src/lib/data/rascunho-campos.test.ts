@@ -31,6 +31,7 @@ test("o autosave (saveDraftData) grava essas colunas e o editor as envia", async
   const acao = readFileSync("src/lib/data/actions.ts", "utf8");
   assert.match(acao, /\.\.\.camposDeConteudoDoRascunho\(snap\)/);
   const editor = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx", "utf8");
-  const bloco = editor.slice(editor.indexOf("await saveDraftData({"), editor.indexOf("await saveDraftData({") + 400);
+  // E700: o autosave monta a gravação em montarGravacao (a mesma que a saída da página grava).
+  const bloco = editor.slice(editor.indexOf("const montarGravacao = () => ({"), editor.indexOf("const montarGravacao = () => ({") + 500);
   for (const campo of ["neighborhood", "bedrooms", "bathrooms", "areaM2", "description"]) assert.ok(bloco.includes(campo), campo);
 });

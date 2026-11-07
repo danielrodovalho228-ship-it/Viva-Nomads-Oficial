@@ -147,8 +147,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Conferência inicial: getSession lê o cookie/sessão vigente. Só aqui
     // decidimos "logado ou não" — e marcamos `authChecked` para liberar o guard.
-    supabase.auth.getSession().then(({ data }) => {
-      hydrate(data.session);
+    supabase.auth.getSession().then(async ({ data }) => {
+      let sessao = data.session;
+      // E674: "sem sessão" aqui pode ser instantâneo (renovação do token em curso, duas abas). hydrate(null) apagaria o
+      // usuário e o AuthGuard mandaria para /auth uma carga direta com sessão viva. Confere uma vez no servidor (getUser)
+      // e relê a sessão antes de declarar deslogado; falha de rede não derruba a carga.
+      if (!sessao) {
+        try {
+          const { data: conferido } = await supabase.auth.getUser();
+          if (conferido.user) sessao = (await supabase.auth.getSession()).data.session;
+        } catch {
+          /* segue como sem sessão */
+        }
+      }
+      hydrate(sessao);
       setAuthChecked(true);
     });
 
