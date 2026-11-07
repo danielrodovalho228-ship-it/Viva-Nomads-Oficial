@@ -104,7 +104,7 @@ export function FichaDentroCampos({ ficha, onChange, mostrarFaltas }: { ficha: F
       {mostrarFaltas && faltas.length > 0 && (
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" data-testid="ficha-faltas">
           <p className="font-semibold">Falta responder:</p>
-          <ul className="list-disc pl-5">{faltas.map((f) => <li key={f}>{f}</li>)}</ul>
+          <ul className="list-inside list-disc">{faltas.map((f) => <li key={f}>{f}</li>)}</ul>
         </div>
       )}
     </section>
