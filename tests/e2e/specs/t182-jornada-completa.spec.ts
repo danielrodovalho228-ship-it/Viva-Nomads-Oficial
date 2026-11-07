@@ -1,4 +1,5 @@
 // Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
+import { camposDoPar, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, lerSaida, novaSenha, novoSufixo, pdf, tornarContratoVigente } from "../fixtures/laboratorio";
@@ -294,6 +295,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await pi.getByRole("button", { name: "Avaliar o proprietário" }).click();
     await pi.getByRole("radio", { name: "5 estrelas" }).click();
     await pi.getByPlaceholder(/Comentário \(opcional\)/).fill(marcaInq);
+    await preencherCriterios(pi);
     await pi.getByRole("button", { name: "Enviar avaliação" }).click();
     await expect(pi.getByText(/Avaliação enviada\. Ela aparece quando a outra parte também avaliar/)).toBeVisible({ timeout: 20_000 });
     await foto(pi, "6-inquilina-avaliou");
@@ -317,6 +319,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await pd.getByRole("button", { name: "Avaliar o morador" }).first().click();
     await pd.getByRole("radio", { name: "5 estrelas" }).click();
     await pd.getByPlaceholder(/Comentário \(opcional\)/).fill(marcaDono);
+    await preencherCriterios(pd);
     await pd.getByRole("button", { name: "Enviar avaliação" }).click();
     await expect(pd.getByText(/Avaliação enviada\./)).toBeVisible({ timeout: 20_000 });
     await expect

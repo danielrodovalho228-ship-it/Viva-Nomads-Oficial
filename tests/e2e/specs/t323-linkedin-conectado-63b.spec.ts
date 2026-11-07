@@ -1,3 +1,4 @@
+import { camposDoPar, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
@@ -126,8 +127,8 @@ test.describe("T323 — selo LinkedIn conectado (63-B)", () => {
       await sb.auth.signInWithPassword({ email, password: senha });
       return sb;
     };
-    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
-    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada", ...camposDoPar("inquilino") });
+    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada", ...camposDoPar("proprietario") });
     const visitante = await browser.newPage();
     await ligarChave(visitante);
     await expect
