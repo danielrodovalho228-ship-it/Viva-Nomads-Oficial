@@ -794,3 +794,11 @@ A `main` não andou desde a passada 61. Bloco seguinte: as páginas de cidade e 
 - **Imagens, estouro, cartão sem foto:** 32 imagens na cidade e na busca, 4 e 6 nos polos (`hc-ufu-umuarama`, `ufu-santa-monica`), 0 quebradas, 0 cartões sem foto, scrollWidth = largura da janela.
 - **Observação:** as páginas dos polos não repetem a contagem em texto (só a lista); não é defeito (o desenho do E446 põe o número na cidade).
 - **Achados novos:** nenhum.
+
+## Passada 63 (07/11; modo demonstração local, `main` em #3218; 768 × 1024, logado) — painel no tamanho de tablet
+
+A `main` só ganhou blocos de testes da Pista C desde a passada 62 (nenhum arquivo de tela). Tamanho ainda sem medida com a conta logada: 768.
+Rotas: `/dashboard`, `/imoveis`, `/leads`, `/mensagens`, `/contratos`, `/pedidos`, `/ferramentas`, `/conta/perfil`, `/imoveis/ube-001/editar` e o assistente (`/imoveis/novo?etapa=regras`).
+- 0 imagens quebradas (o Início tem 20, todas carregadas), um h1, scrollWidth = 768, nada além da borda, nada cortado, 10 de 10 telas.
+- **Alvos de toque:** só o selo "Ativo/Pausado" de `/dashboard/imoveis` (24 px) — já corrigido no #3176 (rascunho). Sem achado novo.
+- Conformidade mockup × real: sem diferença.
