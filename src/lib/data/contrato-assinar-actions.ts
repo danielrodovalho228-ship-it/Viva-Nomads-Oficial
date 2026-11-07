@@ -13,7 +13,10 @@ import { notify } from "@/lib/notifications";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
 import { garantirCartao } from "@/lib/data/cartoes-servidor";
+import { congelarInstrucaoSaida } from "@/lib/data/estadia";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/site";
+import { congelarFicha, normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
@@ -411,6 +414,7 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
       .eq("id", c.id)
       .is("pets_regras_congeladas", null);
     if (erroCongela) throw new LeituraDaAssinaturaFalhou(`congelar: ${erroCongela.message}`);
+    await congelarInstrucaoSaida(admin as unknown as SupabaseClient, c.id, c.property_id as string);
     c = await lerContrato(admin, contratoId);
   }
   // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
@@ -426,8 +430,37 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
     if (erroPacote) throw new LeituraDaAssinaturaFalhou(`congelar limpeza: ${erroPacote.message}`);
     c = await lerContrato(admin, contratoId);
   }
+  if (c) await congelarFichaDentro(admin, c);
   if (c) await completarPets(c, true);
   return c;
+}
+
+/**
+ * E660: na 1ª assinatura a ficha "o que tem dentro" do anúncio congela no contrato (uma vez só), como as regras de pets: a
+ * outra parte assina a mesma ficha mesmo que o dono edite o anúncio depois, e é ela que se confere na entrada. Leitura à
+ * parte (sem a 0316 a coluna não existe: segue sem a ficha). Anúncio anterior à ficha não congela nada.
+ */
+async function congelarFichaDentro(admin: AdminAssinatura, c: LinhaContrato): Promise<void> {
+  if (c.assinado_proprietario_em || c.assinado_inquilino_em || !c.property_id) return;
+  const { data: atual, error: erroLe } = await admin.from("contratos").select("ficha_dentro_congelada").eq("id", c.id).maybeSingle();
+  if (erroLe) {
+    console.error("[ficha-dentro] ler congelada falhou:", erroLe.message);
+    return;
+  }
+  if ((atual as { ficha_dentro_congelada?: unknown } | null)?.ficha_dentro_congelada != null) return;
+  const { data: imovel, error: erroImovel } = await admin.from("properties").select("ficha_dentro").eq("id", c.property_id).maybeSingle();
+  if (erroImovel) {
+    console.error("[ficha-dentro] ler ficha do anúncio falhou:", erroImovel.message);
+    return;
+  }
+  const ficha = normalizarFicha((imovel as { ficha_dentro?: unknown } | null)?.ficha_dentro);
+  if (!ficha) return;
+  const { error } = await admin
+    .from("contratos")
+    .update({ ficha_dentro_congelada: congelarFicha(ficha, new Date()) })
+    .eq("id", c.id)
+    .is("ficha_dentro_congelada", null);
+  if (error) throw new LeituraDaAssinaturaFalhou(`congelar ficha: ${error.message}`);
 }
 
 export async function assinarContrato(input: {
@@ -463,6 +496,20 @@ export async function assinarContrato(input: {
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 
   const jaAssinou = visao.papel === "inquilino" ? c.assinado_inquilino_em : c.assinado_proprietario_em;
+  // E675: quem já assinou e envia de novo (toque duplo, reenvio depois de a resposta demorar) recebe SUCESSO: a assinatura
+  // existe. Antes recebia "Você já assinou" como erro, e a tela parecia ter falhado. Nada é gravado nem gasto de novo.
+  if (jaAssinou && visao.papel && c.status === "ativo") {
+    const nomesJa = await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id);
+    const outraJa = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
+    return {
+      ok: true,
+      aviso: avisoAssinatura(visao.papel, {
+        proprietario: { nome: nomesJa.proprietario, em: c.assinado_proprietario_em },
+        inquilino: { nome: nomesJa.inquilino, em: c.assinado_inquilino_em },
+      }),
+      ambos: outraJa,
+    };
+  }
   const motivo = motivoNaoPodeAssinar({
     status: c.status,
     papel: visao.papel,
@@ -475,12 +522,14 @@ export async function assinarContrato(input: {
   if (faltam) return { ok: false, error: faltam };
 
   // Confirmação de identidade NO SERVIDOR: código de e-mail de uso único, com validade e limite de falhas.
-  const { data: linhaCodigo } = await admin
+  const { data: linhaCodigo, error: erroCodigo } = await admin
     .from("contrato_assinatura_codigos")
     .select("codigo_hash, expira_em, falhas, usado_em, enviado_em")
     .eq("contrato_id", c.id)
     .eq("user_id", user.id)
     .maybeSingle();
+  // E675: leitura falha não vira "Peça o código por e-mail" (o código existe; só não deu para ler agora).
+  if (erroCodigo) return { ok: false, error: "Não foi possível conferir o código agora. Tente de novo." };
   const lc = (linhaCodigo as LinhaCodigo | null) ?? null;
   const conf = conferirCodigo(lc, input.codigo, user.id, c.id, Date.now());
   if (!conf.ok) {
@@ -558,6 +607,11 @@ export async function assinarContrato(input: {
 
   // E444: quem assinou resolve o aviso crítico "assinar o contrato" no sino.
   after(() => resolverAvisos({ usuarioId: user.id, eventos: ["contract_status"], refId: c.id }));
+  // E676: com as duas assinaturas, nenhuma das duas partes mantém o crítico "assinar o contrato" (a outra parte também sai).
+  if (visao.papel && (visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em)) {
+    const outro = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
+    if (outro) after(() => resolverAvisos({ usuarioId: outro, eventos: ["contract_status"], refId: c.id }));
+  }
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
   const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;

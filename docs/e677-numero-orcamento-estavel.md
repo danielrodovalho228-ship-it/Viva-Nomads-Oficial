@@ -18,3 +18,11 @@ muda quando nasce uma proposta nova.
 
 **Dúvida:** não mexi na numeração (`next_document_number`), que está estável. Se a QA quiser a lista com "a mais recentemente
 movida primeiro" (como era), é voltar a ordem para `atualizada_em`, ao custo desse reembaralhamento.
+
+## Evidência adicional (relato de 07/11: "[TESTE QA] Resumo semanal 0276 B", v1, R$ 4.802)
+Leitura somente-leitura da produção: esse imóvel tem **uma única proposta**, `ORC-2026-0013` (R$ 4.801,67, v1, "vista", criada
+em 06/11 01:59 UTC, atualizada em 07/11 00:55 UTC), e o registro único (`documentos_registro`) tem o mesmo número. O
+`ORC-2026-0007` é de **outro imóvel** ("Casa mobiliada 2 quartos", recusada em 30/10). Ou seja, não há dois números para a
+mesma proposta: o que a QA viu foram **duas propostas diferentes na mesma posição da lista**. Com a ordem por
+`atualizada_em`, uma proposta que muda de estado (vista, recusada, expirada) troca de lugar com as vizinhas, e as linhas
+dos imóveis de teste só se distinguem pelo número. A ordem por envio (`criada_em`) deste PR evita o reembaralhamento.
