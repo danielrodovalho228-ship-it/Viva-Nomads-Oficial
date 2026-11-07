@@ -54,6 +54,23 @@ async function estaFechada(admin: NonNullable<ReturnType<typeof createAdminClien
 }
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
+class LeituraDoContratoFalhou extends Error {}
+const MSG_CONFERENCIA_SEM_LEITURA = "Não foi possível ler o contrato agora. Tente de novo.";
+
+/** Para as ações: { ctx } quando a pessoa é parte; { erro } com a frase certa quando não é ou quando a leitura falhou. */
+async function contextoDaConferencia(contratoId: string): Promise<{ ctx: NonNullable<Awaited<ReturnType<typeof parteDoContrato>>> } | { erro: string }> {
+  try {
+    const ctx = await parteDoContrato(contratoId);
+    return ctx ? { ctx } : { erro: "Você não faz parte deste contrato." };
+  } catch (e) {
+    if (e instanceof LeituraDoContratoFalhou) {
+      console.error("[conferencia] leitura do contrato falhou:", e.message);
+      return { erro: MSG_CONFERENCIA_SEM_LEITURA };
+    }
+    throw e;
+  }
+}
+
 async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; propertyId: string | null; entrada: EntradaDoContrato } | null> {
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -62,11 +79,13 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: c } = await admin
+  const { data: c, error: erroContrato } = await admin
     .from("contratos")
     .select("tenant_id, status, property_id, properties(owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Achado 160: falha de leitura não é "você não faz parte" — lança, e quem chama diz a frase certa (ou a página mostra o erro).
+  if (erroContrato) throw new LeituraDoContratoFalhou(erroContrato.message);
   if (!c) return null;
   const prop = c.properties as unknown as { owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
   const donoId = prop?.owner_id;
@@ -96,8 +115,9 @@ export async function registrarItemConferencia(input: {
   precisaReparo?: boolean;
 }): Promise<Resultado> {
   if (input.tipo !== "entrada" && input.tipo !== "saida") return erro("Tipo de conferência inválido.");
-  const ctx = await parteDoContrato(input.contratoId);
-  if (!ctx) return erro("Você não faz parte deste contrato.");
+  const lido = await contextoDaConferencia(input.contratoId);
+  if ("erro" in lido) return erro(lido.erro);
+  const ctx = lido.ctx;
   if (!(input.tipo === "entrada" ? STATUS_ENTRADA : STATUS_SAIDA).includes(ctx.status)) return erro("Este contrato não está em um momento de conferência.");
   if (input.fotoPath && !input.fotoPath.startsWith(`${ctx.uid}/`)) return erro("Foto inválida.");
   const v = validarItem({ comodo: input.comodo, descricao: input.descricao, fotoPath: input.fotoPath ?? null });
@@ -150,8 +170,9 @@ export async function registrarItemConferencia(input: {
  * confere, com texto curto e foto opcional). Cada "não confere" vira pendência do dono (72 h). Entra no hash de fechamento.
  */
 export async function responderConfortoEntrada(input: { contratoId: string; respostas: unknown }): Promise<Resultado & { pendencias?: number }> {
-  const ctx = await parteDoContrato(input.contratoId);
-  if (!ctx) return erro("Você não faz parte deste contrato.");
+  const lido = await contextoDaConferencia(input.contratoId);
+  if ("erro" in lido) return erro(lido.erro);
+  const ctx = lido.ctx;
   if (ctx.parte !== "inquilino") return erro("O padrão mínimo é conferido pelo morador.");
   if (!STATUS_ENTRADA.includes(ctx.status)) return erro("Este contrato não está em um momento de conferência.");
   if (janelaEncerrada("entrada", ctx.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
@@ -208,8 +229,9 @@ export async function responderConferencia(input: {
 }): Promise<Resultado> {
   if (input.tipo !== "entrada" && input.tipo !== "saida") return erro("Tipo de conferência inválido.");
   if (input.decisao !== "confirmou" && input.decisao !== "contestou") return erro("Resposta inválida.");
-  const ctx = await parteDoContrato(input.contratoId);
-  if (!ctx) return erro("Você não faz parte deste contrato.");
+  const lido = await contextoDaConferencia(input.contratoId);
+  if ("erro" in lido) return erro(lido.erro);
+  const ctx = lido.ctx;
   const admin = createAdminClient()!;
   if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
   const encerrada = janelaEncerrada(input.tipo, ctx.entrada);
@@ -309,8 +331,9 @@ async function subirArquivo(
 /** Sobe a foto de um cômodo; devolve o caminho para passar a `registrarItemConferencia`. */
 export async function enviarFotoConferencia(formData: FormData): Promise<Resultado & { path?: string }> {
   const contratoId = String(formData.get("contratoId") ?? "");
-  const ctx = await parteDoContrato(contratoId);
-  if (!ctx) return erro("Você não faz parte deste contrato.");
+  const lido = await contextoDaConferencia(contratoId);
+  if ("erro" in lido) return erro(lido.erro);
+  const ctx = lido.ctx;
   if (!(await consumirLimite(`conferencia-arquivo:${ctx.uid}`, 60, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
   const r = await subirArquivo(ctx.uid, formData.get("arquivo"), validarFotoConferencia);
   if (!r.ok) return erro(r.error);
@@ -322,8 +345,9 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   const contratoId = String(formData.get("contratoId") ?? "");
   const tipo = String(formData.get("tipo") ?? "") as TipoConferencia;
   if (tipo !== "entrada" && tipo !== "saida") return erro("Tipo de conferência inválido.");
-  const ctx = await parteDoContrato(contratoId);
-  if (!ctx) return erro("Você não faz parte deste contrato.");
+  const lido = await contextoDaConferencia(contratoId);
+  if ("erro" in lido) return erro(lido.erro);
+  const ctx = lido.ctx;
   if (!(await consumirLimite(`conferencia-arquivo:${ctx.uid}`, 60, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
