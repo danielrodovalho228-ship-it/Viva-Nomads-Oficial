@@ -5,7 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T1351 — E414 (#3025, na main): quando a medição de internet NÃO conclui, ela não trava o cadastro nem marca o imóvel.
   O servidor devolve a falha (simulada aqui na resposta de /api/internet/medicoes, porque no laboratório o motor é simulado
   e sempre conclui): a tela mostra o motivo (medir-internet-erro), o botão passa a "Tentar de novo", aparece "Nada foi
-  registrado no imóvel… medir depois" (medir-internet-depois), nenhuma medição fica gravada e o resto da página segue
+  registrado no imóvel… medir depois" (medir-internet-depois) com o botão "Medir depois" (#3145), que dispensa a falha
+  ("Medição adiada…"), nenhuma medição fica gravada e o resto da página segue
   utilizável. Edição do imóvel pelo dono, 390 e 1280 px, sem estouro.
 */
 const senha = novaSenha();
@@ -52,6 +53,12 @@ test.describe("T1351 — E414: a medição que falha não trava o cadastro", () 
       await expect(bloco.getByTestId("medir-internet-botao")).toBeEnabled();
       await expect(bloco.getByTestId("medir-internet-depois")).toContainText("Nada foi registrado no imóvel");
       await expect(bloco.getByTestId("medir-internet-resultado")).toHaveCount(0);
+      // E414 (complemento, #3145): "Medir depois" é botão próprio em toda tela que mede (aqui, a edição); dispensa a falha e não grava nada.
+      const depois = bloco.getByTestId("medir-internet-depois-botao");
+      await expect(depois).toBeVisible();
+      await depois.click();
+      await expect(bloco.getByTestId("medir-internet-adiada")).toContainText("Medição adiada: nada foi registrado no imóvel");
+      await expect(bloco.getByTestId("medir-internet-erro")).toHaveCount(0);
       const { data } = await adm().from("internet_medicoes").select("id").eq("property_id", ids.imovel!);
       expect(data ?? [], "a falha não grava medição").toHaveLength(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
