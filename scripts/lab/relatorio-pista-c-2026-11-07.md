@@ -404,3 +404,15 @@ Verdes e já mesclados por você: t1432 / E679 no head corrigido (#3278, run 424
 ## Bloco 505 verde
 
 Bloco 505 (t1436, #3286, grupo do 488: painel do proprietário sem id, incluindo as respostas rápidas do E665) **verde** (run 42407211303), a 390 e 1280 px. Sem merge de produto novo na main desde `9e08c86c6` (só PRs meus). Sem merge e sem fechar PR; o #3286 aguarda a mesclagem do Daniel. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105. Próximo da fila: bloco 506 (grupo do 489).
+
+## Onze merges de produto, specs promovidas e novas, bloco 506 (main `eef8fdd44`)
+
+**Foto.** Main `eef8fdd44`: `tsc` limpo (build ok); run da main pendente. Entraram: E681 (#3245), E680 (#3239), E674 (#3263 e #3247), E703 (#3287), E700 (#3285), E699 (#3282), E696/E702/E704 (#3280), E701 (#3277), E695 (#3276), E694 (#3275) e os meus blocos 502–505/t1432. Bloco 505 (#3286) verde (run 42407211303).
+
+**Specs promovidas à main (draft mesclado):** t1427 / E681 (#3269) e t1430 / E674 resíduo (#3272): main mesclada no ramo, cobertura reaplicada, diff só da spec, base trocada, fora de draft. Runs novos em andamento.
+
+**Specs novas para merges sem guarda:** t1437 / E695 (#3293): busca vazia fala do lugar certo — lugar com imóveis e filtro que exclui tudo ≠ lugar sem imóveis. t1438 / E703 (#3294): conta sem celular tem o WhatsApp desligado e desabilitado com o convite e o link para o perfil; com celular, ligado e sem convite.
+
+**Sem spec de tela ainda (item pulado):** E694 (exemplo sem beco), E696/E702/E704 (fórmula do total no cartão de preço), E699 (travas de publicação) e E700 (checklist do passo 10) — todos no assistente/cartão e dependem de semear imóvel em estado específico; E701 (área estável) e E680 (estadia alheia). Mais os de antes: avaliações do parceiro (0323), conduta cega (0324) e termos do avaliador (0325). **Pendentes:** t1428 (E685/E686, #3270) e t1429 (E691, #3271) seguem sobre drafts não mesclados (#3256, #3253).
+
+**Bloco 506** (t1439, grupo do 489: morador sem id) aberto. Defeitos de produto novos: nenhum; L-104 aberto; próximo livre: L-105.
