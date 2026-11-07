@@ -2373,7 +2373,8 @@
         "t631-e222b-renovar-aditivo",
         "t676-varredura-bloco69",
         "t712-e267-transacionais-corpo",
-        "t1407-varredura-bloco485"
+        "t1407-varredura-bloco485",
+        "t1398-e672-comparativo-aditivo"
       ]
     },
     "/dashboard/estadia/[contratoId]/confirmada": {
