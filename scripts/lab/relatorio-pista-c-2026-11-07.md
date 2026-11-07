@@ -481,3 +481,7 @@ Bloco 511 (t1444, #3319, grupo do 494: detalhe da proposta e da visita, pelos do
 ## Bloco 512 aberto (main `1dc15a295`)
 
 Main em `1dc15a295`: sem merge de produto novo desde a última foto (o run de `3a69c0bd9` deu verde; o de `1dc15a295` estava em andamento), então nenhuma spec de merge. Bloco 512 (t1445, grupo do 495: `/conferir`, pedidos do morador, Admin → Sistema) aberto, em andamento. Sem falha nova para ligar à lista-master. L-104 e L-56 abertos no produto; próximo livre: L-106. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 512 verde (main `b205b52d6`)
+
+Bloco 512 (t1445, #3320, grupo do 495: `/conferir`, pedidos do morador, Admin → Sistema) **verde** (run 42420808861), a 390 e 1280 px, e já mesclado. Nenhum merge de produto novo na main. Sem falha nova para a lista-master; L-104 e L-56 abertos no produto; próximo livre: L-106. Próximo da fila: bloco 513 (grupo do 496). Sem prova ao vivo, sem merge e sem fechar PR.
