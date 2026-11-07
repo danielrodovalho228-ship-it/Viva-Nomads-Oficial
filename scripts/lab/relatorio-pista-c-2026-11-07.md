@@ -31,10 +31,11 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 452 | t1363 | #3146 | 435 (t1333) | verde, run 42349095375 |
 | 453 | t1364 | #3147 | 436 (t1336) | verde, run 42350134573 |
 | 455 | t1366 | #3151 | 438 (t1339) | verde, run 42351735688 |
-| 454 | t1365 | #3150 | 437 (t1338) | 1ª rodada vermelha por instabilidade do conjunto crítico (t8-rascunho ×5 e t82 webkit: upload das fotos de teste lento no runner; run 42351696195); rerun único dos jobs com falha disparado |
+| 454 | t1365 | #3150 | 437 (t1338) | verde após rerun único (run 42351696195, tentativa 2); a 1ª rodada foi instabilidade de infra (t8-rascunho ×5 e t82 webkit: upload lento das fotos de teste no runner), não defeito do bloco |
 | 456 | t1367 | #3152 | 439 (t1342) | verde, run 42352665121 |
 | 457 | t1368 | #3153 | 440 (t1346) | verde, run 42353447927 |
 | 458 | t1369 | #3154 | 441 (t1347) | verde, run 42354136749 |
+| 459 | t1370 | #3155 | 442 (t1348) | verde, run 42354904238 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
