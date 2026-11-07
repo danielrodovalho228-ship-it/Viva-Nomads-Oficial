@@ -502,14 +502,18 @@ export async function escolherAvaliador(form: FormData): Promise<Res> {
 export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "designado") return SEM_ACESSO;
-  const { data: ref } = await c.admin.from("vistoria_pedidos").select("valor_tabela, proposta_em").eq("id", c.p.id).maybeSingle();
+  const { data: ref, error: erroRef } = await c.admin.from("vistoria_pedidos").select("valor_tabela, proposta_em").eq("id", c.p.id).maybeSingle();
+  // Leitura falha não vira "a proposta já foi enviada": o avaliador tenta de novo em vez de achar que perdeu o pedido.
+  if (erroRef) return { ok: false, erro: MSG_VISTORIA_SEM_LEITURA };
   if (!ref || ref.proposta_em) return { ok: false, erro: "A proposta deste pedido já foi enviada." };
   const lido = lerReais(String(form.get("valor") ?? ""));
   if (!lido.ok) return lido;
   const v = validarProposta({ valor: lido.valor ?? Number.NaN, prazoDias: Number(form.get("prazoDias")) }, faixaDeReferencia(Number(ref.valor_tabela)));
   if (!v.ok) return v;
   const agora = new Date().toISOString();
-  const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
+  const { data, error: erroAceite } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
+  // Erro ao gravar a aceitação não vira "o prazo de 24 horas já passou".
+  if (erroAceite) return { ok: false, erro: MSG_VISTORIA_SEM_LEITURA };
   if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
   await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
