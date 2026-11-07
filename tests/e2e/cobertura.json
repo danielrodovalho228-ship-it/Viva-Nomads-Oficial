@@ -580,7 +580,8 @@
         "t1405-varredura-bloco483",
         "t1423-varredura-bloco497",
         "t1426-varredura-bloco500",
-        "t1437-e695-busca-vazia-fala-do-lugar-certo"
+        "t1437-e695-busca-vazia-fala-do-lugar-certo",
+        "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura"
       ]
     },
     "/cidades": {
@@ -1904,7 +1905,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1414-e666-legenda-calendario",
-        "t1423-varredura-bloco497"
+        "t1423-varredura-bloco497",
+        "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura"
       ]
     },
     "/modelodenegocio": {
