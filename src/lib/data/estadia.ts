@@ -378,6 +378,8 @@ export function localDaEstadia(c: { property_id?: string | null; properties?: { 
 
 export interface EstadiaNaHome {
   contratoId: string;
+  /** E680: a conta para quem esta lista foi montada. O cliente só mostra a lista se for a conta que está nele. */
+  paraUsuario: string;
   papel: PapelEstadia;
   imovel: string;
   /** E360: onde é (bairro, cidade) e o código do anúncio: o título sozinho (ex.: "Carteira 3") não identifica o imóvel. */
@@ -431,7 +433,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
       instrucoesPreenchidas: instrucoesPreenchidas(instrucoes),
       aditivo: a ? { status: a.status, propostoPorMim: a.proposto_por === user.id, euAssinei: (a.contrato_aditivo_assinaturas ?? []).some((s) => s.papel === papel) } : null,
     });
-    out.push({ contratoId: c.id, papel, imovel: c.properties?.title ?? "Imóvel", local: localDaEstadia(c), topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
+    out.push({ contratoId: c.id, paraUsuario: user.id, papel, imovel: c.properties?.title ?? "Imóvel", local: localDaEstadia(c), topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
   }
   return out;
 }
