@@ -104,8 +104,11 @@ function faltaDe(p: Record<string, unknown>, c: { servicos: number; fotos: numbe
     cidades: (p.cidades as string[]) ?? [],
     categorias: (p.categorias as string[]) ?? [],
     fotosGaleria: c.fotos,
-    // FISCAL-PARCEIRO-B: a resposta conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado.
-    ...(p.publicado_em ? {} : { tipoPessoa: (p.tipo_pessoa as string | null) ?? null, emiteNota: (p.emite_nota as boolean | null) ?? null }),
+    // FISCAL-PARCEIRO-B: a resposta da nota conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado por ela.
+    // E650: o tipo de pessoa vai SEMPRE — a pendência do CNPJ (E648) aparece para todo parceiro que não é PJ, publicado ou não.
+    tipoPessoa: (p.tipo_pessoa as string | null) ?? null,
+    emiteNota: (p.emite_nota as boolean | null) ?? null,
+    jaPublicou: Boolean(p.publicado_em),
   });
 }
 

@@ -80,10 +80,10 @@ test("pendência: só PJ sem resposta; bloqueia a primeira publicação, nunca q
   assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoa: "pj", emiteNota: null }), [PENDENCIA_NOTA]);
   assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoa: "pj", emiteNota: true }), []);
   assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoa: "pf", emiteNota: null }), [PENDENCIA_CNPJ], "E648: CPF existente não publica até apresentar CNPJ");
-  // Sem tipo (quem já esteve no ar: o painel não passa a declaração) → não bloqueia.
+  // Sem tipo na chamada → não bloqueia. E650: o painel passa o tipo SEMPRE; quem já esteve no ar só escapa da pergunta da nota (jaPublicou).
   assert.deepEqual(faltaParaPublicar(pagina), []);
   const painel = ler("lib/parceiros/painel-actions.ts");
-  assert.match(painel, /\.\.\.\(p\.publicado_em \? \{\} : \{ tipoPessoa: /);
+  assert.match(painel, /jaPublicou: Boolean\(p\.publicado_em\)/);
   assert.match(painel, /if \(m\.p\.tipo_pessoa !== "pj"\) return \{ ok: false/);
   assert.match(painel, /if \(v\.valor === true && m\.p\.nota_selo_removido_em\) return/);
 });

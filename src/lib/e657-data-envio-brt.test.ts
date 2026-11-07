@@ -18,7 +18,7 @@ test("dataBRT: 22h de Brasília (01h UTC do dia seguinte) segue sendo o dia do e
 
 test("a lista de candidaturas mostra a data de envio no calendário de Brasília", () => {
   const src = ler("app/(dashboard)/dashboard/candidaturas/page.tsx");
-  assert.match(src, /Enviada em \{dataBRT\(c\.createdAt\)\}/);
+  assert.match(src, /Enviada em \{dataBRT\(c\.enviadaEm\)\}/);
   assert.doesNotMatch(src, /function dataBR\(/);
   assert.doesNotMatch(src, /slice\(0, 10\)/);
 });
