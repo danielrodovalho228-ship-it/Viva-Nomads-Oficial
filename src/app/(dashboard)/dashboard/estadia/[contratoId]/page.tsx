@@ -17,7 +17,7 @@ import { carregarVisaoConvidado, convidadosParaOMorador } from "@/lib/data/estad
 import { hrefVisaoConvidado, limiteConvidados } from "@/lib/anuncio/chegada-e-pedido";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
 import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
-import { marcasDaEstadia } from "@/lib/calendario/grade";
+import { marcasDaEstadia, mesesDaEstadia } from "@/lib/calendario/grade";
 import Link from "next/link";
 import { LinhaDoTempoEstadia } from "@/components/contrato/linha-do-tempo-estadia";
 import { LocalEstadia } from "@/components/estadia/local-estadia";
@@ -122,12 +122,12 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
         <Panel title="Calendário da estadia" data-testid="estadia-calendario">
           <LegendaCalendario marcas={["entrada", "periodo", "saida"]} />
           <div className="grid gap-4 sm:grid-cols-2">
-            {[...new Set([e.periodo.inicio, e.periodo.fim].filter((d): d is string => !!d).map((d) => d.slice(0, 7)))].map((am) => (
+            {mesesDaEstadia(e.periodo.inicio, e.periodo.fim).map(({ ano, mes }) => (
               <CalendarioMes
-                key={am}
+                key={`${ano}-${mes}`}
                 tipo="estadia"
-                ano={Number(am.slice(0, 4))}
-                mes={Number(am.slice(5, 7)) - 1}
+                ano={ano}
+                mes={mes}
                 marcas={marcasDaEstadia(e.periodo.inicio, e.periodo.fim)}
               />
             ))}
