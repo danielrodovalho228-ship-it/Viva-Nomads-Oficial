@@ -186,12 +186,16 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       {estadias.length > 0 && (
         <p className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Estadia com contrato (toque para abrir)
+            <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Ocupado: estadia com contrato (toque para abrir)
           </span>
         </p>
       )}
 
-      <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} />
+      <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} rotulos={{ bloqueado: "Bloqueado por você ou de outro site" }} />
+      {/* E666: o que o visitante vê como "Ocupado" e como "Bloqueado pelo proprietário" na página pública. */}
+      <p className="-mt-1 mb-3 text-xs text-muted" data-testid="calendario-legenda-explicacao">
+        Ocupado: estadia com contrato. Bloqueado: dia que você fechou (ou que veio do calendário de outro site).
+      </p>
       {diaBloqueado &&
         (() => {
           const b = blocks.find((x) => x.inicio.slice(0, 10) <= diaBloqueado && x.fim.slice(0, 10) >= diaBloqueado);

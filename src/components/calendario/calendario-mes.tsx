@@ -88,13 +88,13 @@ export function CalendarioMes(p: {
 }
 
 /** Legenda: só as marcas que a tela usa, com a mesma amostra de cor da grade. */
-export function LegendaCalendario({ marcas }: { marcas: readonly MarcaDia[] }) {
+export function LegendaCalendario({ marcas, rotulos }: { marcas: readonly MarcaDia[]; /** E666: rótulo próprio de uma marca nesta tela (ex.: "Bloqueado por você"); sem ele, o da grade. */ rotulos?: Partial<Record<MarcaDia, string>> }) {
   return (
     <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" data-testid="calendario-legenda">
       {marcas.map((m) => (
         <li key={m} className="inline-flex items-center gap-2">
           <span className={cn("inline-block h-4 w-4 rounded-lg", CLASSE_MARCA[m])} aria-hidden />
-          {ROTULO_MARCA[m]}
+          {rotulos?.[m] ?? ROTULO_MARCA[m]}
         </li>
       ))}
     </ul>
