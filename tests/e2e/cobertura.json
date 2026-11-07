@@ -541,7 +541,8 @@
         "t489-e176-menus",
         "t588-varredura-bloco46",
         "t710-e265-sem-selo-em-todo-cartao",
-        "t853-busca-conta-teste"
+        "t853-busca-conta-teste",
+        "t1285-e446-contagem-cidade-igual-busca"
       ]
     },
     "/cidades": {
@@ -568,7 +569,8 @@
         "t197-anuncio-teste-oculto",
         "t311-marco-principal-unico",
         "t557-varredura-bloco42",
-        "t591-varredura-bloco48"
+        "t591-varredura-bloco48",
+        "t1285-e446-contagem-cidade-igual-busca"
       ]
     },
     "/cidades/[cidade]/[polo]": {
