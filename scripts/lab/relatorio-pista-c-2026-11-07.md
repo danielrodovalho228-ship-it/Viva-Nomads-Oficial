@@ -310,3 +310,11 @@ Defeitos de produto novos: nenhum além do L-103.
 - Próximo número livre: **L-105**.
 
 **Bloco 493 (t1419, grupo do 476) aberto no #3246.** Defeitos de produto novos além do L-104: nenhum.
+
+## Desfecho do bloco 492, #3164 mesclado e blocos 493/494 (main `4ffdb7572`)
+
+**Desfecho do bloco 492 (#3244).** Foi mesclado no head anterior ao commit que anota o L-104 (`a846d5b19`; o ajuste `33ece6ed6` ficou só na branch). Resultado: a t1418 na main ainda falharia só no console de "Qualificar o imóvel" (400 em `/api/proximidades`, L-104). Levei o ajuste para a main num PR novo (**#3248**, `claude-c/l104-t1418`, cherry-pick, só a spec): anota o L-104 e tolera só esse erro nessa tela. O L-104 segue como defeito de produto aberto (Pistas A/B); próximo número livre: **L-105**.
+
+**#3164 mesclado (E662 tela + mapa de grupos).** A t1415 (E661/E662, #3238) foi retargetada para a main (main mesclada no ramo, diff só da spec e da cobertura, fora de draft); run novo em andamento. Mesclados também por você: t1391, t1396, t1397, t1398, t1399, t1413/t1414, t1416, blocos 491 e 492. Nenhum outro merge de produto na foto (`4ffdb7572`); o run da main em `f795c5c5b` deu verde, o de `4ffdb7572` estava em andamento.
+
+**Bloco 493 (#3246).** Estava sem run porque conflitava com a main (só `cobertura.json`, que muda a cada bloco mesclado); mesclei a main e reapliquei o registro. Run novo em andamento. **Bloco 494** (t1420, grupo do 477: detalhe da proposta e da visita, com a ordem do E677) aberto no #3249. Defeitos de produto novos além do L-104: nenhum.
