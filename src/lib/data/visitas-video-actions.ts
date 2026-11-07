@@ -103,7 +103,9 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, needsAuth: true, error: modalidade === "video" ? "Entre para pedir a visita por vídeo." : "Entre para agendar a visita." };
 
-  const { data: prop } = await supabase.from("properties").select("owner_id, title").eq("id", propertyId).maybeSingle();
+  const { data: prop, error: erroImovel } = await supabase.from("properties").select("owner_id, title").eq("id", propertyId).maybeSingle();
+  // Leitura falha não vira "imóvel indisponível": a pessoa tenta de novo em vez de desistir da visita.
+  if (erroImovel) return { ok: false, error: "Não foi possível ler o imóvel agora. Tente de novo." };
   const ownerId = (prop?.owner_id as string | undefined) ?? null;
   if (!ownerId) return { ok: false, error: "Imóvel não encontrado ou indisponível." };
   if (ownerId === user.id) return { ok: false, error: "Este anúncio é seu." };
@@ -332,11 +334,13 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: v } = await admin
+  const { data: v, error: erroPedido } = await admin
     .from("visitas_video")
     .select("id, owner_id, tenant_id, property_id, status, modalidade, horario_proposto, link_chamada")
     .eq("id", entrada.id)
     .maybeSingle();
+  // Leitura falha não vira "pedido não encontrado": o dono ou o morador tenta de novo.
+  if (erroPedido) return { ok: false, error: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!v) return { ok: false, error: "Pedido não encontrado." };
   const quem = v.owner_id === user.id ? "dono" : v.tenant_id === user.id ? "morador" : null;
   if (!quem) return { ok: false, error: "Sem permissão." };
