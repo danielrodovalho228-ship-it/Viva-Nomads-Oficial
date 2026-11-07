@@ -1584,7 +1584,8 @@
         "t487-e178-primeiro-pagamento",
         "t599-varredura-bloco49",
         "t1388-varredura-bloco477",
-        "t1420-varredura-bloco494"
+        "t1420-varredura-bloco494",
+        "t1444-varredura-bloco511"
       ]
     },
     "/dashboard/reembolsos": {
@@ -1726,7 +1727,8 @@
         "t589-varredura-bloco47",
         "t599-varredura-bloco49",
         "t1388-varredura-bloco477",
-        "t1420-varredura-bloco494"
+        "t1420-varredura-bloco494",
+        "t1444-varredura-bloco511"
       ]
     },
     "/dev/emails": {
