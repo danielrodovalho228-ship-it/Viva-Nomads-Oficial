@@ -13,3 +13,9 @@
 **Dúvida:** não reproduzi ao vivo. Se a QA ainda vir estadia alheia depois do deploy, falta o horário e se houve troca de conta (porta de QA) antes.
 
 **Observação:** `tsc` na main está vermelho em `src/lib/estadia/instrucoes.ts` (mapa de grupos incompleto): é o que o #3164 corrige; não é deste PR.
+
+## Evidência do banco (leitura, 07/11, sem escrita)
+
+O id citado (`2d7b24ba-cb32-47d1-bfbb-bc8a9ba1cb5e`) **não existe** hoje em `contratos`, `properties`, `leads` nem `propostas`. O nome "[TESTE QA] Resumo semanal 0276 A" é o título de um **imóvel** da massa 0276 (`a0276a00-…`), que não tem nenhum contrato; a migração 0276 não cria contrato. O inquilino1 tem 3 contratos ativos, nenhum nesse imóvel.
+
+Leitura: o 404 "para as duas contas" é coerente com um contrato que já não existe (apagado numa limpeza/redefinição de massa de QA depois da renderização). A lista do servidor (`estadiasDaHome`, `getMinhasLocacoes`) filtra por `tenant_id`/imóveis da própria sessão; a defesa de cliente deste PR (`soDaConta`) cobre a lista que chega a um navegador já em outra conta. Sem outra causa no código. Se a QA ver de novo: horário, e se a massa foi redefinida antes.
