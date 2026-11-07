@@ -501,3 +501,11 @@ Bloco 512 (t1445, #3320, grupo do 495: `/conferir`, pedidos do morador, Admin �
 ## t1446 e bloco 513 verdes
 
 t1446 / E697 + E698 (#3321) **verde** (run 42422586647): a galeria do exemplo `ube-015` não repete foto e a primeira pintura de `/buscar` não tem foto quebrada nem mapa vazio, a 390 e 1280 px. Bloco 513 (t1447, #3322, grupo do 496) **verde** (run 42422614415). Nenhum merge de produto novo além dos já tratados. Aberto no produto: L-104 (400 em `/api/proximidades` no "Qualificar o imóvel"); próximo livre: **L-107**. Próximo da fila: bloco 514 (grupo do 497). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Blocos 514 e 515 abertos (main `2f7eac9df`)
+
+**Dependência de merge.** #3321 (t1446) e #3322 (bloco 513) já foram mesclados (runs verdes 42422586647 e 42422614415). Os blocos 514 e 515 foram abertos sobre a main atual, sem depender de nenhum PR pendente; os dois são independentes entre si.
+
+**Merges desde `6832dd107`.** Só PRs meus (#3321, #3322) e dois da Pista QA (#3327, #3328: capturas e rodadas de QA em `docs/`); `src` e `supabase` não mudaram, então nenhuma spec de merge a escrever. Main: run de `1c2d233cd` verde (42423390299); o de `2f7eac9df` estava em andamento.
+
+**Blocos.** 514 (t1448, grupo do 497: início, buscar, imóvel, ajuda, painel do proprietário) e 515 (t1449, grupo do 498: admin visão geral/eventos/funil, visitas, serviços, públicas de parceiros), a 390 e 1280 px. Em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
