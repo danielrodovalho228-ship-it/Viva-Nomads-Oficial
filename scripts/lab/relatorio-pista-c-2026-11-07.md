@@ -28,6 +28,7 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 449 | t1360 | #3141 | 432 (t1328) | verde, run 42345926425 |
 | 450 | t1361 | #3142 | 433 (t1329) | verde, run 42347366048 |
 | 451 | t1362 | #3143 | 434 (t1330) | verde, run 42348039111 |
+| 452 | t1363 | #3146 | 435 (t1333) | verde, run 42349095375 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
