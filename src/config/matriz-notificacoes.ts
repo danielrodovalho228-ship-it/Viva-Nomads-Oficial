@@ -109,6 +109,8 @@ export const MATRIZ_NOTIFICACOES = {
   pedido_aceito: { categoria: "mensagens", papeis: ["proprietario"], canais: SEM_PUSH },
 
   // ── Lembretes (com interruptor) ───────────────────────────────────────────
+  // E664: aviso urgente do morador na chegada (segurança: sempre chega, push + sino + e-mail; só o proprietário).
+  emergencia_chegada: { categoria: "seguranca", papeis: ["proprietario"], canais: TODOS_OS_CANAIS },
   checkin_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   saida_lembrete: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   vistoria_lembrete: { categoria: "lembretes", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
