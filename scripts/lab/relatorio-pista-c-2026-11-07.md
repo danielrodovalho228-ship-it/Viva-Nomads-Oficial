@@ -197,3 +197,7 @@ Novos na main: E528 (#3050, painel de preço sem rolagem) e E529 (#3051, barra d
 ## Colheita e bloco 482 (main `2efa62001`)
 
 Verdes: t1393 (#3192, run 42375213154), t1394 (#3193, run 42375216804), bloco 480 (#3206, run 42375384858); t1401 (#3205), bloco 480 e bloco 481 (#3207) já mesclados na main. Runs da main em `56a62b079`/`2c0853c4a` substituídos por mais novos (cancelados, não vermelhos); o de `2efa62001` pendente ao fechar. Bloco 482 (t1404, grupo do 465: candidaturas, favoritos, propostas, locações, mensagens, contratos, leads, orçamentos, públicas; inclui telas do E670/E677/E675) aberto no #3210. Defeitos de produto novos: nenhum (L-103 livre).
+
+## Bloco 482 verde e bloco 483 (main `8eaf146be`)
+
+Bloco 482 (#3210) verde (run 42376349669) e mesclado; main em `2efa62001` verde (run 42376262301), run de `8eaf146be` em andamento. Nenhum merge de produto novo desde `2efa62001`, então sem spec de merge nova. Bloco 483 (t1405, grupo do 466: cidade, buscar, comparar, institucionais, parceiros/buscar, admin atendimento/contratos/candidaturas) aberto no #3218. Defeitos de produto novos: nenhum (L-103 livre).
