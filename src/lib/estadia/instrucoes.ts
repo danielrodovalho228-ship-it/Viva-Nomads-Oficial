@@ -17,11 +17,19 @@ export const CAMPOS_INSTRUCOES = [
   { chave: "wifi_rede", rotulo: "Wi-Fi: rede", ajuda: "", max: 100 },
   { chave: "wifi_senha", rotulo: "Wi-Fi: senha", ajuda: "", max: 100 },
   { chave: "regras_condominio", rotulo: "Regras do condomínio", ajuda: "", max: 1500 },
+  // E661 (apoio): a estrutura do CONDOMÍNIO, separada do Wi-Fi do apartamento. A Pista A agrupa em "Estrutura do condomínio".
+  { chave: "condominio_wifi_rede", rotulo: "Wi-Fi do condomínio: rede", ajuda: "Áreas comuns, quando houver.", max: 100 },
+  { chave: "condominio_wifi_senha", rotulo: "Wi-Fi do condomínio: senha", ajuda: "", max: 100 },
+  { chave: "condominio_recepcao", rotulo: "Recepção do condomínio", ajuda: "Horário e como funciona a portaria ou recepção.", max: 500 },
+  { chave: "condominio_fechadura", rotulo: "Fechadura do condomínio", ajuda: "Portão, eclusa ou porta comum: código, biometria ou chave.", max: 500 },
   { chave: "lixo", rotulo: "Lixo", ajuda: "Onde e quando descartar.", max: 500 },
   { chave: "vaga", rotulo: "Vaga", ajuda: "", max: 500 },
   { chave: "contatos_predio", rotulo: "Contatos úteis do prédio", ajuda: "Portaria, zelador, síndico.", max: 500 },
   { chave: "observacoes", rotulo: "Observações", ajuda: "", max: 1500 },
 ] as const;
+
+/** Os campos da "Estrutura do condomínio" (E661): quem agrupa a tela lê daqui, sem repetir as chaves. */
+export const CAMPOS_CONDOMINIO = ["condominio_wifi_rede", "condominio_wifi_senha", "condominio_recepcao", "condominio_fechadura"] as const;
 
 export type ChaveInstrucao = (typeof CAMPOS_INSTRUCOES)[number]["chave"];
 export type Instrucoes = Partial<Record<ChaveInstrucao, string | null>>;
