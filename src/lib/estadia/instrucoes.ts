@@ -121,3 +121,43 @@ export function lembrarDono(inicio: string | null, preenchidas: boolean, agora: 
   const hoje = diaBRT(agora);
   return !!hoje && diasAte(hoje, inicio) === LEMBRETE_DONO_DIAS;
 }
+
+/*
+  E661 — no guia da estadia, as instruções saem em blocos: "Como entrar" (a chegada), "O imóvel e o que está incluso"
+  (o que o dono declara do apartamento — Wi-Fi do APARTAMENTO, vaga, observações) e "Estrutura do condomínio" (regras do
+  condomínio, lixo, contatos do prédio; texto "informado pelo proprietário, pode variar"). Só reagrupa campos que já
+  existem (sem coluna nova); um Wi-Fi do condomínio hoje vai no campo de regras/contatos do prédio.
+*/
+export type GrupoInstrucao = "entrada" | "imovel" | "condominio";
+export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
+  como_entrar: "entrada",
+  wifi_rede: "imovel",
+  wifi_senha: "imovel",
+  vaga: "imovel",
+  observacoes: "imovel",
+  regras_condominio: "condominio",
+  lixo: "condominio",
+  contatos_predio: "condominio",
+};
+export const TITULO_GRUPO_INSTRUCAO: Record<GrupoInstrucao, string> = {
+  entrada: "Como entrar",
+  imovel: "O imóvel e o que está incluso",
+  condominio: "Estrutura do condomínio",
+};
+export const NOTA_ESTRUTURA_CONDOMINIO_GUIA = "Informado pelo proprietário, pode variar.";
+
+export interface CampoDaInstrucao {
+  chave: ChaveInstrucao;
+  rotulo: string;
+  valor: string;
+}
+
+/** Os campos COM texto, por grupo, na ordem do catálogo. Grupo sem texto some. */
+export function agruparInstrucoes(campos: Instrucoes | null | undefined): { grupo: GrupoInstrucao; titulo: string; campos: CampoDaInstrucao[] }[] {
+  const porGrupo: Record<GrupoInstrucao, CampoDaInstrucao[]> = { entrada: [], imovel: [], condominio: [] };
+  for (const c of CAMPOS_INSTRUCOES) {
+    const valor = (campos?.[c.chave] ?? "").trim();
+    if (valor) porGrupo[GRUPO_DA_INSTRUCAO[c.chave]].push({ chave: c.chave, rotulo: c.rotulo, valor: campos![c.chave]! });
+  }
+  return (["entrada", "imovel", "condominio"] as const).filter((g) => porGrupo[g].length > 0).map((g) => ({ grupo: g, titulo: TITULO_GRUPO_INSTRUCAO[g], campos: porGrupo[g] }));
+}
