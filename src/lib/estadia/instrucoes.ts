@@ -4,6 +4,7 @@
   "como entrar" (decisão do Muse, 21/10). O morador vê 7 dias antes da entrada, só com o contrato assinado pelas duas
   partes e o 1º pagamento registrado. Antes disso: "Liberadas em [data]".
 */
+import { INSTRUCAO_SAIDA_MAX } from "./instrucao-saida.ts";
 import { diaBRT } from "../datas-brasilia.ts";
 import { ddmmaaaa, diasAte } from "./estadia.ts";
 
@@ -20,6 +21,8 @@ export const CAMPOS_INSTRUCOES = [
   { chave: "lixo", rotulo: "Lixo", ajuda: "Onde e quando descartar.", max: 500 },
   { chave: "vaga", rotulo: "Vaga", ajuda: "", max: 500 },
   { chave: "contatos_predio", rotulo: "Contatos úteis do prédio", ajuda: "Portaria, zelador, síndico.", max: 500 },
+  // E662: a instrução ÚNICA de saída — o mesmo texto para o morador e para o dono (a cópia do contrato é congelada na 1ª assinatura).
+  { chave: "instrucao_saida", rotulo: "Como sair (check-out)", ajuda: "Horário, o que deixar, chaves e a regra de devolução do condomínio.", max: INSTRUCAO_SAIDA_MAX },
   { chave: "observacoes", rotulo: "Observações", ajuda: "", max: 1500 },
 ] as const;
 
@@ -42,10 +45,12 @@ export function normalizarInstrucoes(entrada: Record<string, unknown>): Instruco
 }
 
 /** O texto por contrato (contratos_checkin.instrucoes) sobrescreve "como entrar" quando presente. */
-export function instrucoesEfetivas(doImovel: Instrucoes | null, doContrato: string | null | undefined): Instrucoes | null {
+export function instrucoesEfetivas(doImovel: Instrucoes | null, doContrato: string | null | undefined, saidaDoContrato?: string | null): Instrucoes | null {
   const sobrescrita = (doContrato ?? "").trim();
-  if (!doImovel && !sobrescrita) return null;
-  return { ...(doImovel ?? {}), ...(sobrescrita ? { como_entrar: sobrescrita } : {}) };
+  const saida = (saidaDoContrato ?? "").trim();
+  if (!doImovel && !sobrescrita && !saida) return null;
+  // E662: a cópia da instrução de saída congelada no contrato vence a do imóvel.
+  return { ...(doImovel ?? {}), ...(sobrescrita ? { como_entrar: sobrescrita } : {}), ...(saida ? { instrucao_saida: saida } : {}) };
 }
 
 /**

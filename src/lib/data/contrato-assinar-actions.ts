@@ -13,6 +13,8 @@ import { notify } from "@/lib/notifications";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
 import { garantirCartao } from "@/lib/data/cartoes-servidor";
+import { congelarInstrucaoSaida } from "@/lib/data/estadia";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/site";
 import {
   assuntoAvisoOutraParte,
@@ -411,6 +413,7 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
       .eq("id", c.id)
       .is("pets_regras_congeladas", null);
     if (erroCongela) throw new LeituraDaAssinaturaFalhou(`congelar: ${erroCongela.message}`);
+    await congelarInstrucaoSaida(admin as unknown as SupabaseClient, c.id, c.property_id as string);
     c = await lerContrato(admin, contratoId);
   }
   // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
