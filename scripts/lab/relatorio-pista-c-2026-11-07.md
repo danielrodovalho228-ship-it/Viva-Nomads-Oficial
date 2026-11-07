@@ -49,6 +49,7 @@ Escopo: só `tests/e2e` e `scripts/lab`. Nada de produto, migração ou merge. T
 | 470 | t1381 | #3177 | 453 (t1364) | verde, run 42363887694 |
 | 471 | t1382 | #3179 | 454 (t1365) | verde, run 42364888902 |
 | 472 | t1383 | #3181 | 455 (t1366) | verde, run 42365089033 |
+| 473 | t1384 | #3185 | 456 (t1367) | verde, run 42366225064 |
 
 ## Specs permanentes dos merges do dia
 | Item | Merge | Spec | PR | Resultado |
@@ -103,3 +104,11 @@ Todas estão com o lab-crítico verde no PR de spec (base = branch do draft) e *
 | t1349 | E667 modelo de negócio sem faixa 31+ | #3119 (`claude-a/e667-modelo-31`) | #3117 | aberto, rascunho |
 | t1357 | E668 papel parceiro só se escolhido (migração 0318) | #3138 (`claude-b/e668`) | #3134 | aberto, rascunho |
 | t1358 | E669 laudo validado e removível (migração 0319) | #3139 (`claude-b/e669`) | #3135 | aberto, rascunho |
+
+### Merges novos na `main` (07/11, depois de 27855dc92) e cobertura
+| Merge | O que | Cobertura no lab |
+|---|---|---|
+| #3083 (`301624b00`) | E657: `reenviada_em` (migração 0315); a lista mostra o último envio | t1331 estendida (PR #3077): lead criado em 04/11 e reenviado em 06/11 mostra "Enviada em 06/11/2026" com a marca "Reenviada" |
+| #3145 (`0b7916bce`) | E414 complemento: "Medir depois" como botão próprio em toda tela que mede | t1351 estendida (PR #3125): botão visível, "Medição adiada…", nada gravado |
+| #3144 (`2c411b3c6`) | E477 resíduo: observadora da QA só leitura em Pendências, Fotos de perfil e Imóveis | t1390 nova (PR do branch `claude-c/t1390-e477`): Imóveis (sem "Pausar", com "Só leitura"; admin comum mantém "Pausar"). Pendências e Fotos de perfil: só teste unitário do PR |
+Lab da `main`: #3144 (`2c411b3c6`) verde; #3145 cancelado pelo push seguinte; #3083 (`301624b00`) conferido ao fechar o bloco.
