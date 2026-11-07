@@ -139,6 +139,8 @@ export function lembrarDono(inicio: string | null, preenchidas: boolean, agora: 
 export type GrupoInstrucao = "entrada" | "imovel" | "condominio";
 export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
   como_entrar: "entrada",
+  // A saída (E662) fica com a chegada: o rótulo "Como sair (check-out)" já diz o que é.
+  instrucao_saida: "entrada",
   wifi_rede: "imovel",
   wifi_senha: "imovel",
   vaga: "imovel",
@@ -146,6 +148,10 @@ export const GRUPO_DA_INSTRUCAO: Record<ChaveInstrucao, GrupoInstrucao> = {
   regras_condominio: "condominio",
   lixo: "condominio",
   contatos_predio: "condominio",
+  condominio_wifi_rede: "condominio",
+  condominio_wifi_senha: "condominio",
+  condominio_recepcao: "condominio",
+  condominio_fechadura: "condominio",
 };
 export const TITULO_GRUPO_INSTRUCAO: Record<GrupoInstrucao, string> = {
   entrada: "Como entrar",

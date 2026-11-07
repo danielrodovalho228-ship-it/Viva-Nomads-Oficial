@@ -28,3 +28,10 @@ test("E661: guia do morador/dono e do convidado usam o mesmo componente", async 
     assert.match(readFileSync(p, "utf8"), /<InstrucoesEmBlocos /, p);
   }
 });
+
+test("E661/E662: Wi-Fi, recepção e fechadura do condomínio vão para o bloco do condomínio; a saída fica com a chegada", () => {
+  const g = agruparInstrucoes({ como_entrar: "Portaria", instrucao_saida: "Até 11h", condominio_wifi_rede: "Cond", condominio_recepcao: "24h", condominio_fechadura: "Biometria", lixo: "Subsolo" });
+  const por = Object.fromEntries(g.map((x) => [x.grupo, x.campos.map((c) => c.chave)]));
+  assert.deepEqual(por.entrada, ["como_entrar", "instrucao_saida"]);
+  assert.deepEqual(por.condominio, ["condominio_wifi_rede", "condominio_recepcao", "condominio_fechadura", "lixo"]);
+});
