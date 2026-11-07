@@ -33,7 +33,7 @@ export function Logo({
     );
   return (
     // O nome acessível CONTÉM o texto visível ("VivaNomads"): axe label-content-name-mismatch (t251).
-    <Link href={href} className={cn("inline-flex items-center gap-2", className)} aria-label={rotulo} data-logo>
+    <Link href={href} className={cn("alvo-toque inline-flex items-center gap-2", className)} aria-label={rotulo} data-logo>
       <BrandMark onDark={light} />
       <Wordmark light={light} />
     </Link>
