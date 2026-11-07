@@ -485,3 +485,15 @@ Main em `1dc15a295`: sem merge de produto novo desde a última foto (o run de `3
 ## Bloco 512 verde (main `b205b52d6`)
 
 Bloco 512 (t1445, #3320, grupo do 495: `/conferir`, pedidos do morador, Admin → Sistema) **verde** (run 42420808861), a 390 e 1280 px, e já mesclado. Nenhum merge de produto novo na main. Sem falha nova para a lista-master; L-104 e L-56 abertos no produto; próximo livre: L-106. Próximo da fila: bloco 513 (grupo do 496). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## E697, E698, E708 e bloco 513 (main `6832dd107`)
+
+**Foto.** Main `6832dd107` (run 42421587492 verde). Merges de produto novos: E697 (#3299), E704 (#3291), E706 (#3301), E708 (#3313) e E698 (#3312); mais o bloco 512 meu.
+
+**E708 (#3313) — numeração.** O E708 usou o nome **L-106** para "as rotas de retorno do LinkedIn voltam para Segurança": é o mesmo defeito que o t351 já registrava como **L-56** e que eu chamei de L-106 por engano antes de aposentar o número. O produto agora usa uma constante única (`ROTA_CONTA_LINKEDIN`) nas três rotas e o próprio PR já ajustou o t323 e o t351 (a volta cai em `/dashboard/conta/seguranca`, `expect(url.pathname)`). **Corrigido; sem spec nova.** Por isso o L-106 fica como "volta do LinkedIn em Privacidade — corrigido pelo E708 (= L-56)"; o aberto no produto continua só o L-104; **próximo livre: L-107**.
+
+**Specs novas (PR #3321, `claude-c/t1446-e697-e698`, t1446):** E697: a galeria do anúncio de exemplo `ube-015` não repete foto (mosaico no desktop, carrossel no celular), conferindo que os endereços das imagens são todos diferentes; E698: a primeira pintura de `/buscar` não tem quadro de foto em estado `falhou` e o quadro do mapa é o mapa ou o aviso "Carregando o mapa…", nunca um retângulo vazio. 390 e 1280 px. Em andamento.
+
+**Sem spec de tela ainda:** E704 (pinos do mapa com rótulo de cidade) e E706 (título da avaliação do nível), além dos de antes (E694, E696/E702/E704-fórmula, E699, E700, E701, E680, avaliações do parceiro/conduta cega/termos do avaliador).
+
+**Bloco 513** (t1447, grupo do 496: estadia, cartão, desempenho, contrato) aberto. Sem prova ao vivo, sem merge e sem fechar PR.
