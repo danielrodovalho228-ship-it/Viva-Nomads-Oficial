@@ -128,3 +128,10 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Bloco 531 (t1469, PR #3380 draft, run 42443520216): verde. Início, ajuda, busca, imóvel e telas do proprietário (grupo do 514).
 - Bloco 532 (t1470, PR #3381 draft, run 42443522805): verde. Admin, parceiros, visitas e serviços (grupo do 515).
 - Merge novo na main durante a sequência: #3377 (docs da QA); nada a testar. Nenhum defeito novo; L-107 livre. Próximo: bloco 533 (grupo do 516).
+
+## Blocos 533, 534 e 535
+
+- Bloco 533 (t1471, PR #3385 draft, run 42444865371): verde. Painel do proprietário e do morador, /empresas e /para-proprietarios (grupo do 516).
+- Bloco 534 (t1472, PR #3386 draft, run 42444867450): verde. Admin, busca, cidades, comparar, privacidade, segurança, termos, parceiros/buscar (grupo do 517).
+- Bloco 535 (t1473, PR #3387 draft, run 42444870267): verde. /dev/emails, /dashboard/qa/emails, /avisos/desligar (grupo do 518).
+- Nenhum merge novo na main durante a sequência (último: #3377, docs da QA). Nenhum defeito novo; L-107 livre; L-104 único aberto. Próximo: bloco 536 (grupo do 519).
