@@ -607,3 +607,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Main em `a5d6970f8` (#3402, E687/0329): lab crítico verde** (run 42527730368). Entrou depois o **#3406 (E699, migração 0330, `911a6ebba`)**: massa de identidade pendente (CPF de teste na dona `proprietario-qa`), dados só de conta de teste da produção, sem massa no lab → guarda pelo teste de unidade do próprio PR; sem spec de UI possível. Lab da main em `911a6ebba`: a conferir.
 - **t1568 (#3558, draft sobre #3555)**: E753, "Wi-Fi" fora de "Não tem" em `/imoveis/ube-003`, 390 e 1280. Lab: a conferir (na main de hoje a spec falha, como esperado; passa com o #3555).
 - **Bloco 601 (#3559, t1549)**: aberto como draft por pedido expresso (main mesclada no ramo; numeração e cobertura 13/13). Lab: a conferir. Sem achado até aqui (próximo livre: L-110).
+
+## Vigia das 22h25 — vereditos e merges novos
+
+- **t1568 (#3558, E753) verde** sobre o ramo do #3555 (run 42528863983). **Bloco 601 (#3559, t1549) verde** (run 42528869633); sem achado (próximo livre: **L-110**).
+- **Merges novos na main** (até `052e10e24`): **#3459 (E690, 0331)** — ativa o avaliador de teste UDI-002 na produção (conta `is_teste`), sem massa no lab → guarda no teste de unidade do PR; **#3466 (E721, 0332)** — índice único completo em `push_adiados (user_id, grupo)` → **t1569 (#3562)**, guarda de banco do upsert por grupo (lab: a conferir). Já antes: #3406 (E699/0330, mesma situação do E690).
+- Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos; limpeza pós-merge pendente.
