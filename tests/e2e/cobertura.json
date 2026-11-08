@@ -796,7 +796,8 @@
         "t672-e190-troca-de-modo",
         "t1411-varredura-bloco489",
         "t1399-e674-troca-de-conta-no-navegador",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/assinatura": {
@@ -829,7 +830,8 @@
         "t352-varredura-bloco17",
         "t676-varredura-bloco69",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/buscas": {
@@ -844,7 +846,8 @@
         "t602-e181-familia-contadores",
         "t607-varredura-bloco51",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/candidaturas": {
@@ -912,7 +915,8 @@
         "t408-varredura-bloco27",
         "t679-varredura-bloco70",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/conta": {
@@ -1022,7 +1026,8 @@
         "t588-varredura-bloco46",
         "t608-e174-vinculo-pela-tela",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/contratos": {
@@ -1120,7 +1125,8 @@
         "t489-e176-menus",
         "t684-varredura-bloco71",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/ferramentas": {
@@ -1155,7 +1161,8 @@
         "t418-varredura-bloco35",
         "t684-varredura-bloco71",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/imoveis": {
@@ -1646,7 +1653,8 @@
         "t302-varredura-logada-bloco6",
         "t675-varredura-bloco68",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/roi-imovel": {
@@ -1698,7 +1706,8 @@
         "t1411-varredura-bloco489",
         "t1422-varredura-bloco496",
         "t1439-varredura-bloco506",
-        "t1447-varredura-bloco513"
+        "t1447-varredura-bloco513",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/tributacao": {
@@ -1731,7 +1740,8 @@
         "t402-conta-leva2",
         "t679-varredura-bloco70",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/viabilidade": {
@@ -2971,7 +2981,8 @@
         "t421-varredura-bloco38",
         "t684-varredura-bloco71",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/dashboard/conta/avaliacoes": {
@@ -2987,7 +2998,8 @@
         "t392-varredura-bloco24",
         "t679-varredura-bloco70",
         "t1411-varredura-bloco489",
-        "t1439-varredura-bloco506"
+        "t1439-varredura-bloco506",
+        "t1461-varredura-bloco523"
       ]
     },
     "/prova/celular/aviso": {
