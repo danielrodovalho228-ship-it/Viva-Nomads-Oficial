@@ -911,3 +911,13 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Flutuante sobre texto:** tratado pelo #3324 (anúncio) e #3348 (demais públicas); medido a 1280 em 12 rotas, 0 trechos cobertos.
 - **Estado dos PRs da Pista A:** todos sem conflito com a `main` e com CI verde (4/4). A pilha E679 (#3274 a #3290) voltou a dar conflito (t93, do lado da Pista C) e foi resolvida de novo nos próprios branches; #3341 (C10) fora de draft.
 - **Conformidade lado a lado com mockups:** nenhuma tela nova de mockup entrou na `main` depois da passada 76; sem desvio novo além dos listados. As dúvidas de desenho abertas seguem com o Muse/Daniel (E709: 80 px × 32 px; E710: ações à direita a 1280; C5; preço repetido do C9; nomes de bairro do mapa no E704).
+
+## Passada 78 (08/11; `main` em `5bea39692`) — C4 / E712: topo da home × mockup `publico-home`
+
+- **O achado da QA (C4):** o topo real da `/` (banner em largura cheia com vídeo de fundo, campo de busca "Para onde você vai?" e, logo abaixo, "A Viva em 30 segundos") difere do mockup `publico-home` (texto e foto lado a lado, destaques logo abaixo), e a matriz não trazia o número da troca.
+- **A decisão que autoriza a divergência (achada no repositório):**
+  - **Ordem `bab1b2aa` (prints 01, 14 e 15):** "home com hero em largura cheia, UMA busca ('Para onde você vai?') e atalhos por categoria que abrem a /buscar filtrada" — spec `t66-home-busca-principal`.
+  - **Vídeo institucional v3 ("A Viva em 30 segundos"):** a seção fica logo abaixo do hero, com vídeo de fundo no hero — spec `t177-video-institucional`.
+  - **Conformidade da home de 30/10 (passada final):** selo dentro da foto, atalhos na coluna e títulos de seção iguais — spec `t730-conformidade-home`, commit `5b68d48e0`.
+  Como essas ordens são posteriores ao mockup, o estado "Conforme" da matriz para `publico-home` vale com a estrutura atual; o que faltava era este registro. O hero com vídeo e busca é protegido por três specs do laboratório.
+- **Não alterei a home.** O arquivo do mockup `publico-home` não está no repositório (a QA o montou fora do repo), então eu não tinha como conferir elemento por elemento, e trocar o topo por texto + foto desfaria três ordens registradas. Se o Muse quiser mesmo o topo do mockup, preciso (a) do arquivo do mockup e (b) de uma ordem que revogue a `bab1b2aa` e o T177.
