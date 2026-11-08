@@ -17,3 +17,13 @@ Bloco 517 (t1451, #3338, grupo do 500: cidade, buscar, comparar, institucionais,
 **Merges novos desde o bloco 517.** Só documentação da Pista QA (#3336, #3340: rodadas de QA em `docs/`); `src`, `supabase` e `tests` sem mudança: nenhuma spec de merge, nenhuma regressão.
 
 **Blocos.** 518 (t1452, grupo do 501: avisos, prévia de e-mails, caixa do leitor de QA) e 519 (t1453, grupo do 502: contrato, imóvel, estadia, locação, sócios, autenticação), a 390 e 1280 px. Independentes entre si, abertos sobre a main atual; em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Blocos 518 e 519 verdes; E680 coberto; novos merges E506, E699, E704 (main `b9a3fa4c4`)
+
+**Verdes:** bloco 518 (t1452, #3342, grupo do 501, run 42429194387) e bloco 519 (t1453, #3343, grupo do 502, run 42429221163), a 390 e 1280 px; ambos já mesclados.
+
+**Merges de produto novos** (todos já na main, `tsc` limpo em `b9a3fa4c4`): E506 barra de qualificação (#3298), E680 lista populada (#3311), E699 resíduos (#3337) e E704 rótulos de cidade no Leaflet (#3331). Run da main em `b9a3fa4c4` pendente ao registrar; sem regressão conhecida.
+
+**Spec permanente nova:** t1454 / E680 (PR do ramo `claude-c/t1454-e680`): duas moradoras com uma locação cada; depois da troca de conta no mesmo navegador (guardado da A, sessão acabada, B entra), `/dashboard/locacoes` mostra só a locação da B; a 390 e 1280 px. Em andamento.
+
+**Ainda sem spec de tela (item pulado, um por vez):** E506 (barra de qualificação), E699 (resíduos das travas de publicação), E704 (rótulos de cidade nos pinos do mapa; pede semear imóveis em cidades distintas), E706, E694, E696/E702, E700, E701, e as avaliações do parceiro/conduta cega/termos do avaliador. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
