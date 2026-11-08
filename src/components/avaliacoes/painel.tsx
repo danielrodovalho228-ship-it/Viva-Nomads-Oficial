@@ -3,7 +3,7 @@ import { ChevronRight, Clock, Home, Lock, Star } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/dashboard/primitives";
 import { AvaliacoesRecebidasLista } from "@/components/avaliacoes/recebidas-lista";
-import { hrefAvaliarEstadia } from "@/lib/avaliacoes";
+import { hrefPaginaAvaliar } from "@/lib/avaliacoes-pagina";
 import type { AvaliacaoRecebidaComRevisao } from "@/lib/data/avaliacoes-recebidas";
 import type { AvaliacaoFeita } from "@/lib/data/avaliacoes-painel";
 import type { AbaAvaliacoes } from "@/lib/conta/avaliacoes-recebidas";
@@ -96,7 +96,7 @@ export function PainelAvaliacoes({
                       <Clock className="h-4 w-4" aria-hidden /> {rotuloFaltam(p.dias)}
                     </span>
                   </div>
-                  <ButtonLink href={hrefAvaliarEstadia(p.contratoId, p.papel)} variant="outline" size="lg" className="col-span-2 sm:col-span-1" data-testid="painel-avaliar-agora">
+                  <ButtonLink href={hrefPaginaAvaliar(p.contratoId)} variant="outline" size="lg" className="col-span-2 sm:col-span-1" data-testid="painel-avaliar-agora">
                     Avaliar agora
                   </ButtonLink>
                 </li>

@@ -827,6 +827,13 @@
         "t1439-varredura-bloco506"
       ]
     },
+    "/dashboard/avaliacoes/avaliar/[contratoId]": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "/dashboard/buscas": {
       "personas": [
         "inquilino"
