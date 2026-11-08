@@ -87,6 +87,8 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
  * Morador pede a visita — por vídeo ou PRESENCIAL (prompt 23). Autoridade no servidor: horários (já em instante
  * UTC; a tela converte a hora de Brasília), dono do imóvel e anúncio de exemplo. Avisa o dono por e-mail.
  */
+const MSG_VISITA_SEM_LEITURA = "Não foi possível ler o pedido de visita agora. Tente de novo.";
+
 export async function pedirVisita(propertyId: string, horarios: unknown, motivo?: string, modalidade: ModalidadeVisita = "video"): Promise<Resultado> {
   if (!ehModalidade(modalidade)) return { ok: false, error: "Tipo de visita inválido." };
   if (typeof propertyId !== "string" || !propertyId) return { ok: false, error: "Imóvel não encontrado." };
@@ -103,7 +105,9 @@ export async function pedirVisita(propertyId: string, horarios: unknown, motivo?
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, needsAuth: true, error: modalidade === "video" ? "Entre para pedir a visita por vídeo." : "Entre para agendar a visita." };
 
-  const { data: prop } = await supabase.from("properties").select("owner_id, title").eq("id", propertyId).maybeSingle();
+  const { data: prop, error: erroImovel } = await supabase.from("properties").select("owner_id, title").eq("id", propertyId).maybeSingle();
+  // Falha de leitura NÃO é "imóvel indisponível": o interessado tenta de novo em vez de achar que o anúncio saiu do ar.
+  if (erroImovel) return { ok: false, error: MSG_VISITA_SEM_LEITURA };
   const ownerId = (prop?.owner_id as string | undefined) ?? null;
   if (!ownerId) return { ok: false, error: "Imóvel não encontrado ou indisponível." };
   if (ownerId === user.id) return { ok: false, error: "Este anúncio é seu." };
@@ -332,11 +336,12 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: v } = await admin
+  const { data: v, error: erroPedido } = await admin
     .from("visitas_video")
     .select("id, owner_id, tenant_id, property_id, status, modalidade, horario_proposto, link_chamada")
     .eq("id", entrada.id)
     .maybeSingle();
+  if (erroPedido) return { ok: false, error: MSG_VISITA_SEM_LEITURA };
   if (!v) return { ok: false, error: "Pedido não encontrado." };
   const quem = v.owner_id === user.id ? "dono" : v.tenant_id === user.id ? "morador" : null;
   if (!quem) return { ok: false, error: "Sem permissão." };
