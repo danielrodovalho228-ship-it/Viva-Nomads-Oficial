@@ -174,6 +174,9 @@ PY
 if bash "$RAIZ/scripts/drill/drill.sh" >"$E/drill-cifra.log" 2>&1; then falhou "drill vermelho com cifra adulterada"; else passou "drill vermelho com cifra adulterada"; fi
 bash "$AQUI/finalizar.sh" drill >>"$E/drill-cifra.log" 2>&1 || true
 cat "$E/drill-cifra.log" >>"$SAIDA"
+# Diagnóstico (sem dado: só etapa e motivo curto): ajuda a ver por que a cifra adulterada não deu o motivo esperado.
+echo "    motivos gravados do drill:"; psqlf -c "select ok::text || ' | ' || coalesce(motivo, '(sem motivo)') from public.backups_execucoes where tipo = 'drill' order by inicio" | sed 's/^/      /' || true
+echo "    log do drill (cifra adulterada), linhas de etapa/erro:"; grep -E "^(::error::|== |etapa|  )" "$E/drill-cifra.log" | head -20 | sed 's/^/      /' || true
 confere "motivo: não foi possível decifrar" '[ "$(psqlf -c "select count(*) from public.backups_execucoes where tipo = '"'"'drill'"'"' and not ok and motivo like '"'"'%decifrar%'"'"'")" = 1 ]'
 
 echo "== 8. Limpeza"
