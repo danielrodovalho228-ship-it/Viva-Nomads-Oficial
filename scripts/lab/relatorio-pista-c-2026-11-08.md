@@ -660,3 +660,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Merge novo #3499 (E725, `c4000dd9a`)**: **t1574 (#3576)** — 10 dias no calendário: só o aviso "Estadia mínima de 30 dias." e sem total; 30 dias: sem aviso; 390 e 1280. Lab a conferir.
 - **Bloco 605 (#3575, t1553)**: 17ª volta do grupo do bloco 588 (admin: ajuda da publicação, encerramentos, dados de teste); `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Sem achado até aqui (próximo livre: **L-110**).
 - Drafts #3533, #3530, #3531, #3532, #3498 abertos; E727, E728, E719, E713, E729 e 0335 ainda não mergeados.
+
+## Cadeia das 23h25 — rajada de merges
+
+- **Entraram na main** (até `fe4d93dde`): #3551 (E749), #3552 (E750), #3555 (E753), #3556 (E754), #3557 (E756), #3561 (E755), #3565 (E760), #3566 (E761), #3568 (E762) e #3569 (E764), além de #3499 (E725, lab verde, run 42533956457). Os runs de push da rajada foram cancelados pelo seguinte; só o último (`fe4d93dde`, run 42534532949) fecha o veredito da main.
+- **E753:** t1568 (#3558) retargetada para `main` (draft mesclado; main mesclada no ramo; o diff ficou só a spec).
+- **Specs novas:** **t1575 (#3581)** — E755 (ordem estável da vitrine), E760 (redirect 307 de meus-imoveis) e E764 (Mensagens vazio). **A fazer na próxima volta:** E749, E750, E754, E756, E761, E762.
+- **Em andamento:** t1573 (#3572, corrigida; run 42534278938), t1574 (#3576, E725; run 42534229148), bloco 605 (#3575; run 42534225342). Verdes: t1572 (#3571, E682), bloco 604 (#3570).
+- Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos. Sem achado novo (próximo livre: **L-110**).
