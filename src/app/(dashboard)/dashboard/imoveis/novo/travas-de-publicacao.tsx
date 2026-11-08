@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CheckCircle2, Clock, ShieldCheck, XCircle } from "lucide-react";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import { estadoIdentidadeParaTrava, travasDePublicacao, type EstadoDocumentoTrava } from "@/lib/anuncio/travas-publicacao";
@@ -9,8 +10,8 @@ import { estadoIdentidadeParaTrava, travasDePublicacao, type EstadoDocumentoTrav
  * Não trava nada: é só o aviso, com o estado de cada item. Enviar o documento e confirmar a identidade continua onde já era.
  */
 export function TravasDePublicacao({ documento }: { documento: EstadoDocumentoTrava }) {
-  const { situacao } = useEstadoIdentidade();
-  const { itens, mostrar } = travasDePublicacao({ identidade: estadoIdentidadeParaTrava(situacao), documento });
+  const { situacao, indisponivel } = useEstadoIdentidade();
+  const { itens, mostrar } = travasDePublicacao({ identidade: estadoIdentidadeParaTrava(situacao, indisponivel), documento });
   if (!mostrar) return null;
   return (
     <div className="rounded-xl border border-sage-200 bg-white p-4" data-testid="travas-publicacao">
@@ -31,7 +32,13 @@ export function TravasDePublicacao({ documento }: { documento: EstadoDocumentoTr
               {i.rotulo}
               {i.estado === "falta" && " — falta"}
               {i.estado === "em_analise" && " — em análise"}
+              {i.estado === "carregando" && i.detalhe && ` — ${i.detalhe}`}
             </span>
+            {i.href && (
+              <Link href={i.href} className="ml-1 font-medium text-forest underline underline-offset-4" data-testid={`trava-${i.chave}-resolver`}>
+                {i.estado === "falta" ? "Resolver" : "Ver em Segurança"}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

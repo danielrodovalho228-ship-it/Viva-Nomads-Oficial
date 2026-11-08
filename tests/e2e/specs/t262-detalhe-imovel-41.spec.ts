@@ -133,9 +133,10 @@ for (const largura of LARGURAS) {
         expect(totalBarra).toBeGreaterThanOrEqual(mes * 3 - 0.5);
         expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, "")));
         // Decisão do Muse (31/10): a barra não repete "A Viva não segura dinheiro"; a frase oficial sob o botão diz que o
-        // pagamento vai direto ao proprietário.
+        // pagamento vai direto ao proprietário. E694: no EXEMPLO não há botão de pedir, então nem a frase sob ele (a frase vale
+        // no anúncio real: t75/t398).
         await expect(barra.getByTestId("barra-nao-segura")).toHaveCount(0);
-        await expect(barra.getByTestId("barra-cta-frase")).toContainText("o pagamento vai direto para ele");
+        await expect(barra.getByTestId("barra-cta-frase")).toHaveCount(0);
         // O mesmo número do cartão de preço.
         expect(num(await page.getByTestId("total-por-mes").innerText())).toBe(mes);
       } else {
@@ -157,28 +158,15 @@ for (const largura of LARGURAS) {
       await expect(estadia).toHaveCount(0);
     });
 
-    test("UM primário 'Solicitar' (a candidatura de sempre) e 'Agendar visita' em texto terciário, sem travar", async ({ page }) => {
+    test("exemplo (E694): nenhum primário de ação — a explicação e a saída para os imóveis reais; sem visita nem candidatura", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
-      await expect(page.locator(largura === 390 ? '[data-testid="barra-solicitar"]' : '[data-testid="cartao-solicitar"]')).toBeVisible();
-      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual(["Pedir para morar"]);
-      const escopo = largura === 390 ? page.getByTestId("barra-fixa-imovel") : page.locator("#cartao-preco");
-      const visita = largura === 390 ? escopo.getByTestId("barra-agendar-visita") : escopo.getByTestId("agendar-visita");
-      await expect(visita).toHaveText(/Agendar visita/);
-      expect(await visita.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
-      // A visita é opção: abre a própria janela e fecha sem mexer na solicitação.
-      // Clique antes da hidratação não abre a janela (lab 24/10, instável): repete o clique até ela aparecer. Abrir é idempotente.
-      await expect(async () => {
-        await visita.click();
-        await expect(page.getByTestId("visita-presencial-passo")).toBeVisible({ timeout: 3_000 });
-      }).toPass({ timeout: 20_000 });
-      await page.getByTestId("visita-presencial-passo").click({ position: { x: 5, y: 5 } });
-      await expect(page.getByTestId("visita-presencial-passo")).toHaveCount(0);
-      // "Solicitar" abre o MESMO fluxo de candidatura (passo de revisão; o envio final é "Enviar candidatura").
-      await escopo.getByRole("button", { name: "Pedir para morar", exact: true }).click();
-      const passo = page.getByTestId("solicitacao-passo");
-      await expect(passo).toBeVisible();
-      await expect(passo.getByTestId("solicitacao-demo")).toBeVisible(); // ube-001 é exemplo: nada é enviado
-      await expect(page.getByRole("button", { name: "Enviar candidatura" })).toHaveCount(0); // só no último passo
+      const saida = largura === 390 ? page.getByTestId("barra-ver-reais") : page.locator("#cartao-preco").getByTestId("exemplo-ver-reais");
+      await expect(saida).toBeVisible();
+      // Sem "Pedir para morar", "Agendar visita", "Visita por vídeo" nem "Enviar mensagem": o exemplo explica (o anúncio real tem os 4).
+      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual([]);
+      await expect(page.getByTestId("exemplo-sem-acoes")).toBeAttached();
+      await expect(page.getByTestId(largura === 390 ? "barra-agendar-visita" : "agendar-visita")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Pedir para morar", exact: true })).toHaveCount(0);
     });
   });
 }
