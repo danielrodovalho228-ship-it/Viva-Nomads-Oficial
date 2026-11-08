@@ -628,3 +628,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 ## Vigia das 22h47
 
 - **t1570 (#3564, E688/0333): verde** (run 42530919517). Nenhum merge novo desde `298197783`; drafts #3533, #3530, #3531, #3532, #3498 abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Continuação do Muse (22h55) — main em `10f292a83`
+
+- **Lab da main:** `298197783` (#3471, E688/AquiResolve) **verde** (42530992233), `b18c39ec3` (E745) verde (42530715501), `b069fdc02` (E688/0333) verde. `10f292a83` (E722/0334): run 42532121103 em andamento.
+- **Merge novo #3479 (E722, 0334)**, pré-aceitação de 72 h atrás da chave `PRE_ACEITACAO_72H_ATIVA` (desligada): **t1571 (#3567)** — 8 colunas `pre_aceitacao_*` em `propostas` + cron `/api/cron/pre-aceitacao` sem segredo/segredo errado (401/503). Fluxo completo fica nos testes de unidade do PR; spec de fluxo só com a chave ligada no lab (pendente de decisão). Lab da t1571: a conferir.
+- **Varredura por blocos:** sem bloco pendente (601–603 verdes em draft); bloco novo segue pausado pelo Muse. Sem achado novo (próximo livre: **L-110**). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos.
