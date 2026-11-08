@@ -8,7 +8,7 @@ import { BannerTopo } from "@/components/institucional/banner-topo";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { ROTA_RECRUTAMENTO } from "@/lib/vistoria/entrada";
-import { FRASE_PAGA_AVALIACAO } from "@/lib/vistoria/regras";
+import { FRASE_DONO_PAGA_AVALIACAO } from "@/lib/vistoria/regras";
 
 /*
   Correção 62-B3, item 1: a página de recrutamento do avaliador credenciado. Pública, indexável e no sitemap; funciona
@@ -88,7 +88,7 @@ export default function AvaliadoresRecrutamentoPage() {
       <section className="mt-8" data-testid="recrutamento-pagamento">
         <h2 className="text-lg font-semibold text-ink">Como é pago</h2>
         <p className="mt-2 text-ink/80">
-          Você define o seu valor e o seu prazo em cada pedido; a tabela da Viva para a cidade e o porte do imóvel é só uma referência. {FRASE_PAGA_AVALIACAO} Quem paga é o dono do imóvel.
+          Você define o seu valor e o seu prazo em cada pedido; a tabela da Viva para a cidade e o porte do imóvel é só uma referência. {FRASE_DONO_PAGA_AVALIACAO}
         </p>
         <p className="mt-2 text-sm text-ink/70">{textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
       </section>
