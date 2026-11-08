@@ -994,3 +994,21 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Termos e Privacidade** estão congelados (texto jurídico) e a **Central de ajuda** é página pública indexável com cabeçalho próprio; o logo do painel também sai para a página pública por decisão (E443).
 
 **Conclusão:** a perda de contexto acontece **depois** do "Ajuda", ao abrir a Central, o Fale com a Viva, os Termos ou a Privacidade, que são públicos. O próprio "Ajuda" mantém o contexto logado. **Nenhum PR de código aberto.** Se o Muse/Daniel quiserem que Central, Fale com a Viva, Termos e Privacidade abram *dentro* do painel (casca logada), isso é mudança de produto: espelhar páginas públicas e as legais congeladas dentro de `/dashboard`, ou um cabeçalho condicional por sessão nas páginas públicas; fica como decisão.
+
+## E718 (só conformidade) — `/para-proprietarios` × mockup `publico-proprietarios`: os blocos existentes (passada 85)
+
+**Bloqueio registrado:** o arquivo do mockup `publico-proprietarios` **não está no repositório** (a QA o montou fora, "não versionado"); só há fotos do site (`public/images/unicas/proprietarios-*.webp`, `public/apresentacao/06-proprietarios.jpg`), que não são o mockup. Por isso **não há como comparar print × mockup elemento por elemento (cores, formatos, proporções, espaçamentos, tipografia) sem adivinhar**, e não adivinhei. Os 3 blocos que faltam (de 7) dependem de decisão do coordenador e **não foram implementados**.
+
+**O que a página real tem hoje (modo demonstração, `main` em `58d87b1b7`)** — 5 faixas contra os 7 blocos do mockup (a QA contou 4 que correspondem). Medido a 390 e 1280 px:
+
+| # | Bloco real (título) | 390 px (y / altura) | 1280 px (y / altura) | Imagens |
+|---|---|---|---|---|
+| 1 | Topo/banner "Seu imóvel mobiliado ocupado por **meses**, com contrato" | 105 / 775 | 109 / 591 | 1 (foto da proprietária) |
+| 2 | Cartão "Quanto você paga" (comparativo; sem título de seção próprio) | 880 / 502 | 700 / 298 | 0 |
+| 3 | "Do anúncio às chaves, em 3 passos" | 1430 / 1500 | 1046 / 639 | 3 |
+| 4 | "Como o modelo de média duração reduz seus custos" | 2930 / 1763 | 1685 / 675 | 4 |
+| 5 | "A plataforma cuida do trabalho chato" (traz o botão cheio) | 4693 / 940 | 2360 / 672 | 1 |
+
+**Verificações do lado real:** 0 imagens quebradas, 0 sem `alt`, 0 resposta de erro de imagem, 0 estouro lateral, nos dois tamanhos. O banner mudou desde a QA: o botão "Anunciar meu imóvel" sobe para a dobra no celular (C7, #3350, mesclado). O botão cheio único da página está no bloco 5; o do banner é o branco do topo.
+
+**O que falta para fechar:** (a) o arquivo do mockup (ou o par montado da QA, no repo) para a comparação dos blocos 1 a 4 elemento por elemento; (b) a decisão do coordenador sobre os 3 blocos ausentes. Nada foi alterado na página.
