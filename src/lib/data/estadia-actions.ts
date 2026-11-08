@@ -358,11 +358,14 @@ interface LinhaAditivo {
   hash_documento: string | null;
 }
 
+const MSG_ADITIVO_SEM_LEITURA = "Não foi possível abrir a proposta agora. Tente de novo.";
+
 async function carregarAditivo(aditivoId: string): Promise<{ ctx: Contexto; a: LinhaAditivo } | { erro: string }> {
   if (!UUID_RE.test(String(aditivoId))) return { erro: "Proposta não encontrada." };
   const admin = createAdminClient();
   if (!admin) return { erro: "Serviço indisponível." };
-  const { data } = await admin.from("contrato_aditivos").select("id, contrato_id, numero, status, proposto_por, papel_proponente, mudancas, resumo, expira_em, criado_em, hash_documento").eq("id", aditivoId).maybeSingle();
+  const { data, error: erroAditivo } = await admin.from("contrato_aditivos").select("id, contrato_id, numero, status, proposto_por, papel_proponente, mudancas, resumo, expira_em, criado_em, hash_documento").eq("id", aditivoId).maybeSingle();
+  if (erroAditivo) return { erro: MSG_ADITIVO_SEM_LEITURA };
   const a = data as LinhaAditivo | null;
   if (!a) return { erro: "Proposta não encontrada." };
   const ctx = await contextoDaEstadia(a.contrato_id);
@@ -454,7 +457,8 @@ export async function pedirCodigoAditivo(aditivoId: string): Promise<Res> {
   const { ctx, a } = r;
   if (a.status !== "aceito") return { ok: false, erro: "Este aditivo não está aguardando assinatura." };
   if (!ctx.email) return { ok: false, erro: "A conta precisa de um e-mail para receber o código." };
-  const { data: ja } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
+  const { data: ja, error: erroJa } = await ctx.admin.from("contrato_aditivo_assinaturas").select("papel").eq("aditivo_id", a.id).eq("papel", ctx.papel).maybeSingle();
+  if (erroJa) return { ok: false, erro: MSG_ADITIVO_SEM_LEITURA };
   if (ja) return { ok: false, erro: "Você já assinou este aditivo." };
   const agora = Date.now();
   const { data: atual, error: erroAtual } = await ctx.admin.from("contrato_aditivo_codigos").select("enviado_em").eq("aditivo_id", a.id).eq("user_id", ctx.userId).maybeSingle();
