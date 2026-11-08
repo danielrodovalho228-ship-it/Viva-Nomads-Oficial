@@ -1,8 +1,8 @@
+import { criteriosDaAvaliacao, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
 import { authFile } from "../fixtures/auth";
-import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
 
 /**
  * T93 — a TELA da avaliação recebida (ordem 404cd213 item 4, achado do Moacir no #550). Cliques de verdade:
@@ -46,7 +46,7 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       await dono.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
 
       // 1) O avaliado responde pela tela.
-      await page.goto("/dashboard/avaliacoes", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "networkidle" });
       const cartao = page.getByTestId("avaliacao-recebida").filter({ hasText: marca });
       await expect(cartao).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

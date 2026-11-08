@@ -116,9 +116,11 @@ test("avaliações: a leitura usa a sessão para as avaliações e só o nome cu
   assert.match(dados, /supabase\s*\.from\("avaliacoes"\)[\s\S]*?\.eq\("alvo_id", user\.id\)[\s\S]*?\.eq\("status", "publicada"\)/);
   assert.match(dados, /nomeCurto\(/);
   assert.match(dados, /signAvatarPath\(/);
+  // E679: o painel unificado lê pela página e mostra a lista no componente "Recebidas".
   const pagina = ler("src/app/(dashboard)/dashboard/avaliacoes/page.tsx");
   assert.match(pagina, /avaliacoesRecebidas\((\{ exigir: true \})?\)/);
-  for (const t of ["avaliacao-autor", "avaliacao-contexto", "avaliacoes-aba-", "avaliacoes-busca"]) assert.ok(pagina.includes(t), t);
+  const lista = ler("src/components/avaliacoes/recebidas-lista.tsx");
+  for (const t of ["avaliacao-autor", "avaliacao-contexto", "avaliacoes-aba-", "avaliacoes-busca"]) assert.ok(lista.includes(t), t);
 });
 
 test("spec do PERFIL-B aponta as telas e as divergências", () => {

@@ -13,7 +13,9 @@ test("oito seções na ordem do NAV-A (24/10), cada uma com a sua rota e uma des
   );
   for (const s of SECOES_CONTA) {
     // E176 (parte 2): Notificações é a página única do sino.
-    assert.equal(s.href, s.id === "notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta/${s.id}`);
+    // E679: Avaliações também é uma página única, o painel unificado (um nome, um destino).
+    const unica: Record<string, string> = { notificacoes: "/dashboard/notificacoes", avaliacoes: "/dashboard/avaliacoes" };
+    assert.equal(s.href, unica[s.id] ?? `/dashboard/conta/${s.id}`);
     assert.ok(s.descricao.length > 0 && s.descricao.length <= 60, s.id);
   }
   assert.equal(itemDaSecao("dados").rotulo, "Dados");
