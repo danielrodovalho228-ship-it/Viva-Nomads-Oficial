@@ -8,13 +8,10 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
   test(`T873 — ${nome} px: o caminho de reserva abre com os passos`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: altura });
     await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
-    const dias = page.locator('button[data-estado-dia="disponivel"]');
-    await expect(dias.first()).toBeVisible({ timeout: 20_000 });
-    const total = await dias.count();
-    await dias.nth(0).click();
-    await dias.nth(Math.min(total - 1, 31)).click();
+    // Sem escolher datas: o controle está sempre na página (E530, reprova de 06/11: sumia).
     const caminho = page.getByTestId("caminho-reserva");
-    await expect(caminho).toBeVisible();
+    await expect(caminho).toBeVisible({ timeout: 20_000 });
+    await caminho.scrollIntoViewIfNeeded();
     const yAntes = await page.evaluate(() => window.scrollY);
     await caminho.getByText("Ver o caminho de reserva").click();
     const passos = page.getByTestId("caminho-reserva-passos");

@@ -25,11 +25,19 @@ test("a página Como funciona usa a MESMA fonte dos passos (sem cópia que desat
   assert.doesNotMatch(comoFunciona, /title: "Candidate-se", text: "Envie sua candidatura/);
 });
 
-test("o link deixa de rolar para o cartão de preço: abre o caminho ali mesmo e oferece o passo a passo", () => {
+test("o controle é um componente próprio, sempre visível na página do imóvel (não depende de datas nem de ser exemplo)", () => {
+  const comp = ler("src/components/property/caminho-reserva.tsx");
+  const pagina = ler("src/app/(public)/imoveis/[id]/property-detail.tsx");
+  assert.match(comp, /<details[^>]*data-testid="caminho-reserva"/);
+  assert.match(comp, /<summary[^>]*>\s*Ver o caminho de reserva\s*<\/summary>/);
+  assert.match(comp, /PASSOS_MORADOR\.map/);
+  assert.match(comp, /href="\/como-funciona#para-inquilinos"/);
+  assert.match(pagina, /import \{ CaminhoReserva \} from "@\/components\/property\/caminho-reserva";/);
+  // Dentro do bloco #disponibilidade, antes do calendário, sem condição de data ou de anúncio de exemplo.
+  assert.match(pagina, /<div id="disponibilidade"[\s\S]*?<CaminhoReserva \/>[\s\S]*?<AvailabilityCalendar /);
+});
+
+test("o calendário não guarda mais o controle (um só no DOM) e não rola para o cartão de preço", () => {
   assert.doesNotMatch(calendario, /href="#cartao-preco"/);
-  const bloco = calendario.slice(calendario.indexOf('data-testid="caminho-reserva"'), calendario.indexOf("</details>", calendario.indexOf('data-testid="caminho-reserva"')));
-  assert.match(calendario, /<details[^>]*data-testid="caminho-reserva"/);
-  assert.match(bloco, /<summary[^>]*>\s*Ver o caminho de reserva\s*<\/summary>/);
-  assert.match(bloco, /PASSOS_MORADOR\.map/);
-  assert.match(bloco, /href="\/como-funciona#para-inquilinos"/);
+  assert.doesNotMatch(calendario, /data-testid="caminho-reserva"/);
 });
