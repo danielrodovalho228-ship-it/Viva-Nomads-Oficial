@@ -5,7 +5,7 @@ import { TAMANHOS, abrirComoConta, escutarErros, lerMassa, temContaVarredura, ty
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1476 — VARREDURA DA PÁGINA INTEIRA, BLOCO 536 (Pista C, 05/11), 16ª volta do ciclo (repete o grupo do bloco 502, t1433; antes, os blocos 485, 468 e 451). O protocolo do bloco 21 (t385):
+  T1476 — VARREDURA DA PÁGINA INTEIRA, BLOCO 536 (Pista C, 08/11), 16ª volta do ciclo (repete o grupo do bloco 519, t1453; antes, os blocos 502, 485, 468 e 451). O protocolo do bloco 21 (t385):
   seis classes (imagem pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
   régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 535 (registro de cobertura: última
@@ -15,7 +15,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
    - sócios: /acesso-socios (a porta) e as páginas internas (sem /tributario, que redireciona desde o #1793, nem /socios e /decisao, eliminadas pelo E595/E596), pela porta
      com o código do laboratório (sem ele, pula);
    - autenticação, como visitante: /auth, /auth/reset, /auth/verificar-codigo e /auth/pronto.
-  Defeito novo entra como test.fail ligado a um item (L-107 é o próximo livre; aberto no produto: L-104, o 400 em /api/proximidades no Qualificar o imóvel).
+  Defeito novo entra como test.fail ligado a um item (L-108 é o próximo livre; abertos no produto: L-104, o 400 em /api/proximidades no Qualificar o imóvel, e L-107, o selo da assinatura do laudo que derruba o /nivel do dono).
 */
 type Conta = ChaveConta | "VISITANTE" | "SOCIO";
 interface Tela {
