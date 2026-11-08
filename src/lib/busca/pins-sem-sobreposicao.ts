@@ -9,8 +9,12 @@ export type CaixaPin = { id: string; x: number; y: number; w: number; h: number 
 const FOLGA = 4;
 const ANEIS = 8;
 
-export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: number }): Map<string, { dx: number; dy: number }> {
-  const colocados: { l: number; r: number; t: number; b: number }[] = [];
+/** E704: caixa fixa (centro e tamanho na tela) que o pin não pode cobrir, como o nome da cidade que o mapa-base desenha. */
+export type Obstaculo = { x: number; y: number; w: number; h: number };
+
+export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: number }, obstaculos: readonly Obstaculo[] = []): Map<string, { dx: number; dy: number }> {
+  // Os obstáculos entram primeiro: ficam onde estão e os pins é que se afastam (como se fossem pins já colocados).
+  const colocados: { l: number; r: number; t: number; b: number }[] = obstaculos.map((o) => ({ l: o.x - o.w / 2, r: o.x + o.w / 2, t: o.y - o.h / 2, b: o.y + o.h / 2 }));
   const out = new Map<string, { dx: number; dy: number }>();
   const caixa = (p: CaixaPin, dx: number, dy: number) => ({
     l: p.x + dx - p.w / 2 - FOLGA / 2,

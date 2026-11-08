@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Star, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { avaliar } from "@/lib/data/avaliacoes-actions";
+import { CRITERIOS, ETIQUETAS, MAX_ETIQUETAS, type ParAvaliacao } from "@/lib/avaliacoes-criterios";
 import { LIMITE_COMENTARIO, TEXTO_AVALIACAO_FECHADA, partesDaAvaliacao, prazoAvaliacao, validarAvaliacao } from "@/lib/avaliacoes";
 import { cn } from "@/lib/utils";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -42,6 +43,12 @@ export function AvaliacaoForm({
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comentario, setComentario] = useState("");
+  const par: ParAvaliacao = papelAutor === "inquilino" ? "morador_avalia_dono" : "dono_avalia_morador";
+  const [criterios, setCriterios] = useState<Record<string, number>>({});
+  const [etiquetas, setEtiquetas] = useState<string[]>([]);
+  const [recomendaria, setRecomendaria] = useState<boolean | null>(null);
+  const [notaPrivadaParte, setNotaPrivadaParte] = useState("");
+  const [notaPrivadaViva, setNotaPrivadaViva] = useState("");
   const [aberto, setAberto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
@@ -59,7 +66,7 @@ export function AvaliacaoForm({
       return;
     }
     setEnviando(true);
-    const r = await semQuedaDeRede(avaliar({ contratoId, alvoId, papelAutor, rating, comentario }));
+    const r = await semQuedaDeRede(avaliar({ contratoId, alvoId, papelAutor, rating, comentario, criterios, etiquetas, recomendaria, notaPrivadaParte, notaPrivadaViva }));
     setEnviando(false);
     if (r.ok) {
       setModeracao(!!r.moderacao);
@@ -137,6 +144,61 @@ export function AvaliacaoForm({
           </button>
         ))}
       </div>
+      <fieldset className="mt-3 space-y-2" data-testid="avaliacao-criterios">
+        <legend className="text-xs font-semibold text-muted">Avalie cada ponto</legend>
+        {CRITERIOS[par].map((c) => (
+          <div key={c.chave} className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-sm text-ink">{c.rotulo}</span>
+            <div className="flex items-center gap-1" role="radiogroup" aria-label={`${c.rotulo}, de 1 a 5`}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  role="radio"
+                  aria-checked={criterios[c.chave] === n}
+                  aria-label={`${c.rotulo}: ${n}`}
+                  onClick={() => setCriterios((x) => ({ ...x, [c.chave]: n }))}
+                  className="min-h-11 min-w-11"
+                >
+                  <Star className={cn("mx-auto h-5 w-5", (criterios[c.chave] ?? 0) >= n ? "fill-champagne text-champagne-600" : "text-sage")} />
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </fieldset>
+      <div className="mt-3 flex flex-wrap gap-2" aria-label="Etiquetas rápidas">
+        {ETIQUETAS[par].map((t) => {
+          const on = etiquetas.includes(t);
+          return (
+            <button
+              key={t}
+              type="button"
+              aria-pressed={on}
+              disabled={!on && etiquetas.length >= MAX_ETIQUETAS}
+              onClick={() => setEtiquetas((x) => (on ? x.filter((y) => y !== t) : [...x, t]))}
+              className={cn("min-h-11 rounded-full border px-3 text-xs font-semibold", on ? "border-forest bg-forest/10 text-forest" : "border-sage-200 text-muted")}
+            >
+              {t}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Recomendaria">
+        <span className="text-sm text-ink">{papelAutor === "inquilino" ? "Recomendaria este imóvel?" : "Receberia de novo?"}</span>
+        {[true, false].map((v) => (
+          <button
+            key={String(v)}
+            type="button"
+            role="radio"
+            aria-checked={recomendaria === v}
+            onClick={() => setRecomendaria(v)}
+            className={cn("min-h-11 rounded-full border px-4 text-sm font-semibold", recomendaria === v ? "border-forest bg-forest/10 text-forest" : "border-sage-200 text-muted")}
+          >
+            {v ? "Sim" : "Não"}
+          </button>
+        ))}
+      </div>
       <textarea
         rows={2}
         value={comentario}
@@ -145,9 +207,25 @@ export function AvaliacaoForm({
         placeholder={placeholder}
         className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
       />
+      <textarea
+        rows={2}
+        value={notaPrivadaParte}
+        onChange={(e) => setNotaPrivadaParte(e.target.value)}
+        maxLength={LIMITE_COMENTARIO}
+        placeholder="Recado privado para a outra parte (só ela vê; opcional)"
+        className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+      />
+      <textarea
+        rows={2}
+        value={notaPrivadaViva}
+        onChange={(e) => setNotaPrivadaViva(e.target.value)}
+        maxLength={LIMITE_COMENTARIO}
+        placeholder="Recado privado para a Viva (só a equipe vê; opcional)"
+        className="mt-3 w-full rounded-xl border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+      />
       {erro && <p className="mt-2 text-sm text-red-600">{erro}</p>}
       <div className="mt-3 flex items-center gap-3">
-        <Button variant="gold" size="sm" onClick={enviar} disabled={enviando || rating === 0}>
+        <Button variant="gold" size="sm" onClick={enviar} disabled={enviando || rating === 0 || recomendaria === null || CRITERIOS[par].some((c) => !criterios[c.chave])}>
           {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar avaliação
         </Button>
         <button

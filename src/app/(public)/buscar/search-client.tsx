@@ -14,9 +14,19 @@ import { alternarSelecao } from "@/lib/busca/comparar";
 // só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
-  { ssr: false }
+  // E698: enquanto o módulo do mapa baixa, o quadro já diz que está carregando (e não fica um retângulo cinza vazio).
+  { ssr: false, loading: () => <MapaCarregandoModulo /> }
 );
-import { cn, distanceKm } from "@/lib/utils";
+
+function MapaCarregandoModulo() {
+  return (
+    <div className="grid h-full w-full place-items-center bg-surface-2" data-testid="mapa-carregando-modulo" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
+  );
+}
+import { cn, distanceKm, hojeBR } from "@/lib/utils";
+import { situacaoBuscaVazia } from "@/lib/busca-vazia";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
@@ -448,6 +458,8 @@ export function SearchClient({
   // E131: a lista e todas as contagens partem da MESMA base (a regra dos exemplos decidida uma vez, sem os filtros da
   // folha). Assim nenhuma pílula ou faceta conta mais imóveis do que a lista sem filtro mostra.
   const baseVisivel = useMemo(() => baseDaVitrine(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  // E695: o que existe no lugar digitado ANTES da data e dos filtros decide se "a Viva ainda não chegou" é verdade.
+  const situacaoVazia = useMemo(() => situacaoBuscaVazia({ local: locationQuery, imoveisNoLocal: baseVisivel, hoje: hojeBR() }), [locationQuery, baseVisivel]);
   const contarComPainel = useCallback((f: FiltrosPainel) => contarNaBase(baseVisivel, (p) => passaNoPainel(p, f)), [baseVisivel]);
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
@@ -845,12 +857,23 @@ export function SearchClient({
             // Prompt 48: busca sem resultado diz o que aconteceu e dá os três próximos passos — pedido de moradia,
             // limpar filtros (ou ampliar a busca) e criar alerta. Sem ilustração genérica.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia">
-              <p className="font-title text-lg font-semibold text-ink">
-                {locationQuery.trim()
-                  ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
-                  : "Ainda não há imóveis para esta busca"}
-              </p>
-              <ConviteCidade texto={locationQuery} />
+              {/* E695: "ainda não chegou" só quando o lugar tem ZERO imóveis; havendo imóveis que a data/os filtros excluíram,
+                  a mensagem é de data/filtro (com a próxima disponibilidade), e o convite de cidade não aparece. */}
+              {situacaoVazia.tipo === "sem_disponibilidade" ? (
+                <>
+                  <p className="font-title text-lg font-semibold text-ink" data-testid="busca-vazia-titulo">{situacaoVazia.titulo}</p>
+                  <p className="mt-1 max-w-md text-sm text-muted" data-testid="busca-vazia-proxima">{situacaoVazia.detalhe}</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-title text-lg font-semibold text-ink" data-testid="busca-vazia-titulo">
+                    {locationQuery.trim()
+                      ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
+                      : "Ainda não há imóveis para esta busca"}
+                  </p>
+                  <ConviteCidade texto={locationQuery} />
+                </>
+              )}
               <p className="mt-1 max-w-md text-sm text-muted">
                 {PEDIDO_MORADIA_ON
                   ? "Publique um pedido de moradia e os proprietários da cidade encontram você, ou crie um alerta para saber quando entrar um imóvel assim."

@@ -1,4 +1,5 @@
 // Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
+import { camposDoPar, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Page, type Request } from "@playwright/test";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, lerSaida, novaSenha, novoSufixo, pdf, tornarContratoVigente } from "../fixtures/laboratorio";
@@ -294,6 +295,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await pi.getByRole("button", { name: "Avaliar o proprietário" }).click();
     await pi.getByRole("radio", { name: "5 estrelas" }).click();
     await pi.getByPlaceholder(/Comentário \(opcional\)/).fill(marcaInq);
+    await preencherCriterios(pi);
     await pi.getByRole("button", { name: "Enviar avaliação" }).click();
     await expect(pi.getByText(/Avaliação enviada\. Ela aparece quando a outra parte também avaliar/)).toBeVisible({ timeout: 20_000 });
     await foto(pi, "6-inquilina-avaliou");
@@ -303,7 +305,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
 
     // Às cegas: o dono ainda não vê a avaliação, nem na tela dele nem na página pública.
     const pd = await comoDono(browser);
-    await abrir(pd, "/dashboard/avaliacoes");
+    await abrir(pd, "/dashboard/avaliacoes?aba=recebidas");
     await expect(pd.getByText("Nenhuma avaliação publicada ainda")).toBeVisible({ timeout: 20_000 });
     await expect(pd.locator("main")).not.toContainText(marcaInq);
     const anon = await browser.newContext({ viewport: { width: 1280, height: 900 }, storageState: { cookies: [], origins: [] } });
@@ -317,6 +319,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
     await pd.getByRole("button", { name: "Avaliar o morador" }).first().click();
     await pd.getByRole("radio", { name: "5 estrelas" }).click();
     await pd.getByPlaceholder(/Comentário \(opcional\)/).fill(marcaDono);
+    await preencherCriterios(pd);
     await pd.getByRole("button", { name: "Enviar avaliação" }).click();
     await expect(pd.getByText(/Avaliação enviada\./)).toBeVisible({ timeout: 20_000 });
     await expect
@@ -324,12 +327,12 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
       .toEqual(["publicada", "publicada"]);
 
     // Cada lado vê a do outro em "Avaliações recebidas".
-    await abrir(pd, "/dashboard/avaliacoes");
+    await abrir(pd, "/dashboard/avaliacoes?aba=recebidas");
     await expect(pd.getByTestId("avaliacao-recebida").filter({ hasText: marcaInq })).toBeVisible({ timeout: 20_000 });
     await foto(pd, "6-dono-recebeu", [1280, 390]);
     await pd.context().close();
     const pi2 = await entrar(browser, inq.email, senha);
-    await abrir(pi2, "/dashboard/avaliacoes");
+    await abrir(pi2, "/dashboard/avaliacoes?aba=recebidas");
     await expect(pi2.getByTestId("avaliacao-recebida").filter({ hasText: marcaDono })).toBeVisible({ timeout: 20_000 });
     await foto(pi2, "6-inquilina-recebeu");
     await pi2.context().close();
