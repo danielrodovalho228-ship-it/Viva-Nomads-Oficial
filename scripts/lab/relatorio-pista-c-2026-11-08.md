@@ -402,3 +402,13 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e no fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 575 (grupo do 558).
+
+## Blocos 575, 576 e 577
+
+- Bloco 575 (t1523, PR #3484 draft, run 42493524991): verde. Públicas com parâmetro na URL (grupo do 558).
+- Bloco 576 (t1524, PR #3485 draft, run 42493528281): verde. Admin com id na URL (grupo do 559).
+- Bloco 577 (t1525, PR #3486 draft, run 42493532087): verde. Compartilhadas sem id: proprietário e parceiro (grupo do 560).
+- Só no laboratório, 390 e 1280 px: sem imagem vazia/quebrada, sobreposição de fixo, cartão sem foto, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim de cada bloco): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 578 (grupo do 561).
