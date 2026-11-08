@@ -961,7 +961,7 @@ function Section({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-title font-semibold text-ink">{title}</span>
-          <span className="block truncate text-sm text-muted">{summary}</span>
+          <span className="line-clamp-2 block text-sm text-muted">{summary}</span>
         </span>
         {saved && <span className="text-sm font-medium text-forest">Salvo</span>}
         <ChevronDown
