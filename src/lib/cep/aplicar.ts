@@ -36,6 +36,7 @@ export interface AplicacaoCep {
 
 /** O que o resultado do CEP muda no formulário (só substitui o que não foi digitado; vazio sempre recebe). */
 export function aplicarResultadoCep(r: ResultadoCep, atual: EnderecoAtual, digitados: ReadonlySet<CampoEndereco>): AplicacaoCep {
+  if (r.tipo === "faixa") return { uf: r.uf.slice(0, 2) }; // E746: só a UF da faixa; cidade e rua a pessoa preenche
   if (r.tipo !== "rua" && r.tipo !== "cidade") return {};
   const pode = (c: CampoEndereco, valor: string) => !digitados.has(c) || !valor.trim();
   const out: AplicacaoCep = {};
