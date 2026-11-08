@@ -351,7 +351,7 @@ export default function AuthPage() {
   const linkTexto = "inline-flex min-h-11 items-center gap-2 text-sm font-medium text-forest hover:text-blue-700";
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       {/* Lado da marca — foto distinta para login e cadastro (plano C1/C2) */}
       <div className="relative hidden overflow-hidden lg:block">
         {/* Fase 2.3 — imagem lateral serena (vertical), só em >= 1024px. */}
@@ -385,7 +385,7 @@ export default function AuthPage() {
       </div>
 
       {/* Formulário: fundo quente e o formulário num cartão (sem o branco vazio). */}
-      <div className={`flex items-center justify-center px-4 py-8 sm:p-12 ${FUNDO_FORMULARIO_PORTA}`} data-testid="porta-formulario">
+      <div className={`flex min-w-0 items-center justify-center px-4 py-8 sm:p-12 ${FUNDO_FORMULARIO_PORTA}`} data-testid="porta-formulario">
         <div className="w-full max-w-md">
           <div className="mb-6 flex justify-center lg:hidden">
             <Logo href="/" />

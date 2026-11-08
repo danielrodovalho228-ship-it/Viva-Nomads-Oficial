@@ -38,3 +38,12 @@ export function baseDaBusca<T>(base: T[], ehExemplo: (x: T) => boolean, forcarEx
 export function contarNaBase<T>(baseVisivel: T[], passa: (x: T) => boolean): number {
   return baseVisivel.filter(passa).length;
 }
+
+/**
+ * E723 (Phoenix/RELATORIO-002, A2): "Ver imóveis reais" no anúncio de exemplo abre a /buscar, e enquanto não há imóvel real
+ * ela mostra os MESMOS exemplos. A lista passa a dizer isso no topo (nunca finge que são imóveis reais).
+ */
+export const TEXTO_VITRINE_SO_EXEMPLOS = "Ainda não há imóveis reais publicados. Estes são anúncios de exemplo, para você ver como a Viva funciona.";
+export function soHaExemplos(lista: { id: string }[], ehExemplo: (x: { id: string }) => boolean): boolean {
+  return lista.length > 0 && lista.every((x) => ehExemplo(x));
+}
