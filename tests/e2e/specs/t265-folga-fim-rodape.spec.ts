@@ -130,7 +130,7 @@ for (const { largura, altura } of LARGURAS) {
 for (const { largura, altura } of LARGURAS) {
   test.describe(`T265 — hero da home (${largura} px)`, () => {
     test.use({ viewport: { width: largura, height: altura }, storageState: { cookies: [], origins: [] } });
-    test("E712: foto do topo com preload e pronta em < 3 s num 4G simulado", async ({ page }) => {
+    test("nunca abre preto: prévia no HTML, preload do poster e poster em < 3 s num 4G simulado", async ({ page }) => {
       // 4G comum: ~4 Mb/s de descida e 60 ms de latência.
       const cdp = await page.context().newCDPSession(page);
       await cdp.send("Network.enable");
@@ -140,13 +140,15 @@ for (const { largura, altura } of LARGURAS) {
       // Já no HTML do servidor: o <link rel=preload> do poster e a prévia borrada (data: URI, sem rede).
       const html = await (await page.request.get("/")).text();
       expect(html).toMatch(/<link[^>]+rel="preload"[^>]+hero-home-poster/);
-      const poster = page.getByTestId("hero-foto");
+      const previa = page.getByTestId("hero-previa");
+      await expect(previa).toBeVisible();
+      expect(await previa.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(/^url\("data:image\/webp;base64,/);
+      const poster = page.getByTestId("hero-poster");
       await expect(poster).toHaveAttribute("fetchpriority", "high");
       await expect.poll(() => poster.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 3_000 }).toBe(true);
       const ms = Date.now() - inicio;
       const escolhido = await poster.evaluate((el: HTMLImageElement) => new URL(el.currentSrc).pathname);
-      // E712: a foto ocupa metade da largura no computador (640 px a 1280): o navegador escolhe a de 768 px; no celular, também.
-      expect(["/media/hero-home-poster-768.webp", "/media/hero-home-poster.webp"]).toContain(escolhido);
+      expect(escolhido).toBe(largura < 768 ? "/media/hero-home-poster-768.webp" : "/media/hero-home-poster.webp");
       test.info().annotations.push({ type: "hero", description: `${largura}px: poster ${escolhido} em ${ms} ms (4G simulado)` });
       await page.screenshot({ path: `tests/laboratorio/saida/t265-hero-${largura}.png` });
     });

@@ -9,25 +9,27 @@ import { readFileSync, existsSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
-test("E712: a busca 'Para onde você vai?' continua um campo só (agora na /buscar e nos blocos), nunca de 4 campos", () => {
+test("hero: uma busca só, rotulada 'Para onde você vai?', que leva à /buscar?local=", () => {
   const busca = ler("components/home/busca-principal.tsx");
   assert.match(busca, /Para onde você vai\?/);
   assert.match(busca, /htmlFor="busca-principal-local"/);
+  assert.match(busca, /inputId="busca-principal-local"/);
   assert.match(busca, /`\/buscar\?\$\{new URLSearchParams\(\{ local: q \}\)\.toString\(\)\}`/);
+  // Nada de período / pessoas / orçamento no hero: ficam nos filtros da /buscar.
   assert.doesNotMatch(busca, /<select|GuestsField|Orçamento\/mês/);
+  const home = ler("app/(public)/page.tsx");
+  assert.equal((home.match(/<BuscaPrincipal \/>/g) ?? []).length, 1);
+  assert.doesNotMatch(home, /HeroSearch/);
   assert.ok(!existsSync(new URL("../components/hero-search.tsx", import.meta.url)), "busca antiga de 4 campos removida");
 });
 
-test("E712: o topo da home segue o mockup publico-home — título à esquerda, 'Buscar moradia' e 'Publicar pedido de moradia', apoio e foto", () => {
+test("hero em largura cheia: foto de fundo ocupa a seção; texto centralizado", () => {
   const home = ler("app/(public)/page.tsx");
-  const hero = home.slice(home.indexOf('data-testid="hero-home"'), home.indexOf("<VideoInstitucional"));
-  assert.match(hero, /Imóveis mobiliados prontos para morar, de 30 a 180 dias, com contrato digital\./);
-  assert.match(hero, /href="\/buscar"[^>]*>\s*Buscar moradia/);
-  assert.match(hero, /href="\/pedidos\/novo"[^>]*>\s*Publicar pedido de moradia/);
-  assert.match(hero, /Sem burocracia • Mudança rápida • Suporte 7 dias/);
-  assert.match(hero, /data-testid="hero-foto"/);
-  assert.match(hero, /lg:grid-cols-2/);
-  assert.doesNotMatch(hero, /text-center|<HeroVideoBg|<BuscaPrincipal/);
+  const hero = home.slice(home.indexOf('data-testid="hero-home"'), home.indexOf("<AtalhosCategoria"));
+  assert.match(hero, /<HeroVideoBg \/>/);
+  assert.match(hero, /text-center/);
+  assert.match(hero, /<h1/);
+  assert.doesNotMatch(hero, /lg:grid-cols-12/); // não é mais o hero de 2 colunas
 });
 
 test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", async () => {

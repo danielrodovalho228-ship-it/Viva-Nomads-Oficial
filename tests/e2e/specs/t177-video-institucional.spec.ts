@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
   T177 — Vídeo institucional v3 ("A Viva em 30 segundos"), a 390 e 1280 px.
   1. A seção existe na home (logo abaixo do hero) e no topo de /como-funciona, com título visível.
   2. <video controls preload="none" playsinline poster> com aria-label e legenda pt-BR padrão; sem autoplay.
-  3. A página NÃO baixa o mp4 antes do play (só a capa); o topo da home não tem mais vídeo de fundo (E712).
+  3. A página NÃO baixa o mp4 antes do play (só a capa); o vídeo de fundo do hero continua igual.
   4. Capa e legenda existem (200); 16:9 e sem rolagem lateral.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -75,7 +75,7 @@ for (const rota of ["/", "/como-funciona"]) {
   }
 }
 
-test("T177 home: o topo (E712) fica acima do vídeo institucional", async ({ page }) => {
+test("T177 home: o vídeo de fundo do hero continua no lugar", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("hero-home")).toBeVisible();
   await expect(page.getByTestId("secao-video-institucional")).toHaveCount(1);

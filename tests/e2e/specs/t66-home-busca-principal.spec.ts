@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T66 — home: topo do mockup `publico-home` (E712: título, "Buscar moradia" e "Publicar pedido de moradia", foto) e
- * atalhos por categoria que abrem a /buscar filtrada. A busca de um campo ("Para onde você vai?") saiu do topo,
- * que no mockup não a tem: "Buscar moradia" leva à /buscar. Mobile-first: 360/390 px sem rolagem lateral.
+ * T66 — ordem bab1b2aa (prints 01, 14, 15): home com hero em largura cheia,
+ * UMA busca ("Para onde você vai?") e atalhos por categoria que abrem a /buscar
+ * filtrada. Mobile-first: 360/390 px sem rolagem lateral; 1280 px com o hero
+ * ocupando a largura toda.
  */
 test.describe("T66 — Home: busca principal e atalhos", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -12,9 +13,10 @@ test.describe("T66 — Home: busca principal e atalhos", () => {
     test(`celular ${largura} px: uma busca, atalhos e sem rolagem lateral`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 844 });
       await page.goto("/", { waitUntil: "networkidle" });
-      await expect(page.getByTestId("hero-titulo")).toBeVisible();
-      await expect(page.getByTestId("home-buscar-moradia")).toBeVisible();
-      await expect(page.getByTestId("home-publicar-pedido")).toBeVisible();
+      const busca = page.getByTestId("busca-principal");
+      await expect(busca.getByLabel("Para onde você vai?")).toBeVisible();
+      await expect(busca.locator("input")).toHaveCount(1);
+      await expect(busca.locator("select")).toHaveCount(0);
       await expect(page.getByTestId("atalhos-categoria").getByRole("link")).not.toHaveCount(0); // 5 atalhos; some o que tiver 0 imóveis (ordem a875278a)
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(1);
@@ -22,39 +24,31 @@ test.describe("T66 — Home: busca principal e atalhos", () => {
     });
   }
 
-  test("1280 px: título à esquerda e foto à direita, lado a lado", async ({ page }) => {
+  test("1280 px: hero em largura cheia e busca centralizada", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
-    const titulo = await page.getByTestId("hero-titulo").boundingBox();
-    const foto = await page.getByTestId("hero-foto").boundingBox();
-    expect(titulo && foto && titulo.x + titulo.width <= foto.x + 1).toBe(true);
-    await expect(page.getByTestId("hero-foto")).toHaveJSProperty("complete", true);
+    const hero = await page.getByTestId("hero-home").boundingBox();
+    expect(hero?.x ?? 99).toBeLessThanOrEqual(1);
+    expect(hero?.width ?? 0).toBeGreaterThanOrEqual(1270);
+    const busca = await page.getByTestId("busca-principal").boundingBox();
+    const centro = (busca?.x ?? 0) + (busca?.width ?? 0) / 2;
+    expect(Math.abs(centro - 640)).toBeLessThan(40);
     await page.screenshot({ path: "tests/laboratorio/saida/t66-home-1280.png" });
   });
 
-  test("'Buscar moradia' leva à /buscar", async ({ page }) => {
+  test("buscar pela cidade leva à /buscar com o local", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.getByTestId("home-buscar-moradia").click();
-    await expect(page).toHaveURL(/\/buscar/);
+    await page.getByLabel("Para onde você vai?").fill("Uberlândia");
+    await page.getByRole("button", { name: "Buscar imóveis" }).click();
+    await expect(page).toHaveURL(/\/buscar\?local=Uberl%C3%A2ndia/);
   });
 
   test("atalhos abrem a /buscar já filtrada", async ({ page }) => {
-    // Os atalhos somem quando o filtro tem 0 imóveis (ordem a875278a): o que existe depende dos dados do ambiente.
-    // Confere todos os que aparecem; "Aceita pets" e "3+ quartos" só quando houver.
     await page.goto("/", { waitUntil: "networkidle" });
-    const links = page.getByTestId("atalhos-categoria").getByRole("link");
-    const total = await links.count();
-    expect(total).toBeGreaterThan(0);
-    for (const [rotulo, filtro] of [[/Aceita pets/, /\/buscar\?(.*&)?pet=1/], [/3\+ quartos/, /\/buscar\?(.*&)?quartos=3/]] as const) {
-      await page.goto("/", { waitUntil: "networkidle" });
-      const alvo = page.getByTestId("atalhos-categoria").getByRole("link", { name: rotulo });
-      if (await alvo.count()) {
-        await alvo.click();
-        await expect(page).toHaveURL(filtro);
-      }
-    }
+    await page.getByTestId("atalhos-categoria").getByRole("link", { name: /Aceita pets/ }).click();
+    await expect(page).toHaveURL(/\/buscar\?(.*&)?pet=1/);
     await page.goto("/", { waitUntil: "networkidle" });
-    await links.first().click();
-    await expect(page).toHaveURL(/\/buscar/);
+    await page.getByTestId("atalhos-categoria").getByRole("link", { name: /3\+ quartos/ }).click();
+    await expect(page).toHaveURL(/\/buscar\?(.*&)?quartos=3/);
   });
 });

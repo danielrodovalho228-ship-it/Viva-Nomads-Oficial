@@ -13,8 +13,7 @@ import { preload } from "react-dom";
  * e com movimento reduzido, fica só o poster (economia de dados e acessibilidade).
  * A camada escura por cima mantém o texto do hero legível.
  */
-import { HERO_POSTER } from "@/lib/hero-poster";
-export { HERO_POSTER };
+export const HERO_POSTER = { celular: "/media/hero-home-poster-768.webp", computador: "/media/hero-home-poster.webp" } as const;
 const HERO_SRCSET = `${HERO_POSTER.celular} 768w, ${HERO_POSTER.computador} 1280w`;
 /** 24×14 px, borrada (sharp), ~120 bytes: pinta na 1ª renderização, antes de qualquer download. */
 export const HERO_PREVIA =
