@@ -45,8 +45,8 @@ test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1
   assert.equal(estadiaDoCartao(dois), dois.estadia);
 });
 
-test("E356: o rótulo diz que o preço grande é o total do mês, tudo incluído", () => {
-  assert.equal(ROTULO_TOTAL_MES, "Total por mês, tudo incluído");
+test("E356: o rótulo diz que o preço grande é o total do mês, sem IPTU (E767)", () => {
+  assert.equal(ROTULO_TOTAL_MES, "Total por mês, sem IPTU");
 });
 
 test("E702: quando a data foi calculada para a estadia mínima, o cartão diz isso; igual à do cadastro, não", async () => {
