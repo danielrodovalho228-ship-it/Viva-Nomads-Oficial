@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FlaskConical } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
+import { TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,11 @@ export default async function AvaliadorPage({ params }: { params: Promise<{ nume
   const nota = a.nota_conduta == null ? null : Number(a.nota_conduta);
   return (
     <main className="mx-auto max-w-2xl px-4 py-12" data-testid="avaliador-publico">
+      {a.teste && (
+        <p className="mb-4 inline-flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-ink" data-testid="avaliador-teste">
+          <FlaskConical className="mt-1 h-4 w-4 shrink-0" aria-hidden /> {TEXTO_AVALIADOR_DE_TESTE}
+        </p>
+      )}
       <p className="text-sm text-muted">Avaliador credenciado da Viva</p>
       <h1 className="mt-1 font-title text-2xl font-semibold text-ink">{a.nome_curto}</h1>
       <p className="mt-2 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
