@@ -22,3 +22,18 @@ Uma migração que escrevesse `status = 'ativo'` ignoraria a aprovação humana 
 ## Dúvidas
 1. Se o Daniel preferir que a massa já chegue ativa (sem passar pelo admin), é uma migração de 3 linhas na `avaliadores_credenciamento` (`status='ativo'`, `ativado_em`, `decidido_em`), só para `numero_credenciado = 'UDI-002'` com conta `is_teste`. Fica **aguardando decisão**; segui a leitura conservadora.
 2. UDI-001 está `suspenso` (reativação também é ação de admin AAL2).
+
+## Conferência rápida (só leitura, antes e depois de ativar)
+Para o QA confirmar o estado do UDI-002 sem mexer em nada (consulta de leitura, nunca escrita):
+
+```sql
+select a.numero_credenciado, a.status, a.ativado_em,
+       (select count(*) from vistoria_pedidos v
+         where v.avaliador_id = a.id and v.teste and v.status = 'laudo_emitido') as avaliacoes_de_teste_concluidas
+  from avaliadores_credenciamento a
+ where a.numero_credenciado = 'UDI-002';
+```
+
+- **Antes:** `status = em_teste`, `ativado_em` vazio, `avaliacoes_de_teste_concluidas >= 1`.
+- **Depois da ativação pelo admin:** `status = ativo` e `ativado_em` preenchido; a tela `/dashboard/parceiro/avaliacao` passa a mostrar o passo 5 cumprido.
+- Se `avaliacoes_de_teste_concluidas = 0`, a massa da 0256 não está na base e o passo 5 não fecha mesmo com o avaliador ativo.
