@@ -17,3 +17,21 @@ Todos em draft, sem conflito com a `main` de 08/11 (branches atualizadas por mer
 
 ## Código que ainda falta nos itens
 Nenhum. O que resta depende de terceiros: spec `fluxo-parceiros-completo` §2 (E687), parecer da Dra. Beatriz para o aviso e o livro (E707), ativação do UDI-002 pelo admin ou decisão sobre a migração de 3 linhas (E690), hash do PDF no selo se quiserem (E691).
+
+## Conferência de CI e conflito (08/11/2026, depois das 02:50 UTC)
+Cada PR foi lido no GitHub e teve o merge da `main` testado localmente. Todos seguem em draft, sem merge meu.
+
+| PR | Head conferido | `verify` | `lab-critico` | `e2e` | Conflito com a `main` |
+|---|---|---|---|---|---|
+| #3292 (E687) | `02307c1` | verde | verde | verde | não |
+| #3329 (E689) | `186e6d2` | verde | verde | verde | não |
+| #3330 (E690) | `f843d91` | verde | verde | verde | não |
+| #3296 (E691) | `e9436d0` | verde | verde | verde | não |
+| #3297 (E707) | `b35a3d4` | verde | verde | verde | não |
+| #3326 (rodada 4) | `a3750cc` | verde | verde | verde | não |
+| #3344 (rodada 5) | `77a30f7` | verde | verde | verde | não |
+| #3354 (rodada 6) | `e00f2b5` | verde | verde | verde | não |
+
+As rodadas 4 a 6 (#3326, #3344, #3354) rodaram o CI sobre uma `main` anterior; o merge da `main` de agora entra limpo nas três e os heads não mudaram. Se o chat principal quiser o CI sobre a `main` atual antes do merge, basta atualizar a branch (merge, sem reescrever histórico).
+
+Observação do #3330: o primeiro `verify` travou no passo `Build` (runner sem resposta, typecheck e testes já verdes). Foi cancelado e refeito num head novo, com uma melhoria real no doc do E690.
