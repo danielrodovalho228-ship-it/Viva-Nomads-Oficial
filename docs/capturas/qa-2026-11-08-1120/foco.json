@@ -1,0 +1,142 @@
+[
+ {
+  "w": 390,
+  "r": "/",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/buscar",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/auth",
+  "medidos": 8,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "medidos": 13,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "medidos": 12,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-001",
+  "medidos": 7,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/buscar",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "medidos": 8,
+  "fracos": [
+   {
+    "el": "A",
+    "txt": "VivaNomads",
+    "noAncestral": false,
+    "cor": "rgb(28, 107, 58)",
+    "larg": 2,
+    "ct": 1.48,
+    "fundo": "oklab(0.144787 0.00000661612 0.00000289828 / 0.55)"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "medidos": 13,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "medidos": 12,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "medidos": 11,
+  "fracos": [
+   {
+    "el": "A",
+    "txt": "Pular para o conteúdo pri",
+    "noAncestral": false,
+    "cor": "rgb(255, 255, 255)",
+    "larg": 2,
+    "ct": 1,
+    "fundo": "rgb(255, 255, 255)"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/conferir",
+  "medidos": 14,
+  "fracos": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "medidos": 14,
+  "fracos": []
+ }
+]
