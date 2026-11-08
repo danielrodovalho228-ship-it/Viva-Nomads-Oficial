@@ -28,9 +28,17 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # E744: a suíte inteira (~4.500 testes) não cabia no teto de um job (run 42471821063: 640 rodaram, 3.864 não rodaram).
+  # Agora ela é fatiada em FATIAS jobs paralelos (--shard do Playwright); cada fatia sobe o próprio Supabase local e o
+  # próprio site, e o job `consolidar` junta os resultados e grava UMA linha em lab_execucoes. Desenho em docs/e744-suite-fatiada.md.
   laboratorio:
+    name: laboratorio (fatia ${{ matrix.fatia }}/12)
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SITE_URL: http://localhost:3123
@@ -134,34 +142,59 @@ jobs:
       - name: Rodar a suíte E2E
         id: e2e
         continue-on-error: true
-        run: npx playwright test --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+        run: npx playwright test --shard=${{ matrix.fatia }}/12 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
-
-      - name: Resumo da noite
-        if: ${{ !cancelled() }}
-        run: |
-          {
-            echo "## Laboratório — $(date -u +%Y-%m-%d)"
-            grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
-            echo
-            echo "### Por spec (passou / falhou)"
-            node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
-            echo
-            echo "Envios simulados (nada saiu para a rede):"
-            if [ -f "$LAB_OUTBOX" ]; then cut -d'"' -f4 "$LAB_OUTBOX" | sort | uniq -c; else echo "nenhum"; fi
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Guardar relatório, prints e vídeos das falhas
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: laboratorio-${{ github.run_id }}
+          name: laboratorio-${{ github.run_id }}-fatia-${{ matrix.fatia }}
           path: |
             playwright-report/
             tests/e2e/.artifacts/
             tests/laboratorio/saida/
           retention-days: 14
+
+      - name: Marcar a fatia como falha se algum teste falhou
+        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
+        run: exit 1
+
+  # Junta as fatias: um resumo, uma linha em public.lab_execucoes, e vermelho se qualquer fatia falhou.
+  consolidar:
+    needs: laboratorio
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LAB_OUTBOX: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Baixar as fatias
+        uses: actions/download-artifact@v4
+        with:
+          pattern: laboratorio-${{ github.run_id }}-fatia-*
+          path: fatias
+
+      - name: Juntar os resultados das fatias
+        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 12
+
+      - name: Resumo da noite
+        run: |
+          {
+            echo "## Laboratório — $(date -u +%Y-%m-%d) (12 fatias)"
+            node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
+            echo
+            echo "### Por spec (passou / falhou)"
+            node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Registrar no banco
         # Uma linha em public.lab_execucoes por execução. PR só do próprio repositório (nunca de fork, que não
@@ -191,6 +224,6 @@ jobs:
             from (select :'resumo'::jsonb as j) x;
           SQL
 
-      - name: Marcar a execução como falha se algum teste falhou
-        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
+      - name: Marcar a execução como falha se alguma fatia falhou
+        if: ${{ needs.laboratorio.result != 'success' && github.event_name != 'pull_request' }}
         run: exit 1
