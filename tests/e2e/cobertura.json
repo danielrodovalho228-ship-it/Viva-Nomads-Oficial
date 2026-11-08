@@ -2683,7 +2683,8 @@
         "t591-varredura-bloco48",
         "t1412-varredura-bloco490",
         "t1440-varredura-bloco507",
-        "t1462-varredura-bloco524"
+        "t1462-varredura-bloco524",
+        "t1480-fixos-e-dinamicas-publicas"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
