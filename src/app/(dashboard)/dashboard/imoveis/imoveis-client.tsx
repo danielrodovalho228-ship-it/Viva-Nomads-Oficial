@@ -20,6 +20,8 @@ import type { Property, PropertyStatus } from "@/lib/types";
 import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
 import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import { estadoIdentidadeParaTrava, HREF_CPF_NA_CONTA, HREF_VERIFICAR_IDENTIDADE } from "@/lib/anuncio/travas-publicacao";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
@@ -56,6 +58,12 @@ export function MyPropertiesClient({
   pausas?: Record<string, string | null>;
 }) {
   const { on: demoOn } = useDemoMode();
+  // E699 (a): a trava de identidade também aparece em "Falta para publicar" (antes só o documento). A leitura é da própria
+  // pessoa (a mesma do cadastro); carregando ou indisponível não afirma "falta" aqui.
+  const { situacao: situacaoIdentidade } = useEstadoIdentidade();
+  const estadoIdentidade = estadoIdentidadeParaTrava(situacaoIdentidade);
+  const faltaIdentidade = estadoIdentidade === "pendente" || estadoIdentidade === "sem_cpf";
+  const hrefIdentidade = estadoIdentidade === "sem_cpf" ? HREF_CPF_NA_CONTA : HREF_VERIFICAR_IDENTIDADE;
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [excluindo, setExcluindo] = useState<string | null>(null);
@@ -313,7 +321,7 @@ export function MyPropertiesClient({
                         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
                       {/* P0 (30/10): cada pendência é um atalho para o PASSO dela no assistente (rascunho) — nunca o editor. */}
-                      {comp.faltam.length > 0 && (
+                      {(comp.faltam.length > 0 || faltaIdentidade) && (
                         <p className="mt-1 text-[11px] text-amber-800" data-testid="falta-publicar">
                           Falta para publicar:{" "}
                           {comp.obrigatorios
@@ -326,6 +334,14 @@ export function MyPropertiesClient({
                                 </Link>
                               </span>
                             ))}
+                          {faltaIdentidade && (
+                            <span>
+                              {comp.faltam.length > 0 && " · "}
+                              <Link href={hrefIdentidade} className="font-medium underline" data-testid="pendencia-identidade">
+                                Confirmação de identidade
+                              </Link>
+                            </span>
+                          )}
                         </p>
                       )}
                       {comp.melhorar.length > 0 && (

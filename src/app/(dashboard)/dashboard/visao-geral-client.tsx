@@ -42,7 +42,7 @@ import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import { kpiInteressados } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
 import { useAuthStore } from "@/lib/store";
-import { soDaConta } from "@/lib/sessao/lista-da-conta";
+import { contaConfirmada, soDaConta } from "@/lib/sessao/lista-da-conta";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
 import { coverPhoto } from "@/lib/media";
@@ -494,8 +494,8 @@ function ListaDecisoes({ decisoes }: { decisoes: (Decisao | DecisaoDoPapel)[] })
  * a pessoa decide nelas entra na lista de decisões acima (Prompt 42) — aqui não se repete.
  */
 function CartaoEstadias({ estadias: doServidor }: { estadias: EstadiaNaHome[] }) {
-  // E680: a lista é da conta para quem o servidor a montou; com outra conta no navegador ela não aparece.
-  const contaDoNavegador = useAuthStore((s) => s.user?.id);
+  // E680: a lista é da conta para quem o servidor a montou; só aparece com a conta CONFIRMADA no navegador (a persistida pode ser a anterior).
+  const contaDoNavegador = useAuthStore((s) => contaConfirmada(s));
   const estadias = soDaConta(doServidor, contaDoNavegador);
   if (!estadias.length) return null;
   return (
