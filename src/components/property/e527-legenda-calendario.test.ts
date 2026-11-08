@@ -33,3 +33,14 @@ test("a legenda e os dias usam a mesma constante (a amostra não descola do dia)
   assert.match(grade, /estado === "indisponivel" && cn\("cursor-not-allowed text-muted line-through", ocupSet\.has\(iso\) \? COR_DIA\.ocupado : COR_DIA\.bloqueado\)/);
   assert.match(grade, /COR_DIA\.disponivel/);
 });
+
+// E527 (resíduo, lote 6 de 06/11): as amostras seguiam fracas — "Disponível" era um quadradinho verde quase branco, próximo
+// do "Hoje" (branco com anel) e de contraste fraco contra o cinza do "Ocupado". Amostras maiores (16 px) e a de Disponível
+// com contorno verde da marca; "Hoje" segue com anel âmbar sobre fundo branco (forma e cor diferentes).
+test("as amostras da legenda têm tamanho legível (16 px) e a de Disponível tem contorno verde forte", () => {
+  assert.equal((legenda.match(/\bh-4 w-4\b/g) ?? []).length, 5, "todas com 16 px");
+  assert.doesNotMatch(legenda, /\bh-3 w-3\b/);
+  const disp = legenda.slice(legenda.indexOf("COR_DIA.disponivel") - 80, legenda.indexOf("COR_DIA.disponivel") + 30);
+  assert.match(disp, /ring-1 ring-forest/);
+  assert.match(legenda, /bg-white ring-2 ring-champagne/);
+});
