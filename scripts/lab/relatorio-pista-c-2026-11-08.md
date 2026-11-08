@@ -292,3 +292,12 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Merge novo na main depois do último registro: nenhum (conferido ao fim da sequência; último de código segue o #3433; só docs da QA depois). Sem spec permanente nova a criar.
 - Sem 504 de infra nesta passada. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
 - Próximo bloco: 556 (grupo do 539).
+
+## Blocos 556, 557 e 558
+
+- Bloco 556 (t1504, PR #3456 draft, run 42478838521): verde. Painel do proprietário sem id (grupo do 539).
+- Bloco 557 (t1505, PR #3457 draft, run 42478840889): verde. Painel do morador sem id (grupo do 540).
+- Bloco 558 (t1506, PR #3458 draft, run 42478843153): verde. Públicas com parâmetro na URL (grupo do 541).
+- Merge novo na main desde o último registro: nenhum (conferido no começo e no fim da sequência; sem merge de código desde o #3433). Sem spec permanente nova a criar.
+- Sem 504 de infra. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Próximo bloco: 559 (grupo do 542).
