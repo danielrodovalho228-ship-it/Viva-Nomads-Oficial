@@ -1009,7 +1009,8 @@
         "t1418-varredura-bloco492",
         "t1419-varredura-bloco493",
         "t1442-varredura-bloco509",
-        "t1443-varredura-bloco510"
+        "t1443-varredura-bloco510",
+        "t1543-varredura-bloco595"
       ]
     },
     "/dashboard/conta/seguranca": {
@@ -1585,7 +1586,8 @@
         "t1418-varredura-bloco492",
         "t1419-varredura-bloco493",
         "t1442-varredura-bloco509",
-        "t1443-varredura-bloco510"
+        "t1443-varredura-bloco510",
+        "t1543-varredura-bloco595"
       ]
     },
     "/dashboard/pedidos": {
@@ -2440,7 +2442,8 @@
         "t1418-varredura-bloco492",
         "t1419-varredura-bloco493",
         "t1442-varredura-bloco509",
-        "t1443-varredura-bloco510"
+        "t1443-varredura-bloco510",
+        "t1543-varredura-bloco595"
       ]
     },
     "/parceiros/[slug]": {
@@ -2521,7 +2524,8 @@
         "t712-e267-transacionais-corpo",
         "t1387-varredura-bloco476",
         "t1419-varredura-bloco493",
-        "t1443-varredura-bloco510"
+        "t1443-varredura-bloco510",
+        "t1543-varredura-bloco595"
       ]
     },
     "/admin/parceiros/pedidos": {
