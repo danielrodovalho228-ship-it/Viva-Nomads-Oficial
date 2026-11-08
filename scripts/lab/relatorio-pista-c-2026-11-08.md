@@ -619,3 +619,8 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1569 (#3562, E721/0332): verde** (run 42529968365). Lab da main: `052e10e24` verde (42529615185); `e7ca59039` (E690), `911a6ebba` (E699) e `a5d6970f8` (E687/0329) verdes. `b069fdc02` (E688) em andamento; `da35ad3be` (E759) cancelado por run mais novo; `b18c39ec3` (E745) pendente.
 - **Merges novos desde `052e10e24`:** #3478 (E688, 0333), #3563 (E759, jornada da estadia) e #3560 (E745, drill de backup). **t1570 (#3564)**: E688, `plano_manutencao` e `assistencia_24h` em `em_breve` no banco do lab. E759 e E745 entraram com testes de unidade próprios (E745 é rotina de operação, sem tela; E759 pede massa de estadia que o lab não tem). Lab da t1570: a conferir.
 - **Varredura por blocos:** não há bloco pendente (601, 602 e 603 verdes em draft); novo bloco segue pausado pelo Muse. Sem achado novo (próximo livre: **L-110**).
+
+## Vigia das 22h40
+
+- **Merge novo #3471 (E688, Pista A, `298197783`)**: retira o cartão "parceiro geral" (AquiResolve) das superfícies públicas. O próprio PR já atualizou a **t236** (`parceiro-geral` e o texto "AquiResolve" ausentes em `/parceiros/fotografos` com busca vazia, 390 e 1280, mesmo ligado pelo admin) → guarda existente; sem spec nova.
+- **t1570 (#3564, E688/0333)**: lab em andamento (run 42530919517). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos. Sem achado novo (próximo livre: **L-110**).
