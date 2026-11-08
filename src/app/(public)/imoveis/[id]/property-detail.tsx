@@ -25,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
@@ -461,11 +461,21 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
-      {exemplo && (
-        <p data-testid="aviso-demo" className="rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-          {EXEMPLO_AVISO_DEMO}
-        </p>
-      )}
+      {exemplo ? (
+        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+          <p data-testid="aviso-demo" className="font-medium text-forest">
+            {EXEMPLO_AVISO_DEMO}
+          </p>
+          <p className="mt-1">
+            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
+            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
+          </p>
+          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
+            Ver imóveis reais
+          </ButtonLink>
+        </div>
+      ) : (
+        <>
       {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
@@ -532,6 +542,8 @@ export function PropertyDetail({
           </>
         )}
       </Button>
+        </>
+      )}
       <a
         data-cta={marcaCta("secondary")}
         href={contatoViva.href}
