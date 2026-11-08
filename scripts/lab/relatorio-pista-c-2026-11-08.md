@@ -613,3 +613,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1568 (#3558, E753) verde** sobre o ramo do #3555 (run 42528863983). **Bloco 601 (#3559, t1549) verde** (run 42528869633); sem achado (próximo livre: **L-110**).
 - **Merges novos na main** (até `052e10e24`): **#3459 (E690, 0331)** — ativa o avaliador de teste UDI-002 na produção (conta `is_teste`), sem massa no lab → guarda no teste de unidade do PR; **#3466 (E721, 0332)** — índice único completo em `push_adiados (user_id, grupo)` → **t1569 (#3562)**, guarda de banco do upsert por grupo (lab: a conferir). Já antes: #3406 (E699/0330, mesma situação do E690).
 - Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos; limpeza pós-merge pendente.
+
+## Cadeia das 22h35 — main em `b18c39ec3`
+
+- **t1569 (#3562, E721/0332): verde** (run 42529968365). Lab da main: `052e10e24` verde (42529615185); `e7ca59039` (E690), `911a6ebba` (E699) e `a5d6970f8` (E687/0329) verdes. `b069fdc02` (E688) em andamento; `da35ad3be` (E759) cancelado por run mais novo; `b18c39ec3` (E745) pendente.
+- **Merges novos desde `052e10e24`:** #3478 (E688, 0333), #3563 (E759, jornada da estadia) e #3560 (E745, drill de backup). **t1570 (#3564)**: E688, `plano_manutencao` e `assistencia_24h` em `em_breve` no banco do lab. E759 e E745 entraram com testes de unidade próprios (E745 é rotina de operação, sem tela; E759 pede massa de estadia que o lab não tem). Lab da t1570: a conferir.
+- **Varredura por blocos:** não há bloco pendente (601, 602 e 603 verdes em draft); novo bloco segue pausado pelo Muse. Sem achado novo (próximo livre: **L-110**).
