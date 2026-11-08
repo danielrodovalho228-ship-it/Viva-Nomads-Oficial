@@ -141,7 +141,10 @@ test("4f8d17c6 — flutuante idêntico em /, /precos e /como-funciona a 768 e 12
   }
   expect([...estilos], "um formato só").toHaveLength(1);
   const [bg, cor, raio, peso, altura] = [...estilos][0].split("|");
-  expect([bg, cor, raio, peso, altura]).toEqual(["rgb(28, 107, 58)", "rgb(255, 255, 255)", "8px", "600", "48px"]);
+  // C1b (08/11): o flutuante é o botão REDONDO de 48 px em todo o site (180 × 48 px com texto cobria texto de /termos, /empresas…);
+  // o nome acessível "Fale com a Viva" fica (sr-only). Raio de pílula (≥ 24 px) em vez dos 8 px de antes.
+  expect([bg, cor, peso, altura]).toEqual(["rgb(28, 107, 58)", "rgb(255, 255, 255)", "600", "48px"]);
+  expect(Number.parseFloat(raio), "botão redondo").toBeGreaterThanOrEqual(24);
 });
 
 /**
