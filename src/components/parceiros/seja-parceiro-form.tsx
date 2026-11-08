@@ -74,7 +74,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   const [enviado, setEnviado] = useState(false);
   const [pendente, iniciar] = useTransition();
 
-  // Volta do login/cadastro: recupera o que a pessoa já tinha digitado (nunca o documento). Depois da hidratação,
+  // Volta do login/cadastro: recupera o que a pessoa já tinha digitado (inclusive o CNPJ, E728). Depois da hidratação,
   // para o HTML do servidor e o do navegador começarem iguais.
   useEffect(() => {
     const t = setTimeout(() => {
@@ -82,7 +82,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         const r = sessionStorage.getItem(RASCUNHO);
         if (!r) return;
         const salvo = JSON.parse(r) as Partial<Campos>;
-        setC((x) => ({ ...x, ...salvo, documento: x.documento, aceite: false }));
+        // E728: o CNPJ volta como os outros campos (é o documento da empresa, só aceito CNPJ; fica só neste navegador e
+        // sai do armazenamento assim que a pessoa volta logada).
+        setC((x) => ({ ...x, ...salvo, documento: typeof salvo.documento === "string" && salvo.documento ? salvo.documento : x.documento, aceite: false }));
         if (estado.logado) sessionStorage.removeItem(RASCUNHO);
       } catch {
         /* sem armazenamento: segue em branco */
@@ -124,8 +126,8 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
 
   function irParaConta() {
     try {
-      const { documento: _doc, aceite: _a, ...resto } = c;
-      void _doc;
+      // E728: o CNPJ (conferido acima: só CNPJ chega aqui) vai junto no rascunho; só o aceite não é guardado.
+      const { aceite: _a, ...resto } = c;
       void _a;
       sessionStorage.setItem(RASCUNHO, JSON.stringify(resto));
     } catch {
