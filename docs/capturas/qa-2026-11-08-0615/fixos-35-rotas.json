@@ -1,0 +1,2446 @@
+[
+ {
+  "w": 390,
+  "r": "/",
+  "st": 200,
+  "imgs": 26,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda",
+  "st": 200,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Para quem procura moradia"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Pedido de moradia, prazos e o que você p"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/fale-com-a-viva",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Não envie CPF, documentos ou senhas por "
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/morador",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/morador",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "4"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/proprietarios",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/proprietarios",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Como ser avaliador credenciado"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Taxa de serviço dos parceiros"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/buscar",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "2 quartos"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "2 banheiros"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "68 m²"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "mobiliado"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Disponível a partir de 19/11/2026"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "st": 200,
+  "imgs": 4,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia/hc-ufu-umuarama",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "st": 200,
+  "imgs": 6,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia/ufu-santa-monica",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/como-funciona",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/comparar",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/comparar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Buscar imóveis"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Publicar pedido"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/conferir",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Imóveis mobiliados para estadias de 30 a"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Suporte:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "suporte@vivanomads.com.br"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/empresas",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Um lugar para morar, não um quarto de ho"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Para times em projeto, realocação ou per"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/excluir-conta",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/excluir-conta",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Enviar link de exclusão"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/favoritos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/favoritos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Plataforma"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/guia-fotos",
+  "st": 200,
+  "imgs": 6,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guia-fotos",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/guias",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Para todos"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-escolher-bairro-em-uberlandia",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "O mapa da busca mostra a região aproxima"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/o-que-e-a-caucao",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/o-que-e-a-caucao",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Para o proprietário"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-001",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)",
+   "Imóvel mobiliado de 2 quartos para pacientes e aco"
+  ],
+  "final": "/imoveis/ube-001",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Com pet · Home office · Família"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Exemplo ilustrativo"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Helena M. (exemplo)"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Na Viva há 1 ano e 8 meses"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Na Viva há 1 ano e 8 meses"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "E-mail confirmado"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Telefone verificado"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-005",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/imoveis/ube-005",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Até 4 pessoas · 2 quartos · 1 banheiro ·"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Com pet · Família · Executivo"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Exemplo ilustrativo"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Rafael T. (exemplo)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Rafael T. (exemplo)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Na Viva há 1 ano e 5 meses"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "st": 200,
+  "imgs": 11,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/para-proprietarios",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "st": 200,
+  "imgs": 21,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "30–180 dias"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "de estadia em imóveis mobiliados"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "R$ 0"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/ativar",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/ativar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Imóveis mobiliados para estadias de 30 a"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Suporte:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "suporte@vivanomads.com.br"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Escolhido pelo proprietário"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Emite nota fiscal"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "("
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "0"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": ")"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/fotografos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/fotografos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Taxa de serviço: 10% sobre o valor do se"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Quando o pagamento pela plataforma estiv"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/pedidos/novo",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "depois de publicar (e nunca antes da dat"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Bairros preferidos (até"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "3"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": ")"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/privacidade",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/privacidade",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "10"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Cookies"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Dados de cadastro (nome, e-mail, telefon"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Suboperadores"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": ", abaixo) — não armazenamos dados comple"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/proprietario/exemplo-1",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/proprietario/exemplo-1",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Arquiteta, moro em Uberlândia e cuido pe"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/seguranca",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/seguranca",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "“Vamos combinar por fora, no WhatsApp.”"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/termos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/termos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "2. Posição da plataforma (conectador)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "O Viva Nomads"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "não é locador, fiador, garantidor nem pa"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "de locação. Atua exclusivamente conectan"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/acesso-socios",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/acesso-socios",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/auth",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/pagina-que-nao-existe-qa",
+  "st": 404,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/pagina-que-nao-existe-qa",
+  "topo": [],
+  "fim": [],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 pagina-que-nao-existe-qa"
+  ],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/",
+  "st": 200,
+  "imgs": 26,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Santa Mônica, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anúncio de exemplo"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Centro, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Tibery, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Umuarama, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda",
+  "st": 200,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Documentos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Termos de uso"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Política de privacidade"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/fale-com-a-viva",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Falar com uma pessoa"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Não envie CPF, documentos ou senhas por "
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imprensa ou outro assunto:"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "suporte@vivanomads.com.br"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/morador",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/morador",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "4"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/proprietarios",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/proprietarios",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "7"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/buscar",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Imóvel mobiliado de 2 quartos para pacientes e aco",
+   "Casa 3 quartos para família em transição — Jardim ",
+   "Imóvel mobiliado para pós-graduação e pesquisadore"
+  ],
+  "final": "/buscar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 9.080 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Total por mês, tudo incluído"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "2 quartos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "2 banheiros"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "100 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "mobiliado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 6.680 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "3 quartos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "3 banheiros"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "110 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "1 quarto"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "1 banheiro"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "30 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Disponível a partir de 14/01/2027"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "A garantia é a Caução, combinada entre a"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Vejo o endereço completo antes de fechar"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "st": 200,
+  "imgs": 4,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia/hc-ufu-umuarama",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sim. Os imóveis do Viva Nomads em Uberlâ"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Quanto custa por mês perto de HC-UFU e U"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "st": 200,
+  "imgs": 6,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia/ufu-santa-monica",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sim. Os imóveis do Viva Nomads em Uberlâ"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Quanto custa por mês perto de UFU Santa "
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/como-funciona",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/comparar",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/comparar",
+  "topo": [
+   {
+    "fixo": "fale-com-a-viva-raiz",
+    "texto": "A plataforma conecta proprietários e mor"
+   }
+  ],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/conferir",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/conferir",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Todo documento gerado pela Viva Nomads t"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Código de conferência"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/empresas",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/excluir-conta",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/excluir-conta",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "até o encerramento — assim preservamos o"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Histórico de contratos:"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "se você já teve contratos, em vez de apa"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "removemos sua identidade"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "(nome, e-mail, telefone e foto) e encerr"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "sem identificação"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "pelo prazo exigido por lei."
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/favoritos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/favoritos",
+  "topo": [
+   {
+    "fixo": "fale-com-a-viva-raiz",
+    "texto": "A plataforma conecta proprietários e mor"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Favoritos ("
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "0"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": ")"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/guia-fotos",
+  "st": 200,
+  "imgs": 6,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guia-fotos",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Arrume o ambiente e tire objetos pessoai"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Luz natural: abra as cortinas, acenda as"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Câmera na altura do peito, do canto do c"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Quais informações e documentos o morador"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Para proprietários"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-escolher-bairro-em-uberlandia",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/o-que-e-a-caucao",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/o-que-e-a-caucao",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "st": 200,
+  "imgs": 15,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante"
+  ],
+  "final": "/imoveis/ube-001",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Centro, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anúncio de exemplo"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Tibery, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Umuarama, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Aparecida, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470 em 1 mês"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": [
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470 em 1 mês"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-005",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante"
+  ],
+  "final": "/imoveis/ube-005",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Santa Mônica, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anúncio de exemplo"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Centro, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Tibery, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Umuarama, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": [
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "st": 200,
+  "imgs": 11,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/para-proprietarios",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Pagamento mensal direto na sua conta."
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "st": 200,
+  "imgs": 21,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Só para a equipe falar com você sobre o "
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/ativar",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/ativar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Com a conta do e-mail do pedido, dá para"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Ativar pelo painel"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Taxa de serviço: 10% sobre o valor do se"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Quero ser avisado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Avisamos você quando houver um parceiro "
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Indique um profissional"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Conhece alguém bom que atende aí? Mande "
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/fotografos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/fotografos",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Quando o pagamento pela plataforma estiv"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/pedidos/novo",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Seu pedido chega aos proprietários com o"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Ao publicar, você entra com um código en"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "A Viva nunca pede PIX ou pagamento fora "
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/privacidade",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/privacidade",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/proprietario/exemplo-1",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Imóvel mobiliado para pós-graduação e pesquisadore"
+  ],
+  "final": "/proprietario/exemplo-1",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Resposta de"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Helena M. (exemplo)"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": ":"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Obrigada, Natália! Volte para o festival"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/seguranca",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/seguranca",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Para haver trilha em caso de disputa e p"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/termos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/termos",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/acesso-socios",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/acesso-socios",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/pagina-que-nao-existe-qa",
+  "st": 404,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/pagina-que-nao-existe-qa",
+  "topo": [],
+  "fim": [],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 pagina-que-nao-existe-qa"
+  ],
+  "topoReal": [],
+  "fimReal": []
+ }
+]
