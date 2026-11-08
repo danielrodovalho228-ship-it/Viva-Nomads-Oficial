@@ -97,3 +97,11 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Bloco 524 (t1462, PR #3367, run 42437908184): verde. Públicas com parâmetro na URL (polo, como funciona, guias, pedidos/novo, proprietário, parceiro, imóveis perto de).
 - Merge novo na main: #3362 (Renato, t150: faixa Comparar a 1280) já é a própria spec; sem spec nova.
 - Nenhum defeito novo; L-107 segue livre. Próximo: bloco 525 (grupo do 508).
+
+## Blocos 525 e 526
+
+- Bloco 525 (t1463, PR #3369 em draft, run 42439205377): verde. Admin com id na URL (chamado, contrato, pedido de parceiro, refazer duas etapas).
+- Bloco 526 (t1464, PR #3370 em draft, run 42439229945): verde. Compartilhadas sem id (conta/[secao], orçamentos/nova, pedidos-cidade, qualificar, parceiro, avaliação do parceiro, aviso de prova).
+- Main: #3361 (run 5057), #3362, #3363 e #3368 verdes no push. #3366 em andamento no fechamento; o run do #3367 foi cancelado por ser superado pelo seguinte (conclusão cancelled, não falha). Nenhum teste permanente quebrou.
+- Merges novos sem spec: nenhum (#3362 é spec; #3363 e #3368 são docs da QA).
+- Nenhum defeito novo; L-107 livre. Próximo: bloco 527 (grupo do 510).
