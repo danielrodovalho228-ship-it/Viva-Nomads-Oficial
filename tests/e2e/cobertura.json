@@ -878,7 +878,8 @@
         "t674-e255-enquadramento-reforma",
         "t673-varredura-bloco67",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/carteira": {
@@ -897,7 +898,8 @@
         "t631-e222b-renovar-aditivo",
         "t675-varredura-bloco68",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/comparar": {
@@ -1137,7 +1139,8 @@
         "t549-varredura-bloco39",
         "t684-varredura-bloco71",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/garantias": {
@@ -1675,7 +1678,8 @@
         "t302-varredura-logada-bloco6",
         "t675-varredura-bloco68",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -2275,7 +2279,8 @@
         "t613-varredura-bloco52",
         "t626-varredura-bloco60",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/propostas": {
@@ -2785,7 +2790,8 @@
         "t418-varredura-bloco35",
         "t684-varredura-bloco71",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/auth/intencao": {
@@ -2930,7 +2936,8 @@
         "t679-varredura-bloco70",
         "t1410-varredura-bloco488",
         "t1413-e665-modelos-respostas-rapidas",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
