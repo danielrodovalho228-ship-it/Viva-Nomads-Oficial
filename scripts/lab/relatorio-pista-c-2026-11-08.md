@@ -674,3 +674,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Verdes:** t1573 (#3572, E707, 2º run 42534278938) e bloco 605 (#3575, t1553, run 42534225342). Lab da main em `fe4d93dde`: run 42534532949 cancelado (substituído por run mais novo); veredito na próxima conferência.
 - **t1574 (#3576, E725): 1º run vermelho (42534229148) por defeito de spec.** O aviso "Estadia mínima de 30 dias." aparece como deveria; o que a spec negou por engano foi `total-junto-da-acao`, que é o **"Total por mês" (E528)**, fixo no cartão. O E725 tira só o total da estadia (`cartao-lateral-estadia`/`-conta`). Spec corrigida em commit novo (e, com 30 dias, o total da estadia aparece); rerun em andamento. Não é defeito de produto.
 - Sem achado novo (próximo livre: **L-110**). Faltam specs de E749, E750, E754, E756, E761, E762; bloco 606 (grupo do 589) é o próximo.
+
+## Cadeia das 23h35 — veredito da main e bloco 606
+
+- **Run 42534532949 (`fe4d93dde`): cancelado** pelo run seguinte (concurrency) — sem veredito. Dos 11 runs da rajada, **um falhou: 42534468214 (`815e9f24d`, E760)**, e a causa é **infraestrutura, não código nem spec**: `supabase start` falhou 3× com `failed to bind host port 0.0.0.0:54322/tcp: address already in use` (a rajada subiu vários runs ao mesmo tempo). Nenhum teste chegou a rodar. Item para o dono do workflow: a rajada de merges em sequência estoura as portas do runner; o `concurrency` cancela os runs, mas os que já subiram o Supabase colidem. Último run de push: `c65907055` (#3549, E746), run 42534555303, na fila.
+- **t1575 (#3581)**: run 42534634357 em andamento. **t1574 (#3576)**: corrigida, rerun em andamento.
+- **Bloco 605 (#3575): verde.** **Bloco 606 (#3582, t1554)**, 17ª volta do grupo do bloco 589 (avaliação pelos dois lados, avaliador, documento emitido): aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Sem achado (próximo livre: **L-110**).
+- Entraram também #3549 (E746) e #3550 (E747): specs a fazer, junto de E749, E750, E754, E756, E761 e E762.
