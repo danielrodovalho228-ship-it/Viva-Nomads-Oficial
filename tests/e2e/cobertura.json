@@ -2885,7 +2885,8 @@
         "t657-e235-link-avaliador",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1485-e717-avaliador-de-teste"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
