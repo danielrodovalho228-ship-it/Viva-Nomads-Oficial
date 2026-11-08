@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /*
   T1429 — E691 (#3253): o número e o hash da assinatura do laudo aparecem para o dono, no bloco do laudo do painel do imóvel
-  (/dashboard/imoveis/<id>/nivel): "Assinado pelo avaliador em dd/mm/aaaa · laudo <nº>" e o registro curto (8 primeiros …
+  (/dashboard/imoveis/<id>/nivel): o selo "Laudo assinado pelo avaliador" com nº, data e o hash curto (8 primeiros …
   8 últimos do hash). Caminho negativo: laudo SEM assinatura registrada não mostra a linha (nada inventado). 390 e 1280 px.
 */
 const senha = novaSenha();
@@ -72,16 +72,19 @@ test.describe("T1429 — E691: assinatura do laudo visível ao dono", () => {
       await comChave(d);
       await d.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await d.goto(`/dashboard/imoveis/${ids.imAss}/nivel`, { waitUntil: "domcontentloaded" });
-      const linha = d.getByTestId("laudo-assinatura");
-      await expect(linha).toBeVisible({ timeout: 30_000 });
-      await expect(linha).toContainText(/Assinado pelo avaliador em \d{2}\/\d{2}\/\d{4}/);
-      await expect(linha).toContainText(`laudo VIS-T1429-A-${sufixo}`);
-      await expect(linha).toContainText(`${HASH.slice(0, 8)}…${HASH.slice(-8)}`);
+      const selo = d.getByTestId("selo-assinatura");
+      await expect(selo).toBeVisible({ timeout: 30_000 });
+      await expect(selo).toHaveAttribute("data-quem", "dono");
+      await expect(selo).toContainText("Laudo assinado pelo avaliador");
+      await expect(d.getByTestId("selo-assinatura-numero")).toContainText(`VIS-T1429-A-${sufixo}`);
+      await expect(d.getByTestId("selo-assinatura-numero")).toContainText(/\d{2}\/\d{2}\/\d{4}/);
+      await expect(d.getByTestId("selo-assinatura-hash")).toHaveText(`${HASH.slice(0, 8)}…${HASH.slice(-8)}`);
+      await expect(d.getByLabel("Hash completo da assinatura")).toHaveValue(HASH);
       expect(await d.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
 
       await d.goto(`/dashboard/imoveis/${ids.imSem}/nivel`, { waitUntil: "domcontentloaded" });
       await expect(d.getByText(`VIS-T1429-S-${sufixo}`).first()).toBeVisible({ timeout: 30_000 });
-      await expect(d.getByTestId("laudo-assinatura")).toHaveCount(0);
+      await expect(d.getByTestId("selo-assinatura")).toHaveCount(0);
       await d.context().close();
     });
   }
