@@ -39,6 +39,16 @@ for (const arquivo of [MIG, APLICAR]) {
   });
 }
 
+test("O13 (QA): cada UPDATE de bloco e de pagamento leva guarda por linha (contrato do próprio bloco, ativo)", () => {
+  for (const arquivo of [MIG, APLICAR]) {
+    const sql = ler(arquivo);
+    for (const suf of ["c", "m", "s"]) {
+      assert.match(sql, new RegExp(`update public\\.contrato_blocos set [^;]*where id = c_bloco_${suf} and contrato_id = c_contrato_${suf}\\s+and exists \\(select 1 from public\\.contratos k where k\\.id = c_contrato_${suf} and k\\.status = 'ativo'\\);`));
+      assert.match(sql, new RegExp(`update public\\.pagamentos_bloco set [^;]*where bloco_id = c_bloco_${suf} and contrato_id = c_contrato_${suf} and observacao`));
+    }
+  }
+});
+
 test("0328 só mexe nas linhas de ids fixos a0327…, só com contrato ativo e dono de conta de teste", () => {
   const sql = ler(MIG);
   assert.match(sql, /join public\.profiles pr on pr\.id = p\.owner_id and pr\.is_teste/);

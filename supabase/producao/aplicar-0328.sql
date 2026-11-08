@@ -26,19 +26,22 @@ begin
   v_alvo := v_agora::date + case when v_agora::time >= time '09:30' then 1 else 0 end;
 
   -- Chegada: entrada em ALVO, 30 dias.
-  update public.contrato_blocos set inicio = v_alvo, fim = v_alvo + 29 where id = c_bloco_c;
+  update public.contrato_blocos set inicio = v_alvo, fim = v_alvo + 29 where id = c_bloco_c and contrato_id = c_contrato_c
+    and exists (select 1 from public.contratos k where k.id = c_contrato_c and k.status = 'ativo');
   update public.contratos set periodo = daterange(v_alvo, v_alvo + 30, '[)') where id = c_contrato_c and status = 'ativo';
   -- Meio: 60 dias de bloco; o meio (entrada + 30) é ALVO.
-  update public.contrato_blocos set inicio = v_alvo - 30, fim = v_alvo + 30 where id = c_bloco_m;
+  update public.contrato_blocos set inicio = v_alvo - 30, fim = v_alvo + 30 where id = c_bloco_m and contrato_id = c_contrato_m
+    and exists (select 1 from public.contratos k where k.id = c_contrato_m and k.status = 'ativo');
   update public.contratos set periodo = daterange(v_alvo - 30, v_alvo + 31, '[)') where id = c_contrato_m and status = 'ativo';
   -- Saída: o último dia do bloco é ALVO+7; a semana da saída (fim - 7) é ALVO.
-  update public.contrato_blocos set inicio = v_alvo - 22, fim = v_alvo + 7 where id = c_bloco_s;
+  update public.contrato_blocos set inicio = v_alvo - 22, fim = v_alvo + 7 where id = c_bloco_s and contrato_id = c_contrato_s
+    and exists (select 1 from public.contratos k where k.id = c_contrato_s and k.status = 'ativo');
   update public.contratos set periodo = daterange(v_alvo - 22, v_alvo + 8, '[)') where id = c_contrato_s and status = 'ativo';
 
   -- Data do 1º pagamento acompanha a entrada de cada bloco (um dia antes), como na 0327.
-  update public.pagamentos_bloco set data_pagamento = v_alvo - 1 where bloco_id = c_bloco_c and observacao = 'Massa de teste E689';
-  update public.pagamentos_bloco set data_pagamento = v_alvo - 31 where bloco_id = c_bloco_m and observacao = 'Massa de teste E689';
-  update public.pagamentos_bloco set data_pagamento = v_alvo - 23 where bloco_id = c_bloco_s and observacao = 'Massa de teste E689';
+  update public.pagamentos_bloco set data_pagamento = v_alvo - 1 where bloco_id = c_bloco_c and contrato_id = c_contrato_c and observacao = 'Massa de teste E689';
+  update public.pagamentos_bloco set data_pagamento = v_alvo - 31 where bloco_id = c_bloco_m and contrato_id = c_contrato_m and observacao = 'Massa de teste E689';
+  update public.pagamentos_bloco set data_pagamento = v_alvo - 23 where bloco_id = c_bloco_s and contrato_id = c_contrato_s and observacao = 'Massa de teste E689';
 end $$;
 
 insert into supabase_migrations.schema_migrations (version, name)
