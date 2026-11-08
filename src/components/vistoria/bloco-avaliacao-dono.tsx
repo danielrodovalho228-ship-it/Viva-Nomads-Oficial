@@ -13,7 +13,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
-import { faixaDeReferencia } from "@/lib/vistoria/escolha";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { sugeridosDoPedido } from "@/lib/vistoria/servidor";
 import {
   COLUNAS_PRECO,
@@ -59,7 +59,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? ""),
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -87,17 +87,37 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     proposta_em: string | null;
     proposta_aceita_em: string | null;
     teste: boolean;
-    avaliadores_credenciamento: { numero_credenciado: string } | null;
+    avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
-      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, parceiros(nome_publico)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
+      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
       if (erroDados) throw new Error(erroDados.message);
-      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; parceiros: { nome_publico: string | null } | null }[]).map((d) => [d.id, d]));
-      sugeridos = lista.map((a) => ({ id: a.id, numero: porId.get(a.id)?.numero_credenciado ?? "", nome: porId.get(a.id)?.parceiros?.nome_publico ?? "Avaliador" }));
+      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null } | null }[]).map((d) => [d.id, d]));
+      // E682: reputação = conduta PUBLICADA (a função pública conta só as avaliações já publicadas, às cegas).
+      const { data: publicos, error: erroPublicos } = await admin.rpc("avaliadores_publicos");
+      if (erroPublicos) throw new Error(erroPublicos.message);
+      const conduta = new Map(((publicos ?? []) as { numero_credenciado: string; nota_conduta: number | string | null; avaliacoes_feitas: number }[]).map((x) => [x.numero_credenciado, x]));
+      sugeridos = lista.map((a) => {
+        const d = porId.get(a.id);
+        const pub = conduta.get(d?.numero_credenciado ?? "");
+        const nota = pub?.nota_conduta != null ? Number(pub.nota_conduta) : null;
+        return {
+          id: a.id,
+          numero: d?.numero_credenciado ?? "",
+          nome: d?.parceiros?.nome_publico ?? "Avaliador",
+          termos: linhaDeTermos({
+            valor: d?.preco_proprio != null ? Number(d.preco_proprio) : null,
+            prazoEntregaDias: d?.prazo_entrega_dias ?? null,
+            prazoRespostaHoras: d?.prazo_resposta_horas ?? null,
+            notaConduta: nota,
+            avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
+          }),
+        };
+      });
     } catch {
       sugeridos = null;
     }
@@ -170,6 +190,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                           <Link href={hrefAvaliador(a.numero)} className="underline">
                             {a.numero}
                           </Link>
+                          <span className="block text-xs text-muted" data-testid="avaliacao-sugerido-termos">{a.termos}</span>
                         </span>
                         <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
                           <input type="hidden" name="pedidoId" value={atual.id} />
@@ -183,13 +204,14 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </div>
             )}
             {atual.status === "designado" && !atual.proposta_em && (
-              <p className="text-muted" data-testid="avaliacao-aguarda-proposta">O avaliador tem 24 horas para responder com o valor e o prazo dele. Sem resposta, você escolhe outro.</p>
+              <p className="text-muted" data-testid="avaliacao-aguarda-proposta">O avaliador tem {atual.avaliadores_credenciamento?.prazo_resposta_horas ?? PRAZO_RESPOSTA_PADRAO_HORAS} horas para responder com o valor e o prazo dele. Sem resposta, você escolhe outro.</p>
             )}
             {atual.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-proposta">
                 <p className="font-semibold text-ink">
                   Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
                 </p>
+                <p className="mt-1 text-muted" data-testid="avaliacao-proposta-prazo">Aceite em até {PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta; passado o prazo, você escolhe outro avaliador.</p>
                 {propostaForaDaFaixa && faixa && (
                   <p className="mt-1 text-muted" data-testid="avaliacao-proposta-fora">Fora da faixa de referência da cidade ({brl(faixa.min)} a {brl(faixa.max)}). Você decide.</p>
                 )}

@@ -8,6 +8,7 @@ import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
+import { lerFotoAvatar, gravarFotoAvatar } from "@/lib/foto-avatar-cache";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
 import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
@@ -83,6 +84,8 @@ const TENANT_ONLY = [
   "/dashboard/comparar",
   "/dashboard/buscas",
   "/dashboard/locacoes",
+  "/dashboard/pedidos",
+  "/dashboard/candidaturas",
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -117,13 +120,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
+    // E698: a última foto conhecida desta conta já na 1ª pintura (a leitura do servidor confirma ou limpa em seguida).
+    const guardada = lerFotoAvatar(displayUser?.id);
+    if (guardada) void Promise.resolve().then(() => alive && setMyPhoto(guardada));
     getMyAvatarUrl()
       .then((r) => {
         if (alive) setMyPhoto(r.url);
+        if (alive && displayUser?.id) gravarFotoAvatar(displayUser.id, r.url);
       })
       .catch(() => {});
     // CONTA-A: a foto nova (ou removida) aparece na hora no selo do cabeçalho.
-    const aoMudar = (e: Event) => setMyPhoto((e as CustomEvent<{ url: string | null }>).detail?.url ?? null);
+    const aoMudar = (e: Event) => {
+      const url = (e as CustomEvent<{ url: string | null }>).detail?.url ?? null;
+      setMyPhoto(url);
+      gravarFotoAvatar(displayUser?.id, url);
+    };
     window.addEventListener(FOTO_ATUALIZADA, aoMudar);
     return () => {
       alive = false;

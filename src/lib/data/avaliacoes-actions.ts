@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { validarAvaliacao } from "@/lib/avaliacoes";
+import { validarAvaliacaoCompleta, type ParAvaliacao } from "@/lib/avaliacoes-criterios";
 import { erroBancoPT } from "@/lib/erros-banco";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string; moderacao?: boolean };
@@ -14,6 +15,13 @@ export interface AvaliacaoInput {
   papelAutor: "proprietario" | "inquilino";
   rating: number;
   comentario?: string;
+  /** E679: nota de 1 a 5 em cada critério FIXO do par (chaves em src/lib/avaliacoes-criterios.ts). */
+  criterios: Record<string, number>;
+  etiquetas?: string[];
+  recomendaria: boolean | null;
+  /** Nota privada para a outra parte e nota privada para a Viva (até 500 caracteres; nunca públicas). */
+  notaPrivadaParte?: string;
+  notaPrivadaViva?: string;
 }
 
 /**
@@ -27,6 +35,18 @@ export interface AvaliacaoInput {
 export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   const err = validarAvaliacao(input.rating, input.comentario);
   if (err) return { ok: false, error: err };
+  const par: ParAvaliacao = input.papelAutor === "inquilino" ? "morador_avalia_dono" : "dono_avalia_morador";
+  const v = validarAvaliacaoCompleta(par, {
+    notaGeral: input.rating,
+    criterios: input.criterios,
+    etiquetas: input.etiquetas ?? [],
+    recomendaria: input.recomendaria,
+    comentarioPublico: input.comentario,
+  });
+  if (!v.ok) return { ok: false, error: v.erro };
+  for (const t of [input.notaPrivadaParte, input.notaPrivadaViva]) {
+    if ((t ?? "").trim().length > 500) return { ok: false, error: "A nota privada pode ter até 500 caracteres." };
+  }
 
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
@@ -45,7 +65,12 @@ export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
       alvo_id: input.alvoId,
       papel_autor: input.papelAutor,
       nota_geral: Math.round(input.rating),
-      comentario_publico: input.comentario?.trim() || null,
+      comentario_publico: v.comentarioPublico,
+      notas_categorias: v.criterios,
+      etiquetas: v.etiquetas,
+      recomendaria: v.recomendaria,
+      nota_privada_parte: input.notaPrivadaParte?.trim() || null,
+      nota_privada_viva: input.notaPrivadaViva?.trim() || null,
       status: "enviada",
     })
     .select("status")

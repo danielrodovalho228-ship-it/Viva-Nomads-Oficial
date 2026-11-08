@@ -25,7 +25,7 @@ import {
   X,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
@@ -77,6 +77,7 @@ import { NivelImovel } from "@/components/niveis/nivel-imovel";
 import { AvaliacaoFicha } from "@/components/niveis/avaliacao-ficha";
 import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
+import { CaminhoReserva } from "@/components/property/caminho-reserva";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { DenunciarAnuncio } from "@/components/anuncio/denunciar-anuncio";
@@ -461,11 +462,21 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
-      {exemplo && (
-        <p data-testid="aviso-demo" className="rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-          {EXEMPLO_AVISO_DEMO}
-        </p>
-      )}
+      {exemplo ? (
+        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+          <p data-testid="aviso-demo" className="font-medium text-forest">
+            {EXEMPLO_AVISO_DEMO}
+          </p>
+          <p className="mt-1">
+            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
+            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
+          </p>
+          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
+            Ver imóveis reais
+          </ButtonLink>
+        </div>
+      ) : (
+        <>
       {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
@@ -532,6 +543,8 @@ export function PropertyDetail({
           </>
         )}
       </Button>
+        </>
+      )}
       <a
         data-cta={marcaCta("secondary")}
         href={contatoViva.href}
@@ -573,11 +586,18 @@ export function PropertyDetail({
         <h3 className="font-title text-lg font-semibold text-ink">
           Tirar uma dúvida
         </h3>
+        {/* E694: no exemplo o aviso vem ANTES da caixa de texto, e a caixa e o "Enviar" ficam desligados. */}
+        {exemplo && (
+          <p data-testid="mensagem-exemplo-aviso" className="mt-2 rounded-lg bg-sage-100 px-3 py-2 text-xs font-medium text-forest">
+            Este anúncio é de exemplo: nenhuma mensagem é enviada. A caixa abaixo só mostra como é.
+          </p>
+        )}
         <p className="mt-1 text-sm text-muted">
           Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma.
         </p>
         <textarea
           rows={4}
+          disabled={exemplo}
           autoFocus
           value={composeText}
           onChange={(e) => setComposeText(e.target.value)}
@@ -591,12 +611,12 @@ export function PropertyDetail({
         {leadErro && <p className="mt-2 text-sm text-red-600">{leadErro}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={() => setComposeKind(null)} disabled={pending !== null}>
-            Cancelar
+            {exemplo ? "Entendi" : "Cancelar"}
           </Button>
           <Button
             variant="primary"
             size="sm"
-            disabled={pending !== null || composeText.trim().length < 3}
+            disabled={exemplo || pending !== null || composeText.trim().length < 3}
             onClick={async () => {
               const ok = await handleLead(composeKind, composeText);
               if (ok) setComposeKind(null);
@@ -653,6 +673,7 @@ export function PropertyDetail({
           </div>
         ) : (
           <>
+            {!exemplo && (
             <div className="mb-3 pr-12" data-testid="candidatura-progresso">
               <div className="flex justify-between text-xs font-medium text-muted">
                 {ETAPAS_CANDIDATURA.map((e, i) => (
@@ -663,10 +684,17 @@ export function PropertyDetail({
                 <div className="h-full bg-forest transition-all" style={{ width: `${progressoEtapa(etapa)}%` }} />
               </div>
             </div>
+            )}
             <h3 id="solicitacao-titulo" className="font-title text-lg font-semibold text-ink">
               {etapa === "revisar" ? "Revisar solicitação" : etapa === "mensagem" ? "Mensagem ao proprietário" : "Confirmar candidatura"}
             </h3>
             <p className="mt-1 text-sm text-muted">{property.title}</p>
+            {/* E694: o caráter de exemplo se declara AQUI, antes de qualquer campo — nunca só no fim. */}
+            {exemplo && (
+              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+              </p>
+            )}
             {etapa === "mensagem" ? (
               <>
               {/* 61-B: a mensagem do dono para quem vai pedir, lida antes da apresentação (mascarada ao salvar e ao ler). */}
@@ -743,11 +771,6 @@ export function PropertyDetail({
                 {etapa === "confirmar" && <p className="mt-3 text-xs text-muted">{TERMOS_CANDIDATURA} <Link href="/termos" className="underline">Ler os termos</Link></p>}
               </>
             )}
-            {exemplo && (
-              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
-              </p>
-            )}
             {(resumo.erro ?? solicitacaoErro) && (
               <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
                 {resumo.erro ?? solicitacaoErro}
@@ -764,9 +787,11 @@ export function PropertyDetail({
                 {etapa === "revisar" ? (exemplo ? "Entendi" : "Cancelar") : "Voltar"}
               </Button>
               {etapa !== "confirmar" ? (
+                !exemplo && (
                 <Button variant="primary" size="sm" disabled={!!resumo.erro} onClick={() => setEtapa(proximaEtapa(etapa))}>
                   Continuar
                 </Button>
+                )
               ) : (
                 !exemplo && (
                   <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
@@ -808,7 +833,7 @@ export function PropertyDetail({
     // tiverem o cômodo marcado — o dado ainda não existe, então o bloco não aparece) → comodidades → regras →
     // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
     // (computador) traz o valor e o "Solicitar".
-    <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 lg:pb-8" data-testid="imovel-largura-total">
+    <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 md:pr-(--faixa-flutuante) lg:px-(--faixa-flutuante) lg:pb-8" data-testid="imovel-largura-total">
       {modoTeste && !aguardandoPerfil && (
         <p
           role="note"
@@ -989,6 +1014,7 @@ export function PropertyDetail({
                 {avisoDataBusca}
               </p>
             )}
+            <CaminhoReserva />
             <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} onDisponivelDesde={setDisponivelDesde} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}

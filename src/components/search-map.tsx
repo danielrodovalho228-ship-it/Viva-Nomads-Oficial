@@ -12,8 +12,9 @@ import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { usePreviaNoHover } from "@/components/busca/previa-hover";
-import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
-import { afastarPins } from "@/lib/busca/pins-sem-sobreposicao";
+import { ATRIBUICAO_MAPA, TILES_CARTO, TILES_CARTO_SEM_ROTULOS, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
+import { afastarPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
+import { CIDADES_ROTULADAS, ZOOM_MAXIMO_DO_ROTULO, caixaDoRotulo, obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -90,15 +91,37 @@ interface SearchMapProps {
  * E525 (D11): afasta os pins que se cobrem (cada um vai à posição livre mais próxima). Por MARGEM, não por transform:
  * o pin já usa o translate do Tailwind (Leaflet) e o transform do próprio marcador (Mapbox).
  */
-function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLElement }[], quadro: { w: number; h: number }) {
+function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLElement }[], quadro: { w: number; h: number }, obstaculos: Obstaculo[] = []) {
   const desloc = afastarPins(
     itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
-    quadro
+    quadro,
+    obstaculos
   );
   for (const { id, el } of itens) {
     const { dx, dy } = desloc.get(id) ?? { dx: 0, dy: 0 };
     el.style.marginLeft = `${dx}px`;
     el.style.marginTop = `${dy}px`;
+  }
+}
+
+/**
+ * E704: os nomes de cidade que o Mapbox desenha (camadas "settlement-*-label" do estilo) viram obstáculos fixos do
+ * afastamento de pinos — o pin de preço não cobre o nome da cidade. A posição vem do próprio mapa
+ * (`queryRenderedFeatures`), nunca de um palpite; a largura do texto é estimada pelo tamanho do nome. Sem camada ou com
+ * erro, nenhum obstáculo (o comportamento de antes).
+ */
+function rotulosDeCidade(map: mapboxgl.Map): Obstaculo[] {
+  try {
+    const camadas = ["settlement-major-label", "settlement-minor-label"].filter((id) => map.getLayer(id));
+    if (camadas.length === 0) return [];
+    return map.queryRenderedFeatures({ layers: camadas }).flatMap((f) => {
+      if (f.geometry.type !== "Point") return [];
+      const pt = map.project(f.geometry.coordinates as [number, number]);
+      const nome = String(f.properties?.name_pt ?? f.properties?.name ?? "");
+      return [{ x: pt.x, y: pt.y, w: Math.max(80, nome.length * 10), h: 22 }];
+    });
+  } catch {
+    return [];
   }
 }
 
@@ -244,13 +267,17 @@ function SearchMapbox({
           const pt = map.project(marker.getLngLat());
           return { id, x: pt.x, y: pt.y, el };
         }),
-        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
+        rotulosDeCidade(map)
       );
     reorganizar();
     // E525: também ao ganhar tamanho (no celular o mapa nasce escondido e os pins mediam 0 × 0).
+    // E704: e quando o mapa termina de desenhar (é aí que os nomes de cidade existem para serem lidos).
     map.on("moveend resize", reorganizar);
+    map.once("idle", reorganizar);
     return () => {
       map.off("moveend resize", reorganizar);
+      map.off("idle", reorganizar);
     };
     // O enquadramento (fitBounds) fica num efeito próprio keyed em [sig, focusKey]
     // para um único ajuste de câmera — evita animações concorrentes quando lista
@@ -433,7 +460,10 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   const onSelectRef = useRef(onSelect);
   const selRef = useRef(selectedId);
   const focusRef = useRef(focus);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  // E698: o quadro do mapa nasce cinza até chegar o 1º tile; o aviso honesto cobre esse intervalo (e some sozinho).
+  const [quadro, setQuadro] = useState<HTMLDivElement | null>(null);
+  const [tilesProntos, setTilesProntos] = useState(!TILES_CARTO);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLElement }>>(new Map());
   const reorganizarRef = useRef<(() => void) | null>(null);
@@ -477,11 +507,33 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
     L.control.zoom({ position: "topright" }).addTo(map);
-    if (TILES_CARTO) {
-      L.tileLayer(TILES_CARTO, {
+    if (TILES_CARTO && TILES_CARTO_SEM_ROTULOS) {
+      const camada = L.tileLayer(TILES_CARTO_SEM_ROTULOS, {
         maxZoom: 19,
         attribution: ATRIBUICAO_MAPA,
-      }).addTo(map);
+        // E698: pede os tiles já durante o arrasto/zoom e guarda uma margem — a base chega antes de os pinos parecerem soltos.
+        updateWhenIdle: false,
+        keepBuffer: 3,
+      });
+      camada.once("load", () => setTilesProntos(true));
+      camada.addTo(map);
+      // E704: tiles sem rótulos; o nome da cidade é desenhado aqui, com o tamanho que o afastamento de pinos respeita.
+      const rotulos = CIDADES_ROTULADAS.map((c) => {
+        const { w, h } = caixaDoRotulo(c.nome);
+        return L.marker([c.lat, c.lng], {
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -1000,
+          icon: L.divIcon({
+            className: "",
+            iconSize: [w, h],
+            html: `<div data-testid="rotulo-cidade-mapa" class="pointer-events-none flex items-center justify-center text-sm font-semibold text-muted" style="width:${w}px;height:${h}px;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff">${c.nome}</div>`,
+          }),
+        }).addTo(map);
+      });
+      const mostrarRotulos = () => rotulos.forEach((m) => m.getElement()?.style.setProperty("display", map.getZoom() > ZOOM_MAXIMO_DO_ROTULO ? "none" : ""));
+      mostrarRotulos();
+      map.on("zoomend", mostrarRotulos);
     } else {
       avisarMapaSemChave();
     }
@@ -503,7 +555,10 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     });
     ro.observe(containerRef.current);
     const markers = markersRef.current;
+    // Rede lenta ou tiles que não chegam: o aviso não fica para sempre (o erro de tile é tratado à parte, E419).
+    const limite = window.setTimeout(() => setTilesProntos(true), 10_000);
     return () => {
+      window.clearTimeout(limite);
       ro.disconnect();
       map.remove();
       mapRef.current = null;
@@ -546,7 +601,9 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
           const pt = map.latLngToContainerPoint(marker.getLatLng());
           return { id, x: pt.x, y: pt.y, el };
         }),
-        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
+        // E704: o nome da cidade vem no tile; o ponto dela é um obstáculo fixo (o pino de preço não o cobre).
+        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }, map.getZoom())
       );
     reorganizar();
     reorganizarRef.current = reorganizar;
@@ -640,8 +697,27 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
 
   return (
     <>
-      <div ref={containerRef} data-testid="mapa-busca" data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"} className={cn("z-0 overflow-hidden bg-surface-2", className)} />
+      <div
+        ref={(el) => {
+          containerRef.current = el;
+          setQuadro(el);
+        }}
+        data-testid="mapa-busca"
+        data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
+        data-mapa-tiles={tilesProntos ? "pronto" : "carregando"}
+        className={cn("z-0 overflow-hidden bg-surface-2", className)}
+      />
+      {!tilesProntos && quadro && createPortal(<AvisoMapaCarregando />, quadro)}
       {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={fechar} />, popupEl)}
     </>
+  );
+}
+
+/** E698: aviso discreto sobre o quadro do mapa enquanto a base (ruas) ainda não chegou — o pino sozinho num fundo cinza parecia quebrado. */
+function AvisoMapaCarregando() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[450] grid place-items-center bg-surface-2/60" data-testid="mapa-carregando" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
   );
 }

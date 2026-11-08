@@ -75,7 +75,7 @@ import type { Property, Proximity } from "@/lib/types";
 import { cn, dataBR, hojeBR } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store";
 import { isEligible } from "@/lib/qualification";
-import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
+import { DECLARACOES_VAZIAS, QUALIDADE_INICIAL, declaracoesDoImovelOk, declaracoesDoRascunho, declaracoesRespondidas, elegibilidadeDoCadastro, type DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
 import { draftKey, DRAFT_KEY_LEGADO } from "@/lib/local-keys";
 import { registrarEvento, registrarEventoUmaVez } from "@/lib/eventos/registrar";
 import { TERMO_IA_VERSAO, camposDaIa, precisaAceitarTermo } from "@/lib/anuncio/termo-ia";
@@ -113,6 +113,7 @@ import type { ItemProntidao } from "@/lib/anuncio/prontidao";
 import { MENSAGEM_FALHA_IA, motivoDoStatusFotos, type MotivoFalhaIa } from "@/lib/ai/falha-ia";
 import { AntesDePublicar, AtalhosCadastro, EtapaOndeFica } from "./etapa-onde-fica";
 import { MatriculaNoInicio } from "./matricula-no-inicio";
+import { TravasDePublicacao } from "./travas-de-publicacao";
 import { camposDaMatriculaNoInicio, linhaDocumentoDoInicio, resumoDoPreenchimento } from "@/lib/documento/matricula-no-inicio";
 import { buscarCep, formatarCep, type OpcaoEndereco, type ResultadoCep } from "@/lib/cep/buscar";
 import { aplicarResultadoCep, type CampoEndereco } from "@/lib/cep/aplicar";
@@ -447,7 +448,7 @@ export default function NewPropertyPage() {
         selo: false,
         video: false,
         // Prompt 22: a qualificação é item da MESMA lista, desde o passo 1 (no editor de anúncio publicado não se aplica).
-        qualificacaoOk: editingId ? undefined : qualificado,
+        qualificacaoOk: editingId ? undefined : declaracoesDoImovelOk(elegibilidade),
         // 61-B / FILTROS-1: tipo de entrada e velocidade da internet só se exigem do anúncio NOVO (o draft_data decide).
         tipoEntradaOk: editingId ? undefined : false,
         internetOk: editingId ? undefined : false,
@@ -1208,7 +1209,17 @@ export default function NewPropertyPage() {
     subleaseDoc: subleaseDoc.filter((p) => p.url && !p.url.startsWith("blob:")),
     subleaseDocTipo,
   });
+  // E700: o salvamento pendente de uma EDIÇÃO real (aguardando os 2 s do debounce). Quem sai da página nesse intervalo
+  // não perde a mudança: a saída grava o que estava pendente (antes, a limpeza do efeito cancelava e a declaração sumia).
+  const gravacaoPendenteRef = useRef<(() => Parameters<typeof saveDraftData>[0]) | null>(null);
+  useEffect(() => () => {
+    const montar = gravacaoPendenteRef.current;
+    if (!montar) return;
+    gravacaoPendenteRef.current = null;
+    void saveDraftData(montar()).catch(() => {});
+  }, []);
   useEffect(() => {
+    gravacaoPendenteRef.current = null; // a execução anterior vale só até esta (o novo conteúdo a substitui)
     if (approved !== true || editId) return;
     // E180: o anúncio novo (vazio) não apaga a cópia local antes de a entrada ser verificada, nem enquanto a retomada
     // dela está oferecida.
@@ -1231,7 +1242,22 @@ export default function NewPropertyPage() {
     let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, base: baseConteudoRef.current, conteudo });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (decisao === "edicao") setSaveStatus("saving");
+    const montarGravacao = () => ({
+      id: draftIdRef.current,
+      novo: !draftIdRef.current && comecouOutroRef.current,
+      title,
+      city,
+      monthlyPrice: Number(monthlyPrice) || 0,
+      neighborhood,
+      bedrooms: Number(bedrooms) || 0,
+      bathrooms: Number(bathrooms) || 0,
+      areaM2: Number(areaM2) || 0,
+      description,
+      data: JSON.parse(draftJson),
+    });
+    gravacaoPendenteRef.current = decisao === "edicao" ? montarGravacao : null;
     const t = setTimeout(async () => {
+      gravacaoPendenteRef.current = null;
       if (!on) return;
       if (aguardandoBaseRef.current) {
         aguardandoBaseRef.current = false;
@@ -1247,19 +1273,7 @@ export default function NewPropertyPage() {
       // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
       let res: Awaited<ReturnType<typeof saveDraftData>>;
       try {
-        res = await saveDraftData({
-          id: draftIdRef.current,
-          novo: !draftIdRef.current && comecouOutroRef.current,
-          title,
-          city,
-          monthlyPrice: Number(monthlyPrice) || 0,
-          neighborhood,
-          bedrooms: Number(bedrooms) || 0,
-          bathrooms: Number(bathrooms) || 0,
-          areaM2: Number(areaM2) || 0,
-          description,
-          data: JSON.parse(draftJson),
-        });
+        res = await saveDraftData(montarGravacao());
       } catch {
         if (on) {
           setSaveErro(null);
@@ -1826,10 +1840,12 @@ export default function NewPropertyPage() {
     return (
       <Qualificacao
         aviso={avisoRascunho}
+        travas={<TravasDePublicacao documento={docEstado} />}
         tela={telaQual}
         respostas={qualConf.respostas}
         provas={provasDaQualificacao}
         confirmados={conf.marcados}
+        progressoRascunho={prontidao.pct}
         onResponder={responderQualificacao}
         onTela={(t) => {
           setTelaQual(t);
@@ -2064,6 +2080,7 @@ export default function NewPropertyPage() {
           <div className="mt-6">
             {step === ETAPA.tipo && (
               <div className="space-y-6">
+                <TravasDePublicacao documento={docEstado} />
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
                 {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} onComecePelaMatricula={() => setMatriculaInicioAberta(true)} />}
                 {matriculaInicioAberta && (

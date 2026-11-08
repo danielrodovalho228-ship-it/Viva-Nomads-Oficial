@@ -5,10 +5,11 @@ import { SITE_URL } from "@/lib/site";
 import { linkedinAtivo } from "@/lib/linkedin/chave";
 import { configLinkedin, segredoLinkedin } from "@/lib/linkedin/servidor";
 import { COOKIE_FLUXO, ESCOPO, VIDA_COOKIE_SEG, assinarCookie, desafioPkce, novoSegredoDoFluxo } from "@/lib/linkedin/regras";
+import { ROTA_CONTA_LINKEDIN } from "@/lib/linkedin/rotas";
 
 export const dynamic = "force-dynamic";
 
-const CONTA = "/dashboard/conta/privacidade";
+const CONTA = ROTA_CONTA_LINKEDIN;
 
 /**
  * 63-B — começa o "Conectar LinkedIn" (não é login): exige sessão Viva, 5 tentativas por hora por conta, gera state, nonce

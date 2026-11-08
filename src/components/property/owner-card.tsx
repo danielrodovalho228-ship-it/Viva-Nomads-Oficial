@@ -73,7 +73,6 @@ export function OwnerCard({
   taxaManutencao?: { taxa: number; resolvidos: number } | null;
 }) {
   const exemplo = isExemplo(property);
-  const [avisoDemo, setAvisoDemo] = useState(false);
   // E427: a página é estática (o HTML só leva o nome abreviado). Quem tem o aceite com este dono recebe o nome COMPLETO do
   // servidor depois de abrir — o mesmo de "Quem recebe" e de /proprietario/[id]; os demais ficam com o abreviado.
   const donoId = proprietario?.id ?? property.ownerId;
@@ -141,7 +140,7 @@ export function OwnerCard({
   }
   if (!d) return null;
 
-  const podeMensagem = exemplo || !!onMensagem;
+  const podeMensagem = !exemplo && !!onMensagem;
   const nomeExibido = nomeAceite ?? d.nome;
 
   return (
@@ -237,7 +236,7 @@ export function OwnerCard({
               {podeMensagem && (
                 <button
                   type="button"
-                  onClick={exemplo ? () => setAvisoDemo(true) : onMensagem}
+                  onClick={onMensagem}
                   className={buttonClasses({ variant: "secondary", size: "md", className: "w-full" })}
                 >
                   <MessageSquare className="h-4 w-4" aria-hidden /> Enviar mensagem
@@ -245,9 +244,9 @@ export function OwnerCard({
               )}
             </div>
           )}
-          {avisoDemo && (
+          {exemplo && (
             <p role="status" data-testid="mensagem-demo" className="mt-3 rounded-xl bg-sage-100 p-3 text-sm text-ink">
-              Este é um anúncio de demonstração: nenhuma mensagem é enviada. Nos anúncios reais, a conversa acontece
+              Este é um anúncio de exemplo: aqui não há botão de mensagem. Nos anúncios reais, a conversa acontece
               pelo chat da Viva, com o contato protegido até o aceite.
             </p>
           )}
