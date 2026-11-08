@@ -25,11 +25,11 @@ export function secoesDoImovel(p: { avaliacoes: number; temDono: boolean }): Sec
 
 const MESES = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."];
 
-/** "Disponível agora" / "Disponível a partir de 12/11" — `hoje` em AAAA-MM-DD. */
+/** "Disponível agora" / "Disponível a partir de 12/11/2026" (E702: o ano sempre) — `hoje` em AAAA-MM-DD. */
 export function statusDisponibilidade(availableFrom: string | undefined, hoje: string): string {
   const de = availableFrom?.slice(0, 10);
   if (!de || !/^\d{4}-\d{2}-\d{2}$/.test(de) || de <= hoje) return "Disponível agora";
-  return `Disponível a partir de ${de.slice(8, 10)}/${de.slice(5, 7)}`;
+  return `Disponível a partir de ${de.slice(8, 10)}/${de.slice(5, 7)}/${de.slice(0, 4)}`;
 }
 
 /** Código curto e estável do anúncio, para citar no atendimento ("Código VN-3F9A2C"). */

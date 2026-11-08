@@ -1,6 +1,7 @@
 import { Home, Search, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { corAvatar, rostoDoAvatar } from "@/lib/avatar";
+import { FotoDoAvatar } from "@/components/ui/foto-do-avatar";
 
 /** Modo do avatar — espelha o "mundo" ativo (proprietário/inquilino). */
 export type AvatarMode = "owner" | "tenant";
@@ -49,29 +50,23 @@ export function Avatar({
   const BadgeIcon = m?.icon;
   const badge = Math.round(size * 0.44);
 
-  const face = photoUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element -- avatar pequeno, tamanho fixo, URL assinada/rota própria
-    <img
-      src={photoUrl}
-      alt=""
-      className={cn(
-        "h-full w-full rounded-full object-cover transition-[box-shadow] duration-300",
-        m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring),
-        className
-      )}
-    />
-  ) : (
-    <span
-      className={cn(
-        "inline-grid h-full w-full place-items-center rounded-full font-title font-semibold text-white transition-[box-shadow] duration-300",
-        m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring),
-        className
-      )}
-      style={{ fontSize: size * 0.4, backgroundColor: rosto.tipo === "silhueta" ? "var(--color-forest)" : corAvatar(name) }}
-      data-rosto={rosto.tipo}
-      aria-hidden
-    >
-      {rosto.tipo === "silhueta" ? <UserRound className="h-3/5 w-3/5" strokeWidth={1.75} /> : rosto.texto}
+  // E698: as iniciais (ou a silhueta) são SEMPRE a base; a foto entra por cima, com fade, quando carregar.
+  const anel = m && cn("ring-2 ring-offset-2 ring-offset-forest", m.ring);
+  const face = (
+    <span className="relative inline-block h-full w-full">
+      <span
+        className={cn(
+          "inline-grid h-full w-full place-items-center rounded-full font-title font-semibold text-white transition-[box-shadow] duration-300",
+          anel,
+          className
+        )}
+        style={{ fontSize: size * 0.4, backgroundColor: rosto.tipo === "silhueta" ? "var(--color-forest)" : corAvatar(name) }}
+        data-rosto={rosto.tipo}
+        aria-hidden
+      >
+        {rosto.tipo === "silhueta" ? <UserRound className="h-3/5 w-3/5" strokeWidth={1.75} /> : rosto.texto}
+      </span>
+      {photoUrl && <FotoDoAvatar key={photoUrl} src={photoUrl} className={cn(anel, className)} />}
     </span>
   );
 

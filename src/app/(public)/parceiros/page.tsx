@@ -3,7 +3,6 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { ButtonLink } from "@/components/ui/button";
@@ -81,9 +80,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         titulo="Seja parceiro da Viva Nomads"
         subtitulo={<p>Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma e identidade revelada depois do aceite.</p>}
       >
-        <ButtonLink href="#quero-ser-parceiro" variant="inverse" size="lg" data-testid="seja-parceiro-topo">
-          Seja parceiro <ArrowRight className="h-4 w-4" />
-        </ButtonLink>
+        {/* E711: o "Seja parceiro" que ficava aqui levava ao mesmo destino da porta "Quero ser parceiro" logo acima — saiu. */}
         <ButtonLink href="#tipos" variant="inverseSecondary" size="lg">
           Ver tipos de parceria
         </ButtonLink>

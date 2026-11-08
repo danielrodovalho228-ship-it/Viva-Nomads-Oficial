@@ -45,24 +45,10 @@ export default function ForLandlordsPage() {
         }
         subtitulo={
           <>
-            <p>
+            <p className="max-sm:text-base">
               Locação mobiliada de média duração (30 a 180 dias), com contrato formal e a
               negociação registrada na plataforma. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
               condomínio e IPTU que podem ser transferidos ao morador conforme o contrato.
-            </p>
-            <p className="mt-4 text-base text-white/90">
-              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}). Plano Gestor: {GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
-              {PRECOS_VISIVEL ? (
-                <>
-                  Sem mensalidade —{" "}
-                  <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
-                    ver os preços
-                  </Link>
-                  .
-                </>
-              ) : (
-                "Sem mensalidade."
-              )}
             </p>
           </>
         }
@@ -77,6 +63,21 @@ export default function ForLandlordsPage() {
           Planos e taxas
         </ButtonLink>
         )}
+        {/* C7: a frase da taxa (texto igual) desce para depois do botão — no celular a ação principal fica na dobra. */}
+        <p className="w-full max-w-2xl text-base text-white/90" data-testid="anunciar-taxa">
+          <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}). Plano Gestor: {GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
+          {PRECOS_VISIVEL ? (
+            <>
+              Sem mensalidade —{" "}
+              <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
+                ver os preços
+              </Link>
+              .
+            </>
+          ) : (
+            "Sem mensalidade."
+          )}
+        </p>
       </BannerTopo>
 
       {/* Quanto custa, em reais, contra o Airbnb (versão curta; a completa fica em /precos). */}

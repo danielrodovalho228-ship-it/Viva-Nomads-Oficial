@@ -1,0 +1,39 @@
+# Registro de medição da Pista QA
+
+Uma linha por item provado. Alimenta a medição do Daniel: o tempo entre o merge e o veredito, e quanto se perde por falta de massa.
+
+- **Merge:** horário do merge na `main`, conferido no GitHub (UTC).
+- **Veredito:** horário em que a Pista QA fechou a proposta de veredito (UTC). O fechamento do item é do Muse do chat principal.
+- **Ambiente:** `produção/navegador` é o site no ar, aberto num Chromium de verdade, sem login. `produção/logado` é o mesmo pela porta de QA. `lab` é o laboratório (Actions ou local).
+
+| Item | PR | Merge (UTC) | Veredito (UTC) | Resultado | Faltou massa? | Ambiente | Detalhe |
+|---|---|---|---|---|---|---|---|
+| E695 | #3276 | 2026-11-07 19:48 | 2026-11-07 21:36 | provado | não | produção/navegador (390 e 1280) | [rodada 07/11](qa-rodadas/2026-11-07.md#e695) |
+| E696 | #3280 | 2026-11-07 19:48 | 2026-11-07 21:36 | provado | não | produção/navegador (390 e 1280) | [rodada 07/11](qa-rodadas/2026-11-07.md#e696) |
+| E702 | #3280 | 2026-11-07 19:48 | 2026-11-07 21:36 | parcial | sim: nenhum imóvel no ar com data calculada diferente da cadastrada | produção/navegador (390 e 1280) | [rodada 07/11](qa-rodadas/2026-11-07.md#e702) |
+| E694 | #3275 | 2026-11-07 19:48 | 2026-11-07 21:36 | parcial: o essencial passa, com resíduo D1 e D2 | não | produção/navegador (390 e 1280), visitante sem login | [rodada 07/11](qa-rodadas/2026-11-07.md#e694) |
+| E697 | #3299 | 2026-11-07 22:38 | 2026-11-07 23:00 | provado | não | produção/navegador (1280 e 390): 15 exemplos, SHA-256 das fotos | [rodada 22:40](qa-rodadas/2026-11-07-2240.md) |
+| E698 | #3312 | 2026-11-07 22:37 | 2026-11-07 23:00 | parcial: fotos e aviso do mapa passam; retângulo vazio nos 1–2 s antes de o mapa montar; avatar (logado) não provado | não | produção/navegador (1280 e 390), tiles do mapa simulados | [rodada 22:40](qa-rodadas/2026-11-07-2240.md) |
+| E681 | #3245 | 2026-11-07 19:50 | 2026-11-07 23:00 | parcial: lab verde (t1427); falta a prova ao vivo logada | não (lab) | lab #2722 (`b0ab598`) | [rodada 22:40](qa-rodadas/2026-11-07-2240.md) |
+| E674 | #3247, #3263 | 2026-11-07 19:50 | 2026-11-07 23:00 | parcial: lab verde (t1399, t1430); falta a prova ao vivo logada | não (lab) | lab #2722 | [rodada 22:40](qa-rodadas/2026-11-07-2240.md) |
+| E703 | #3287 | 2026-11-07 19:49 | 2026-11-07 23:00 | parcial: lab verde (t1438); falta a prova ao vivo logada | não (lab) | lab #2722 | [rodada 22:40](qa-rodadas/2026-11-07-2240.md) |
+| E679 (formulário) | #3231 | 2026-11-07 18:44 | 2026-11-07 23:00 | parcial: t1432 verde, **mas t182 passo 6 (avaliações às cegas) estourou o tempo** e t28 foi pulada | sim: falta avaliador ativo para a parte da conduta | lab #2722 | [rodada 22:40](qa-rodadas/2026-11-07-2240.md) |
+| E704 | #3291 | 2026-11-07 22:38 | 2026-11-07 23:05 | reprovado em produção: a correção é só do motor Mapbox; o ar roda Leaflet + CARTO | não | produção/navegador (1280), motor do mapa conferido no DOM e na rede | [sequência 23:02](qa-rodadas/2026-11-07-2305.md) |
+| E711 | #3323 (draft) | sem merge | 2026-11-07 23:40 | aprovado no lab; falta a prova ao vivo depois do merge | não | lab local (build do draft, modo demonstração) × produção como "antes" | [sequência 23:30](qa-rodadas/2026-11-07-2330.md) |
+| E709 | #3324 (draft) | sem merge | 2026-11-07 23:40 | aprovado no lab, com dúvida de desenho (conteúdo a 80 px × cabeçalho a 32 px); falta a prova ao vivo | não | lab local × produção | [sequência 23:30](qa-rodadas/2026-11-07-2330.md) |
+| E710 | #3325 (draft) | sem merge | 2026-11-07 23:40 | aprovado no lab; posição das ações a 1280 diverge do texto do PR; falta a prova ao vivo | não | lab local × produção | [sequência 23:30](qa-rodadas/2026-11-07-2330.md) |
+| E704 (2/2) | #3331 (draft) | sem merge | 2026-11-07 23:53 | aprovado no lab (mecânica): 0 pinos sobre o nome a 390/1280/1440, contra 2 em produção; falta a prova visual com tiles reais depois do merge | não | lab local (build do draft) × produção como "antes" | [sequência 23:50](qa-rodadas/2026-11-07-2350.md) |
+| E694 (resíduo) | #3339 (draft) | sem merge | 2026-11-08 00:10 | aprovado no lab, com resíduo R1 (campos de reserva e aviso sem botão no exemplo); D1 e D2 saem | não | lab local × produção | [sequência 00:05](qa-rodadas/2026-11-08-0005.md) |
+| E704 (2/2, nova abordagem) | #3331 (draft, `e8419829`) | sem merge | 2026-11-08 00:10 | aprovado no lab: tiles `voyager_nolabels`, 0 pinos sobre o nome desenhado; falta a prova visual com os tiles reais. Supera a linha das 23:53 | não | lab local × produção | [sequência 00:05](qa-rodadas/2026-11-08-0005.md) |
+| E699 (resíduos) | #3337 (draft) | sem merge | 2026-11-08 00:10 | parcial no lab: (b) e (c) ✔; (a) e (d) pedem massa real | sim: dono de teste com rascunho sem documento aprovado | lab local (sessão de demonstração; não é prova logada) | [sequência 00:05](qa-rodadas/2026-11-08-0005.md) |
+| E701 | #3277 | 2026-11-07 19:48 | 2026-11-08 00:20 | aprovado no lab (a casca do morador em pedidos e candidaturas com o papel em proprietário; pedidos-cidade segue do dono); falta o ao vivo logado | não (lab) | lab local (build da `main`, sessão de demonstração) | [vigia 00:18](qa-rodadas/2026-11-08-0020.md) |
+| E706 | #3301 | 2026-11-07 22:38 | 2026-11-08 00:20 | aprovado no build (título novo presente, "·" órfão ausente); tela não renderizada no demo; falta o logado, com `VISTORIA_ATIVA` | sim: imóvel do dono no banco | lab local (build com `VISTORIA_ATIVA=on`) | [vigia 00:18](qa-rodadas/2026-11-08-0020.md) |
+| E708 | #3313 | 2026-11-07 22:37 | 2026-11-08 00:20 | sem efeito no ar: rotas do LinkedIn dão 404 (integração desligada); prova das specs t323 e t351, puladas pelo L1 | não | produção/curl sem sessão | [vigia 00:18](qa-rodadas/2026-11-08-0020.md) |
+| E704 (2/2) | #3331 | 2026-11-08 00:29 | 2026-11-08 00:32 | provado ao vivo na mecânica: tiles `voyager_nolabels` e 0 de 15 pinos sobre o nome a 390/768/1280/1440; falta a captura com a imagem dos tiles | não | produção/navegador (`a7c4088`) | [vigia 00:29](qa-rodadas/2026-11-08-0030.md) |
+| C10 | #3341 (draft) | sem merge | 2026-11-08 00:32 | aprovado no lab: a faixa "Desconfie…" entre golpes e FAQ, um botão cheio "Fale com a Viva" com toque ≥ 44 px | não | lab local × produção | [vigia 00:29](qa-rodadas/2026-11-08-0030.md) |
+| E694 (resíduo) | #3339 | 2026-11-08 00:37 | 2026-11-08 00:57 | provado ao vivo: só "Ver imóveis reais" em 3 exemplos a 390/1280; resíduo R1 (campos e aviso sem botão) pendente | não | produção/navegador (`f38bce28`) | [rodada 00:51](qa-rodadas/2026-11-08-0055.md) |
+| E710 | #3325 | 2026-11-08 00:47 | 2026-11-08 00:57 | provado ao vivo: ações na tela a 390/360, "Mapa" abre; a posição a 1280 diverge do texto do PR | não | produção/navegador | [rodada 00:51](qa-rodadas/2026-11-08-0055.md) |
+| E711 | #3323 | 2026-11-08 00:47 | 2026-11-08 00:57 | provado ao vivo: uma só chamada "Quero ser parceiro" na dobra a 390/1280 | não | produção/navegador | [rodada 00:51](qa-rodadas/2026-11-08-0055.md) |
+| C1b | #3348 (draft) | sem merge | 2026-11-08 00:57 | aprovado no lab: 0 trechos cobertos em 7 páginas (produção: 1 a 4) | não | lab local × produção | [rodada 00:51](qa-rodadas/2026-11-08-0055.md) |
+| C9 | #3349 (draft) | sem merge | 2026-11-08 00:57 | aprovado no lab: 0 de 15 localizações cortadas (produção: 6) | não | lab local × produção | [rodada 00:51](qa-rodadas/2026-11-08-0055.md) |
+| C7 | #3350 (draft) | sem merge | 2026-11-08 00:57 | parcial no lab: na dobra a 390×844; a 360×640 segue 33 px sob a navegação (decisão de conteúdo) | não | lab local × produção | [rodada 00:51](qa-rodadas/2026-11-08-0055.md) |
