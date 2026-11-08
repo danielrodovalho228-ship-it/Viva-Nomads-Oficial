@@ -2821,7 +2821,8 @@
         "t599-varredura-bloco49",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1537-varredura-bloco589"
       ]
     },
     "/admin/avaliadores": {
@@ -2862,7 +2863,8 @@
         "t606-varredura-bloco50",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1537-varredura-bloco589"
       ]
     },
     "/avaliadores": {
@@ -2885,7 +2887,8 @@
         "t657-e235-link-avaliador",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1537-varredura-bloco589"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
@@ -2898,7 +2901,8 @@
         "t606-varredura-bloco50",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1537-varredura-bloco589"
       ]
     },
     "/admin/funil": {
