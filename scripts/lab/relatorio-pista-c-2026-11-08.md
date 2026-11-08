@@ -647,3 +647,8 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1571 (#3567, E722/0334): verde** (run 42532397238).
 - **Merge novo #3437 (E682, `137cb58fb`)**: a lista "Escolha o avaliador" mostra só a conduta publicada (sem preço nem prazo). **t1572 (#3571)**: massa própria (credenciamento ativo + pedido em `pedido`), 390 e 1280 px; lab a conferir. Risco: se a massa não fizer o avaliador aparecer em `sugeridos`, a falha é de massa, não do produto.
 - **Bloco 604 (#3570, t1552):** run 42532676112 em andamento. Drafts #3533, #3530, #3531, #3532, #3498 abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Vigia das 23h15
+
+- **Merge novo #3297 (E707, `a2d21c25e`)**, composição dos prazos da caução atrás da chave `CAUCAO_PRAZOS_ATIVA` (desligada): **t1573 (#3572)** guarda o estado desligado do simulador de reembolso (`/dashboard/reembolsos`: prazo legal de 30 dias no texto, sem o campo "Data do check-out"). O cálculo fica nos testes de unidade do PR; o ramo ligado pede decisão de ligar a chave no lab. Lab: a conferir.
+- **Em andamento:** t1572 (#3571, E682, run 42533397415) e bloco 604 (#3570, run 42532676112). Nenhum achado novo (próximo livre: **L-110**). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos.
