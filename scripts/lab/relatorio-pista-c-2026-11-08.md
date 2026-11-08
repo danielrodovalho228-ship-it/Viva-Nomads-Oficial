@@ -511,3 +511,13 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main (começo e fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
 - Próximo bloco: 598 (grupo do 581).
+
+## Blocos 598, 599 e 600
+
+- Bloco 598 (t1546, PR #3525 draft, run 42512106100): verde: contrato, estadia e imóvel com id (grupo do 581).
+- Bloco 599 (t1547, PR #3526 draft, run 42512109322): verde: início, ajuda, busca e proprietário (grupo do 582).
+- Bloco 600 (t1548, PR #3527 draft, run 42512112428): verde: serviços e visitas, admin, parceiros (grupo do 583).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (começo e fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+- Próximo bloco: 601 (grupo do 584).
