@@ -37,3 +37,15 @@ select a.numero_credenciado, a.status, a.ativado_em,
 - **Antes:** `status = em_teste`, `ativado_em` vazio, `avaliacoes_de_teste_concluidas >= 1`.
 - **Depois da ativação pelo admin:** `status = ativo` e `ativado_em` preenchido; a tela `/dashboard/parceiro/avaliacao` passa a mostrar o passo 5 cumprido.
 - Se `avaliacoes_de_teste_concluidas = 0`, a massa da 0256 não está na base e o passo 5 não fecha mesmo com o avaliador ativo.
+
+## Depois da ativação: o que já existe para emitir e assinar um laudo de teste (E691, 08/11)
+Conferido em produção, só leitura:
+- **Pedido para o avaliador trabalhar:** `a0256000-…-0a2` (`teste = true`, `status = designado`, `avaliador_id` = UDI-002), no anúncio pausado `[TESTE QA NÍVEL] Conforto` do `proprietario1`. A 0256 o deixou parado de propósito (sem linha em `vistoria_designacoes`, então a rotina de hora em hora não faz rodízio nem manda e-mail). Nenhuma massa nova é necessária.
+- **Laudo antigo:** `VIS-QA-0256` (`a0256000-…-0b1`, pedido `…0a1`) está `aprovado` e **sem assinatura** (`assinado_por`, `assinado_em` e `assinatura_hash` vazios). Ele foi semeado antes da assinatura do E648, então **não serve** para provar o selo; a assinatura nasce no envio de um laudo novo, pelo painel do avaliador.
+- **Por que não gravei uma assinatura por SQL:** a assinatura (`assinatura_hash` + termo) é um ato do avaliador, feito na caixa "assino" de "Revisar e enviar o laudo". Preencher à mão criaria uma evidência que o fluxo nunca produziu, e a prova do E691 precisa ser do fluxo real.
+
+### Roteiro para a QA (nada disso é feito pela Pista B)
+1. Admin observador (duas etapas) ativa o UDI-002 em `/admin/avaliadores` (passo "ativar avaliador").
+2. Laboratório com a chave `VISTORIA_ATIVA` ligada por cookie (`vn_lab_vistoria`), nunca em produção.
+3. Como `avaliador1@`: responder ao pedido `…0a2`, seguir o checklist e, em "Revisar e enviar o laudo", marcar "assino" e enviar.
+4. Conferir que o painel do avaliador e o bloco do dono mostram "Assinado pelo avaliador em dd/mm/aaaa · laudo VIS-… · registro `abcd1234…ef567890`".
