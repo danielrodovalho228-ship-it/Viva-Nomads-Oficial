@@ -381,3 +381,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Lab da main: lab crítico verde em `a844024e7`; zero merges de código novos desde o #3433 (conferido de novo ao fim), então nenhuma spec quebrada por merge para corrigir. Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
 - Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 572 (grupo do 555).
+
+## Bloco 572
+
+- Bloco 572 (t1520, PR #3481 draft, run 42490019540): verde. Intenção, avaliação do imóvel, avaliadora e laudo (grupo do 555).
+- Lab da main: lab crítico verde em `a844024e7`; zero merges de código novos desde o #3433 (conferido ao fim). Testes permanentes novos a rodar: 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 573 (grupo do 556).
