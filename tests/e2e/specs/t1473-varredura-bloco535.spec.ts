@@ -5,7 +5,7 @@ import { TAMANHOS, escutarErros } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1473 — VARREDURA DA PÁGINA INTEIRA, BLOCO 535 (Pista C, 08/11), 16ª volta do ciclo: repete o grupo do bloco 501 (t1431; antes, blocos 484, 467, 450 e 433) —
+  T1473 — VARREDURA DA PÁGINA INTEIRA, BLOCO 535 (Pista C, 08/11), 16ª volta do ciclo: repete o grupo do bloco 518 (t1451; antes, blocos 501, 484, 467, 450 e 433) —
   as telas que a 7ª volta varreu pela primeira vez (avisos, prévia de e-mails e a caixa do leitor de QA, que o E435 #2553 passou a dividir com o admin), no protocolo do bloco 21 (t385): seis classes (imagem pelo carregamento real,
   elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade), página toda rolada, 390 e
   1280 px, HTTP abaixo de 400, e o console (régua da t249):
