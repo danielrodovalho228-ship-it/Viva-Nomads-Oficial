@@ -31,3 +31,16 @@ Bloco 517 (t1451, #3338, grupo do 500: cidade, buscar, comparar, institucionais,
 ## t1454 / E680 verde
 
 t1454 (E680, #3346) **verde** (run 42430241110): depois da troca de conta no mesmo navegador, `/dashboard/locacoes` da conta que entrou mostra só a locação dela, a 390 e 1280 px. Sem regressão; sem defeito novo. Aberto no produto: L-104; próximo livre: **L-107**. Pendentes de spec de tela: E506, E699, E704, E706, E694, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador. Próximo bloco da fila: 520 (grupo do 503). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Jornadas da QA viram teste (t1455) e bloco 520 (main `1b76bf880`)
+
+**Estado.** Main `1b76bf880`; t1454 / E680 (#3346) já verde (run 42430241110); run da main em andamento. Merges novos do dia desde `b9a3fa4c4`: só E694 (#3339), coberto agora pela t1455.
+
+**Propostas da Pista QA** (`docs/qa-rodadas/2026-11-07.md`, "Para a Pista C, testes determinísticos"):
+- **T-E694 → t1455 (#3351):** visitante em `/imoveis/ube-005` (exemplo): aviso de exemplo, só "Ver imóveis reais" (→ `/buscar`), nenhuma das ações que não funcionam, nenhum "Enviar", nenhum texto de validação em vermelho; 390 e 1280 px.
+- **T-E695 → t1437 (mesmo PR):** acrescentado o caso `quartos=9` (lugar com imóveis, outro filtro exclui tudo → mesma mensagem de data/filtro sem o convite de cidade). Já cobríamos "lugar com imóveis + preço" e "lugar sem imóvel".
+- **T-E696 (fórmula 04/12→16/01 em ube-005): pendente.** A página não lê as datas pela URL; a spec precisa clicar o calendário entre meses (frágil sem uma semente de datas). A conta tem teste unitário (`formula-estadia`). Também pendente: o ramo do E695 sem data futura (precisa de imóvel com disponibilidade já passada) e o E704 (rótulo da cidade no mapa; o lab não carrega tiles do CARTO).
+
+**Resíduos que a própria QA registrou, para as pistas donas (não são do lab):** D3 (E695: sem data, o título diz "nenhum para essa data" e o detalhe manda mudar a data mesmo quando o filtro é a única causa), D4 (E695: `local=Curitiba` sem filtro mostra "Nenhum imóvel com estes filtros" acima de "A Viva ainda não chegou"), R1 (E694: campos de reserva visíveis no exemplo, sem botão). Nenhum virou número L- novo porque a QA já os numerou (D3, D4, R1).
+
+**Bloco 520** (t1456, #3352, grupo do 503: admin sem id) aberto, a 390 e 1280 px, em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
