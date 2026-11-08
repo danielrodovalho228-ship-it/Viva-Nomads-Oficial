@@ -24,6 +24,7 @@ export function AvaliacaoForm({
   demo,
   encerradoEm,
   fechada = false,
+  estadoAvaliacao = null,
 }: {
   contratoId: string;
   alvoId: string;
@@ -39,6 +40,8 @@ export function AvaliacaoForm({
    * NÃO oferece o botão — o servidor recusaria (0089: só contrato encerrado, até 14 dias depois do fim).
    */
   fechada?: boolean;
+  /** E719: a avaliação que a pessoa JÁ enviou neste contrato (enviada | publicada | em_moderacao), lida do servidor; null = ainda não avaliou. */
+  estadoAvaliacao?: string | null;
 }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -56,7 +59,7 @@ export function AvaliacaoForm({
   const [erro, setErro] = useState<string | null>(null);
   // Sem leitura no servidor ao abrir a tela (Prompt 42: nenhuma server action na navegação do painel); o estado
   // "Aguardando a outra parte" vem do envio desta visita, e o banco recusa uma segunda avaliação do mesmo contrato.
-  const partes = <PartesAvaliacao euEnviei={enviado} prazo={prazoAvaliacao(encerradoEm)} />;
+  const partes = <PartesAvaliacao euEnviei={enviado || !!estadoAvaliacao} prazo={prazoAvaliacao(encerradoEm)} />;
 
   async function enviar() {
     setErro(null);
@@ -75,7 +78,19 @@ export function AvaliacaoForm({
     else setErro(r.error ?? "Não foi possível avaliar.");
   }
 
-  if (enviado) {
+  // E719: a avaliação já enviada em outra visita: a publicada é dita como publicada (as duas saem juntas); nunca o botão de novo.
+  if (!enviado && estadoAvaliacao === "publicada") {
+    return (
+      <>
+        {partes}
+        <p className="mt-3 inline-flex items-center gap-2 text-sm text-forest" data-testid="avaliacao-publicada">
+          <Check className="h-4 w-4" /> Avaliações publicadas: a sua e a da outra parte já estão no ar.
+        </p>
+      </>
+    );
+  }
+
+  if (enviado || estadoAvaliacao) {
     return (
       <>
       {partes}
@@ -83,7 +98,7 @@ export function AvaliacaoForm({
         <Check className="h-4 w-4" />
         {demo
           ? "Avaliação de exemplo registrada."
-          : moderacao
+          : moderacao || estadoAvaliacao === "em_moderacao"
             ? "Avaliação recebida. Ela passa por uma revisão da equipe antes de aparecer (o comentário tinha contato ou palavra que não publicamos)."
             : "Avaliação enviada. Ela aparece quando a outra parte também avaliar, ou em até 14 dias depois do fim do contrato."}
       </p>

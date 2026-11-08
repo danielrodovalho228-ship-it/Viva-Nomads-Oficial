@@ -144,6 +144,7 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       pagamentos,
       caucao: estadoCaucao({ blocos, pagamentos }),
       podeAvaliar: false,
+      minhaAvaliacao: null,
       fimParaAvaliacao: null,
     };
   });
@@ -385,6 +386,7 @@ function ContratoCard({
         placeholder="Comentário (opcional) — pontualidade, cuidado com o imóvel, comunicação…"
         demo={demo}
         encerradoEm={contrato.fimParaAvaliacao}
+        estadoAvaliacao={contrato.minhaAvaliacao}
         // E544: só dentro da janela (contrato encerrado, até 14 dias depois); antes, o pendente com o prazo.
         fechada={!demo && !contrato.podeAvaliar}
       />

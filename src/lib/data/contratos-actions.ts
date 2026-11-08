@@ -102,6 +102,8 @@ export interface ContratoView {
   caucao: EstadoCaucao;
   /** E544: janela de avaliação aberta (contrato encerrado há até 14 dias) — a mesma regra do servidor (0089). */
   podeAvaliar: boolean;
+  /** E719: a avaliação que EU enviei neste contrato (enviada | publicada | em_moderacao) ou null se ainda não avaliei. */
+  minhaAvaliacao: string | null;
   /** E544: fim do contrato para o prazo da avaliação — o encerramento ou, antes dele, o fim do último bloco. */
   fimParaAvaliacao: string | null;
 }
@@ -240,6 +242,8 @@ export interface LocacaoView {
   criadoEm: string;
   /** Janela de avaliação aberta (contrato encerrado há até 14 dias). Nunca em contrato aguardando assinatura. */
   podeAvaliar: boolean;
+  /** E719: a avaliação que EU enviei neste contrato (enviada | publicada | em_moderacao) ou null se ainda não avaliei. */
+  minhaAvaliacao: string | null;
   /** Fim do contrato (dá o prazo da avaliação, Prompt 43). */
   encerradoEm: string | null;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
@@ -257,6 +261,18 @@ const MSG_LOCACOES_NAO_CARREGARAM = "Não foi possível carregar as suas locaç�
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
  * home, notificações), segue a lista vazia. */
+/**
+ * E719: o estado da avaliação que a pessoa JÁ enviou em cada contrato (a leitura é pela sessão: o autor lê as próprias,
+ * RLS avaliacoes_autor_le). A publicação é às cegas e das duas juntas: "publicada" na minha avaliação = as duas saíram.
+ */
+async function minhasAvaliacoesPorContrato(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, userId: string, contratoIds: string[]): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>();
+  if (contratoIds.length === 0) return mapa;
+  const { data } = await supabase.from("avaliacoes").select("contrato_id, status").eq("autor_id", userId).in("contrato_id", contratoIds).neq("status", "rascunho");
+  for (const l of (data ?? []) as { contrato_id: string; status: string }[]) mapa.set(String(l.contrato_id), String(l.status));
+  return mapa;
+}
+
 export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Promise<LocacaoView[]> {
   const supabase = await createClient();
   if (!supabase) return [];
@@ -276,6 +292,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
   // join volta vazio e o cartão virava "Imóvel". Para os contratos DELE (tenant_id = eu, já filtrados acima), o
   // servidor lê só o título e o dono desses imóveis.
   const linhas = (data ?? []) as Record<string, unknown>[];
+  const minhasAvaliacoes = await minhasAvaliacoesPorContrato(supabase, user.id, linhas.map((c) => String(c.id)));
   const semTitulo = [...new Set(linhas.filter((c) => !(c.properties as { title?: string } | null)?.title).map((c) => String(c.property_id)))];
   const doServidor = new Map<string, { title?: string; owner_id?: string }>();
   if (semTitulo.length) {
@@ -300,6 +317,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
       estado,
       criadoEm: String(c.created_at),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
+      minhaAvaliacao: minhasAvaliacoes.get(String(c.id)) ?? null,
       encerradoEm: (c.encerrado_em as string | null) ?? null,
       pagamentos,
       caucao: caucaoDaLinha(
@@ -350,6 +368,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
   if (error && opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM);
 
   const contratos = (data ?? []) as unknown as Record<string, unknown>[];
+  const minhasAvaliacoes = await minhasAvaliacoesPorContrato(supabase, user.id, contratos.map((c) => String(c.id)));
   // A taxa de cada contrato, lida com o cliente de serviço só para imóveis DESTE dono.
   const admin = createAdminClient();
   // Achado 80: com `exigir` (telas Contratos, Garantias, Carteira), a taxa que não foi lida derruba a tela com o aviso
@@ -394,6 +413,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       pagamentos,
       caucao: caucaoDaLinha(c, blocos, pagamentos),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
+      minhaAvaliacao: minhasAvaliacoes.get(String(c.id)) ?? null,
       fimParaAvaliacao: (c.encerrado_em as string | null) ?? blocos[blocos.length - 1]?.fim ?? null,
     };
   });

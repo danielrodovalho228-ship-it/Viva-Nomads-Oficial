@@ -39,6 +39,7 @@ function buildDemoLocacoes(): LocacaoView[] {
     estado,
     criadoEm: c.inicio,
     podeAvaliar: false,
+    minhaAvaliacao: null,
     encerradoEm: null,
     pagamentos: [],
     caucao: estadoCaucao({ blocos: [{ caucao: c.valorMes, caucaoStatus: "comprovada" }], pagamentos: [] }),
@@ -164,6 +165,7 @@ export function LocacoesClient({
                 placeholder="Comentário (opcional) — comunicação, o imóvel como anunciado, suporte…"
                 demo={demoOn}
                 encerradoEm={l.encerradoEm}
+                estadoAvaliacao={l.minhaAvaliacao}
               />
               </div>
               )}
