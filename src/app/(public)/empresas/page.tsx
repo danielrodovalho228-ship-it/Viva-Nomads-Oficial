@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/empresas" },
   title: "Moradia mobiliada para equipes e empresas",
   description:
-    "Mobilidade corporativa com imóveis mobiliados de 30 a 180 dias: contrato formal, recibo mensal da estadia para reembolso e relatórios. Fale com a gente.",
+    "Mobilidade corporativa com imóveis mobiliados de 30 a 180 dias: contrato formal, recibo mensal da estadia para reembolso. Fale com a gente.",
   openGraph: {
     url: "/empresas",
     title: "Moradia mobiliada para equipes e empresas",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 const PASSOS = [
-  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos com opções de imóveis mobiliados.", foto: "/images/unicas/empresas-passo-necessidade.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
+  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. A equipe responde com opções de imóveis mobiliados.", foto: "/images/unicas/empresas-passo-necessidade.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
   { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/unicas/empresas-passo-escolha.webp", alt: "Colegas escolhendo o imóvel no tablet" },
   { titulo: "Contrato e recibo", texto: "Contrato digital assinado pelas partes; todo mês a empresa recebe o recibo da estadia para o reembolso.", foto: "/images/como-funciona/04-assine.webp", alt: "Assinatura digital do contrato no celular" },
 ];
@@ -42,6 +42,7 @@ const BENEFICIOS = [
 const FAQ_EMPRESAS = [
   { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem vem morar." },
   { p: "Qual é o prazo das estadias?", r: "De 30 a 180 dias, com imóveis mobiliados e prontos para morar." },
+  { p: "Qual é o prazo de resposta e a taxa?", r: "Ainda não há prazo de resposta definido para empresas: a equipe responde no e-mail informado, com as opções. A taxa da Viva é do proprietário, por contrato fechado; quem vem morar não paga taxa à plataforma, e não há mensalidade." },
   { p: "Quem assina o contrato?", r: "O proprietário e quem vai morar (ou a empresa, quando ela for a responsável). A assinatura é digital, pela plataforma." },
 ];
 
@@ -57,17 +58,12 @@ const PILARES = [
     titulo: "Recibo para reembolso",
     texto: "Recibo mensal da estadia emitido pelo proprietário + contrato assinado, que podem ser usados no reembolso conforme a política da sua empresa. A Viva Nomads não cobra nada do morador.",
   },
-  {
-    id: "relatorios",
-    titulo: "Relatórios",
-    texto: "Acompanhamento das estadias da sua empresa — em construção com os primeiros parceiros corporativos.",
-  },
 ];
 
 export default function EmpresasPage() {
   return (
     <>
-      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo mensal da estadia para reembolso e relatórios." })} />
+      <JsonLd dados={paginaInstitucional(SITE_URL, { caminho: "/empresas", nome: "Para empresas", descricao: "Mobilidade corporativa com locação mobiliada de média duração: imóveis prontos, recibo mensal da estadia para reembolso." })} />
       <BannerTopo
         foto="/images/unicas/empresas-banner.webp"
         alt="Profissional chegando a um imóvel mobiliado com a mala"
@@ -76,8 +72,8 @@ export default function EmpresasPage() {
         subtitulo={
           <p>
             Imóveis mobiliados de 30 a 180 dias para mobilidade corporativa — prontos para morar, com
-            contrato formal e a negociação toda pela plataforma. O pagamento vai direto ao proprietário; a
-            plataforma nunca toca no dinheiro.
+            contrato formal e a negociação toda pela plataforma. O pagamento da estadia vai direto ao proprietário; a
+            plataforma nunca toca nesse dinheiro. Serviços de parceiros (limpeza, mudança) são contratados à parte, com regra própria.
           </p>
         }
       >
@@ -98,7 +94,7 @@ export default function EmpresasPage() {
           <h2 className="mt-4 font-title text-2xl font-semibold text-ink">Um lugar para morar, não um quarto de hotel</h2>
           <p className="mt-3 text-muted">Para times em projeto, realocação ou período de experiência em outra cidade.</p>
         </div>
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-3xl gap-4 md:grid-cols-2">
           {PILARES.map((p) => (
             <div key={p.titulo} className="flex flex-col overflow-hidden rounded-xl border border-line bg-white ">
               <FotoCartao cartao={cartaoSecao("empresas", p.id)} />
@@ -165,7 +161,7 @@ export default function EmpresasPage() {
           <h2 className="font-title text-2xl font-semibold text-ink">Perguntas rápidas</h2>
           {/* Regra do E186: acordeão só dentro das páginas de tema da Central de Ajuda — aqui, cada pergunta é um bloco
               aberto, a resposta à vista (os três cartões numa linha a partir do tablet). */}
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {FAQ_EMPRESAS.map((f) => (
               <div key={f.p} className="rounded-xl border border-line bg-white p-4" data-testid="empresas-faq-item">
                 <h3 className="font-semibold text-ink">{f.p}</h3>
