@@ -14,10 +14,15 @@ export function AcoesAvaliacao({
   avaliacaoId,
   podeResponder,
   podeRevisar,
+  rotuloRevisar = "Pedir revisão",
+  comoLink = false,
 }: {
   avaliacaoId: string;
   podeResponder: boolean;
   podeRevisar: boolean;
+  /** E679: na página de responder o gatilho é o link "Contestar avaliação" do mockup. */
+  rotuloRevisar?: string;
+  comoLink?: boolean;
 }) {
   const [aberto, setAberto] = useState<"resposta" | "revisao" | null>(null);
   const [texto, setTexto] = useState("");
@@ -48,19 +53,24 @@ export function AcoesAvaliacao({
   };
 
   return (
-    <div className="mt-4">
+    <div className={comoLink && aberto === null ? "inline" : "mt-4"}>
       {aberto === null && (
-        <div className="flex flex-wrap gap-2">
+        <div className={comoLink ? "inline" : "flex flex-wrap gap-2"}>
           {podeResponder && (
             <Button variant="secondary" type="button" data-testid="avaliacao-responder" onClick={() => abrir("resposta")}>
               Responder
             </Button>
           )}
-          {podeRevisar && (
-            <Button type="button" variant="outline" data-testid="avaliacao-pedir-revisao" onClick={() => abrir("revisao")}>
-              Pedir revisão
-            </Button>
-          )}
+          {podeRevisar &&
+            (comoLink ? (
+              <button type="button" className="inline-flex min-h-11 items-center text-sm text-forest underline underline-offset-2" data-testid="avaliacao-pedir-revisao" onClick={() => abrir("revisao")}>
+                {rotuloRevisar}
+              </button>
+            ) : (
+              <Button type="button" variant="outline" data-testid="avaliacao-pedir-revisao" onClick={() => abrir("revisao")}>
+                {rotuloRevisar}
+              </Button>
+            ))}
         </div>
       )}
       {aberto !== null && (
