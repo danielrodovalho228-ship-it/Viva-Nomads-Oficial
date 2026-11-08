@@ -18,4 +18,6 @@ test("na página do imóvel o botão é redondo também no computador (sem o tex
 test("a página do imóvel reserva a faixa do botão no computador (dos dois lados, mesma margem)", () => {
   const linha = detalhe.split("\n").find((l) => l.includes('data-testid="imovel-largura-total"')) ?? "";
   assert.match(linha, /lg:px-\(--faixa-flutuante\)/);
+  // Tablet (768 a 1023 px): o botão mora à DIREITA (a esquerda é do computador); a faixa reservada é a da direita.
+  assert.match(linha, /md:pr-\(--faixa-flutuante\)/);
 });
