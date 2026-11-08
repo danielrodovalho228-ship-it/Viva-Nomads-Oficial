@@ -353,3 +353,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Leitura da Pista C (opinião, não decisão):** o remédio completo é 1 (cobertura) + 4 (transparência); a 2 é a mais barata e rápida para devolver as `t2…t9` à noite; a 3 só se o custo de manter a varredura continuar alto depois das outras.
 - Enquanto isso, a Pista C segue abrindo blocos em PR draft (não mesclados, portanto sem efeito na noturna) e não apaga nada.
 - Próximo bloco: 568 (grupo do 551).
+
+## Bloco 568
+
+- Bloco 568 (t1516, PR #3475 draft, run 42485637435): verde. Admin (atendimento, contratos, candidaturas), busca, cidades, comparar, privacidade, segurança, termos e parceiros/buscar (grupo do 551).
+- Lab da main: lab crítico verde em `a844024e7` e `624a5924a`; nenhum merge de código novo depois do #3433 (nem docs novas da QA além da rodada 10:45). Sem spec permanente nova a criar. Suíte noturna segue "falha" só por tempo estourado (L-108), com as propostas de mitigação registradas acima, à espera do coordenador.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 569 (grupo do 552).
