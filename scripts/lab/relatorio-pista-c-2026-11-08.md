@@ -63,3 +63,7 @@ Reenviado no head `405b56e22` (o PR ainda estava aberto, conferi antes). Sem rer
 **Spec nova t1457** (PR do ramo `claude-c/t1457-c10-c7`): C10 (a faixa e o botão levam a `/ajuda/fale-com-a-viva`, 390 e 1280) e C7 (390 × 844: o botão inteiro dentro da primeira tela, sem nada cobrindo o centro dele, e a frase da taxa depois do botão). Em andamento.
 
 **Sem spec de tela ainda (item pulado):** C9, E710 e E711 (cobertos só estruturalmente pelos blocos que passam por `/buscar` e `/parceiros`, a 390 e 1280), mais a lista de antes (E506, E699, E704, E706, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador; T-E696 e o ramo sem data futura do E695). Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## t1457 verde (C10 e C7)
+
+t1457 (#3355) **verde** (run 42432802592): `/seguranca` tem a faixa "Desconfie…" com o botão "Fale com a Viva" levando a `/ajuda/fale-com-a-viva` (390 e 1280), e em `/para-proprietarios` a 390 × 844 o botão "Anunciar meu imóvel" fica inteiro na primeira tela, sem nada cobrindo o centro, com a frase da taxa depois. Sem regressão, sem defeito novo; aberto no produto: L-104; próximo livre: **L-107**. Próximo bloco da fila: 521 (grupo do 504). Sem prova ao vivo, sem merge e sem fechar PR.
