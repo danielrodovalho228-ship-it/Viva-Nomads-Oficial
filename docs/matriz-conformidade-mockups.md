@@ -658,3 +658,8 @@ Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "
 A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
+
+## Passada 90 — /seguranca × mockup `publico-seguranca` (Pista A)
+
+- **E720 — faixa "Avise a Viva" (corrigido neste PR):** o mockup mostra uma linha só: ícone de informação num círculo com contorno verde, a frase "Desconfie de quem pede pagamento fora da plataforma e avise a Viva." e o botão "Fale com a Viva" à direita, dentro de caixa com contorno verde. A página real usava outro arranjo; alinhada. Capturas em `docs/capturas/c10b/` (1280 e 390 px, sem rolagem horizontal).
+- **E721 — três cartões de valor ausentes (aberto, decisão do coordenador):** o mockup traz "Identidade verificada…", "Contrato digital com registro e número único" e "O dinheiro vai direto entre as partes…". A página real não os tem. Não implementado: o texto dos cartões afirma garantias (identidade, registro) que dependem de decisão de conteúdo/produto.
