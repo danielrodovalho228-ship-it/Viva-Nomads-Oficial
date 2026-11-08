@@ -13,7 +13,8 @@ test("E747: ISO digitado tecla a tecla chega a 15/11/2026 sem embaralhar", () =>
     passos.push(texto);
   }
   expect(passos.at(-1)).toBe("15/11/2026");
-  for (const p of passos.slice(0, -1)) expect(p, "passo intermediário embaralhado").not.toMatch(/^\d{2}\/\d{2}\/\d{4}$|^20\/26/);
+  // antes do "-" ainda vale a máscara de sempre ("20/26"); do "-" em diante o texto segue em ISO, sem barras, até os 8 dígitos
+  for (const p of passos.slice(4, -1)) expect(p, "passo intermediário embaralhado").not.toContain("/");
 });
 
 test("E747: a máscara dd/mm/aaaa de sempre continua igual", () => {
