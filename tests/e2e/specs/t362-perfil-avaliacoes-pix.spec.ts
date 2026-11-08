@@ -1,7 +1,7 @@
+import { criteriosDaAvaliacao, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
 
 /**
  * Rodada da vigia 24/10 (Pista C): confirmação dos merges no lab-crítico do bloco 19 (t354).
@@ -98,11 +98,11 @@ test.describe("T362 — PERFIL-B: chave Pix de recebimento e avaliações recebi
     test.setTimeout(150_000);
     const d = await entrar(browser, dono.email, senha);
     await d.setViewportSize({ width: 390, height: 844 });
-    await d.goto("/dashboard/avaliacoes", { waitUntil: "domcontentloaded" });
+    await d.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "domcontentloaded" });
     const cartao = d.getByTestId("avaliacao-recebida").filter({ hasText: marca });
     await expect(cartao).toBeVisible({ timeout: 30_000 });
     await expect(cartao.getByTestId("avaliacao-autor")).toContainText("Carlos S.");
-    await expect(cartao.getByTestId("avaliacao-autor")).toContainText("morador");
+    await expect(cartao.getByTestId("avaliacao-papel")).toContainText(/morador/i);
     await expect(cartao.getByTestId("avaliacao-contexto")).toContainText(/^Recebida em \d{2} [a-z]{3} \d{4} · Casa no Santa Mônica .+ · Uberlândia$/);
     await expect(cartao).not.toContainText("Mendes");
     await semRolagemLateral(d);
@@ -110,7 +110,7 @@ test.describe("T362 — PERFIL-B: chave Pix de recebimento e avaliações recebi
 
     // Nota 4 é positiva.
     await d.getByTestId("avaliacoes-aba-positivas").click();
-    await expect(d).toHaveURL(/aba=positivas/);
+    await expect(d).toHaveURL(/filtro=positivas/);
     await expect(d.getByTestId("avaliacao-recebida").filter({ hasText: marca })).toBeVisible();
     // Busca sem resultado e busca que acha (sem acento).
     await d.getByTestId("avaliacoes-busca").fill("palavra-que-nao-existe");

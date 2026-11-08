@@ -101,3 +101,27 @@ export function contagemContestacoes(e: { contestacoes: number; devolucoes: numb
     { chave: "auditoria", rotulo: "laudos sorteados para auditoria", valor: e.auditoria, ancora: "#auditoria" },
   ];
 }
+
+// ── E691: selo da assinatura do laudo (número + hash visíveis ao avaliador e ao dono) ─────────────────────────────
+export interface SeloAssinaturaDados {
+  numero: string;
+  versao: number;
+  assinadoEm: string | null;
+  assinaturaHash: string | null;
+}
+
+/** Hash curto para a tela (início…fim); o inteiro fica disponível para copiar. */
+export function hashCurto(hash: string): string {
+  return hash.length > 20 ? `${hash.slice(0, 8)}…${hash.slice(-8)}` : hash;
+}
+
+/** O que o selo mostra. Laudo sem assinatura (anterior à assinatura do avaliador) não ganha selo. */
+export function seloDaAssinatura(l: SeloAssinaturaDados): { numero: string; quando: string; hash: string; hashCurto: string } | null {
+  if (!l.assinaturaHash || !l.assinadoEm) return null;
+  return {
+    numero: `${l.numero}${l.versao > 1 ? ` v${l.versao}` : ""}`,
+    quando: `${dataBRT(l.assinadoEm)}, ${horaBRT(l.assinadoEm)} ${ETIQUETA_BRASILIA}`,
+    hash: l.assinaturaHash,
+    hashCurto: hashCurto(l.assinaturaHash),
+  };
+}

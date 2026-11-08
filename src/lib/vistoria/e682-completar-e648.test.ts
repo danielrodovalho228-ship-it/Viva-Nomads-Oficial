@@ -11,7 +11,7 @@ const ler = (p: string) => readFileSync(p, "utf8");
 const servidor = ler("src/lib/vistoria/servidor.ts");
 const rotina = servidor.slice(servidor.indexOf("export async function rotinaVistoria"));
 
-test("o dono tem 72 h (a confirmar) para aceitar a proposta; depois a escolha volta ao dono", () => {
+test("o dono tem 72 h (decisão do Daniel, 07/11) para aceitar a proposta; depois a escolha volta ao dono", () => {
   assert.equal(PRAZO_DONO_ACEITAR_HORAS, 72);
   const t0 = "2026-11-07T10:00:00Z";
   assert.equal(propostaVencida(t0, new Date("2026-11-10T09:59:00Z")), false);

@@ -21,7 +21,9 @@ test("Conta (A1, NAV-A): oito telas na ordem Perfil → Como você usa a Viva �
   assert.match(SECAO, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
   assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
   // Cada seção é um caso de /conta/[secao] ou a sua rota própria (as que leem dados no servidor, ex.: Avaliações).
-  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "seguranca", "pagamentos", "ajuda"]) {
+  // E679: Avaliações saiu da casca da Conta — é o painel único /dashboard/avaliacoes; a rota antiga só redireciona.
+  assert.match(ler("src/app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /redirect\(`\/dashboard\/avaliacoes\?aba=recebidas/);
+  for (const id of ["papeis", "dados", "privacidade", "seguranca", "pagamentos", "ajuda"]) {
     const propria = existsSync(new URL(`../../app/(dashboard)/dashboard/conta/${id}/page.tsx`, import.meta.url));
     assert.match(propria ? ler(`src/app/(dashboard)/dashboard/conta/${id}/page.tsx`) : SECAO, new RegExp(`<CascaConta ativo="${id}"`), id);
   }

@@ -138,7 +138,7 @@ export function descredenciamentoValido(e: { criterioId: string | null; motivo: 
 // ── 5. Os termos do avaliador (E682): valor, prazo de entrega e prazo de resposta são DELE ────────────────────────
 export const PRAZO_RESPOSTA_PADRAO_HORAS = 24;
 export const PRAZO_RESPOSTA_MAX_HORAS = 72;
-/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, referência a confirmar). Passado, a escolha volta ao dono. */
+/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, decisão do Daniel em 07/11/2026). Passado, a escolha volta ao dono. */
 export const PRAZO_DONO_ACEITAR_HORAS = 72;
 
 /** A proposta do avaliador está parada, sem aceite do dono, há mais que o prazo do dono? */

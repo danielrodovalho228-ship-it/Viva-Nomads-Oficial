@@ -31,7 +31,7 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
   // NAV-A (24/10): a ordem da Conta é Perfil, Como você usa a Viva, Avaliações, Dados, Privacidade, Notificações,
   // Pagamentos, Ajuda (e Sair, no menu do celular).
   { id: "papeis", rotulo: "Como você usa a Viva", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
-  { id: "avaliacoes", rotulo: "Avaliações", href: "/dashboard/conta/avaliacoes", icone: "Star", descricao: "O que disseram de você depois de cada estadia." },
+  { id: "avaliacoes", rotulo: "Avaliações", href: "/dashboard/avaliacoes", icone: "Star", descricao: "O que disseram de você depois de cada estadia." },
   { id: "dados", rotulo: "Dados", href: "/dashboard/conta/dados", icone: "FileText", descricao: "Nome, contato e documento. Só a Viva vê." },
   { id: "privacidade", rotulo: "Privacidade", href: "/dashboard/conta/privacidade", icone: "Shield", descricao: "O que os outros veem, baixar ou excluir seus dados." },
   // E176 (parte 2): "Segurança e verificações" ganha item próprio na Conta (antes, uma subtela de Privacidade).
@@ -76,7 +76,7 @@ const ANCORA_SECAO: Readonly<Record<string, string>> = {
   celular: "/dashboard/conta/dados#celular",
   dados: "/dashboard/conta/dados",
   "local-trabalho": "/dashboard/conta/dados",
-  avaliacoes: "/dashboard/conta/avaliacoes",
+  avaliacoes: "/dashboard/avaliacoes",
   papeis: "/dashboard/conta/papeis",
   notificacoes: "/dashboard/notificacoes",
   pagamentos: "/dashboard/conta/pagamentos",

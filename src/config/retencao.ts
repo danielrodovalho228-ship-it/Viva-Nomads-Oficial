@@ -252,6 +252,7 @@ export const JSONB_PROPRIO: Record<string, string> = {
   "parceiro_pedido_eventos.dados": "dados do evento do pedido (nosso)",
   "parceiro_solicitacoes.checklist": "checklist preenchido pelo parceiro",
   "parceiro_solicitacoes.dados_categoria": "campos da categoria preenchidos pelo parceiro",
+  "parceiros.dados_categoria": "campos da categoria (empresa e veículo da Mudança) copiados do pedido do parceiro",
   "parceiros.dados_recebimento": "dados de recebimento digitados pelo parceiro",
   "pedidos_moradia.destino": "destino escolhido pela pessoa (coordenada coberta pela guarda de coordenadas)",
   "profiles.local_trabalho": "local escolhido pela pessoa (coordenada coberta pela guarda de coordenadas)",

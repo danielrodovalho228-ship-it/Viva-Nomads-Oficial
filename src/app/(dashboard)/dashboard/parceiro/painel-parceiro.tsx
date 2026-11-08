@@ -15,7 +15,7 @@ import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
-import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, PENDENCIA_CNPJ, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, PENDENCIA_CNPJ, REDES, linhasDadosDaCategoria, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
@@ -599,6 +599,12 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
             <dt className="text-muted">Categorias</dt>
             <dd className="font-semibold text-ink">{p.categorias.map(rotuloCategoria).join(", ")}</dd>
           </div>
+          {linhasDadosDaCategoria(p.categorias, p.dadosCategoria).map((l) => (
+            <div key={l.rotulo} data-testid="parceiro-dado-categoria">
+              <dt className="text-muted">{l.rotulo}</dt>
+              <dd className="font-semibold text-ink">{l.valor}</dd>
+            </div>
+          ))}
           <div>
             <dt className="text-muted">Endereço da página</dt>
             <dd className="font-semibold text-ink">/parceiros/{p.slug}</dd>
