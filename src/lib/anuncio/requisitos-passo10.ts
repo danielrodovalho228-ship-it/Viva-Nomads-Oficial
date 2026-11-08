@@ -94,6 +94,22 @@ export function qualificacaoDoRascunho(d: unknown, f: FatosQualificacaoRascunho)
   return e ? isEligible(e) : false;
 }
 
+/**
+ * E700: o item "Declarações do imóvel (IPTU, água, luz e gás)" da lista "Falta para publicar". Fica ok quando as declarações
+ * (e o resto do próprio imóvel: mobiliado, mínimo de 30 dias, convenção) estão em ordem. O DOCUMENTO e a OPERAÇÃO têm item
+ * próprio na lista ("documento", "sublocacao"), então não seguram este: antes ele só ficava ok com a elegibilidade completa e
+ * continuava "pendente" com as declarações prontas. A elegibilidade completa (isEligible) segue travando o Publicar.
+ */
+export function declaracoesDoImovelOk(e: EligibilityState): boolean {
+  return isEligible({ ...e, hasDocument: true, isOwnerOrAgent: true });
+}
+
+/** O mesmo item, para o rascunho gravado (a lista de imóveis lê o draft_data). */
+export function declaracoesDoRascunhoOk(d: unknown, f: FatosQualificacaoRascunho): boolean {
+  const e = elegibilidadeDoRascunho(d, f);
+  return e ? declaracoesDoImovelOk(e) : false;
+}
+
 type FatosQualificacaoRascunho = { documento: "none" | "pending" | "approved" | "rejected"; sublocacaoOk: boolean };
 
 /**

@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { buttonClasses, marcaCta } from "@/components/ui/button";
+import { ButtonLink, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
 
@@ -69,7 +69,7 @@ export function BarraFixaCelular({
       <div className="mx-auto max-w-xl">
         {barra.demonstracao && (
           <p data-testid="barra-demo" className="text-[11px] leading-snug text-muted">
-            Anúncio de exemplo: esta solicitação não é enviada.
+            Anúncio de exemplo: aqui não dá para pedir, escrever nem agendar. Veja como funciona e escolha um imóvel real.
           </p>
         )}
         <div className="flex items-center justify-between gap-2">
@@ -101,6 +101,14 @@ export function BarraFixaCelular({
         </div>
         {/* Decisão do Muse (31/10): sem a linha "A Viva não segura dinheiro…" — a frase oficial sob o botão (IMÓVEL-CTA)
             já diz que o pagamento vai direto ao proprietário; a barra não repete. */}
+        {barra.demonstracao ? (
+          // E694 (resíduo): no exemplo os botões de ação não existem — só a saída para os imóveis reais.
+          <div className="mt-1 flex items-center gap-4">
+            <ButtonLink href="/buscar" variant="secondary" size="sm" className="h-11 flex-1 px-3" data-testid="barra-ver-reais">
+              Ver imóveis reais
+            </ButtonLink>
+          </div>
+        ) : (
         <div className="mt-1 flex items-center gap-4">
           {barra.estado === "candidatou" ? (
             <Link href="/dashboard/mensagens" className={buttonClasses({ variant: "secondary", size: "sm", className: "h-11 flex-1 px-3" })}>
@@ -122,8 +130,9 @@ export function BarraFixaCelular({
             Agendar visita
           </button>
         </div>
+        )}
         {/* IMÓVEL-CTA (adendo de 24/10): a frase de tranquilidade, em texto pequeno, sob o botão. */}
-        {barra.estado !== "candidatou" && !bloqueio && (
+        {barra.estado !== "candidatou" && !bloqueio && !barra.demonstracao && (
           <p data-testid="barra-cta-frase" className="mt-1 text-[11px] leading-snug text-muted">
             {FRASE_CTA_IMOVEL}
           </p>

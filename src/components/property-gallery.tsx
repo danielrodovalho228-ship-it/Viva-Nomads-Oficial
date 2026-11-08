@@ -7,6 +7,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
+import { fotosUnicas } from "@/lib/media";
 import { ITEM_VIDEO, fotoDoItem, itensDaGaleriaVideoDepoisDaCapa } from "@/lib/video-tour";
 import { VideoArquivoModal } from "@/components/video-arquivo";
 import { ROTULO_SELO_VIDEO } from "@/lib/card-selos";
@@ -48,7 +49,7 @@ export function PropertyGallery({
   const [lightbox, setLightbox] = useState(false);
   const [videoAberto, setVideoAberto] = useState(false);
   const [index, setIndex] = useState(0);
-  const fotos = photos.length ? photos : [""];
+  const fotos = photos.length ? fotosUnicas(photos) : [""];
   // 65-B: o vídeo é o 2º item, logo depois da capa (a capa segue como a foto grande do mosaico e a 1ª do carrossel).
   const list = itensDaGaleriaVideoDepoisDaCapa(fotos, videoUrl, !!videoArquivoId);
 

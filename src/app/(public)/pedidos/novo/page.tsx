@@ -902,7 +902,7 @@ function BotaoMarca({
       )}
     >
       {ativo ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Icone className="h-4 w-4 shrink-0 text-muted" />}
-      <span className="truncate">{children}</span>
+      <span className="line-clamp-2 min-w-0 text-center leading-tight">{children}</span>
     </button>
   );
 }

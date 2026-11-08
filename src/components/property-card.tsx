@@ -78,7 +78,7 @@ export function PropertyCard({
             bairro só trunca se for maior que a linha inteira. */}
         <div className="flex flex-wrap items-start justify-between gap-x-2" data-testid="cartao-local-linha">
           {/* Bairro (com a cidade) + nota. Cartão 16/600. */}
-          <h3 className="min-w-0 max-w-full truncate font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
+          <h3 className="min-w-0 max-w-full line-clamp-2 font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
             {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </h3>
           {exemplo ? (

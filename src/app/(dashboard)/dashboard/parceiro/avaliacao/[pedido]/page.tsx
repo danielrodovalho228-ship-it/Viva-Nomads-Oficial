@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { SeloAssinatura } from "@/components/vistoria/selo-assinatura";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
@@ -12,7 +13,7 @@ import { PERGUNTAS_RUIDO } from "@/config/niveis";
 import { DELIMITACAO_LAUDO, ROTULO_VALOR, itemChecklist, valoresDoItem, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTULO_RESULTADO, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
-import { linhaResumoGrupo, prazoDoLaudo, textoAssinatura } from "@/lib/vistoria/telas-laudo";
+import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
 export const metadata = { title: "Checklist da avaliação", robots: { index: false, follow: false } };
@@ -46,7 +47,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
 
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
-    admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinatura_hash, assinado_em").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
+    admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_checklist_fotos").select("item_chave, comodo, criado_em").eq("pedido_id", p.id).order("criado_em"),
   ]);
   const iniciais = Object.fromEntries(((itens ?? []) as { chave: string; valor: ValorItem; observacao: string | null }[]).map((i) => [i.chave, { valor: i.valor, observacao: i.observacao }]));
@@ -61,8 +62,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     corrigido_em: string | null;
     ressalva_vencida_em: string | null;
     contestado_em: string | null;
-    assinatura_hash: string | null;
     assinado_em: string | null;
+    assinatura_hash: string | null;
   } | null;
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
@@ -194,15 +195,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
       {laudo && (
         <Panel title={`Laudo ${laudo.numero}${laudo.versao > 1 ? ` v${laudo.versao}` : ""}`} data-testid="avaliador-laudo" data-resultado={laudo.resultado}>
           <p className="text-sm text-ink">Resultado: {ROTULO_RESULTADO[laudo.resultado]}</p>
-          {(() => {
-            const a = textoAssinatura({ numero: laudo.numero, hash: laudo.assinatura_hash, em: laudo.assinado_em });
-            return a ? (
-              <p className="mt-1 text-xs text-muted" data-testid="laudo-assinatura">
-                {a.linha} · registro <span title={a.hash} className="font-mono">{a.hashCurto}</span>
-              </p>
-            ) : null;
-          })()}
           <a href={`/api/vistoria/laudo/${laudo.id}`} className="mt-1 inline-block text-sm underline">Baixar o PDF</a>
+          <SeloAssinatura laudo={{ numero: laudo.numero, versao: laudo.versao, assinadoEm: laudo.assinado_em, assinaturaHash: laudo.assinatura_hash }} quem="avaliador" />
           {(laudo.ressalvas.length > 0 || laudo.graves.length > 0) && !laudo.corrigido_em && !laudo.ressalva_vencida_em && !laudo.contestado_em && (
             <FormAcao acao={confirmarCorrecao} className="mt-4 grid gap-2" testid="confirmar-correcao">
               <input type="hidden" name="laudoId" value={laudo.id} />

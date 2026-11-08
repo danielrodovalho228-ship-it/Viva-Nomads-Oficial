@@ -89,7 +89,7 @@ test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e dispo
   // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/);
   const hoje = new Date("2026-10-14T12:00:00Z");
-  assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11");
+  assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11/2026"); // E702: o ano sempre
   assert.equal(disponivelAPartirDe("2027-01-05", hoje), "05/01/2027");
   assert.equal(disponivelAPartirDe("2026-10-01", hoje), null);
   assert.equal(disponivelAPartirDe(undefined, hoje), null);

@@ -424,6 +424,8 @@ export async function GET(request: Request) {
   const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
   // Avaliações de pedido de parceiro: publicam 14 dias depois da conclusão, mesmo sem a outra parte (nunca no simulado).
   const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
+  // E679-B: a conduta do avaliador é cega; publica as que venceram os 14 dias do laudo sem a outra parte (nunca no simulado).
+  if (!simular) await admin.rpc("publicar_conduta_avaliador").then(() => null, () => null);
   // E565: a faixa da taxa conta só os ativos de verdade (calendário confirmado nos últimos 30 dias): o calendário que
   // vence não muda nenhuma linha, então a rotina diária recalcula a faixa_dono de todos (a queda abre a janela de 30 dias).
   const faixasAtualizadas = simular ? 0 : await admin.rpc("atualizar_faixas_dos_donos").then((r) => Number(r.data ?? 0) || 0, () => 0);

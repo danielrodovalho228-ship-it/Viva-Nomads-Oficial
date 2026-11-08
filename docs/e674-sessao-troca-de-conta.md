@@ -21,3 +21,17 @@ mais coisas da conta anterior:
 
 **Dúvida:** não reproduzi a troca ao vivo; as duas causas são as que o código mostra. Se a QA ainda vir o Lucas depois do
 deploy, falta o horário e a aba em que aconteceu (outra aba aberta com a conta anterior também pode renovar o cookie).
+
+## Complemento (07/11, 2ª volta): a causa que sobrava no SERVIDOR
+O #3166 (mergeado) limpou o lado do navegador (store e sessão local, antes do POST da porta). Sobrava o lado do servidor:
+`entrarComoQa` chamava `verifyOtp` com os cookies da conta anterior ainda no pedido. Agora, depois de todas as travas e antes
+de gravar a sessão nova, a porta encerra a sessão LOCAL (`signOut({ scope: "local" })`: só os cookies deste navegador; a
+conta anterior não é derrubada em outros aparelhos). Teste: `src/lib/qa/e674-porta-limpa-sessao.test.ts`.
+
+Sobre a guarda de `/dashboard/contratos` em carga direta: a página não tem guarda própria (o `proxy.ts` barra sem sessão e o
+servidor lê a sessão pelo cookie), então o conteúdo da carga direta é sempre o da conta do cookie; a lista por navegação interna
+e a carga direta usam a mesma consulta. A troca vinha do cookie, não da página. Sem prova ao vivo.
+
+## E668 (mesmo dispatch)
+Já mergeado no #3134 (carimbo `papel_ativo_escolhido_em`, migração 0318): "parceiro" só vale como papel gravado se foi escolhido;
+a casca abre como "Áreas do morador/proprietário" por papel. Nada novo neste PR.
