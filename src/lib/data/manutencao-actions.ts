@@ -118,10 +118,14 @@ async function sessao(): Promise<Sessao | null> {
 
 type OrdemDaParte = LinhaOrdem & { tenant_id: string; owner_id: string };
 
-/** A ordem, lida PELO RLS (só as partes enxergam) + o lado de quem pede. */
-async function ordemDaParte(s: Sessao, id: string): Promise<{ ordem: OrdemDaParte; papel: PapelOrdem } | null> {
+const MSG_ORDEM_SEM_LEITURA = "Não foi possível ler a solicitação agora. Tente de novo.";
+/** A ordem, lida PELO RLS (só as partes enxergam) + o lado de quem pede. "erro" = não deu para ler agora. */
+async function ordemDaParte(s: Sessao, id: string): Promise<{ ordem: OrdemDaParte; papel: PapelOrdem } | null | "erro"> {
   const nova = await s.supabase.from("service_orders").select(COLUNAS_ORDEM).eq("id", id).maybeSingle();
-  const data = nova.error ? (await s.supabase.from("service_orders").select(COLUNAS_ORDEM_ANTIGAS).eq("id", id).maybeSingle()).data : nova.data;
+  // Colunas novas ausentes (migração ainda não aplicada): lê as antigas. Falha nas DUAS leituras = não deu para ler (não é "não encontrada").
+  const antiga = nova.error ? await s.supabase.from("service_orders").select(COLUNAS_ORDEM_ANTIGAS).eq("id", id).maybeSingle() : null;
+  if (nova.error && antiga?.error) return "erro";
+  const data = nova.error ? antiga?.data : nova.data;
   const ordem = data as unknown as OrdemDaParte | null;
   if (!ordem) return null;
   if (ordem.owner_id === s.uid) return { ordem, papel: "proprietario" };
@@ -181,6 +185,7 @@ export async function detalheSolicitacao(id: string): Promise<{ ok: true; detalh
   const s = await sessao();
   if (!s) return { ok: false, error: "Sessão expirada. Entre de novo." };
   const alvo = await ordemDaParte(s, id);
+  if (alvo === "erro") return { ok: false, error: MSG_ORDEM_SEM_LEITURA };
   if (!alvo) return { ok: false, error: "Solicitação não encontrada." };
   const [{ data: evs }, { data: msgs }] = await Promise.all([
     s.supabase.from("service_order_eventos").select("tipo, papel, status_para, criado_em").eq("service_order_id", id).order("criado_em").limit(100),
@@ -219,6 +224,7 @@ export async function mudarStatusSolicitacao(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Indisponível no momento." };
   const alvo = await ordemDaParte(s, id);
+  if (alvo === "erro") return { ok: false, error: MSG_ORDEM_SEM_LEITURA };
   if (!alvo) return { ok: false, error: "Solicitação não encontrada." };
   const { ordem, papel } = alvo;
   const atual = ordem.status as SOStatus;
@@ -253,6 +259,7 @@ export async function responderSolicitacao(id: string, texto: string): Promise<{
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Indisponível no momento." };
   const alvo = await ordemDaParte(s, id);
+  if (alvo === "erro") return { ok: false, error: MSG_ORDEM_SEM_LEITURA };
   if (!alvo) return { ok: false, error: "Solicitação não encontrada." };
   if (!(await consumirLimite(`manutencao-msg:${s.uid}`, 30, 3600))) return { ok: false, error: "Muitas mensagens em pouco tempo. Tente de novo mais tarde." };
 
@@ -357,6 +364,7 @@ export async function marcarSolucaoProvisoria(id: string): Promise<ResultadoOrde
   const s = await sessao();
   if (!s) return { ok: false, error: "Sessão expirada. Entre de novo." };
   const alvo = await ordemDaParte(s, id);
+  if (alvo === "erro") return { ok: false, error: MSG_ORDEM_SEM_LEITURA };
   if (!alvo || alvo.papel !== "proprietario") return { ok: false, error: "Só o proprietário marca a solução provisória." };
   const o = alvo.ordem;
   if (o.priority !== "urgente") return { ok: false, error: "Solução provisória é só para urgências." };
@@ -380,6 +388,7 @@ export async function responderSolucaoMorador(id: string, acao: "confirmar" | "r
   const admin = createAdminClient();
   if (!s || !admin) return { ok: false, error: "Sessão expirada. Entre de novo." };
   const alvo = await ordemDaParte(s, id);
+  if (alvo === "erro") return { ok: false, error: MSG_ORDEM_SEM_LEITURA };
   if (!alvo || alvo.papel !== "inquilino") return { ok: false, error: "Só o morador confirma ou reabre." };
   const agora = new Date();
   if (!moradorPodeResponder(paraSolucao(alvo.ordem), agora)) return { ok: false, error: "O prazo de 48 horas para confirmar ou reabrir já passou." };
@@ -402,6 +411,7 @@ export async function pedirReclassificacao(id: string, motivo: string): Promise<
   const admin = createAdminClient();
   if (!s || !admin) return { ok: false, error: "Sessão expirada. Entre de novo." };
   const alvo = await ordemDaParte(s, id);
+  if (alvo === "erro") return { ok: false, error: MSG_ORDEM_SEM_LEITURA };
   if (!alvo || alvo.papel !== "proprietario") return { ok: false, error: "Só o proprietário pede a reclassificação." };
   if (alvo.ordem.reclassificacao_pedida_em) return { ok: false, error: "O pedido de reclassificação já foi enviado." };
   const agora = new Date().toISOString();
