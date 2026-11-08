@@ -7,17 +7,15 @@ import { test, expect } from "@playwright/test";
     C17: fechar "Mais filtros" com Esc manda o foco para "Pular para o conteúdo principal"; deveria voltar ao botão que abriu
          (document.activeElement = [data-testid=pilula-mais]).
   C17 reproduz no laboratório: fica como test.fail ligado ao item da QA; quem corrigir remove o test.fail no mesmo PR (o Playwright avisa).
-  C16 reproduz no laboratório a 360 px (5 px de rolagem lateral): test.fail ligado ao item. A 390 px o laboratório não reproduz (passou com
-  test.fail: "Expected to fail, but passed"): os 3 px que a QA mediu em produção dependem da largura real da fonte do site; ali o teste é
-  comum e guarda contra regressão MAIOR; o 390 de produção só se prova no navegador real, pelos trabalhadores de QA. Visitante.
+  C16 CORRIGIDO: o #3433 (Faixa D, `flex-wrap` na faixa de ações) tirou o estouro a 360 px; o `test.fail` de antes passou a "passar quando devia
+  falhar" no lab, então o C16 é teste comum de regressão a 360 e 390 px. Falta só a prova do C16 em produção no navegador real (QA).
+  C17 reproduz no laboratório: fica como test.fail ligado ao item da QA; quem corrigir remove o test.fail no mesmo PR (o Playwright avisa). Visitante.
 */
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe("T1486 — busca com filtro ativo (C16) e foco ao fechar Mais filtros (C17)", () => {
   for (const w of [360, 390] as const) {
     test(`C16 a ${w} px: /buscar?quartos=1 não rola para o lado e o Mapa cabe na tela`, async ({ page }) => {
-      // 360 px reproduz no laboratório (5 px); 390 px não (a QA mediu 3 px em produção, fonte real): só o 360 é test.fail.
-      test.fail(w === 360, "C16 (QA 07:05): a linha Mais filtros · Ordenar · Mapa estoura a largura com filtro ativo a 360 px");
       await page.setViewportSize({ width: w, height: 844 });
       const r = await page.goto("/buscar?quartos=1", { waitUntil: "domcontentloaded" });
       expect(r?.status() ?? 0).toBeLessThan(400);
