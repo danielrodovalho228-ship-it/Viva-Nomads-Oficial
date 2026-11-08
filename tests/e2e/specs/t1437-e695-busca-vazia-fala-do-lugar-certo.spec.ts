@@ -35,6 +35,10 @@ test.describe("T1437 — E695: busca vazia fala do lugar certo", () => {
       await expect(page.getByTestId("busca-vazia-proxima")).toContainText(/Mude a data de entrada ou tire algum filtro/);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
 
+      // T-E695 (QA, 07/11): outro filtro que exclui tudo num lugar COM imóveis dá a mesma mensagem de data/filtro, sem o convite de cidade.
+      await page.goto("/buscar?local=Uberl%C3%A2ndia&quartos=9", { waitUntil: "domcontentloaded" });
+      await expect(page.getByTestId("busca-vazia-titulo")).toHaveText(/^Há \d+ imóve(l|is) em Uberlândia, mas nenhum para essa data e esses filtros\.$/, { timeout: 40_000 });
+
       await page.goto("/buscar?local=Cidade%20Sem%20Nenhum%20Imovel", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("busca-vazia-titulo")).toHaveText(/^Ainda não temos imóvel para essa busca em Cidade Sem Nenhum Imovel\.$/, { timeout: 40_000 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
