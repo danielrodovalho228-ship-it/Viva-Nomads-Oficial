@@ -1,0 +1,236 @@
+{
+ "390 Datas": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "diasClicaveis": 0,
+  "url": "/buscar",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "escFecha": "nao-reabriu",
+  "focoVolta": true,
+  "hs": 0
+ },
+ "390 Local": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [
+   "Tempo máximo até o trabalho\nes <- Navegação principal",
+   "escolha um destino <- Navegação principal"
+  ],
+  "url": "/buscar?destino=hc-ufu&modo=carro",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "390 Tipo": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?tipo=studio",
+  "depois": "5 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "390 Preço": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?preco=3500",
+  "depois": "8 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "390 Nível": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "escFecha": "nao-reabriu",
+  "focoVolta": true,
+  "hs": 0
+ },
+ "390 Mais filtros": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": true,
+  "cobertos": [],
+  "url": "/buscar?quartos=1",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": true,
+  "escFecha": true,
+  "focoVolta": false,
+  "hs": 3
+ },
+ "390 Ordenar": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?ordem=recent",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": true,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "768 Datas": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "diasClicaveis": 0,
+  "url": "/buscar",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "escFecha": "nao-reabriu",
+  "focoVolta": true,
+  "hs": 0
+ },
+ "768 Local": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?destino=hc-ufu&modo=carro",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "768 Tipo": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?tipo=studio",
+  "depois": "5 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "768 Preço": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?preco=3500",
+  "depois": "8 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "768 Nível": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "escFecha": "nao-reabriu",
+  "focoVolta": true,
+  "hs": 0
+ },
+ "768 Mais filtros": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": true,
+  "cobertos": [],
+  "url": "/buscar?quartos=1",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": true,
+  "escFecha": true,
+  "focoVolta": false,
+  "hs": 0
+ },
+ "768 Ordenar": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?ordem=recent",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": true,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "1280 Datas": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "diasClicaveis": 0,
+  "url": "/buscar",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "escFecha": "nao-reabriu",
+  "focoVolta": true,
+  "hs": 0
+ },
+ "1280 Local": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?destino=hc-ufu&modo=carro",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "1280 Tipo": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?tipo=studio",
+  "depois": "5 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "1280 Preço": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?preco=3500",
+  "depois": "8 imóveis em",
+  "fechouAoAplicar": false,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ },
+ "1280 Nível": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": false,
+  "escFecha": "nao-reabriu",
+  "focoVolta": true,
+  "hs": 0
+ },
+ "1280 Mais filtros": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": true,
+  "cobertos": [],
+  "url": "/buscar?quartos=1",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": true,
+  "escFecha": true,
+  "focoVolta": false,
+  "hs": 0
+ },
+ "1280 Ordenar": {
+  "antes": "15 imóveis em",
+  "aberto": true,
+  "focoDentro": false,
+  "cobertos": [],
+  "url": "/buscar?ordem=recent",
+  "depois": "15 imóveis em",
+  "fechouAoAplicar": true,
+  "erro": "TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting fo"
+ }
+}
