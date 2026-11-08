@@ -32,6 +32,7 @@ import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
 import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapidas-conversa";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
+import { TEXTO_MENSAGENS_VAZIO, TITULO_MENSAGENS_VAZIO } from "@/lib/mensagens-vazio";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { horaDaBolha } from "@/lib/mensagens/hora-da-bolha";
@@ -258,10 +259,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         <PageTitle title="Mensagens" />
         {/* Prompt 48: sem ilustração; diz como a conversa funciona e o próximo passo. */}
         <div className="rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="mensagens-vazio">
-          <h2 className="font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h2>
-          <p className="mt-2 max-w-md text-sm text-muted">
-            A conversa começa quando você pede um imóvel ou quando alguém pede o seu. Tudo fica aqui, com o imóvel e as
-            datas no topo; telefone e e-mail só aparecem depois do aceite.
+          <h2 className="font-title text-lg font-semibold text-ink">{TITULO_MENSAGENS_VAZIO}</h2>
+          <p className="mt-2 max-w-md text-sm text-muted" data-testid="mensagens-vazio-texto">
+            {TEXTO_MENSAGENS_VAZIO}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <ButtonLink href="/buscar" variant="secondary" size="sm">
