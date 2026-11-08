@@ -203,3 +203,11 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Os itens C16 e C17 já têm número da QA; não abri L- novo para eles (evita duplicar). L-108 segue livre.
 - Merges de código na main: nenhum desde o último registro (só #3416, docs da QA). Drafts E714/E717/E719 seguem abertos.
 - Próximo bloco: 544 (grupo do 527).
+
+## Bloco 544 e conferência com a lista-master anexa
+
+- Bloco 544 (t1488, PR #3426 draft, run 42462584673): verde. Compartilhadas com o morador, pedido de serviço pelos dois lados, três papéis (grupo do 527).
+- Lab da main: o push mais recente (`fc7061bfb`, #3416, run 42458166437) está verde; os dois anteriores (#3414, #3412) também. Nenhum merge de código novo desde o último registro.
+- Lista-master anexa (snapshot até E719): sem item novo que peça spec e já esteja mergeado. Drafts ainda abertos, sem spec possível na main: E714 (#3395, spec pronta no PR #3421), E717 (#3396, spec no PR #3422), E713 (#3408, coberto pela t59 e t1475), E716 (#3356 e #3388), E719 (#3397 e #3398, duas implementações; spec adiada até se escolher). E712 e E718 seguem abertos com a Pista A/chat principal, sem comportamento fechado para testar.
+- Defeitos: nenhum novo; L-108 livre; abertos L-104 e L-107 (t1429, PR #3394); C16 (360 px) e C17 da QA cobertos por `test.fail` na t1486 (PR #3424).
+- Próximo bloco: 545 (grupo do 528).
