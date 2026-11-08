@@ -121,3 +121,10 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Bloco 529 (t1467, PR #3374 em draft, run 42442070795): verde. /conferir, /conferir/[codigo], /dashboard/pedidos e /admin/sistema, 390 e 1280 px.
 - Main: único merge novo é #3372 (docs da QA, rodada 02:40); sem código de app novo desde `a3bae5dd`. A QA propôs o T-E686 (em /parceiros/avaliadores, nunca "Você define o seu" junto de "segue a tabela da Viva"; depois do D-E686-a, também sem "Você paga a avaliação"). A primeira parte já é a t1428 (PR #3270), que depende do #3256 ainda em draft: na main de hoje o texto ainda traz os dois trechos, então a spec não entra antes do produto. A parte "Você paga a avaliação" fica para quando o D-E686-a for corrigido (pista A).
 - Nenhum defeito novo; L-107 livre. Próximo: bloco 530 (grupo do 513).
+
+## Blocos 530, 531 e 532
+
+- Bloco 530 (t1468, PR #3379 draft, run 42443518457): verde. Contrato, estadia, cartão, desempenho e solicitações (grupo do 513).
+- Bloco 531 (t1469, PR #3380 draft, run 42443520216): verde. Início, ajuda, busca, imóvel e telas do proprietário (grupo do 514).
+- Bloco 532 (t1470, PR #3381 draft, run 42443522805): verde. Admin, parceiros, visitas e serviços (grupo do 515).
+- Merge novo na main durante a sequência: #3377 (docs da QA); nada a testar. Nenhum defeito novo; L-107 livre. Próximo: bloco 533 (grupo do 516).
