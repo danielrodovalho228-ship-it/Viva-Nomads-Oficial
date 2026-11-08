@@ -166,3 +166,14 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Merges novos: #3391, #3392, #3399 e #3400 (docs da QA); nada a testar.
 - Bloco 536 (t1476, PR #3403 draft, run 42453174535): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações com id, telas da estadia e do imóvel com id.
 - Aberto no produto: L-104 e L-107. Próximo livre: L-108. Próximo bloco: 537 (grupo do 520).
+
+## Blocos 537, 538, 539 e t1480
+
+- Bloco 537 (t1477, PR #3409 draft, run 42454153217): verde. Admin (ajuda da publicação, fotos, marketing, sócios, dados de teste, serviços, solicitações, pedidos, encerramentos, retenção), grupo do 520.
+- Bloco 538 (t1478, PR #3410 draft, run 42454155444): verde. Intenção, avaliação do imóvel, avaliadora, laudo, grupo do 521.
+- Bloco 539 (t1479, PR #3411 draft, run 42454158246): verde. Painel do proprietário sem id, grupo do 522.
+- Merges novos: #3404 (lint, sem mudança de comportamento) e #3405 (docs da QA, rodada 06:10); nenhum código de app novo.
+- t1480 (PR #3413 draft, run 42456730096): verde. T-fixos e T-dinâmicas propostos pela QA na rodada 06:10 (nenhum texto do main/footer fica sob elemento fixo de baixo, 390 e 1280 px; páginas do sitemap com 1 h1 e sem imagem de largura natural 0; /imoveis-perto-de inexistente = 404).
+  - Três falhas no caminho eram da minha spec, não do produto: (1) contava o cabeçalho fixo do topo (cobrir o que rola por baixo é normal); (2) a rolagem parava no meio porque a página crescia (rolagem 8839 de 9995), e o texto do rodapé aparecia sob a barra de baixo no meio do trajeto; (3) agora rola até encostar no fim de verdade. Nenhum defeito de produto: coerente com a QA (0 sobreposições).
+- Pendente da QA: T-P1 (saudação do assistente sem "planos") até a Pista A corrigir a saudação.
+- Aberto no produto: L-104 e L-107 (t1429 com test.fail, PR #3394). Próximo livre: L-108. Próximo bloco: 540 (grupo do 523).
