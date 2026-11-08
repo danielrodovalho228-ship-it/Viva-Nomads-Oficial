@@ -596,3 +596,8 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1567 (#3548, E687/0326): verde** (run 42526112937).
 - **Bloco 602 (#3553, t1550): verde** (run 42526520335). **Bloco 603 (#3554, t1551): verde** (run 42526539684). Mesclada a main nos dois ramos antes do push; sem achado de varredura (próximo livre: **L-110**). Os dois mexem em `cobertura.json`: o segundo a mesclar precisa de merge da main no ramo (eu resolvo). O 601 segue sem PR (pausa do Muse).
 - **Main** ainda em `b2934fb2a`: nenhum merge novo desde a última foto; drafts #3533, #3530, #3531, #3532 e #3498 abertos. Drafts novos de A/B em lab verde, sem merge (specs saem quando entrarem): #3543 (O4), #3547 (E748), #3549 (E746), #3550 (E747), #3551 (E749), #3552 (E750), #3479 (E722/0334).
+
+## Vigia das 22h — merge novo
+
+- **#3402 (E687, migração 0329, `a5d6970f8`)** entrou na main: massa do parceiro de Mudança aprovado, **só em conta de teste da produção** (sem massa no lab). Guarda: o teste de unidade `massa-parceiro-mudanca-e687.test.ts` (já no PR) + a t1567 (#3548, verde), que cobre `parceiros.dados_categoria` no banco do lab. Não cabe spec de UI nova. Lab crítico da main em `a5d6970f8`: run 42527730368, em andamento no momento do registro.
+- Demais: sem merge novo; drafts #3533, #3530, #3531, #3532, #3498 abertos (limpeza pós-merge segue pendente).
