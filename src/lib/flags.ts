@@ -116,6 +116,12 @@ export const MATRICULA_OBRIGATORIA = process.env.NEXT_PUBLIC_MATRICULA_OBRIGATOR
 export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA === "on";
 
 /**
+ * E722 — pré-aceitação de 72 horas (prazo para concluir o contrato depois do aceite, lembretes de 24 h e 6 h, expiração sem
+ * punição, até 2 reaberturas com a taxa congelada mantida). OFF por padrão: o motor existe, nada age até a decisão de ligar.
+ */
+export const PRE_ACEITACAO_72H_ATIVA = process.env.NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA === "on";
+
+/**
  * TRAVA COBRANCA_MENSAL (E641, desenho do coordenador de 05/11/2026): cobrança mensal para contratos de 91 a 180 dias. DESLIGADA por
  * padrão e só a parte NEUTRA existe: cronograma, livro de pagamentos (registro do morador, confirmação do dono) e lembretes D-5/D-3.
  * Nada de atraso, encargos, mensagem depois do vencimento ou consequência ao morador até o parecer da Dra. Beatriz. Só o valor "on" liga.

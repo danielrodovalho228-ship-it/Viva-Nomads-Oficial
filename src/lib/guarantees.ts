@@ -172,7 +172,8 @@ export const SERVICOS_ADICIONAIS: ServicoAdicional[] = [
     categoria: "manutencao_proprietario",
     quemPaga: "proprietario",
     parceiroNome: null,
-    status: "ativo",
+    // E688 (Daniel, 08/11): sem a saída AquiResolve, aparece como "Em breve", sem poder contratar (espelha a 0333).
+    status: "em_breve",
     descricao:
       "Manutenção preventiva e corretiva do imóvel, com prestador parceiro independente. Você contrata e paga direto ao prestador; a Viva não recebe esse valor nem executa o serviço.",
   },
