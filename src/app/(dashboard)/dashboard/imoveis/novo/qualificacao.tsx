@@ -22,7 +22,7 @@ import {
 } from "@/lib/anuncio/qualificacao-conforto";
 import { nivelDaQualificacao, type ProvasDoRascunho } from "@/lib/anuncio/qualificacao-nivel";
 import { cn } from "@/lib/utils";
-import { progressoQualificacao, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
+import { progressoQualificacaoComRascunho, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
 import { RodapeAssistente } from "./rodape-assistente";
 
 const ICONES: Record<IconeOpcao, React.ComponentType<{ className?: string }>> = {
@@ -57,10 +57,14 @@ export function Qualificacao(p: {
   ocupado?: boolean;
   /** E180: o aviso "Você tem um anúncio em andamento" (Continuar de onde parei), logo abaixo do progresso. */
   aviso?: React.ReactNode;
+  /** E699: o cartão "Para publicar, a Viva pede duas coisas" já na entrada do fluxo (antes do Passo 1). */
+  travas?: React.ReactNode;
   /** E415: as provas do rascunho (foto na hora, internet medida, ruído) — o resultado as credita. */
   provas?: ProvasDoRascunho | null;
   /** E506: o conforto que o rascunho já tem confirmado (Passo 5) — conta no resultado e na barra. */
   confirmados?: readonly string[];
+  /** E506: o % completo real do rascunho (prontidão) — a barra nunca fica abaixo dele. */
+  progressoRascunho?: number;
 }) {
   const resultado = p.tela >= TOTAL_TELAS;
   // O "Sair" do topo (moldura do assistente) aqui salva as respostas antes de sair (decisão do Muse, 25/10).
@@ -94,6 +98,7 @@ export function Qualificacao(p: {
         {resultado ? rotuloProgressoQualificacao(faltamAgora) : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
       </p>
       {p.aviso && <div className="mt-4">{p.aviso}</div>}
+      {p.travas && <div className="mt-4" data-testid="qualificacao-travas">{p.travas}</div>}
       {resultado ? (
         <Resultado respostas={p.respostas} confirmados={p.confirmados} provas={p.provas ?? null} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
@@ -110,7 +115,7 @@ export function Qualificacao(p: {
         total={10}
         texto={resultado ? "Resultado da qualificação · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
         detalhe={resultado ? null : textoRespondidas(respondidas)}
-        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, fracaoDaQualificacao(respondidas, confortoAgora.length))}
+        pct={progressoQualificacaoComRascunho(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, fracaoDaQualificacao(respondidas, confortoAgora.length), p.progressoRascunho ?? 0)}
         onVoltar={!resultado && p.tela > 0 ? () => p.onTela(p.tela - 1) : null}
         primario={
           resultado

@@ -82,3 +82,31 @@ test("E453: título do cartão do mapa INTEIRO — sem corte de linhas nem retic
   assert.match(card, /<p className="break-words text-sm font-semibold text-ink" data-testid="card-pin-titulo">\{p\.title\}<\/p>/);
   assert.doesNotMatch(card, /line-clamp-\d text-sm font-semibold/);
 });
+
+// E704 — o pin de preço não cobre o nome da cidade que o mapa-base desenha: o rótulo vira obstáculo fixo.
+test("E704: pin sobre o rótulo da cidade sai de cima dele; o rótulo não se mexe", () => {
+  const rotulo = { x: 300, y: 200, w: 120, h: 20 };
+  const pins = [pin("sobre", 300, 200)];
+  const d = afastarPins(pins, { w: 800, h: 600 }, [rotulo]);
+  const o = d.get("sobre")!;
+  const c = { l: 300 + o.dx - 32, r: 300 + o.dx + 32, t: 200 + o.dy - 12, b: 200 + o.dy + 12 };
+  const livre = c.r <= rotulo.x - rotulo.w / 2 || c.l >= rotulo.x + rotulo.w / 2 || c.b <= rotulo.y - rotulo.h / 2 || c.t >= rotulo.y + rotulo.h / 2;
+  assert.ok(livre, `ainda cobre o rótulo: ${JSON.stringify(o)}`);
+});
+
+test("E704: pin longe do rótulo fica onde está", () => {
+  const d = afastarPins([pin("a", 50, 50)], { w: 800, h: 600 }, [{ x: 300, y: 200, w: 120, h: 20 }]);
+  assert.deepEqual(d.get("a"), { dx: 0, dy: 0 });
+});
+
+test("E704: sem obstáculos o resultado é o de sempre", () => {
+  const pins = [pin("a", 100, 100), pin("b", 104, 102)];
+  assert.deepEqual([...afastarPins(pins, { w: 800, h: 600 }, [])], [...afastarPins(pins, { w: 800, h: 600 })]);
+});
+
+test("E704: o mapa Mapbox lê os rótulos de cidade do próprio mapa e os passa ao afastamento", () => {
+  const src = readFileSync(new URL("../../components/search-map.tsx", import.meta.url), "utf8");
+  assert.match(src, /settlement-major-label/);
+  assert.match(src, /queryRenderedFeatures\(/);
+  assert.match(src, /afastarPins\([\s\S]{0,400}obstaculos/);
+});
