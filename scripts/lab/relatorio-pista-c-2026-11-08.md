@@ -301,3 +301,14 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Merge novo na main desde o último registro: nenhum (conferido no começo e no fim da sequência; sem merge de código desde o #3433). Sem spec permanente nova a criar.
 - Sem 504 de infra. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
 - Próximo bloco: 559 (grupo do 542).
+
+## Blocos 559, 560 e 561 e a suíte noturna completa
+
+- Bloco 559 (t1507, PR #3461 draft, run 42480742592): verde. Admin com id na URL (grupo do 542).
+- Bloco 560 (t1508, PR #3462 draft, run 42480746797): verde. Compartilhadas sem id: proprietário e parceiro (grupo do 543).
+- Bloco 561 (t1509, PR #3463 draft, run 42480748665): verde. Compartilhadas: morador, pedido de serviço, três papéis (grupo do 544).
+- Merge novo de código na main depois do #3433: nenhum (conferido no começo e no fim). Últimos merges: docs da QA (#3443, #3444). Sem spec permanente nova a criar.
+- **Lab crítico (`lab-critico.yml`) na main:** verde em `624a5924a` e `a844024e7` (runs 42471821068 e 42472878384).
+- **Suíte noturna completa (`laboratorio.yml`, "Rodar a suíte E2E", ~65 min):** run 42471821063 em `624a5924a` terminou **com falha** no passo "Marcar a execução como falha se algum teste falhou" (a suíte rodou até o fim; o passo de infra `setup-cli` passou, sem 504). **Não consegui abrir a lista dos testes que falharam**: ela está no resumo do job e no artefato `laboratorio-42471821063` (173 MB), e o artefato não baixa daqui sem credencial; o log do job só traz a linha final. Causa provável: não classificável por mim agora (infra × código × teste vencido). O run de `a844024e7` (42472878415) estava em andamento ao fechar este registro. **Pedido ao chat principal:** abrir o "Resumo da noite" dessa run (ou o artefato) e me passar os nomes das specs vermelhas; eu classifico cada uma (defeito real × teste vencido × massa), corrijo spec vencida e proponho L-108 em diante para defeito real. Os `test.fail` conhecidos (L-104, L-107, C17, C19, E527, E532) seguem como estão, sem forçar verde.
+- Defeitos novos na varredura: nenhum; L-108 livre.
+- Próximo bloco: 562 (grupo do 545).
