@@ -18,7 +18,7 @@ import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { podeLerAvaliacaoDoPedido, validarAvaliacaoCompleta, validarFatoFalso } from "@/lib/avaliacoes-criterios";
 import { validarContestacao, validarResposta } from "@/lib/avaliacoes-resposta";
 import { PEDIDO_PARCEIRO_TESTE_RECUSADO, categoriaValida, parceiroPodeReceberServico, rotuloCategoria } from "./regras";
-import { agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
+import { MSG_AGENDA_SEM_LEITURA, agendaDoParceiro, avisar, evento, mensagem, novoCodigo, rota } from "./pedido-servidor";
 import { numeroOrcamentoParceiro } from "@/lib/fiscal/prefixos";
 import { EVENTOS_DE_HORARIO, reagendamentoPendente } from "@/lib/automacao/remarcacao";
 import { hashPerceptual, reconverterFotoParaWebp, semMetadados } from "@/lib/foto-reconversao";
@@ -190,7 +190,8 @@ export async function solicitarOrcamento(e: EntradaPedido): Promise<Res<{ id: st
   if (e.propertyId) {
     if (!UUID.test(e.propertyId) || !(await imovelDaPessoa(admin, e.propertyId, userId))) return { ok: false, erro: "Escolha um imóvel seu ou da sua estadia." };
   }
-  const agenda = await agendaDoParceiro(admin, parceiro.id);
+  const agenda = await agendaDoParceiro(admin, parceiro.id).catch(() => null);
+  if (!agenda) return { ok: false, erro: MSG_AGENDA_SEM_LEITURA };
   const v = validarPedido(e, agenda, new Date());
   if (!v.ok) return { ok: false, erro: v.erro };
 
@@ -394,7 +395,8 @@ export async function proporOutroHorario(pedidoId: string, horario: string): Pro
   const c = await carregar(pedidoId);
   if ("erro" in c) return { ok: false, erro: c.erro };
   if (c.papel !== "parceiro" || c.p.status !== "aceito") return { ok: false, erro: "Esta ação não está disponível agora. Atualize a página." };
-  const agenda = await agendaDoParceiro(c.admin, c.p.parceiro_id);
+  const agenda = await agendaDoParceiro(c.admin, c.p.parceiro_id).catch(() => null);
+  if (!agenda) return { ok: false, erro: MSG_AGENDA_SEM_LEITURA };
   if (!horarioNaAgenda(horario, agenda.janelas, agenda.bloqueios, new Date())) return { ok: false, erro: "Esse horário está fora da sua agenda." };
   const iso = new Date(horario).toISOString();
   const lista = [...new Set([...(c.p.horarios_propostos ?? []).map((h) => new Date(h).toISOString()), iso])].slice(-3);
