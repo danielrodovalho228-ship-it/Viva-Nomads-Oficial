@@ -14,7 +14,7 @@ test.describe("T1455 — E694: o anúncio de exemplo só explica", () => {
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       const r = await page.goto("/imoveis/ube-005", { waitUntil: "domcontentloaded" });
       expect(r?.status() ?? 0).toBeLessThan(400);
-      await expect(page.getByText(/Este anúncio é de exemplo|anúncio de exemplo/i).first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByText(/Este anúncio é de exemplo|anúncio de exemplo/i).filter({ visible: true }).first()).toBeVisible({ timeout: 30_000 });
       const reais = page.getByRole("link", { name: /Ver imóveis reais/i }).filter({ visible: true });
       await expect(reais.first()).toBeVisible();
       expect(await reais.first().getAttribute("href")).toMatch(/\/buscar/);
