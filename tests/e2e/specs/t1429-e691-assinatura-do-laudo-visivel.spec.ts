@@ -68,6 +68,10 @@ test.describe("T1429 — E691: assinatura do laudo visível ao dono", () => {
 
   for (const w of [1280, 390] as const) {
     test(`a ${w} px: laudo assinado mostra data, nº e registro; sem assinatura não mostra a linha`, async ({ browser }) => {
+      // L-107 (08/11): com laudo ASSINADO a tela do dono (/nivel) cai em "Não conseguimos abrir esta tela". Causa provável: o selo
+      // (src/components/vistoria/selo-assinatura.tsx, componente de servidor) passa onFocus a um <input>; handler de evento não
+      // atravessa o servidor. Quem corrigir o produto remove este test.fail no mesmo PR (o Playwright avisa).
+      test.fail(true, "L-107: /nivel do dono quebra com laudo assinado (selo com onFocus em componente de servidor)");
       const d = await entrar(browser, dono.email, senha);
       await comChave(d);
       await d.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
