@@ -360,3 +360,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Lab da main: lab crítico verde em `a844024e7` e `624a5924a`; nenhum merge de código novo depois do #3433 (nem docs novas da QA além da rodada 10:45). Sem spec permanente nova a criar. Suíte noturna segue "falha" só por tempo estourado (L-108), com as propostas de mitigação registradas acima, à espera do coordenador.
 - Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 569 (grupo do 552).
+
+## Bloco 569
+
+- Bloco 569 (t1517, PR #3476 draft, run 42486601163): verde. /dev/emails, /dashboard/qa/emails e /avisos/desligar (grupo do 552).
+- Lab da main: lab crítico verde em `a844024e7` e `624a5924a`; nenhum merge de código novo depois do #3433. Sem teste permanente novo a rodar (zero merges novos de código desde a última rodada: 0 de 0). Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 570 (grupo do 553).
