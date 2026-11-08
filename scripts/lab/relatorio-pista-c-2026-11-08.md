@@ -601,3 +601,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 
 - **#3402 (E687, migração 0329, `a5d6970f8`)** entrou na main: massa do parceiro de Mudança aprovado, **só em conta de teste da produção** (sem massa no lab). Guarda: o teste de unidade `massa-parceiro-mudanca-e687.test.ts` (já no PR) + a t1567 (#3548, verde), que cobre `parceiros.dados_categoria` no banco do lab. Não cabe spec de UI nova. Lab crítico da main em `a5d6970f8`: run 42527730368, em andamento no momento do registro.
 - Demais: sem merge novo; drafts #3533, #3530, #3531, #3532, #3498 abertos (limpeza pós-merge segue pendente).
+
+## Cadeia das 22h10
+
+- **Main em `a5d6970f8` (#3402, E687/0329): lab crítico verde** (run 42527730368). Entrou depois o **#3406 (E699, migração 0330, `911a6ebba`)**: massa de identidade pendente (CPF de teste na dona `proprietario-qa`), dados só de conta de teste da produção, sem massa no lab → guarda pelo teste de unidade do próprio PR; sem spec de UI possível. Lab da main em `911a6ebba`: a conferir.
+- **t1568 (#3558, draft sobre #3555)**: E753, "Wi-Fi" fora de "Não tem" em `/imoveis/ube-003`, 390 e 1280. Lab: a conferir (na main de hoje a spec falha, como esperado; passa com o #3555).
+- **Bloco 601 (#3559, t1549)**: aberto como draft por pedido expresso (main mesclada no ramo; numeração e cobertura 13/13). Lab: a conferir. Sem achado até aqui (próximo livre: L-110).
