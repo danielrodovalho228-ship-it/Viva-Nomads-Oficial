@@ -147,6 +147,7 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
           texto("cartao-titulo", "Imóvel mobiliado de exemplo");
           texto("cartao-preco-mes", "R$ 3.000");
           por("cartao-total-estadia")?.remove();
+          por("cartao-total-composicao")?.remove(); // E756: a linha "Inclui limpezas…" só existe em cartão com taxas únicas
           const sintese = por("cartao-sintese");
           if (sintese) sintese.textContent = "1 quarto · 1 banheiro · 40 m² · mobiliado";
           por("cartao-disponivel")?.remove();
