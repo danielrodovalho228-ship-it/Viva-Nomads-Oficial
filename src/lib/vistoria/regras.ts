@@ -12,6 +12,8 @@ import { chaveCidade } from "../cidades.ts";
 
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
+/** E714: a mesma regra dita ao AVALIADOR (página de recrutamento): quem paga é o dono, e a frase não fala com o dono. */
+export const FRASE_DONO_PAGA_AVALIACAO = "O dono paga a avaliação, não o resultado: o seu laudo é independente.";
 /** O que todo valor da tabela inclui (exibido no pedido, junto do texto da tabela). */
 export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
 
