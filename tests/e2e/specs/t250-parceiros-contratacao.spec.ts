@@ -1,3 +1,4 @@
+import { preencherCriteriosDoPedido } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
@@ -254,10 +255,12 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     // 8) As duas avaliações: cegas até a segunda; depois publicadas e a nota vai para a página do parceiro.
     await d.getByTestId("pedido-nota-5").click();
     await d.getByTestId("pedido-avaliacao-texto").fill("Fotos ótimas, chegou no horário.");
+    await preencherCriteriosDoPedido(d, "cliente");
     await d.getByTestId("pedido-avaliar").click();
     await expect(d.getByTestId("pedido-avaliacao-enviada")).toContainText("Aparece quando as duas partes avaliarem");
     await p.reload({ waitUntil: "domcontentloaded" });
     await p.getByTestId("pedido-nota-4").click();
+    await preencherCriteriosDoPedido(p, "parceiro");
     await p.getByTestId("pedido-avaliar").click();
     await expect(p.getByTestId("pedido-avaliacao-enviada")).toContainText("Publicada", { timeout: 20_000 });
     await expect(p.getByTestId("pedido-avaliacao-outro")).toContainText("5 de 5");

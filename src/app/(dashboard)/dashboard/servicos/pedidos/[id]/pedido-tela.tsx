@@ -12,6 +12,10 @@ import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { CRITERIOS, ETIQUETAS, MAX_ETIQUETAS, type ParAvaliacao } from "@/lib/avaliacoes-criterios";
+import { TEXTOS_SERVICO, linhaDoPedido } from "@/lib/avaliacoes-servico";
+import { Eye, Lock, Star } from "lucide-react";
+import { rotuloCategoria } from "@/lib/parceiros/regras";
+import { cn } from "@/lib/utils";
 import { MOTIVOS_REVISAO } from "@/lib/avaliacoes-resposta";
 import {
   AVISO_ATUALIZAR_ACEITO,
@@ -486,60 +490,103 @@ function EnviarArquivos({
   );
 }
 
+/** Estrelas da avaliação (1 a 5): o mesmo desenho da avaliação da estadia; cada estrela é um botão de 44 px. */
+function Estrelas({ valor, onEscolher, nome, grande = false, testid }: { valor: number; onEscolher: (n: number) => void; nome: string; grande?: boolean; testid?: (n: number) => string }) {
+  return (
+    <div className="flex items-center" role="radiogroup" aria-label={nome}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          role="radio"
+          aria-checked={valor === n}
+          aria-label={`${nome}: ${n}`}
+          onClick={() => onEscolher(n)}
+          className="min-h-11 min-w-11"
+          data-testid={testid?.(n)}
+        >
+          <Star className={cn("mx-auto", grande ? "h-8 w-8" : "h-6 w-6", valor >= n ? "fill-amber-500 stroke-amber-600 text-amber-600" : "text-sage")} aria-hidden />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Avaliacao({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; rodar: Rodar }) {
   const [nota, setNota] = useState(0);
   const [texto, setTexto] = useState("");
   const par: ParAvaliacao = d.papel === "cliente" ? "cliente_avalia_parceiro" : "parceiro_avalia_cliente";
+  const textos = TEXTOS_SERVICO[par as keyof typeof TEXTOS_SERVICO];
   const [criterios, setCriterios] = useState<Record<string, number>>({});
   const [etiquetas, setEtiquetas] = useState<string[]>([]);
   const [recomendaria, setRecomendaria] = useState<boolean | null>(null);
   const [notaPrivadaParte, setNotaPrivadaParte] = useState("");
   const [notaPrivadaViva, setNotaPrivadaViva] = useState("");
   const completo = nota > 0 && recomendaria !== null && CRITERIOS[par].every((c) => criterios[c.chave]);
+  const titulo = d.papel === "cliente" ? `${rotuloCategoria(d.categoria)} — ${d.parceiro.nome}` : `${d.cliente.nome} · Cliente`;
   return (
-    <Panel title={d.papel === "cliente" ? "Avalie o serviço" : "Avalie o cliente"} data-testid="pedido-avaliacao">
+    <Panel title={textos.pagina} data-testid="pedido-avaliacao">
+      {/* E679 (PR 5, mockups avaliacoes-avaliar-servico-*): cartão do serviço, faixas de aviso, nota geral grande, critérios com
+          estrelas à direita, destaques, texto com contador, "contrataria de novo?" e o botão cheio. */}
+      <p className="text-xl font-semibold text-forest" data-testid="pedido-avaliacao-titulo">
+        {titulo}
+      </p>
+      <p className="mt-1 text-sm text-muted">{linhaDoPedido({ codigo: d.codigo, valor: d.valores.combinado })}</p>
+      {textos.avisoEntreParceiros && (
+        <p className="mt-3 flex items-start gap-3 rounded-xl bg-amber-100 px-4 py-3 text-sm text-amber-900" data-testid="pedido-avaliacao-entre-parceiros">
+          <Eye className="mt-1 h-5 w-5 shrink-0" aria-hidden /> {textos.avisoEntreParceiros}
+        </p>
+      )}
+      <p className="mt-3 flex items-center gap-3 rounded-xl bg-sage-100 px-4 py-3 text-sm text-ink" data-testid="pedido-avaliacao-sigilo">
+        <Lock className="h-5 w-5 shrink-0 text-forest" aria-hidden /> Sua avaliação é secreta por enquanto: ela só aparece quando os dois avaliarem, ou em 14 dias.
+      </p>
       {d.minhaAvaliacao ? (
-        <p className="text-sm text-ink" data-testid="pedido-avaliacao-enviada">
+        <p className="mt-3 text-sm text-ink" data-testid="pedido-avaliacao-enviada">
           Sua avaliação: {d.minhaAvaliacao.nota} de 5. {d.minhaAvaliacao.status === "publicada" ? "Publicada." : "Aparece quando as duas partes avaliarem (ou em 14 dias)."}
         </p>
       ) : (
-        <div className="grid gap-2">
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Nota geral de 1 a 5">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Chip key={n} ativo={nota === n} onClick={() => setNota(n)} data-testid={`pedido-nota-${n}`}>
-                {n}
-              </Chip>
+        <div className="mt-3 grid gap-1">
+          <h3 className="text-xl font-semibold text-forest">{textos.geral}</h3>
+          <Estrelas valor={nota} onEscolher={setNota} nome="Nota geral" grande testid={(n) => `pedido-nota-${n}`} />
+          <div className="mt-2 divide-y divide-line border-t border-line">
+            {CRITERIOS[par].map((c) => (
+              <div key={c.chave} className="flex flex-wrap items-center justify-between gap-2 py-1" data-testid={`pedido-criterio-${c.chave}`}>
+                <span className="text-base text-ink">{c.rotulo}</span>
+                <Estrelas valor={criterios[c.chave] ?? 0} onEscolher={(n) => setCriterios((x) => ({ ...x, [c.chave]: n }))} nome={c.rotulo} testid={(n) => `pedido-criterio-${c.chave}-${n}`} />
+              </div>
             ))}
           </div>
-          {CRITERIOS[par].map((c) => (
-            <div key={c.chave} className="flex flex-wrap items-center justify-between gap-2" data-testid={`pedido-criterio-${c.chave}`}>
-              <span className="text-sm text-ink">{c.rotulo}</span>
-              <div className="flex gap-1" role="group" aria-label={`${c.rotulo}, de 1 a 5`}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Chip key={n} ativo={criterios[c.chave] === n} onClick={() => setCriterios((x) => ({ ...x, [c.chave]: n }))}>
-                    {n}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-          ))}
+          <h3 className="mt-3 text-xl font-semibold text-forest">{textos.etiquetas}</h3>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Etiquetas rápidas">
             {ETIQUETAS[par].map((t) => (
-              <Chip key={t} ativo={etiquetas.includes(t)} onClick={() => setEtiquetas((x) => (x.includes(t) ? x.filter((y) => y !== t) : x.length >= MAX_ETIQUETAS ? x : [...x, t]))}>
+              <Chip key={t} ativo={etiquetas.includes(t)} className="min-h-11" onClick={() => setEtiquetas((x) => (x.includes(t) ? x.filter((y) => y !== t) : x.length >= MAX_ETIQUETAS ? x : [...x, t]))}>
                 {t}
               </Chip>
             ))}
           </div>
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Recomendaria">
-            <span className="text-sm text-ink">{d.papel === "cliente" ? "Recomendaria este parceiro?" : "Receberia este cliente de novo?"}</span>
-            <Chip ativo={recomendaria === true} onClick={() => setRecomendaria(true)} data-testid="pedido-recomendaria-sim">Sim</Chip>
-            <Chip ativo={recomendaria === false} onClick={() => setRecomendaria(false)} data-testid="pedido-recomendaria-nao">Não</Chip>
+          <h3 className="mt-3 text-xl font-semibold text-forest">{textos.texto}</h3>
+          <div className="relative">
+            <textarea className={`${campo} pb-6`} rows={3} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={textos.placeholder} aria-label={textos.texto} data-testid="pedido-avaliacao-texto" />
+            <span className="pointer-events-none absolute bottom-2 right-3 text-xs text-muted" data-testid="pedido-avaliacao-contador">
+              {texto.length}/500
+            </span>
           </div>
-          <textarea className={campo} rows={3} maxLength={500} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Comentário público (opcional, até 500 caracteres)" data-testid="pedido-avaliacao-texto" />
-          <textarea className={campo} rows={2} maxLength={500} value={notaPrivadaParte} onChange={(e) => setNotaPrivadaParte(e.target.value)} placeholder="Recado privado para a outra parte (opcional)" />
-          <textarea className={campo} rows={2} maxLength={500} value={notaPrivadaViva} onChange={(e) => setNotaPrivadaViva(e.target.value)} placeholder="Recado privado para a Viva (opcional)" />
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2" role="group" aria-label="Recomendaria">
+            <span className="text-lg font-semibold text-forest">{textos.recomenda}</span>
+            <div className="flex gap-2">
+              <Chip ativo={recomendaria === true} className="min-h-11" onClick={() => setRecomendaria(true)} data-testid="pedido-recomendaria-sim">Sim</Chip>
+              <Chip ativo={recomendaria === false} className="min-h-11" onClick={() => setRecomendaria(false)} data-testid="pedido-recomendaria-nao">Não</Chip>
+            </div>
+          </div>
+          <details className="mt-2 rounded-xl border border-line p-3">
+            <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-ink">Recados privados (opcional)</summary>
+            <textarea className={`${campo} mt-2`} rows={2} maxLength={500} value={notaPrivadaParte} onChange={(e) => setNotaPrivadaParte(e.target.value)} placeholder="Recado privado para a outra parte (opcional)" />
+            <textarea className={`${campo} mt-2`} rows={2} maxLength={500} value={notaPrivadaViva} onChange={(e) => setNotaPrivadaViva(e.target.value)} placeholder="Recado privado para a Viva (opcional)" />
+          </details>
           <Button
             variant="primary"
+            size="lg"
+            className="mt-2 w-full"
             disabled={pendente || !completo}
             onClick={() => rodar("avaliar", { nota, criterios, etiquetas, recomendaria, texto, notaPrivadaParte, notaPrivadaViva }, "Avaliação enviada.")}
             data-testid="pedido-avaliar"
