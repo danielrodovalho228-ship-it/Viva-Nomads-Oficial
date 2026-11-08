@@ -543,3 +543,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
   5. Menores e independentes, na sequência: #3429 (t1489: janelas da busca) e #3434 (t1491: E452 negativo e E436).
   - Observação: todos editam `tests/e2e/cobertura.json`; o 2º PR em diante pode precisar de uma mesclagem da main no ramo (resolvo no meu PR, sem pedir ao Daniel).
 - Estado da main (conferido): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433. Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+
+## Atualização — main em `143ad20ad`, specs de guarda e fila de blocos
+
+- **Specs de guarda, vereditos no lab crítico (bases já em `main`):** t1498 corrigida (#3495), t1485/E717 (#3422), t1486 (#3424), t1494 (#3440), t1489 (#3429) e t1491 (#3434) verdes. A t1484/E714 (#3421) falhou por spec desatualizada (a redação mesclada é "O dono paga a avaliação, não o resultado"), foi corrigida no commit `4e8102d99` e ficou **verde** (run 42518504034). A t1428/E686 (#3270) aceita as duas redações. Recomendação: **não mesclar o #3447** (t1498 com `test.fail(w < 378)`, vale o #3495 depois do #3489).
+- **E742 (L-104) e E743 (L-107):** causa provável e evidência em `scripts/lab/evidencia-e742-e743-2026-11-08.md`; correção é das pistas donas.
+- **Último bloco verde: 600** (t1548, #3527, run 42512112428), não o 591. Os blocos 601–603 estão em ramos `claude-c/bloco601|602|603`, sem PR e sem rodar. **Não abri o bloco 601:** a pausa do Muse (08/11) segue valendo e ainda há dezenas de blocos em draft sem drenar (de #1409 a #3527). Se o Daniel quiser retomar mesmo assim, é só dizer; o 601 é o próximo.
+- Defeitos abertos: L-104, L-107, L-108, L-109 (proposto), C17, E527, E532(i). Próximo livre: L-110. Sem achado novo nesta atualização.
