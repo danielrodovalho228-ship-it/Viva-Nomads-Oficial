@@ -103,7 +103,8 @@
       "specs": [
         "t368-varredura-bloco20",
         "t1417-varredura-bloco491",
-        "t1441-varredura-bloco508"
+        "t1441-varredura-bloco508",
+        "t1507-varredura-bloco559"
       ]
     },
     "/admin/agentes": {
@@ -174,7 +175,8 @@
         "t605-e217-resposta-sem-sugestao",
         "t599-varredura-bloco49",
         "t1417-varredura-bloco491",
-        "t1441-varredura-bloco508"
+        "t1441-varredura-bloco508",
+        "t1507-varredura-bloco559"
       ]
     },
     "/admin/avaliacoes": {
@@ -2505,7 +2507,8 @@
         "t537-e165-admin-contrato-assinaturas",
         "t588-varredura-bloco46",
         "t1417-varredura-bloco491",
-        "t1441-varredura-bloco508"
+        "t1441-varredura-bloco508",
+        "t1507-varredura-bloco559"
       ]
     },
     "/dashboard/servicos/pedidos/[id]": {
@@ -2544,7 +2547,8 @@
         "t250-parceiros-contratacao",
         "t368-varredura-bloco20",
         "t1417-varredura-bloco491",
-        "t1441-varredura-bloco508"
+        "t1441-varredura-bloco508",
+        "t1507-varredura-bloco559"
       ]
     },
     "/admin/contratos/encerramentos": {
