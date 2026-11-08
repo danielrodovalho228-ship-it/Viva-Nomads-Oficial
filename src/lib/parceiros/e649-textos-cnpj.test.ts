@@ -11,7 +11,7 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 
 test("/parceiros: o passo 'A Viva confere' pede CNPJ e a pergunta 'Preciso de CNPJ?' responde Sim", () => {
   const p = ler("src/app/(public)/parceiros/page.tsx");
-  assert.match(p, /Identidade e CNPJ; para fotografia, também o portfólio\./);
+  assert.match(p, /confere o seu documento e o CNPJ \(a verificação automática de identidade ainda não abriu\); para fotografia, também o portfólio\./); // E757: texto único da identidade
   assert.match(p, /p: "Preciso de CNPJ\?", r: "Sim: a Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria\. O CPF não é aceito/);
   assert.doesNotMatch(p, /pessoa física \(CPF\) ou empresa/);
   assert.doesNotMatch(p, /Identidade e CPF ou CNPJ/);
