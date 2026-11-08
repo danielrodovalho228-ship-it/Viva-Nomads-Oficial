@@ -1054,3 +1054,23 @@ Fonte: `lista-master.md` anexa. Itens com dono Pista A e estado não fechado, se
 | 11 | Mobile: rodapé fixo | Faixa verde "Para proprietários — Anunciar meu imóvel" | Barra de abas (Início, Buscar, Pedidos…) | componente |
 
 **Por que NÃO alinhei o topo (e o E712 segue 🔴 aberto):** alinhar exige trocar o hero inteiro (vídeo + busca única → texto + dois botões + foto), e isso **contradiz ordens e specs já mesclados**: ordem `bab1b2aa` ("home com hero em largura cheia e UMA busca 'Para onde você vai?'", spec `t66`), o vídeo institucional v3 logo abaixo do hero (`t177`) e a conformidade de 30/10 (`t730`). São duas autoridades do Daniel em conflito (regra de 23/10: telas IGUAIS aos mockups; e a ordem `bab1b2aa`, que veio **depois** do mockup). Trocar o hero quebraria três specs do laboratório e desfaria uma ordem registrada. **Pergunta ao chat principal:** qual vale para o topo da home — o mockup `publico-home` ou a ordem `bab1b2aa` + vídeo v3? Com a resposta, o alinhamento é um PR de bloco único (hero + faixa de proprietários + destaques), com a atualização dos três specs; o mesmo vale para o rodapé fixo e o cabeçalho mobile (itens 10 e 11).
+
+## Passada 89 — E718 (só conformidade): `/para-proprietarios` × mockup `publico-proprietarios`, com o mockup achado em `origin/mockups`
+
+Mockup em `origin/mockups:docs/mockups/publico-proprietarios-{desktop,mobile}.webp` (a passada 85 dizia "fora do repo"; está no branch `mockups`). Capturas lado a lado em `docs/capturas/e718/` (mockup; real a 1920 e 390, modo demonstração, `main` em `da24ba7f9`). **Nada foi implementado**; os blocos que faltam dependem de decisão do coordenador.
+
+**Os 7 blocos do mockup × a página real**
+
+| # | Bloco do mockup | Na página real | Diferenças |
+|---|---|---|---|
+| 1 | **Topo**: fundo bege, título "Seu imóvel mobiliado rendendo com moradores de 30 a 180 dias." (esquerda, 3 linhas, preto), botão cheio verde "Anunciar meu imóvel →", linha "Cadastro gratuito • Sem taxas para anunciar • Onboarding em poucos minutos", foto da entrega de chaves numa moldura arredondada à direita | **Existe, com forma diferente**: faixa escura com a foto de fundo, "Seu imóvel mobiliado ocupado por **meses**, com contrato" (branco, "meses" em verde-limão), parágrafo longo, botão **branco** "Anunciar meu imóvel →" e o parágrafo da taxa ao lado | fundo, título, cor do botão (cheio verde × branco), linha de apoio (curta × parágrafo de taxa), foto (moldura à direita × fundo) |
+| 2 | **4 cartões de valor** em fileira, com ícone verde-menta redondo: "Pedidos de moradia da sua cidade chegam até você", "Contrato digital e recibos automáticos", "Moradores com identidade verificada", "Você recebe direto, sem a Viva segurar o pagamento" | **Parcial**: "Como o modelo de média duração reduz seus custos" tem 4 cartões com foto (custos transferidos, menos imóvel parado, contrato com validade, caução), outro conteúdo | ícone × foto; conteúdo diferente. **Falta "Pedidos de moradia da sua cidade chegam até você"** |
+| 3 | Faixa **"Publicamos para você"** (selo SERVIÇO, texto "Cuidamos das fotos profissionais…", foto de fotógrafo) | **Não existe** | bloco ausente |
+| 4 | Faixa verde **"Simulador de rentabilidade"** (tipo, cidade, estimativa "R$ 4.800", botão branco "Calcular rentabilidade") | **Não existe** na página (há o simulador no painel, `/dashboard/simulador`) | bloco ausente |
+| 5–7 | (o mockup mostra os blocos 1 a 4 acima na primeira tela; os 3 restantes contados pela QA são "Pedidos…", "Publicamos para você" e "Simulador") | A página real ainda traz blocos que o mockup não mostra: "Quanto você paga" (comparativo), "Do anúncio às chaves, em 3 passos" e "A plataforma cuida do trabalho chato" | conteúdo extra, já decidido em outras ordens (taxa, caução) |
+
+**Cabeçalho do mockup:** logo com folha verde, "Imóveis · **Para proprietários** (sublinhado verde, ativo) · Empresas · Fale com a Viva", "Entrar" em contorno. Real: logo "N", "Imóveis · Anunciar · Empresas · Parceiros", "Fale com a Viva", "Entrar" cheio: rótulos e botão já decididos no E176/E458 (o mockup é anterior).
+
+**Mobile:** mockup em coluna única (1008×2128, ≈390 px) com os mesmos blocos; real a 390 px: 0 imagens quebradas, 0 estouro lateral; o botão do topo sobe para a dobra (C7).
+
+**Resumo:** dos 7 blocos, **4 existem** (topo; custos/valores; "do anúncio às chaves" como passos; "plataforma cuida") com forma e conteúdo diferentes do mockup; **3 faltam** ("Pedidos de moradia da sua cidade chegam até você", "Publicamos para você", "Simulador de rentabilidade"). Os blocos ausentes e a troca do topo (como no E712) pedem decisão do coordenador/chat principal; sem ela, nada foi alterado.
