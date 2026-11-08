@@ -141,3 +141,21 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Correção da seção anterior: entrou o merge #3382 (rodada 03:35 da QA) durante a sequência dos blocos 533–535, ao contrário do que está escrito ali.
 - t1474 (PR #3389 draft, run 42445630077): verde. Teste proposto pela QA nessa rodada: `/conferir/{inexistente}` ("Nenhum documento com este código"), `/conferir/{código de teste}` ("Documento de teste") e 404 em `/parceiros/{inexistente}` e `/avaliadores/{inexistente}`. Não conferi no log se o caso do documento de teste rodou ou pulou (ele pula declarando o motivo quando o laboratório não tem documento de teste válido).
 - Pendências de massa: `/avaliadores/{suspenso}` (precisa de avaliador suspenso) e o E702 (a QA diz que falta massa da Pista C; ainda sem pedido concreto de massa).
+
+## Vigia pós-lote de 10 merges (04:36 UTC) — L-107
+
+- Main: o push final do lote (run 5124, `41f87b941`) deu verde. Os runs dos merges intermediários foram cancelados por serem superados.
+- t1428 (E686, PR #3270): verde com a main mesclada (run 42447678072). Passou a ser só spec (código de produto dos drafts removido; já está na main).
+- t1475 (E713 e chips do /pedidos/novo, PR #3390): verde (run 42448482905) depois de eu escopar ao calendário a checagem da frase "esta solicitação não é enviada" (ela segue noutros pontos do exemplo; erro meu, não do produto).
+- t1429 (E691): o PR #3271 ficou com a base antiga e o lab montou a lista de specs de todos os blocos desde então (cancelado por tempo, não falha). Substituído pelo PR #3394, limpo, saindo da main. Pede ao Daniel fechar o #3271.
+
+### L-107 — defeito real (proposta de item para a lista-master, pelo chat principal)
+- **O quê:** com um laudo ASSINADO, a tela do dono `/dashboard/imoveis/<id>/nivel` cai em "Não conseguimos abrir esta tela" (código para a equipe 1965082685), 1280 px. Sem laudo assinado, o selo não aparece e a tela não é afetada.
+- **Origem:** E691 (#3296, Pista B), selo da assinatura do laudo. O mesmo componente é usado na tela do avaliador (`parceiro/avaliacao/[pedido]`).
+- **Causa provável (não confirmada):** `src/components/vistoria/selo-assinatura.tsx` é componente de servidor (sem "use client") e passa `onFocus` a um `<input>`; handler de evento não atravessa o servidor.
+- **Evidência:** lab run 42451630488, t1429 (PR #3394), mensagem "selo ausente; a tela mostra: Não conseguimos abrir esta tela…". Classificação: defeito real (não é teste vencido nem massa: o mesmo seed funcionava no desenho do draft).
+- **Spec:** t1429 com `test.fail` ligado ao L-107; quem corrigir remove o `test.fail` no mesmo PR. A parte "laudo sem assinatura não mostra a linha" ficou sem verificação enquanto o `test.fail` vale (o teste para na primeira etapa).
+- Aberto agora: L-104 e L-107. Próximo número livre: L-108.
+
+### Sem spec ainda
+E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste de leitura de fonte).
