@@ -493,6 +493,18 @@ body:has([data-testid="barra-fixa-imovel"]) {
     left: 1.5rem;
   }
 }
+/* C1b: no site público o botão redondo "Fale com a Viva" mora a 1,5 rem da borda direita (48 px de largura): o conteúdo
+   termina antes dele (a faixa já existe como --faixa-flutuante). Em tela larga a margem do container já dá a folga. */
+@media (min-width: 768px) {
+  html:not([data-app]) .vn-main .container-page {
+    padding-right: max(2rem, calc(var(--faixa-flutuante) - max(0px, (100vw - 80rem) / 2)));
+  }
+}
+@media (min-width: 1024px) {
+  html:not([data-app]) .vn-main .container-page {
+    padding-right: max(2.5rem, calc(var(--faixa-flutuante) - max(0px, (100vw - 80rem) / 2)));
+  }
+}
 /* CONTA-A C4 — no painel (site), a coluna reserva a faixa da direita onde mora o "Fale com a Viva" redondo (48 px a
    1,5 rem da borda): o botão nunca senta sobre um cartão durante a rolagem. No app o botão não existe. */
 @media (min-width: 768px) {
