@@ -24,6 +24,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "PAGAMENTO_PARCEIROS_ATIVO", rotulo: "Pagamento de parceiros pela plataforma", variavel: "NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO" },
   { nome: "ENCERRAMENTO_REGRAS_ATIVO", rotulo: "Regras de encerramento de contrato", variavel: "NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO" },
   { nome: "VISTORIA_ATIVA", rotulo: "Avaliação do imóvel por avaliador credenciado", variavel: "NEXT_PUBLIC_VISTORIA_ATIVA" },
+  { nome: "AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA", rotulo: "Ativação automática do avaliador (teste e ativo, sem passar pelo admin)", variavel: "NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA" },
   { nome: "MATRICULA_OBRIGATORIA", rotulo: "Matrícula atualizada obrigatória para publicar (só com a confirmação da Dra. Beatriz)", variavel: "NEXT_PUBLIC_MATRICULA_OBRIGATORIA" },
   { nome: "FICHA_RESUMO_ATIVA", rotulo: "Ficha-resumo do contrato (entra com o modelo de contrato da Dra. Beatriz)", variavel: "NEXT_PUBLIC_FICHA_RESUMO_ATIVA" },
   { nome: "COBRANCA_MENSAL_ATIVA", rotulo: "Cobrança mensal de contratos de 91 a 180 dias: cronograma, livro e lembretes (só com o parecer da Dra. Beatriz)", variavel: "NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA" },
