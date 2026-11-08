@@ -230,16 +230,20 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
 
   // "Em análise" = o dono já mandou mensagem ao inquilino nesse imóvel. Uma
   // consulta só: conjunto de (dono, imóvel) que já falaram com o inquilino.
-  const { data: msgs } = await supabase
+  const { data: msgs, error: erroMsgs } = await supabase
     .from("messages")
     .select("sender_id, property_id")
     .eq("receiver_id", user.id);
+  // Leitura que falha não vira "ninguém falou comigo" (a candidatura apareceria como "enviada" em vez de "em análise").
+  if (erroMsgs && opcoes.exigir) throw new Error(MSG_CANDIDATURAS_NAO_CARREGARAM);
   const engajou = new Set((msgs ?? []).map((m) => `${m.sender_id}_${m.property_id}`));
   // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
-  const { data: contratos } = await supabase
+  const { data: contratos, error: erroContratos } = await supabase
     .from("contratos")
     .select(`id, lead_id, ${COLUNAS_ESTADO_CONTRATO}`)
     .eq("tenant_id", user.id);
+  // Idem: leitura que falha não vira "sem contrato" (o selo do contrato sumiria da candidatura).
+  if (erroContratos && opcoes.exigir) throw new Error(MSG_CANDIDATURAS_NAO_CARREGARAM);
   // O selo do contrato pela fonte única (o mesmo de Contratos e da página do contrato).
   const contratoDoLead = new Map(
     ((contratos ?? []) as unknown as ({ id: string; lead_id: string | null } & LinhaEstadoContrato)[])
