@@ -77,6 +77,7 @@ import { NivelImovel } from "@/components/niveis/nivel-imovel";
 import { AvaliacaoFicha } from "@/components/niveis/avaliacao-ficha";
 import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
+import { CaminhoReserva } from "@/components/property/caminho-reserva";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { DenunciarAnuncio } from "@/components/anuncio/denunciar-anuncio";
@@ -1013,6 +1014,7 @@ export function PropertyDetail({
                 {avisoDataBusca}
               </p>
             )}
+            <CaminhoReserva />
             <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} onDisponivelDesde={setDisponivelDesde} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}

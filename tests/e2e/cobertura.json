@@ -598,7 +598,8 @@
         "t1437-e695-busca-vazia-fala-do-lugar-certo",
         "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura",
         "t1448-varredura-bloco514",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1459-c9-e709-e710-e711-layout"
       ]
     },
     "/cidades": {
@@ -877,7 +878,8 @@
         "t674-e255-enquadramento-reforma",
         "t673-varredura-bloco67",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/carteira": {
@@ -896,7 +898,8 @@
         "t631-e222b-renovar-aditivo",
         "t675-varredura-bloco68",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/comparar": {
@@ -1136,7 +1139,8 @@
         "t549-varredura-bloco39",
         "t684-varredura-bloco71",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/garantias": {
@@ -1674,7 +1678,8 @@
         "t302-varredura-logada-bloco6",
         "t675-varredura-bloco68",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/solicitacoes": {
@@ -1951,7 +1956,8 @@
         "t1423-varredura-bloco497",
         "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura",
         "t1448-varredura-bloco514",
-        "t1455-e694-exemplo-so-explica"
+        "t1455-e694-exemplo-so-explica",
+        "t1459-c9-e709-e710-e711-layout"
       ]
     },
     "/modelodenegocio": {
@@ -2012,7 +2018,8 @@
         "t661-varredura-bloco62",
         "t1403-varredura-bloco481",
         "t1424-varredura-bloco498",
-        "t1449-varredura-bloco515"
+        "t1449-varredura-bloco515",
+        "t1459-c9-e709-e710-e711-layout"
       ]
     },
     "/parceiros/avaliadores": {
@@ -2272,7 +2279,8 @@
         "t613-varredura-bloco52",
         "t626-varredura-bloco60",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/propostas": {
@@ -2782,7 +2790,8 @@
         "t418-varredura-bloco35",
         "t684-varredura-bloco71",
         "t1410-varredura-bloco488",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/auth/intencao": {
@@ -2794,7 +2803,8 @@
         "t317-email-unico-49c1",
         "t599-varredura-bloco49",
         "t1409-varredura-bloco487",
-        "t1435-varredura-bloco504"
+        "t1435-varredura-bloco504",
+        "t1458-varredura-bloco521"
       ]
     },
     "/admin/avaliadores": {
@@ -2834,7 +2844,8 @@
         "t315-telas-avaliacao-dono-62a",
         "t606-varredura-bloco50",
         "t1409-varredura-bloco487",
-        "t1435-varredura-bloco504"
+        "t1435-varredura-bloco504",
+        "t1458-varredura-bloco521"
       ]
     },
     "/avaliadores": {
@@ -2856,7 +2867,8 @@
         "t591-varredura-bloco48",
         "t657-e235-link-avaliador",
         "t1409-varredura-bloco487",
-        "t1435-varredura-bloco504"
+        "t1435-varredura-bloco504",
+        "t1458-varredura-bloco521"
       ]
     },
     "/dashboard/parceiro/avaliacao/[pedido]": {
@@ -2868,7 +2880,8 @@
         "t344-avaliacao-telas-62a-parte2",
         "t606-varredura-bloco50",
         "t1409-varredura-bloco487",
-        "t1435-varredura-bloco504"
+        "t1435-varredura-bloco504",
+        "t1458-varredura-bloco521"
       ]
     },
     "/admin/funil": {
@@ -2923,7 +2936,8 @@
         "t679-varredura-bloco70",
         "t1410-varredura-bloco488",
         "t1413-e665-modelos-respostas-rapidas",
-        "t1436-varredura-bloco505"
+        "t1436-varredura-bloco505",
+        "t1460-varredura-bloco522"
       ]
     },
     "/dashboard/estadia/[contratoId]/mensagens": {
