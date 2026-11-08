@@ -81,10 +81,9 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t357-solicitar-preenchido-${nome}.png` });
 
-      // Alterar no diálogo: saída +30 dias e 3 pessoas → o total da estadia passa a 2 meses.
+      // Alterar no diálogo: saída +30 dias → o total da estadia passa a 2 meses (o anúncio do laboratório aceita até 2 pessoas).
       const novaSaida = maisDias(saida, 30);
       await passo.getByTestId("solicitacao-saida").fill(novaSaida);
-      await passo.getByTestId("solicitacao-pessoas").selectOption("3");
       await expect(totalEstadia).toContainText("Total da estadia (60 dias)");
       await expect(totalEstadia).toContainText("2 meses");
       await expect(passo.locator("div", { hasText: /^Total por mês \(com contas\)/ }).first()).toBeVisible();
@@ -105,10 +104,10 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       await expect(passo.getByTestId("solicitacao-erro")).toHaveCount(0);
 
       // Fechar: a caixa e o calendário mostram o que mudou no diálogo.
-      await passo.getByRole("button", { name: "Entendi" }).click();
+      await passo.getByRole("button", { name: "Cancelar" }).click(); // anúncio real: o 1º passo fecha por "Cancelar"
       await expect(passo).toHaveCount(0);
       await expect(card.getByTestId("candidatura-saida")).toHaveValue(dataBR(novaSaida));
-      await expect(card.getByTestId("candidatura-pessoas")).toHaveValue("3");
+      await expect(card.getByTestId("candidatura-pessoas")).toHaveValue("2");
       await expect(page.getByTestId("calendario-selecao")).toContainText(`${br(entrada)} → ${br(novaSaida)}`);
     });
   });
