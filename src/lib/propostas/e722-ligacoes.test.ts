@@ -85,3 +85,10 @@ test("o desenho não usa o nome 'validade da proposta' para o prazo do pré-acei
   const a = ler("src/lib/notifications/assuntos.ts");
   for (const k of ["preAceitacaoLembrete", "preAceitacaoExpirou", "preAceitacaoPerdeuVez"]) assert.doesNotMatch(a.slice(a.indexOf(k), a.indexOf(k) + 120), /validade/i);
 });
+
+test("as datas nunca ficam bloqueadas durante a janela: só contrato ativo ocupa o imóvel", () => {
+  const per = readFileSync("src/lib/contrato-periodo.ts", "utf8");
+  assert.match(per, /STATUS_OCUPA_IMOVEL = "ativo"/);
+  const srv = readFileSync("src/lib/propostas/pre-aceitacao-servidor.ts", "utf8");
+  assert.doesNotMatch(srv, /bloque/i);
+});

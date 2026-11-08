@@ -29,8 +29,10 @@ export const TEXTO_PERDEU_A_VEZ_DONO =
   "Outro pré-aceite concluiu o contrato deste imóvel nas mesmas datas. Esta candidatura perdeu a vez, sem penalidade, e só volta se você a reabrir.";
 export const TEXTO_SEM_PUNICAO =
   "Se o prazo terminar sem o contrato concluído, a pré-aceitação expira sem punição: nada é cobrado nem anotado contra você. Ela pode ser reaberta até 2 vezes; se o prazo terminar pela 3ª vez, a candidatura é encerrada. A taxa já congelada continua valendo.";
-export const TEXTO_ENCERRADA =
-  "O prazo terminou pela 3ª vez sem o contrato concluído, e a candidatura foi encerrada. Nada é cobrado nem anotado contra você. Se ainda quiser este imóvel, envie uma nova proposta.";
+/** Aviso da expiração da janela do morador: o MESMO texto na 1ª, na 2ª e na 3ª vez (a 3ª só acrescenta o encerramento). */
+export const TEXTO_JANELA_TERMINOU =
+  "A pré-aceitação terminou sem o contrato concluído. Nada é cobrado nem anotado contra você.";
+export const TEXTO_ENCERRADA = `${TEXTO_JANELA_TERMINOU} Como foi a 3ª vez, a candidatura foi encerrada. Se ainda quiser este imóvel, envie uma nova proposta.`;
 export const TEXTO_ENCERRADA_DONO =
   "A candidatura foi encerrada: o prazo do morador terminou pela 3ª vez sem o contrato concluído. O morador foi avisado.";
 export const TEXTO_TAXA_CONTINUA =
@@ -131,4 +133,15 @@ export function textoDoPrazo(prazo: Date): string {
   const l = new Date(prazo.getTime() + BRT);
   const dois = (n: number) => String(n).padStart(2, "0");
   return `${dois(l.getUTCDate())}/${dois(l.getUTCMonth() + 1)}/${l.getUTCFullYear()} às ${dois(l.getUTCHours())}:${dois(l.getUTCMinutes())} (horário de Brasília)`;
+}
+
+/** Linha de contexto do OUTRO prazo (a tela e o e-mail mostram um prazo principal por vez). */
+export function linhaDeContexto(papel: "owner" | "tenant", estado: "vigente" | "expirada", janelaTexto: string, donoTexto: string | null): string | null {
+  if (estado === "vigente") {
+    return papel === "owner"
+      ? "Seu prazo de 1 dia útil para decidir só começa se a janela do morador terminar sem contrato."
+      : null;
+  }
+  if (papel === "owner") return `A janela do morador terminou em ${janelaTexto}.`;
+  return donoTexto ? `O proprietário tem até ${donoTexto} para decidir.` : null;
 }

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  LEMBRETES_HORAS, MAX_REABERTURAS, PRAZO_PRE_ACEITACAO_HORAS, TEXTO_ENCERRADA, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_TAXA_CONTINUA,
+  LEMBRETES_HORAS, MAX_REABERTURAS, PRAZO_PRE_ACEITACAO_HORAS, TEXTO_ENCERRADA, TEXTO_JANELA_TERMINOU, linhaDeContexto, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_TAXA_CONTINUA,
   encerraNaExpiracao, estadoDaPreAceitacao, lembretesDaPreAceitacao, prazoDoDono, podeReabrir, prazoDaPreAceitacao, reabrirPreAceitacao, textoDoPrazo,
 } from "./pre-aceitacao.ts";
 import { emSilencio } from "../notifications/silencio.ts";
@@ -97,7 +97,8 @@ test("a 3ª expiração (depois de 2 reaberturas) encerra a candidatura, com avi
   assert.equal(encerraNaExpiracao(0), false);
   assert.equal(encerraNaExpiracao(1), false);
   assert.equal(encerraNaExpiracao(2), true);
-  assert.match(TEXTO_ENCERRADA, /pela 3ª vez.*encerrada/);
+  assert.ok(TEXTO_ENCERRADA.startsWith(TEXTO_JANELA_TERMINOU), "mesmo texto da 1ª janela");
+  assert.match(TEXTO_ENCERRADA, /3ª vez.*encerrada/);
 });
 
 test("relógio do dono: 1 dia útil (seg–sex, Brasília), sexta vira segunda, fim de semana conta de segunda, teto na entrada", () => {
@@ -111,4 +112,11 @@ test("relógio do dono: 1 dia útil (seg–sex, Brasília), sexta vira segunda, 
   assert.notEqual(prazoDoDono(t("2026-11-10T13:00:00Z"), null).getTime(), prazoDoDono(t("2026-11-12T13:00:00Z"), null).getTime());
   // Teto: entrada em 11/11 → início do dia 11/11 BRT.
   assert.equal(prazoDoDono(t("2026-11-10T13:00:00Z"), "2026-11-11").toISOString(), "2026-11-11T03:00:00.000Z");
+});
+
+test("um prazo por vez + linha de contexto do outro", () => {
+  assert.match(linhaDeContexto("owner", "expirada", "10/11 às 10h", "11/11 às 18h")!, /janela do morador terminou em 10\/11/);
+  assert.match(linhaDeContexto("tenant", "expirada", "10/11 às 10h", "11/11 às 18h")!, /proprietário tem até 11\/11/);
+  assert.match(linhaDeContexto("owner", "vigente", "x", null)!, /1 dia útil/);
+  assert.equal(linhaDeContexto("tenant", "vigente", "x", null), null);
 });

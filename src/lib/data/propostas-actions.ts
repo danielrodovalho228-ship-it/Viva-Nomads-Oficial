@@ -76,7 +76,7 @@ import {
 import { hojeBR } from "@/lib/utils";
 import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
 import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
-import { estadoDaPreAceitacao, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
+import { estadoDaPreAceitacao, linhaDeContexto, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
 import { reabrirNoBanco } from "@/lib/propostas/pre-aceitacao-servidor";
 
 /**
@@ -665,6 +665,8 @@ export interface PreAceitacaoView {
   ateTexto: string;
   /** Um prazo por vez: com a candidatura de volta ao dono, só o prazo DELE (1 dia útil) aparece; o do morador some. */
   donoAteTexto: string | null;
+  /** Linha de contexto do outro prazo (E722: um prazo por vez + esta linha). */
+  contexto: string | null;
   /** Candidatura encerrada na 3ª expiração: não há mais reabertura. */
   encerrada: boolean;
   /** Perdeu a corrida: só o dono reabre. */
@@ -1176,11 +1178,13 @@ async function preAceitacaoDaProposta(admin: Admin, propostaId: string, papel: A
   const encerrada = !!d.pre_aceitacao_encerrada_em;
   const perdeu = !!d.pre_aceitacao_perdeu_em;
   const estado = estadoDaPreAceitacao(ate, new Date()).chave;
+  const donoAteTexto = estado === "expirada" && !encerrada && d.pre_aceitacao_dono_ate ? textoDoPrazo(new Date(d.pre_aceitacao_dono_ate)) : null;
   return {
     estado,
     ateIso: ate.toISOString(),
     ateTexto: textoDoPrazo(ate),
-    donoAteTexto: estado === "expirada" && !encerrada && d.pre_aceitacao_dono_ate ? textoDoPrazo(new Date(d.pre_aceitacao_dono_ate)) : null,
+    donoAteTexto,
+    contexto: encerrada ? null : linhaDeContexto(papel === "owner" ? "owner" : "tenant", estado, textoDoPrazo(ate), donoAteTexto),
     encerrada,
     perdeuACorrida: perdeu,
     reaberturas,

@@ -26,3 +26,8 @@ Fechado pelo coordenador com a decisão do Daniel. **Tudo atrás de `PRE_ACEITAC
 Testes: `e722-pre-aceitacao.test.ts` (8) e `e722-ligacoes.test.ts` (5). Sem prova ao vivo.
 
 5. **Nome:** o prazo se chama "pré-aceitação"/"prazo para concluir o contrato"; o termo "validade da proposta" (outro prazo, da proposta enviada) não é usado (teste de guarda).
+
+## Um prazo por vez + contexto (08/11/2026)
+- Tela e e-mail mostram UM prazo principal (morador enquanto vigente; dono, 1 dia útil, depois da expiração) e uma linha de contexto sobre o outro (`linhaDeContexto`).
+- A 3ª expiração encerra a candidatura com o mesmo texto da 1ª janela (`TEXTO_JANELA_TERMINOU`) + frase de encerramento.
+- Datas nunca ficam bloqueadas na janela: só contrato `ativo` ocupa o imóvel (teste de guarda em `e722-ligacoes.test.ts`).

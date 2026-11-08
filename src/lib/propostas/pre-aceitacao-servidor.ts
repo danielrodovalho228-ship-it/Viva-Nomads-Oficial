@@ -7,7 +7,7 @@ import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoEmDias } from "@/lib/contrato-periodo";
 import { diasDosTermos } from "./regras";
 import { COLUNAS_VERSAO, termosDaLinha, type LinhaVersao } from "@/lib/data/propostas-servidor";
-import { encerraNaExpiracao, lembretesDaPreAceitacao, PRAZO_PRE_ACEITACAO_HORAS, prazoDoDono, reabrirPreAceitacao, textoDoPrazo, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
+import { encerraNaExpiracao, lembretesDaPreAceitacao, linhaDeContexto, PRAZO_PRE_ACEITACAO_HORAS, prazoDoDono, reabrirPreAceitacao, textoDoPrazo, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_JANELA_TERMINOU, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
 
 /*
   E722 — roda a pré-aceitação de 72 h. ATRÁS DA CHAVE PRE_ACEITACAO_72H_ATIVA (desligada): sem ela, não faz nada.
@@ -103,7 +103,13 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
           resumo.encerradas++;
           await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
         } else {
-          await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoExpirou, `a pré-aceitação terminou sem o contrato concluído. ${TEXTO_SEM_PUNICAO}`, `a pré-aceitação do morador terminou sem o contrato concluído e a candidatura voltou para você. O seu prazo para decidir termina em ${textoDoPrazo(donoAte!)}. Você pode reabri-la.`);
+          const janela = textoDoPrazo(prazo);
+          const dono = textoDoPrazo(donoAte!);
+          await avisarOsDois(
+            admin, l, ASSUNTOS.preAceitacaoExpirou,
+            `${TEXTO_JANELA_TERMINOU} ${TEXTO_SEM_PUNICAO} ${linhaDeContexto("tenant", "expirada", janela, dono)}`,
+            `a pré-aceitação do morador terminou sem o contrato concluído e a candidatura voltou para você. O seu prazo para decidir termina em ${dono}. ${linhaDeContexto("owner", "expirada", janela, dono)} Você pode reabri-la.`,
+          );
         }
       }
       continue;
@@ -133,7 +139,7 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
       const { data: marcou } = await admin.from("propostas").update({ [col]: agora.toISOString() }).eq("id", l.id).is(col, null).select("id").maybeSingle();
       if (!marcou) continue;
       resumo.lembretes++;
-      await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoLembrete, `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`);
+      await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoLembrete, `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`, `faltam ${lem.horasAntes} horas para a janela do morador terminar (${textoDoPrazo(prazo)}). ${linhaDeContexto("owner", "vigente", textoDoPrazo(prazo), null)}`);
     }
   }
   return resumo;

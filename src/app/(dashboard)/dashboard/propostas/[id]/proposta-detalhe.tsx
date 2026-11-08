@@ -467,6 +467,9 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                 {p.preAceitacao.estado === "expirada" && p.preAceitacao.perdeuACorrida && !p.preAceitacao.encerrada && (
                   <p data-testid="pre-aceitacao-perdeu">{p.papel === "owner" ? TEXTO_PERDEU_A_VEZ_DONO : TEXTO_PERDEU_A_VEZ}</p>
                 )}
+                {p.preAceitacao.contexto && !p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-contexto">{p.preAceitacao.contexto}</p>
+                )}
                 <p data-testid="pre-aceitacao-corrida">{p.preAceitacao.regraCorrida}</p>
                 <p data-testid="pre-aceitacao-sem-punicao">{p.preAceitacao.semPunicao}</p>
                 <p data-testid="pre-aceitacao-taxa">{p.preAceitacao.taxaContinua}</p>
