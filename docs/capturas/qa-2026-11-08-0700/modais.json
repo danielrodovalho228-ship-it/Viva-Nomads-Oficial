@@ -1,0 +1,287 @@
+{
+ "menu 390 /": {
+  "dialogo": "Navegação principal",
+  "caixa": [
+   787,
+   844,
+   58
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "menu 390 /imoveis/ube-001": {
+  "dialogo": "Navegação principal",
+  "caixa": [
+   787,
+   844,
+   58
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "menu 390 /parceiros": {
+  "dialogo": "Caminhos dos parceiros",
+  "caixa": [
+   506,
+   654,
+   148
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Datas": {
+  "dialogo": "Datas",
+  "caixa": [
+   229,
+   536,
+   307
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Local": {
+  "dialogo": "Local",
+  "caixa": [
+   229,
+   961,
+   732
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [
+   "Outro local: nome do lugar ou endereço"
+  ],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Tipo": {
+  "dialogo": "Tipo",
+  "caixa": [
+   229,
+   555,
+   326
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Preço": {
+  "dialogo": "Preço",
+  "caixa": [
+   229,
+   411,
+   182
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Nível": {
+  "dialogo": "Nível",
+  "caixa": [
+   229,
+   411,
+   182
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Mais filtros": {
+  "dialogo": "Filtros",
+  "caixa": [
+   101,
+   844,
+   743
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [
+   "Mostrar 15 imóveis"
+  ],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Ordenar": {
+  "dialogo": "Ordenar",
+  "caixa": [
+   229,
+   511,
+   282
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 390 Mapa": {
+  "dialogo": "Navegação principal",
+  "caixa": [
+   787,
+   844,
+   58
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Datas": {
+  "dialogo": "Datas",
+  "caixa": [
+   185,
+   492,
+   307
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Local": {
+  "dialogo": "Local",
+  "caixa": [
+   185,
+   822,
+   637
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [
+   "Outro local: nome do lugar ou endereço"
+  ],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Tipo": {
+  "dialogo": "Tipo",
+  "caixa": [
+   185,
+   463,
+   278
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Preço": {
+  "dialogo": "Preço",
+  "caixa": [
+   185,
+   367,
+   182
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Nível": {
+  "dialogo": "Nível",
+  "caixa": [
+   185,
+   367,
+   182
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Mais filtros": {
+  "dialogo": "Filtros",
+  "caixa": [
+   0,
+   844,
+   844
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [
+   "Mostrar 15 imóveis"
+  ],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Ordenar": {
+  "dialogo": "Ordenar",
+  "caixa": [
+   185,
+   467,
+   282
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [],
+  "foraDaTela": [],
+  "alvosPequenos": []
+ },
+ "buscar 1280 Mapa": {
+  "dialogo": "(nenhum)",
+  "caixa": [
+   0,
+   3641,
+   3641
+  ],
+  "rolavel": "nao-precisa",
+  "vh": 844,
+  "hs": 0,
+  "cortes": [
+   "Imóveis encontrados"
+  ],
+  "foraDaTela": [],
+  "alvosPequenos": [
+   "Imóveis",
+   "Anunciar",
+   "Empresas",
+   "Parceiros",
+   "Fale com a Viva",
+   "INPUT",
+   "suporte@vivanomads.com.br",
+   "Buscar imóveis"
+  ]
+ }
+}
