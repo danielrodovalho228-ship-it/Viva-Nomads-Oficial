@@ -1012,3 +1012,14 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 **Verificações do lado real:** 0 imagens quebradas, 0 sem `alt`, 0 resposta de erro de imagem, 0 estouro lateral, nos dois tamanhos. O banner mudou desde a QA: o botão "Anunciar meu imóvel" sobe para a dobra no celular (C7, #3350, mesclado). O botão cheio único da página está no bloco 5; o do banner é o branco do topo.
 
 **O que falta para fechar:** (a) o arquivo do mockup (ou o par montado da QA, no repo) para a comparação dos blocos 1 a 4 elemento por elemento; (b) a decisão do coordenador sobre os 3 blocos ausentes. Nada foi alterado na página.
+
+## Passada 86 (08/11; modo demonstração local, `main` em `fc7061bfb`; 390 e 1280) — anúncios de exemplo `ube-002` a `ube-015`
+
+- **Páginas:** `/imoveis/ube-002` a `/imoveis/ube-015` (14), que só tinham sido varridas em `ube-001` e `ube-010`. Puladas `/para-proprietarios` (E718: mockup fora do repo) e as com draft aberto.
+- **Critérios:** carregamento real de cada imagem (`complete`, `naturalWidth`, resposta HTTP), `alt`, elemento fixo sobre conteúdo, texto cortado, estouro lateral.
+- **Imagens, `alt`, estouro lateral e elementos fixos:** 0 quebradas (14 a 23 imagens por página), 0 sem `alt`, 0 resposta de erro, 0 estouro lateral.
+- **Texto cortado já com correção em draft (não repito):** a linha-resumo do "Bom saber" ("Sem câmeras no interior (declarado pelo…", "Urgente com solução provisória…"), em **todos** os 14 anúncios a 390 px: **#3356**.
+- **Achado novo (registrado aqui, sem PR de código nesta sequência):**
+  - **N1 — "Destaques" do anúncio: a linha de detalhe do cartão "Pronto para morar" aparece cortada com "…".** Página: `/imoveis/ube-006`, `007`, `010`, `011`, `012`, `013`, `014` e `015` (os que têm o selo "Pronto para morar"); largura: **1280 px**; elemento: `span` "Imóvel mobiliado e equipado" (`destaques-imovel.tsx`, linha do detalhe com `truncate`; texto em `src/lib/anuncio/resumos-imovel.ts`, chave `pronto`). A 390 px não corta. Correção óbvia e pequena (mesma da C9 e do "Bom saber"): `truncate` → `line-clamp-2`, com teste. Fica para PR quando liberado; esta sequência só registra.
+- **Conformidade com mockups:** sem tela de mockup nova; `publico-home` e `publico-proprietarios` seguem fora do repo.
+- **CI do #3417 (E460):** verde (4/4), sem conflito, em draft.
