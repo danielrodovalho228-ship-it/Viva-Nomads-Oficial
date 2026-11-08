@@ -20,9 +20,9 @@ import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDa
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
 import { AvisoFotoRemovida } from "@/components/account/aviso-foto-removida";
 import { BIO_MAX, ESTADO_SALVAR, IDIOMAS, LINHA_PERFIL_COMPLETO, destinoDaFalta, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
+import { perfilAlterado, retrato, retratoSemIdiomas } from "@/lib/perfil/retrato";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
-import { perfilAlterado, retrato, retratoSemIdiomas } from "@/lib/perfil/retrato";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
