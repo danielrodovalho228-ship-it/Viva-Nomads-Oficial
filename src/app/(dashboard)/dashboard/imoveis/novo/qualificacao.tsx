@@ -22,7 +22,7 @@ import {
 } from "@/lib/anuncio/qualificacao-conforto";
 import { nivelDaQualificacao, type ProvasDoRascunho } from "@/lib/anuncio/qualificacao-nivel";
 import { cn } from "@/lib/utils";
-import { progressoQualificacao, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
+import { progressoQualificacaoComRascunho, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
 import { RodapeAssistente } from "./rodape-assistente";
 
 const ICONES: Record<IconeOpcao, React.ComponentType<{ className?: string }>> = {
@@ -63,6 +63,8 @@ export function Qualificacao(p: {
   provas?: ProvasDoRascunho | null;
   /** E506: o conforto que o rascunho já tem confirmado (Passo 5) — conta no resultado e na barra. */
   confirmados?: readonly string[];
+  /** E506: o % completo real do rascunho (prontidão) — a barra nunca fica abaixo dele. */
+  progressoRascunho?: number;
 }) {
   const resultado = p.tela >= TOTAL_TELAS;
   // O "Sair" do topo (moldura do assistente) aqui salva as respostas antes de sair (decisão do Muse, 25/10).
@@ -113,7 +115,7 @@ export function Qualificacao(p: {
         total={10}
         texto={resultado ? "Resultado da qualificação · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
         detalhe={resultado ? null : textoRespondidas(respondidas)}
-        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, fracaoDaQualificacao(respondidas, confortoAgora.length))}
+        pct={progressoQualificacaoComRascunho(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, fracaoDaQualificacao(respondidas, confortoAgora.length), p.progressoRascunho ?? 0)}
         onVoltar={!resultado && p.tela > 0 ? () => p.onTela(p.tela - 1) : null}
         primario={
           resultado
