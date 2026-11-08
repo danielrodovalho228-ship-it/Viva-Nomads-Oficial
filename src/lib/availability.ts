@@ -116,13 +116,26 @@ export interface ReservaResultado {
   motivo?: string;
 }
 
+/** A estadia mínima do anúncio em dias (padrão 30 quando o cadastro não define). */
+export function estadiaMinimaDias(minDias?: number | null): number {
+  return minDias && minDias > 0 ? minDias : 30;
+}
+
+/**
+ * E725: a duração escolhida está ABAIXO da estadia mínima? Então a estadia é inválida: não se calcula nem se exibe total
+ * (só o aviso "Estadia mínima de N dias"). Sem duração (null/0), não há o que avisar.
+ */
+export function abaixoDaEstadiaMinima(dias: number | null | undefined, minDias?: number | null): boolean {
+  return dias != null && dias > 0 && dias < estadiaMinimaDias(minDias);
+}
+
 /**
  * Valida uma tentativa de reserva contra a janela de disponibilidade, a estadia
  * mínima/máxima e os dias bloqueados. Retorna o nº de dias e, se inválida, o
  * motivo em texto (pronto para exibir).
  */
 export function validarReserva(i: ReservaInput): ReservaResultado {
-  const min = i.minDias && i.minDias > 0 ? i.minDias : 30;
+  const min = estadiaMinimaDias(i.minDias);
   const max = i.maxDias && i.maxDias > 0 ? i.maxDias : 180;
   const dias = diasEntre(i.checkIn, i.checkOut);
 

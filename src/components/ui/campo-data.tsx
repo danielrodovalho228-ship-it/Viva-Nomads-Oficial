@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type InputH
 import { CalendarDays } from "lucide-react";
 import { CalendarioBR } from "@/components/ui/calendario-br";
 import { useToque } from "@/components/ui/use-toque";
-import { brParaIso, dataDigitadaInvalida, interpretarDataColada, isoParaBr, mascararData, textoAposMudancaDeFora } from "@/lib/data-digitada";
+import { brParaIso, dataDigitadaInvalida, interpretarDataColada, isoParaBr, mascararDataDigitada, textoAposMudancaDeFora } from "@/lib/data-digitada";
 import { cn } from "@/lib/utils";
 
 /**
@@ -79,7 +79,7 @@ export function CampoDataTexto({
             aoMudar(iso);
             return;
           }
-          const m = mascararData(bruto);
+          const m = mascararDataDigitada(bruto);
           setTexto(m);
           aoInvalido?.(dataDigitadaInvalida(m));
           aoMudar(brParaIso(m) ?? "");

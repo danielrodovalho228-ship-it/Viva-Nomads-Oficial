@@ -1,3 +1,4 @@
+import { datasDaEstadia } from "@/lib/contrato-blocos";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { parceiroPodeReceberServico } from "@/lib/parceiros/regras";
@@ -62,7 +63,7 @@ export async function contratoDoEvento(admin: Admin, contratoId: string): Promis
   } | null;
   if (!c?.properties) return null;
   const blocos = validos(c.contrato_blocos);
-  const saida = blocos.map((b) => b.fim).sort().at(-1);
+  const saida = datasDaEstadia(c.contrato_blocos)?.fim;
   if (!saida) return null;
   const { data: outros, error: erroOutros } = await admin
     .from("contratos")
@@ -430,8 +431,8 @@ export async function automacaoDaEstadia(admin: Admin, agora: Date, simular: boo
   for (const c of (data ?? []) as unknown as { id: string; assinado_proprietario_em: string | null; assinado_inquilino_em: string | null; contrato_blocos: Bloco[] | null }[]) {
     if (!c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
     const blocos = validos(c.contrato_blocos);
-    const inicio = blocos.map((b) => b.inicio).sort()[0];
-    const saida = blocos.map((b) => b.fim).sort().at(-1);
+    const inicio = datasDaEstadia(blocos)?.entrada;
+    const saida = datasDaEstadia(blocos)?.fim;
     const eventos: Evento[] = [];
     if (saida && saida > hoje && saida <= dia(DIAS_ANTES_LIMPEZA)) eventos.push({ tipo: "saida_em_5_dias" });
     if (inicio && inicio > hoje && inicio <= dia(DIAS_ANTES_SUGESTAO)) eventos.push({ tipo: "entrada_em_7_dias" });

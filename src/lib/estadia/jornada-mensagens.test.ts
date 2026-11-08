@@ -21,7 +21,7 @@ const longa = { entrada: "2027-01-10", fim: "2027-03-20" }; // 69 dias
 
 test("datas da jornada: chegada, semana da saída (7 dias antes) e meio (só estadia longa)", () => {
   assert.equal(MEIO_ESTADIA_MIN_DIAS, 60);
-  assert.deepEqual(jornadaDaEstadia(longa), { chegada: "2027-01-10", semanaSaida: "2027-03-13", meio: "2027-02-13" });
+  assert.deepEqual(jornadaDaEstadia(longa), { d7: "2027-01-03", chegada: "2027-01-10", semanaSaida: "2027-03-13", meio: "2027-02-13" });
   assert.equal(jornadaDaEstadia({ entrada: "2027-01-10", fim: "2027-02-24" }).meio, null, "45 dias: sem mensagem do meio");
   assert.equal(jornadaDaEstadia({ entrada: "2027-01-10", fim: "2027-03-11" }).meio, "2027-02-09", "60 dias já é longa");
   assert.equal(jornadaDaEstadia({ entrada: "2027-01-10", fim: "2027-01-15" }).semanaSaida, null, "estadia curtíssima: a semana da saída cairia antes da chegada");
@@ -51,7 +51,7 @@ test("remarcou por aditivo: as datas recalculam e a chave muda, então a jornada
 test("confirmação: sai logo depois da assinatura das duas partes (hoje ou ontem), nunca em contrato antigo", () => {
   assert.equal(confirmacaoDevida({ assinadoEm: "2027-01-02T15:00:00Z", hoje: "2027-01-02" }), true);
   assert.equal(confirmacaoDevida({ assinadoEm: "2027-01-02T15:00:00Z", hoje: "2027-01-03" }), true);
-  assert.equal(confirmacaoDevida({ assinadoEm: "2027-01-02T15:00:00Z", hoje: "2027-01-05" }), false);
+  assert.equal(confirmacaoDevida({ assinadoEm: "2027-01-02T15:00:00Z", hoje: "2027-01-05" }), false, "sem o 1º pagamento, contrato antigo não recebe");
   // 01h UTC ainda é a noite anterior em Brasília.
   assert.equal(confirmacaoDevida({ assinadoEm: "2027-01-03T01:00:00Z", hoje: "2027-01-02" }), true);
   assert.equal(confirmacaoDevida({ assinadoEm: null, hoje: "2027-01-02" }), false);

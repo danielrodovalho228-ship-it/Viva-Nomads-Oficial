@@ -45,3 +45,11 @@ Teste: `src/lib/vistoria/e682-completar-e648.test.ts`.
 | Chave on (controle) | A lista aparece com "conduta 4,5 · 7 avaliações feitas" e o botão Escolher: o teste não passa por estar vazio. |
 
 Verificado por mutação: trocando `if (!visivel) return null;` por `if (false) ...`, o caso 1 fica vermelho (revertido).
+
+## Ajuste (lista sem preço nem prazo)
+Pedido do Daniel: a lista de escolha NÃO mostra preço nem prazo. A linha de cada avaliador (`linhaDeTermos`) passou a mostrar só a conduta publicada; valor e prazo chegam na proposta do avaliador (aceite do dono em 72 h, vencido expira). "Meus termos" (0325) segue gravado, sem aparecer na lista. Atrás de `VISTORIA_ATIVA` (desligada). Sem prova ao vivo.
+
+## Conferência da sequência E707 · E654 · E682 (08/11)
+- E707: código no #3297 (aberto, rascunho), atrás de `CAUCAO_PRAZOS_ATIVA` desligada; espera a Dra. Beatriz.
+- E654: já na main (`pedirCodigoAssinatura` nunca lança e a tela mostra erro ou confirmação). A causa-raiz da não entrega não aparece no código: o envio usa o mesmo `sendEmail` dos demais e o contrato 67329884 nem chegou ao `upsert`; só o log `[assinatura] pedir código falhou:` da próxima tentativa dirá.
+- E682: tela, termos, 72 h e avisos já na main; só a linha da lista mudou aqui.

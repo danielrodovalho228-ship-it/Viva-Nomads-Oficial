@@ -111,12 +111,12 @@ test("garantia 'inativo' nunca é elegível", () => {
   assert.ok(!filtra.some((g) => g.id === "x"));
 });
 
-test("Serviços: Plano de manutenção disponível; Assistência 24h 'Em breve' (sem parceiro real, ordem 3e2b7030)", () => {
-  assert.equal(servicosDisponiveis().length, 1);
+test("Serviços: Plano de manutenção e Assistência 24h 'Em breve' (sem a saída AquiResolve; ordem 3e2b7030 e E688)", () => {
+  assert.equal(servicosDisponiveis().length, 0);
   const visiveis = servicosVisiveis();
   assert.equal(visiveis.length, 2);
   assert.equal(servicoSelecionavel(visiveis.find((s) => s.id === "assistencia_24h")!), false);
-  assert.equal(servicoSelecionavel(visiveis.find((s) => s.id === "plano_manutencao")!), true);
+  assert.equal(servicoSelecionavel(visiveis.find((s) => s.id === "plano_manutencao")!), false);
   // Quem paga continua correto por serviço.
   const assist = visiveis.find((s) => s.id === "assistencia_24h")!;
   const manut = visiveis.find((s) => s.id === "plano_manutencao")!;
