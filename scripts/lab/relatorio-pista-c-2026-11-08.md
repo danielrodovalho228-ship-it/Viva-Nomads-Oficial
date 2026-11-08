@@ -211,3 +211,12 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Lista-master anexa (snapshot até E719): sem item novo que peça spec e já esteja mergeado. Drafts ainda abertos, sem spec possível na main: E714 (#3395, spec pronta no PR #3421), E717 (#3396, spec no PR #3422), E713 (#3408, coberto pela t59 e t1475), E716 (#3356 e #3388), E719 (#3397 e #3398, duas implementações; spec adiada até se escolher). E712 e E718 seguem abertos com a Pista A/chat principal, sem comportamento fechado para testar.
 - Defeitos: nenhum novo; L-108 livre; abertos L-104 e L-107 (t1429, PR #3394); C16 (360 px) e C17 da QA cobertos por `test.fail` na t1486 (PR #3424).
 - Próximo bloco: 545 (grupo do 528).
+
+## Bloco 545 e specs propostas pela QA (rodadas 06:25, 06:40, 07:05 e 08:50)
+
+- Bloco 545 (t1490, PR #3430 draft, run 42464319493): verde. Proposta e visita com id (grupo do 528).
+- t1489 (PR #3429 draft, run 42465890357): verde. T-janelas-busca: cada controle da faixa de /buscar abre a janela sem rolagem lateral, Fechar e Esc fecham, foco volta ao botão (390 e 1280 px). Caminho até o verde: (1) erro meu, o id da pílula Ordenar é `ordenar` e não `ordem`; (2) duas quedas de infraestrutura (504 no download do supabase/setup-cli, antes de qualquer teste), com um único rerun nessa run; o run verde veio de um commit legítimo (merge da main no ramo).
+- t1491 (PR #3434 draft, run 42465929827): verde. T-E452-neg (tipo=loft sem botão Nível; nivel=premium mostra "Premium" e desligar tira `nivel` da URL) e T-E436 (a 1280 e 390 nada cobre o topo público).
+- Ainda sem spec: T-E458-390 (menu de /empresas a 390 com o link "Parceiros"; falta o seletor do menu do celular), T-E713r (#3408, draft) e T-E660r (#3407, draft), T-0328 (leitura no banco depois do merge da migração), T-P1 (saudação do assistente, depende da Pista A).
+- Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394) e C16 (360 px)/C17 da QA (t1486, PR #3424).
+- Próximo bloco: 546 (grupo do 529).
