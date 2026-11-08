@@ -928,3 +928,26 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Achado 1 (corrigido em #3360, draft):** `/pedidos/novo` a 390 px — "Mobiliado completo", "100 Mbps" e "300 Mbps" cortados com "…" no botão de 48 px; agora quebram em 2 linhas.
 - **Sem achado:** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, nenhum texto cortado nas demais rotas.
 - **Itens da lista conferidos no GitHub antes de começar:** E621 (`/comparar` com a foto da coluna) já mesclado em 05/11 (#2789); E477 (observador só leitura no admin) tem correções mescladas depois da reprova de 06/11 (#2914, #2922, #3033, #3144) e a telas de Pendências, Fotos de perfil, Imóveis, Documentos, Atendimento, Cidades, Destinos e Marketing já escondem o controle de escrita para a observadora; falta só a prova do laboratório (#3186, Pista C, draft). Nada novo a abrir na Pista A.
+
+## Passada 80 (08/11; `main` em `c22987c92`; 390 e 1280) — home completa contra as ordens e specs de conformidade
+
+**Bloqueio registrado:** o arquivo do mockup `publico-home` **não está no repositório** (a QA o montou fora, "não versionado"). Por isso a comparação elemento por elemento foi feita contra o que o repo guarda do desenho aprovado: as asserções dos specs `t66` (ordem `bab1b2aa`), `t177` (vídeo institucional v3) e `t730` (conformidade da home de 30/10), mais a passada 78. Nada foi adivinhado.
+
+| Elemento (spec) | 390 px | 1280 px |
+|---|---|---|
+| Hero em largura cheia (t66) | x 0–390 ✔ | x 0–1280 ✔ |
+| UMA busca "Para onde você vai?", 1 campo, 0 `select` (t66) | ✔ | ✔ |
+| Busca centralizada no hero (t66, tolerância 40 px) | centro 195 de 195 ✔ | centro 620 de 640 (−20 px, dentro da tolerância; ver nota) |
+| Atalhos por categoria (t66) | 6 links ✔ | 6 links ✔ |
+| Vídeo "A Viva em 30 segundos" logo abaixo do hero (t177) | ✔ | ✔ |
+| Vídeo sem `autoplay` e sem `controls` até o play, `preload="none"`, com capa, `aria-label` e legenda pt-BR (t177) | ✔ | ✔ |
+| Vídeo 16:9 (t177) | 1,79 ✔ | 1,78 ✔ |
+| Selo "Internet para home office" dentro da foto (t730) | ✔ | ✔ |
+| Atalhos e título na coluna das outras seções, título à esquerda (t730) | x 20 = 20 = 20 ✔ | x 40 = 40 = 40 ✔ |
+| Títulos de seção com o mesmo tamanho (t730) | 22 px ✔ | 28 px ✔ |
+| Imagens | 26, 0 quebradas, 0 sem `alt`, 0 resposta de erro ✔ | 26, 0 quebradas, 0 sem `alt`, 0 erro ✔ |
+| Rolagem lateral | 0 ✔ | 0 ✔ |
+
+**Nota (1280):** a busca do hero ficou 20 px à esquerda do centro por causa da faixa reservada ao botão "Fale com a Viva" (C1b, #3348, mesclado): o conteúdo público ganhou 72 px de respiro à direita. Passa na tolerância do t66 (40 px) e alinha com as demais seções; centralizar exatamente exigiria folga igual dos dois lados e desalinharia o hero do resto. Não corrigi; se o Muse quiser o centro exato, é decisão de desenho.
+
+**Desvios menores a corrigir:** nenhum. Nenhum PR de bloco aberto. Próximos itens abertos da fila (C5, preço repetido do C9, nomes de bairro do E704, topo da home × mockup) dependem de decisão do Muse/Daniel.
