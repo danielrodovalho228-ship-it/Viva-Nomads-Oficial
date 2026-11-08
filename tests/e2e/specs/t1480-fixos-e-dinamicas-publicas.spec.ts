@@ -19,7 +19,12 @@ async function rolarAteOFim(page: Page) {
       y += Math.round(innerHeight * 0.8);
       await new Promise((r) => setTimeout(r, 120));
     }
-    window.scrollTo(0, document.documentElement.scrollHeight);
+    // A página cresce enquanto rola (imagens e listas que chegam): insiste até encostar de verdade no fim.
+    for (let i = 0; i < 25; i++) {
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await new Promise((r) => setTimeout(r, 300));
+      if (scrollY + innerHeight >= document.documentElement.scrollHeight - 2) break;
+    }
   });
   await page.waitForTimeout(400);
 }
