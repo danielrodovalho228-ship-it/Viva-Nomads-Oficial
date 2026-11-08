@@ -67,3 +67,15 @@ Reenviado no head `405b56e22` (o PR ainda estava aberto, conferi antes). Sem rer
 ## t1457 verde (C10 e C7)
 
 t1457 (#3355) **verde** (run 42432802592): `/seguranca` tem a faixa "Desconfie…" com o botão "Fale com a Viva" levando a `/ajuda/fale-com-a-viva` (390 e 1280), e em `/para-proprietarios` a 390 × 844 o botão "Anunciar meu imóvel" fica inteiro na primeira tela, sem nada cobrindo o centro, com a frase da taxa depois. Sem regressão, sem defeito novo; aberto no produto: L-104; próximo livre: **L-107**. Próximo bloco da fila: 521 (grupo do 504). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 521 e specs de layout público C9/E709/E710/E711 (main `5bea39692`)
+
+**Estado.** Main `5bea39692`: run verde (42433587638). Merge de produto novo desde a última foto: E709 (#3324, folga para o botão flutuante), além do meu t1457. `tsc` limpo.
+
+**Bloco 521** (t1458, #3358, grupo do 504: avaliação do imóvel, avaliadora, página pública da avaliadora, intenção), a 390 e 1280 px, aberto, em andamento.
+
+**Specs de tela que faltavam (t1459, #3359):** C9 (nome do local no cartão da busca pode quebrar em linhas, sem corte horizontal), E710 (ações da busca em linha própria no celular, mesma linha dos filtros do tablet para cima), E711 (`/parceiros` sem o "Seja parceiro" duplicado, com "Quero ser parceiro") e E709 (folga de pelo menos 80 px à direita na página do imóvel a 768 e 1280). Em andamento.
+
+**Rodadas de erros/estados vazios da Pista B:** o PR do bloco de auditorias 160–187 (leitura que falha não vira "não encontrado") não entrou como merge de produto na main nesta foto; ficam como item pulado até mesclarem (as auditorias estão em PRs `claude-b/auditoria-*` e `claude-b/achado*-leitura`, quase todas ainda abertas). Pendentes de spec de tela: E506, E699, E704, E706, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador, T-E696, ramo sem data futura do E695.
+
+Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
