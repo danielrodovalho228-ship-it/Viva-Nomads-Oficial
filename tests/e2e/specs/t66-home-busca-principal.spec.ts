@@ -39,11 +39,22 @@ test.describe("T66 — Home: busca principal e atalhos", () => {
   });
 
   test("atalhos abrem a /buscar já filtrada", async ({ page }) => {
+    // Os atalhos somem quando o filtro tem 0 imóveis (ordem a875278a): o que existe depende dos dados do ambiente.
+    // Confere todos os que aparecem; "Aceita pets" e "3+ quartos" só quando houver.
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.getByTestId("atalhos-categoria").getByRole("link", { name: /Aceita pets/ }).click();
-    await expect(page).toHaveURL(/\/buscar\?(.*&)?pet=1/);
+    const links = page.getByTestId("atalhos-categoria").getByRole("link");
+    const total = await links.count();
+    expect(total).toBeGreaterThan(0);
+    for (const [rotulo, filtro] of [[/Aceita pets/, /\/buscar\?(.*&)?pet=1/], [/3\+ quartos/, /\/buscar\?(.*&)?quartos=3/]] as const) {
+      await page.goto("/", { waitUntil: "networkidle" });
+      const alvo = page.getByTestId("atalhos-categoria").getByRole("link", { name: rotulo });
+      if (await alvo.count()) {
+        await alvo.click();
+        await expect(page).toHaveURL(filtro);
+      }
+    }
     await page.goto("/", { waitUntil: "networkidle" });
-    await page.getByTestId("atalhos-categoria").getByRole("link", { name: /3\+ quartos/ }).click();
-    await expect(page).toHaveURL(/\/buscar\?(.*&)?quartos=3/);
+    await links.first().click();
+    await expect(page).toHaveURL(/\/buscar/);
   });
 });
