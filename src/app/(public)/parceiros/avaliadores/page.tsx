@@ -88,7 +88,7 @@ export default function AvaliadoresRecrutamentoPage() {
       <section className="mt-8" data-testid="recrutamento-pagamento">
         <h2 className="text-lg font-semibold text-ink">Como é pago</h2>
         <p className="mt-2 text-ink/80">
-          O valor da avaliação segue a tabela da Viva para a cidade e o porte do imóvel. {FRASE_PAGA_AVALIACAO} Quem paga é o dono do imóvel.
+          Você define o seu valor e o seu prazo em cada pedido; a tabela da Viva para a cidade e o porte do imóvel é só uma referência. {FRASE_PAGA_AVALIACAO} Quem paga é o dono do imóvel.
         </p>
         <p className="mt-2 text-sm text-ink/70">{textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
       </section>
