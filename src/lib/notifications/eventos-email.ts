@@ -100,6 +100,7 @@ export type NotificationEvent =
   | "estadia_convite_ocupante" // 61-B: o morador convidou quem vai morar junto → o convidado (só leitura)
   | "estadia_instrucoes_pendentes" // D-10 sem instruções de chegada → proprietário
   | "jornada_confirmacao" // E663: contrato assinado pelas duas partes → morador (pede os documentos pela plataforma)
+  | "jornada_d7" // E759: 7 dias antes da entrada → morador (instruções de chegada na página da estadia)
   | "jornada_chegada" // E663: dia da entrada → as duas partes
   | "jornada_semana_saida" // E663: uma semana antes da saída → as duas partes
   | "jornada_meio_estadia" // E663: meio de estadia longa (60+ dias) → morador (tudo certo? algo quebrou? avaliação parcial)
@@ -231,6 +232,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   estadia_convite_ocupante: { subject: "Você foi incluído em uma estadia na Viva", body: () => "O morador incluiu você na estadia. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.", cta: "Ver a estadia", path: "/auth" },
   estadia_instrucoes_liberadas: { subject: "As instruções de chegada estão liberadas", body: (n) => `Olá${n ? " " + n : ""}, a sua entrada está chegando. Como entrar, o Wi-Fi e as regras do prédio já estão na página da estadia.`, cta: "Ver as instruções", path: "/dashboard/locacoes" },
   jornada_confirmacao: { subject: "Contrato assinado: envie seus documentos", body: (n) => `Olá${n ? " " + n : ""}, seu contrato está assinado. Envie seus documentos pela plataforma, na página da estadia.`, cta: "Enviar documentos", path: "/dashboard/locacoes" },
+  jornada_d7: { subject: "A entrada é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a entrada. As instruções de chegada estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   jornada_chegada: { subject: "Hoje é o dia da entrada", body: (n) => `Olá${n ? " " + n : ""}, hoje é o dia da entrada no imóvel do contrato. As instruções estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   jornada_semana_saida: { subject: "A saída é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a saída. Combine a conferência de saída pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   jornada_meio_estadia: { subject: "Como está a estadia?", body: (n) => `Olá${n ? " " + n : ""}, a estadia chegou à metade. Está tudo certo? Se algo quebrou, avise pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
