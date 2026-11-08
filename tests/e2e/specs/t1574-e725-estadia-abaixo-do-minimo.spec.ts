@@ -3,7 +3,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha,
 
 /*
   T1574 — E725 (#3499): no anúncio, uma estadia ABAIXO da mínima (30 dias, padrão do lab) é inválida — o cartão de preço não calcula nem exibe
-  total: fica só o aviso "Estadia mínima de 30 dias." (cartao-lateral-estadia-minima). Com 30 dias o aviso some. Anúncio real do lab,
+  total: fica só o aviso "Estadia mínima de 30 dias." (cartao-lateral-estadia-minima), sem o total da estadia. Com 30 dias o aviso some. Anúncio real do lab,
   calendário de Disponibilidade, 390 e 1280 px, sem estouro. Só no laboratório.
 */
 const senha = novaSenha();
@@ -49,13 +49,15 @@ for (const [w, h] of [[1280, 900], [390, 844]] as const) {
       const cartao = page.locator("#cartao-preco");
       await escolher(page, 10);
       await expect(cartao.getByTestId("cartao-lateral-estadia-minima")).toHaveText(/Estadia mínima de 30 dias\./);
-      await expect(cartao.getByTestId("total-junto-da-acao")).toHaveCount(0);
-      await expect(cartao.getByTestId("total-mensal")).toHaveCount(0);
+      // o total da ESTADIA (cartao-lateral-estadia / -conta) não aparece; o "Total por mês" (E528, total-junto-da-acao) é o mensal e fica
+      await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveCount(0);
+      await expect(cartao.getByTestId("cartao-lateral-estadia-conta")).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), "rolagem lateral").toBeLessThanOrEqual(1);
 
       await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
       await escolher(page, 30);
       await expect(page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia-minima")).toHaveCount(0);
+      await expect(page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").first()).toBeVisible();
     });
   });
 }
