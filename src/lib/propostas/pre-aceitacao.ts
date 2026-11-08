@@ -4,7 +4,7 @@
     • a data e a hora exatas do fim aparecem na tela (horário de Brasília);
     • o prazo nunca passa da data de entrada: se a entrada vier antes das 72 h, vale a entrada;
     • lembretes 24 h e 6 h antes do fim, respeitando o silêncio das 22h às 7h;
-    • regra de corrida, por escrito: o primeiro a concluir o contrato fica com o imóvel;
+    • regra de corrida, por escrito: com vários pré-aceites nas mesmas datas, o primeiro a concluir o contrato fica; os demais recebem mensagem clara e voltam à fila do dono;
     • vencido sem concluir, a pré-aceitação EXPIRA sem punição, e pode ser reaberta no máximo 2 vezes;
     • na reabertura a taxa congelada na pré-aceitação CONTINUA VALENDO (não recalcula) — decisão do Daniel.
   Roda: node --test src/lib/propostas/e722-pre-aceitacao.test.ts
@@ -20,7 +20,11 @@ export const MAX_REABERTURAS = 2;
 export const LEMBRETES_HORAS = [24, 6] as const;
 
 export const TEXTO_REGRA_CORRIDA =
-  "Regra de corrida: o primeiro a concluir o contrato fica com o imóvel. Se outra pessoa concluir antes, esta pré-aceitação perde a vez, sem penalidade.";
+  "Regra de corrida: quando há vários pré-aceites para as mesmas datas, o primeiro a concluir o contrato fica com o imóvel. Os demais recebem uma mensagem clara e voltam à fila do proprietário, sem penalidade.";
+export const TEXTO_PERDEU_A_VEZ =
+  "Outra pessoa concluiu o contrato deste imóvel, nas mesmas datas, antes de você. Pela regra de corrida, o primeiro a concluir o contrato fica com o imóvel. Nada é cobrado nem anotado contra você, e a sua candidatura voltou para a fila do proprietário.";
+export const TEXTO_PERDEU_A_VEZ_DONO =
+  "Outro pré-aceite concluiu o contrato deste imóvel nas mesmas datas. A candidatura que perdeu a vez voltou para a sua fila, sem penalidade.";
 export const TEXTO_SEM_PUNICAO =
   "Se o prazo terminar sem o contrato concluído, a pré-aceitação expira sem punição: nada é cobrado nem anotado contra você. Ela pode ser reaberta até 2 vezes, e a taxa já congelada continua valendo.";
 export const TEXTO_TAXA_CONTINUA =

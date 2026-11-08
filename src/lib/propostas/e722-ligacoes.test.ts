@@ -47,3 +47,25 @@ test("a tela mostra a data e a hora exatas, a regra de corrida, a ausência de p
   const tela = ler("src/app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx");
   for (const id of ["pre-aceitacao-prazo", "pre-aceitacao-corrida", "pre-aceitacao-sem-punicao", "pre-aceitacao-taxa"]) assert.match(tela, new RegExp(`data-testid="${id}"`));
 });
+
+test("regra de corrida: quem perde a vez recebe mensagem clara, a candidatura volta à fila do dono e não reabre", () => {
+  const srv = ler("src/lib/propostas/pre-aceitacao-servidor.ts");
+  assert.match(srv, /conflitoNoImovel\(admin, l\.property_id, periodo\)/); // outro contrato ativo nas mesmas datas
+  assert.match(srv, /pre_aceitacao_perdeu_em: agora\.toISOString\(\)/);
+  assert.match(srv, /from\("leads"\)\.update\(\{ status: "new", accepted_at: null, decided_by: null \}\)\.eq\("id", l\.lead_id\)\.eq\("status", "accepted"\)/);
+  assert.match(srv, /ASSUNTOS\.preAceitacaoPerdeuVez, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO/);
+  assert.match(srv, /if \(p\.pre_aceitacao_perdeu_em\) return \{ ok: false/); // perdeu a corrida: não reabre
+  // Falha de leitura das datas NÃO conta como perda da corrida.
+  assert.match(srv, /startsWith\("Não foi possível"\)/);
+  assert.match(ler("supabase/migrations/0334_propostas_pre_aceitacao_e722.sql"), /add column if not exists pre_aceitacao_perdeu_em timestamptz/);
+});
+
+test("o desenho não usa o nome 'validade da proposta' para o prazo do pré-aceite", () => {
+  for (const f of ["src/lib/propostas/pre-aceitacao.ts", "src/lib/propostas/pre-aceitacao-servidor.ts", "src/app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx"]) {
+    const t = ler(f);
+    const bloco = f.endsWith("proposta-detalhe.tsx") ? t.slice(t.indexOf("p.preAceitacao &&"), t.indexOf("p.fechamentoUrl &&")) : t;
+    assert.doesNotMatch(bloco, /validade da proposta/i, f);
+  }
+  const a = ler("src/lib/notifications/assuntos.ts");
+  for (const k of ["preAceitacaoLembrete", "preAceitacaoExpirou", "preAceitacaoPerdeuVez"]) assert.doesNotMatch(a.slice(a.indexOf(k), a.indexOf(k) + 120), /validade/i);
+});

@@ -8,6 +8,7 @@ alter table public.propostas add column if not exists pre_aceitacao_reaberturas 
 alter table public.propostas add column if not exists pre_aceitacao_lembrete_24h_em timestamptz;
 alter table public.propostas add column if not exists pre_aceitacao_lembrete_6h_em timestamptz;
 alter table public.propostas add column if not exists pre_aceitacao_expirou_em timestamptz;
+alter table public.propostas add column if not exists pre_aceitacao_perdeu_em timestamptz;
 alter table public.propostas drop constraint if exists propostas_pre_aceitacao_reaberturas_valida;
 alter table public.propostas add constraint propostas_pre_aceitacao_reaberturas_valida check (pre_aceitacao_reaberturas between 0 and 2);
 create index if not exists propostas_pre_aceitacao_idx on public.propostas (pre_aceitacao_ate) where status = 'aceita' and pre_aceitacao_ate is not null;

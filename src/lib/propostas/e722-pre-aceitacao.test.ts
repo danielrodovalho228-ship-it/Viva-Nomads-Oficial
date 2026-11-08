@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  LEMBRETES_HORAS, MAX_REABERTURAS, PRAZO_PRE_ACEITACAO_HORAS, TEXTO_REGRA_CORRIDA, TEXTO_TAXA_CONTINUA,
+  LEMBRETES_HORAS, MAX_REABERTURAS, PRAZO_PRE_ACEITACAO_HORAS, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_TAXA_CONTINUA,
   estadoDaPreAceitacao, lembretesDaPreAceitacao, podeReabrir, prazoDaPreAceitacao, reabrirPreAceitacao, textoDoPrazo,
 } from "./pre-aceitacao.ts";
 import { emSilencio } from "../notifications/silencio.ts";
@@ -85,6 +85,10 @@ test("no máximo 2 reaberturas; a taxa congelada continua a mesma, sem recalcula
 });
 
 test("os textos escritos trazem a regra de corrida, a ausência de punição e a taxa que continua valendo", () => {
-  assert.match(TEXTO_REGRA_CORRIDA, /primeiro a concluir o contrato fica com o imóvel/);
+  assert.match(TEXTO_REGRA_CORRIDA, /vários pré-aceites para as mesmas datas, o primeiro a concluir o contrato fica com o imóvel/);
+  assert.match(TEXTO_REGRA_CORRIDA, /Os demais recebem uma mensagem clara e voltam à fila do proprietário/);
+  assert.match(TEXTO_PERDEU_A_VEZ, /Outra pessoa concluiu o contrato deste imóvel, nas mesmas datas, antes de você/);
+  assert.match(TEXTO_PERDEU_A_VEZ, /voltou para a fila do proprietário/);
+  assert.match(TEXTO_PERDEU_A_VEZ_DONO, /voltou para a sua fila/);
   assert.match(TEXTO_TAXA_CONTINUA, /taxa congelada na pré-aceitação CONTINUA VALENDO, não recalcula/);
 });
