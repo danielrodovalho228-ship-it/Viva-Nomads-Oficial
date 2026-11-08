@@ -88,6 +88,7 @@ export function AvailabilityCalendar({
   // Achado 48: a leitura das datas ocupadas falhou → o calendário avisa (antes ficava todo livre, em silêncio).
   const [datasFalharam, setDatasFalharam] = useState(false);
   const [tentativaDatas, setTentativaDatas] = useState(0);
+  const [datasCarregadas, setDatasCarregadas] = useState(false);
   useEffect(() => {
     // Dias fechados pelo proprietário e períodos com contrato (só as datas). [] sem backend.
     let vivo = true;
@@ -116,7 +117,6 @@ export function AvailabilityCalendar({
   const bloqueados = blockDays;
   // E673: "Disponível a partir de" = a primeira entrada em que cabe a estadia mínima, olhando os períodos ocupados (contratos e
   // bloqueios, aditivos incluídos) — não só a data escolhida no cadastro. Enquanto as datas não carregam (ou se falharam), a do cadastro.
-  const [datasCarregadas, setDatasCarregadas] = useState(false);
   const desde = useMemo(
     () => (datasCarregadas && !datasFalharam ? primeiraEntradaPossivel({ from, until, minDias: property.minPeriodDays, hoje: today, ocupados: bloqueados }) : null),
     [datasCarregadas, datasFalharam, from, until, property.minPeriodDays, today, bloqueados],

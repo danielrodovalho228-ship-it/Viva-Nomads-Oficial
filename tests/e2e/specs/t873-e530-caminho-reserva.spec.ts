@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T873 — E530: no anúncio de exemplo, "Ver o caminho de reserva" abre os passos do morador ali mesmo (antes só rolava
+ * T873 — E530: no anúncio de exemplo, "Ver o caminho para morar" abre os passos do morador ali mesmo (antes só rolava
  * até o cartão de preço, ao lado). Os passos são os mesmos do Como funciona e há o link para o passo a passo completo.
  */
 for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] as const) {
@@ -13,7 +13,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
     await expect(caminho).toBeVisible({ timeout: 20_000 });
     await caminho.scrollIntoViewIfNeeded();
     const yAntes = await page.evaluate(() => window.scrollY);
-    await caminho.getByText("Ver o caminho de reserva").click();
+    await caminho.getByText("Ver o caminho para morar").click();
     const passos = page.getByTestId("caminho-reserva-passos");
     await expect(passos).toBeVisible();
     for (const t of ["Busque", "Converse", "Candidate-se", "Assine"]) await expect(passos).toContainText(t);

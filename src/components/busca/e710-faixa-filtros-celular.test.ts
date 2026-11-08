@@ -20,3 +20,9 @@ test("Mais filtros, Ordenar e Mapa ficam no grupo de ações, fora da faixa que 
 test("a linha única continua do tablet para cima (sm:flex-row) e o testid antigo da barra fica no contêiner de tudo", () => {
   assert.match(fonte, /flex flex-col gap-2 pb-1 sm:flex-row sm:items-center" data-testid="linha-pilulas"/);
 });
+
+// Lab t106 (360 px): Mais filtros + Ordenar + Mapa somavam 366 px e estouravam a tela em 6 px (rolagem lateral).
+// O grupo de ações quebra linha em vez de passar da borda.
+test("o grupo de ações pode quebrar linha (a 360 px não há rolagem lateral)", () => {
+  assert.match(fonte, /<div className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0" data-testid="pilulas-acoes">/);
+});
