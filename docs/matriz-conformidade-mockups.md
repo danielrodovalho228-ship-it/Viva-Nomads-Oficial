@@ -921,3 +921,10 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
   - **Conformidade da home de 30/10 (passada final):** selo dentro da foto, atalhos na coluna e títulos de seção iguais — spec `t730-conformidade-home`, commit `5b68d48e0`.
   Como essas ordens são posteriores ao mockup, o estado "Conforme" da matriz para `publico-home` vale com a estrutura atual; o que faltava era este registro. O hero com vídeo e busca é protegido por três specs do laboratório.
 - **Não alterei a home.** O arquivo do mockup `publico-home` não está no repositório (a QA o montou fora do repo), então eu não tinha como conferir elemento por elemento, e trocar o topo por texto + foto desfaria três ordens registradas. Se o Muse quiser mesmo o topo do mockup, preciso (a) do arquivo do mockup e (b) de uma ordem que revogue a `bab1b2aa` e o T177.
+
+## Passada 79 (08/11; `main` em `269790fdc`; 390 e 1280) — 22 rotas públicas ainda não varridas
+
+- **Rotas:** `/comparar`, `/guia-fotos`, `/pedidos`, `/pedidos/novo`, `/conferir`, `/excluir-conta`, `/parceiros/buscar`, `/parceiros/ativar`, `/ajuda/fale-com-a-viva`, `/avisos/desligar`, `/alerta-busca/desligar`, `/avaliadores`, `/favoritos`, três temas de `/ajuda/<tema>`, três `/guias/<slug>`, bairros de `/cidades/uberlandia/*` e perfis de `/parceiros/*`.
+- **Achado 1 (corrigido em #3360, draft):** `/pedidos/novo` a 390 px — "Mobiliado completo", "100 Mbps" e "300 Mbps" cortados com "…" no botão de 48 px; agora quebram em 2 linhas.
+- **Sem achado:** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, nenhum texto cortado nas demais rotas.
+- **Itens da lista conferidos no GitHub antes de começar:** E621 (`/comparar` com a foto da coluna) já mesclado em 05/11 (#2789); E477 (observador só leitura no admin) tem correções mescladas depois da reprova de 06/11 (#2914, #2922, #3033, #3144) e a telas de Pendências, Fotos de perfil, Imóveis, Documentos, Atendimento, Cidades, Destinos e Marketing já escondem o controle de escrita para a observadora; falta só a prova do laboratório (#3186, Pista C, draft). Nada novo a abrir na Pista A.
