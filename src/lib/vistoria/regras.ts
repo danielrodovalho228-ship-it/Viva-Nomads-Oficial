@@ -25,7 +25,7 @@ export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas 
   nenhum texto fala em desconto.
 */
 export const TEXTO_REVERIFICACAO_INCLUIDA = "A reverificação dos itens da ressalva, pelo mesmo avaliador, está incluída no valor já pago.";
-export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter \"· vistoriado\", peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser.";
+export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter o selo “vistoriado”, peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser.";
 
 // ── Porte (do anúncio: quartos) ────────────────────────────────────────────────────────────────────────────────
 export const PORTES = ["estudio", "q1_2", "q3_mais"] as const;

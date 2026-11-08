@@ -1,52 +1,21 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * T132 — "Solicitar" (Prompt 41; antes "Enviar candidatura") nunca fica mudo (complemento 2 da ordem 4f8023d1).
- * Anúncio de exemplo (ube-001): clicar abre o passo de confirmação com o resumo
- * (entrada, motivo, valores) e o aviso de demonstração; nada é gravado.
- * Data no passado: mensagem visível, sem seguir.
+ * T132 — Anúncio de exemplo não oferece "Pedir para morar" (E694, resíduo; antes: o "Solicitar" nunca ficava mudo).
+ * No exemplo (ube-001) a coluna de reserva e a barra do celular trazem a explicação e a saída para os imóveis reais; o
+ * fluxo de candidatura de verdade (resumo, datas) é de anúncio real: t327, t357 e t855 o percorrem.
  */
-const DEMO = /Demonstração: este anúncio é de exemplo e a solicitação não é enviada/;
-
 for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] as const) {
   test.describe(`T132 — ${nome} px`, () => {
-    test("com data e motivo preenchidos, clicar abre o resumo e o aviso; nada é gravado", async ({ page }) => {
-      const gravacoes: string[] = [];
+    test("o exemplo explica e leva aos imóveis reais; não há botão que peça para morar", async ({ page }) => {
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
       const card = page.locator("#cartao-preco");
-      await card.getByTestId("candidatura-inicio").fill("2099-01-10");
-      await card.getByTestId("candidatura-motivo").selectOption("trabalho_remoto");
-      page.on("request", (r) => {
-        if (r.method() === "POST") gravacoes.push(r.url());
-      });
-      const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Pedir para morar", exact: true }).click();
-      const passo = page.getByTestId("solicitacao-passo");
-      await expect(passo).toBeVisible();
-      // E53: no Revisar a entrada vem no campo editável do diálogo (a mesma seleção da caixa e do calendário).
-      await expect(passo.getByTestId("solicitacao-inicio")).toHaveValue("10/01/2099");
-      await expect(passo).toContainText("Trabalho remoto");
-      await expect(passo).toContainText("devolvida no fim");
-      await expect(passo.getByTestId("solicitacao-demo")).toHaveText(DEMO);
-      await expect(passo.getByRole("button", { name: "Enviar solicitação" })).toHaveCount(0);
+      await expect(card.getByTestId("exemplo-sem-acoes")).toContainText("Anúncio de exemplo");
+      await expect(page.getByRole("button", { name: "Pedir para morar", exact: true })).toHaveCount(0);
+      const saida = largura >= 1024 ? card.getByTestId("exemplo-ver-reais") : page.getByTestId("barra-fixa-imovel").getByTestId("barra-ver-reais");
+      await expect(saida).toHaveAttribute("href", "/buscar");
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-      await passo.getByRole("button", { name: "Entendi" }).click();
-      await expect(passo).toHaveCount(0);
-      expect(gravacoes).toEqual([]);
-    });
-
-    test("data de entrada no passado: mensagem visível", async ({ page }) => {
-      await page.setViewportSize({ width: largura, height: altura });
-      await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
-      const card = page.locator("#cartao-preco");
-      await card.getByTestId("candidatura-inicio").evaluate((el: HTMLInputElement) => {
-        el.removeAttribute("min");
-      });
-      await card.getByTestId("candidatura-inicio").fill("2020-01-10");
-      const gatilho = largura >= 1024 ? card : page.getByTestId("barra-fixa-imovel");
-      await gatilho.getByRole("button", { name: "Pedir para morar", exact: true }).click();
-      await expect(page.getByTestId("solicitacao-erro")).toContainText("hoje ou depois");
     });
   });
 }
