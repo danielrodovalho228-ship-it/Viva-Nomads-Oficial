@@ -105,7 +105,7 @@ export default function ForLandlordsPage() {
               <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
               <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
               <p className="mt-1 text-base text-muted">
-                Você envia o link, o texto e as fotos do anúncio que já tem; a equipe monta o rascunho. {AVISO_SEM_CUSTO} {AVISO_APROVACAO}
+                Você envia o link, o texto e as fotos do anúncio que já tem. {AVISO_SEM_CUSTO} {AVISO_APROVACAO}
               </p>
               <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg" className="mt-4 w-full sm:w-auto" data-testid="proprietarios-pedir-ajuda">
                 Pedir ajuda para publicar
