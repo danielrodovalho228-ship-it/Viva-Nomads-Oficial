@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
@@ -15,6 +15,7 @@ import { CITIES } from "@/lib/constants";
 import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 import { GESTOR_TEXTO } from "@/config/planos";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
+import { AVISO_APROVACAO, AVISO_SEM_CUSTO } from "@/lib/ajuda-publicacao/ajuda";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
 // E564: a frase cobre a tabela; a faixa do Plano Gestor é dita à parte (GESTOR_TEXTO).
@@ -79,6 +80,51 @@ export default function ForLandlordsPage() {
           )}
         </p>
       </BannerTopo>
+
+      {/* E718 (mockup publico-proprietarios): os três blocos que faltavam — pedidos da cidade, "Publicamos para você" e o simulador.
+          Decisão do Daniel (08/11): completar. Texto só do que o produto faz; nenhum valor de exemplo (o simulador começa vazio, E294). */}
+      <section className="container-page pt-12" data-testid="proprietarios-blocos-mockup">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-xl border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-pedidos-cidade">
+            <div className="flex items-start gap-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sage-100 text-forest">
+                <MapPin className="h-5 w-5" aria-hidden />
+              </span>
+              <div>
+                <h2 className="font-title text-lg font-semibold text-ink sm:text-2xl">Pedidos de moradia da sua cidade chegam até você</h2>
+                <p className="mt-1 text-base text-muted">Veja os pedidos de quem procura moradia perto do seu imóvel e responda pela plataforma.</p>
+              </div>
+            </div>
+            <ButtonLink href="/dashboard/pedidos-cidade" variant="secondary" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-ver-pedidos">
+              Ver pedidos da cidade
+            </ButtonLink>
+          </div>
+
+          <div className="flex flex-col gap-4 overflow-hidden rounded-xl border border-line bg-surface-2 sm:flex-row sm:items-center" data-testid="proprietarios-publicamos">
+            <div className="flex-1 p-6">
+              <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
+              <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
+              <p className="mt-1 text-base text-muted">
+                Você envia o link, o texto e as fotos do anúncio que já tem; a equipe monta o rascunho. {AVISO_SEM_CUSTO} {AVISO_APROVACAO}
+              </p>
+              <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg" className="mt-4 w-full sm:w-auto" data-testid="proprietarios-pedir-ajuda">
+                Pedir ajuda para publicar
+              </ButtonLink>
+            </div>
+            <BrandImage src="/images/unicas/prop-passo-anuncie.webp" alt="Proprietário fotografando a sala para o anúncio" rounded="rounded-none" sizes="(max-width: 640px) 100vw, 320px" className="aspect-[16/10] w-full sm:w-80" />
+          </div>
+
+          <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
+            <div>
+              <h2 className="font-title text-lg font-semibold sm:text-2xl">Simulador de rentabilidade</h2>
+              <p className="mt-1 text-base text-white/85">Estime quanto o seu imóvel pode render por mês com os números que você digitar. A Viva não preenche valor nenhum por você.</p>
+            </div>
+            <ButtonLink href="/dashboard/simulador" variant="inverse" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-calcular">
+              Calcular rentabilidade
+            </ButtonLink>
+          </div>
+        </div>
+      </section>
 
       {/* Quanto custa, em reais, contra o Airbnb (versão curta; a completa fica em /precos). */}
       <section className="container-page pt-12">
