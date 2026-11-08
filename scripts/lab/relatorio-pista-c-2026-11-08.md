@@ -110,3 +110,8 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 
 - Bloco 527 (t1465, PR #3371 em draft, run 42440171656): verde. Compartilhadas com o morador, pedido de serviço pelos dois lados, três papéis.
 - Merges novos na main desde o último registro: só os blocos 523/524 (#3366, #3367); nenhuma jornada provada sem teste. Nenhum defeito novo; L-107 livre. Próximo: bloco 528 (grupo do 511).
+
+## Bloco 528
+
+- Bloco 528 (t1466, PR #3373 em draft, run 42440770509): verde. Proposta e visita com id na URL, 390 e 1280 px.
+- Main sem merge novo desde #3366/#3367 (blocos 523/524, já spec); nenhuma jornada provada sem teste. Nenhum defeito novo; L-107 livre. Próximo: bloco 529 (grupo do 512).
