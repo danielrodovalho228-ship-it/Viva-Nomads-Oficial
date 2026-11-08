@@ -21,3 +21,9 @@ test("no anúncio de exemplo a coluna de reserva não traz os campos de reserva,
   assert.match(ramoReal, /data-testid="candidatura-motivo"/);
   assert.doesNotMatch(bloco.slice(exemploAntes, bloco.indexOf(") : (", exemploAntes)), /camposPeriodo|candidatura-motivo/);
 });
+
+test("no anúncio de exemplo a coluna não repete o aviso 'esta solicitação não é enviada' (nem o selo aviso-demo)", () => {
+  const exemploAntes = bloco.indexOf("{exemplo ? (");
+  const ramoExemplo = bloco.slice(exemploAntes, bloco.indexOf(") : (", exemploAntes));
+  assert.doesNotMatch(ramoExemplo, /EXEMPLO_AVISO_DEMO|aviso-demo/);
+});

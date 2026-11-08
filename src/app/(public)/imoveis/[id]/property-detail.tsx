@@ -447,10 +447,7 @@ export function PropertyDetail({
     <div className="flex flex-col gap-2">
       {exemplo ? (
         <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
-          <p data-testid="aviso-demo" className="font-medium text-forest">
-            {EXEMPLO_AVISO_DEMO}
-          </p>
-          <p className="mt-1">
+          <p>
             Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
             nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
           </p>
