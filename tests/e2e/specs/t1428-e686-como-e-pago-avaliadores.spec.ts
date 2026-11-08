@@ -20,8 +20,8 @@ test.describe("T1428 — E686: Como é pago (avaliadores)", () => {
       expect(texto).toContain("Você define o seu valor e o seu prazo em cada pedido");
       expect(texto).toContain("só uma referência");
       expect(texto, "a frase antiga saiu").not.toContain("O valor da avaliação segue a tabela da Viva");
-      // E714 (#3395) troca a frase: "Quem paga é o dono do imóvel" vira "O dono do imóvel paga a avaliação…"; as duas dizem que o dono paga.
-      expect(texto).toMatch(/Quem paga é o dono do imóvel|O dono do imóvel paga a avaliação/);
+      // E714 (#3395) troca a frase: "Quem paga é o dono do imóvel" vira "O dono paga a avaliação…"; as duas dizem que o dono paga.
+      expect(texto).toMatch(/Quem paga é o dono do imóvel|O dono (do imóvel )?paga a avaliação/);
       await bloco.scrollIntoViewIfNeeded();
       const caixa = await bloco.boundingBox();
       expect(caixa!.x).toBeGreaterThanOrEqual(0);
