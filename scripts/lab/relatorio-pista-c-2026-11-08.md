@@ -220,3 +220,12 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Ainda sem spec: T-E458-390 (menu de /empresas a 390 com o link "Parceiros"; falta o seletor do menu do celular), T-E713r (#3408, draft) e T-E660r (#3407, draft), T-0328 (leitura no banco depois do merge da migração), T-P1 (saudação do assistente, depende da Pista A).
 - Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394) e C16 (360 px)/C17 da QA (t1486, PR #3424).
 - Próximo bloco: 546 (grupo do 529).
+
+## Bloco 546, C16 corrigido e instabilidade da infraestrutura
+
+- Bloco 546 (t1492, PR #3436 draft, run 42467393893): verde. Conferir, pedidos do morador, admin/sistema (grupo do 529).
+- **C16 (QA 07:05) corrigido na main:** o #3433 (Faixa D, `flex-wrap` na faixa de ações da busca) tirou o estouro lateral a 360 px; na t1486 o `test.fail` do C16 a 360 passou a falhar com "Expected to fail, but passed". A spec virou teste comum de regressão a 360 e 390 px (run 42468873863, verde). **C17 segue aberto** (`test.fail` ligado ao item da QA, reproduz no lab). A prova do C16 em produção no navegador real é dos trabalhadores de QA.
+- **Infraestrutura (não é defeito do produto nem de spec):** vários runs caíram com `Unexpected HTTP response: 504` no download do `supabase/setup-cli`, antes de qualquer teste. Afetou: o push da main do #3433 (`53c0bcc10`, runs 42466518269 tentativas 1 e 2) e o 1º run da t1486. **A main nesse commit ficou sem veredito do lab** (esgotei o único rerun); o veredito virá do próximo push na main. As specs sobre a main foram verdes no mesmo período (blocos 545 e 546, t1489, t1491, t1486).
+- #3433 (Faixa D, lab verde: t106, t113, t118, t141, t155) mexeu em `barra-pilulas.tsx` e `caminho-reserva.tsx` (texto "Ver o caminho para morar"); já traz suas specs. A t873 (E530) é a spec do texto antigo "Ver o caminho de reserva"; não confirmei se a Faixa D a ajustou, conferir quando o lab da main sair.
+- Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17.
+- Próximo bloco: 547 (grupo do 530).
