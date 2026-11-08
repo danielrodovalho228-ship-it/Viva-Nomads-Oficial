@@ -6,7 +6,7 @@ import { TAMANHOS, abrirComoConta, escutarErros, lerMassa, temContaVarredura, ty
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1472 — VARREDURA DA PÁGINA INTEIRA, BLOCO 534 (Pista C, 08/11), 16ª volta do ciclo (repete o grupo do bloco 500, t1426; antes, os blocos 483, 466 e 449). O protocolo do bloco 21 (t385):
+  T1472 — VARREDURA DA PÁGINA INTEIRA, BLOCO 534 (Pista C, 08/11), 16ª volta do ciclo (repete o grupo do bloco 517, t1450; antes, os blocos 500, 483, 466 e 449). O protocolo do bloco 21 (t385):
   seis classes (imagem pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
   régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 533 (registro de cobertura: última
