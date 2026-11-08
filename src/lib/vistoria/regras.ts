@@ -13,6 +13,9 @@ import { chaveCidade } from "../cidades.ts";
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
 export const TEXTO_AVALIADOR_DE_TESTE = "Avaliador de teste: esta é uma conta de teste da plataforma e não é um avaliador real.";
+/** E717: quem está em teste não se chama "credenciado": o rótulo acima do nome diz que é um avaliador de teste. */
+export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado da Viva";
+export const ROTULO_AVALIADOR_EM_TESTE = "Avaliador em teste";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
 /** O que todo valor da tabela inclui (exibido no pedido, junto do texto da tabela). */
 export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
