@@ -426,3 +426,14 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e no fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 580 (grupo do 563).
+
+## Blocos 580, 581 e 582 e a t1498 para o C19 corrigido
+
+- Bloco 580 (t1528, PR #3492 draft, run 42498428382): verde. Conferir, conferir/[codigo], pedidos do morador, admin/sistema (grupo do 563).
+- Bloco 581 (t1529, PR #3493 draft, run 42498430740): verde. Contrato, estadia e imóvel com id (grupo do 564).
+- Bloco 582 (t1530, PR #3494 draft, run 42498435308): verde. Início, ajuda, busca e telas do proprietário (grupo do 565).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- **C19 corrigido pela Pista A no draft #3489** (branch `claude-a/c19-auth-sem-rolagem`: `src/app/auth/page.tsx`, prova de 0 px de 320 a 1280 px). **t1498 versão corrigida (PR #3495 draft, base = branch do #3489, run 42498441042): verde** sobre o código do #3489, sem `test.fail`, teste comum a 320, 360, 375, 390 e 1280 px. **Dependência:** só passa com o #3489. Enquanto o #3489 não mergear, a versão do PR #3447 (com `test.fail` abaixo de 378 px) é a que vale; após o merge do #3489 sem esta troca ela passaria a "passar inesperadamente". Quando o #3489 mergear: base do #3495 passa para a main (eu ajusto), o #3447 perde o sentido (fechamento é do Daniel) e **o C19 sai da lista de defeitos abertos**.
+- Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e ao fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 583 (grupo do 566).
