@@ -57,6 +57,8 @@ export function Qualificacao(p: {
   ocupado?: boolean;
   /** E180: o aviso "Você tem um anúncio em andamento" (Continuar de onde parei), logo abaixo do progresso. */
   aviso?: React.ReactNode;
+  /** E699: o cartão "Para publicar, a Viva pede duas coisas" já na entrada do fluxo (antes do Passo 1). */
+  travas?: React.ReactNode;
   /** E415: as provas do rascunho (foto na hora, internet medida, ruído) — o resultado as credita. */
   provas?: ProvasDoRascunho | null;
   /** E506: o conforto que o rascunho já tem confirmado (Passo 5) — conta no resultado e na barra. */
@@ -94,6 +96,7 @@ export function Qualificacao(p: {
         {resultado ? rotuloProgressoQualificacao(faltamAgora) : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
       </p>
       {p.aviso && <div className="mt-4">{p.aviso}</div>}
+      {p.travas && <div className="mt-4" data-testid="qualificacao-travas">{p.travas}</div>}
       {resultado ? (
         <Resultado respostas={p.respostas} confirmados={p.confirmados} provas={p.provas ?? null} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
