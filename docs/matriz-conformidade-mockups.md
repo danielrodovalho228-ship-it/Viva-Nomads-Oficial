@@ -901,3 +901,13 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Dúvidas de desenho abertas (nos PRs):** E709 — conteúdo a 80 px da borda × cabeçalho a 32 px; E710 — a 1280 as ações da busca ficam alinhadas à direita (a descrição do PR dizia "mesma posição"); E711 — a primeira tela de `/parceiros` fica sem botão preenchido.
 - **Novo item (sem PR até agora, da rodada 22:40 da QA): C10** `/seguranca` — faixa "Desconfie de quem pede pagamento fora da plataforma" com o botão "Fale com a Viva" (mockup `publico-seguranca`): PR #3341, em draft. Capturas em `docs/capturas/c10/`.
 - **Ainda sem PR (propostas da QA, dependem de decisão):** C1b (flutuante cobre texto em `/termos`, `/privacidade`, `/empresas`, `/parceiros`; as legais estão congeladas e o botão tem a decisão "ícone + texto em todas as páginas"), C5 (barra fixa de preço do anúncio com 174 px no celular), C7 (banner de `/para-proprietarios` empurra o botão para baixo da dobra), C9 (bairro cortado com "…" e preço repetido no cartão da busca).
+
+## Passada 77 (08/11; modo demonstração local, `main` em `f38bce28e`; 390 e 1280) — varredura geral e texto cortado
+
+- **Imagens, fixos, estouro:** rotas públicas (32 linhas) e do painel (22): 0 imagens quebradas ou com erro HTTP (carregamento conferido por `complete` e `naturalWidth`), 0 sem `alt`, 0 estouro lateral, nenhum título coberto por elemento fixo. Só `/sobre` e `/blog` dão 404 (rotas inexistentes).
+- **Texto cortado (14 rotas públicas, 390 e 1280):** dois achados.
+  - `cartao-local` da busca, do anúncio (cartões semelhantes) e de `/precos`, cortado com "…" a 390 e a 1280: já tem correção, **#3349 (C9)**, fora de draft.
+  - **Novo:** linha-resumo do "Bom saber" em `/imoveis/[id]` ("Sem câmeras no interior (declarado pelo…", "Urgente com solução provisória em até 24…"): correção em **#3356** (`line-clamp-2`), draft.
+- **Flutuante sobre texto:** tratado pelo #3324 (anúncio) e #3348 (demais públicas); medido a 1280 em 12 rotas, 0 trechos cobertos.
+- **Estado dos PRs da Pista A:** todos sem conflito com a `main` e com CI verde (4/4). A pilha E679 (#3274 a #3290) voltou a dar conflito (t93, do lado da Pista C) e foi resolvida de novo nos próprios branches; #3341 (C10) fora de draft.
+- **Conformidade lado a lado com mockups:** nenhuma tela nova de mockup entrou na `main` depois da passada 76; sem desvio novo além dos listados. As dúvidas de desenho abertas seguem com o Muse/Daniel (E709: 80 px × 32 px; E710: ações à direita a 1280; C5; preço repetido do C9; nomes de bairro do mapa no E704).
