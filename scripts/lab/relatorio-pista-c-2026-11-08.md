@@ -257,3 +257,11 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - **Efeito medido hoje (08/11, 09:03 a 10:40 UTC):** pelo menos 8 runs afetados (42465463510, 42466518269, 42467421477, 42468633690, 42470270662, 42470322221, 42471239969 e o 1º do 42471244137), incluindo dois pushes seguidos na main sem veredito. Outros runs no mesmo intervalo passaram (42468873863, 42468392458, 42471228082, 42471230803): é intermitente, não é queda total.
 - **Custo:** a main fica sem veredito, e cada PR de spec gasta o rerun único; a regra de "no máximo um rerun por run" torna o ruído caro.
 - **Sugestão:** fixar a versão do CLI (`with: version: <fixa>`) e repetir o passo com espera (ex.: `nick-fields/retry` ou duas tentativas com `continue-on-error`), ou instalar por cache. Proposta de item para a lista-master, dono: quem cuida do workflow (Faixa D/chat principal).
+
+## Bloco 550 e veredito do bloco 547
+
+- Bloco 550 (t1497, PR #3445 draft, run 42473481205): verde. Painéis do proprietário e do morador, /empresas e /para-proprietarios (grupo do 533).
+- **Bloco 547 (t1493, PR #3439 draft, run 42473481778): verde na 2ª tentativa.** Veredito dado depois de a main avançar (#3443 e #3444, docs da QA) e de eu mesclar a main no ramo (commit legítimo, sem commit vazio). A 1ª tentativa caiu no passo `supabase/setup-cli@v1` (esse passo levou 6,5 minutos antes de falhar). Histórico do 547: 4 runs seguidos caídos nesse passo (42470270662 e 42471239969, 2 tentativas cada) antes deste.
+- **Observação para o dono do workflow (repetição do item de infra):** o 504/falha do `supabase/setup-cli@v1` se repetiu mais uma vez hoje. Os runs do bloco 547 caíram nesse passo repetidamente enquanto outros PRs rodavam normalmente no mesmo intervalo; pode ser coincidência de horário, não afirmo causa. A sugestão segue a mesma: fixar a versão do CLI e repetir o passo com espera, ou instalar por cache.
+- Defeitos: nenhum novo de produto; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i).
+- Próximo bloco: 551 (grupo do 534).
