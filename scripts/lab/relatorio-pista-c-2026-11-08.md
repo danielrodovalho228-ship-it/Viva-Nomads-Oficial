@@ -135,3 +135,9 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Bloco 534 (t1472, PR #3386 draft, run 42444867450): verde. Admin, busca, cidades, comparar, privacidade, segurança, termos, parceiros/buscar (grupo do 517).
 - Bloco 535 (t1473, PR #3387 draft, run 42444870267): verde. /dev/emails, /dashboard/qa/emails, /avisos/desligar (grupo do 518).
 - Nenhum merge novo na main durante a sequência (último: #3377, docs da QA). Nenhum defeito novo; L-107 livre; L-104 único aberto. Próximo: bloco 536 (grupo do 519).
+
+## Correção e t1474
+
+- Correção da seção anterior: entrou o merge #3382 (rodada 03:35 da QA) durante a sequência dos blocos 533–535, ao contrário do que está escrito ali.
+- t1474 (PR #3389 draft, run 42445630077): verde. Teste proposto pela QA nessa rodada: `/conferir/{inexistente}` ("Nenhum documento com este código"), `/conferir/{código de teste}` ("Documento de teste") e 404 em `/parceiros/{inexistente}` e `/avaliadores/{inexistente}`. Não conferi no log se o caso do documento de teste rodou ou pulou (ele pula declarando o motivo quando o laboratório não tem documento de teste válido).
+- Pendências de massa: `/avaliadores/{suspenso}` (precisa de avaliador suspenso) e o E702 (a QA diz que falta massa da Pista C; ainda sem pedido concreto de massa).
