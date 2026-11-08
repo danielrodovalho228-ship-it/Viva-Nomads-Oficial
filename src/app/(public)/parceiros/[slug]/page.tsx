@@ -10,7 +10,9 @@ import { SolicitarOrcamento } from "@/components/parceiros/solicitar-orcamento";
 import { createClient } from "@/lib/supabase/server";
 import { imoveisParaServico } from "@/lib/parceiros/imoveis-servico";
 import { RefDaVisita } from "@/components/cartoes/ref-da-visita";
-import { modoDaPaginaDoParceiro, parceiroPorSlug } from "@/lib/data/parceiros-publico";
+import { getAvaliacoesDoParceiro, modoDaPaginaDoParceiro, parceiroPorSlug } from "@/lib/data/parceiros-publico";
+import { PerfilAvaliacoes } from "@/components/avaliacoes/perfil-avaliacoes";
+import { resumoDasNotas, TEXTO_NOTAS_ENTRE_PARCEIROS } from "@/lib/avaliacoes-perfil";
 import { destinoDaCategoria } from "@/lib/parceiros/rotas-categoria";
 import { FAIXA_PARCEIRO_TESTE_DONO, FAIXA_PARCEIRO_TESTE_EQUIPE, FAIXA_PARCEIRO_TESTE_VISITANTE, REDES, rotuloCategoria, textoPreco } from "@/lib/parceiros/regras";
 import { documentoDoServico } from "@/lib/parceiros/fiscal";
@@ -60,6 +62,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
   const { parceiro: p, servicos, galeria } = d;
   // E297: parceiro de teste aberto pelo link — faixa e, para quem não é da equipe, o pedido desativado (como o E93).
   const modoTeste = await modoDaPaginaDoParceiro(p);
+  const avaliacoes = await getAvaliacoesDoParceiro(p.id).catch(() => null);
   // Vindo da página da estadia pela busca (Prompt 41): a categoria pedida já vem escolhida na folha.
   const categoriaInicial = sp.categoria && p.categorias.includes(sp.categoria) ? sp.categoria : null;
   const doCadastro = !!imovelDoCadastro && sp.cadastro === "1";
@@ -174,6 +177,22 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                 <GaleriaPublica itens={galeria.map((g) => ({ id: g.id, url: g.url, legenda: g.legenda ?? null }))} nome={p.nomePublico} />
               )}
             </section>
+            {/* E679 (PR 4): avaliações dos clientes + resumo das notas. A nota que o parceiro dá ao cliente NUNCA aparece aqui. */}
+            {avaliacoes === null ? (
+              <p role="alert" className="text-muted" data-testid="avaliacoes-falha">
+                Não foi possível carregar as avaliações agora. Recarregue a página para ver.
+              </p>
+            ) : (
+              avaliacoes.length > 0 && (
+                <PerfilAvaliacoes
+                  avaliacoes={avaliacoes.map((a) => ({ id: a.id, autorNome: a.autorNome, nota: a.nota, comentario: a.comentario, data: a.data, resposta: a.resposta }))}
+                  resumo={resumoDasNotas("cliente_avalia_parceiro", avaliacoes.map((a) => a.notasCategorias))}
+                  nomeResposta={p.nomePublico}
+                  rotuloTotal={`${p.avaliacoesQtd || avaliacoes.length} ${(p.avaliacoesQtd || avaliacoes.length) === 1 ? "avaliação" : "avaliações"} de clientes`}
+                  aviso={TEXTO_NOTAS_ENTRE_PARCEIROS(p.nomePublico)}
+                />
+              )
+            )}
           </div>
           <aside className="min-w-0 space-y-4">
             {modoTeste === "visitante" ? (

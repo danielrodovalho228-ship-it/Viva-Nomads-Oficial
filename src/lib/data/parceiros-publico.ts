@@ -8,6 +8,7 @@ import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { chaveCidade } from "@/lib/cidades";
 import { passaFiltroNota } from "@/lib/parceiros/fiscal";
+import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { filtrarParceiros, lerParceiroGeral, modoParceiroTeste, type ModoParceiroTeste, type ParceiroGeral, type ParceiroNaBusca } from "@/lib/parceiros/regras";
 
 /**
@@ -217,4 +218,54 @@ export async function lerParceiroGeralServidor(): Promise<ParceiroGeral> {
   if (!admin) return lerParceiroGeral(null, false);
   const { data } = await admin.from("chaves_plataforma").select("ligada, valor").eq("chave", "PARCEIRO_GERAL_FALLBACK").maybeSingle();
   return lerParceiroGeral(data?.valor, data?.ligada === true);
+}
+
+export interface AvaliacaoDoParceiro {
+  id: string;
+  autorNome: string;
+  nota: number;
+  comentario: string;
+  data: string | null;
+  resposta: string | null;
+  notasCategorias: Record<string, unknown> | null;
+}
+
+/**
+ * E679 (PR 4) — as avaliações PUBLICADAS que os CLIENTES deram ao parceiro (com a resposta dele), para a página pública.
+ * Só `papel_autor = 'cliente'`: a nota que o parceiro dá ao cliente é visível só entre parceiros e NUNCA entra aqui.
+ * Nome curto de quem avaliou. A falha de leitura LANÇA (a página avisa), nunca vira "sem avaliações".
+ */
+export async function getAvaliacoesDoParceiro(parceiroId: string): Promise<AvaliacaoDoParceiro[]> {
+  const admin = createAdminClient();
+  if (!admin || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(parceiroId)) return [];
+  const { data: pedidos, error: e1 } = await admin.from("parceiro_pedidos").select("id").eq("parceiro_id", parceiroId).limit(2000);
+  if (e1) throw new Error("Não foi possível ler as avaliações agora.");
+  const ids = ((pedidos ?? []) as { id: string }[]).map((p) => p.id);
+  if (ids.length === 0) return [];
+  const { data, error } = await admin
+    .from("parceiro_avaliacoes")
+    .select("id, autor_id, nota, texto, publicada_em, notas_categorias")
+    .in("pedido_id", ids)
+    .eq("papel_autor", "cliente")
+    .eq("status", "publicada")
+    .order("publicada_em", { ascending: false })
+    .limit(20);
+  if (error) throw new Error("Não foi possível ler as avaliações agora.");
+  const linhas = (data ?? []) as { id: string; autor_id: string; nota: number; texto: string | null; publicada_em: string | null; notas_categorias: Record<string, unknown> | null }[];
+  if (linhas.length === 0) return [];
+  const [{ data: resp }, { data: perfis }] = await Promise.all([
+    admin.from("avaliacao_respostas").select("parceiro_avaliacao_id, texto").in("parceiro_avaliacao_id", linhas.map((l) => l.id)),
+    admin.from("profiles").select("id, full_name").in("id", [...new Set(linhas.map((l) => l.autor_id))]),
+  ]);
+  const resposta = new Map(((resp ?? []) as { parceiro_avaliacao_id: string; texto: string }[]).map((r) => [r.parceiro_avaliacao_id, r.texto]));
+  const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurto(p.full_name)]));
+  return linhas.map((l) => ({
+    id: l.id,
+    autorNome: nome.get(l.autor_id) ?? "Cliente",
+    nota: Number(l.nota),
+    comentario: l.texto ?? "",
+    data: l.publicada_em,
+    resposta: resposta.get(l.id) ?? null,
+    notasCategorias: l.notas_categorias ?? null,
+  }));
 }

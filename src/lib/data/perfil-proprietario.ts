@@ -133,6 +133,10 @@ export async function nomeCompletoDoAceite(donoId: string): Promise<{ nome: stri
 
 export interface AvaliacaoRecebida {
   id: string;
+  /** Nome curto de quem avaliou ("Camila A."); "Morador" quando não há nome. */
+  autorNome: string;
+  /** Notas por critério do morador (E679, resumo das notas do perfil). */
+  notasCategorias: Record<string, unknown> | null;
   nota: number;
   comentario: string;
   data: string | null;
@@ -149,18 +153,23 @@ export async function getAvaliacoesRecebidas(donoId: string): Promise<AvaliacaoR
   if (!admin || !UUID_RE.test(donoId)) return [];
   const { data, error } = await admin
     .from("avaliacoes")
-    .select("id, nota_geral, comentario_publico, publicada_em")
+    .select("id, autor_id, nota_geral, comentario_publico, publicada_em, notas_categorias")
     .eq("alvo_id", donoId)
     .eq("status", "publicada")
     .order("publicada_em", { ascending: false })
     .limit(20);
   if (error) throw new Error("Não foi possível ler as avaliações agora.");
-  const linhas = (data ?? []) as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[];
+  const linhas = (data ?? []) as { id: string; autor_id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null; notas_categorias: Record<string, unknown> | null }[];
   if (linhas.length === 0) return [];
+  // E679: só o nome CURTO de quem avaliou (como no perfil público e nas Recebidas); a falha aqui não esconde a avaliação.
+  const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", [...new Set(linhas.map((l) => l.autor_id))]);
+  const nomePorId = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurto(p.full_name)]));
   const { data: resp } = await admin.from("avaliacao_respostas").select("avaliacao_id, texto").in("avaliacao_id", linhas.map((l) => l.id));
   const porId = new Map(((resp ?? []) as { avaliacao_id: string; texto: string }[]).map((r) => [r.avaliacao_id, r.texto]));
   return linhas.map((l) => ({
     id: l.id,
+    autorNome: nomePorId.get(l.autor_id) ?? "Morador",
+    notasCategorias: l.notas_categorias ?? null,
     nota: Number(l.nota_geral),
     comentario: l.comentario_publico ?? "",
     data: l.publicada_em,
