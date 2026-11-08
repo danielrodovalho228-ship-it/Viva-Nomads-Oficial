@@ -269,3 +269,8 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 14. Erros e estados vazios — rodada 17 (08/11/2026)
+Só leitura de tela, sem migração. Falha ao ler o pedido de avaliação não vira página 404 nem checklist vazio:
+`/dashboard/parceiro/avaliacao/[pedido]` (pedido, itens, laudo, fotos) e `/dashboard/avaliacao-imovel/[id]` (pedido).
+Teste: `src/lib/data/e293-leituras-r17.test.ts`. Páginas atrás de `VISTORIA_ATIVA` (desligada).

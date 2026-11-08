@@ -37,19 +37,37 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
-  const { data: p } = await admin
+  const { data: p, error: erroPedido } = await admin
     .from("vistoria_pedidos")
     .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
+  // Falha de leitura NÃO é "pedido inexistente": o avaliador vê que não deu para abrir, não uma página 404.
+  if (erroPedido) return (
+    <>
+        <PageTitle title="Checklist da avaliação" />
+        <Panel data-testid="leitura-falhou">
+          <p className="text-sm text-muted">Não foi possível abrir esta página agora. Nada foi perdido: tente de novo em instantes.</p>
+        </Panel>
+      </>
+  );
   if (!p || dono !== user.id) notFound();
 
-  const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
+  const [{ data: itens, error: erroItens }, { data: laudos, error: erroLaudos }, { data: fotos, error: erroFotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_checklist_fotos").select("item_chave, comodo, criado_em").eq("pedido_id", p.id).order("criado_em"),
   ]);
+  // Checklist vazio por falha de leitura levaria o avaliador a refazer (e sobrescrever) o que já salvou.
+  if (erroItens || erroLaudos || erroFotos) return (
+    <>
+        <PageTitle title="Checklist da avaliação" />
+        <Panel data-testid="leitura-falhou">
+          <p className="text-sm text-muted">Não foi possível abrir esta página agora. Nada foi perdido: tente de novo em instantes.</p>
+        </Panel>
+      </>
+  );
   const iniciais = Object.fromEntries(((itens ?? []) as { chave: string; valor: ValorItem; observacao: string | null }[]).map((i) => [i.chave, { valor: i.valor, observacao: i.observacao }]));
   const laudo = ((laudos ?? [])[0] ?? null) as {
     id: string;
