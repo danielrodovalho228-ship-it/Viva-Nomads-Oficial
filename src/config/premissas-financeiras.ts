@@ -166,10 +166,10 @@ export const encargosProLabore = (r: Regime, proLabore = PRO_LABORE) => cent(pro
  */
 export const OPCIONAIS_NAO_SOMADOS: Item[] = [
   {
-    rotulo: "Associação à CDL Uberlândia",
+    rotulo: "Associação à ACIUB Uberlândia",
     valor: 100,
     unidade: "R$/mês",
-    obs: "Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente",
+    obs: "Associação à ACIUB Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente",
   },
   {
     rotulo: "Caixas de e-mail da empresa (Hostinger)",
