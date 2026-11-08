@@ -281,19 +281,19 @@ export function AvailabilityCalendar({
       {/* E527 (D13): amostras com a cor dos dias (COR_DIA) e sem risco na palavra "Indisponível". */}
       <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted" data-testid="calendario-legenda">
         <span className="inline-flex items-center gap-2">
-          <span className={cn("h-3 w-3 rounded-lg ring-1 ring-sage-200", COR_DIA.disponivel)} aria-hidden /> Disponível
+          <span className={cn("h-4 w-4 rounded-lg ring-1 ring-forest", COR_DIA.disponivel)} aria-hidden /> Disponível
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-3 w-3 rounded-lg bg-forest" /> Selecionado
+          <span className="h-4 w-4 rounded-lg bg-forest" /> Selecionado
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.ocupado)} aria-hidden /> {ROTULO_OCUPADO}
+          <span className={cn("h-4 w-4 rounded-lg", COR_DIA.ocupado)} aria-hidden /> {ROTULO_OCUPADO}
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.bloqueado)} aria-hidden /> {ROTULO_BLOQUEADO}
+          <span className={cn("h-4 w-4 rounded-lg", COR_DIA.bloqueado)} aria-hidden /> {ROTULO_BLOQUEADO}
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-3 w-3 rounded-lg ring-2 ring-champagne" /> Hoje
+          <span className="h-4 w-4 rounded-lg bg-white ring-2 ring-champagne" /> Hoje
         </span>
       </div>
       {/* E666: a pergunta "as datas estão livres?" aparecia mesmo com o calendário à vista — a legenda agora responde. */}
