@@ -83,7 +83,8 @@ test.describe("T1480 — fixos × conteúdo e dinâmicas públicas (visitante)",
             }
           }
           const h1 = document.querySelectorAll("h1").length;
-          const vazias = Array.from(document.images).filter((i) => i.complete && i.naturalWidth === 0 && i.currentSrc).length;
+          // Tiles do mapa (CARTO) ficam de fora: dependem da rede, e uma queda deles não é defeito do site (QA, rodada 07:05).
+          const vazias = Array.from(document.images).filter((i) => i.complete && i.naturalWidth === 0 && i.currentSrc && !i.closest(".leaflet-container")).length;
           return { sob: sob.slice(0, 3), h1, vazias };
         });
         if (m.sob.length) problemas.push(`${p.nome} ${rota}: texto sob elemento fixo (${m.sob.join("; ")})`);
