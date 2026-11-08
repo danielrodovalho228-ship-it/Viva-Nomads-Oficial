@@ -154,18 +154,19 @@ export function EditarImovelClient({
   // E660 (resíduo): a ficha "o que tem dentro" do anúncio no ar — a MESMA fonte do assistente (ficha_dentro + FichaDentroCampos).
   // Só vai ao servidor depois que o dono mexe nela (anúncio antigo sem ficha não ganha uma ficha vazia por salvar outra seção).
   const quartosDoAnuncio = Math.max(1, Number(bedrooms) || 1);
-  const [ficha, setFicha] = useState<FichaDentro>(() => property.fichaDentro ?? fichaVazia(Math.max(1, Number(property.bedrooms) || 1)));
+  const [fichaBruta, setFichaBruta] = useState<FichaDentro>(() => property.fichaDentro ?? fichaVazia(Math.max(1, Number(property.bedrooms) || 1)));
   const [fichaMexida, setFichaMexida] = useState(false);
   const mudarFicha = (f: FichaDentro) => {
-    setFicha(f);
+    setFichaBruta(f);
     setFichaMexida(true);
   };
-  // O número de quartos de "Detalhes & preço" manda: a ficha ganha/perde quartos, mantendo o que já foi respondido.
-  useEffect(() => {
-    if (ficha.quartos.length === quartosDoAnuncio) return;
-    if (property.fichaDentro) setFichaMexida(true);
-    setFicha((f) => ({ ...f, quartos: Array.from({ length: quartosDoAnuncio }, (_, i) => f.quartos[i] ?? fichaVazia(quartosDoAnuncio).quartos[i]) }));
-  }, [quartosDoAnuncio, ficha.quartos.length, property.fichaDentro]);
+  // O número de quartos de "Detalhes & preço" manda: a ficha ganha/perde quartos, mantendo o que já foi respondido
+  // (derivado no render, sem efeito). Ajustar o número de quartos de um anúncio que JÁ tem ficha também a atualiza no envio.
+  const ajustouQuartos = fichaBruta.quartos.length !== quartosDoAnuncio;
+  const ficha: FichaDentro = ajustouQuartos
+    ? { ...fichaBruta, quartos: Array.from({ length: quartosDoAnuncio }, (_, i) => fichaBruta.quartos[i] ?? fichaVazia(quartosDoAnuncio).quartos[i]) }
+    : fichaBruta;
+  const fichaParaEnviar = fichaMexida || (ajustouQuartos && !!property.fichaDentro);
   const faltasFicha = faltasDaFicha(ficha);
   const resumoFicha = !property.fichaDentro && !fichaMexida ? "Ainda não preenchida · camas, ar-condicionado, enxoval e cozinha" : faltasFicha.length === 0 ? "Completa" : `${faltasFicha.length} ${faltasFicha.length === 1 ? "item" : "itens"} por preencher`;
   const [bathrooms, setBathrooms] = useState(String(property.bathrooms || ""));
@@ -262,7 +263,7 @@ export function EditarImovelClient({
       city: property.city,
       neighborhood: property.neighborhood,
       bedrooms: Number(bedrooms) || 0,
-      fichaDentro: fichaMexida ? ficha : undefined,
+      fichaDentro: fichaParaEnviar ? ficha : undefined,
       bathrooms: Number(bathrooms) || 0,
       areaM2: Number(areaM2) || 0,
       minPeriodDays: Number(minPeriod) || 30,

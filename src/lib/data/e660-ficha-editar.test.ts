@@ -22,12 +22,13 @@ test("existe a seção 'O que tem dentro' com Salvar seção, partindo da ficha 
   assert.match(editar, /testid="secao-ficha-dentro"/);
   assert.match(editar, /title="O que tem dentro"/);
   assert.match(editar, /onSave=\{\(\) => saveSection\("ficha"\)\}/);
-  assert.match(editar, /useState<FichaDentro>\(\(\) => property\.fichaDentro \?\? fichaVazia\(/);
+  assert.match(editar, /const \[fichaBruta, setFichaBruta\] = useState<FichaDentro>\(\(\) => property\.fichaDentro \?\? fichaVazia\(/);
   assert.match(editar, /<FichaDentroCampos ficha=\{ficha\} onChange=\{mudarFicha\} mostrarFaltas=\{fichaMexida\} \/>/);
 });
 
 test("a ficha só vai ao servidor depois que o dono mexe (anúncio antigo sem ficha não ganha ficha vazia)", () => {
-  assert.match(editar, /fichaDentro: fichaMexida \? ficha : undefined,/);
+  assert.match(editar, /fichaDentro: fichaParaEnviar \? ficha : undefined,/);
+  assert.match(editar, /const fichaParaEnviar = fichaMexida \|\| \(ajustouQuartos && !!property\.fichaDentro\);/);
   const acoes = ler("src/lib/data/actions.ts");
   assert.match(acoes, /async function gravarFichaDentro[\s\S]*?if \(bruto === undefined\) return;/);
   assert.match(acoes, /await gravarFichaDentro\(supabase, user\.id, id, input\.fichaDentro\);/);
@@ -35,7 +36,8 @@ test("a ficha só vai ao servidor depois que o dono mexe (anúncio antigo sem fi
 
 test("o número de quartos de 'Detalhes & preço' manda na ficha (como no assistente)", () => {
   assert.match(editar, /const quartosDoAnuncio = Math\.max\(1, Number\(bedrooms\) \|\| 1\);/);
-  assert.match(editar, /if \(ficha\.quartos\.length === quartosDoAnuncio\) return;/);
+  assert.match(editar, /const ajustouQuartos = fichaBruta\.quartos\.length !== quartosDoAnuncio;/);
+  assert.doesNotMatch(editar, /useEffect\(\(\) => \{\s*if \(ficha\./);
 });
 
 test("a edição não bloqueia salvar por ficha incompleta (a obrigatoriedade é só do anúncio novo)", () => {
