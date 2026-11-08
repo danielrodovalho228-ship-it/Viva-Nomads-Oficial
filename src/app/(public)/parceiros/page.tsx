@@ -17,7 +17,7 @@ import { comPortasDePrecos } from "@/config/precos-visivel";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
-  title: "Seja parceiro: fotógrafos e gestores",
+  title: "Seja parceiro: fotógrafos e serviços",
   description: "Fotógrafos, mudança, limpeza, montagem e manutenção para imóveis mobiliados: peça a sua parceria e tenha uma página na Viva Nomads.",
 };
 
@@ -98,6 +98,12 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
 
       <section id="tipos" aria-labelledby="h-tipos" className="container-page section-y scroll-mt-24">
         <h2 id="h-tipos" className="text-center font-title text-2xl font-semibold text-ink">Tipos de parceria</h2>
+        {/* E730 (Phoenix/RELATORIO-002, C5): a página mostra Empresas, Gestores e Avaliação, mas o formulário só traz as categorias de
+            serviço. A promessa agora diz o que o formulário entrega e para onde vai cada um dos outros. */}
+        <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted" data-testid="parceiros-tipos-nota">
+          O formulário "Quero ser parceiro" serve às categorias de serviço: fotografia, mudança, limpeza, lavanderia, montagem, manutenção e outro serviço.
+          Empresas e gestores têm página própria, e a avaliação de imóveis é um credenciamento à parte.
+        </p>
         <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6" data-testid="parceiros-tipos">
           {CARDS.map((c) => {
             const f = FOTOS_PARCERIA.find((x) => x.id === c.id)!;

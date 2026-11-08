@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
+import { VoltarPainel } from "@/components/layout/voltar-painel";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
@@ -454,6 +455,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
           {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
           {papelTopo && <FaixaCritico pathname={pathname} />}
+          {/* E720: o "← Voltar" padrão de toda tela interna (menos as que já têm o próprio). */}
+          <VoltarPainel />
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
