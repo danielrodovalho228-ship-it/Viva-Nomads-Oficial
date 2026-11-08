@@ -893,3 +893,11 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **E194:** já na `main` (#1532, #1660, spec `t565`); reconferido na passada 74 (selo "Anunciar imóvel", rodapé fixo e barra contínua até o Passo 1). Nada a corrigir.
 - **Varredura geral (rotas públicas e do painel):** 0 imagens quebradas, 0 sem `alt`, 0 estouro lateral, nenhum título coberto por elemento fixo. Só `/sobre` e `/blog` dão 404 (rotas inexistentes).
 - **PRs:** #3301 (E706) e #3291 (E704) já foram mesclados pelo Daniel. #3314 (E702/E661) e #3316 (E84 SEO) seguem em draft, sem conflito e com CI verde (4/4).
+
+## Passada 76 (08/11; `main` em `e59f0aa13`) — lote E704 (2/2), E709, E710, E711 verde para o QA
+
+- **CI na leitura final (verify, lab-critico, e2e, prévia):** #3331 (E704 2/2), #3324 (E709), #3325 (E710), #3323 (E711), #3314 (resíduo E702/E661), #3316 (E84 SEO) e #3256 (E685/E686) — todos **verdes (4/4) e sem conflito** com a `main`. Nenhuma correção foi necessária; nada mesclado por mim.
+- **E704 (#3331):** a produção serve Leaflet + CARTO. A busca passa a usar tiles `voyager_nolabels` e a página desenha o nome da cidade com o retângulo que o afastamento de pinos respeita. Prova visual (1280 e 390, pinos R$ 2.430, 3.470, 3.340 e 4.420) segue com o QA: os tiles do CARTO não carregam na rede da sessão. Custo de desenho aberto para o Daniel: somem os nomes de bairros, ruas e vizinhas do mapa da busca.
+- **Dúvidas de desenho abertas (nos PRs):** E709 — conteúdo a 80 px da borda × cabeçalho a 32 px; E710 — a 1280 as ações da busca ficam alinhadas à direita (a descrição do PR dizia "mesma posição"); E711 — a primeira tela de `/parceiros` fica sem botão preenchido.
+- **Novo item (sem PR até agora, da rodada 22:40 da QA): C10** `/seguranca` — faixa "Desconfie de quem pede pagamento fora da plataforma" com o botão "Fale com a Viva" (mockup `publico-seguranca`): PR #3341, em draft. Capturas em `docs/capturas/c10/`.
+- **Ainda sem PR (propostas da QA, dependem de decisão):** C1b (flutuante cobre texto em `/termos`, `/privacidade`, `/empresas`, `/parceiros`; as legais estão congeladas e o botão tem a decisão "ícone + texto em todas as páginas"), C5 (barra fixa de preço do anúncio com 174 px no celular), C7 (banner de `/para-proprietarios` empurra o botão para baixo da dobra), C9 (bairro cortado com "…" e preço repetido no cartão da busca).
