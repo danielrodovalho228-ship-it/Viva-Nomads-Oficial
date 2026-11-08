@@ -425,8 +425,14 @@ export function lerParceiroGeral(v: unknown, ligada: boolean): ParceiroGeral {
   const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
   return { ligado: ligada, nome: limpar(o.nome as string, 80), cidade: limpar(o.cidade as string, 80), descricao: limpar(o.descricao as string, 300) };
 }
-export function mostrarParceiroGeral(g: ParceiroGeral, resultados: number): boolean {
-  return g.ligado && resultados === 0 && !!g.nome;
+/**
+ * E688 (decisão do Daniel, 08/11/2026): a saída "parceiro geral" (AquiResolve) fica FORA das superfícies públicas por ora —
+ * não se promete o que não está cadastrado (o registro da Maira foi adiado em 18/10). Reversível: quando ela se cadastrar,
+ * basta ligar esta constante (e a chave PARCEIRO_GERAL_FALLBACK no admin). A configuração no admin continua existindo.
+ */
+export const PARCEIRO_GERAL_NAS_SUPERFICIES = false;
+export function mostrarParceiroGeral(g: ParceiroGeral, resultados: number, naSuperficie: boolean = PARCEIRO_GERAL_NAS_SUPERFICIES): boolean {
+  return naSuperficie && g.ligado && resultados === 0 && !!g.nome;
 }
 
 // ── Imagens da página (recorte no navegador; o servidor só aceita WebP até 5 MB) ────────────────────────────────
