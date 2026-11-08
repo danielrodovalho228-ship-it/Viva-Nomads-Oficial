@@ -237,3 +237,23 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Reruns: usei o único permitido em cada run; não há mais reruns a pedir. Uma nova passada com a main à frente (merge da main no ramo, commit legítimo) gera run novo para estes dois PRs.
 - Defeitos de produto: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i) (estes dois com `test.fail` na t1494, ainda não confirmados no lab).
 - Próximo bloco: 548 (grupo do 531).
+
+## Vereditos dos blocos 547 a 549 e t1494
+
+| Spec | PR (draft) | Run | Veredito |
+|---|---|---|---|
+| Bloco 547 (t1493, grupo do 530) | #3439 | 42471239969 (2 tentativas) | **sem veredito, falha de infra**: passo `supabase/setup-cli@v1` falhou nas duas tentativas, antes de qualquer teste. Já tinha caído antes, em 42470270662 (2 tentativas). Rerun único esgotado em cada run; sem commit vazio. |
+| Bloco 548 (t1495, grupo do 531) | #3441 | 42471228082 | verde |
+| Bloco 549 (t1496, grupo do 532) | #3442 | 42471230803 | verde |
+| t1494 (E527 e E532 (i)) | #3440 | 42471244137 (tentativa 2) | verde: **os dois `test.fail` reproduzem no lab** (contraste da legenda do calendário abaixo de 3:1 e prévia do cartão "Segurança" repetindo as câmeras do bloco "Privacidade"); a 1ª tentativa tinha caído por infra |
+
+- Nenhum defeito de produto novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i) (agora confirmados no lab pela t1494).
+- Main: sem veredito do lab em `53c0bcc10` e `da24ba7f9` (infra); o push seguinte (`049469e5b`, docs da QA) não foi conferido por mim.
+- Próximo bloco: 550 (grupo do 533).
+
+## Item para o dono do workflow (achado de laboratório; não corrigido, fora do escopo `tests/e2e` e `scripts/lab`)
+
+- **O que acontece:** o job `lab-critico` (`.github/workflows/lab-critico.yml`) falha de forma intermitente no passo `supabase/setup-cli@v1` com `Unexpected HTTP response: 504` (download do CLI), antes de qualquer teste; o passo não tem repetição e a versão do CLI não está fixada.
+- **Efeito medido hoje (08/11, 09:03 a 10:40 UTC):** pelo menos 8 runs afetados (42465463510, 42466518269, 42467421477, 42468633690, 42470270662, 42470322221, 42471239969 e o 1º do 42471244137), incluindo dois pushes seguidos na main sem veredito. Outros runs no mesmo intervalo passaram (42468873863, 42468392458, 42471228082, 42471230803): é intermitente, não é queda total.
+- **Custo:** a main fica sem veredito, e cada PR de spec gasta o rerun único; a regra de "no máximo um rerun por run" torna o ruído caro.
+- **Sugestão:** fixar a versão do CLI (`with: version: <fixa>`) e repetir o passo com espera (ex.: `nick-fields/retry` ou duas tentativas com `continue-on-error`), ou instalar por cache. Proposta de item para a lista-master, dono: quem cuida do workflow (Faixa D/chat principal).
