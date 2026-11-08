@@ -19,7 +19,7 @@ test("a palavra 'Indisponível' da legenda não é riscada", () => {
 test("Disponível e Indisponível têm cores de famílias diferentes (verde × cinza), não dois verdes pálidos", () => {
   const cores = src.match(/export const COR_DIA = \{([^}]+)\}/)?.[1] ?? "";
   const disp = cores.match(/disponivel: "([^"]+)"/)?.[1] ?? "";
-  const indisp = cores.match(/indisponivel: "([^"]+)"/)?.[1] ?? "";
+  const indisp = cores.match(/ocupado: "([^"]+)"/)?.[1] ?? ""; // E666: "indisponível" virou ocupado (cinza cheio) + bloqueado (listrado)
   assert.match(disp, /\bbg-sage-100\b/);
   assert.match(indisp, /\bbg-line\b/);
   assert.doesNotMatch(indisp, /sage/);
@@ -27,8 +27,9 @@ test("Disponível e Indisponível têm cores de famílias diferentes (verde × c
 
 test("a legenda e os dias usam a mesma constante (a amostra não descola do dia)", () => {
   assert.match(legenda, /COR_DIA\.disponivel/);
-  assert.match(legenda, /COR_DIA\.indisponivel/);
+  assert.match(legenda, /COR_DIA\.ocupado/);
+  assert.match(legenda, /COR_DIA\.bloqueado/);
   const grade = src.slice(0, src.indexOf('data-testid="calendario-legenda"'));
-  assert.match(grade, /estado === "indisponivel" && cn\("cursor-not-allowed text-muted line-through", COR_DIA\.indisponivel\)/);
+  assert.match(grade, /estado === "indisponivel" && cn\("cursor-not-allowed text-muted line-through", ocupSet\.has\(iso\) \? COR_DIA\.ocupado : COR_DIA\.bloqueado\)/);
   assert.match(grade, /COR_DIA\.disponivel/);
 });
