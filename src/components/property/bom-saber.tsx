@@ -62,7 +62,7 @@ export function BomSaber({ property }: { property: Property }) {
                 <Icone className="h-5 w-5 shrink-0 text-forest" aria-hidden />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-ink">{l.titulo}</span>
-                  <span className="block truncate text-xs text-muted">{l.resumo}</span>
+                  <span className="line-clamp-2 block text-xs text-muted">{l.resumo}</span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
               </button>
