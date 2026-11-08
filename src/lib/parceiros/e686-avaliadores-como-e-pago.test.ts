@@ -18,6 +18,6 @@ test("E686: 'Como é pago' diz que o avaliador define o valor e o prazo, e a tab
 
 test("E714: a constante para o avaliador diz que o DONO paga, e a do dono segue falando com o dono", async () => {
   const { FRASE_DONO_PAGA_AVALIACAO, FRASE_PAGA_AVALIACAO } = await import("../vistoria/regras.ts");
-  assert.equal(FRASE_DONO_PAGA_AVALIACAO, "O dono do imóvel paga a avaliação, não o resultado.");
+  assert.equal(FRASE_DONO_PAGA_AVALIACAO, "O dono paga a avaliação, não o resultado: o seu laudo é independente.");
   assert.equal(FRASE_PAGA_AVALIACAO, "Você paga a avaliação, não o resultado.");
 });
