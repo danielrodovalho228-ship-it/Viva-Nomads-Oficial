@@ -62,15 +62,19 @@ test.describe("T1480 — fixos × conteúdo e dinâmicas públicas (visitante)",
               if (!topo || topo === n.parentElement || topo.contains(n.parentElement) || n.parentElement.contains(topo)) continue;
               let f: Element | null = topo;
               let fixo = false;
+              let fixoEl: Element | null = null;
+              let fr: DOMRect | null = null;
               while (f && f !== document.body) {
                 // Só os fixos de BAIXO (barra de baixo, botão redondo, faixa de cookies): o cabeçalho fixo do topo cobrindo o que rola por baixo dele é o comportamento normal.
                 if (getComputedStyle(f).position === "fixed" && f.getBoundingClientRect().top > innerHeight * 0.4) {
                   fixo = true;
+                  fixoEl = f;
+                  fr = f.getBoundingClientRect();
                   break;
                 }
                 f = f.parentElement;
               }
-              if (fixo) sob.push(`"${t.slice(0, 40)}" sob ${topo.tagName.toLowerCase()}${topo.getAttribute("data-testid") ? "[" + topo.getAttribute("data-testid") + "]" : ""}`);
+              if (fixo) sob.push(`"${t.slice(0, 40)}" y=${Math.round(cy)} sob ${(fixoEl?.getAttribute("data-testid") ?? fixoEl?.className?.toString().slice(0, 40) ?? "?")} [${Math.round(fr?.top ?? 0)}-${Math.round(fr?.bottom ?? 0)}] op=${fixoEl ? getComputedStyle(fixoEl).opacity : "?"} rolagem=${Math.round(scrollY)}/${document.documentElement.scrollHeight - innerHeight}`);
             }
           }
           const h1 = document.querySelectorAll("h1").length;
