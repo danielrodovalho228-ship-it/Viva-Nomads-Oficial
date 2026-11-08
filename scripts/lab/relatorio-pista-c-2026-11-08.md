@@ -681,3 +681,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1575 (#3581)**: run 42534634357 em andamento. **t1574 (#3576)**: corrigida, rerun em andamento.
 - **Bloco 605 (#3575): verde.** **Bloco 606 (#3582, t1554)**, 17ª volta do grupo do bloco 589 (avaliação pelos dois lados, avaliador, documento emitido): aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Sem achado (próximo livre: **L-110**).
 - Entraram também #3549 (E746) e #3550 (E747): specs a fazer, junto de E749, E750, E754, E756, E761 e E762.
+
+## Cadeia das 23h45 — vereditos, 8 specs e conferência dos rascunhos
+
+- **Vereditos fechados:** main `c65907055` (#3549, E746) **verde** (run 42534555303); t1575 (#3581, E755/E760/E764) **verde** (42534634357); t1574 (#3576, E725) **verde** no 2º run (42535279280); **bloco 606 (#3582, t1554) verde** (42535244751), sem achado (próximo livre: **L-110**). t1568 (#3558, sobre a main) verde (42534567752). Reposição do run cancelado 42534532949: a main avançou para `c89c11e0c` (#3547, E748); o run dela é o 42535630223 (em andamento) e substitui os cancelados (concurrency).
+- **Run do E760 (42534468214):** falha de infra (supabase start, porta 54322 em uso, 3×, nenhum teste rodou); sem repetição nos runs seguintes.
+- **Specs novas, uma por merge — t1576 a t1583 (PR #3587):** E746, E747, E749, E750, E754, E756, E761 e E762, lógica sem página (rodam no lab-crítico sem massa). `tsc` limpo, numeração/cobertura 13/13; lab a conferir. Faltam: E748 (#3547) e os merges que entrarem.
+- **Rascunhos velhos (#3533 E734, #3530 E732, #3531 E742, #3532 E743, #3498 E724): NENHUM está na main.** Conferi o diff de cada um contra `origin/main`: todos os arquivos de produto e testes deles seguem faltando (bottom-sheet.tsx; banner-topo.tsx; proximidades/route.ts; selo-assinatura.tsx; price-card.tsx). Por isso **não foram fechados**; faltam todos os cinco. Quando cada um mesclar: limpar o C17 da t1486, o L-107 da t1429 e `conhecidoL104`, e trocar a base de #3538–#3542 para `main`.
