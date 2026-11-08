@@ -521,3 +521,12 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main (começo e fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
 - Próximo bloco: 601 (grupo do 584).
+
+## Parada da varredura de blocos (recomendação ao coordenador) — fila possivelmente vencida
+
+- **Estado da main (conferido uma vez):** head `a844024e7`, lab crítico verde (run 42472878384); **nenhum merge de código novo desde o #3433**, então nada quebrou, nenhum teste permanente novo a criar e nenhuma "superfície de merge recente" a varrer. Os drafts das outras pistas seguem abertos (#3489 C19, #3395 E714, #3396 E717, #3397/#3398 E719, #3408 E713). Nenhum prova/reprova ao vivo.
+- **Contagem dos meus PRs abertos:** 66 em draft, todos `mergeable: clean`: **58 blocos de varredura (543 a 600)** e 8 de specs (t1484, t1485, t1486, t1489, t1491, t1494, t1498 nas duas versões). Nenhum bloco foi mesclado desde o 522.
+- **Retorno decrescente:** dos blocos 523 a 600, **zero defeito novo de produto**; todos os vermelhos foram falha de infraestrutura (504 do `setup-cli`) ou erro da própria spec, já corrigidos. Cada bloco repete um grupo de telas varrido 3 a 4 vezes na 16ª volta do ciclo.
+- **Custo:** cada bloco mesclado entra na ordem alfabética `t1…` da noturna e piora o L-108 (já só ~117 de 838 specs rodam à noite); e todos os PRs editam `tests/e2e/cobertura.json`, então mesclar vários em sequência tende a gerar conflito de linhas nos seguintes.
+- **Decisão pedida (coordenador/chat principal):** (a) **pausar a criação de blocos novos** até o L-108 ter remédio; (b) **consolidar** a varredura (um único job/projeto semanal de varredura, em vez de ~58 arquivos), ou mesclar só os blocos de grupos ainda não varridos; (c) priorizar o que tem valor de guarda: a t1486 (C17), a t1494 (E527/E532), a t1498 (C19) e as specs do E714/E717. A Pista C **não fecha nem apaga nenhum PR** e **não abre o bloco 601** enquanto não houver essa decisão ou um merge novo na main para guardar.
+- Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
