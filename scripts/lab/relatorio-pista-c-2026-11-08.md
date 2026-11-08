@@ -276,3 +276,10 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Defeitos: nenhum novo meu; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
 - Infra do workflow: nenhum 504 nesta passada (as 3 corridas passaram de primeira).
 - Próximo bloco: 552 (grupo do 535).
+
+## Bloco 552
+
+- Bloco 552 (t1500, PR #3450 draft, run 42476347198): verde. /dev/emails, /dashboard/qa/emails e /avisos/desligar (grupo do 535).
+- Main: lab verde em `a844024e7` e `624a5924a`; nenhum merge de código novo desde o último registro (últimos: docs da QA, #3443 e #3444). Sem spec nova a criar.
+- Sem 504 de infra nesta passada. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Próximo bloco: 553 (grupo do 536).
