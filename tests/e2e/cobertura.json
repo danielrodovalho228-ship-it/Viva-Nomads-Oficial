@@ -29,7 +29,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/acesso-socios": {
@@ -388,7 +389,8 @@
         "t673-varredura-bloco67",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/ajuda/[tema]": {
@@ -404,7 +406,8 @@
         "t694-varredura-bloco73",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -425,7 +428,8 @@
         "t671-varredura-bloco66",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/alerta-busca/desligar": {
@@ -599,7 +603,8 @@
         "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura",
         "t1448-varredura-bloco514",
         "t1451-varredura-bloco517",
-        "t1459-c9-e709-e710-e711-layout"
+        "t1459-c9-e709-e710-e711-layout",
+        "t1495-varredura-bloco548"
       ]
     },
     "/cidades": {
@@ -962,7 +967,8 @@
         "t694-varredura-bloco73",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/dashboard/conta/[secao]": {
@@ -1199,7 +1205,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/dashboard/imoveis/[id]/editar": {
@@ -1234,7 +1241,8 @@
         "t1402-varredura-bloco480",
         "t1415-e661-e662-guia-em-blocos-e-saida",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/dashboard/imoveis/novo": {
@@ -1372,7 +1380,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1495-varredura-bloco548"
       ]
     },
     "/dashboard/indicacoes": {
@@ -1426,7 +1435,8 @@
         "t1423-varredura-bloco497",
         "t1425-varredura-bloco499",
         "t1448-varredura-bloco514",
-        "t1450-varredura-bloco516"
+        "t1450-varredura-bloco516",
+        "t1495-varredura-bloco548"
       ]
     },
     "/dashboard/locacoes": {
@@ -1547,7 +1557,8 @@
         "t1425-varredura-bloco499",
         "t1438-e703-whatsapp-sem-celular",
         "t1448-varredura-bloco514",
-        "t1450-varredura-bloco516"
+        "t1450-varredura-bloco516",
+        "t1495-varredura-bloco548"
       ]
     },
     "/dashboard/orcamentos": {
@@ -1970,7 +1981,8 @@
         "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura",
         "t1448-varredura-bloco514",
         "t1455-e694-exemplo-so-explica",
-        "t1459-c9-e709-e710-e711-layout"
+        "t1459-c9-e709-e710-e711-layout",
+        "t1495-varredura-bloco548"
       ]
     },
     "/modelodenegocio": {
