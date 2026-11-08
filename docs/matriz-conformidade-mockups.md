@@ -970,3 +970,11 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 
 - A descoberta por links das listas (contratos, locações, mensagens, candidaturas, leads, favoritos, parceiro, pedidos, agenda), sem os imóveis de exemplo já varridos na passada 82, só encontrou **`/dashboard/parceiro/avaliacao`** na conta demo: as demais listas ficam vazias nela, então não há rota `/<seção>/<id>` para abrir. Essa rota: 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado, a 390 e 1280.
 - **Limite:** as páginas de detalhe de contrato, locação, conversa, candidatura e lead precisam de dado real, que a conta demo não tem; ficam para o laboratório. Achados novos: nenhum.
+
+## Passada 84 (08/11; modo demonstração local, `main` em `58d87b1b7`; 390 e 1280) — páginas públicas restantes
+
+- **Páginas (≈30):** página de erro 404, `/excluir-conta/confirmar`, `/avisos/desligar`, `/alerta-busca/desligar`, `/parceiros/ativar`, perfis `/proprietario/<id>`, bairros e polos de `/cidades/uberlandia/*`, outras cidades de `/cidades/*`, guias `/guias/<slug>` e temas `/ajuda/<tema>`. Puladas as que já têm PR draft aberto.
+- **Critérios:** carregamento real de cada imagem (`complete` e `naturalWidth`, mais resposta HTTP de imagem), elemento fixo sobre conteúdo, texto cortado (rolagem horizontal interna), estouro lateral.
+- **Resultado:** **nenhum defeito novo.** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado. As únicas respostas 404 são de ids de exemplo que não existem no banco (`/avaliadores/UDI-001`, `/proprietario/ube-001`) e da rota inexistente de controle: a própria página 404 renderiza inteira (9 imagens carregadas, sem estouro) a 390 e 1280.
+- **Conformidade com mockups:** nenhuma tela de mockup nova; o `publico-home` segue fora do repo (E712).
+- **CI do #3408 (E713):** verify, lab-critico, e2e e prévia verdes (4/4) depois da correção da spec `t59`; em draft.
