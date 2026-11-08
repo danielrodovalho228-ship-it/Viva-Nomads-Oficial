@@ -7,7 +7,7 @@
 Os dois são **configuração**, não código. (Um GET deixa `metodo` no log, mas o formulário usa POST.)
 
 ## O que conferi (só leitura)
-- Vercel, lista de variáveis (nomes e metadados; nenhum valor foi lido nem alterado): `QA_LOGIN_KEY_HASH` **existe** em Production (atualizada em 28/10/2026) e em Preview (28/10/2026). É do tipo *sensitive*: o valor não é legível por ninguém depois de salvo. Logo, o caso `desligada` por variável ausente está descartado; sobra "hash salvo não corresponde à chave que a QA usa" ou "valor salvo fora do formato".
+- Vercel, lista de variáveis (nomes e metadados; nenhum valor foi lido nem alterado): `QA_LOGIN_KEY_HASH` **existe** em Production (atualizada em 29/10/2026, 01:46 UTC) e em Preview (29/10/2026, 01:47 UTC). É do tipo *sensitive*: o valor não é legível por ninguém depois de salvo. Logo, o caso `desligada` por variável ausente está descartado; sobra "hash salvo não corresponde à chave que a QA usa" ou "valor salvo fora do formato".
 - Logs de runtime de produção, últimas 24 h: **nenhuma** chamada à porta registrada; sem o código de motivo (`[qa-entrar] recusa …`) não dá para separar `chave` de `desligada` por log hoje.
 - `AUTOMACOES_ATIVO` não foi tocada.
 
