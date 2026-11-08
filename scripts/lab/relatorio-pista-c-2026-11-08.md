@@ -437,3 +437,13 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e ao fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 583 (grupo do 566).
+
+## Blocos 583, 584 e 585
+
+- Bloco 583 (t1531, PR #3500 draft, run 42499632174): verde. Serviços e visitas, admin e parceiros (grupo do 566).
+- Bloco 584 (t1532, PR #3501 draft, run 42499634861): verde. Painéis do morador e do proprietário, /empresas, /para-proprietarios (grupo do 567).
+- Bloco 585 (t1533, PR #3502 draft, run 42499637981): verde. Cidade, institucionais, parceiros, comparar e admin (grupo do 568).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido antes dos blocos e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. O #3489 (C19) segue aberto, não mergeado: a t1498 do #3447 (com `test.fail`) continua a versão válida; a corrigida (#3495) aguarda o merge do #3489. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 586 (grupo do 569).
