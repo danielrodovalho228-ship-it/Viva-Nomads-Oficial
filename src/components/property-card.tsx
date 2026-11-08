@@ -81,10 +81,7 @@ export function PropertyCard({
           <h3 className="min-w-0 max-w-full line-clamp-2 font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
             {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </h3>
-          {exemplo ? (
-            // Anúncio de exemplo: nunca mostra nota (seria fictícia) — e fica marcado.
-            <span className="shrink-0 text-xs leading-6 text-apoio">Anúncio de exemplo</span>
-          ) : property.reviewCount > 0 ? (
+          {exemplo ? null : property.reviewCount > 0 ? (
             <span className="inline-flex shrink-0 items-center gap-1 text-sm tabular-nums text-ink" data-testid="cartao-nota">
               <Star className="h-3.5 w-3.5 fill-ink text-ink" aria-hidden />
               {numBR(property.rating, 1)}
@@ -95,6 +92,14 @@ export function PropertyCard({
             <span className="shrink-0 text-xs text-apoio">Novo na plataforma</span>
           )}
         </div>
+
+        {/* E726: o selo do exemplo tem UMA posição só — sempre na linha de baixo, à esquerda, em todos os cartões (antes ia à direita ou
+            quebrava para baixo conforme a largura do cartão e o nome do bairro). Exemplo nunca mostra nota (seria fictícia). */}
+        {exemplo && (
+          <span className="text-xs leading-6 text-apoio" data-testid="cartao-selo-exemplo">
+            Anúncio de exemplo
+          </span>
+        )}
 
         <p className="line-clamp-2 text-sm text-muted" data-testid="cartao-titulo">
           {property.title}
