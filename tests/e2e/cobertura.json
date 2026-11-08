@@ -160,7 +160,8 @@
         "t615-varredura-bloco54",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/admin/atendimento/[id]": {
@@ -599,7 +600,8 @@
         "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura",
         "t1448-varredura-bloco514",
         "t1451-varredura-bloco517",
-        "t1459-c9-e709-e710-e711-layout"
+        "t1459-c9-e709-e710-e711-layout",
+        "t1550-varredura-bloco602"
       ]
     },
     "/cidades": {
@@ -630,7 +632,8 @@
         "t1401-e446-contagem-da-cidade",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/cidades/[cidade]/[polo]": {
@@ -682,7 +685,8 @@
         "t408-varredura-bloco27",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/conferir": {
@@ -2145,7 +2149,8 @@
         "t607-varredura-bloco51",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/proprietario/[id]": {
@@ -2222,7 +2227,8 @@
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
         "t1451-varredura-bloco517",
-        "t1457-c10-c7-seguranca-e-botao-na-dobra"
+        "t1457-c10-c7-seguranca-e-botao-na-dobra",
+        "t1550-varredura-bloco602"
       ]
     },
     "/simulacao": {
@@ -2256,7 +2262,8 @@
         "t661-varredura-bloco62",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/tributario": {
@@ -2364,7 +2371,8 @@
         "t589-varredura-bloco47",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/admin/solicitacoes": {
@@ -2393,7 +2401,8 @@
         "t388-varredura-bloco23",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/admin/eventos": {
@@ -2491,7 +2500,8 @@
         "t560-varredura-bloco44",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1550-varredura-bloco602"
       ]
     },
     "/admin/contratos/[id]": {
