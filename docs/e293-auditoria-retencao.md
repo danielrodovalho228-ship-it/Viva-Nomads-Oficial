@@ -269,3 +269,9 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 15. Erros e estados vazios — rodada 18 (08/11/2026)
+Sem migração. Em `src/lib/data/prova-actions.ts`, falha ao ler o dono do imóvel (provas por foto e medição de internet) virava
+"Sem permissão." para o próprio dono. Agora diz "Não foi possível conferir o imóvel agora. Tente de novo em instantes."
+(`pedirLinkCelular`, `abrirCapturaProva`, `pedirLinkMedicao`); as leituras de acompanhamento seguem devolvendo vazio e tentam de novo.
+Teste: `src/lib/data/e293-leituras-r18.test.ts`.
