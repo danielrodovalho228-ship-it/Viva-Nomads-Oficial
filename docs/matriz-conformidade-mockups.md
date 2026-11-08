@@ -958,3 +958,10 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Resultado:** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado. Achados novos: nenhum.
 - **Redirecionamentos (esperados, não são defeito):** `roi-imovel` e `viabilidade` levam a `/dashboard/simulador`; `tributacao` leva a `/dashboard/ferramentas`.
 - **E713:** o anúncio de exemplo (calendário com aviso morto) está corrigido no #3365, draft e verde.
+
+## Passada 82 (08/11; modo demonstração local, `main` em `f7436be7e`; 390 e 1280) — rotas dinâmicas do painel logado
+
+- **Rotas:** `/dashboard/imoveis/<id>/editar`, `cartao`, `desempenho` e `parceiros` (imóveis de exemplo ube-001 a ube-00x) e outras `/dashboard/<seção>/<id>` descobertas pelos links das listas (contratos, locações, mensagens, candidaturas, leads, favoritos, parceiro, pedidos, agenda).
+- **Achado 1 (corrigido em #3388, draft):** `/dashboard/imoveis/<id>/editar` a 390 px — a linha-resumo de cada seção do acordeão era cortada com "…" ("aceita pets · não fumantes · a…", "Ainda não preenchida — o morad…", "Nenhum detalhe opcional ligado"). Agora quebra em até 2 linhas.
+- **Sem achado nas demais:** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado (a 1280 não houve corte em nenhuma).
+- **CI do #3097 nesta data:** verify, e2e e prévia verdes; lab-critico em andamento, nenhum check vermelho.
