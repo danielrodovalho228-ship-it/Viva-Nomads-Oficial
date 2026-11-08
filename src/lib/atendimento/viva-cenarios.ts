@@ -54,7 +54,7 @@ export const CENARIOS: Cenario[] = [
   {
     n: 1, quem: "inquilino2", onde: "Botão Ajuda (site)", mensagem: "Como funciona a caução?", categoria: "duvida", canal: "site",
     temContratoAtivo: true, contexto: { tipo: null, id: null }, critico: false,
-    esperado: { rota: "ia", destino: "ia", quemResolve: "IA", prazo: "Imediato", resposta: [/poupan[çc]a/i, /3 vezes o valor mensal/i], respostaNao: [...PROIBIDAS, /50\s?%/, /cada bloco/i] },
+    esperado: { rota: "ia", destino: "ia", quemResolve: "IA", prazo: "Imediato", resposta: [/direto ao proprietário/i, /3 vezes o valor mensal/i], respostaNao: [...PROIBIDAS, /50\s?%/, /cada bloco/i] },
     roteiro: [texto("Caução de até 3 vezes o valor mensal, paga direto ao proprietário; a Viva não recebe nem segura esse dinheiro. Ela volta para você no fim, depois da conferência de saída.")],
   },
   {
