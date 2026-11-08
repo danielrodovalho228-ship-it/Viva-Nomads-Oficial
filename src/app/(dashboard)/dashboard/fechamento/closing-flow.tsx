@@ -504,7 +504,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <Clock className="h-5 w-5" /> Verificação pendente
                 </p>
                 <p className="mt-2 text-sm text-amber-800/90">
-                  A verificação de identidade abre em breve (via parceiro, em estruturação). Por ora,
+                  A verificação automática de identidade ainda não abriu; a equipe da Viva confere o documento. Por ora,
                   o fechamento segue com a pendência <strong>registrada</strong> — ela aparece no
                   resumo e é visível na negociação. {KYC_PORTAO_RIGIDO ? "" : "Você pode continuar."}
                 </p>
