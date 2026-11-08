@@ -53,3 +53,13 @@ t1454 (E680, #3346) **verde** (run 42430241110): depois da troca de conta no mes
 1. **t1455 a 1280 px:** `getByText(/anúncio de exemplo/).first()` pegou o `barra-demo` (a barra fixa do celular, `hidden` no desktop). O aviso visível existe. Correção: `.filter({ visible: true })`. A 390 passou.
 2. **t1437, caso `quartos=9`:** `busca-vazia-titulo` não apareceu — o filtro `quartos=9` não gera a busca vazia que eu presumi. Era palpite meu, não vem da tabela da QA (que usa `quartos=3` em Santa Mônica). Caso retirado; o t1437 volta ao que estava verde (preço que exclui tudo + lugar sem imóvel). Os demais casos da tabela do T-E695 dependem da massa de Santa Mônica e ficam pendentes.
 Reenviado no head `405b56e22` (o PR ainda estava aberto, conferi antes). Sem rerun. Nenhum defeito de produto novo; aberto: L-104; próximo livre: **L-107**.
+
+## t1455 verde; cinco merges da Pista A (C7, C9, C10, E710, E711) — t1457 (main `fc8a8e73e`)
+
+**Verde:** t1455 / T-E694 (#3351) no head corrigido (run 42432093519), mesclada; bloco 520 já registrado verde.
+
+**Merges de produto novos** (todos da Pista A, `tsc` limpo em `fc8a8e73e`; runs da main em `3e2435ffe` e `fc8a8e73e` pendentes ao registrar): C10 (#3341, `/seguranca` com a faixa "Desconfie…" e o botão "Fale com a Viva"), C9 (#3349, nome do local sem corte no cartão da busca), C7 (#3350, "Anunciar meu imóvel" na dobra a 390 em `/para-proprietarios`), E710 (#3325, faixa de filtros no celular) e E711 (#3323, CTA de parceiros).
+
+**Spec nova t1457** (PR do ramo `claude-c/t1457-c10-c7`): C10 (a faixa e o botão levam a `/ajuda/fale-com-a-viva`, 390 e 1280) e C7 (390 × 844: o botão inteiro dentro da primeira tela, sem nada cobrindo o centro dele, e a frase da taxa depois do botão). Em andamento.
+
+**Sem spec de tela ainda (item pulado):** C9, E710 e E711 (cobertos só estruturalmente pelos blocos que passam por `/buscar` e `/parceiros`, a 390 e 1280), mais a lista de antes (E506, E699, E704, E706, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador; T-E696 e o ramo sem data futura do E695). Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
