@@ -46,7 +46,7 @@ test("#70: /parceiros/fotografos tem 'pedir é grátis' e botão para /parceiros
 test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e frase do Plano Gestor", () => {
   const t = ler("src/app/(public)/parceiros/page.tsx");
   const titulo = /title: "([^"]+)"/.exec(t)?.[1] ?? "";
-  assert.equal(titulo, "Seja parceiro: fotógrafos e gestores");
+  assert.equal(titulo, "Seja parceiro: fotógrafos e serviços");
   assert.ok(`${titulo} · Viva Nomads`.length <= 60);
   assert.doesNotMatch(titulo, /Viva Nomads/);
   // Prompt 13: a frase do Plano Gestor está na janela do formulário (a caixa cinza repetia a tabela).

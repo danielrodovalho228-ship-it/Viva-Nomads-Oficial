@@ -2,7 +2,7 @@ import { PASSO_CONVERSE_TEXTO } from "./conversa-chat.ts";
 
 /**
  * O caminho de reserva do morador — fonte única dos passos da página Como funciona ("Para quem busca um imóvel") e do
- * "Ver o caminho de reserva" do anúncio de exemplo (E530).
+ * "Ver o caminho para morar" do anúncio de exemplo (E530).
  */
 export const PASSOS_MORADOR = [
   { titulo: "Busque", texto: "Encontre imóveis mobiliados por cidade, período e orçamento." },
