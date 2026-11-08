@@ -17,7 +17,7 @@ const src = mapa + "\n" + base;
 test("tiles da CARTO Voyager com a chave lida de NEXT_PUBLIC_CARTO_API_KEY", () => {
   assert.match(src, /const CARTO_KEY = process\.env\.NEXT_PUBLIC_CARTO_API_KEY;/);
   assert.match(src, /const TILES_CARTO = CARTO_KEY \? `https:\/\/basemaps\.cartocdn\.com\/rastertiles\/voyager\/\{z\}\/\{x\}\/\{y\}\.png\?key=\$\{encodeURIComponent\(CARTO_KEY\)\}` : null;/);
-  assert.match(src, /if \(TILES_CARTO\) \{\s*L\.tileLayer\(TILES_CARTO,/);
+  assert.match(src, /if \(TILES_CARTO && TILES_CARTO_SEM_ROTULOS\) \{\s*(?:const camada = )?L\.tileLayer\(TILES_CARTO_SEM_ROTULOS,/);
   assert.doesNotMatch(src, /light_all|tile\.openstreetmap\.org/);
 });
 

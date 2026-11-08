@@ -6,10 +6,11 @@ import { notify } from "@/lib/notifications";
 import { linkedinAtivo } from "@/lib/linkedin/chave";
 import { configLinkedin, segredoLinkedin } from "@/lib/linkedin/servidor";
 import { COOKIE_FLUXO, conferirIdToken, hashDoSub, lerCookie, nomeCompativel, retornoConfere, validoAte, type ChavePublica } from "@/lib/linkedin/regras";
+import { ROTA_CONTA_LINKEDIN } from "@/lib/linkedin/rotas";
 
 export const dynamic = "force-dynamic";
 
-const CONTA = "/dashboard/conta/privacidade";
+const CONTA = ROTA_CONTA_LINKEDIN;
 
 /**
  * 63-B — volta do LinkedIn. Confere a sessão Viva (a MESMA que começou), o state e o cookie de 10 min; troca o code no
