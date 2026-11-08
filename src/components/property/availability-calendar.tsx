@@ -333,10 +333,14 @@ export function AvailabilityCalendar({
               .
             </p>
           ) : isDemo ? (
-            <div className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-              <p className="flex items-center gap-2">
-                <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.
+            // E713: sem aviso morto — as datas servem só para simular o valor; a saída é a mesma do cartão de preço (E694).
+            <div className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink" data-testid="calendario-exemplo">
+              <p className="flex items-start gap-2 text-forest">
+                <CircleAlert className="mt-1 h-4 w-4 shrink-0" /> Anúncio de exemplo: as datas servem só para simular o valor; aqui não dá para pedir.
               </p>
+              <Link href="/buscar" className={buttonClasses({ variant: "secondary", size: "sm", className: "mt-3" })} data-testid="calendario-exemplo-ver-reais">
+                Ver imóveis reais
+              </Link>
             </div>
           ) : isOwner ? (
             <p className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
