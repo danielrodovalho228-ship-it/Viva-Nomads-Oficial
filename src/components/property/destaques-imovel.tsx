@@ -26,7 +26,7 @@ export function DestaquesImovel({ property }: { property: Property }) {
             <Icone className={CLASSE_ICONE_LISTA} strokeWidth={TRACO_ICONE_LISTA} aria-hidden />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-ink">{d.titulo}</span>
-              {d.detalhe && <span className="block truncate text-xs text-muted">{d.detalhe}</span>}
+              {d.detalhe && <span className="line-clamp-2 block text-xs text-muted">{d.detalhe}</span>}
             </span>
           </li>
         );
