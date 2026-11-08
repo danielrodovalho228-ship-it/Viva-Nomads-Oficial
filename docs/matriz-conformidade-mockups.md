@@ -658,3 +658,21 @@ Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "
 A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
+
+## E712 (C4) — topo da home alinhado ao mockup `publico-home` (Pista A)
+
+Ordem do coordenador: alinhar o real ao mockup, sem registrar a divergência como decisão. Diferenças do topo, uma a uma (mockup × antes → agora):
+
+| # | Elemento | Antes | Agora |
+|---|---|---|---|
+| 1 | Fundo | faixa escura com vídeo | superfície clara, sem vídeo |
+| 2 | Título | "Imóveis mobiliados para morar por meses", centrado, branco | "Imóveis mobiliados prontos para morar, de 30 a 180 dias, com contrato digital.", à esquerda, escuro, 3 linhas a 1280 px |
+| 3 | Ações | campo "Para onde você vai?" + link "Não achou?" | botão cheio "Buscar moradia" (→ /buscar) e botão de contorno "Publicar pedido de moradia" (→ /pedidos/novo), lado a lado (empilhados a 390 px) |
+| 4 | Linha de apoio | "Estadias de 30 a 180 dias · sem taxa…" | "Sem burocracia • Mudança rápida • Suporte 7 dias" |
+| 5 | Imagem | vídeo de fundo | foto na moldura arredondada à direita (desktop) / em cima do título (celular) |
+
+Capturas em `docs/capturas/e712b/` (1280 e 390 px, sem rolagem lateral, foto carregada, botões de 56 e 52 px).
+
+**Efeito colateral assumido:** a busca de um campo do topo (ordem `bab1b2aa`, spec t66) saiu, porque o mockup não a tem; "Buscar moradia" abre a /buscar. Specs t66, t265, t177, t813 e o teste de unidade foram atualizados.
+
+**Ainda abertos (E712 só trata do topo):** itens 6–11 da passada 88 — bloco "Imóveis em destaque" sobre faixa verde, faixa "Para proprietários" com "Por que escolher a VivaNomads", logo em folha, menu do topo (já decidido no E176/E458) e, no celular, "Entrar" em contorno e faixa fixa "Anunciar meu imóvel".
