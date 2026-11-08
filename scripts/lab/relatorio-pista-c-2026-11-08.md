@@ -468,3 +468,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 589 (grupo do 572).
+
+## Bloco 589
+
+- Bloco 589 (t1537, PR #3512 draft, run 42505504522): verde. Intenção, avaliação do imóvel, avaliadora e laudo (grupo do 572). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: sem merge sem spec de guarda. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 590 (grupo do 573).
