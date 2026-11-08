@@ -530,3 +530,16 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Custo:** cada bloco mesclado entra na ordem alfabética `t1…` da noturna e piora o L-108 (já só ~117 de 838 specs rodam à noite); e todos os PRs editam `tests/e2e/cobertura.json`, então mesclar vários em sequência tende a gerar conflito de linhas nos seguintes.
 - **Decisão pedida (coordenador/chat principal):** (a) **pausar a criação de blocos novos** até o L-108 ter remédio; (b) **consolidar** a varredura (um único job/projeto semanal de varredura, em vez de ~58 arquivos), ou mesclar só os blocos de grupos ainda não varridos; (c) priorizar o que tem valor de guarda: a t1486 (C17), a t1494 (E527/E532), a t1498 (C19) e as specs do E714/E717. A Pista C **não fecha nem apaga nenhum PR** e **não abre o bloco 601** enquanto não houver essa decisão ou um merge novo na main para guardar.
 - Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+
+## Decisão do Muse (08/11) sobre a varredura — em vigor
+
+- **Decisão:** (1) **pausar a criação de blocos novos** enquanto os 58 blocos e 8 specs em draft não drenarem pelo merge; (2) **priorizar as specs de guarda** t1486, t1494, t1498 e as do E714 e do E717; (3) manter o lab crítico verde e corrigir spec quebrada de merge novo quando houver. A consolidação da varredura em job semanal fica para depois da drenagem. Fila dirigida de merges que destravam a Pista C: #3401 → #3406 → #3402 → #3437+#3459 → #3297, além dos drafts de A e B.
+- **Cumprimento:** a Pista C **não abre mais PR de bloco**. Os blocos 601, 602 e 603 já tinham sido gerados e empurrados quando a decisão chegou (ramos `claude-c/bloco601`, `claude-c/bloco602`, `claude-c/bloco603`, specs t1549, t1550 e t1551, sem PR aberto e sem rodar no lab); ficam **parados, sem PR**, e não os apago (regra de não apagar ramo remoto). Se o coordenador quiser, abro os PRs depois da drenagem.
+- **Guia de merge das specs de guarda (ordem sugerida, tudo em draft e `mergeable`/`clean` no último conferido):**
+  1. #3440 (t1494: E527 e E532 (i) como `test.fail`, sobre a main).
+  2. #3424 (t1486: C16 comum a 360 e 390 px, C17 como `test.fail`, sobre a main).
+  3. #3495 (t1498 **corrigida**, base = branch do #3489) **depois do #3489**; **não mesclar o #3447** (t1498 com `test.fail` abaixo de 378 px), que passaria a falhar com "passou quando devia falhar" depois do #3489. Se o #3489 não vier, o #3447 é o que vale.
+  4. #3421 (t1484: E714) depois do #3395, e #3422 (t1485: E717) depois do #3396; ao mergear o draft de cada uma, trocar a base do PR da spec para a main.
+  5. Menores e independentes, na sequência: #3429 (t1489: janelas da busca) e #3434 (t1491: E452 negativo e E436).
+  - Observação: todos editam `tests/e2e/cobertura.json`; o 2º PR em diante pode precisar de uma mesclagem da main no ramo (resolvo no meu PR, sem pedir ao Daniel).
+- Estado da main (conferido): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433. Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
