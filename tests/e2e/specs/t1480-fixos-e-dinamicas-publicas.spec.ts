@@ -63,13 +63,14 @@ test.describe("T1480 — fixos × conteúdo e dinâmicas públicas (visitante)",
               let f: Element | null = topo;
               let fixo = false;
               while (f && f !== document.body) {
-                if (getComputedStyle(f).position === "fixed") {
+                // Só os fixos de BAIXO (barra de baixo, botão redondo, faixa de cookies): o cabeçalho fixo do topo cobrindo o que rola por baixo dele é o comportamento normal.
+                if (getComputedStyle(f).position === "fixed" && f.getBoundingClientRect().top > innerHeight * 0.4) {
                   fixo = true;
                   break;
                 }
                 f = f.parentElement;
               }
-              if (fixo) sob.push(`"${t.slice(0, 40)}" sob ${topo.tagName.toLowerCase()}`);
+              if (fixo) sob.push(`"${t.slice(0, 40)}" sob ${topo.tagName.toLowerCase()}${topo.getAttribute("data-testid") ? "[" + topo.getAttribute("data-testid") + "]" : ""}`);
             }
           }
           const h1 = document.querySelectorAll("h1").length;
