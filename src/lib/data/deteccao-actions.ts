@@ -74,7 +74,8 @@ async function donoDoAnuncio(propertyId: string) {
 type Dono = NonNullable<Awaited<ReturnType<typeof donoDoAnuncio>>>;
 
 async function galeria(c: Dono, propertyId: string): Promise<string[]> {
-  const { data } = await c.admin.from("property_photos").select("url").eq("property_id", propertyId).order("sort_order");
+  const { data, error } = await c.admin.from("property_photos").select("url").eq("property_id", propertyId).order("sort_order");
+  if (error) throw new Error("Não foi possível ler as fotos do anúncio.");
   return ((data ?? []) as { url: string }[]).map((f) => caminhoDaGaleria(f.url, c.uid)).filter((x): x is string => !!x);
 }
 
@@ -100,6 +101,8 @@ async function montar(c: Dono, propertyId: string): Promise<Omit<EstadoDeteccao,
     c.admin.from("nivel_itens").select("chave, declarado, foto_path, foto_status, foto_origem, refazer_ate").eq("property_id", propertyId),
     c.admin.from("deteccao_fotos_analises").select("caminho").eq("property_id", propertyId).eq("pessoa", true),
   ]);
+  // E293 r21: falha de leitura não vira "sem sugestões" nem "nenhuma foto com pessoa" (a tela trata o erro: o bloco some e o passo segue).
+  for (const r of [sug, itens, pessoas]) if (r.error) throw new Error("Não foi possível ler as sugestões das fotos.");
   const naGaleria = new Set(fotos);
   const nivelComFoto = new Set(
     ((itens.data ?? []) as { chave: string; declarado: boolean; foto_path: string | null; foto_status: string | null; foto_origem: "camera" | "arquivo" | null; refazer_ate: string | null }[])
