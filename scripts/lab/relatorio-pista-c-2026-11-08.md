@@ -90,3 +90,10 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Bloco 522 (PR #3361, run 42436534565): verde. Painel do proprietário sem id (agenda, carteira, ganhos, recibos, respostas rápidas, simulador, ferramentas), 390 e 1280 px.
 - E530b (#3132): a spec t873 foi ajustada no próprio merge; sem spec nova.
 - Próximo: bloco 523 (grupo do 506).
+
+## Blocos 523 e 524
+
+- Bloco 523 (t1461, PR #3366, run 42437878706): verde. Painel do morador sem id (painel, avaliações, buscas, comparar, conta, fechamento, garantias, reembolsos, solicitações, verificação).
+- Bloco 524 (t1462, PR #3367, run 42437908184): verde. Públicas com parâmetro na URL (polo, como funciona, guias, pedidos/novo, proprietário, parceiro, imóveis perto de).
+- Merge novo na main: #3362 (Renato, t150: faixa Comparar a 1280) já é a própria spec; sem spec nova.
+- Nenhum defeito novo; L-107 segue livre. Próximo: bloco 525 (grupo do 508).
