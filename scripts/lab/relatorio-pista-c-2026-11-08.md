@@ -367,3 +367,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Lab da main: lab crítico verde em `a844024e7` e `624a5924a`; nenhum merge de código novo depois do #3433. Sem teste permanente novo a rodar (zero merges novos de código desde a última rodada: 0 de 0). Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
 - Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 570 (grupo do 553).
+
+## Bloco 570
+
+- Bloco 570 (t1518, PR #3477 draft, run 42487399895): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações, estadia e imóvel com id (grupo do 553).
+- Lab da main: lab crítico verde em `a844024e7`; zero merges de código novos desde o #3433 (conferido de novo ao fim). Testes permanentes novos a rodar: 0 de 0. Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 571 (grupo do 554).
