@@ -177,3 +177,17 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
   - Três falhas no caminho eram da minha spec, não do produto: (1) contava o cabeçalho fixo do topo (cobrir o que rola por baixo é normal); (2) a rolagem parava no meio porque a página crescia (rolagem 8839 de 9995), e o texto do rodapé aparecia sob a barra de baixo no meio do trajeto; (3) agora rola até encostar no fim de verdade. Nenhum defeito de produto: coerente com a QA (0 sobreposições).
 - Pendente da QA: T-P1 (saudação do assistente sem "planos") até a Pista A corrigir a saudação.
 - Aberto no produto: L-104 e L-107 (t1429 com test.fail, PR #3394). Próximo livre: L-108. Próximo bloco: 540 (grupo do 523).
+
+## Blocos 540, 541, 542 e specs dos drafts E714/E717
+
+- Bloco 540 (t1481, PR #3418 draft, run 42457973492): verde. Painel do morador sem id (grupo do 523).
+- Bloco 541 (t1482, PR #3419 draft, run 42457976391): verde. Públicas com parâmetro na URL (grupo do 524).
+- Bloco 542 (t1483, PR #3420 draft, run 42457978905): verde. Admin com id na URL (grupo do 525).
+- Nenhum defeito novo; L-108 livre; abertos: L-104 e L-107 (t1429, PR #3394).
+
+### Drafts que aguardam merge dirigido
+- E714 (#3395, "o dono paga a avaliação"): spec t1484 (PR #3421, base = branch do #3395, run 42458121246, verde sobre o código do draft). A t1428 (PR #3270) passou a aceitar a frase velha e a nova (run 42458135893, verde).
+- E717 (#3396, faixa de teste no avaliador): spec t1485 (PR #3422, base = branch do #3396, run 42458123885, verde).
+- E713 (#3408): já coberto (o próprio PR atualiza a t59; o calendário do exemplo está na t1475, PR #3390). Sem spec nova.
+- E719 (#3397 e #3398): são duas implementações do mesmo item, com textos diferentes. Spec adiada até se escolher qual vale (decisão do coordenador/Daniel); não duplico.
+- Quando #3395 e #3396 mesclarem, as bases de #3421 e #3422 passam para a main.
