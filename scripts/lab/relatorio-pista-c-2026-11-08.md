@@ -624,3 +624,7 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 
 - **Merge novo #3471 (E688, Pista A, `298197783`)**: retira o cartão "parceiro geral" (AquiResolve) das superfícies públicas. O próprio PR já atualizou a **t236** (`parceiro-geral` e o texto "AquiResolve" ausentes em `/parceiros/fotografos` com busca vazia, 390 e 1280, mesmo ligado pelo admin) → guarda existente; sem spec nova.
 - **t1570 (#3564, E688/0333)**: lab em andamento (run 42530919517). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Vigia das 22h47
+
+- **t1570 (#3564, E688/0333): verde** (run 42530919517). Nenhum merge novo desde `298197783`; drafts #3533, #3530, #3531, #3532, #3498 abertos. Sem achado novo (próximo livre: **L-110**).
