@@ -483,3 +483,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **L-109 (proposta ao chat principal; achado de operação, fora do escopo da Pista C):** na main (`a844024e7`) os workflows **Backup noturno** (run 42485195051, 13:29 UTC) e **Teste de restauração** (run 42497108612, 15:53 UTC) **falham no mesmo passo**, "Montar o rclone.conf temporário (600) com o remoto cifrado" (passo 5 no backup, passo 6 no drill); o passo seguinte ("Cópia (banco, arquivos, manifesto e retenção)" / "Restaurar e conferir") é **pulado**, e "Registrar no admin e alarmar" também falha. Efeito: a cópia noturna **não está sendo feita** e a restauração não está sendo provada. Causa provável, não confirmada (a mensagem do passo não aparece no log que consegui ler): segredo/remoto cifrado do rclone ausente ou mal formado, o que pode depender de dado só do Daniel. Não corrijo; item para o dono desses workflows.
 - Defeitos abertos: L-104, L-107, L-108, **L-109 (novo, proposto)**, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: **L-110**.
 - Próximo bloco: 591 (grupo do 574).
+
+## E708 reconferido e bloco 591
+
+- **E708 (L-106) reconferido na main `a844024e7`:** `ROTA_CONTA_LINKEDIN` (`src/lib/linkedin/rotas.ts`) = `/dashboard/conta/seguranca`; nenhuma referência do LinkedIn a `/dashboard/conta/privacidade` em `src` (só o comentário do teste `e708-rotas-de-retorno.test.ts`); t323 e t351 cobrem o fluxo no lab, e a t323 está no conjunto do lab crítico, verde no head (run 42472878384). Conclusão: as rotas de retorno não apontam mais para a página antiga; prova de pé, nada a reabrir.
+- Bloco 591 (t1539, PR #3514 draft, run 42507658007): verde. Painel do morador sem id: painel, avaliações, buscas, comparar, conta, fechamento, garantias, reembolsos, solicitações, verificação (grupo do 574). Só no laboratório, 390 e 1280 px.
+- Estado da main (começo e fim): head `a844024e7`, lab crítico verde; nenhum merge de código novo desde o #3433. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110. Nenhum defeito novo nesta passada.
+- Próximo bloco: 592 (grupo do 575).
