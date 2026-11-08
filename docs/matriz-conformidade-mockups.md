@@ -978,3 +978,19 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Resultado:** **nenhum defeito novo.** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado. As únicas respostas 404 são de ids de exemplo que não existem no banco (`/avaliadores/UDI-001`, `/proprietario/ube-001`) e da rota inexistente de controle: a própria página 404 renderiza inteira (9 imagens carregadas, sem estouro) a 390 e 1280.
 - **Conformidade com mockups:** nenhuma tela de mockup nova; o `publico-home` segue fora do repo (E712).
 - **CI do #3408 (E713):** verify, lab-critico, e2e e prévia verdes (4/4) depois da correção da spec `t59`; em draft.
+
+## E464 (resíduo) — o "Ajuda" do menu da Conta: desenho intencional, evidência no código (passada 85)
+
+**Relato (QA, prova de 06/11 lote 3):** o "Ajuda" do menu Conta "sai do painel e carrega o cabeçalho público (sem sino, sem menu do painel)".
+
+**O que o código e a tela fazem (modo demonstração local, 390 e 1280):**
+- O item **"Ajuda" do menu da Conta** (avatar no celular, "Conta ▾" no computador) abre `/dashboard/conta/ajuda` (`HREF_AJUDA_CONTA`, `src/config/abas-painel.ts`). Essa página **fica no painel**: casca da Conta, cabeçalho logado **com sino** e menu do painel (medido: `data-painel-main` presente, sino presente, sem aviso de pré-lançamento, sem navegação pública).
+- A tela lista os destinos da Ajuda (`LINKS_AJUDA_CONTA`): Central de ajuda (`/ajuda`), Fale com a Viva (`/ajuda/fale-com-a-viva`), Termos (`/termos`) e Privacidade (`/privacidade`). **Esses quatro são páginas públicas** e abrem com o cabeçalho público (medido em `/ajuda`: sem sino, com navegação pública e aviso de pré-lançamento). É o ponto em que o contexto logado se perde.
+
+**Por que é desenho intencional:**
+- **E185** (pacote de menus, comentário em `abas-painel.ts`): "`Ajuda` tem UM destino em todos os menus: a Ajuda da Conta, que leva à Central de ajuda, aos termos e ao 'Sair da conta'. Antes o avatar ia para a Central pública (/ajuda)." A troca de antes (avatar → Central pública) para a de hoje (avatar → Ajuda da Conta, dentro do painel) **já foi a correção** do contexto.
+- **E176** (mockups aprovados do menu): o avatar é um atalho curto — Minha conta · Modo · Ajuda · Sair.
+- **E493:** a Ajuda tem uma porta só no painel (o menu da Conta), sem repetir na lista de seções.
+- **Termos e Privacidade** estão congelados (texto jurídico) e a **Central de ajuda** é página pública indexável com cabeçalho próprio; o logo do painel também sai para a página pública por decisão (E443).
+
+**Conclusão:** a perda de contexto acontece **depois** do "Ajuda", ao abrir a Central, o Fale com a Viva, os Termos ou a Privacidade, que são públicos. O próprio "Ajuda" mantém o contexto logado. **Nenhum PR de código aberto.** Se o Muse/Daniel quiserem que Central, Fale com a Viva, Termos e Privacidade abram *dentro* do painel (casca logada), isso é mudança de produto: espelhar páginas públicas e as legais congeladas dentro de `/dashboard`, ou um cabeçalho condicional por sessão nas páginas públicas; fica como decisão.
