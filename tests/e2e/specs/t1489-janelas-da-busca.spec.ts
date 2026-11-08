@@ -8,7 +8,7 @@ import { test, expect } from "@playwright/test";
 */
 test.use({ storageState: { cookies: [], origins: [] } });
 
-const CONTROLES = ["datas", "local", "tipo", "preco", "nivel", "ordem"] as const;
+const CONTROLES = ["datas", "local", "tipo", "preco", "nivel", "ordenar"] as const;
 
 test.describe("T1489 — janelas da busca", () => {
   for (const w of [390, 1280] as const) {
