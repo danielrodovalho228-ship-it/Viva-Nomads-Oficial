@@ -652,3 +652,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 
 - **Merge novo #3297 (E707, `a2d21c25e`)**, composição dos prazos da caução atrás da chave `CAUCAO_PRAZOS_ATIVA` (desligada): **t1573 (#3572)** guarda o estado desligado do simulador de reembolso (`/dashboard/reembolsos`: prazo legal de 30 dias no texto, sem o campo "Data do check-out"). O cálculo fica nos testes de unidade do PR; o ramo ligado pede decisão de ligar a chave no lab. Lab: a conferir.
 - **Em andamento:** t1572 (#3571, E682, run 42533397415) e bloco 604 (#3570, run 42532676112). Nenhum achado novo (próximo livre: **L-110**). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos.
+
+## Cadeia das 23h25
+
+- **Verdes:** t1572 (#3571, E682, run 42533397415) e bloco 604 (#3570, t1552, run 42532676112).
+- **t1573 (#3572, E707): 1º run vermelho (42533621122) por defeito de spec**: a spec supunha o simulador de reembolso em conta real, mas o simulador é só do modo demonstração; conta real vê "A devolução da caução fica no contrato". Corrigida em commit novo (estado honesto, sem simulador, sem campo de check-out, sem prazo fictício); rerun em andamento. Não é defeito de produto.
+- **Merge novo #3499 (E725, `c4000dd9a`)**: **t1574 (#3576)** — 10 dias no calendário: só o aviso "Estadia mínima de 30 dias." e sem total; 30 dias: sem aviso; 390 e 1280. Lab a conferir.
+- **Bloco 605 (#3575, t1553)**: 17ª volta do grupo do bloco 588 (admin: ajuda da publicação, encerramentos, dados de teste); `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Sem achado até aqui (próximo livre: **L-110**).
+- Drafts #3533, #3530, #3531, #3532, #3498 abertos; E727, E728, E719, E713, E729 e 0335 ainda não mergeados.
