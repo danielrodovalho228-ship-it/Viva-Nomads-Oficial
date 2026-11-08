@@ -7,20 +7,24 @@ import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoEmDias } from "@/lib/contrato-periodo";
 import { diasDosTermos } from "./regras";
 import { COLUNAS_VERSAO, termosDaLinha, type LinhaVersao } from "@/lib/data/propostas-servidor";
-import { lembretesDaPreAceitacao, PRAZO_PRE_ACEITACAO_HORAS, reabrirPreAceitacao, textoDoPrazo, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
+import { encerraNaExpiracao, lembretesDaPreAceitacao, PRAZO_PRE_ACEITACAO_HORAS, prazoDoDono, reabrirPreAceitacao, textoDoPrazo, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
 
 /*
   E722 — roda a pré-aceitação de 72 h. ATRÁS DA CHAVE PRE_ACEITACAO_72H_ATIVA (desligada): sem ela, não faz nada.
     • lembretes de 24 h e 6 h antes do fim (uma vez cada; nunca no silêncio de 22h às 7h, pela regra pura);
-    • vencida sem contrato: a proposta expira SEM punição (status "expirada" + pre_aceitacao_expirou_em), avisa os dois.
+    • vencida sem contrato: a proposta expira SEM punição (status "expirada" + pre_aceitacao_expirou_em), avisa os dois; a candidatura volta ao dono com o
+      relógio dele (1 dia útil, recomeça a cada volta). A 3ª expiração (depois de 2 reaberturas) ENCERRA a candidatura e avisa o morador;
+    • perdeu a corrida: expira com a mensagem clara e NADA volta sozinho para a fila; só o dono reabre, à mão.
   Nada aqui recalcula taxa: taxa_congelada nunca é escrita por este arquivo.
 */
 export interface ResumoPreAceitacao {
   ativa: boolean;
   lembretes: number;
   expiradas: number;
-  /** Pré-aceites que perderam a corrida (outro concluiu o contrato antes) e voltaram à fila do dono. */
+  /** Pré-aceites que perderam a corrida (outro concluiu o contrato antes). */
   perderamAVez: number;
+  /** Candidaturas encerradas na 3ª expiração (já contadas em `expiradas`). */
+  encerradas: number;
 }
 
 interface Linha {
@@ -32,6 +36,7 @@ interface Linha {
   property_id: string;
   versao_atual: number;
   aceita_em: string | null;
+  pre_aceitacao_reaberturas: number | null;
   pre_aceitacao_ate: string;
   pre_aceitacao_lembrete_24h_em: string | null;
   pre_aceitacao_lembrete_6h_em: string | null;
@@ -53,7 +58,7 @@ async function avisarOsDois(admin: SupabaseClient, l: Linha, assunto: string, te
 }
 
 /** Há um contrato ativo de outra pessoa nas datas desta proposta? (o mesmo cálculo de datas do aceite). Falha de leitura NÃO conta como perda. */
-async function perdeuACorrida(admin: SupabaseClient, l: Linha): Promise<boolean> {
+async function perdeuACorrida(admin: SupabaseClient, l: Pick<Linha, "id" | "versao_atual" | "property_id">): Promise<boolean> {
   const { data, error } = await admin.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", l.id).eq("versao", l.versao_atual).maybeSingle();
   if (error || !data) return false;
   const v = data as unknown as LinhaVersao;
@@ -63,44 +68,59 @@ async function perdeuACorrida(admin: SupabaseClient, l: Linha): Promise<boolean>
   return !!conflito && !conflito.startsWith("Não foi possível");
 }
 
+/** Data de entrada da versão vigente (para o teto do relógio do dono); null se não deu para ler. */
+async function dataEntradaDa(admin: SupabaseClient, l: Pick<Linha, "id" | "versao_atual">): Promise<string | null> {
+  const { data } = await admin.from("proposta_versoes").select("data_entrada").eq("proposta_id", l.id).eq("versao", l.versao_atual).maybeSingle();
+  const d = (data as { data_entrada?: string } | null)?.data_entrada;
+  return d ? String(d).slice(0, 10) : null;
+}
+
 export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new Date()): Promise<ResumoPreAceitacao> {
-  if (!PRE_ACEITACAO_72H_ATIVA) return { ativa: false, lembretes: 0, expiradas: 0, perderamAVez: 0 };
-  const resumo: ResumoPreAceitacao = { ativa: true, lembretes: 0, expiradas: 0, perderamAVez: 0 };
+  if (!PRE_ACEITACAO_72H_ATIVA) return { ativa: false, lembretes: 0, expiradas: 0, perderamAVez: 0, encerradas: 0 };
+  const resumo: ResumoPreAceitacao = { ativa: true, lembretes: 0, expiradas: 0, perderamAVez: 0, encerradas: 0 };
   const { data, error } = await admin
     .from("propostas")
-    .select("id, numero, owner_id, tenant_id, lead_id, property_id, versao_atual, aceita_em, pre_aceitacao_ate, pre_aceitacao_lembrete_24h_em, pre_aceitacao_lembrete_6h_em, properties(title)")
+    .select("id, numero, owner_id, tenant_id, lead_id, property_id, versao_atual, aceita_em, pre_aceitacao_reaberturas, pre_aceitacao_ate, pre_aceitacao_lembrete_24h_em, pre_aceitacao_lembrete_6h_em, properties(title)")
     .eq("status", "aceita")
     .not("pre_aceitacao_ate", "is", null);
   if (error || !data) return resumo;
   for (const l of data as unknown as Linha[]) {
     const prazo = new Date(l.pre_aceitacao_ate);
     if (prazo.getTime() <= agora.getTime()) {
+      // A 3ª expiração (depois de 2 reaberturas) encerra a candidatura; antes disso ela volta ao dono, com o relógio dele recomeçando.
+      const encerra = encerraNaExpiracao(Number(l.pre_aceitacao_reaberturas ?? 0));
+      const donoAte = encerra ? null : prazoDoDono(agora, await dataEntradaDa(admin, l));
       const { data: ok } = await admin
         .from("propostas")
-        .update({ status: "expirada", pre_aceitacao_expirou_em: agora.toISOString(), atualizada_em: agora.toISOString() })
+        .update({ status: "expirada", pre_aceitacao_expirou_em: agora.toISOString(), pre_aceitacao_encerrada_em: encerra ? agora.toISOString() : null, pre_aceitacao_dono_ate: donoAte?.toISOString() ?? null, atualizada_em: agora.toISOString() })
         .eq("id", l.id)
         .eq("status", "aceita")
         .select("id")
         .maybeSingle();
       if (ok) {
         resumo.expiradas++;
-        await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoExpirou, `a pré-aceitação terminou sem o contrato concluído. ${TEXTO_SEM_PUNICAO}`);
+        if (encerra) {
+          resumo.encerradas++;
+          await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
+        } else {
+          await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoExpirou, `a pré-aceitação terminou sem o contrato concluído. ${TEXTO_SEM_PUNICAO}`, `a pré-aceitação do morador terminou sem o contrato concluído e a candidatura voltou para você. O seu prazo para decidir termina em ${textoDoPrazo(donoAte!)}. Você pode reabri-la.`);
+        }
       }
       continue;
     }
-    // Regra de corrida: outro contrato ativo nas mesmas datas = alguém concluiu antes. A candidatura perde a vez e volta à fila do dono.
+    // Regra de corrida: outro contrato ativo nas mesmas datas = alguém concluiu antes. A candidatura perde a vez (sem punição); só o dono a reabre.
     if (await perdeuACorrida(admin, l)) {
+      const donoAteCorrida = prazoDoDono(agora, await dataEntradaDa(admin, l));
       const { data: ok } = await admin
         .from("propostas")
-        .update({ status: "expirada", pre_aceitacao_expirou_em: agora.toISOString(), pre_aceitacao_perdeu_em: agora.toISOString(), atualizada_em: agora.toISOString() })
+        .update({ status: "expirada", pre_aceitacao_expirou_em: agora.toISOString(), pre_aceitacao_perdeu_em: agora.toISOString(), pre_aceitacao_dono_ate: donoAteCorrida.toISOString(), atualizada_em: agora.toISOString() })
         .eq("id", l.id)
         .eq("status", "aceita")
         .select("id")
         .maybeSingle();
       if (ok) {
         resumo.perderamAVez++;
-        // A candidatura volta para a fila do dono (aguardando decisão dele), sem punição.
-        await admin.from("leads").update({ status: "new", accepted_at: null, decided_by: null }).eq("id", l.lead_id).eq("status", "accepted");
+        // Nada volta sozinho para a fila: quem perdeu a vez só volta se o dono reabrir à mão. O lead NÃO é mexido aqui.
         await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoPerdeuVez, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO);
       }
       continue;
@@ -119,14 +139,21 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
   return resumo;
 }
 
-/** Reabre uma pré-aceitação expirada (no máximo 2 vezes). A taxa congelada NÃO é tocada. Devolve o motivo de recusa, ou o novo prazo. */
-export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, agora: Date = new Date()): Promise<{ ok: true; prazo: Date; reaberturas: number } | { ok: false; error: string }> {
-  const { data, error } = await admin.from("propostas").select("id, status, versao_atual, pre_aceitacao_reaberturas, pre_aceitacao_expirou_em, pre_aceitacao_perdeu_em").eq("id", propostaId).maybeSingle();
+/**
+ * Reabre uma pré-aceitação expirada (no máximo 2 vezes). A taxa congelada NÃO é tocada. Devolve o motivo de recusa, ou o novo prazo.
+ * Quem perdeu a corrida só volta por reabertura MANUAL DO DONO (`quem` = "owner"), e só se as datas já estiverem livres.
+ */
+export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, quem: "owner" | "tenant", agora: Date = new Date()): Promise<{ ok: true; prazo: Date; reaberturas: number } | { ok: false; error: string }> {
+  const { data, error } = await admin.from("propostas").select("id, status, versao_atual, property_id, pre_aceitacao_reaberturas, pre_aceitacao_expirou_em, pre_aceitacao_perdeu_em, pre_aceitacao_encerrada_em").eq("id", propostaId).maybeSingle();
   if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
-  const p = data as { id: string; status: string; versao_atual: number; pre_aceitacao_reaberturas: number; pre_aceitacao_expirou_em: string | null; pre_aceitacao_perdeu_em: string | null } | null;
+  const p = data as { id: string; status: string; versao_atual: number; property_id: string; pre_aceitacao_reaberturas: number; pre_aceitacao_expirou_em: string | null; pre_aceitacao_perdeu_em: string | null; pre_aceitacao_encerrada_em: string | null } | null;
   if (!p) return { ok: false, error: "Proposta não encontrada." };
   if (p.status !== "expirada" || !p.pre_aceitacao_expirou_em) return { ok: false, error: "Só uma pré-aceitação que expirou pode ser reaberta." };
-  if (p.pre_aceitacao_perdeu_em) return { ok: false, error: "Outra pessoa concluiu o contrato deste imóvel antes (regra de corrida): a candidatura voltou para a fila do proprietário." };
+  if (p.pre_aceitacao_encerrada_em) return { ok: false, error: "Esta candidatura foi encerrada na 3ª expiração do prazo. Envie uma nova proposta." };
+  if (p.pre_aceitacao_perdeu_em) {
+    if (quem !== "owner") return { ok: false, error: "Outra pessoa concluiu o contrato deste imóvel antes (regra de corrida). Só o proprietário pode reabrir esta candidatura." };
+    if (await perdeuACorrida(admin, p)) return { ok: false, error: "O contrato de outra pessoa ainda ocupa estas datas: não dá para reabrir agora." };
+  }
   const { data: v, error: erroV } = await admin.from("proposta_versoes").select("data_entrada").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
   if (erroV || !v) return { ok: false, error: "Não foi possível ler a data de entrada agora. Tente de novo em instantes." };
   const { data: tx, error: erroTx } = await admin.from("propostas").select("taxa_congelada").eq("id", p.id).maybeSingle();
@@ -139,7 +166,7 @@ export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, 
     .from("propostas")
     .update({
       status: "aceita", pre_aceitacao_ate: r.prazo.toISOString(), pre_aceitacao_reaberturas: r.reaberturas, pre_aceitacao_expirou_em: null,
-      pre_aceitacao_lembrete_24h_em: null, pre_aceitacao_lembrete_6h_em: null, atualizada_em: agora.toISOString(),
+      pre_aceitacao_lembrete_24h_em: null, pre_aceitacao_lembrete_6h_em: null, pre_aceitacao_perdeu_em: null, pre_aceitacao_dono_ate: null, atualizada_em: agora.toISOString(),
     })
     .eq("id", p.id)
     .eq("status", "expirada")

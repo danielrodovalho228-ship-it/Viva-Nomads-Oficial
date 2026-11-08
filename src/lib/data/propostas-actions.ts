@@ -660,9 +660,15 @@ export interface VersaoView {
 /** E722: o que a tela mostra da pré-aceitação de 72 h (só com a chave ligada e a proposta aceita ou expirada). */
 export interface PreAceitacaoView {
   estado: "vigente" | "expirada";
-  /** Fim da janela (ISO) e o mesmo em texto, com data e hora exatas de Brasília. */
+  /** Fim da janela do morador (ISO) e o mesmo em texto, com data e hora exatas de Brasília. Só aparece enquanto o prazo é do morador. */
   ateIso: string;
   ateTexto: string;
+  /** Um prazo por vez: com a candidatura de volta ao dono, só o prazo DELE (1 dia útil) aparece; o do morador some. */
+  donoAteTexto: string | null;
+  /** Candidatura encerrada na 3ª expiração: não há mais reabertura. */
+  encerrada: boolean;
+  /** Perdeu a corrida: só o dono reabre. */
+  perdeuACorrida: boolean;
   reaberturas: number;
   podeReabrir: boolean;
   regraCorrida: string;
@@ -890,7 +896,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       };
     }
   }
-  const preAceitacao = PRE_ACEITACAO_72H_ATIVA && ["aceita", "expirada"].includes(p.status) ? await preAceitacaoDaProposta(s.admin, p.id) : null;
+  const preAceitacao = PRE_ACEITACAO_72H_ATIVA && ["aceita", "expirada"].includes(p.status) ? await preAceitacaoDaProposta(s.admin, p.id, papel) : null;
   return {
     preAceitacao,
     id: p.id,
@@ -1141,7 +1147,8 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
 }
 
 /**
- * E722 — reabre uma pré-aceitação que expirou (no máximo 2 vezes). Qualquer das duas partes da proposta pode pedir.
+ * E722 — reabre uma pré-aceitação que expirou (no máximo 2 vezes). Qualquer das duas partes pode pedir; quem perdeu a corrida só volta
+ * por reabertura do DONO. A 3ª expiração encerra a candidatura (não reabre).
  * A taxa congelada na pré-aceitação CONTINUA VALENDO: a reabertura não a recalcula. Atrás de PRE_ACEITACAO_72H_ATIVA.
  */
 export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazoAte: string }>> {
@@ -1152,7 +1159,7 @@ export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazo
   if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
   const p = data as { id: string; owner_id: string; tenant_id: string; lead_id: string } | null;
   if (!p || (p.owner_id !== s.user.id && p.tenant_id !== s.user.id)) return { ok: false, error: "Proposta não encontrada." };
-  const r = await reabrirNoBanco(s.admin, p.id);
+  const r = await reabrirNoBanco(s.admin, p.id, p.owner_id === s.user.id ? "owner" : "tenant");
   if (!r.ok) return { ok: false, error: r.error };
   revalidatePath(`/dashboard/propostas/${p.id}`);
   revalidatePath("/dashboard/fechamento");
@@ -1160,18 +1167,24 @@ export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazo
 }
 
 /** E722: a janela de 72 h da proposta, pronta para a tela (data e hora exatas, regra de corrida, sem punição, taxa que continua). */
-async function preAceitacaoDaProposta(admin: Admin, propostaId: string): Promise<PreAceitacaoView | null> {
-  const { data, error } = await admin.from("propostas").select("pre_aceitacao_ate, pre_aceitacao_reaberturas").eq("id", propostaId).maybeSingle();
-  const d = data as { pre_aceitacao_ate: string | null; pre_aceitacao_reaberturas: number | null } | null;
+async function preAceitacaoDaProposta(admin: Admin, propostaId: string, papel: Autor): Promise<PreAceitacaoView | null> {
+  const { data, error } = await admin.from("propostas").select("pre_aceitacao_ate, pre_aceitacao_reaberturas, pre_aceitacao_dono_ate, pre_aceitacao_encerrada_em, pre_aceitacao_perdeu_em").eq("id", propostaId).maybeSingle();
+  const d = data as { pre_aceitacao_ate: string | null; pre_aceitacao_reaberturas: number | null; pre_aceitacao_dono_ate: string | null; pre_aceitacao_encerrada_em: string | null; pre_aceitacao_perdeu_em: string | null } | null;
   if (error || !d?.pre_aceitacao_ate) return null;
   const ate = new Date(d.pre_aceitacao_ate);
   const reaberturas = Number(d.pre_aceitacao_reaberturas ?? 0);
+  const encerrada = !!d.pre_aceitacao_encerrada_em;
+  const perdeu = !!d.pre_aceitacao_perdeu_em;
+  const estado = estadoDaPreAceitacao(ate, new Date()).chave;
   return {
-    estado: estadoDaPreAceitacao(ate, new Date()).chave,
+    estado,
     ateIso: ate.toISOString(),
     ateTexto: textoDoPrazo(ate),
+    donoAteTexto: estado === "expirada" && !encerrada && d.pre_aceitacao_dono_ate ? textoDoPrazo(new Date(d.pre_aceitacao_dono_ate)) : null,
+    encerrada,
+    perdeuACorrida: perdeu,
     reaberturas,
-    podeReabrir: podeReabrir(reaberturas),
+    podeReabrir: podeReabrir(reaberturas) && !encerrada && (!perdeu || papel === "owner"),
     regraCorrida: TEXTO_REGRA_CORRIDA,
     semPunicao: TEXTO_SEM_PUNICAO,
     taxaContinua: TEXTO_TAXA_CONTINUA,

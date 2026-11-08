@@ -4,7 +4,9 @@
 --   pre_aceitacao_reaberturas quantas vezes a janela foi reaberta (no máximo 2)
 --   pre_aceitacao_lembrete_24h_em / _6h_em   quando cada lembrete saiu (uma vez só)
 --   pre_aceitacao_expirou_em quando a janela venceu sem contrato (expira SEM punição)
---   pre_aceitacao_perdeu_em  quando outra pessoa concluiu o contrato nas mesmas datas antes (regra de corrida): a candidatura volta à fila do dono
+--   pre_aceitacao_perdeu_em  quando outra pessoa concluiu o contrato nas mesmas datas antes (regra de corrida): só volta por reabertura manual do dono
+--   pre_aceitacao_encerrada_em  a 3ª expiração (depois de 2 reaberturas) encerra a candidatura
+--   pre_aceitacao_dono_ate   fim do prazo do dono (1 dia útil, seg–sex, Brasília; recomeça a cada volta; nunca passa da entrada)
 -- A taxa congelada (taxa_congelada) NÃO muda na reabertura: a decisão do Daniel é que ela continua valendo.
 alter table public.propostas add column if not exists pre_aceitacao_ate timestamptz;
 alter table public.propostas add column if not exists pre_aceitacao_reaberturas smallint not null default 0;
@@ -12,6 +14,8 @@ alter table public.propostas add column if not exists pre_aceitacao_lembrete_24h
 alter table public.propostas add column if not exists pre_aceitacao_lembrete_6h_em timestamptz;
 alter table public.propostas add column if not exists pre_aceitacao_expirou_em timestamptz;
 alter table public.propostas add column if not exists pre_aceitacao_perdeu_em timestamptz;
+alter table public.propostas add column if not exists pre_aceitacao_encerrada_em timestamptz;
+alter table public.propostas add column if not exists pre_aceitacao_dono_ate timestamptz;
 alter table public.propostas drop constraint if exists propostas_pre_aceitacao_reaberturas_valida;
 alter table public.propostas add constraint propostas_pre_aceitacao_reaberturas_valida check (pre_aceitacao_reaberturas between 0 and 2);
 create index if not exists propostas_pre_aceitacao_idx on public.propostas (pre_aceitacao_ate) where status = 'aceita' and pre_aceitacao_ate is not null;

@@ -48,16 +48,32 @@ test("a tela mostra a data e a hora exatas, a regra de corrida, a ausência de p
   for (const id of ["pre-aceitacao-prazo", "pre-aceitacao-corrida", "pre-aceitacao-sem-punicao", "pre-aceitacao-taxa"]) assert.match(tela, new RegExp(`data-testid="${id}"`));
 });
 
-test("regra de corrida: quem perde a vez recebe mensagem clara, a candidatura volta à fila do dono e não reabre", () => {
+test("regra de corrida: quem perde a vez recebe mensagem clara, nada volta sozinho à fila e só o dono reabre", () => {
   const srv = ler("src/lib/propostas/pre-aceitacao-servidor.ts");
-  assert.match(srv, /conflitoNoImovel\(admin, l\.property_id, periodo\)/); // outro contrato ativo nas mesmas datas
+  assert.match(srv, /conflitoNoImovel\(admin, l\.property_id, periodo\)/);
   assert.match(srv, /pre_aceitacao_perdeu_em: agora\.toISOString\(\)/);
-  assert.match(srv, /from\("leads"\)\.update\(\{ status: "new", accepted_at: null, decided_by: null \}\)\.eq\("id", l\.lead_id\)\.eq\("status", "accepted"\)/);
+  assert.doesNotMatch(srv, /from\("leads"\)\.update/); // o lead não é mexido
   assert.match(srv, /ASSUNTOS\.preAceitacaoPerdeuVez, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO/);
-  assert.match(srv, /if \(p\.pre_aceitacao_perdeu_em\) return \{ ok: false/); // perdeu a corrida: não reabre
-  // Falha de leitura das datas NÃO conta como perda da corrida.
+  assert.match(srv, /if \(quem !== "owner"\) return \{ ok: false/);
   assert.match(srv, /startsWith\("Não foi possível"\)/);
-  assert.match(ler("supabase/migrations/0334_propostas_pre_aceitacao_e722.sql"), /add column if not exists pre_aceitacao_perdeu_em timestamptz/);
+  assert.match(ler("src/lib/data/propostas-actions.ts"), /reabrirNoBanco\(s\.admin, p\.id, p\.owner_id === s\.user\.id \? "owner" : "tenant"\)/);
+});
+
+test("3ª expiração encerra a candidatura e avisa o morador; relógio do dono recomeça a cada volta", () => {
+  const srv = ler("src/lib/propostas/pre-aceitacao-servidor.ts");
+  assert.match(srv, /encerraNaExpiracao\(/);
+  assert.match(srv, /ASSUNTOS\.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO/);
+  assert.match(srv, /pre_aceitacao_encerrada_em/);
+  assert.match(srv, /prazoDoDono\(agora/);
+  assert.match(srv, /pre_aceitacao_dono_ate: null/); // reabrir limpa o relógio do dono
+  for (const f of ["supabase/migrations/0334_propostas_pre_aceitacao_e722.sql", "supabase/producao/aplicar-0334.sql"]) {
+    assert.match(ler(f), /pre_aceitacao_encerrada_em timestamptz/);
+    assert.match(ler(f), /pre_aceitacao_dono_ate timestamptz/);
+  }
+});
+
+test("o cron de vencimento e lembretes roda a cada 1 hora", () => {
+  assert.match(ler("vercel.json"), /"path": "\/api\/cron\/pre-aceitacao", "schedule": "0 \* \* \* \*"/);
 });
 
 test("o desenho não usa o nome 'validade da proposta' para o prazo do pré-aceite", () => {

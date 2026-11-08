@@ -34,6 +34,7 @@ import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
+import { TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO } from "@/lib/propostas/pre-aceitacao";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
 import { estadiaDaProposta } from "@/lib/propostas/estadia-da-proposta";
@@ -448,18 +449,30 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
             </Panel>
           )}
           {p.preAceitacao && (
-            <Panel title={p.preAceitacao.estado === "vigente" ? "Prazo para concluir o contrato" : "Pré-aceitação encerrada"}>
+            <Panel title={p.preAceitacao.estado === "vigente" ? "Prazo para concluir o contrato" : p.preAceitacao.encerrada ? "Candidatura encerrada" : "Pré-aceitação encerrada"}>
               <div className="space-y-2 text-sm text-muted" data-testid="pre-aceitacao">
-                <p className="font-medium text-forest" data-testid="pre-aceitacao-prazo">
-                  {p.preAceitacao.estado === "vigente" ? "Termina em " : "Terminou em "}
-                  {p.preAceitacao.ateTexto}.
-                </p>
+                {p.preAceitacao.estado === "vigente" && (
+                  <p className="font-medium text-forest" data-testid="pre-aceitacao-prazo">
+                    Termina em {p.preAceitacao.ateTexto}.
+                  </p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.donoAteTexto && p.papel === "owner" && (
+                  <p className="font-medium text-forest" data-testid="pre-aceitacao-prazo-dono">
+                    Seu prazo para decidir termina em {p.preAceitacao.donoAteTexto}.
+                  </p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-encerrada">{p.papel === "owner" ? TEXTO_ENCERRADA_DONO : TEXTO_ENCERRADA}</p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.perdeuACorrida && !p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-perdeu">{p.papel === "owner" ? TEXTO_PERDEU_A_VEZ_DONO : TEXTO_PERDEU_A_VEZ}</p>
+                )}
                 <p data-testid="pre-aceitacao-corrida">{p.preAceitacao.regraCorrida}</p>
                 <p data-testid="pre-aceitacao-sem-punicao">{p.preAceitacao.semPunicao}</p>
                 <p data-testid="pre-aceitacao-taxa">{p.preAceitacao.taxaContinua}</p>
-                {p.preAceitacao.estado === "expirada" && (
+                {p.preAceitacao.estado === "expirada" && !p.preAceitacao.encerrada && (
                   <p data-testid="pre-aceitacao-reaberturas">
-                    {p.preAceitacao.podeReabrir ? `Reaberturas usadas: ${p.preAceitacao.reaberturas} de 2.` : "As 2 reaberturas já foram usadas."}
+                    {p.preAceitacao.reaberturas < 2 ? `Reaberturas usadas: ${p.preAceitacao.reaberturas} de 2.` : "As 2 reaberturas já foram usadas."}
                   </p>
                 )}
                 {p.preAceitacao.estado === "expirada" && p.preAceitacao.podeReabrir && (

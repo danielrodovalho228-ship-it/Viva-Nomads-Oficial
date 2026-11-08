@@ -91,8 +91,10 @@ export const ASSUNTOS = {
   preAceitacaoLembrete: "Prazo para concluir o contrato",
   /** E722: a pré-aceitação de 72 h terminou sem o contrato (sem punição; pode ser reaberta até 2 vezes). */
   preAceitacaoExpirou: "A pré-aceitação terminou",
-  /** E722: regra de corrida — outra pessoa concluiu o contrato antes; a candidatura voltou à fila do dono. */
+  /** E722: regra de corrida — outra pessoa concluiu o contrato antes; a candidatura só volta se o dono reabrir. */
   preAceitacaoPerdeuVez: "Outra pessoa concluiu o contrato antes",
+  /** E722: o prazo terminou pela 3ª vez e a candidatura foi encerrada (avisa o morador e o dono). */
+  preAceitacaoEncerrada: "Sua candidatura foi encerrada",
   /** E637: o prazo de 7 dias do parecer sobre a caução terminou sem desconto (avisa o dono e o morador). */
   caucaoLiberacaoIntegral: "Caução: liberação integral registrada",
   /** E637: a devolução da caução passou de 30 dias (avisa o dono). */

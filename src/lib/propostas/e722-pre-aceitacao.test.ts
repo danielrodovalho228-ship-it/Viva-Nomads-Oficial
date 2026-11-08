@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  LEMBRETES_HORAS, MAX_REABERTURAS, PRAZO_PRE_ACEITACAO_HORAS, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_TAXA_CONTINUA,
-  estadoDaPreAceitacao, lembretesDaPreAceitacao, podeReabrir, prazoDaPreAceitacao, reabrirPreAceitacao, textoDoPrazo,
+  LEMBRETES_HORAS, MAX_REABERTURAS, PRAZO_PRE_ACEITACAO_HORAS, TEXTO_ENCERRADA, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_TAXA_CONTINUA,
+  encerraNaExpiracao, estadoDaPreAceitacao, lembretesDaPreAceitacao, prazoDoDono, podeReabrir, prazoDaPreAceitacao, reabrirPreAceitacao, textoDoPrazo,
 } from "./pre-aceitacao.ts";
 import { emSilencio } from "../notifications/silencio.ts";
 
@@ -86,9 +86,29 @@ test("no máximo 2 reaberturas; a taxa congelada continua a mesma, sem recalcula
 
 test("os textos escritos trazem a regra de corrida, a ausência de punição e a taxa que continua valendo", () => {
   assert.match(TEXTO_REGRA_CORRIDA, /vários pré-aceites para as mesmas datas, o primeiro a concluir o contrato fica com o imóvel/);
-  assert.match(TEXTO_REGRA_CORRIDA, /Os demais recebem uma mensagem clara e voltam à fila do proprietário/);
+  assert.match(TEXTO_REGRA_CORRIDA, /Os demais recebem uma mensagem clara, sem penalidade, e só voltam se o proprietário reabrir/);
   assert.match(TEXTO_PERDEU_A_VEZ, /Outra pessoa concluiu o contrato deste imóvel, nas mesmas datas, antes de você/);
-  assert.match(TEXTO_PERDEU_A_VEZ, /voltou para a fila do proprietário/);
-  assert.match(TEXTO_PERDEU_A_VEZ_DONO, /voltou para a sua fila/);
+  assert.match(TEXTO_PERDEU_A_VEZ, /só volta se o proprietário a reabrir/);
+  assert.match(TEXTO_PERDEU_A_VEZ_DONO, /só volta se você a reabrir/);
   assert.match(TEXTO_TAXA_CONTINUA, /taxa congelada na pré-aceitação CONTINUA VALENDO, não recalcula/);
+});
+
+test("a 3ª expiração (depois de 2 reaberturas) encerra a candidatura, com aviso ao morador", () => {
+  assert.equal(encerraNaExpiracao(0), false);
+  assert.equal(encerraNaExpiracao(1), false);
+  assert.equal(encerraNaExpiracao(2), true);
+  assert.match(TEXTO_ENCERRADA, /pela 3ª vez.*encerrada/);
+});
+
+test("relógio do dono: 1 dia útil (seg–sex, Brasília), sexta vira segunda, fim de semana conta de segunda, teto na entrada", () => {
+  // Terça 10/11/2026 10:00 BRT → quarta 10:00 BRT.
+  assert.equal(prazoDoDono(t("2026-11-10T13:00:00Z"), "2026-12-20").toISOString(), "2026-11-11T13:00:00.000Z");
+  // Sexta 13/11 10:00 BRT → segunda 16/11 10:00 BRT.
+  assert.equal(prazoDoDono(t("2026-11-13T13:00:00Z"), "2026-12-20").toISOString(), "2026-11-16T13:00:00.000Z");
+  // Sábado 14/11 → conta de segunda 00h: terça 17/11 00h BRT.
+  assert.equal(prazoDoDono(t("2026-11-14T15:00:00Z"), "2026-12-20").toISOString(), "2026-11-17T03:00:00.000Z");
+  // Recomeça a cada volta: outro início, outro prazo.
+  assert.notEqual(prazoDoDono(t("2026-11-10T13:00:00Z"), null).getTime(), prazoDoDono(t("2026-11-12T13:00:00Z"), null).getTime());
+  // Teto: entrada em 11/11 → início do dia 11/11 BRT.
+  assert.equal(prazoDoDono(t("2026-11-10T13:00:00Z"), "2026-11-11").toISOString(), "2026-11-11T03:00:00.000Z");
 });

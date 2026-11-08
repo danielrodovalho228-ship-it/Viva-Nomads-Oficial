@@ -6,8 +6,8 @@ import { rodarPreAceitacao } from "@/lib/propostas/pre-aceitacao-servidor";
 
 /**
  * E722 — pré-aceitação de 72 h: lembretes de 24 h e 6 h e expiração sem punição. Exige `Authorization: Bearer <CRON_SECRET>`.
- * ATRÁS DA CHAVE PRE_ACEITACAO_72H_ATIVA (desligada): sem ela, responde ok e não faz nada. Pede um disparo de hora em hora
- * (os lembretes são de 24 h e 6 h antes do fim); a agenda não está no vercel.json por ora. Só no laboratório
+ * ATRÁS DA CHAVE PRE_ACEITACAO_72H_ATIVA (desligada): sem ela, responde ok e não faz nada. Roda de hora em hora
+ * (vercel.json: "0 * * * *"), porque os lembretes são de 24 h e 6 h antes do fim. Só no laboratório
  * (INTEGRACOES_SIMULADAS=on): `?agora=<ISO>`.
  */
 export async function GET(request: Request) {
