@@ -590,3 +590,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Spec do merge novo:** E687/0326 → **t1567 (#3548)**, guarda de banco (`parceiros.dados_categoria`). E689/0328 só mexe em dados de contas de teste da produção (ids fixos), sem massa no lab; fica guardada pelo teste de unidade `massa-estadia-semente-datas-0328.test.ts`.
 - **Ainda não mesclados** (specs saem quando entrarem): E699, E690, E721, E688, E722, E682, E707, E725, E727, E728, E719, E713, E724, E729 e migrações 0329–0335.
 - **Varredura por blocos:** segue sem bloco novo (pausa do Muse); as superfícies recém-mergeadas do dia estão cobertas pelas specs t1560–t1567.
+
+## Vigia das 21h55 — vereditos
+
+- **t1567 (#3548, E687/0326): verde** (run 42526112937).
+- **Bloco 602 (#3553, t1550): verde** (run 42526520335). **Bloco 603 (#3554, t1551): verde** (run 42526539684). Mesclada a main nos dois ramos antes do push; sem achado de varredura (próximo livre: **L-110**). Os dois mexem em `cobertura.json`: o segundo a mesclar precisa de merge da main no ramo (eu resolvo). O 601 segue sem PR (pausa do Muse).
+- **Main** ainda em `b2934fb2a`: nenhum merge novo desde a última foto; drafts #3533, #3530, #3531, #3532 e #3498 abertos. Drafts novos de A/B em lab verde, sem merge (specs saem quando entrarem): #3543 (O4), #3547 (E748), #3549 (E746), #3550 (E747), #3551 (E749), #3552 (E750), #3479 (E722/0334).
