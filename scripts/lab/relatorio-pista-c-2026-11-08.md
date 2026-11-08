@@ -582,3 +582,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Main** parada em `143ad20ad` (lab crítico verde). Drafts #3533, #3530, #3531, #3532 e #3498 ainda abertos. Nenhuma spec vermelha por merge novo.
 - **t1566 (#3546) verde** (run 42524050023): guarda de E718, E720, E723, E726, E730 e E731 a 390 e 1280 px. Todos os merges do dia têm guarda de lab.
 - **Varredura por blocos:** não avançou; a pausa do Muse segue valendo (último bloco verde: 600; 601–603 prontos em ramo, sem PR). Nenhum achado novo (próximo livre: L-110).
+
+## Missão da noite (prazo 07:00 CST) — foto das 21h35
+
+- **Main** em `b2934fb2a` (entrou o #3401, E689/0328); lab crítico da main **verde** (run 42525051927). Drafts #3533, #3530, #3531, #3532 e #3498 ainda abertos.
+- **Specs de guarda a drenar:** #3538–#3542 (E734, E732, E742, E743, E724), #3544 (t1565, E219), #3546 (t1566) — todas verdes e em draft; a drenagem é por merge (decisão do Muse/Daniel, eu não faço merge). Prioridade por valor de guarda: t1486 (#3424), t1494 (#3440), t1498 (#3495), t1484 (#3421, E714), t1485 (#3422, E717).
+- **Spec do merge novo:** E687/0326 → **t1567 (#3548)**, guarda de banco (`parceiros.dados_categoria`). E689/0328 só mexe em dados de contas de teste da produção (ids fixos), sem massa no lab; fica guardada pelo teste de unidade `massa-estadia-semente-datas-0328.test.ts`.
+- **Ainda não mesclados** (specs saem quando entrarem): E699, E690, E721, E688, E722, E682, E707, E725, E727, E728, E719, E713, E724, E729 e migrações 0329–0335.
+- **Varredura por blocos:** segue sem bloco novo (pausa do Muse); as superfícies recém-mergeadas do dia estão cobertas pelas specs t1560–t1567.
