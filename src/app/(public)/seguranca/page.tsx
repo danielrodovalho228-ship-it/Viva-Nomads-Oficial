@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
-import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch } from "lucide-react";
+import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch, Info } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { ButtonLink } from "@/components/ui/button";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
@@ -87,12 +87,14 @@ export default function SegurancaPage() {
       </section>
 
       {/* C10 (mockup publico-seguranca): depois de ler os golpes, a pessoa sabe o que fazer — avisar a Viva. */}
-      <section className="mt-8 flex flex-col gap-4 rounded-xl border border-sage-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between" data-testid="seguranca-avise" aria-labelledby="seguranca-avise-titulo">
-        <div>
-          <h2 id="seguranca-avise-titulo" className="font-title text-xl font-semibold text-ink">
-            Desconfie de quem pede pagamento fora da plataforma
+      <section className="mt-8 flex flex-col gap-4 rounded-xl border border-forest bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6" data-testid="seguranca-avise" aria-labelledby="seguranca-avise-titulo">
+        <div className="flex items-center gap-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-forest bg-sage-100 text-forest">
+            <Info className="h-5 w-5" aria-hidden />
+          </span>
+          <h2 id="seguranca-avise-titulo" className="text-base font-medium text-ink sm:text-lg">
+            Desconfie de quem pede pagamento fora da plataforma e avise a Viva.
           </h2>
-          <p className="mt-1 text-sm text-muted">Recebeu um pedido assim? Conte para a gente: a equipe da Viva olha o caso.</p>
         </div>
         <ButtonLink href={HREF_FALE_COM_A_VIVA} size="lg" className="w-full sm:w-auto" data-testid="seguranca-fale-com-a-viva">
           Fale com a Viva
