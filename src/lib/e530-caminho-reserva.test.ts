@@ -1,5 +1,5 @@
 /*
-  E530 — "Ver o caminho de reserva" (anúncio de exemplo) não mostrava caminho nenhum: o link só rolava até o cartão de
+  E530 — "Ver o caminho para morar" (anúncio de exemplo) não mostrava caminho nenhum: o link só rolava até o cartão de
   preço (#cartao-preco), ao lado de onde a pessoa já estava. NOME ≠ DESTINO.
   Correção: o mesmo texto vira um "abrir/fechar" que mostra ali mesmo os passos do morador (a MESMA fonte da página
   Como funciona) e leva, se a pessoa quiser, ao passo a passo completo em /como-funciona#para-inquilinos.
@@ -29,7 +29,7 @@ test("o controle é um componente próprio, sempre visível na página do imóve
   const comp = ler("src/components/property/caminho-reserva.tsx");
   const pagina = ler("src/app/(public)/imoveis/[id]/property-detail.tsx");
   assert.match(comp, /<details[^>]*data-testid="caminho-reserva"/);
-  assert.match(comp, /<summary[^>]*>\s*Ver o caminho de reserva\s*<\/summary>/);
+  assert.match(comp, /<summary[^>]*>\s*Ver o caminho para morar\s*<\/summary>/);
   assert.match(comp, /PASSOS_MORADOR\.map/);
   assert.match(comp, /href="\/como-funciona#para-inquilinos"/);
   assert.match(pagina, /import \{ CaminhoReserva \} from "@\/components\/property\/caminho-reserva";/);
@@ -40,4 +40,12 @@ test("o controle é um componente próprio, sempre visível na página do imóve
 test("o calendário não guarda mais o controle (um só no DOM) e não rola para o cartão de preço", () => {
   assert.doesNotMatch(calendario, /href="#cartao-preco"/);
   assert.doesNotMatch(calendario, /data-testid="caminho-reserva"/);
+});
+
+// Lab t118: "reserva" é vocabulário de hospedagem — fora das páginas públicas (varredura de texto, ordem 8652162e).
+test("o rótulo visível do caminho não usa o vocabulário 'reserva'", () => {
+  const comp = readFileSync("src/components/property/caminho-reserva.tsx", "utf8");
+  const rotulo = /<summary[^>]*>\s*([^<]+?)\s*<\/summary>/.exec(comp)?.[1] ?? "";
+  assert.ok(rotulo.length > 0);
+  assert.doesNotMatch(rotulo, /\breservas?\b/i);
 });
