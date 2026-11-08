@@ -965,3 +965,8 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 - **Achado 1 (corrigido em #3388, draft):** `/dashboard/imoveis/<id>/editar` a 390 px — a linha-resumo de cada seção do acordeão era cortada com "…" ("aceita pets · não fumantes · a…", "Ainda não preenchida — o morad…", "Nenhum detalhe opcional ligado"). Agora quebra em até 2 linhas.
 - **Sem achado nas demais:** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado (a 1280 não houve corte em nenhuma).
 - **CI do #3097 nesta data:** verify, e2e e prévia verdes; lab-critico em andamento, nenhum check vermelho.
+
+## Passada 83 (08/11; modo demonstração local, `main` em `f7436be7e`; 390 e 1280) — demais rotas dinâmicas do painel
+
+- A descoberta por links das listas (contratos, locações, mensagens, candidaturas, leads, favoritos, parceiro, pedidos, agenda), sem os imóveis de exemplo já varridos na passada 82, só encontrou **`/dashboard/parceiro/avaliacao`** na conta demo: as demais listas ficam vazias nela, então não há rota `/<seção>/<id>` para abrir. Essa rota: 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado, a 390 e 1280.
+- **Limite:** as páginas de detalhe de contrato, locação, conversa, candidatura e lead precisam de dado real, que a conta demo não tem; ficam para o laboratório. Achados novos: nenhum.
