@@ -26,9 +26,9 @@ import { cn } from "@/lib/utils";
 export const COR_DIA = {
   disponivel: "bg-sage-100",
   /** Ocupado: já reservado (contrato ou agenda importada) — cinza cheio. */
-  ocupado: "bg-line",
+  ocupado: "bg-line ring-1 ring-inset ring-apoio",
   /** Bloqueado pelo dono: mesmo cinza, mas listrado — outra forma, não só outro tom. */
-  bloqueado: "bg-[repeating-linear-gradient(135deg,var(--color-line)_0_3px,transparent_3px_7px)] ring-1 ring-inset ring-line",
+  bloqueado: "bg-[repeating-linear-gradient(135deg,var(--color-line)_0_3px,transparent_3px_7px)] ring-1 ring-inset ring-apoio",
 } as const;
 
 /**
@@ -265,7 +265,7 @@ export function AvailabilityCalendar({
                         podeSelecionar && !isIn && !isOut && !noIntervalo && cn(COR_DIA.disponivel, "font-medium"),
                         noIntervalo && "bg-sage-200 font-medium",
                         (isIn || isOut) && "bg-forest font-semibold text-white",
-                        isHoje && !isIn && !isOut && "ring-2 ring-champagne"
+                        isHoje && !isIn && !isOut && "ring-2 ring-champagne-600"
                       )}
                     >
                       {dia}
@@ -293,7 +293,7 @@ export function AvailabilityCalendar({
           <span className={cn("h-4 w-4 rounded-lg", COR_DIA.bloqueado)} aria-hidden /> {ROTULO_BLOQUEADO}
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="h-4 w-4 rounded-lg bg-white ring-2 ring-champagne" /> Hoje
+          <span className="h-4 w-4 rounded-lg bg-white ring-2 ring-champagne-600" /> Hoje
         </span>
       </div>
       {/* E666: a pergunta "as datas estão livres?" aparecia mesmo com o calendário à vista — a legenda agora responde. */}

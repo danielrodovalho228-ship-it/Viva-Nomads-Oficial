@@ -111,7 +111,7 @@ export function BarraPilulas(p: {
         {/* E452: filtro que não filtra não se mostra — a pílula só existe quando há nível para escolher (ou um já escolhido). */}
         {nivel.visivel && pilula("nivel")}
         </div>
-        <div className="flex items-center gap-2 sm:shrink-0" data-testid="pilulas-acoes">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0" data-testid="pilulas-acoes">
         <Chip ativo={p.nMaisFiltros > 0} onClick={p.onMaisFiltros} aria-haspopup="dialog" data-testid="pilula-mais" className="shrink-0 gap-2 whitespace-nowrap">
           <SlidersHorizontal className="h-4 w-4" aria-hidden /> Mais filtros
           {p.nMaisFiltros > 0 && <span className="tabular-nums">({p.nMaisFiltros})</span>}

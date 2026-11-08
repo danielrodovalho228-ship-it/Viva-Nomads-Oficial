@@ -42,5 +42,16 @@ test("as amostras da legenda têm tamanho legível (16 px) e a de Disponível te
   assert.doesNotMatch(legenda, /\bh-3 w-3\b/);
   const disp = legenda.slice(legenda.indexOf("COR_DIA.disponivel") - 80, legenda.indexOf("COR_DIA.disponivel") + 30);
   assert.match(disp, /ring-1 ring-forest/);
-  assert.match(legenda, /bg-white ring-2 ring-champagne/);
+  assert.match(legenda, /bg-white ring-2 ring-champagne-600/);
+});
+
+// E527 (QA 08/11, rodada 10:45): Ocupado (1,36:1), Bloqueado (1,37:1) e Hoje (2,32:1) seguiam abaixo de 3:1 contra o branco
+// (WCAG 1.4.11). Contorno em apoio (#6a6a6a, 5,4:1) nos dois cinzas e anel champagne-600 (#4fa01e, 3,3:1) em Hoje — na
+// grade e na legenda, a MESMA regra.
+test("E527: Ocupado e Bloqueado têm contorno de 3:1 ou mais; Hoje usa champagne-600 na grade e na legenda", () => {
+  const cores = src.match(/export const COR_DIA = \{([^}]+)\}/)?.[1] ?? "";
+  assert.match(cores, /ocupado: "bg-line ring-1 ring-inset ring-apoio"/);
+  assert.match(cores, /bloqueado:[^\n]*ring-1 ring-inset ring-apoio/);
+  assert.doesNotMatch(src, /ring-champagne(?!-600)/);
+  assert.equal((src.match(/ring-2 ring-champagne-600/g) ?? []).length, 2, "grade e legenda");
 });
