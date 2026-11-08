@@ -54,3 +54,13 @@ test("#1438f18d: guias no sitemap, no rodapé, na Central de Ajuda e no llms.txt
   assert.match(guia, /href="\/buscar"/);
   assert.match(guia, /href="\/para-proprietarios"/);
 });
+
+test("E773: nenhum guia manda para /precos enquanto a página está suspensa (E563)", async () => {
+  const { PRECOS_VISIVEL } = await import("../../config/precos-visivel.ts");
+  if (PRECOS_VISIVEL) return;
+  const { readFileSync } = await import("node:fs");
+  const fonte = readFileSync(new URL("./guias.ts", import.meta.url), "utf8");
+  const texto = JSON.stringify(await import("./guias.ts"));
+  assert.doesNotMatch(texto, /\/precos/);
+  assert.match(fonte, /PRECOS_VISIVEL \? " A tabela completa está em \/precos\." : ""/);
+});
