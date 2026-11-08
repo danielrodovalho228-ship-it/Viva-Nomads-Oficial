@@ -32,6 +32,9 @@
   --color-muted: #3f3f3f; /* secundário: texto corrido de apoio */
   --color-apoio: #6a6a6a; /* apoio: só miúdo (≤ 14 px) e legenda */
   --color-line: #dddddd; /* linha de borda 1 px (campos, chips, cartões de lista) */
+  /* E736: borda dos CAMPOS de formulário. O --color-line (#ddd) tem 1,25–1,36:1 contra o branco e as superfícies; campo precisa de 3:1
+     (WCAG 1.4.11). Cinza neutro entre o line e o apoio: 3,6:1 no branco e 3,2:1 sobre o surface-2. */
+  --color-campo-borda: #8a8a8a;
   --color-divisor: #ebebeb; /* divisor 1 px entre blocos e cinza do esqueleto */
   --color-surface: #ffffff;
   --color-surface-2: #f7f7f7; /* superfície */
@@ -668,4 +671,12 @@ body:has([data-testid="cogumelo"]) {
     height: 44px;
     transform: translateY(-50%);
   }
+}
+
+/* E736 — bordas dos campos de formulário com contraste acessível (3:1), sem mexer nos demais usos do --color-line (cartões, chips,
+   divisores). Fora de @layer de propósito: ganha das utilities do Tailwind. O campo em foco/erro mantém a própria cor. */
+input[class~="border-line"]:not(:focus):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select[class~="border-line"]:not(:focus),
+textarea[class~="border-line"]:not(:focus) {
+  border-color: var(--color-campo-borda);
 }
