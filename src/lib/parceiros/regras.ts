@@ -26,6 +26,14 @@ export type CategoriaParceiro = (typeof CATEGORIAS_PARCEIRO)[number]["valor"];
 export const CATEGORIAS_SO_CREDENCIAMENTO: readonly string[] = ["vistoria"];
 /** O catálogo "pedir serviço": as categorias que se contratam direto. */
 export const CATEGORIAS_CATALOGO = CATEGORIAS_PARCEIRO.filter((x) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(x.valor));
+/**
+ * E729 (Phoenix/RELATORIO-002, C3): a exigência que uma categoria traz ao formulário (o campo extra só aparece depois de marcá-la)
+ * é dita JUNTO da categoria, antes de marcar. Fonte única: a mesma validação do servidor (abaixo) exige estes campos.
+ */
+export const EXIGENCIA_DA_CATEGORIA: Readonly<Record<string, string>> = {
+  fotografia: "Pede o link do portfólio",
+  mudanca: "Pede empresa e veículo",
+};
 export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.valor === c)?.rotulo ?? "Serviço";
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
