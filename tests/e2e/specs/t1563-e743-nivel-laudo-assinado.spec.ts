@@ -73,11 +73,11 @@ test.describe("T1563 — E743: /nivel com laudo assinado abre", () => {
       await d.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await d.goto(`/dashboard/imoveis/${ids.imAss}/nivel`, { waitUntil: "domcontentloaded" });
       await expect(d.getByText("Não conseguimos abrir esta tela")).toHaveCount(0);
-      const linha = d.getByTestId("laudo-assinatura");
+      const linha = d.getByTestId("selo-assinatura");
       await expect(linha).toBeVisible({ timeout: 30_000 });
-      await expect(linha).toContainText(/Assinado pelo avaliador em \d{2}\/\d{2}\/\d{4}/);
-      await expect(linha).toContainText(`laudo VIS-T1563-A-${sufixo}`);
-      await expect(linha).toContainText(`${HASH.slice(0, 8)}…${HASH.slice(-8)}`);
+      await expect(linha).toContainText("Laudo assinado pelo avaliador");
+      await expect(linha).toContainText(`VIS-T1563-A-${sufixo}`);
+      await expect(d.getByTestId("selo-assinatura-hash")).toHaveText(`${HASH.slice(0, 8)}…${HASH.slice(-8)}`);
       const campo = d.getByLabel("Hash completo da assinatura");
       await expect(campo).toHaveValue(HASH);
       expect(await campo.evaluate((el) => getComputedStyle(el).userSelect), "o clique seleciona o hash inteiro").toBe("all");
@@ -85,7 +85,7 @@ test.describe("T1563 — E743: /nivel com laudo assinado abre", () => {
 
       await d.goto(`/dashboard/imoveis/${ids.imSem}/nivel`, { waitUntil: "domcontentloaded" });
       await expect(d.getByText(`VIS-T1563-S-${sufixo}`).first()).toBeVisible({ timeout: 30_000 });
-      await expect(d.getByTestId("laudo-assinatura")).toHaveCount(0);
+      await expect(d.getByTestId("selo-assinatura")).toHaveCount(0);
       await d.context().close();
     });
   }
