@@ -6,15 +6,17 @@ import { test, expect } from "@playwright/test";
          em /buscar?quartos=1 a 360 e 390 px, a página não rola para o lado e o botão "Mapa" termina dentro da tela.
     C17: fechar "Mais filtros" com Esc manda o foco para "Pular para o conteúdo principal"; deveria voltar ao botão que abriu
          (document.activeElement = [data-testid=pilula-mais]).
-  Enquanto o produto não corrige, os dois ficam como test.fail ligados aos itens C16 e C17 da QA; quem corrigir remove o test.fail no
-  mesmo PR (o Playwright avisa). Visitante.
+  C17 reproduz no laboratório: fica como test.fail ligado ao item da QA; quem corrigir remove o test.fail no mesmo PR (o Playwright avisa).
+  C16 NÃO reproduz no laboratório (o run do lab passou com test.fail: "Expected to fail, but passed"): o estouro de 3 a 33 px que a QA mediu
+  em produção depende da largura real da fonte do site, e o Chromium do laboratório renderiza com outra métrica. Por isso o C16 aqui é um
+  teste comum, que guarda contra regressão MAIOR no laboratório; o defeito de produção segue aberto como C16 da QA e só se prova no navegador
+  real, pelos trabalhadores de QA. Visitante.
 */
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe("T1486 — busca com filtro ativo (C16) e foco ao fechar Mais filtros (C17)", () => {
   for (const w of [360, 390] as const) {
     test(`C16 a ${w} px: /buscar?quartos=1 não rola para o lado e o Mapa cabe na tela`, async ({ page }) => {
-      test.fail(true, "C16 (QA 07:05): a linha Mais filtros · Ordenar · Mapa estoura a largura com filtro ativo");
       await page.setViewportSize({ width: w, height: 844 });
       const r = await page.goto("/buscar?quartos=1", { waitUntil: "domcontentloaded" });
       expect(r?.status() ?? 0).toBeLessThan(400);
