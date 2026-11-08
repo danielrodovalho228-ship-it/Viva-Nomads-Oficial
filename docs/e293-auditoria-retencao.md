@@ -269,3 +269,11 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 16. Erros e estados vazios — rodada 19 (08/11/2026)
+Sem migração. As três piores leituras que viravam "nada" nos fluxos logados:
+1. `situacaoDaRenovacao` (contrato): falha de leitura virava "sem renovação" (o bloco sumia). Agora é um estado próprio
+   e a tela diz "Não foi possível conferir a renovação agora. Tente de novo em instantes."
+2. `petsDoInquilino` (resumo da candidatura): falha virava "sem pets": o dono decidiria sem ver o animal. Agora lança e o cartão avisa.
+3. `fichaPetsDaCandidatura` (ficha completa) e a leitura do anúncio: falha virava "A ficha do pet não está mais disponível". Agora diz que não foi possível abrir.
+Teste: `src/lib/data/e293-leituras-r19.test.ts`.

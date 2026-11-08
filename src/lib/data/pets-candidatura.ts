@@ -8,6 +8,7 @@ import {
   conferenciaPetComRegras,
   conferenciaQuantidade,
   donoVeFichaPet,
+  MSG_PETS_SEM_LEITURA,
   petsVaoNaCandidatura,
   PORTE_CURTO,
   PRAZO_LINK_FICHA_PET_S,
@@ -38,6 +39,8 @@ export interface FichaPetsCandidatura {
   pets: FichaPetDono[];
   /** "Fora das regras: o anúncio aceita até 1 animal" quando há mais pets do que o anúncio aceita. */
   quantidade: string | null;
+  /** A leitura dos pets ou do anúncio falhou: a tela diz que não deu para abrir, nunca "não está mais disponível". */
+  falhou?: boolean;
 }
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
@@ -81,11 +84,13 @@ async function candidaturaDoDono(alvo: { leadId: string } | { propertyId: string
 }
 
 async function petsDoInquilino(admin: Admin, tenantId: string): Promise<LinhaPet[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("pets_inquilino")
     .select("nome, especie, porte, raca, observacoes, fotos, carteira_vacina")
     .eq("user_id", tenantId)
     .order("criado_em");
+  // Falha de leitura NÃO é "sem pets": o dono decidiria sem ver o animal da candidatura.
+  if (error) throw new Error(MSG_PETS_SEM_LEITURA);
   return (data ?? []) as LinhaPet[];
 }
 
@@ -94,7 +99,8 @@ export async function resumoFichaPets(alvo: { leadId: string } | { propertyId: s
   const c = await candidaturaDoDono(alvo);
   if (!c) return null;
   // E397: imóvel que não aceita animais → a candidatura não leva pet (nem o resumo).
-  const { data: imovel } = await c.admin.from("properties").select("pets_allowed").eq("id", c.lead.propertyId).maybeSingle();
+  const { data: imovel, error: erroImovel } = await c.admin.from("properties").select("pets_allowed").eq("id", c.lead.propertyId).maybeSingle();
+  if (erroImovel) throw new Error(MSG_PETS_SEM_LEITURA);
   if (!petsVaoNaCandidatura((imovel as { pets_allowed?: boolean | null } | null)?.pets_allowed)) return null;
   const resumo = resumoPetsCandidatura(await petsDoInquilino(c.admin, c.lead.tenantId));
   return resumo ? { leadId: c.lead.id, resumo } : null;
@@ -110,10 +116,11 @@ export async function fichaPetsDaCandidatura(leadId: string): Promise<FichaPetsC
   const c = await candidaturaDoDono({ leadId });
   if (!c) return vazio;
   const { admin, lead } = c;
-  const [linhas, { data: imovel }] = await Promise.all([
+  const [linhas, { data: imovel, error: erroImovel }] = await Promise.all([
     petsDoInquilino(admin, lead.tenantId),
     admin.from("properties").select("pets_allowed, pets_regras").eq("id", lead.propertyId).maybeSingle(),
   ]);
+  if (erroImovel) throw new Error(MSG_PETS_SEM_LEITURA);
   const petsAllowed = (imovel as { pets_allowed?: boolean | null } | null)?.pets_allowed ?? null;
   // E397: imóvel que não aceita animais → nenhuma ficha de pet na candidatura.
   if (linhas.length === 0 || !petsVaoNaCandidatura(petsAllowed)) return vazio;

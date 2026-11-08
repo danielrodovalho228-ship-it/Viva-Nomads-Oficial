@@ -6,16 +6,19 @@ import { renovacaoPossivel, type Renovacao } from "@/lib/estadia/renovacao";
   E222-B — a renovação na página do contrato: só com contrato ativo e assinado pelas duas partes. Lê pela sessão (RLS:
   só as partes leem o contrato e os blocos). Sem "use server": leitura interna da página, nunca chamada do navegador.
 */
-export type SituacaoRenovacao = { cabe: true; renovacao: Renovacao } | { cabe: false };
+export type SituacaoRenovacao = { cabe: true; renovacao: Renovacao } | { cabe: false } | { falhou: true };
+export const MSG_RENOVACAO_SEM_LEITURA = "Não foi possível conferir a renovação agora. Tente de novo em instantes.";
 
 export async function situacaoDaRenovacao(contratoId: string): Promise<SituacaoRenovacao | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("contratos")
     .select("status, tamanho_bloco_meses, assinado_proprietario_em, assinado_inquilino_em, contrato_blocos(meses, status)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Falha de leitura NÃO é "sem renovação" nem "no máximo": a tela diz que não deu para conferir.
+  if (error) return { falhou: true };
   const c = data as {
     status: string;
     tamanho_bloco_meses: number | null;

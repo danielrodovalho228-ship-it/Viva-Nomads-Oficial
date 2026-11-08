@@ -7,6 +7,8 @@ import { compatibilidadePets, ROTULO_ESPECIE, type EspeciePet, type PortePet, ty
 
 /** Links assinados das fotos e da carteira: 10 minutos. */
 export const PRAZO_LINK_FICHA_PET_S = 600;
+/** Falha de leitura dos pets ou do anúncio: nunca "sem pets" nem "ficha indisponível". */
+export const MSG_PETS_SEM_LEITURA = "Não foi possível abrir a ficha do pet agora. Tente de novo em instantes.";
 
 /** Corte das observações no cartão do inquilino ("ver mais" mostra o resto). */
 export const CORTE_OBSERVACOES_PET = 120;
