@@ -100,13 +100,18 @@ export function BarraPilulas(p: {
 
   return (
     <div ref={caixa} className="relative" data-testid="busca-controles">
-      <div role="toolbar" aria-label="Filtros da busca" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" data-testid="linha-pilulas">
+      {/* E710: no celular as três AÇÕES (Mais filtros · Ordenar · Mapa) ficam numa linha própria, sempre à vista; só os
+          filtros (Datas · Local · Tipo · Preço · Nível) correm na faixa lateral. Do tablet para cima é uma linha só. */}
+      <div role="toolbar" aria-label="Filtros da busca" className="flex flex-col gap-2 pb-1 sm:flex-row sm:items-center" data-testid="linha-pilulas">
+        <div className="-mx-4 flex min-w-0 items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-1 sm:px-0" data-testid="pilulas-filtros">
         {pilula("datas")}
         {pilula("local")}
         {pilula("tipo")}
         {pilula("preco")}
         {/* E452: filtro que não filtra não se mostra — a pílula só existe quando há nível para escolher (ou um já escolhido). */}
         {nivel.visivel && pilula("nivel")}
+        </div>
+        <div className="flex items-center gap-2 sm:shrink-0" data-testid="pilulas-acoes">
         <Chip ativo={p.nMaisFiltros > 0} onClick={p.onMaisFiltros} aria-haspopup="dialog" data-testid="pilula-mais" className="shrink-0 gap-2 whitespace-nowrap">
           <SlidersHorizontal className="h-4 w-4" aria-hidden /> Mais filtros
           {p.nMaisFiltros > 0 && <span className="tabular-nums">({p.nMaisFiltros})</span>}
@@ -115,6 +120,7 @@ export function BarraPilulas(p: {
         <Chip ativo={p.mapa} onClick={p.onMapa} data-testid="pilula-mapa" className="shrink-0 gap-2 whitespace-nowrap">
           <IconeMapa className="h-4 w-4" aria-hidden /> Mapa
         </Chip>
+        </div>
       </div>
 
       {aberto && (

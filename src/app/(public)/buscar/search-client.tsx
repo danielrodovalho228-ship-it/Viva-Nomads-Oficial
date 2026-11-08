@@ -14,8 +14,17 @@ import { alternarSelecao } from "@/lib/busca/comparar";
 // só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
-  { ssr: false }
+  // E698: enquanto o módulo do mapa baixa, o quadro já diz que está carregando (e não fica um retângulo cinza vazio).
+  { ssr: false, loading: () => <MapaCarregandoModulo /> }
 );
+
+function MapaCarregandoModulo() {
+  return (
+    <div className="grid h-full w-full place-items-center bg-surface-2" data-testid="mapa-carregando-modulo" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
+  );
+}
 import { cn, distanceKm, hojeBR } from "@/lib/utils";
 import { situacaoBuscaVazia } from "@/lib/busca-vazia";
 import { tierFromPhotoCount, searchPriority } from "@/lib/listing";

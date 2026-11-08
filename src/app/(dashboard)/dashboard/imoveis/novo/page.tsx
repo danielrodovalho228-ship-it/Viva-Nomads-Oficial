@@ -1840,10 +1840,12 @@ export default function NewPropertyPage() {
     return (
       <Qualificacao
         aviso={avisoRascunho}
+        travas={<TravasDePublicacao documento={docEstado} />}
         tela={telaQual}
         respostas={qualConf.respostas}
         provas={provasDaQualificacao}
         confirmados={conf.marcados}
+        progressoRascunho={prontidao.pct}
         onResponder={responderQualificacao}
         onTela={(t) => {
           setTelaQual(t);
