@@ -281,6 +281,8 @@ export default function NewPropertyPage() {
   // O número de quartos do passo "Detalhes" manda: a ficha ganha/perde quartos, mantendo o que já foi respondido.
   useEffect(() => {
     const n = Math.max(1, Math.min(20, Math.floor(Number(bedrooms)) || 1));
+    // Sincroniza a ficha com o nº de quartos (campo controlado acima); o setter funcional só muda o estado quando o nº difere.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFichaDentro((f) => (f.quartos.length === n ? f : { ...f, quartos: Array.from({ length: n }, (_, i) => f.quartos[i] ?? fichaVazia(n).quartos[i]) }));
   }, [bedrooms]);
   // E263-A: "Aceita pets" ligado abre as condições do dono (as mesmas do editor), todas opcionais.
