@@ -641,3 +641,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1571 (#3567, E722):** run 42532397238 em andamento no momento do registro; veredito na próxima conferência.
 - **Bloco 604 (#3570, t1552)**, 17ª volta do grupo do bloco 587 (painel com id, sócios, autenticação), a 390 e 1280 px; `cobertura.json` regenerado; numeração e cobertura 13/13, `tsc` limpo. Lab: a conferir. Sem achado até aqui (próximo livre: **L-110**). Mexe em `cobertura.json` como #3553, #3554 e #3559: ao mesclar, o seguinte precisa de merge da main no ramo.
 - Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos; limpeza pós-merge pendente.
+
+## Vigia das 23h10
+
+- **t1571 (#3567, E722/0334): verde** (run 42532397238).
+- **Merge novo #3437 (E682, `137cb58fb`)**: a lista "Escolha o avaliador" mostra só a conduta publicada (sem preço nem prazo). **t1572 (#3571)**: massa própria (credenciamento ativo + pedido em `pedido`), 390 e 1280 px; lab a conferir. Risco: se a massa não fizer o avaliador aparecer em `sugeridos`, a falha é de massa, não do produto.
+- **Bloco 604 (#3570, t1552):** run 42532676112 em andamento. Drafts #3533, #3530, #3531, #3532, #3498 abertos. Sem achado novo (próximo livre: **L-110**).
