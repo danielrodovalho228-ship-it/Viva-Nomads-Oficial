@@ -191,3 +191,15 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - E713 (#3408): já coberto (o próprio PR atualiza a t59; o calendário do exemplo está na t1475, PR #3390). Sem spec nova.
 - E719 (#3397 e #3398): são duas implementações do mesmo item, com textos diferentes. Spec adiada até se escolher qual vale (decisão do coordenador/Daniel); não duplico.
 - Quando #3395 e #3396 mesclarem, as bases de #3421 e #3422 passam para a main.
+
+## Bloco 543, t1480 ajustada e t1486 (C16/C17 da QA)
+
+- Bloco 543 (t1487, PR #3425 draft, run 42460626402): verde. Compartilhadas sem id (grupo do 526).
+- t1480 (PR #3413, run 42460536920): verde com o ajuste pedido pela QA (rodada 07:05): imagens dentro de `.leaflet-container` (tiles do mapa) ficam fora da contagem de imagem vazia. A falha que a QA viu a 390 em produção ("2 imagens com largura natural 0" em /imoveis/ube-001) era de tile bloqueado pela rede dela, não do site.
+- t1486 (PR #3424 draft, run 42461764106): os dois testes propostos pela QA na mesma rodada.
+  - **C17** (Esc em "Mais filtros" leva o foco ao começo da página): reproduz no lab → `test.fail` ligado ao item C17 da QA.
+  - **C16** (estouro lateral da linha Mais filtros · Ordenar · Mapa com filtro ativo): reproduz no lab a **360 px** (5 px) → `test.fail` ligado ao C16; a **390 px** o lab NÃO reproduz (os 3 px da QA dependem da fonte real do site; passou como "Expected to fail, but passed"), então ali o teste é comum. O 390 de produção só se prova no navegador real (QA).
+  - Dois erros meus no caminho (test.fail onde não reproduzia; depois só em 390): ajustados com commits novos, sem defeito de spec restante.
+- Os itens C16 e C17 já têm número da QA; não abri L- novo para eles (evita duplicar). L-108 segue livre.
+- Merges de código na main: nenhum desde o último registro (só #3416, docs da QA). Drafts E714/E717/E719 seguem abertos.
+- Próximo bloco: 544 (grupo do 527).
