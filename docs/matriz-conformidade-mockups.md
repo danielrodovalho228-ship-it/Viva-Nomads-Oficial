@@ -663,6 +663,7 @@ E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDa
 
 - **Tela / mockup:** `/` × `publico-home`.
 - **Decisão (Daniel, 08/11/2026, por voz, registrada no chat do coordenador):** "a busca fica no hero, não na faixa do cabeçalho". O topo da home **não** é alinhado ao mockup `publico-home`: o hero (foto/vídeo de fundo, UMA busca "Para onde você vai?", "Publicar pedido de moradia") e a busca ficam como estão. Isto **revoga** a ordem anterior de alinhar o cabeçalho ao mockup.
+- **Decisão final (Daniel, 08/11/2026, reiterada ao coordenador):** a home NÃO muda em nada no topo; "hero e busca ficam exatamente como estão ao vivo hoje". Confirmado no diff do PR #3460: só `docs/matriz-conformidade-mockups.md` muda (nenhum arquivo de `src/` nem de `tests/`), então hero e busca são idênticos aos da `main`.
 - **Vale até nova ordem dele.** Enquanto isso, a divergência do topo contra `publico-home` é DECIDIDA, e não achado aberto; ela se apoia na ordem `bab1b2aa` (spec t66), no vídeo institucional v3 (t177) e na conformidade de 30/10 (t730), que seguem protegendo o hero.
 - **Registro das diferenças (passada 88), mantido só como histórico:** fundo (vídeo × bege), título, ação principal (busca única × "Buscar moradia" + "Publicar pedido de moradia"), linha de apoio, imagem (vídeo de fundo × foto na moldura), destaques, faixa "Para proprietários", logo, menu e rodapé do celular.
 - **PR #3460:** o alinhamento do topo foi revertido (o hero e a busca ficam idênticos aos da `main`); o PR passou a carregar só este registro.
