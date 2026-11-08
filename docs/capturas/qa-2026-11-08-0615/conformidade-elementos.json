@@ -1,0 +1,282 @@
+{
+ "390 /buscar": {
+  "presentes": [
+   "Datas",
+   "Local",
+   "Tipo",
+   "Preço",
+   "Nível",
+   "Mais filtros",
+   "Ordenar",
+   "Mapa",
+   "tudo incluído"
+  ],
+  "ausentes": [
+   "Bairro",
+   "do HC-UFU",
+   "m do "
+  ],
+  "chips": [
+   "Datas",
+   "Local",
+   "Tipo",
+   "Preço",
+   "Nível",
+   "Mais filtros",
+   "Ordenar",
+   "Mapa",
+   "Salvar busca",
+   "Descrever o que procuro",
+   "Publicar pedido"
+  ],
+  "labels": [
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar"
+  ],
+  "botoesCheios": []
+ },
+ "390 /imoveis/ube-001": {
+  "presentes": [
+   "O que tem por perto",
+   "Supermercado",
+   "Ponto de ônibus",
+   "Regras da estadia",
+   "Avaliações"
+  ],
+  "ausentes": [
+   "O que está incluído",
+   "Farmácia",
+   "Enviar o pedido não custa nada",
+   "Nível Conforto",
+   "vistoriado",
+   "Wi-Fi",
+   "Limpeza semanal",
+   "Pedir para morar"
+  ],
+  "chips": [],
+  "labels": [
+   "Quando quer entrar?",
+   "Até quando?",
+   "Quantas pessoas vão morar?",
+   "Motivo da estadia (opcional)"
+  ],
+  "botoesCheios": []
+ },
+ "390 /pedidos/novo": {
+  "presentes": [
+   "Bairro",
+   "Pessoas",
+   "Publicar pedido"
+  ],
+  "ausentes": [
+   "Perto de",
+   "Datas",
+   "Orçamento",
+   "Descrição",
+   "Publicar pedido — é grátis",
+   "grátis"
+  ],
+  "chips": [],
+  "labels": [
+   "Onde e quando",
+   "Cidade",
+   "Data de entrada",
+   "Por quanto tempo",
+   "Bairros preferidos (até 3)",
+   "Trabalho ou estudo",
+   "Outro local: nome do lugar ou endereço",
+   "Como chamar este lugar (opcional)",
+   "Tempo máximo até o trabalho",
+   "Quem vai morar",
+   "Pessoas",
+   "O imóvel",
+   "Valor e motivo",
+   "Valor mensal mínimo (opcional)",
+   "Valor mensal máximo",
+   "Motivo da estadia",
+   "Apresentação (opcional)"
+  ],
+  "botoesCheios": [
+   "Publicar pedido"
+  ]
+ },
+ "390 /ajuda/fale-com-a-viva": {
+  "presentes": [
+   "em até 24 h",
+   "Abrir chamado",
+   "Falar com uma pessoa",
+   "planos"
+  ],
+  "ausentes": [
+   "Assunto",
+   "Mensagem",
+   "Enviar mensagem",
+   "Uma pessoa da equipe responde em até 24h",
+   "Planos"
+  ],
+  "chips": [],
+  "labels": [
+   "Sua mensagem para a Viva"
+  ],
+  "botoesCheios": [
+   "",
+   "Abrir chamado"
+  ],
+  "trechoPlanos": "nte virtual da Viva Nomads\n\nOi! Sou a Viva, assistente virtual da Viva Nomads. Posso tirar dúvidas sobre como funciona, planos, Caução e contratos. Como posso a"
+ },
+ "1280 /buscar": {
+  "presentes": [
+   "Datas",
+   "Local",
+   "Tipo",
+   "Preço",
+   "Nível",
+   "Mais filtros",
+   "Ordenar",
+   "Mapa",
+   "tudo incluído"
+  ],
+  "ausentes": [
+   "Bairro",
+   "do HC-UFU",
+   "m do "
+  ],
+  "chips": [
+   "Datas",
+   "Local",
+   "Tipo",
+   "Preço",
+   "Nível",
+   "Mais filtros",
+   "Ordenar",
+   "Mapa",
+   "Salvar busca",
+   "Descrever o que procuro",
+   "Publicar pedido",
+   "+",
+   "−"
+  ],
+  "labels": [
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar",
+   "Comparar"
+  ],
+  "botoesCheios": []
+ },
+ "1280 /imoveis/ube-001": {
+  "presentes": [
+   "O que tem por perto",
+   "Supermercado",
+   "Ponto de ônibus",
+   "Regras da estadia",
+   "Avaliações"
+  ],
+  "ausentes": [
+   "O que está incluído",
+   "Farmácia",
+   "Enviar o pedido não custa nada",
+   "Nível Conforto",
+   "vistoriado",
+   "Wi-Fi",
+   "Limpeza semanal",
+   "Pedir para morar"
+  ],
+  "chips": [
+   "+3 mais"
+  ],
+  "labels": [
+   "Quando quer entrar?",
+   "Até quando?",
+   "Quantas pessoas vão morar?",
+   "Motivo da estadia (opcional)"
+  ],
+  "botoesCheios": []
+ },
+ "1280 /pedidos/novo": {
+  "presentes": [
+   "Bairro",
+   "Pessoas",
+   "Publicar pedido"
+  ],
+  "ausentes": [
+   "Perto de",
+   "Datas",
+   "Orçamento",
+   "Descrição",
+   "Publicar pedido — é grátis",
+   "grátis"
+  ],
+  "chips": [],
+  "labels": [
+   "Onde e quando",
+   "Cidade",
+   "Data de entrada",
+   "Por quanto tempo",
+   "Bairros preferidos (até 3)",
+   "Trabalho ou estudo",
+   "Outro local: nome do lugar ou endereço",
+   "Como chamar este lugar (opcional)",
+   "Tempo máximo até o trabalho",
+   "Quem vai morar",
+   "Pessoas",
+   "O imóvel",
+   "Valor e motivo",
+   "Valor mensal mínimo (opcional)",
+   "Valor mensal máximo",
+   "Motivo da estadia",
+   "Apresentação (opcional)"
+  ],
+  "botoesCheios": [
+   "Publicar pedido"
+  ]
+ },
+ "1280 /ajuda/fale-com-a-viva": {
+  "presentes": [
+   "em até 24 h",
+   "Abrir chamado",
+   "Falar com uma pessoa",
+   "planos"
+  ],
+  "ausentes": [
+   "Assunto",
+   "Mensagem",
+   "Enviar mensagem",
+   "Uma pessoa da equipe responde em até 24h",
+   "Planos"
+  ],
+  "chips": [],
+  "labels": [
+   "Sua mensagem para a Viva"
+  ],
+  "botoesCheios": [
+   "",
+   "Abrir chamado"
+  ],
+  "trechoPlanos": "nte virtual da Viva Nomads\n\nOi! Sou a Viva, assistente virtual da Viva Nomads. Posso tirar dúvidas sobre como funciona, planos, Caução e contratos. Como posso a"
+ }
+}
