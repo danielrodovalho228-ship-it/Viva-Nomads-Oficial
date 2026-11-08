@@ -1,0 +1,815 @@
+[
+ {
+  "w": 390,
+  "r": "/ajuda/contratos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/contratos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Outros temas"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/seguranca",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/seguranca",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Outros temas"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/auth/intencao",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/auth/pronto",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth/pronto",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/auth/reset",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth/reset",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/auth/verificar-codigo",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/app/boas-vindas",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/app/boas-vindas",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir/codigo-inexistente-qa",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/conferir/codigo-inexistente-qa",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Plataforma"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Buscar imóveis"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/limpeza",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "ou CEP"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/fotografia",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/fotografos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Taxa de serviço: 10% sobre o valor do se"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Quando o pagamento pela plataforma estiv"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/mudanca",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "ou CEP"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/slug-inexistente-qa",
+  "st": 404,
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/slug-inexistente-qa",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 parceiros/slug-inexistente-qa"
+  ],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/prova/celular/aviso",
+  "st": 200,
+  "imgs": 0,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/prova/celular/aviso",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/dev/emails",
+  "st": 404,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/dev/emails",
+  "topo": [],
+  "fim": [],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 dev/emails"
+  ],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Escolhido pelo proprietário"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/contratos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/contratos",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "4"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/seguranca",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/seguranca",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "4"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth/intencao",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth/pronto",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth/pronto",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth/reset",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth/reset",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth/verificar-codigo",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/app/boas-vindas",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/app/boas-vindas",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/conferir/codigo-inexistente-qa",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/conferir/codigo-inexistente-qa",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Conferir documento"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/limpeza",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Quero ser avisado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Avisamos você quando houver um parceiro "
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Indique um profissional"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Conhece alguém bom que atende aí? Mande "
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/fotografia",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/fotografos",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Quando o pagamento pela plataforma estiv"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/mudanca",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Quero ser avisado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Avisamos você quando houver um parceiro "
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Indique um profissional"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Conhece alguém bom que atende aí? Mande "
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/slug-inexistente-qa",
+  "st": 404,
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/slug-inexistente-qa",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "·"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Total por mês, tudo incluído"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 8.200 em 2 meses"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 parceiros/slug-inexistente-qa"
+  ],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/prova/celular/aviso",
+  "st": 200,
+  "imgs": 0,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/prova/celular/aviso",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/dev/emails",
+  "st": 404,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/dev/emails",
+  "topo": [],
+  "fim": [],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 dev/emails"
+  ],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "A garantia é a Caução, combinada entre a"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Vejo o endereço completo antes de fechar"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Taxa de serviço: 10% sobre o valor do se"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ }
+]
