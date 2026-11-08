@@ -79,3 +79,7 @@ t1457 (#3355) **verde** (run 42432802592): `/seguranca` tem a faixa "Desconfie�
 **Rodadas de erros/estados vazios da Pista B:** o PR do bloco de auditorias 160–187 (leitura que falha não vira "não encontrado") não entrou como merge de produto na main nesta foto; ficam como item pulado até mesclarem (as auditorias estão em PRs `claude-b/auditoria-*` e `claude-b/achado*-leitura`, quase todas ainda abertas). Pendentes de spec de tela: E506, E699, E704, E706, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador, T-E696, ramo sem data futura do E695.
 
 Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 521 e t1459 verdes
+
+Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#3359, C9/E709/E710/E711) **verde** (run 42434662997), a 390 e 1280 px (E709 também a 768): nome do local sem corte no cartão da busca, ações da busca em linha própria no celular, `/parceiros` sem o "Seja parceiro" duplicado e folga de 80 px à direita para o botão flutuante. Sem regressão, sem defeito novo; aberto no produto: L-104; próximo livre: **L-107**. Próximo bloco da fila: 522 (grupo do 505). Sem prova ao vivo, sem merge e sem fechar PR.
