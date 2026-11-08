@@ -135,6 +135,15 @@ const VOLTOU = [
 ];
 export const SQL_LIVRO_VOLTOU = `select count(*) from (${VOLTOU.join(" union all ")}) x`;
 
+/*
+  E745: o gatilho storage.protect_delete() do Supabase barra `delete from storage.objects` ("Direct deletion from storage
+  tables is not allowed") e volta junto no restore, inclusive no banco EFÊMERO do drill. A reaplicação roda com os
+  gatilhos desligados SÓ nessa sessão do banco descartável (session_replication_role = replica); a contagem de
+  "voltou" roda fora dela. Nunca na produção: reaplicarLivro recusa DRILL_DB_URL igual a SUPABASE_DB_URL.
+*/
+export const SQL_SEM_GATILHOS = "set session_replication_role = 'replica'";
+export const SQL_COM_GATILHOS = "reset session_replication_role";
+
 export const SQL_LIVRO_REAPLICAR = [
   "delete from storage.objects o using _livro l where l.origem = 'bucket:' || o.bucket_id and l.ref = o.name",
   "update public.documentos_inquilino d set caminho = null, arquivo_eliminado_em = coalesce(d.arquivo_eliminado_em, now()) from _livro l where l.origem = 'bucket:inquilino-docs' and l.ref = d.caminho",
