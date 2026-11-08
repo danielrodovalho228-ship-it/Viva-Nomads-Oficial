@@ -634,3 +634,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Lab da main:** `298197783` (#3471, E688/AquiResolve) **verde** (42530992233), `b18c39ec3` (E745) verde (42530715501), `b069fdc02` (E688/0333) verde. `10f292a83` (E722/0334): run 42532121103 em andamento.
 - **Merge novo #3479 (E722, 0334)**, pré-aceitação de 72 h atrás da chave `PRE_ACEITACAO_72H_ATIVA` (desligada): **t1571 (#3567)** — 8 colunas `pre_aceitacao_*` em `propostas` + cron `/api/cron/pre-aceitacao` sem segredo/segredo errado (401/503). Fluxo completo fica nos testes de unidade do PR; spec de fluxo só com a chave ligada no lab (pendente de decisão). Lab da t1571: a conferir.
 - **Varredura por blocos:** sem bloco pendente (601–603 verdes em draft); bloco novo segue pausado pelo Muse. Sem achado novo (próximo livre: **L-110**). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos.
+
+## Cadeia das 23h
+
+- **Main `10f292a83` (#3479, E722/0334): lab verde** (run 42532121103). Nenhum merge novo depois dele (E682, E707, E725, E727, E728, E719, E713, E729 e 0335 ainda não mergeados).
+- **t1571 (#3567, E722):** run 42532397238 em andamento no momento do registro; veredito na próxima conferência.
+- **Bloco 604 (#3570, t1552)**, 17ª volta do grupo do bloco 587 (painel com id, sócios, autenticação), a 390 e 1280 px; `cobertura.json` regenerado; numeração e cobertura 13/13, `tsc` limpo. Lab: a conferir. Sem achado até aqui (próximo livre: **L-110**). Mexe em `cobertura.json` como #3553, #3554 e #3559: ao mesclar, o seguinte precisa de merge da main no ramo.
+- Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos; limpeza pós-merge pendente.
