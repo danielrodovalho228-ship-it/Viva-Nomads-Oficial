@@ -83,3 +83,10 @@ Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merg
 ## Bloco 521 e t1459 verdes
 
 Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#3359, C9/E709/E710/E711) **verde** (run 42434662997), a 390 e 1280 px (E709 também a 768): nome do local sem corte no cartão da busca, ações da busca em linha própria no celular, `/parceiros` sem o "Seja parceiro" duplicado e folga de 80 px à direita para o botão flutuante. Sem regressão, sem defeito novo; aberto no produto: L-104; próximo livre: **L-107**. Próximo bloco da fila: 522 (grupo do 505). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 522 (t1460) e conferência da main
+
+- Main `269790fdc` verde no lab crítico (run 5051); nenhuma falha a classificar, nenhum L- novo. L-107 segue livre; L-104 segue como único defeito aberto.
+- Bloco 522 (PR #3361, run 42436534565): verde. Painel do proprietário sem id (agenda, carteira, ganhos, recibos, respostas rápidas, simulador, ferramentas), 390 e 1280 px.
+- E530b (#3132): a spec t873 foi ajustada no próprio merge; sem spec nova.
+- Próximo: bloco 523 (grupo do 506).
