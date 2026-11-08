@@ -312,3 +312,22 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - **Suíte noturna completa (`laboratorio.yml`, "Rodar a suíte E2E", ~65 min):** run 42471821063 em `624a5924a` terminou **com falha** no passo "Marcar a execução como falha se algum teste falhou" (a suíte rodou até o fim; o passo de infra `setup-cli` passou, sem 504). **Não consegui abrir a lista dos testes que falharam**: ela está no resumo do job e no artefato `laboratorio-42471821063` (173 MB), e o artefato não baixa daqui sem credencial; o log do job só traz a linha final. Causa provável: não classificável por mim agora (infra × código × teste vencido). O run de `a844024e7` (42472878415) estava em andamento ao fechar este registro. **Pedido ao chat principal:** abrir o "Resumo da noite" dessa run (ou o artefato) e me passar os nomes das specs vermelhas; eu classifico cada uma (defeito real × teste vencido × massa), corrijo spec vencida e proponho L-108 em diante para defeito real. Os `test.fail` conhecidos (L-104, L-107, C17, C19, E527, E532) seguem como estão, sem forçar verde.
 - Defeitos novos na varredura: nenhum; L-108 livre.
 - Próximo bloco: 562 (grupo do 545).
+
+## Suíte noturna classificada (L-108) e blocos 562 a 564
+
+### L-108 — a suíte noturna estoura o tempo e deixa a maior parte das specs sem rodar (defeito de laboratório; proposta de item para a lista-master)
+- **Fonte:** registro das execuções em `public.lab_execucoes` (só leitura), porque o log do job não traz a lista de testes e o artefato `laboratorio-42471821063` (173 MB) não baixa sem credencial.
+- **Run 42471821063 (`624a5924a`) e run 42472878415 (`a844024e7`), ambos "falha":** 637 passaram / 0 falharam / 3864 sem rodar, e 664 / 0 / 3837. A falha vem do passo "Marcar a execução como falha se algum teste falhou", porque a execução bate no `--global-timeout=3900000` (65 min, o passo "Rodar a suíte E2E" dura exatamente 65 min) e o Playwright sai com erro.
+- **Cobertura efetiva:** em `624a5924a`, dos 838 arquivos de spec, só **117** tiveram algum teste passando (75 de 78 das de quatro dígitos `t1xxx`, e apenas 42 das outras 760). A ordem alfabética põe `t1…`, `t10…`, `t100…`, `t1000…t1xxx` antes das `t2…t9`, e as specs de varredura de bloco (t14xx, cada tela a 390 e 1280 px) gastam o orçamento antes. **~720 specs não rodam na noturna.**
+- **É crônico e piora:** 31/10 a 07/11 passavam ~1000–1180 testes (com ~2500 sem rodar, ou seja, já cortava); depois de 07/11 à noite passam ~620–770 (com ~3700–3900 sem rodar). O total sobe junto com as specs novas.
+- **Falhas reais registradas (nome → classificação):** t106, t113, t118, t141, t155 (e t161 uma vez, 47dc9da78) eram as "5 falhas fixas" da main até 09:24 UTC; o #3433 (Faixa D) as consertou → **teste vencido, já corrigido**. Nos três runs completos depois (`53c0bcc10`, `624a5924a`, `a844024e7`) não há spec vermelha.
+- **Remédios possíveis (decisão do coordenador/dono do workflow; não apliquei):** (a) no workflow (`.github/workflows/laboratorio.yml`, fora do escopo da Pista C): dividir a suíte em fatias paralelas (matriz/shards) ou subir o tempo; (b) nas specs (escopo da Pista C, precisa de decisão): tirar as specs de varredura de bloco do noturno (rodam só no lab crítico e em PR, p. ex. por tag ou projeto Playwright separado) e/ou aposentar ciclos antigos de varredura que se repetem; (c) fazer o noturno falhar com mensagem própria ("estourou o tempo: X de Y specs rodaram") para não parecer spec vermelha.
+- **Ressalva:** cada spec de bloco mesclada piora o L-108; avisei nos PRs #3468, #3469 e #3470. Nada foi apagado. Os `test.fail` conhecidos (L-104, L-107, C17, C19, E527, E532) seguem como estão.
+
+### Blocos
+- Bloco 562 (t1510, PR #3468 draft, run 42482773616): verde. Proposta e visita com id (grupo do 545).
+- Bloco 563 (t1511, PR #3469 draft, run 42482776440): verde. Conferir, pedidos do morador, admin/sistema (grupo do 546).
+- Bloco 564 (t1512, PR #3470 draft, run 42482780969): verde. Contrato, estadia e imóvel com id (grupo do 547).
+- Merge novo de código na main depois do #3433: nenhum. Sem spec permanente nova a criar.
+- Defeitos abertos: L-104, L-107 (t1429), L-108 (novo, acima), C17, C19, E527 e E532 (i). Próximo número livre: **L-109**.
+- Próximo bloco: 565 (grupo do 548), a decidir com o coordenador se a varredura continua enquanto o L-108 não for tratado.
