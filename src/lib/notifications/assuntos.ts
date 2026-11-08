@@ -87,6 +87,10 @@ export const ASSUNTOS = {
   comprovanteCaucao: "Seu comprovante de Caução",
   termoDevolucao: "Termo de devolução da Caução",
   contratoPronto: "Seu contrato está pronto para assinar",
+  /** E722: lembrete de 24 h / 6 h para concluir o contrato depois do aceite da proposta. */
+  preAceitacaoLembrete: "Prazo para concluir o contrato",
+  /** E722: a pré-aceitação de 72 h terminou sem o contrato (sem punição; pode ser reaberta até 2 vezes). */
+  preAceitacaoExpirou: "A pré-aceitação terminou",
   /** E637: o prazo de 7 dias do parecer sobre a caução terminou sem desconto (avisa o dono e o morador). */
   caucaoLiberacaoIntegral: "Caução: liberação integral registrada",
   /** E637: a devolução da caução passou de 30 dias (avisa o dono). */

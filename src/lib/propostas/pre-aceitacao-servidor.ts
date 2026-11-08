@@ -1,0 +1,113 @@
+import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
+import { lembretesDaPreAceitacao, PRAZO_PRE_ACEITACAO_HORAS, reabrirPreAceitacao, textoDoPrazo, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
+
+/*
+  E722 — roda a pré-aceitação de 72 h. ATRÁS DA CHAVE PRE_ACEITACAO_72H_ATIVA (desligada): sem ela, não faz nada.
+    • lembretes de 24 h e 6 h antes do fim (uma vez cada; nunca no silêncio de 22h às 7h, pela regra pura);
+    • vencida sem contrato: a proposta expira SEM punição (status "expirada" + pre_aceitacao_expirou_em), avisa os dois.
+  Nada aqui recalcula taxa: taxa_congelada nunca é escrita por este arquivo.
+*/
+export interface ResumoPreAceitacao {
+  ativa: boolean;
+  lembretes: number;
+  expiradas: number;
+}
+
+interface Linha {
+  id: string;
+  numero: string;
+  owner_id: string;
+  tenant_id: string;
+  lead_id: string;
+  aceita_em: string | null;
+  pre_aceitacao_ate: string;
+  pre_aceitacao_lembrete_24h_em: string | null;
+  pre_aceitacao_lembrete_6h_em: string | null;
+  properties: { title?: string | null } | null;
+}
+
+async function avisarOsDois(admin: SupabaseClient, l: Linha, assunto: string, texto: string) {
+  const imovel = l.properties?.title ?? "o imóvel";
+  for (const [uid, href] of [[l.tenant_id, `/dashboard/propostas/${l.id}`], [l.owner_id, `/dashboard/propostas/${l.id}`]] as const) {
+    const { data } = await admin.from("profiles").select("email, full_name").eq("id", uid).maybeSingle();
+    const pf = data as { email?: string | null; full_name?: string | null } | null;
+    if (!pf?.email) continue;
+    await notify({
+      event: "contract_status", email: pf.email, name: pf.full_name ?? undefined, userId: uid, pushUrl: href, subject: assunto, ctaLabel: "Ver a proposta",
+      body: (n) => `Olá${n ? " " + n : ""}, ${texto} (${imovel}, proposta ${l.numero}).`,
+    });
+  }
+}
+
+export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new Date()): Promise<ResumoPreAceitacao> {
+  if (!PRE_ACEITACAO_72H_ATIVA) return { ativa: false, lembretes: 0, expiradas: 0 };
+  const resumo: ResumoPreAceitacao = { ativa: true, lembretes: 0, expiradas: 0 };
+  const { data, error } = await admin
+    .from("propostas")
+    .select("id, numero, owner_id, tenant_id, lead_id, aceita_em, pre_aceitacao_ate, pre_aceitacao_lembrete_24h_em, pre_aceitacao_lembrete_6h_em, properties(title)")
+    .eq("status", "aceita")
+    .not("pre_aceitacao_ate", "is", null);
+  if (error || !data) return resumo;
+  for (const l of data as unknown as Linha[]) {
+    const prazo = new Date(l.pre_aceitacao_ate);
+    if (prazo.getTime() <= agora.getTime()) {
+      const { data: ok } = await admin
+        .from("propostas")
+        .update({ status: "expirada", pre_aceitacao_expirou_em: agora.toISOString(), atualizada_em: agora.toISOString() })
+        .eq("id", l.id)
+        .eq("status", "aceita")
+        .select("id")
+        .maybeSingle();
+      if (ok) {
+        resumo.expiradas++;
+        await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoExpirou, `a pré-aceitação terminou sem o contrato concluído. ${TEXTO_SEM_PUNICAO}`);
+      }
+      continue;
+    }
+    const inicio = new Date(prazo.getTime() - PRAZO_PRE_ACEITACAO_HORAS * 3_600_000);
+    for (const lem of lembretesDaPreAceitacao(inicio, prazo)) {
+      const col = lem.horasAntes === 24 ? "pre_aceitacao_lembrete_24h_em" : "pre_aceitacao_lembrete_6h_em";
+      if (l[col] || agora.getTime() < lem.enviarEm.getTime()) continue;
+      if (l.aceita_em && lem.enviarEm.getTime() < Date.parse(l.aceita_em)) continue;
+      const { data: marcou } = await admin.from("propostas").update({ [col]: agora.toISOString() }).eq("id", l.id).is(col, null).select("id").maybeSingle();
+      if (!marcou) continue;
+      resumo.lembretes++;
+      await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoLembrete, `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`);
+    }
+  }
+  return resumo;
+}
+
+/** Reabre uma pré-aceitação expirada (no máximo 2 vezes). A taxa congelada NÃO é tocada. Devolve o motivo de recusa, ou o novo prazo. */
+export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, agora: Date = new Date()): Promise<{ ok: true; prazo: Date; reaberturas: number } | { ok: false; error: string }> {
+  const { data, error } = await admin.from("propostas").select("id, status, versao_atual, pre_aceitacao_reaberturas, pre_aceitacao_expirou_em").eq("id", propostaId).maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
+  const p = data as { id: string; status: string; versao_atual: number; pre_aceitacao_reaberturas: number; pre_aceitacao_expirou_em: string | null } | null;
+  if (!p) return { ok: false, error: "Proposta não encontrada." };
+  if (p.status !== "expirada" || !p.pre_aceitacao_expirou_em) return { ok: false, error: "Só uma pré-aceitação que expirou pode ser reaberta." };
+  const { data: v, error: erroV } = await admin.from("proposta_versoes").select("data_entrada").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+  if (erroV || !v) return { ok: false, error: "Não foi possível ler a data de entrada agora. Tente de novo em instantes." };
+  const { data: tx, error: erroTx } = await admin.from("propostas").select("taxa_congelada").eq("id", p.id).maybeSingle();
+  if (erroTx) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
+  const taxa = (tx as { taxa_congelada: number | null } | null)?.taxa_congelada ?? null;
+  const r = reabrirPreAceitacao({ reaberturas: p.pre_aceitacao_reaberturas, taxaCongelada: taxa == null ? null : Number(taxa), dataEntrada: String((v as { data_entrada: string }).data_entrada), agora });
+  if (!r) return { ok: false, error: p.pre_aceitacao_reaberturas >= 2 ? "Esta pré-aceitação já foi reaberta 2 vezes, o máximo permitido." : "A data de entrada já passou: não dá para reabrir." };
+  // Só muda o prazo, o contador e o status; taxa_congelada fica como está (a taxa congelada continua valendo).
+  const { data: ok } = await admin
+    .from("propostas")
+    .update({
+      status: "aceita", pre_aceitacao_ate: r.prazo.toISOString(), pre_aceitacao_reaberturas: r.reaberturas, pre_aceitacao_expirou_em: null,
+      pre_aceitacao_lembrete_24h_em: null, pre_aceitacao_lembrete_6h_em: null, atualizada_em: agora.toISOString(),
+    })
+    .eq("id", p.id)
+    .eq("status", "expirada")
+    .eq("pre_aceitacao_reaberturas", p.pre_aceitacao_reaberturas)
+    .select("id")
+    .maybeSingle();
+  if (!ok) return { ok: false, error: "A proposta mudou enquanto você respondia. Abra de novo." };
+  return { ok: true, prazo: r.prazo, reaberturas: r.reaberturas };
+}

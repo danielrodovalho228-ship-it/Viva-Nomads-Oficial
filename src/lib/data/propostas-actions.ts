@@ -75,6 +75,9 @@ import {
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
 import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
+import { estadoDaPreAceitacao, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
+import { reabrirNoBanco } from "@/lib/propostas/pre-aceitacao-servidor";
 
 /**
  * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
@@ -654,7 +657,22 @@ export interface VersaoView {
   mudou: Diferenca[];
 }
 
+/** E722: o que a tela mostra da pré-aceitação de 72 h (só com a chave ligada e a proposta aceita ou expirada). */
+export interface PreAceitacaoView {
+  estado: "vigente" | "expirada";
+  /** Fim da janela (ISO) e o mesmo em texto, com data e hora exatas de Brasília. */
+  ateIso: string;
+  ateTexto: string;
+  reaberturas: number;
+  podeReabrir: boolean;
+  regraCorrida: string;
+  semPunicao: string;
+  taxaContinua: string;
+}
+
 export interface PropostaView {
+  /** E722: pré-aceitação de 72 h (null = chave desligada ou proposta sem janela). */
+  preAceitacao: PreAceitacaoView | null;
   id: string;
   numero: string;
   status: StatusProposta;
@@ -872,7 +890,9 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       };
     }
   }
+  const preAceitacao = PRE_ACEITACAO_72H_ATIVA && ["aceita", "expirada"].includes(p.status) ? await preAceitacaoDaProposta(s.admin, p.id) : null;
   return {
+    preAceitacao,
     id: p.id,
     numero: p.numero,
     status: p.status,
@@ -1067,7 +1087,11 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
+    .update({
+      status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString(),
+      // E722 (atrás da chave, desligada): 72 h corridas para concluir o contrato, limitadas pela data de entrada.
+      ...(PRE_ACEITACAO_72H_ATIVA ? { pre_aceitacao_ate: prazoDaPreAceitacao(agora, String(v.data_entrada).slice(0, 10)).toISOString(), pre_aceitacao_reaberturas: 0 } : {}),
+    })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -1117,4 +1141,42 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };
+}
+
+/**
+ * E722 — reabre uma pré-aceitação que expirou (no máximo 2 vezes). Qualquer das duas partes da proposta pode pedir.
+ * A taxa congelada na pré-aceitação CONTINUA VALENDO: a reabertura não a recalcula. Atrás de PRE_ACEITACAO_72H_ATIVA.
+ */
+export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazoAte: string }>> {
+  if (!PRE_ACEITACAO_72H_ATIVA) return { ok: false, error: "A pré-aceitação de 72 horas ainda não está ativa." };
+  const s = await sessao();
+  if (!s) return { ok: false, error: "Entre para reabrir." };
+  const { data, error } = await s.supabase.from("propostas").select("id, owner_id, tenant_id, lead_id").eq("id", id).maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
+  const p = data as { id: string; owner_id: string; tenant_id: string; lead_id: string } | null;
+  if (!p || (p.owner_id !== s.user.id && p.tenant_id !== s.user.id)) return { ok: false, error: "Proposta não encontrada." };
+  const r = await reabrirNoBanco(s.admin, p.id);
+  if (!r.ok) return { ok: false, error: r.error };
+  revalidatePath(`/dashboard/propostas/${p.id}`);
+  revalidatePath("/dashboard/fechamento");
+  return { ok: true, prazoAte: r.prazo.toISOString() };
+}
+
+/** E722: a janela de 72 h da proposta, pronta para a tela (data e hora exatas, regra de corrida, sem punição, taxa que continua). */
+async function preAceitacaoDaProposta(admin: Admin, propostaId: string): Promise<PreAceitacaoView | null> {
+  const { data, error } = await admin.from("propostas").select("pre_aceitacao_ate, pre_aceitacao_reaberturas").eq("id", propostaId).maybeSingle();
+  const d = data as { pre_aceitacao_ate: string | null; pre_aceitacao_reaberturas: number | null } | null;
+  if (error || !d?.pre_aceitacao_ate) return null;
+  const ate = new Date(d.pre_aceitacao_ate);
+  const reaberturas = Number(d.pre_aceitacao_reaberturas ?? 0);
+  return {
+    estado: estadoDaPreAceitacao(ate, new Date()).chave,
+    ateIso: ate.toISOString(),
+    ateTexto: textoDoPrazo(ate),
+    reaberturas,
+    podeReabrir: podeReabrir(reaberturas),
+    regraCorrida: TEXTO_REGRA_CORRIDA,
+    semPunicao: TEXTO_SEM_PUNICAO,
+    taxaContinua: TEXTO_TAXA_CONTINUA,
+  };
 }
