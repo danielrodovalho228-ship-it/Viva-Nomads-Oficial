@@ -1,6 +1,6 @@
 import { BadgeCheck, Eye, MessageSquareText } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
-import { PILULA_EMAIL, TITULO_ESPELHO, nomeNoEspelho } from "@/lib/perfil/espelho";
+import { PILULA_EMAIL, TITULO_ESPELHO, linhasDoEspelho, nomeNoEspelho } from "@/lib/perfil/espelho";
 
 /**
  * O ESPELHO (CONTA-A, item 4; desenho perfil-01): a pílula "É assim que o proprietário te vê", a foto, o nome curto (o
@@ -13,6 +13,8 @@ export function EspelhoPerfil({
   emailConfirmado,
   bio,
   titulo = TITULO_ESPELHO,
+  profissao = null,
+  idiomas = [],
 }: {
   foto: string | null;
   nome: string;
@@ -20,8 +22,12 @@ export function EspelhoPerfil({
   bio: string;
   /** E55: o título acompanha o papel (morador por padrão). */
   titulo?: string;
+  /** E749: a categoria profissional e os idiomas, quando preenchidos (a pessoa os liga no perfil). */
+  profissao?: string | null;
+  idiomas?: readonly string[];
 }) {
   const sobre = bio.trim();
+  const linhas = linhasDoEspelho(profissao, idiomas);
   return (
     <section
       id="espelho"
@@ -53,6 +59,22 @@ export function EspelhoPerfil({
                 <BadgeCheck className="h-4 w-4" aria-hidden /> {PILULA_EMAIL}
               </span>
             </p>
+          )}
+          {(linhas.profissao || linhas.idiomas) && (
+            <dl className="mt-3 space-y-1 text-sm text-ink lg:text-center" data-testid="espelho-sinais">
+              {linhas.profissao && (
+                <div className="flex gap-1 lg:justify-center">
+                  <dt className="text-muted">Profissão:</dt>
+                  <dd data-testid="espelho-profissao">{linhas.profissao}</dd>
+                </div>
+              )}
+              {linhas.idiomas && (
+                <div className="flex gap-1 lg:justify-center">
+                  <dt className="text-muted">Idiomas:</dt>
+                  <dd data-testid="espelho-idiomas">{linhas.idiomas}</dd>
+                </div>
+              )}
+            </dl>
           )}
           <div
             className={

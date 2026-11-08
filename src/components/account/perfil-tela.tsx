@@ -21,7 +21,7 @@ import { clearMyAvatar } from "@/lib/data/avatar-actions";
 import { AvisoFotoRemovida } from "@/components/account/aviso-foto-removida";
 import { BIO_MAX, ESTADO_SALVAR, IDIOMAS, LINHA_PERFIL_COMPLETO, destinoDaFalta, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
-import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
+import { CATEGORIA_NAO_INFORMAR, categoriaLabel } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -251,7 +251,7 @@ export function PerfilTela() {
           {/* E504 (c): o enquadramento só aparece com o papel JÁ conhecido (a conta carregada) — antes, o 1º quadro saía com o papel
             padrão (morador) e trocava para proprietário depois, e o rótulo lateral ficava fixo. Enquanto não há conta, o espaço é guardado. */}
         {usuarioPronto ? (
-          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
         ) : (
           <div aria-hidden className="min-h-[24rem]" data-testid="espelho-aguardando" />
         )}
@@ -339,7 +339,7 @@ export function PerfilTela() {
 
       <aside className="hidden min-w-0 gap-6 xl:grid" aria-label={papelEspelho === "proprietario" ? "Como o morador te vê" : "Como o proprietário te vê"}>
         <TituloSecaoLateral ativo="perfil" subtitulo={SUBTITULO_PERFIL} />
-        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
       </aside>
     </div>
   );

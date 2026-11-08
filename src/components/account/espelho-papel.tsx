@@ -16,7 +16,7 @@ type Papel = "morador" | "proprietario";
  * "Na Viva desde", tempo de resposta e só os selos que são fato). Quem tem os dois papéis vê o do papel em uso e um link
  * "Ver como [o outro papel]".
  */
-export function EspelhoPorPapel(p: { papel: Papel; foto: string | null; nome: string; emailConfirmado: boolean; bio: string }) {
+export function EspelhoPorPapel(p: { papel: Papel; foto: string | null; nome: string; emailConfirmado: boolean; bio: string; profissao?: string | null; idiomas?: readonly string[] }) {
   const [publico, setPublico] = useState<MeuPerfilPublico | null>(null);
   const [visto, setVisto] = useState<Papel | null>(null);
   useEffect(() => {
@@ -37,7 +37,7 @@ export function EspelhoPorPapel(p: { papel: Papel; foto: string | null; nome: st
       {papel === "proprietario" && publico ? (
         <EspelhoDono publico={publico} foto={p.foto ?? publico.fotoUrl} />
       ) : (
-        <EspelhoPerfil foto={p.foto} nome={p.nome} emailConfirmado={p.emailConfirmado} bio={p.bio} titulo={TITULO_ESPELHO} />
+        <EspelhoPerfil foto={p.foto} nome={p.nome} emailConfirmado={p.emailConfirmado} bio={p.bio} titulo={TITULO_ESPELHO} profissao={p.profissao} idiomas={p.idiomas} />
       )}
       {ehDono && (
         <p className="text-center">
