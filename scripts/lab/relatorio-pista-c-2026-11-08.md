@@ -331,3 +331,25 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Merge novo de código na main depois do #3433: nenhum. Sem spec permanente nova a criar.
 - Defeitos abertos: L-104, L-107 (t1429), L-108 (novo, acima), C17, C19, E527 e E532 (i). Próximo número livre: **L-109**.
 - Próximo bloco: 565 (grupo do 548), a decidir com o coordenador se a varredura continua enquanto o L-108 não for tratado.
+
+## Blocos 565, 566 e 567 e as propostas de mitigação do L-108 (decisão do coordenador/chat principal)
+
+- Bloco 565 (t1513, PR #3472 draft, run 42484448803): verde. Início, ajuda, busca, imóvel e telas do proprietário (grupo do 548).
+- Bloco 566 (t1514, PR #3473 draft, run 42484452212): verde. Admin, parceiros e visitas (grupo do 549).
+- Bloco 567 (t1515, PR #3474 draft, run 42484455873): verde. Painéis do proprietário e do morador, /empresas (grupo do 550).
+- Lab da main (conferido uma vez ao fim): lab crítico verde em `a844024e7` (run 42472878384); sem merge de código novo desde o #3433. A suíte noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+
+### L-108 — propostas de mitigação (nenhuma aplicada; a decisão é do coordenador/chat principal)
+Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~3700–3900 sem rodar; só ~117 dos 838 arquivos de spec têm algum teste que passa; as specs de varredura de bloco (t14xx, ~116 arquivos já na main, cada tela a 390 e 1280 px) e a ordem alfabética consomem os 65 min antes das `t2…t9`.
+
+| # | Mitigação | Custo | Benefício | Risco / observação |
+|---|---|---|---|---|
+| 1 | **Dividir a suíte em fatias paralelas** (matriz de jobs / `--shard`), cada uma com o seu tempo | Mexe em `.github/workflows/laboratorio.yml` (fora do escopo da Pista C); cada fatia repete a subida do Supabase e o build (~8 min de setup por fatia) e gasta minutos do Actions em proporção ao número de fatias | Cobre **tudo** sem apagar nada: com 4 fatias o tempo cai para ~1/4 de ~4500 testes; falha identifica a fatia | Massa e banco por fatia (isolar o Supabase local por job); definir fatias estáveis para o relatório; a regra do banco `lab_execucoes` precisa somar fatias |
+| 2 | **Tirar a varredura de bloco do noturno** (projeto Playwright/tag próprios; ela roda no lab crítico e em PR, ou num job semanal) | Pequeno nas specs (uma tag/projeto e um `--grep-invert`), mais um ajuste no workflow para o novo job | Libera a maior parte do orçamento hoje gasto (os ~116 arquivos t14xx), fazendo as `t2…t9` voltarem a rodar na noite | A varredura deixa de rodar toda noite (risco de regressão visual fora de PR); precisa de job próprio para não sumir |
+| 3 | **Aposentar ciclos antigos de varredura que se repetem** (cada bloco repete o grupo de 17 blocos antes; manter só o ciclo mais recente por grupo) | Decisão editorial e trabalho de uma passada: apagar/mesclar specs e atualizar `cobertura.json` e a numeração | Reduz o tempo de todo job (noturno, PR e lab crítico) sem mexer em workflow; menos manutenção | **Perde histórico e a cobertura de telas só presentes nos ciclos antigos**; irreversível se não houver git (há); é a opção que mais mexe nas specs |
+| 4 | **Noturno honesto sobre o tempo**: falhar com mensagem própria ("estourou o tempo: X de Y specs rodaram"), gravar `nao_rodaram` e ordenar as specs por risco (críticas primeiro) | Pequeno no workflow e no registrador; sem apagar nada | Para de parecer spec vermelha; deixa o problema visível (o número que importa é "quantas rodaram"); a ordem por risco garante que o crítico rode primeiro | **Não resolve a cobertura**, só a transparência; precisa de uma lista de specs críticas (já existe `scripts/lab/fluxos-criticos.mjs`) |
+
+- **Leitura da Pista C (opinião, não decisão):** o remédio completo é 1 (cobertura) + 4 (transparência); a 2 é a mais barata e rápida para devolver as `t2…t9` à noite; a 3 só se o custo de manter a varredura continuar alto depois das outras.
+- Enquanto isso, a Pista C segue abrindo blocos em PR draft (não mesclados, portanto sem efeito na noturna) e não apaga nada.
+- Próximo bloco: 568 (grupo do 551).
