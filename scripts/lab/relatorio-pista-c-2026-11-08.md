@@ -558,7 +558,7 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 | t1560 | #3538 | E734, foco volta a `pilula-mais` (T-C17), Esc/X/fundo, 1280 e 390 (#3533) | verde (42520959748) |
 | t1561 | #3539 | E732, contraste do rótulo de /empresas ≥ 4,5:1 medido em pixels (#3530) | verde (42520964513) |
 | t1562 | #3540 | E742, `/api/proximidades` 200 `sem_endereco`; 400 mantido para entrada inválida e anúncio alheio (#3531) | verde (42520970241) |
-| t1563 | #3541 | E743, `/nivel` com laudo assinado abre, selo e hash `select-all` (#3532) | 1º run vermelho (42520974587): **defeito de spec**, usava o marcador `laudo-assinatura` (herdado da t1429 antiga); o produto usa `selo-assinatura`. Corrigido em commit novo; rerun em andamento |
+| t1563 | #3541 | E743, `/nivel` com laudo assinado abre, selo e hash `select-all` (#3532) | verde no 2º run (42521874502). O 1º (42520974587) falhou por defeito de spec: marcador `laudo-assinatura` herdado da t1429 antiga; o produto usa `selo-assinatura` |
 | t1564 | #3542 | E724, aviso do exemplo é o 1º elemento do cartão e fica acima do preço (#3498) | verde (42520976878) |
 
 - Nenhum achado novo de produto (próximo livre: **L-110**).
