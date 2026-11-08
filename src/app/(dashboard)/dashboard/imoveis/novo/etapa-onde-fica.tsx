@@ -371,6 +371,7 @@ export function AntesDePublicar(p: {
     faltaOperacao: p.faltaOperacao,
     rotuloOperacao: OPERACOES.find((o) => o.valor === p.ownershipType)?.rotulo ?? "",
     identidade: estadoIdentidade,
+    identidadeTexto: identidade?.identidade.texto ?? null,
     documento: p.docEstado,
     linhaDocumentoInicio: p.linhaDocumentoInicio,
     declaracoes: p.declaracoes,
