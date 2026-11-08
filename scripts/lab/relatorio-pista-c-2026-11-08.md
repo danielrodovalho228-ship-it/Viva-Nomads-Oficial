@@ -475,3 +475,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: sem merge sem spec de guarda. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
 - Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
 - Próximo bloco: 590 (grupo do 573).
+
+## Bloco 590 e achado de operação (L-109, proposta)
+
+- Bloco 590 (t1538, PR #3513 draft, run 42506644588): verde. Painel do proprietário sem id (grupo do 573). Só no laboratório, 390 e 1280 px.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: sem merge sem spec de guarda. O #3489 (C19) segue aberto, sem merge. Noturna do laboratório segue "falha" só por tempo estourado (L-108).
+- **L-109 (proposta ao chat principal; achado de operação, fora do escopo da Pista C):** na main (`a844024e7`) os workflows **Backup noturno** (run 42485195051, 13:29 UTC) e **Teste de restauração** (run 42497108612, 15:53 UTC) **falham no mesmo passo**, "Montar o rclone.conf temporário (600) com o remoto cifrado" (passo 5 no backup, passo 6 no drill); o passo seguinte ("Cópia (banco, arquivos, manifesto e retenção)" / "Restaurar e conferir") é **pulado**, e "Registrar no admin e alarmar" também falha. Efeito: a cópia noturna **não está sendo feita** e a restauração não está sendo provada. Causa provável, não confirmada (a mensagem do passo não aparece no log que consegui ler): segredo/remoto cifrado do rclone ausente ou mal formado, o que pode depender de dado só do Daniel. Não corrijo; item para o dono desses workflows.
+- Defeitos abertos: L-104, L-107, L-108, **L-109 (novo, proposto)**, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: **L-110**.
+- Próximo bloco: 591 (grupo do 574).
