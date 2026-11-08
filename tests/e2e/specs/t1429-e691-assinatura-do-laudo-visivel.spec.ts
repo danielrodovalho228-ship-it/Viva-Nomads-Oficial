@@ -73,7 +73,12 @@ test.describe("T1429 — E691: assinatura do laudo visível ao dono", () => {
       await d.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await d.goto(`/dashboard/imoveis/${ids.imAss}/nivel`, { waitUntil: "domcontentloaded" });
       const selo = d.getByTestId("selo-assinatura");
-      await expect(selo, `selo ausente; a tela mostra: ${(await d.locator("main").innerText().catch(() => "")).replace(/\s+/g, " ").slice(0, 900)}`).toBeVisible({ timeout: 30_000 });
+      try {
+        await expect(selo).toBeVisible({ timeout: 30_000 });
+      } catch (e) {
+        const tela = (await d.locator("main").innerText().catch(() => "")).replace(/\s+/g, " ").slice(0, 1200);
+        throw new Error(`selo ausente; a tela mostra: ${tela}`, { cause: e });
+      }
       await expect(selo).toHaveAttribute("data-quem", "dono");
       await expect(selo).toContainText("Laudo assinado pelo avaliador");
       await expect(d.getByTestId("selo-assinatura-numero")).toContainText(`VIS-T1429-A-${sufixo}`);
