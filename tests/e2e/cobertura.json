@@ -1771,7 +1771,8 @@
       "specs": [
         "t252-dev-emails",
         "t1406-varredura-bloco484",
-        "t1431-varredura-bloco501"
+        "t1431-varredura-bloco501",
+        "t1452-varredura-bloco518"
       ]
     },
     "/empresas": {
@@ -2959,7 +2960,8 @@
         "t470-qa-leitor-caixas",
         "t521-qa-caixa-sem-token",
         "t1406-varredura-bloco484",
-        "t1431-varredura-bloco501"
+        "t1431-varredura-bloco501",
+        "t1452-varredura-bloco518"
       ]
     },
     "/qa/entrar": {
@@ -2978,7 +2980,8 @@
         "t695-e264b-proativos",
         "t711-e264b-proativos-corpo",
         "t1406-varredura-bloco484",
-        "t1431-varredura-bloco501"
+        "t1431-varredura-bloco501",
+        "t1452-varredura-bloco518"
       ]
     },
     "/dashboard/imoveis/[id]/publicar": {
