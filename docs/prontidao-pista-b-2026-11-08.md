@@ -1,5 +1,39 @@
 # Prontidão dos PRs da Pista B para o merge dirigido (08/11/2026)
 
+## Atualização de 08/11 (manhã): PRs #3375 a #3415 e o que já entrou na `main`
+
+**Já mesclados na `main` desde a primeira versão deste resumo:** #3292 (E687, 0326), #3296 (E691), #3329 (E689, 0327), #3268 (E682, 72 h). A 0326 e a 0327 já foram aplicadas em produção. A última migração aplicada é a **0327**.
+**Ainda abertos da primeira versão:** #3297 (E707, atrás de `CAUCAO_PRAZOS_ATIVA` desligada, aguarda o parecer da Dra. Beatriz), #3330 (E690, só doc; a ativação do UDI-002 é do admin com duas etapas), #3326, #3344, #3354 (rodadas 4 a 6).
+
+**PRs novos da Pista B (todos em rascunho, `verify`, `lab-critico` e `e2e` verdes, sem conflito com a `main` de agora, testado por merge local):**
+
+| PR | Item | O que entrega | Migração | Risco | Prova de QA depois do merge |
+|---|---|---|---|---|---|
+| [#3375](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3375) | Erros/vazios r7 | Abrir chamado: falha ao conferir o contexto não o descarta (a ordem URGENTE de "não consegui entrar" não some em silêncio) | não | Baixo | — |
+| [#3376](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3376) | Erros/vazios r8 | Manutenção: falha ao ler a ordem não vira "não encontrada" nem "só o proprietário" | não | Baixo | — |
+| [#3378](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3378) | Erros/vazios r9 | Contador de imóveis do pedido: falha de leitura não vira "0 combinam" | não | Baixo | — |
+| [#3383](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3383) | Erros/vazios r10 | Propostas: falha de leitura não vira 404 nem "não encontrada" nem "candidatura encerrada" | não | Baixo (a página cai no `error.tsx` em falha) | — |
+| [#3384](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3384) | Erros/vazios r11 | Visitas: falha de leitura não vira "imóvel indisponível" nem "pedido não encontrado" | não | Baixo | — |
+| [#3393](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3393) | E293 retenção | Inventário descreve as colunas das migrações 0317, 0320, 0323 e 0325 (só texto) | não | Nenhum | — |
+| [#3398](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3398) | E719 | Cartão do contrato lê o estado real da avaliação; publicada tira o "Aguardando a outra parte" | não | Baixo (UI) | Contrato com as duas avaliações publicadas (a0268a00) |
+| [#3401](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3401) | E689 | **0328**: reposiciona os blocos das estadias-semente (o app lê o último dia do bloco como a saída) | 0328 | Baixo (só dados de teste) | Jornada de e-mails no dia ALVO; a Action recalcula ALVO ao aplicar |
+| [#3402](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3402) | E687 | **0329**: parceiro de Mudança aprovado em conta de teste (`inquilino2`) para o ramo positivo | 0329 | Baixo (só dados de teste) | Painel do parceiro mostra a própria empresa e o veículo |
+| [#3406](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3406) | E699 (a)/(c) | **0330**: CPF de teste na dona `proprietario-qa` (sem laudo = identidade pendente) | 0330 | Baixo (só dados de teste) | "Falta para publicar" com identidade; link "Resolver" da trava |
+| [#3407](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3407) | E660 (resíduo) | Ficha "o que tem dentro" na edição do anúncio publicado (mesma fonte do assistente) | não | Médio-baixo (UI de edição; só grava depois que o dono mexe) | Editar anúncio publicado, abrir "O que tem dentro", salvar |
+| [#3415](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/pull/3415) | E719 | Só doc: comparação dos duplicados #3397 × #3398 | não | Nenhum | — |
+
+**Ordem das migrações:** 0328 (#3401), 0329 (#3402) e 0330 (#3406) são independentes e idempotentes; a Action aplica o que ainda não está registrado, em qualquer ordem. Nenhuma depende de código (são todas só dado de teste).
+
+**Duplicidade E719:** #3397 (Pista A) e #3398 (Pista B) resolvem o mesmo defeito. Comparação em `docs/e719-comparacao-3397-3398.md` (#3415): o **#3398** atende o critério do relato; no #3397 o cabeçalho "Avaliação · Aguardando a outra parte" continua na tela. Recomendação: mesclar o #3398 e não mesclar o #3397 (nenhum foi fechado; quem decide é o chat principal).
+
+**E477 (Pendências, Fotos de perfil e Imóveis):** já está na `main` (commit `ad10d5900`, de 07/11 06:45 UTC, depois da re-prova de 06/11 23:32). As ações do servidor recusam a observadora e os controles saem de toda linha com o aviso "Só leitura". O detalhe do pedido de parceiro (`/admin/parceiros/pedidos/[id]`) não tem controle de escrita, então não precisa do aviso. Os 29 testes `e477-*` e `observador*` passam. Falta só a re-prova da QA na tela publicada.
+
+**Guardas intocadas:** `AUTOMACOES_ATIVO` ("1"), `CAUCAO_PRAZOS_ATIVA` e `VISTORIA_ATIVA` (desligadas), contrato-semente VN-CT-D5D50247, 2FA e variáveis da Vercel.
+
+---
+
+## Versão anterior (08/11, 02:50 UTC)
+
 Todos em draft, sem conflito com a `main` de 08/11 (branches atualizadas por merge, sem reescrever histórico). Nenhum mexe em `AUTOMACOES_ATIVO`, `CAUCAO_PRAZOS_ATIVA` (continua desligada), `VISTORIA_ATIVA` (continua desligada), 2FA nem variáveis da Vercel. Nenhum tem prova ao vivo: as provas são dos trabalhadores de QA.
 
 **Ordem sugerida de merge:** #3292 (0326) antes de #3329 (0327); o resto é independente. A última migração na `main` é a 0325.
