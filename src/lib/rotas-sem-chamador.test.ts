@@ -25,6 +25,7 @@ function arquivos(dir: string, out: string[] = []): string[] {
 /** Rotas que ninguém do app chama, de propósito. */
 const EXCECOES: Record<string, string> = {
   "/api/webhooks/asaas": "webhook: quem chama é o Asaas (URL cadastrada no painel do Asaas), não o app",
+  "/api/cron/pre-aceitacao": "E722: cron atrás de PRE_ACEITACAO_72H_ATIVA (desligada); pede disparo de hora em hora, ainda sem agenda no vercel.json (decisão do Daniel antes de ligar)",
   "/api/lab/mensagens-programadas": "rota do laboratório: só os specs E2E a chamam, e ela recusa fora do lab",
 };
 
