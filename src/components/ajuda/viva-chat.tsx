@@ -67,7 +67,9 @@ export function VivaChatFlutuante() {
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
   // Página do imóvel no celular (Q4): só o ícone redondo, para não tampar
   // estrelas e o total do mês. A barra fixa fica embaixo; o nome acessível continua "Fale com a Viva".
-  const compacto = pathname.startsWith("/imoveis/");
+  // C1b: em TODO o site o botão é o redondo (180 × 48 px com texto cobria texto de /termos, /empresas, /parceiros…); o nome
+  // acessível continua "Fale com a Viva" e o menu do topo tem o mesmo link com texto.
+  const compacto = true;
   // CONTA-A C4: no painel o botão é sempre o redondo (48 px) e a coluna reserva a faixa da direita (dashboard-shell),
   // para ele nunca sentar sobre um cartão durante a rolagem.
   const painel = pathname.startsWith("/dashboard");
