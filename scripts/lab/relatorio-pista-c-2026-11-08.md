@@ -564,3 +564,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - Nenhum achado novo de produto (próximo livre: **L-110**).
 - A t1429 do #3394 (ramo `-limpo`) já usa os marcadores certos do selo; a cópia antiga (ramo `claude-c/t1429-e691`) tem o marcador errado e não deve ser usada.
 - Quando os drafts mesclarem: tirar o `test.fail` do C17 na t1486 (#3424) e do L-107 na t1429 (#3394), tirar `conhecidoL104` das specs de bloco e trocar a base destes cinco PRs para `main`.
+
+## Sequência do Muse (21h) — limpeza pós-merge e prova do E219
+
+- **Limpeza pós-merge: ainda não dá.** Os drafts #3533, #3530, #3531, #3532 e #3498 seguem **abertos** (main parada em `143ad20ad`). Tirar o `test.fail` do C17 (t1486/#3424) e do L-107 (t1429/#3394), tirar `conhecidoL104` das specs de bloco e trocar a base de #3538–#3542 para `main` só faz sentido depois do merge de cada draft: antes disso, as specs ficariam vermelhas na main (a correção não está lá). Fica a lista de ações por draft: #3533 → t1486 (C17); #3532 → t1429 (L-107); #3531 → `conhecidoL104` nas specs de bloco (t1418 e as que copiam o padrão); #3530, #3498 e #3533 → base de #3539, #3542 e #3538 para `main`.
+- **Re-rodar as cinco specs na main atual:** a main não mudou desde os runs verdes (t1560, t1561, t1562, t1564 verdes; t1563 verde no 2º run). Nada a re-rodar; roda de novo no primeiro merge.
+- **E219 (prova):** a t612 já cobre 2 cartões (360/390/1280). Nova **t1565 (#3544, draft sobre a main)**: 4 cartões, com e sem horário, nomes sem ponto de quebra, 320/360/390/1280, sem rolagem lateral e sem horário inventado. Só spec; a tela é da Pista A.
