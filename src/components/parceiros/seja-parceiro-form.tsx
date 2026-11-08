@@ -10,6 +10,8 @@ import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoria
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
+import { ERRO_SESSAO_NAO_CONFIRMADA, pessoaLogada, rotuloEnvioParceria } from "@/lib/parceiros/sessao-rotulo";
+import { useAuthStore } from "@/lib/store";
 import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { AtivarNoPainel } from "@/app/(dashboard)/dashboard/parceiro/ativar-no-painel";
 
@@ -92,6 +94,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   }, [estado.logado]);
 
   const set = <K extends keyof Campos>(k: K, v: Campos[K]) => setC((x) => ({ ...x, [k]: v }));
+  // E731: o rótulo segue a sessão que a pessoa vê (servidor OU navegador), não só a do servidor.
+  const logadoNoNavegador = !!useAuthStore((st) => st.user);
+  const logadaParaORotulo = pessoaLogada(estado.logado, logadoNoNavegador);
   const temCategoria = (v: string) => c.categorias.includes(v);
   const outras = c.categorias.some((x) => x !== "fotografia" && x !== "mudanca");
 
@@ -140,7 +145,11 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
     // E651: o documento é conferido AQUI, antes de mandar a pessoa para criar a conta — um CPF não avança em silêncio.
     const erroDoc = validarDocumentoParceiro(c.documento);
     if (erroDoc) return setErro(erroDoc);
-    if (!estado.logado) return irParaConta();
+    if (!estado.logado) {
+      // E731: logada no navegador, mas o servidor não confirmou: não manda criar conta — pede para entrar de novo.
+      if (logadoNoNavegador) return setErro(ERRO_SESSAO_NAO_CONFIRMADA);
+      return irParaConta();
+    }
     const entrada = {
       ...c,
       cidades: c.cidades.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean),
@@ -163,7 +172,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         </p>
       )}
       {sol?.status === "aguardando_email" && <p className="rounded-xl border border-line bg-surface-2 p-3 text-sm text-ink">{STATUS_TEXTO.aguardando_email}</p>}
-      {!estado.logado && (
+      {!logadaParaORotulo && (
         <p className="rounded-xl border border-sage-200 bg-sage-100 p-3 text-sm text-ink" data-testid="seja-parceiro-precisa-conta">
           Para pedir a parceria, você precisa de uma conta com e-mail confirmado. Preencha e toque em continuar: você cria a conta (ou entra) e volta com tudo preenchido.
         </p>
@@ -319,7 +328,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       )}
       <Button type="submit" className="w-full sm:w-auto" disabled={pendente || (estado.logado && !estado.emailConfirmado)} data-testid="seja-parceiro-enviar">
         {pendente && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-        {estado.logado ? "Enviar pedido de parceria" : "Continuar: criar conta ou entrar"}
+        {rotuloEnvioParceria(estado.logado, logadoNoNavegador)}
       </Button>
       {c.categorias.length > 0 && <p className="text-xs text-muted">Categorias: {c.categorias.map(rotuloCategoria).join(", ")}.</p>}
     </form>

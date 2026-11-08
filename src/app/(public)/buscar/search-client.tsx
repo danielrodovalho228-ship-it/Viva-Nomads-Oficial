@@ -53,7 +53,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
 import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
-import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, soHaExemplos, TEXTO_CARTAO_PEDIDO, TEXTO_VITRINE_SO_EXEMPLOS } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
@@ -844,6 +844,12 @@ export function SearchClient({
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
           {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
           <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
+          {/* E723: sem imóvel real publicado, a lista é só de exemplos — e diz isso no topo. */}
+          {soHaExemplos(results, (p) => isExemplo(p.id)) && !exemplosForcados && (
+            <p className="mb-4 rounded-lg bg-sage-100 px-4 py-3 text-sm font-medium text-forest" data-testid="busca-so-exemplos">
+              {TEXTO_VITRINE_SO_EXEMPLOS}
+            </p>
+          )}
 
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.

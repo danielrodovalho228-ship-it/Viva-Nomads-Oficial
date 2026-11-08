@@ -10,5 +10,14 @@ test("E686: 'Como é pago' diz que o avaliador define o valor e o prazo, e a tab
   assert.doesNotMatch(bloco, /segue a tabela/);
   assert.match(bloco, /você define o seu valor e o seu prazo/i);
   assert.match(bloco, /tabela da Viva[^.]*referência/i);
-  assert.match(bloco, /Quem paga é o dono do imóvel/);
+  // E714: a frase fala DO dono, não com ele ("Você paga a avaliação" é do dono, não do avaliador que lê a página).
+  assert.match(bloco, /\{FRASE_DONO_PAGA_AVALIACAO\}/);
+  assert.doesNotMatch(bloco, /FRASE_PAGA_AVALIACAO\}/);
+  assert.doesNotMatch(bloco, /Você paga a avaliação/);
+});
+
+test("E714: a constante para o avaliador diz que o DONO paga, e a do dono segue falando com o dono", async () => {
+  const { FRASE_DONO_PAGA_AVALIACAO, FRASE_PAGA_AVALIACAO } = await import("../vistoria/regras.ts");
+  assert.equal(FRASE_DONO_PAGA_AVALIACAO, "O dono paga a avaliação, não o resultado: o seu laudo é independente.");
+  assert.equal(FRASE_PAGA_AVALIACAO, "Você paga a avaliação, não o resultado.");
 });
