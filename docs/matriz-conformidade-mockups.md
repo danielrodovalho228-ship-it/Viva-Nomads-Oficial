@@ -951,3 +951,10 @@ Estados abertos do anúncio `ube-001`: **Agendar visita** e **Pedir para morar**
 **Nota (1280):** a busca do hero ficou 20 px à esquerda do centro por causa da faixa reservada ao botão "Fale com a Viva" (C1b, #3348, mesclado): o conteúdo público ganhou 72 px de respiro à direita. Passa na tolerância do t66 (40 px) e alinha com as demais seções; centralizar exatamente exigiria folga igual dos dois lados e desalinharia o hero do resto. Não corrigi; se o Muse quiser o centro exato, é decisão de desenho.
 
 **Desvios menores a corrigir:** nenhum. Nenhum PR de bloco aberto. Próximos itens abertos da fila (C5, preço repetido do C9, nomes de bairro do E704, topo da home × mockup) dependem de decisão do Muse/Daniel.
+
+## Passada 81 (08/11; modo demonstração local, `main` em `f7436be7e`; 390 e 1280) — painel logado, rotas ainda não varridas
+
+- **Rotas (16):** `/dashboard/ganhos`, `garantias`, `indicacoes`, `notificacoes`, `orcamentos/nova`, `propostas`, `respostas-rapidas`, `roi-imovel`, `simulador`, `solicitacoes`, `tributacao`, `verificacao`, `viabilidade`, `visitas`, `conta/seguranca` e `conta/excluir`.
+- **Resultado:** 0 imagens quebradas ou com erro HTTP, 0 sem `alt`, 0 estouro lateral, 0 texto cortado. Achados novos: nenhum.
+- **Redirecionamentos (esperados, não são defeito):** `roi-imovel` e `viabilidade` levam a `/dashboard/simulador`; `tributacao` leva a `/dashboard/ferramentas`.
+- **E713:** o anúncio de exemplo (calendário com aviso morto) está corrigido no #3365, draft e verde.
