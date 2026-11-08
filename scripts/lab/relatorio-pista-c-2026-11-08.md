@@ -283,3 +283,12 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - Main: lab verde em `a844024e7` e `624a5924a`; nenhum merge de código novo desde o último registro (últimos: docs da QA, #3443 e #3444). Sem spec nova a criar.
 - Sem 504 de infra nesta passada. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
 - Próximo bloco: 553 (grupo do 536).
+
+## Blocos 553, 554 e 555
+
+- Bloco 553 (t1501, PR #3451 draft, run 42477355268): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações, estadia e imóvel com id (grupo do 536).
+- Bloco 554 (t1502, PR #3452 draft, run 42477357440): verde. Admin: ajuda da publicação, fotos de perfil, marketing, sócios, dados de teste, serviços, solicitações, pedidos de parceiros, encerramentos, retenção (grupo do 537).
+- Bloco 555 (t1503, PR #3453 draft, run 42477360913): verde. Intenção, avaliação do imóvel, avaliadora e laudo (grupo do 538).
+- Merge novo na main depois do último registro: nenhum (conferido ao fim da sequência; último de código segue o #3433; só docs da QA depois). Sem spec permanente nova a criar.
+- Sem 504 de infra nesta passada. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Próximo bloco: 556 (grupo do 539).
