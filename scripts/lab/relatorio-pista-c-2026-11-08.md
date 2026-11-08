@@ -668,3 +668,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Specs novas:** **t1575 (#3581)** — E755 (ordem estável da vitrine), E760 (redirect 307 de meus-imoveis) e E764 (Mensagens vazio). **A fazer na próxima volta:** E749, E750, E754, E756, E761, E762.
 - **Em andamento:** t1573 (#3572, corrigida; run 42534278938), t1574 (#3576, E725; run 42534229148), bloco 605 (#3575; run 42534225342). Verdes: t1572 (#3571, E682), bloco 604 (#3570).
 - Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Cadeia das 23h30
+
+- **Verdes:** t1573 (#3572, E707, 2º run 42534278938) e bloco 605 (#3575, t1553, run 42534225342). Lab da main em `fe4d93dde`: run 42534532949 cancelado (substituído por run mais novo); veredito na próxima conferência.
+- **t1574 (#3576, E725): 1º run vermelho (42534229148) por defeito de spec.** O aviso "Estadia mínima de 30 dias." aparece como deveria; o que a spec negou por engano foi `total-junto-da-acao`, que é o **"Total por mês" (E528)**, fixo no cartão. O E725 tira só o total da estadia (`cartao-lateral-estadia`/`-conta`). Spec corrigida em commit novo (e, com 30 dias, o total da estadia aparece); rerun em andamento. Não é defeito de produto.
+- Sem achado novo (próximo livre: **L-110**). Faltam specs de E749, E750, E754, E756, E761, E762; bloco 606 (grupo do 589) é o próximo.
