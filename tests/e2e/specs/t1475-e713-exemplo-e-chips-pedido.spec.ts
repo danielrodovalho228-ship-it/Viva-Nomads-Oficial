@@ -22,7 +22,8 @@ test.describe("T1475 — E713 e chips do /pedidos/novo (visitante)", () => {
       const caixa = page.getByTestId("calendario-exemplo");
       await expect(caixa).toBeVisible();
       await expect(caixa).toContainText(/simular o valor/);
-      await expect(page.getByText("esta solicitação não é enviada")).toHaveCount(0);
+      // O aviso morto saiu do CALENDÁRIO (a frase segue em outros pontos da página de exemplo, como o aviso de demonstração).
+      await expect(page.locator('section[aria-labelledby="disp-title"]').getByText("esta solicitação não é enviada")).toHaveCount(0);
       const ver = page.getByTestId("calendario-exemplo-ver-reais");
       await expect(ver).toBeVisible();
       expect(await ver.getAttribute("href")).toBe("/buscar");
