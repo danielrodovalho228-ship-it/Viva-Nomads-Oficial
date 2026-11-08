@@ -78,11 +78,13 @@ export default function RootLayout({
           <AppModeBridge />
           <PushApp />
           <OrigemVisita />
-          <VivaChatFlutuante />
           <LinksDoApp />
           {/* E384: mensagens da validação nativa em português em todas as telas. */}
           <ValidacaoPtBr />
           {children}
+          {/* E737: o botão flutuante "Fale com a Viva" vem DEPOIS do conteúdo no DOM (ele é fixo, então a posição na tela é a mesma).
+              Antes ele era o 1º da página e o 1º Tab caía nele, antes do link "Pular para o conteúdo". */}
+          <VivaChatFlutuante />
         </AuthProvider>
         {/* E282: Vercel Web Analytics — só a medição padrão (visitantes, páginas, origens), sem cookies próprios e sem
             eventos customizados. Passa a contar quando o recurso for habilitado no projeto da Vercel. Só nos builds da
