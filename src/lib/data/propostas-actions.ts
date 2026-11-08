@@ -744,6 +744,7 @@ async function registroDaProposta(admin: Admin, propostaId: string): Promise<Pro
  * linha de uma posição passava a ser outra proposta (as do mesmo imóvel só se distinguem pelo número).
  */
 const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas agora.";
+const MSG_PROPOSTA_SEM_LEITURA = "Não foi possível ler a proposta agora. Tente de novo.";
 
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
@@ -812,7 +813,9 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
   if (!s || !/^[0-9a-f-]{36}$/i.test(id)) return null;
   await expirarVencidas(s.admin, s.user.id);
   // Leitura pela sessão (RLS): quem não é parte não vê nada (404).
-  const { data: pRow } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  // Falha de leitura NÃO é "proposta inexistente" (404): lança, e a página cai no error.tsx em vez de dizer que não existe.
+  const { data: pRow, error: erroProposta } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  if (erroProposta) throw new Error(MSG_PROPOSTA_SEM_LEITURA);
   let p = pRow as LinhaProposta | null;
   if (!p) return null;
   const papel: Autor = p.owner_id === s.user.id ? "owner" : "tenant";
@@ -827,7 +830,8 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       .maybeSingle();
     if (vista) p = vista as LinhaProposta;
   }
-  const { data: vs } = await s.supabase.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).order("versao");
+  const { data: vs, error: erroVersoes } = await s.supabase.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).order("versao");
+  if (erroVersoes) throw new Error(MSG_PROPOSTA_SEM_LEITURA);
   const linhas = (vs ?? []) as LinhaVersao[];
   if (!linhas.length) return null;
   const versoes: VersaoView[] = linhas.map((v, i) => {
@@ -913,10 +917,12 @@ export type Resposta =
 
 async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof sessao>>>, id: string) {
   await expirarVencidas(s.admin, s.user.id);
-  const { data } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  const { data, error: erroProposta } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).eq("id", id).maybeSingle();
+  if (erroProposta) return "erro" as const;
   const p = data as LinhaProposta | null;
   if (!p) return null;
-  const { data: v } = await s.admin.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+  const { data: v, error: erroVersao } = await s.admin.from("proposta_versoes").select(COLUNAS_VERSAO).eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+  if (erroVersao) return "erro" as const;
   if (!v) return null;
   return { p, v: v as LinhaVersao, papel: (p.owner_id === s.user.id ? "owner" : "tenant") as Autor };
 }
@@ -928,6 +934,7 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para responder." };
   const c = await carregarParaResponder(s, id);
+  if (c === "erro") return { ok: false, error: MSG_PROPOSTA_SEM_LEITURA };
   if (!c) return { ok: false, error: "Proposta não encontrada." };
   const { p, v, papel } = c;
   if (!estaAberta(p.status)) return { ok: false, error: p.status === "expirada" ? "Esta proposta expirou." : "Esta proposta não está mais em andamento." };
@@ -1057,7 +1064,8 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   if (!hoje) return { ok: false, error: MSG_TAXA_SEM_LEITURA };
   const taxa = taxaEfetivaDaProposta(tx.taxa_no_envio, hoje.taxa);
   const origem = origemDaTaxaDaProposta(tx.taxa_no_envio, hoje);
-  const { data: lead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
+  const { data: lead, error: erroLead } = await admin.from("leads").select("id, status").eq("id", p.lead_id).maybeSingle();
+  if (erroLead) return { ok: false, error: MSG_PROPOSTA_SEM_LEITURA };
   if (!lead || !["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
