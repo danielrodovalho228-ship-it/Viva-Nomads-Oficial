@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { preconnect } from "react-dom";
 import { listProperties } from "@/lib/data/properties";
 import { SearchClient } from "./search-client";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -24,6 +25,8 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  // E698: abre a conexão com o servidor dos tiles do mapa já na resposta da página (antes, só depois do JS do mapa).
+  preconnect("https://basemaps.cartocdn.com", { crossOrigin: "anonymous" });
   // E571: conta de TESTE logada vê também os anúncios de teste ativos (cartões, filtros e contadores da mesma lista).
   // Visitante e conta real: a lista pública de sempre, sem anúncio de teste.
   const incluirTeste = await buscaComAnunciosDeTeste();

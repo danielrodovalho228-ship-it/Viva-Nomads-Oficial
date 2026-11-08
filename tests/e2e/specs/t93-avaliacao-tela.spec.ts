@@ -88,8 +88,11 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
         await expect(pedido).toBeVisible();
         await pedido.getByLabel(/justificativa/i).fill("Conferido: o comentário é opinião sobre a estadia.");
         await pedido.getByRole("button", { name: /manter no ar/i }).click();
-        // ADMIN-2: decidido, o pedido sai da fila da Central (a conferência do estado é a do banco, logo abaixo).
-        await expect(pedido).toHaveCount(0, { timeout: 30_000 });
+        // ADMIN-2: a decisão mora na Central de Pendências, que não escreve "Mantida" na tela (o item sai da fila). A prova é o
+        // registro da decisão no banco; o teste confere o mesmo logo abaixo.
+        await expect
+          .poll(async () => (await adm.from("avaliacao_contestacoes").select("status").eq("detalhe", `O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`).maybeSingle()).data?.status, { timeout: 30_000, message: "a decisão 'manter no ar' foi gravada" })
+          .toBe("mantida");
       } finally {
         await ctxAdmin.close();
       }

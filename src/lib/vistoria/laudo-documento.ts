@@ -41,11 +41,11 @@ const dataBRT = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { tim
 
 /** Próximo passo do dono, pelo resultado (o mesmo texto vai na notificação). */
 export function proximoPasso(r: Resultado, prazoRessalvaAte: string | null): string {
-  if (r === "aprovado") return "O anúncio passa a mostrar o nível com \"· vistoriado\" por 12 meses.";
+  if (r === "aprovado") return "O anúncio passa a mostrar o nível com o selo “vistoriado” por 12 meses.";
   // Adendo 62-B1: a fronteira escrita — reverificação incluída só aqui; depois de "reprovado", nova avaliação (sem
   // falar em desconto: a condição de retorno, quando existir, aparece só no pedido, com a tabela da cidade).
   if (r === "com_ressalvas") return `Corrija os itens listados até ${prazoRessalvaAte ? dataBRT(prazoRessalvaAte) : "o prazo"}. ${TEXTO_REVERIFICACAO_INCLUIDA}`;
-  return `Vale o nível sustentado por este laudo, sem "· vistoriado". ${TEXTO_NOVA_AVALIACAO}`;
+  return `Vale o nível sustentado por este laudo, sem o selo “vistoriado”. ${TEXTO_NOVA_AVALIACAO}`;
 }
 
 export function conteudoLaudo(d: DadosLaudoDocumento, cabecalho?: Omit<CabecalhoDocumento, "marca">): ConteudoDocumento {
