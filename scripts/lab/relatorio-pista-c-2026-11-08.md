@@ -105,3 +105,8 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 - Main: #3361 (run 5057), #3362, #3363 e #3368 verdes no push. #3366 em andamento no fechamento; o run do #3367 foi cancelado por ser superado pelo seguinte (conclusão cancelled, não falha). Nenhum teste permanente quebrou.
 - Merges novos sem spec: nenhum (#3362 é spec; #3363 e #3368 são docs da QA).
 - Nenhum defeito novo; L-107 livre. Próximo: bloco 527 (grupo do 510).
+
+## Bloco 527
+
+- Bloco 527 (t1465, PR #3371 em draft, run 42440171656): verde. Compartilhadas com o morador, pedido de serviço pelos dois lados, três papéis.
+- Merges novos na main desde o último registro: só os blocos 523/524 (#3366, #3367); nenhuma jornada provada sem teste. Nenhum defeito novo; L-107 livre. Próximo: bloco 528 (grupo do 511).
