@@ -576,3 +576,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 1. **Lab verde:** t1565 (E219, #3544) **verde** (run 42522980194). Main parada em `143ad20ad`, sem merge novo desde as 19h50; os cinco drafts (#3533, #3530, #3531, #3532, #3498) seguem abertos. Nenhuma spec vermelha nova; nenhum item novo para a lista-master.
 2. **Varredura por blocos: não retomada.** Último bloco verde: 600 (#3527). Os blocos 601–603 estão prontos em ramo, mas a pausa de blocos novos do Muse (08/11) segue valendo e a fila de drafts não drenou. Motivo registrado; o 601 abre assim que a pausa cair.
 3. **Specs dos merges novos sem guarda:** **t1566 (#3546, draft sobre a main)** cobre E718, E720, E723, E726, E730 e E731 a 390 e 1280 px (E718 com imagem carregada de verdade). Os merges #3356 (bom saber), #3489 (C19, t1498), #3395 (E714, t1484) e #3396 (E717, t1485) já têm guarda. #3520 (troca CDL→ACIUB) é só texto de premissas e é coberto pela t1191.
+
+## Sequência de 21h25 — foto do estado
+
+- **Main** parada em `143ad20ad` (lab crítico verde). Drafts #3533, #3530, #3531, #3532 e #3498 ainda abertos. Nenhuma spec vermelha por merge novo.
+- **t1566 (#3546) verde** (run 42524050023): guarda de E718, E720, E723, E726, E730 e E731 a 390 e 1280 px. Todos os merges do dia têm guarda de lab.
+- **Varredura por blocos:** não avançou; a pausa do Muse segue valendo (último bloco verde: 600; 601–603 prontos em ramo, sem PR). Nenhum achado novo (próximo livre: L-110).
