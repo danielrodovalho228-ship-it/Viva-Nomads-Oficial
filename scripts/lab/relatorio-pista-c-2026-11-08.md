@@ -115,3 +115,9 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 
 - Bloco 528 (t1466, PR #3373 em draft, run 42440770509): verde. Proposta e visita com id na URL, 390 e 1280 px.
 - Main sem merge novo desde #3366/#3367 (blocos 523/524, já spec); nenhuma jornada provada sem teste. Nenhum defeito novo; L-107 livre. Próximo: bloco 529 (grupo do 512).
+
+## Bloco 529
+
+- Bloco 529 (t1467, PR #3374 em draft, run 42442070795): verde. /conferir, /conferir/[codigo], /dashboard/pedidos e /admin/sistema, 390 e 1280 px.
+- Main: único merge novo é #3372 (docs da QA, rodada 02:40); sem código de app novo desde `a3bae5dd`. A QA propôs o T-E686 (em /parceiros/avaliadores, nunca "Você define o seu" junto de "segue a tabela da Viva"; depois do D-E686-a, também sem "Você paga a avaliação"). A primeira parte já é a t1428 (PR #3270), que depende do #3256 ainda em draft: na main de hoje o texto ainda traz os dois trechos, então a spec não entra antes do produto. A parte "Você paga a avaliação" fica para quando o D-E686-a for corrigido (pista A).
+- Nenhum defeito novo; L-107 livre. Próximo: bloco 530 (grupo do 513).
