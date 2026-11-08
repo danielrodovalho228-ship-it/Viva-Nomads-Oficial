@@ -159,3 +159,10 @@ Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#335
 
 ### Sem spec ainda
 E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste de leitura de fonte).
+
+## E708 e bloco 536
+
+- E708 (#3313): já na main; sem referência do LinkedIn à rota antiga em `src`. Coberto pelo teste unitário `e708-rotas-de-retorno.test.ts` e pela t323 (volta em /dashboard/conta/seguranca). Item pulado por já estar mergeado e coberto.
+- Merges novos: #3391, #3392, #3399 e #3400 (docs da QA); nada a testar.
+- Bloco 536 (t1476, PR #3403 draft, run 42453174535): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações com id, telas da estadia e do imóvel com id.
+- Aberto no produto: L-104 e L-107. Próximo livre: L-108. Próximo bloco: 537 (grupo do 520).
