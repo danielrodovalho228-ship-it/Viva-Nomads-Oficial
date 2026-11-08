@@ -33,7 +33,7 @@ export function dataIdentidade(iso: string | null | undefined): string {
   return Number.isFinite(d.getTime()) ? d.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "";
 }
 
-const TEXTO_EM_BREVE = "Conferida pela equipe da Viva";
+export const TEXTO_EM_BREVE = "Conferida pela equipe da Viva";
 const TEXTO_SIMULAVEL = "Verificar identidade (simulado — conta de teste)";
 
 /**
