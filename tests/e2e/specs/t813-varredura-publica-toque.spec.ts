@@ -11,18 +11,13 @@ for (const largura of [390, 1280] as const) {
   test.describe(`T813 — área de toque nas páginas públicas (${largura} px)`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 }, hasTouch: largura === 390, isMobile: largura === 390 });
 
-    test("home: o campo de busca ocupa a barra inteira", async ({ page }) => {
+    test("home (E712): os dois botões do topo têm alvo de 44 px e não estouram a largura", async ({ page }) => {
       await page.goto("/", { waitUntil: "domcontentloaded" });
-      const campo = page.locator("#busca-principal-local");
-      await expect(campo).toBeVisible({ timeout: 30_000 });
-      const caixa = await campo.boundingBox();
-      expect(caixa?.height ?? 0).toBeGreaterThanOrEqual(44);
-      // Toque 4 px abaixo do topo do campo (fora da linha do texto antiga) foca o campo.
-      await page.mouse.click((caixa?.x ?? 0) + 20, (caixa?.y ?? 0) + 4);
-      await expect(campo).toBeFocused();
-      // O contorno do foco fica na barra em pílula, não num retângulo dentro dela.
-      expect(await campo.evaluate((e) => getComputedStyle(e).outlineStyle)).toBe("none");
-      expect(await page.getByTestId("barra-busca-home").evaluate((e) => getComputedStyle(e).outlineStyle)).toBe("solid");
+      for (const id of ["home-buscar-moradia", "home-publicar-pedido"]) {
+        const botao = page.getByTestId(id);
+        await expect(botao).toBeVisible({ timeout: 30_000 });
+        expect((await botao.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t813-home-${largura}.png` });
     });

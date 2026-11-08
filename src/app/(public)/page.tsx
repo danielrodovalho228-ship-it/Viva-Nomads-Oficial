@@ -30,9 +30,9 @@ import { ButtonLink } from "@/components/ui/button";
 import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
-import { BuscaPrincipal } from "@/components/home/busca-principal";
 import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
-import { HeroVideoBg } from "@/components/hero-video-bg";
+import { preload } from "react-dom";
+import { HERO_POSTER } from "@/lib/hero-poster";
 import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
@@ -68,6 +68,8 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function HomePage() {
+  // LCP: o poster do topo vem pré-carregado no <head>.
+  preload(HERO_POSTER.computador, { as: "image", imageSrcSet: `${HERO_POSTER.celular} 768w, ${HERO_POSTER.computador} 1280w`, imageSizes: "(min-width: 1024px) 50vw, 100vw", fetchPriority: "high" });
   const todos = await listProperties();
   const featured = todos.slice(0, quantosDestaques(todos.length));
   // Enquanto só há exemplos, a seção diz isso (nada de "Disponíveis agora").
@@ -76,24 +78,40 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd dados={organizacao(SITE_URL)} />
-      {/* ───────── HERO (ordem bab1b2aa): foto em largura cheia + UMA busca ───────── */}
-      <section className="relative overflow-hidden bg-night text-white" data-testid="hero-home">
-        {/* Fundo: poster = LCP; vídeo só em desktop sem reduced-motion. */}
-        <HeroVideoBg />
-        <div className="container-page relative z-10 flex min-h-[26rem] flex-col items-center justify-center py-12 text-center sm:min-h-[28rem] lg:min-h-[30rem]">
-          <h1 className="max-w-3xl font-title text-[28px] font-semibold leading-tight sm:text-[40px]">
-            Imóveis mobiliados para morar por meses
-          </h1>
-          <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
-            Estadias de 30 a 180 dias · sem taxa para o morador
-          </p>
-          <div className="mt-8 w-full max-w-xl">
-            <BuscaPrincipal />
+      {/* ───────── HERO (E712: mockup `publico-home`): título e dois botões à esquerda, foto na moldura à direita ───────── */}
+      <section className="bg-surface-2" data-testid="hero-home">
+        <div className="container-page grid items-center gap-8 py-8 lg:grid-cols-2 lg:gap-12 lg:py-12">
+          <div className="order-2 lg:order-1">
+            <h1 className="font-title text-[28px] font-semibold leading-tight text-ink sm:text-[40px]" data-testid="hero-titulo">
+              Imóveis mobiliados prontos para morar, de 30 a 180 dias, com contrato digital.
+            </h1>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/buscar" size="lg" data-testid="home-buscar-moradia">
+                Buscar moradia
+              </ButtonLink>
+              {/* Prompt 30, item 6: a porta do pedido de moradia na home. */}
+              <ButtonLink href="/pedidos/novo" variant="secondary" size="lg" data-testid="home-publicar-pedido">
+                Publicar pedido de moradia
+              </ButtonLink>
+            </div>
+            <p className="mt-4 text-base text-muted" data-testid="hero-apoio">
+              Sem burocracia • Mudança rápida • Suporte 7 dias
+            </p>
           </div>
-          {/* Prompt 30, item 6: a porta do pedido de moradia na home. */}
-          <Link href="/pedidos/novo" data-testid="home-publicar-pedido" className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-white underline underline-offset-4 hover:text-white/80">
-            Não achou? Publicar pedido de moradia
-          </Link>
+          <div className="order-1 lg:order-2">
+            {/* eslint-disable-next-line @next/next/no-img-element -- poster já pré-carregado (preload) para o LCP */}
+            <img
+              src={HERO_POSTER.computador}
+              srcSet={`${HERO_POSTER.celular} 768w, ${HERO_POSTER.computador} 1280w`}
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              alt="Sala mobiliada e iluminada, pronta para morar"
+              width={1280}
+              height={720}
+              fetchPriority="high"
+              className="aspect-[16/9] w-full rounded-xl object-cover"
+              data-testid="hero-foto"
+            />
+          </div>
         </div>
       </section>
 
