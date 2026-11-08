@@ -1034,3 +1034,23 @@ Fonte: `lista-master.md` anexa. Itens com dono Pista A e estado não fechado, se
 - **E661 e E666 (🔴 reprovados pós-merge: "o merge não chegou à produção"):** o código da `main` tem os blocos do E661 (`InstrucoesEmBlocos`, "Informado pelo proprietário, pode variar") e a legenda do E666 público está no #3250 (ainda **não** mesclado: o #3087 mesclado cobre outra parte). Se a QA viu a página pública sem os blocos, o ponto a investigar é deploy/condição (por exemplo `INSTRUCOES liberadas` do E661, e o #3250 aberto do E666), não código novo da Pista A.
 - **E670 (selo âmbar "Atenção" sem motivo no cartão do lead):** a própria lista marca como "decisão do chat principal/Daniel".
 - **E176, E255, E308, E430, E436, E474…E538, E554, E560, E584, E478, E626:** mergeados aguardando reteste ao vivo do QA, dependentes de decisão (E478, E626, E554, E560) ou sem objeto novo; nenhum com PR de código pendente da Pista A.
+
+## Passada 88 — E712 (C4): topo da home, print × mockup `publico-home`, elemento por elemento
+
+**O mockup foi achado.** Ele não está na `main`, mas está no branch **`origin/mockups`** (`docs/mockups/publico-home-desktop.webp` 1920×1200 e `publico-home-mobile.webp` 1008×2128; também `menu-publico-*` e `publico-proprietarios-*`). As passadas 78 e 80 diziam "mockup fora do repo": a correção é "fora da `main`, dentro do branch `mockups`". Capturas lado a lado em `docs/capturas/e712/` (mockup desktop e mobile; real a 1920 e 390, modo demonstração, `main` em `75a396772`).
+
+| # | Elemento | Mockup `publico-home` | Real hoje | Diferença |
+|---|---|---|---|---|
+| 1 | Fundo do topo | Bege claro, sem vídeo | Faixa escura com vídeo de fundo (hero em largura cheia) | estrutura |
+| 2 | Título (H1) | "Imóveis mobiliados prontos para morar, de 30 a 180 dias, com contrato digital." (alinhado à esquerda, 3 linhas, preto) | "Imóveis mobiliados para morar por meses" (centrado, branco, 2 linhas) | texto, alinhamento e cor |
+| 3 | Ação principal | "Buscar moradia" (botão cheio verde) + "Publicar pedido de moradia" (contorno), lado a lado | Campo "Para onde você vai?" com lupa; "Não achou? Publicar pedido de moradia" como link sublinhado | componente |
+| 4 | Linha de apoio | "Sem burocracia • Mudança rápida • Suporte 7 dias" | "Estadias de 30 a 180 dias · sem taxa para o morador" | texto |
+| 5 | Imagem | Foto da sala numa moldura arredondada à direita (desktop); foto em largura cheia sobre o título (mobile) | Vídeo de fundo atrás de tudo | posição e formato |
+| 6 | Destaques logo abaixo | "Imóveis em destaque para você" com 3 cartões sobre faixa verde | "A Viva em 30 segundos" (vídeo) e depois "Encontre o imóvel do seu jeito" | ordem e blocos |
+| 7 | Faixa "Para proprietários" + "Por que escolher a VivaNomads" | Faixa verde com texto, cartão de 3 selos e "Anunciar meu imóvel" | Outros blocos mais abaixo; o botão cheio de proprietário está no fim | posição |
+| 8 | Logo | Folha verde + "VivaNomads" todo em verde | Ícone "N" azul/verde + "VivaNomads" azul/verde | marca |
+| 9 | Menu (desktop) | Imóveis · Para proprietários · Empresas · Fale com a Viva · Entrar (**contorno**) | Imóveis · Anunciar · Empresas · Parceiros · Fale com a Viva · Entrar (**cheio**) | rótulos e botão (menu já decidido no E176/E458: "vale a lista aprovada") |
+| 10 | Mobile: cabeçalho | Logo + "Entrar" em contorno; sem ☰ visível | Logo + ☰ (menu) | controle |
+| 11 | Mobile: rodapé fixo | Faixa verde "Para proprietários — Anunciar meu imóvel" | Barra de abas (Início, Buscar, Pedidos…) | componente |
+
+**Por que NÃO alinhei o topo (e o E712 segue 🔴 aberto):** alinhar exige trocar o hero inteiro (vídeo + busca única → texto + dois botões + foto), e isso **contradiz ordens e specs já mesclados**: ordem `bab1b2aa` ("home com hero em largura cheia e UMA busca 'Para onde você vai?'", spec `t66`), o vídeo institucional v3 logo abaixo do hero (`t177`) e a conformidade de 30/10 (`t730`). São duas autoridades do Daniel em conflito (regra de 23/10: telas IGUAIS aos mockups; e a ordem `bab1b2aa`, que veio **depois** do mockup). Trocar o hero quebraria três specs do laboratório e desfaria uma ordem registrada. **Pergunta ao chat principal:** qual vale para o topo da home — o mockup `publico-home` ou a ordem `bab1b2aa` + vídeo v3? Com a resposta, o alinhamento é um PR de bloco único (hero + faixa de proprietários + destaques), com a atualização dos três specs; o mesmo vale para o rodapé fixo e o cabeçalho mobile (itens 10 e 11).
