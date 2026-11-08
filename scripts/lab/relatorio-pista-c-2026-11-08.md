@@ -265,3 +265,14 @@ E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste
 - **Observação para o dono do workflow (repetição do item de infra):** o 504/falha do `supabase/setup-cli@v1` se repetiu mais uma vez hoje. Os runs do bloco 547 caíram nesse passo repetidamente enquanto outros PRs rodavam normalmente no mesmo intervalo; pode ser coincidência de horário, não afirmo causa. A sugestão segue a mesma: fixar a versão do CLI e repetir o passo com espera, ou instalar por cache.
 - Defeitos: nenhum novo de produto; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i).
 - Próximo bloco: 551 (grupo do 534).
+
+## Vigia pós-bloco 550: C19, E527 ajustado e bloco 551
+
+- Lab da main: verde em `624a5924a` (#3443) e `a844024e7` (#3444), docs da QA. Nenhum merge de código novo; drafts E714, E717, E719, E716 e E713 seguem abertos (specs prontas ou adiadas como registrado antes).
+- **t1498 (PR #3447 draft, run 42475127749): verde.** T-C19 proposto pela QA (rodada 10:30): `/auth` sem rolagem lateral e `porta-formulario` dentro da tela. A 320, 360 e 375 px o defeito **reproduz no lab** (`test.fail` ligado ao item C19 da QA); a 390 e 1280 px é teste comum e passa. Correção é da pista dona do `/auth` (a QA aponta `grid min-h-screen lg:grid-cols-2` sem `grid-cols-1`).
+- **t1494 (PR #3440 draft, run 42475085864): verde** com a medida ajustada a pedido da QA (rodada 10:45): o E527 agora mede o pixel mais escuro de cada amostra da legenda (preenchimento OU contorno, captura com folga de 3 px) para Disponível, Ocupado, Bloqueado e Hoje. Na main o `test.fail` segue valendo; com o #3432 (draft, anel `forest` no "Disponível") só o Disponível passa, Ocupado, Bloqueado e Hoje continuam abaixo de 3:1 segundo a QA. E532 (i) sem mudança.
+- **Bloco 551 (t1499, PR #3448 draft, run 42475153661): verde.** Admin, busca, cidades, comparar, privacidade, segurança, termos e parceiros/buscar (grupo do 534).
+- QA 10:30 ainda sem spec: T-R1 (a "Nova jornada de teste" do admin não pré-seleciona um anúncio [TESTE QA] com contrato ativo): precisa de sessão de admin e massa de teste; fica como proposta, sem prova logada nesta pista.
+- Defeitos: nenhum novo meu; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Infra do workflow: nenhum 504 nesta passada (as 3 corridas passaram de primeira).
+- Próximo bloco: 552 (grupo do 535).
