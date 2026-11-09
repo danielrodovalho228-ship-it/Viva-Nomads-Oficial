@@ -68,3 +68,10 @@ test("o resumo da suíte inteira vai ao banco por arquivo, nunca como argumento 
   assert.match(consolidar, /\\set resumo `cat "\$RESUMO_ARQ"`/);
   assert.match(consolidar, /:'resumo'::jsonb/);
 });
+
+test("o supabase start da fatia tenta 5 vezes e reinicia o Docker da 2ª em diante (porta 54322 presa, fatias 11 e 4)", () => {
+  const fatia = yml.split("  consolidar:")[0];
+  assert.match(fatia, /for tentativa in 1 2 3 4 5; do/);
+  assert.match(fatia, /sudo systemctl restart docker/);
+  assert.match(fatia, /supabase start falhou 5 vezes/);
+});
