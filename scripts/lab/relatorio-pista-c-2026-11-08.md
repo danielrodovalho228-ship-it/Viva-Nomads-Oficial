@@ -1283,3 +1283,14 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **PAUSA aprovada pelo Daniel (09/11):** nenhum bloco novo de varredura (666 fica fechado). Só lab verde e triagem.
 - Triagem das 236 falhas do run 42560445737 agrupada por causa (ver o arquivo acima).
 - main segue em `344e3a273`; sem merge novo → sem spec de guarda pendente.
+
+## Rodada das 12h UTC (09/11) — manutenção do lab (pausa vigente): PR #3682
+
+Ritmo novo (Muse, 09/11): sem bloco novo de varredura; lab verde + specs dos merges recentes. O disparo do lab crítico do **bloco 660**, citado como pendente, já foi resolvido: run 42599595721, **verde**.
+
+PR de manutenção **#3682** (draft, branch `claude-c/lab-e744-ajustes`, commit `a10853ef9`), só `tests/e2e`:
+- **Notificações (t329, t354, t385):** causa lida no código — `next.config.ts` redireciona `/dashboard/conta/notificacoes` → `/dashboard/notificacoes` (E176 parte 2, `permanent: false`); a varredura abre a rota antiga e esperava ficar nela (1280 vem primeiro em `TAMANHOS`, por isso só 1280 aparece no erro). Os 3 specs passam a conferir o destino final (`destinoFinal`).
+- **t621:** o `checklist-ativacao` do proprietário não existe mais no Início do dono (E218-A: o guia mora dentro do bloco principal, `inicio-dono-passos`). Spec passa a exigir que NÃO haja checklist à parte e, no caso do rascunho, que `inicio-dono-passos` apareça no bloco principal. **Isto foi lido no código, não visto rodar**; o lab do PR confirma.
+- **t696:** `conferencia-tipo` saiu da lista de conferência no E271 ("Declarações e documento ficam só nas seções de 'Antes de publicar'"); marca do Passo 10 trocada para `declaracoes-passo10`. Mesma ressalva: confirmar no lab.
+- **t739:** comentário no cabeçalho, só para o spec rodar isolado no lab crítico do PR.
+- **Padrão "fixo" (L-110):** o `t329` (alterado) contém telas de inquilina (Mensagens, Meus pedidos) e de proprietário (Mensagens) do padrão; o lab do PR mostra o nome completo do botão. Resultado a registrar abaixo quando o run terminar.
