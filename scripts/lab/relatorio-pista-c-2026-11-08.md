@@ -1343,3 +1343,11 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - **E724 (PR #3685, t1589):** run 42637243510 em andamento desde 14:42 UTC.
 - **Novo merge #3503 (E729, 0425d5f37):** a exigência de cada categoria ("Pede o link do portfólio" / "Pede empresa e veículo") aparece no cartão antes de marcar. Só tinha teste de unidade. **Spec criada: `t1590-e729-exigencia-na-categoria.spec.ts`** (PR **#3686**, draft, commit `490083a8b`), `/parceiros` a 390 e 1280 px; guardas 13/13, tsc limpo; ainda não rodou.
 - Próximo L livre: **L-111**.
+
+## Rodada das 15h10 UTC (09/11) — E724 verde, E729 em curso, E690 (#3524) sem spec nova
+
+- **PR #3682:** sem run novo; veredito final é o 42617052464 (126 passaram, 3 falharam = L-110, produto).
+- **E724 (PR #3685, t1589):** run 42637243510 **verde** (o t1589 passou). Push da main do #3498 (42636489264) também verde.
+- **E729 (PR #3686, t1590):** run 42638725445 em andamento desde 14:51 UTC. Push da main do #3503 (42637657700) **verde**.
+- **Novo merge #3524 (E690, `8ee2fb5bc`):** ativação automática do avaliador credenciado (solicitado→em_teste→ativo), **atrás da chave `AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA`, desligada por padrão**; migração 0335; disparo no `/api/caf/verify`. Tem teste de unidade (`e690-ativacao-automatica.test.ts`). **Sem spec nova de navegador por ora:** com a chave desligada (estado do lab) o caminho antigo, manual pelo admin, é o que roda, e ele já é guardado por `t303`/`t341` (credenciamento do avaliador). Um spec do caminho novo exigiria a chave ligada no ambiente do lab, o que é mudança de workflow (fora do meu escopo). Mesmo tratamento dado ao E722/E707. Push da main do #3524 (42639488596) em andamento.
+- Próximo L livre: **L-111**.
