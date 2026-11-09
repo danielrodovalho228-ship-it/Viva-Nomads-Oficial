@@ -1393,3 +1393,10 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 3. **Main:** head `082af97b1` (#3610, E781) assentou **verde** (push 42651538718). Novo head `ac555605a` (#3617, E782): push 42657109989 em andamento.
 4. **Novo merge #3617 (E782):** a tela de Avaliações segue o padrão (seta de voltar, título em tinta, abas sublinhadas, sem título duplicado) + grafia "Uberlândia" na tela de papéis. A Pista A deixou a prova em 390 px para o QA/lab (tela com login). **Spec criada: `t1594-e782-avaliacoes-no-padrao-das-telas.spec.ts`** (PR **#3690**, draft, commit `e446121d0`), logada como a INQUILINA da massa, 390 e 1280; guardas 13/13, tsc limpo; **ainda não rodou**. O adendo "Uberlândia" não está coberto (depende do dado do perfil).
 5. **L-110** inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1595**; próximo L livre: **L-111**.
+
+## Rodada das 17h UTC (09/11) — t1594 verde; E782 assentou; E783 coberto pela Pista A
+
+1. **t1594 (E782, PR #3690):** run 42657863658 **verde**; os dois casos rodaram e passaram (390 e 1280, 4,9 s cada; 51 passaram em 2,4 min). A guarda do #3617 está confirmada no navegador, logada como a inquilina da massa.
+2. **CI da main:** push do #3617 (head `ac555605a`) run 42657109989 **verde**.
+3. **Novo merge #3618 (E783, `e0eaf8805`):** a foto de perfil do cabeçalho passa a aparecer em todas as telas, inclusive Conta e Perfil (sai a exceção do E55 que trocava por iniciais). **Cobertura existente:** a Pista A ajustou no próprio merge o spec de navegador `t391-conta-conformidade` (16 linhas) e o teste de unidade `visual-mockup.test.ts`, além de `e783-avatar-foto.test.ts`. **Spec nova dispensada.** Push da main ainda sem leitura nesta rodada.
+4. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1595**; próximo L livre: **L-111**.
