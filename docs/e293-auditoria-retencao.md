@@ -276,3 +276,25 @@ apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_descont
 - A guarda (`inventario.test.ts`) passa a reconhecer `instrucao_saida`, `nota_privada_parte`, `nota_privada_viva` e `condominio_wifi_senha/recepcao/fechadura` como nomes de dado pessoal, para a próxima tabela com essas colunas não passar em branco.
 - Já cobertos: `conferencia_laudos_retirados`, `properties` (condomínio), `parceiro_avaliacoes`, `ficha_dentro*`, `dados_categoria`.
 - Sem migração, sem apagar nada. O prazo de `contratos` entra na lista do item 13 (Dra. Beatriz).
+
+## 12. Relatório numerado de retenção (09/11/2026)
+
+Conferido em produção só com leitura, em 09/11/2026, por volta das 03h30 (horário de Brasília). Nada foi apagado. A rotina
+`e293-limpeza-retencao` (0281, `17 4 * * *`) está ativa e **terminou com sucesso hoje às 04h17 UTC**; `limpar-eventos-antigos`
+(mensal) rodou em 01/11.
+
+| # | Item (inventário) | Prazo declarado | Quem cumpre | Linhas | Vencidas hoje | Situação |
+|---|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | `pg_cron` da 0067 | 22.245 (desde 05/10/2026) | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | fase 2: o relatório só conta | 330 (desde 18/10/2026) | 0 | **as primeiras vencem em 16/01/2027**; passar à fase 1 antes disso é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | rotina do atendimento | 0 | 0 | em dia |
+| 4 | `saidas_motivos` | 365 dias (anonimizar) | fase 2: só conta | 0 | 0 | sem dados |
+| 5 | `denuncias_anuncio` | 365 dias da decisão | fase 2: só conta | 0 | 0 | sem dados |
+| 6 | `proprietario_strikes` | 365 dias | rotina da avaliação | 0 | 0 | sem dados (`VISTORIA_ATIVA` desligada) |
+| 7 | `estadia_convidados` | 30 dias do fim da estadia | rotina da estadia | 0 | 0 | sem dados |
+| 8 | `contrato_ocupantes` | 90 dias do fim da estadia | rotina do Prompt 32 | 0 | 0 | sem dados |
+| 9 | Livro `eliminacoes_registro` | — | `0281` e fase 1 | 121 (desde 23/10/2026) | — | +17 linhas desde 02/11 (eram 103): a rotina diária está apagando o que a §7 lista |
+| 10 | `contratos` (novo no inventário, §11) | pendente (item 13) | — | — | — | inventariado; prazo depende do item 13 |
+
+**Decisões em aberto (não executadas, sem mudança desde 05/11):** item 2 (`ia_chamadas` para a fase 1 antes de 16/01/2027), P4 Google
+Places, `destinos` pelo OSM, coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
