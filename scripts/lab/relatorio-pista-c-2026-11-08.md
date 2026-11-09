@@ -854,3 +854,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 628 (#3634, t1576):** 1º run (42558732902) vermelho por **infra**: `supabase start` falhou 3 vezes (porta em uso) e nenhum teste rodou, a mesma falha do E760 e do bloco 609. Não é defeito de produto nem da spec; sem L- novo. Único rerun disparado; veredito na rodada seguinte.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
 - **Padrão a registrar:** a falha de `supabase start` por porta em uso já apareceu em 3 runs (E760, bloco 609, bloco 628), sempre em PR/push logo após outro run no mesmo runner; sem teste vermelho em nenhum. Fica para a Pista B avaliar se o workflow precisa limpar containers antes de subir.
+
+## Leitura das 04h15 (09/11) — 628 no rerun, 630 aberto
+
+- **Bloco 629 (#3635): VERDE** (42558758231), já registrado.
+- **Bloco 628 (#3634):** rerun (tentativa 2 do run 42558732902) em andamento desde 04h03; sem veredito.
+- **Bloco 630 (#3636, t1578, grupo do 613 — proposta e visita pelos dois lados; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem achado novo na varredura, logo nenhuma spec de guarda nova a propor (próximo livre: **L-110**).
