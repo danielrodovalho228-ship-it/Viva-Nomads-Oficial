@@ -6,7 +6,7 @@ import { TAMANHOS, abrirComoConta, escutarErros, lerMassa, temContaVarredura, ty
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1579 — VARREDURA DA PÁGINA INTEIRA, BLOCO 631 (Pista C, 08/11), 18ª volta do ciclo: repete o grupo do bloco 614 (t1562; antes, os blocos 597, 580, 563, 546, 529, 512, 495, 478, 461, 444 e 427;
+  T1620 — VARREDURA DA PÁGINA INTEIRA, BLOCO 631 (Pista C, 08/11), 18ª volta do ciclo: repete o grupo do bloco 614 (t1562; antes, os blocos 597, 580, 563, 546, 529, 512, 495, 478, 461, 444 e 427;
   as telas tocadas pelos merges #2028 e #2031), as varridas há mais tempo depois do bloco 596. O protocolo do bloco 21 (t385): seis classes (imagem pelo carregamento real, elemento fixo
   sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade), página toda rolada, 390 e 1280 px, HTTP
   abaixo de 400; e o console (erro de console ou de página, régua da t249) no relatório.
@@ -47,7 +47,7 @@ const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco631";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
-test.describe("T1579 — varredura da página inteira, bloco 631 (18ª volta, telas dos merges #2028 e #2031: conferir, sistema, pedidos do morador) (390 e 1280 px)", () => {
+test.describe("T1620 — varredura da página inteira, bloco 631 (18ª volta, telas dos merges #2028 e #2031: conferir, sistema, pedidos do morador) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeAll(async () => {
     // Um código de verdade (o "Conferir arquivo" do #2031 só aparece com documento achado); sem nenhum, o estado "não achado".
