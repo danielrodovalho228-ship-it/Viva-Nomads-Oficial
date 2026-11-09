@@ -474,3 +474,6 @@ export function linhasDadosDaCategoria(categorias: readonly string[], dados: { e
   if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
   return linhas;
 }
+
+/** E771: a divisão 90/10 vale só para SERVIÇOS de parceiros; o pagamento da estadia (/empresas, /buscar) vai direto ao proprietário. */
+export const ESCOPO_PAGAMENTO_PARCEIROS = "Esta divisão vale só para os serviços de parceiros. O pagamento da estadia vai direto ao proprietário, e a Viva não toca nesse dinheiro.";
