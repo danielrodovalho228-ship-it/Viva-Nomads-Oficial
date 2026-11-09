@@ -5,7 +5,7 @@ import { TAMANHOS, escutarErros } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1568 — VARREDURA DA PÁGINA INTEIRA, BLOCO 620 (Pista C, 08/11), 17ª volta do ciclo: repete o grupo do bloco 603 (t1551; antes, blocos 586, 569, 552, 535, 518, 501, 484, 467, 450 e 433) —
+  T1609 — VARREDURA DA PÁGINA INTEIRA, BLOCO 620 (Pista C, 08/11), 17ª volta do ciclo: repete o grupo do bloco 603 (t1551; antes, blocos 586, 569, 552, 535, 518, 501, 484, 467, 450 e 433) —
   as telas que a 7ª volta varreu pela primeira vez (avisos, prévia de e-mails e a caixa do leitor de QA, que o E435 #2553 passou a dividir com o admin), no protocolo do bloco 21 (t385): seis classes (imagem pelo carregamento real,
   elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade), página toda rolada, 390 e
   1280 px, HTTP abaixo de 400, e o console (régua da t249):
@@ -47,7 +47,7 @@ async function abrir(browser: Browser, conta: Conta, tam: (typeof TAMANHOS)[numb
   return ctx.newPage();
 }
 
-test.describe("T1568 — varredura da página inteira, bloco 620 (17ª volta: avisos, prévia de e-mails, caixa do leitor de QA) (390 e 1280 px)", () => {
+test.describe("T1609 — varredura da página inteira, bloco 620 (17ª volta: avisos, prévia de e-mails, caixa do leitor de QA) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (conta de leitor de QA)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
