@@ -1,0 +1,432 @@
+[
+ {
+  "w": 390,
+  "r": "/",
+  "viol": [],
+  "incompletos": 21
+ },
+ {
+  "w": 390,
+  "r": "/ajuda",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/morador",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/proprietarios",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/buscar",
+  "viol": [],
+  "incompletos": 4
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia",
+  "viol": [],
+  "incompletos": 4
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "viol": [],
+  "incompletos": 2
+ },
+ {
+  "w": 390,
+  "r": "/comparar",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/conferir",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/excluir-conta",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/favoritos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/guia-fotos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/guias",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/guias/o-que-e-a-caucao",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-001",
+  "viol": [],
+  "incompletos": 10
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/ativar",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/fotografos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "viol": [],
+  "incompletos": 2
+ },
+ {
+  "w": 390,
+  "r": "/privacidade",
+  "viol": [],
+  "incompletos": 4
+ },
+ {
+  "w": 390,
+  "r": "/proprietario/exemplo-1",
+  "viol": [
+   {
+    "t": "child(10) > .gap-3.flex.items-center > .w-10.h-10.text-white",
+    "msg": {
+     "fg": "#ffffff",
+     "bg": "#4fa01e",
+     "ratio": 3.29,
+     "exp": "4.5:1"
+    },
+    "html": "<span aria-hidden=\"true\" class=\"grid h-10 w-10 shrink-0 place-items-center rounded-full te"
+   }
+  ],
+  "incompletos": 2
+ },
+ {
+  "w": 390,
+  "r": "/seguranca",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/termos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/acesso-socios",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/auth",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 390,
+  "r": "/pagina-que-nao-existe-qa",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 1280,
+  "r": "/",
+  "viol": [],
+  "incompletos": 6
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/morador",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/proprietarios",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/buscar",
+  "viol": [],
+  "incompletos": 5
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia",
+  "viol": [],
+  "incompletos": 4
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 1280,
+  "r": "/comparar",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/conferir",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/excluir-conta",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/favoritos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/guia-fotos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/guias",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/guias/o-que-e-a-caucao",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "viol": [],
+  "incompletos": 1
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/ativar",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/fotografos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "viol": [],
+  "incompletos": 6
+ },
+ {
+  "w": 1280,
+  "r": "/privacidade",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/proprietario/exemplo-1",
+  "viol": [
+   {
+    "t": "child(10) > .gap-3.flex.items-center > .w-10.h-10.text-white",
+    "msg": {
+     "fg": "#ffffff",
+     "bg": "#4fa01e",
+     "ratio": 3.29,
+     "exp": "4.5:1"
+    },
+    "html": "<span aria-hidden=\"true\" class=\"grid h-10 w-10 shrink-0 place-items-center rounded-full te"
+   }
+  ],
+  "incompletos": 2
+ },
+ {
+  "w": 1280,
+  "r": "/seguranca",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/termos",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/acesso-socios",
+  "viol": [],
+  "incompletos": 0
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "viol": [],
+  "incompletos": 5
+ },
+ {
+  "w": 1280,
+  "r": "/pagina-que-nao-existe-qa",
+  "viol": [],
+  "incompletos": 1
+ }
+]
