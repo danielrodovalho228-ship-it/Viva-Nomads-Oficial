@@ -904,3 +904,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 635 (#3643, t1583):** run 42564247954 em andamento (iniciado 04h53); sem veredito.
 - **Bloco 636 (#3645, t1584, grupo do 619 — cidade, institucionais, parceiros, comparar, admin; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** conferida uma vez, ainda em `344e3a273`: **nenhum merge novo**. Os trabalhos das Pistas A e B (E723–E734, E766/E768) seguem em PR/draft, não na main; nenhuma spec permanente nova a rodar. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 05h10 (09/11) — bloco 635 verde, 636 rodando, 637 aberto
+
+- **Bloco 635 (#3643, t1583): VERDE** (42564247954), painéis do morador e do proprietário/empresas (19ª volta), sem achado.
+- **Bloco 636 (#3645, t1584):** run 42564754630 em andamento.
+- **Bloco 637 (#3646, t1585, grupo do 620 — avisos, prévia de e-mails, caixa do leitor de QA; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
