@@ -876,3 +876,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 631 (#3638, t1579):** run 42560774263 em andamento.
 - **Bloco 632 (#3639, t1580, grupo do 615 — solicitações, estadia, desempenho, cartão, contrato; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada); nenhuma spec permanente nova a rodar. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h35 (09/11) — bloco 631 verde, 632 em fila, 633 aberto
+
+- **Bloco 631 (#3638, t1579): VERDE** (42560774263), conferir/sistema/pedidos do morador (18ª volta), sem achado.
+- **Bloco 632 (#3639, t1580):** run 42561331910 ainda **em fila** no runner; sem veredito.
+- **Bloco 633 (#3640, t1581, grupo do 616 — início, busca, imóvel, ajuda, painel do proprietário; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
