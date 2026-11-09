@@ -1067,3 +1067,10 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Numeração:** todas as specs de bloco do lote ficam em t1600–t1631, sem colisão com as specs E-* (t1560–t1587).
 - **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. **Achados novos: nenhum** (próximo livre: **L-110**).
 - **Próximo bloco da fila:** 644 (grupo do 627, spec t1632), que só abro se o chat principal pedir nova volta, para não ocupar a fila de runners sem necessidade enquanto o lab está verde.
+
+## Nova volta pedida pelo Muse — 06h35 UTC (09/11)
+
+- **Main:** head conferido uma vez, `344e3a273`; os últimos merges continuam os de 08/11 (E727/E728, E748, E746, E747, E749, E750, E753, E754), todos já com guarda (t1576–t1587 e testes de unidade dos PRs). **Nenhum merge novo, nenhuma spec de guarda nova.**
+- **Bloco 644 (#3653, t1632, grupo do 627 — admin: chamado, contrato, pedido de parceiro; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar do lab:** lote 612–643 todo verde (32/32); 644 em primeira rodada.
+- **Achados novos:** nenhum (próximo livre: **L-110**).
