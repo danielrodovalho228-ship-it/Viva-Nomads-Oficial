@@ -452,3 +452,13 @@ Correção: as três specs varrem `/dashboard/notificacoes`. Guarda: `tests/labo
 Causa: o teto por teste do `playwright.config.ts` (45 s) foi pensado para o gate de PR; nas fatias noturnas, com 2 workers no runner, 17 testes (t78, t71, t176, t778, t51, t290, t291, t40, t56, t66…) estouram por lentidão, não por defeito.
 Correção: as 16 fatias gerais do noturno rodam com `--timeout=90000` (gate de PR e config intactos; o teto global da fatia segue 3.900 s). Guarda em `tests/laboratorio/lab-fatias.test.ts`.
 Observação: o log do job não traz o detalhe por teste (a saída vai para `e2e.txt`/artefato); o detalhe só sai da linha consolidada de `lab_execucoes` (aguarda a fatia 20/20).
+
+## Run 42619364978 — consolidado (head b35f781cc, antes das correções de Notificações/timeout)
+`lab_execucoes` 09/11 13:44 UTC: **219 falhas** (a run anterior tinha 242). Fatias: 4 verdes (2, 17, 18, 19) e 16 vermelhas; a 20/20 (admin) terminou sem estourar. A suíte termina e consolida.
+Por família: **55 baselines de screenshot** (t245 38, t271 11, t263 6 — decisão visual do QA; o artefato `linhas-de-base` já existe); Notificações @1280 (t354, t385: corrigido em 883ad2274); timeouts 45 s (t78, t71, t176, t778: corrigido em 53e25ae50); ~160 falhas em ~95 specs de causas distintas (specs desatualizados e dependências entre testes), triagem por spec abaixo.
+
+### Specs desatualizados (drift do produto) — corrigidos
+- `t51` "visão geral": exigia o painel "Áreas do admin" na inicial do admin, removido pelo E176 (guarda `estilo-admin.test`). Agora confere os atalhos no menu do admin. Guarda: `tests/laboratorio/t51-areas-admin-e176.test.ts`.
+
+### Ainda abertos (leitura do consolidado)
+t14/t46 (aba "Estadias" da barra: nome acessível vem de `descricao`), t95, t277 (32px × 80px), t436, t70, t112, t799, t318/t316, t597 (dois pedidos por saída), t621/t696 (varredura com texto E218/#1587), t719/t692 (sem mensagem de erro), t910 (Range.selectNodeContents), e os demais com 1 falha cada. Cada um exige abrir o spec e o código; seguem a ordem do consolidado.

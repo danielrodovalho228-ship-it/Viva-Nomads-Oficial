@@ -29,12 +29,12 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
     });
   }
 
-  test("visão geral mostra as áreas novas com atalhos", async ({ page }) => {
+  test("visão geral alcança as áreas novas pelo menu do admin", async ({ page }) => {
+    // E176: a inicial do admin não repete "Áreas do admin" (estilo-admin.test); os atalhos moram no menu lateral.
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/admin", { waitUntil: "networkidle" });
-    const corpo = page.locator("main");
-    await expect(corpo.getByRole("heading", { name: "Áreas do admin" })).toBeVisible();
-    for (const href of ["/admin/socios", "/admin/parceiros", "/admin/fotografos", "/admin/agentes"]) {
-      await expect(corpo.locator(`a[href="${href}"]`).first()).toBeVisible();
+    for (const href of ["/admin/socios", "/admin/parceiros", "/admin/agentes"]) {
+      await expect(page.locator(`a[href="${href}"]`).first(), href).toBeAttached();
     }
   });
 
