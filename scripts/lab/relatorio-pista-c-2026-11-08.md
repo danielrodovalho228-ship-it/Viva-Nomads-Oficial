@@ -812,3 +812,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 623 (#3627, t1571): VERDE** (42554666493), avaliação pelos dois lados e avaliadora pública, sem achado.
 - **Bloco 624 (#3629, t1572, grupo do 607 — painel do proprietário sem id; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. E783 (#3618) e E744 (#3588) seguem em draft. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h35 (09/11) — blocos 625 e 626 abertos, 624 ainda rodando
+
+- **Bloco 624 (#3629, t1572):** run 42555516380 em andamento (veredito na rodada seguinte).
+- **Bloco 625 (#3630, t1573, grupo do 608 — painel do morador sem id; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Bloco 626 (#3631, t1574, grupo do 609 — públicas com parâmetro; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada). Sem L- aberto (próximo livre: **L-110**).
