@@ -767,3 +767,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 617 (#3619, t1565): VERDE** (42547382408), serviços e visitas, admin, parceiros, sem achado.
 - **Bloco 618 (#3621, t1566, grupo do 601 — painéis do morador e do proprietário, empresas, para-proprietários):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. E748 (#3547) já tem teste de unidade próprio na main (`src/lib/anuncio/e748-identidade-fonte-unica.test.ts`), então fica guardado sem spec de lab. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 02h15 (09/11) — bloco 618 verde, 619 aberto
+
+- **Bloco 618 (#3621, t1566): VERDE** (42548178505), painéis do morador e do proprietário, empresas, sem achado.
+- **Bloco 619 (#3623, t1567, grupo do 602 — cidade, institucionais, parceiros, comparar, admin):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab disparado pelo push, veredito na rodada seguinte.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
