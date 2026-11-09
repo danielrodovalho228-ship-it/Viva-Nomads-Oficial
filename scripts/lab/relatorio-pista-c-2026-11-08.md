@@ -1090,3 +1090,10 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 645 (#3654, t1633, grupo do 628 — compartilhadas sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar:** lote 612–644 verde (33/33); 645 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. **#3598** (conserto do `verify` vermelho da main) segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 06h58 UTC (09/11) — bloco 645 verde, 646 aberto
+
+- **Bloco 645 (#3654, t1633): VERDE** (42574791054), compartilhadas sem id (19ª volta), sem achado.
+- **Bloco 646 (#3656, t1634, grupo do 629 — morador nas compartilhadas; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–645 verde (34/34); 646 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 (conserto do `verify` da main) segue aberto e não mesclado. Achados novos: nenhum (próximo livre: **L-110**).
