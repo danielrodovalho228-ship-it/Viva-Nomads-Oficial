@@ -1173,3 +1173,12 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **Bloco 653 (#3664, t1641, grupo do 636 — cidade, institucionais, parceiros, comparar, admin; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar:** lote 612–652 verde (41/41); 653 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; #3598 aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 08h17 UTC (09/11) — 653 em andamento, 654 aguarda
+
+- **Bloco 653** (#3664, t1641, run 42583894527, tentativa 1): ainda `in_progress` (iniciada 08:09 UTC). Sem veredito. Pela regra, o **bloco 654 (grupo 637, t1642) não abre** até o 653 ficar verde.
+- **main**: continua em `344e3a273` (sem merge novo).
+- **#3598** (E727/E728, `verify` da main): aberto, fora de draft, limpo, **não mesclado**.
+- **#3531 (E742) e #3532 (E743)**: abertos em draft, **não mesclados**. Seguimentos E742/E743 (tirar `conhecidoL104` dos specs de bloco, tirar `test.fail` do t1429, rebase de #3540/#3541) **ficam intocados, aguardando o merge**.
+- **#3588** (E744 fatiado): aberto em draft, **não mesclado**. Não existe noturna completa em código corrigido (run 42554301427 foi cancelada); a **triagem E744 das 37 varreduras + 17 timeouts continua esperando essa rodada**.
+- Próxima leitura: gatilho das ~08:20 UTC lê o 653 e, se verde, abre o 654.
