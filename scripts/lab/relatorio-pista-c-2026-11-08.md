@@ -1368,3 +1368,12 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
    - **#3579 (E752):** a Caução passa a mostrar o valor do 1º bloco ("Caução do 1º bloco (N meses)" + R$) e o texto público "paga direto ao proprietário / a Viva não recebe nem segura esse dinheiro" (sai a "poupança"). Mudança de comportamento; tinha teste de unidade (`e752-caucao-valor.test.ts`) e a Pista B ajustou o `t158`. **Spec criada: `t1591-e752-caucao-valor-do-primeiro-bloco.spec.ts`** (PR **#3687**, draft, commit `b25747916`), `/imoveis/ube-001` a 390 e 1280 px. Guardas 13/13, tsc limpo; **ainda não rodou**.
 3. **Consolidado:** PRs de guarda em draft aguardando QA — #3684 (t1588, E719), #3685 (t1589, E724), #3686 (t1590, E729), todos verdes; #3687 (t1591, E752) em primeira execução. PR #3682: 126 passaram, 3 falharam = **L-110** (t329, produto, pista B); sem run novo.
 4. Próximo `t` livre: **t1592**. Próximo L livre: **L-111**.
+
+## Rodada das 16h10 UTC (09/11) — t1591 verde; E776 dispensado; E780 (t1592)
+
+1. **t1591 (E752, PR #3687):** run 42648647207 **verde** (tests 2 min 28 s). **Push do #3579 na main:** 42647760345 **verde**.
+2. **PRs de guarda em draft** (#3684 t1588, #3685 t1589, #3686 t1590, #3687 t1591): todos **verdes**, sem commit novo nos branches, sem run pendente nem vermelho por causa nova. Seguem em draft para o QA do chat principal; nada mesclado por mim.
+3. **Merges novos** (head `192aef78b`), na ordem:
+   - **#3596 (E776):** textos-fonte únicos (contato, caução, taxas) + gate de frases proibidas no CI. É refatoração de texto para constantes (`textos-regulados.ts`) com gate próprio em teste de unidade (`frases-proibidas.test.ts`, 87 linhas) que varre o fonte; os únicos textos visíveis que mudam estão em telas logadas (rótulo "Caução (devolvida no fim)" em Reembolsos; nota das Visitas). **Spec de navegador dispensada**: o gate de frases proibidas é a guarda do merge e roda no CI. Push da main 42649064238 **verde**.
+   - **#3611 (E780):** o topo da /buscar fica preso no celular (faixa de filtros `sticky top-18`, a contagem rola por baixo; lg+ no fluxo). Tinha só teste de unidade e capturas da Pista A. **Spec criada: `t1592-e780-topo-da-busca-preso.spec.ts`** (PR **#3688**, draft, commit `ee18c7f83`); guardas 13/13, tsc limpo; **ainda não rodou**. Push da main 42650306889 em andamento.
+4. **L-110** segue como exceção (t329, PR #3682: 126 passaram, 3 falharam; produto, pista B); sem nova rodada nele. Próximo `t` livre: **t1593**. Próximo L livre: **L-111**.
