@@ -1442,3 +1442,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Run 42672859114 (PR #3693, `cd7a8beec`), tentativa 2: **success**. O E732 (rótulo do banner com contraste ≥ 4,5:1) está guardado a 390 e 1280 px. A primeira tentativa foi falha de infra (0 jobs), não veredito.
 - Head da main segue `37db454e3`: nenhum merge de produto novo desde #3586/#3530 → nenhuma spec nova. Próximos livres: t1598 / L-111.
 - PRs de guarda #3690–#3693 (t1594–t1597) verdes e em rascunho; L-110 segue aberto (Pista B).
+
+## Rodada das 19h00 UTC (09/11) — conferência única da sequência
+
+- Main segue em `37db454e3` (últimos merges: #3688, #3689, guardas minhas). Nenhum merge de produto novo desde #3586/#3530 → nenhuma spec nova (próximos livres: t1598 / L-111).
+- Guardas t1594–t1597 (PRs #3690–#3693): verdes, em rascunho, sem erro de spec ou infra a corrigir. Nada de produto tocado.
+- Aberto: L-110 (Pista B); #3682 mantém 3 vermelhos de t329 por desenho.
