@@ -773,3 +773,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 618 (#3621, t1566): VERDE** (42548178505), painéis do morador e do proprietário, empresas, sem achado.
 - **Bloco 619 (#3623, t1567, grupo do 602 — cidade, institucionais, parceiros, comparar, admin):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab disparado pelo push, veredito na rodada seguinte.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## E744 — suíte noturna que estoura o teto global (09/11, 02h30)
+
+- **Já existe PR para o E744: #3588** (Pista B, `claude-b/e744-suite-fatiada`, draft, `mergeable_state: clean`): 16 fatias paralelas (`--shard=N/16`, `fail-fast: false`), job `consolidar` que junta os `resultado.json` e grava uma linha em `lab_execucoes`, teste de guarda de matriz × `--shard` × `--esperadas`; 207 pass / 0 fail nos testes do PR. O desenho foi aprovado pelo Daniel. O problema medido: run 42471821063, 640 testes rodaram e 3.864 não rodaram (teto de 3900 s).
+- **Decisão da Pista C:** não abrir um segundo PR fatiando o mesmo workflow. Duplicaria o #3588, daria conflito em `.github/workflows` e sairia do meu escopo (`tests/e2e` e `scripts/lab`). O que fica comigo: ler o resultado da 1ª execução fatiada na main depois do merge e registrar as fatias vermelhas, se houver, como L- (próximo livre: **L-110**). O merge só com o gate completo verde é do Daniel.
+- **Bloco 619 (#3623):** run 42550014972 em andamento. **Main:** sem merge novo depois de `344e3a273`.
