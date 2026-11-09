@@ -145,13 +145,20 @@ jobs:
       - name: Rodar a suíte E2E
         id: e2e
         continue-on-error: true
-        # Fatias 1–16: a suíte SEM os specs pesados (LAB_PESADOS=fora), em 16 partes. Fatias 17–20: SÓ os specs pesados
-        # (t50 e t49, ver SPECS_PESADOS em playwright.config.ts), em 4 partes. Todas com o mesmo teto de tempo.
+        # Fatias 1–16: a suíte SEM o t48-varredura (LAB_PESADOS=fora), em 16 partes. Fatias 17–20: SÓ o t48-varredura, uma
+        # fatia por grupo de testes (a cadeia é serial e leva ~100 min junta; separada, cada grupo leva <= 30 min).
         run: |
-          if [ "${{ matrix.fatia }}" -le 16 ]; then
+          F=${{ matrix.fatia }}
+          if [ "$F" -le 16 ]; then
             LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
-            npx playwright test t50-rls-todas-tabelas t49-seguranca-publica --shard=$(( ${{ matrix.fatia }} - 16 ))/4 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+            case "$F" in
+              17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
+              18) GREP="inquilino: todas as telas logadas" ;;
+              19) GREP="proprietário: todas as telas logadas" ;;
+              20) GREP="admin: todas as telas logadas" ;;
+            esac
+            npx playwright test t48-varredura --grep "$GREP" --reporter=list,html,json --workers=1 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           fi
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
@@ -199,7 +206,7 @@ jobs:
       - name: Resumo da noite
         run: |
           {
-            echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 dos specs pesados)"
+            echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 da varredura t48)"
             node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
             echo
             echo "### Por spec (passou / falhou)"

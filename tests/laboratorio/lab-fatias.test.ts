@@ -15,8 +15,8 @@ test("a matriz cobre as fatias 1..N e o --shard usa o mesmo N", () => {
   const matriz = /fatia:\s*\[([^\]]+)\]/.exec(yml)?.[1]?.split(",").map((x) => Number(x.trim())) ?? [];
   const n = Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]);
   assert.ok(n >= 8, `fatias = ${n}`);
-  // 16 gerais + 4 dos specs pesados (E744): a matriz tem n + PESADAS fatias.
-  const pesadas = Number(/--shard=\$\(\( \$\{\{ matrix\.fatia \}\} - \d+ \)\)\/(\d+)/.exec(yml)?.[1]);
+  // 16 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 17..20 do case do workflow).
+  const pesadas = ["17", "18", "19", "20"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
   assert.equal(pesadas, 4);
   assert.deepEqual(matriz, Array.from({ length: n + pesadas }, (_, i) => i + 1));
   assert.match(yml, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/\d+\)/);
@@ -69,11 +69,16 @@ test("o supabase start da fatia tenta 5 vezes e reinicia o Docker da 2ª em dian
   assert.match(fatia, /supabase start falhou 5 vezes/);
 });
 
-test("os specs pesados saem das fatias gerais e rodam só nas fatias próprias (a fatia 11/16 batia o teto)", () => {
+test("a varredura t48 (cadeia serial de ~100 min) sai das fatias gerais e roda em 4 fatias próprias, uma por grupo de testes", () => {
   const cfg = readFileSync("playwright.config.ts", "utf8");
-  assert.match(cfg, /export const SPECS_PESADOS = \/t\(50-rls-todas-tabelas\|49-seguranca-publica\)\\\.spec\\\.ts\//);
+  assert.match(cfg, /export const SPECS_PESADOS = \/t48-varredura\\\.spec\\\.ts\//);
   assert.match(cfg, /testIgnore: process\.env\.LAB_PESADOS === "fora" \? SPECS_PESADOS : undefined/);
   assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/16/);
-  assert.match(yml, /npx playwright test t50-rls-todas-tabelas t49-seguranca-publica --shard=\$\(\( \$\{\{ matrix\.fatia \}\} - 16 \)\)\/4/);
-  assert.match(yml, /if \[ "\$\{\{ matrix\.fatia \}\}" -le 16 \]/);
+  assert.match(yml, /npx playwright test t48-varredura --grep "\$GREP"/);
+  assert.match(yml, /if \[ "\$F" -le 16 \]/);
+  // Os 4 grupos cobrem os 6 testes do t48 sem sobrepor: visitante (3) + uma fatia por persona logada (3).
+  const spec = readFileSync("tests/e2e/specs/t48-varredura.spec.ts", "utf8");
+  assert.match(spec, /mode: "serial"/, "a razão da separação: a cadeia é serial");
+  for (const g of ["inquilino: todas as telas logadas", "proprietário: todas as telas logadas", "admin: todas as telas logadas"]) assert.ok(yml.includes(g), g);
+  for (const t of ["visitante: todas as rotas do sitemap", "visitante a 1280 px", "endereços inexistentes", "sitemap limpo"]) assert.ok(spec.includes(t), t);
 });
