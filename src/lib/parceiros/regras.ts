@@ -26,6 +26,8 @@ export type CategoriaParceiro = (typeof CATEGORIAS_PARCEIRO)[number]["valor"];
 export const CATEGORIAS_SO_CREDENCIAMENTO: readonly string[] = ["vistoria"];
 /** O catálogo "pedir serviço": as categorias que se contratam direto. */
 export const CATEGORIAS_CATALOGO = CATEGORIAS_PARCEIRO.filter((x) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(x.valor));
+/** E729: a exigência do portfólio aparece junto da categoria (antes de marcar), não só depois. Só fotografia a tem. */
+export const NOTA_PORTFOLIO_CATEGORIA: Readonly<Record<string, string>> = { fotografia: "Pede o link do portfólio" };
 export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.valor === c)?.rotulo ?? "Serviço";
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
@@ -466,6 +468,3 @@ export function linhasDadosDaCategoria(categorias: readonly string[], dados: { e
   if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
   return linhas;
 }
-
-/** E729: a exigência do portfólio aparece junto da categoria (antes de marcar), não só depois. Só fotografia a tem. */
-export const NOTA_PORTFOLIO_CATEGORIA: Readonly<Record<string, string>> = { fotografia: "Pede o link do portfólio" };
