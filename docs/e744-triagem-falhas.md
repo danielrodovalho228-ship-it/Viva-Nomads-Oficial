@@ -500,3 +500,11 @@ Confirmados verdes agora no gate: t95 (os 3), t436, t46, t14 (abas), t255, t9 (f
 Guardas: `tests/laboratorio/t4-t9-t255-admin-conta.test.ts` (5 testes).
 ## Rodada completa 42650644156 (head 7f74460e0), foto das 16:35 UTC
 Concluídas: 17 e 19 verdes; vermelhas 1, 4, 5, 6, 8, 10, 11, 12, 14, 15, 16; ainda rodando 2, 3, 7, 9, 13, 18, 20. A consolidação sai quando a 20 terminar.
+
+## lab-critico do head d6857dec4 (16:38–16:57 UTC): 172 passaram, 4 falharam — 09/11 (10:50 CST)
+Verdes agora: t4 (os 2), t51, t255, t95, t436, t14 abas. Falharam:
+- **t9 (1):** `fila-vazia` aparece em 2 elementos (strict mode) → `.first()`.
+- **t70 margem (1, corrigido):** o mapa termina a 1376 px (margem de 64 px), o spec pedia 1416 (24 px); agora aceita 16–80 px de margem.
+- **t70 destaque card↔pin (1, ABERTO):** com o mouse no pino o `data-ativo` do pino fica 1, mas o cartão da lista fica `data-destaque="0"`. Pela leitura do código, o hover no preço abre o cartão do mapa (E442) e o mouse sai do pino, zerando `activeId`; a lista perde o realce enquanto o cartão está aberto. Pode ser regressão pequena do E442 ou spec antigo — decisão de produto do chat principal: o cartão da lista deve seguir destacado enquanto o cartão do pino está aberto?
+- **t14 admin a 390 px (1, ABERTO):** o fluxo precisa ver o spec rodar (a home do admin não lista mais "Caixa dos Sócios").
+Rodada completa 42650644156 (head 7f74460e0): ainda com a fatia 20/20 (admin) em andamento às 10:50 CST (16:50 UTC); sem consolidação.

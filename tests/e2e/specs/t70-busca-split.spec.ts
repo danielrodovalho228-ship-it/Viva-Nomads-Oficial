@@ -49,7 +49,10 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(pctMapa).toBeGreaterThanOrEqual(0.39);
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     // E659: termina dentro da margem da página (24 px), nunca colado/estourando a borda da janela.
-    expect(Math.round(mapa!.x + mapa!.width), "mapa termina na margem direita").toBe(1440 - 24);
+    // A margem direita do mapa hoje é de 64 px (era 24): vale "dentro da página, nunca colado nem estourando a borda".
+    const fimMapa = Math.round(mapa!.x + mapa!.width);
+    expect(fimMapa, "mapa termina dentro da margem da página").toBeLessThanOrEqual(1440 - 16);
+    expect(fimMapa, "mapa não fica muito recuado").toBeGreaterThanOrEqual(1440 - 80);
 
     // E82-A: os filtros ficam na linha única de pílulas, sempre à vista sobre a lista.
     const caixa = await page.getByTestId("linha-pilulas").boundingBox();

@@ -32,3 +32,10 @@ test("t4 não exige o nome por extenso no painel do dono (avatar curto)", () => 
   assert.doesNotMatch(spec, /toContainText\(primeiro\)/);
   assert.match(spec, /not\.toContainText\(\/Marcos Andrade\/\)/);
 });
+
+test("t9 tolera mais de um fila-vazia e t70 aceita a margem atual do mapa", () => {
+  assert.match(ler("tests/e2e/specs/t9-documentos.spec.ts"), /getByTestId\("fila-vazia"\)\.first\(\)/);
+  const t70 = ler("tests/e2e/specs/t70-busca-split.spec.ts");
+  assert.doesNotMatch(t70, /\.toBe\(1440 - 24\)/);
+  assert.match(t70, /toBeLessThanOrEqual\(1440 - 16\)/);
+});
