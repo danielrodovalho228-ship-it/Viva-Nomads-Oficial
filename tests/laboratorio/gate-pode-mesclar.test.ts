@@ -3,7 +3,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-// @ts-expect-error módulo .mjs sem tipos
 import { avaliar, exigidosDe } from "../../scripts/gate/pode-mesclar.mjs";
 
 const ok = (name: string, started_at = "2026-11-09T01:00:00Z") => ({ name, status: "completed", conclusion: "success", started_at });

@@ -8,7 +8,7 @@ O CI de um PR testa o PR contra a main **do momento em que foi aberto/atualizado
 
 ## O gate próprio (este PR)
 1. **Script `scripts/gate/pode-mesclar.mjs <PR> [--com-suite]`** (só lê a API; nunca mescla). "PODE" só se: PR aberto, fora do rascunho, base `main`; a branch **contém a ponta atual da main** (`behind_by = 0`); e cada check exigido tem conclusão `success` **no head** (vale o mais recente de cada nome). Lógica pura e testada: `tests/laboratorio/gate-pode-mesclar.test.ts` (4).
-2. **Workflow `gate-pode-mesclar.yml`** (`workflow_dispatch`, entrada: número do PR e se exige a suíte): roda o script com o `GITHUB_TOKEN` somente-leitura e escreve o veredito no resumo. É o que a rotina de merge chama antes de cada merge.
+2. **Workflow `gate-pode-mesclar.yml`** (`workflow_dispatch`, entrada: número do PR e se exige a suíte): roda o script com o `GITHUB_TOKEN` somente-leitura e escreve o veredito no resumo. **Só pode ser disparado depois de estar na `main`** (o GitHub responde 404 ao despachar workflow que ainda não está na branch padrão — conferido em 09/11). Até o merge deste PR, a rotina roda o script direto: `GITHUB_TOKEN=... GITHUB_REPOSITORY=... node scripts/gate/pode-mesclar.mjs <PR>`.
 3. **Lista de checks exigidos em `scripts/gate/exigidos.json`:** hoje `verify` e `lab-critico`. `suite-completa` (o consolidar da suíte fatiada do E744: 16 fatias gerais + 4 dos specs pesados = 20 jobs) entra com `--com-suite` **quando a suíte estiver verde na main** — antes disso ela está vermelha (falhas reais de teste ainda a triar, ver `docs/e744-suite-fatiada.md`) e exigi-la travaria todos os merges.
 
 ## Procedimento da rotina de merge (um PR por vez)
