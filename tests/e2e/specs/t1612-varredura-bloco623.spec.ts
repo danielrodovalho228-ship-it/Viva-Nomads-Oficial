@@ -5,7 +5,7 @@ import { TAMANHOS, escutarErros } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1571 — VARREDURA DA PÁGINA INTEIRA, BLOCO 623 (Pista C, 08/11), 18ª volta do ciclo (repete o grupo do bloco 606, t1554; antes, os blocos 589, 572, 555, 538, 521, 504, 487, 470 e 453), com o
+  T1612 — VARREDURA DA PÁGINA INTEIRA, BLOCO 623 (Pista C, 08/11), 18ª volta do ciclo (repete o grupo do bloco 606, t1554; antes, os blocos 589, 572, 555, 538, 521, 504, 487, 470 e 453), com o
   console (régua da t249) no relatório. O protocolo do bloco 21 (t385): seis classes (imagem
   pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto cortado, grade),
   página toda rolada, 390 e 1280 px, HTTP abaixo de 400. Rodízio pelo registro de cobertura: as últimas telas fora do
@@ -67,7 +67,7 @@ async function abrir(browser: Browser, t: Tela, largura: number, altura: number)
   return page;
 }
 
-test.describe("T1571 — varredura da página inteira, bloco 623 (18ª volta, avaliação pelos dois lados, avaliadora pública, escolha de intenção) (390 e 1280 px)", () => {
+test.describe("T1612 — varredura da página inteira, bloco 623 (18ª volta, avaliação pelos dois lados, avaliadora pública, escolha de intenção) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   // Um worker só: os pedidos semeados valem para as telas do bloco.
   test.describe.configure({ mode: "default" });
