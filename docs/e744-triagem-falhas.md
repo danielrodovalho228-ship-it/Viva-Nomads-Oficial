@@ -419,3 +419,12 @@ Por resultado: {'falhou': 235, 'instavel': 8}.
 - `t95-assinatura-redireciona.spec.ts` › /dashboard/assinatura leva a /precos, sem plano pago à venda (falhou)
 - `t95-assinatura-redireciona.spec.ts` › menu do dono a 1280 px não tem 'Plano e assinatura' (menu realmente aberto) (falhou)
 - `t95-assinatura-redireciona.spec.ts` › menu do dono a 390 px não tem 'Plano e assinatura' (menu realmente aberto) (falhou)
+
+## Atualização — dois runs completos comparados (09/11, 05:50 UTC)
+Runs **42547901640** (16 fatias) e **42560445737** (20 fatias, com a varredura t48 em fatias próprias), mesma suíte, 4.498 testes cada.
+- Falhas distintas (spec + título, só status `falhou`): **211** no 1º run, **212** no 2º.
+- **206 falham nos dois runs** (determinísticas: defeito de produto, de spec ou linha de base vencida). **5** só no 1º e **6** só no 2º (oscilam: instáveis/lentas sob carga).
+- Linha do 2º run em `lab_execucoes`: 3.940 passaram · 236 falharam · 316 pularam · 6 instáveis.
+- Distribuição por categoria do 1º run (inalterada em ordem de grandeza): ~134 asserção/elemento, ~55 screenshot (t245, t271, t263), ~37 varredura, ~17 timeout de 45 s. Os 3 specs visuais sozinhos respondem por 55 entradas; atualizar as linhas de base é decisão de desenho (Pista A/C), não correção do fatiamento.
+
+**Estado registrado, sem decisão** (a escolha entre zerar a lista ou fixar uma linha de base "não pode piorar" é do coordenador): o fatiamento fecha a suíte em ~61 min; o gate completo continua não verde por 206 falhas determinísticas de teste.
