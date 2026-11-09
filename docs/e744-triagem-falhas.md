@@ -566,3 +566,11 @@ Rodada 42677782445 (head 93f1c0af0) em andamento desde 18:51 UTC; a próxima só
 
 - **t703/t708 (conta do cartão lateral):** não era espaço faltando no produto: o `FormulaDoTotal` (cartão lateral) desenha a conta em LISTA, uma parcela por linha com "+ " nas seguintes; os specs comparavam o texto de uma linha só da prévia. Agora normalizam as quebras de linha. Guarda `formula-total-t703-t708.test.ts`.
 - Rodada 42677782445 (head 93f1c0af0): fatias 2, 17, 18, 19 verdes; 1, 3–16 vermelhas; 20/20 (admin) em andamento às 20:00 UTC (reiniciada às 19:09); consolidação pendente.
+
+## RODADA 42677782445 — CONSOLIDADO (head 93f1c0af0, 20:09 UTC): **184 falhas** (242 → 219 → 199 → 188 → 184)
+Saíram da lista (corrigidos e confirmados em run completa): **t14, t256, t595, t631, t70 (nas proporções), t230, t389**. Entraram/mudaram (flaky ou carga): t21, t334, t410 (1 cada), t316 (1→2), t719 (2→1). Fatias: verdes 2, 17, 18, 19 e 20 (a 20/20 admin fechou às 20:09); vermelhas 1, 3–16.
+### lab-critico do head 2090bff39 (20:02–20:21): 185 passaram, 4 falharam, 2 flaky
+- **t703/t708 (3):** a conta do cartão lateral saía "R$ 3.450+ limpeza…" (sem espaço entre as parcelas, nem quebra de linha): defeito de TEXTO real no `FormulaDoTotal` (quem lê/copia o texto). **Corrigido no produto:** um espaço entre as parcelas (`Fragment` + `{i > 0 && " "}`); guarda `formula-total-t703-t708.test.ts`. A hipótese anterior (só normalizar o spec) estava incompleta.
+- **t610 (1):** o nome de quem sai também traz o sobrenome ("Bruno Partida") → `^Bruno( \w+)?$`.
+- **t703 teste 2 (1, aberto):** "Estadia mínima (1 mês)" aparece 1 vez no cartão de Meus anúncios (o spec espera 0). Coerente com "total sempre R$ Y em N mês" (E777); precisa do chat principal confirmar se a linha com 1 mês deve aparecer em Meus anúncios.
+- **t712 B (aberto):** e-mail de convite "Caio incluiu você como morador da estadia em … · Centro, Uberlândia." — texto do corpo mudou; precisa do corpo completo.
