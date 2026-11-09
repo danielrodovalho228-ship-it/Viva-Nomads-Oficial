@@ -4,14 +4,16 @@
 Run 42471821063 do "Laboratório de testes (noturno)": 640 testes rodaram, 3.864 NÃO rodaram — o Playwright morreu no `--global-timeout=3900000` (65 min). A suíte tem ~4.500 testes em 838 specs; com 2 workers em um runner, o ritmo medido foi ~6 s por teste, então um job só precisaria de ~7,5 h.
 
 ## O desenho (só o workflow noturno/da main; o gate de PR não muda)
-- **12 fatias paralelas** (`strategy.matrix.fatia: [1..12]`, `--shard=<fatia>/12` do Playwright, `fullyParallel: true`, então os testes se distribuem de forma equilibrada). Cada fatia é um job independente: sobe o próprio Supabase local, personas, build, site e Chromium — nenhum estado compartilhado entre fatias.
-- Cada fatia: ~4.500 / 12 ≈ 375 testes ≈ 38 min de testes + ~10 min de preparo ≈ 50 min, dentro do `--global-timeout` de 65 min e do `timeout-minutes: 90` de cada job. Margem para crescer: até ~600 testes por fatia (~7.200 no total) antes de precisar de mais fatias — é só trocar o `12` na matriz e no `--shard` (um teste de guarda confere que os dois e o `--esperadas` do consolidar são o mesmo número).
+- **16 fatias paralelas** (`strategy.matrix.fatia: [1..12]`, `--shard=<fatia>/12` do Playwright, `fullyParallel: true`, então os testes se distribuem de forma equilibrada). Cada fatia é um job independente: sobe o próprio Supabase local, personas, build, site e Chromium — nenhum estado compartilhado entre fatias.
+- Cada fatia: ~4.500 / 16 ≈ 280 testes ≈ 29 min de testes + ~10 min de preparo ≈ 40 min, dentro do `--global-timeout` de 65 min e do `timeout-minutes: 90` de cada job. Margem para crescer: até ~600 testes por fatia (~9.600 no total) antes de precisar de mais fatias — é só trocar o `16` na matriz e no `--shard` (um teste de guarda confere que os dois e o `--esperadas` do consolidar são o mesmo número).
 - `fail-fast: false`: uma fatia vermelha não cancela as outras.
 - Cada fatia guarda o próprio artifact (`laboratorio-<run>-fatia-<n>`: relatório, prints, vídeos, `resultado.json`) e fica vermelha se algum teste dela falhou.
 - **Job `consolidar`** (`needs: laboratorio`, roda mesmo com fatia vermelha): baixa os artifacts, junta os `resultado.json` (`scripts/lab/juntar-resultados.mjs`: concatena `suites`, soma `stats`; fatia sem arquivo só avisa), escreve o resumo por spec e grava **uma linha** em `public.lab_execucoes` (o passo "Registrar no banco", único com `SUPABASE_DB_URL`, nunca em PR). Fica vermelho se qualquer fatia falhou.
 
+## O gate de merge
+A mudança de gate (suíte completa fatiada como check obrigatório) é o E775, em PR separado (`docs/e775-fila-de-merge.md`): `merge_group` + check `suite-completa`.
+
 ## O que NÃO muda
-- O gate de merge continua sendo o `lab-critico` (lista crítica + specs do próprio PR); a suíte completa nunca rodou em PR (decisão de 21/10) e continua só no noturno (03h BRT), em `workflow_dispatch` e no push na `main`.
 - A regra de testes escopados durante a correção continua. O que muda é a rede de regressão: a suíte completa agora termina, fatiada e verde.
 - Sem segredo antes do passo de registro; sem rede (modo simulado).
 
