@@ -745,3 +745,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 614 (#3614, t1562):** run 42546251047 em andamento.
 - **Bloco 615 (#3615, t1563, grupo do 598 — solicitações, estadia, desempenho, cartão, contrato):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`; sem spec nova de guarda. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 01h50 (09/11) — blocos 614, 615 e 616
+
+- **Bloco 614 (#3614, t1562):** run 42546251047 ainda em andamento.
+- **Bloco 615 (#3615, t1563):** run 42546347427 ainda em andamento.
+- **Bloco 616 (#3616, t1564, grupo do 599 — início, busca, imóvel, ajuda, painel do proprietário):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab disparado pelo push.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**). Vereditos finais entram na rodada seguinte.
