@@ -24,3 +24,12 @@ test("imóvel com tudo marcado não tem bloco 'Não tem'", () => {
 test("todo item esperado tem ícone próprio", () => {
   for (const e of ESPERADAS) assert.notEqual(iconeDaComodidade(e.rotulo), Check, e.rotulo);
 });
+
+test("E753: 'Wi-Fi' nunca aparece em 'Não tem' — a internet não é comodidade marcada e o anúncio a afirma pelo espaço de trabalho", () => {
+  assert.ok(!ESPERADAS.some((e) => /wi-?fi|internet/i.test(e.rotulo)), "a lista fixa não tem Wi-Fi");
+  // ube-003: sem nenhum item de internet nas comodidades, mas com internet declarada (trabalho remoto)
+  const ube003 = { amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem"], internetTier: "trabalho_remoto" } as unknown as Property;
+  const r = comodidadesQueNaoTem(ube003);
+  assert.ok(!r.includes("Wi-Fi"), `não tem: ${r.join(", ")}`);
+  assert.deepEqual(r, ["Lava-louças", "TV", "Elevador", "Ar-condicionado"]);
+});

@@ -28,6 +28,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "FICHA_RESUMO_ATIVA", rotulo: "Ficha-resumo do contrato (entra com o modelo de contrato da Dra. Beatriz)", variavel: "NEXT_PUBLIC_FICHA_RESUMO_ATIVA" },
   { nome: "COBRANCA_MENSAL_ATIVA", rotulo: "Cobrança mensal de contratos de 91 a 180 dias: cronograma, livro e lembretes (só com o parecer da Dra. Beatriz)", variavel: "NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA" },
   { nome: "CAUCAO_PRAZOS_ATIVA", rotulo: "Prazos da caução: parecer em 7 dias, devolução em 30 (só com o parecer da Dra. Beatriz)", variavel: "NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA" },
+  { nome: "PRE_ACEITACAO_72H_ATIVA", rotulo: "Pré-aceitação de 72 horas para concluir o contrato (lembretes, expiração sem punição, até 2 reaberturas)", variavel: "NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA" },
   { nome: "VISTORIA_PARECER_14", rotulo: "Parecer jurídico do item 14 (avaliação do imóvel)", variavel: "NEXT_PUBLIC_VISTORIA_PARECER_14" },
   { nome: "LINKEDIN_CONECTAR_ATIVO", rotulo: "Conectar LinkedIn (selo de confiança)", variavel: "NEXT_PUBLIC_LINKEDIN_CONECTAR_ATIVO" },
   { nome: "REDES_USUARIO_ATIVO", rotulo: "Redes sociais da própria pessoa", variavel: "NEXT_PUBLIC_REDES_USUARIO_ATIVO" },

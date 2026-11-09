@@ -158,14 +158,12 @@ export function validarTermos(e: { valor: number; prazoEntregaDias: number; praz
   return { ok: true, valor: Math.round(e.valor * 100) / 100, prazoEntregaDias: e.prazoEntregaDias, prazoRespostaHoras: e.prazoRespostaHoras };
 }
 
-const reais = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
-
-/** A linha de cada avaliador na lista de escolha do dono: termos próprios + conduta publicada (avaliações de conduta). */
-export function linhaDeTermos(a: { valor: number | null; prazoEntregaDias: number | null; prazoRespostaHoras: number | null; notaConduta: number | null; avaliacoesConduta: number }): string {
-  const termos =
-    a.valor != null && a.prazoEntregaDias != null
-      ? `${reais(a.valor)} · entrega em ${a.prazoEntregaDias} ${a.prazoEntregaDias === 1 ? "dia" : "dias"} · responde em até ${a.prazoRespostaHoras ?? PRAZO_RESPOSTA_PADRAO_HORAS} h`
-      : "valor e prazo: ele informa ao responder";
-  const conduta = a.notaConduta != null && a.avaliacoesConduta > 0 ? `conduta ${a.notaConduta.toFixed(1).replace(".", ",")} · ${a.avaliacoesConduta} ${a.avaliacoesConduta === 1 ? "avaliação feita" : "avaliações feitas"}` : "sem avaliações de conduta ainda";
-  return `${termos} · ${conduta}`;
+/**
+ * A linha de cada avaliador na lista de escolha do dono: SÓ a conduta publicada. A lista NÃO mostra preço nem prazo
+ * (E682, decisão do Daniel): valor e prazo vêm na proposta do avaliador, depois que o dono o escolhe.
+ */
+export function linhaDeTermos(a: { notaConduta: number | null; avaliacoesConduta: number }): string {
+  return a.notaConduta != null && a.avaliacoesConduta > 0
+    ? `conduta ${a.notaConduta.toFixed(1).replace(".", ",")} · ${a.avaliacoesConduta} ${a.avaliacoesConduta === 1 ? "avaliação feita" : "avaliações feitas"}`
+    : "sem avaliações de conduta ainda";
 }
