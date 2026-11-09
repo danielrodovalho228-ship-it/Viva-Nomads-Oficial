@@ -50,10 +50,17 @@ test("FONTE ÚNICA: as frases de contato vêm de textos-regulados e as telas as 
   const conversa = readFileSync("src/config/conversa-chat.ts", "utf8");
   assert.match(conversa, /from "\.\/textos-regulados\.ts"/);
   assert.doesNotMatch(conversa, /export const \w+ =/, "conversa-chat só reexporta");
-  assert.match(readFileSync("src/app/(dashboard)/dashboard/mensagens/messages-client.tsx", "utf8"), /NOTA_CONTATO_MENSAGENS/);
+  // E764 (main): o estado vazio das mensagens tem a própria fonte (lib/mensagens-vazio.ts); a tela só a usa, e o gate a varre.
+  assert.match(readFileSync("src/app/(dashboard)/dashboard/mensagens/messages-client.tsx", "utf8"), /\{TEXTO_MENSAGENS_VAZIO\}/);
   assert.match(readFileSync("src/app/(dashboard)/dashboard/visitas/page.tsx", "utf8"), /NOTA_VISITA_DONO/);
   // Caução e taxas: uma fonte só, reexportada.
   const regulados = readFileSync("src/config/textos-regulados.ts", "utf8");
   assert.match(regulados, /export \{ CAUCAO_FRASE \} from "\.\.\/lib\/faixas\.ts"/);
   assert.match(regulados, /export \{ TEXTO_REGRA_UNICA \} from "\.\.\/lib\/cobranca\/regra\.ts"/);
+});
+
+test("E776: a frase que nega a troca de contato (E764) passa; o interior de comentário de bloco não é superfície", () => {
+  assert.deepEqual(achadosProibidos("Telefone e e-mail nunca são trocados na conversa: aparecem como “contato protegido”, em qualquer fase, inclusive depois do aceite."), []);
+  assert.equal(achadosProibidos("o telefone só aparece depois do aceite").length, 1, "a formulação proibida continua barrada");
+  assert.deepEqual(semComentarios("/*\n  dizia telefone só depois do aceite\n*/\nconst a = 1;"), ["", "", "", "const a = 1;"]);
 });

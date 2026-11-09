@@ -14,7 +14,8 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
   {
     id: "contato-depois-do-aceite",
     regra: "E445: telefone, e-mail e redes sociais NUNCA são trocados (não existe 'contato depois do aceite' entre morador e proprietário).",
-    re: /(telefone|e-?mail|whatsapp|contato( direto)?)[^.\n"`]{0,60}\b(só )?(depois|após|apos) d?o aceite/i,
+    // Frase que NEGA a troca ("nunca são trocados… inclusive depois do aceite", E764) não é a formulação proibida.
+    re: /(telefone|e-?mail|whatsapp|contato( direto)?)(?:(?!nunca|jamais|não|nao|inclusive|mesmo|qualquer)[^.\n"`]){0,60}\b(só )?(depois|após|apos) d?o aceite/i,
   },
   {
     id: "caucao-em-poupanca",
@@ -42,7 +43,19 @@ export const FORA_DO_GATE: { prefixo: string; motivo: string }[] = [
 
 /** Comentário de código não é superfície: linhas que só têm comentário saem da varredura. */
 export function semComentarios(codigo: string): string[] {
-  return codigo.split("\n").map((l) => (/^\s*(\/\/|\*|\/\*)/.test(l) ? "" : l));
+  // Também o interior de um comentário de bloco (linhas sem o "*" na frente, como no cabeçalho do E764).
+  let emBloco = false;
+  return codigo.split("\n").map((l) => {
+    if (emBloco) {
+      if (l.includes("*/")) emBloco = false;
+      return "";
+    }
+    if (/^\s*\/\*/.test(l)) {
+      if (!l.includes("*/")) emBloco = true;
+      return "";
+    }
+    return /^\s*(\/\/|\*)/.test(l) ? "" : l;
+  });
 }
 
 export function achadosProibidos(texto: string): { id: string; trecho: string }[] {
