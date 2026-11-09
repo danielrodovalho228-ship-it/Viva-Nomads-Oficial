@@ -827,3 +827,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 626 (#3631, t1574):** run 42555723253 **em andamento**; sem veredito.
 - **Bloco 627 (grupo do 610):** não aberto — só abre com 625 e 626 verdes.
 - **Main:** confirmado, nenhum merge novo depois de `344e3a273`; nenhuma spec de guarda nova. Sem L- aberto (próximo livre: **L-110**).
+
+## Leitura das 03h45 (09/11) — bloco 626 verde, 625 ainda em fila
+
+- **Bloco 626 (#3631, t1574): VERDE** (42555723253), públicas com parâmetro (18ª volta), sem achado.
+- **Bloco 625 (#3630, t1573):** run 42555698036 continua **em fila** no runner desde 03h18 (cerca de 11 minutos sem começar). Fila, não falha; sem veredito. O 627 continua fechado até o 625 sair.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
