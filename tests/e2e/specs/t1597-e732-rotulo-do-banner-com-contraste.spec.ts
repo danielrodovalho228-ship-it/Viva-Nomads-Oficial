@@ -17,11 +17,15 @@ for (const largura of [390, 1280]) {
       await expect(rotulo).toHaveText("Para empresas");
 
       const medida = await rotulo.evaluate((el) => {
-        const rgba = (s: string) => {
-          const m = s.match(/rgba?\(([^)]+)\)/);
-          if (!m) return [0, 0, 0, 1];
-          const p = m[1].split(/[ ,/]+/).filter(Boolean).map(Number);
-          return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+        // O Chromium devolve cores do Tailwind v4 em formatos como color(srgb …) / oklab(…): o canvas converte qualquer CSS para RGBA.
+        const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+        const rgba = (cor: string) => {
+          ctx.clearRect(0, 0, 1, 1);
+          ctx.fillStyle = "#000";
+          ctx.fillStyle = cor;
+          ctx.fillRect(0, 0, 1, 1);
+          const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+          return [r, g, b, a / 255];
         };
         const sobre = (fg: number[], bg: number[]) => [0, 1, 2].map((i) => fg[i] * fg[3] + bg[i] * (1 - fg[3]));
         const lum = (c: number[]) => {
