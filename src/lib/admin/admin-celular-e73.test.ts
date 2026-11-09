@@ -13,7 +13,9 @@ test("(a) E176 (D3): no celular, '‹ Voltar ao site' à vista e UM caminho de m
   const bloco = shell.slice(shell.indexOf('pathname.startsWith("/admin") && ('), shell.indexOf("Aviso fixo do modo demonstração"));
   assert.match(bloco, /data-testid="admin-nav-celular"/);
   assert.match(bloco, /lg:hidden/);
-  assert.match(bloco, /href="\/" [^>]*data-testid="admin-voltar-site"[\s\S]*?Voltar ao site/);
+  // E784: o link é o componente VoltarAoSite (última página pública; entrada direta → home "/").
+  assert.match(bloco, /<VoltarAoSite \/>/);
+  assert.match(ler("components/layout/voltar-ao-site.tsx"), /data-testid="admin-voltar-site"[\s\S]*?Voltar ao site/);
   assert.doesNotMatch(shell, /Menu da equipe/);
   assert.match(shell, /aria-label="Abrir menu"\s+data-testid=\{naAreaAdmin \? "admin-abrir-menu" : undefined\}/);
 });
