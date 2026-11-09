@@ -1128,3 +1128,12 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 650 (#3660, t1638, grupo do 633 — início, busca, imóvel, ajuda, painel do proprietário; 19ª volta):** aberto como draft; mesmas guardas verdes; lab a conferir.
 - **Placar:** lote 612–647 verde (36/36); 648, 649 e 650 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. #3598 segue aberto (só a decisão de mesclar). Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h44 UTC (09/11) — 648 e 649 verdes, 650 rodando, 651 aberto
+
+- **Bloco 648 (#3658, t1636): VERDE** (42579655530), conferir/sistema/pedidos do morador (19ª volta), sem achado.
+- **Bloco 649 (#3659, t1637): VERDE** (42579943849), solicitações/estadia/desempenho/cartão/contrato (19ª volta), sem achado.
+- **Bloco 650 (#3660, t1638):** run 42579996462 em andamento.
+- **Bloco 651 (#3661, t1639, grupo do 634 — serviços e visitas, admin, parceiros; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–649 verde (38/38); 650 e 651 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
