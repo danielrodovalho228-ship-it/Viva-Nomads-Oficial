@@ -65,7 +65,7 @@ export function BannerTopo({
           {/* E732: o rótulo verde sobre a foto tinha 3,60:1 (o fundo é a foto). Sobre uma pastilha escura (night/80) o contraste passa de 7:1
               em qualquer foto, e o verde da marca fica. */}
           {eyebrow && (
-            <p className="inline-block rounded-full bg-night/80 px-3 py-1 text-sm font-semibold text-green-300" data-testid="banner-topo-eyebrow">
+            <p className="inline-block rounded-full bg-night/80 px-3 py-1 text-sm font-semibold text-white/90" data-testid="banner-topo-eyebrow">
               {eyebrow}
             </p>
           )}
