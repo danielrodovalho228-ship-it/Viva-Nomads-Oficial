@@ -785,3 +785,9 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 619 (#3623, t1567): VERDE** (42550014972), cidade/institucionais/parceiros/comparar/admin, sem achado. O run ficou na fila do runner por cerca de 9 minutos antes de começar (fila, não falha).
 - **Bloco 620 (#3624, t1568, grupo do 603 — avisos, prévia de e-mails, caixa do leitor de QA):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 02h50 (09/11) — bloco 620 verde, 621 aberto
+
+- **Bloco 620 (#3624, t1568): VERDE** (42551922631), avisos/prévia de e-mails/caixa do leitor de QA, sem achado.
+- **Bloco 621 (#3625, t1569, grupo do 604 — painel com id, sócios e autenticação; 18ª volta do ciclo):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. O #3588 (E744, fatias) segue em draft e não mesclado; a leitura da 1ª execução fatiada da main fica para depois do merge dele. Sem L- aberto (próximo livre: **L-110**).
