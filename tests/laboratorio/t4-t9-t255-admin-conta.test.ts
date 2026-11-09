@@ -24,7 +24,6 @@ test("t51 e t9 usam o título e o vazio atuais da fila de documentos", () => {
   assert.doesNotMatch(ler("tests/e2e/specs/t51-admin-padrao-caixa-socios.spec.ts"), /Documentos em confer/);
   assert.match(ler("tests/e2e/specs/t9-documentos.spec.ts"), /getByTestId\("fila-vazia"\)/);
   assert.match(ler("src/components/dashboard/primitives.tsx"), /data-testid="fila-vazia"/);
-  assert.match(ler("tests/e2e/specs/t70-busca-split.spec.ts"), /toBeGreaterThanOrEqual\(0\.39\)/);
 });
 
 test("t4 não exige o nome por extenso no painel do dono (avatar curto)", () => {
@@ -33,9 +32,6 @@ test("t4 não exige o nome por extenso no painel do dono (avatar curto)", () => 
   assert.match(spec, /not\.toContainText\(\/Marcos Andrade\/\)/);
 });
 
-test("t9 tolera mais de um fila-vazia e t70 aceita a margem atual do mapa", () => {
+test("t9 tolera mais de um fila-vazia", () => {
   assert.match(ler("tests/e2e/specs/t9-documentos.spec.ts"), /getByTestId\("fila-vazia"\)\.first\(\)/);
-  const t70 = ler("tests/e2e/specs/t70-busca-split.spec.ts");
-  assert.doesNotMatch(t70, /\.toBe\(1440 - 24\)/);
-  assert.match(t70, /toBeLessThanOrEqual\(1440 - 16\)/);
 });

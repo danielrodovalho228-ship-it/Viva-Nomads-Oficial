@@ -206,7 +206,7 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
 
     const proposto = await emailDo(ids.dono, "estadia_aditivo_proposto", "A");
     regua(proposto.corpo, "Dora", "A", [
-      `Bia propôs uma alteração no contrato de ${tituloDe("A")}: Meses: de 2 para 3.`,
+      `Bia propôs uma alteração no contrato de ${tituloDe("A")}: Meses: de 2 para 3`,
       /Aceite ou recuse até \d{2}\/\d{2}\/\d{4} pela página da estadia\./,
       "Aditivo: 1",
       "O que muda: Meses: de 2 para 3",

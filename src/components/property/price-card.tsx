@@ -48,6 +48,8 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
   // "Total da estadia (43 dias): R$ 4.671,67 · 1 mês + 13 dias". Sem datas, a duração da busca/estadia mínima em meses.
   const estadiaDias = dias ? estadiaDoImovelEmDias(property, dias) : null;
   const estadia = !estadiaDias && meses > 1 ? estadiaDoImovel(property, meses) : null;
+  // E777/E744: o total do período é SEMPRE "R$ Y em N mês/meses" (com 1 mês: "R$ Y em 1 mês", como no cartão da busca); "/mês" só acompanha o mensal.
+  const totalDeUmMes = !estadiaDias && meses <= 1 && estadiaMinimaAviso == null;
   const availableFrom = disponivelFuturo(disponivelDesde ?? property.availableFrom);
   // E702: a data calculada (E673) diz de onde vem quando difere da do cadastro.
   const notaData = availableFrom ? notaDataCalculada(disponivelDesde, property.availableFrom, property.minPeriodDays) : null;
@@ -67,10 +69,10 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
           {preco.valor}
         </span>
         <span className="text-sm text-ink">/mês</span>
-        {estadia && (
+        {(estadia || totalDeUmMes) && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {resumoEmMeses(estadia.total, estadia.meses)}
+            · {estadia ? resumoEmMeses(estadia.total, estadia.meses) : resumoEmMeses(preco.total, 1)}
           </span>
         )}
       </p>

@@ -42,17 +42,12 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(lista && mapa).toBeTruthy();
     const pctLista = lista!.width / 1440;
     const pctMapa = mapa!.width / 1440;
-    // 58% da área útil (E659: margem de 24 px de cada lado) = ~0,528 da janela de 1440; o piso era 0,53 do desenho sem margem.
-    expect(pctLista).toBeGreaterThanOrEqual(0.52);
+    expect(pctLista).toBeGreaterThanOrEqual(0.53);
     expect(pctLista).toBeLessThanOrEqual(0.6);
-    // o mapa ocupa o que sobra da lista (58% da área útil, margem de 24 px do E659): ~0,394 da janela de 1440.
-    expect(pctMapa).toBeGreaterThanOrEqual(0.39);
+    expect(pctMapa).toBeGreaterThanOrEqual(0.4);
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     // E659: termina dentro da margem da página (24 px), nunca colado/estourando a borda da janela.
-    // A margem direita do mapa hoje é de 64 px (era 24): vale "dentro da página, nunca colado nem estourando a borda".
-    const fimMapa = Math.round(mapa!.x + mapa!.width);
-    expect(fimMapa, "mapa termina dentro da margem da página").toBeLessThanOrEqual(1440 - 16);
-    expect(fimMapa, "mapa não fica muito recuado").toBeGreaterThanOrEqual(1440 - 80);
+    expect(Math.round(mapa!.x + mapa!.width), "mapa termina na margem direita").toBe(1440 - 24);
 
     // E82-A: os filtros ficam na linha única de pílulas, sempre à vista sobre a lista.
     const caixa = await page.getByTestId("linha-pilulas").boundingBox();

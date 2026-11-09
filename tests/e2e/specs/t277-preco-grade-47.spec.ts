@@ -67,12 +67,13 @@ for (const largura of [390, 1280] as const) {
       }
     });
 
-    test("margem de tela constante: 16 px no celular, 32 px no computador", async ({ page }) => {
+    test("margem de tela constante: 16 px no celular, 80 px no computador (faixa do Fale com a Viva, E709)", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       const caixa = page.getByTestId("imovel-largura-total");
       await expect(caixa).toBeVisible({ timeout: 30_000 });
       const pad = await caixa.evaluate((el) => getComputedStyle(el).paddingLeft);
-      expect(pad).toBe(largura === 390 ? "16px" : "32px");
+      // E709: no computador a faixa à esquerda é reservada ao "Fale com a Viva" (--faixa-flutuante = 80 px), no lugar dos 32 px.
+      expect(pad).toBe(largura === 390 ? "16px" : "80px");
       await semRolagemLateral(page);
     });
   });

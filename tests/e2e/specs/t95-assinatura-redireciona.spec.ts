@@ -12,7 +12,8 @@ test.describe("T95 — Assinatura aposentada @criticos", () => {
   test("/dashboard/assinatura sai de /dashboard/assinatura (para /precos ou /dashboard conforme a chave), sem plano pago à venda", async ({ page }) => {
     await page.goto("/dashboard/assinatura", { waitUntil: "domcontentloaded" });
     // next.config.ts: /precos só com NEXT_PUBLIC_PRECOS_VISIVEL=1; sem a chave (lab e produção hoje) o destino é /dashboard.
-    await expect(page).toHaveURL(/\/(precos|dashboard)$/);
+    // Decisão do chat principal (E563): preços suspensos → /dashboard; visíveis → /precos (a chave é a do build do ambiente).
+    await expect(page).toHaveURL(process.env.NEXT_PUBLIC_PRECOS_VISIVEL === "1" ? /\/precos$/ : /\/dashboard$/);
     await expect(page.getByRole("button", { name: /Assinar (Essencial|Profissional)/i })).toHaveCount(0);
     await expect(page.getByText("Visualizar como plano (demonstração)")).toHaveCount(0);
   });

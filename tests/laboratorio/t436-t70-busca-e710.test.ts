@@ -19,7 +19,10 @@ test("t436 lê as pílulas nos dois grupos da barra, na ordem do documento", () 
     ultimo = i;
   }
 });
-test("t70 aceita a lista a 58% da área útil (~0,528 de 1440 px)", () => {
-  assert.match(t70, /toBeGreaterThanOrEqual\(0\.52\)/);
+test("t70 segue a spec (decisão do chat principal): proporções, margens do E659 e destaque, sem afrouxar", () => {
+  const t70 = readFileSync("tests/e2e/specs/t70-busca-split.spec.ts", "utf8");
+  assert.match(t70, /toBeGreaterThanOrEqual\(0\.53\)/);
+  assert.match(t70, /toBeGreaterThanOrEqual\(0\.4\)/);
+  assert.match(t70, /\.toBe\(1440 - 24\)/);
   assert.match(readFileSync("src/app/(public)/buscar/search-client.tsx", "utf8"), /lg:w-\[58%\]/);
 });

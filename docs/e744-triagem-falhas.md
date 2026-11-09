@@ -557,3 +557,9 @@ Guarda: `tests/laboratorio/aditivo-resumo-t610.test.ts` (5).
 - **t910:** `selectNodeContents(undefined)` — o texto do botão mora num `<span>` filho; o spec procura o nó de texto em qualquer profundidade (TreeWalker).
 Guarda: `tests/laboratorio/t910-t916-evaluate.test.ts`.
 Rodada 42677782445 (head 93f1c0af0) em andamento desde 18:51 UTC; a próxima só sai depois dela, para não disputar os runners.
+
+## Decisões do chat principal aplicadas (09/11, 19:30 UTC) — main em 954bbece mesclada na branch
+- **t277 (decidido):** o total do período é SEMPRE "R$ Y em N mês/meses" (`resumoEmMeses`, E777); "/mês" só acompanha o valor mensal. A barra fixa do celular (`barraFixaImovel`) e o cartão lateral da página (`PriceCard`) passaram a dizer "R$ Y em 1 mês" com 1 mês, igual ao cartão da busca; `preco-paridade.test` compara o rodapé com `estadiaDoCartao`. A margem de 32 px do computador no spec era anterior ao E709 (faixa de 80 px do "Fale com a Viva"): o spec espera 80 px no computador.
+- **t95 (decidido):** `/dashboard/assinatura` → `/precos` com `NEXT_PUBLIC_PRECOS_VISIVEL=1` (E563), senão `/dashboard`; o spec agora lê a chave.
+- **t70 (decidido: pela spec):** voltei o spec ao original (0,53 / 0,40 / margem de 24 px, destaque card↔pin). ATENÇÃO: o `lab-critico` do head 1798023cf mediu a lista a 0,528, o mapa a 0,394 e o fim do mapa a 1376 px (margem de 64 px) — valores estáveis, não de servidor frio. Se continuarem assim, o desvio é de layout (a faixa do E709 comendo a largura), não do spec: precisa do chat principal.
+- **t610/t712:** o nome do cartão é "Iara Chegada" (nome completo da massa) → `^Iara( \w+)?`; o e-mail do aditivo traz "· Saída… · Dias…" depois de "Meses: de 2 para 3" → o spec confere o prefixo sem o ponto final.
