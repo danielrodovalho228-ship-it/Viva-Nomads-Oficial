@@ -995,3 +995,23 @@ Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para 
 - **Runs do próprio PR #3095** (relatório): 5766 e 5769 vermelhos; é o mesmo gate (sem `e2e.txt`), sem relação com spec.
 - **Bloco 641:** continua fechado até 624 e 640 darem verde.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Fechamento das 05h55 UTC (09/11) — 624, 625, 626 e 640 verdes; 641 aberto
+
+**Os blocos pedidos (leitura nova):**
+
+| Bloco | PR | Run | Veredito |
+|---|---|---|---|
+| 624 (t1613) | #3629 | 42567402098 (tentativa 2) | **VERDE** |
+| 625 (t1614) | #3630 | 42567409168 | **VERDE** |
+| 626 (t1615) | #3631 | 42567415419 | **VERDE** |
+| 640 (t1628) | #3649 | 42568275908 | **VERDE** |
+
+**Bloco 641 (#3650, t1629, grupo do 624 — painel do proprietário sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+
+**Tabela dos 27 renumerados (612–638) + 639 + 640:**
+- **Verdes:** 612, 613, 614, 615, 617, 619, 620 (r2), 622, 623, 624 (r2), 625, 626, 627, 628, 629, 630, 631, 632, 633, 636, 637, 639, 640.
+- **Infra, 2 falhas no mesmo run (regra de 1 rerun esgotada), sem veredito de spec:** 618, 621, 634.
+- **Rerun (tentativa 2) em andamento:** 616 (a conferir), 635, 638.
+- **Causa de todos os vermelhos:** download do `setup-cli` (HTTP 504) / passo de instalação, antes de qualquer teste.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
