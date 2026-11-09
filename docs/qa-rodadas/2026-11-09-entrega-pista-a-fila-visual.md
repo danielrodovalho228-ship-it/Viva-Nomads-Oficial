@@ -1,5 +1,7 @@
 # Entrega da Pista A ao QA — fila visual (09/11/2026)
 
+**Revalidado em 09/11, 23:40 CST:** os 7 PRs seguem verdes (`verify`, `lab-critico`, `e2e`), sem conflito com a `main`, em draft. O #3598 (Pista B) está verde e fora de draft, esperando o merge do chat principal.
+
 Todos os PRs abaixo estão em **draft**, sem conflito com a `main` (checado com `git merge-tree`) e com `verify`, `lab-critico` e `e2e` verdes (o #3613 foi reexecutado depois de receber o mesmo ajuste de teste do #3598). Nenhum tem migração. A `main` está vermelha por dois testes (E727/E728); o conserto é o **#3598** (Pista B, verde, fora de draft): ao entrar, o ajuste de teste idêntico que levei para os PRs abaixo se unifica sozinho.
 
 | PR | Item | O que entrega | Prova pendente (QA, não executada pela Pista A) |
@@ -17,6 +19,9 @@ Todos os PRs abaixo estão em **draft**, sem conflito com a `main` (checado com 
 - **Visitas do dono** (`/dashboard/visitas`): "Nome e contato do interessado só aparecem depois do aceite".
 - Fotógrafos: "contato do dono só depois do aceite, com taxa paga".
 Se o E445 vale para esses fluxos, abrir item novo; a Pista A não alterou sem ordem.
+
+## Outros drafts da Pista A no mesmo lote (verdes, para o QA)
+#3603 (E778, evidência do Superpowers), #3589 (E720, voltar em Estadia confirmada/convidado), #3535 (E738, voltar único), #3498 (E724, aviso primeiro), #3530 (E732, contraste), #3533 (E734, foco do Esc), #3583–#3586 (E767, E769, E773, E770–E772), #3574/#3577/#3578 (E757, E758, E763), #3644 (E729).
 
 ## Pendências de decisão (registradas antes)
 E761 (identidade bloqueia ou não), E762 (mostrar líquido × guarda de custódia), BannerTopo × ordem 5a4b9146, `Total por mês (com contas)` em `precos.ts` (E767, intocada), prazo de resposta de empresas (E770), cartões de /seguranca (C10-2).
