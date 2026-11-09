@@ -1335,3 +1335,11 @@ Head da main: `fe74cd383`. Merges depois do #3398 (E719), na ordem:
 2. **#3498 (E724)** — o aviso do exemplo vem primeiro no cartão de preço. Só tinha teste de unidade (leitura do fonte). **Spec criada: `t1589-e724-aviso-do-exemplo-primeiro.spec.ts`** (PR **#3685**, draft, commit `a410c29c4`): `/imoveis/ube-001` e `ube-002` a 390 e 1280 px, o aviso existe, diz "Nenhuma solicitação é enviada a ninguém", precede o preço no DOM, no mesmo cartão, sem rolagem lateral. Guardas 13/13, tsc limpo; **ainda não rodou**.
 
 Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t1589, E724), primeira execução. Próximo L livre: **L-111**.
+
+## Rodada das 15h UTC (09/11) — #3682 final, E719 verde, E729 coberto
+
+- **PR #3682 (manutenção do lab):** o run mais recente continua sendo o 42617052464 (commit `b29214d75`): **126 passaram, 3 falharam**, as 3 = **L-110** (t329, produto). Sem commit novo no branch, sem run novo. Veredito final; nenhuma spec de laboratório vermelha.
+- **E719 (PR #3684, t1588):** run 42635926324 **verde, 50 passaram**; o t1588 rodou (não foi pulado) e passou.
+- **E724 (PR #3685, t1589):** run 42637243510 em andamento desde 14:42 UTC.
+- **Novo merge #3503 (E729, 0425d5f37):** a exigência de cada categoria ("Pede o link do portfólio" / "Pede empresa e veículo") aparece no cartão antes de marcar. Só tinha teste de unidade. **Spec criada: `t1590-e729-exigencia-na-categoria.spec.ts`** (PR **#3686**, draft, commit `490083a8b`), `/parceiros` a 390 e 1280 px; guardas 13/13, tsc limpo; ainda não rodou.
+- Próximo L livre: **L-111**.
