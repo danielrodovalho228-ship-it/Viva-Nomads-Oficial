@@ -23,3 +23,11 @@ test("E718: um botão cheio por tela continua valendo (os três blocos usam secu
   const blocos = s.slice(s.indexOf('data-testid="proprietarios-blocos-mockup"'), s.indexOf("Quanto custa, em reais"));
   assert.doesNotMatch(blocos, /variant="primary"/);
 });
+
+test("t112: /para-proprietarios não repete a mesma imagem decorativa na página (a imagem do bloco 'Publicamos para você' saiu)", () => {
+  const s = readFileSync(new URL("../app/(public)/para-proprietarios/page.tsx", import.meta.url), "utf8");
+  const usos = [...s.matchAll(/\/images\/unicas\/[\w-]+\.webp/g)].map((m) => m[0]);
+  const vistos = new Set<string>();
+  const repetidas = usos.filter((u) => (vistos.has(u) ? true : (vistos.add(u), false)));
+  assert.deepEqual(repetidas, []);
+});
