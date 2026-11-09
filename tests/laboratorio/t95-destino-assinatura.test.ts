@@ -8,3 +8,10 @@ test("t95 acompanha o redirect condicional de /dashboard/assinatura", () => {
   const spec = readFileSync("tests/e2e/specs/t95-assinatura-redireciona.spec.ts", "utf8");
   assert.match(spec, /toHaveURL\(\/\\\/\(precos\|dashboard\)\$\/\)/);
 });
+
+// MENUS-5: o dono não tem menu lateral (só a área da equipe); o t95 não pode exigir o `menu-cascata` do dono.
+test("t95 não exige menu lateral do dono", () => {
+  const spec = readFileSync("tests/e2e/specs/t95-assinatura-redireciona.spec.ts", "utf8");
+  assert.doesNotMatch(spec, /menu-cascata|Abrir menu/);
+  assert.match(readFileSync("src/components/layout/dashboard-shell.tsx", "utf8"), /\{!papelTopo && \(\s*<button[\s\S]{0,200}aria-label="Abrir menu"/);
+});

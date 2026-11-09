@@ -42,7 +42,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(lista && mapa).toBeTruthy();
     const pctLista = lista!.width / 1440;
     const pctMapa = mapa!.width / 1440;
-    expect(pctLista).toBeGreaterThanOrEqual(0.53);
+    // 58% da área útil (E659: margem de 24 px de cada lado) = ~0,528 da janela de 1440; o piso era 0,53 do desenho sem margem.
+    expect(pctLista).toBeGreaterThanOrEqual(0.52);
     expect(pctLista).toBeLessThanOrEqual(0.6);
     expect(pctMapa).toBeGreaterThanOrEqual(0.4);
     expect(pctMapa).toBeLessThanOrEqual(0.45);

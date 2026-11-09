@@ -11,9 +11,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
  * disso vaza para o site.
  */
 
-// Prompt 41: barra por papel (5 itens); admin não tem barra.
-const ABAS_INQUILINO = ["Início", "Buscar", "Mensagens", "Estadias", "Perfil"];
-const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"];
+// Barra por papel (5 itens), conforme src/config/abas-painel.ts (MENUS-5: "Pedidos", "Estadia", "Interessados", "Contratos"); admin só não tem barra nas telas /admin (PAPEL-B).
+const ABAS_INQUILINO = ["Início", "Buscar", "Pedidos", "Mensagens", "Estadia"];
+const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"];
 
 function barraDoApp(page: Page) {
   return page.locator("nav.vn-tabbar");
@@ -118,10 +118,10 @@ test.describe("T14 — Modo app", () => {
 
     test("Admin a 390 px: sem barra de abas (Prompt 41) → painel → Caixa dos Sócios → Voltar ao painel", async ({ page }) => {
       test.skip(!hasAccount("admin"), "sem conta de teste do admin");
-      await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      // PAPEL-B: a barra segue o papel ativo; o admin não tem barra nas telas /admin (em /dashboard ele vê a do papel ativo).
+      await page.goto("/admin", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
       await expect(barraDoApp(page)).toHaveCount(0);
-      await page.goto("/admin", { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/admin\/?$/);
       // No lab o primeiro toque pode cair antes da hidratação do painel: repete o toque até a rota mudar.
       await expect(async () => {

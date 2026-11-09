@@ -17,20 +17,17 @@ test.describe("T95 — Assinatura aposentada @criticos", () => {
     await expect(page.getByText("Visualizar como plano (demonstração)")).toHaveCount(0);
   });
 
+  // MENUS-5: o dono não tem mais menu lateral nem hambúrguer (barra de baixo no celular, abas no topo e Conta no avatar);
+  // o menu lateral só existe na área da equipe. A ausência de "Plano e assinatura" vale para a página inteira, com a Conta aberta.
   for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
-    test(`menu do dono a ${largura} px não tem 'Plano e assinatura' (menu realmente aberto)`, async ({ page }) => {
+    test(`painel do dono a ${largura} px não tem 'Plano e assinatura' (página inteira)`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      if (largura < 768) await page.getByRole("button", { name: "Abrir menu" }).click();
-      const menu = page.locator("aside").filter({ has: page.getByTestId("menu-cascata") }).last();
-      // Prova positiva: o menu está de fato visível, com itens, antes de afirmar a ausência.
-      await expect(menu).toBeVisible();
-      await expect(menu.getByRole("link", { name: "Visão geral" }).first()).toBeVisible();
-      // Abre todos os grupos para não esconder o item dentro de um submenu fechado.
-      const grupos = menu.locator("button[aria-expanded='false']");
-      for (let n = await grupos.count(); n > 0; n--) await grupos.first().click();
-      await expect(menu.getByRole("link", { name: /Plano e assinatura/i })).toHaveCount(0);
-      await expect(menu.locator("a[href^='/dashboard/assinatura']")).toHaveCount(0);
+      // Prova positiva: o painel carregou (conteúdo e navegação presentes) antes de afirmar a ausência.
+      await expect(page.locator("[data-painel-main]")).toBeVisible();
+      await expect(page.getByRole("navigation").first()).toBeVisible();
+      await expect(page.getByRole("link", { name: /Plano e assinatura/i })).toHaveCount(0);
+      await expect(page.locator("a[href^='/dashboard/assinatura']")).toHaveCount(0);
       const rolagem = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(rolagem).toBeLessThanOrEqual(1);
     });
