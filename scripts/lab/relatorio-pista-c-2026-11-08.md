@@ -933,3 +933,23 @@ O teste `src/lib/specs-numeracao.test.ts` exige número `tN` único por spec. Ca
 - **Efeito:** quando um PR de cada lado mesclar, o outro fica vermelho no guarda de numeração (o lab roda no merge-ref). Nada está na main ainda, então hoje nenhum run quebrou.
 - **Contenção já feita:** a partir do bloco 639 as specs de bloco usam a faixa **t1600+** (639 = t1600, 640 = t1601, …).
 - **Correção pendente (decisão de custo):** renumerar os blocos 612–638 para t1601+ em lote antes do primeiro merge de qualquer um deles, ou fazê-lo ramo a ramo no momento do merge (cada ramo já precisa de merge da main por causa do `cobertura.json`). Renumerar tudo agora são 27 pushes e 27 runs de lab; não fiz sem alinhar.
+
+### Renumeração em lote dos blocos 612–638 (09/11, 05h45) — feita
+
+Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para t1601–t1627 (bloco N → t(1601 + N − 612)); cada ramo teve o arquivo renomeado, o título interno ajustado e o `cobertura.json` regenerado, com numeração/cobertura 13/13 em todos antes do push.
+
+| Bloco | Antes → Depois | Bloco | Antes → Depois | Bloco | Antes → Depois |
+|---|---|---|---|---|---|
+| 612 | t1560 → t1601 | 621 | t1569 → t1610 | 630 | t1578 → t1619 |
+| 613 | t1561 → t1602 | 622 | t1570 → t1611 | 631 | t1579 → t1620 |
+| 614 | t1562 → t1603 | 623 | t1571 → t1612 | 632 | t1580 → t1621 |
+| 615 | t1563 → t1604 | 624 | t1572 → t1613 | 633 | t1581 → t1622 |
+| 616 | t1564 → t1605 | 625 | t1573 → t1614 | 634 | t1582 → t1623 |
+| 617 | t1565 → t1606 | 626 | t1574 → t1615 | 635 | t1583 → t1624 |
+| 618 | t1566 → t1607 | 627 | t1575 → t1616 | 636 | t1584 → t1625 |
+| 619 | t1567 → t1608 | 628 | t1576 → t1617 | 637 | t1585 → t1626 |
+| 620 | t1568 → t1609 | 629 | t1577 → t1618 | 638 | t1586 → t1627 |
+
+- **Bloco 639** fica em **t1600** (já aberto assim, #3648); o **próximo bloco (640) usa t1628**, porque t1601 passou a ser do bloco 612.
+- **Conferência de unicidade:** varri todos os ramos remotos (main + `claude-c/*`): nenhum número ≥ t1556 aparece em dois ramos diferentes. As specs E-\* (t1560–t1587) e os blocos (t1556–t1559 e t1600–t1627) não se sobrepõem mais.
+- Os 27 pushes dispararam 27 runs de lab; só renomeiam arquivo e título, então o esperado é verde igual ao anterior. Qualquer vermelho aqui entra na próxima rodada como causa a ler no log.
