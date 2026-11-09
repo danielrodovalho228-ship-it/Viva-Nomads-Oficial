@@ -709,3 +709,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **t1587 (#3600):** 1º run (42538551226) vermelho por defeito de spec (`sp-aceite` não existe para visitante). Premissa corrigida em commit novo; run 42540600583 em andamento. Não é defeito de produto.
 - **Evidência do Superpowers (E778):** `scripts/lab/evidencia-superpowers-pista-c-2026-11-09.md`.
 - Próximo livre: **L-110** (nenhum aberto). Próximo bloco: **608** (grupo do 591, painel do morador sem id).
+
+## Rodada das 00h45 (09/11) — t1587 e bloco 608
+
+- **t1587 (#3600, E727 + E728): VERDE** no 2º run (42540600583, spec corrigida). Era defeito da spec, não do produto. Pronto para o próximo passo do chat principal.
+- **Bloco 608 (#3604, t1556): VERDE** (42540765984), 17ª volta do grupo do 591, sem achado.
+- **Main:** nenhum merge novo depois de `344e3a273` (#3505, verde); nada novo a guardar. Sem L- aberto (próximo livre: **L-110**).
+- Próximo bloco: **609** (grupo do 592, t1540).
