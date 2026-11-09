@@ -551,3 +551,9 @@ Guarda: `tests/laboratorio/aditivo-resumo-t610.test.ts` (5).
 - **Papel-ativo/avatar (t355, t361, t391, t318, t370, t365, t280, t886, t644, t81, t489).**
 - **Cadastro (t288, t292, t534, t800, t799, t386, t547, t401, t400, t435, t469, t194, t204, t186).**
 - **Cauda de dados/esperas (≈40).**
+
+### Quebras de código de spec (não do produto) — corrigidas
+- **t916:** `evaluateAll(visiveis("…"))` — a closure com `rotulo` não atravessa o `evaluate` do Playwright (ReferenceError no navegador); o rótulo agora é argumento.
+- **t910:** `selectNodeContents(undefined)` — o texto do botão mora num `<span>` filho; o spec procura o nó de texto em qualquer profundidade (TreeWalker).
+Guarda: `tests/laboratorio/t910-t916-evaluate.test.ts`.
+Rodada 42677782445 (head 93f1c0af0) em andamento desde 18:51 UTC; a próxima só sai depois dela, para não disputar os runners.
