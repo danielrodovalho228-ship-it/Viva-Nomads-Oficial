@@ -1453,3 +1453,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 
 - Merges novos desde `37db454e3`: #3602 (CLAUDE.md: regras de PR e "pronto") e #3460 (E712, docs: o topo da home não muda). Os dois são só documentação, sem comportamento de produto → **dispensa de spec registrada**. Próximos livres: t1598 / L-111.
 - Guardas t1594–t1597 (#3690–#3693) sem mudança: verdes, em rascunho. L-110 segue com a Pista B.
+
+## Rodada das 19h50 UTC (09/11) — CI da main nos merges de docs
+
+- Push do #3602 (`e49fc8314`, run 42682752738): **vermelho de infra** — falhou no passo "Subir o Supabase local" (1 min), antes de qualquer teste; os passos de teste ficaram "skipped". Merge só de documentação.
+- Push do #3460 (`954bbece6`, run 42682766358), 12 s depois, sobre a mesma árvore + o doc do E712: **verde**. Esse run cobre o #3602; não gastei rerun.
+- Nenhuma spec quebrada por merge recente; nenhum merge de produto novo → sem spec nova (t1598 / L-111 livres). L-110 segue com a Pista B.
