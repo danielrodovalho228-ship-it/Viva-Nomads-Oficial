@@ -964,3 +964,24 @@ Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para 
   - **Ainda em fila/andamento:** os demais (615, 617, 621–623, 625–638), a ler na rodada seguinte.
 - **Lição de operação:** subir dezenas de ramos de uma vez estoura a fila e o download do CLI. Em lote futuro, empurrar em levas de ~6 ramos.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Leitura das 05h48 UTC (23h48 CST, 09/11) — blocos 624, 625 e 626 e visão dos 27 runs
+
+**Os três pedidos (leitura nova, não a última conhecida):**
+
+| Bloco | PR | Run | Estado |
+|---|---|---|---|
+| 624 (t1613) | #3629 | 42567402098 | **rerun (tentativa 2) em andamento**; a tentativa 1 foi infra (HTTP 504 do setup-cli) |
+| 625 (t1614) | #3630 | 42567409168 | **VERDE** |
+| 626 (t1615) | #3631 | 42567415419 | **VERDE** |
+
+- Como o 624 ainda não tem veredito, **nenhum bloco novo foi aberto** nesta leitura (o 627, grupo do 610, já existe: #3633, t1616, verde).
+
+**Visão dos 27 renumerados (mesma leitura):**
+- **Verdes (17):** 612, 613, 614, 615, 617, 619, 622, 623, 625, 626, 627, 628, 629, 631, 632, 633, 637.
+- **Reruns em andamento:** 616, 620, 621, 624. Bloco 630 e 636 também em andamento (1ª tentativa).
+- **Vermelhos por infra, ainda sem rerun:** 634 (42567462031), 635 (42567467525), 638 (42567484544): log curto (~3,7 mil caracteres), sem `e2e.txt`, nenhum teste rodou.
+- **618 (42567368975): 2ª falha de infra no mesmo run** (mesma assinatura curta, depois do rerun). Pela regra de um rerun por run, **não repito**; segue como "infra, sem veredito de spec" e será conferido na próxima alteração real do ramo.
+- **Causa comum:** o download do `supabase/setup-cli@v1` devolve 504 sob a carga de 27+ runs simultâneos (mais os runs das outras pistas). A renumeração só renomeia arquivo e título; nada em teste mudou.
+- **Plano:** esperar a fila esvaziar e só então reexecutar 634, 635 e 638 (um rerun cada), em levas pequenas.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
