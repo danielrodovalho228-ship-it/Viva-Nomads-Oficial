@@ -918,3 +918,18 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 637 (#3646, t1585):** run 42565259755 em andamento.
 - **Bloco 638 (#3647, t1586, grupo do 621 — painel com id, sócios e autenticação; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 05h35 (09/11) — blocos 637 e 638 verdes, 639 aberto, e uma colisão de numeração minha
+
+- **Bloco 637 (#3646, t1585): VERDE** (42565259755), avisos/prévia de e-mails/caixa do leitor de QA (19ª volta), sem achado.
+- **Bloco 638 (#3647, t1586): VERDE** (42565736895), painel com id/sócios/autenticação (19ª volta), sem achado.
+- **Bloco 639 (#3648, spec t1600, grupo do 622 — admin; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+### Problema de numeração das minhas specs (erro meu, não é defeito de produto)
+
+O teste `src/lib/specs-numeracao.test.ts` exige número `tN` único por spec. Cada ramo passa sozinho, mas **os blocos 612–638 usaram t1560–t1586, números que as specs de guarda E-\* (outros PRs meus) já ocupam**. Exemplos: t1560 (bloco 612 × E734), t1565 (617 × E219), t1570 (622 × E688/0333), t1575 (627 × E755/E760/E764), t1576 (628 × E746), t1583 (635 × E762), t1584 (636 × E766). Também t1587 (E727/E728, #3600).
+
+- **Efeito:** quando um PR de cada lado mesclar, o outro fica vermelho no guarda de numeração (o lab roda no merge-ref). Nada está na main ainda, então hoje nenhum run quebrou.
+- **Contenção já feita:** a partir do bloco 639 as specs de bloco usam a faixa **t1600+** (639 = t1600, 640 = t1601, …).
+- **Correção pendente (decisão de custo):** renumerar os blocos 612–638 para t1601+ em lote antes do primeiro merge de qualquer um deles, ou fazê-lo ramo a ramo no momento do merge (cada ramo já precisa de merge da main por causa do `cobertura.json`). Renumerar tudo agora são 27 pushes e 27 runs de lab; não fiz sem alinhar.
