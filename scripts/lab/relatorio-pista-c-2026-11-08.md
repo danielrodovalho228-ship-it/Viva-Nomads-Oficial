@@ -1316,3 +1316,14 @@ main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente
 - **Lab crítico sobre o head atual:** o run de push do próprio `344e3a273` (42537255566) está **verde**; não há como disparar outro run sem commit novo na main.
 - **PR #3682 (manutenção do lab):** run 42617052464, **126 passaram, 3 falharam**; as 3 são o **L-110** (t329, produto, pista B), com evidência em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Nada de laboratório vermelho.
 - Sem bloco de varredura (pausa de 09/11), sem prova ao vivo. **Próximo L livre: L-111.** Sequência encerrada.
+
+## Rodada das 14h45 UTC (09/11) — a main se moveu: #3598 e #3398 (E719)
+
+Merges novos desde `344e3a273`, na ordem:
+1. **#3598** (14:14 UTC, `47d85e5b0`): conserto do teste de unidade `e727-e728-continuar.test.ts` (a main vermelha do `verify`). Só teste de unidade; **sem comportamento novo, nada a guardar no lab**. Lab crítico de push: run 42632791776, **verde**.
+2. **#3398** (14:23 UTC, `9c2417411`) **E719**: o cartão do contrato lê o estado real da avaliação (publicada → "Publicada", some o "Aguardando a outra parte"; em moderação/removida têm estado próprio; quem já avaliou não recebe o formulário). Já tinha teste de unidade (Pista B). Lab crítico de push: run 42634158284, **verde**.
+
+**Spec de guarda criada:** `t1588-e719-cartao-avaliacao-estado.spec.ts` (PR de evidência **#3684**, draft, commit `860272395`): dois contratos encerrados ontem (avaliação do inquilino publicada num, enviada no outro), logado como inquilino em `/dashboard/locacoes`; confere `Publicada` × `Aguardando a outra parte` e a ausência do formulário. Guardas de numeração/cobertura 13/13, tsc limpo. **Ainda não rodou**: o lab crítico do PR é a primeira execução.
+
+Efeito colateral: com o #3598 mesclado, o `verify` da main deve voltar a verde (era a causa do vermelho em todos os meus PRs).
+Próximo L livre: **L-111**. Sem bloco de varredura (pausa de 09/11).
