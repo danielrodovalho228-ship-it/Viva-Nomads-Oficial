@@ -953,3 +953,14 @@ Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para 
 - **Bloco 639** fica em **t1600** (já aberto assim, #3648); o **próximo bloco (640) usa t1628**, porque t1601 passou a ser do bloco 612.
 - **Conferência de unicidade:** varri todos os ramos remotos (main + `claude-c/*`): nenhum número ≥ t1556 aparece em dois ramos diferentes. As specs E-\* (t1560–t1587) e os blocos (t1556–t1559 e t1600–t1627) não se sobrepõem mais.
 - Os 27 pushes dispararam 27 runs de lab; só renomeiam arquivo e título, então o esperado é verde igual ao anterior. Qualquer vermelho aqui entra na próxima rodada como causa a ler no log.
+
+## Rodada das 05h50 (09/11) — bloco 639 verde, 640 aberto, leitura dos 27 runs da renumeração
+
+- **Bloco 639 (#3648, t1600): VERDE** (42567141606), admin (19ª volta), sem achado.
+- **Bloco 640 (#3649, t1628, grupo do 623 — avaliação pelos dois lados, avaliadora pública; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Runs dos 27 blocos renumerados (leitura parcial):**
+  - **Verdes:** 612, 613, 614, 619.
+  - **Vermelhos por infra, não pela renumeração:** 616 (42567354515), 618 (42567368975), 620 (42567377561), 624 (42567402098). Causa lida no log: `supabase/setup-cli@v1` recebeu **HTTP 504 três vezes** ao baixar o CLI (passo de instalação, antes de qualquer teste). Foi o efeito de 27 pushes disparando 27 runs ao mesmo tempo; nenhum teste rodou. Um único rerun por run foi disparado.
+  - **Ainda em fila/andamento:** os demais (615, 617, 621–623, 625–638), a ler na rodada seguinte.
+- **Lição de operação:** subir dezenas de ramos de uma vez estoura a fila e o download do CLI. Em lote futuro, empurrar em levas de ~6 ramos.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
