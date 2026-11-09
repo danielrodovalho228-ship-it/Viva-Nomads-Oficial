@@ -292,17 +292,15 @@ test.describe("T48 — Varredura do site e do app", () => {
     ["proprietário", dono, () => [`/dashboard/imoveis/${ids.imovel}/editar`]],
     ["admin", { email: adminConta.email }, TELAS_ADMIN],
   ] as const) {
-    // E744: um teste por largura (390 e 1280), cada um com o próprio login — o admin levava 56 min juntos e era o caminho
-    // crítico da suíte; separados, o laboratório roda cada largura em uma fatia própria (fatias 20 e 21).
-    for (const largura of [390, 1280] as const) {
-      test(`${nome}: todas as telas logadas (${largura} px)`, async ({ browser }) => {
-        test.setTimeout(1_800_000);
-        const page = await entrar(browser, conta.email, senha);
-        const extra = typeof extras === "function" ? extras() : extras;
-        if (largura === 1280) await page.setViewportSize({ width: 1280, height: 900 });
-        await varrer(page, [...TELAS_LOGADAS, ...extra], largura);
-        await page.context().close();
-      });
-    }
+    test(`${nome}: todas as telas logadas`, async ({ browser }) => {
+      test.setTimeout(1_800_000);
+      const page = await entrar(browser, conta.email, senha);
+      const extra = typeof extras === "function" ? extras() : extras;
+      await varrer(page, [...TELAS_LOGADAS, ...extra]);
+      // 1280 px: o mesmo painel no computador.
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await varrer(page, [...TELAS_LOGADAS, ...extra], 1280);
+      await page.context().close();
+    });
   }
 });

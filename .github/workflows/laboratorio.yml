@@ -32,13 +32,13 @@ jobs:
   # Agora ela é fatiada em FATIAS jobs paralelos (--shard do Playwright); cada fatia sobe o próprio Supabase local e o
   # próprio site, e o job `consolidar` junta os resultados e grava UMA linha em lab_execucoes. Desenho em docs/e744-suite-fatiada.md.
   laboratorio:
-    name: laboratorio (fatia ${{ matrix.fatia }}/21)
+    name: laboratorio (fatia ${{ matrix.fatia }}/20)
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
-        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SITE_URL: http://localhost:3123
@@ -158,8 +158,7 @@ jobs:
               17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
               18) GREP="inquilino: todas as telas logadas" ;;
               19) GREP="proprietário: todas as telas logadas" ;;
-              20) GREP="admin: todas as telas logadas \(390 px\)" ;;
-              21) GREP="admin: todas as telas logadas \(1280 px\)" ;;
+              20) GREP="admin: todas as telas logadas" ;;
             esac
             npx playwright test t48-varredura --grep "$GREP" --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
           fi
@@ -204,7 +203,7 @@ jobs:
           path: fatias
 
       - name: Juntar os resultados das fatias
-        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 21
+        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 20
 
       - name: Resumo da noite
         run: |
