@@ -861,3 +861,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 628 (#3634):** rerun (tentativa 2 do run 42558732902) em andamento desde 04h03; sem veredito.
 - **Bloco 630 (#3636, t1578, grupo do 613 — proposta e visita pelos dois lados; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem achado novo na varredura, logo nenhuma spec de guarda nova a propor (próximo livre: **L-110**).
+
+## Rodada das 04h20 (09/11) — bloco 628 verde, 631 aberto
+
+- **Bloco 628 (#3634, t1576): VERDE** no rerun (42558732902, tentativa 2), compartilhadas sem id (18ª volta). O 1º run foi falha de infra (`supabase start`), sem teste rodado. Sem achado.
+- **Bloco 630 (#3636, t1578):** run 42560370023 em andamento.
+- **Bloco 631 (#3638, t1579, grupo do 614 — conferir, sistema, pedidos do morador; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
