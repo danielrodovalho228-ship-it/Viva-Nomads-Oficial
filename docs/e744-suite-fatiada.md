@@ -53,17 +53,22 @@ Testes de guarda: `tests/laboratorio/lab-fatias.test.ts` (matriz 1..N = `--shard
 
 **Run de 16 fatias (42538098625):** ficou na fila do grupo de concorrência até o run de 12 terminar e começou às 00:56 UTC; resultado a registrar aqui quando concluir (≈ 01:50 UTC).
 
-## Run de 16 fatias (42538098625) — leitura de 09/11 01:52 UTC (ainda em andamento)
-Roda no commit `7afef87` (antes das correções do consolidar e do `supabase start`).
+## Run de 16 fatias (42538098625) — veredito final (concluído 09/11 02:06 UTC: failure)
+Rodou no commit `7afef87` (antes das correções do consolidar e do `supabase start`). Passo "Rodar a suíte E2E" por fatia:
 
-| Fatias | Resultado | Duração (início 00:56 UTC) |
+| Fatia | Veredito | Suíte |
 |---|---|---|
-| 2 | **verde** | 36 min |
-| 1, 3, 5–10, 12–16 | vermelhas (falhas reais de teste: o Playwright saiu com código 1) | 21 a 35 min |
-| 4 | vermelha por **infraestrutura**: `supabase start` falhou 3 vezes com `failed to bind host port 0.0.0.0:54322/tcp: address already in use` (o `ss` do runner não listava a porta); 2 min, ~280 testes não rodaram | 2 min |
-| 11 | ainda rodando aos 56 min (teto de 65 min do `--global-timeout`) | — |
+| 2 | **verde** | 31 min |
+| 1, 3, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16 | vermelhas só no passo "Marcar a fatia como falha" (o Playwright saiu com código 1 = falhas reais de teste) | 15 a 29 min |
+| 4 | **infra**: `supabase start` falhou 3 vezes (`failed to bind host port 0.0.0.0:54322/tcp: address already in use`); nenhum teste rodou | 0 |
+| 11 | vermelha e **bateu o teto de 65 min** (`--global-timeout`): há algo lento ou pendurado nesta fatia | 65 min |
+| consolidar | vermelho: "Registrar no banco" falhou (o bug do `psql` com argumento grande, já corrigido) e depois "alguma fatia falhou" | — |
 
-**Lido:** com 16 fatias a suíte inteira fecha em ~35 min em 14 das 16 fatias (contra 65 min estourando com 640 de 4.504 testes), então o objetivo "a suíte termina" está provado. As duas anomalias de tempo/infra foram:
-- **Porta 54322 presa** (fatia 4 aqui, fatia 11 no run anterior): corrigido neste PR com 5 tentativas, `sudo ss` para ver o processo e reinício do Docker da 2ª tentativa em diante. Não consegui reproduzir localmente; a prova é o próximo run.
-- **Uma fatia que passa de 50 min** (8 no run de 12; 11 neste): o `--shard` divide por quantidade, e algum arquivo de spec longo cai nela. Se repetir no run seguinte, o passo é balancear por duração (lista de specs pesados em fatia própria).
-- **Nomes dos testes que falharam:** não saem pela API sem os artifacts (`laboratorio-42538098625-fatia-N`) e, neste run, o consolidar vai falhar ao gravar no banco (bug do `psql` já corrigido). Saem da linha de `lab_execucoes` no **primeiro run com o código corrigido** — é o que disparo a seguir.
+**Veredito:** a suíte completa **termina** em 15 das 16 fatias em no máximo 31 min. O gate completo **não está verde**: 13 fatias com falhas reais de teste, uma fatia sem rodar (infra) e uma que estoura o teto.
+
+**Triagem do que é da suíte fatiada (corrigido neste PR):**
+1. Registro no banco (E2BIG): corrigido (arquivo + `\set ... \`cat\``).
+2. `supabase start` com a porta 54322 presa (fatias 4 aqui e 11 no run de 12): 5 tentativas + reinício do Docker.
+3. Fatia lenta (11 aqui; 8 no run de 12): o `--shard` balanceia por quantidade. A fatia que estoura muda de run para run, o que aponta para um ou poucos testes que penduram (espera sem fim), não para um spec sempre pesado. A lista por spec e as durações saem do `resultado.json`; o run em andamento (42547901640) é o primeiro que as grava na linha de `lab_execucoes`.
+
+**Fora do escopo do fatiamento (a triar quando houver os nomes):** as falhas reais de teste das 13 fatias vermelhas. Cada uma é defeito de produto ou de spec e não se corrige no workflow; entram como lista para a Pista C / QA.
