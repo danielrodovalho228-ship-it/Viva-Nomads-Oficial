@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { FRASE_CONVERSA_CHAT, PASSO_CONVERSE_TEXTO } from "./conversa-chat.ts";
 
-// Ordem b3790661 (D3): um só discurso — conversa pelo chat da Viva; contato protegido em qualquer fase (E774: nada de "só depois do aceite").
+// Ordem b3790661 (D3) + E445/E776: um só discurso — conversa pelo chat da Viva; telefone, e-mail e redes nunca são trocados.
 function arquivos(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
     const p = join(dir, n);
@@ -24,12 +24,10 @@ test("nenhum texto do site contradiz a regra do chat mascarado até o aceite", (
   assert.deepEqual(achados, []);
 });
 
-test("a frase única fala de chat da Viva e diz que o contato nunca é trocado (E774)", () => {
+test("a frase única fala de chat da Viva e de contato que nunca é trocado", () => {
   assert.match(FRASE_CONVERSA_CHAT, /chat da Viva/);
+  assert.match(FRASE_CONVERSA_CHAT, /nunca são trocados/);
   assert.doesNotMatch(FRASE_CONVERSA_CHAT, /depois do aceite/);
-  assert.match(FRASE_CONVERSA_CHAT, /não são trocados na conversa, em nenhuma fase/);
-  assert.doesNotMatch(PASSO_CONVERSE_TEXTO, /depois do aceite/);
-  assert.match(PASSO_CONVERSE_TEXTO, /não são trocados na conversa, em nenhuma fase/);
   assert.match(PASSO_CONVERSE_TEXTO, /chat da Viva/);
 });
 
