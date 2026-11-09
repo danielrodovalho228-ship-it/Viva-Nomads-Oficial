@@ -5,7 +5,7 @@ import { TAMANHOS, abrirComoConta, escutarErros, lerMassa, temContaVarredura, ty
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1583 — VARREDURA DA PÁGINA INTEIRA, BLOCO 635 (Pista C, 08/11), 19ª volta do ciclo (repete o grupo do bloco 618, t1566; antes, os blocos 601, 584, 567, 550, 533, 516, 499, 482, 465 e 448). O protocolo do bloco 21 (t385):
+  T1624 — VARREDURA DA PÁGINA INTEIRA, BLOCO 635 (Pista C, 08/11), 19ª volta do ciclo (repete o grupo do bloco 618, t1566; antes, os blocos 601, 584, 567, 550, 533, 516, 499, 482, 465 e 448). O protocolo do bloco 21 (t385):
   seis classes (imagem pelo carregamento real, elemento fixo sobre conteúdo, cartão sem foto, estouro horizontal, texto
   cortado, grade), página toda rolada, 390 e 1280 px, HTTP abaixo de 400; e o console (erro de console ou de página,
   régua da t249) no relatório. As telas varridas há mais tempo depois do bloco 600 (registro de cobertura: última
@@ -54,7 +54,7 @@ const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco635";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
 
-test.describe("T1583 — varredura da página inteira, bloco 635 (19ª volta: painéis do morador e do proprietário, empresas, para proprietários) (390 e 1280 px)", () => {
+test.describe("T1624 — varredura da página inteira, bloco 635 (19ª volta: painéis do morador e do proprietário, empresas, para proprietários) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "precisa do laboratório (contas da massa da varredura)");
   test.beforeEach(({}, info) => {
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
