@@ -84,3 +84,17 @@ O CI de um PR testa o PR contra a main **de quando ele foi aberto ou atualizado*
 
 ## Fora deste documento
 Implementação, workflow da fila e qualquer mudança de proteção/ruleset. O gate de leitura do #3597 continua como está.
+
+
+---
+
+## Conferência contra o estado atual (09/11, ~12h UTC) — o que muda no desenho
+Conferido: main `344e3a2` (vermelha só pelo drift do E727/E728; o #3598 que a conserta ainda **não** foi mesclado), `.github/workflows/gate-pode-mesclar.yml` e `scripts/gate/` **ainda não estão na main** (#3597 aberto, empilhado sobre o #3588), nenhuma proteção de branch ligada.
+
+O desenho **continua válido**. Ajustes e fatos novos:
+1. **Escala da fila:** não são ~20 PRs. O repositório tem cerca de **1.000 PRs abertos** e **111 só da Pista B** (`docs/e779-triagem-prs-pista-b.md`). Com ~4–5 PRs por hora na fila serial da alternativa (b), a fila não esvazia em horas. A fila (qualquer alternativa) precisa de **triagem antes**: só entram PRs prontos e não duplicados.
+2. **Conflitos viram regra de saída da fila:** 104 pares de PRs da Pista B conflitam entre si (mesmo arquivo de ação ou fim de `docs/e293-auditoria-retencao.md`). Depois de cada merge, os vizinhos ficam "sujos". A fila deve sair do PR com conflito com comentário, **sem tentar resolver sozinha**, e a pista dona resolve (como já dizia o desenho). A atualização automática da branch só serve para quem está limpo.
+3. **Checks exigidos:** além de `verify` e `lab-critico` (obrigatórios), há `e2e` e, em PRs que mexem no workflow, `gerar linhas de base` e `ensaio`. Mantenho só `verify` + `lab-critico` como obrigatórios; os outros não bloqueiam.
+4. **O `lab-critico` roda inteiros os specs que o PR altera** (aprendido no #3588): um PR que altere o `t48-varredura` (cadeia de ~100 min) estoura o job de 40 min. Isso torna PRs que tocam specs pesados **inadmissíveis na fila** sem tratar o portão antes. Entra como regra de saída da fila.
+5. **Main vermelha pausa:** hoje ela está vermelha, então pela regra 2 **nenhum merge entraria**, exceto o #3598. Na prática o primeiro item da fila é o #3598.
+6. **Recomendação:** mantida: (b) agora, com a condição do App/token restrito. Soma-se a condição de **triagem prévia** (ponto 1).
