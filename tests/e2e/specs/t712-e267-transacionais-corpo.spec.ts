@@ -201,7 +201,7 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
     await m.getByTestId("alteracao-meses").selectOption("3");
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.A}$`), { timeout: 30_000 });
-    await expect(m.getByTestId("aditivo-resumo")).toHaveText("Meses: de 2 para 3");
+    await expect(m.getByTestId("aditivo-resumo")).toContainText("Meses: de 2 para 3");
     await m.context().close();
 
     const proposto = await emailDo(ids.dono, "estadia_aditivo_proposto", "A");

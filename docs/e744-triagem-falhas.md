@@ -535,3 +535,19 @@ Rodada completa 42664590118 (head 1798023cf): ainda sem a fatia 20/20 (admin) à
 
 ## Rodada 42664590118 (head 1798023cf) — 18:30 UTC
 Todas as 20 fatias terminaram (sem estouro): verdes 2, 17, 18, 19, 20 (a 20/20, admin, passou); vermelhas 1, 3–16. O job `consolidar` ainda corria (linha em `lab_execucoes` não gravada). Não foi disparada rodada concorrente.
+
+## RODADA 42664590118 — CONSOLIDADO (head 1798023cf, 18:27 UTC, 09/11)
+**188 falhas** (242 → 219 → 199 → 188). Fatias verdes: 2, 17, 18, 19, 20; vermelhas 1, 3–16. 55 são baselines de screenshot (QA); 3 são t277 (decisão do chat principal); o resto, ≈130, em ≈100 specs.
+Estado do gate de PR (lab-critico) no head 369f3bb45: 0 falhas.
+### Corrigido nesta leva (spec desatualizado, sem decisão de produto)
+- **aditivo-resumo (t256, t595, t631, t712):** o resumo agora traz "· Saída: … · Dias: …" depois de "Meses: de X para Y"; os specs conferem por prefixo (`toContainText`).
+- **t610:** o nome no cartão "Hoje" agora traz a inicial do sobrenome ("Iara C"); aceita `Iara` ou `Iara C`.
+Guarda: `tests/laboratorio/aditivo-resumo-t610.test.ts` (5).
+### Mapa do que resta (por família, do consolidado)
+- **Timeouts a 90 s (6 specs):** t78 (3), t71, t176, t778, t290, t40, t66.
+- **Tipo do imóvel — 3 imagens em vez de 9 (t691, t704, t706, t710):** o seletor do tipo mostra só 3 fotos; pode ser carga preguiçosa (spec) ou regressão (E265); precisa ver renderizado.
+- **Preço com espaço faltando (t703, t708):** "3 × R$ 3.450+ limpeza" sem espaço antes do "+": vale confirmar se é defeito de espaçamento no cartão (texto) ou só `textContent`.
+- **Decisões do admin (t229, t231, t273, t465):** reescrever contra a Central de Pendências.
+- **Papel-ativo/avatar (t355, t361, t391, t318, t370, t365, t280, t886, t644, t81, t489).**
+- **Cadastro (t288, t292, t534, t800, t799, t386, t547, t401, t400, t435, t469, t194, t204, t186).**
+- **Cauda de dados/esperas (≈40).**
