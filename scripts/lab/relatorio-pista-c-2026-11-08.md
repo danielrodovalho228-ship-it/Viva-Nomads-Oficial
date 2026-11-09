@@ -716,3 +716,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 608 (#3604, t1556): VERDE** (42540765984), 17ª volta do grupo do 591, sem achado.
 - **Main:** nenhum merge novo depois de `344e3a273` (#3505, verde); nada novo a guardar. Sem L- aberto (próximo livre: **L-110**).
 - Próximo bloco: **609** (grupo do 592, t1540).
+
+## Rodada das 01h00 (09/11) — blocos 609 a 612
+
+- **Bloco 609 (#3605, t1557): VERDE** no rerun (42542017159, tentativa 2). O 1º run falhou por infra: `supabase start` com a porta 54322 em uso, 3 tentativas, nenhum teste rodou (mesma falha do E760). Um único rerun, como manda a regra. Sem achado.
+- **Bloco 610 (#3606, t1558): VERDE** (42542223876), admin, sem achado.
+- **Bloco 611 (#3607, t1559):** run 42542253080 em andamento.
+- **Bloco 612 (#3608, t1560, grupo do 595):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
