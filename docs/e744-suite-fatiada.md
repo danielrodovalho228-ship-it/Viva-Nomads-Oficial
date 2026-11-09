@@ -72,3 +72,10 @@ Rodou no commit `7afef87` (antes das correções do consolidar e do `supabase st
 3. Fatia lenta (11 aqui; 8 no run de 12): o `--shard` balanceia por quantidade. A fatia que estoura muda de run para run, o que aponta para um ou poucos testes que penduram (espera sem fim), não para um spec sempre pesado. A lista por spec e as durações saem do `resultado.json`; o run em andamento (42547901640) é o primeiro que as grava na linha de `lab_execucoes`.
 
 **Fora do escopo do fatiamento (a triar quando houver os nomes):** as falhas reais de teste das 13 fatias vermelhas. Cada uma é defeito de produto ou de spec e não se corrige no workflow; entram como lista para a Pista C / QA.
+
+## Fatia 11/16: causa e correção (09/11, 03:05 UTC)
+No run 42538098625 e no 42547901640 a fatia que estoura o teto é a MESMA, **11/16**. Listei o que cai nela (`playwright test --list --shard=11/16`): 279 testes, dos quais **208 são de dois specs de segurança** (`t50-rls-todas-tabelas`, 149; `t49-seguranca-publica`, 59). Esses testes custam ~3x mais que a média (varrem o RLS de todas as tabelas), e o `--shard` divide por quantidade; por isso uma fatia ficou com todo o peso.
+
+**Correção:** `SPECS_PESADOS` em `playwright.config.ts`. As fatias 1–16 rodam a suíte **sem** eles (`LAB_PESADOS=fora`, ~264 testes cada, medido com `--list`); as fatias 17–20 rodam **só** eles (`t50` e `t49`, 4 partes de ~70). A matriz passa a 20 jobs; o consolidar espera 20; os testes de guarda foram atualizados (`lab-fatias.test.ts`). Fatia 4 do run em curso rodou normalmente (22 min): o reinício do Docker contra a porta presa não foi exercitado de novo, então segue sem prova.
+
+**Triagem das falhas reais (13 fatias vermelhas):** continua pendente dos nomes dos testes. O run em curso (42547901640) foi disparado antes desta correção; os nomes saem do primeiro run no código corrigido (linha de `lab_execucoes` e artifacts).

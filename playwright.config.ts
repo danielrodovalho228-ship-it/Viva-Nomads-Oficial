@@ -28,7 +28,15 @@ const BYPASS_HEADERS = BYPASS
 // Funil, Eventos e os números do admin contam só 'real'.
 const TRAFEGO_HEADERS = { "x-vn-origem": "e2e" };
 
+/**
+ * E744: specs que custam ~3x mais por teste que a média (t50 varre o RLS de todas as tabelas; t49 é a segurança pública).
+ * O --shard divide por QUANTIDADE de testes, então uma fatia que os recebia (a 11 de 16, nos dois runs de 16) passava de
+ * 50 min e batia o teto. A suíte noturna os tira das fatias gerais (LAB_PESADOS=fora) e roda só eles em fatias próprias.
+ */
+export const SPECS_PESADOS = /t(50-rls-todas-tabelas|49-seguranca-publica)\.spec\.ts/;
+
 export default defineConfig({
+  testIgnore: process.env.LAB_PESADOS === "fora" ? SPECS_PESADOS : undefined,
   testDir: "./tests/e2e/specs",
   globalSetup: "./tests/e2e/global-setup.ts",
   globalTeardown: "./tests/e2e/global-teardown.ts",
