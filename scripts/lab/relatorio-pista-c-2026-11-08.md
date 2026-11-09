@@ -1359,3 +1359,12 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
   1. **#3599 (E777, preço único):** refatoração — o resumo "R$ X em N meses" ("em 1 mês" no singular) passa a vir de uma só função (`resumoEmMeses`, em `cartao-preco.ts`), usada pelo cartão, pela barra fixa, pela página do imóvel e pela reserva. Tem teste de unidade (`e777-preco-unico.test.ts`). **Sem spec nova:** o texto do total já é conferido pelos specs de navegador existentes (t703, t708 e a família do E756); o único efeito visível novo é "em 1 mês" no singular onde antes saía "em 1 meses", e esse caso é puro (unidade). O push da main não aparece mais em andamento.
   2. **#3603 (E778):** só documentação (`docs/lista-visual/e778-superpowers-pista-a.md`). Nada a guardar. Push da main (42642425184) em andamento (docs).
 - Sem bloco de varredura (estrutura de pista única, decisão do Daniel de 09/11). PR #3682 inalterado (126 passaram, 3 falharam = L-110). Próximo L livre: **L-111**.
+
+## Rodada das 16h UTC (09/11) — #3637 verde; #3681 (docs) e #3579 (E752)
+
+1. **Push do #3637 (E778, Pista B, docs):** run 42644034827 **verde**. **#3603 (E778, Pista A):** 42642425184 **verde**.
+2. **Merges novos** (head `01f2102ff`), na ordem:
+   - **#3681 (E775):** só documentação (desenho da fila de merge). **Sem spec necessária.** Push da main 42646658005 **verde**.
+   - **#3579 (E752):** a Caução passa a mostrar o valor do 1º bloco ("Caução do 1º bloco (N meses)" + R$) e o texto público "paga direto ao proprietário / a Viva não recebe nem segura esse dinheiro" (sai a "poupança"). Mudança de comportamento; tinha teste de unidade (`e752-caucao-valor.test.ts`) e a Pista B ajustou o `t158`. **Spec criada: `t1591-e752-caucao-valor-do-primeiro-bloco.spec.ts`** (PR **#3687**, draft, commit `b25747916`), `/imoveis/ube-001` a 390 e 1280 px. Guardas 13/13, tsc limpo; **ainda não rodou**.
+3. **Consolidado:** PRs de guarda em draft aguardando QA — #3684 (t1588, E719), #3685 (t1589, E724), #3686 (t1590, E729), todos verdes; #3687 (t1591, E752) em primeira execução. PR #3682: 126 passaram, 3 falharam = **L-110** (t329, produto, pista B); sem run novo.
+4. Próximo `t` livre: **t1592**. Próximo L livre: **L-111**.
