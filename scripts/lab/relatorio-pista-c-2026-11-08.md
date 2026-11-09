@@ -1165,3 +1165,11 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 
 ### Depende de decisão (merge) — nada mesclado por esta pista
 Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco, tirar o `test.fail` do L-107 na t1429 e trocar a base de #3540/#3541 para `main`. Main: head `344e3a273`, sem merge novo.
+
+## Rodada das 08h10 UTC (09/11) — 651 e 652 verdes, 653 aberto
+
+- **Bloco 651 (#3661, t1639): VERDE** no rerun (42580959339, tentativa 2), serviços e visitas/admin/parceiros (20ª volta). A 1ª tentativa foi infra (log curto, sem teste rodado). Sem achado.
+- **Bloco 652 (#3662, t1640): VERDE** (42582278880), painéis do morador e do proprietário/empresas (20ª volta), sem achado.
+- **Bloco 653 (#3664, t1641, grupo do 636 — cidade, institucionais, parceiros, comparar, admin; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–652 verde (41/41); 653 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 aberto. Achados novos: nenhum (próximo livre: **L-110**).
