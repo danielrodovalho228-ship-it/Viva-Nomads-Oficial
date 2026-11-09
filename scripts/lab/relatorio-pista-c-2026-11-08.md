@@ -1041,3 +1041,18 @@ A regra de um rerun foi usada nesta rodada para os três; a próxima rodada reab
 - **Em andamento:** 638 (rerun, 42567484544), 641 (42569946450, 1ª tentativa), 642 (#3651).
 - **618, 621, 634:** nova rodada, novo rerun único disparado agora (tentativa 3). Resultado na próxima leitura; se falharem de novo pelo mesmo passo de instalação, reporto ao chat principal como problema do runner.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Placar do lote — leitura das 06h15 UTC (09/11)
+
+Blocos 612–643 (32 PRs de varredura, todos draft):
+
+| Situação | Qtde | Blocos |
+|---|---|---|
+| **Verde** | 29 | 612–617, 619–633, 635–642 (621 e 638 só no rerun) |
+| **Vermelho por infra, em rerun** | 2 | 618 (#3621) e 634 (#3642): 3 falhas seguidas do `supabase/setup-cli` (HTTP 504 no download, antes de qualquer teste); novo rerun disparado (tentativa 4) por ordem do chat principal |
+| **Primeira rodada em andamento** | 1 | 643 (#3652, t1631, grupo do 626 — públicas com parâmetro; 19ª volta) |
+| **Vermelho de spec / defeito de produto** | 0 | — |
+
+- **Novos nesta leitura:** 621 (r3) e 638 (r2) **VERDES**; 641 (#3650, 42569946450) **VERDE**; 642 (#3651, 42570372431) **VERDE**.
+- **Atenção sobre a causa:** 618 e 634 falharam no mesmo passo (download do CLI, 504) em três tentativas, mesmo com a fila baixa, enquanto 621 passou na mesma janela. Se a tentativa 4 falhar, reporto ao chat principal como problema de runner/CDN (candidata a fixar o CLI em cache ou trocar o download no workflow, que é da Pista B), sem mexer no workflow.
+- **Main:** head conferido uma vez nesta leitura, `344e3a273`; nenhum merge novo, nenhuma spec de guarda a escrever. **Achados novos: nenhum** (próximo livre: **L-110**).
