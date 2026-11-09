@@ -312,10 +312,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
   // Mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho): o cabeçalho mostra a foto também na Conta.
-  // E55 (QA 24/10, reincidência): na tela Perfil a foto aparece só no herói editável e no espelho — as miniaturas de
-  // navegação (barra lateral e cabeçalho) viram iniciais ali. No computador o Perfil abre também em /dashboard/conta.
-  const naTelaPerfil = pathname === "/dashboard/conta/perfil" || pathname === "/dashboard/conta";
-  const fotoNav = naTelaPerfil ? null : myPhoto;
+  // E783 (Daniel, 09/11): a foto do cabeçalho aparece em TODAS as telas, inclusive Conta e Perfil. O E55 (24/10) trocava a miniatura
+  // por iniciais na tela Perfil e fazia a foto "sumir" ao entrar na Conta; a iniciais ficam só para quem não tem foto.
+  const fotoNav = myPhoto;
   const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   // MENUS-5 / MORADOR-NAV: fora do /admin, TODO papel navega pelas abas da fonte única (config/abas-painel.ts) — no
