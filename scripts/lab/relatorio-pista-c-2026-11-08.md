@@ -840,3 +840,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Lote 624–626 fechado verde:** #3629 (624), #3630 (625), #3631 (626).
 - **Bloco 627 (#3633, t1575, grupo do 610 — admin; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h00 (09/11) — bloco 627 verde, 628 e 629 abertos
+
+- **Bloco 627 (#3633, t1575): VERDE** (42557762122), admin (18ª volta), sem achado.
+- **Bloco 628 (#3634, t1576, grupo do 611 — compartilhadas sem id; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Bloco 629 (#3635, t1577, grupo do 612 — morador nas compartilhadas; 18ª volta):** aberto como draft; mesmas guardas verdes; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada). Sem L- aberto (próximo livre: **L-110**).
