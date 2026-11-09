@@ -1015,3 +1015,22 @@ Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para 
 - **Rerun (tentativa 2) em andamento:** 616 (a conferir), 635, 638.
 - **Causa de todos os vermelhos:** download do `setup-cli` (HTTP 504) / passo de instalação, antes de qualquer teste.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Leitura das 05h58 UTC (09/11) — 616 verde; pendências de infra com próximo passo; 642 aberto
+
+- **Bloco 616 (#3616, t1605): VERDE** no rerun (42567354515, tentativa 2).
+- **635 (#3643) e 638 (#3647):** reruns (tentativa 2) ainda em andamento; sem veredito.
+- **641 (#3650, t1629):** run 42569946450 em andamento (iniciado 05h54).
+- **Bloco 642 (#3651, t1630, grupo do 625 — painel do morador sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+
+### Blocos sem veredito de spec (nenhum some da lista)
+
+| Bloco | PR | Run | Estado | Próximo passo |
+|---|---|---|---|---|
+| 618 (t1607) | #3621 | 42567368975 | 2 falhas de infra (setup-cli 504), nenhum teste rodou | 1 novo rerun na próxima rodada (06h00 UTC), com a fila das outras pistas baixa; se falhar de novo, reportar ao chat principal como problema do runner, não da spec |
+| 621 (t1610) | #3625 | 42567384581 | idem | idem |
+| 634 (t1623) | #3642 | 42567462031 | idem | idem |
+
+A regra de um rerun foi usada nesta rodada para os três; a próxima rodada reabre um rerun por run. Nenhum ramo tem commit vazio nem alteração só para disparar CI.
+
+- **Main:** nenhum merge novo depois de `344e3a273`; sem spec de guarda a escrever. Sem L- de produto aberto (próximo livre: **L-110**).
