@@ -1238,3 +1238,11 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 2. **661** (#3675, t1649, grupo 644, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; é independente do 660, então avancei. Veredito pendente.
 3. **Merges sem spec de guarda:** a main não mudou desde `344e3a273` (último merge #3505, E727/E728, que tem guarda no t1587/#3600). Nada novo na fila.
 - #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo (próximo livre: L-110).
+
+## Rodada das 10h30 UTC (09/11) — 660 e 661 verdes, 662 aberto
+
+1. **661** (#3675, t1649): run 42599283700 **verde** na 1ª tentativa.
+2. **660** (#3674, t1648): a run do lab crítico passou a existir (42599595721, criada às 10:15 UTC por disparo externo ao meu fluxo) e fechou **verde**. O "660 sem veredito" da rodada das 10h20 fica encerrado.
+3. Lote 612–661 verde (50/50).
+4. **662** (#3676, t1650, grupo 645, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+5. **Merges desde `344e3a273`:** nenhum (main segue em `344e3a273`) → nada sem spec de guarda. #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo; próximo livre: **L-110**.
