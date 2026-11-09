@@ -138,8 +138,12 @@ export async function avisar(
   }
 }
 
+export const MSG_AGENDA_SEM_LEITURA = "Não foi possível conferir a agenda do parceiro agora. Tente de novo em instantes.";
+
 export async function agendaDoParceiro(admin: Admin, parceiroId: string): Promise<{ janelas: JanelaAgenda[]; bloqueios: BloqueioAgenda[] }> {
-  const { data } = await admin.from("parceiro_agenda").select("tipo, dia_semana, inicio, fim, data_inicio, data_fim").eq("parceiro_id", parceiroId);
+  const { data, error } = await admin.from("parceiro_agenda").select("tipo, dia_semana, inicio, fim, data_inicio, data_fim").eq("parceiro_id", parceiroId);
+  // Falha de leitura NÃO é "agenda vazia": o pedido seria recusado como "fora da agenda" por engano.
+  if (error) throw new Error(MSG_AGENDA_SEM_LEITURA);
   const linhas = (data ?? []) as { tipo: string; dia_semana: number | null; inicio: string | null; fim: string | null; data_inicio: string | null; data_fim: string | null }[];
   return {
     janelas: linhas

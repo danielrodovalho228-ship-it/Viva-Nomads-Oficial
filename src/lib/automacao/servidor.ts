@@ -166,7 +166,10 @@ async function textoComServico(admin: Admin, servicoId: string | null, descricao
 
 async function horariosDoPedido(admin: Admin, parceiroId: string, janela: Janela | null, agora: Date): Promise<{ horarios: string[]; aviso: string }> {
   if (!janela) return { horarios: [], aviso: "" };
-  const r = horariosNaJanela(janela, await agendaDoParceiro(admin, parceiroId), agora);
+  const agenda = await agendaDoParceiro(admin, parceiroId).catch(() => null);
+  // Sem ler a agenda, não diz "fora da agenda": propõe a janela e avisa que não deu para conferir.
+  if (!agenda) return { horarios: [], aviso: "\nNão foi possível conferir a sua agenda agora: proponha um horário." };
+  const r = horariosNaJanela(janela, agenda, agora);
   return { horarios: r.horarios, aviso: r.foraDaAgenda ? "\nFora da sua agenda: proponha outro horário." : "" };
 }
 

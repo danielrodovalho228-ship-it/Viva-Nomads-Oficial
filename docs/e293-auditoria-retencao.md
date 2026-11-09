@@ -269,3 +269,15 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 17. Erros e estados vazios — rodada 20 (08/11/2026)
+Sem migração. Três leituras que viravam um "não" falso em ações logadas:
+1. `agendaDoParceiro`: a falha virava "agenda vazia": o pedido de orçamento era recusado como "fora da agenda" e o parceiro não conseguia propor horário. Agora lança; as ações dizem "Não foi possível conferir a agenda do parceiro agora" e a automação avisa que não deu para conferir.
+2. `instrucoesPreenchidas` (check-in): a falha virava "instruções em branco": o proprietário era barrado ao assinar o contrato. Agora a assinatura (e o pedido do código) diz que não foi possível conferir o contrato.
+3. Consumo do código de assinatura: erro de gravação virava "código bloqueado". Agora diz para tentar de novo (o código segue valendo).
+Teste: `src/lib/data/e293-leituras-r20.test.ts`.
+
+### Seguimento da retenção E293 (rodada 20)
+Conferido: nenhuma coluna, tabela ou jsonb nova nesta rodada; o inventário (`src/config/retencao.ts`) e as guardas de minimização seguem verdes.
+Pendências que continuam do lado de quem decide (nada foi apagado e nenhum prazo mudou): prazos do item 13 (Dra. Beatriz) e a rotina que apague também os arquivos de `fotos_repetidas_alertas` e `caucao_desconto_itens`.
+Novo desde o §12 (PR #3524, E690): `avaliadores_credenciamento.criterios_decisao` (jsonb, só nosso: sim/não por critério e fonte real/simulada, sem dado pessoal) entrou como `JSONB_PROPRIO`; `decidido_pelo_sistema` é booleano. O motivo gravado ("Decidido pelo sistema…") segue a retenção da própria linha do credenciamento.
