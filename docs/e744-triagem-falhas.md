@@ -440,3 +440,10 @@ Runs **42547901640** (16 fatias) e **42560445737** (20 fatias, com a varredura t
 
 Causa: a seta "Ver mais itens" (`FileiraRolavel`, E248, `data-testid="fileira-seta-dir"`) cobre de propósito a borda da fileira de subabas; o critério `controlesCobertos` (`tests/e2e/fixtures/varredura.ts`) a tratava como elemento fixo cobrindo "Recibos e notas". Não é defeito do site: rolar a fileira revela o item.
 Correção: o critério ignora a seta da fileira (`setaDaFileira`), sem tocar em nenhum spec (t48 intacto). Guarda: `tests/laboratorio/varredura-seta-fileira.test.ts`.
+
+## Run 42619364978 (head b35f781cc, 09/11) — estado por fatia
+Até 13:20 UTC: 19 de 20 fatias concluídas — **4 verdes** (2, 17, 18, 19) e **15 vermelhas** (1, 3–16); a 20/20 (admin) ainda rodando. A suíte TERMINA (fatias de 6 a 35 min); as vermelhas são falhas reais de teste, as mesmas 15 da run anterior. Consolidação (`lab_execucoes`) ainda não gravada; atualizar aqui quando sair.
+
+## Família "Notificações @1280 caiu fora da tela" — causa e correção (09/11)
+Causa: o E176 faz `/dashboard/conta/notificacoes` redirecionar (302) para `/dashboard/notificacoes`; t329, t354 e t385 ainda exigiam o pathname antigo. Não é defeito do site.
+Correção: as três specs varrem `/dashboard/notificacoes`. Guarda: `tests/laboratorio/varredura-notificacoes-e176.test.ts`.

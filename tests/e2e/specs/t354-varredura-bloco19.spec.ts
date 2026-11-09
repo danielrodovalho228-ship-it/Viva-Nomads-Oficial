@@ -41,7 +41,7 @@ const TELAS: Tela[] = [
     SECOES_CONTA.map(([secao, nome]) => ({
       conta,
       papel: conta === "INQUILINA" ? "inquilina" : "proprietário",
-      rota: () => `/dashboard/conta${secao}`,
+      rota: () => (secao === "/notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta${secao}`),
       nome: `Conta A1 · ${nome}`,
     })),
   ),
