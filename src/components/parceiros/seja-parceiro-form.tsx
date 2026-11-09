@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, CIDADES_MAX, NOTA_PORTFOLIO_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -244,7 +244,10 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
                   className="absolute right-2 top-2 h-5 w-5 accent-forest"
                   data-testid={`sp-cat-${k.valor}`}
                 />
-                <span className="px-3 py-2 text-center font-semibold">{k.rotulo}</span>
+                <span className="px-3 py-2 text-center font-semibold">
+                  {k.rotulo}
+                  {NOTA_PORTFOLIO_CATEGORIA[k.valor] && <span className="block text-xs font-normal text-muted" data-testid={`sp-cat-nota-${k.valor}`}>{NOTA_PORTFOLIO_CATEGORIA[k.valor]}</span>}
+                </span>
               </label>
             );
           })}
@@ -259,6 +262,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
               data-testid={`sp-cat-${k.valor}`}
             />
             {k.rotulo}
+            {NOTA_PORTFOLIO_CATEGORIA[k.valor] && <span className="text-xs font-normal text-muted">· {NOTA_PORTFOLIO_CATEGORIA[k.valor].toLowerCase()}</span>}
           </label>
         ))}
         {/* Prompt 62-A, item 1: avaliação de imóveis é credenciamento à parte (nunca categoria do catálogo). */}

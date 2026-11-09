@@ -466,3 +466,6 @@ export function linhasDadosDaCategoria(categorias: readonly string[], dados: { e
   if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
   return linhas;
 }
+
+/** E729: a exigência do portfólio aparece junto da categoria (antes de marcar), não só depois. Só fotografia a tem. */
+export const NOTA_PORTFOLIO_CATEGORIA: Readonly<Record<string, string>> = { fotografia: "Pede o link do portfólio" };
