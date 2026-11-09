@@ -45,7 +45,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     // 58% da área útil (E659: margem de 24 px de cada lado) = ~0,528 da janela de 1440; o piso era 0,53 do desenho sem margem.
     expect(pctLista).toBeGreaterThanOrEqual(0.52);
     expect(pctLista).toBeLessThanOrEqual(0.6);
-    expect(pctMapa).toBeGreaterThanOrEqual(0.4);
+    // o mapa ocupa o que sobra da lista (58% da área útil, margem de 24 px do E659): ~0,394 da janela de 1440.
+    expect(pctMapa).toBeGreaterThanOrEqual(0.39);
     expect(pctMapa).toBeLessThanOrEqual(0.45);
     // E659: termina dentro da margem da página (24 px), nunca colado/estourando a borda da janela.
     expect(Math.round(mapa!.x + mapa!.width), "mapa termina na margem direita").toBe(1440 - 24);

@@ -35,7 +35,7 @@ test.describe("T-DOC — Conferência de documentos @criticos", () => {
 
     if (!(await primeiroCard.isVisible().catch(() => false))) {
       // Fila vazia é um estado válido — valida o vazio e encerra.
-      await expect(page.getByText(/Nada na fila/i)).toBeVisible();
+      await expect(page.getByTestId("fila-vazia")).toBeVisible(); // FilaVazia: "Nada pendente."
       test.skip(true, "Fila vazia no banco de teste — sem item para exercer os portões.");
       return;
     }

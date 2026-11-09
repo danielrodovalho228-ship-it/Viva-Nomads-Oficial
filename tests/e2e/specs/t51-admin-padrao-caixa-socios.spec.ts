@@ -10,7 +10,7 @@ const TELAS = [
   { url: "/admin/parceiros", titulo: "Parceiros" },
   // /admin/fotografos agora redireciona para a aba "Fotógrafos" de Parceiros (ADMIN-2, menu-admin.ts): a tela própria não existe mais.
   { url: "/admin/socios", titulo: "Caixa dos Sócios" },
-  { url: "/admin/documentos", titulo: "Documentos em conferência" },
+  { url: "/admin/documentos", titulo: "Documentos" },
 ];
 
 test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {

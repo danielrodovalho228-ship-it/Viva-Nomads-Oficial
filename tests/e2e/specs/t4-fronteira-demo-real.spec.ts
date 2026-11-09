@@ -20,15 +20,14 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
     await expect(page.locator("body")).not.toContainText(PERSONAS_DEMO);
   });
 
-  test("saudação/sidebar exibem o nome REAL da conta", async ({ page }) => {
+  test("saudação/avatar são da conta REAL, nunca da persona de demonstração", async ({ page }) => {
     const nome = account("proprietario").nome;
     test.skip(!nome, "Defina TESTES_PROPRIETARIO_NOME para conferir o nome real.");
     await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    const primeiro = nome.split(" ")[0];
-    await expect(page.locator("body")).toContainText(primeiro);
-    await expect(page.locator("aside")).toContainText(primeiro);
-    // E nunca a persona de demonstração.
-    await expect(page.locator("aside")).not.toContainText(/Marcos Andrade/);
+    // E176-D2 (avatar curto) + MENUS-5: o painel do dono não escreve mais o nome por extenso (sem barra lateral); o avatar
+    // mostra a inicial da conta real. O que vale é nunca aparecer a persona de demonstração.
+    await expect(page.locator("[data-painel-main]")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText(/Marcos Andrade/);
   });
 
   test("verificação mostra 'Não verificado' — sem selo automático", async ({ page }) => {

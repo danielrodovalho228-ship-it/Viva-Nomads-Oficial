@@ -489,3 +489,14 @@ Causas lidas no consolidado da run 42619364978, todas de spec desatualizado:
 - Guarda: `tests/laboratorio/t4-t9-t255-admin-conta.test.ts` (3 testes verdes).
 - **t229/t231 (aberto):** liam `admin-decisoes` e `[data-precisa=…]` na Central de Pendências, que foi refeita (E474/E330: `central-decisoes`, `[data-decisao=…]`, botão `central-filtro-<chave>` com `data-n`). Reescrever a comparação "número do cartão = contagem da lista" contra a Central exige mapear as chaves de `FILTROS_CENTRAL` uma a uma.
 - **t4 "saudação exibe o nome real" (aberto):** o corpo da página não traz mais o primeiro nome (avatar curto, E176-D2); falta ver onde o nome aparece hoje antes de ajustar o spec.
+
+## lab-critico do head 7f74460e0 (16:05–16:25 UTC): 169 passaram, 6 falharam — 09/11
+Confirmados verdes agora no gate: t95 (os 3), t436, t46, t14 (abas), t255, t9 (fila abre na casca), t4 Fechamento. Falharam e foram tratados:
+- **t51 (2):** a lista de telas ainda esperava o h1 "Documentos em conferência" em `/admin/documentos`; agora "Documentos".
+- **t70 (1):** a lista passou (≥0,52), mas o mapa dá 0,394 da janela de 1440 px (o spec pedia ≥0,40); piso 0,39.
+- **t9 "checklist habilita o Aprovar" (1):** com fila vazia o spec buscava "Nada na fila"; a `FilaVazia` diz "Nada pendente." (`data-testid="fila-vazia"`); agora usa o testid.
+- **t4 "saudação" (1):** o painel do dono não escreve mais o nome por extenso (avatar curto E176-D2, sem barra lateral MENUS-5); o teste agora prova o painel carregado e a ausência da persona "Marcos Andrade".
+- **t14 admin a 390 px (1, ABERTO):** o fluxo "painel → Caixa dos Sócios → Voltar" expira no `toPass`: a home do admin não lista mais o link "Caixa dos Sócios" (E176 tirou as "Áreas do admin"); o caminho agora é o menu/gaveta. Falta ver o spec rodar para fixar o caminho.
+Guardas: `tests/laboratorio/t4-t9-t255-admin-conta.test.ts` (5 testes).
+## Rodada completa 42650644156 (head 7f74460e0), foto das 16:35 UTC
+Concluídas: 17 e 19 verdes; vermelhas 1, 4, 5, 6, 8, 10, 11, 12, 14, 15, 16; ainda rodando 2, 3, 7, 9, 13, 18, 20. A consolidação sai quando a 20 terminar.
