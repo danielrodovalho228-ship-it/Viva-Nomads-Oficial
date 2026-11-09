@@ -20,8 +20,11 @@ test("E727: /parceiros passa pelo proxy, que renova a sessão (cookies novos na 
 
 test("E727: com sessão, o botão é 'Enviar pedido de parceria' e nunca manda a /auth", () => {
   const f = ler("src/components/parceiros/seja-parceiro-form.tsx");
-  assert.match(f, /estado\.logado \? "Enviar pedido de parceria" : "Continuar: criar conta ou entrar"/);
-  assert.match(f, /if \(!estado\.logado\) return irParaConta\(\);/); // /auth só para quem não tem sessão
+  assert.match(f, /rotuloEnvioParceria\(estado\.logado, logadoNoNavegador\)|rotuloEnvioParceria\(/);
+  const r = ler("src/lib/parceiros/sessao-rotulo.ts");
+  assert.match(r, /ROTULO_ENVIAR_PARCERIA = "Enviar pedido de parceria"/);
+  assert.match(r, /ROTULO_CONTINUAR_CONTA = "Continuar: criar conta ou entrar"/);
+  assert.match(f, /if \(!estado\.logado\) \{[\s\S]*?return irParaConta\(\);/); // /auth só para quem não tem sessão
 });
 
 test("E728: o CNPJ entra no rascunho da ida ao /auth e volta como os outros campos; só o aceite não é guardado", () => {
@@ -30,7 +33,7 @@ test("E728: o CNPJ entra no rascunho da ida ao /auth e volta como os outros camp
   assert.doesNotMatch(f, /const \{ documento: _doc/);
   assert.match(f, /documento: typeof salvo\.documento === "string" && salvo\.documento \? salvo\.documento : x\.documento, aceite: false/);
   // O CNPJ só chega ao rascunho depois de conferido (CPF é recusado antes de ir ao /auth).
-  assert.ok(f.indexOf("validarDocumentoParceiro(c.documento)") < f.indexOf("if (!estado.logado) return irParaConta()"));
+  assert.ok(f.indexOf("validarDocumentoParceiro(c.documento)") < f.indexOf("if (!estado.logado) {"));
   // Sai do armazenamento quando a pessoa volta logada.
   assert.match(f, /if \(estado\.logado\) sessionStorage\.removeItem\(RASCUNHO\)/);
 });
