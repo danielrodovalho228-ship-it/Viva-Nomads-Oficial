@@ -13,6 +13,6 @@
 Já está na `main` (#3569). Nada a fazer.
 
 ## E770 / E771 / E772 (/empresas, /parceiros) — um PR só, pois mexem no mesmo arquivo
-- E770: FAQ nova "Qual é o prazo de resposta e a taxa?": não há prazo definido para empresas (resposta por e-mail); a taxa da Viva é do proprietário, por contrato; morador não paga taxa; sem mensalidade. Passo 1 deixou de dizer "Respondemos". **Decisão do Daniel:** se quiser prometer prazo (ex.: 1 dia útil como em /parceiros), é só trocar a frase.
+- E770: FAQ "Qual é o prazo de resposta e a taxa?" e o passo 1 publicam **prazo de 7 dias** (decisão do Daniel, 09/11/2026): "Respondemos em até 7 dias com opções de imóveis mobiliados"; taxa da Viva é do proprietário, por contrato; morador não paga taxa; sem mensalidade.
 - E771: /empresas diz "pagamento da estadia vai direto ao proprietário… serviços de parceiros são contratados à parte, com regra própria"; /parceiros (Regras claras) ganhou "A divisão vale só para os serviços de parceiros; o pagamento da estadia vai direto ao proprietário" (`ESCOPO_PAGAMENTO_PARCEIROS`).
 - E772: "Uma fatura por estadia" já não existe no código: a página fala em recibo mensal emitido pelo proprietário (FAQ) — coberto. "Relatórios (em construção)" saiu (cartão, descrição SEO e JSON-LD); grade ficou com 2 pilares.

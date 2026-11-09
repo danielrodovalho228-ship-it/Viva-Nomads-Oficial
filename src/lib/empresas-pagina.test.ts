@@ -39,7 +39,9 @@ test("/empresas: SEO — title ≤ 60, og:url, canonical e JSON-LD", () => {
 });
 
 test("E770/E771/E772: prazo e taxa explícitos, escopo do dinheiro nas duas páginas, nada 'em construção' anunciado", () => {
-  assert.match(page, /Ainda não há prazo de resposta definido para empresas/);
+  assert.match(page, /A equipe responde em até 7 dias, no e-mail informado/); // decisão do Daniel, 09/11
+  assert.match(page, /Respondemos em até 7 dias com opções de imóveis mobiliados/);
+  assert.doesNotMatch(page, /Ainda não há prazo de resposta/);
   assert.match(page, /A taxa da Viva é do proprietário, por contrato fechado/);
   assert.match(page, /pagamento da estadia vai direto ao proprietário/);
   assert.match(page, /Serviços de parceiros \(limpeza, mudança\) são contratados à parte/);

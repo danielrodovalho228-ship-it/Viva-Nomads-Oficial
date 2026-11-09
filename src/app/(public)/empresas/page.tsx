@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 const PASSOS = [
-  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. A equipe responde com opções de imóveis mobiliados.", foto: "/images/unicas/empresas-passo-necessidade.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
+  { titulo: "Conte a necessidade", texto: "Cidade, período (30 a 180 dias) e quantas pessoas. Respondemos em até 7 dias com opções de imóveis mobiliados.", foto: "/images/unicas/empresas-passo-necessidade.webp", alt: "Pessoa buscando imóveis mobiliados no notebook" },
   { titulo: "Escolha o imóvel", texto: "A pessoa do time ou o RH conversa com o proprietário pela plataforma e envia a candidatura.", foto: "/images/unicas/empresas-passo-escolha.webp", alt: "Colegas escolhendo o imóvel no tablet" },
   { titulo: "Contrato e recibo", texto: "Contrato digital assinado pelas partes; todo mês a empresa recebe o recibo da estadia para o reembolso.", foto: "/images/como-funciona/04-assine.webp", alt: "Assinatura digital do contrato no celular" },
 ];
@@ -42,7 +42,7 @@ const BENEFICIOS = [
 const FAQ_EMPRESAS = [
   { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem vem morar." },
   { p: "Qual é o prazo das estadias?", r: "De 30 a 180 dias, com imóveis mobiliados e prontos para morar." },
-  { p: "Qual é o prazo de resposta e a taxa?", r: "Ainda não há prazo de resposta definido para empresas: a equipe responde no e-mail informado, com as opções. A taxa da Viva é do proprietário, por contrato fechado; quem vem morar não paga taxa à plataforma, e não há mensalidade." },
+  { p: "Qual é o prazo de resposta e a taxa?", r: "A equipe responde em até 7 dias, no e-mail informado, com as opções de imóveis. A taxa da Viva é do proprietário, por contrato fechado; quem vem morar não paga taxa à plataforma, e não há mensalidade." },
   { p: "Quem assina o contrato?", r: "O proprietário e quem vai morar (ou a empresa, quando ela for a responsável). A assinatura é digital, pela plataforma." },
 ];
 
