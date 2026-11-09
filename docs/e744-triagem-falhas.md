@@ -524,3 +524,7 @@ Próximo passo prático: rodar um subconjunto do lab localmente (Docker existe a
 ## Leva 09/11 (noite) — causas-raiz corrigidas
 - **"Enviar" ambíguo (t379, t41, t43):** `getByRole('button', {name:'Enviar'})` casa por substring com "Enviar mesmo assim" (aviso do filtro de contato) → `exact: true` nos 7 pontos. Guarda `botao-enviar-exato.test.ts` (4).
 - **Título do anúncio (t288, t292 e, por extensão, t534, t547, t800, t386…):** o título não nasce mais preenchido (a prévia diz "Título ainda não definido") e o "Continuar" da Descrição o exige; `continuarAte` (fixture `cadastro.ts`) passava sem escrever um e ficava na Descrição quando esperava "Quanto custa por mês?". A fixture agora escreve um título quando falta. Guarda `cadastro-continuar-titulo.test.ts` (2). t386 ("previa-titulo" esperava "Apartamento") e t547 (valor sugerido) seguem abertos: dependem de a prévia/sugestão de título ter mudado de desenho (decisão do dono do produto, não do fatiamento).
+
+## lab-critico do head 1798023cf (17:30–17:49 UTC): 194 passaram, 1 falhou — 09/11
+Só o t14 admin a 390 px (a inicial não lista mais "Caixa dos Sócios" nem "Outras áreas"). Corrigido: o teste abre `/admin/socios` pelo endereço, confere que o app não tem barra de abas, que o Voltar leva ao painel e que o h1 de volta é "Visão geral". Guarda `t14-admin-voltar.test.ts`.
+Rodada completa 42664590118 (head 1798023cf): em andamento às 18:00 UTC; já verdes 17, 18, 19; vermelhas 5, 6, 10, 12, 16; demais rodando.

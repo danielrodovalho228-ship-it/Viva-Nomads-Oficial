@@ -123,17 +123,18 @@ test.describe("T14 — Modo app", () => {
       await esperarModoApp(page);
       await expect(barraDoApp(page)).toHaveCount(0);
       await expect(page).toHaveURL(/\/admin\/?$/);
-      // No lab o primeiro toque pode cair antes da hidratação do painel: repete o toque até a rota mudar.
-      await expect(async () => {
-        await page.getByRole("link", { name: /Caixa dos Sócios/ }).first().click();
-        await expect(page).toHaveURL(/\/admin\/socios/, { timeout: 5_000 });
-      }).toPass({ timeout: 30_000 });
+      // E176: a inicial do admin não lista mais "Caixa dos Sócios" (os atalhos moram no menu da equipe, que o modo app não mostra);
+      // a subtela abre pelo endereço e o que vale aqui é o Voltar do app levar sempre ao painel /admin (isAdminSub).
+      await page.goto("/admin/socios", { waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(/\/admin\/socios/);
+      await expect(barraDoApp(page)).toHaveCount(0);
       // Mesmo cuidado do toque acima: o Voltar pode ser tocado antes da hidratação do cabeçalho do app.
       await expect(async () => {
         await page.getByRole("button", { name: "Voltar" }).click();
         await expect(page).toHaveURL(/\/admin\/?$/, { timeout: 5_000 });
       }).toPass({ timeout: 30_000 });
-      await expect(page.getByTestId("admin-outras-areas").getByRole("link", { name: "Documentos" })).toBeVisible();
+      // "Outras áreas" (AtalhosAdmin) saiu da inicial no E176; o painel de volta é a "Visão geral".
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Visão geral");
       const sobra = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(sobra).toBeLessThanOrEqual(0);
     });
