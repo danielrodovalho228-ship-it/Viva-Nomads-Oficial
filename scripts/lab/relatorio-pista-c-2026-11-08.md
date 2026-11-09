@@ -1231,3 +1231,10 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - Sem veredito, **o 661 não abre** (regra: um bloco por vez, lido antes do próximo).
 - Saídas possíveis, todas dependentes de decisão: (a) commit com mudança real no spec (hoje não há nada a corrigir nele); (b) fechar e reabrir o PR; (c) o chat principal/Daniel dispara a run. Pelas guardas (sem commit vazio, sem fechar PR), nada disso foi feito.
 - main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 10h20 UTC (09/11) — 660 sem veredito, 661 aberto, merges sem guarda
+
+1. **660** (#3674, t1648): sem run de `lab-critico` (consulta de 10:12 UTC: zero runs para o branch). Via própria de disparo: **nenhuma** (o workflow só tem `pull_request` e `push` na main, sem `workflow_dispatch`; rerun exige run existente; commit vazio e fechar/reabrir PR estão vetados). Registro: **660 sem veredito — disparo externo pendente do chat principal.**
+2. **661** (#3675, t1649, grupo 644, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; é independente do 660, então avancei. Veredito pendente.
+3. **Merges sem spec de guarda:** a main não mudou desde `344e3a273` (último merge #3505, E727/E728, que tem guarda no t1587/#3600). Nada novo na fila.
+- #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo (próximo livre: L-110).
