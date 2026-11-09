@@ -1424,3 +1424,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - **t1597 (E732, PR #3693):** run 42665924787 **em andamento** desde 17:34 UTC.
 - **Main** (head `05506b984`): o PR de guarda **#3685 (t1589, E724) foi mesclado por outra pessoa/pista** (depois do #3684/t1588). Nenhum merge de produto novo desde o #3586/#3530 → nenhuma spec a criar.
 - PRs de guarda em draft: #3686–#3692 (t1590–t1596) verdes; #3693 (t1597) em curso. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
+
+## Rodada das 18h20 UTC (09/11) — t1597 vermelho por defeito do MEU spec; corrigido
+
+- **t1597 (E732, PR #3693), run 42665924787:** 2 falharam (390 e 1280), 49 passaram. Erro: "contraste 1.00:1". **Causa: spec, não produto.** O parser de cor do spec só lia `rgb(`/`rgba(`; o Chromium devolve as cores do Tailwind v4 como `color(srgb …)`/`oklab(…)`, o parser caiu no padrão preto/preto e deu razão 1,00 (o `alfaFundo > 0,5` passou só porque o padrão tem alfa 1). Corrigido em `claude-c/spec-e732` (commit abaixo): as cores passam por um `canvas` 1×1, que converte qualquer CSS para RGBA. Novo run do PR #3693 disparado. Nada a devolver à Pista A: o rótulo do E732 não foi medido de verdade nesse run.
+- **Main:** os PRs de guarda **#3686 (t1590, E729) e #3687 (t1591, E752) foram mesclados por outra pessoa/pista** (`132b9aa36`, `d1e13c8dc`); sem merge de produto novo. Mesclados por outrem até agora: #3684, #3685, #3686, #3687 (t1588–t1591).
+- Em draft: #3688–#3692 (t1592–t1596) verdes; #3693 (t1597) em novo run. L-110 inalterado. Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
