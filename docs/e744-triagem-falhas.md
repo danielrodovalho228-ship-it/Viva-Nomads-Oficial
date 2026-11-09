@@ -462,3 +462,7 @@ Por família: **55 baselines de screenshot** (t245 38, t271 11, t263 6 — decis
 
 ### Ainda abertos (leitura do consolidado)
 t14/t46 (aba "Estadias" da barra: nome acessível vem de `descricao`), t95, t277 (32px × 80px), t436, t70, t112, t799, t318/t316, t597 (dois pedidos por saída), t621/t696 (varredura com texto E218/#1587), t719/t692 (sem mensagem de erro), t910 (Range.selectNodeContents), e os demais com 1 falha cada. Cada um exige abrir o spec e o código; seguem a ordem do consolidado.
+
+### t51 (cont.) — 09/11
+As duas varreduras de largura (360 e 1280) também estouravam os 45 s (quatro telas com `networkidle`); o `lab-critico` de a6f2852b9 ficou vermelho por isso, já que roda o spec inteiro. Agora `test.setTimeout(120_000)` nelas.
+Abertos com causa lida no consolidado: t14/t46 (nome acessível da aba vem de `descricao`, não de `label`), t95 (`/dashboard/assinatura` leva a `/dashboard`, não a `/precos`: `precosVisivel` desligado), t277 (cartão mostra "R$ 3.960/mês", spec espera "em 1 mês"; margem 80 px × 32 px).

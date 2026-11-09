@@ -18,6 +18,7 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
 
   for (const largura of [360, 1280]) {
     test(`telas do admin com título e sem rolagem lateral a ${largura}px`, async ({ page }) => {
+      test.setTimeout(120_000); // 4 telas com networkidle: os 45 s do gate estouram sob carga (run 42619364978)
       await page.setViewportSize({ width: largura, height: 800 });
       for (const t of TELAS) {
         await page.goto(t.url, { waitUntil: "networkidle" });
