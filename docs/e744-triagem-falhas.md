@@ -480,3 +480,12 @@ Lido no log do `lab-critico` de 62a53ffc9 (123 passaram, 3 falharam, todas no t5
 - **t436 (corrigido):** E710 separou as pílulas em dois grupos (`pilulas-filtros`, `pilulas-acoes`); o spec lia só filhos diretos. Agora lê as oito pílulas na ordem do documento; a "linha única" vale de 640 px para cima e, no celular, são duas linhas (filtros + ações). Guarda `t436-t70-busca-e710.test.ts`.
 - **t70 (1 de 2):** piso da lista 0,53 → 0,52 (a lista é 58% da área útil com a margem de 24 px do E659: ~0,528). O destaque card↔pin (`data-destaque` 0 em vez de 1 ao passar o mouse no pino) segue aberto: precisa ver o spec rodar.
 - **t277:** aguarda decisão do chat principal (não mexido).
+
+## Bloco admin/conta (t4, t9, t255, t229, t231) — 09/11 (noite)
+Causas lidas no consolidado da run 42619364978, todas de spec desatualizado:
+- **t4 Fechamento (corrigido):** esperava `aside nav` no painel do dono, que não tem mais barra lateral (MENUS-5); agora espera o miolo `[data-painel-main]`.
+- **t9 (corrigido, 2 testes):** o h1 de `/admin/documentos` vem do rótulo do menu (`tituloDoAdmin` → "Documentos"); o spec buscava "Documentos em conferência".
+- **t255 F20 (corrigido, 2 testes):** o vazio da lista é "Nenhum pedido nesta lista." (o spec aceitava "…no sistema.").
+- Guarda: `tests/laboratorio/t4-t9-t255-admin-conta.test.ts` (3 testes verdes).
+- **t229/t231 (aberto):** liam `admin-decisoes` e `[data-precisa=…]` na Central de Pendências, que foi refeita (E474/E330: `central-decisoes`, `[data-decisao=…]`, botão `central-filtro-<chave>` com `data-n`). Reescrever a comparação "número do cartão = contagem da lista" contra a Central exige mapear as chaves de `FILTROS_CENTRAL` uma a uma.
+- **t4 "saudação exibe o nome real" (aberto):** o corpo da página não traz mais o primeiro nome (avatar curto, E176-D2); falta ver onde o nome aparece hoje antes de ajustar o spec.

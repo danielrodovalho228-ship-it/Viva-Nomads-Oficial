@@ -15,7 +15,8 @@ test.describe("T4 — Conta real, demo desligado @criticos", () => {
 
   test("Fechamento não expõe persona/contrato fictício", async ({ page }) => {
     await page.goto("/dashboard/fechamento", { waitUntil: "domcontentloaded" });
-    await expect(page.locator("aside nav")).toBeVisible(); // a tela carregou (sem isso, "não contém" passaria no vazio)
+    // A tela carregou (sem isso, "não contém" passaria no vazio). O dono não tem mais barra lateral (MENUS-5): vale o miolo do painel.
+    await expect(page.locator("[data-painel-main]")).toBeVisible();
     await expect(page.locator("body")).not.toContainText(PERSONAS_DEMO);
   });
 

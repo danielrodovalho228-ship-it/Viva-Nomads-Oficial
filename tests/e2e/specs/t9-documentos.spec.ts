@@ -16,7 +16,8 @@ test.describe("T-DOC — Conferência de documentos @criticos", () => {
 
   async function irParaFila(page: Page) {
     await page.goto("/admin/documentos", { waitUntil: "networkidle" });
-    await expect(page.getByRole("heading", { name: /Documentos em confer/i })).toBeVisible();
+    // O h1 vem do rótulo do menu do admin (tituloDoAdmin → "Documentos"); o texto "em conferência" saiu do título.
+    await expect(page.getByRole("heading", { level: 1, name: "Documentos" })).toBeVisible();
   }
 
   test("a fila abre dentro da casca admin", async ({ page }) => {
