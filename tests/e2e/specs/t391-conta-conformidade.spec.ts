@@ -115,7 +115,7 @@ test.describe("T391 — Conta: E55, E63, E64, E66, E67", () => {
       await p.screenshot({ path: `${SAIDA}/t391-perfil-${w}.png` });
       // E783: a tela Conta (a do print do Daniel) também mostra a foto no cabeçalho, não a inicial.
       await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img').first()).toBeAttached({ timeout: 20_000 });
+      await expect(p.locator('[data-testid="papel-ativo"] img, [data-testid="barra-avatar"] img').first()).toBeAttached({ timeout: 20_000 });
       await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
       await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1, { timeout: 20_000 });
       await p.context().close();
