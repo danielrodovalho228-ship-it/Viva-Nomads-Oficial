@@ -1224,3 +1224,10 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **659** (#3673, t1647): run 42594369553 **verde** na 1ª tentativa. Lote 612–659 verde (48/48).
 - **660** (#3674, t1648, grupo 643, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
 - main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 10h08 UTC (09/11) — 660 sem run do lab crítico
+
+- **660** (#3674, t1648, commit `c6cd2a732`): **o workflow `lab-critico` não disparou** para este PR. Em 14 min só rodaram `e2e` (run 42596763850, evento `deployment_status`, verde, só prova que o preview sobe) e a Vercel. Não há run de `lab-critico` para o branch (nem em andamento, nem cancelada, nem com falha), então **não é falha de infra e não há rerun a fazer**: o evento `pull_request` de abertura não gerou run. Os outros 13 blocos do dia (648–659) dispararam normalmente.
+- Sem veredito, **o 661 não abre** (regra: um bloco por vez, lido antes do próximo).
+- Saídas possíveis, todas dependentes de decisão: (a) commit com mudança real no spec (hoje não há nada a corrigir nele); (b) fechar e reabrir o PR; (c) o chat principal/Daniel dispara a run. Pelas guardas (sem commit vazio, sem fechar PR), nada disso foi feito.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
