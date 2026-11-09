@@ -2,7 +2,7 @@ import {
   AirVent, Armchair, Bike, Building, Car, CookingPot, Dumbbell, Fan, Flame, Laptop, MonitorSmartphone,
   Refrigerator, Shirt, ShieldCheck, Sofa, Soup, Tv, UtensilsCrossed, VolumeX, Waves, WashingMachine,
   Wifi, Camera, Microwave, DoorOpen, Sun, Check, Lamp, Plug, AlarmSmoke, FireExtinguisher, BriefcaseBusiness, Presentation,
-  PartyPopper, Droplets, type LucideIcon,
+  PartyPopper, Droplets, PawPrint, Accessibility, Trees, type LucideIcon,
 } from "lucide-react";
 import { AMENITY_KEY_BY_LABEL } from "../amenities.ts";
 
@@ -47,6 +47,10 @@ export const ICONE_POR_CHAVE: Record<string, LucideIcon> = {
 /** Ícone de texto livre (comodidades antigas, sem chave): palavra-chave → ícone. */
 const POR_PALAVRA: [RegExp, LucideIcon][] = [
   [/wi-?fi|internet|fibra/, Wifi],
+  // Varredura de conformidade (09/11): comodidades que apareciam com o check genérico.
+  [/pets?\b|animais|cachorro|gato/, PawPrint],
+  [/acess[ií]vel|acessibilidade|cadeirante/, Accessibility],
+  [/quintal|jardim|[aá]rea verde/, Trees],
   [/ar[- ]?condicionado|climatiza/, AirVent],
   [/ventilador/, Fan],
   [/aquecimento|aquecedor|lareira/, Flame],
