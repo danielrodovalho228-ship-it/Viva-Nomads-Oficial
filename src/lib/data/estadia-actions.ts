@@ -75,6 +75,9 @@ import {
   type OcupanteView,
 } from "@/lib/data/estadia";
 
+/** Leitura que falha não vira "não é o dono" nem "não encontrado" (frente de erros e estados vazios, E293). */
+const MSG_ESTADIA_SEM_LEITURA = "Não foi possível conferir os dados da estadia agora. Tente de novo em instantes.";
+
 export type Res<T = undefined> = { ok: true; valor: T } | { ok: false; erro: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -159,7 +162,8 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre para continuar." };
-  const { data: imovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data: imovel, error: erroImovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (erroImovel) return { ok: false, erro: MSG_ESTADIA_SEM_LEITURA };
   if ((imovel as { owner_id?: string } | null)?.owner_id !== user.id) return { ok: false, erro: "Só o proprietário edita as instruções." };
   const normalizadas = normalizarInstrucoes(campos);
   let imovelCampos: Instrucoes = normalizadas;
@@ -168,7 +172,8 @@ export async function salvarInstrucoes(propertyId: string, campos: Record<string
     const admin = createAdminClient();
     if (!admin) return { ok: false, erro: "Serviço indisponível." };
     // O contrato precisa ser deste imóvel (e o imóvel, do dono, conferido acima).
-    const { data: k } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    const { data: k, error: erroK } = await admin.from("contratos").select("id").eq("id", contratoId).eq("property_id", propertyId).maybeSingle();
+    if (erroK) return { ok: false, erro: MSG_ESTADIA_SEM_LEITURA };
     if (!k) return { ok: false, erro: "Contrato não encontrado." };
     const [{ data: ck, error: erroCk }, { data: atual, error: erroAtual }] = await Promise.all([
       admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", contratoId).maybeSingle(),
@@ -210,7 +215,8 @@ export async function salvarInstrucaoSaidaDoImovel(propertyId: string, texto: st
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre para continuar." };
-  const { data: imovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data: imovel, error: erroImovel } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (erroImovel) return { ok: false, erro: MSG_ESTADIA_SEM_LEITURA };
   if ((imovel as { owner_id?: string } | null)?.owner_id !== user.id) return { ok: false, erro: "Só o proprietário edita a instrução de saída." };
   const { error } = await supabase
     .from("imovel_instrucoes_chegada")
@@ -363,7 +369,8 @@ async function carregarAditivo(aditivoId: string): Promise<{ ctx: Contexto; a: L
   if (!UUID_RE.test(String(aditivoId))) return { erro: "Proposta não encontrada." };
   const admin = createAdminClient();
   if (!admin) return { erro: "Serviço indisponível." };
-  const { data } = await admin.from("contrato_aditivos").select("id, contrato_id, numero, status, proposto_por, papel_proponente, mudancas, resumo, expira_em, criado_em, hash_documento").eq("id", aditivoId).maybeSingle();
+  const { data, error: erroAditivo } = await admin.from("contrato_aditivos").select("id, contrato_id, numero, status, proposto_por, papel_proponente, mudancas, resumo, expira_em, criado_em, hash_documento").eq("id", aditivoId).maybeSingle();
+  if (erroAditivo) return { erro: MSG_ESTADIA_SEM_LEITURA };
   const a = data as LinhaAditivo | null;
   if (!a) return { erro: "Proposta não encontrada." };
   const ctx = await contextoDaEstadia(a.contrato_id);
