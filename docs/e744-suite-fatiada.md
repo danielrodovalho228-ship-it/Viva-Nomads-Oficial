@@ -82,3 +82,8 @@ No run 42538098625 e no 42547901640 a fatia que estoura o teto é a MESMA, **11/
 
 ## Resultado do run 42547901640 e triagem por nome (09/11, 03:20 UTC)
 O consolidar gravou a linha em `lab_execucoes`: **3.938 passaram · 235 falharam · 317 pularam · 8 instáveis = 4.498 testes, a suíte inteira rodou.** Os nomes das 243 entradas por spec e por categoria estão em `docs/e744-triagem-falhas.md`: 134 asserção/elemento, 55 screenshot (t245, t271, t263), 37 varredura, 17 timeout de 45 s. Nenhuma é do fatiamento; é dívida de testes que a suíte nunca chegava a mostrar. A fatia 11 estourou o teto (65 min) neste run, o que a separação dos specs pesados (t50/t49) corrige no run seguinte (42554301427, na fila).
+
+## Estado do run com a separação dos specs pesados (09/11, 03:25 UTC)
+O run **42554301427** (commit `783d9d2`, 16 fatias gerais + 4 fatias dos specs t50/t49) segue **na fila** (`queued`): não começou, então ainda não há resultado sobre a fatia 11 nem sobre as fatias 17–20. Prova local já feita: `--list` mostra 263 a 265 testes por fatia geral e ~70 por fatia pesada, e `t50` não aparece mais nas gerais. A verificação real é o conjunto: nenhuma fatia perto do teto de 65 min.
+
+**Decisão que NÃO é desta pista (coordenador):** zerar a lista de 243 falhas (`docs/e744-triagem-falhas.md`) antes de exigir `suite-completa`, ou fixar uma linha de base "não pode piorar" e pagar a lista por módulo. Esta pista não decide.
