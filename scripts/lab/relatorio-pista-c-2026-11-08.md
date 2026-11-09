@@ -702,3 +702,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Spec do merge novo: t1587 (#3600)** — E728 (rascunho com o CNPJ volta do /auth a 390 e 1280) e E727 (conta logada abre /parceiros sem ir a /auth). Lab a conferir.
 - **Blocos:** 604 (#3570), 605 (#3575) e 606 (#3582) **verdes** (sem achado). **Bloco 607 (#3601, t1555)**, 17ª volta do grupo do 590 (painel do proprietário sem id): aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Próximo livre: **L-110**.
 - Drafts #3533, #3530, #3531, #3532, #3498 e também #3573, #3579, #3580 seguem abertos (nenhum na main).
+
+## Vereditos finais da rodada (09/11, 00h35)
+
+- **Verdes:** main `c89c11e0c` (E748, run 42535630223); merge #3505 (E727 + E728, `344e3a273`, run 42537255566); t1584 (#3590, E766, run 42537203148); t1585 (#3591, E751, run 42537207774); bloco 607 (#3601, t1555, run 42538558066), sem achado.
+- **t1587 (#3600):** 1º run (42538551226) vermelho por defeito de spec (`sp-aceite` não existe para visitante). Premissa corrigida em commit novo; run 42540600583 em andamento. Não é defeito de produto.
+- **Evidência do Superpowers (E778):** `scripts/lab/evidencia-superpowers-pista-c-2026-11-09.md`.
+- Próximo livre: **L-110** (nenhum aberto). Próximo bloco: **608** (grupo do 591, painel do morador sem id).
