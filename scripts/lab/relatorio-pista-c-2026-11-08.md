@@ -1034,3 +1034,10 @@ Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para 
 A regra de um rerun foi usada nesta rodada para os três; a próxima rodada reabre um rerun por run. Nenhum ramo tem commit vazio nem alteração só para disparar CI.
 
 - **Main:** nenhum merge novo depois de `344e3a273`; sem spec de guarda a escrever. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Rodada das 06h00 UTC (09/11) — 635 verde; reruns de 618, 621 e 634 disparados
+
+- **Bloco 635 (#3643, t1624): VERDE** no rerun (42567467525, tentativa 2).
+- **Em andamento:** 638 (rerun, 42567484544), 641 (42569946450, 1ª tentativa), 642 (#3651).
+- **618, 621, 634:** nova rodada, novo rerun único disparado agora (tentativa 3). Resultado na próxima leitura; se falharem de novo pelo mesmo passo de instalação, reporto ao chat principal como problema do runner.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
