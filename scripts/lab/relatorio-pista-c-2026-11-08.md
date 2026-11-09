@@ -1436,3 +1436,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - **t1597 (E732, PR #3693), run 42672859114** (commit `cd7a8beec`, com o parser de cor pelo canvas): **failure em ~50 s, sem nenhum job** (`list_workflow_jobs` → 0). Não há teste executado, logo **não é veredito do spec nem do produto**: é falha de infraestrutura/disparo do workflow. Regra de um rerun: **rerun disparado** (run_attempt 2). Veredito do t1597 segue pendente desse rerun.
 - **Main** (head `37db454e3`): os PRs de guarda **#3688 (t1592, E780) e #3689 (t1593, E781) foram mesclados por outra pessoa/pista** (`2911b0323`, `37db454e3`). Mesclados por outrem até agora: #3684–#3689 (t1588–t1593). **Nenhum merge de produto novo** desde #3586/#3530 → nenhuma spec nova (próximo `t` livre **t1598**, próximo L livre **L-111**).
 - Em draft: #3690–#3692 (t1594–t1596) verdes; #3693 (t1597) aguardando o rerun. L-110 inalterado.
+
+## Rodada das 18h40 UTC (09/11) — t1597 verde no rerun
+
+- Run 42672859114 (PR #3693, `cd7a8beec`), tentativa 2: **success**. O E732 (rótulo do banner com contraste ≥ 4,5:1) está guardado a 390 e 1280 px. A primeira tentativa foi falha de infra (0 jobs), não veredito.
+- Head da main segue `37db454e3`: nenhum merge de produto novo desde #3586/#3530 → nenhuma spec nova. Próximos livres: t1598 / L-111.
+- PRs de guarda #3690–#3693 (t1594–t1597) verdes e em rascunho; L-110 segue aberto (Pista B).
