@@ -52,3 +52,18 @@ Testes de guarda: `tests/laboratorio/lab-fatias.test.ts` (matriz 1..N = `--shard
 4. **Falhas reais de teste (fatias 1–7, 9, 10, 12):** todas ficaram vermelhas só no passo "Marcar a fatia como falha" (o Playwright saiu com código 1). Os nomes dos testes que falharam ficam no `resultado.json` de cada fatia (artifact `laboratorio-<run>-fatia-N`) e, agora, na linha de `lab_execucoes` quando o consolidar gravar. **Sem a linha do banco nem acesso aos artifacts por esta sessão, não consigo listar os testes.** Isso fecha quando o run de 16 fatias gravar a linha.
 
 **Run de 16 fatias (42538098625):** ficou na fila do grupo de concorrência até o run de 12 terminar e começou às 00:56 UTC; resultado a registrar aqui quando concluir (≈ 01:50 UTC).
+
+## Run de 16 fatias (42538098625) — leitura de 09/11 01:52 UTC (ainda em andamento)
+Roda no commit `7afef87` (antes das correções do consolidar e do `supabase start`).
+
+| Fatias | Resultado | Duração (início 00:56 UTC) |
+|---|---|---|
+| 2 | **verde** | 36 min |
+| 1, 3, 5–10, 12–16 | vermelhas (falhas reais de teste: o Playwright saiu com código 1) | 21 a 35 min |
+| 4 | vermelha por **infraestrutura**: `supabase start` falhou 3 vezes com `failed to bind host port 0.0.0.0:54322/tcp: address already in use` (o `ss` do runner não listava a porta); 2 min, ~280 testes não rodaram | 2 min |
+| 11 | ainda rodando aos 56 min (teto de 65 min do `--global-timeout`) | — |
+
+**Lido:** com 16 fatias a suíte inteira fecha em ~35 min em 14 das 16 fatias (contra 65 min estourando com 640 de 4.504 testes), então o objetivo "a suíte termina" está provado. As duas anomalias de tempo/infra foram:
+- **Porta 54322 presa** (fatia 4 aqui, fatia 11 no run anterior): corrigido neste PR com 5 tentativas, `sudo ss` para ver o processo e reinício do Docker da 2ª tentativa em diante. Não consegui reproduzir localmente; a prova é o próximo run.
+- **Uma fatia que passa de 50 min** (8 no run de 12; 11 neste): o `--shard` divide por quantidade, e algum arquivo de spec longo cai nela. Se repetir no run seguinte, o passo é balancear por duração (lista de specs pesados em fatia própria).
+- **Nomes dos testes que falharam:** não saem pela API sem os artifacts (`laboratorio-42538098625-fatia-N`) e, neste run, o consolidar vai falhar ao gravar no banco (bug do `psql` já corrigido). Saem da linha de `lab_execucoes` no **primeiro run com o código corrigido** — é o que disparo a seguir.
