@@ -532,3 +532,6 @@ Rodada completa 42664590118 (head 1798023cf): em andamento às 18:00 UTC; já ve
 ## Head 369f3bb45 — checks do PR #3588 TODOS VERDES (09/11, 18:12 UTC)
 `verify`, `e2e`, `lab-critico` (194+ testes, 0 falhas), "gerar linhas de base" e Vercel: success. É a primeira vez que o gate de PR do #3588 fecha verde com os specs tocados (t4, t9, t14, t41, t43, t51, t56, t70, t95, t255, t379, t436, t46).
 Rodada completa 42664590118 (head 1798023cf): ainda sem a fatia 20/20 (admin) às 18:15 UTC; consolidação pendente. Uma linha de `lab_execucoes` das 17:45 UTC (4 falhas) é de outra execução, não desta rodada.
+
+## Rodada 42664590118 (head 1798023cf) — 18:30 UTC
+Todas as 20 fatias terminaram (sem estouro): verdes 2, 17, 18, 19, 20 (a 20/20, admin, passou); vermelhas 1, 3–16. O job `consolidar` ainda corria (linha em `lab_execucoes` não gravada). Não foi disparada rodada concorrente.
