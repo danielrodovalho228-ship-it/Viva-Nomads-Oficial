@@ -1269,3 +1269,9 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **664** (#3678, t1652): run 42604616160 **verde** na 1ª tentativa. Lote 612–664 verde (53/53).
 - **665** (#3679, t1653, grupo 648, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; veredito pendente.
 - main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados.
+
+## Rodada das 11h12 UTC (09/11) — 665 em andamento, reprodução do t297 aberta
+
+- **665** (#3679, t1653): run 42605901835 `in_progress` desde 11:03 UTC. Sem veredito; o **666 (grupo 649, t1654) não abre** antes.
+- **Reprodução do t297** (morador › Candidaturas @390, classe `fixo`, falha do run 42560445737): PR de evidência **#3680** (draft, branch `claude-c/repro-e744-t297-fixo390`, commit `5417080fa`). A mudança é só um comentário de cabeçalho no spec, o que faz o lab crítico rodar o t297 inteiro (14 telas; só olho "morador — Candidaturas"). O lab crítico cria a massa da varredura (passo `massa-varredura.mjs`), então o cenário é comparável. Às 11:12 UTC o PR ainda não tinha run de `lab-critico` (mesma lacuna vista no #3674 antes). **Só vira L-110 se reproduzir**; se passar, fica como roteiro/ambiente da noturna na triagem.
+- main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente.
