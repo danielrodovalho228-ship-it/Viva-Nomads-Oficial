@@ -1309,3 +1309,10 @@ main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente
 
 Run **42617052464** (commit `b29214d75`): **126 passaram, 3 falharam** (10,5 min). As 3 falhas são exclusivamente o **L-110** no t329 (inquilina › Mensagens, proprietário › Mensagens, inquilina › Meus pedidos; botão "Ver mais itens" cobrindo item da faixa a 390 px): produto, pista dona, sem `test.fail` (pausa). Todos os specs de lab do PR estão verdes: t354 (18), t385 (17), t621 (13), t696 (9), **t739 (8, inclusive `buscar-limpeza-cartao`)**, t329 Notificações. Nada de spec/lab restante vermelho.
 main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente). Próximo L livre: **L-111**.
+
+## Vigia das 13h32 UTC (09/11) — sem merge novo, sem vermelho de laboratório
+
+- **Head da main conferido:** `344e3a273` (#3505, E727/E728). **Nenhum merge novo** desde a última leitura → nenhuma spec de guarda a escrever; o #3505 já tem guarda (`t1587`, #3600).
+- **Lab crítico sobre o head atual:** o run de push do próprio `344e3a273` (42537255566) está **verde**; não há como disparar outro run sem commit novo na main.
+- **PR #3682 (manutenção do lab):** run 42617052464, **126 passaram, 3 falharam**; as 3 são o **L-110** (t329, produto, pista B), com evidência em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Nada de laboratório vermelho.
+- Sem bloco de varredura (pausa de 09/11), sem prova ao vivo. **Próximo L livre: L-111.** Sequência encerrada.
