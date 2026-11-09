@@ -447,3 +447,8 @@ Até 13:20 UTC: 19 de 20 fatias concluídas — **4 verdes** (2, 17, 18, 19) e *
 ## Família "Notificações @1280 caiu fora da tela" — causa e correção (09/11)
 Causa: o E176 faz `/dashboard/conta/notificacoes` redirecionar (302) para `/dashboard/notificacoes`; t329, t354 e t385 ainda exigiam o pathname antigo. Não é defeito do site.
 Correção: as três specs varrem `/dashboard/notificacoes`. Guarda: `tests/laboratorio/varredura-notificacoes-e176.test.ts`.
+
+## Família "timeout 45 s" — correção (09/11)
+Causa: o teto por teste do `playwright.config.ts` (45 s) foi pensado para o gate de PR; nas fatias noturnas, com 2 workers no runner, 17 testes (t78, t71, t176, t778, t51, t290, t291, t40, t56, t66…) estouram por lentidão, não por defeito.
+Correção: as 16 fatias gerais do noturno rodam com `--timeout=90000` (gate de PR e config intactos; o teto global da fatia segue 3.900 s). Guarda em `tests/laboratorio/lab-fatias.test.ts`.
+Observação: o log do job não traz o detalhe por teste (a saída vai para `e2e.txt`/artefato); o detalhe só sai da linha consolidada de `lab_execucoes` (aguarda a fatia 20/20).

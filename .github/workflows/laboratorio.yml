@@ -152,7 +152,7 @@ jobs:
           # Varredura (17–20): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
           # tem 120 min para ainda sobrar tempo de guardar o resultado. As gerais seguem em 65 min.
           if [ "$F" -le 16 ]; then
-            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
             case "$F" in
               17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;

@@ -104,3 +104,10 @@ test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, 
   // os 3 specs existem com esse nome
   for (const f of ["t245-visual-regressao", "t263-visual-41", "t271-admin-visual"]) assert.ok(readFileSync(`tests/e2e/specs/${f}.spec.ts`, "utf8").length > 0, f);
 });
+
+// E744: sob 2 workers no runner, 17 testes estouravam os 45 s do gate de PR (t78, t71, t176, t778…); as fatias gerais da noite dão 90 s por teste.
+test("fatias gerais do noturno dão 90 s por teste (o gate de PR segue em 45 s)", () => {
+  const yml = readFileSync(".github/workflows/laboratorio.yml", "utf8");
+  assert.match(yml, /--shard=\$\{\{ matrix\.fatia \}\}\/16[^\n]*--timeout=90000/);
+  assert.match(readFileSync("playwright.config.ts", "utf8"), /timeout: 45_000/);
+});
