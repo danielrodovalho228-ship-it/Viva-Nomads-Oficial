@@ -1294,3 +1294,8 @@ PR de manutenção **#3682** (draft, branch `claude-c/lab-e744-ajustes`, commit 
 - **t696:** `conferencia-tipo` saiu da lista de conferência no E271 ("Declarações e documento ficam só nas seções de 'Antes de publicar'"); marca do Passo 10 trocada para `declaracoes-passo10`. Mesma ressalva: confirmar no lab.
 - **t739:** comentário no cabeçalho, só para o spec rodar isolado no lab crítico do PR.
 - **Padrão "fixo" (L-110):** o `t329` (alterado) contém telas de inquilina (Mensagens, Meus pedidos) e de proprietário (Mensagens) do padrão; o lab do PR mostra o nome completo do botão. Resultado a registrar abaixo quando o run terminar.
+
+## Rodada das 12h05 UTC (09/11) — resultado do PR #3682
+
+Run 42610031395 (commit `a10853ef9`): **119 passaram, 5 falharam, 1 instável**. t354, t385 e t621 verdes; t329 só vermelho no L-110; t696 e t739 corrigidos no mesmo PR (`f79741af8`, novo run em andamento). L-110 ganhou o nome do botão ("Ver mais itens", 4 telas, 2 contas). Detalhe: `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`.
+main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente. Próximo L livre: **L-111**.

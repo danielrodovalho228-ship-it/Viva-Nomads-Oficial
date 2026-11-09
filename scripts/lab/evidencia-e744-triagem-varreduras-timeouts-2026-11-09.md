@@ -73,3 +73,31 @@ Leitura: os timeouts concentram-se em **busca/filtros** (t66, t71, t78: 6) e em 
 - o resto são 1 por spec (testids de telas específicas), sem causa comum aparente.
 
 **Para as pistas donas:** a lista acima é só classificação; nada foi corrigido em produto. A decisão de zerar a lista ou travar linha de base continua sendo do Daniel/coordenação.
+
+---
+
+# Anexo ao L-110 (12h UTC) — nome do botão, lido no run 42610031395 (PR #3682)
+
+O botão que cobre é **sempre o mesmo: `button "Ver mais itens"`**, a 390 px, no **topo** da rolagem, em contas de **inquilina** e de **proprietário**. O item coberto muda conforme a tela:
+
+| Tela (spec) | Conta | Item coberto | Run |
+|---|---|---|---|
+| Candidaturas (t297) | morador | "Propostas" (topo e fim) | 42606335086 |
+| Meus pedidos (t329) | inquilina | "Propostas" | 42610031395 |
+| Mensagens (t329) | inquilina | "Como morador1" | 42610031395 |
+| Mensagens (t329) | proprietário | "Como morador0" | 42610031395 |
+
+Todas falharam na 1ª tentativa e no retry (determinístico). Nas mesmas specs, as demais telas passam (t329: 12 passaram; só essas 3 falharam). "Propostas" e "Como morador…" são itens do menu/abas da casca do app; "Ver mais itens" é o botão que fecha essa faixa a 390 px. A casca (pista B) é o lugar provável; não li o código dela. Quatro telas reproduzidas, duas contas, um botão: o L-110 vale para a faixa de navegação a 390 px, não para uma tela só.
+
+# Resultado do PR #3682, spec a spec (run 42610031395, commit `a10853ef9`: 119 passaram, 5 falharam, 1 instável, 11,3 min)
+
+| Spec | Resultado | Leitura |
+|---|---|---|
+| t354 | **verde** (18) | Notificações a 1280 resolvida (destino final). |
+| t385 | **verde** (17) | idem. |
+| t329 | Notificações **verde**; 3 vermelhas | as 3 são o L-110 (botão "Ver mais itens"), não do spec. |
+| t621 | **verde** (13) | o desenho do E218-A confere (sem checklist à parte; `inicio-dono-passos` no rascunho). |
+| t696 | **vermelho** | `declaracoes-passo10` não está no Passo 10 (a leitura do código estava errada). Corrigido em `f79741af8`: marca = `lista-conferencia`. |
+| t739 | **vermelho** (`buscar-limpeza-cartao`; `parceiros` instável) | reproduziu a falha da noturna. Causa: E297 — `parceiros_publicos.teste` vem de `profiles.is_teste` da dona e a busca pública esconde parceiro de teste de visitante; a conta `@lab.vivanomads.test` nasce de teste. Corrigido em `f79741af8`: o spec zera `is_teste` da dona para ver o cartão como o de um parceiro real. |
+
+As 3 vermelhas do t329 ficam vermelhas no PR até a pista dona fechar o L-110 (sem `test.fail`: pausa vigente).
