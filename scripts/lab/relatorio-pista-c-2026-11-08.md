@@ -911,3 +911,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 636 (#3645, t1584):** run 42564754630 em andamento.
 - **Bloco 637 (#3646, t1585, grupo do 620 — avisos, prévia de e-mails, caixa do leitor de QA; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 05h20 (09/11) — bloco 636 verde, 637 rodando, 638 aberto
+
+- **Bloco 636 (#3645, t1584): VERDE** (42564754630), cidade/institucionais/parceiros/comparar/admin (19ª volta), sem achado.
+- **Bloco 637 (#3646, t1585):** run 42565259755 em andamento.
+- **Bloco 638 (#3647, t1586, grupo do 621 — painel com id, sócios e autenticação; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
