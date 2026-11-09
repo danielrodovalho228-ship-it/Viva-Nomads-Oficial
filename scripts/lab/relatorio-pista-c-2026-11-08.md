@@ -1083,3 +1083,10 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Decisão:** não corrijo `src/` (fora da minha pista) e não puxo o #3598 para o ramo do relatório (misturaria PRs). **Nenhum item L-**: não é defeito de produto. Quando o #3598 mesclar, o `verify` deste PR e dos 32 PRs de bloco passa sem ação minha.
 - **Efeito colateral a lembrar:** todos os meus PRs de bloco (#3604–#3653) herdam esse mesmo `verify` vermelho da main; o sinal confiável do lote é o `lab-critico`.
 - **Bloco 644 (#3653):** run 42573565104 ainda em andamento (iniciado 06h31). **Main:** head `344e3a273`, sem merge novo.
+
+## Rodada das 06h45 UTC (09/11) — bloco 644 verde, 645 aberto
+
+- **Bloco 644 (#3653, t1632): VERDE** (42573565104), admin (chamado, contrato, pedido de parceiro; 19ª volta), sem achado.
+- **Bloco 645 (#3654, t1633, grupo do 628 — compartilhadas sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–644 verde (33/33); 645 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. **#3598** (conserto do `verify` vermelho da main) segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
