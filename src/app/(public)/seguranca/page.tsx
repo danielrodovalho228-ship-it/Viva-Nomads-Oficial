@@ -30,7 +30,7 @@ const GOLPES = [
   {
     golpe: "Perfil falso / morador sem histórico.",
     protecao:
-      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação de identidade do morador chega em breve.",
+      "A identidade só é revelada após o aceite — nome e foto, nunca contato. A verificação automática de identidade do morador ainda não abriu; por ora, a equipe da Viva confere o documento.",
     icon: FileSearch,
   },
   {
@@ -117,7 +117,7 @@ export default function SegurancaPage() {
           </Faq>
           <Faq q="Vai haver verificação do morador?">
             <p>
-              Em breve — ainda não está disponível. Hoje, a identidade completa só aparece após o
+              A verificação automática ainda não abriu; por ora, a equipe da Viva confere o documento. A identidade completa só aparece após o
               aceite, e nunca o contato direto.
             </p>
           </Faq>
