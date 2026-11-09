@@ -66,7 +66,7 @@ test("textos da entrada: 'avaliação do imóvel' e 'avaliador credenciado'; nun
 test("E30: aprovar para teste nunca ativa; ativar só com a avaliação de teste registrada", () => {
   // Aprovar para teste leva a "em_teste" e nada além (a transição é a única coisa que a ação grava).
   const acoes = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
-  const decidir = acoes.slice(acoes.indexOf("export async function adminDecidirCredenciamento"), acoes.indexOf("async function ativarParceiroDoAvaliador"));
+  const decidir = acoes.slice(acoes.indexOf("export async function adminDecidirCredenciamento"), acoes.indexOf("/** Avaliação de TESTE: o admin aponta"));
   assert.match(decidir, /ativado_em: agora[^\n]*para === "ativo"|para === "ativo" && c\.status === "em_teste" \? \{ ativado_em/);
   assert.match(decidir, /if \(para === "ativo"\) \{[\s\S]*?comTesteConcluido\(a\.admin, \[id\]\)[\s\S]*?estadoIdentidade\(a\.admin[\s\S]*?podeAtivar\(\{[^}]*identidadeConfirmada: ident\?\.estado === "confirmada"/, "ativar confere o teste e a identidade no servidor");
   assert.doesNotMatch(decidir.slice(decidir.indexOf('if (para === "em_teste") {'), decidir.indexOf("// E30")), /status: "ativo"/);
@@ -108,7 +108,8 @@ test("E35-B: candidato em teste nunca recebe pedido real; o teste só em imóvel
   const acoes = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
   assert.match(acoes, /if \(!dono\?\.is_teste\) return \{ ok: false, erro: "A avaliação de teste é só em imóvel de conta de teste\." \}/);
   // ativarParceiroDoAvaliador continua no "Aprovar para teste" e o parceiro nasce em rascunho (sem página pública).
-  const ativa = acoes.slice(acoes.indexOf("async function ativarParceiroDoAvaliador"), acoes.indexOf("export async function adminCriarAvaliacaoTeste"));
+  // (E690: a função mora em parceiro-do-avaliador-servidor.ts, comum à aprovação do admin e à automática.)
+  const ativa = readFileSync(new URL("./parceiro-do-avaliador-servidor.ts", import.meta.url), "utf8");
   assert.match(ativa, /status: "rascunho"/);
   assert.doesNotMatch(ativa, /status: "ativo"|publicado/);
 });
