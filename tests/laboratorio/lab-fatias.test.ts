@@ -50,3 +50,11 @@ test("juntar: concatena as suites e soma os stats; fatia sem arquivo não derrub
   assert.equal(acharResultados(raiz).length, 2);
   assert.deepEqual(acharResultados(join(raiz, "nao-existe")), []);
 });
+
+test("o resumo da suíte inteira vai ao banco por arquivo, nunca como argumento do psql (E2BIG, run 42536824482)", () => {
+  const consolidar = yml.split("  consolidar:")[1];
+  assert.doesNotMatch(consolidar, /-v resumo=/, "o resumo passa de 128 KB: não pode ir em argv");
+  assert.doesNotMatch(consolidar, /-v categoria=/);
+  assert.match(consolidar, /\\set resumo `cat "\$RESUMO_ARQ"`/);
+  assert.match(consolidar, /:'resumo'::jsonb/);
+});
