@@ -1182,3 +1182,9 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **#3531 (E742) e #3532 (E743)**: abertos em draft, **não mesclados**. Seguimentos E742/E743 (tirar `conhecidoL104` dos specs de bloco, tirar `test.fail` do t1429, rebase de #3540/#3541) **ficam intocados, aguardando o merge**.
 - **#3588** (E744 fatiado): aberto em draft, **não mesclado**. Não existe noturna completa em código corrigido (run 42554301427 foi cancelada); a **triagem E744 das 37 varreduras + 17 timeouts continua esperando essa rodada**.
 - Próxima leitura: gatilho das ~08:20 UTC lê o 653 e, se verde, abre o 654.
+
+## Rodada das 08h22 UTC (09/11) — 653 verde, 654 aberto
+
+- **653** (#3664, t1641): run 42583894527 **verde** na 1ª tentativa. Lote 612–653 verde (42/42).
+- **654** (#3665, t1642, grupo 637, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 não mesclados (seguimentos E742/E743 intocados; triagem E744 aguarda noturna completa).
