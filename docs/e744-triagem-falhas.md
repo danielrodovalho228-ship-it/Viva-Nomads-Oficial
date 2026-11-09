@@ -580,3 +580,8 @@ Saíram: t277 (3), t610, t708, t910, t916, t59, t391, t410, t334, t21. Entraram:
 - **t262 (2) e t703 teste 2 — efeito direto da decisão E777 (total sempre "R$ Y em N mês/meses"):** os specs esperavam 0 ocorrências do total com 1 mês; agora esperam "R$ Y em 1 mês" / "Estadia mínima (1 mês)". Guarda `e777-n1-specs.test.ts`.
 - **t132 (2):** o aviso do anúncio de exemplo diz "Este anúncio é de exemplo…"; o spec lia "Anúncio de exemplo".
 - **Abertos:** t70 (0,528 × 0,53 estável: layout × spec, chat principal), t710 (imagens do seletor de tipo/`tipo-loft`), t839 (Fechar do cartão do mapa não clicável), t431, t712 B, t346.
+
+## Família "tipo do imóvel — 3 fotos em vez de 9" (t691, t704, t706) — corrigida (09/11, noite)
+Causa: o Passo 1 mostra TRÊS tipos à vista (Casa, Apartamento, Quarto — `TIPOS_A_VISTA`, E607) e "Ver mais tipos" (`tipos-ver-mais`) abre a grade dos nove; os specs contavam nove fotos sem abrir. Agora abrem antes (só se `aria-expanded` não for "true", porque um tipo escondido já marcado abre a grade sozinho). Guarda `tipos-ver-mais.test.ts` (4). t710 segue aberto (outro erro: foto "Tela de notebook…" e `tipo-loft`).
+## Família "papel-ativo / avatar" (t355, t361, t391, t318, t370, t365, t280, t886, t644, t81, t489) — ABERTA, causa lida
+O chip `papel-ativo` (foto + papel) só existe hoje no topo das telas SEM `TopoPainel` (equipe); morador/dono/parceiro têm a foto no botão da Conta (`MenuConta`, `data-testid="conta-<px>"`/`conta-<px>-celular`). Os specs que procuram `papel-ativo:visible img` / `[data-rosto]` no cabeçalho precisam apontar para o botão da Conta; falta ver o DOM renderizado para escolher o seletor sem errar.
