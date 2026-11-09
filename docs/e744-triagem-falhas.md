@@ -594,3 +594,9 @@ Saíram da lista: t132, t262, t290, t691, t703, t704, t706, t840 (famílias E777
 - **t355 e t361:** o chip `papel-ativo` (foto + papel) só existe no topo da equipe; no painel o selo do cabeçalho é o botão da Conta (`conta-<px>`). t361 também deixou de exigir "iniciais no cabeçalho do Perfil" (o E783 desfez o E55).
 ### Papel-ativo/avatar ainda abertos
 t318 (papel ativo "proprietario" × "morador"), t370 (`papel-morar-toggle` desabilitado), t886 (sino no `topo-parceiro`), t644 (`conta-menu-lateral` ausente), t81 (menu "Administração"), t442 (texto "Fotos de perfil em revisão" ausente).
+
+## lab-critico do head ec6736585 (23:06–23:33 UTC)
+Resultado: 262 passaram, 3 falharam. Consolidado vigente (rodada 42706121873): 179 linhas — 4064 passaram / 167 falharam / 12 instáveis / 274 puladas. Nenhuma consolidação mais nova.
+- t355 teste 3: `papel-ativo` não existe no /dashboard do dono (selo = botão `conta-<px>`) → spec corrigida.
+- t365 teste 1: Ajuda fora do menu da Conta (E493) → spec corrigida.
+- t712 B: corpo traz "Uberlândia · código VN-…" e a spec espera "Uberlândia." → dúvida de texto para o chat principal, nada alterado.

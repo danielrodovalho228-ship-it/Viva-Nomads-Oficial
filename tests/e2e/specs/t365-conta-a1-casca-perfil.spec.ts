@@ -68,7 +68,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     const menu = p.getByTestId("conta-menu-lateral");
     await expect(menu).toBeVisible();
     const hrefs = await menu.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-    expect(hrefs).toEqual(ORDEM.map(hrefSecao));
+    expect(hrefs).toEqual(ORDEM.filter((s) => s !== "ajuda").map(hrefSecao)); // E493: Ajuda fica fora do menu da Conta
     const ativo = p.getByTestId("conta-menu-perfil");
     await expect(ativo).toHaveAttribute("aria-current", "page");
     await expect(ativo).toHaveCSS("background-color", "rgb(28, 107, 58)");

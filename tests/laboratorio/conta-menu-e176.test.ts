@@ -23,3 +23,8 @@ test("t355/t361: o selo do cabeçalho é o botão da Conta (conta-<px>), não o 
   assert.doesNotMatch(ler("tests/e2e/specs/t361-conta-a-correcoes-qa.spec.ts"), /"papel-ativo"\]:visible img/);
   assert.match(ler("src/components/ui/avatar.tsx"), /data-rosto=\{rosto\.tipo\}/);
 });
+
+test("t355/t365: papel-ativo não é esperado no /dashboard do dono; Ajuda fica fora do menu da Conta (E493)", () => {
+  assert.doesNotMatch(ler("tests/e2e/specs/t355-conta-a-perfil-espelho.spec.ts"), /goto\("\/dashboard"[^\n]*\n[^\n]*papel-ativo/);
+  assert.match(ler("tests/e2e/specs/t365-conta-a1-casca-perfil.spec.ts"), /s !== "ajuda"/);
+});

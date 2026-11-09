@@ -127,7 +127,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     expect(caminho).toBe(`${ids.dono}/avatar.webp`);
     // Fora da Conta, o cabeçalho mostra a foto nova.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+    await expect(p.locator('[data-testid^="conta-"]:visible img').first()).toBeAttached({ timeout: 20_000 });
     await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
