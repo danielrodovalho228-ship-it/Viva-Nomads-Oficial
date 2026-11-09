@@ -520,3 +520,7 @@ Rodada completa 42650644156 (head 7f74460e0): ainda com a fatia 20/20 (admin) em
 - **Família "botão Enviar duplicado" (3):** t379, t41, t43 — `getByRole('button', {name:'Enviar'})` acha 2 (o botão do bate-papo e o do "Fale com a Viva"); precisa escopo.
 - **Famílias de dados/esperas (≈20):** t204, t719, t194, t389, t397, t410, t323, t346, t548, t564, t585 etc. — dependem de ver o erro completo do spec rodando.
 Próximo passo prático: rodar um subconjunto do lab localmente (Docker existe aqui; falta a CLI do Supabase) ou disparar `lab-critico` com os specs de cada família tocados, um por família, e fixar cada um sobre o erro real.
+
+## Leva 09/11 (noite) — causas-raiz corrigidas
+- **"Enviar" ambíguo (t379, t41, t43):** `getByRole('button', {name:'Enviar'})` casa por substring com "Enviar mesmo assim" (aviso do filtro de contato) → `exact: true` nos 7 pontos. Guarda `botao-enviar-exato.test.ts` (4).
+- **Título do anúncio (t288, t292 e, por extensão, t534, t547, t800, t386…):** o título não nasce mais preenchido (a prévia diz "Título ainda não definido") e o "Continuar" da Descrição o exige; `continuarAte` (fixture `cadastro.ts`) passava sem escrever um e ficava na Descrição quando esperava "Quanto custa por mês?". A fixture agora escreve um título quando falta. Guarda `cadastro-continuar-titulo.test.ts` (2). t386 ("previa-titulo" esperava "Apartamento") e t547 (valor sugerido) seguem abertos: dependem de a prévia/sugestão de título ter mudado de desenho (decisão do dono do produto, não do fatiamento).
