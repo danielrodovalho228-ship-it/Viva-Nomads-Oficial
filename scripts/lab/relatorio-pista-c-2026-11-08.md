@@ -1104,3 +1104,12 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 647 (#3657, t1635, grupo do 630 — proposta e visita; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar:** lote 612–646 verde (35/35); 647 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## O que falta para o #3598 (conserto do `verify` vermelho da main) — 07h14 UTC (09/11)
+
+- **Estado do PR:** aberto, **não é draft**, `mergeable_state: clean`, 1 arquivo (+6/−3, só o teste `src/lib/parceiros/e727-e728-continuar.test.ts`), head `dff00dad8`, base `344e3a273` (a main atual).
+- **Checks do #3598:** `verify` **verde**, `lab-critico` **verde**, `e2e` **verde**, `Vercel Preview Comments` **verde**. Nada técnico pendente.
+- **O que falta:** só a **decisão de mesclar**, que é do chat principal/Daniel; esta pista não mescla. É a única mudança que tira o `verify` vermelho da main e, por herança, dos PRs do lote (#3095 e #3604–#3657).
+- **Depois do merge:** os PRs com `verify` vermelho só por esse teste ficam verdes com um `update-branch` da base (ou no próximo push); eu confiro o `verify` de cada PR de bloco e do #3095 e registro aqui.
+- **Bloco 646 (#3656): VERDE** (42576154780), já registrado. **Bloco 647 (#3657, t1635):** run 42577764705 em andamento (iniciado 07h11); veredito na próxima leitura.
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. Achados novos: nenhum (próximo livre: **L-110**).
