@@ -5,7 +5,7 @@
   função, `estadiaDoImovel`), e o cartão diz em uma linha o que há além das mensalidades. PURO.
 */
 import { estadiaDoImovel, precoDoImovel } from "./precos.ts";
-import { formatBRL } from "./utils.ts";
+import { resumoEmMeses } from "./cartao-preco.ts";
 
 export interface EstadiaNoCartao {
   /** "R$ 8.900 em 2 meses" */
@@ -23,7 +23,7 @@ export function estadiaNoCartao(p: Parameters<typeof estadiaDoImovel>[0], meses:
   if (!e) return null;
   const unicos = precoDoImovel(p, meses).unicos.map((u) => u.rotulo.toLowerCase());
   return {
-    texto: `${formatBRL(e.total)} em ${e.meses} meses`,
+    texto: resumoEmMeses(e.total, e.meses),
     total: e.total,
     meses: e.meses,
     composicao: unicos.length ? `Inclui ${unicos.join(" e ")}` : null,

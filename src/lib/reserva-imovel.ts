@@ -14,7 +14,7 @@ import { textoLimpezaEstadia, type LimpezaEstadia } from "./anuncio/limpeza-esta
 import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
-import { totalDoPeriodo } from "./cartao-preco.ts";
+import { resumoEmMeses, totalDoPeriodo } from "./cartao-preco.ts";
 import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, type TotalMensal } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
 import { validarReserva } from "./availability.ts";
@@ -224,11 +224,11 @@ export function resumoSolicitacao(e: {
           ]
         : meses && e.estadia && e.estadia.meses === meses
         ? [
-            { rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(e.estadia.total)} em ${meses} ${meses === 1 ? "mês" : "meses"}` },
+            { rotulo: ROTULO_TOTAL_CONTRATO, valor: resumoEmMeses(e.estadia.total, meses) },
             { rotulo: "Conta do total", valor: `${e.estadia.conta} = ${formatBRL(e.estadia.total)}` },
           ]
         : typeof e.totalMensal === "number" && meses
-          ? [{ rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(totalDoPeriodo(e.totalMensal, meses))} em ${meses} ${meses === 1 ? "mês" : "meses"}` }]
+          ? [{ rotulo: ROTULO_TOTAL_CONTRATO, valor: resumoEmMeses(totalDoPeriodo(e.totalMensal, meses), meses) }]
           : []),
       { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
