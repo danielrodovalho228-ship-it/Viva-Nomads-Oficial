@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PawPrint, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fichaPetsDaCandidatura, resumoFichaPets, type FichaPetsCandidatura } from "@/lib/data/pets-candidatura";
+import { MSG_PETS_SEM_LEITURA } from "@/lib/anuncio/ficha-pet-dono";
 
 type Alvo = { leadId: string } | { propertyId: string; tenantId: string };
 
@@ -16,6 +17,7 @@ type Alvo = { leadId: string } | { propertyId: string; tenantId: string };
 export function FichaPetCandidatura({ alvo, resumo: resumoInicial, className }: { alvo: Alvo; resumo?: string | null; className?: string }) {
   const [resumo, setResumo] = useState<string | null | undefined>(resumoInicial);
   const [leadId, setLeadId] = useState<string | null>("leadId" in alvo ? alvo.leadId : null);
+  const [resumoFalhou, setResumoFalhou] = useState(false);
   const [aberta, setAberta] = useState(false);
   const [ficha, setFicha] = useState<FichaPetsCandidatura | null>(null);
   const [carregando, setCarregando] = useState(false);
@@ -30,20 +32,22 @@ export function FichaPetCandidatura({ alvo, resumo: resumoInicial, className }: 
         setResumo(r?.resumo ?? null);
         if (r) setLeadId(r.leadId);
       })
-      .catch(() => vivo && setResumo(null));
+      .catch(() => vivo && setResumoFalhou(true));
     return () => {
       vivo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chave, resumoInicial]);
 
+  // Falha ao conferir os pets: o dono vê o aviso, não a ausência do cartão (que parece "candidatura sem pet").
+  if (resumoFalhou) return <p className={className} data-testid="ficha-pet-resumo-sem-leitura">{MSG_PETS_SEM_LEITURA}</p>;
   if (!resumo || !leadId) return null;
 
   async function abrir() {
     setAberta(true);
     setCarregando(true);
     // Links de 10 minutos: busca de novo a cada abertura.
-    const f = await fichaPetsDaCandidatura(leadId!).catch(() => ({ pets: [], quantidade: null }));
+    const f = await fichaPetsDaCandidatura(leadId!).catch(() => ({ pets: [], quantidade: null, falhou: true }));
     setFicha(f);
     setCarregando(false);
   }
@@ -68,6 +72,8 @@ export function FichaPetCandidatura({ alvo, resumo: resumoInicial, className }: 
           </div>
           {carregando ? (
             <p className="text-muted">Carregando…</p>
+          ) : ficha?.falhou ? (
+            <p className="text-muted" data-testid="ficha-pet-sem-leitura">{MSG_PETS_SEM_LEITURA}</p>
           ) : !ficha || ficha.pets.length === 0 ? (
             <p className="text-muted" data-testid="ficha-pet-indisponivel">A ficha do pet não está mais disponível para esta candidatura.</p>
           ) : (

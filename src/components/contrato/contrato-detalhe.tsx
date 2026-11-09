@@ -21,7 +21,7 @@ import { meuCartaoPostal } from "@/lib/data/cartoes-actions";
 import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 import { ButtonLink } from "@/components/ui/button";
-import { situacaoDaRenovacao } from "@/lib/data/renovacao-contrato";
+import { MSG_RENOVACAO_SEM_LEITURA, situacaoDaRenovacao } from "@/lib/data/renovacao-contrato";
 import { numerosDoContrato } from "@/lib/data/pedido-orcamento-actions";
 import { linhaNumerosDoContrato } from "@/lib/pedido-ref";
 import { HREF_RENOVAR, ROTULO_RENOVAR, TEXTO_NO_MAXIMO } from "@/lib/estadia/renovacao";
@@ -121,8 +121,10 @@ export async function ContratoDetalhe({
         <AvisoAssinatura contratoId={c.id} aviso={c.aviso} />
         {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
         {renovacao && (
-          <div id="renovar" className="mt-4 scroll-mt-24 border-t border-line pt-4" data-testid="contrato-renovacao" data-cabe={renovacao.cabe ? "1" : "0"}>
-            {renovacao.cabe ? (
+          <div id="renovar" className="mt-4 scroll-mt-24 border-t border-line pt-4" data-testid="contrato-renovacao" data-cabe={"falhou" in renovacao ? "?" : renovacao.cabe ? "1" : "0"}>
+            {"falhou" in renovacao ? (
+              <p className="text-sm text-muted" data-testid="contrato-renovacao-sem-leitura">{MSG_RENOVACAO_SEM_LEITURA}</p>
+            ) : renovacao.cabe ? (
               <>
                 <p className="text-sm text-muted">
                   Quer ficar mais tempo? A renovação é um aditivo de prorrogação, assinado pelas duas partes. Cabem mais {renovacao.renovacao.mesesQueCabem}{" "}
