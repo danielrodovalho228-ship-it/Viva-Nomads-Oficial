@@ -1137,3 +1137,11 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 651 (#3661, t1639, grupo do 634 — serviços e visitas, admin, parceiros; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar:** lote 612–649 verde (38/38); 650 e 651 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h58 UTC (09/11) — 650 verde, 651 em rerun por infra, 652 aberto
+
+- **Bloco 650 (#3660, t1638): VERDE** (42579996462), início/busca/imóvel/ajuda/painel do proprietário (19ª volta), sem achado.
+- **Bloco 651 (#3661, t1639):** 1ª tentativa (42580959339) vermelha por **infra** (log curto, sem `e2e.txt`, nenhum teste rodou, mesma assinatura das anteriores); rerun único disparado.
+- **Bloco 652 (#3662, t1640, grupo do 635 — painéis do morador e do proprietário, empresas; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–650 verde (39/39); 651 em rerun e 652 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
