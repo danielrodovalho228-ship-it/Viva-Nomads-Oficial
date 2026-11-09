@@ -60,3 +60,11 @@ test("E775: a fila de merge roda o verify, o lab-critico e a suíte completa fat
   assert.match(yml, /needs: laboratorio/);
   assert.equal(Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]), 16, "desenho aprovado: 16 fatias");
 });
+
+test("o resumo da suíte inteira vai ao banco por arquivo, nunca como argumento do psql (E2BIG, run 42536824482)", () => {
+  const consolidar = yml.split("  consolidar:")[1];
+  assert.doesNotMatch(consolidar, /-v resumo=/, "o resumo passa de 128 KB: não pode ir em argv");
+  assert.doesNotMatch(consolidar, /-v categoria=/);
+  assert.match(consolidar, /\\set resumo `cat "\$RESUMO_ARQ"`/);
+  assert.match(consolidar, /:'resumo'::jsonb/);
+});
