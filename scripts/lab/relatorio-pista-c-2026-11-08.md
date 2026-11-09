@@ -833,3 +833,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 626 (#3631, t1574): VERDE** (42555723253), públicas com parâmetro (18ª volta), sem achado.
 - **Bloco 625 (#3630, t1573):** run 42555698036 continua **em fila** no runner desde 03h18 (cerca de 11 minutos sem começar). Fila, não falha; sem veredito. O 627 continua fechado até o 625 sair.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h45 (09/11) — lote 624–626 fechado verde, 627 aberto
+
+- **Bloco 625 (#3630, t1573): VERDE** (42555698036), painel do morador sem id (18ª volta). O run ficou cerca de 11 minutos em fila e mais 9 em execução; nenhum rerun foi necessário. Sem achado.
+- **Lote 624–626 fechado verde:** #3629 (624), #3630 (625), #3631 (626).
+- **Bloco 627 (#3633, t1575, grupo do 610 — admin; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
