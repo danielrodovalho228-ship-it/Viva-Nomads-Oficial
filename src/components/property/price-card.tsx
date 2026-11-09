@@ -6,7 +6,7 @@ import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLE
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { notaDataCalculada, rotuloPreco } from "@/lib/cartao-preco";
+import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -62,7 +62,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
         {estadia && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {formatBRL(estadia.total)} em {estadia.meses} meses
+            · {resumoEmMeses(estadia.total, estadia.meses)}
           </span>
         )}
       </p>
