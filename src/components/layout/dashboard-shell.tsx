@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
+import { VoltarAoSite } from "@/components/layout/voltar-ao-site";
 import { VoltarPainel } from "@/components/layout/voltar-painel";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
+import { Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
@@ -436,9 +437,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             nada muda (a barra lateral já está aberta). */}
         {pathname.startsWith("/admin") && (
           <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
-            <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
-              <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
-            </Link>
+            <VoltarAoSite />
           </nav>
         )}
 
