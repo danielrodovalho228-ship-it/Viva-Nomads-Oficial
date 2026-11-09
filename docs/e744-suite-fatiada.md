@@ -10,8 +10,8 @@ Run 42471821063 do "Laboratório de testes (noturno)": 640 testes rodaram, 3.864
 - Cada fatia guarda o próprio artifact (`laboratorio-<run>-fatia-<n>`: relatório, prints, vídeos, `resultado.json`) e fica vermelha se algum teste dela falhou.
 - **Job `consolidar`** (`needs: laboratorio`, roda mesmo com fatia vermelha): baixa os artifacts, junta os `resultado.json` (`scripts/lab/juntar-resultados.mjs`: concatena `suites`, soma `stats`; fatia sem arquivo só avisa), escreve o resumo por spec e grava **uma linha** em `public.lab_execucoes` (o passo "Registrar no banco", único com `SUPABASE_DB_URL`, nunca em PR). Fica vermelho se qualquer fatia falhou.
 
-## O gate de merge
-A mudança de gate (suíte completa fatiada como check obrigatório) é o E775, em PR separado (`docs/e775-fila-de-merge.md`): `merge_group` + check `suite-completa`.
+## O gate de merge (sinal verde do Daniel, 08/11/2026)
+Merge só com o gate completo verde: a suíte fatiada é check obrigatório na FILA DE MERGE (E775, `docs/e775-fila-de-merge.md`). O job `consolidar` tem o nome estável **`suite-completa`** (verde só se as 16 fatias passaram) e o workflow tem o gatilho `merge_group`.
 
 ## O que NÃO muda
 - A regra de testes escopados durante a correção continua. O que muda é a rede de regressão: a suíte completa agora termina, fatiada e verde.
