@@ -528,3 +528,7 @@ Próximo passo prático: rodar um subconjunto do lab localmente (Docker existe a
 ## lab-critico do head 1798023cf (17:30–17:49 UTC): 194 passaram, 1 falhou — 09/11
 Só o t14 admin a 390 px (a inicial não lista mais "Caixa dos Sócios" nem "Outras áreas"). Corrigido: o teste abre `/admin/socios` pelo endereço, confere que o app não tem barra de abas, que o Voltar leva ao painel e que o h1 de volta é "Visão geral". Guarda `t14-admin-voltar.test.ts`.
 Rodada completa 42664590118 (head 1798023cf): em andamento às 18:00 UTC; já verdes 17, 18, 19; vermelhas 5, 6, 10, 12, 16; demais rodando.
+
+## Head 369f3bb45 — checks do PR #3588 TODOS VERDES (09/11, 18:12 UTC)
+`verify`, `e2e`, `lab-critico` (194+ testes, 0 falhas), "gerar linhas de base" e Vercel: success. É a primeira vez que o gate de PR do #3588 fecha verde com os specs tocados (t4, t9, t14, t41, t43, t51, t56, t70, t95, t255, t379, t436, t46).
+Rodada completa 42664590118 (head 1798023cf): ainda sem a fatia 20/20 (admin) às 18:15 UTC; consolidação pendente. Uma linha de `lab_execucoes` das 17:45 UTC (4 falhas) é de outra execução, não desta rodada.
