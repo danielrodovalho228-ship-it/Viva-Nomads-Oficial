@@ -1448,3 +1448,8 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Main segue em `37db454e3` (últimos merges: #3688, #3689, guardas minhas). Nenhum merge de produto novo desde #3586/#3530 → nenhuma spec nova (próximos livres: t1598 / L-111).
 - Guardas t1594–t1597 (PRs #3690–#3693): verdes, em rascunho, sem erro de spec ou infra a corrigir. Nada de produto tocado.
 - Aberto: L-110 (Pista B); #3682 mantém 3 vermelhos de t329 por desenho.
+
+## Rodada das 19h25 UTC (09/11) — main em `954bbece6`
+
+- Merges novos desde `37db454e3`: #3602 (CLAUDE.md: regras de PR e "pronto") e #3460 (E712, docs: o topo da home não muda). Os dois são só documentação, sem comportamento de produto → **dispensa de spec registrada**. Próximos livres: t1598 / L-111.
+- Guardas t1594–t1597 (#3690–#3693) sem mudança: verdes, em rascunho. L-110 segue com a Pista B.
