@@ -18,6 +18,12 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     re: /(telefone|e-?mail|whatsapp|contato( direto)?)(?:(?!nunca|jamais|não|nao|inclusive|mesmo|qualquer)[^.\n"`]){0,60}\b(só )?(depois|após|apos) d?o aceite/i,
   },
   {
+    id: "contato-protegido-ate-o-aceite",
+    regra: "E785 (variante do E445): 'contato protegido até o aceite' (e parentes: liberado/revelado/compartilhado até ou antes do aceite) sugere que o contato é trocado depois. O certo é a fonte única: telefone, e-mail e redes sociais NUNCA são trocados.",
+    // Cobre "contato protegido até o aceite", "e-mail fica oculto até o aceite", "protegemos o contato até o aceite".
+    re: /(?:(contato|telefone|e-?mail|whatsapp|dados? de contato)(?:(?!nunca|jamais|não|nao|inclusive|mesmo|qualquer)[^.\n"`]){0,70}\b(protegid|resguardad|liberad|revelad|divulgad|compartilhad|oculto|escondid|visível|visivel|trocad)\w*|\b(protegemos|protegendo|mantemos|guardamos|preservamos|escondemos|ocultamos)\b(?:(?!nunca|jamais|não|nao)[^.\n"`]){0,50}\b(contato|telefone|e-?mail|whatsapp)\b)(?:(?!nunca|jamais|não|nao)[^.\n"`]){0,50}\b(até|ate|antes d)\w*\s+(d?o\s+)?aceite/i,
+  },
+  {
     id: "caucao-em-poupanca",
     regra: "Caução: paga direto ao proprietário; a Viva não recebe nem segura o dinheiro. Não se promete 'em poupança' nas frases públicas.",
     re: /cau[çc][ãa]o[^.\n"`]{0,60}\b(em|na|numa|uma) (uma )?poupan|depositad[ao] em poupan|cau[çc][ãa]o fica em (uma )?poupan/i,

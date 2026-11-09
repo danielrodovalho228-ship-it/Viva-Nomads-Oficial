@@ -78,10 +78,36 @@ test("GATE (fora de src/): e-mails, seeds, scripts e arquivos públicos também 
       if (s.isDirectory()) { varrer(p); continue; }
       if (!/\.(ts|tsx|mjs|js|sql|json|md|html|txt)$/.test(n) || s.size > 2_000_000) continue;
       const bruto = readFileSync(p, "utf8");
-      const texto = /\.(ts|tsx|mjs|js)$/.test(n) ? semComentarios(bruto).join("\n") : bruto;
+      // Comentário de SQL ("-- …") também não é superfície (as migrações antigas são imutáveis e comentam o que fizeram).
+      const texto = /\.(ts|tsx|mjs|js)$/.test(n) ? semComentarios(bruto).join("\n") : /\.sql$/.test(n) ? bruto.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n") : bruto;
       for (const a of achadosProibidos(texto)) achados.push(`${p.split("\\").join("/")} [${a.id}] ${a.trecho}`);
     }
   };
   for (const raiz of ["supabase", "public", "scripts"]) varrer(raiz);
   assert.deepEqual(achados, []);
+});
+
+test("E785: variantes de 'contato protegido até o aceite' são barradas; as frases certas e as que NEGAM passam", () => {
+  for (const ruim of [
+    "Contato protegido até o aceite",
+    "com o contato protegido até o aceite.",
+    "O telefone fica oculto até o aceite",
+    "Seu e-mail é liberado só depois do aceite",
+    "Protegemos o seu contato até o aceite",
+    "Contato do proprietário e identidade do morador ficam protegidos até o aceite.",
+  ]) assert.ok(achadosProibidos(ruim).length >= 1, `deveria barrar: ${ruim}`);
+  for (const boa of [
+    "Sem troca de contato direto",
+    "telefone, e-mail e redes sociais nunca são trocados",
+    "O nome completo do interessado aparece depois do aceite; telefone e e-mail nunca são trocados.",
+    "Telefone e e-mail nunca são trocados: ficam protegidos, inclusive depois do aceite.",
+  ]) assert.deepEqual(achadosProibidos(boa), [], `não deveria barrar: ${boa}`);
+});
+
+test("E785: a fonte única tem o selo e a frase da negociação, e as telas as importam", () => {
+  const regulados = readFileSync("src/config/textos-regulados.ts", "utf8");
+  assert.match(regulados, /export const SELO_SEM_TROCA_DE_CONTATO = "Sem troca de contato direto"/);
+  assert.match(regulados, /export const FRASE_NEGOCIACAO_NA_PLATAFORMA/);
+  assert.match(readFileSync("src/app/(public)/page.tsx", "utf8"), /SELO_SEM_TROCA_DE_CONTATO/);
+  assert.match(readFileSync("src/lib/precos-pagina.ts", "utf8"), /FRASE_NEGOCIACAO_NA_PLATAFORMA/);
 });
