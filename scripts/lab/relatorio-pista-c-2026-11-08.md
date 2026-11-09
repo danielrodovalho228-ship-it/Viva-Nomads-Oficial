@@ -1327,3 +1327,11 @@ Merges novos desde `344e3a273`, na ordem:
 
 Efeito colateral: com o #3598 mesclado, o `verify` da main deve voltar a verde (era a causa do vermelho em todos os meus PRs).
 Próximo L livre: **L-111**. Sem bloco de varredura (pausa de 09/11).
+
+## Rodada das 14h50 UTC (09/11) — mais dois merges: #3408 (E713) e #3498 (E724)
+
+Head da main: `fe74cd383`. Merges depois do #3398 (E719), na ordem:
+1. **#3408 (E713, resíduo)** — a coluna de reserva do anúncio de exemplo não traz os 4 campos, só a explicação e "Ver imóveis reais". A **Pista A já ajustou os specs de navegador no próprio merge** (`t130-reserva-imovel`, `t59-flutuante-nao-tampa`) e há teste de unidade (`e713-coluna-reserva-exemplo.test.ts`). **Cobertura existente; nenhuma spec nova.**
+2. **#3498 (E724)** — o aviso do exemplo vem primeiro no cartão de preço. Só tinha teste de unidade (leitura do fonte). **Spec criada: `t1589-e724-aviso-do-exemplo-primeiro.spec.ts`** (PR **#3685**, draft, commit `a410c29c4`): `/imoveis/ube-001` e `ube-002` a 390 e 1280 px, o aviso existe, diz "Nenhuma solicitação é enviada a ninguém", precede o preço no DOM, no mesmo cartão, sem rolagem lateral. Guardas 13/13, tsc limpo; **ainda não rodou**.
+
+Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t1589, E724), primeira execução. Próximo L livre: **L-111**.
