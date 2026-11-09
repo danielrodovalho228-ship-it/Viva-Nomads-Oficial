@@ -1145,3 +1145,23 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 652 (#3662, t1640, grupo do 635 — painéis do morador e do proprietário, empresas; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar:** lote 612–650 verde (39/39); 651 em rerun e 652 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Fila aberta da lista-master — E744, E742 e E743 (09/11, 08h UTC)
+
+### E744 — suíte noturna que estoura o teto global
+- **Desenho/feito (Pista B, #3588, draft, limpo):** fatiamento em jobs paralelos (hoje 16 fatias gerais + 4 fatias só dos specs pesados t50/t49), `consolidar` que grava a linha em `lab_execucoes`. Provas já registradas no `docs/e744-suite-fatiada.md` do PR: a suíte **termina** (run 42547901640: 3.938 passaram · 235 falharam · 317 pularam · 8 instáveis = 4.498 testes; antes eram 640 rodados e 3.864 não rodados). A separação dos pesados (t50/t49) corrige a fatia que batia o teto de 65 min.
+- **Prova de "noite completa VERDE": ainda NÃO existe.** O run 42554301427 (com a separação dos pesados) foi **cancelado**; não há run completo no código corrigido. As 243 entradas vermelhas/instáveis (134 asserção/elemento, 55 screenshot, 37 varredura, 17 timeout de 45 s) estão em `docs/e744-triagem-falhas.md`.
+- **O que cabe à Pista C (triagem das falhas de spec/varredura/timeout):** só começa depois de um run completo no código corrigido gravar a lista atualizada; a decisão entre "zerar a lista" e "linha de base que não pode piorar" é do coordenador/Daniel (registrada pela Pista B). Não disparei workflow de `.github/` (fora do meu escopo).
+
+### E742 — 400 em `/api/proximidades` no "Qualificar o imóvel" (= L-104)
+- **Reproduzido no lab e causa isolada:** `scripts/lab/evidencia-e742-e743-2026-11-08.md` (rota devolve `400 sem_cep` para imóvel do dono sem CEP e sem ponto gravado).
+- **Spec permanente:** t1562 (#3540, sobre o draft de correção #3531, verde); a tolerância `conhecidoL104` continua nas specs de bloco até o fix mesclar.
+- **Correção de produto (Pista B, #3531, draft, limpo):** `200 { itens: [], fonte: "sem_endereco" }` para o dono sem endereço; 400 só para entrada inválida ou anúncio de outra pessoa.
+
+### E743 — `/nivel` quebra com laudo assinado, erro 1965082685 (= L-107)
+- **Reproduzido no lab e causa isolada:** mesma evidência; `onFocus` passado a `<input>` em componente de servidor (`selo-assinatura.tsx`).
+- **Spec permanente:** t1429 com `test.fail` ligado ao L-107 (#3394) e t1563 (#3541, sobre o draft de correção #3532, verde).
+- **Correção de produto (Pista B, #3532, draft, limpo):** seleção do hash por CSS (`select-all`), sem manipulador; guarda `e743-selo-sem-handler.test.ts`.
+
+### Depende de decisão (merge) — nada mesclado por esta pista
+Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco, tirar o `test.fail` do L-107 na t1429 e trocar a base de #3540/#3541 para `main`. Main: head `344e3a273`, sem merge novo.
