@@ -4,7 +4,7 @@ import { BadgeCheck, LockKeyhole, MessagesSquare } from "lucide-react";
 export const SELOS_CONFIANCA_PARCEIROS = [
   { icone: BadgeCheck, texto: "Parceiros aprovados pela Viva" },
   { icone: MessagesSquare, texto: "Você combina tudo pelas mensagens da Viva" },
-  { icone: LockKeyhole, texto: "Contato e endereço só depois do aceite" },
+  { icone: LockKeyhole, texto: "Endereço só depois do aceite; contato sempre protegido" },
 ] as const;
 
 export function SelosConfianca() {

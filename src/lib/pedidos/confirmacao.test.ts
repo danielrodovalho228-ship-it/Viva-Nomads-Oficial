@@ -93,3 +93,11 @@ test("migração 0184: a chave mora no banco, desligada, e o mural usa a mesma r
   const volta = readFileSync(new URL("../../../supabase/producao/rollback/0184_rollback.sql", import.meta.url), "utf8");
   assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261019000184'/);
 });
+
+test("E774: o aviso não promete revelar contato depois do aceite (E445: contato protegido em qualquer fase)", () => {
+  for (const sms of [true, false]) {
+    assert.doesNotMatch(avisoConfirmacao(sms), /escondido até|só depois do aceite/i);
+    assert.match(avisoConfirmacao(sms), /continua protegido/);
+    assert.match(avisoConfirmacao(sms), /nem depois de você aceitar/);
+  }
+});

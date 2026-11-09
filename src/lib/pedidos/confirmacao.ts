@@ -57,8 +57,8 @@ export function contatoConfirmado(s: SituacaoContato, sms: ChaveSms = { ligada: 
 /** Aviso do formulário e da tela de "Pedido publicado". Acompanha a chave. */
 export function avisoConfirmacao(smsLigado: boolean): string {
   return smsLigado
-    ? "Seu pedido só chega aos proprietários com e-mail e telefone confirmados. Seu contato continua escondido até você aceitar uma resposta."
-    : "Seu pedido chega aos proprietários com o seu e-mail confirmado. Seu contato continua escondido até você aceitar uma resposta.";
+    ? "Seu pedido só chega aos proprietários com e-mail e telefone confirmados. Seu contato continua protegido: o proprietário não vê o seu telefone nem o seu e-mail, nem depois de você aceitar uma resposta."
+    : "Seu pedido chega aos proprietários com o seu e-mail confirmado. Seu contato continua protegido: o proprietário não vê o seu e-mail, nem depois de você aceitar uma resposta.";
 }
 
 /** Título do aviso quando falta confirmar algo (só o que falta de verdade). */
