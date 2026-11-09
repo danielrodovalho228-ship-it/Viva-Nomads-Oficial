@@ -58,6 +58,7 @@ import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
+import { desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
@@ -477,21 +478,21 @@ export function SearchClient({
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
     let list = baseVisivel.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b) || desempatePorId(a, b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a) || desempatePorId(a, b));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
-        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "") || desempatePorId(a, b)
       );
     // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
     else if (dist)
-      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)! || desempatePorId(a, b));
     else
       list = [...list].sort(
         (a, b) =>
           prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
+            prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto) || desempatePorId(a, b)
       );
     return list;
   }, [baseVisivel, dist, filtrosPainel, sort]);
