@@ -4,6 +4,7 @@ import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { estadiaDoCartao, mesesDoCartao, ROTULO_TOTAL_MES, rotuloPreco } from "@/lib/cartao-preco";
+import { estadiaNoCartao } from "@/lib/cartao-estadia";
 import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -37,6 +38,8 @@ export function PropertyCard({
   const inc = calcularTudoIncluido(property);
   // Prompt 47: preço com contexto pela função única (mensal · total do período · disponível a partir de).
   const preco = rotuloPreco({ mensal: inc.total, meses: mesesDoCartao(periodMonths, property.minPeriodDays), disponivelEm: property.availableFrom });
+  // E756: o total da estadia é o MESMO da página do imóvel (mensalidades + limpezas de preparação e de saída), e o cartão diz o que inclui.
+  const estadiaCartao = estadiaNoCartao(property, preco.meses);
   const sintese = itensSintese(property);
   // E416 (05/11): o nível virou selo da foto — sai da linha-síntese (nada repetido).
   const linhaSintese = sintese.filter((i) => i.chave !== "nivel");
@@ -115,13 +118,18 @@ export function PropertyCard({
           {/* E356: todo cartão mostra o total da estadia (com 1 mês, "R$ X em 1 mês"): comparação igual entre vizinhos. */}
           <span className="text-sm text-muted" data-testid="cartao-total-estadia">
             {" · "}
-            {estadiaDoCartao(preco)}
+            {estadiaCartao?.texto ?? estadiaDoCartao(preco)}
           </span>
         </p>
         {/* E356: diz o que é o preço grande (o total do mês, com condomínio e consumo fixo). */}
         <p className="text-xs text-apoio" data-testid="cartao-total-rotulo">
           {ROTULO_TOTAL_MES}
         </p>
+        {estadiaCartao?.composicao && (
+          <p className="text-xs text-apoio" data-testid="cartao-total-composicao">
+            {estadiaCartao.composicao}
+          </p>
+        )}
 
         {/* Linha-síntese: cada item só com o dado; a linha some se não houver nenhum (src/lib/cartao-sintese.ts). */}
         {linhaSintese.length > 0 && (

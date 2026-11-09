@@ -312,7 +312,7 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/); // sem "total" solto (QA)
   assert.doesNotMatch(c, /\/mês total/);
   assert.match(c, /const preco = rotuloPreco\(\{ mensal: inc\.total, meses: mesesDoCartao\(periodMonths, property\.minPeriodDays\), disponivelEm: property\.availableFrom \}\);/);
-  assert.match(c, /\{estadiaDoCartao\(preco\)\}/); // E356: todo cartão tem a linha ("R$ X em 1 mês" com N = 1), antes N = 1 só "R$ X/mês"
+  assert.match(c, /estadiaDoCartao\(preco\)\}/); // E756: o total vem de estadiaNoCartao (igual ao da página) e, sem ele, de estadiaDoCartao // E356: todo cartão tem a linha ("R$ X em 1 mês" com N = 1), antes N = 1 só "R$ X/mês"
   assert.match(c, /const sintese = itensSintese\(property\);/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
   // Carrossel com pontos; E416 (05/11): os selos empilhados sobre a foto (antes: no máximo 1).
@@ -546,6 +546,6 @@ test("Prompt 43: nenhum texto da lista proibida (\"Vamos começar\", \"Oops!\", 
 test("E356: o cartão rotula o preço (Total por mês) e mostra a linha da estadia em todo cartão", () => {
   const c = ler("components/property-card.tsx");
   assert.match(c, /data-testid="cartao-total-rotulo"[^>]*>\s*\{ROTULO_TOTAL_MES\}/);
-  assert.match(c, /\{estadiaDoCartao\(preco\)\}/);
+  assert.match(c, /estadiaDoCartao\(preco\)\}/); // E756: o total vem de estadiaNoCartao (igual ao da página) e, sem ele, de estadiaDoCartao
   assert.doesNotMatch(c, /\{preco\.estadia && \(\s*<span[^>]*cartao-total-estadia/);
 });
