@@ -1351,3 +1351,11 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - **E729 (PR #3686, t1590):** run 42638725445 em andamento desde 14:51 UTC. Push da main do #3503 (42637657700) **verde**.
 - **Novo merge #3524 (E690, `8ee2fb5bc`):** ativação automática do avaliador credenciado (solicitado→em_teste→ativo), **atrás da chave `AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA`, desligada por padrão**; migração 0335; disparo no `/api/caf/verify`. Tem teste de unidade (`e690-ativacao-automatica.test.ts`). **Sem spec nova de navegador por ora:** com a chave desligada (estado do lab) o caminho antigo, manual pelo admin, é o que roda, e ele já é guardado por `t303`/`t341` (credenciamento do avaliador). Um spec do caminho novo exigiria a chave ligada no ambiente do lab, o que é mudança de workflow (fora do meu escopo). Mesmo tratamento dado ao E722/E707. Push da main do #3524 (42639488596) em andamento.
 - Próximo L livre: **L-111**.
+
+## Rodada das 15h20 UTC (09/11) — E729 e E690 verdes; #3599 (E777) e #3603 (E778)
+
+- **E729 (PR #3686, t1590):** run 42638725445 **verde**. **E690:** push da main do #3524 (42639488596) **verde**.
+- **Merges novos** (head `c09833383`), na ordem:
+  1. **#3599 (E777, preço único):** refatoração — o resumo "R$ X em N meses" ("em 1 mês" no singular) passa a vir de uma só função (`resumoEmMeses`, em `cartao-preco.ts`), usada pelo cartão, pela barra fixa, pela página do imóvel e pela reserva. Tem teste de unidade (`e777-preco-unico.test.ts`). **Sem spec nova:** o texto do total já é conferido pelos specs de navegador existentes (t703, t708 e a família do E756); o único efeito visível novo é "em 1 mês" no singular onde antes saía "em 1 meses", e esse caso é puro (unidade). O push da main não aparece mais em andamento.
+  2. **#3603 (E778):** só documentação (`docs/lista-visual/e778-superpowers-pista-a.md`). Nada a guardar. Push da main (42642425184) em andamento (docs).
+- Sem bloco de varredura (estrutura de pista única, decisão do Daniel de 09/11). PR #3682 inalterado (126 passaram, 3 falharam = L-110). Próximo L livre: **L-111**.
