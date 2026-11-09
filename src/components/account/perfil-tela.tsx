@@ -20,8 +20,9 @@ import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDa
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
 import { AvisoFotoRemovida } from "@/components/account/aviso-foto-removida";
 import { BIO_MAX, ESTADO_SALVAR, IDIOMAS, LINHA_PERFIL_COMPLETO, destinoDaFalta, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
+import { perfilAlterado, retrato, retratoSemIdiomas } from "@/lib/perfil/retrato";
 import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
-import { CATEGORIA_NAO_INFORMAR } from "@/config/categorias-profissionais";
+import { CATEGORIA_NAO_INFORMAR, categoriaLabel } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -129,7 +130,7 @@ export function PerfilTela() {
   if (p === null) return null;
 
   const temFoto = !!foto.url;
-  const alterado = salvo !== null && salvo !== retrato(nome, bio, cidade, idiomasLigado ? idiomas : []);
+  const alterado = perfilAlterado(salvo, retrato(nome, bio, cidade, idiomasLigado ? idiomas : []));
   const bioCheck = validarBio(bio);
   const barra = progressoPerfil(
     { foto: temFoto || p.temFoto, bio: bio.trim() || null, idiomas, cidade: cidade.trim() || null, profissao: p.profissao, motivo: null },
@@ -251,7 +252,7 @@ export function PerfilTela() {
           {/* E504 (c): o enquadramento só aparece com o papel JÁ conhecido (a conta carregada) — antes, o 1º quadro saía com o papel
             padrão (morador) e trocava para proprietário depois, e o rótulo lateral ficava fixo. Enquanto não há conta, o espaço é guardado. */}
         {usuarioPronto ? (
-          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
         ) : (
           <div aria-hidden className="min-h-[24rem]" data-testid="espelho-aguardando" />
         )}
@@ -294,6 +295,8 @@ export function PerfilTela() {
               if (r.ok) {
                 setIdiomas([]);
                 setP({ ...p, idiomas: [] });
+                // E750: os idiomas foram GRAVADOS (vazios) — o retrato do que está salvo acompanha, senão "Há alterações para salvar" ficava de pé.
+                setSalvo((a) => retratoSemIdiomas(a));
               }
               return r.ok;
             }}
@@ -339,7 +342,7 @@ export function PerfilTela() {
 
       <aside className="hidden min-w-0 gap-6 xl:grid" aria-label={papelEspelho === "proprietario" ? "Como o morador te vê" : "Como o proprietário te vê"}>
         <TituloSecaoLateral ativo="perfil" subtitulo={SUBTITULO_PERFIL} />
-        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} />
+        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
       </aside>
     </div>
   );
@@ -431,10 +434,6 @@ function EsqueletoPerfil() {
 }
 
 /** Extra do E62: o que o "Salvar alterações" grava, num texto só, para comparar com o que está no banco. */
-function retrato(nome: string, bio: string, cidade: string, idiomas: string[]): string {
-  return JSON.stringify([nome.trim(), bio.trim(), cidade.trim(), [...idiomas].sort()]);
-}
-
 function EstadoSalvar({ alterado }: { alterado: boolean }) {
   return (
     <p className={alterado ? "mt-2 text-sm font-semibold text-amber-800" : "mt-2 text-sm text-forest"} role="status" data-testid="perfil-salvar-estado" data-alterado={alterado ? "1" : "0"}>

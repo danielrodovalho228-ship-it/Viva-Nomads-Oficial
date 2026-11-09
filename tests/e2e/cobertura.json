@@ -3859,6 +3859,12 @@
         "sistema"
       ],
       "specs": []
+    },
+    "/api/cron/pre-aceitacao": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
     }
   },
   "actions": {
@@ -5393,6 +5399,13 @@
       "specs": [
         "t193-propostas"
       ]
+    },
+    "src/lib/data/propostas-actions.ts#reabrirPreAceitacao": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
     },
     "src/lib/data/push-actions.ts#enviarPushDeTeste": {
       "personas": [

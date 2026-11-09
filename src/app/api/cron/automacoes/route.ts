@@ -30,6 +30,7 @@ import {
 } from "@/lib/automacoes/regras";
 import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { datasDaEstadia } from "@/lib/contrato-blocos";
 import { chaveDaJornada, confirmacaoDevida, corpoDaJornada, momentosDeHoje } from "@/lib/estadia/jornada-mensagens";
 import { corpoDaChegada } from "@/lib/estadia/emails-chegada";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
@@ -349,16 +350,16 @@ export async function GET(request: Request) {
   // saída e meio da estadia longa. As datas saem dos blocos ATUAIS: remarcou por aditivo (E652), recalcula e reenvia nas
   // datas novas (a data entra na chave). O D-7 das instruções (bloco 7) segue o mesmo, sem duplicar.
   for (const c of estadias ?? []) {
-    const blocos = ((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string }[]).filter((b) => b.status !== "nao_aceito" && b.inicio && b.fim);
-    if (!blocos.length || !c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
-    const datas = { entrada: blocos.map((b) => b.inicio).sort()[0], fim: blocos.map((b) => b.fim).sort().at(-1) as string };
+    const datas = datasDaEstadia(c.contrato_blocos as { inicio: string; fim: string; status: string }[] | null);
+    if (!datas || !c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
     const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
     const dadosCorpo = { ...datas, imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }, horario: prop?.checkin_after, horarioSaida: prop?.checkout_before };
     const assinadoEm = [c.assinado_proprietario_em as string, c.assinado_inquilino_em as string].sort().at(-1);
     const doDia = momentosDeHoje({ ...datas, hoje });
-    const hojeMomentos = confirmacaoDevida({ assinadoEm, hoje }) ? (["jornada_confirmacao", ...doDia] as const) : doDia;
-    // Chegada e semana da saída só com o 1º pagamento (a mesma condição do D-7); a confirmação não depende dele.
+    // D-7, chegada, semana da saída e meio só com o 1º pagamento (a mesma condição do D-7 das instruções).
     const pago = primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]);
+    // E759: a confirmação sai também quando a estadia fica confirmada (assinada + 1º pagamento) antes de começar.
+    const hojeMomentos = confirmacaoDevida({ assinadoEm, hoje, pago, entrada: datas.entrada }) ? (["jornada_confirmacao", ...doDia] as const) : doDia;
     for (const momento of hojeMomentos) {
       if (momento !== "jornada_confirmacao" && !pago) continue;
       const paraDono = momento === "jornada_chegada" || momento === "jornada_semana_saida";

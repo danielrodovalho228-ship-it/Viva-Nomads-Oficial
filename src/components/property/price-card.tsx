@@ -37,7 +37,7 @@ function disponivelFuturo(iso?: string): string | null {
  * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
-export function PriceCard({ property, actions, meses = 1, dias = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
+export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMinimaAviso = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E725: duração escolhida abaixo do mínimo (em dias do mínimo): mostra só o aviso, sem total da estadia. */ estadiaMinimaAviso?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
   const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: disponivelDesde ?? property.availableFrom });
@@ -66,6 +66,11 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
           </span>
         )}
       </p>
+      {estadiaMinimaAviso != null && (
+        <p className="text-sm font-medium text-ink" data-testid="cartao-lateral-estadia-minima" role="status">
+          Estadia mínima de {estadiaMinimaAviso} dias.
+        </p>
+      )}
       {estadiaDias && (
         <>
           <p className="text-sm text-ink tabular-nums" data-testid="cartao-lateral-estadia">
