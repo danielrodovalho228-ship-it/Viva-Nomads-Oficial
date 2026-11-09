@@ -985,3 +985,13 @@ Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para 
 - **Causa comum:** o download do `supabase/setup-cli@v1` devolve 504 sob a carga de 27+ runs simultâneos (mais os runs das outras pistas). A renumeração só renomeia arquivo e título; nada em teste mudou.
 - **Plano:** esperar a fila esvaziar e só então reexecutar 634, 635 e 638 (um rerun cada), em levas pequenas.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Leitura das 05h50 UTC (09/11) — reruns em levas
+
+- **620 (#3624): VERDE** no rerun (42567377561, tentativa 2).
+- **621 (#3625): 2ª falha de infra no mesmo run** (42567384581, tentativa 2, mesma assinatura curta). Um rerun por run já usado: **não repito**; fica "infra, sem veredito de spec" até a próxima alteração real do ramo. Mesmo caso do 618.
+- **634, 635, 638:** 1ª tentativa vermelha por infra; **rerun único disparado agora** (levas pequenas, a fila das outras pistas já está baixa).
+- **Em andamento:** 616 e 624 (reruns), 630, 636, 640.
+- **Runs do próprio PR #3095** (relatório): 5766 e 5769 vermelhos; é o mesmo gate (sem `e2e.txt`), sem relação com spec.
+- **Bloco 641:** continua fechado até 624 e 640 darem verde.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
