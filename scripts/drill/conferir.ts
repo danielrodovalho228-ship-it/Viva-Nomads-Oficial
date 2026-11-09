@@ -14,7 +14,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { lerManifesto } from "../../src/lib/backup/manifesto.ts";
 import {
+  SQL_COM_GATILHOS,
   SQL_LIVRO_REAPLICAR,
+  SQL_SEM_GATILHOS,
   SQL_LIVRO_VOLTOU,
   TAMANHO_AMOSTRA,
   compararContagens,
@@ -61,13 +63,15 @@ function reaplicarLivro(url: string): Conferencia {
   const bin = process.env.PSQL || "psql";
   const sessao = (sql: string) =>
     execFileSync(bin, [url, "-X", "-q", "-At", "-v", "ON_ERROR_STOP=1", "-f", "-"], { input: sql, encoding: "utf8", stdio: ["pipe", "pipe", "ignore"] });
+  // Segurança: gatilhos desligados só no banco descartável do drill; nunca na produção.
+  if (process.env.SUPABASE_DB_URL?.trim() && process.env.SUPABASE_DB_URL.trim() === url) return conferirLivro(0, null, null, false);
   try {
     if (psql(url, "select to_regclass('public.eliminacoes_registro') is null").trim() === "t") return conferirLivro(0, 0, 0, true);
     const fonte = process.env.SUPABASE_DB_URL?.trim() || url;
     const livro = lerLivro(psql(fonte, "select origem || '|' || ref_id from public.eliminacoes_registro where modo = 'apagado' and origem like 'bucket:%'"));
     const valores = livro.map((l) => `('${l.origem}','${l.ref}')`).join(",");
     const contagens = sessao(
-      ["create temp table _livro (origem text, ref text)", ...(valores ? [`insert into _livro values ${valores}`] : []), SQL_LIVRO_VOLTOU, SQL_LIVRO_REAPLICAR, SQL_LIVRO_VOLTOU].join(";\n") + ";\n",
+      ["create temp table _livro (origem text, ref text)", ...(valores ? [`insert into _livro values ${valores}`] : []), SQL_LIVRO_VOLTOU, SQL_SEM_GATILHOS, SQL_LIVRO_REAPLICAR, SQL_COM_GATILHOS, SQL_LIVRO_VOLTOU].join(";\n") + ";\n",
     )
       .split("\n")
       .map((l) => l.trim())

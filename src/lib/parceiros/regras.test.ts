@@ -16,6 +16,7 @@ import {
   lerParceiroGeral,
   mesmoEmail,
   mostrarParceiroGeral,
+  PARCEIRO_GERAL_NAS_SUPERFICIES,
   PAGAMENTO_EM_BREVE,
   recorteImagem,
   REGRAS_CLARAS,
@@ -172,9 +173,16 @@ test("textos da busca vazia: cada frase é UM texto (em pedaços, leitores que a
 test("cartão do parceiro geral: desligado por padrão, só na busca vazia e com nome", () => {
   assert.equal(mostrarParceiroGeral(lerParceiroGeral(null, false), 0), false);
   const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);
-  assert.equal(mostrarParceiroGeral(g, 0), true);
-  assert.equal(mostrarParceiroGeral(g, 2), false);
-  assert.equal(mostrarParceiroGeral({ ...g, nome: "" }, 0), false);
+  // Regra em si (superfície ligada): só na busca vazia e com nome.
+  assert.equal(mostrarParceiroGeral(g, 0, true), true);
+  assert.equal(mostrarParceiroGeral(g, 2, true), false);
+  assert.equal(mostrarParceiroGeral({ ...g, nome: "" }, 0, true), false);
+});
+
+test("E688: a saída do parceiro geral (AquiResolve) está FORA das superfícies por ora, mesmo com a chave ligada no admin", () => {
+  assert.equal(PARCEIRO_GERAL_NAS_SUPERFICIES, false);
+  const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);
+  assert.equal(mostrarParceiroGeral(g, 0), false);
 });
 
 test("imagens: recorte central (avatar 1:1, capa 3:1) e lado maior reduzido", () => {

@@ -4,6 +4,7 @@ import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { estadiaDoCartao, mesesDoCartao, ROTULO_TOTAL_MES, rotuloPreco } from "@/lib/cartao-preco";
+import { estadiaNoCartao } from "@/lib/cartao-estadia";
 import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -37,6 +38,8 @@ export function PropertyCard({
   const inc = calcularTudoIncluido(property);
   // Prompt 47: preço com contexto pela função única (mensal · total do período · disponível a partir de).
   const preco = rotuloPreco({ mensal: inc.total, meses: mesesDoCartao(periodMonths, property.minPeriodDays), disponivelEm: property.availableFrom });
+  // E756: o total da estadia é o MESMO da página do imóvel (mensalidades + limpezas de preparação e de saída), e o cartão diz o que inclui.
+  const estadiaCartao = estadiaNoCartao(property, preco.meses);
   const sintese = itensSintese(property);
   // E416 (05/11): o nível virou selo da foto — sai da linha-síntese (nada repetido).
   const linhaSintese = sintese.filter((i) => i.chave !== "nivel");
@@ -81,10 +84,7 @@ export function PropertyCard({
           <h3 className="min-w-0 max-w-full line-clamp-2 font-title text-base font-semibold leading-snug text-ink" data-testid="cartao-local">
             {linhaLocalizacao(property.neighborhood, property.city, property.state)}
           </h3>
-          {exemplo ? (
-            // Anúncio de exemplo: nunca mostra nota (seria fictícia) — e fica marcado.
-            <span className="shrink-0 text-xs leading-6 text-apoio">Anúncio de exemplo</span>
-          ) : property.reviewCount > 0 ? (
+          {exemplo ? null : property.reviewCount > 0 ? (
             <span className="inline-flex shrink-0 items-center gap-1 text-sm tabular-nums text-ink" data-testid="cartao-nota">
               <Star className="h-3.5 w-3.5 fill-ink text-ink" aria-hidden />
               {numBR(property.rating, 1)}
@@ -95,6 +95,14 @@ export function PropertyCard({
             <span className="shrink-0 text-xs text-apoio">Novo na plataforma</span>
           )}
         </div>
+
+        {/* E726: o selo do exemplo tem UMA posição só — sempre na linha de baixo, à esquerda, em todos os cartões (antes ia à direita ou
+            quebrava para baixo conforme a largura do cartão e o nome do bairro). Exemplo nunca mostra nota (seria fictícia). */}
+        {exemplo && (
+          <span className="text-xs leading-6 text-apoio" data-testid="cartao-selo-exemplo">
+            Anúncio de exemplo
+          </span>
+        )}
 
         <p className="line-clamp-2 text-sm text-muted" data-testid="cartao-titulo">
           {property.title}
@@ -110,13 +118,18 @@ export function PropertyCard({
           {/* E356: todo cartão mostra o total da estadia (com 1 mês, "R$ X em 1 mês"): comparação igual entre vizinhos. */}
           <span className="text-sm text-muted" data-testid="cartao-total-estadia">
             {" · "}
-            {estadiaDoCartao(preco)}
+            {estadiaCartao?.texto ?? estadiaDoCartao(preco)}
           </span>
         </p>
         {/* E356: diz o que é o preço grande (o total do mês, com condomínio e consumo fixo). */}
         <p className="text-xs text-apoio" data-testid="cartao-total-rotulo">
           {ROTULO_TOTAL_MES}
         </p>
+        {estadiaCartao?.composicao && (
+          <p className="text-xs text-apoio" data-testid="cartao-total-composicao">
+            {estadiaCartao.composicao}
+          </p>
+        )}
 
         {/* Linha-síntese: cada item só com o dado; a linha some se não houver nenhum (src/lib/cartao-sintese.ts). */}
         {linhaSintese.length > 0 && (

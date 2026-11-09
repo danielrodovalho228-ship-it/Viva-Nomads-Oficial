@@ -28,30 +28,33 @@ test("E620: o nível de cada exemplo É o do motor (nada escrito à mão)", () =
   assert.match(mod, /nivelDoImovel\(\{/);
 });
 
-test("E620: distribuição honesta — 4 Essencial (12 de 12), 11 sem nível; nenhum Conforto/Premium sem foto na hora e sem medição", () => {
-  const essencial = SAMPLE_PROPERTIES.filter((p) => p.nivel === "essencial").map((p) => p.id);
-  assert.deepEqual(essencial, ["ube-001", "ube-006", "ube-012", "ube-014"]);
+test("E754: todo anúncio carrega ao menos Essencial — os 15 exemplos fecham os 12 itens; nenhum Conforto/Premium sem foto na hora e sem medição", () => {
+  // Regra aprovada: anúncio publicado = ao menos Essencial (publicar exige os 12 itens). A massa de exemplo completa o que faltava
+  // (velocidade da internet, cozinha equipada, lavanderia, Pronto para Morar no ube-003) em vez de esconder o nível.
+  assert.deepEqual(SAMPLE_PROPERTIES.filter((p) => p.nivel === "essencial").map((p) => p.id), SAMPLE_PROPERTIES.map((p) => p.id));
   assert.equal(SAMPLE_PROPERTIES.filter((p) => p.nivel === "conforto" || p.nivel === "premium").length, 0);
-  assert.equal(SAMPLE_PROPERTIES.filter((p) => !p.nivel).length, 11);
+  assert.equal(SAMPLE_PROPERTIES.filter((p) => !p.nivel).length, 0);
+  for (const p of SAMPLE_PROPERTIES) assert.deepEqual(graduarExemplo(p).faltam, [], p.id);
 });
 
-test("E620: quem fica sem nível tem o motivo (os itens do padrão mínimo que os atributos não sustentam)", () => {
-  assert.deepEqual(graduarExemplo(porId("ube-002")).faltam, ["lavanderia_acesso"]); // "Studio premium" sem máquina de lavar
-  assert.deepEqual(graduarExemplo(porId("ube-005")).faltam, ["internet_informada"]); // "Internet fibra" sem a velocidade
-  assert.deepEqual(graduarExemplo(porId("ube-007")).faltam, ["cozinha_basica", "internet_informada", "lavanderia_acesso"]);
-  const casa = graduarExemplo(porId("ube-003")).faltam; // sem Pronto para Morar e sem ar-condicionado
-  for (const k of ["ventilacao_quartos", "agua_quente", "entrega_limpa", "internet_informada"]) assert.ok(casa.includes(k as never), k);
-  for (const p of SAMPLE_PROPERTIES) if (!p.nivel) assert.ok(graduarExemplo(p).faltam.length > 0, p.id);
+test("E754: o motor continua exigindo os 12 itens — tirar um atributo derruba o nível (nada é dado de graça)", () => {
+  const p = porId("ube-002");
+  const semAr = { ...p, amenities: p.amenities.filter((a) => a !== "Ar-condicionado"), amenityGroups: p.amenityGroups?.map((g) => ({ ...g, items: g.items.filter((i) => i !== "Ar-condicionado") })) };
+  assert.equal(graduarExemplo(semAr).nivel, null);
+  assert.deepEqual(graduarExemplo(semAr).faltam, ["ventilacao_quartos"]);
+  const semVelocidade = { ...porId("ube-005"), workFeatures: ["Internet fibra"] };
+  assert.deepEqual(graduarExemplo(semVelocidade).faltam, ["internet_informada"]); // "Internet fibra" sem a velocidade
 });
 
 test("E620: leitura conservadora dos atributos — sem o atributo, sem resposta", () => {
   assert.equal(mbpsInformado(porId("ube-001")), 300);
-  assert.equal(mbpsInformado(porId("ube-005")), null); // "Internet fibra" não é velocidade
+  assert.equal(mbpsInformado({ ...porId("ube-005"), workFeatures: ["Internet fibra"], amenityGroups: [] }), null); // "Internet fibra" não é velocidade
   assert.equal(mbpsInformado({ ...porId("ube-005"), internetMbps: 100 }), 100); // o campo informado vale
-  assert.equal(respostasDoExemplo(porId("ube-009")).cozinha, undefined); // "Cozinha compacta" sem "equipada"
+  assert.equal(respostasDoExemplo({ ...porId("ube-009"), amenities: ["Mobiliado completo", "Cozinha compacta"] }).cozinha, undefined); // "Cozinha compacta" sem "equipada"
   assert.equal(respostasDoExemplo(porId("ube-004")).cozinha, "fogao"); // "Cozinha compacta equipada"
   assert.equal(respostasDoExemplo(porId("ube-001")).cozinha, "micro");
-  assert.equal(respostasDoExemplo(porId("ube-003")).ventilacao, undefined);
+  assert.equal(respostasDoExemplo({ ...porId("ube-003"), amenities: ["Mobiliado completo"] }).ventilacao, undefined); // sem Ar-condicionado
+  assert.equal(respostasDoExemplo(porId("ube-002")).lavanderia, "predio"); // E754: "Lavanderia compartilhada" = no prédio, com uso incluído
 });
 
 test("E620: exemplo novo já nasce graduado pelo mesmo caminho (a correção está onde a massa é gerada)", () => {
@@ -65,7 +68,7 @@ test("E620: exemplo novo já nasce graduado pelo mesmo caminho (a correção est
 
 test("E620: filtro de Nível da busca conta > 0 coerente (mesma regra do painel: 'a partir de')", () => {
   const conta = Object.fromEntries(NIVEIS.map((n) => [n, SAMPLE_PROPERTIES.filter((p) => passaNoPainel(p, { ...FILTROS_PAINEL_VAZIOS, nivelMin: n })).length]));
-  assert.deepEqual(conta, { essencial: 4, conforto: 0, premium: 0 });
+  assert.deepEqual(conta, { essencial: 15, conforto: 0, premium: 0 });
 });
 
 test("E620: a página do exemplo mostra o MESMO nível do cartão", () => {

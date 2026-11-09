@@ -1,4 +1,4 @@
-import { ufBateComCep } from "./faixas-uf.ts";
+import { ufBateComCep, ufDaFaixa } from "./faixas-uf.ts";
 
 /**
  * CEP que sempre responde (prompt 20). Devolve SEMPRE um resultado que a tela transforma em mensagem: com rua, só a
@@ -13,6 +13,7 @@ import { ufBateComCep } from "./faixas-uf.ts";
 export type ResultadoCep =
   | { tipo: "rua"; rua: string; bairro: string; cidade: string; uf: string }
   | { tipo: "cidade"; cidade: string; uf: string }
+  | { tipo: "faixa"; uf: string }
   | { tipo: "nao_encontrado" }
   | { tipo: "sem_rede" };
 
@@ -71,16 +72,31 @@ async function brasilApi(cep: string, buscar: Buscar): Promise<Fonte> {
   }
 }
 
+/**
+ * E746 (família do E429): CEP genérico / de faixa ("38400-000", o "centro" de Uberlândia) não aponta uma rua, e as bases
+ * não o conhecem — a resposta era "Não encontramos esse CEP", um beco sem saída. CEP que termina em 000 e cai numa faixa
+ * de UF conhecida vira "faixa": a tela explica que é genérico, guarda a UF e leva à busca pelo endereço.
+ */
+export function ehCepGenerico(cep8: string): boolean {
+  return cep8.endsWith("000") && !!ufDaFaixa(cep8);
+}
+
 /** ViaCEP; a BrasilAPI só quando o ViaCEP FALHA. "Sem rede" só quando nenhuma das duas respondeu de forma definitiva. */
 export async function buscarCep(valor: string, buscar: Buscar): Promise<ResultadoCep> {
   const cep = digitosCep(valor);
   if (!cep) return { tipo: "nao_encontrado" };
   const a = await viaCep(cep, buscar);
-  if (a === "nao_achou") return { tipo: "nao_encontrado" }; // definitivo: a BrasilAPI NÃO é chamada
+  if (a === "nao_achou") return semAchado(cep); // definitivo: a BrasilAPI NÃO é chamada
   if (a) return a; // rua ou CEP geral (só cidade)
   const b = await brasilApi(cep, buscar); // ViaCEP fora do ar
   if (b && b !== "nao_achou") return b;
-  return b === null ? { tipo: "sem_rede" } : { tipo: "nao_encontrado" };
+  return b === null ? { tipo: "sem_rede" } : semAchado(cep);
+}
+
+/** Nenhuma base achou o CEP: genérico de faixa (termina em 000) tem saída guiada; o resto continua "não encontrado". */
+function semAchado(cep: string): ResultadoCep {
+  const uf = ufDaFaixa(cep);
+  return ehCepGenerico(cep) && uf ? { tipo: "faixa", uf } : { tipo: "nao_encontrado" };
 }
 
 export interface OpcaoEndereco {
@@ -130,6 +146,8 @@ export function mensagemCep(r: ResultadoCep): string {
       return "Endereço encontrado";
     case "cidade":
       return "Este CEP é da cidade toda — digite a rua";
+    case "faixa":
+      return "Este CEP é genérico (de uma região, não de uma rua) — digite a rua ou busque pelo endereço";
     case "nao_encontrado":
       return "Não encontramos esse CEP — buscar pelo endereço";
     case "sem_rede":
