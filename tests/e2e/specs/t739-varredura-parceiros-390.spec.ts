@@ -6,6 +6,9 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha,
   horizontal, toda imagem visível carregada (rolando até o fim, para o carregamento sob demanda) e nenhum texto ou
   controle por cima de outro (elementos fixos — barra de baixo, "Fale com a Viva" — ficam de fora). Inclui a busca com
   um parceiro publicado (cartão) e a página pública dele.
+
+  E744 (Pista C, 09/11): no run completo 42560445737 o "390 px: buscar-limpeza-cartao" não achou o cartão do parceiro em 20 s;
+  reexecutado isolado no lab crítico (mesmo PR de manutenção) para separar defeito de ordem/massa da noturna.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
