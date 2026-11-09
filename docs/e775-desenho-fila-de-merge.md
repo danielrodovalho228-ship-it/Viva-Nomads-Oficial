@@ -98,3 +98,13 @@ O desenho **continua válido**. Ajustes e fatos novos:
 4. **O `lab-critico` roda inteiros os specs que o PR altera** (aprendido no #3588): um PR que altere o `t48-varredura` (cadeia de ~100 min) estoura o job de 40 min. Isso torna PRs que tocam specs pesados **inadmissíveis na fila** sem tratar o portão antes. Entra como regra de saída da fila.
 5. **Main vermelha pausa:** hoje ela está vermelha, então pela regra 2 **nenhum merge entraria**, exceto o #3598. Na prática o primeiro item da fila é o #3598.
 6. **Recomendação:** mantida: (b) agora, com a condição do App/token restrito. Soma-se a condição de **triagem prévia** (ponto 1).
+
+---
+
+## Simulação da cadeia segurada (09/11, ~12h20 UTC) — a combinação testada que a fila entregaria
+Cadeia: **#3398** (E719) → **#3408** (E713) → **#3498** (E724) → **#3503** (E729) → **#3524** (E690, migração 0335), em branch descartável sobre `origin/main` (`344e3a2`) **com a correção do #3598 já dentro**, mesclando um a um nesta ordem.
+- **Conflitos:** nenhum. Os cinco entram em sequência sem conflito (inclusive #3408 → #3498, que mexem no mesmo detalhe do anúncio).
+- **`tsc --noEmit`** no resultado final: limpo.
+- **Testes escopados** dos cinco PRs mais `estilo`, avaliações e `e727-e728`: **129 passam, 0 falham**.
+- **Fora desta simulação:** `lab-critico` e `e2e` (Playwright) da combinação; o CI de cada PR roda sobre a main antiga de quando foi atualizado. É o que o gate do E775 faria: rodar o CI de novo depois de cada merge.
+- **Conclusão:** a cadeia não tem bloqueio de conflito nem de tipos. O que a segura é **ordem e a main vermelha**: #3598 primeiro, depois a cadeia na ordem acima. O #3524 não é empilhado (base `main`); entra por último apenas pela migração 0335 (a Action aplica no merge).
