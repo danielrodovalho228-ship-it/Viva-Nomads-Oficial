@@ -435,3 +435,8 @@ Runs **42547901640** (16 fatias) e **42560445737** (20 fatias, com a varredura t
 - Corrigir = refazer as imagens **no ambiente do laboratório** (mesmo Chromium/fontes/banco semeado; refazer no notebook gera imagem que reprova no CI). Isso é a nova rotina `.github/workflows/linhas-de-base.yml` (`--update-snapshots`, só artefato, `contents: read`, sem commit).
 - **Aprovar as imagens é decisão de produto/QA**, não da Pista B: baixar o artefato `linhas-de-base-<run>`, olhar o diff e copiar os PNG para `tests/e2e/visual/` num PR. Depois disso as 55 falhas somem e o próximo gate fica em ~151 falhas.
 - A política (zerar a lista vs. "não piorar") continua com a coordenação.
+
+## Família "fixo" @390 — causa e correção (09/11)
+
+Causa: a seta "Ver mais itens" (`FileiraRolavel`, E248, `data-testid="fileira-seta-dir"`) cobre de propósito a borda da fileira de subabas; o critério `controlesCobertos` (`tests/e2e/fixtures/varredura.ts`) a tratava como elemento fixo cobrindo "Recibos e notas". Não é defeito do site: rolar a fileira revela o item.
+Correção: o critério ignora a seta da fileira (`setaDaFileira`), sem tocar em nenhum spec (t48 intacto). Guarda: `tests/laboratorio/varredura-seta-fileira.test.ts`.
