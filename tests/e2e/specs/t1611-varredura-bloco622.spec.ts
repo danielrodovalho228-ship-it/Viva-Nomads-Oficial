@@ -6,7 +6,7 @@ import { TAMANHOS, escutarErros } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
-  T1570 — VARREDURA DA PÁGINA INTEIRA, BLOCO 622 (Pista C, 08/11), 18ª volta do ciclo (repete o grupo do bloco 605, t1553; antes, os blocos 588, 571, 554, 537, 520, 503, 486, 469 e 452). O protocolo do bloco 21 (t385):
+  T1611 — VARREDURA DA PÁGINA INTEIRA, BLOCO 622 (Pista C, 08/11), 18ª volta do ciclo (repete o grupo do bloco 605, t1553; antes, os blocos 588, 571, 554, 537, 520, 503, 486, 469 e 452). O protocolo do bloco 21 (t385):
   seis classes, página toda rolada, carregamento real de cada imagem, elemento fixo sobre conteúdo, 390 e 1280 px, HTTP
   abaixo de 400; e o console (erro de console ou de página, régua da t249) no relatório. As telas varridas há mais tempo
   depois do bloco 587 (registro de cobertura: última varredura no bloco 571, t1519): as do ADMIN sem id na URL — ajuda
@@ -57,7 +57,7 @@ async function abrir(browser: Browser, t: Tela): Promise<Page> {
   return (await browser.newContext()).newPage();
 }
 
-test.describe("T1570 — varredura da página inteira, bloco 622 (18ª volta, admin: ajuda da publicação, encerramentos, dados de teste, fotos de perfil, marketing, pedidos de parceiros, retenção, serviços, sócios, solicitações) (390 e 1280 px)", () => {
+test.describe("T1611 — varredura da página inteira, bloco 622 (18ª volta, admin: ajuda da publicação, encerramentos, dados de teste, fotos de perfil, marketing, pedidos de parceiros, retenção, serviços, sócios, solicitações) (390 e 1280 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default" });
   test.beforeEach(({}, info) => {
