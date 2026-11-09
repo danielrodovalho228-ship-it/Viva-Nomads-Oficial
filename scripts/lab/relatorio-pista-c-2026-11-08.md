@@ -797,3 +797,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 621 (#3625, t1569): VERDE** (42552787551), painel com id, sócios e autenticação (18ª volta), sem achado.
 - **Bloco 622 (#3626, t1570, grupo do 605 — admin; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`; #3588 (E744) segue em draft, sem execução fatiada da main para ler. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h20 (09/11) — 621 fechado, 622 rodando, 623 aberto, drafts das outras pistas
+
+- **Bloco 621 (#3625): VERDE** (42552787551), já fechado na rodada anterior.
+- **Bloco 622 (#3626, t1570):** run 42554321174 em andamento.
+- **Bloco 623 (#3627, t1571, grupo do 606 — avaliação pelos dois lados, avaliadora pública; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. **E783 (#3618, Pista A)** ainda é draft, não mesclado: o PR traz o próprio teste (`e783-avatar-foto`) e ajusta a t391 (Perfil mostra a foto no cabeçalho), então já tem guarda; a spec de lab de conta com foto só vale depois do merge. **E744 (#3588)** segue em draft (head mudou para `783d9d2b0`, 10 commits); sem execução fatiada da main para ler.
+- Sem L- aberto (próximo livre: **L-110**).
