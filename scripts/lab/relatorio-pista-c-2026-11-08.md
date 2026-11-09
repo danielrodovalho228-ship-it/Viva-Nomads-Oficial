@@ -1304,3 +1304,8 @@ main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente
 
 **121 passaram, 4 falharam (10,3 min).** t354 (18), t385 (17), t621 (13) e **t696 (9)** verdes. t329: Notificações verdes; 3 vermelhas = **L-110** (dependência da pista dona, sem `test.fail`). **t739 continuou vermelho** (`buscar-limpeza-cartao`, 1ª tentativa e retry): o `is_teste=false` (E297) não bastava. Causa raiz lida no código: **E648** — `filtrarParceiros` só lista `tipoPessoa === "pj"` (`parceiroPodeReceberServico`) e o spec criava o parceiro como `pf`/CPF. Corrigido em `b29214d75` (parceiro `pj` com `cnpjAleatorio()`); novo run do #3682 em andamento. Isto também explica a falha do t739 na noturna (E648, não o E297 sozinho).
 main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente. Bloco 666 fechado (pausa de 09/11 vigente). Próximo L livre: **L-111**.
+
+## Rodada das 12h55 UTC (09/11) — veredito final do PR #3682
+
+Run **42617052464** (commit `b29214d75`): **126 passaram, 3 falharam** (10,5 min). As 3 falhas são exclusivamente o **L-110** no t329 (inquilina › Mensagens, proprietário › Mensagens, inquilina › Meus pedidos; botão "Ver mais itens" cobrindo item da faixa a 390 px): produto, pista dona, sem `test.fail` (pausa). Todos os specs de lab do PR estão verdes: t354 (18), t385 (17), t621 (13), t696 (9), **t739 (8, inclusive `buscar-limpeza-cartao`)**, t329 Notificações. Nada de spec/lab restante vermelho.
+main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente). Próximo L livre: **L-111**.
