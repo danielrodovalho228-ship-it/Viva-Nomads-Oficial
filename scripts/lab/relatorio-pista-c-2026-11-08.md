@@ -1252,3 +1252,9 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **662** (#3676, t1650): run 42601051428 **verde** na 1ª tentativa. Lote 612–662 verde (51/51).
 - **663** (#3677, t1651, grupo 646, 20ª volta): aberto em draft, guardas 13/13, tsc limpo. Veredito pendente (ver a consulta de run abaixo).
 - main segue em `344e3a273` (nenhum merge desde então → nenhuma spec de guarda pendente); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo; próximo livre: **L-110**.
+
+## Rodada das 10h58 UTC (09/11) — 663 verde, 664 aberto
+
+- **663** (#3677, t1651): run 42603089449 **verde** na 1ª tentativa. Lote 612–663 verde (52/52).
+- **664** (#3678, t1652, grupo 647, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; veredito pendente.
+- main segue em `344e3a273`: nenhum merge novo → nenhuma spec de guarda pendente; nenhuma spec vermelha nova → nenhum `test.fail` novo. #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo; próximo livre: **L-110**.
