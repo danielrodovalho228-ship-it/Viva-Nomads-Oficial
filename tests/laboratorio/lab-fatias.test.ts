@@ -91,3 +91,16 @@ test("as fatias da varredura t48 têm teto maior que as gerais (a do admin levou
   assert.ok(varredura >= 90 * 60_000, "folga sobre os 56 min medidos");
   assert.ok(varredura < job * 60_000 - 10 * 60_000, "sobra tempo do job para preparo e para guardar o resultado");
 });
+
+test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, não faz push, cobre os 3 specs de captura", () => {
+  const w = readFileSync(".github/workflows/linhas-de-base.yml", "utf8");
+  assert.match(w, /npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots/);
+  assert.match(w, /actions\/upload-artifact@v4/);
+  assert.match(w, /node-version: "24\.22\.1"/);
+  assert.match(w, /permissions:\s*\n\s*contents: read/, "somente leitura: aprovar imagem é decisão humana, via PR");
+  assert.doesNotMatch(w, /git (commit|push)|contents: write/);
+  // mesmo ambiente do laboratório: mesmas etapas de banco, seed, build e site
+  for (const passo of ["supabase start", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
+  // os 3 specs existem com esse nome
+  for (const f of ["t245-visual-regressao", "t263-visual-41", "t271-admin-visual"]) assert.ok(readFileSync(`tests/e2e/specs/${f}.spec.ts`, "utf8").length > 0, f);
+});

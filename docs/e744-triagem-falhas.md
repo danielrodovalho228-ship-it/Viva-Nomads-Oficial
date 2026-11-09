@@ -428,3 +428,10 @@ Runs **42547901640** (16 fatias) e **42560445737** (20 fatias, com a varredura t
 - Distribuição por categoria do 1º run (inalterada em ordem de grandeza): ~134 asserção/elemento, ~55 screenshot (t245, t271, t263), ~37 varredura, ~17 timeout de 45 s. Os 3 specs visuais sozinhos respondem por 55 entradas; atualizar as linhas de base é decisão de desenho (Pista A/C), não correção do fatiamento.
 
 **Estado registrado, sem decisão** (a escolha entre zerar a lista ou fixar uma linha de base "não pode piorar" é do coordenador): o fatiamento fecha a suíte em ~61 min; o gate completo continua não verde por 206 falhas determinísticas de teste.
+
+## Maior família: capturas de tela contra imagens-base antigas (55 falhas)
+
+- t245 (38), t271 (11), t263 (6): `toHaveScreenshot` reprova por diferença de pixels/tamanho. Não é um defeito único: a interface mudou desde que as imagens foram feitas.
+- Corrigir = refazer as imagens **no ambiente do laboratório** (mesmo Chromium/fontes/banco semeado; refazer no notebook gera imagem que reprova no CI). Isso é a nova rotina `.github/workflows/linhas-de-base.yml` (`--update-snapshots`, só artefato, `contents: read`, sem commit).
+- **Aprovar as imagens é decisão de produto/QA**, não da Pista B: baixar o artefato `linhas-de-base-<run>`, olhar o diff e copiar os PNG para `tests/e2e/visual/` num PR. Depois disso as 55 falhas somem e o próximo gate fica em ~151 falhas.
+- A política (zerar a lista vs. "não piorar") continua com a coordenação.
