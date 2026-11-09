@@ -35,6 +35,7 @@ import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { horaDaBolha } from "@/lib/mensagens/hora-da-bolha";
+import { NOTA_CONTATO_MENSAGENS } from "@/config/textos-regulados";
 import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
 
 /**
@@ -261,7 +262,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
           <h2 className="font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h2>
           <p className="mt-2 max-w-md text-sm text-muted">
             A conversa começa quando você pede um imóvel ou quando alguém pede o seu. Tudo fica aqui, com o imóvel e as
-            datas no topo; telefone e e-mail só aparecem depois do aceite.
+            datas no topo; {NOTA_CONTATO_MENSAGENS}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <ButtonLink href="/buscar" variant="secondary" size="sm">
