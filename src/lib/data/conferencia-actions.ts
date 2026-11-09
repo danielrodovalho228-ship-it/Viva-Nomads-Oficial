@@ -48,9 +48,12 @@ const erro = (error: string): Resultado => ({ ok: false, error });
 
 /** Prompt 56 (D5): depois do fechamento nada muda — o banco recusa; aqui a pessoa recebe o motivo em português. */
 const ERRO_FECHADA = "Esta conferência já foi fechada: nada muda depois do fechamento. Uma correção vira uma versão nova, pela equipe.";
-async function estaFechada(admin: NonNullable<ReturnType<typeof createAdminClient>>, contratoId: string, tipo: TipoConferencia): Promise<boolean> {
-  const { data } = await admin.from("conferencias").select("fechada_em").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
-  return !!data?.fechada_em;
+const ERRO_SEM_LEITURA = "Não foi possível conferir o estado da conferência agora. Tente de novo em instantes.";
+/** Motivo para recusar a ação (já fechada, ou leitura que falhou), ou null se pode seguir. Leitura falha não vira "ainda aberta". */
+async function motivoFechada(admin: NonNullable<ReturnType<typeof createAdminClient>>, contratoId: string, tipo: TipoConferencia): Promise<string | null> {
+  const { data, error } = await admin.from("conferencias").select("fechada_em").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
+  if (error) return ERRO_SEM_LEITURA;
+  return data?.fechada_em ? ERRO_FECHADA : null;
 }
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
@@ -108,7 +111,10 @@ export async function registrarItemConferencia(input: {
   if (!(await consumirLimite(`conferencia-item:${ctx.uid}`, 200, HORA))) return erro("Muitos registros em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
-  if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
+  {
+    const fechada = await motivoFechada(admin, input.contratoId, input.tipo);
+    if (fechada) return erro(fechada);
+  }
   const { data: conf } = await admin
     .from("conferencias")
     .upsert({ contrato_id: input.contratoId, tipo: input.tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true })
@@ -165,7 +171,10 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (v.respostas.some((r) => r.foto && !r.foto.startsWith(`${ctx.uid}/`))) return erro("Foto inválida.");
   if (!(await consumirLimite(`conferencia-conforto:${ctx.uid}`, 20, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
-  if (await estaFechada(admin, input.contratoId, "entrada")) return erro(ERRO_FECHADA);
+  {
+    const fechada = await motivoFechada(admin, input.contratoId, "entrada");
+    if (fechada) return erro(fechada);
+  }
   await admin
     .from("conferencias")
     .upsert({ contrato_id: input.contratoId, tipo: "entrada", aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
@@ -211,7 +220,10 @@ export async function responderConferencia(input: {
   const ctx = await parteDoContrato(input.contratoId);
   if (!ctx) return erro("Você não faz parte deste contrato.");
   const admin = createAdminClient()!;
-  if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
+  {
+    const fechada = await motivoFechada(admin, input.contratoId, input.tipo);
+    if (fechada) return erro(fechada);
+  }
   const encerrada = janelaEncerrada(input.tipo, ctx.entrada);
   let { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
   if (!conf) {
@@ -357,13 +369,18 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   if (!(await consumirLimite(`conferencia-arquivo:${ctx.uid}`, 60, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
-  if (await estaFechada(admin, contratoId, tipo)) return erro(ERRO_FECHADA);
+  {
+    const fechada = await motivoFechada(admin, contratoId, tipo);
+    if (fechada) return erro(fechada);
+  }
   await admin
     .from("conferencias")
     .upsert({ contrato_id: contratoId, tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
-  const { data: ja } = await admin.from("conferencia_laudos").select("conferencia_id").eq("conferencia_id", conf.id).maybeSingle();
+  const { data: ja, error: erroLaudo } = await admin.from("conferencia_laudos").select("conferencia_id").eq("conferencia_id", conf.id).maybeSingle();
+  // Leitura falha não vira "sem laudo": a pessoa receberia "Não há laudo anexado para trocar" ou anexaria um segundo.
+  if (erroLaudo) return erro(ERRO_SEM_LEITURA);
   // E669: com `substituir=1` o AUTOR troca o laudo (enquanto a conferência está aberta); sem a marca, um laudo por conferência.
   const substituir = formData.get("substituir") === "1";
   if (ja && !substituir) return erro("Esta conferência já tem um laudo independente anexado.");
