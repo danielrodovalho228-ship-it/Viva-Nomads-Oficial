@@ -102,7 +102,8 @@ test.describe("T703 — E254-A: total da estadia mínima, uma fonte e a conta ab
       const lateral = p.locator("#cartao-preco");
       await expect(lateral.getByTestId("cartao-lateral-estadia")).toContainText("em 3 meses", { timeout: 20_000 });
       expect(reais(await lateral.getByTestId("cartao-lateral-estadia").innerText())).toBe(ref!.total);
-      await expect(lateral.getByTestId("cartao-lateral-estadia-conta")).toHaveText(ref!.conta);
+      // FormulaDoTotal desenha a conta em lista (uma parcela por linha, "+ " nas seguintes): as quebras de linha viram espaço.
+      expect((await lateral.getByTestId("cartao-lateral-estadia-conta").innerText()).trim().replace(/\s*\n\s*/g, " ")).toBe(ref!.conta);
       if (largura === 390) expect(reais(await p.getByTestId("barra-total-estadia").innerText())).toBe(ref!.total);
       await lateral.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t703-publica-${largura}.png` });

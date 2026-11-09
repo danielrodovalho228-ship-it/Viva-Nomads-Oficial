@@ -563,3 +563,6 @@ Rodada 42677782445 (head 93f1c0af0) em andamento desde 18:51 UTC; a próxima só
 - **t95 (decidido):** `/dashboard/assinatura` → `/precos` com `NEXT_PUBLIC_PRECOS_VISIVEL=1` (E563), senão `/dashboard`; o spec agora lê a chave.
 - **t70 (decidido: pela spec):** voltei o spec ao original (0,53 / 0,40 / margem de 24 px, destaque card↔pin). ATENÇÃO: o `lab-critico` do head 1798023cf mediu a lista a 0,528, o mapa a 0,394 e o fim do mapa a 1376 px (margem de 64 px) — valores estáveis, não de servidor frio. Se continuarem assim, o desvio é de layout (a faixa do E709 comendo a largura), não do spec: precisa do chat principal.
 - **t610/t712:** o nome do cartão é "Iara Chegada" (nome completo da massa) → `^Iara( \w+)?`; o e-mail do aditivo traz "· Saída… · Dias…" depois de "Meses: de 2 para 3" → o spec confere o prefixo sem o ponto final.
+
+- **t703/t708 (conta do cartão lateral):** não era espaço faltando no produto: o `FormulaDoTotal` (cartão lateral) desenha a conta em LISTA, uma parcela por linha com "+ " nas seguintes; os specs comparavam o texto de uma linha só da prévia. Agora normalizam as quebras de linha. Guarda `formula-total-t703-t708.test.ts`.
+- Rodada 42677782445 (head 93f1c0af0): fatias 2, 17, 18, 19 verdes; 1, 3–16 vermelhas; 20/20 (admin) em andamento às 20:00 UTC (reiniciada às 19:09); consolidação pendente.
