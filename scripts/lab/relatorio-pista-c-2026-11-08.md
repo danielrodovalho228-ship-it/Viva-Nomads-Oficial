@@ -1056,3 +1056,14 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Novos nesta leitura:** 621 (r3) e 638 (r2) **VERDES**; 641 (#3650, 42569946450) **VERDE**; 642 (#3651, 42570372431) **VERDE**.
 - **Atenção sobre a causa:** 618 e 634 falharam no mesmo passo (download do CLI, 504) em três tentativas, mesmo com a fila baixa, enquanto 621 passou na mesma janela. Se a tentativa 4 falhar, reporto ao chat principal como problema de runner/CDN (candidata a fixar o CLI em cache ou trocar o download no workflow, que é da Pista B), sem mexer no workflow.
 - **Main:** head conferido uma vez nesta leitura, `344e3a273`; nenhum merge novo, nenhuma spec de guarda a escrever. **Achados novos: nenhum** (próximo livre: **L-110**).
+
+## Fechamento do lote 612–643 — 06h28 UTC (09/11)
+
+**Placar final: 32 verdes × 0 vermelhos × 0 em rerun.**
+
+- **618 (#3621)** e **634 (#3642)** fecharam **VERDES** na tentativa 4 (42567368975 e 42567462031). A falha era o download do `supabase/setup-cli` (HTTP 504, passo anterior a qualquer teste); passou sozinha, sem nenhuma alteração de código ou workflow. Conclusão: oscilação do download do CLI, não defeito de spec nem de produto; nada a reportar à Pista B além da observação.
+- **643 (#3652, t1631): VERDE** (42572020739), públicas com parâmetro (19ª volta).
+- **Reruns gastos no lote:** 616, 618 (×3), 620, 621 (×2), 624, 628 (bloco do lote anterior), 634 (×3), 635, 638. Todos por infra.
+- **Numeração:** todas as specs de bloco do lote ficam em t1600–t1631, sem colisão com as specs E-* (t1560–t1587).
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. **Achados novos: nenhum** (próximo livre: **L-110**).
+- **Próximo bloco da fila:** 644 (grupo do 627, spec t1632), que só abro se o chat principal pedir nova volta, para não ocupar a fila de runners sem necessidade enquanto o lab está verde.
