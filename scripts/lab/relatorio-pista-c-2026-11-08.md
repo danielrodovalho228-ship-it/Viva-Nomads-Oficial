@@ -1275,3 +1275,11 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **665** (#3679, t1653): run 42605901835 `in_progress` desde 11:03 UTC. Sem veredito; o **666 (grupo 649, t1654) não abre** antes.
 - **Reprodução do t297** (morador › Candidaturas @390, classe `fixo`, falha do run 42560445737): PR de evidência **#3680** (draft, branch `claude-c/repro-e744-t297-fixo390`, commit `5417080fa`). A mudança é só um comentário de cabeçalho no spec, o que faz o lab crítico rodar o t297 inteiro (14 telas; só olho "morador — Candidaturas"). O lab crítico cria a massa da varredura (passo `massa-varredura.mjs`), então o cenário é comparável. Às 11:12 UTC o PR ainda não tinha run de `lab-critico` (mesma lacuna vista no #3674 antes). **Só vira L-110 se reproduzir**; se passar, fica como roteiro/ambiente da noturna na triagem.
 - main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente.
+
+## Rodada das 11h35 UTC (09/11) — vereditos, L-110 aberto, pausa de blocos
+
+- **665** (#3679, t1653): run 42605901835 **verde** na 1ª tentativa. Lote 612–665 verde (54/54). **Último bloco verde: 665.**
+- **Reprodução do t297** (#3680, run 42606335086): **vermelho, reproduziu** (falhou na 1ª e no retry; 62 passaram, 1 falhou). Aberto **L-110**: "Ver mais itens" cobre "Propostas" a 390 px em morador › Candidaturas. Evidência e abrangência em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Próximo livre: **L-111**.
+- **PAUSA aprovada pelo Daniel (09/11):** nenhum bloco novo de varredura (666 fica fechado). Só lab verde e triagem.
+- Triagem das 236 falhas do run 42560445737 agrupada por causa (ver o arquivo acima).
+- main segue em `344e3a273`; sem merge novo → sem spec de guarda pendente.

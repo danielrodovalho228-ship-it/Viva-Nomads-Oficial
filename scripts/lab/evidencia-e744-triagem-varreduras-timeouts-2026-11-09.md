@@ -32,3 +32,44 @@ Leitura: os timeouts concentram-se em **busca/filtros** (t66, t71, t78: 6) e em 
 3. Ajustar os 3 specs de testid (t621, t696) e reexecutar o t739 isolado.
 4. `test.setTimeout` nos specs de busca e nos fluxos longos.
 5. Decisão que NÃO é minha (Daniel/coordenação): zerar a lista antes de exigir `suite-completa` na `main` ou travar linha de base ("não pode piorar").
+
+---
+
+# Atualização das 11h35 UTC — reprodução do t297 e as 236 falhas agrupadas por causa
+
+## L-110 — "Ver mais itens" cobre o item "Propostas" a 390 px (reproduzido no lab crítico)
+
+- **Reprodução:** PR de evidência #3680 (draft), run **42606335086**, spec `t297-varredura-logada-bloco3` › "morador — Candidaturas: as seis classes, rolando a página inteira". Falhou **na 1ª tentativa e no retry** (determinístico). Os outros 13 testes da mesma spec passaram (62 passaram, 1 falhou; 4,5 min), inclusive "morador — Avisos" e "morador — Conta · segurança" com a mesma conta e a 390 px.
+- **O que o lab mediu** (classe `fixo` @390, `/dashboard/candidaturas`, conta inquilina da massa da varredura):
+  - `topo: "Propostas" coberto por button "Ver mais itens"`
+  - `fim: "Propostas" coberto por button "Ver mais itens"`
+- **Leitura:** um botão fixo "Ver mais itens" fica por cima do item "Propostas" tanto no topo quanto no fim da rolagem. A causa exata (barra de abas, menu do app) não foi lida no código: é das pistas A/B.
+- **Artefato (screenshot + contexto):** `lab-critico-42606335086`, id 13669021325.
+- **Abrangência provável (sem prova ainda):** no run completo 42560445737, **26 dos 27** erros do padrão `fixo @390` têm o formato `topo: "<item>" coberto por button …` (o banco guarda só os primeiros 300 caracteres do erro, então o nome do botão não aparece nos outros 25) e **1** (t622) é `coberto por a …`. As 16 specs afetadas são de telas logadas de morador/proprietário/inquilina (t297, t298, t302, t329, t336, t388, t416, t418, t553, t559, t588, t589, t591, t599, t607, t622). Não confirmei que o botão é o mesmo nos 26; o próximo passo é reexecutar duas delas no lab (uma de proprietário, uma de inquilina) lendo o texto completo.
+- **Por que passa em "Avisos"/"Conta · segurança":** não sei. Hipótese para as pistas donas: depende de a página ter o item "Propostas" na faixa que o botão cobre. Não confirmado.
+- **Dono:** pista A (tela) / B (casca de navegação). Pista C não corrige produto. Nenhum `test.fail` foi posto nas 16 specs (pausa: só lab verde); isso fica como decisão de quem fecha o item.
+- **Estado do PR #3680:** o lab crítico dele fica vermelho de propósito (é a evidência). Draft, não é para mesclar.
+
+## As 236 falhas do run 42560445737, por causa (192 pelo padrão do erro + 44 de varredura/rota)
+
+| # | Causa | Entradas | Specs | Dono provável |
+|---|---|---|---|---|
+| 1 | Screenshot (`toHaveScreenshot`) — linha de base difere do render | 55 | 3 (t245, t271, t263) | A/C: separar regressão real de linha de base velha; atualizar imagens só após decisão de desenho |
+| 2 | `fixo @390` — botão cobre item (L-110) | 27 | 16 | A/B (L-110) |
+| 3 | Timeout de 45 s (e t48 a 30 min) | 17 | 12 | C: esperas/`setTimeout`; t48 por grupo |
+| 4 | Varredura: rota de Notificações a 1280 caiu fora da tela | 5 | 3 | C: confirmar a rota atual e atualizar os specs |
+| 5 | Varredura: outras (clique sem resposta, 2 testids de checklist E218, `conferencia-tipo`, cartão de parceiro) | 5 | 4 | C: ajuste de roteiro/massa |
+| 6 | Asserção/elemento | 133 | 117 | ver abaixo |
+
+**Grupos de causa visíveis na causa 6 (pelo texto do erro, não verificados no código):**
+- `aditivo-resumo` com "Meses: de X para Y" diferente — 4 specs (t256, t595, t631, t712): texto do resumo do aditivo mudou.
+- `passo-titulo` do assistente — t288, t292 ("Quanto custa por mês?"), t534 ("Detalhes do imóvel"): ordem/título dos passos mudou.
+- botão "Enviar" ambíguo (strict mode, 2 elementos) — t379, t41, t43.
+- `admin-decisoes` não aparece/valor diferente — t229, t231, t273, t465.
+- links da `nav.vn-tabbar` não achados — t14 (3), t46; `menu-cascata`/`aside` — t95, t81, t4.
+- `papel-ativo` (rosto/img) — t355, t361, t391.
+- radiogroup "Tipo do imóvel" com contagem diferente — t704, t706, t710.
+- inserção com erro `23514 "Dê uma nota de 1 a 5 para cada um dos três critérios"` — t304, t486: o spec grava avaliação sem os três critérios (massa/spec, não produto).
+- o resto são 1 por spec (testids de telas específicas), sem causa comum aparente.
+
+**Para as pistas donas:** a lista acima é só classificação; nada foi corrigido em produto. A decisão de zerar a lista ou travar linha de base continua sendo do Daniel/coordenação.
