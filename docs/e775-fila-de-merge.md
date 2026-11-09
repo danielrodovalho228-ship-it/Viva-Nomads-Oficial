@@ -9,7 +9,7 @@ O CI de um PR testa o PR contra a main **do momento em que foi aberto/atualizado
 ## O gate próprio (este PR)
 1. **Script `scripts/gate/pode-mesclar.mjs <PR> [--com-suite]`** (só lê a API; nunca mescla). "PODE" só se: PR aberto, fora do rascunho, base `main`; a branch **contém a ponta atual da main** (`behind_by = 0`); e cada check exigido tem conclusão `success` **no head** (vale o mais recente de cada nome). Lógica pura e testada: `tests/laboratorio/gate-pode-mesclar.test.ts` (4).
 2. **Workflow `gate-pode-mesclar.yml`** (`workflow_dispatch`, entrada: número do PR e se exige a suíte): roda o script com o `GITHUB_TOKEN` somente-leitura e escreve o veredito no resumo. É o que a rotina de merge chama antes de cada merge.
-3. **Lista de checks exigidos em `scripts/gate/exigidos.json`:** hoje `verify` e `lab-critico`. `suite-completa` (o consolidar da suíte de 16 fatias, E744) entra com `--com-suite` **quando a suíte estiver verde na main** — antes disso ela está vermelha (falhas reais de teste ainda a triar, ver `docs/e744-suite-fatiada.md`) e exigi-la travaria todos os merges.
+3. **Lista de checks exigidos em `scripts/gate/exigidos.json`:** hoje `verify` e `lab-critico`. `suite-completa` (o consolidar da suíte fatiada do E744: 16 fatias gerais + 4 dos specs pesados = 20 jobs) entra com `--com-suite` **quando a suíte estiver verde na main** — antes disso ela está vermelha (falhas reais de teste ainda a triar, ver `docs/e744-suite-fatiada.md`) e exigi-la travaria todos os merges.
 
 ## Procedimento da rotina de merge (um PR por vez)
 1. Rodar o gate no PR. Se "atrás da main": atualizar a branch com a main (merge, sem reescrever histórico) e **esperar o CI do novo head**.
@@ -23,3 +23,11 @@ O CI de um PR testa o PR contra a main **do momento em que foi aberto/atualizado
 ## Limites conhecidos
 - Sem um token que dispare workflows, a atualização automática de branch por Action não reroda o CI (push do `GITHUB_TOKEN` não dispara workflows); por isso a atualização da branch é feita pela rotina de merge, com as credenciais dela.
 - O gate vê o estado de agora; entre o gate e o clique de merge a main pode andar. A proteção "up to date" do GitHub fecha essa janela.
+
+## Pendências de ação de admin na proteção da `main` (registro objetivo, 09/11/2026)
+O agente não tem permissão de proteção de branch nem de ruleset. Em Settings → Branches → regra para `main`, um admin precisa:
+1. Exigir PR antes de mesclar.
+2. Marcar como checks obrigatórios `verify` e `lab-critico`.
+3. Marcar **"Require branches to be up to date before merging"** (fecha a janela entre o gate e o clique de merge).
+4. **Depois** que a suíte completa estiver verde na `main` (E744: hoje 13 fatias têm falhas reais de teste a triar): disparar o laboratório uma vez por `workflow_dispatch` para o check `suite-completa` existir, acrescentá-lo aos obrigatórios e passar a chamar o gate com `--com-suite`.
+Nada aqui depende de fila nativa (indisponível em conta pessoal).
