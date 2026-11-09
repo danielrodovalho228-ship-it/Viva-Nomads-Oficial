@@ -111,7 +111,6 @@ export default function ForLandlordsPage() {
                 Pedir ajuda para publicar
               </ButtonLink>
             </div>
-            <BrandImage src="/images/unicas/prop-passo-anuncie.webp" alt="Proprietário fotografando a sala para o anúncio" rounded="rounded-none" sizes="(max-width: 640px) 100vw, 320px" className="aspect-[16/10] w-full sm:w-80" />
           </div>
 
           <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
