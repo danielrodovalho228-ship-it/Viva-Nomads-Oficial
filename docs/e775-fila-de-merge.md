@@ -31,3 +31,9 @@ O agente não tem permissão de proteção de branch nem de ruleset. Em Settings
 3. Marcar **"Require branches to be up to date before merging"** (fecha a janela entre o gate e o clique de merge).
 4. **Depois** que a suíte completa estiver verde na `main` (E744: hoje 13 fatias têm falhas reais de teste a triar): disparar o laboratório uma vez por `workflow_dispatch` para o check `suite-completa` existir, acrescentá-lo aos obrigatórios e passar a chamar o gate com `--com-suite`.
 Nada aqui depende de fila nativa (indisponível em conta pessoal).
+
+## Estado em 09/11 (foto da API, uma conferência)
+- #3597: `verify`, `lab-critico` e `e2e` verdes na cabeça atual → **pronto para QA**. Base = branch do E744 (#3588).
+- #3588 (E744): a rotina nova `linhas-de-base` falhou uma vez por 504 ao baixar o Supabase CLI (infra); job reiniciado.
+- Main em `344e3a2`, ainda vermelha pelos testes do E727/E728 (corrigido em #3598, pronto e limpo, aguardando merge).
+- Não é código (decisão/admin): merge do #3598, #3579, #3588; as 4 configurações de proteção da main; política do E744 (zerar a lista × "não piorar").
