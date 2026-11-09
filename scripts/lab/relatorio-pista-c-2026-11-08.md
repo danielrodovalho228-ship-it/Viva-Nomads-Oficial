@@ -1417,3 +1417,10 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
    - **#3684:** é o meu próprio PR de guarda do E719 (ver item 2); nada a guardar.
    Guardas de numeração 13/13 e tsc limpo nas duas; **ainda não rodaram**. Pushes da main desses merges sem leitura nesta rodada.
 4. PRs de guarda em draft: #3685–#3691 (t1589–t1595) verdes; #3692 (t1596) e #3693 (t1597) em primeira execução. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
+
+## Rodada das 17h55 UTC (09/11) — t1596 verde; t1597 em curso; #3685 mesclado por outrem
+
+- **t1596 (E770–E772, PR #3692):** run 42665913414 **verde** (esteve na fila de 17:34 até iniciar; terminou 17:52).
+- **t1597 (E732, PR #3693):** run 42665924787 **em andamento** desde 17:34 UTC.
+- **Main** (head `05506b984`): o PR de guarda **#3685 (t1589, E724) foi mesclado por outra pessoa/pista** (depois do #3684/t1588). Nenhum merge de produto novo desde o #3586/#3530 → nenhuma spec a criar.
+- PRs de guarda em draft: #3686–#3692 (t1590–t1596) verdes; #3693 (t1597) em curso. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
