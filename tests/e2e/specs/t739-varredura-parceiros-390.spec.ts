@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T739 — varredura visual das páginas públicas de parceiros a 390 px (Muse, 30/10): em cada página, nenhum estouro
@@ -68,12 +68,13 @@ test.describe("T739 — varredura das páginas de parceiros a 390 px", () => {
     ids.conta = await criarConta(conta, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lia Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Lia Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;
     ids.parceiro = data.id as string;
-    // E297: a busca pública NÃO mostra parceiro de teste a visitante (profiles.is_teste da dona → parceiros_publicos.teste).
+    // E648: a busca pública só lista parceiro que recebe serviço (pj/CNPJ); o spec nascia com CPF (pf) e o cartão nunca
+    // aparecia. E297: a busca pública NÃO mostra parceiro de teste a visitante (profiles.is_teste da dona → parceiros_publicos.teste).
     // A conta @lab.vivanomads.test nasce de teste; esta varredura quer ver o cartão como o de um parceiro de verdade.
     await adm().from("profiles").update({ is_teste: false }).eq("id", ids.conta);
   });
