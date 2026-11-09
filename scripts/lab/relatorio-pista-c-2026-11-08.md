@@ -724,3 +724,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 611 (#3607, t1559):** run 42542253080 em andamento.
 - **Bloco 612 (#3608, t1560, grupo do 595):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 01h10 (09/11) — blocos 611, 612 e 613
+
+- **Bloco 611 (#3607, t1559): VERDE** (42542253080), compartilhadas sem id, sem achado.
+- **Bloco 612 (#3608, t1560): VERDE** (42543032913), morador nas compartilhadas, sem achado.
+- **Bloco 613 (#3609, t1561, grupo do 596 — proposta e visita pelos dois lados):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada). Sem L- aberto (próximo livre: **L-110**).
+- Lote 608–612 fechado verde: #3604, #3605, #3606, #3607, #3608.
