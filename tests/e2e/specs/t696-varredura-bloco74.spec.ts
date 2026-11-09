@@ -34,8 +34,8 @@ const ids: Record<string, string> = {};
 const EMAIL_DONO = `dono.t696.${sufixo}@lab.vivanomads.test`;
 const BASE = { street: "Rua Santos Dumont", numero: "100", neighborhood: "Centro", city: "Uberlândia", uf: "MG", cep: "38400-000", minPeriod: "30", maxPeriod: "180", monthlyPrice: "3200", bathrooms: "1", areaM2: "40", bedrooms: "1", etapaMax: 9 };
 
-// E271: as declarações saíram da lista de conferência (conferencia-tipo) e ficam nas seções de "Antes de publicar"
-// (declaracoes-passo10); a marca do Passo 10 acompanha.
+// E271: as declarações saíram da lista de conferência (conferencia-tipo). No Passo 10 a marca é a própria lista de
+// conferência (lista-conferencia): o lab mostrou que declaracoes-passo10 não está no Passo 10 (é do bloco do Passo 3).
 const cadastro = (etapa: string) => () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=${etapa}`;
 const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Passo 1, os cartões de tipo com foto (#1587)", rota: cadastro("tipo") },
@@ -43,7 +43,7 @@ const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Passo 2, a contagem das fotos (#1586)", rota: cadastro("fotos"), marca: "fotos-contagem" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 5, sem o tipo de acesso (#1583)", rota: cadastro("comodidades"), marca: "privacidade-campos" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 6, como se entra no imóvel (#1583)", rota: cadastro("regras"), marca: "chegada-e-pedido" },
-  { conta: "DONO", papel: "proprietário", nome: "Passo 10, Declarações do imóvel em \"Antes de publicar\" (#1587, E271)", rota: cadastro("revisao"), marca: "declaracoes-passo10" },
+  { conta: "DONO", papel: "proprietário", nome: "Passo 10, a conferência sem a linha das declarações (#1587, E271)", rota: cadastro("revisao"), marca: "lista-conferencia" },
   { conta: "DONO", papel: "proprietário", nome: "Editor do anúncio, com a seção Regras da casa (#1583)", rota: () => `/dashboard/imoveis/${ids.anuncio}/editar`, marca: "secao-regras" },
   { conta: "VISITANTE", papel: "visitante", nome: "Anúncio público, destaques e privacidade (#1588)", rota: () => `/imoveis/${ids.anuncio}`, marca: "destaques-imovel" },
   { conta: "DONO", papel: "proprietário", nome: "Anúncio público visto pelo dono (#1588)", rota: () => `/imoveis/${ids.anuncio}`, marca: "destaques-imovel" },

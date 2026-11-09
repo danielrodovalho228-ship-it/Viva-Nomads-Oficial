@@ -73,6 +73,9 @@ test.describe("T739 — varredura das páginas de parceiros a 390 px", () => {
       .single();
     if (error) throw error;
     ids.parceiro = data.id as string;
+    // E297: a busca pública NÃO mostra parceiro de teste a visitante (profiles.is_teste da dona → parceiros_publicos.teste).
+    // A conta @lab.vivanomads.test nasce de teste; esta varredura quer ver o cartão como o de um parceiro de verdade.
+    await adm().from("profiles").update({ is_teste: false }).eq("id", ids.conta);
   });
   test.afterAll(async () => {
     if (ids.parceiro) await adm().from("parceiros").delete().eq("id", ids.parceiro);
