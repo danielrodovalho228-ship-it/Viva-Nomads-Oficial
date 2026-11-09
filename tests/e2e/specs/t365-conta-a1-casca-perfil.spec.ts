@@ -20,7 +20,8 @@ const AREIA = "rgb(247, 247, 247)";
 // NAV-A (24/10): "Como você usa a Viva" (papeis) logo depois do Perfil.
 // E176 (parte 2): "Segurança e verificações" ganhou item próprio; "Notificações" é a página única do sino.
 const ORDEM = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"];
-const hrefSecao = (s: string) => (s === "notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta/${s}`);
+// E176: Notificações e Avaliações moram fora de /dashboard/conta/* (página única do sino; Avaliações do menu por papel).
+const hrefSecao = (s: string) => (s === "notificacoes" ? "/dashboard/notificacoes" : s === "avaliacoes" ? "/dashboard/avaliacoes" : `/dashboard/conta/${s}`);
 
 test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");

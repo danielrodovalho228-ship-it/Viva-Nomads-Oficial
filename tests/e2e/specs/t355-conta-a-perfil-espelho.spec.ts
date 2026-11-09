@@ -66,7 +66,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await expect(topo.locator('[data-rosto="silhueta"]')).toHaveCount(1);
       await expect(topo).not.toContainText("?");
       // O selo do cabeçalho também mostra a silhueta (não o "P"/"M" do papel, nem "?").
-      await expect(p.locator('[data-testid="papel-ativo"]:visible [data-rosto="silhueta"]')).toHaveCount(1);
+      // E176/E783: o chip papel-ativo saiu do painel; o selo do cabeçalho é o botão da Conta (conta-<px>).
+      await expect(p.locator('[data-testid^="conta-"] [data-rosto="silhueta"]').first()).toBeAttached();
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t355-sem-nome-${w}.png` });
       await p.context().close();

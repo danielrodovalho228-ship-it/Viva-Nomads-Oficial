@@ -585,3 +585,12 @@ Saíram: t277 (3), t610, t708, t910, t916, t59, t391, t410, t334, t21. Entraram:
 Causa: o Passo 1 mostra TRÊS tipos à vista (Casa, Apartamento, Quarto — `TIPOS_A_VISTA`, E607) e "Ver mais tipos" (`tipos-ver-mais`) abre a grade dos nove; os specs contavam nove fotos sem abrir. Agora abrem antes (só se `aria-expanded` não for "true", porque um tipo escondido já marcado abre a grade sozinho). Guarda `tipos-ver-mais.test.ts` (4). t710 segue aberto (outro erro: foto "Tela de notebook…" e `tipo-loft`).
 ## Família "papel-ativo / avatar" (t355, t361, t391, t318, t370, t365, t280, t886, t644, t81, t489) — ABERTA, causa lida
 O chip `papel-ativo` (foto + papel) só existe hoje no topo das telas SEM `TopoPainel` (equipe); morador/dono/parceiro têm a foto no botão da Conta (`MenuConta`, `data-testid="conta-<px>"`/`conta-<px>-celular`). Os specs que procuram `papel-ativo:visible img` / `[data-rosto]` no cabeçalho precisam apontar para o botão da Conta; falta ver o DOM renderizado para escolher o seletor sem errar.
+
+## RODADA 42706121873 — CONSOLIDADO (head a1645efc0, 22:50 UTC): 4064 passaram · 167 falharam · 12 instáveis · 274 pularam (179 linhas; antes 183)
+Saíram da lista: t132, t262, t290, t691, t703, t704, t706, t840 (famílias E777/E607 confirmadas em run completa). Entraram (1 cada): t1426, t367, t410, t692, t776; t719 1→2.
+### Corrigido nesta leva (spec desatualizado; guardas em `tests/laboratorio/conta-menu-e176.test.ts`)
+- **t489:** "Planos" só aparece no menu público com a chave de preços ligada (E563); o spec lê `NEXT_PUBLIC_PRECOS_VISIVEL`.
+- **t365 e t280:** Avaliações e Notificações moram fora de `/dashboard/conta/*` (`/dashboard/avaliacoes`, `/dashboard/notificacoes`).
+- **t355 e t361:** o chip `papel-ativo` (foto + papel) só existe no topo da equipe; no painel o selo do cabeçalho é o botão da Conta (`conta-<px>`). t361 também deixou de exigir "iniciais no cabeçalho do Perfil" (o E783 desfez o E55).
+### Papel-ativo/avatar ainda abertos
+t318 (papel ativo "proprietario" × "morador"), t370 (`papel-morar-toggle` desabilitado), t886 (sino no `topo-parceiro`), t644 (`conta-menu-lateral` ausente), t81 (menu "Administração"), t442 (texto "Fotos de perfil em revisão" ausente).

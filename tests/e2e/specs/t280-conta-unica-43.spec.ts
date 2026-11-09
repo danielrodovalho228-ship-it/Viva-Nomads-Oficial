@@ -15,6 +15,9 @@ import {
 } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 
+// E176 (parte 2): "Notificações" é a página única do sino (/dashboard/notificacoes), não /dashboard/conta/notificacoes.
+const hrefConta = (s: string) => (s === "notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta/${s}`);
+
 /*
   T280 — Prompt 43 (perfil, calendários, fluxos, conta única, onboarding e Anunciar em 6 passos), a 390 e 1280 px:
   1. Conta com os 3 papéis: "Seus papéis" com os 3 ativos, Conta em 4 grupos, nenhum seletor de modo; a barra do
@@ -104,7 +107,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
         const grupoConta = page.locator('[data-testid="conta-grupo"][data-grupo="Conta"]');
         await expect(grupoConta).toBeVisible({ timeout: 25_000 });
-        for (const s of ["notificacoes", "privacidade", "pagamentos"]) await expect(grupoConta.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
+        for (const s of ["notificacoes", "privacidade", "pagamentos"]) await expect(grupoConta.locator(`a[href="${hrefConta(s)}"]`)).toHaveCount(1);
         // A barra segue o contexto da tela, sem troca manual nem segundo login.
         await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
         await expect(async () => expect(await abas(page)).toContain("Agenda")).toPass({ timeout: 25_000 });
@@ -118,7 +121,7 @@ test.describe("T280 — conta única e fluxos do Prompt 43", () => {
         // A1: no computador a Conta é uma casca com o menu lateral das oito telas; Pagamentos tem a sua tela.
         await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
         const menu = page.getByTestId("conta-menu-lateral");
-        for (const s of ["perfil", "papeis", "dados", "privacidade", "notificacoes", "pagamentos"]) await expect(menu.locator(`a[href="/dashboard/conta/${s}"]`)).toHaveCount(1);
+        for (const s of ["perfil", "papeis", "dados", "privacidade", "notificacoes", "pagamentos"]) await expect(menu.locator(`a[href="${hrefConta(s)}"]`)).toHaveCount(1);
         await page.goto("/dashboard/conta/pagamentos", { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("conta-pagamentos")).toContainText("A Viva não recebe esse valor", { timeout: 25_000 });
       }
