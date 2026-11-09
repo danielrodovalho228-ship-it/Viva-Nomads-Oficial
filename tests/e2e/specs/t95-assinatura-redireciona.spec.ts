@@ -9,9 +9,10 @@ import { authFile } from "../fixtures/auth";
 test.describe("T95 — Assinatura aposentada @criticos", () => {
   test.use({ storageState: authFile("proprietario"), viewport: { width: 390, height: 844 } });
 
-  test("/dashboard/assinatura leva a /precos, sem plano pago à venda", async ({ page }) => {
+  test("/dashboard/assinatura sai de /dashboard/assinatura (para /precos ou /dashboard conforme a chave), sem plano pago à venda", async ({ page }) => {
     await page.goto("/dashboard/assinatura", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/precos$/);
+    // next.config.ts: /precos só com NEXT_PUBLIC_PRECOS_VISIVEL=1; sem a chave (lab e produção hoje) o destino é /dashboard.
+    await expect(page).toHaveURL(/\/(precos|dashboard)$/);
     await expect(page.getByRole("button", { name: /Assinar (Essencial|Profissional)/i })).toHaveCount(0);
     await expect(page.getByText("Visualizar como plano (demonstração)")).toHaveCount(0);
   });

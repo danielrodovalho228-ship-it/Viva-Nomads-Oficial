@@ -466,3 +466,10 @@ t14/t46 (aba "Estadias" da barra: nome acessível vem de `descricao`), t95, t277
 ### t51 (cont.) — 09/11
 As duas varreduras de largura (360 e 1280) também estouravam os 45 s (quatro telas com `networkidle`); o `lab-critico` de a6f2852b9 ficou vermelho por isso, já que roda o spec inteiro. Agora `test.setTimeout(120_000)` nelas.
 Abertos com causa lida no consolidado: t14/t46 (nome acessível da aba vem de `descricao`, não de `label`), t95 (`/dashboard/assinatura` leva a `/dashboard`, não a `/precos`: `precosVisivel` desligado), t277 (cartão mostra "R$ 3.960/mês", spec espera "em 1 mês"; margem 80 px × 32 px).
+
+## Bloco t51 / t95 / t14·t46 / t277 — 09/11 (tarde)
+Lido no log do `lab-critico` de 62a53ffc9 (123 passaram, 3 falharam, todas no t51):
+- **t51 (corrigido):** `/admin/fotografos` hoje redireciona para a aba "Fotógrafos" de Parceiros (ADMIN-2); a tela própria com h1 "Fotógrafos parceiros" não existe mais, então saiu da lista de telas. O teste "visão geral" saiu: sua premissa ("Áreas do admin" na inicial) foi removida pelo E176 e a cobertura dos itens do menu é do `menu-admin.test`. Guarda: `tests/laboratorio/t51-areas-admin-e176.test.ts`.
+- **t95 (1 de 3 corrigido):** `/dashboard/assinatura` vai a `/precos` só com `NEXT_PUBLIC_PRECOS_VISIVEL=1`; sem a chave vai a `/dashboard` (next.config.ts). O spec aceita os dois. Guarda: `tests/laboratorio/t95-destino-assinatura.test.ts`. Os dois testes do menu do dono (390 e 1280 px: `aside` com `menu-cascata` não aparece) seguem abertos: precisam do spec rodando para ver a estrutura atual do menu.
+- **t277 — DECISÃO DO CHAT PRINCIPAL:** o cartão mostra "R$ 3.960/mês" e o spec espera "R$ 3.960 em 1 mês"; a margem de tela é 80 px no computador onde o spec espera 32 px. Falta decidir qual texto/medida vale (o produto atual ou o spec). Não mexi.
+- **t14/t46 (aberto):** a aba "Estadias" não é achada pelo nome; pode ser "Minha estadia" (morador com contrato, `nav-mobile.ts`) e a barra aparece no admin a 390 px (esperado 0). Sem o spec rodando não dá para separar spec desatualizado de defeito.

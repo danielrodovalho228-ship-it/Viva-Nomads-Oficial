@@ -8,7 +8,7 @@ import { authFile } from "../fixtures/auth";
  */
 const TELAS = [
   { url: "/admin/parceiros", titulo: "Parceiros" },
-  { url: "/admin/fotografos", titulo: "Fotógrafos parceiros" },
+  // /admin/fotografos agora redireciona para a aba "Fotógrafos" de Parceiros (ADMIN-2, menu-admin.ts): a tela própria não existe mais.
   { url: "/admin/socios", titulo: "Caixa dos Sócios" },
   { url: "/admin/documentos", titulo: "Documentos em conferência" },
 ];
@@ -30,14 +30,7 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
     });
   }
 
-  test("visão geral alcança as áreas novas pelo menu do admin", async ({ page }) => {
-    // E176: a inicial do admin não repete "Áreas do admin" (estilo-admin.test); os atalhos moram no menu lateral.
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/admin", { waitUntil: "networkidle" });
-    for (const href of ["/admin/socios", "/admin/parceiros", "/admin/agentes"]) {
-      await expect(page.locator(`a[href="${href}"]`).first(), href).toBeAttached();
-    }
-  });
+  // E176: a inicial do admin não repete "Áreas do admin" (estilo-admin.test); os atalhos moram no menu (menu-admin.test cobre os itens).
 
   test("Caixa dos Sócios: envia texto e aparece na conversa como Recebido", async ({ page }) => {
     await page.goto("/admin/socios", { waitUntil: "networkidle" });
