@@ -59,6 +59,7 @@ import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
+import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { mesesDoCartao } from "@/lib/cartao-preco";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -324,7 +325,11 @@ export function PropertyDetail({
   const [datasInvalidas, setDatasInvalidas] = useState({ entrada: false, saida: false });
   // E562 (telas): o total da estadia em DIAS exatos (estadiaDoImovelEmDias) — a mesma regra da proposta; nada de meses
   // arredondados (43 dias = "1 mês + 13 dias", não 2 meses).
-  const diasSelecao = diasDaSelecao(selecao);
+  const diasEscolhidos = diasDaSelecao(selecao);
+  // E725: abaixo da estadia mínima a estadia é inválida: não se precifica (nem total no cartão, nem na barra, nem no resumo);
+  // fica só o aviso "Estadia mínima de N dias".
+  const abaixoDoMinimo = abaixoDaEstadiaMinima(diasEscolhidos, property.minPeriodDays);
+  const diasSelecao = abaixoDoMinimo ? null : diasEscolhidos;
   const estadiaSelecao = diasSelecao ? estadiaDoImovelEmDias(property, diasSelecao) : null;
   const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, ...parcelasDoResumo(calcularTotalMensal(property)), estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida, janela: { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, maxDias: property.maxPeriodDays } });
   // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
@@ -1049,7 +1054,7 @@ export function PropertyDetail({
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
         <aside>
-          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} disponivelDesde={disponivelDesde} />
+          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} estadiaMinimaAviso={abaixoDoMinimo ? estadiaMinimaDias(property.minPeriodDays) : null} disponivelDesde={disponivelDesde} />
         </aside>
       </div>
 

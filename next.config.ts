@@ -48,6 +48,10 @@ const nextConfig: NextConfig = {
       // E766: /admin/backup e /admin/backups davam 404; o cartão completo do backup mora em Sistema.
       { source: "/admin/backup", destination: "/admin/sistema#backup", permanent: false },
       { source: "/admin/backups", destination: "/admin/sistema#backup", permanent: false },
+      // E760: /dashboard/meus-imoveis (nome antigo da lista de anúncios) dava 404; a lista de hoje é /dashboard/imoveis.
+      // Sem 308: o redirect permanente ficaria no cache do navegador.
+      { source: "/dashboard/meus-imoveis", destination: "/dashboard/imoveis", permanent: false },
+      { source: "/dashboard/meus-imoveis/:path*", destination: "/dashboard/imoveis/:path*", permanent: false },
       // www → ápice, MENOS /.well-known/*: Android (assetlinks) e Apple (AASA) não aceitam redirect nesse arquivo,
       // então os dois hosts servem /.well-known direto (200). O redirect mora aqui, não no domínio da Vercel,
       // porque o redirect de domínio da Vercel não tem exceção por caminho.

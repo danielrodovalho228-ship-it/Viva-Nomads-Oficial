@@ -3,7 +3,7 @@
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import Link from "next/link";
-import { blocosBolso, blocosBolsoPeriodo, calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
+import { AVISO_VALORES_BRUTOS, blocosBolso, blocosBolsoPeriodo, calcularBolso, NOTA_BOLSO } from "@/lib/cobranca/bolso";
 import { contaDoPeriodo, type CamposTotalMes } from "@/lib/precos";
 import { formatBRL, cn } from "@/lib/utils";
 import { SUPORTE_EMAIL } from "@/lib/site";
@@ -43,6 +43,9 @@ export function SimuladorBolso(p: {
       <h2 id="bolso-titulo" className="font-title text-xl font-semibold text-ink sm:text-2xl">
         O que vai para o seu bolso
       </h2>
+      <p className="mt-1 text-sm text-muted" data-testid="bolso-aviso-brutos">
+        {AVISO_VALORES_BRUTOS}
+      </p>
       <div className={cn("mt-4 grid gap-3", conta !== undefined ? "grid-cols-1 sm:grid-cols-2" : doCadastro ? "grid-cols-2" : "sm:grid-cols-3")}>
         {!doCadastro && (
           <label className="text-sm font-medium text-ink">
