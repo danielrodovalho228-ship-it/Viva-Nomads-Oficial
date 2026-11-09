@@ -64,6 +64,7 @@ export function respostasDoExemplo(p: Property): Respostas {
   if (cozinhaEquipada) r.cozinha = tem(l, /^micro-?ondas$/) ? "micro" : "fogao";
   if (tem(l, /roupa de cama e banho/) || pronto) r.roupa = "todos";
   if (tem(l, /^máquina de lavar$/)) r.lavanderia = "imovel";
+  else if (tem(l, /^lavanderia (compartilhada|coletiva|no prédio)/)) r.lavanderia = "predio"; // E754: "No prédio ou condomínio, com uso incluído"
   if (pronto) {
     r.agua = true;
     r.luz = true;

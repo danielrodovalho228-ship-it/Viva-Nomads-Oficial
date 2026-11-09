@@ -5,6 +5,7 @@
   de gravar com o cliente de serviço; mudanças de estado conferem o estado atual na própria gravação (dois cliques não
   passam os dois). Nenhum dinheiro passa pela Viva: a taxa do aditivo é registro para o fluxo de cobrança que já existe.
 */
+import { datasDaEstadia } from "@/lib/contrato-blocos";
 import { after } from "next/server";
 import { recusaObservador } from "@/lib/qa/observador";
 import { headers } from "next/headers";
@@ -122,11 +123,11 @@ function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent,
 
 /** E267: o imóvel e o período como o e-mail mostram (o "bairro" é o campo público `address`, nunca o endereço exato). */
 function dadosDaEstadia(c: LinhaContratoEstadia): Pick<DadosEstadiaEmail, "imovel" | "entrada" | "saida"> {
-  const b = blocosOrdenados(c).filter((x) => x.status !== "nao_aceito");
+  const datas = datasDaEstadia(blocosOrdenados(c));
   return {
     imovel: { id: (c as { property_id?: string | null }).property_id ?? null, titulo: c.properties?.title, bairro: c.properties?.address, cidade: c.properties?.city },
-    entrada: b.map((x) => x.inicio).sort()[0] ?? null,
-    saida: b.map((x) => x.fim).sort().at(-1) ?? null,
+    entrada: datas?.entrada ?? null,
+    saida: datas?.fim ?? null,
   };
 }
 

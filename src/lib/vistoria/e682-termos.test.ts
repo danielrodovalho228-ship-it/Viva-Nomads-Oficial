@@ -22,15 +22,12 @@ test("termos inválidos são recusados com a causa", () => {
   assert.equal(validarTermos({ valor: 300, prazoEntregaDias: 5, prazoRespostaHoras: 73 }).ok, false);
 });
 
-test("a linha da lista mostra valor, entrega, resposta e a conduta publicada; sem termos, 'ele informa ao responder'", () => {
-  const com = linhaDeTermos({ valor: 350, prazoEntregaDias: 5, prazoRespostaHoras: 12, notaConduta: 4.5, avaliacoesConduta: 7 });
-  assert.match(com, /R\$\s?350/);
-  assert.match(com, /entrega em 5 dias/);
-  assert.match(com, /responde em até 12 h/);
-  assert.match(com, /conduta 4,5 · 7 avaliações feitas/);
-  const sem = linhaDeTermos({ valor: null, prazoEntregaDias: null, prazoRespostaHoras: null, notaConduta: null, avaliacoesConduta: 0 });
-  assert.match(sem, /valor e prazo: ele informa ao responder/);
-  assert.match(sem, /sem avaliações de conduta ainda/);
+test("a linha da lista mostra só a conduta publicada: nem preço nem prazo (E682)", () => {
+  const com = linhaDeTermos({ notaConduta: 4.5, avaliacoesConduta: 7 });
+  assert.equal(com, "conduta 4,5 · 7 avaliações feitas");
+  assert.doesNotMatch(com, /R\$|entrega|dias|\bh\b/);
+  const sem = linhaDeTermos({ notaConduta: null, avaliacoesConduta: 0 });
+  assert.equal(sem, "sem avaliações de conduta ainda");
 });
 
 test("o prazo para o avaliador responder é o que ELE declarou (padrão 24 h); recusa ou silêncio devolvem ao dono, sem rodízio", () => {

@@ -11,6 +11,24 @@ export function mascararData(entrada: string): string {
   return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join("/");
 }
 
+/**
+ * E747: data digitada tecla a tecla em ISO ("2026-11-15") virava "20/26/1115": a máscara dd/mm/aaaa tirava o "-" e agrupava os 8
+ * dígitos como dia/mês/ano. Agora, se a entrada tem "-" depois de 4 dígitos (o ano vem primeiro), o texto segue em ISO enquanto
+ * a pessoa digita ("2026-", "2026-11", "2026-11-1") e, com os 8 dígitos, vira dd/mm/aaaa (ou fica como está, sem embaralhar,
+ * se a data não existir). Sem "-", a máscara dd/mm/aaaa de sempre.
+ */
+export function mascararDataDigitada(entrada: string): string {
+  const d = entrada.replace(/\D/g, "").slice(0, 8);
+  const iso = entrada.includes("-") && d.length >= 4 && /^(19|20|21|22)\d\d$/.test(d.slice(0, 4));
+  if (!iso) return mascararData(entrada);
+  if (d.length === 8) {
+    const valida = interpretarDataColada(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`);
+    if (valida) return isoParaBr(valida);
+  }
+  const [a, m, di] = [d.slice(0, 4), d.slice(4, 6), d.slice(6, 8)];
+  return [a, m, di].filter(Boolean).join("-") + (d.length === 4 || d.length === 6 ? "-" : "");
+}
+
 function isoValida(a: number, m: number, d: number): string | null {
   if (a < 1900 || a > 2200) return null;
   const dt = new Date(Date.UTC(a, m - 1, d));

@@ -315,6 +315,10 @@ export const config = {
     "/qualificar",
     "/pedidos",
     "/pedidos/:path*",
+    // E727: /parceiros lê a sessão no servidor (o "Continuar" do formulário de parceria). Sem passar pelo proxy, o token
+    // vencido não era renovado ali e a pessoa logada era tratada como visitante (mandada a /auth, com novo código).
+    "/parceiros",
+    "/parceiros/:path*",
     "/admin",
     "/admin/:path*",
     // Páginas internas (deck dos sócios) — gate admin OU cookie de sócio.

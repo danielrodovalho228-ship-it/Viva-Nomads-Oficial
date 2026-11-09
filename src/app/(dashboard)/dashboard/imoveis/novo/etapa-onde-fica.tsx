@@ -79,7 +79,7 @@ export function EtapaOndeFica(p: {
   const [buscaAberta, setBuscaAberta] = useState(false);
   const digitosCep = p.cep.replace(/\D/g, "").length;
   const r = p.cepResultado;
-  const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade";
+  const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade" || r?.tipo === "faixa";
   const avisoPrivacidade = (
     <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted" data-testid="endereco-privacidade">
       <MapPin className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
@@ -134,7 +134,7 @@ export function EtapaOndeFica(p: {
               ) : (
                 mensagemCep(r)
               )}
-              {r.tipo === "cidade" && (
+              {(r.tipo === "cidade" || r.tipo === "faixa") && (
                 <>
                   {" · "}
                   <button type="button" className="font-semibold underline" onClick={() => setBuscaAberta(true)} data-testid="cep-buscar-endereco">
@@ -371,6 +371,7 @@ export function AntesDePublicar(p: {
     faltaOperacao: p.faltaOperacao,
     rotuloOperacao: OPERACOES.find((o) => o.valor === p.ownershipType)?.rotulo ?? "",
     identidade: estadoIdentidade,
+    identidadeTexto: identidade?.identidade.texto ?? null,
     documento: p.docEstado,
     linhaDocumentoInicio: p.linhaDocumentoInicio,
     declaracoes: p.declaracoes,

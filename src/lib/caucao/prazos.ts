@@ -10,9 +10,12 @@
   Datas em AAAA-MM-DD (calendário de Brasília); "corridos" = calendário, sem pular fim de semana.
 */
 
+import { PRAZO_REEMBOLSO_DIAS, addDiasCorridos, tetoExternoDevolucao } from "../caucao.ts";
+
 export const PRAZO_PARECER_DIAS = 7;
 export const PRAZO_CONTESTACAO_DIAS = 5;
-export const PRAZO_DEVOLUCAO_DIAS = 30;
+/** E707: os 30 dias são o TETO EXTERNO contado do check-out confirmado — o mesmo marco de lib/caucao.ts. */
+export const PRAZO_DEVOLUCAO_DIAS = PRAZO_REEMBOLSO_DIAS;
 
 export const TEXTO_VIVA_NAO_DECIDE =
   "A Viva não decide a disputa. Ela entrega o dossiê em PDF (fotos de entrada e saída lado a lado, valores e comprovantes) e oferece as saídas: acordo entre as partes, vistoriador parceiro ou Juizado Especial.";
@@ -24,14 +27,10 @@ export const SAIDAS_DA_DISPUTA = [
 ] as const;
 
 /** Soma `n` dias corridos a uma data AAAA-MM-DD (UTC, sem fuso: a conta é de calendário). */
-export function addDias(iso: string, n: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d.toISOString().slice(0, 10);
-}
+export const addDias = addDiasCorridos;
 
 export function prazosDaSaida(saida: string): { parecerAte: string; devolucaoAte: string } {
-  return { parecerAte: addDias(saida, PRAZO_PARECER_DIAS), devolucaoAte: addDias(saida, PRAZO_DEVOLUCAO_DIAS) };
+  return { parecerAte: addDias(saida, PRAZO_PARECER_DIAS), devolucaoAte: tetoExternoDevolucao(saida) };
 }
 
 /** O que PODE virar desconto. Desgaste natural não está na lista, de propósito: nunca desconta. */
@@ -69,6 +68,8 @@ export interface FatosPrazo {
   /** Quando a devolução foi feita e confirmada, se foi. */
   devolvidaEm: string | null;
   hoje: string;
+  /** E707: valor da caução, para calcular a parte indiscutível (sem ele, nada é calculado). */
+  caucao?: number;
 }
 
 export type ChavePrazo = "aguardando_parecer" | "liberacao_integral" | "em_contestacao" | "desconto_valendo" | "em_disputa" | "devolvida";
@@ -85,8 +86,22 @@ export interface EstadoPrazos {
   avisarOsDois: boolean;
   /** Passou do dia 30 sem devolução: pendência no painel do dono e bloqueio de novos anúncios. */
   pendenciaDevolucao: boolean;
+  /** E707 (a): teto externo (30 dias do check-out confirmado). Igual a `devolverAte`. */
+  tetoExterno: string;
+  /** E707 (a): liberação integral (silêncio no 7º dia ou parecer sem desconto) = devolução devida de imediato. */
+  devolucaoDevida: boolean;
+  /** Desde quando a devolução é devida (AAAA-MM-DD), se já é. */
+  devidaDesde: string | null;
+  /** E707 (c): ao fim da janela de contestação, a parte que ninguém discute é liberada mesmo com disputa no resto. */
+  liberarParteIndiscutivel: { valor: number; desde: string } | null;
   /** Sempre falso: a Viva nunca decide a disputa. */
   vivaDecide: false;
+}
+
+/** E707 (c) — o que sobra da caução depois de tudo o que o dono pleiteia (aceito, proposto ou contestado). Nunca negativo. */
+export function parteIndiscutivel<T extends { valor: number }>(caucao: number, descontos: readonly T[]): number {
+  const pleiteado = descontos.reduce((s, d) => s + Math.max(0, Number(d.valor) || 0), 0);
+  return Math.max(0, Math.round((caucao - pleiteado) * 100) / 100);
 }
 
 export function estadoDosPrazos(f: FatosPrazo): EstadoPrazos {
@@ -94,21 +109,26 @@ export function estadoDosPrazos(f: FatosPrazo): EstadoPrazos {
   const comDesconto = f.descontos.length > 0;
   const contestarAte = f.parecerEm && comDesconto ? addDias(f.parecerEm, PRAZO_CONTESTACAO_DIAS) : null;
   const atrasada = f.hoje > devolucaoAte && !f.devolvidaEm;
-  const base = { parecerAte, contestarAte, devolverAte: devolucaoAte, vivaDecide: false as const };
+  const base = { parecerAte, contestarAte, devolverAte: devolucaoAte, tetoExterno: devolucaoAte, vivaDecide: false as const };
   const de = (chave: ChavePrazo, extra: Partial<EstadoPrazos> = {}): EstadoPrazos => ({
-    ...base, chave, motivo: null, avisarOsDois: false, pendenciaDevolucao: false, ...extra,
+    ...base, chave, motivo: null, avisarOsDois: false, pendenciaDevolucao: false, devolucaoDevida: false, devidaDesde: null, liberarParteIndiscutivel: null, ...extra,
   });
 
   if (f.devolvidaEm) return de("devolvida");
   // Pendência só em quem deve devolver: liberação integral ou desconto valendo (com disputa a Viva não cobra devolução).
   if (!f.parecerEm) {
     if (f.hoje <= parecerAte) return de("aguardando_parecer");
-    return de("liberacao_integral", { motivo: "silencio", avisarOsDois: true, pendenciaDevolucao: atrasada });
+    return de("liberacao_integral", { motivo: "silencio", avisarOsDois: true, pendenciaDevolucao: atrasada, devolucaoDevida: true, devidaDesde: addDias(parecerAte, 1) });
   }
-  if (!comDesconto) return de("liberacao_integral", { motivo: "parecer_sem_desconto", avisarOsDois: true, pendenciaDevolucao: atrasada });
-  if (f.descontos.some((d) => d.status === "contestado")) return de("em_disputa");
-  if (contestarAte && f.hoje <= contestarAte) return de("em_contestacao");
-  return de("desconto_valendo", { pendenciaDevolucao: atrasada });
+  if (!comDesconto) return de("liberacao_integral", { motivo: "parecer_sem_desconto", avisarOsDois: true, pendenciaDevolucao: atrasada, devolucaoDevida: true, devidaDesde: f.parecerEm });
+  // E707 (c): a janela de contestação termina no dia 5 OU antes, quando o morador já respondeu a TODOS os itens (aceitou ou contestou).
+  const fimDaJanela = contestarAte ? addDias(contestarAte, 1) : null;
+  const todosResponderam = f.descontos.every((d) => d.status !== "proposto");
+  const janelaEncerrada = (!!fimDaJanela && f.hoje >= fimDaJanela) || todosResponderam;
+  const libera = f.caucao != null && janelaEncerrada ? { valor: parteIndiscutivel(f.caucao, f.descontos), desde: !!fimDaJanela && f.hoje >= fimDaJanela ? fimDaJanela : f.hoje } : null;
+  if (f.descontos.some((d) => d.status === "contestado")) return de("em_disputa", { liberarParteIndiscutivel: libera });
+  if (contestarAte && f.hoje <= contestarAte) return de("em_contestacao", { liberarParteIndiscutivel: libera });
+  return de("desconto_valendo", { pendenciaDevolucao: atrasada, liberarParteIndiscutivel: libera });
 }
 
 /** Qualquer contrato do dono em pendência de devolução trava a publicação de anúncio novo, até regularizar. */

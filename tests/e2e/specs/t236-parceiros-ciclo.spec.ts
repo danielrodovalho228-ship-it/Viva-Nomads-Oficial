@@ -403,7 +403,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
   });
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px: busca vazia — avise-me, "Indique um profissional" e o cartão do parceiro geral (ligado pelo admin)`, async ({ browser, page }) => {
+    test(`${largura}px: busca vazia — avise-me e "Indique um profissional"; o cartão do parceiro geral fica fora do site (E688), mesmo ligado pelo admin`, async ({ browser, page }) => {
       semDialogo(page);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       const url = "/parceiros/buscar?categoria=lavanderia&cidade=Itapagipe&uf=MG";
@@ -428,8 +428,9 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
         await a.context().close();
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("parceiro-geral")).toContainText("AquiResolve");
-      await expect(page.getByTestId("parceiro-geral").locator("img")).toHaveCount(0); // sem logo de terceiros
+      // E688 (Daniel, 08/11): o cartão (AquiResolve) não é prometido enquanto o parceiro não estiver cadastrado.
+      await expect(page.getByTestId("parceiro-geral")).toHaveCount(0);
+      await expect(page.getByText("AquiResolve")).toHaveCount(0);
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t236-busca-vazia-${largura}.png`, fullPage: false });
     });

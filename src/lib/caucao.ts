@@ -36,8 +36,18 @@ export const MAX_PARCELAS = 12;
 export const PERC_MOVEIS = 0.1;
 /** …sem ultrapassar 30% do total da estadia. */
 export const TETO_ESTADIA = 0.3;
-/** Prazo legal de devolução após a entrega das chaves. */
+/** Prazo legal de devolução após a entrega das chaves. E707: é só o TETO EXTERNO; a devolução é devida de imediato quando há liberação integral. */
 export const PRAZO_REEMBOLSO_DIAS = 30;
+
+/** Soma `n` dias corridos a uma data AAAA-MM-DD (calendário, sem fuso). */
+export function addDiasCorridos(iso: string, n: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** E707 — teto externo da devolução: 30 dias corridos do check-out confirmado. Marco único (prazos.ts e caucao.ts). */
+export const tetoExternoDevolucao = (checkoutConfirmado: string): string => addDiasCorridos(checkoutConfirmado, PRAZO_REEMBOLSO_DIAS);
 
 /**
  * Caução sugerida para imóvel mobiliado: ~10% do valor dos móveis, com TETO de
@@ -88,4 +98,14 @@ export function totalDescontos(descontos: DescontoReembolso[]): number {
  */
 export function calcularReembolso(caucao: number, descontos: DescontoReembolso[]): number {
   return Math.max(0, caucao - totalDescontos(descontos));
+}
+
+/**
+ * E707 — prazo limite que o simulador de reembolso mostra. Com a trava dos prazos da caução DESLIGADA, é o de sempre (30 dias a
+ * partir de hoje). Ligada, é o teto externo contado do check-out confirmado (marco único) — e sem check-out válido, nenhum prazo.
+ */
+export function prazoLimiteDoReembolso(e: { prazosAtivos: boolean; hoje: string; checkout: string }): string | null {
+  if (!e.prazosAtivos) return addDiasCorridos(e.hoje, PRAZO_REEMBOLSO_DIAS);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.checkout) || Number.isNaN(Date.parse(`${e.checkout}T00:00:00Z`))) return null;
+  return tetoExternoDevolucao(e.checkout);
 }
