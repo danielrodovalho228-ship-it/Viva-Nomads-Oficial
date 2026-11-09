@@ -1097,3 +1097,10 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 646 (#3656, t1634, grupo do 629 — morador nas compartilhadas; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar:** lote 612–645 verde (34/34); 646 em primeira rodada.
 - **Main:** head `344e3a273`, sem merge novo; #3598 (conserto do `verify` da main) segue aberto e não mesclado. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h12 UTC (09/11) — bloco 646 verde, 647 aberto
+
+- **Bloco 646 (#3656, t1634): VERDE** (42576154780), morador nas compartilhadas (19ª volta), sem achado.
+- **Bloco 647 (#3657, t1635, grupo do 630 — proposta e visita; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–646 verde (35/35); 647 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
