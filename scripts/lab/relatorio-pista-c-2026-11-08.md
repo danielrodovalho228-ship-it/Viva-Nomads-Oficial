@@ -752,3 +752,12 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 615 (#3615, t1563):** run 42546347427 ainda em andamento.
 - **Bloco 616 (#3616, t1564, grupo do 599 — início, busca, imóvel, ajuda, painel do proprietário):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab disparado pelo push.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**). Vereditos finais entram na rodada seguinte.
+
+## Vereditos 614–616 e abertura do 617 (09/11, 01h50)
+
+- **Bloco 614 (#3614, t1562): VERDE** (42546251047), conferir/sistema/pedidos do morador, sem achado.
+- **Bloco 615 (#3615, t1563): VERDE** (42546347427), solicitações/estadia/desempenho/cartão/contrato, sem achado.
+- **Bloco 616 (#3616, t1564): VERDE** (42546593733), início/busca/imóvel/ajuda/painel do proprietário, sem achado.
+- **Bloco 617 (#3619, t1565, grupo do 600 — serviços e visitas, admin, parceiros):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+- Lote 613–616 fechado verde: #3609, #3614, #3615, #3616.
