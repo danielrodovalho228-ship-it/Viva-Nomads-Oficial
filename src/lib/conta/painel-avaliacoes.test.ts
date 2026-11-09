@@ -90,3 +90,15 @@ test("E679: o painel tem as três abas do mockup, o aviso de sigilo, 'Recebidas 
   assert.match(t, /TEXTO_SIGILO/);
   assert.doesNotMatch(t, /anfitri|inquilin|h[oó]spede/i);
 });
+
+// E782 (adendo): "Uberlandia" (digitado sem acento no perfil) aparece "Uberlândia" nos dois cartões e no chip da tela de papéis.
+import { linhaQueroMorar, resumoQueroMorar, textoQueroAnunciar } from "./tela-papeis.ts";
+import { grafiaDaCidade } from "../cidades.ts";
+test("E782 adendo: a cidade sem acento sai com a grafia oficial nos três textos dos papéis", () => {
+  assert.equal(grafiaDaCidade("Uberlandia"), "Uberlândia");
+  assert.equal(grafiaDaCidade("  uberlandia "), "Uberlândia");
+  assert.equal(grafiaDaCidade("Araguari"), "Araguari");
+  assert.equal(linhaQueroMorar("Uberlandia"), "Procurando imóvel de 1 a 6 meses em Uberlândia");
+  assert.equal(resumoQueroMorar("Uberlandia"), "Uberlândia · 1–6 meses · Mobiliado");
+  assert.match(textoQueroAnunciar("Uberlandia"), /em Uberlândia\.$/);
+});

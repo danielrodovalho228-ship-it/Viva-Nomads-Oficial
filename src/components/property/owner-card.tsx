@@ -1,5 +1,6 @@
 "use client";
 
+import { grafiaDaCidade } from "@/lib/cidades";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -166,7 +167,7 @@ export function OwnerCard({
           </p>
           {d.cidade && (
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-muted">
-              <MapPin className="h-4 w-4" aria-hidden /> {d.cidade}
+              <MapPin className="h-4 w-4" aria-hidden /> {grafiaDaCidade(d.cidade)}
             </p>
           )}
           {d.reputacao && (
