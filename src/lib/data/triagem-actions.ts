@@ -21,6 +21,9 @@ import {
   type LinhaVinculo,
 } from "@/lib/triagem/vinculo";
 
+/** Leitura que falha não vira "nenhum comprovante", "não encontrado" nem "já foi decidido" (frente de erros e estados vazios, E293). */
+const MSG_TRIAGEM_SEM_LEITURA = "Não foi possível conferir o comprovante agora. Tente de novo em instantes.";
+
 /*
   Prompt 52 — triagem do morador (vínculo). Tudo atrás da chave TRIAGEM_VINCULO_ATIVA: desligada, cada ação devolve nada.
   O morador vê o próprio estado e abre o próprio arquivo; a equipe (admin com 2FA) confere e decide. O dono NUNCA abre o
@@ -79,7 +82,8 @@ export async function linkMeuVinculo(): Promise<{ ok: boolean; url?: string; err
   if (!(await triagemVinculoAtiva())) return { ok: false, error: "Indisponível." };
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para abrir." };
-  const { data } = await s.admin.from("triagem_vinculos").select("path").eq("user_id", s.userId).order("enviado_em", { ascending: false }).limit(1).maybeSingle();
+  const { data, error: erroLeitura } = await s.admin.from("triagem_vinculos").select("path").eq("user_id", s.userId).order("enviado_em", { ascending: false }).limit(1).maybeSingle();
+  if (erroLeitura) return { ok: false, error: MSG_TRIAGEM_SEM_LEITURA };
   if (!data?.path) return { ok: false, error: "Nenhum comprovante enviado." };
   const { data: u } = await s.admin.storage.from(BUCKET_TRIAGEM).createSignedUrl(data.path as string, LINK_TTL);
   return u?.signedUrl ? { ok: true, url: u.signedUrl } : { ok: false, error: "Não foi possível abrir agora." };
@@ -143,7 +147,8 @@ export async function linkVinculoAdmin(id: string): Promise<{ ok: boolean; url?:
   if (!(await triagemVinculoAtiva())) return { ok: false, error: "Indisponível." };
   const s = await sessao();
   if (!s || !(await ehAdmin(s.supabase, s.userId)) || !UUID.test(String(id))) return { ok: false, error: "Sem permissão." };
-  const { data } = await s.admin.from("triagem_vinculos").select("path").eq("id", id).maybeSingle();
+  const { data, error: erroLeitura } = await s.admin.from("triagem_vinculos").select("path").eq("id", id).maybeSingle();
+  if (erroLeitura) return { ok: false, error: MSG_TRIAGEM_SEM_LEITURA };
   if (!data?.path) return { ok: false, error: "Não encontrado." };
   const { data: u } = await s.admin.storage.from(BUCKET_TRIAGEM).createSignedUrl(data.path as string, LINK_TTL);
   return u?.signedUrl ? { ok: true, url: u.signedUrl } : { ok: false, error: "Não foi possível abrir agora." };
@@ -164,7 +169,9 @@ export async function decidirVinculo(id: string, decisao: "aprovar" | "recusar",
     mudanca = { status: "recusado", motivo: textoDaRecusa(motivo, complemento), decidido_por: s.userId, decidido_em: agora.toISOString(), valido_ate: null };
   }
   const { data, error } = await s.admin.from("triagem_vinculos").update(mudanca).eq("id", id).eq("status", "pendente").select("user_id");
-  if (error || !data?.length) return { ok: false, error: "Este envio já foi decidido ou foi trocado pelo morador." };
+  // Erro do banco não é "já decidido": a equipe tentaria de novo em vez de achar que outra pessoa decidiu.
+  if (error) return { ok: false, error: MSG_TRIAGEM_SEM_LEITURA };
+  if (!data?.length) return { ok: false, error: "Este envio já foi decidido ou foi trocado pelo morador." };
   await logModeracao(s.supabase, s.userId, decisao === "aprovar" ? "aprovar_vinculo" : "recusar_vinculo", "triagem_vinculo", id);
   revalidatePath("/admin/documentos");
   revalidatePath("/dashboard/candidaturas");
