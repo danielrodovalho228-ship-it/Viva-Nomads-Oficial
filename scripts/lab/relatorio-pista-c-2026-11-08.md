@@ -1299,3 +1299,8 @@ PR de manutenção **#3682** (draft, branch `claude-c/lab-e744-ajustes`, commit 
 
 Run 42610031395 (commit `a10853ef9`): **119 passaram, 5 falharam, 1 instável**. t354, t385 e t621 verdes; t329 só vermelho no L-110; t696 e t739 corrigidos no mesmo PR (`f79741af8`, novo run em andamento). L-110 ganhou o nome do botão ("Ver mais itens", 4 telas, 2 contas). Detalhe: `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`.
 main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente. Próximo L livre: **L-111**.
+
+## Rodada das 12h30 UTC (09/11) — run 42613148153 (PR #3682, commit `f79741af8`)
+
+**121 passaram, 4 falharam (10,3 min).** t354 (18), t385 (17), t621 (13) e **t696 (9)** verdes. t329: Notificações verdes; 3 vermelhas = **L-110** (dependência da pista dona, sem `test.fail`). **t739 continuou vermelho** (`buscar-limpeza-cartao`, 1ª tentativa e retry): o `is_teste=false` (E297) não bastava. Causa raiz lida no código: **E648** — `filtrarParceiros` só lista `tipoPessoa === "pj"` (`parceiroPodeReceberServico`) e o spec criava o parceiro como `pf`/CPF. Corrigido em `b29214d75` (parceiro `pj` com `cnpjAleatorio()`); novo run do #3682 em andamento. Isto também explica a falha do t739 na noturna (E648, não o E297 sozinho).
+main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente. Bloco 666 fechado (pausa de 09/11 vigente). Próximo L livre: **L-111**.
