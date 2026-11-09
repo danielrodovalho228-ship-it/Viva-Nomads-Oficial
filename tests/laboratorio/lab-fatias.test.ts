@@ -15,9 +15,9 @@ test("a matriz cobre as fatias 1..N e o --shard usa o mesmo N", () => {
   const matriz = /fatia:\s*\[([^\]]+)\]/.exec(yml)?.[1]?.split(",").map((x) => Number(x.trim())) ?? [];
   const n = Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]);
   assert.ok(n >= 8, `fatias = ${n}`);
-  // 16 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 17..20 do case do workflow).
-  const pesadas = ["17", "18", "19", "20"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
-  assert.equal(pesadas, 4);
+  // 16 gerais + 5 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 17..21 do case do workflow).
+  const pesadas = ["17", "18", "19", "20", "21"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
+  assert.equal(pesadas, 5);
   assert.deepEqual(matriz, Array.from({ length: n + pesadas }, (_, i) => i + 1));
   assert.match(yml, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/\d+\)/);
   assert.match(yml, /--esperadas \d+/);
@@ -76,7 +76,7 @@ test("a varredura t48 (cadeia serial de ~100 min) sai das fatias gerais e roda e
   assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/16/);
   assert.match(yml, /npx playwright test t48-varredura --grep "\$GREP"/);
   assert.match(yml, /if \[ "\$F" -le 16 \]/);
-  // Os 4 grupos cobrem os 6 testes do t48 sem sobrepor: visitante (3) + uma fatia por persona logada (3).
+  // Os 5 grupos cobrem os 9 testes do t48 sem sobrepor: visitante (3) + uma fatia por persona logada (3).
   const spec = readFileSync("tests/e2e/specs/t48-varredura.spec.ts", "utf8");
   assert.match(spec, /mode: "serial"/, "a razão da separação: a cadeia é serial");
   for (const g of ["inquilino: todas as telas logadas", "proprietário: todas as telas logadas", "admin: todas as telas logadas"]) assert.ok(yml.includes(g), g);
@@ -103,4 +103,21 @@ test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, 
   for (const passo of ["supabase start", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
   // os 3 specs existem com esse nome
   for (const f of ["t245-visual-regressao", "t263-visual-41", "t271-admin-visual"]) assert.ok(readFileSync(`tests/e2e/specs/${f}.spec.ts`, "utf8").length > 0, f);
+});
+
+test("o admin da varredura t48 roda uma largura por fatia (20 = 390 px, 21 = 1280 px): cada grep acha exatamente um teste", () => {
+  const spec = readFileSync("tests/e2e/specs/t48-varredura.spec.ts", "utf8");
+  assert.match(spec, /for \(const largura of \[390, 1280\] as const\)/);
+  const titulos = ["inquilino", "proprietário", "admin"].flatMap((n) => [390, 1280].map((l) => `${n}: todas as telas logadas (${l} px)`));
+  const grepDe = (k: string) => {
+    const m = new RegExp(`\\n\\s+${k}\\) GREP="([^"]+)"`).exec(yml);
+    assert.ok(m, `grep da fatia ${k}`);
+    return new RegExp(m[1].replace(/\\\\/g, "\\"));
+  };
+  assert.deepEqual(titulos.filter((t) => grepDe("20").test(t)), ["admin: todas as telas logadas (390 px)"]);
+  assert.deepEqual(titulos.filter((t) => grepDe("21").test(t)), ["admin: todas as telas logadas (1280 px)"]);
+  // inquilino e proprietário seguem uma fatia cada, com as duas larguras em série.
+  assert.equal(titulos.filter((t) => grepDe("18").test(t)).length, 2);
+  assert.equal(titulos.filter((t) => grepDe("19").test(t)).length, 2);
+  assert.match(yml, /--esperadas 21/);
 });
