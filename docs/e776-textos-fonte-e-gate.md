@@ -16,3 +16,12 @@ O fluxo de **parceiros** (serviços): a liberação do contato do parceiro depoi
 
 ## Dependência
 Este PR parte do #3579 (E752), que já tirou "poupança" de `CAUCAO_FRASE`, do guia da Caução e do resumo do atendimento. Depois do merge do #3579, trocar a base para `main`.
+
+## Inventário das superfícies (feito enquanto o #3579 não mescla)
+| Superfície | Varrida pelo gate? | Achados |
+|---|---|---|
+| `src/` (fora testes e `FORA_DO_GATE`) | sim, desde o início | 0 |
+| `supabase/` (seeds, SQL, templates), `public/`, `scripts/` | **sim, a partir deste commit** | 0 |
+| `tests/`, `docs/` | não, de propósito (guardam as formulações ruins como exemplo e descrevem as regras) | só os próprios exemplos |
+| fluxo de parceiros | fora, justificado em `FORA_DO_GATE` | — |
+Resultado: nenhuma frase proibida viva fora de `src/`. O gate agora cobre também essas raízes.

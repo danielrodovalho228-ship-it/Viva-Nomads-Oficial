@@ -64,3 +64,24 @@ test("E776: a frase que nega a troca de contato (E764) passa; o interior de come
   assert.equal(achadosProibidos("o telefone só aparece depois do aceite").length, 1, "a formulação proibida continua barrada");
   assert.deepEqual(semComentarios("/*\n  dizia telefone só depois do aceite\n*/\nconst a = 1;"), ["", "", "", "const a = 1;"]);
 });
+
+test("GATE (fora de src/): e-mails, seeds, scripts e arquivos públicos também não usam formulação proibida", () => {
+  // Inventário E776: supabase/ (seeds, templates de e-mail), public/ e scripts/ estavam sem varredura. tests/ e docs/ ficam de fora
+  // de propósito: guardam as formulações ruins como exemplo de teste e descrevem as próprias regras.
+  const achados: string[] = [];
+  const varrer = (dir: string) => {
+    if (!existsSync(dir)) return;
+    for (const n of readdirSync(dir)) {
+      if (n === "node_modules" || n === ".next" || n === "saida") continue;
+      const p = join(dir, n);
+      const s = statSync(p);
+      if (s.isDirectory()) { varrer(p); continue; }
+      if (!/\.(ts|tsx|mjs|js|sql|json|md|html|txt)$/.test(n) || s.size > 2_000_000) continue;
+      const bruto = readFileSync(p, "utf8");
+      const texto = /\.(ts|tsx|mjs|js)$/.test(n) ? semComentarios(bruto).join("\n") : bruto;
+      for (const a of achadosProibidos(texto)) achados.push(`${p.split("\\").join("/")} [${a.id}] ${a.trecho}`);
+    }
+  };
+  for (const raiz of ["supabase", "public", "scripts"]) varrer(raiz);
+  assert.deepEqual(achados, []);
+});
