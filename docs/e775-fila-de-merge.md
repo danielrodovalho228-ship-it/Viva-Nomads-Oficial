@@ -1,47 +1,25 @@
-# E775 — fila de merge do GitHub (merge só com o gate completo verde)
+# E775 — gate de merge: o CI testa a COMBINAÇÃO e só mescla com o gate completo verde
 
-O repositório é PÚBLICO (`private=false`): fila de merge disponível sem organização e minutos de runner padrão gratuitos.
+## Correção de premissa (09/11/2026)
+A versão anterior deste documento dizia que a fila de merge nativa do GitHub funcionava em repositório público sem organização. **Está errado:** a fila só existe em repositório de **organização**; este é de conta pessoal. O ruleset com `merge_queue` não pode ser criado. O caminho adotado é a **fila própria / gate aprovado**, abaixo. Os gatilhos `merge_group:` e o nome estável `suite-completa` ficam nos workflows (inofensivos; valem se o repositório um dia for para uma organização).
 
-## O que o código já faz (este PR)
-- `merge_group:` nos três workflows que formam o gate: `ci.yml` (**verify**), `lab-critico.yml` (**lab-critico**) e `laboratorio.yml` (a suíte completa em **16 fatias**; o job `consolidar` se chama **`suite-completa`**).
-- Na fila, o GitHub cria um commit temporário (`gh-readonly-queue/main/...`) com a main + os PRs enfileirados, roda esses checks nele e só então funde. Falhou, o PR sai da fila; passou, entra na `main`.
+## O problema que a fila resolvia
+O CI de um PR testa o PR contra a main **do momento em que foi aberto/atualizado**. Dois PRs verdes podem quebrar a main juntos (conflito semântico): foi o que aconteceu com o #3505 (E727/E728) × E731/E651, que deixou a main vermelha. A regra é: **quem pousa na main já foi testado COM a ponta atual da main dentro.**
 
-## O que falta fazer nas CONFIGURAÇÕES do repositório (precisa de admin: o agente não tem essa permissão)
-Settings → Rules → Rulesets → New branch ruleset, alvo `main`:
-```json
-{
-  "name": "main: fila de merge e gate completo",
-  "target": "branch",
-  "enforcement": "active",
-  "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
-  "rules": [
-    { "type": "merge_queue", "parameters": {
-        "merge_method": "SQUASH",
-        "grouping_strategy": "ALLGREEN",
-        "min_entries_to_merge": 1,
-        "max_entries_to_merge": 5,
-        "min_entries_to_merge_wait_minutes": 5,
-        "max_entries_to_build": 5,
-        "check_response_timeout_minutes": 90 } },
-    { "type": "required_status_checks", "parameters": {
-        "strict_required_status_checks_policy": false,
-        "required_status_checks": [
-          { "context": "verify" },
-          { "context": "lab-critico" },
-          { "context": "suite-completa" } ] } }
-  ]
-}
-```
-- **`merge_method`**: o repositório hoje usa "Merge pull request" nos commits da `main`; se a preferência for manter, trocar `SQUASH` por `MERGE`.
-- **Não** colocar `e2e` (roda em `deployment_status` da Vercel, que não existe para o commit da fila) como check obrigatório da fila.
-- A suíte completa leva ~40 min por rodada: com `max_entries_to_merge: 5` até 5 PRs entram juntos numa só rodada (`ALLGREEN`: se um falha, o grupo é refeito sem ele).
+## O gate próprio (este PR)
+1. **Script `scripts/gate/pode-mesclar.mjs <PR> [--com-suite]`** (só lê a API; nunca mescla). "PODE" só se: PR aberto, fora do rascunho, base `main`; a branch **contém a ponta atual da main** (`behind_by = 0`); e cada check exigido tem conclusão `success` **no head** (vale o mais recente de cada nome). Lógica pura e testada: `tests/laboratorio/gate-pode-mesclar.test.ts` (4).
+2. **Workflow `gate-pode-mesclar.yml`** (`workflow_dispatch`, entrada: número do PR e se exige a suíte): roda o script com o `GITHUB_TOKEN` somente-leitura e escreve o veredito no resumo. É o que a rotina de merge chama antes de cada merge.
+3. **Lista de checks exigidos em `scripts/gate/exigidos.json`:** hoje `verify` e `lab-critico`. `suite-completa` (o consolidar da suíte de 16 fatias, E744) entra com `--com-suite` **quando a suíte estiver verde na main** — antes disso ela está vermelha (falhas reais de teste ainda a triar, ver `docs/e744-suite-fatiada.md`) e exigi-la travaria todos os merges.
 
-## Ordem de ativação
-1. Mesclar este PR (e o do E744, que traz o `merge_group` e o nome `suite-completa`).
-2. Rodar o laboratório uma vez por `workflow_dispatch` para o check `suite-completa` existir (o GitHub só deixa escolher checks que já reportaram).
-3. Criar o ruleset acima; testar com um PR de documentação.
+## Procedimento da rotina de merge (um PR por vez)
+1. Rodar o gate no PR. Se "atrás da main": atualizar a branch com a main (merge, sem reescrever histórico) e **esperar o CI do novo head**.
+2. Rodar o gate de novo. Só com "PODE": mesclar.
+3. Depois de cada merge, os demais PRs ficam "atrás da main" e voltam ao passo 1. Isso serializa os merges — é o preço de não ter a fila nativa, e é o que evita a combinação não testada.
 
-## Pendências que dependem de admin do repositório (estado em 09/11/2026)
-1. **Criar o ruleset** da `main` com `merge_queue` e os checks obrigatórios `verify`, `lab-critico` e `suite-completa` (JSON acima). O agente não tem permissão de ruleset nem `gh` autenticado.
-2. **Ordem:** mesclar o E744 (#3588) e este PR; disparar o laboratório uma vez (`workflow_dispatch`) para o check `suite-completa` existir; só então criar o ruleset.
-3. **Cuidado:** com o gate completo, a fila só passa quando as 16 fatias ficam verdes. A primeira execução fatiada mostrou falhas reais de teste escondidas (ver `docs/e744-suite-fatiada.md`); **triar essas falhas antes de exigir `suite-completa`**, ou a fila trava. Enquanto isso, o ruleset pode exigir só `verify` e `lab-critico`.
+## O que depende de admin do repositório (o agente não tem essa permissão)
+- **Proteção da `main`** (Settings → Branches → regra para `main`): exigir PR, exigir os checks `verify` e `lab-critico` e marcar **"Require branches to be up to date before merging"**. Isso faz o próprio GitHub bloquear o botão de merge de branch desatualizada, o mesmo que o gate faz por script.
+- Depois que a suíte completa estiver verde na `main`: acrescentar `suite-completa` aos checks obrigatórios (rodar uma vez o laboratório por `workflow_dispatch` para o nome existir) e passar a chamar o gate com `--com-suite`.
+
+## Limites conhecidos
+- Sem um token que dispare workflows, a atualização automática de branch por Action não reroda o CI (push do `GITHUB_TOKEN` não dispara workflows); por isso a atualização da branch é feita pela rotina de merge, com as credenciais dela.
+- O gate vê o estado de agora; entre o gate e o clique de merge a main pode andar. A proteção "up to date" do GitHub fecha essa janela.

@@ -1,0 +1,41 @@
+name: Gate de merge (pode mesclar?)
+
+# E775: o repositório é de conta pessoal, então a fila de merge nativa não existe. Este fluxo é o gate próprio:
+# responde se um PR pode ser mesclado AGORA (aberto, fora do rascunho, com a main dentro e os checks exigidos verdes no
+# head). Só LÊ a API; nunca mescla. A rotina de merge roda isto e só mescla com "PODE". A lista de checks exigidos fica em
+# scripts/gate/exigidos.json.
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Número do PR"
+        required: true
+      com_suite:
+        description: "Exigir também a suíte completa (suite-completa)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+
+jobs:
+  gate:
+    name: gate-pode-mesclar
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Avaliar o PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR: ${{ inputs.pr }}
+          COM_SUITE: ${{ inputs.com_suite }}
+        run: |
+          if [ "$COM_SUITE" = "true" ]; then EXTRA="--com-suite"; else EXTRA=""; fi
+          node scripts/gate/pode-mesclar.mjs "$PR" $EXTRA | tee -a "$GITHUB_STEP_SUMMARY"
