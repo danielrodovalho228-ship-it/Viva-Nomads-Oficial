@@ -15,10 +15,13 @@ test("a matriz cobre as fatias 1..N e o --shard usa o mesmo N", () => {
   const matriz = /fatia:\s*\[([^\]]+)\]/.exec(yml)?.[1]?.split(",").map((x) => Number(x.trim())) ?? [];
   const n = Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]);
   assert.ok(n >= 8, `fatias = ${n}`);
-  assert.deepEqual(matriz, Array.from({ length: n }, (_, i) => i + 1));
+  // 16 gerais + 4 dos specs pesados (E744): a matriz tem n + PESADAS fatias.
+  const pesadas = Number(/--shard=\$\(\( \$\{\{ matrix\.fatia \}\} - \d+ \)\)\/(\d+)/.exec(yml)?.[1]);
+  assert.equal(pesadas, 4);
+  assert.deepEqual(matriz, Array.from({ length: n + pesadas }, (_, i) => i + 1));
   assert.match(yml, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/\d+\)/);
   assert.match(yml, /--esperadas \d+/);
-  assert.equal(Number(/--esperadas (\d+)/.exec(yml)?.[1]), n, "o consolidar espera o mesmo número de fatias");
+  assert.equal(Number(/--esperadas (\d+)/.exec(yml)?.[1]), n + pesadas, "o consolidar espera o mesmo número de fatias");
   assert.match(yml, /fail-fast: false/, "uma fatia vermelha não cancela as outras");
 });
 
@@ -64,4 +67,13 @@ test("o supabase start da fatia tenta 5 vezes e reinicia o Docker da 2ª em dian
   assert.match(fatia, /for tentativa in 1 2 3 4 5; do/);
   assert.match(fatia, /sudo systemctl restart docker/);
   assert.match(fatia, /supabase start falhou 5 vezes/);
+});
+
+test("os specs pesados saem das fatias gerais e rodam só nas fatias próprias (a fatia 11/16 batia o teto)", () => {
+  const cfg = readFileSync("playwright.config.ts", "utf8");
+  assert.match(cfg, /export const SPECS_PESADOS = \/t\(50-rls-todas-tabelas\|49-seguranca-publica\)\\\.spec\\\.ts\//);
+  assert.match(cfg, /testIgnore: process\.env\.LAB_PESADOS === "fora" \? SPECS_PESADOS : undefined/);
+  assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/16/);
+  assert.match(yml, /npx playwright test t50-rls-todas-tabelas t49-seguranca-publica --shard=\$\(\( \$\{\{ matrix\.fatia \}\} - 16 \)\)\/4/);
+  assert.match(yml, /if \[ "\$\{\{ matrix\.fatia \}\}" -le 16 \]/);
 });

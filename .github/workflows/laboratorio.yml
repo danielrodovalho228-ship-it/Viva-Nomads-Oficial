@@ -32,13 +32,13 @@ jobs:
   # Agora ela é fatiada em FATIAS jobs paralelos (--shard do Playwright); cada fatia sobe o próprio Supabase local e o
   # próprio site, e o job `consolidar` junta os resultados e grava UMA linha em lab_execucoes. Desenho em docs/e744-suite-fatiada.md.
   laboratorio:
-    name: laboratorio (fatia ${{ matrix.fatia }}/16)
+    name: laboratorio (fatia ${{ matrix.fatia }}/20)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
-        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SITE_URL: http://localhost:3123
@@ -145,7 +145,14 @@ jobs:
       - name: Rodar a suíte E2E
         id: e2e
         continue-on-error: true
-        run: npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+        # Fatias 1–16: a suíte SEM os specs pesados (LAB_PESADOS=fora), em 16 partes. Fatias 17–20: SÓ os specs pesados
+        # (t50 e t49, ver SPECS_PESADOS em playwright.config.ts), em 4 partes. Todas com o mesmo teto de tempo.
+        run: |
+          if [ "${{ matrix.fatia }}" -le 16 ]; then
+            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+          else
+            npx playwright test t50-rls-todas-tabelas t49-seguranca-publica --shard=$(( ${{ matrix.fatia }} - 16 ))/4 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+          fi
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
 
@@ -187,12 +194,12 @@ jobs:
           path: fatias
 
       - name: Juntar os resultados das fatias
-        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 16
+        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 20
 
       - name: Resumo da noite
         run: |
           {
-            echo "## Laboratório — $(date -u +%Y-%m-%d) (16 fatias)"
+            echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 dos specs pesados)"
             node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
             echo
             echo "### Por spec (passou / falhou)"
