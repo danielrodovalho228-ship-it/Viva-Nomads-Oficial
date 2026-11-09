@@ -34,7 +34,7 @@ jobs:
   laboratorio:
     name: laboratorio (fatia ${{ matrix.fatia }}/20)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -149,6 +149,8 @@ jobs:
         # fatia por grupo de testes (a cadeia é serial e leva ~100 min junta; separada, cada grupo leva <= 30 min).
         run: |
           F=${{ matrix.fatia }}
+          # Varredura (17–20): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
+          # tem 120 min para ainda sobrar tempo de guardar o resultado. As gerais seguem em 65 min.
           if [ "$F" -le 16 ]; then
             LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
@@ -158,7 +160,7 @@ jobs:
               19) GREP="proprietário: todas as telas logadas" ;;
               20) GREP="admin: todas as telas logadas" ;;
             esac
-            npx playwright test t48-varredura --grep "$GREP" --reporter=list,html,json --workers=1 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+            npx playwright test t48-varredura --grep "$GREP" --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
           fi
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
