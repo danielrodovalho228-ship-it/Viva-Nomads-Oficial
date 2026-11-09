@@ -13,7 +13,7 @@ function lum(hex: string) {
 const razao = (a: number, b: number) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 
 test("E732: o rótulo do banner fica numa pastilha escura (night/80), não direto sobre a foto", () => {
-  assert.match(s, /className="inline-block rounded-full bg-night\/80 px-3 py-1 text-sm font-semibold text-white/90" data-testid="banner-topo-eyebrow"/);
+  assert.match(s, /className="inline-block rounded-full bg-night\/80 px-3 py-1 text-sm font-semibold text-white\/90" data-testid="banner-topo-eyebrow"/);
   assert.doesNotMatch(s, /<p className="text-sm font-semibold text-green-300">/);
 });
 
