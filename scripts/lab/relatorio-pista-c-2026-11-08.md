@@ -1074,3 +1074,12 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Bloco 644 (#3653, t1632, grupo do 627 — admin: chamado, contrato, pedido de parceiro; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Placar do lab:** lote 612–643 todo verde (32/32); 644 em primeira rodada.
 - **Achados novos:** nenhum (próximo livre: **L-110**).
+
+## Diagnóstico do CI vermelho do PR #3095 — 06h42 UTC (09/11)
+
+- **Qual check falha:** `verify` (job 129016236160, run 42573588828). Os demais passam: `e2e`, `Vercel Preview Comments`; `lab-critico` em andamento. Os runs do lab-crítico deste PR já vinham fechando verdes ou por infra (504); o vermelho persistente é só o `verify`.
+- **Causa (lida no log, passo Testes):** `src/lib/parceiros/e727-e728-continuar.test.ts` falha em dois testes — **E727** (a asserção procura `estado.logado ? "Enviar pedido de parceria" : "Continuar: criar conta ou entrar"` no componente) e **E728** (a ordem `validarDocumentoParceiro(c.documento)` antes de `if (!estado.logado) return irParaConta()`). São asserções de texto de código que ficaram velhas depois que E731/E651 mudaram o formulário.
+- **De quem é:** é a **main vermelha**, não o relatório: o `verify` roda no merge-ref com a main (`344e3a273`), que já traz o teste quebrado do #3505. Meu PR só mexe em `scripts/lab/*.md`. O conserto já existe: **#3598** (Pista B, `claude-b/fix-main-e727-e728-testes`, 1 arquivo, `mergeable_state: clean`, ainda não mesclado), que atualiza só as asserções e deixa o comportamento do E727/E728 como está.
+- **Decisão:** não corrijo `src/` (fora da minha pista) e não puxo o #3598 para o ramo do relatório (misturaria PRs). **Nenhum item L-**: não é defeito de produto. Quando o #3598 mesclar, o `verify` deste PR e dos 32 PRs de bloco passa sem ação minha.
+- **Efeito colateral a lembrar:** todos os meus PRs de bloco (#3604–#3653) herdam esse mesmo `verify` vermelho da main; o sinal confiável do lote é o `lab-critico`.
+- **Bloco 644 (#3653):** run 42573565104 ainda em andamento (iniciado 06h31). **Main:** head `344e3a273`, sem merge novo.
