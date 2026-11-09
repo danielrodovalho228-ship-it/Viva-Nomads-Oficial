@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +12,19 @@ import { cn } from "@/lib/utils";
  * - O espaço desenhado (rascunho sem foto, E308) tem moldura tracejada e ícone de câmera: lugar a preencher, não imagem
  *   quebrada. O texto é o aprovado. Nenhuma foto é inventada.
  */
+/** E787: tempo máximo para a foto pintar antes de cair no plano B. */
+export const PRAZO_FOTO_MS = 8000;
+
 export function FotoDoInicio({ foto, rascunho }: { foto: string | null; rascunho: boolean }) {
   const [falhou, setFalhou] = useState(false);
+  const [carregou, setCarregou] = useState(false);
+  // E787: carregamento REAL. Imagem que não chega a pintar (conexão que pendura, resposta vazia) não deixa a área em branco:
+  // passado o prazo sem pintar, vale o plano B (espaço desenhado / coluna única).
+  useEffect(() => {
+    if (!foto || falhou || carregou) return;
+    const t = setTimeout(() => setFalhou(true), PRAZO_FOTO_MS);
+    return () => clearTimeout(t);
+  }, [foto, falhou, carregou]);
   if (foto && !falhou)
     return (
       // E308 (devolução 01/11): no "Continue seu anúncio", a FOTO REAL do rascunho (a primeira, por sort_order) em
@@ -23,6 +34,11 @@ export function FotoDoInicio({ foto, rascunho }: { foto: string | null; rascunho
         ref={(img) => {
           // a imagem pode ter falhado antes da hidratação (o onError não chega a rodar)
           if (img && img.complete && img.naturalWidth === 0) setFalhou(true);
+          else if (img && img.complete) setCarregou(true);
+        }}
+        onLoad={(e) => {
+          if (e.currentTarget.naturalWidth === 0) setFalhou(true);
+          else setCarregou(true);
         }}
         src={foto}
         alt=""
