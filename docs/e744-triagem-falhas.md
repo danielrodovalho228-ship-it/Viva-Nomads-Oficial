@@ -574,3 +574,9 @@ Saíram da lista (corrigidos e confirmados em run completa): **t14, t256, t595, 
 - **t610 (1):** o nome de quem sai também traz o sobrenome ("Bruno Partida") → `^Bruno( \w+)?$`.
 - **t703 teste 2 (1, aberto):** "Estadia mínima (1 mês)" aparece 1 vez no cartão de Meus anúncios (o spec espera 0). Coerente com "total sempre R$ Y em N mês" (E777); precisa do chat principal confirmar se a linha com 1 mês deve aparecer em Meus anúncios.
 - **t712 B (aberto):** e-mail de convite "Caio incluiu você como morador da estadia em … · Centro, Uberlândia." — texto do corpo mudou; precisa do corpo completo.
+
+## RODADA 42693072505 — CONSOLIDADO (head 2f9fab057, 21:27 UTC): **183 falhas** (184 → 183)
+Saíram: t277 (3), t610, t708, t910, t916, t59, t391, t410, t334, t21. Entraram: t132 (2), t262 (2), t230, t389, t431, t839, t70 (proporção 0,528 outra vez), t710 (1→3), t346 (1→2).
+- **t262 (2) e t703 teste 2 — efeito direto da decisão E777 (total sempre "R$ Y em N mês/meses"):** os specs esperavam 0 ocorrências do total com 1 mês; agora esperam "R$ Y em 1 mês" / "Estadia mínima (1 mês)". Guarda `e777-n1-specs.test.ts`.
+- **t132 (2):** o aviso do anúncio de exemplo diz "Este anúncio é de exemplo…"; o spec lia "Anúncio de exemplo".
+- **Abertos:** t70 (0,528 × 0,53 estável: layout × spec, chat principal), t710 (imagens do seletor de tipo/`tipo-loft`), t839 (Fechar do cartão do mapa não clicável), t431, t712 B, t346.
