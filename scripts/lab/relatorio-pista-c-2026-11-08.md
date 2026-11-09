@@ -1400,3 +1400,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 2. **CI da main:** push do #3617 (head `ac555605a`) run 42657109989 **verde**.
 3. **Novo merge #3618 (E783, `e0eaf8805`):** a foto de perfil do cabeçalho passa a aparecer em todas as telas, inclusive Conta e Perfil (sai a exceção do E55 que trocava por iniciais). **Cobertura existente:** a Pista A ajustou no próprio merge o spec de navegador `t391-conta-conformidade` (16 linhas) e o teste de unidade `visual-mockup.test.ts`, além de `e783-avatar-foto.test.ts`. **Spec nova dispensada.** Push da main ainda sem leitura nesta rodada.
 4. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1595**; próximo L livre: **L-111**.
+
+## Rodada das 17h20 UTC (09/11) — #3618 verde; E784 (t1595)
+
+1. **Push do #3618 (E783) na main:** run 42659223810 **verde**. Fecha a leitura pendente; a dispensa de spec do E783 (coberto pelo `t391-conta-conformidade` ajustado pela Pista A) fica confirmada.
+2. **Novo merge #3620 (E784, `93fd4e877`):** o "‹ Voltar ao site" do admin no celular leva à última página pública (rastro em `sessionStorage`); entrada direta → home. Push da main 42660387069 **verde**. Tinha só teste de unidade; o `t404` cobria só a entrada direta e a Pista A deixou os três caminhos "para o QA/lab". **Spec criada: `t1595-e784-voltar-ao-site-do-admin.spec.ts`** (PR **#3691**, draft, commit `7e7f5df1e`): admin do lab a 390 px — anúncio com query, home e entrada direta; guardas 13/13, tsc limpo; **ainda não rodou**.
+3. PRs de guarda em draft: #3684–#3690 (t1588–t1594) verdes; #3691 (t1595) em primeira execução. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1596**; próximo L livre: **L-111**.
