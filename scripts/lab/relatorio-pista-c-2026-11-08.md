@@ -1406,3 +1406,14 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 1. **Push do #3618 (E783) na main:** run 42659223810 **verde**. Fecha a leitura pendente; a dispensa de spec do E783 (coberto pelo `t391-conta-conformidade` ajustado pela Pista A) fica confirmada.
 2. **Novo merge #3620 (E784, `93fd4e877`):** o "‹ Voltar ao site" do admin no celular leva à última página pública (rastro em `sessionStorage`); entrada direta → home. Push da main 42660387069 **verde**. Tinha só teste de unidade; o `t404` cobria só a entrada direta e a Pista A deixou os três caminhos "para o QA/lab". **Spec criada: `t1595-e784-voltar-ao-site-do-admin.spec.ts`** (PR **#3691**, draft, commit `7e7f5df1e`): admin do lab a 390 px — anúncio com query, home e entrada direta; guardas 13/13, tsc limpo; **ainda não rodou**.
 3. PRs de guarda em draft: #3684–#3690 (t1588–t1594) verdes; #3691 (t1595) em primeira execução. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1596**; próximo L livre: **L-111**.
+
+## Rodada das 17h40 UTC (09/11) — t1595 verde; #3684 mesclado por outrem; E732 (t1597) e E770–E772 (t1596)
+
+1. **t1595 (E784, PR #3691):** run 42662640394 **verde**.
+2. **Mudança de estado:** o PR de guarda **#3684 (t1588, E719) foi mesclado na main por outra pessoa/pista** (`591284944`); não por mim. O spec `t1588` agora é parte da main.
+3. **Merges novos** (head `591284944`), na ordem:
+   - **#3530 (E732):** o rótulo verde do banner de topo vira pastilha escura (night/80) com texto branco a 90% (era 3,60:1 sobre a foto). Só unidade. **Spec criada: `t1597-e732-rotulo-do-banner-com-contraste.spec.ts`** (PR **#3693**, draft, commit `47d26a00c`): `/empresas` a 390 e 1280 px, contraste calculado no navegador sobre branco (pior caso) ≥ 4,5:1.
+   - **#3586 (E770/E771/E772):** `/empresas` com prazo de 7 dias e taxa explícitos, escopo do pagamento (estadia direto ao proprietário; parceiros à parte), sem "Relatórios/em construção/fatura"; `/parceiros` com `regras-escopo-pagamento`. Só unidade. **Spec criada: `t1596-e770-empresas-prazo-e-escopo-do-pagamento.spec.ts`** (PR **#3692**, draft, commit `8d75587c7`).
+   - **#3684:** é o meu próprio PR de guarda do E719 (ver item 2); nada a guardar.
+   Guardas de numeração 13/13 e tsc limpo nas duas; **ainda não rodaram**. Pushes da main desses merges sem leitura nesta rodada.
+4. PRs de guarda em draft: #3685–#3691 (t1589–t1595) verdes; #3692 (t1596) e #3693 (t1597) em primeira execução. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
