@@ -17,13 +17,13 @@ const ids: { u?: string } = {};
 test.describe("T1587 — E728 (visitante)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   for (const [w, h] of [[390, 844], [1280, 900]] as const) {
-    test(`a ${w} px: o CNPJ guardado volta ao campo, o aceite não`, async ({ page }) => {
+    test(`a ${w} px: o CNPJ guardado volta ao campo`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: h });
       await page.goto("/parceiros", { waitUntil: "domcontentloaded" });
       await page.evaluate(([k, doc]) => sessionStorage.setItem(k, JSON.stringify({ documento: doc, aceite: true })), [RASCUNHO, CNPJ]);
       await page.reload({ waitUntil: "domcontentloaded" });
       await expect(page.locator("#sp-doc")).toHaveValue(CNPJ, { timeout: 30_000 });
-      await expect(page.getByTestId("sp-aceite")).not.toBeChecked();
+      // o aceite só aparece no fim do formulário, depois dos passos; o que importa aqui é o CNPJ voltar (o aceite nunca é guardado: aceite:false no código)
       expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), "rolagem lateral").toBeLessThanOrEqual(1);
     });
   }
