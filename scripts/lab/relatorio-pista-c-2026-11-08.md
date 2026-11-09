@@ -890,3 +890,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 633 (#3640, t1581):** run 42561904621 em andamento.
 - **Bloco 634 (#3642, t1582, grupo do 617 — serviços e visitas, admin, parceiros; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h55 (09/11) — blocos 633 e 634 verdes, 635 aberto
+
+- **Bloco 633 (#3640, t1581): VERDE** (42561904621), início/busca/imóvel/ajuda/painel do proprietário (18ª volta), sem achado.
+- **Bloco 634 (#3642, t1582): VERDE** (42562987823), serviços e visitas/admin/parceiros (19ª volta), sem achado.
+- **Bloco 635 (#3643, t1583, grupo do 618 — painéis do morador e do proprietário, empresas; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Lote 628–634 fechado verde:** #3634, #3635, #3636, #3638, #3639, #3640, #3642.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
