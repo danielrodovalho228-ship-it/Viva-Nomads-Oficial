@@ -1113,3 +1113,10 @@ Blocos 612–643 (32 PRs de varredura, todos draft):
 - **Depois do merge:** os PRs com `verify` vermelho só por esse teste ficam verdes com um `update-branch` da base (ou no próximo push); eu confiro o `verify` de cada PR de bloco e do #3095 e registro aqui.
 - **Bloco 646 (#3656): VERDE** (42576154780), já registrado. **Bloco 647 (#3657, t1635):** run 42577764705 em andamento (iniciado 07h11); veredito na próxima leitura.
 - **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h29 UTC (09/11) — bloco 647 verde, 648 aberto
+
+- **Bloco 647 (#3657, t1635): VERDE** (42577764705), proposta e visita (19ª volta), sem achado.
+- **Bloco 648 (#3658, t1636, grupo do 631 — conferir, sistema, pedidos do morador; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–647 verde (36/36); 648 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto, todos os checks verdes, aguardando só a decisão de mesclar. Achados novos: nenhum (próximo livre: **L-110**).
