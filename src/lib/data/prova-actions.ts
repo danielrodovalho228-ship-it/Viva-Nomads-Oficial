@@ -26,6 +26,9 @@ import type { StatusFoto } from "@/lib/niveis/regras";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const FALHA_LEITURA = "falha" as const;
+const ERRO_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
+
 type Res<T = object> = ({ ok: true } & T) | { ok: false; erro: string };
 
 async function donoDoItem(propertyId: string, chave: string) {
@@ -37,13 +40,15 @@ async function donoDoItem(propertyId: string, chave: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data, error } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (error) return FALHA_LEITURA; // falha de leitura NÃO é "sem permissão"
   return data?.owner_id === user.id ? { uid: user.id, email: user.email ?? null, admin } : null;
 }
 
 /** Abriu a câmera: token de captura para ESTE item (o navegador manda junto com a foto). */
 export async function abrirCapturaProva(propertyId: string, chave: string): Promise<Res<{ token: string; expiraEm: string }>> {
   const c = await donoDoItem(propertyId, chave);
+  if (c === FALHA_LEITURA) return { ok: false, erro: ERRO_LEITURA };
   if (!c) return { ok: false, erro: "Sem permissão." };
   if (!(await consumirLimite(`prova-captura:${c.uid}`, 200, DIA))) return { ok: false, erro: "Muitas fotos hoje. Tente novamente amanhã." };
   const { token, hash } = novoToken();
@@ -72,6 +77,7 @@ async function origemDaTela(): Promise<string> {
  */
 export async function pedirLinkCelular(propertyId: string, chave: string): Promise<Res<{ url: string; qr: string; expiraEm: string; emailEnviado: boolean }>> {
   const c = await donoDoItem(propertyId, chave);
+  if (c === FALHA_LEITURA) return { ok: false, erro: ERRO_LEITURA };
   if (!c) return { ok: false, erro: "Sem permissão." };
   if (!(await consumirLimite(`prova-link:${c.uid}`, 30, DIA))) return { ok: false, erro: "Muitos links hoje. Tente novamente amanhã." };
   const { token, hash } = novoToken();
@@ -119,7 +125,7 @@ export interface ProvaDoItem {
 /** O computador pergunta se a foto da câmera já chegou (QR aberto). */
 export async function provaDoItem(propertyId: string, chave: string): Promise<ProvaDoItem | null> {
   const c = await donoDoItem(propertyId, chave);
-  if (!c) return null;
+  if (!c || c === FALHA_LEITURA) return null;
   const { data } = await c.admin.from("nivel_itens").select("foto_origem, foto_capturada_em, foto_status").eq("property_id", propertyId).eq("chave", chave).maybeSingle();
   return { origem: (data?.foto_origem as OrigemFoto | null) ?? null, capturadaEm: (data?.foto_capturada_em as string | null) ?? null, fotoStatus: (data?.foto_status as StatusFoto | null) ?? null };
 }
@@ -137,7 +143,8 @@ async function donoDoImovel(propertyId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  const { data, error } = await supabase.from("properties").select("owner_id").eq("id", propertyId).maybeSingle();
+  if (error) return FALHA_LEITURA;
   return data?.owner_id === user.id ? { uid: user.id, admin } : null;
 }
 
@@ -145,6 +152,7 @@ async function donoDoImovel(propertyId: string) {
 export async function pedirLinkMedicao(propertyId: string, ponto: string): Promise<Res<{ url: string; qr: string; expiraEm: string }>> {
   if (!ehPontoInternet(ponto)) return { ok: false, erro: "Ponto inválido." };
   const c = await donoDoImovel(propertyId);
+  if (c === FALHA_LEITURA) return { ok: false, erro: ERRO_LEITURA };
   if (!c) return { ok: false, erro: "Sem permissão." };
   if (!(await consumirLimite(`prova-link:${c.uid}`, 30, DIA))) return { ok: false, erro: "Muitos links hoje. Tente novamente amanhã." };
   const { token, hash } = novoToken();
@@ -163,7 +171,7 @@ export async function pedirLinkMedicao(propertyId: string, ponto: string): Promi
 export async function medicaoDoPonto(propertyId: string, ponto: string): Promise<string | null> {
   if (!ehPontoInternet(ponto)) return null;
   const c = await donoDoImovel(propertyId);
-  if (!c) return null;
+  if (!c || c === FALHA_LEITURA) return null;
   const { data } = await c.admin
     .from("internet_medicoes")
     .select("medido_em")
