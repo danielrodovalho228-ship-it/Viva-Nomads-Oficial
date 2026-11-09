@@ -42,7 +42,8 @@ test.describe("T130 — Reserva no imóvel", () => {
       if (ehGravacaoDeLead(r.method(), r.postData(), ["Posso entrar em dezembro?"])) gravacoes.push(r.url());
     });
     const card = page.locator("#cartao-preco");
-    await expect(card.getByTestId("aviso-demo")).toBeVisible();
+    await expect(card.getByTestId("exemplo-sem-acoes")).toBeVisible(); // E713: a explicação + "Ver imóveis reais"; o aviso "esta solicitação não é enviada" saiu da coluna
+    await expect(card.getByTestId("aviso-demo")).toHaveCount(0);
     await expect(card.getByTestId("cartao-solicitar")).toHaveCount(0);
     await expect(card.getByRole("button", { name: "Enviar mensagem" })).toHaveCount(0);
     await expect(page.getByTestId("mensagem-demo")).toBeVisible(); // o cartão do proprietário explica em vez de oferecer o botão
