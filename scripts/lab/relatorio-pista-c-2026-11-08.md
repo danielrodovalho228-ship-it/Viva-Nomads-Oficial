@@ -1263,3 +1263,9 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 
 - **Correção do que eu vinha registrando:** o run **42560445737** (20 fatias + consolidar, commit `6215ff77`, branch do #3588) **terminou**: 3.940 passaram · 236 falharam · 316 pularam · 6 instáveis (4.498 testes), as 20 fatias chegaram ao fim da suíte. Eu escrevia "não existe noturna completa em código corrigido" olhando só o 42554301427 (cancelado); esse registro estava incompleto. Continua sem ser "noite verde" e o #3588 segue em draft, sem merge.
 - **Triagem E744 (37 varreduras + 17 timeouts) feita:** detalhe em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Resumo: 27 das 37 varreduras são o mesmo padrão `fixo @390`; 5 são a rota de Notificações a 1280; 3 testids velhos; 1 clique; 1 massa. Timeouts: busca/filtros e fluxos longos (lentidão), t48 a 30 min. Nenhum L- aberto (sem reprodução no lab ainda); próximo livre: **L-110**.
+
+## Rodada das 11h20 UTC (09/11) — 664 verde, 665 aberto
+
+- **664** (#3678, t1652): run 42604616160 **verde** na 1ª tentativa. Lote 612–664 verde (53/53).
+- **665** (#3679, t1653, grupo 648, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; veredito pendente.
+- main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados.
