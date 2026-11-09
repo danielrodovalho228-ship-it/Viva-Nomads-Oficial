@@ -110,9 +110,12 @@ test.describe("T391 — Conta: E55, E63, E64, E66, E67", () => {
       const p = await abrir(browser, w, "/dashboard/conta/perfil");
       await p.getByTestId("perfil-tela").waitFor({ timeout: 20_000 });
       // E783: o cabeçalho mostra a foto também no Perfil (o E55 trocava por iniciais e a foto "sumia" ao entrar na Conta).
-      // (celular: o avatar da barra do topo; computador: o chip do papel ativo)
-      await expect(p.locator('[data-testid="papel-ativo"] img, [data-testid="barra-avatar"] img').first()).toBeAttached({ timeout: 20_000 });
+      // Computador: a barra lateral e o chip mostram a foto. No celular o Perfil abre sem cabeçalho do painel: a prova é a Conta (abaixo).
+      if (w >= 1024) await expect(p.locator('[data-testid="papel-ativo"] img, [data-testid="barra-avatar"] img').first()).toBeAttached({ timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t391-perfil-${w}.png` });
+      // E783: a tela Conta (a do print do Daniel) também mostra a foto no cabeçalho, não a inicial.
+      await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await expect(p.locator('[data-testid="papel-ativo"]:visible img').first()).toBeAttached({ timeout: 20_000 });
       await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
       await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1, { timeout: 20_000 });
       await p.context().close();
