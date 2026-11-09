@@ -92,3 +92,12 @@ test("a varredura t48 (cadeia serial de ~100 min) sai das fatias gerais e roda e
   for (const g of ["inquilino: todas as telas logadas", "proprietário: todas as telas logadas", "admin: todas as telas logadas"]) assert.ok(yml.includes(g), g);
   for (const t of ["visitante: todas as rotas do sitemap", "visitante a 1280 px", "endereços inexistentes", "sitemap limpo"]) assert.ok(spec.includes(t), t);
 });
+
+test("as fatias da varredura t48 têm teto maior que as gerais (a do admin levou 56 min) e cabem no timeout do job", () => {
+  const job = Number(/timeout-minutes:\s*(\d+)/.exec(yml)?.[1]);
+  const geral = Number(/LAB_PESADOS=fora[^\n]*--global-timeout=(\d+)/.exec(yml)?.[1]);
+  const varredura = Number(/t48-varredura[^\n]*--global-timeout=(\d+)/.exec(yml)?.[1]);
+  assert.ok(varredura > geral, `varredura ${varredura} > geral ${geral}`);
+  assert.ok(varredura >= 90 * 60_000, "folga sobre os 56 min medidos");
+  assert.ok(varredura < job * 60_000 - 10 * 60_000, "sobra tempo do job para preparo e para guardar o resultado");
+});
