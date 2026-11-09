@@ -883,3 +883,10 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Bloco 632 (#3639, t1580):** run 42561331910 ainda **em fila** no runner; sem veredito.
 - **Bloco 633 (#3640, t1581, grupo do 616 — início, busca, imóvel, ajuda, painel do proprietário; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
 - **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h45 (09/11) — bloco 632 verde, 633 rodando, 634 aberto
+
+- **Bloco 632 (#3639, t1580): VERDE** (42561331910), solicitações/estadia/desempenho/cartão/contrato (18ª volta). O run ficou cerca de 10 minutos em fila (fila, não falha). Sem achado.
+- **Bloco 633 (#3640, t1581):** run 42561904621 em andamento.
+- **Bloco 634 (#3642, t1582, grupo do 617 — serviços e visitas, admin, parceiros; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
