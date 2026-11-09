@@ -1194,3 +1194,9 @@ Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco,
 - **654** (#3665, t1642): run 42585443072 **verde** na 1ª tentativa. Lote 612–654 verde (43/43).
 - **655** (#3668, t1643, grupo 638, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
 - main segue em `344e3a273` (sem merge novo); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 08h55 UTC (09/11) — 655 verde, 656 aberto
+
+- **655** (#3668, t1643): run 42587264161 **verde** na 1ª tentativa. Lote 612–655 verde (44/44).
+- **656** (#3669, t1644, grupo 639, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
