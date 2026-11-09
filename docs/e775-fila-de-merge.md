@@ -40,3 +40,8 @@ Settings → Rules → Rulesets → New branch ruleset, alvo `main`:
 1. Mesclar este PR (e o do E744, que traz o `merge_group` e o nome `suite-completa`).
 2. Rodar o laboratório uma vez por `workflow_dispatch` para o check `suite-completa` existir (o GitHub só deixa escolher checks que já reportaram).
 3. Criar o ruleset acima; testar com um PR de documentação.
+
+## Pendências que dependem de admin do repositório (estado em 09/11/2026)
+1. **Criar o ruleset** da `main` com `merge_queue` e os checks obrigatórios `verify`, `lab-critico` e `suite-completa` (JSON acima). O agente não tem permissão de ruleset nem `gh` autenticado.
+2. **Ordem:** mesclar o E744 (#3588) e este PR; disparar o laboratório uma vez (`workflow_dispatch`) para o check `suite-completa` existir; só então criar o ruleset.
+3. **Cuidado:** com o gate completo, a fila só passa quando as 16 fatias ficam verdes. A primeira execução fatiada mostrou falhas reais de teste escondidas (ver `docs/e744-suite-fatiada.md`); **triar essas falhas antes de exigir `suite-completa`**, ou a fila trava. Enquanto isso, o ruleset pode exigir só `verify` e `lab-critico`.
