@@ -694,3 +694,11 @@ Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~370
 - **Cobertura por frente:** E721 → t1569 (#3562, verde, main `052e10e24`); E722 → t1571 (#3567, verde, main `10f292a83`); E742 → t1562 (#3540, verde, sobre o draft #3531, **ainda não mesclado**); **E752 (#3579, draft) → t1586 (#3592)**; **E751 (#3580, draft) → t1585 (#3591)**; **E766 (#3573, draft) → t1584 (#3590)**. Três specs novas sobre os ramos dos drafts (falham na main de hoje, como esperado; passam com o draft). Lab a conferir.
 - **t1576–t1583 (#3587): 1º run vermelho (42536077552) por defeito de spec**, 2 de 16: t1577 (E747) exigia ISO desde a 1ª tecla, mas antes do "-" vale a máscara de sempre ("20/26"); t1578 (E749) esperava "Prefiro não informar", mas sem dado a linha some (`null`, nunca vazia). Premissas corrigidas em commit novo; rerun em andamento. Não é defeito de produto.
 - **Main `c89c11e0c` (E748):** lab em andamento (42535630223). **Varredura pública:** as três voltas públicas do ciclo (blocos 601, 602 e 603, #3559/#3553/#3554) já estão verdes; os próximos blocos (604–606) são painel/sócios/auth, admin e avaliação, e o 607 volta ao painel do proprietário. Sem achado (próximo livre: **L-110**).
+
+## Cadeia da 00h10 (09/11) — main, frentes e blocos 604–607
+
+- **Lab da main:** `c89c11e0c` (E748) **verde** (42535630223); `c659070554` (E746) verde. Novo merge **#3505 (E727 + E728, `344e3a273`)**: run 42537255566 em andamento.
+- **Verdes:** t1576–t1583 (#3587) no 2º run (42537040348, após corrigir t1577/t1578); **t1586 (#3592, E752) verde** (42537211936). **Em andamento:** t1584 (#3590, E766; 42537203148) e t1585 (#3591, E751; 42537207774).
+- **Spec do merge novo: t1587 (#3600)** — E728 (rascunho com o CNPJ volta do /auth a 390 e 1280) e E727 (conta logada abre /parceiros sem ir a /auth). Lab a conferir.
+- **Blocos:** 604 (#3570), 605 (#3575) e 606 (#3582) **verdes** (sem achado). **Bloco 607 (#3601, t1555)**, 17ª volta do grupo do 590 (painel do proprietário sem id): aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Próximo livre: **L-110**.
+- Drafts #3533, #3530, #3531, #3532, #3498 e também #3573, #3579, #3580 seguem abertos (nenhum na main).
