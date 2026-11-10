@@ -32,3 +32,7 @@ test("t355/t365: papel-ativo não é esperado no /dashboard do dono; Ajuda fica 
 test("t365 teste 2: Ajuda e Avaliações não têm pílula no menu da Conta", () => {
   assert.match(ler("tests/e2e/specs/t365-conta-a1-casca-perfil.spec.ts"), /s === "ajuda" \|\| s === "avaliacoes"\) continue;/);
 });
+
+test("t712 B: o convite aceita a linha do imóvel com o código do anúncio", () => {
+  assert.match(ler("tests/e2e/specs/t712-e267-transacionais-corpo.spec.ts"), /\( · código VN-\[A-Z0-9\]\+\)\?/);
+});

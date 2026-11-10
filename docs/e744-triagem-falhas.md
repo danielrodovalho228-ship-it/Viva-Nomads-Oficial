@@ -607,3 +607,6 @@ Resultado: 267 passaram, 2 falharam (antes: 3). Consolidado vigente continua o d
 - t365 teste 1: verde. Teste 2: Avaliações mora fora da casca da Conta (E176) e Ajuda fora do menu (E493) → sem pílula `conta-menu-*`; spec corrigida + guard.
 - t712 B: segue aberto (corpo "Uberlândia · código VN-…" × spec "Uberlândia."): decisão do chat principal.
 Próximo: nova rodada completa do head com esta correção (nenhuma rodada em andamento).
+
+## lab-critico do head 0f5067960 (02:09 UTC, 10/11)
+269 passaram, 1 falhou (t712 B). O corpo do convite traz a linha do imóvel com "· código VN-…" antes do ponto; a spec esperava o ponto logo depois da cidade. Spec aceita o código opcional (o texto do produto não muda). A rodada completa do head segue em consolidação (fatia 20/20 ainda rodando); consolidado vigente: 179 linhas (22:50 UTC).

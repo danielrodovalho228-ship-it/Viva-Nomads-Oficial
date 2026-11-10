@@ -244,7 +244,8 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
     await expect.poll(async () => (await doConvidado()).length, { timeout: 30_000 }).toBe(1);
     const [convite] = await doConvidado();
     expect(convite.assunto).toContain("Você foi incluído em uma estadia na Viva");
-    expect(convite.corpo).toContain(`Caio incluiu você como morador da estadia em ${imovelPorExtenso("B")}.`);
+    // A linha do imóvel leva o código do anúncio ("· código VN-…") depois do endereço por extenso; o resto da frase é o mesmo.
+    expect(convite.corpo).toMatch(new RegExp(`Caio incluiu você como morador da estadia em ${imovelPorExtenso("B").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}( · código VN-[A-Z0-9]+)?\\.`));
     expect(convite.corpo).not.toContain("um imóvel da Viva");
     expect(convite.corpo).not.toContain(RUA);
     expect(convite.corpo).not.toMatch(/R\$|3\.200/);
