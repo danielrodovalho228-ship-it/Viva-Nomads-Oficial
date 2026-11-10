@@ -1492,3 +1492,7 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Head da main: `954bbece6` (inalterado). Último `lab-critico` na main: run 42682766358 (#3460), **success**. Guardas t1592–t1597 todas verdes (t1595 com o teste (4) 1280 px: run 42776863792, success).
 - Merges novos: nenhum. Spec pendente: nenhuma (#3602 e #3460 isentos, só docs). Livres: t1598 / L-111. L-110 com a Pista B.
 - Sequência encerrada sem agendamento; retoma com merge novo na main ou nova ordem.
+
+## Conferência de 10/11 10:13 UTC (reativação) — sem merge novo
+
+- Head da main: `954bbece6` (inalterado desde 09/11 19:22 UTC). Merges novos: nenhum. Lab: último `lab-critico` na main = run 42682766358 (#3460), **success**. Specs tocadas: nenhuma (nada a cobrir). Livres: t1598 / L-111. L-110 com a Pista B.
