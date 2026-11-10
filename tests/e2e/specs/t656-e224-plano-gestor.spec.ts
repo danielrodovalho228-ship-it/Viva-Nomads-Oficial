@@ -54,7 +54,7 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
     const texto = page.getByTestId("conta-plano-gestor-texto");
-    await expect(texto).toHaveText("Plano Gestor: liberado com 20 imóveis com documento aprovado. Você tem 0; faltam 20.", { timeout: 30_000 });
+    await expect(texto).toHaveText("Plano Gestor: taxa de 4% com 20 imóveis ativos (publicados, com documento aprovado e calendário em dia). Você tem 0; faltam 20.", { timeout: 30_000 });
     await expect(texto).toHaveAttribute("data-elegivel", "0");
     await expect(page.getByTestId("conta-plano-gestor").getByRole("button")).toHaveCount(0);
     await expect(page.getByTestId("conta-plano-gestor").getByRole("link")).toHaveCount(0);

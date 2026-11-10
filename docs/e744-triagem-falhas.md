@@ -692,3 +692,13 @@ Fatias 3, 12, 13 e 18 perdidas por falha do passo do Chromium foram refeitas uma
 - Infra: a correção do Chromium (commit 049eca53c) só vale para rodadas disparadas depois dela.
 
 **Próximo passo exato:** (1) ler no `lab_execucoes.falhas` o erro de t255, t683 e t776 e dos que têm erro legível dentre os ~100; (2) corrigir na mesma branch os determinísticos com guarda em `tests/laboratorio/`; (3) disparar UMA rodada nova (agora com o Chromium endurecido) e consolidar; (4) PR #3588 segue em draft até a suíte fechar verde.
+
+## Lote de correções determinísticas (após a rodada 42767013537) — leitura dos erros no `lab_execucoes`
+Corrigidas na mesma branch, com guarda em `tests/laboratorio/specs-desatualizadas-lote2.test.ts`:
+- **t656** — texto do Plano Gestor mudou (E564): a spec cobra o texto da função `textoElegibilidadeGestor`.
+- **t315** — a rota de avaliação diz `Avaliação: selo “vistoriado” por 12 meses` (a spec tinha `“· vistoriado”`).
+- **t304 e t486** — o trigger do E679 exige três critérios + "recomendaria" em avaliação enviada; os inserts passam a usar `criteriosDaAvaliacao("inquilino")`.
+- **t593** — a moradora de teste se chama "Lia Visitante"; a spec conferia a palavra solta. Passa a conferir só o rótulo vazio.
+- **t287** — havia dois `role=status` no formulário; a spec filtra pelo texto.
+- **t875** — aviso aparece em dois lugares; spec usa o primeiro.
+Lidas e deixadas de fora, por dependerem de decisão de produto ou de dado: t600 (nome "Ana Isabela" × "Ana I."), t348 (assertiva larga: o HTML mostra o preço do imóvel), t386/t401/t288/t292/t534/t547 (ordem do wizard e aceite do termo de IA), t229/t231/t273/t465 (admin "decisões" → Central de Pendências, reescrita), t683 (distância 980 m × < 650), t816/t88 (medidas de layout), t112 (PR #3698), t85 (mensagem de PDF pequeno × tipo), t862 (404 × 200: possível defeito de produto).
