@@ -427,7 +427,7 @@ function irParaCampo(alvo: string) {
 function EsqueletoPerfil() {
   // E789: o esqueleto tem a FORMA da tela (título, campos, botão) com pulso, em vez de dois cartões brancos vazios:
   // enquanto os dados não chegam, lê-se "carregando", não "travou".
-  const linha = (w: string) => <div className={`h-4 rounded bg-surface-2 ${w}`} />;
+  const linha = (w: string) => <div className={`h-4 rounded-lg bg-surface-2 ${w}`} />;
   const campo = (
     <div className="space-y-2">
       {linha("w-24")}
@@ -436,7 +436,7 @@ function EsqueletoPerfil() {
   );
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" aria-busy="true" aria-live="polite" data-testid="perfil-carregando">
-      <div className="animate-pulse space-y-5 rounded-xl border border-line bg-white p-5" data-testid="perfil-carregando-formulario">
+      <div className="animate-pulse space-y-4 rounded-xl border border-line bg-white p-4" data-testid="perfil-carregando-formulario">
         <span className="sr-only">Carregando o seu perfil…</span>
         {linha("w-40")}
         {campo}
@@ -445,7 +445,7 @@ function EsqueletoPerfil() {
         <div className="h-24 w-full rounded-lg bg-surface-2" />
         <div className="h-11 w-40 rounded-lg bg-surface-2" />
       </div>
-      <div className="hidden animate-pulse space-y-3 rounded-xl border border-line bg-white p-5 xl:block" data-testid="perfil-carregando-espelho">
+      <div className="hidden animate-pulse space-y-3 rounded-xl border border-line bg-white p-4 xl:block" data-testid="perfil-carregando-espelho">
         <div className="mx-auto h-20 w-20 rounded-full bg-surface-2" />
         {linha("mx-auto w-32")}
         {linha("w-full")}
