@@ -652,3 +652,12 @@ Linha bruta: 3812 passaram · 157 falharam · 9 instáveis · 253 puladas · **1
 - Entraram/pioraram: t431 (1), t204 (1→2), t346 (1→2), t585 (1→2), t719 (1→2).
 - Ação: refazer só a fatia 2/20 (rerun do job 129628630086, tentativa 2 do mesmo run) e consolidar de novo; o comparativo oficial sai dessa consolidação.
 - Nota de infraestrutura: o risco de "fatia perdida" já estava previsto no workflow (comentário da etapa do Supabase); o Chromium é o segundo ponto de perda. Proposta, sem executar: limite de 8 min por tentativa e verificação de cache do navegador antes de baixar.
+
+## Rodada 42755440801 — consolidado FINAL (tentativa 2, 06:01 UTC) — head 097d01308
+**4090 passaram · 157 falharam · 9 instáveis · 253 puladas · 166 linhas** (rodada anterior 42747581191, head 48c01a4ac: 4087/160/7/255 · 167). A fatia 2/20 refeita rodou os ~280 testes e entregou ~278 passes, sem falha própria.
+- **Saíram (efeito direto das correções do lote):** t710 (/empresas), t21, t410, t607, t683. Já saíram na rodada anterior: t30, t352, t431→voltou (ver abaixo), t712, t755.
+- **Pioraram/entraram:** t431 (0→1), t204 (1→2), t346 (1→2), t585 (1→2), t719 (1→2). Pendem de leitura do erro de cada um na próxima rodada de correção.
+- **99 specs ainda com falha**, 55 delas linhas visuais (t245 38, t271 11, t263 6 — Pista QA). Restam ~111 linhas de ~97 specs, quase todas 1 por spec (cadastro/wizard t186/t194/t386/t400/t401/t435/t469/t534/t547/t799/t800, admin "decisões" t229/t231/t273/t465, papel-ativo/Conta t318/t370/t886/t644/t81/t442, timeouts de 90 s t71/t78/t176/t778/t290/t40/t66, mapa t839/t840).
+- Suíte AINDA NÃO verde (157 falhas). PR #3588 segue em draft.
+
+**Próximo passo exato:** (1) ler o erro dos 5 que pioraram/entraram (t431, t204, t346, t585, t719) no `lab_execucoes.falhas`; (2) corrigir na mesma branch os de causa determinística, com guarda em `tests/laboratorio/`; (3) uma rodada completa por vez, a próxima do head resultante; (4) reduzir a janela de infraestrutura: limite de 8 min por tentativa na instalação do Chromium (proposta, não aplicada).
