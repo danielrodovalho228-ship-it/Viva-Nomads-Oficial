@@ -1465,3 +1465,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Main segue em `954bbece6`; nenhum merge desde #3460. Último `lab-critico` na main: run 42682766358, **success**. O vermelho do #3602 (run 42682752738) foi infra ("Subir o Supabase local"), sem teste executado.
 - Nenhuma spec nova nem corrigida; sem bloco de varredura; sem produto tocado. Livres: t1598 / L-111.
 - Guardas t1594–t1597 (#3690–#3693): verdes, em rascunho, aguardando o QA do chat principal. L-110 segue com a Pista B.
+
+## Fechamento da checagem (10/11)
+
+- Main segue em `954bbece6`: nenhum merge novo, então nada a cobrir. `lab-critico` na main: run 42682766358 (#3460) **success**; sem falha nova a registrar. t1598 conferido livre na árvore.
+- L-110: aberto, com a Pista B (estado apenas registrado).
+- **Próximo passo:** ao surgir merge de produto novo na main, ler o run do push e criar a guarda a partir de t1598 / L-111 (um PR draft por merge); merges só de docs seguem dispensados. As guardas t1594–t1597 (#3690–#3693) aguardam o QA do chat principal.
