@@ -100,7 +100,7 @@ export default function ForLandlordsPage() {
             </ButtonLink>
           </div>
 
-          <div className="flex flex-col gap-4 overflow-hidden rounded-xl border border-line bg-surface-2 sm:flex-row sm:items-center" data-testid="proprietarios-publicamos">
+          <div className="flex flex-col gap-4 overflow-hidden rounded-xl border border-line bg-surface-2" data-testid="proprietarios-publicamos">
             <div className="flex-1 p-6">
               <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
               <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
@@ -111,7 +111,6 @@ export default function ForLandlordsPage() {
                 Pedir ajuda para publicar
               </ButtonLink>
             </div>
-            <BrandImage src="/images/unicas/prop-passo-anuncie.webp" alt="Proprietário fotografando a sala para o anúncio" rounded="rounded-none" sizes="(max-width: 640px) 100vw, 320px" className="aspect-[16/10] w-full sm:w-80" />
           </div>
 
           <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
