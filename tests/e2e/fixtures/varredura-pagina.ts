@@ -44,7 +44,22 @@ async function rolarTudo(page: Page) {
 }
 
 /** Abre, rola tudo e mede as seis classes. `respostasRuins` vem de escutarImagens(), ligado antes do goto. */
+/** E744 (t352): a página pode navegar sozinha logo depois do carregamento (redirecionamento do app); o contexto some no meio da
+ *  varredura. Espera a página assentar e varre de novo (até 3 vezes) — só para esse erro; qualquer outro sobe como sempre. */
+export const CONTEXTO_DESTRUIDO = /Execution context was destroyed|Target page, context or browser has been closed|Frame was detached/;
 export async function varrerPagina(page: Page, respostasRuins: string[]): Promise<Achados> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await varrerPaginaUmaVez(page, respostasRuins);
+    } catch (e) {
+      if (tentativa >= 3 || !CONTEXTO_DESTRUIDO.test(String(e))) throw e;
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
+      await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => {});
+    }
+  }
+}
+
+async function varrerPaginaUmaVez(page: Page, respostasRuins: string[]): Promise<Achados> {
   await rolarTudo(page);
   // Imagens: dá até 8 s para as que entraram na rolagem terminarem de carregar.
   const imagensRuins = () =>

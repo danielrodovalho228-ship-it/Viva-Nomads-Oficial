@@ -623,3 +623,8 @@ Consolidado: **171 linhas** (antes 179). 4083 passaram · 161 falharam · 10 ins
 ## lab-critico do head 48c01a4ac (run 42744304362, 03:06 UTC)
 280 passaram · 2 falharam · 17 puladas. **t712 B verde** (e t710 do Passo 1 a partir de rascunho, também). As 2 falhas são a t710 em /empresas (390 e 1280 px): a spec esperava a foto "Tela de notebook com gráficos…" do cartão Relatórios, que saiu de /empresas no E772 (os pilares da página são só mobilidade e recibo). Spec corrigida e guarda `tests/laboratorio/t710-cartoes-empresas.test.ts` (alts da spec = pilares da página).
 Rodada completa do head 48c01a4ac disparada às 03:07 UTC (a correção da t710 vai no commit seguinte e entra na rodada seguinte).
+
+## Cauda (Passo 2) — t755 e t352
+- **t755** (dependia da hora): o bloco do contrato de teste nasce no dia UTC (`tornarContratoVigente`, `toISOString`); depois das 21h de Brasília o dia UTC já é o seguinte e a spec cobrava a célula de "hoje" em Brasília. A spec passa a cobrar a 1ª célula do bloco (`diaDoBloco`). Guarda: `tests/laboratorio/t755-dia-do-bloco.test.ts`.
+- **t352** (corrida de navegação): `varrerPagina` quebrava com "Execution context was destroyed" quando a página navega sozinha logo depois de carregar. A varredura agora espera a página assentar e repete (até 3 vezes), só para esse erro; os 126 specs que usam `varrerPagina` ganham a mesma proteção. Guarda: `tests/laboratorio/varredura-contexto-destruido.test.ts`.
+- Rodada completa 42747581191 (head 48c01a4ac, 03:09 UTC) segue em andamento; consolidado vigente: 171 linhas.
