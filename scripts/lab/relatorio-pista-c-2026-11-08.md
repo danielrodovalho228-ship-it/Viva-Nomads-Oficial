@@ -1477,3 +1477,10 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Head da main: `954bbece6` (inalterado). Merges novos desde a última checagem: nenhum. Merges cobertos: nenhum a cobrir (#3602 e #3460 seguem isentos, só docs).
 - Lab: último `lab-critico` na main = run 42682766358 (#3460), **success**; sem falha de produto a nomear para a Pista B. L-110 segue aberto com a Pista B.
 - Livres: t1598 / L-111. Sequência encerrada, sem agendamento; a próxima checagem acontece quando houver merge novo ou nova ordem.
+
+## Rodada de 10/11 — E782/E784 a 390 px e achado do link no desktop
+
+- Main `954bbece6` inalterada; último `lab-critico` na main = run 42682766358, success.
+- E782 a 390 px: **t1594** (PR #3690) já cobre seta de voltar sem "← Voltar" em texto, título único, abas sublinhadas, a 390 e 1280 px. E784 a 390 px: **t1595** (PR #3691) cobre os 3 caminhos (anúncio → mesmo anúncio; home → home; entrada direta → home, nunca /buscar).
+- **Achado (E784, desenho, não defeito):** o "‹ Voltar ao site" do admin não aparece a 1280 px porque a nav `admin-nav-celular` é `lg:hidden` (dashboard-shell.tsx; comentário E73/E176: "No computador nada muda — a barra lateral já está aberta"). O t404 já exigia a nav oculta no desktop. Sem item L: comportamento só-móvel por desenho. Se o Daniel quiser a saída também no desktop, é decisão de produto (Pista A/B), não do lab.
+- Acrescentado o teste (4) ao t1595 (1280 px: nav e link ocultos) para fixar a conclusão; verdict do CI do PR #3691 pendente.
