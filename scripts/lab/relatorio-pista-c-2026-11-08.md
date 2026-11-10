@@ -1513,3 +1513,9 @@ Nenhum destes é merge ainda; **nenhuma spec criada** para draft. Lista do que f
 | #3694 | E785 gate de frases proibidas | Sem spec nova: o PR ajusta t217/t172 e o gate roda no CI. |
 | #3698 | t112 imagem repetida (Faixa D) | Sem spec nova: usa o t112 existente. |
 | #3699 | E293 retenção | Só docs/config: isento. |
+
+## Correção do achado do E784 (10/11) — defeito confirmado, não "por desenho"
+
+- **Reprova do Daniel (10/11, 1920 px) confirma defeito:** o "‹ Voltar ao site" não existe no admin em desktop (`admin-nav-celular` com `lg:hidden`). A minha conclusão anterior ("só-móvel por desenho", seção de 10/11) está **revertida**.
+- **Ajuste na spec (PR #3691, commit `2a400a8c1`):** o teste (4) do t1595 passa a exigir o link **visível e com href "/" a 1280 px**, marcado `test.fail` justificado (o lab reproduziu o defeito: run 42776863792 viu a faixa e o link ocultos). Fica verde enquanto o defeito existe e **avisa** quando o #3702 (Pista B) pousar; aí remove-se o `test.fail`. Guardas de numeração/cobertura: 13/13. Verdict do CI do PR #3691: pendente.
+- Defeito do produto: item da Pista B (PR #3702, rascunho). Sem correção de produto da minha parte.
