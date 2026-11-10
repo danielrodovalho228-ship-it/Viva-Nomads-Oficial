@@ -1,4 +1,4 @@
-# Massa do grupo A conferida no banco, parte 2 (10/11, 10:08–10:20 UTC): E719, E721, E727/E728, E699, E672/E675 e E687
+# Massa do grupo A conferida no banco, parte 2 (10/11, 10:08–10:10 UTC): E719, E721, E727/E728, E699, E672/E675 e E687
 
 - **Continua:** [parte 1](2026-11-10-massa-grupo-a-conferida.md) (E759, E787, E350, E351, E575–E577 e E414).
 - **Executor de todos os passos logados:** o trabalhador de QA agendado pelo chat principal, com a chave da porta.
