@@ -610,3 +610,12 @@ Próximo: nova rodada completa do head com esta correção (nenhuma rodada em an
 
 ## lab-critico do head 0f5067960 (02:09 UTC, 10/11)
 269 passaram, 1 falhou (t712 B). O corpo do convite traz a linha do imóvel com "· código VN-…" antes do ponto; a spec esperava o ponto logo depois da cidade. Spec aceita o código opcional (o texto do produto não muda). A rodada completa do head segue em consolidação (fatia 20/20 ainda rodando); consolidado vigente: 179 linhas (22:50 UTC).
+
+## Rodada completa do head 0f5067960 (run 42737030513) — consolidada 02:37 UTC, 10/11
+Consolidado: **171 linhas** (antes 179). 4083 passaram · 161 falharam · 10 instáveis · 255 puladas (antes 4056/167/12/274). Fatias: 5 verdes (2, 17, 18, 19, 20) e 15 com falha de teste; `consolidar` vermelho por haver falhas, não por defeito do desenho.
+- Saíram: t1426, t230, t280, t355, t361, t365, t367, t489, t692, t776. t346 2→1, t719 2→1.
+- Entraram: t21, t30, t352 (corrida de navegação), t755 (depende da data: hoje em Brasília × UTC depois das 21h).
+- Visuais: t245 (38), t271 (11), t263 (6) — Pista QA.
+- t112 (2): imagem repetida em /para-proprietarios — correção de produto no PR #3698 (Faixa D), não repetida aqui.
+- t710 (3): 1 corrigido nesta rodada de correção (reabre "Ver mais tipos" depois de trocar o tipo); os 2 de /empresas ("Tela de notebook…") seguem sem causa.
+- lab-critico do head 3897d3d94 ainda rodando.

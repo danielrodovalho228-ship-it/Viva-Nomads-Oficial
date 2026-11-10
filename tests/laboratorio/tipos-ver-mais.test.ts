@@ -18,3 +18,8 @@ for (const f of ["t691-e259-polimento-assistente", "t704-e265-tipos-sem-selo", "
     assert.ok(i < s.indexOf("toHaveCount(9"), "antes da contagem de nove");
   });
 }
+
+test("t710: reabre 'Ver mais tipos' depois de trocar o tipo, antes de conferir o loft desmarcado", () => {
+  const s = readFileSync("tests/e2e/specs/t710-e265-sem-selo-em-todo-cartao.spec.ts", "utf8");
+  assert.match(s, /verMais\.getAttribute\("aria-expanded"\)\) !== "true"\) await verMais\.click\(\);\s*\n\s*await expect\(loft\)\.toHaveAttribute\("aria-checked", "false"\)/);
+});
