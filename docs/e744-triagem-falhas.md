@@ -702,3 +702,11 @@ Corrigidas na mesma branch, com guarda em `tests/laboratorio/specs-desatualizada
 - **t287** — havia dois `role=status` no formulário; a spec filtra pelo texto.
 - **t875** — aviso aparece em dois lugares; spec usa o primeiro.
 Lidas e deixadas de fora, por dependerem de decisão de produto ou de dado: t600 (nome "Ana Isabela" × "Ana I."), t348 (assertiva larga: o HTML mostra o preço do imóvel), t386/t401/t288/t292/t534/t547 (ordem do wizard e aceite do termo de IA), t229/t231/t273/t465 (admin "decisões" → Central de Pendências, reescrita), t683 (distância 980 m × < 650), t816/t88 (medidas de layout), t112 (PR #3698), t85 (mensagem de PDF pequeno × tipo), t862 (404 × 200: possível defeito de produto).
+
+## Rodada 42792426869 (head 42a48ade0, Chromium endurecido) — consolidado FINAL, tentativa única (10:47 UTC, 10/11)
+**4114 passaram · 151 falharam · 5 instáveis · 239 puladas · 156 linhas** (rodada anterior 42767013537: 4093/156/7/253 · 163). Total executado 4509 (= o da suíte inteira): **as 20 fatias rodaram de primeira, nenhuma falhou no Chromium** — o endurecimento do passo funcionou.
+- Saíram (12 linhas): t194, t255, t287, t303, t304, t315, t486, t593, t776, t875 — entre elas, todas as corrigidas no lote 2 (t287, t304, t315, t486, t593, t875).
+- Entraram: t692 (2), t840 (1).
+- Visuais da Pista QA: 55 das 151. Restam ~96 linhas fora dos visuais (a maioria 1 por spec), listadas no lote 2 como "fora por decisão de produto ou dado".
+
+**Estado da frente E744:** o objetivo do PR — a suíte completa TERMINAR e consolidar em uma linha — está cumprido e repetido em 4 rodadas completas; o que falta para "verde" são specs desatualizadas e decisões de produto/QA (lista acima), não o fatiamento. O PR #3588 segue em draft; o julgamento é: mesclar o fatiamento como está (a suíte noturna passa a terminar) e tratar o restante em PRs próprios, ou segurar até verde.
