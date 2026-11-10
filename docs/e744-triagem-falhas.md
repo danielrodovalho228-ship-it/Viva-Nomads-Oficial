@@ -633,3 +633,15 @@ Rodada completa do head 48c01a4ac disparada às 03:07 UTC (a correção da t710 
 - Rodada 42747581191 (head 48c01a4ac, 03:09 UTC): ainda em execução; sem consolidação nova. Comparativo pendente contra as 171 linhas (4083/161/10/255).
 - Correções já no branch, ainda não medidas em rodada completa: t710 (empresas e "Ver mais tipos"), t755 (dia do bloco), t352/varredura (repete se a página navega).
 - **Próximo passo:** quando a 42747581191 consolidar, registrar o comparativo aqui; só então disparar UMA rodada completa do head 75bbbf731 (ou o mais novo), sem rodar duas ao mesmo tempo, e acompanhar até consolidar. PR #3588 segue em draft.
+
+## Rodada 42747581191 (head 48c01a4ac) — consolidada 04:10 UTC, 10/11
+**167 linhas** (antes 171). 4087 passaram · 160 falharam · 7 instáveis · 255 puladas (antes 4083/161/10/255).
+- Saíram: t30, t352, t431, t712, t755 (e t204 2→1, t710 3→2).
+- Entraram: t290, t607, t840 (1 cada).
+- Visuais (Pista QA): t245 (38), t271 (11), t263 (6) = 55.
+- Cauda com 2: t78 (3), t112 (2; correção no PR #3698), t176, t621, t71, t710 (/empresas, já corrigido no branch), t77, t772, t778, t799, t800.
+- Cauda com 1: ~80 specs, entre elas t21, t227, t229, t231, t273 (admin "decisões"), t318, t370, t386, t401, t435, t469, t534, t547, t886, t644, t81, t442 (famílias já nomeadas), t839, t840.
+- Esta rodada NÃO traz t710 (/empresas), t755 e t352 (commit 75bbbf731); essas saídas (t352, t755) já aparecem por variação de horário/instabilidade e precisam da rodada seguinte para confirmar.
+
+## Rodada seguinte
+Disparada às 04:3x UTC do head da branch que inclui 75bbbf731 (t710 /empresas, t755 dia do bloco, t352 varredura que repete). Uma rodada só. Resultado linha a linha será registrado aqui quando consolidar.
