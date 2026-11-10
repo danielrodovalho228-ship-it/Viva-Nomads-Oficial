@@ -628,3 +628,8 @@ Rodada completa do head 48c01a4ac disparada às 03:07 UTC (a correção da t710 
 - **t755** (dependia da hora): o bloco do contrato de teste nasce no dia UTC (`tornarContratoVigente`, `toISOString`); depois das 21h de Brasília o dia UTC já é o seguinte e a spec cobrava a célula de "hoje" em Brasília. A spec passa a cobrar a 1ª célula do bloco (`diaDoBloco`). Guarda: `tests/laboratorio/t755-dia-do-bloco.test.ts`.
 - **t352** (corrida de navegação): `varrerPagina` quebrava com "Execution context was destroyed" quando a página navega sozinha logo depois de carregar. A varredura agora espera a página assentar e repete (até 3 vezes), só para esse erro; os 126 specs que usam `varrerPagina` ganham a mesma proteção. Guarda: `tests/laboratorio/varredura-contexto-destruido.test.ts`.
 - Rodada completa 42747581191 (head 48c01a4ac, 03:09 UTC) segue em andamento; consolidado vigente: 171 linhas.
+
+## Fechamento do lote — estado em 10/11 (manhã, UTC)
+- Rodada 42747581191 (head 48c01a4ac, 03:09 UTC): ainda em execução; sem consolidação nova. Comparativo pendente contra as 171 linhas (4083/161/10/255).
+- Correções já no branch, ainda não medidas em rodada completa: t710 (empresas e "Ver mais tipos"), t755 (dia do bloco), t352/varredura (repete se a página navega).
+- **Próximo passo:** quando a 42747581191 consolidar, registrar o comparativo aqui; só então disparar UMA rodada completa do head 75bbbf731 (ou o mais novo), sem rodar duas ao mesmo tempo, e acompanhar até consolidar. PR #3588 segue em draft.
