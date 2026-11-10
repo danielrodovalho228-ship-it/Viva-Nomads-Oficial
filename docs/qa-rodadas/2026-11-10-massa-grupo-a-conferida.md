@@ -25,7 +25,7 @@
 - 0 contratos. `checkin_after` e `checkout_before` são **nulos**.
 - `imovel_instrucoes_chegada`: **0 linhas.** O e-mail do D-7 vai sair na variante "instruções ainda não lidas, veja a página" (a varredura ampliada do `route.ts:308-309`). **Isso não é defeito.** Se a prova quiser as instruções no corpo (E209), o `proprietario1` preenche "Instruções de chegada" do imóvel **antes** do cron.
 
-**Regra que o cron aplica** (`route.ts:288-334`, `instrucoes.ts:121`, `contrato-estado.ts:53`):
+**Regra que o cron aplica** (na `main`: bloco 7 `route.ts:289-335` e bloco 8 `route.ts:349-375`, `jornada-mensagens.ts:68,99-107`, `instrucoes.ts:121`, `contrato-estado.ts:53`):
 - contrato com `status='ativo'`;
 - o 1º bloco começando em 17/11;
 - `assinado_proprietario_em` e `assinado_inquilino_em` preenchidos;
@@ -42,10 +42,12 @@
 7. Conferir na tela que o contrato aparece como ativo.
 
 **Leitura depois do cron** (Pista QA, SELECT): os 3 SELECTs da `2026-11-10-0930.md`. O esperado é:
-- `estadia_instrucoes_liberadas` para o `3555816b…`;
+- `jornada_d7` **e** `estadia_instrucoes_liberadas` para o `3555816b…` (dois avisos no D-7, os dois exigem o pagamento confirmado);
 - `contrato_eventos` `instrucoes_liberadas` com `inicio=2026-11-17`;
-- `emails_teste.evento='estadia_instrucoes_liberadas'`;
-- a `jornada_confirmacao` sai **pelas assinaturas**, com ou sem pagamento.
+- `emails_teste.evento` `jornada_d7` e `estadia_instrucoes_liberadas`;
+- a `jornada_confirmacao` sai pelas assinaturas (janela) **ou** quando a estadia fica paga com a entrada futura.
+
+> Corrigido às 10:30: a primeira versão desta seção foi escrita lendo o código de uma branch atrás da `main`, sem o `jornada_d7`.
 
 **Se perder as 13:00:** usar entrada = dia + 8 e ler no cron do dia seguinte.
 
