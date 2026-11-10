@@ -24,7 +24,7 @@ const CARTOES = {
   "/empresas": [
     "Profissional chegando a um imóvel mobiliado com mala de viagem",
     "Mesa de trabalho com notebook e recibo impresso",
-    "Tela de notebook com gráficos sobre uma mesa de escritório",
+    // E772: o cartão "Relatórios" saiu de /empresas (era "em construção"); a foto fica nos dados, sem cartão na página.
   ],
   "/para-proprietarios": [
     "Contas de casa organizadas sobre uma mesa ao lado de uma planta",

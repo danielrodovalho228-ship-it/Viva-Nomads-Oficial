@@ -619,3 +619,7 @@ Consolidado: **171 linhas** (antes 179). 4083 passaram · 161 falharam · 10 ins
 - t112 (2): imagem repetida em /para-proprietarios — correção de produto no PR #3698 (Faixa D), não repetida aqui.
 - t710 (3): 1 corrigido nesta rodada de correção (reabre "Ver mais tipos" depois de trocar o tipo); os 2 de /empresas ("Tela de notebook…") seguem sem causa.
 - lab-critico do head 3897d3d94 ainda rodando.
+
+## lab-critico do head 48c01a4ac (run 42744304362, 03:06 UTC)
+280 passaram · 2 falharam · 17 puladas. **t712 B verde** (e t710 do Passo 1 a partir de rascunho, também). As 2 falhas são a t710 em /empresas (390 e 1280 px): a spec esperava a foto "Tela de notebook com gráficos…" do cartão Relatórios, que saiu de /empresas no E772 (os pilares da página são só mobilidade e recibo). Spec corrigida e guarda `tests/laboratorio/t710-cartoes-empresas.test.ts` (alts da spec = pilares da página).
+Rodada completa do head 48c01a4ac disparada às 03:07 UTC (a correção da t710 vai no commit seguinte e entra na rodada seguinte).
