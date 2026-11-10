@@ -680,3 +680,15 @@ Visuais da Pista QA não entram (t245/t271/t263).
 Linha bruta: 3308 passaram · 136 falharam · 7 instáveis · 211 puladas · 143 linhas. **Não comparável** com 4090/157/9/253: quatro fatias (3, 12, 13 e 18 de 20) não rodaram nenhum teste — o passo "Instalar Chromium do Playwright" falhou em todas (~25 min), ~780 testes sem rodar. Segunda rodada seguida com perda por esse passo (antes: fatia 2).
 - Correção da infraestrutura (commit seguinte, `laboratorio.yml`): Chromium instala primeiro e sozinho, tentativas de 5 min (até 4); o WebKit (só 3 specs de celular) passa a passo próprio com `continue-on-error`, para não derrubar a fatia. Guarda em `tests/laboratorio/lab-fatias.test.ts`.
 - Ação: refazer só as fatias 3, 12, 13 e 18 (rerun de jobs da mesma run; usam o workflow antigo) e consolidar de novo; o comparativo oficial sai dessa tentativa 2.
+
+## Rodada 42767013537 (head d5ddb6d8c) — consolidado FINAL, 5 tentativas (09:22 UTC, 10/11)
+Fatias 3, 12, 13 e 18 perdidas por falha do passo do Chromium foram refeitas uma a uma (tentativas 2–5); as 20 fatias entregaram resultado.
+**4093 passaram · 156 falharam · 7 instáveis · 253 puladas · 163 linhas** (rodada anterior 42755440801: 4090/157/9/253 · 166).
+- Saiu: **t719** (2→0, a correção do E508 funcionou), t840.
+- Melhoraram: t204 2→1, t346 2→1, t585 2→1.
+- Entraram (1 cada): t255, t683, t776 (já tinham aparecido e saído em rodadas anteriores: alternam).
+- Visuais da Pista QA: 55 das 156.
+- **Suíte ainda não verde.** Restam ~101 linhas fora dos visuais, quase todas 1 por spec (cadastro/wizard, admin "decisões", Conta/papel-ativo, timeouts de 90 s, mapa).
+- Infra: a correção do Chromium (commit 049eca53c) só vale para rodadas disparadas depois dela.
+
+**Próximo passo exato:** (1) ler no `lab_execucoes.falhas` o erro de t255, t683 e t776 e dos que têm erro legível dentre os ~100; (2) corrigir na mesma branch os determinísticos com guarda em `tests/laboratorio/`; (3) disparar UMA rodada nova (agora com o Chromium endurecido) e consolidar; (4) PR #3588 segue em draft até a suíte fechar verde.
