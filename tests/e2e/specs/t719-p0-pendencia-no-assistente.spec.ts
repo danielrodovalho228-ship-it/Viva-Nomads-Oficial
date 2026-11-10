@@ -54,17 +54,17 @@ test.describe("T719 — P0: pendência do rascunho abre o passo no assistente", 
     await p.context().close();
   });
 
-  test("B: publicado sem tipo de entrada → editor por seções na seção Regras, aberta", async ({ browser }) => {
+  test("B: publicado sem tipo de entrada → sem pendência na lista (E508); o editor abre na seção Regras", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    // E418 (02/11): um aviso único no topo; o link do anúncio fica no cartão dele.
-    await expect(p.getByTestId("aviso-tipo-entrada")).toBeVisible({ timeout: 30_000 });
-    const link = p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.ativo}"]`).getByTestId("card-tipo-entrada");
-    await expect(link).toHaveAttribute("href", `/dashboard/imoveis/${ids.ativo}/editar#secao-regras`);
-    await link.click();
+    // E508 (D-S2-04): anúncio no ar não carrega pendência de cadastro — nem dica no topo, nem link no cartão.
+    await expect(p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.ativo}"]`)).toBeVisible({ timeout: 30_000 });
+    await expect(p.getByTestId("aviso-tipo-entrada")).toHaveCount(0);
+    await expect(p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.ativo}"]`).getByTestId("card-tipo-entrada")).toHaveCount(0);
+    await p.goto(`/dashboard/imoveis/${ids.ativo}/editar#secao-regras`, { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("secao-regras")).toHaveAttribute("data-aberta", "true", { timeout: 30_000 });
-    await p.screenshot({ path: `${SAIDA}/t719-editor-regras-1280.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t729-editor-regras-1280.png`, fullPage: true });
     await p.context().close();
   });
 });

@@ -661,3 +661,17 @@ Linha bruta: 3812 passaram · 157 falharam · 9 instáveis · 253 puladas · **1
 - Suíte AINDA NÃO verde (157 falhas). PR #3588 segue em draft.
 
 **Próximo passo exato:** (1) ler o erro dos 5 que pioraram/entraram (t431, t204, t346, t585, t719) no `lab_execucoes.falhas`; (2) corrigir na mesma branch os de causa determinística, com guarda em `tests/laboratorio/`; (3) uma rodada completa por vez, a próxima do head resultante; (4) reduzir a janela de infraestrutura: limite de 8 min por tentativa na instalação do Chromium (proposta, não aplicada).
+
+## Classificação das cinco que subiram (rodada 42755440801, consolidado final 06:01 UTC)
+| Spec | Teste | Resultado | Classe | Ação |
+|---|---|---|---|---|
+| t719 | B publicado sem tipo de entrada | falhou (as 2 tentativas) | **determinística**: a t719 é cópia antiga da t729; o E508 tirou o aviso "Informar o tipo de entrada" de Meus imóveis e a t719 ainda o exigia | spec alinhada à t729 + guarda `t719-e508-sem-pendencia.test.ts` |
+| t719 | A atalho do rascunho → Passo 2 | instável (recebeu /dashboard/verificacao) | instável (redirecionamento depende de estado da conta) | nenhuma |
+| t431 | 3 (390 px) categorias | instável (passou na 2ª) | instável | nenhuma |
+| t204 | ia-fotos-falha | instável | instável | nenhuma |
+| t204 | matrícula não lida | falhou, sem texto de erro no consolidado | sem causa legível (o log do teste fica no artefato, bloqueado ao proxy) | não corrigir às cegas; pede o log da próxima rodada |
+| t346 | 3 busca × datas importadas | instável | instável | nenhuma |
+| t346 | 4 data importada cruza candidatura | falhou, sem texto | sem causa legível (antes: esperava aviso ao dono = 1, recebeu 0) | idem |
+| t585 | a boas-vindas | instável (timeout 180 s) | instável/lento | nenhuma |
+| t585 | d2 véspera na hora | falhou, sem texto | sem causa legível | idem |
+Visuais da Pista QA não entram (t245/t271/t263).
