@@ -1484,3 +1484,5 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - E782 a 390 px: **t1594** (PR #3690) já cobre seta de voltar sem "← Voltar" em texto, título único, abas sublinhadas, a 390 e 1280 px. E784 a 390 px: **t1595** (PR #3691) cobre os 3 caminhos (anúncio → mesmo anúncio; home → home; entrada direta → home, nunca /buscar).
 - **Achado (E784, desenho, não defeito):** o "‹ Voltar ao site" do admin não aparece a 1280 px porque a nav `admin-nav-celular` é `lg:hidden` (dashboard-shell.tsx; comentário E73/E176: "No computador nada muda — a barra lateral já está aberta"). O t404 já exigia a nav oculta no desktop. Sem item L: comportamento só-móvel por desenho. Se o Daniel quiser a saída também no desktop, é decisão de produto (Pista A/B), não do lab.
 - Acrescentado o teste (4) ao t1595 (1280 px: nav e link ocultos) para fixar a conclusão; verdict do CI do PR #3691 pendente.
+
+- **Verdict do teste (4) do t1595:** run 42776863792 (PR #3691, `d70c939f1`) = **success**. A 1280 px a nav e o link "Voltar ao site" ficam ocultos, confirmando o desenho só-móvel. Main `954bbece6` sem merge novo; lab verde.
