@@ -35,4 +35,14 @@ test.describe("T1595 — E784: Voltar ao site do admin acompanha o contexto (390
     await expect(page.getByTestId("admin-voltar-site")).toHaveAttribute("href", "/", { timeout: 25_000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
+
+  // Achado de desenho (não é defeito): a navegação da equipe com "‹ Voltar ao site" é só do celular (`lg:hidden`, E73/E176: "No computador
+  // nada muda — a barra lateral já está aberta"). A 1280 px o link some DE PROPÓSITO; o t404 já exige a nav oculta. Aqui fica registrado.
+  test("(4) a 1280 px o link não existe (comportamento só-móvel, por desenho)", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/admin", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("admin-numeros")).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByTestId("admin-nav-celular")).toBeHidden();
+    await expect(page.getByTestId("admin-voltar-site")).toBeHidden();
+  });
 });
