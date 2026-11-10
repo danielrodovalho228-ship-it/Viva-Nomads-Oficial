@@ -70,6 +70,8 @@
   - Esperado depois do merge do #3696: o plano B em coluna única, nos dois casos. **Antes** do merge, (b) deve deixar a área em branco. Esse é o "antes".
 - Telas: **390** e 1280.
 
+> **Atualizado às 11:45** ([rodada 11:45](2026-11-10-1145.md)): o head `344b6b8b7` do #3696 ignora fotos com menos de 4.096 bytes. Caso novo, "cor única": **`inquilino1` / `59df17b5`** (8 fotos de 1.784 bytes; esperado depois do merge: espaço desenhado). O `804dbc8e` (capa de 5.552 bytes) segue como controle "foto que carrega".
+
 **Passo logado que falta** (trabalhador de QA agendado, depois do merge do #3696): os 3 casos acima, com print de cada um, e o "antes" do caso (b) se der tempo de fazê-lo antes do merge.
 
 ## E350: modelos de recusa de parceiro
