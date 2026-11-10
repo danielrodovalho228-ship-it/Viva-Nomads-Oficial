@@ -64,7 +64,7 @@ test.describe("T719 — P0: pendência do rascunho abre o passo no assistente", 
     await expect(p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.ativo}"]`).getByTestId("card-tipo-entrada")).toHaveCount(0);
     await p.goto(`/dashboard/imoveis/${ids.ativo}/editar#secao-regras`, { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("secao-regras")).toHaveAttribute("data-aberta", "true", { timeout: 30_000 });
-    await p.screenshot({ path: `${SAIDA}/t729-editor-regras-1280.png`, fullPage: true });
+    await p.screenshot({ path: `${SAIDA}/t719-editor-regras-1280.png`, fullPage: true });
     await p.context().close();
   });
 });
