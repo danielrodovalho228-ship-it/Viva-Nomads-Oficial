@@ -26,6 +26,14 @@ export type CategoriaParceiro = (typeof CATEGORIAS_PARCEIRO)[number]["valor"];
 export const CATEGORIAS_SO_CREDENCIAMENTO: readonly string[] = ["vistoria"];
 /** O catálogo "pedir serviço": as categorias que se contratam direto. */
 export const CATEGORIAS_CATALOGO = CATEGORIAS_PARCEIRO.filter((x) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(x.valor));
+/**
+ * E729 (Phoenix/RELATORIO-002, C3): a exigência que uma categoria traz ao formulário (o campo extra só aparece depois de marcá-la)
+ * é dita JUNTO da categoria, antes de marcar. Fonte única: a mesma validação do servidor (abaixo) exige estes campos.
+ */
+export const EXIGENCIA_DA_CATEGORIA: Readonly<Record<string, string>> = {
+  fotografia: "Pede o link do portfólio",
+  mudanca: "Pede empresa e veículo",
+};
 export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.valor === c)?.rotulo ?? "Serviço";
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
@@ -425,8 +433,14 @@ export function lerParceiroGeral(v: unknown, ligada: boolean): ParceiroGeral {
   const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
   return { ligado: ligada, nome: limpar(o.nome as string, 80), cidade: limpar(o.cidade as string, 80), descricao: limpar(o.descricao as string, 300) };
 }
-export function mostrarParceiroGeral(g: ParceiroGeral, resultados: number): boolean {
-  return g.ligado && resultados === 0 && !!g.nome;
+/**
+ * E688 (decisão do Daniel, 08/11/2026): a saída "parceiro geral" (AquiResolve) fica FORA das superfícies públicas por ora —
+ * não se promete o que não está cadastrado (o registro da Maira foi adiado em 18/10). Reversível: quando ela se cadastrar,
+ * basta ligar esta constante (e a chave PARCEIRO_GERAL_FALLBACK no admin). A configuração no admin continua existindo.
+ */
+export const PARCEIRO_GERAL_NAS_SUPERFICIES = false;
+export function mostrarParceiroGeral(g: ParceiroGeral, resultados: number, naSuperficie: boolean = PARCEIRO_GERAL_NAS_SUPERFICIES): boolean {
+  return naSuperficie && g.ligado && resultados === 0 && !!g.nome;
 }
 
 // ── Imagens da página (recorte no navegador; o servidor só aceita WebP até 5 MB) ────────────────────────────────
@@ -460,3 +474,6 @@ export function linhasDadosDaCategoria(categorias: readonly string[], dados: { e
   if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
   return linhas;
 }
+
+/** E771: a divisão 90/10 vale só para SERVIÇOS de parceiros; o pagamento da estadia (/empresas, /buscar) vai direto ao proprietário. */
+export const ESCOPO_PAGAMENTO_PARCEIROS = "Esta divisão vale só para os serviços de parceiros. O pagamento da estadia vai direto ao proprietário, e a Viva não toca nesse dinheiro.";

@@ -35,7 +35,7 @@ for (const largura of [390, 1280]) {
         await pergunta.click();
         await expect(pergunta).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
       }).toPass({ timeout: 30_000 });
-      await expect(page.getByText("Caução de até 3 vezes o valor mensal")).toBeVisible();
+      await expect(page.getByText("Caução de até 3 vezes o valor mensal, paga direto ao proprietário")).toBeVisible();
       await expect(page.getByText(/50%|cada bloco/)).toHaveCount(0);
     });
   });

@@ -1,4 +1,5 @@
 import { FormulaDoTotal } from "@/components/property/formula-total";
+import { isExemplo } from "@/lib/demo-listing";
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
@@ -6,7 +7,7 @@ import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLE
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { notaDataCalculada, rotuloPreco } from "@/lib/cartao-preco";
+import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -37,7 +38,7 @@ function disponivelFuturo(iso?: string): string | null {
  * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
-export function PriceCard({ property, actions, meses = 1, dias = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
+export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMinimaAviso = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E725: duração escolhida abaixo do mínimo (em dias do mínimo): mostra só o aviso, sem total da estadia. */ estadiaMinimaAviso?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
   const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: disponivelDesde ?? property.availableFrom });
@@ -54,6 +55,13 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
   return (
     // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
     <PainelPrecoFixo>
+      {/* E724 (Phoenix/RELATORIO-002, A3): no anúncio de exemplo o aviso vem PRIMEIRO, no topo do cartão — antes de qualquer
+          data, valor ou total —, e não só abaixo dos campos. */}
+      {isExemplo(property.id) && (
+        <p className="mb-3 rounded-lg bg-sage-100 px-3 py-2 text-sm font-medium text-forest" data-testid="cartao-exemplo-aviso">
+          Anúncio de exemplo: serve para você ver como a Viva funciona. Nenhuma solicitação é enviada a ninguém.
+        </p>
+      )}
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}
@@ -62,10 +70,15 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
         {estadia && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {formatBRL(estadia.total)} em {estadia.meses} meses
+            · {resumoEmMeses(estadia.total, estadia.meses)}
           </span>
         )}
       </p>
+      {estadiaMinimaAviso != null && (
+        <p className="text-sm font-medium text-ink" data-testid="cartao-lateral-estadia-minima" role="status">
+          Estadia mínima de {estadiaMinimaAviso} dias.
+        </p>
+      )}
       {estadiaDias && (
         <>
           <p className="text-sm text-ink tabular-nums" data-testid="cartao-lateral-estadia">

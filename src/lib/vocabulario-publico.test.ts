@@ -9,7 +9,7 @@ import { achadosNoTexto } from "./varredura-texto.ts";
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
 test("#142: frase-padrão da Caução sem 'aluguéis'", () => {
-  assert.match(CAUCAO_FRASE, /^Caução de até 3 vezes o valor mensal, depositada em poupança/);
+  assert.match(CAUCAO_FRASE, /^Caução de até 3 vezes o valor mensal, paga direto ao proprietário/);
   assert.deepEqual(achadosNoTexto(CAUCAO_FRASE, { vocabulario: true }), []);
 });
 

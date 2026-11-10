@@ -59,6 +59,7 @@ import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
+import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
 import { mesesDoCartao } from "@/lib/cartao-preco";
 import { FavoriteButton } from "@/components/favorite-button";
@@ -324,7 +325,11 @@ export function PropertyDetail({
   const [datasInvalidas, setDatasInvalidas] = useState({ entrada: false, saida: false });
   // E562 (telas): o total da estadia em DIAS exatos (estadiaDoImovelEmDias) — a mesma regra da proposta; nada de meses
   // arredondados (43 dias = "1 mês + 13 dias", não 2 meses).
-  const diasSelecao = diasDaSelecao(selecao);
+  const diasEscolhidos = diasDaSelecao(selecao);
+  // E725: abaixo da estadia mínima a estadia é inválida: não se precifica (nem total no cartão, nem na barra, nem no resumo);
+  // fica só o aviso "Estadia mínima de N dias".
+  const abaixoDoMinimo = abaixoDaEstadiaMinima(diasEscolhidos, property.minPeriodDays);
+  const diasSelecao = abaixoDoMinimo ? null : diasEscolhidos;
   const estadiaSelecao = diasSelecao ? estadiaDoImovelEmDias(property, diasSelecao) : null;
   const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, ...parcelasDoResumo(calcularTotalMensal(property)), estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida, janela: { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, maxDias: property.maxPeriodDays } });
   // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
@@ -445,6 +450,19 @@ export function PropertyDetail({
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
+      {exemplo ? (
+        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+          <p>
+            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
+            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
+          </p>
+          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
+            Ver imóveis reais
+          </ButtonLink>
+        </div>
+      ) : (
+        <>
+      {/* E713: os campos de reserva só existem no anúncio real; no exemplo a coluna é a explicação + "Ver imóveis reais" (E694). */}
       {camposPeriodo("candidatura")}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Motivo da estadia (opcional)
@@ -462,21 +480,6 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
-      {exemplo ? (
-        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
-          <p data-testid="aviso-demo" className="font-medium text-forest">
-            {EXEMPLO_AVISO_DEMO}
-          </p>
-          <p className="mt-1">
-            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
-            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
-          </p>
-          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
-            Ver imóveis reais
-          </ButtonLink>
-        </div>
-      ) : (
-        <>
       {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
@@ -1049,7 +1052,7 @@ export function PropertyDetail({
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
         <aside>
-          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} disponivelDesde={disponivelDesde} />
+          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} estadiaMinimaAviso={abaixoDoMinimo ? estadiaMinimaDias(property.minPeriodDays) : null} disponivelDesde={disponivelDesde} />
         </aside>
       </div>
 

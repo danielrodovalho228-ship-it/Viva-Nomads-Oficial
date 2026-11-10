@@ -24,7 +24,7 @@ test("/empresas: sem 'aluguel', usa 'estadia' e 'imóveis mobiliados'; nunca 'te
 
 test("/empresas: seção de 3 passos e FAQ com faturamento/recibo, prazo e assinatura", () => {
   assert.match(page, /Como funciona para a empresa/);
-  assert.equal((page.match(/titulo: "/g) ?? []).length >= 6, true); // 3 pilares + 3 passos
+  assert.equal((page.match(/titulo: "/g) ?? []).length >= 5, true); // 2 pilares (E772 tirou Relatórios) + 3 passos
   assert.match(page, /Como a empresa recebe o recibo\?/);
   assert.match(page, /De 30 a 180 dias/);
   assert.match(page, /Quem assina o contrato\?/);
@@ -36,4 +36,18 @@ test("/empresas: SEO — title ≤ 60, og:url, canonical e JSON-LD", () => {
   assert.match(page, /openGraph: \{\s*url: "\/empresas"/);
   assert.match(page, /canonical: "\/empresas"/);
   assert.match(page, /<JsonLd/);
+});
+
+test("E770/E771/E772: prazo e taxa explícitos, escopo do dinheiro nas duas páginas, nada 'em construção' anunciado", () => {
+  assert.match(page, /A equipe responde em até 7 dias, no e-mail informado/); // decisão do Daniel, 09/11
+  assert.match(page, /Respondemos em até 7 dias com opções de imóveis mobiliados/);
+  assert.doesNotMatch(page, /Ainda não há prazo de resposta/);
+  assert.match(page, /A taxa da Viva é do proprietário, por contrato fechado/);
+  assert.match(page, /pagamento da estadia vai direto ao proprietário/);
+  assert.match(page, /Serviços de parceiros \(limpeza, mudança\) são contratados à parte/);
+  assert.doesNotMatch(page, /em construção|Relatórios|relatórios/);
+  assert.doesNotMatch(page, /fatura/i); // quem emite é o proprietário, e é RECIBO (FAQ "Como a empresa recebe o recibo?")
+  const regras = ler("components/parceiros/regras-parceiros.tsx");
+  assert.match(regras, /ESCOPO_PAGAMENTO_PARCEIROS/);
+  assert.match(ler("lib/parceiros/regras.ts"), /Esta divisão vale só para os serviços de parceiros\. O pagamento da estadia vai direto ao proprietário/);
 });

@@ -53,11 +53,12 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
 import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
-import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, soHaExemplos, TEXTO_CARTAO_PEDIDO, TEXTO_VITRINE_SO_EXEMPLOS } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
+import { desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
@@ -477,21 +478,21 @@ export function SearchClient({
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
     let list = baseVisivel.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b) || desempatePorId(a, b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a) || desempatePorId(a, b));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
-        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "") || desempatePorId(a, b)
       );
     // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
     else if (dist)
-      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)! || desempatePorId(a, b));
     else
       list = [...list].sort(
         (a, b) =>
           prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
+            prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto) || desempatePorId(a, b)
       );
     return list;
   }, [baseVisivel, dist, filtrosPainel, sort]);
@@ -688,6 +689,10 @@ export function SearchClient({
       {/* E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles e, acima da lista, SÓ a linha da contagem com
           "Salvar busca" e "Descrever o que procuro". Nada de título grande, banner, caixa de destino ou de descrição na
           página: o destino vive no painel da pílula Local; a descrição, numa folha. */}
+      {/* E780: no celular a faixa de filtros (chips + Mais filtros · Ordenar · Mapa) fica PRESA logo abaixo do cabeçalho, inteira, e
+          a contagem rola por baixo dela. Antes tudo rolava e o cabeçalho fixo cobria a metade de cima dos chips. No computador
+          (lg+) a faixa segue no fluxo. */}
+      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo">
       <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
         <BarraPilulas
           filtros={filtrosPainel}
@@ -754,7 +759,10 @@ export function SearchClient({
           mapa={comMapa ? verMapa : mapaNoCelular}
           onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
         />
+      </div>
+      </div>
 
+      <div className="container-page lg:max-w-none lg:px-0">
         {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever +
             Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
@@ -844,6 +852,12 @@ export function SearchClient({
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
           {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
           <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
+          {/* E723: sem imóvel real publicado, a lista é só de exemplos — e diz isso no topo. */}
+          {soHaExemplos(results, (p) => isExemplo(p.id)) && !exemplosForcados && (
+            <p className="mb-4 rounded-lg bg-sage-100 px-4 py-3 text-sm font-medium text-forest" data-testid="busca-so-exemplos">
+              {TEXTO_VITRINE_SO_EXEMPLOS}
+            </p>
+          )}
 
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
