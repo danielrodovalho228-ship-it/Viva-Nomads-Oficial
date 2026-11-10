@@ -11,3 +11,6 @@
 ## Decisões do chat principal (09/11) aplicadas
 1. Selo da home (spec t1025) = "Perfil verificado" (`SELO_PERFIL_VERIFICADO`, no lugar de "Sem troca de contato direto"); t217 e `home-imagens.test.ts` ajustados.
 2. Nova regra `plataforma-entrega-contato-do-proprietario`: barra "contato do proprietário/dono/anfitrião/locador" que a plataforma entrega, passa, revela ou libera (verbo antes: "passamos/entrega/você recebe o contato do proprietário"; particípio depois: "contato do dono liberado/revelado"). Negações ("nunca entrega", "não passamos") passam. "Sem contato por fora" NÃO entra (orientação permitida). Teste cobre os dois lados; o GATE varre `src/` sem achados.
+
+## Varredura final (10/11)
+Conferido em `src/`, `tests/`, `supabase/` e `public/`: nenhuma superfície voltada ao público sugere contato liberado depois do aceite. Restavam dois **comentários de código** com a ideia antiga ("contato protegido/mascarado até o aceite", em `visitas-video-actions.ts` e `property-detail.tsx`); reescritos para a regra E445 (o gate ignora comentários, mas eles ensinariam a frase errada). "contato protegido" como **máscara** (`[contato protegido]`, ajuda, FAQ) é o mecanismo de bloqueio e segue.
