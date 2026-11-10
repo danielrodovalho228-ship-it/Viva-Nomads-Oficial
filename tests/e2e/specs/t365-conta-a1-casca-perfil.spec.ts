@@ -121,6 +121,8 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     for (const [s, t] of Object.entries(titulos)) {
       await p.goto(`/dashboard/conta/${s}`, { waitUntil: "domcontentloaded" });
       await expect(h1Visiveis(p), s).toHaveText(t);
+      // Ajuda fica fora do menu (E493) e Avaliações mora em /dashboard/avaliacoes, fora da casca da Conta (E176): sem pílula.
+      if (s === "ajuda" || s === "avaliacoes") continue;
       await expect(p.getByTestId(`conta-menu-${s}`)).toHaveAttribute("aria-current", "page");
     }
     // E176 (parte 2): "Segurança e verificações" é item próprio da Conta.

@@ -600,3 +600,10 @@ Resultado: 262 passaram, 3 falharam. Consolidado vigente (rodada 42706121873): 1
 - t355 teste 3: `papel-ativo` não existe no /dashboard do dono (selo = botão `conta-<px>`) → spec corrigida.
 - t365 teste 1: Ajuda fora do menu da Conta (E493) → spec corrigida.
 - t712 B: corpo traz "Uberlândia · código VN-…" e a spec espera "Uberlândia." → dúvida de texto para o chat principal, nada alterado.
+
+## lab-critico do head ecc492d4a (00:10 UTC, 10/11)
+Resultado: 267 passaram, 2 falharam (antes: 3). Consolidado vigente continua o da rodada 42706121873: 179 linhas (4064/167/12/274); nenhuma consolidação mais nova que 22:50 UTC.
+- t355: verde.
+- t365 teste 1: verde. Teste 2: Avaliações mora fora da casca da Conta (E176) e Ajuda fora do menu (E493) → sem pílula `conta-menu-*`; spec corrigida + guard.
+- t712 B: segue aberto (corpo "Uberlândia · código VN-…" × spec "Uberlândia."): decisão do chat principal.
+Próximo: nova rodada completa do head com esta correção (nenhuma rodada em andamento).

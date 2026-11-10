@@ -28,3 +28,7 @@ test("t355/t365: papel-ativo não é esperado no /dashboard do dono; Ajuda fica 
   assert.doesNotMatch(ler("tests/e2e/specs/t355-conta-a-perfil-espelho.spec.ts"), /goto\("\/dashboard"[^\n]*\n[^\n]*papel-ativo/);
   assert.match(ler("tests/e2e/specs/t365-conta-a1-casca-perfil.spec.ts"), /s !== "ajuda"/);
 });
+
+test("t365 teste 2: Ajuda e Avaliações não têm pílula no menu da Conta", () => {
+  assert.match(ler("tests/e2e/specs/t365-conta-a1-casca-perfil.spec.ts"), /s === "ajuda" \|\| s === "avaliacoes"\) continue;/);
+});
