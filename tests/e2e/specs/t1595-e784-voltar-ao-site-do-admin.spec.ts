@@ -36,13 +36,16 @@ test.describe("T1595 — E784: Voltar ao site do admin acompanha o contexto (390
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 
-  // Achado de desenho (não é defeito): a navegação da equipe com "‹ Voltar ao site" é só do celular (`lg:hidden`, E73/E176: "No computador
-  // nada muda — a barra lateral já está aberta"). A 1280 px o link some DE PROPÓSITO; o t404 já exige a nav oculta. Aqui fica registrado.
-  test("(4) a 1280 px o link não existe (comportamento só-móvel, por desenho)", async ({ page }) => {
+  // DEFEITO CONFIRMADO (reprova do Daniel, 10/11, 1920 px): o "‹ Voltar ao site" do admin NÃO existe em desktop (a faixa `admin-nav-celular`
+  // tem `lg:hidden`). A conclusão anterior desta spec ("só-móvel por desenho") foi revertida. A correção é da Pista B (PR #3702).
+  // O lab reproduz o defeito (run 42776863792: a 1280 px a faixa e o link estavam ocultos), então `test.fail` justificado: fica verde
+  // enquanto o defeito existe e AVISA (passa inesperadamente) quando o #3702 pousar — aí é só remover o `test.fail`.
+  test("(4) a 1280 px o link existe e leva à home (defeito aberto até o #3702)", async ({ page }) => {
+    test.fail(true, "E784: link ausente em desktop; correção no PR #3702 (Pista B). Remover test.fail quando o #3702 pousar.");
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/admin", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("admin-numeros")).toBeVisible({ timeout: 25_000 });
-    await expect(page.getByTestId("admin-nav-celular")).toBeHidden();
-    await expect(page.getByTestId("admin-voltar-site")).toBeHidden();
+    await expect(page.getByTestId("admin-voltar-site")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("admin-voltar-site")).toHaveAttribute("href", "/");
   });
 });
