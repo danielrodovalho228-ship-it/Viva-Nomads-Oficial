@@ -12,6 +12,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # E775: a fila de merge roda o lab-critico no commit que vai para a main.
+  merge_group:
 
 permissions:
   contents: read

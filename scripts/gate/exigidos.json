@@ -1,0 +1,5 @@
+{
+  "comentario": "Checks que a rotina de merge exige no head do PR (E775). 'suite-completa' é o consolidar do laboratório fatiado (E744); só entra aqui quando a suíte completa estiver verde na main, senão ninguém mescla.",
+  "checks": ["verify", "lab-critico"],
+  "checksQuandoSuiteVerde": ["verify", "lab-critico", "suite-completa"]
+}

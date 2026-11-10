@@ -13,6 +13,9 @@ on:
   # public.lab_execucoes (ordem 225d0648).
   push:
     branches: [main]
+  # E775: a fila de merge do GitHub roda a suíte completa fatiada ANTES de fundir na main: o check `suite-completa`
+  # (job consolidar, abaixo) é o portão do merge. Em PR segue sem rodar (o portão de PR é o lab-critico).
+  merge_group:
   # Em PR não roda (decisão do Muse, 21/10): a suíte inteira não cabe no teto e ficava verde com teste falhando.
   # O portão de PR é o lab-critico (lista crítica + specs do próprio PR, falha = vermelho). Aqui, na main e no
   # noturno, falha também deixa o job vermelho (último passo).
@@ -195,6 +198,8 @@ jobs:
 
   # Junta as fatias: um resumo, uma linha em public.lab_execucoes, e vermelho se qualquer fatia falhou.
   consolidar:
+    # Nome estável do check obrigatório da fila de merge (E775): verde só se TODAS as fatias passaram.
+    name: suite-completa
     needs: laboratorio
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest

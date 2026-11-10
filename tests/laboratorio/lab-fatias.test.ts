@@ -54,6 +54,16 @@ test("juntar: concatena as suites e soma os stats; fatia sem arquivo não derrub
   assert.deepEqual(acharResultados(join(raiz, "nao-existe")), []);
 });
 
+test("E775: a fila de merge roda o verify, o lab-critico e a suíte completa fatiada (check suite-completa)", () => {
+  for (const f of ["ci.yml", "lab-critico.yml", "laboratorio.yml"]) {
+    const gatilhos = readFileSync(`.github/workflows/${f}`, "utf8").split("\njobs:")[0].split("\npermissions:")[0];
+    assert.match(gatilhos, /^\s+merge_group:/m, `${f} precisa do gatilho merge_group`);
+  }
+  assert.match(yml, /consolidar:\n\s+# Nome estável do check obrigatório da fila de merge \(E775\)[^\n]*\n\s+name: suite-completa/);
+  assert.match(yml, /needs: laboratorio/);
+  assert.equal(Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]), 16, "desenho aprovado: 16 fatias");
+});
+
 test("o resumo da suíte inteira vai ao banco por arquivo, nunca como argumento do psql (E2BIG, run 42536824482)", () => {
   const consolidar = yml.split("  consolidar:")[1];
   assert.doesNotMatch(consolidar, /-v resumo=/, "o resumo passa de 128 KB: não pode ir em argv");

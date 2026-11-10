@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # E775: a fila de merge roda o `verify` no commit que vai para a main.
+  merge_group:
 
 jobs:
   verify:
