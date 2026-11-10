@@ -24,6 +24,12 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     re: /(?:(contato|telefone|e-?mail|whatsapp|dados? de contato)(?:(?!nunca|jamais|não|nao|inclusive|mesmo|qualquer)[^.\n"`]){0,70}\b(protegid|resguardad|liberad|revelad|divulgad|compartilhad|oculto|escondid|visível|visivel|trocad)\w*|\b(protegemos|protegendo|mantemos|guardamos|preservamos|escondemos|ocultamos)\b(?:(?!nunca|jamais|não|nao)[^.\n"`]){0,50}\b(contato|telefone|e-?mail|whatsapp)\b)(?:(?!nunca|jamais|não|nao)[^.\n"`]){0,50}\b(até|ate|antes d)\w*\s+(d?o\s+)?aceite/i,
   },
   {
+    id: "plataforma-entrega-contato-do-proprietario",
+    regra: "E785 (decisão de 09/11): 'contato do proprietário' (ou do dono/anfitrião) entregue, passado ou revelado pela plataforma sugere troca de contato, contra o E445. Orientação como 'sem contato por fora' é permitida.",
+    // Verbo de entrega ANTES: "passamos/a Viva entrega/você recebe o contato do proprietário". Particípio DEPOIS: "contato do dono liberado/revelado/entregue".
+    re: /(?<!\b(?:nunca|jamais|n[ãa]o)\s)\b(entreg|pass|envi|repass|reveal|revel|liber|forne[çc]|compartilh|divulg|disponibiliz|mostr|receb)\w*(?:(?!nunca|jamais|n[ãa]o|sem\b)[^.\n"`]){0,40}\bcontatos? d[oea]s? (propriet[áa]ri[oa]|dono|dona|anfitri[ãa]o|locador)|\bcontatos? d[oea]s? (propriet[áa]ri[oa]|dono|dona|anfitri[ãa]o|locador)(?:(?!nunca|jamais|n[ãa]o|sem\b)[^.\n"`]){0,40}\b(entregue|repassad|revelad|liberad|fornecid|compartilhad|divulgad|disponibilizad|enviad)\w*/i,
+  },
+  {
     id: "caucao-em-poupanca",
     regra: "Caução: paga direto ao proprietário; a Viva não recebe nem segura o dinheiro. Não se promete 'em poupança' nas frases públicas.",
     re: /cau[çc][ãa]o[^.\n"`]{0,60}\b(em|na|numa|uma) (uma )?poupan|depositad[ao] em poupan|cau[çc][ãa]o fica em (uma )?poupan/i,

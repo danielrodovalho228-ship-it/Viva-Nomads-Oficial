@@ -34,7 +34,7 @@ for (const largura of [390, 1280]) {
 
       const faixa = page.getByTestId("faixa-confianca");
       await expect(faixa.locator(":scope > *")).toHaveCount(4);
-      for (const t of ["Sem troca de contato direto", "Caução documentada", "Documentação do imóvel conferida", "R$ 0 de taxa para o morador"]) {
+      for (const t of ["Perfil verificado", "Caução documentada", "Documentação do imóvel conferida", "R$ 0 de taxa para o morador"]) {
         await expect(faixa).toContainText(t);
       }
 

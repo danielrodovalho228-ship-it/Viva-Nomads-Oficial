@@ -97,7 +97,7 @@ test("E785: variantes de 'contato protegido até o aceite' são barradas; as fra
     "Contato do proprietário e identidade do morador ficam protegidos até o aceite.",
   ]) assert.ok(achadosProibidos(ruim).length >= 1, `deveria barrar: ${ruim}`);
   for (const boa of [
-    "Sem troca de contato direto",
+    "Perfil verificado",
     "telefone, e-mail e redes sociais nunca são trocados",
     "O nome completo do interessado aparece depois do aceite; telefone e e-mail nunca são trocados.",
     "Telefone e e-mail nunca são trocados: ficam protegidos, inclusive depois do aceite.",
@@ -106,8 +106,25 @@ test("E785: variantes de 'contato protegido até o aceite' são barradas; as fra
 
 test("E785: a fonte única tem o selo e a frase da negociação, e as telas as importam", () => {
   const regulados = readFileSync("src/config/textos-regulados.ts", "utf8");
-  assert.match(regulados, /export const SELO_SEM_TROCA_DE_CONTATO = "Sem troca de contato direto"/);
+  assert.match(regulados, /export const SELO_PERFIL_VERIFICADO = "Perfil verificado"/);
   assert.match(regulados, /export const FRASE_NEGOCIACAO_NA_PLATAFORMA/);
-  assert.match(readFileSync("src/app/(public)/page.tsx", "utf8"), /SELO_SEM_TROCA_DE_CONTATO/);
+  assert.match(readFileSync("src/app/(public)/page.tsx", "utf8"), /SELO_PERFIL_VERIFICADO/);
   assert.match(readFileSync("src/lib/precos-pagina.ts", "utf8"), /FRASE_NEGOCIACAO_NA_PLATAFORMA/);
+});
+
+test("E785 (decisão de 09/11): 'contato do proprietário' entregue/revelado pela plataforma entra; 'sem contato por fora' não", () => {
+  for (const ruim of [
+    "Passamos o contato do proprietário para você.",
+    "A Viva entrega o contato do proprietário depois da visita.",
+    "Você recebe o contato do dono assim que o pedido é aceito.",
+    "Contato do proprietário liberado após a assinatura.",
+    "O contato do anfitrião é revelado no chat.",
+  ]) assert.ok(achadosProibidos(ruim).some((a) => a.id === "plataforma-entrega-contato-do-proprietario"), `deveria barrar: ${ruim}`);
+  for (const boa of [
+    "Sem contato por fora: tudo pelo chat da Viva.",
+    "Combine tudo pelo chat; sem contato por fora da plataforma.",
+    "A Viva nunca entrega o contato do proprietário: telefone e e-mail nunca são trocados.",
+    "Não passamos o contato do proprietário.",
+    "Fale com o proprietário pelo chat da Viva.",
+  ]) assert.deepEqual(achadosProibidos(boa).filter((a) => a.id === "plataforma-entrega-contato-do-proprietario"), [], `não deveria barrar: ${boa}`);
 });

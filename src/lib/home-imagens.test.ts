@@ -25,9 +25,9 @@ test("H1/H4: slots com os nomes combinados; marcados prontos só se o arquivo ex
 const home = readFileSync(new URL("../app/(public)/page.tsx", import.meta.url), "utf8");
 
 test("H3: faixa de confiança tem os 4 selos reais, sem citar lei", () => {
-  // E785: o selo de contato vem da fonte única (textos-regulados), com o texto "Sem troca de contato direto".
-  assert.match(home, /text=\{SELO_SEM_TROCA_DE_CONTATO\}/);
-  assert.match(readFileSync(new URL("../config/textos-regulados.ts", import.meta.url), "utf8"), /SELO_SEM_TROCA_DE_CONTATO = "Sem troca de contato direto"/);
+  // E785: o selo de contato vem da fonte única (textos-regulados), com o texto "Perfil verificado".
+  assert.match(home, /text=\{SELO_PERFIL_VERIFICADO\}/);
+  assert.match(readFileSync(new URL("../config/textos-regulados.ts", import.meta.url), "utf8"), /SELO_PERFIL_VERIFICADO = "Perfil verificado"/);
   for (const t of [
     "Caução documentada",
     "Documentação do imóvel conferida",
