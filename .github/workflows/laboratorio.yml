@@ -128,16 +128,29 @@ jobs:
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
       - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
-        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
-        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
+        # A instalação às vezes trava sem erro (apt/download). E744 (rodadas 42755440801 e 42767013537: 1 e 4 fatias perdidas, uns
+        # 280 testes cada): tentativas CURTAS (5 min, até 4) para caber no teto do passo; o Chromium vem primeiro e sozinho
+        # (todas as fatias precisam dele). O timeout mata o npx, mas o apt-get filho segura a trava do dpkg: antes de repetir,
+        # encerra o apt que sobrou, espera a trava soltar e conserta o dpkg.
         timeout-minutes: 25
         run: |
-          for i in 1 2 3; do
-            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
+          for i in 1 2 3 4; do
+            timeout 300 npx playwright install --with-deps chromium && exit 0
             echo "tentativa $i travou ou falhou"
             sudo pkill -f '[a]pt-get|[d]pkg' || true
             for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+
+      - name: Instalar WebKit do Playwright (só 3 specs de celular usam)
+        # Se falhar, perdem-se só esses specs (aparecem como falha), não a fatia inteira.
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          for i in 1 2; do
+            timeout 240 npx playwright install --with-deps webkit && exit 0
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
             sudo dpkg --configure -a || true
           done
           exit 1

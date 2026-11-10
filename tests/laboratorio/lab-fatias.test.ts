@@ -111,3 +111,11 @@ test("fatias gerais do noturno dão 90 s por teste (o gate de PR segue em 45 s)"
   assert.match(yml, /--shard=\$\{\{ matrix\.fatia \}\}\/16[^\n]*--timeout=90000/);
   assert.match(readFileSync("playwright.config.ts", "utf8"), /timeout: 45_000/);
 });
+
+test("E744: o Chromium instala primeiro e sozinho, com tentativas curtas; o WebKit não derruba a fatia", () => {
+  const y = readFileSync(".github/workflows/laboratorio.yml", "utf8");
+  assert.match(y, /timeout 300 npx playwright install --with-deps chromium && exit 0/);
+  assert.doesNotMatch(y, /install --with-deps chromium webkit/);
+  const webkit = y.slice(y.indexOf("- name: Instalar WebKit do Playwright"));
+  assert.match(webkit.slice(0, 400), /continue-on-error: true/);
+});

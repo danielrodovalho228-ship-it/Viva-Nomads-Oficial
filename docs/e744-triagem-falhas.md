@@ -675,3 +675,8 @@ Linha bruta: 3812 passaram · 157 falharam · 9 instáveis · 253 puladas · **1
 | t585 | a boas-vindas | instável (timeout 180 s) | instável/lento | nenhuma |
 | t585 | d2 véspera na hora | falhou, sem texto | sem causa legível | idem |
 Visuais da Pista QA não entram (t245/t271/t263).
+
+## Rodada 42767013537 (head d5ddb6d8c, com a correção da t719) — 1ª tentativa, consolidada 07:14 UTC
+Linha bruta: 3308 passaram · 136 falharam · 7 instáveis · 211 puladas · 143 linhas. **Não comparável** com 4090/157/9/253: quatro fatias (3, 12, 13 e 18 de 20) não rodaram nenhum teste — o passo "Instalar Chromium do Playwright" falhou em todas (~25 min), ~780 testes sem rodar. Segunda rodada seguida com perda por esse passo (antes: fatia 2).
+- Correção da infraestrutura (commit seguinte, `laboratorio.yml`): Chromium instala primeiro e sozinho, tentativas de 5 min (até 4); o WebKit (só 3 specs de celular) passa a passo próprio com `continue-on-error`, para não derrubar a fatia. Guarda em `tests/laboratorio/lab-fatias.test.ts`.
+- Ação: refazer só as fatias 3, 12, 13 e 18 (rerun de jobs da mesma run; usam o workflow antigo) e consolidar de novo; o comparativo oficial sai dessa tentativa 2.
