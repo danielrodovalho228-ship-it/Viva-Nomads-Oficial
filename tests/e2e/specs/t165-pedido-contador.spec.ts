@@ -34,7 +34,7 @@ for (const largura of [390, 1280]) {
     await expect(aviso).toBeVisible({ timeout: 15_000 });
     await expect(aviso).toContainText("com o seu e-mail confirmado");
     await expect(aviso).not.toContainText(/telefone/i);
-    await expect(aviso).toContainText("contato continua escondido até você aceitar");
+    await expect(aviso).toContainText("contato nunca é trocado");
     const semRolagemLateral = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
     expect(semRolagemLateral).toBe(true);
   });
