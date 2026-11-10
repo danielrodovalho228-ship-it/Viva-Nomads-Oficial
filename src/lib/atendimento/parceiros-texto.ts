@@ -19,7 +19,7 @@ export const CADASTRO_PARCEIRO =
 export const TAXA_PARCERIA_TEXTO = `${TEXTO_TAXA_SERVICO_PARCEIROS} Sem mensalidade e sem exclusividade. Enquanto o pagamento pela plataforma não estiver ativo, o valor do serviço é combinado e pago direto entre parceiro e proprietário.`;
 
 export const CONTATO_NO_ACEITE =
-  "O contato e o endereço do proprietário só são liberados ao parceiro depois que ele aceita o pedido. Antes disso ficam protegidos.";
+  "O contato direto do proprietário não é trocado: a conversa com o parceiro fica nas mensagens da Viva. O endereço do imóvel só chega ao parceiro depois que ele aceita o pedido.";
 
 export const REGRAS_ENTREGA =
   "A contratação pela plataforma (orçamento, conversa, entrega e avaliação) chega em breve. Até lá, a página mostra os serviços e o parceiro é avaliado só por avaliações reais.";
@@ -28,7 +28,7 @@ export const BUSCA_FOTOGRAFOS =
   "Começamos por Uberlândia (MG) e avisamos quando chegarmos a outras cidades. A busca de parceiros é em /parceiros/buscar (categoria, cidade ou CEP); a de fotógrafos, em /parceiros/fotografos. Sem parceiro na cidade, dá para pedir aviso.";
 
 export const CONTRATAR_FOTOGRAFO =
-  "No passo Fotos do cadastro do imóvel, toque em \"Quer um fotógrafo profissional?\" para ver os fotógrafos parceiros da cidade do imóvel e a página de cada um. Você combina tudo pelas mensagens da Viva; contato e endereço só depois do aceite.";
+  "No passo Fotos do cadastro do imóvel, toque em \"Quer um fotógrafo profissional?\" para ver os fotógrafos parceiros da cidade do imóvel e a página de cada um. Você combina tudo pelas mensagens da Viva, e o seu contato não é trocado.";
 
 export const EMPRESAS_E_GESTORES =
   `Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor, 4% sem mensalidade, para ${PORTA_GESTOR_TEXTO}).`;
