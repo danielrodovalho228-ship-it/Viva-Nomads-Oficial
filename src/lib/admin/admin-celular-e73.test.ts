@@ -38,3 +38,8 @@ test("(c) a linha de decisão inteira é tocável e leva ao mesmo destino do bot
   assert.match(n, /<Link href=\{l\.href\} className="[^"]*after:absolute after:inset-0/);
   assert.match(n, /<ButtonLink href=\{l\.href\}[^>]*className="relative z-10"/);
 });
+
+test("E784: a spec t404 compara o destino da linha COM a âncora (/admin/sistema#backup), senão a URL certa nunca bate", () => {
+  const spec = readFileSync(new URL("../../../tests/e2e/specs/t404-admin-celular-e73.spec.ts", import.meta.url), "utf8");
+  assert.match(spec, /\$\{u\.pathname\}\$\{u\.search\}\$\{u\.hash\}` === destino/);
+});

@@ -94,7 +94,8 @@ test.describe("T404 — E73: o admin no celular", () => {
         await page.locator("[data-decisao]").first().waitFor({ timeout: 25_000 });
       }
       await page.mouse.click(alvo.x, alvo.y);
-      await page.waitForURL((u) => `${u.pathname}${u.search}` === destino, { timeout: 20_000 });
+      // O destino pode trazer âncora (ex.: /admin/sistema#backup): compara com o hash, senão a URL certa nunca "bate".
+      await page.waitForURL((u) => `${u.pathname}${u.search}${u.hash}` === destino, { timeout: 20_000 });
     });
   }
 });
