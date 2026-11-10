@@ -1486,3 +1486,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Acrescentado o teste (4) ao t1595 (1280 px: nav e link ocultos) para fixar a conclusão; verdict do CI do PR #3691 pendente.
 
 - **Verdict do teste (4) do t1595:** run 42776863792 (PR #3691, `d70c939f1`) = **success**. A 1280 px a nav e o link "Voltar ao site" ficam ocultos, confirmando o desenho só-móvel. Main `954bbece6` sem merge novo; lab verde.
+
+## Conferência de 10/11 09:58 UTC — sem merge novo, sem spec pendente (parada)
+
+- Head da main: `954bbece6` (inalterado). Último `lab-critico` na main: run 42682766358 (#3460), **success**. Guardas t1592–t1597 todas verdes (t1595 com o teste (4) 1280 px: run 42776863792, success).
+- Merges novos: nenhum. Spec pendente: nenhuma (#3602 e #3460 isentos, só docs). Livres: t1598 / L-111. L-110 com a Pista B.
+- Sequência encerrada sem agendamento; retoma com merge novo na main ou nova ordem.
