@@ -1471,3 +1471,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Main segue em `954bbece6`: nenhum merge novo, então nada a cobrir. `lab-critico` na main: run 42682766358 (#3460) **success**; sem falha nova a registrar. t1598 conferido livre na árvore.
 - L-110: aberto, com a Pista B (estado apenas registrado).
 - **Próximo passo:** ao surgir merge de produto novo na main, ler o run do push e criar a guarda a partir de t1598 / L-111 (um PR draft por merge); merges só de docs seguem dispensados. As guardas t1594–t1597 (#3690–#3693) aguardam o QA do chat principal.
+
+## Conferência de 10/11 06:15 UTC — sem merge novo
+
+- Head da main: `954bbece6` (inalterado). Merges novos desde a última checagem: nenhum. Merges cobertos: nenhum a cobrir (#3602 e #3460 seguem isentos, só docs).
+- Lab: último `lab-critico` na main = run 42682766358 (#3460), **success**; sem falha de produto a nomear para a Pista B. L-110 segue aberto com a Pista B.
+- Livres: t1598 / L-111. Sequência encerrada, sem agendamento; a próxima checagem acontece quando houver merge novo ou nova ordem.
