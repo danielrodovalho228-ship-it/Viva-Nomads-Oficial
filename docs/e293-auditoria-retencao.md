@@ -269,3 +269,22 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 13. Migrações 0313 a 0335 (10/11/2026) — revisão, só leitura e texto
+
+Nenhum prazo mudou e nada é apagado. Uma tabela nova e colunas novas; a guarda `inventario.test.ts` segue verde (159 passam, 0 falham no escopo `src/config` + `src/lib/minimizacao`).
+
+| Migração | O que entrou | Inventário |
+|---|---|---|
+| 0319 (E669) | tabela `conferencia_laudos_retirados` | já consta em `retencao.ts` |
+| 0313 (E648) | em `avaliadores_credenciamento`: termo assinado (hash e texto), critério de descredenciamento, resposta do avaliador | **descrição corrigida** neste PR |
+| 0323 (E679) | em `parceiro_avaliacoes`: notas por critério, etiquetas, `nota_privada_parte` e `nota_privada_viva` (texto livre) | **descrição corrigida** neste PR |
+| 0335 (E690) | `criterios_decisao` (jsonb só nosso) | já classificado (guarda P3) |
+| 0317 (E661) / 0320 (E662) | em `properties`: `condominio_wifi_rede`, `condominio_wifi_senha`, `condominio_recepcao`, `condominio_fechadura`, `instrucao_saida` (texto livre do dono; a senha do Wi-Fi do condomínio e como entrar) | **achado:** `properties` não é linha do inventário e a guarda só reconhece pelo nome da coluna (`senha`/`fechadura`/`instrucao` não estão na lista). Proposta abaixo |
+| 0316, 0318, 0325, 0326, 0334 | `ficha_dentro` (jsonb do dono), `papel_ativo_escolhido_em`, preços/prazos do avaliador, `dados_categoria` (jsonb), campos da pré-aceitação | sem dado pessoal novo; `ficha_dentro` e `dados_categoria` já classificados |
+| 0327–0333 | massa de teste e índice | nada |
+
+**Proposta (não executada, para validação do Daniel):**
+1. Incluir `condominio_wifi_senha`, `condominio_fechadura`, `condominio_recepcao` e `instrucao_saida` na lista de nomes da guarda e no inventário (prazo: enquanto o anúncio existir; a lista pública `PROPERTY_PUBLIC_COLUMNS` NÃO inclui esses campos — conferido no código; falta conferir no banco, por permissão de coluna, que um acesso direto da API pública também não os devolve).
+2. Decidir se a senha do Wi-Fi precisa de prazo próprio (sair da linha quando a estadia acaba).
+Decisões em aberto da §10/§12 seguem as mesmas.

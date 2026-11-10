@@ -79,7 +79,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("conferencia_itens", "public.conferencia_itens", "descrição e caminho da foto da conferência", "prova da conferência", DISPUTA),
   i("conferencia_conforto", "public.conferencia_conforto", "resposta do morador ao padrão mínimo (texto e foto)", "prova da conferência de entrada (59)", DISPUTA),
   // Prompt 62-B1: avaliação do imóvel por avaliador credenciado. Contas is_teste ficam fora das métricas e do rodízio real.
-  i("avaliadores_credenciamento", "public.avaliadores_credenciamento", "número de credenciado, cidade, motivo das decisões, relações declaradas (donos e imóveis) e link do portfólio", "credenciar o avaliador e impedir avaliação com vínculo", CONTA, "o número de credenciado e as avaliações feitas (contagem)"),
+  i("avaliadores_credenciamento", "public.avaliadores_credenciamento", "número de credenciado, cidade, motivo das decisões, relações declaradas (donos e imóveis), link do portfólio, o termo assinado (hash e texto), o critério de descredenciamento e a resposta do avaliador (0313, E648)", "credenciar o avaliador e impedir avaliação com vínculo", CONTA, "o número de credenciado e as avaliações feitas (contagem)"),
   i("avaliadores", "bucket:avaliadores", "portfólio ou referência enviada no credenciamento", "a Viva conferir a experiência do avaliador", CONTA),
   i("vistoria_pedidos", "public.vistoria_pedidos", "pedido de avaliação (imóvel, dono, morador do imóvel ocupado, agenda, concordância, registro de pagamento direto)", "designar, agendar e registrar a avaliação", DISPUTA),
   i("vistoria_conduta", "public.vistoria_conduta", "notas e comentário de conduta (dono → avaliador; avaliador → acesso)", "nota de conduta pública do avaliador", CONTA, "a média de conduta do avaliador"),
@@ -141,7 +141,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("avaliacao_contestacoes", "public.avaliacao_contestacoes", "motivo da contestação", "moderação", CONTA),
   i("reviews", "public.reviews", "comentário (legado)", "avaliação", CONTA),
   i("property_reviews", "public.property_reviews", "nome do autor e comentário", "avaliação", CONTA),
-  i("parceiro_avaliacoes", "public.parceiro_avaliacoes", "texto da avaliação", "avaliação do parceiro", CONTA),
+  i("parceiro_avaliacoes", "public.parceiro_avaliacoes", "texto da avaliação, notas por critério, etiquetas e, em texto livre, a nota privada de cada parte e a da Viva (0323, E679)", "avaliação do parceiro", CONTA),
   i("parceiros", "public.parceiros", "documento, razão social, telefone, dados de recebimento, base (lat/lng)", "o parceiro atender e receber", CONTA),
   i("parceiros-midia", "bucket:parceiros", "foto, capa e galeria do parceiro (públicas)", "página do parceiro", CONTA),
   i("parceiro_galeria", "public.parceiro_galeria", "caminho da foto da galeria", "página do parceiro", CONTA),
