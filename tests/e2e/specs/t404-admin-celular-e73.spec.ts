@@ -51,14 +51,13 @@ test.describe("T404 — E73: o admin no celular", () => {
 
       // (a) navegação à vista no celular.
       const nav = page.getByTestId("admin-nav-celular");
+      // E784: "‹ Voltar ao site" existe em TODAS as larguras (reprovado a 1920 px: não havia o link).
+      await expect(nav).toBeVisible();
+      await expect(page.getByTestId("admin-voltar-site")).toHaveAttribute("href", "/");
       if (celular) {
-        await expect(nav).toBeVisible();
-        await expect(page.getByTestId("admin-voltar-site")).toHaveAttribute("href", "/");
         // E176 (D3): UM caminho de menu — o hambúrguer do topo; o botão "Menu da equipe" saiu.
         await expect(page.getByTestId("admin-abrir-menu")).toHaveAttribute("aria-label", "Abrir menu");
         await expect(page.getByText("Menu da equipe")).toHaveCount(0);
-      } else {
-        await expect(nav).toBeHidden();
       }
 
       // (b) E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção" (sem a faixa duplicada).

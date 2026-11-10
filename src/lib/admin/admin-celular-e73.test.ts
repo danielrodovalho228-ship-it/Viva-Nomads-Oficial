@@ -12,7 +12,8 @@ test("(a) E176 (D3): no celular, '‹ Voltar ao site' à vista e UM caminho de m
   const shell = ler("components/layout/dashboard-shell.tsx");
   const bloco = shell.slice(shell.indexOf('pathname.startsWith("/admin") && ('), shell.indexOf("Aviso fixo do modo demonstração"));
   assert.match(bloco, /data-testid="admin-nav-celular"/);
-  assert.match(bloco, /lg:hidden/);
+  // E784: a faixa com o link aparece em todas as larguras (a 1920 px não havia 'Voltar ao site').
+  assert.doesNotMatch(bloco, /lg:hidden/);
   // E784: o link é o componente VoltarAoSite (última página pública; entrada direta → home "/").
   assert.match(bloco, /<VoltarAoSite \/>/);
   assert.match(ler("components/layout/voltar-ao-site.tsx"), /data-testid="admin-voltar-site"[\s\S]*?Voltar ao site/);
