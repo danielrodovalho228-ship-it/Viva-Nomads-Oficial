@@ -1459,3 +1459,9 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 - Push do #3602 (`e49fc8314`, run 42682752738): **vermelho de infra** — falhou no passo "Subir o Supabase local" (1 min), antes de qualquer teste; os passos de teste ficaram "skipped". Merge só de documentação.
 - Push do #3460 (`954bbece6`, run 42682766358), 12 s depois, sobre a mesma árvore + o doc do E712: **verde**. Esse run cobre o #3602; não gastei rerun.
 - Nenhuma spec quebrada por merge recente; nenhum merge de produto novo → sem spec nova (t1598 / L-111 livres). L-110 segue com a Pista B.
+
+## Conferência de encerramento (10/11) — main sem merge novo
+
+- Main segue em `954bbece6`; nenhum merge desde #3460. Último `lab-critico` na main: run 42682766358, **success**. O vermelho do #3602 (run 42682752738) foi infra ("Subir o Supabase local"), sem teste executado.
+- Nenhuma spec nova nem corrigida; sem bloco de varredura; sem produto tocado. Livres: t1598 / L-111.
+- Guardas t1594–t1597 (#3690–#3693): verdes, em rascunho, aguardando o QA do chat principal. L-110 segue com a Pista B.
