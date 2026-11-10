@@ -1,0 +1,5 @@
+# E789 — Conta/Perfil com cartões brancos vazios por ~5 s
+Causa (lida no código, sem medir ao vivo): `perfil-tela.tsx` lê, no navegador, `getMeuPerfilPublico()` e `getMeusDados()` com `Promise.all`. São duas Server Actions; o Next enfileira as ações do cliente, então viajam uma depois da outra (dois vai-e-voltas, cada um com `getUser` e consultas). Enquanto isso o esqueleto eram dois retângulos brancos sem forma, que num celular lento parecem travamento.
+Correção: (1) `getPerfilInicial()` roda as duas leituras em paralelo no servidor e responde uma vez; falha continua lançando ("Tentar de novo", achados 66/70). (2) O esqueleto passa a ter a forma da tela (formulário + espelho), `animate-pulse` e texto para leitor de tela.
+Limite: o ganho de tempo não foi medido (sem prova ao vivo); a mudança tira um vai-e-volta e o aspecto de travamento. Uma versão com os dados vindos do servidor na primeira pintura exigiria transformar `conta/[secao]/page.tsx` (hoje "use client") e fica como proposta.
+Teste: `src/components/account/e789-perfil-carregamento.test.ts` (4) + achados 66–70 e componentes da Conta: 37 pass / 0 fail; `tsc` limpo.
