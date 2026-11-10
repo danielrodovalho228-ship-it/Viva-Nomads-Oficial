@@ -645,3 +645,10 @@ Rodada completa do head 48c01a4ac disparada às 03:07 UTC (a correção da t710 
 
 ## Rodada seguinte
 Disparada às 04:3x UTC do head da branch que inclui 75bbbf731 (t710 /empresas, t755 dia do bloco, t352 varredura que repete). Uma rodada só. Resultado linha a linha será registrado aqui quando consolidar.
+
+## Rodada 42755440801 (head 097d01308, com t710/t755/t352) — consolidada 05:22 UTC
+Linha bruta: 3812 passaram · 157 falharam · 9 instáveis · 253 puladas · **166 linhas**. **Não é comparável** com as 167 anteriores: a fatia **2/20 não rodou nenhum teste** (~280 testes, incluindo 45 das specs t141/t14xx de varredura). Causa: o passo "Instalar Chromium do Playwright" travou 21 min e falhou (as 3 tentativas do passo gastaram o tempo) — falha de infraestrutura, não de teste. As outras 19 fatias rodaram.
+- Já resolvidos nesta rodada: t710 (/empresas), t21, t607, t683, t410.
+- Entraram/pioraram: t431 (1), t204 (1→2), t346 (1→2), t585 (1→2), t719 (1→2).
+- Ação: refazer só a fatia 2/20 (rerun do job 129628630086, tentativa 2 do mesmo run) e consolidar de novo; o comparativo oficial sai dessa consolidação.
+- Nota de infraestrutura: o risco de "fatia perdida" já estava previsto no workflow (comentário da etapa do Supabase); o Chromium é o segundo ponto de perda. Proposta, sem executar: limite de 8 min por tentativa e verificação de cache do navegador antes de baixar.
