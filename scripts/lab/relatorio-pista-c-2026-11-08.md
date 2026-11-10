@@ -1496,3 +1496,20 @@ Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t158
 ## Conferência de 10/11 10:13 UTC (reativação) — sem merge novo
 
 - Head da main: `954bbece6` (inalterado desde 09/11 19:22 UTC). Merges novos: nenhum. Lab: último `lab-critico` na main = run 42682766358 (#3460), **success**. Specs tocadas: nenhuma (nada a cobrir). Livres: t1598 / L-111. L-110 com a Pista B.
+
+## Specs devidas quando os drafts da Pista B pousarem (10/11, main `954bbece6`)
+
+Nenhum destes é merge ainda; **nenhuma spec criada** para draft. Lista do que fica devido (livres: t1598 / L-111):
+
+| PR | Item | Spec devida quando pousar |
+|---|---|---|
+| #3703 | E721 "Adiar" na conversa (migração 0336) | **t1598**: `/dashboard/mensagens`, 390 e 1280 px — botão Adiar no cabeçalho (1 dia/3 dias/1 semana), conversa sai de "Todas" e vai ao chip "Adiadas", "Retomar" devolve. Antes: confirmar que a 0336 foi aplicada no ambiente do lab (Action de migrações pós-merge). |
+| #3702 | E784 "Voltar ao site" em todas as larguras (remove `lg:hidden`) | **Ajustar t1595 (PR #3691), teste (4)**: hoje afirma link OCULTO a 1280 px; passa a ser **visível** nas duas larguras. O PR #3702 já atualiza o t404 e diz não duplicar o fluxo de histórico (t1595 1–3). **Meu achado "só-móvel por desenho" foi revertido por decisão do Daniel (reprova de 10/11)**: o t1595(4) vai quebrar no merge se não for invertido. |
+| #3695 | E786 selo do anúncio de teste sem transbordo | t1599: anúncio de teste (modo teste-visitante), 390 px, botão da barra fixa e do cartão quebram linha, `scrollWidth ≤ innerWidth`. |
+| #3700 | E788 selo "Equipe" sem avatar inerte | t1600: admin, selo "Equipe" sem círculo de avatar e não é link; inicial do avatar maiúscula (≥13 px). |
+| #3701 | E789 Conta/Perfil com esqueleto | t1601 (opcional): `/dashboard/conta/perfil` mostra esqueleto com "Carregando o seu perfil…" e depois o formulário; sem cartões brancos vazios. |
+| #3696 | E787 capa do "Continue seu anúncio" | t1602 (opcional, depende de massa com foto <4 KB): capa não vira retângulo chapado. |
+| #3697 | E774 aviso do /pedidos/novo | Sem spec nova: o PR ajusta o t165. |
+| #3694 | E785 gate de frases proibidas | Sem spec nova: o PR ajusta t217/t172 e o gate roda no CI. |
+| #3698 | t112 imagem repetida (Faixa D) | Sem spec nova: usa o t112 existente. |
+| #3699 | E293 retenção | Só docs/config: isento. |
