@@ -18,6 +18,8 @@ import { emDiasBR, isoParaBR, reais } from "../fixtures/rascunho-cadastro";
       preparação (limpeza) na lista "Fora do total mensal" e NÃO dentro do total por mês.
    3. Anúncio de teste: na página pública (390 e 1280) o visitante vê a faixa "Anúncio de teste…" e o "Solicitar"
       travado; na /buscar o anúncio não aparece.
+   4. F9: o visitante abre o link quando ainda é rascunho (404); logo depois de publicar, o dono e o visitante veem o
+      anúncio (o 404 não fica preso no cache — revalidarAnuncio nas ações).
   IA, OSM e ViaCEP simulados (nada sai para a rede).
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -79,6 +81,14 @@ test.describe("T693 — prova de publicação: os 10 passos, publicar e a págin
   });
 
   test("1–2. 1280 px — os 10 passos na tela, a prévia do Passo 10 e Publicar", async ({ browser }) => {
+    // F9 (ordem 48dad1c3 / d5b4f72f): um visitante abre o link enquanto o anúncio ainda é rascunho → 404. Esse 404 NÃO
+    // pode ficar preso no cache depois de publicar (o caso 1 confere o dono logo após publicar; o caso 2, o visitante).
+    const visita = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: { cookies: [], origins: [] } });
+    const v = await visita.newPage();
+    await v.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
+    await expect(v.getByRole("heading", { level: 1 })).toHaveText("Página não encontrada", { timeout: 20_000 });
+    await visita.close();
+
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.route("https://viacep.com.br/ws/**", (r) =>
@@ -202,6 +212,9 @@ test.describe("T693 — prova de publicação: os 10 passos, publicar e a págin
     const { data: pub } = await adm().from("properties").select("status, title, monthly_price").eq("id", ids.imovel!).single();
     expect(pub).toMatchObject({ status: "active", title: titulo });
     expect(Number(pub!.monthly_price)).toBe(3200);
+    // F9 como DONO, logo depois de publicar (antes da rede de 60 s): o anúncio abre, sem o 404 do rascunho.
+    await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(titulo, { timeout: 20_000 });
     await page.context().close();
   });
 
