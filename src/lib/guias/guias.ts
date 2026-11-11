@@ -63,7 +63,7 @@ export const GUIAS: Guia[] = [
       {
         titulo: "Para o morador",
         paragrafos: [
-          "A Caução fica em uma poupança e volta para você no fim do contrato, depois da conferência de saída, se não houver pendência combinada entre as partes.",
+          "A Caução é paga direto ao proprietário e volta para você no fim do contrato, depois da conferência de saída, se não houver pendência combinada entre as partes.",
           "A plataforma não recebe nem guarda esse dinheiro. Desconfie de qualquer pedido de pagamento fora do que está no contrato (veja /seguranca).",
         ],
       },

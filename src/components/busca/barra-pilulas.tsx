@@ -126,7 +126,7 @@ export function BarraPilulas(p: {
       {aberto && (
         // E526 (D12): o painel abre NO FLUXO, logo abaixo da linha de pílulas — empurra o título e os cartões em vez de
         // ficar por cima deles (antes: absolute z-40, cobria "N imóveis em …" e os primeiros cartões).
-        <div className="mt-2 rounded-xl border border-line bg-white p-4 shadow-flutuante sm:w-[28rem]" data-testid={`painel-pilula-${aberto}`} role="dialog" aria-label={ROTULO[aberto]}>
+        <div className="mt-2 max-h-[calc(100dvh-13rem)] overflow-y-auto rounded-xl border border-line bg-white p-4 shadow-flutuante sm:w-[28rem] lg:max-h-none lg:overflow-visible" data-testid={`painel-pilula-${aberto}`} role="dialog" aria-label={ROTULO[aberto]}>
           {aberto === "datas" && (
             <div className="space-y-4">
               <label className="block text-sm font-semibold text-ink">
