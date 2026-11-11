@@ -40,11 +40,13 @@ test.describe("T772 — E329: visita confirmada", () => {
         .single();
       if (error) throw error;
 
-      // Antes da confirmação: o morador ainda vê "Visita por vídeo".
+      // Antes da confirmação: o morador vê a visita pedida (E329/E411: com uma em aberto, o anúncio mostra o estado e
+      // não oferece pedir outra igual — o botão "visita-video-abrir" não aparece).
       const morador = await entrar(browser, inq.email, senha);
       await morador.setViewportSize({ width: largura, height: 900 });
       await morador.goto(`/imoveis/${imovel}`, { waitUntil: "domcontentloaded" });
-      await expect(morador.getByTestId("visita-video-abrir").first()).toBeAttached({ timeout: 25_000 });
+      await expect(morador.getByTestId("visita-video-pedida").first()).toBeAttached({ timeout: 25_000 });
+      await expect(morador.getByTestId("visita-video-abrir")).toHaveCount(0);
       await expect(morador.getByTestId("visita-video-agendada")).toHaveCount(0);
 
       // (a) o dono confirma e vê o aviso.

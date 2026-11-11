@@ -148,9 +148,10 @@ test.describe("T678 — E202: os e-mails da candidatura trazem o imóvel, as dat
     confereQuadro(aceite.corpo);
     expect(aceite.corpo).toContain("/dashboard/mensagens?conversa=");
 
-    // (b) O Fechamento herda o período da candidatura aceita: 1 mês (antes, 4 meses).
+    // (b) O Fechamento herda o período da candidatura aceita: 30 dias = 1 mês (antes, 4 meses). Desde o E655 a
+    // janela exata da candidatura aparece em dias (sem o seletor de meses).
     await page.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByLabel(/Prazo total em meses/i)).toHaveValue("1", { timeout: 20_000 });
+    await expect(page.getByTestId("fechamento-prazo-dias")).toHaveText("30 dias (1 mês)", { timeout: 20_000 });
     await page.screenshot({ path: `${SAIDA}/t678-fechamento-1-mes-1280.png` });
     await page.context().close();
   });
