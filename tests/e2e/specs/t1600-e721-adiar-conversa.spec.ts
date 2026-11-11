@@ -71,6 +71,8 @@ test.describe("T1600 — E721: adiar a conversa de ponta a ponta (sem 42P10, sem
     // O outro lado: o dono não tem linha e vê a conversa em "Todas".
     expect(await linha(ids.dono)).toBeNull();
     const d = await entrar(browser, dono.email, senha);
+    // Largura de computador: no celular, com ?conversa= a conversa abre direto e a lista fica escondida.
+    await d.setViewportSize({ width: 1280, height: 900 });
     await abrirConversa(d);
     await expect(d.getByTestId("conversa-adiar")).toBeVisible();
     await d.context().close();
