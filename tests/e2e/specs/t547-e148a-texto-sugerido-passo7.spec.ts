@@ -7,7 +7,8 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
   T547 — E148-A (#1399), guarda permanente da Pista C, no que a t484 da Pista A não cobre: o TEXTO EXATO do modelo fixo
   (src/lib/anuncio/texto-sugerido.ts, a IA não responde no laboratório) a 390 e 1280, e nada de endereço exato:
    1. rascunho com Apartamento, 2 quartos, 1 banheiro, 55 m², Santa Mônica/Uberlândia e título e descrição VAZIOS → o
-      passo abre com "Apartamento mobiliado de 2 quartos no Santa Mônica" e a descrição com quartos, banheiro, área e
+      cartão da sugestão mostra "Apartamento mobiliado de 2 quartos no Santa Mônica" (E613: os campos seguem vazios até o
+      "Usar esta sugestão") e, depois do clique, a descrição com quartos, banheiro, área e
       "Para estadias de 30 a 180 dias." — sem rua nem número (nada de endereço exato);
   (O texto do dono não ser sobrescrito é da t484.)
 */
@@ -44,8 +45,19 @@ test.describe("T547 — E148-A: o texto exato do modelo no Passo 7, sem endereç
       const page = await abrirPasso(browser, { email: dono.email, senha }, w === 390 ? ids.vazio390 : ids.vazio1280, "descricao", w);
       const titulo = page.getByTestId("cadastro-titulo");
       const descricao = page.getByTestId("cadastro-descricao");
-      await expect(titulo).toHaveValue("Apartamento mobiliado de 2 quartos no Santa Mônica", { timeout: 30_000 });
+      // E613: o modelo aparece no cartão da sugestão e NÃO entra sozinho nos campos.
+      const cartao = page.getByTestId("sugestao-cartao");
+      await expect(cartao.getByTestId("sugestao-titulo")).toHaveText("Apartamento mobiliado de 2 quartos no Santa Mônica", { timeout: 30_000 });
+      await expect(titulo).toHaveValue("");
+      await expect(descricao).toHaveValue("");
+      const noCartao = (await cartao.getByTestId("sugestao-descricao").innerText()).trim();
+      expect(noCartao, "endereço exato no cartão").not.toContain(BASE.street);
+      // Só no clique do dono o texto vai para os campos — e é o mesmo do cartão.
+      await page.getByTestId("sugestao-usar").click();
+      await expect(titulo).toHaveValue("Apartamento mobiliado de 2 quartos no Santa Mônica");
+      await expect(descricao).not.toHaveValue("");
       const texto = await descricao.inputValue();
+      expect(texto.replace(/\s+/g, " ").trim(), "o campo recebe o texto do cartão").toBe(noCartao.replace(/\s+/g, " "));
       console.log(`t547 ${w}: descrição "${texto}"`);
       expect(texto).toContain("Apartamento mobiliado com 2 quartos, 1 banheiro e 55 m².");
       expect(texto.trim().endsWith("Para estadias de 30 a 180 dias.")).toBe(true);
