@@ -113,5 +113,20 @@ para o futuro app. Health-check em `GET /api/health`.
 | NFS-e (plataforma) | Focus NFe / PlugNotas | `src/lib/integrations/nfse.ts` |
 | Seguro-fiança | Porto / Junto | `src/lib/closing.ts` |
 
+### Mapas: quais chaves ligam o quê
+
+| Variável | Liga | Onde é lida |
+|---|---|---|
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | o mapa de `/buscar` e a área aproximada em `/imoveis/[id]` (pública por natureza: restrinja por domínio no painel do Mapbox) | `src/lib/integracoes/mapas.ts`, `src/components/property-map.tsx` |
+| `GOOGLE_PLACES_API_KEY` | "o que tem perto" (Places + Distance Matrix), **só no servidor** | `src/lib/integrations/chave-google.ts` |
+| `GOOGLE_MAPS_API_KEY` | mesmo efeito: aceito como apelido da `GOOGLE_PLACES_API_KEY` (a oficial vence se as duas existirem) | `src/lib/integrations/chave-google.ts` |
+
+Sem a chave, a página mostra o aviso no lugar do mapa e nada quebra. Para conferir sem ver
+nenhuma chave: o cartão "Mapas" do `/admin` mostra **Mapa: ligado/desligado** e **Lugares
+próximos: ligado/desligado**, e `GET /api/health` (logado como admin) traz `integrations.mapbox` e
+`integrations.google_places` (true/false).
+A CSP já libera `api.mapbox.com`/`events.mapbox.com` em `connect-src` e `worker-src blob:`
+(`next.config.ts`).
+
 A plataforma é **conectadora** — não é locadora, fiadora nem garantidora, e não intermedeia
 o pagamento do aluguel (vai direto ao proprietário).
