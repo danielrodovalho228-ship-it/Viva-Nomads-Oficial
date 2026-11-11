@@ -1,4 +1,5 @@
 import { FormulaDoTotal } from "@/components/property/formula-total";
+import { isExemplo } from "@/lib/demo-listing";
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
@@ -6,7 +7,7 @@ import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLE
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { notaDataCalculada, rotuloPreco } from "@/lib/cartao-preco";
+import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -54,6 +55,13 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
   return (
     // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
     <PainelPrecoFixo>
+      {/* E724 (Phoenix/RELATORIO-002, A3): no anúncio de exemplo o aviso vem PRIMEIRO, no topo do cartão — antes de qualquer
+          data, valor ou total —, e não só abaixo dos campos. */}
+      {isExemplo(property.id) && (
+        <p className="mb-3 rounded-lg bg-sage-100 px-3 py-2 text-sm font-medium text-forest" data-testid="cartao-exemplo-aviso">
+          Anúncio de exemplo: serve para você ver como a Viva funciona. Nenhuma solicitação é enviada a ninguém.
+        </p>
+      )}
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}
@@ -62,7 +70,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
         {estadia && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {formatBRL(estadia.total)} em {estadia.meses} meses
+            · {resumoEmMeses(estadia.total, estadia.meses)}
           </span>
         )}
       </p>
