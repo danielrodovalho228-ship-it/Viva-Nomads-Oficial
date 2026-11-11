@@ -35,11 +35,11 @@ test("E181 (família inteira): Candidaturas e Mensagens da home também contam a
   assert.match(pagina, /totalCandidaturas=\{candidaturas \? candidaturas\.length : null\}/);
   assert.match(ler("app/(dashboard)/dashboard/candidaturas/page.tsx"), /listMinhasCandidaturas\((\{ exigir: true \})?\)/);
   assert.match(home, /label="Candidaturas" value=\{demo \? "2" : valorContador\(totalCandidaturas\)\}/);
-  // Mensagens: listConversations, na home e em /dashboard/mensagens (a tela abre em "Todas").
+  // Mensagens: listConversations, na home e em /dashboard/mensagens (a tela abre em "Todas", que não conta as adiadas — E721).
   assert.match(pagina, /ou\("conversas", listConversations\(\{ exigir: true \}\), null\)/);
-  assert.match(pagina, /totalConversas=\{conversas \? conversas\.length : null\}/);
+  assert.match(pagina, /totalConversas=\{conversas \? separarAdiadas\(conversas\)\.ativas\.length : null\}/);
   assert.match(ler("app/(dashboard)/dashboard/mensagens/page.tsx"), /initial=\{await listConversations\(\{ exigir: true \}\)\}/);
-  assert.match(ler("app/(dashboard)/dashboard/mensagens/messages-client.tsx"), /useState<Filtro>\("todas"\)/);
+  assert.match(ler("app/(dashboard)/dashboard/mensagens/messages-client.tsx"), /useState<Filtro \| "adiadas">\("todas"\)/);
   assert.match(home, /label="Mensagens" value=\{demo \? "1" : valorContador\(totalConversas\)\}/);
   // Nenhum contador do morador com número fixo fora do modo demonstração.
   for (const rotulo of ["Candidaturas", "Favoritos", "Buscas salvas", "Mensagens"]) {

@@ -18,6 +18,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 import { PrecoJustoBadge } from "@/components/ui/badge";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { CONTATO_NUNCA_TROCADO } from "@/config/textos-regulados";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
@@ -287,7 +288,7 @@ function ProtegidoPor() {
       img: "/images/unicas/cf-conversa-registrada.webp",
       alt: "Proprietária respondendo a um pedido pelo celular",
       title: "Conversa registrada",
-      text: "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
+      text: `Toda a negociação acontece na plataforma; ${CONTATO_NUNCA_TROCADO}.`,
     },
     {
       img: "/images/como-funciona/08-feche.webp",

@@ -28,9 +28,17 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # E744: a suíte inteira (~4.500 testes) não cabia no teto de um job (run 42471821063: 640 rodaram, 3.864 não rodaram).
+  # Agora ela é fatiada em FATIAS jobs paralelos (--shard do Playwright); cada fatia sobe o próprio Supabase local e o
+  # próprio site, e o job `consolidar` junta os resultados e grava UMA linha em lab_execucoes. Desenho em docs/e744-suite-fatiada.md.
   laboratorio:
+    name: laboratorio (fatia ${{ matrix.fatia }}/20)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SITE_URL: http://localhost:3123
@@ -59,21 +67,24 @@ jobs:
           version: 2.120.0
 
       - name: Subir o Supabase local (todas as migrações)
-        # O runner às vezes chega com a porta 54322 ocupada ("address already in use",
-        # run 38179479994): não é falha de migração. Mostra quem ocupa a porta, limpa
-        # restos de containers e tenta de novo até 3 vezes.
+        # O runner às vezes chega com a porta 54322 ocupada ("failed to bind host port 0.0.0.0:54322/tcp: address
+        # already in use", run 38179479994 e, nas 3 tentativas, fatias 11 do run 42536824482 e 4 do 42538098625): não é
+        # falha de migração. Com 16 fatias a chance de UMA cair nisso por noite é alta, e uma fatia perdida são ~280 testes
+        # sem rodar. Mostra quem ocupa a porta (com sudo, para ver o processo), limpa os containers e, da 2ª tentativa em
+        # diante, reinicia o daemon do Docker (solta a porta presa no docker-proxy). Até 5 tentativas.
         run: |
-          for tentativa in 1 2 3; do
+          for tentativa in 1 2 3 4 5; do
             if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
               exit 0
             fi
-            echo "::warning::supabase start falhou (tentativa $tentativa/3). Portas em uso:"
-            (ss -ltnp 2>/dev/null | grep -E ':543(2[0-9])\b' || echo "nenhuma porta 5432x listada")
+            echo "::warning::supabase start falhou (tentativa $tentativa/5). Portas em uso:"
+            (sudo ss -ltnp 2>/dev/null | grep -E ':543(2[0-9])\b' || echo "nenhuma porta 5432x listada")
             supabase stop --no-backup || true
             docker rm -f $(docker ps -aq) 2>/dev/null || true
+            if [ "$tentativa" -ge 2 ]; then sudo systemctl restart docker || true; sleep 5; fi
             sleep $((tentativa * 5))
           done
-          echo "::error::supabase start falhou 3 vezes"
+          echo "::error::supabase start falhou 5 vezes"
           exit 1
 
       - name: Acertar com produção (role como texto + políticas extras)
@@ -117,13 +128,14 @@ jobs:
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
       - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
-        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
-        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
+        # A instalação às vezes trava sem erro (apt/download). E744 (rodadas 42755440801 e 42767013537: 1 e 4 fatias perdidas, uns
+        # 280 testes cada): tentativas CURTAS (5 min, até 4) para caber no teto do passo; o Chromium vem primeiro e sozinho
+        # (todas as fatias precisam dele). O timeout mata o npx, mas o apt-get filho segura a trava do dpkg: antes de repetir,
+        # encerra o apt que sobrou, espera a trava soltar e conserta o dpkg.
         timeout-minutes: 25
         run: |
-          for i in 1 2 3; do
-            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
+          for i in 1 2 3 4; do
+            timeout 300 npx playwright install --with-deps chromium && exit 0
             echo "tentativa $i travou ou falhou"
             sudo pkill -f '[a]pt-get|[d]pkg' || true
             for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
@@ -131,37 +143,90 @@ jobs:
           done
           exit 1
 
+      - name: Instalar WebKit do Playwright (só 3 specs de celular usam)
+        # Se falhar, perdem-se só esses specs (aparecem como falha), não a fatia inteira.
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          for i in 1 2; do
+            timeout 240 npx playwright install --with-deps webkit && exit 0
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+
       - name: Rodar a suíte E2E
         id: e2e
         continue-on-error: true
-        run: npx playwright test --reporter=list,html,json --workers=2 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+        # Fatias 1–16: a suíte SEM o t48-varredura (LAB_PESADOS=fora), em 16 partes. Fatias 17–20: SÓ o t48-varredura, uma
+        # fatia por grupo de testes (a cadeia é serial e leva ~100 min junta; separada, cada grupo leva <= 30 min).
+        run: |
+          F=${{ matrix.fatia }}
+          # Varredura (17–20): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
+          # tem 120 min para ainda sobrar tempo de guardar o resultado. As gerais seguem em 65 min.
+          if [ "$F" -le 16 ]; then
+            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+          else
+            case "$F" in
+              17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
+              18) GREP="inquilino: todas as telas logadas" ;;
+              19) GREP="proprietário: todas as telas logadas" ;;
+              20) GREP="admin: todas as telas logadas" ;;
+            esac
+            npx playwright test t48-varredura --grep "$GREP" --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
+          fi
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
-
-      - name: Resumo da noite
-        if: ${{ !cancelled() }}
-        run: |
-          {
-            echo "## Laboratório — $(date -u +%Y-%m-%d)"
-            grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
-            echo
-            echo "### Por spec (passou / falhou)"
-            node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
-            echo
-            echo "Envios simulados (nada saiu para a rede):"
-            if [ -f "$LAB_OUTBOX" ]; then cut -d'"' -f4 "$LAB_OUTBOX" | sort | uniq -c; else echo "nenhum"; fi
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Guardar relatório, prints e vídeos das falhas
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: laboratorio-${{ github.run_id }}
+          name: laboratorio-${{ github.run_id }}-fatia-${{ matrix.fatia }}
           path: |
             playwright-report/
             tests/e2e/.artifacts/
             tests/laboratorio/saida/
           retention-days: 14
+
+      - name: Marcar a fatia como falha se algum teste falhou
+        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
+        run: exit 1
+
+  # Junta as fatias: um resumo, uma linha em public.lab_execucoes, e vermelho se qualquer fatia falhou.
+  consolidar:
+    needs: laboratorio
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LAB_OUTBOX: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Baixar as fatias
+        uses: actions/download-artifact@v4
+        with:
+          pattern: laboratorio-${{ github.run_id }}-fatia-*
+          path: fatias
+
+      - name: Juntar os resultados das fatias
+        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 20
+
+      - name: Resumo da noite
+        run: |
+          {
+            echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 da varredura t48)"
+            node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
+            echo
+            echo "### Por spec (passou / falhou)"
+            node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Registrar no banco
         # Uma linha em public.lab_execucoes por execução. PR só do próprio repositório (nunca de fork, que não
@@ -180,10 +245,16 @@ jobs:
             echo "::warning::Sem o secret SUPABASE_DB_URL: resultado não gravado no banco."
             exit 0
           fi
-          RESUMO="$(node scripts/lab/resumo-specs.mjs --json tests/laboratorio/saida/resultado.json)"
-          CATEGORIA="$(node scripts/lab/gerar-cobertura.mjs --json || echo '{}')"
+          # O resumo da suíte inteira passa de 128 KB: como argumento de linha de comando o execve recusa
+          # ("Argument list too long", run 42536824482). Vai por arquivo e o psql o lê com \set ... `cat`.
+          SAIDA=tests/laboratorio/saida
+          node scripts/lab/resumo-specs.mjs --json "$SAIDA/resultado.json" > "$SAIDA/resumo-banco.json"
+          (node scripts/lab/gerar-cobertura.mjs --json || echo '{}') > "$SAIDA/categoria-banco.json"
+          export RESUMO_ARQ="$SAIDA/resumo-banco.json" CATEGORIA_ARQ="$SAIDA/categoria-banco.json"
           psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 \
-            -v sha="$COMMIT_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" -v resumo="$RESUMO" -v categoria="$CATEGORIA" >/dev/null <<'SQL'
+            -v sha="$COMMIT_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" >/dev/null <<'SQL'
+          \set resumo `cat "$RESUMO_ARQ"`
+          \set categoria `cat "$CATEGORIA_ARQ"`
           insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url, por_categoria)
           select :'sha', :'gatilho',
                  (j->>'passou')::int, (j->>'falhou')::int, (j->>'pulou')::int, (j->>'instavel')::int,
@@ -191,6 +262,6 @@ jobs:
             from (select :'resumo'::jsonb as j) x;
           SQL
 
-      - name: Marcar a execução como falha se algum teste falhou
-        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
+      - name: Marcar a execução como falha se alguma fatia falhou
+        if: ${{ needs.laboratorio.result != 'success' && github.event_name != 'pull_request' }}
         run: exit 1

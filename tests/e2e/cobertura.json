@@ -5063,6 +5063,20 @@
       ],
       "specs": []
     },
+    "src/lib/data/conversa-adiar-actions.ts#adiarConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/conversa-adiar-actions.ts#retomarConversa": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": []
+    },
     "src/lib/data/convidado-actions.ts#mesclarBuscasConvidado": {
       "personas": [
         "inquilino"

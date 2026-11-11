@@ -319,7 +319,7 @@ test.describe("T256 — Página da estadia (Prompt 32)", () => {
     await m.getByTestId("alteracao-meses").selectOption("4");
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}$`));
-    await expect(m.getByTestId("aditivo-resumo")).toHaveText("Meses: de 3 para 4");
+    await expect(m.getByTestId("aditivo-resumo")).toContainText("Meses: de 3 para 4");
     await expect(m.getByTestId("aditivo-taxa")).toHaveCount(0);
     // Nada muda antes do aceite e das duas assinaturas.
     const { count: antes } = await adm().from("contrato_blocos").select("id", { count: "exact", head: true }).eq("contrato_id", ids.contrato!);

@@ -20,7 +20,8 @@ const AREIA = "rgb(247, 247, 247)";
 // NAV-A (24/10): "Como você usa a Viva" (papeis) logo depois do Perfil.
 // E176 (parte 2): "Segurança e verificações" ganhou item próprio; "Notificações" é a página única do sino.
 const ORDEM = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"];
-const hrefSecao = (s: string) => (s === "notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta/${s}`);
+// E176: Notificações e Avaliações moram fora de /dashboard/conta/* (página única do sino; Avaliações do menu por papel).
+const hrefSecao = (s: string) => (s === "notificacoes" ? "/dashboard/notificacoes" : s === "avaliacoes" ? "/dashboard/avaliacoes" : `/dashboard/conta/${s}`);
 
 test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -67,7 +68,7 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     const menu = p.getByTestId("conta-menu-lateral");
     await expect(menu).toBeVisible();
     const hrefs = await menu.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-    expect(hrefs).toEqual(ORDEM.map(hrefSecao));
+    expect(hrefs).toEqual(ORDEM.filter((s) => s !== "ajuda").map(hrefSecao)); // E493: Ajuda fica fora do menu da Conta
     const ativo = p.getByTestId("conta-menu-perfil");
     await expect(ativo).toHaveAttribute("aria-current", "page");
     await expect(ativo).toHaveCSS("background-color", "rgb(28, 107, 58)");
@@ -120,6 +121,8 @@ test.describe("T365 — CONTA-A A1: casca da Conta e a tela Perfil (perfil-01)",
     for (const [s, t] of Object.entries(titulos)) {
       await p.goto(`/dashboard/conta/${s}`, { waitUntil: "domcontentloaded" });
       await expect(h1Visiveis(p), s).toHaveText(t);
+      // Ajuda fica fora do menu (E493) e Avaliações mora em /dashboard/avaliacoes, fora da casca da Conta (E176): sem pílula.
+      if (s === "ajuda" || s === "avaliacoes") continue;
       await expect(p.getByTestId(`conta-menu-${s}`)).toHaveAttribute("aria-current", "page");
     }
     // E176 (parte 2): "Segurança e verificações" é item próprio da Conta.

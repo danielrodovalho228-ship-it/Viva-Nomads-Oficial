@@ -248,7 +248,7 @@ export function OwnerCard({
           {exemplo && (
             <p role="status" data-testid="mensagem-demo" className="mt-3 rounded-xl bg-sage-100 p-3 text-sm text-ink">
               Este é um anúncio de exemplo: aqui não há botão de mensagem. Nos anúncios reais, a conversa acontece
-              pelo chat da Viva, com o contato protegido até o aceite.
+              pelo chat da Viva; telefone, e-mail e redes sociais nunca são trocados.
             </p>
           )}
         </div>

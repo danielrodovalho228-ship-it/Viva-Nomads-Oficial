@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { atendeCidade, cidadeDoCep, contatoLiberado, filtrarPorCidade, normalizarCep, podeAceitar, portfolioSeguro, taxaValida, validarPedido } from "./regras.ts";
+import { atendeCidade, cidadeDoCep, filtrarPorCidade, normalizarCep, podeAceitar, portfolioSeguro, taxaValida, validarPedido } from "./regras.ts";
 
 const ID = "3f2b8c1e-5a4d-4e7b-9c1a-0d2e4f6a8b10";
 const base = { fotografoId: ID, cep: "38400-100", cidade: "Uberlândia", uf: "mg", data: "2026-10-20", observacao: "" };
@@ -16,13 +16,6 @@ test("CEP: só 8 dígitos", () => {
   assert.equal(normalizarCep("38400-100"), "38400100");
   assert.equal(normalizarCep("1234"), null);
   assert.equal(normalizarCep(null), null);
-});
-
-test("contato do dono só depois do aceite COM taxa paga", () => {
-  assert.equal(contatoLiberado({ status: "enviado", taxa_paga_em: null }), false);
-  assert.equal(contatoLiberado({ status: "aceito", taxa_paga_em: null }), false); // aceito sem pagar: nunca
-  assert.equal(contatoLiberado({ status: "recusado", taxa_paga_em: "2026-10-11T10:00:00Z" }), false);
-  assert.equal(contatoLiberado({ status: "aceito", taxa_paga_em: "2026-10-11T10:00:00Z" }), true);
 });
 
 test("só aceita depois de pagar a taxa", () => {
