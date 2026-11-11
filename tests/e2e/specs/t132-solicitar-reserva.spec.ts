@@ -4,6 +4,7 @@ import { test, expect } from "@playwright/test";
  * T132 — Anúncio de exemplo não oferece "Pedir para morar" (E694, resíduo; antes: o "Solicitar" nunca ficava mudo).
  * No exemplo (ube-001) a coluna de reserva e a barra do celular trazem a explicação e a saída para os imóveis reais; o
  * fluxo de candidatura de verdade (resumo, datas) é de anúncio real: t327, t357 e t855 o percorrem.
+ * E713 (#3408): a coluna do exemplo abre com "Este anúncio é de exemplo, …" (o selo "Anúncio de exemplo" fica no cartão da busca).
  */
 for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] as const) {
   test.describe(`T132 — ${nome} px`, () => {
@@ -11,7 +12,7 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       await page.setViewportSize({ width: largura, height: altura });
       await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
       const card = page.locator("#cartao-preco");
-      await expect(card.getByTestId("exemplo-sem-acoes")).toContainText("Anúncio de exemplo");
+      await expect(card.getByTestId("exemplo-sem-acoes")).toContainText("Este anúncio é de exemplo");
       await expect(page.getByRole("button", { name: "Pedir para morar", exact: true })).toHaveCount(0);
       const saida = largura >= 1024 ? card.getByTestId("exemplo-ver-reais") : page.getByTestId("barra-fixa-imovel").getByTestId("barra-ver-reais");
       await expect(saida).toHaveAttribute("href", "/buscar");
