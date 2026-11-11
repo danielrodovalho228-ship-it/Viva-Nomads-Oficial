@@ -141,7 +141,10 @@ test("4f8d17c6 — flutuante idêntico em /, /precos e /como-funciona a 768 e 12
   }
   expect([...estilos], "um formato só").toHaveLength(1);
   const [bg, cor, raio, peso, altura] = [...estilos][0].split("|");
-  expect([bg, cor, raio, peso, altura]).toEqual(["rgb(28, 107, 58)", "rgb(255, 255, 255)", "8px", "600", "48px"]);
+  // C1b (08/11): o flutuante é o botão REDONDO de 48 px em todo o site (180 × 48 px com texto cobria texto de /termos, /empresas…);
+  // o nome acessível "Fale com a Viva" fica (sr-only). Raio de pílula (≥ 24 px) em vez dos 8 px de antes.
+  expect([bg, cor, peso, altura]).toEqual(["rgb(28, 107, 58)", "rgb(255, 255, 255)", "600", "48px"]);
+  expect(Number.parseFloat(raio), "botão redondo").toBeGreaterThanOrEqual(24);
 });
 
 /**
@@ -163,22 +166,21 @@ test("Q4/E246 — /imoveis/ube-001 a 390 px: sem flutuante; Avaliações e o tot
   await page.screenshot({ path: "tests/laboratorio/saida/t59-q4-imovel-390.png" });
 });
 
-/** Q3 (iPhone): o campo "Quando quer entrar?" cabe no cartão (como o select do motivo) e, vazio, mostra "dd/mm/aaaa". */
-test("Q3 — /imoveis/ube-001 a 390 px: campo de data dentro do cartão e com exemplo de formato", async ({ page }) => {
+/**
+ * Q3 (iPhone) → E713: o cartão de reserva do anúncio de EXEMPLO não traz mais os campos (Quando quer entrar?, Até quando?,
+ * Quantas pessoas?, Motivo): só a explicação e "Ver imóveis reais" (E694). A largura do campo de data no cartão de um anúncio
+ * real é conferida nos specs com imóvel de laboratório (t855, t357).
+ */
+test("Q3/E713 — /imoveis/ube-001 a 390 px: sem campos de reserva no exemplo, com a explicação e a saída", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
-  const data = page.getByTestId("candidatura-inicio").first();
-  await data.scrollIntoViewIfNeeded();
-  const motivo = page.getByTestId("candidatura-motivo").first();
-  const [cd, cm] = [(await data.boundingBox())!, (await motivo.boundingBox())!];
-  // Mesma largura e alinhamento do select logo abaixo (nada passa da borda).
-  expect(Math.abs(cd.x - cm.x)).toBeLessThanOrEqual(1);
-  expect(Math.abs(cd.width - cm.width)).toBeLessThanOrEqual(1);
-  expect(Math.abs(cd.height - cm.height)).toBeLessThanOrEqual(1);
-  // E136: no computador o campo é dd/mm/aaaa com o calendário do site (pt-BR); o exemplo é o placeholder.
-  await expect(data).toHaveAttribute("placeholder", "dd/mm/aaaa");
-  await data.fill("2030-01-15");
-  await expect(data).toHaveValue("15/01/2030");
+  const cartao = page.locator("#cartao-preco");
+  await expect(cartao.getByTestId("candidatura-inicio")).toHaveCount(0);
+  await expect(cartao.getByTestId("candidatura-saida")).toHaveCount(0);
+  await expect(cartao.getByTestId("candidatura-pessoas")).toHaveCount(0);
+  await expect(cartao.getByTestId("candidatura-motivo")).toHaveCount(0);
+  await expect(cartao.getByTestId("exemplo-sem-acoes")).toBeVisible();
+  await expect(cartao.getByTestId("exemplo-ver-reais")).toHaveAttribute("href", "/buscar");
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
   await page.screenshot({ path: "tests/laboratorio/saida/t59-q3-data-390.png" });
 });

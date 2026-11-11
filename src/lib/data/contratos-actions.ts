@@ -104,6 +104,8 @@ export interface ContratoView {
   podeAvaliar: boolean;
   /** E544: fim do contrato para o prazo da avaliação — o encerramento ou, antes dele, o fim do último bloco. */
   fimParaAvaliacao: string | null;
+  /** E719: estado REAL da avaliação que EU fiz deste contrato (enviada, publicada, em_moderacao, removida); null = ainda não avaliei. */
+  minhaAvaliacao: string | null;
 }
 
 function toBloco(b: Record<string, unknown>): BlocoView {
@@ -242,6 +244,8 @@ export interface LocacaoView {
   podeAvaliar: boolean;
   /** Fim do contrato (dá o prazo da avaliação, Prompt 43). */
   encerradoEm: string | null;
+  /** E719: estado REAL da avaliação que EU fiz desta locação (enviada, publicada, em_moderacao, removida); null = ainda não avaliei. */
+  minhaAvaliacao: string | null;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
   pagamentos: PagamentoView[];
   /** Valor e estado da caução, pela mesma função dos Contratos e da Garantias (L2-B, item 12). */
@@ -252,6 +256,26 @@ export interface LocacaoView {
  * Minhas locações (visão do INQUILINO): contratos onde tenant_id = eu, com o
  * proprietário do imóvel (para avaliar). Best-effort: [] em demo/sem sessão.
  */
+/**
+ * E719: o estado real da avaliação que a pessoa fez de cada contrato (a mais recente que não é rascunho). Sem isso o
+ * cartão do contrato só sabia "enviei nesta visita" e seguia dizendo "Aguardando a outra parte" depois de publicada.
+ * Falha de leitura: sem mapa (o cartão cai no comportamento anterior), nunca "não avaliei" inventado.
+ */
+async function avaliacoesMinhasPorContrato(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, userId: string, contratoIds: string[]): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>();
+  if (contratoIds.length === 0) return mapa;
+  const { data, error } = await supabase
+    .from("avaliacoes")
+    .select("contrato_id, status, criado_em")
+    .eq("autor_id", userId)
+    .in("contrato_id", contratoIds)
+    .neq("status", "rascunho")
+    .order("criado_em", { ascending: true });
+  if (error) return mapa;
+  for (const l of (data ?? []) as { contrato_id: string; status: string }[]) mapa.set(l.contrato_id, l.status);
+  return mapa;
+}
+
 const MSG_LOCACOES_NAO_CARREGARAM = "Não foi possível carregar as suas locações agora.";
 
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
@@ -284,6 +308,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
     for (const pr of (props ?? []) as { id: string; title: string | null; owner_id: string | null }[]) doServidor.set(pr.id, { title: pr.title ?? undefined, owner_id: pr.owner_id ?? undefined });
   }
 
+  const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, linhas.map((c) => String(c.id)));
   return linhas.map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null)?.title ? (c.properties as { title?: string; owner_id?: string }) : (doServidor.get(String(c.property_id)) ?? {});
     const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
@@ -301,6 +326,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
       criadoEm: String(c.created_at),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       encerradoEm: (c.encerrado_em as string | null) ?? null,
+      minhaAvaliacao: minhasAvaliacoes.get(String(c.id)) ?? null,
       pagamentos,
       caucao: caucaoDaLinha(
         c,
@@ -366,6 +392,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
     ? await supabase.from("leads").select("id, accepted_at").in("id", leadIds)
     : { data: [] as { id: string; accepted_at: string | null }[] };
   const aceiteDoLead = new Map(((leads ?? []) as { id: string; accepted_at: string | null }[]).map((l) => [l.id, l.accepted_at]));
+  const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, contratos.map((c) => String(c.id)));
   return contratos.map((c) => {
     const meta = titleById.get(String(c.property_id));
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
@@ -395,6 +422,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       caucao: caucaoDaLinha(c, blocos, pagamentos),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       fimParaAvaliacao: (c.encerrado_em as string | null) ?? blocos[blocos.length - 1]?.fim ?? null,
+      minhaAvaliacao: minhasAvaliacoes.get(String(c.id)) ?? null,
     };
   });
 }
