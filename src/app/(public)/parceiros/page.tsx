@@ -101,7 +101,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         {/* E730 (Phoenix/RELATORIO-002, C5): a página mostra Empresas, Gestores e Avaliação, mas o formulário só traz as categorias de
             serviço. A promessa agora diz o que o formulário entrega e para onde vai cada um dos outros. */}
         <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted" data-testid="parceiros-tipos-nota">
-          O formulário "Quero ser parceiro" serve às categorias de serviço: fotografia, mudança, limpeza, lavanderia, montagem, manutenção e outro serviço.
+          O formulário &quot;Quero ser parceiro&quot; serve às categorias de serviço: fotografia, mudança, limpeza, lavanderia, montagem, manutenção e outro serviço.
           Empresas e gestores têm página própria, e a avaliação de imóveis é um credenciamento à parte.
         </p>
         <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6" data-testid="parceiros-tipos">
