@@ -1,7 +1,8 @@
 /*
   Cartão "Por que estou na cidade" (ordem 9950ef15, item 3): período, empresa/instituição e frase curta.
   Módulo puro: o servidor valida aqui (fonte da verdade) e a tela mostra a mesma mensagem.
-  Texto livre passa pelo filtro de contato; nada de diagnóstico (LGPD art. 11): o aviso fica na tela.
+  Texto livre passa pelo filtro de contato; nada de diagnóstico (LGPD art. 11): o aviso fica na tela
+  e o servidor recusa a frase com diagnóstico/doença (mencionaDiagnostico).
 */
 import { contemContato } from "../pedidos/pedidos.ts";
 import type { Validado } from "../conta-validacao.ts";
@@ -17,6 +18,21 @@ export interface PorQueNaCidade {
 }
 
 const DATA = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Ordem 9950ef15, item 5 (LGPD art. 11): diagnóstico e nome de doença não entram na frase que o proprietário lê.
+ * Lista curta e explícita (doença/diagnóstico/tratamento nominal), para não barrar "Residência médica" ou "hospital".
+ * A empresa/instituição fica de fora: nome real de hospital pode conter a especialidade.
+ */
+const DIAGNOSTICO =
+  /diagn[oó]stic|\bdoen[cç]a|\bc[aâ]ncer|\btumor|leucemia|linfoma|quimio|radioterapia|hemodi[aá]lise|\bdi[aá]lise|\bhiv\b|\baids\b|depress[aã]o|esquizofren|bipolar|\bcid[\s-]?[a-z]\d/i;
+
+export const ERRO_DIAGNOSTICO = "Frase: não escreva diagnóstico nem nome de doença. Para o proprietário, tratamento aparece só como \"Saúde\".";
+
+/** true quando o texto cita diagnóstico ou doença (ordem 9950ef15, item 5). */
+export function mencionaDiagnostico(texto: string | null | undefined): boolean {
+  return DIAGNOSTICO.test(String(texto ?? ""));
+}
 
 function dataValida(v: string): boolean {
   if (!DATA.test(v)) return false;
@@ -47,6 +63,7 @@ export function validarPorQueNaCidade(entrada: {
   if (!empresa.ok) return empresa;
   const frase = texto(entrada.frase, FRASE_MAX, "Frase");
   if (!frase.ok) return frase;
+  if (mencionaDiagnostico(frase.valor)) return { ok: false, erro: ERRO_DIAGNOSTICO };
   return { ok: true, valor: { inicio, fim, empresa: empresa.valor, frase: frase.valor } };
 }
 
@@ -63,6 +80,7 @@ export function sinaisPorQueParaDono(p: PorQueNaCidade | null | undefined, aceit
   else if (p.inicio) s.push(`Na cidade desde ${dataBr(p.inicio)}`);
   else if (p.fim) s.push(`Na cidade até ${dataBr(p.fim)}`);
   if (p.empresa) s.push(`Empresa ou instituição: ${p.empresa}`);
-  if (p.frase) s.push(`“${p.frase}”`);
+  // Frase gravada antes da regra do item 5 com diagnóstico: não chega ao proprietário.
+  if (p.frase && !mencionaDiagnostico(p.frase)) s.push(`“${p.frase}”`);
   return s;
 }
