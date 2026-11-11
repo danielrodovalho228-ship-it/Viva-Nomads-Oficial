@@ -1,21 +1,19 @@
 name: Laboratório de testes (noturno)
 
-# Toda noite e a cada merge na main: sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
+# Toda noite (e no disparo manual): sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
 # aplica TODAS as migrações + o acerto com produção, cria as personas (Ana,
-# Paulo, Roberta, Gustavo) com uma senha nova, builda o site em modo
-# INTEGRACOES_SIMULADAS (nada sai para a rede) e roda a suíte E2E contra
-# localhost. Nenhum segredo de produção é usado aqui — o banco morre no fim.
+# Paulo, Roberta, Gustavo) com uma senha nova e roda a suíte E2E contra
+# localhost. O site é buildado UMA vez em modo INTEGRACOES_SIMULADAS (nada sai
+# para a rede; job construir) e cada fatia reaproveita o mesmo .next. Nenhum segredo de produção é usado aqui — o banco morre no fim.
 on:
   schedule:
     - cron: "0 6 * * *" # 01h no Texas (horário de verão), 03h em Brasília
   workflow_dispatch:
-  # Todo merge na main roda a suíte inteira (além das 03h) e grava o resultado em
-  # public.lab_execucoes (ordem 225d0648).
-  push:
-    branches: [main]
-  # Em PR não roda (decisão do Muse, 21/10): a suíte inteira não cabe no teto e ficava verde com teste falhando.
-  # O portão de PR é o lab-critico (lista crítica + specs do próprio PR, falha = vermelho). Aqui, na main e no
-  # noturno, falha também deixa o job vermelho (último passo).
+  # Frente 0 (correção consolidada de 11/11/2026): o push na main deixou de rodar a suíte inteira. Com 100–229 merges por
+  # dia, cada push seria uma rodada de 21 jobs; e as rodadas de 10/11 e 11/11 (ainda num job só) gravaram ~610 executados
+  # contra ~3.900 pulados sem ficar vermelhas. A suíte inteira roda no agendado e no disparo manual; o portão de cada PR
+  # segue sendo o lab-critico (lista crítica + specs do próprio PR).
+  # Em PR não roda (decisão do Muse, 21/10). Falha, rodada incompleta ou regressão deixam o consolidar vermelho.
 
 permissions:
   contents: read
@@ -27,30 +25,33 @@ concurrency:
   # PR novo cancela o PR velho; push na main nunca é cancelado no meio.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+  # O MESMO ambiente no build (job construir) e nas fatias: as NEXT_PUBLIC_ entram no bundle no build.
+env:
+    NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+    NEXT_PUBLIC_SITE_URL: http://localhost:3123
+    INTEGRACOES_SIMULADAS: "on"
+    LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+    # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
+    LAB_RESEND_URL: http://127.0.0.1:3999
+    # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
+    LAB_LINKEDIN_URL: http://127.0.0.1:3997
+    # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
+    LAB_ROTAS_URL: http://127.0.0.1:3998
+    TESTES_BASE_URL: http://localhost:3123
+
 jobs:
   # E744: a suíte inteira (~4.500 testes) não cabia no teto de um job (run 42471821063: 640 rodaram, 3.864 não rodaram).
   # Agora ela é fatiada em FATIAS jobs paralelos (--shard do Playwright); cada fatia sobe o próprio Supabase local e o
   # próprio site, e o job `consolidar` junta os resultados e grava UMA linha em lab_execucoes. Desenho em docs/e744-suite-fatiada.md.
   laboratorio:
     name: laboratorio (fatia ${{ matrix.fatia }}/20)
+    needs: construir
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      NEXT_PUBLIC_SITE_URL: http://localhost:3123
-      INTEGRACOES_SIMULADAS: "on"
-      LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
-      # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
-      LAB_RESEND_URL: http://127.0.0.1:3999
-      # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
-      LAB_LINKEDIN_URL: http://127.0.0.1:3997
-      # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
-      LAB_ROTAS_URL: http://127.0.0.1:3998
-      TESTES_BASE_URL: http://localhost:3123
     steps:
       - uses: actions/checkout@v4
 
@@ -115,8 +116,25 @@ jobs:
         continue-on-error: true
         run: node scripts/lab/massa-varredura.mjs
 
-      - name: Build do site (modo simulado)
-        run: npm run build
+      - name: Baixar o build único (job construir)
+        uses: actions/download-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}-build
+          path: lab-build
+
+      - name: Reaproveitar o .next (mesma chave anônima; páginas pré-renderizadas saem do banco desta fatia)
+        # As NEXT_PUBLIC_ entram no bundle no build: se o Supabase desta fatia tivesse outra chave anônima, o navegador
+        # falaria com a chave errada. Confere o sha256 da chave (nunca a chave) com o do build e para com erro claro.
+        # Depois apaga a saída pré-renderizada do build (gerada com o banco do job construir): o servidor gera cada página
+        # na primeira visita com o banco desta fatia (scripts/lab/limpar-prerender.mjs).
+        run: |
+          AGORA="$(printf '%s' "$NEXT_PUBLIC_SUPABASE_ANON_KEY" | sha256sum | cut -d' ' -f1)"
+          if [ "$AGORA" != "$(cat lab-build/chave-anon.sha256)" ]; then
+            echo "::error::a chave anônima do Supabase desta fatia não é a do build: o .next reaproveitado não serve."
+            exit 1
+          fi
+          tar -xf lab-build/next.tar
+          node scripts/lab/limpar-prerender.mjs .next
 
       - name: Subir o site em localhost:3123
         run: |
@@ -193,6 +211,86 @@ jobs:
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
         run: exit 1
 
+  # Frente 0: o .next é construído UMA vez e as 20 fatias o reaproveitam (antes cada fatia buildava o site de novo). O build
+  # precisa do Supabase local só para ter as mesmas chaves (a anônima entra no bundle) e para a pré-renderização ter onde ler;
+  # o que ela gerou é apagado em cada fatia antes do `next start` (scripts/lab/limpar-prerender.mjs). Daqui sai também a
+  # listagem do commit (`playwright test --list`), que o consolidar compara com o que rodou.
+  construir:
+    name: construir (build único e listagem)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (para as chaves do bundle)
+        run: |
+          for tentativa in 1 2 3 4 5; do
+            if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
+              exit 0
+            fi
+            echo "::warning::supabase start falhou (tentativa $tentativa/5)."
+            supabase stop --no-backup || true
+            docker rm -f $(docker ps -aq) 2>/dev/null || true
+            if [ "$tentativa" -ge 2 ]; then sudo systemctl restart docker || true; sleep 5; fi
+            sleep $((tentativa * 5))
+          done
+          echo "::error::supabase start falhou 5 vezes"
+          exit 1
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Chaves locais (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+
+      - name: Build do site (modo simulado)
+        run: npm run build
+
+      - name: Listagem do commit (o que a rodada tem que executar)
+        # Sem LAB_PESADOS: a suíte INTEIRA (as fatias 1–16 sem o t48 + as 17–20 só com o t48 cobrem exatamente esta lista).
+        run: npx playwright test --list --reporter=json > lista.json
+
+      - name: Empacotar o build
+        # Só o .next (sem o cache do webpack) + o sha256 da chave anônima (nunca a chave) + a listagem.
+        run: |
+          mkdir -p lab-build
+          tar --exclude='.next/cache' -cf lab-build/next.tar .next
+          printf '%s' "$NEXT_PUBLIC_SUPABASE_ANON_KEY" | sha256sum | cut -d' ' -f1 > lab-build/chave-anon.sha256
+          cp lista.json lab-build/lista.json
+          node -e 'const r=require("./lista.json");console.log("listados:",r.stats.skipped+r.stats.expected+r.stats.unexpected+r.stats.flaky)'
+
+      - name: Guardar o build para as fatias
+        uses: actions/upload-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}-build
+          path: lab-build/
+          retention-days: 2
+
+      - name: Guardar a listagem para o consolidar
+        uses: actions/upload-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}-lista
+          path: lista.json
+          retention-days: 14
+
   # Junta as fatias: um resumo, uma linha em public.lab_execucoes, e vermelho se qualquer fatia falhou.
   consolidar:
     needs: laboratorio
@@ -218,6 +316,22 @@ jobs:
       - name: Juntar os resultados das fatias
         run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 20
 
+      - name: Baixar a listagem do commit (job construir)
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}-lista
+          path: lista
+
+      - name: Conferir a completude (executados + pulos declarados = listados)
+        # Frente 0: rodada que corta testes (teto global, fatia perdida, teste que nunca começou) fica vermelha no último passo.
+        id: completude
+        continue-on-error: true
+        run: |
+          node scripts/lab/conferir-completude.mjs lista/lista.json tests/laboratorio/saida/resultado.json \
+            --saida tests/laboratorio/saida/numeros.json | tee tests/laboratorio/saida/completude.md
+          exit "${PIPESTATUS[0]}"
+
       - name: Resumo da noite
         run: |
           {
@@ -226,6 +340,8 @@ jobs:
             echo
             echo "### Por spec (passou / falhou)"
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
+            echo
+            cat tests/laboratorio/saida/completude.md 2>/dev/null || echo "### Completude da rodada"$'\n'"❌ não conferida"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Registrar no banco
@@ -248,20 +364,54 @@ jobs:
           # O resumo da suíte inteira passa de 128 KB: como argumento de linha de comando o execve recusa
           # ("Argument list too long", run 42536824482). Vai por arquivo e o psql o lê com \set ... `cat`.
           SAIDA=tests/laboratorio/saida
+          # Frente 0: ANTES de gravar a rodada, o histórico {spec: último verde} (verde = passou > 0 e falhou = 0). Registros
+          # de pull_request ficam de fora (código que não estava na main). O detector roda aqui para a lista ir junto na linha
+          # e de novo no passo seguinte (sem segredo), que deixa o job vermelho e escreve o resumo.
+          psql "$SUPABASE_DB_URL" -X -q -At -v ON_ERROR_STOP=1 > "$SAIDA/verdes.json" <<'SQL'
+          select coalesce(jsonb_object_agg(spec, ultimo), '{}'::jsonb)
+            from (select k.key as spec, max(e.criada_em) as ultimo
+                    from public.lab_execucoes e
+                    cross join lateral jsonb_each(case when jsonb_typeof(e.por_spec) = 'object' then e.por_spec else '{}'::jsonb end) k
+                   where e.gatilho is distinct from 'pull_request'
+                     and coalesce((k.value->>'passou')::int, 0) > 0
+                     and coalesce((k.value->>'falhou')::int, 0) = 0
+                   group by k.key) x;
+          SQL
+          node scripts/lab/detectar-regressoes.mjs "$SAIDA/verdes.json" "$SAIDA/resultado.json" --saida "$SAIDA/regressoes-banco.json" > /dev/null || true
           node scripts/lab/resumo-specs.mjs --json "$SAIDA/resultado.json" > "$SAIDA/resumo-banco.json"
           (node scripts/lab/gerar-cobertura.mjs --json || echo '{}') > "$SAIDA/categoria-banco.json"
+          [ -s "$SAIDA/numeros.json" ] || echo '{}' > "$SAIDA/numeros.json"
+          [ -s "$SAIDA/regressoes-banco.json" ] || echo '[]' > "$SAIDA/regressoes-banco.json"
           export RESUMO_ARQ="$SAIDA/resumo-banco.json" CATEGORIA_ARQ="$SAIDA/categoria-banco.json"
+          export NUMEROS_ARQ="$SAIDA/numeros.json" REGRESSOES_ARQ="$SAIDA/regressoes-banco.json"
           psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 \
             -v sha="$COMMIT_SHA" -v gatilho="$GATILHO" -v run_url="$RUN_URL" >/dev/null <<'SQL'
           \set resumo `cat "$RESUMO_ARQ"`
           \set categoria `cat "$CATEGORIA_ARQ"`
-          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url, por_categoria)
+          \set numeros `cat "$NUMEROS_ARQ"`
+          \set regressoes `cat "$REGRESSOES_ARQ"`
+          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url, por_categoria,
+                                            listados, executados, nao_executados, regressoes)
           select :'sha', :'gatilho',
                  (j->>'passou')::int, (j->>'falhou')::int, (j->>'pulou')::int, (j->>'instavel')::int,
-                 j->'por_spec', j->'falhas', :'run_url', :'categoria'::jsonb
-            from (select :'resumo'::jsonb as j) x;
+                 j->'por_spec', j->'falhas', :'run_url', :'categoria'::jsonb,
+                 (n->>'listados')::int, (n->>'executados')::int, (n->>'nao_executados')::int, :'regressoes'::jsonb
+            from (select :'resumo'::jsonb as j, :'numeros'::jsonb as n) x;
           SQL
 
+      - name: Detectar regressões (spec que já foi verde e está vermelho agora)
+        # Frente 0: lista não vazia = vermelho no último passo; sem o histórico (banco fora do ar, sem o segredo) também.
+        id: regressoes
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          node scripts/lab/detectar-regressoes.mjs tests/laboratorio/saida/verdes.json tests/laboratorio/saida/resultado.json \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          exit "${PIPESTATUS[0]}"
+
+      # Vermelho também se a rodada não executou tudo o que está listado ou se algum spec que já foi verde voltou a falhar.
       - name: Marcar a execução como falha se alguma fatia falhou
-        if: ${{ needs.laboratorio.result != 'success' && github.event_name != 'pull_request' }}
-        run: exit 1
+        if: ${{ needs.laboratorio.result != 'success' && github.event_name != 'pull_request' || steps.completude.outcome == 'failure' || steps.regressoes.outcome == 'failure' }}
+        run: |
+          echo "fatias: ${{ needs.laboratorio.result }} · completude: ${{ steps.completude.outcome }} · regressões: ${{ steps.regressoes.outcome }}"
+          exit 1
