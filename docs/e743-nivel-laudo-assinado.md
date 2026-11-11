@@ -4,3 +4,6 @@
 **Guarda:** `e743-selo-sem-handler.test.ts` falha se qualquer componente de servidor de `src/components/vistoria` voltar a passar `on*=` a um elemento.
 **Para a Pista C:** o `test.fail` do `t1429` (draft #3394) pode sair junto com este PR.
 Sem prova ao vivo.
+
+## Guarda t1429 passa a valer (11/11)
+A spec `t1429-e691-assinatura-do-laudo-visivel` (Pista C, draft #3394, hoje com conflito e 248 commits atrás) entra neste PR **sem o `test.fail`**: com a correção do selo, a tela `/nivel` do dono abre com laudo assinado e mostra o selo (nº, data, hash curto e hash inteiro), a 1280 e 390 px; sem assinatura, não há selo. A spec entrou no mapa de cobertura (`/dashboard/imoveis/[id]/nivel`) e o `lab-critico` a roda por estar alterada no PR. Guarda unitária: `e743-selo-sem-handler.test.ts` impede o `test.fail` de voltar. O #3394 pode ser fechado como superado por este.

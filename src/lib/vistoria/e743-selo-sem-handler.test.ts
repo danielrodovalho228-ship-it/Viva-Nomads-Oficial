@@ -27,3 +27,9 @@ test("guarda: componentes de servidor de vistoria (sem 'use client') não passam
     assert.deepEqual(handlers, [], `${f} é componente de servidor e passa manipulador de evento`);
   }
 });
+
+test("E743: a guarda t1429 (laudo assinado em /nivel) roda como teste que passa — sem test.fail", () => {
+  const spec = readFileSync(new URL("../../../tests/e2e/specs/t1429-e691-assinatura-do-laudo-visivel.spec.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(spec, /test\.fail\(/);
+  assert.match(spec, /getByTestId\("selo-assinatura"\)/);
+});
