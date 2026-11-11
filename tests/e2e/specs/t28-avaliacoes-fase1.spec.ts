@@ -11,7 +11,7 @@ import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
  *  - às cegas: a do inquilino só aparece quando o proprietário também envia;
  *  - comentário com telefone vai para moderação (não publica);
  *  - enviada não muda; o avaliado lê a nota privada depois de publicada;
- *  - a página do imóvel mostra a avaliação publicada ("Inquilino verificado").
+ *  - a página do imóvel mostra a avaliação publicada ("Morador verificado").
  */
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -106,7 +106,7 @@ test.describe("T28 — Avaliações fase 1 (0089)", () => {
         await page.reload({ waitUntil: "domcontentloaded" });
         await expect(page.locator("#avaliacoes").getByText(`Imóvel impecável ${marca}`)).toBeVisible({ timeout: 5_000 });
       }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 120_000 });
-      await expect(page.getByText("Inquilino verificado").first()).toBeVisible();
+      await expect(page.getByText("Morador verificado").first()).toBeVisible();
     } finally {
       await adm.from("contratos").delete().in("id", [ct!.id, velho!.id]);
     }

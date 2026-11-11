@@ -325,10 +325,10 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
       distanceM: w.distance_m ?? 0,
     })),
     proximities: proximities ?? [],
-    // Avaliação real de quem morou (0089): sem nome digitado — "Inquilino verificado".
+    // Avaliação real de quem morou (0089): sem nome digitado — "Morador verificado" (ordem a8c05cd0: sem "inquilino" na tela).
     reviews: ((reviews as { id: string; nota_geral: number; comentario_publico: string | null; publicada_em: string | null }[] | null) ?? []).map((r) => ({
       id: r.id,
-      author: "Inquilino verificado",
+      author: "Morador verificado",
       rating: Number(r.nota_geral),
       comment: r.comentario_publico ?? "",
       date: r.publicada_em ?? undefined,

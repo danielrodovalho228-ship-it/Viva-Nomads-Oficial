@@ -34,7 +34,7 @@ export function validarInteresse(entrada: { cidade?: unknown; uf?: unknown; pape
   const papel = String(entrada.papel ?? "");
   if (cidade.length < 2 || cidade.length > 80) return { ok: false, erro: "Informe a cidade." };
   if (!UF.test(uf)) return { ok: false, erro: "Escolha a cidade na lista de sugestões." };
-  if (!(PAPEIS_INTERESSE as readonly string[]).includes(papel)) return { ok: false, erro: "Informe se você é proprietário ou inquilino." };
+  if (!(PAPEIS_INTERESSE as readonly string[]).includes(papel)) return { ok: false, erro: "Informe se você é proprietário ou morador." };
   return { ok: true, uf, chave: chaveCidade(cidade), cidade, papel: papel as PapelInteresse };
 }
 

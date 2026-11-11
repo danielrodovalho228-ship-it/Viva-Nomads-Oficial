@@ -47,7 +47,7 @@ export function detalheResposta(): NotifDetalhe {
 /** Aceito para conversa → proprietário (leva às mensagens). */
 export function detalheAceito(): NotifDetalhe {
   return bloco(
-    "Um inquilino aceitou sua resposta e abriu a conversa.",
+    "Um morador aceitou sua resposta e abriu a conversa.",
     "Abrir mensagens",
     "/dashboard/mensagens"
   );
