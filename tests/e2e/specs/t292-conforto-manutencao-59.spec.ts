@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { continuarAte } from "../fixtures/cadastro";
+import { DESCRICAO_RASCUNHO_TESTE, continuarAte } from "../fixtures/cadastro";
 import {
   CHAVE_ANON,
   NO_LABORATORIO,
@@ -103,7 +103,7 @@ test.describe("T292 — Prompt 59: padrão mínimo de conforto e prazo de soluç
     // 59-A: o assistente (passo Comodidades → Revisão) roda num rascunho só dele — o salvamento automático regrava as
     // colunas e as fotos a partir do estado do assistente, e o rascunho "novo" precisa delas intactas para publicar.
     ids.assistente = await criarImovelPronto(ids.dono, `${T.novo} (assistente)`, { semConforto: true });
-    await adm().from("properties").update({ draft_data: { title: T.novo, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.assistente);
+    await adm().from("properties").update({ draft_data: { title: T.novo, description: DESCRICAO_RASCUNHO_TESTE, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.assistente);
     ids.antigo = await criarImovelPronto(ids.dono, T.antigo, { ativo: true, semConforto: true });
     ids.casa = await criarImovelPronto(ids.dono, T.contrato, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.casa, true);
