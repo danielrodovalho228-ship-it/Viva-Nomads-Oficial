@@ -368,7 +368,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
         <div className={styles.card} data-testid="receitas-adicionais">
           <h2>Receitas adicionais (potencial)</h2>
           <p className={styles.cardHelp}>
-            Todas desligadas por padrão. Ligadas, entram na mesma conta (com o imposto da Viva) a partir do mês de início. Nenhuma tem contrato assinado; o inquilino não paga taxa obrigatória. Valor, adesão e mês de início são editáveis.
+            Todas desligadas por padrão. Ligadas, entram na mesma conta (com o imposto da Viva) a partir do mês de início. Nenhuma tem contrato assinado; o morador não paga taxa obrigatória. Valor, adesão e mês de início são editáveis.
           </p>
           <div className={`${styles.toggles} ${styles.noprint}`}>
             <button type="button" className={styles.pill} data-testid="receitas-ligar-todas" aria-pressed={mesmos(ligados, IDS_PARCEIROS) && mesmos(extras, IDS_EXTRAS)} onClick={() => (setLigados(IDS_PARCEIROS), setExtras(IDS_EXTRAS))}>
@@ -688,7 +688,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                 {pct(REPRESENTANTE_SEGUROS.min)} a {pct(REPRESENTANTE_SEGUROS.max)}; prêmio proporcional à duração do contrato). {SELO_POTENCIAL}.
               </li>
               <li>
-                <strong>Receitas adicionais</strong> (desligadas por padrão): verificação opcional do inquilino ({VERIFICACAO.candidatosPorContrato} candidatos por contrato × adesão × valor, menos a verificação de identidade (Certta) de {brl(VERIFICACAO.custoCaf)} por verificação, {VERIFICACAO.custoCafTexto}), empresas (contratos × adesão × valor), “Publicamos para você” (donos novos × adesão × valor), ferramentas (donos ativos × adesão × valor mensal, com saída de 3% ao mês) e fundadores (desconto na taxa).
+                <strong>Receitas adicionais</strong> (desligadas por padrão): verificação opcional do morador ({VERIFICACAO.candidatosPorContrato} candidatos por contrato × adesão × valor, menos a verificação de identidade (Certta) de {brl(VERIFICACAO.custoCaf)} por verificação, {VERIFICACAO.custoCafTexto}), empresas (contratos × adesão × valor), “Publicamos para você” (donos novos × adesão × valor), ferramentas (donos ativos × adesão × valor mensal, com saída de 3% ao mês) e fundadores (desconto na taxa).
               </li>
               <li>
                 <strong>ROI</strong> no mês N = (caixa acumulado no mês N + dinheiro necessário) ÷ dinheiro necessário − 1, com dinheiro necessário = pior caixa (já inclui o investimento inicial).

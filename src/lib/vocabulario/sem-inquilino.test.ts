@@ -11,6 +11,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { STATUS_CONVERSA } from "../pedidos/mural-dono.ts";
 import { validarInteresse } from "../cidades-liberadas/regras.ts";
+import { llmsTxt, llmsFullTxt } from "../seo/llms.ts";
 
 const PALAVRA = /\b[Ii]nquilin[oa]s?\b/;
 const ler = (f: string) => readFileSync(f, "utf8");
@@ -82,4 +83,19 @@ test("interesse por cidade: o erro de papel não diz 'inquilino'", () => {
   const r = validarInteresse({ cidade: "Uberlândia", uf: "MG", papel: "x" });
   assert.equal(r.ok, false);
   assert.doesNotMatch(r.ok ? "" : r.erro, PALAVRA);
+});
+
+test("llms.txt e llms-full.txt (texto público para buscadores de IA) sem 'inquilino'", () => {
+  assert.doesNotMatch(llmsTxt("https://vivanomads.com.br"), PALAVRA);
+  assert.doesNotMatch(llmsFullTxt("https://vivanomads.com.br"), PALAVRA);
+});
+
+test("telas públicas e componentes (página do imóvel, modelo de negócio, menus): nenhuma frase visível com 'inquilino'", () => {
+  const lista = [
+    ...arquivos("src/app/(public)", [/[/\\]termos$/, /[/\\]privacidade$/]),
+    ...arquivos("src/components"),
+    "src/lib/cobranca/regra.ts",
+  ];
+  const achados = lista.flatMap((f) => frasesComInquilino(ler(f), f.endsWith(".tsx")).map((t) => `${f}: ${t.slice(0, 90)}`));
+  assert.deepEqual(achados, []);
 });
