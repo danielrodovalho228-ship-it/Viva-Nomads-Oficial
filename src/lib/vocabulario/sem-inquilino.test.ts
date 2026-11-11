@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { STATUS_CONVERSA } from "../pedidos/mural-dono.ts";
+import { validarInteresse } from "../cidades-liberadas/regras.ts";
 
 const PALAVRA = /\b[Ii]nquilin[oa]s?\b/;
 const ler = (f: string) => readFileSync(f, "utf8");
@@ -75,4 +76,10 @@ test("página do imóvel: avaliação de quem morou assina 'Morador verificado'"
 test("pedidos de moradia: o mural do dono e o aviso de aceite falam de morador", () => {
   for (const v of Object.values(STATUS_CONVERSA)) assert.doesNotMatch(v, PALAVRA, v);
   assert.deepEqual(frasesComInquilino(ler("src/lib/pedidos/notify-templates.ts"), false), []);
+});
+
+test("interesse por cidade: o erro de papel não diz 'inquilino'", () => {
+  const r = validarInteresse({ cidade: "Uberlândia", uf: "MG", papel: "x" });
+  assert.equal(r.ok, false);
+  assert.doesNotMatch(r.ok ? "" : r.erro, PALAVRA);
 });
