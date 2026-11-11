@@ -143,7 +143,7 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                {CAUCAO_FRASE} Depositada antes da entrada, cobre
+                {CAUCAO_FRASE} Paga antes da entrada, cobre
                 danos ou valor mensal em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>

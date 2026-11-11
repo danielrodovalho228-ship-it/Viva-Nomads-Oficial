@@ -450,6 +450,19 @@ export function PropertyDetail({
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
+      {exemplo ? (
+        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+          <p>
+            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
+            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
+          </p>
+          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
+            Ver imóveis reais
+          </ButtonLink>
+        </div>
+      ) : (
+        <>
+      {/* E713: os campos de reserva só existem no anúncio real; no exemplo a coluna é a explicação + "Ver imóveis reais" (E694). */}
       {camposPeriodo("candidatura")}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Motivo da estadia (opcional)
@@ -467,21 +480,6 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
-      {exemplo ? (
-        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
-          <p data-testid="aviso-demo" className="font-medium text-forest">
-            {EXEMPLO_AVISO_DEMO}
-          </p>
-          <p className="mt-1">
-            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
-            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
-          </p>
-          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
-            Ver imóveis reais
-          </ButtonLink>
-        </div>
-      ) : (
-        <>
       {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button

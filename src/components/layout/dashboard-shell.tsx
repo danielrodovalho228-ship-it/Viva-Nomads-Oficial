@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
+import { VoltarAoSite } from "@/components/layout/voltar-ao-site";
 import { VoltarPainel } from "@/components/layout/voltar-painel";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
+import { Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
@@ -312,10 +313,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
   // Mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho): o cabeçalho mostra a foto também na Conta.
-  // E55 (QA 24/10, reincidência): na tela Perfil a foto aparece só no herói editável e no espelho — as miniaturas de
-  // navegação (barra lateral e cabeçalho) viram iniciais ali. No computador o Perfil abre também em /dashboard/conta.
-  const naTelaPerfil = pathname === "/dashboard/conta/perfil" || pathname === "/dashboard/conta";
-  const fotoNav = naTelaPerfil ? null : myPhoto;
+  // E783 (Daniel, 09/11): a foto do cabeçalho aparece em TODAS as telas, inclusive Conta e Perfil. O E55 (24/10) trocava a miniatura
+  // por iniciais na tela Perfil e fazia a foto "sumir" ao entrar na Conta; a iniciais ficam só para quem não tem foto.
+  const fotoNav = myPhoto;
   const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   // MENUS-5 / MORADOR-NAV: fora do /admin, TODO papel navega pelas abas da fonte única (config/abas-painel.ts) — no
@@ -437,9 +437,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             nada muda (a barra lateral já está aberta). */}
         {pathname.startsWith("/admin") && (
           <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
-            <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
-              <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
-            </Link>
+            <VoltarAoSite />
           </nav>
         )}
 

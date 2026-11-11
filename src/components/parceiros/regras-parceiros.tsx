@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { PAGAMENTO_EM_BREVE, REGRAS_CLARAS } from "@/lib/parceiros/regras";
+import { ESCOPO_PAGAMENTO_PARCEIROS, PAGAMENTO_EM_BREVE, REGRAS_CLARAS } from "@/lib/parceiros/regras";
 
 /**
  * Regras claras dos parceiros (Prompt 31a, item 8): mensagens da Viva, taxa de serviço de 10% e a divisão na
@@ -22,6 +22,7 @@ export function RegrasParceiros({ pagamentoAtivo, extra }: { pagamentoAtivo: boo
           </li>
         )}
       </ul>
+      <p className="mt-4 text-sm text-muted" data-testid="regras-escopo-pagamento">{ESCOPO_PAGAMENTO_PARCEIROS}</p>
       {!pagamentoAtivo && (
         <p className="mt-4 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm font-semibold text-ink" data-testid="pagamento-em-breve">
           {PAGAMENTO_EM_BREVE}
