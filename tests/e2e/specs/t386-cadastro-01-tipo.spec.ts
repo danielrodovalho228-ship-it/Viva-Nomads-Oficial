@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { TITULO_PREVIA_PENDENTE } from "../../../src/lib/anuncio/assistente-telas";
 
 /**
  * T386 — Assistente de cadastro em 10 passos, entrega 01 (mockup cadastro-imovel-01, Entrega 3 do CONTA-A).
@@ -69,7 +70,9 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       }
       if (w === 1280) {
         await expect(p.getByTestId("previa-anuncio")).toBeVisible();
-        await expect(p.getByTestId("previa-titulo")).toHaveText("Apartamento");
+        // E630: sem título do dono, a prévia mostra o título como pendente; o tipo escolhido aparece nos chips.
+        await expect(p.getByTestId("previa-titulo")).toHaveText(TITULO_PREVIA_PENDENTE);
+        await expect(p.getByTestId("previa-chips")).toContainText("Apartamento");
         await expect(p.getByTestId("previa-estado")).toContainText("Rascunho");
       } else {
         await expect(p.getByTestId("previa-anuncio")).toBeHidden();
@@ -94,13 +97,14 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
     await p.getByTestId("tipo-casa").click();
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "false");
-    await expect(p.getByTestId("previa-titulo")).toHaveText("Casa");
+    await expect(p.getByTestId("previa-titulo")).toHaveText(TITULO_PREVIA_PENDENTE); // E630: o título é só o do dono
     await expect(p.getByTestId("previa-chips")).toContainText("Casa");
     await p.getByTestId("tipos-ver-mais").click(); // E607: Studio fica em "Ver mais tipos"
     await p.getByTestId("tipo-studio").click();
     await expect(p.getByTestId("tipo-studio")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "false");
-    await expect(p.getByTestId("previa-titulo")).toHaveText("Studio / kitnet");
+    await expect(p.getByTestId("previa-chips")).toContainText("Studio / kitnet");
+    await expect(p.getByTestId("previa-chips")).not.toContainText("Casa");
 
     await p.getByTestId("cadastro-continuar").click();
     await expect(p.getByTestId("passo-texto")).toHaveText("Passo 2 de 10");
