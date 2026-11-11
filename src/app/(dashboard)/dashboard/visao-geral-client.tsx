@@ -39,7 +39,7 @@ import { useProperties } from "@/lib/use-properties";
 import type { ChecklistAnuncio } from "@/lib/anuncio/prontidao";
 import { itensDoChecklist } from "@/lib/anuncio/checklist-compacto";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
-import { kpiInteressados } from "@/lib/painel/kpi-interessados";
+import { kpiInteressados, kpiMensagens, kpiVisualizacoes } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
 import { useAuthStore } from "@/lib/store";
 import { contaConfirmada, soDaConta } from "@/lib/sessao/lista-da-conta";
@@ -91,7 +91,7 @@ export function VisaoGeral({
   /** E72: quantas candidaturas a pessoa enviou — o tamanho da lista de /dashboard/candidaturas (listMinhasCandidaturas). */
   totalCandidaturas?: number | null;
   /** PROP-3 (E113): soma das visualizações dos imóveis do dono, pela mesma conta do painel de desempenho (30 dias). */
-  visualizacoes?: number | null;
+  visualizacoes?: { atual: number; anterior: number } | null;
   /** PROP-3 (E113): quantas conversas a pessoa tem — o tamanho da lista de /dashboard/mensagens. */
   totalConversas?: number | null;
   /** E181: o número de /dashboard/buscas (a mesma lista). */
@@ -203,7 +203,7 @@ function OwnerDashboard({
   rascunho: RascunhoPendente | null;
   cidade: string | null;
   semImovel: boolean;
-  visualizacoes: number | null;
+  visualizacoes: { atual: number; anterior: number } | null;
   totalConversas: number | null;
 }) {
   // Fonte demo: build de demonstração OU modo demonstração do admin. Os dados
@@ -270,9 +270,12 @@ function PainelDoDono({
   myProperties: Property[];
   kpiLeads: ReturnType<typeof kpiInteressados>;
   cidade: string | null;
-  visualizacoes: number | null;
+  visualizacoes: { atual: number; anterior: number } | null;
   totalConversas: number | null;
 }) {
+  // Ordem de8761b0, item 3: os quatro números com período, contexto e próxima ação — nunca só "0".
+  const kpiVisu = kpiVisualizacoes(visualizacoes);
+  const kpiMsg = kpiMensagens(totalConversas);
   return (
     <>
       {/* Convite à verificação (sem progresso fabricado no modo real) */}
@@ -310,12 +313,11 @@ function PainelDoDono({
       )}
       {/* Mobile: 4 KPIs em grade 2×2 compacta (ADENDO item 1/5). */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard
-          label="Visualizações"
-          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
-          hint={demo ? undefined : "Últimos 30 dias, nos seus anúncios"}
-          icon={Eye}
-        />
+        {demo ? (
+          <StatCard label="Visualizações" value={DEMO_KPIS.visualizacoes.toLocaleString("pt-BR")} icon={Eye} />
+        ) : (
+          <StatCard label={kpiVisu.rotulo} value={kpiVisu.valor} hint={kpiVisu.dica} href={kpiVisu.href} icon={Eye} />
+        )}
         {demo ? (
           <StatCard label="Interessados" value={String(DEMO_KPIS.leads)} icon={Users} />
         ) : (
@@ -327,7 +329,11 @@ function PainelDoDono({
             icon={Users}
           />
         )}
-        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
+        {demo ? (
+          <StatCard label="Mensagens" value={String(DEMO_KPIS.mensagens)} icon={MessageSquare} href="/dashboard/mensagens" />
+        ) : (
+          <StatCard label={kpiMsg.rotulo} value={kpiMsg.valor} hint={kpiMsg.dica} href={kpiMsg.href} icon={MessageSquare} />
+        )}
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 

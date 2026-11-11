@@ -41,3 +41,40 @@ test("contarInteressados separa 0–30 dias e 30–60 dias; ignora datas inváli
   );
   assert.deepEqual(r, { atual: 2, anterior: 2 });
 });
+
+// Ordem de8761b0, item 3 (resto): Visualizações e Mensagens também com período, contexto e próxima ação quando zero.
+import { kpiVisualizacoes, kpiMensagens } from "./kpi-interessados.ts";
+
+test("visualizações zero: nunca só '0' — período e próxima ação", () => {
+  const k = kpiVisualizacoes({ atual: 0, anterior: 0 });
+  assert.equal(k.rotulo, "Visualizações · últimos 30 dias");
+  assert.equal(k.valor, "0");
+  assert.match(k.dica, /Compartilhe seu anúncio/);
+  assert.equal(k.href, "/dashboard/imoveis");
+});
+
+test("visualizações: comparação com os 30 dias anteriores e milhar em pt-BR", () => {
+  assert.match(kpiVisualizacoes({ atual: 1200, anterior: 200 }).dica, /1\.000 a mais que nos 30 dias anteriores/);
+  assert.equal(kpiVisualizacoes({ atual: 1200, anterior: 200 }).valor, "1.200");
+  assert.match(kpiVisualizacoes({ atual: 3, anterior: 3 }).dica, /igual aos 30 dias anteriores/);
+});
+
+test("visualizações não lidas: '—' sem inventar zero nem ação", () => {
+  const k = kpiVisualizacoes(null);
+  assert.equal(k.valor, "—");
+  assert.doesNotMatch(k.dica, /Compartilhe/);
+});
+
+test("mensagens zero: próxima ação em vez de só '0'", () => {
+  const k = kpiMensagens(0);
+  assert.equal(k.valor, "0");
+  assert.match(k.dica, /responda rápido/i);
+  assert.equal(k.href, "/dashboard/mensagens");
+});
+
+test("mensagens com conversas e sem leitura", () => {
+  assert.equal(kpiMensagens(4).valor, "4");
+  assert.match(kpiMensagens(4).dica, /conversas/);
+  assert.equal(kpiMensagens(1).dica, "1 conversa com interessados");
+  assert.equal(kpiMensagens(null).valor, "—");
+});

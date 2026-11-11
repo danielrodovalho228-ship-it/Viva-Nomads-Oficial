@@ -170,7 +170,8 @@ export { DIAS_PERIODO };
  * PROP-3 (E113): Visualizações do Início do dono = a soma, nos imóveis dele, da MESMA conta do painel de desempenho
  * (contar() na janela atual, sem o dono e sem contas de teste). Antes o Início mostrava "0" fixo.
  */
-export async function visualizacoesDoDono(agora: Date = new Date()): Promise<number | null> {
+/** Visualizações dos anúncios do dono: últimos 30 dias e os 30 anteriores (ordem de8761b0, item 3). */
+export async function visualizacoesDoDono(agora: Date = new Date()): Promise<{ atual: number; anterior: number } | null> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return null;
@@ -182,17 +183,17 @@ export async function visualizacoesDoDono(agora: Date = new Date()): Promise<num
   // Achado 105: a falha LANÇA (o Início já esconde o número) — nunca "0 visualizações" por engano.
   if (e1) throw new Error("Não foi possível ler os anúncios.");
   const ids = ((ims ?? []) as { id: string }[]).map((i) => i.id);
-  if (!ids.length) return 0;
+  if (!ids.length) return { atual: 0, anterior: 0 };
   const j = janelas(agora);
   const { data: evs, error: e2 } = await admin
     .from("eventos")
     .select("tipo, criado_em, usuario_id")
     .in("imovel_id", ids)
     .eq("tipo", "ver_anuncio")
-    .gte("criado_em", new Date(j.atual[0]).toISOString())
+    .gte("criado_em", new Date(j.anterior[0]).toISOString())
     .limit(20000);
   if (e2) throw new Error("Não foi possível ler as visualizações.");
   const eventos = (evs ?? []) as Evento[];
   const fora = { donoId: user.id, contasTeste: await contasDeTeste(admin, eventos.map((e) => e.usuario_id ?? "")) };
-  return contar(eventos, j.atual, fora).visualizacoes;
+  return { atual: contar(eventos, j.atual, fora).visualizacoes, anterior: contar(eventos, j.anterior, fora).visualizacoes };
 }
