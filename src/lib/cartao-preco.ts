@@ -18,6 +18,12 @@ export function mesesDoCartao(periodMonths: number | undefined, minPeriodDays: n
 }
 
 /** Total do período em reais, calculado em centavos (o mesmo número no cartão e no fechamento). */
+/** E777: o resumo "R$ X em N meses" (singular: "em 1 mês") — a ÚNICA forma de escrever o total do período; cartão, barra fixa,
+ *  página do imóvel e reserva usam esta função. O X vem de quem calcula (precos.ts / estadiaDoImovel), nunca é refeito aqui. */
+export function resumoEmMeses(total: number, meses: number): string {
+  return `${formatBRL(total)} em ${meses} ${meses === 1 ? "mês" : "meses"}`;
+}
+
 export function totalDoPeriodo(mensal: number, meses: number): number {
   const n = Math.max(0, Math.floor(meses));
   return (Math.round((Number.isFinite(mensal) ? mensal : 0) * 100) * n) / 100;
@@ -49,7 +55,7 @@ export function rotuloPreco(p: { mensal: number; meses?: number | null; disponiv
   return {
     valor,
     mes: `${valor}/mês`,
-    estadia: meses > 1 ? `${formatBRL(total)} em ${meses} meses` : null,
+    estadia: meses > 1 ? resumoEmMeses(total, meses) : null,
     total,
     meses,
     disponivel,
@@ -64,7 +70,7 @@ export function textoPreco(r: RotuloPreco): string {
 /** E356: texto do total da estadia no CARTÃO da busca. Todo cartão da mesma grade mostra a linha (com 1 mês, "R$ X em 1 mês"), para a
  *  comparação de preço não depender de o vizinho ter ou não estadia mínima plurimensal. As demais superfícies seguem o `estadia` (null com N = 1). */
 export function estadiaDoCartao(r: RotuloPreco): string {
-  return r.estadia ?? `${formatBRL(r.total)} em 1 mês`;
+  return r.estadia ?? resumoEmMeses(r.total, 1);
 }
 
 /** E356: o rótulo que diz o que o preço grande do cartão é. */

@@ -689,6 +689,10 @@ export function SearchClient({
       {/* E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles e, acima da lista, SÓ a linha da contagem com
           "Salvar busca" e "Descrever o que procuro". Nada de título grande, banner, caixa de destino ou de descrição na
           página: o destino vive no painel da pílula Local; a descrição, numa folha. */}
+      {/* E780: no celular a faixa de filtros (chips + Mais filtros · Ordenar · Mapa) fica PRESA logo abaixo do cabeçalho, inteira, e
+          a contagem rola por baixo dela. Antes tudo rolava e o cabeçalho fixo cobria a metade de cima dos chips. No computador
+          (lg+) a faixa segue no fluxo. */}
+      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo">
       <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
         <BarraPilulas
           filtros={filtrosPainel}
@@ -755,7 +759,10 @@ export function SearchClient({
           mapa={comMapa ? verMapa : mapaNoCelular}
           onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
         />
+      </div>
+      </div>
 
+      <div className="container-page lg:max-w-none lg:px-0">
         {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever +
             Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">

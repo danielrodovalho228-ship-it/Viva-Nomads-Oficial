@@ -62,7 +62,13 @@ export function BannerTopo({
       />
       <div className={cn("container-page flex min-h-[22rem] flex-col justify-center py-16 md:min-h-[26rem] md:py-16", centro && "items-center text-center")}>
         <div className={cn(coluna && cn("mx-auto w-full", coluna))} data-testid="banner-topo-coluna">
-          {eyebrow && <p className="text-sm font-semibold text-green-300">{eyebrow}</p>}
+          {/* E732: o rótulo verde sobre a foto tinha 3,60:1 (o fundo é a foto). Sobre uma pastilha escura (night/80) o contraste passa de 7:1
+              em qualquer foto, e o verde da marca fica. */}
+          {eyebrow && (
+            <p className="inline-block rounded-full bg-night/80 px-3 py-1 text-sm font-semibold text-white/90" data-testid="banner-topo-eyebrow">
+              {eyebrow}
+            </p>
+          )}
           <h1 className={cn("mt-3 max-w-3xl font-title text-[28px] font-semibold leading-tight md:text-[40px]", centro && "mx-auto")}>{titulo}</h1>
           {subtitulo && <div className={cn("mt-4 max-w-2xl text-lg text-white/85", centro && "mx-auto")}>{subtitulo}</div>}
           {children && <div className={cn("mt-8 flex flex-wrap gap-3", centro && "justify-center")}>{children}</div>}
