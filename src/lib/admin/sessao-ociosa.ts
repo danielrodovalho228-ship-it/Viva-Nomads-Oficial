@@ -20,3 +20,24 @@ export function sessaoAdminOciosa(
   if (Number.isFinite(ultimoLoginMs) && ultimo <= ultimoLoginMs) return false;
   return agoraMs - ultimo > limiteMs;
 }
+
+/**
+ * Parte 2 (API): /api/admin passa pelo mesmo limite. A rota da API não redireciona (é fetch):
+ * responde 401 com uma frase simples e o painel manda a pessoa entrar de novo.
+ */
+export function rotaApiAdmin(pathname: string): boolean {
+  return pathname === "/api/admin" || pathname.startsWith("/api/admin/");
+}
+
+/**
+ * Só ação de verdade (POST/PUT/PATCH/DELETE) conta como atividade. Leitura (GET/HEAD/OPTIONS) pode vir de uma tela
+ * aberta que se atualiza sozinha; se contasse, o painel esquecido aberto nunca expiraria.
+ */
+export function apiAdminRenovaAtividade(metodo: string): boolean {
+  return !["GET", "HEAD", "OPTIONS"].includes(metodo.toUpperCase());
+}
+
+/** 401 sem cache e sem detalhe interno. O proxy acrescenta a limpeza dos cookies de sessão. */
+export function respostaApiAdminOciosa(): Response {
+  return Response.json({ erro: "Sessão expirada. Entre de novo." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+}

@@ -9,7 +9,14 @@ import {
   SOCIOS_COOKIE,
   SOCIOS_UNLOCK_PATH,
 } from "@/lib/socios/access";
-import { COOKIE_ADMIN_ATIVO, LIMITE_OCIOSO_ADMIN_MS, sessaoAdminOciosa } from "@/lib/admin/sessao-ociosa";
+import {
+  COOKIE_ADMIN_ATIVO,
+  LIMITE_OCIOSO_ADMIN_MS,
+  apiAdminRenovaAtividade,
+  respostaApiAdminOciosa,
+  rotaApiAdmin,
+  sessaoAdminOciosa,
+} from "@/lib/admin/sessao-ociosa";
 import { APP_COOKIE, appHome, isAppUserAgent, isMarketingPath } from "@/lib/app-mode";
 import { destinoAposLogin } from "@/lib/destino-login";
 import { precisaVerificarUsuario, requisicaoPrefetch, temCookieSessao } from "@/lib/login-celular";
@@ -215,6 +222,24 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     });
   }
 
+  // API do admin (ordem 12a8086d, item 4, parte 2): o mesmo limite de 30 min parado. Quem decide se é admin continua
+  // sendo cada rota (404 para quem não é). Aqui só: parado demais → encerra a sessão local e responde 401; ação de
+  // verdade (não GET) renova o relógio. Sem cookie de atividade = sessão nova (sessaoAdminOciosa), nada muda.
+  if (rotaApiAdmin(pathname) && user) {
+    const agora = Date.now();
+    const ultimoLogin = Date.parse(user.last_sign_in_at ?? "") || 0;
+    if (sessaoAdminOciosa(request.cookies.get(COOKIE_ADMIN_ATIVO)?.value, agora, LIMITE_OCIOSO_ADMIN_MS, ultimoLogin)) {
+      await supabase.auth.signOut({ scope: "local" });
+      const base = respostaApiAdminOciosa();
+      const resposta = comCookies(new NextResponse(base.body, { status: base.status, headers: base.headers }));
+      resposta.cookies.delete(COOKIE_ADMIN_ATIVO);
+      return resposta;
+    }
+    if (apiAdminRenovaAtividade(request.method)) {
+      response.cookies.set(COOKIE_ADMIN_ATIVO, String(agora), { httpOnly: true, secure: true, sameSite: "lax", path: "/" });
+    }
+  }
+
   // Área de admin exige papel admin (fonte confiável: tabela `profiles`).
   if (isAdminRoute && user) {
     const { data: profile } = await supabase
@@ -321,6 +346,8 @@ export const config = {
     "/parceiros/:path*",
     "/admin",
     "/admin/:path*",
+    // API do admin: só para o limite de 30 min parado (cada rota segue conferindo se é admin).
+    "/api/admin/:path*",
     // Páginas internas (deck dos sócios) — gate admin OU cookie de sócio.
     "/simulacao",
     "/simulacao/:path*",
