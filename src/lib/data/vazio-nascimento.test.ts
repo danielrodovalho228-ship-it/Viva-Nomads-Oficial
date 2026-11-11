@@ -25,7 +25,7 @@ test("getNascimento lança quando a leitura falha", () => {
 
 test("a tela trava o campo e salvar não chama salvarNascimento quando a data não carregou", () => {
   const tela = ler("../../components/account/conta-secoes.tsx");
-  assert.match(tela, /getNascimento\(\)\s*\.then\(\(n\) => vivo && setNascimento\(n\)\)\s*\.catch\(\(\) => vivo && setNascFalhou\(true\)\)/);
+  assert.match(tela, /getNascimento\(\)\s*\.then\(\(n\) => vivo && setNascimento\(\(atual\) => nascimentoAoCarregar\(atual, n\)\)\)\s*\.catch\(\(\) => vivo && setNascFalhou\(true\)\)/);
   assert.match(tela, /nascFalhou\s*\? Promise\.resolve\(\{ ok: true, error: undefined \}\)\s*: salvarNascimento\(nascimento\)/);
   assert.match(tela, /const nasc = nascFalhou \? \(\{ ok: true \} as const\) : validarNascimento\(nascimento\);/);
   assert.match(tela, /disabled=\{nascFalhou\}/);

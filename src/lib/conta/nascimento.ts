@@ -30,5 +30,13 @@ export function validarNascimento(v: string, hoje: Date = new Date()): { ok: tru
   return { ok: true, iso: `${m[3]}-${m[2]}-${m[1]}` };
 }
 
+/**
+ * L-54 / t373: a data gravada chega do servidor depois que a tela abre. Se a pessoa já começou a digitar, o que ela
+ * digitou fica (antes era trocado por "" e o salvar gravava vazio); campo ainda vazio recebe a data gravada.
+ */
+export function nascimentoAoCarregar(atual: string, doServidor: string): string {
+  return atual.trim() ? atual : doServidor;
+}
+
 /** Estados vazios: a data não carregou. O campo fica travado e salvar os dados não mexe nela. */
 export const AVISO_NASCIMENTO_FALHOU = "Não carregou agora — recarregue a página para alterar";

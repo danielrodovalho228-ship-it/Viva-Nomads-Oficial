@@ -59,6 +59,8 @@ test.describe("T373 — CONTA-A A4: Meus dados (perfil-04)", () => {
     await p.goto(ROTA, { waitUntil: "domcontentloaded" });
     const campo = p.getByTestId("dados-nascimento");
     await campo.waitFor({ timeout: 20_000 });
+    // L-54: só digita depois de a tela carregar os dados gravados (o Salvar fica travado até lá).
+    await expect(p.getByTestId("dados-salvar")).toBeEnabled({ timeout: 20_000 });
     await campo.fill("31021991");
     await expect(campo).toHaveValue("31/02/1991");
     await p.getByTestId("dados-salvar").click();
