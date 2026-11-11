@@ -71,8 +71,8 @@ export async function depsDecidirReais(): Promise<DepsDecidir> {
       const d = data as { id: string; tipo: TipoAprovacao; referencia: string; status: StatusAprovacao; hash_conteudo: string | null; expira_em: string };
       return { id: d.id, tipo: d.tipo, referencia: d.referencia, status: d.status, hashConteudo: d.hash_conteudo, expiraEm: new Date(d.expira_em) };
     },
-    async gravar(id, status, adminId, quando) {
-      const { data } = await admin.from("aprovacoes").update({ status, decidido_por: adminId, decidido_em: quando.toISOString() }).eq("id", id).eq("status", "pendente").select("id");
+    async gravar(id, status, adminId, quando, aparelho) {
+      const { data } = await admin.from("aprovacoes").update({ status, decidido_por: adminId, decidido_em: quando.toISOString(), decidido_aparelho: aparelho }).eq("id", id).eq("status", "pendente").select("id");
       return (data?.length ?? 0) === 1;
     },
     async expirar(id) {
