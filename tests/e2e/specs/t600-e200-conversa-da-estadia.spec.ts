@@ -72,13 +72,13 @@ test.describe("T600 — E200: a conversa da estadia aparece na lista desde a cri
       await p.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
       const item = conversaDaEstadia(p);
       await expect(item).toBeVisible({ timeout: 25_000 });
-      await expect(item).toContainText("Ana I.");
+      await expect(item).toContainText(ana.nome); // contrato assinado: o dono vê o nome completo (E427)
       await expect(item).toContainText(tituloEstadia);
       await expect(item).not.toContainText("Morador");
       await expect(contagem(p, "todas")).toHaveText("2");
       await expect(contagem(p, "proprietario")).toHaveText("2");
       await item.click();
-      await expect(p.getByTestId("conversa-nome")).toHaveText("Ana I.");
+      await expect(p.getByTestId("conversa-nome")).toHaveText(ana.nome);
       await expect(p.getByTestId("conversa-nova-vazia")).toBeVisible();
       await expect(p.getByTestId("conversa-abrir-estadia")).toHaveAttribute("href", `/dashboard/estadia/${ids.contrato}`);
       await p.screenshot({ path: `${SAIDA}/t600-dono-lista-${largura}.png` });
@@ -93,7 +93,7 @@ test.describe("T600 — E200: a conversa da estadia aparece na lista desde a cri
     await expect(botao).toHaveAttribute("href", `/dashboard/mensagens?conversa=${ids.conversa}`, { timeout: 25_000 });
     await botao.click();
     await p.waitForURL(`**/dashboard/mensagens?conversa=${ids.conversa}`);
-    await expect(p.getByTestId("conversa-nome")).toHaveText("Ana I.", { timeout: 25_000 });
+    await expect(p.getByTestId("conversa-nome")).toHaveText(ana.nome, { timeout: 25_000 });
     await expect(p.getByTestId("conversa-nova-vazia")).toBeVisible();
     await expect(p.getByTestId("mensagens-conversa-nao-encontrada")).toHaveCount(0);
     await expect(contagem(p, "todas")).toHaveText("2");
