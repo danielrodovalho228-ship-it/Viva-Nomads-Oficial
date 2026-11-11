@@ -196,7 +196,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                   doCadastroDoImovel={doCadastro}
                   descricaoInicial={descricaoInicial}
                 />
-                <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
+                <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Seu contato não é trocado.</p>
               </div>
             )}
             {redes.length > 0 && (

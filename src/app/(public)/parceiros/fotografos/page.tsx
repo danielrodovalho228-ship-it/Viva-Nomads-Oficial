@@ -13,7 +13,7 @@ import { TITULO_SEM_FOTOGRAFO } from "@/lib/fotografos/aviso";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
 import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { RegrasParceiros } from "@/components/parceiros/regras-parceiros";
-import { CONTATO_APOS_ACEITE, mostrarParceiroGeral } from "@/lib/parceiros/regras";
+import { CONTATO_PELA_VIVA, mostrarParceiroGeral } from "@/lib/parceiros/regras";
 
 /*
   Prompt 31a, item 6: /parceiros/fotografos é a busca de parceiros filtrada em fotografia (lê a view pública
@@ -105,7 +105,7 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
         <RegrasParceiros pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </section>
       <div className="mt-4"><ButtonLink href="/parceiros?categoria=fotografia#quero-ser-parceiro" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
-      <p className="mt-4 text-xs text-muted" data-testid="fotografos-contato-aceite">{CONTATO_APOS_ACEITE}</p>
+      <p className="mt-4 text-xs text-muted" data-testid="fotografos-contato-aceite">{CONTATO_PELA_VIVA}</p>
     </div>
   );
 }
