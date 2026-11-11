@@ -19,10 +19,12 @@ test.describe("T39 — App: ida e volta", () => {
       await page.goto("/dashboard/ferramentas");
       await expect(page).toHaveURL(/\/auth/);
       await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
-      // Ordem 90181c57: não há mais assinatura; /dashboard/assinatura vai para /precos, que no app
-      // (página de marketing) leva às boas-vindas de quem não entrou.
+      // Ordem 90181c57: não há mais assinatura. E563 (04/11): com a página de preços suspensa (sem
+      // NEXT_PUBLIC_PRECOS_VISIVEL=1), /dashboard/assinatura vai ao painel, que pede login dentro do app; com ela
+      // ligada, vai a /precos, que no app (página de marketing) leva às boas-vindas de quem não entrou.
+      const precosVisivel = process.env.NEXT_PUBLIC_PRECOS_VISIVEL === "1";
       await page.goto("/dashboard/assinatura");
-      await expect(page).toHaveURL(/\/app\/boas-vindas/);
+      await expect(page).toHaveURL(precosVisivel ? /\/app\/boas-vindas/ : /\/auth\?redirect=%2Fdashboard/);
       await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
     });
   });
