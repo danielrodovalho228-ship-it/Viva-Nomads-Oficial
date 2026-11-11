@@ -56,8 +56,12 @@ test.describe("T439 — E101: localização, detecção na edição e espelho po
     await expect(linha).toContainText("Santa Mônica, Uberlândia");
     expect(await page.locator("main").innerText()).not.toMatch(/Uberlândia\s*-\s*(\n|$)/);
     expect((await adm().from("properties").update({ state: "MG" }).eq("id", ids.imovel)).error).toBeNull();
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.locator("main")).toContainText("Santa Mônica, Uberlândia - MG");
+    // A página do imóvel guarda cópia por 60 s (F9: revalidate = 60) e a gravação acima, pela chave de serviço, não
+    // chama revalidatePath: recarrega até a cópia nova entrar (mesmo padrão do t28/t74). Lab 10/11 (5eb1fad9).
+    await expect(async () => {
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await expect(page.locator("main")).toContainText("Santa Mônica, Uberlândia - MG", { timeout: 5_000 });
+    }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 120_000 });
     await page.context().close();
   });
 

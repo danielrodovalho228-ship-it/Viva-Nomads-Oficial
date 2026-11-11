@@ -26,7 +26,7 @@ import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { PERFIL_ATUALIZADO } from "@/components/account/foto-perfil";
 import { getNascimento, salvarNascimento } from "@/lib/data/nascimento-actions";
-import { AVISO_NASCIMENTO_FALHOU, mascararNascimento, validarNascimento } from "@/lib/conta/nascimento";
+import { AVISO_NASCIMENTO_FALHOU, mascararNascimento, nascimentoAoCarregar, validarNascimento } from "@/lib/conta/nascimento";
 import { PILULA_EMAIL } from "@/lib/perfil/espelho";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { removerTodosPushTokens } from "@/lib/data/push-actions";
@@ -76,7 +76,7 @@ export function DadosPessoais() {
         setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
       });
     getNascimento()
-      .then((n) => vivo && setNascimento(n))
+      .then((n) => vivo && setNascimento((atual) => nascimentoAoCarregar(atual, n)))
       .catch(() => vivo && setNascFalhou(true));
     getMeuDocumento()
       .then((d) => vivo && setDocumento(d))
