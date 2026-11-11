@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Locator, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { continuarAte } from "../fixtures/cadastro";
+import { DESCRICAO_RASCUNHO_TESTE, continuarAte } from "../fixtures/cadastro";
 import {
   NO_LABORATORIO,
   adm,
@@ -81,8 +81,8 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
     ids.rascunho = await criarImovelPronto(ids.dono, T.rascunho, { semConforto: true });
-    // O assistente lê o rascunho de draft_data: título, valor mensal e garantia preenchidos, para o Continuar chegar à Revisão.
-    await adm().from("properties").update({ draft_data: { title: T.rascunho, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.rascunho!);
+    // O assistente lê o rascunho de draft_data: título, descrição (E135: mín. de caracteres no Passo 7), valor mensal e garantia preenchidos, para o Continuar chegar à Revisão.
+    await adm().from("properties").update({ draft_data: { title: T.rascunho, description: DESCRICAO_RASCUNHO_TESTE, monthlyPrice: "3200", garantias: { caucao: true }, step: 3, ordemEtapas: 4, etapaMax: 5 } }).eq("id", ids.rascunho!);
     ids.antigo = await criarImovelPronto(ids.dono, T.antigo, { ativo: true, semConforto: true });
     ids.casa = await criarImovelPronto(ids.dono, T.casa, { ativo: true });
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.casa, true);

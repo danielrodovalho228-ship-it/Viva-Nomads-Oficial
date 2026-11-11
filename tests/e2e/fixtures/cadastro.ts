@@ -19,6 +19,12 @@ export const TITULO_PASSO = {
 } as const;
 export type PassoCadastro = keyof typeof TITULO_PASSO;
 
+/**
+ * Descrição de teste para rascunhos gravados direto em draft_data: o "Continuar" do Passo 7 exige título E descrição com
+ * o mínimo de MIN_DESCRICAO caracteres (E135, src/lib/anuncio/prontidao.ts). Sem ela, o assistente para na Descrição.
+ */
+export const DESCRICAO_RASCUNHO_TESTE = "Imóvel mobiliado de teste do laboratório, com cozinha completa, internet e espaço para trabalhar.";
+
 /** Posição (1 a 10) de cada passo, para conferir "Passo X de 10". */
 export const NUMERO_PASSO: Record<PassoCadastro, number> = Object.fromEntries(Object.keys(TITULO_PASSO).map((k, i) => [k, i + 1])) as Record<PassoCadastro, number>;
 
