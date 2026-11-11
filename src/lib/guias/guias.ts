@@ -6,6 +6,21 @@
 */
 import { CAUCAO_FRASE } from "../faixas.ts";
 import { PRECOS_VISIVEL } from "../../config/precos-visivel.ts"; // E773: só cita /precos com a página ligada (suspensa no E563)
+import { FAIXAS_COMISSAO_PADRAO } from "../cobranca/regra.ts";
+import { PORTA_GESTOR_TEXTO } from "../../config/planos.ts";
+
+/**
+ * E773 (RELATORIO-007): as faixas aprovadas no guia, lidas da REGRA DE COBRANÇA (fonte única) — nunca números à mão.
+ * "1–2 imóveis ativos: 12%; 3–5: 10%; 6–15: 8%; 16–19: 6%. O Plano Gestor tem taxa de 4%, sem mensalidade, para …".
+ */
+const pct = (t: number) => `${Math.round(t * 100)}%`;
+export const FAIXAS_DO_GUIA = (() => {
+  const comuns = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
+  const gestor = FAIXAS_COMISSAO_PADRAO.find((f) => f.gestor);
+  const lista = comuns.map((f, i) => `${f.minImoveis}–${f.maxImoveis}${i === 0 ? " imóveis ativos" : ""}: ${pct(f.taxa)}`).join("; ");
+  return `Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): ${lista}.` +
+    (gestor ? ` O Plano Gestor tem taxa de ${pct(gestor.taxa)}, sem mensalidade, para ${PORTA_GESTOR_TEXTO}.` : "");
+})();
 
 export interface Guia {
   slug: string;
@@ -40,6 +55,7 @@ export const GUIAS: Guia[] = [
         titulo: "Como a taxa da Viva entra na conta",
         paragrafos: [
           "Anunciar é grátis. A Viva cobra uma taxa sobre o valor total de cada contrato fechado e de cada renovação (valor mensal × meses), e a taxa cai conforme você tem mais imóveis." + (PRECOS_VISIVEL ? " A tabela completa está em /precos." : ""),
+          FAIXAS_DO_GUIA,
           "Faça a conta com a taxa da sua faixa antes de definir o valor, para saber o seu resultado depois da taxa.",
         ],
       },
