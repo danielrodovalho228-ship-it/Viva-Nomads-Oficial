@@ -95,6 +95,7 @@ export const FORA_DA_BARRA_ADMIN: Readonly<Record<string, string>> = {
   "/admin/conforto": "redireciona para a Central de Pendências (contestações de conforto)",
   "/admin/fotografos": "redireciona para a aba 'Fotógrafos' de Parceiros (ADMIN-2)",
   "/admin/emails-teste": "redireciona para a aba 'E-mails' de Testes (ADMIN-2)",
+  "/admin/agentes/aprovar": "destino do link de uso único dos avisos do Moacir (12a8086d): consome o link e abre a aba Aprovações",
   "/admin/atendimento/[id]": "subpágina de Atendimento",
   "/admin/contratos/[id]": "subpágina de Contratos",
   "/admin/contratos/encerramentos": "subpágina de Contratos",

@@ -78,8 +78,8 @@ function assinar(ronda: string, expira: number, segredo: string): string {
   return crypto.createHmac("sha256", chave(segredo)).update(`${ronda}.${expira}`).digest("hex").slice(0, 32);
 }
 
-/** Rota da tela de aprovação. Até o PR 2 criá-la, o link cai na Central (/admin/agentes) para não dar 404. */
-export const TELA_APROVAR_EXISTE = false;
+/** Rota da tela de aprovação: /admin/agentes/aprovar (12a8086d) confere o link e o consome uma vez só. */
+export const TELA_APROVAR_EXISTE = true;
 
 /** Link assinado da tela de aprovação (exige login admin). NÃO aprova nada sozinho. */
 export function linkAssinadoAprovar(ronda: string, agora: Date, siteUrl: string, segredo: string): string {
