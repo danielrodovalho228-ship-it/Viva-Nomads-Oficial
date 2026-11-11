@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { respostaNaoAdmin } from "@/lib/admin/api-nao-admin";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -14,11 +15,11 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(request: Request) {
   const sessao = await createClient();
-  if (!sessao) return NextResponse.json({ erro: "Só admin." }, { status: 403 });
+  if (!sessao) return respostaNaoAdmin();
   const {
     data: { user },
   } = await sessao.auth.getUser();
-  if (!user || !(await ehAdmin(sessao, user.id))) return NextResponse.json({ erro: "Só admin." }, { status: 403 });
+  if (!user || !(await ehAdmin(sessao, user.id))) return respostaNaoAdmin();
 
   const corpo = (await request.json().catch(() => null)) as { pessoa?: unknown } | null;
   const pessoa = corpo?.pessoa;
