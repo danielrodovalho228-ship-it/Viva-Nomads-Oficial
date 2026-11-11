@@ -9,6 +9,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { STATUS_CONVERSA } from "../pedidos/mural-dono.ts";
 
 const PALAVRA = /\b[Ii]nquilin[oa]s?\b/;
 const ler = (f: string) => readFileSync(f, "utf8");
@@ -69,4 +70,9 @@ test("página do imóvel: avaliação de quem morou assina 'Morador verificado'"
   const fonte = ler("src/lib/data/properties.ts");
   assert.deepEqual(frasesComInquilino(fonte, false), []);
   assert.match(fonte, /author: "Morador verificado"/);
+});
+
+test("pedidos de moradia: o mural do dono e o aviso de aceite falam de morador", () => {
+  for (const v of Object.values(STATUS_CONVERSA)) assert.doesNotMatch(v, PALAVRA, v);
+  assert.deepEqual(frasesComInquilino(ler("src/lib/pedidos/notify-templates.ts"), false), []);
 });

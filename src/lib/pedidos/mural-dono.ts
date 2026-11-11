@@ -17,10 +17,10 @@ export function abaDoPedido(p: { respondido: boolean; ignorado: boolean }): AbaD
 
 /** Status da conversa mostrado em "Respondidos". */
 export const STATUS_CONVERSA: Record<string, string> = {
-  enviada: "Oferta enviada — aguardando o inquilino",
-  vista: "O inquilino viu a sua oferta",
+  enviada: "Oferta enviada — aguardando o morador",
+  vista: "O morador viu a sua oferta",
   aceita_para_conversa: "Conversa aberta",
-  recusada: "O inquilino recusou a oferta",
+  recusada: "O morador recusou a oferta",
 };
 
 /** Mensagem padrão do "Oferecer um imóvel" (sem contato: a conversa é pela plataforma). */
