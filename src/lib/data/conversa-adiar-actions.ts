@@ -19,10 +19,27 @@ export async function adiarConversa(conversationId: string, prazo: PrazoAdiar): 
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Entre na sua conta para adiar." };
   const adiadaEm = new Date().toISOString();
-  const { error } = await supabase
-    .from("conversas_adiadas")
-    .upsert({ user_id: user.id, conversation_id: conversationId, adiada_em: adiadaEm, ate }, { onConflict: "user_id,conversation_id" });
-  if (error) return { ok: false, erro: "Não foi possível adiar agora. Tente de novo." };
+  // E721 (devolução do QA, 10/11): nada de upsert. O upsert vira INSERT … ON CONFLICT DO UPDATE SET com as 4 colunas, e a
+  // 0336 só concede UPDATE em (adiada_em, ate) — o Postgres recusa o comando inteiro. Aqui: UPDATE só das colunas
+  // permitidas; sem linha (primeira vez), INSERT. Se outro pedido inseriu no meio (23505), atualiza de novo.
+  const atualizar = () =>
+    supabase
+      .from("conversas_adiadas")
+      .update({ adiada_em: adiadaEm, ate })
+      .eq("user_id", user.id)
+      .eq("conversation_id", conversationId)
+      .select("conversation_id");
+  const falhou: ResultadoAdiar = { ok: false, erro: "Não foi possível adiar agora. Tente de novo." };
+  const primeiro = await atualizar();
+  if (primeiro.error) return falhou;
+  if (!primeiro.data?.length) {
+    const novo = await supabase.from("conversas_adiadas").insert({ user_id: user.id, conversation_id: conversationId, adiada_em: adiadaEm, ate });
+    if (novo.error) {
+      if (novo.error.code !== "23505") return falhou;
+      const denovo = await atualizar();
+      if (denovo.error || !denovo.data?.length) return falhou;
+    }
+  }
   return { ok: true, adiadaEm, adiadaAte: ate };
 }
 

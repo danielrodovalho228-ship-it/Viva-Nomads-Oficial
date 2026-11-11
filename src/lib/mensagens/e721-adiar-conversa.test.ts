@@ -52,13 +52,35 @@ test("a migração 0336 cria a tabela por pessoa+conversa com RLS própria, e o 
   assert.match(ler("supabase/producao/rollback/0336_rollback.sql"), /drop table if exists public\.conversas_adiadas/);
 });
 
-test("o servidor grava só a linha da própria pessoa por upsert na chave (user_id, conversation_id), sem 42P10", () => {
+test("o servidor grava a linha da própria pessoa sem upsert, e só atualiza colunas que a 0336 concede (devolução do QA, 10/11)", () => {
   const a = ler("src/lib/data/conversa-adiar-actions.ts");
-  assert.match(a, /upsert\([\s\S]*?\{ onConflict: "user_id,conversation_id" \}\)/);
-  assert.match(a, /user_id: user\.id/);
+  const sql = ler("supabase/migrations/0336_conversas_adiadas_e721.sql").replace(/^\s*--.*$/gm, "");
+  // O upsert vira INSERT … ON CONFLICT DO UPDATE SET com TODAS as colunas: com grant de coluna estreito, o Postgres recusa.
+  assert.doesNotMatch(a.replace(/^\s*\/\/.*$/gm, ""), /\.upsert\(/);
+  // As colunas que a ação manda no UPDATE ⊆ as colunas do grant update da migração.
+  const grant = /grant update \(([^)]+)\) on public\.conversas_adiadas to authenticated;/.exec(sql);
+  assert.ok(grant, "grant update de colunas da 0336");
+  const permitidas = new Set(grant![1].split(",").map((c) => c.trim()));
+  const updates = [...a.matchAll(/\.update\(\{([^}]*)\}\)/g)];
+  assert.ok(updates.length >= 1, "a ação atualiza por update");
+  for (const u of updates) {
+    const colunas = u[1].split(",").map((c) => c.split(":")[0].trim()).filter(Boolean);
+    for (const c of colunas) assert.ok(permitidas.has(c), `a ação atualiza '${c}', fora do grant (${[...permitidas].join(", ")})`);
+  }
+  // Primeira vez: insert (a policy de insert exige ser parte da conversa); corrida (23505): atualiza de novo.
+  assert.match(a, /\.eq\("user_id", user\.id\)\s*\.eq\("conversation_id", conversationId\)/);
+  assert.match(a, /\.insert\(\{ user_id: user\.id, conversation_id: conversationId, adiada_em: adiadaEm, ate \}\)/);
+  assert.match(a, /novo\.error\.code !== "23505"/);
   assert.match(a, /\.delete\(\)\.eq\("user_id", user\.id\)\.eq\("conversation_id", conversationId\)/);
-  // a chave do onConflict tem índice ÚNICO COMPLETO (a chave primária), não parcial — a causa do 42P10 da 0226.
-  assert.doesNotMatch(ler("supabase/migrations/0336_conversas_adiadas_e721.sql"), /create unique index[^;]*where/i);
+  // A chave da tabela é a primária completa (nada de índice parcial — a causa do 42P10 da 0226).
+  assert.doesNotMatch(sql, /create unique index[^;]*where/i);
+});
+
+test("a spec de laboratório t1600 prova o caminho real: adiar, adiar de novo, retomar e retomar de novo", () => {
+  const spec = ler("tests/e2e/specs/t1600-e721-adiar-conversa.spec.ts");
+  for (const passo of ["1. Adiar pela primeira vez", "2. Adiar de novo", "3. Retomar", "4. Retomar de novo"]) assert.match(spec, new RegExp(passo.replace(/\./g, "\\.")));
+  assert.match(spec, /conversa-adiar-erro"\)\)\.toHaveCount\(0\)/);
+  assert.doesNotMatch(spec, /test\.fail\(/);
 });
 
 test("a tela: botão Adiar sempre à vista, menu de prazos, Retomar, chip Adiadas e a lista lê o estado do banco", () => {
