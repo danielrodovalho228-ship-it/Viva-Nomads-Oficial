@@ -26,3 +26,9 @@ test("cartão, barra fixa, reserva e cartão lateral importam resumoEmMeses", ()
     assert.match(readFileSync(new URL(`../${f}`, import.meta.url), "utf8"), /resumoEmMeses/, f);
   }
 });
+
+test("E744: o cartão lateral da página do imóvel diz o total de 1 mês pela mesma função (igual ao cartão da busca)", () => {
+  const src = readFileSync(new URL("../components/property/price-card.tsx", import.meta.url), "utf8");
+  assert.match(src, /resumoEmMeses\(preco\.total, 1\)/);
+  assert.match(src, /totalDeUmMes/);
+});

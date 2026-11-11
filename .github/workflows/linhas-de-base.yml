@@ -1,0 +1,157 @@
+name: Linhas de base visuais (gerar para revisão)
+
+# E744: 55 das falhas determinísticas da suíte são comparações de captura (t245, t263, t271) contra imagens-base
+# antigas (a interface mudou depois delas). Esta rotina refaz as imagens NO MESMO AMBIENTE do laboratório
+# (mesmo Chromium, mesmas fontes, mesmo banco semeado) e as guarda como ARTEFATO para revisão humana.
+# NÃO comita nada: aprovar uma imagem-base é decisão de produto (o que é "certo" na tela). Quem aprovar baixa o
+# artefato `linhas-de-base-<run>` e copia os PNG para tests/e2e/visual/ num PR.
+# Roda à mão (workflow_dispatch) ou num PR que mexa neste arquivo (para poder gerar antes de ir para a main).
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/linhas-de-base.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linhas-de-base-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gerar:
+    name: gerar linhas de base
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SITE_URL: http://localhost:3123
+      INTEGRACOES_SIMULADAS: "on"
+      LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+      # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
+      LAB_RESEND_URL: http://127.0.0.1:3999
+      # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
+      LAB_LINKEDIN_URL: http://127.0.0.1:3997
+      # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
+      LAB_ROTAS_URL: http://127.0.0.1:3998
+      TESTES_BASE_URL: http://localhost:3123
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (todas as migrações)
+        # O runner às vezes chega com a porta 54322 ocupada ("failed to bind host port 0.0.0.0:54322/tcp: address
+        # already in use", run 38179479994 e, nas 3 tentativas, fatias 11 do run 42536824482 e 4 do 42538098625): não é
+        # falha de migração. Com 16 fatias a chance de UMA cair nisso por noite é alta, e uma fatia perdida são ~280 testes
+        # sem rodar. Mostra quem ocupa a porta (com sudo, para ver o processo), limpa os containers e, da 2ª tentativa em
+        # diante, reinicia o daemon do Docker (solta a porta presa no docker-proxy). Até 5 tentativas.
+        run: |
+          for tentativa in 1 2 3 4 5; do
+            if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
+              exit 0
+            fi
+            echo "::warning::supabase start falhou (tentativa $tentativa/5). Portas em uso:"
+            (sudo ss -ltnp 2>/dev/null | grep -E ':543(2[0-9])\b' || echo "nenhuma porta 5432x listada")
+            supabase stop --no-backup || true
+            docker rm -f $(docker ps -aq) 2>/dev/null || true
+            if [ "$tentativa" -ge 2 ]; then sudo systemctl restart docker || true; sleep 5; fi
+            sleep $((tentativa * 5))
+          done
+          echo "::error::supabase start falhou 5 vezes"
+          exit 1
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Conferir o banco (asserções de segurança)
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+
+      - name: Chaves locais e senha da noite (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          SENHA="$(openssl rand -hex 16)"
+          SOCIOS="lab-$(openssl rand -hex 8)"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"; echo "::add-mask::$SENHA"; echo "::add-mask::$SOCIOS"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "LAB_SENHA=$SENHA"
+            echo "SOCIOS_ACCESS_CODE=$SOCIOS"
+          } >> "$GITHUB_ENV"
+
+      - name: Criar as personas e os imóveis de teste
+        run: node scripts/lab/seed-lab.mjs
+
+      - name: Criar a massa da varredura visual (t249)
+        # Contas @varredura.lab.vivanomads.test e tests/laboratorio/saida/varredura.json. Sem este passo a t249 ficava
+        # pulada em toda execução. Se falhar, a suíte segue e a t249 reprova dizendo que falta a massa.
+        continue-on-error: true
+        run: node scripts/lab/massa-varredura.mjs
+
+      - name: Build do site (modo simulado)
+        run: npm run build
+
+      - name: Subir o site em localhost:3123
+        run: |
+          node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/linkedin-falso.mjs 3997 > tests/laboratorio/saida/linkedin-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
+          npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
+          curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
+
+      - name: Instalar Chromium do Playwright
+        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
+        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
+        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
+        timeout-minutes: 25
+        run: |
+          for i in 1 2 3; do
+            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
+            echo "tentativa $i travou ou falhou"
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+      - name: Refazer as imagens-base (t245, t263, t271)
+        # --update-snapshots reescreve TODAS as imagens dos 3 specs e nunca reprova por diferença de imagem;
+        # erro de outra natureza (elemento não achado, timeout) continua aparecendo na saída.
+        continue-on-error: true
+        run: npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots --reporter=list --workers=2 --global-timeout=4800000 > tests/laboratorio/saida/linhas-de-base.txt 2>&1
+        env:
+          TESTES_BASE_URL: http://localhost:3123
+
+      - name: Listar o que mudou em relação ao que está no repositório
+        if: ${{ !cancelled() }}
+        run: |
+          git add -N tests/e2e/visual
+          {
+            echo "## Imagens-base refeitas"
+            echo
+            git diff --stat -- tests/e2e/visual | tail -n 80
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          mkdir -p linhas-de-base
+          git ls-files -m -o --exclude-standard tests/e2e/visual | xargs -r -I{} cp --parents {} linhas-de-base/
+
+      - name: Guardar as imagens para revisão
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: linhas-de-base-${{ github.run_id }}
+          path: |
+            linhas-de-base/
+            tests/laboratorio/saida/linhas-de-base.txt
+          retention-days: 14
