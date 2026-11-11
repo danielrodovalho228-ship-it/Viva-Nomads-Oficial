@@ -138,7 +138,12 @@ test.describe("T431 — PERTO-A: O que tem por perto", () => {
       await page.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
       await page.goto(`/imoveis/${ids.ativo}`, { waitUntil: "domcontentloaded" });
       const grupos = page.getByTestId("perto-categorias");
-      await expect(grupos).toBeVisible({ timeout: 30_000 });
+      // A página do imóvel guarda cópia por 60 s (F9: revalidate = 60) e a gravação acima, pela chave de serviço, não
+      // chama revalidatePath: recarrega até a cópia nova entrar (mesmo padrão do t28/t74/t439). Lab 10/11 (5eb1fad9).
+      await expect(async () => {
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await expect(grupos).toBeVisible({ timeout: 5_000 });
+      }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 120_000 });
       const ordem = await grupos.locator("[data-testid^='perto-cat-']").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
       expect(ordem).toEqual(["perto-cat-saude", "perto-cat-educacao", "perto-cat-mercado", "perto-cat-transporte"]);
       await expect(page.getByTestId("perto-cat-saude").locator("h4")).toHaveText("Saúde");
