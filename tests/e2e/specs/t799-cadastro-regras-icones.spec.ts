@@ -19,7 +19,8 @@ for (const largura of [390, 1280] as const) {
     expect(await cartoes.count()).toBeGreaterThanOrEqual(4);
     for (const c of await cartoes.all()) await expect(c.locator("svg").first()).toBeVisible();
     const blocos = page.getByTestId("regras-casa").locator("[data-ligado]");
-    for (const b of await blocos.all()) await expect(b.locator("[data-testid$='-icone']")).toHaveCount(1);
+    // E193: cada bloco de convivência é o cartão grande do assistente; o ícone é o svg filho direto do cartão.
+    for (const b of await blocos.all()) await expect(b.locator(":scope > [data-cartao-assistente] > svg")).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     await grade.scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${SAIDA}/t799-passo6-${largura}.png` });
