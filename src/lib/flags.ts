@@ -99,6 +99,13 @@ export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_RE
  * do item 14 da Dra. Beatriz (NEXT_PUBLIC_VISTORIA_PARECER_14="on" quando recebido).
  */
 export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
+/**
+ * E690: ativação AUTOMÁTICA do avaliador credenciado (regra validada pelo coordenador, 08/11/2026). Desligada por padrão.
+ * Ligada: "solicitado" → "em_teste" sozinho (identidade verificada + CPF do titular/sócio do CNPJ + experiência + código de
+ * conduta + cidade) e "em_teste" → "ativo" sozinho (avaliação-teste concluída e aprovada na conferência). Cada passo grava
+ * "decidido pelo sistema" com os critérios do momento. Nunca dispensa a identidade.
+ */
+export const AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA = process.env.NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
 
 /**

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { VoltarCelular } from "@/components/ui/voltar-celular";
 import { ChevronRight, Clock, Home, Lock, Star } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/dashboard/primitives";
@@ -45,17 +46,23 @@ export function PainelAvaliacoes({
     .slice(0, 2);
   return (
     <div className="mx-auto w-full max-w-3xl" data-testid="avaliacoes-painel">
-      <h1 className="font-title text-2xl font-semibold text-forest sm:text-[28px]">Avaliações</h1>
+      {/* E782: o mesmo cabeçalho das outras telas — seta de voltar junto do título (no celular, título centralizado), título em tinta
+          no tamanho padrão do painel. O "← Voltar" em texto do painel não aparece aqui (painelMostraVoltar). */}
+      <div className="relative flex min-h-11 items-center justify-center lg:justify-start" data-testid="avaliacoes-cabecalho">
+        <VoltarCelular padrao="/dashboard" rotulo="o painel" className="absolute left-0 lg:inline-flex" testId="avaliacoes-voltar" />
+        <h1 className="px-12 text-center font-title text-2xl font-semibold text-ink sm:text-[28px] lg:px-12 lg:text-left">Avaliações</h1>
+      </div>
 
-      <nav className="mt-4 flex flex-wrap gap-2" aria-label="Avaliações">
+      {/* E782: abas como as outras telas do painel (sublinhado, como Favoritos): o título da seção NÃO repete o da aba ativa. */}
+      <nav className="mt-4 flex gap-2 overflow-x-auto border-b border-sage-200" aria-label="Avaliações">
         {ABAS_PAINEL.map((a) => (
           <Link
             key={a.valor}
             href={`${ROTA}?aba=${a.valor}`}
             aria-current={aba === a.valor ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded-full border px-4 text-[15px] sm:px-6 sm:text-base",
-              aba === a.valor ? "border-forest bg-forest font-semibold text-white" : "border-line bg-white text-ink"
+              "-mb-px inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:text-base",
+              aba === a.valor ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"
             )}
             data-testid={`painel-aba-${a.valor}`}
           >
@@ -65,8 +72,7 @@ export function PainelAvaliacoes({
       </nav>
 
       {aba === "para-avaliar" && (
-        <div className="mt-6" data-testid="painel-para-avaliar">
-          <h2 className="text-xl font-semibold text-forest">Para avaliar</h2>
+        <div className="mt-6" data-testid="painel-para-avaliar" aria-label="Para avaliar" role="region">
           {paraAvaliar.length === 0 ? (
             <div className="mt-3">
               <EmptyState
@@ -160,8 +166,7 @@ export function PainelAvaliacoes({
       )}
 
       {aba === "feitas" && (
-        <div className="mt-6" data-testid="painel-feitas">
-          <h2 className="text-xl font-semibold text-forest">Feitas</h2>
+        <div className="mt-6" data-testid="painel-feitas" aria-label="Feitas" role="region">
           {feitas.length === 0 ? (
             <div className="mt-3">
               <EmptyState icon={Star} title="Você ainda não avaliou ninguém" text="As avaliações que você enviar aparecem aqui, com o estado de cada uma."

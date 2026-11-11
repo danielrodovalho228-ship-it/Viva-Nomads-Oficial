@@ -1,7 +1,7 @@
 import { formatBRL } from "./utils.ts";
 import { formatBRLExato } from "./precos.ts";
 import { statusDisponibilidade } from "./imovel-pagina.ts";
-import { rotuloPreco } from "./cartao-preco.ts";
+import { resumoEmMeses, rotuloPreco } from "./cartao-preco.ts";
 
 /**
  * Barra fixa do celular na página do imóvel (ordem aa421902, UX1; Prompt 41): valor por mês + total pela duração
@@ -52,7 +52,7 @@ export function barraFixaImovel(p: {
     mes: preco?.mes ?? "",
     estadia: precoValido && p.dias && p.dias > 0 && p.totalPeriodo != null
       ? `${formatBRLExato(p.totalPeriodo)} em ${p.dias} ${p.dias === 1 ? "dia" : "dias"}`
-      : preco?.estadia && p.totalPeriodo != null ? `${formatBRL(p.totalPeriodo)} em ${preco.meses} meses` : (preco?.estadia ?? null),
+      : preco?.estadia && p.totalPeriodo != null ? resumoEmMeses(p.totalPeriodo, preco.meses) : (preco?.estadia ?? null),
     linha: "Caução e taxas no detalhe",
     status: statusDisponibilidade(p.availableFrom, p.hoje ?? new Date().toISOString().slice(0, 10)),
   };
