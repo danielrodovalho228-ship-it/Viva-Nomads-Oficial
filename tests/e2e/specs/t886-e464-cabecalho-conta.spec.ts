@@ -30,7 +30,8 @@ test.describe("T886 — cabeçalho estável nas páginas de Conta", () => {
       .single();
     if (error) throw error;
     ids.parceiro = data.id as string;
-    await adm().from("profiles").update({ papel_ativo: "parceiro" }).eq("id", ids.pessoa);
+    // E668 (migração 0318): o papel "parceiro" só vale se foi ESCOLHIDO — grava também o carimbo da escolha.
+    await adm().from("profiles").update({ papel_ativo: "parceiro", papel_ativo_escolhido_em: new Date().toISOString() }).eq("id", ids.pessoa);
   });
   test.afterAll(async () => {
     if (ids.parceiro) await adm().from("parceiros").delete().eq("id", ids.parceiro);
