@@ -51,10 +51,23 @@ Spec: `tests/e2e/specs/t1613-e799-previa-perfil-estavel.spec.ts`. Usa uma conta 
 
 | Caso | main `f5bdb9e` | branch |
 |---|---|---|
-| leitura da prévia atrasada 4 s | ✘ viu "É assim que o proprietário te vê quando você pede para morar" (cartão de morador) | ver PR |
-| leitura da prévia falhando | ✘ cartão de morador fixo | ver PR |
-| 3 carregamentos seguidos | ✘ em cada carga, o cartão de morador aparece antes do de dono (2 títulos vistos) | ver PR |
+| leitura da prévia atrasada 4 s | ✘ viu "É assim que o proprietário te vê quando você pede para morar" (cartão de morador) | ✓ espera sem cartão; depois, só o do dono |
+| leitura da prévia falhando | ✘ cartão de morador fixo | ✓ "Não foi possível carregar a prévia…" + "Tentar de novo"; nunca o de morador |
+| 3 carregamentos seguidos | ✘ em cada carga, o cartão de morador aparece antes do de dono (2 títulos vistos) | ✓ um título só, o mesmo nas 3 cargas |
 
 ## Asserções alteradas
 
 `src/lib/e101.test.ts` (E55) conferia o atalho antigo, `const papel: Papel = !ehDono ? "morador" : (visto ?? p.papel)`, e `{ehDono && (`. Agora confere a fonte única, `estadoDoEspelho({ leitura, ehDono, papelDoModo: p.papel, visto })`, e `{leitura === "ok" && ehDono && (`. A regra do E55 segue verificada pelos testes puros.
+
+Saída na branch (build de produção, chave `piloto`):
+```
+  ✓  2 … três carregamentos seguidos: o mesmo título e o mesmo nome (15.3s)
+  ✓  1 … leitura da prévia atrasada: nunca aparece o cartão de morador (38.0s)
+  ✓  3 … leitura da prévia falhando: nunca aparece o cartão de morador (8.6s)
+  3 passed (1.0m)
+```
+
+### Regressão das telas da prévia (lab, branch)
+
+- t355 (Conta A: perfil e espelho): **9 passed**.
+- t439 (E101: espelho e detecção): **5 passed**.

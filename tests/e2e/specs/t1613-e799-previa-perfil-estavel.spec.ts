@@ -71,7 +71,10 @@ test.describe("T1613 — E799 a prévia do perfil do proprietário é estável",
       expect(v.titulos, `títulos vistos: ${JSON.stringify(v.titulos)}`).not.toContain(TITULO_MORADOR);
       expect(v.nomes, `nomes vistos: ${JSON.stringify(v.nomes)}`).not.toContain(nomeCompleto);
       if (caso === "atrasar") {
-        await expect(page.locator('[data-testid="espelho-titulo"]:visible').first()).toHaveText(TITULO_DONO);
+        // As ações do servidor vão em fila (cada uma atrasada 4 s): a da prévia pode chegar depois das outras.
+        await expect(page.locator('[data-testid="espelho-titulo"]:visible').first()).toHaveText(TITULO_DONO, { timeout: 30_000 });
+        const depois = await vistos(page);
+        expect(depois.titulos, `títulos vistos: ${JSON.stringify(depois.titulos)}`).toEqual([TITULO_DONO]);
       } else {
         // A falha é dita (com "tentar de novo"), nunca vira outro cartão.
         await expect(page.locator('[data-testid="espelho-falha"]:visible').first()).toBeVisible();
