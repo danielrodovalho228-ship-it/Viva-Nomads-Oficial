@@ -6142,6 +6142,15 @@
       ],
       "specs": []
     },
+    "src/lib/data/perfil-actions.ts#getPerfilInicial": {
+      "personas": [
+        "inquilino",
+        "proprietario"
+      ],
+      "specs": [
+        "t1601-e789-perfil-primeira-pintura"
+      ]
+    },
     "src/lib/data/perfil-actions.ts#salvarMeuDocumento": {
       "personas": [
         "inquilino",
