@@ -15,28 +15,27 @@ test("o topo saúda pelo primeiro nome; sem nome, neutro", () => {
   assert.equal(textoDoTopo(null), "Olá!");
 });
 
-test("a página do Início não espera leitura: topo e partes fixas fora do Suspense; os dados dentro, com o próprio marcador", () => {
+test("a página do Início: topo → dados → fixos; as leituras em InicioDados (o 1º quadro é a casca do loading.tsx)", () => {
   const p = ler(`${D}/page.tsx`);
-  assert.doesNotMatch(p, /export default async function/, "a página não é assíncrona (nada a esperar no 1º quadro)");
   assert.doesNotMatch(p, /await /);
+  assert.doesNotMatch(p, /<Suspense/, "sem Suspense interno: o bloco ficava visível e inerte (t266)");
   const iTopo = p.indexOf("<InicioTopo />");
-  const iSusp = p.indexOf("<Suspense fallback={<MarcadorSecaoInicio />}>");
   const iDados = p.indexOf("<InicioDados />");
   const iFixo = p.indexOf("<InicioFixo />");
-  assert.ok(iTopo > -1 && iSusp > iTopo && iDados > iSusp && iFixo > iDados, "topo → Suspense(dados) → fixos");
-  // As leituras moraram para InicioDados, sem mudar (o mesmo Promise.all).
+  assert.ok(iTopo > -1 && iDados > iTopo && iFixo > iDados, "topo → dados → fixos");
   const d = ler(`${D}/inicio-dados.tsx`);
   assert.match(d, /export async function InicioDados\(\)/);
   assert.match(d, /listMyProperties\(\{ exigir: true \}\)/);
 });
 
-test("o loading.tsx do painel nunca mostra o esqueleto de página inteira no Início", () => {
+test("o loading.tsx do painel: no Início, a casca (topo, marcador, fixos) — nunca o esqueleto de página inteira", () => {
   const l = ler(`${D}/loading.tsx`);
   assert.match(l, /usePathname\(\) === "\/dashboard"/);
   const iInicio = l.indexOf('usePathname() === "/dashboard"');
   const iLista = l.indexOf("<SkeletonLista />");
   assert.ok(iInicio > -1 && iLista > iInicio, "o Início sai antes do SkeletonLista");
-  assert.match(l.slice(iInicio, iLista), /<InicioTopo \/>/);
+  const casca = l.slice(iInicio, iLista);
+  for (const c of ["<InicioTopo />", "<MarcadorSecaoInicio />", "<InicioFixo />"]) assert.ok(casca.includes(c), c);
 });
 
 test("Peça na Viva e Ferramentas do dono saíram do bloco de dados (pintam no 1º quadro), com os mesmos testids", () => {
@@ -51,7 +50,7 @@ test("Peça na Viva e Ferramentas do dono saíram do bloco de dados (pintam no 1
 });
 
 test("o código do bloco de dados vem com a casca: topo, marcador e fixos moram no módulo do VisaoGeral (o bloco hidrata ao chegar)", () => {
-  assert.match(ler(`${D}/page.tsx`), /import \{ InicioTopo, MarcadorSecaoInicio, InicioFixo \} from "\.\/visao-geral-client"/);
+  assert.match(ler(`${D}/page.tsx`), /import \{ InicioTopo, InicioFixo \} from "\.\/visao-geral-client"/);
   const v = ler(`${D}/visao-geral-client.tsx`);
   for (const f of ["InicioTopo", "MarcadorSecaoInicio", "InicioFixo", "VisaoGeral"]) assert.match(v, new RegExp(`export function ${f}\\(`));
 });
