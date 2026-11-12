@@ -48,7 +48,8 @@ const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. T
   morador recusam; credenciamento e admin funcionam.
 */
 
-export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string };
+/** E818: `campos` aponta os campos com erro (o FormAcao marca cada um em vermelho, com a mensagem junto). */
+export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string; campos?: { campo: string; mensagem: string }[] };
 const BUCKET = "avaliadores";
 const TIPOS_EXPERIENCIA = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 const SEM_ACESSO: Res = { ok: false, erro: "Esta ação não está disponível." };
@@ -97,7 +98,7 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     experienciaArquivo: temArquivo,
     aceiteConduta: form.get("aceiteConduta") === "on",
   });
-  if (!v.ok) return { ok: false, erro: `Falta: ${v.falta.join(" ")}` };
+  if (!v.ok) return { ok: false, erro: `Falta: ${v.falta.join(" ")}`, campos: v.campos };
   if (parc) {
     const doc = String(parc.documento ?? "");
     if (!(parc.tipo_pessoa === "pj" && cnpjValido(doc))) return { ok: false, erro: "Falta: CNPJ válido no cadastro de parceiro (CPF não é aceito)." };
