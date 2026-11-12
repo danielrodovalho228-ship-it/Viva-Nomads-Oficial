@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { InicioDados } from "./inicio-dados";
-import { InicioTopo, MarcadorSecaoInicio, InicioFixo } from "@/components/painel/inicio-secoes";
+import { InicioTopo, MarcadorSecaoInicio, InicioFixo } from "./visao-geral-client";
 import { RodapeInicio } from "@/components/dashboard/rodape-inicio";
 
 /**

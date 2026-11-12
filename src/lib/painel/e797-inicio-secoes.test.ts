@@ -49,3 +49,9 @@ test("Peça na Viva e Ferramentas do dono saíram do bloco de dados (pintam no 1
     assert.match(c.slice(iFixo), new RegExp(`data-testid="${t}"`));
   }
 });
+
+test("o código do bloco de dados vem com a casca: topo, marcador e fixos moram no módulo do VisaoGeral (o bloco hidrata ao chegar)", () => {
+  assert.match(ler(`${D}/page.tsx`), /import \{ InicioTopo, MarcadorSecaoInicio, InicioFixo \} from "\.\/visao-geral-client"/);
+  const v = ler(`${D}/visao-geral-client.tsx`);
+  for (const f of ["InicioTopo", "MarcadorSecaoInicio", "InicioFixo", "VisaoGeral"]) assert.match(v, new RegExp(`export function ${f}\\(`));
+});

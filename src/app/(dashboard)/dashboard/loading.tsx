@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { SkeletonLista } from "@/components/ui/skeleton";
-import { InicioTopo, MarcadorSecaoInicio } from "@/components/painel/inicio-secoes";
+import { InicioTopo, MarcadorSecaoInicio } from "./visao-geral-client";
 
 /**
  * Carregando qualquer tela do painel: esqueleto, não tela branca.
