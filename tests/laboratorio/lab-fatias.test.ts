@@ -63,10 +63,13 @@ test("o resumo da suíte inteira vai ao banco por arquivo, nunca como argumento 
 });
 
 test("o supabase start da fatia tenta 5 vezes e reinicia o Docker da 2ª em diante (porta 54322 presa, fatias 11 e 4)", () => {
+  // E792: o laço mora em scripts/lab/subir-supabase.sh (o mesmo dos 4 jobs), que além disso troca a porta presa do banco.
   const fatia = yml.split("  consolidar:")[0];
-  assert.match(fatia, /for tentativa in 1 2 3 4 5; do/);
-  assert.match(fatia, /sudo systemctl restart docker/);
-  assert.match(fatia, /supabase start falhou 5 vezes/);
+  assert.match(fatia, /run: scripts\/lab\/subir-supabase\.sh/);
+  const script = readFileSync("scripts/lab/subir-supabase.sh", "utf8");
+  assert.match(script, /TENTATIVAS="\$\{1:-5\}"/);
+  assert.match(script, /if \[ "\$tentativa" -ge 2 \]; then sudo systemctl restart docker/);
+  assert.match(script, /supabase start falhou \$TENTATIVAS vezes/);
 });
 
 test("a varredura t48 (cadeia serial de ~100 min) sai das fatias gerais e roda em 4 fatias próprias, uma por grupo de testes", () => {
@@ -100,7 +103,8 @@ test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, 
   assert.match(w, /permissions:\s*\n\s*contents: read/, "somente leitura: aprovar imagem é decisão humana, via PR");
   assert.doesNotMatch(w, /git (commit|push)|contents: write/);
   // mesmo ambiente do laboratório: mesmas etapas de banco, seed, build e site
-  for (const passo of ["supabase start", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
+  // E792: o Supabase sobe pelo script comum dos jobs do laboratório.
+  for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
   // os 3 specs existem com esse nome
   for (const f of ["t245-visual-regressao", "t263-visual-41", "t271-admin-visual"]) assert.ok(readFileSync(`tests/e2e/specs/${f}.spec.ts`, "utf8").length > 0, f);
 });
