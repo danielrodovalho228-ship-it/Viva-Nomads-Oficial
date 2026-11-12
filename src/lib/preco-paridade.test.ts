@@ -71,7 +71,8 @@ test("varredura: as telas de preço de imóvel usam rotuloPreco", () => {
     "app/(dashboard)/dashboard/fechamento/closing-flow.tsx",
     "app/(public)/imoveis/[id]/opengraph-image.tsx",
   ];
-  for (const f of superficies) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): as telas de um anúncio usam rotuloPrecoDoImovel (o rotuloPreco com o total da regra única).
+  for (const f of superficies) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco(DoImovel)?\(/, f);
   // E264-B: o e-mail do alerta (e dos outros proativos) mostra o preço pelo cartão do imóvel do modelo de e-mail.
   for (const f of ["lib/barra-fixa-imovel.ts", "lib/notifications/cartoes-email.ts"]) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
 });

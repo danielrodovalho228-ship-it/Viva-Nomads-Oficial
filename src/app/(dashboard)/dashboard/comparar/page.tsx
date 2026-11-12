@@ -1,8 +1,9 @@
 "use client";
 
+import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { mesesDoCartao } from "@/lib/cartao-preco";
+
 import Link from "next/link";
 import { GitCompare, Check, Minus, Award } from "lucide-react";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
@@ -42,7 +43,7 @@ export default function ComparePage() {
     {
       label: "Preço",
       render: (p) => (
-        <PrecoComContexto rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })} />
+        <PrecoComContexto rotulo={rotuloPrecoDoImovel(p, { meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })} />
       ),
     },
     { label: "Tipo", render: (p) => p.propertyType },
