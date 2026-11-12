@@ -14,6 +14,6 @@ test("E731: o rótulo segue a sessão que a pessoa vê (servidor ou navegador)",
 test("E731: o formulário usa o rótulo único e não manda criar conta quem já está logado no navegador", () => {
   const f = readFileSync("src/components/parceiros/seja-parceiro-form.tsx", "utf8");
   assert.match(f, /rotuloEnvioParceria\(estado\.logado, logadoNoNavegador\)/);
-  assert.match(f, /if \(logadoNoNavegador\) return setErro\(ERRO_SESSAO_NAO_CONFIRMADA\)/);
+  assert.match(f, /if \(logadoNoNavegador\) return falhar\(ERRO_SESSAO_NAO_CONFIRMADA\)/);
   assert.doesNotMatch(f, /"Continuar: criar conta ou entrar"/);
 });
