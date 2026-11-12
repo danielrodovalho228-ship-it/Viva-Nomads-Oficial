@@ -6,6 +6,7 @@ import { ParceiroGeralForm } from "@/components/admin/parceiro-geral-form";
 import { PainelIaCadastro } from "@/components/admin/painel-ia-cadastro";
 import { ContadorDeteccao } from "@/components/admin/contador-deteccao";
 import { CartaoBackup } from "@/components/admin/cartao-backup";
+import { ResumoBackup } from "@/components/admin/resumo-backup";
 import { CartaoEntradaEmail } from "@/components/admin/cartao-entrada-email";
 import { CartaoMapas } from "@/components/admin/cartao-mapas";
 import { CartaoPush } from "@/components/admin/cartao-push";
@@ -106,6 +107,8 @@ export default async function AdminSistemaPage() {
           <ContadorDeteccao />
         </div>
         <div id="backup" className="mt-6 scroll-mt-24">
+          {/* E766 (reprova de 11/11): o observador da QA vê o resumo do estado (só leitura); o cartão completo segue só do admin. */}
+          {observador ? <ResumoBackup semDetalhe /> : null}
           {observador ? null : <CartaoBackup />}
         </div>
         <div id="entrada-email" className="mt-6 scroll-mt-24">
