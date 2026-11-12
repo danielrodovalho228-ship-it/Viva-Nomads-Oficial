@@ -56,3 +56,22 @@ test("A5: semeia com store vazio ou de outra conta; mesma conta não sobrescreve
   assert.equal(deveSemear({ ...B, plan: "pro" }, B), false);
   assert.equal(deveSemear(A, null), false);
 });
+
+test("Onda 1: a lista do piloto são as 5 rotas decididas (A6) — e nada além delas", () => {
+  assert.deepEqual(
+    [...ROTAS_DA_ONDA.piloto],
+    ["/dashboard", "/dashboard/conta", "/dashboard/conta/[secao]", "/dashboard/conta/avaliacoes", "/dashboard/conta/excluir"],
+  );
+  assert.equal(rotaLiberada("/dashboard/conta/seguranca", ROTAS_DA_ONDA.piloto), true, "[secao] cobre as seções da Conta");
+  assert.equal(rotaLiberada("/dashboard/imoveis", ROTAS_DA_ONDA.piloto), false);
+  assert.equal(rotaLiberada("/admin", ROTAS_DA_ONDA.piloto), false);
+});
+
+test("Onda 1: a casca lê usuário e modo pelos hooks do quadro quando há sessão do servidor", async () => {
+  const { readFileSync } = await import("node:fs");
+  for (const f of ["src/lib/roles.ts", "src/lib/demo/demo-mode.tsx", "src/components/layout/mobile-tab-bar.tsx"]) {
+    const s = readFileSync(f, "utf8");
+    assert.match(s, /const sessao = useSessaoServidor\(\);/, f);
+    assert.match(s, /sessao \? usuarioDoQuadro : storeUser/, f);
+  }
+});
