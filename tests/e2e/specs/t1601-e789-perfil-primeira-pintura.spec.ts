@@ -15,6 +15,8 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const pessoa = { email: `inq.t1601.${sufixo}@lab.vivanomads.test`, nome: `Lia Primeira Pintura ${sufixo}`, role: "tenant" as const };
+// A medição tem conta e grupo próprios: roda (e registra os ms) mesmo quando o teste do HTML reprova.
+const medida = { email: `med.t1601.${sufixo}@lab.vivanomads.test`, nome: `Lia Medida ${sufixo}`, role: "tenant" as const };
 const ids: Record<string, string> = {};
 
 test.describe("T1601 — E789: o Perfil chega preenchido na primeira resposta", () => {
@@ -38,14 +40,26 @@ test.describe("T1601 — E789: o Perfil chega preenchido na primeira resposta", 
     expect(html).not.toContain('data-testid="perfil-carregando"');
     await p.context().close();
   });
+});
+
+test.describe("T1601 — E789: medição do tempo até o primeiro conteúdo útil", () => {
+  test.skip(!NO_LABORATORIO, "Só no laboratório.");
+  test.describe.configure({ mode: "default", timeout: 120_000 });
+
+  test.beforeAll(async () => {
+    ids.medida = await criarConta(medida, senha);
+  });
+  test.afterAll(async () => {
+    await apagarContas([ids.medida]);
+  });
 
   for (const w of [390, 1280] as const) {
     test(`${w}: medição do tempo até o primeiro conteúdo útil (zero Server Actions antes do nome)`, async ({ browser }) => {
-      const p = await entrar(browser, pessoa.email, senha);
+      const p = await entrar(browser, medida.email, senha);
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       // Aquece a rota (compilação/caches do servidor) para medir a tela, não a primeira compilação.
       await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
-      await expect(p.getByTestId("perfil-nome")).toHaveValue(pessoa.nome, { timeout: 30_000 });
+      await expect(p.getByTestId("perfil-nome")).toHaveValue(medida.nome, { timeout: 30_000 });
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
       let acoesAntes = 0;
@@ -56,7 +70,7 @@ test.describe("T1601 — E789: o Perfil chega preenchido na primeira resposta", 
       p.on("request", contar);
       const t0 = Date.now();
       await p.goto("/dashboard/conta/perfil", { waitUntil: "commit" });
-      await expect(p.getByTestId("perfil-nome")).toHaveValue(pessoa.nome, { timeout: 30_000 });
+      await expect(p.getByTestId("perfil-nome")).toHaveValue(medida.nome, { timeout: 30_000 });
       conteudo = true;
       const ms = Date.now() - t0;
       p.off("request", contar);
