@@ -46,22 +46,22 @@ test.describe("T1614 — E797 o Início em seções, sem esqueleto de página in
         test.skip(!conta.email || !conta.senha, "conta da massa ausente (rode scripts/lab/massa-varredura.mjs)");
         const page = await entrar(browser, conta.email!, conta.senha!, largura);
 
-        // HTML do servidor (a mesma sessão): o topo vem ANTES do bloco de dados; o esqueleto de página inteira não vem.
-        const html = await (await page.request.get("/dashboard")).text();
-        const iTopo = html.indexOf('data-testid="inicio-topo"');
-        const iDados = html.search(/data-testid="(inicio-dono|inicio-so-morador|inicio-morador)"/);
-        expect(iTopo, "o topo está no HTML do servidor").toBeGreaterThan(-1);
-        expect(iDados, "o bloco de dados chega no mesmo HTML (pelo fluxo)").toBeGreaterThan(-1);
-        expect(iTopo, "o topo sai antes do bloco de dados").toBeLessThan(iDados);
-        expect(html, "sem o SkeletonLista de página inteira no HTML").not.toMatch(/role="status" aria-label="Carregando" class="space-y-4"/);
-
-        // No navegador, quadro a quadro.
+        // 1º o SINTOMA: no navegador, quadro a quadro, o esqueleto de página inteira nunca aparece.
         await page.addInitScript(sonda, ESQUELETO);
         await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
         await expect(page.locator('[data-testid="inicio-dono"], [data-testid="inicio-so-morador"], [data-testid="inicio-morador"]').first()).toBeAttached({ timeout: 30_000 });
         await page.waitForTimeout(500);
         const v = await lida(page);
         expect(v.esqueleto, "o esqueleto de página inteira apareceu em algum quadro").toBe(false);
+
+        // HTML do servidor (a mesma sessão): sem o SkeletonLista; o topo vem ANTES do bloco de dados (que chega pelo fluxo).
+        const html = await (await page.request.get("/dashboard")).text();
+        expect(html, "sem o SkeletonLista de página inteira no HTML").not.toMatch(/role="status" aria-label="Carregando" class="space-y-4"/);
+        const iTopo = html.indexOf('data-testid="inicio-topo"');
+        const iDados = html.search(/data-testid="(inicio-dono|inicio-so-morador|inicio-morador)"/);
+        expect(iTopo, "o topo está no HTML do servidor").toBeGreaterThan(-1);
+        expect(iDados, "o bloco de dados chega no mesmo HTML (pelo fluxo)").toBeGreaterThan(-1);
+        expect(iTopo, "o topo sai antes do bloco de dados").toBeLessThan(iDados);
         expect(v.topoEm, "o topo apareceu").not.toBeNull();
         expect(v.topoEm!, "o topo apareceu antes (ou junto) do bloco de dados").toBeLessThanOrEqual(v.dadosEm ?? Infinity);
         await page.context().close();
@@ -81,9 +81,9 @@ test.describe("T1614 — E797 o Início em seções, sem esqueleto de página in
     });
     await page.locator('a[href="/dashboard"]:visible').first().click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByTestId("inicio-topo")).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('[data-testid="inicio-dono"], [data-testid="inicio-so-morador"], [data-testid="inicio-morador"]').first()).toBeAttached({ timeout: 30_000 });
     expect((await lida(page)).esqueleto, "o esqueleto de página inteira apareceu na navegação").toBe(false);
+    await expect(page.getByTestId("inicio-topo")).toBeVisible();
     await page.context().close();
   });
 });
