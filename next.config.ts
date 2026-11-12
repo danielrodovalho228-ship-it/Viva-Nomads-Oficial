@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
       { source: "/socios/:path*", destination: "/modelodenegocio", permanent: false },
       { source: "/decisao", destination: "/modelodenegocio", permanent: false },
       { source: "/decisao/:path*", destination: "/modelodenegocio", permanent: false },
+      // E766: /admin/backup e /admin/backups davam 404; o cartão completo do backup mora em Sistema.
+      { source: "/admin/backup", destination: "/admin/sistema#backup", permanent: false },
+      { source: "/admin/backups", destination: "/admin/sistema#backup", permanent: false },
       // E760: /dashboard/meus-imoveis (nome antigo da lista de anúncios) dava 404; a lista de hoje é /dashboard/imoveis.
       // Sem 308: o redirect permanente ficaria no cache do navegador.
       { source: "/dashboard/meus-imoveis", destination: "/dashboard/imoveis", permanent: false },
