@@ -65,7 +65,8 @@ test("E55: o espelho segue o papel em uso; quem tem os dois papéis vê 'Ver com
   assert.match(tela, /const papelEspelho = mode === "owner" \? "proprietario" : "morador";/);
   assert.equal((tela.match(/<EspelhoPorPapel papel=\{papelEspelho\}/g) ?? []).length, 2);
   const espelho = ler("components/account/espelho-papel.tsx");
-  assert.match(espelho, /const papel: Papel = !ehDono \? "morador" : \(visto \?\? p\.papel\);/);
-  assert.match(espelho, /\{ehDono && \(/);
+  // E799: o papel sai da fonte única (estadoDoEspelho: dono → papel em uso ou "ver como"; sem leitura → espera/falha).
+  assert.match(espelho, /estadoDoEspelho\(\{ leitura, ehDono, papelDoModo: p\.papel, visto \}\)/);
+  assert.match(espelho, /\{leitura === "ok" && ehDono && \(/);
   for (const t of ["espelho-desde", "espelho-resposta", "espelho-selos"]) assert.match(espelho, new RegExp(`data-testid="${t}"`));
 });
