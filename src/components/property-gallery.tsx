@@ -17,6 +17,13 @@ import { VideoModal } from "@/components/video-walkthrough";
 export const PRIMEIRA_FOTO_OCULTA = 5;
 /** O `sizes` das fotos do mosaico e do carrossel; a galeria aberta reusa esta versão (já no cache) por baixo da grande. */
 const SIZES_MINIATURA = "(max-width: 768px) 100vw, 50vw";
+/**
+ * E768: no mosaico do computador as 4 fotos pequenas ocupam 1 de 4 colunas (≈25% da largura) e, com 2–4 fotos, 1 de 3.
+ * Com o `sizes` da foto grande (50vw) o otimizador gerava versões de ~1080–1280 px para um quadro de ~300 px: com o
+ * cache frio, cada uma custa segundos de codificação e as fotos ficavam em branco na 1ª leitura.
+ */
+export const SIZES_MOSAICO_PEQUENA = "(max-width: 768px) 100vw, 25vw";
+export const SIZES_MOSAICO_COLUNA = "(max-width: 768px) 100vw, 34vw";
 
 const isPhoto = (s?: string) =>
   typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
@@ -104,12 +111,15 @@ function Tile({
   testId,
   capa,
   prioridade = false,
+  sizes,
 }: {
   src: string;
   alt: string;
   className?: string;
   onClick?: () => void;
   testId?: string;
+  /** E768: `sizes` próprio do quadro (as fotos pequenas do mosaico); sem ele vale o da miniatura grande. */
+  sizes?: string;
   /** Capa do vídeo (a 1ª foto), usada só quando src é o vídeo. */
   capa?: string;
   /** E259 (10): a foto que aparece na primeira pintura (pedida já, com preload) — sem o cinza de segundos. */
@@ -157,7 +167,7 @@ function Tile({
           treat={false}
           priority={prioridade}
           rounded="rounded-none"
-          sizes={SIZES_MINIATURA}
+          sizes={sizes ?? SIZES_MINIATURA}
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"
         />
       ) : (
@@ -245,7 +255,7 @@ function DesktopMosaic({
         <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" prioridade />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
-            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} prioridade />
+            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} sizes={SIZES_MOSAICO_COLUNA} />
           ))}
         </div>
       </div>
@@ -258,7 +268,7 @@ function DesktopMosaic({
           const isLast = i === 3 && n > 5;
           return (
             <div key={i} className="relative h-full">
-              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} prioridade />
+              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} sizes={SIZES_MOSAICO_PEQUENA} />
               {isLast && (
                 <button
                   type="button"
