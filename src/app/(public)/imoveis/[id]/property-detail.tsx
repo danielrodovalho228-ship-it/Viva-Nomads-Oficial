@@ -56,7 +56,7 @@ import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
-import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
+import { FAIXA_TESTE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
 import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
@@ -107,9 +107,12 @@ export function PropertyDetail({
   proprietario = null,
   exibicao59 = null,
   estrutura = null,
+  donoTeste = false,
 }: {
   property: Property;
   similar: Property[];
+  /** E786: o dono é conta de teste (lido no servidor) — o anúncio é de teste mesmo sem a marca no título. */
+  donoTeste?: boolean;
   proprietario?: PerfilProprietario | null;
   /** Prompt 59-A: padrão mínimo confirmado e taxa de manutenção no prazo (anúncio de exemplo: null). */
   exibicao59?: Exibicao59 | null;
@@ -149,7 +152,7 @@ export function PropertyDetail({
   const semLogin = authChecked && !usuario && !isExemplo(property);
   // E93: anúncio de teste aberto pelo link. Quem não é o dono nem admin (e enquanto a sessão não carregou) vê a faixa
   // e o "Solicitar" desativado; o dono, o admin e a conta de teste (is_teste) veem a página normal, com a faixa discreta.
-  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true });
+  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true }, donoTeste);
   // QA do Muse (29/10): enquanto a sessão ou o perfil (is_teste) não chegaram, o anúncio de teste não mostra a faixa de
   // visitante — antes ela piscava para a conta de teste até o perfil carregar. O "Solicitar" fica só desativado.
   const aguardandoPerfil = modoTeste === "visitante" && (!authChecked || (!!usuario && usuario.isTeste === undefined));
@@ -842,13 +845,11 @@ export function PropertyDetail({
           role="note"
           data-testid="faixa-anuncio-teste"
           data-modo={modoTeste}
-          className={
-            modoTeste === "visitante"
-              ? "mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink"
-              : "mb-4 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-muted"
-          }
+          // E786: UMA faixa, com o texto especificado e o mesmo desenho para a equipe e o visitante; quebra linha (sem
+          // estouro horizontal). O que muda entre os dois é só o "Solicitar" (E93).
+          className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink break-words"
         >
-          {modoTeste === "visitante" ? FAIXA_TESTE_VISITANTE : FAIXA_TESTE_EQUIPE}
+          {FAIXA_TESTE}
         </p>
       )}
       {composer}

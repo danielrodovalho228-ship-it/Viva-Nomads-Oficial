@@ -30,13 +30,19 @@ export function semAnunciosDeContaTeste<T extends { ownerId?: string | null }>(l
   discreta. Liberação do QA: a conta de teste (profiles.is_teste) também entra como "equipe" — pode "Solicitar" no
   anúncio de teste para o roteiro de ponta a ponta. A conta real segue como "visitante".
 */
-export const FAIXA_TESTE_VISITANTE = "Anúncio de teste da equipe Viva — não é um imóvel disponível";
-export const FAIXA_TESTE_EQUIPE = "Anúncio de teste: fora da busca e das listagens";
+/** E786: a faixa é UMA só, com este texto, igual para a equipe e para o visitante, em todo anúncio de teste. */
+export const FAIXA_TESTE = "Anúncio de teste da equipe Viva — não é um imóvel disponível";
+/** O mesmo texto no "Solicitar" desativado do visitante (E93). */
+export const FAIXA_TESTE_VISITANTE = FAIXA_TESTE;
 
 export type ModoAnuncioTeste = "visitante" | "equipe" | null;
 
-/** null = anúncio de verdade; "equipe" = o dono, o admin ou uma conta de teste; "visitante" = qualquer outra pessoa (com ou sem login). */
-export function modoAnuncioTeste(titulo: string | null | undefined, quem: { dono: boolean; admin: boolean; teste?: boolean }): ModoAnuncioTeste {
-  if (!ehAnuncioDeTeste(titulo)) return null;
+/**
+ * null = anúncio de verdade; "equipe" = o dono, o admin ou uma conta de teste; "visitante" = qualquer outra pessoa (com ou sem login).
+ * E786: anúncio de teste = marca no título OU dono conta de teste (`donoTeste`, a mesma regra do E131 na vitrine e no
+ * ranking) — o "TESTE QA - Casa…" (VN-4A693A), sem colchetes, de conta de teste, ficava sem faixa.
+ */
+export function modoAnuncioTeste(titulo: string | null | undefined, quem: { dono: boolean; admin: boolean; teste?: boolean }, donoTeste = false): ModoAnuncioTeste {
+  if (!ehAnuncioDeTeste(titulo) && !donoTeste) return null;
   return quem.dono || quem.admin || quem.teste === true ? "equipe" : "visitante";
 }
