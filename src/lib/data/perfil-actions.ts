@@ -182,17 +182,6 @@ export interface MeusDados {
 }
 
 /** Lê os MEUS dados pessoais (nome, e-mail, telefone, LinkedIn). */
-/**
- * E789: a tela Conta/Perfil precisa das duas leituras (perfil público + dados pessoais). Pedidas do navegador como duas
- * Server Actions, elas viajam UMA DEPOIS DA OUTRA (o Next enfileira as ações do cliente) — dois idas-e-voltas, e a tela
- * ficava ~5 s em cartões brancos num celular lento. Aqui as duas rodam em paralelo no servidor e voltam numa resposta só.
- * Falha de qualquer uma LANÇA (achados 66 e 70: nunca abrir o formulário vazio).
- */
-export async function getPerfilInicial(): Promise<{ perfil: MeuPerfilPublico | null; dados: MeusDados | null }> {
-  const [perfil, dados] = await Promise.all([getMeuPerfilPublico(), getMeusDados()]);
-  return { perfil, dados };
-}
-
 export async function getMeusDados(): Promise<MeusDados | null> {
   const supabase = await createClient();
   if (!supabase) return null;

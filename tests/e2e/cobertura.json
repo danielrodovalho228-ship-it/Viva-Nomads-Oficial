@@ -6142,13 +6142,6 @@
       ],
       "specs": []
     },
-    "src/lib/data/perfil-actions.ts#getPerfilInicial": {
-      "personas": [
-        "inquilino",
-        "proprietario"
-      ],
-      "specs": []
-    },
     "src/lib/data/perfil-actions.ts#salvarMeuDocumento": {
       "personas": [
         "inquilino",
