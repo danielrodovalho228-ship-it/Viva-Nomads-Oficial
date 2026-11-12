@@ -121,7 +121,7 @@ export function BarraFixaCelular({
               disabled={pending || !!bloqueio || aguardando}
               data-cta={marcaCta("primary")}
               data-testid="barra-solicitar"
-              className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 px-3 py-1 text-xs leading-snug" : "h-11 flex-1 px-3" })}
+              className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 whitespace-normal px-3 py-1 text-center text-xs leading-snug" : "h-11 flex-1 px-3" })}
             >
               {bloqueio ? bloqueio : <>{pending ? "Enviando..." : ROTULO_CTA_IMOVEL}</>}
             </button>

@@ -485,7 +485,7 @@ export function PropertyDetail({
       <Button
         variant="primary"
         size="lg"
-        className="hidden w-full lg:inline-flex"
+        className={testeVisitante ? "hidden h-auto min-h-12 w-full whitespace-normal px-3 py-2 text-center leading-snug lg:inline-flex" : "hidden w-full lg:inline-flex"}
         onClick={abrirSolicitacao}
         disabled={pending !== null || testeVisitante || aguardandoPerfil}
         data-testid="cartao-solicitar"
