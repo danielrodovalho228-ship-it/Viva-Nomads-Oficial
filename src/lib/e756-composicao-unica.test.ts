@@ -93,3 +93,30 @@ test("Meus anúncios (dono): com 1 mês também a linha com o total e a conta da
   assert.match(linha, /^Estadia mínima \(1 mês\): R\$ 4\.660 · 1 × R\$ 3\.960 \+ limpeza de preparação R\$ 450 \+ limpeza de saída R\$ 250$/);
   assert.equal(previa.valor, 4660);
 });
+
+// E756 (escopo ampliado, 12/11): "a regra diverge entre anúncios" — ube-001 soma mensal + condomínio + contas; ube-002 põe a
+// limpeza durante a estadia (2/mês, R$ 180) no total; ube-003 é só o mensal, com as contas "medidas à parte". A regra do
+// total do mês é UMA (calcularTudoIncluido); o que muda é o dado de cada anúncio. O cartão passa a ABRIR o "/mês" pela mesma
+// fonte (parcelasDoMes), então a diferença aparece como composição, não como regra.
+test("o cartão abre o /mês pela fonte única: cada anúncio mostra as parcelas que somam o seu total do mês", async () => {
+  const { composicaoDoMes } = await import("./cartao-estadia.ts");
+  assert.equal(typeof composicaoDoMes, "function", "composicaoDoMes existe");
+  assert.equal(SEM_NBSP(composicaoDoMes(imovel("ube-001"))), "Por mês: valor mensal R$ 3.200 + condomínio R$ 480 + contas R$ 280 = R$ 3.960");
+  assert.equal(SEM_NBSP(composicaoDoMes(imovel("ube-002"))), "Por mês: valor mensal R$ 2.400 + condomínio R$ 350 + contas R$ 200 + limpeza R$ 180 (2 por mês) = R$ 3.130");
+  assert.equal(SEM_NBSP(composicaoDoMes(imovel("ube-003"))), "Por mês: valor mensal R$ 4.100 · água, luz e gás medidos à parte, fora do total");
+  // A soma das parcelas é o /mês do cartão, para qualquer anúncio de exemplo.
+  const { calcularTudoIncluido } = await import("./precos.ts");
+  for (const p of SAMPLE_PROPERTIES) {
+    const t = SEM_NBSP(composicaoDoMes(p));
+    const m = /= R\$ ([\d.]+)$/.exec(t);
+    if (m) assert.equal(Number(m[1].replace(/\./g, "")), calcularTudoIncluido(p).total, `${p.id}: a soma das parcelas é o total do mês`);
+    else assert.equal(calcularTudoIncluido(p).total, p.monthlyPrice, `${p.id}: sem "=" só quando o total do mês é o próprio mensal`);
+  }
+});
+
+test("o cartão da busca desenha a composição do mês e a do total da estadia", () => {
+  const card = ler("src/components/property-card.tsx");
+  assert.match(card, /data-testid="cartao-mes-composicao"/);
+  assert.match(card, /composicaoDoMes\(property\)/);
+  assert.match(card, /data-testid="cartao-total-composicao"/);
+});

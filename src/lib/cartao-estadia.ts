@@ -7,7 +7,8 @@
   de saída, para QUALQUER N ≥ 1. O "/mês" segue sendo o total do mês (o que se paga todo mês). O cartão mostra a conta
   aberta ("2 × R$ 4.100 + limpeza de preparação R$ 450 + limpeza de saída R$ 250"). PURO.
 */
-import { calcularTudoIncluido, estadiaDoImovel } from "./precos.ts";
+import { calcularTudoIncluido, estadiaDoImovel, parcelasDoMes, type CamposTotalMes } from "./precos.ts";
+import { formatBRL } from "./utils.ts";
 import { resumoEmMeses, rotuloPreco, type RotuloPreco } from "./cartao-preco.ts";
 
 type CamposDoAnuncio = Parameters<typeof estadiaDoImovel>[0];
@@ -40,4 +41,16 @@ export function rotuloPrecoDoImovel(
   const e = estadiaNoCartao(p, base.meses);
   if (!e) return { ...base, composicao: null };
   return { ...base, total: e.total, estadia: e.texto, composicao: e.composicao };
+}
+
+/** E756 (escopo ampliado): a composição do "/mês" do cartão, pela fonte única do total do mês (calcularTudoIncluido +
+ *  parcelasDoMes). A regra é a mesma para todo anúncio; o que muda é o dado: com condomínio, contas fixas ou pacote de limpeza,
+ *  a soma aberta ("Por mês: valor mensal R$ 3.200 + condomínio R$ 480 + contas R$ 280 = R$ 3.960"); com as contas medidas,
+ *  o aviso de que ficam fora do total. */
+export function composicaoDoMes(p: CamposTotalMes): string {
+  const m = calcularTudoIncluido(p);
+  const pacote = m.limpezaMes > 0 && p.limpezaEstadia ? ` (${p.limpezaEstadia.porMes} por mês)` : "";
+  const soma = m.temExtras ? `${parcelasDoMes(m)}${pacote} = ${formatBRL(m.total)}` : parcelasDoMes(m);
+  const medidas = p.utilitiesMode === "fixed" ? "" : " · água, luz e gás medidos à parte, fora do total";
+  return `Por mês: ${soma}${medidas}`;
 }

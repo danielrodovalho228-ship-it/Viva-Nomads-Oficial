@@ -37,3 +37,36 @@ Na main: 5 testes, 0 pass, 5 fail.
 - Novo: `src/lib/e756-composicao-unica.test.ts`, 5 testes. Na main: 0 pass / 5 fail. Neste PR: 5 pass / 0 fail.
 - Spec de lab: `tests/e2e/specs/t1603-e756-composicao-total.spec.ts`, ube-001 com 1 e 6 meses, no cartão lateral, na conta e na barra do celular.
 - Asserções antigas alteradas: estão na descrição do PR.
+
+## Escopo ampliado (12/11): "a regra diverge entre anúncios"
+
+### O que foi apontado
+- O ube-001 soma mensal, condomínio e contas.
+- O ube-002 põe a limpeza durante a estadia (2 por mês, R$ 180) dentro do total.
+- O ube-003 é só o mensal, com as contas "medidas à parte".
+
+### Diagnóstico
+A regra do total do mês já é **uma só**, a `calcularTudoIncluido` de `src/lib/precos.ts`: mensal + condomínio + contas fixas + pacote de limpeza. A diferença entre os anúncios vem do **dado** de cada um:
+
+| Anúncio | Dado | Total do mês |
+|---|---|---|
+| ube-001 | condomínio R$ 480, contas fixas R$ 280 | R$ 3.960 |
+| ube-002 | condomínio R$ 350, contas R$ 200, pacote de limpeza R$ 180 | R$ 3.130 |
+| ube-003 | sem condomínio, contas no regime real (medidas) | R$ 4.100 |
+
+O cartão não mostrava o que compõe o "/mês". Por isso a diferença de dado parecia diferença de regra.
+
+### Correção
+O cartão da busca ganhou a linha `cartao-mes-composicao`. Ela vem de `composicaoDoMes()` (`src/lib/cartao-estadia.ts`), que usa a mesma fonte do total do mês (`calcularTudoIncluido` + `parcelasDoMes`). Não há lógica nova de soma.
+
+| Anúncio | O que o cartão mostra |
+|---|---|
+| ube-001 | "Por mês: valor mensal R$ 3.200 + condomínio R$ 480 + contas R$ 280 = R$ 3.960" |
+| ube-002 | "Por mês: valor mensal R$ 2.400 + condomínio R$ 350 + contas R$ 200 + limpeza R$ 180 (2 por mês) = R$ 3.130" |
+| ube-003 | "Por mês: valor mensal R$ 4.100 · água, luz e gás medidos à parte, fora do total" |
+
+Embaixo continua a linha "Total da estadia: N × total do mês + limpeza de preparação + limpeza de saída", que já vinha da regra única deste PR.
+
+### Testes
+- **Unitário:** `src/lib/e756-composicao-unica.test.ts` ganhou os testes 6 e 7. Antes: 5 pass / 2 fail. Depois: 7 pass / 0 fail.
+- **Lab:** `t1603` ganhou o caso do cartão da busca, com a composição do mês dos três anúncios e a conta do total.
