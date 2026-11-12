@@ -53,7 +53,7 @@ const ids: (string | undefined)[] = [];
 let segredoTotp = "";
 
 /** Sonda instalada antes de qualquer script da página: o esqueleto aparece em algum quadro? quando o conteúdo apareceu? */
-function sonda(seletor: string, nomeProibido?: string) {
+function sonda(seletor: string, nomeProibido?: string, iniciaisProibidas?: string) {
   return `(() => {
     window.__vn = { esqueleto: false, conteudoEm: null, proibido: false };
     const olhar = () => {
@@ -61,6 +61,7 @@ function sonda(seletor: string, nomeProibido?: string) {
       const el = document.querySelector('[data-testid="${seletor}"]');
       if (el && window.__vn.conteudoEm === null) window.__vn.conteudoEm = performance.now();
       ${nomeProibido ? `if (document.body && document.body.innerText.includes(${JSON.stringify(nomeProibido)})) window.__vn.proibido = true;` : ""}
+      ${iniciaisProibidas ? `for (const r of document.querySelectorAll("[data-rosto]")) if ((r.textContent || "").trim() === ${JSON.stringify(iniciaisProibidas)}) window.__vn.proibido = true;` : ""}
     };
     new MutationObserver(olhar).observe(document, { subtree: true, childList: true, characterData: true });
     document.addEventListener("DOMContentLoaded", olhar);
@@ -223,6 +224,8 @@ test.describe(`T1608 — E793 Onda 1 (${PILOTO ? "chave piloto" : "chave off: ro
   });
 
   test("5. troca de conta no mesmo navegador: localStorage de A, cookies de B — o 1º quadro é de B e A nunca aparece", async ({ browser }) => {
+    // Com a chave off (rollback) não há sessão do servidor: vale o comportamento de antes (a conferência do cliente troca A por B).
+    test.skip(!PILOTO, "só com a chave piloto");
     // A (Alice) entra e deixa o usuário dela gravado no localStorage.
     const ctxA = await contextoLogado(browser, outra, 390);
     const pa = await ctxA.newPage();
@@ -240,12 +243,15 @@ test.describe(`T1608 — E793 Onda 1 (${PILOTO ? "chave piloto" : "chave off: ro
     }, salvoA);
     const page = await ctxB.newPage();
     const erros = colherErros(page);
-    await page.addInitScript(sonda("perfil-tela", outra.nome));
+    // A casca mostra o PRIMEIRO nome (saudação, rodapé) ou as iniciais: procura "Alice" (o Bruno não tem esse nome).
+    const primeiroNomeA = outra.nome.split(" ")[0];
+    // E o avatar da casca (iniciais do nome completo, E788): "AP" é a Alice; o Bruno é "BP".
+    await page.addInitScript(sonda("perfil-tela", primeiroNomeA, "AP"));
     const resp = await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
     const html = (await resp?.text()) ?? "";
     if (PILOTO) {
       expect(html, "o HTML é de B").toContain(dono.nome.split(" ")[0]);
-      expect(html, "o HTML nunca traz A").not.toContain(outra.nome);
+      expect(html, "o HTML nunca traz A").not.toContain(primeiroNomeA);
     }
     await expect(page.getByTestId("perfil-tela").first()).toBeAttached({ timeout: 30_000 });
     await page.waitForTimeout(2500);
