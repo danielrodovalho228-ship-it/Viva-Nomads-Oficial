@@ -845,7 +845,8 @@ export function SearchClient({
         />
       )}
 
-      <div className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
+      {/* Frente 3 (t70): sem a faixa do "Fale com a Viva" (C1b) — a /buscar não mostra o botão (E95) e o mapa termina na margem de 24 px (E659). */}
+      <div data-sem-faixa-flutuante className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         {/* Estabilidade (02/11): a coluna do mapa é reservada pelo CSS (lg:), não pelo matchMedia — antes, no 1º desenho
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
