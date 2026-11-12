@@ -445,7 +445,10 @@ function EnviarArquivos({
     <form
       className="mt-3 grid gap-2"
       data-testid={testid}
-      action={(f) =>
+      // E818: onSubmit (e não action=) — no React 19 o form action LIMPA o formulário mesmo quando dá erro (o arquivo sumia).
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
         iniciar(async () => {
           setMsg(null);
           f.set("pedidoId", pedidoId);
@@ -454,8 +457,8 @@ function EnviarArquivos({
             setMsg("Enviado.");
             onFeito();
           } else setMsg(r.erro);
-        })
-      }
+        });
+      }}
     >
       <div className="grid gap-1">
         <p className="text-sm font-semibold text-ink">{rotulo}</p>

@@ -35,6 +35,8 @@ test("a tela usa os dados e as regras da Pista B e o mesmo Responder/Pedir revis
   assert.match(t, /linhaContextoAvaliacao\(a\)/);
   assert.match(t, /<AcoesAvaliacao\b/);
   const antiga = readFileSync(new URL("../../app/(dashboard)/dashboard/conta/avaliacoes/page.tsx", import.meta.url), "utf8");
-  assert.match(antiga, /redirect\(`\/dashboard\/avaliacoes\?aba=recebidas/);
+  // E798 (asserção alterada): o destino mora em lib/conta/redirecionar-no-servidor (usado também pelo proxy).
+  assert.match(antiga, /redirect\(destinoContaAvaliacoes\(/);
+  assert.match(readFileSync(new URL("./redirecionar-no-servidor.ts", import.meta.url), "utf8"), /\/dashboard\/avaliacoes\?aba=recebidas/);
   for (const id of ["avaliacoes-aba-", "avaliacoes-busca", "avaliacao-estrelas", "avaliacoes-responder"]) assert.match(t, new RegExp(id), id);
 });

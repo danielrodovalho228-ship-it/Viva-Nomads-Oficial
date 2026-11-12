@@ -155,17 +155,20 @@ export function validarDocumentoParceiro(documento: string | null | undefined): 
   return null;
 }
 
-export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
+/** E818: `campo` aponta o campo do formulário que causou o erro (para marcar em vermelho e focar). */
+export type CampoSolicitacao = "nome" | "documento" | "categorias" | "cidades" | "portfolioUrl" | "empresa" | "veiculo" | "descricao" | "telefone" | "emiteNota" | "aceite";
+
+export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string; campo?: CampoSolicitacao } {
   const nome = limpar(e.nome, 120);
-  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
+  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa).", campo: "nome" };
   // E648: só empresa. O tipo "pf" e qualquer CPF no campo do documento são recusados em todas as categorias.
-  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
+  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ, campo: "documento" };
   const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
   const erroDoc = validarDocumentoParceiro(e.documento);
-  if (erroDoc) return { ok: false, erro: erroDoc };
+  if (erroDoc) return { ok: false, erro: erroDoc, campo: "documento" };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
-  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
+  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria.", campo: "categorias" };
   const vistas = new Set<string>();
   const cidades: string[] = [];
   for (const c of e.cidades ?? []) {
@@ -175,27 +178,27 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
     vistas.add(k);
     cidades.push(l);
   }
-  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida." };
-  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.` };
+  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida.", campo: "cidades" };
+  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.`, campo: "cidades" };
   const portfolioBruto = String(e.portfolioUrl ?? "").trim();
   const portfolioUrl = urlPublicaValida(portfolioBruto);
-  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…)." };
+  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…).", campo: "portfolioUrl" };
   const descricao = limpar(e.descricao, DESCRICAO_MAX) || null;
   const dados: { empresa?: string; veiculo?: string } = {};
-  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio." };
+  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio.", campo: "portfolioUrl" };
   if (categorias.includes("mudanca")) {
     const empresa = limpar(e.empresa, 120);
     const veiculo = limpar(e.veiculo, 120);
-    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo." };
+    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo.", campo: !empresa ? "empresa" : "veiculo" };
     Object.assign(dados, { empresa, veiculo });
   }
-  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece." };
+  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece.", campo: "descricao" };
   const tel = soDigitos(e.telefone);
-  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD)." };
+  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD).", campo: "telefone" };
   // Portão que BLOQUEIA: PJ sem Sim/Não não conclui o cadastro.
   const nota = emiteNotaParaGravar(tipo, e.emiteNota);
-  if (!nota.ok) return nota;
-  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria." };
+  if (!nota.ok) return { ...nota, campo: "emiteNota" };
+  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria.", campo: "aceite" };
   return { ok: true, valor: { nome, tipoPessoa: tipo, documento: doc, categorias, cidades, portfolioUrl, descricao, telefone: tel || null, dadosCategoria: dados, emiteNota: nota.valor } };
 }
 
