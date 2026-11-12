@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -25,7 +25,7 @@ const VOLTA = "/parceiros?seja=1#quero-ser-parceiro";
 
 const STATUS_TEXTO: Record<string, string> = {
   aguardando_email: "A equipe começou um pedido em seu nome. Confira os dados abaixo e confirme o envio.",
-  pendente: "Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.",
+  pendente: `Aguardando aprovação da Viva. Resposta em até ${PRAZO_RESPOSTA_PARCERIA}, por e-mail.`,
   aprovada: "Sua parceria foi aprovada. Ative a sua página aqui ou pelo link do e-mail.",
 };
 

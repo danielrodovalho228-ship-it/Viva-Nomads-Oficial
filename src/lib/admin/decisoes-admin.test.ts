@@ -86,7 +86,7 @@ test("Prompt 50: chamado fora da promessa vem antes de P1; parceria sem resposta
   const r = montarDecisoesAdmin({ chamados_p1: { n: 1 }, chamados_fora_promessa: { n: 2 }, parceiros_para_aprovar: { n: 1 }, parceiros_sem_resposta_1_dia: { n: 1 }, verificacao_analise_humana: { n: 1 } });
   assert.deepEqual(r.linhas.map((l) => l.chave).slice(0, 2), ["chamados_fora_promessa", "chamados_p1"]);
   assert.equal(r.linhas[0].texto, "2 chamados sem resposta de uma pessoa há mais de 24 h");
-  assert.ok(r.linhas.some((l) => l.chave === "parceiros_para_aprovar" && l.href === "/admin/parceiros?aba=pendentes" && l.detalhe === "1 sem resposta há mais de 1 dia útil"));
+  assert.ok(r.linhas.some((l) => l.chave === "parceiros_para_aprovar" && l.href === "/admin/parceiros?aba=pendentes" && l.detalhe === "1 sem resposta há mais de 7 dias")); // E791 (vigia, 12/11/2026): o alerta à equipe usa o MESMO prazo público da parceria (PRAZO_RESPOSTA_PARCERIA, 7 dias); antes, 1 dia útil
   assert.ok(r.linhas.some((l) => l.chave === "verificacao_analise_humana" && l.href === "/admin/documentos#verificacao"));
 });
 
@@ -98,12 +98,12 @@ test("Prompt 51: Correção de qualidade sem dono ou prazo vira decisão e abre 
 });
 
 test("E175: a parceria atrasada conta uma vez só — o total bate com a lista da aba Pendentes", () => {
-  // 5 parcerias pendentes, 3 delas sem resposta há mais de 1 dia útil: eram 2 linhas (5 + 3 = 8), agora 1 linha de 5.
+  // 5 parcerias pendentes, 3 delas sem resposta além do prazo da parceria: eram 2 linhas (5 + 3 = 8), agora 1 linha de 5.
   const r = montarDecisoesAdmin({ parceiros_para_aprovar: { n: 5 }, parceiros_sem_resposta_1_dia: { n: 3, detalhe: "mais antigo há 2 dias" } });
   assert.equal(r.total, 5);
   assert.equal(r.linhas.length, 1);
   assert.equal(r.linhas[0].texto, "5 pedidos de parceria para aprovar");
-  assert.equal(r.linhas[0].detalhe, "3 sem resposta há mais de 1 dia útil · mais antigo há 2 dias");
+  assert.equal(r.linhas[0].detalhe, "3 sem resposta há mais de 7 dias · mais antigo há 2 dias"); // E791 (vigia, 12/11/2026): o alerta à equipe usa o MESMO prazo público da parceria (PRAZO_RESPOSTA_PARCERIA, 7 dias); antes, 1 dia útil
   assert.equal(r.linhas[0].acao, "Analisar");
   assert.ok(!DECISOES_ADMIN.some((d) => d.chave === "parceiros_sem_resposta_1_dia"), "sem a segunda linha");
   // Nenhuma atrasada: a linha das pendentes fica como era; atrasadas sem ler as pendentes: fica fora da conta (avisa).

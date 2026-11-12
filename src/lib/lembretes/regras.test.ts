@@ -30,11 +30,12 @@ test("rascunho parado 3 dias; texto com os passos", () => {
   assert.equal(textoRascunho(2, " "), "Faltam 2 passos para publicar seu imóvel");
 });
 
-test("parceiro sem resposta em 1 dia útil (fim de semana não conta)", () => {
-  // Sexta 10h → segunda 10h.
-  assert.equal(parceiroSemResposta("2026-10-23T13:00:00Z", null, new Date("2026-10-26T12:59:00Z")), false);
-  assert.equal(parceiroSemResposta("2026-10-23T13:00:00Z", null, new Date("2026-10-26T13:01:00Z")), true);
-  assert.equal(parceiroSemResposta("2026-10-23T13:00:00Z", "2026-10-23T15:00:00Z", new Date("2026-10-28T00:00:00Z")), false);
+// E791 (vigia, 12/11/2026): o alerta à equipe usa o MESMO prazo público da parceria (PRAZO_RESPOSTA_PARCERIA, 7 dias); antes, 1 dia útil.
+test("parceiro sem resposta no prazo da parceria (7 dias corridos)", () => {
+  // Sexta 10h → sexta seguinte 10h.
+  assert.equal(parceiroSemResposta("2026-10-23T13:00:00Z", null, new Date("2026-10-30T12:59:00Z")), false);
+  assert.equal(parceiroSemResposta("2026-10-23T13:00:00Z", null, new Date("2026-10-30T13:01:00Z")), true);
+  assert.equal(parceiroSemResposta("2026-10-23T13:00:00Z", "2026-10-23T15:00:00Z", new Date("2026-11-02T00:00:00Z")), false);
 });
 
 test("verificação parada 24 h e chamado fora da promessa", () => {
