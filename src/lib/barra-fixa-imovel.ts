@@ -53,7 +53,8 @@ export function barraFixaImovel(p: {
     estadia: precoValido && p.dias && p.dias > 0 && p.totalPeriodo != null
       ? `${formatBRLExato(p.totalPeriodo)} em ${p.dias} ${p.dias === 1 ? "dia" : "dias"}`
       // E777/E744: o total do período é sempre "R$ Y em N mês/meses" — com 1 mês também ("R$ Y em 1 mês"); "/mês" só acompanha o mensal.
-      : preco ? resumoEmMeses(preco.meses > 1 ? (p.totalPeriodo ?? preco.total) : preco.total, preco.meses) : null,
+      // E756: o total vem da regra única (estadiaDoImovel, com as limpezas únicas) também com 1 mês; sem ele, o total do mês.
+      : preco ? resumoEmMeses(p.totalPeriodo ?? preco.total, preco.meses) : null,
     linha: "Caução e taxas no detalhe",
     status: statusDisponibilidade(p.availableFrom, p.hoje ?? new Date().toISOString().slice(0, 10)),
   };

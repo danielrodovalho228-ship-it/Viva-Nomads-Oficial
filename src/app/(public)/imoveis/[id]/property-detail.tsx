@@ -855,7 +855,7 @@ export function PropertyDetail({
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : meses > 1 ? estadiaDoImovel(property, meses)?.total : null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : estadiaDoImovel(property, Math.max(1, meses))?.total ?? null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
         aguardando={aguardandoPerfil}

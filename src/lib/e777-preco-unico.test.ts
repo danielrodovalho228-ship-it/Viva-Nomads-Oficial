@@ -27,8 +27,11 @@ test("cartão, barra fixa, reserva e cartão lateral importam resumoEmMeses", ()
   }
 });
 
-test("E744: o cartão lateral da página do imóvel diz o total de 1 mês pela mesma função (igual ao cartão da busca)", () => {
+// E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): com 1 mês o cartão lateral dizia o total do MÊS ("resumoEmMeses(preco.total, 1)"), sem as limpezas que a conta logo abaixo
+// somava. Agora o total de 1 mês também vem de estadiaDoImovel (a mesma função do cartão da busca e da prévia do dono).
+test("E744/E756: o cartão lateral da página do imóvel diz o total de 1 mês pela regra única (igual ao cartão da busca)", () => {
   const src = readFileSync(new URL("../components/property/price-card.tsx", import.meta.url), "utf8");
-  assert.match(src, /resumoEmMeses\(preco\.total, 1\)/);
-  assert.match(src, /totalDeUmMes/);
+  assert.match(src, /estadiaDoImovel\(property, Math\.max\(1, meses\)\)/);
+  assert.match(src, /resumoEmMeses\(estadia\.total, estadia\.meses\)/);
+  assert.doesNotMatch(src, /resumoEmMeses\(preco\.total, 1\)/);
 });
