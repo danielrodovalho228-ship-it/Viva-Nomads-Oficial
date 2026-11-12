@@ -10,6 +10,7 @@
   o estado de ativação do Prompt 50 chegar, ele entra no lugar do carregador sem mudar esta função.
   Roda: node --test src/lib/onboarding/ativacao.test.ts
 */
+import { PRAZO_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
 
 export type Papel = "morador" | "proprietario" | "parceiro";
 
@@ -122,7 +123,7 @@ export function checklistParceiro(f: FatosConta): ChecklistAtivacao {
       "Análise da Viva",
       aprovada,
       enviada ? { rotulo: "Falar com a Viva", href: "/ajuda/fale-com-a-viva" } : null,
-      f.parceria === "aguardando" ? "Em análise. Resposta em até 1 dia útil." : f.parceria === "recusada" ? "Não aprovada. Fale com a Viva para entender o motivo." : null,
+      f.parceria === "aguardando" ? `Em análise. Resposta em até ${PRAZO_RESPOSTA_PARCERIA}.` : f.parceria === "recusada" ? "Não aprovada. Fale com a Viva para entender o motivo." : null,
     ),
     item("pagina", "Página publicada", f.parceria === "publicada", aprovada ? { rotulo: "Publicar a página", href: "/dashboard/parceiro" } : null),
     item("pedido", "Primeiro pedido aceito", f.pedidosParceiroAceitos > 0, f.parceria === "publicada" ? { rotulo: "Ver pedidos", href: "/dashboard/parceiro#pedidos" } : null),

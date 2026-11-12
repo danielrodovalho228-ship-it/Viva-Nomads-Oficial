@@ -9,6 +9,12 @@ import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
 
+// ── Prazo de resposta ao pedido de parceria (E791) ──────────────────────────────────────────────────────────────
+/** O prazo público de resposta ao pedido de parceria. É o mesmo que dispara o alerta à equipe (lembretes: parceiroSemResposta,
+ *  24 h úteis) e vale em todas as superfícies: /parceiros, o formulário depois de enviar e o onboarding. */
+export const PRAZO_RESPOSTA_PARCERIA = "1 dia útil";
+export const TEXTO_PRAZO_PARCERIA = `A Viva responde por e-mail em até ${PRAZO_RESPOSTA_PARCERIA}.`;
+
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
 export const CATEGORIAS_PARCEIRO = [
   { valor: "fotografia", rotulo: "Fotografia" },
