@@ -18,7 +18,8 @@ test("varredura: as faixas de teste só aparecem em <p> (quebra natural) ou nos 
   const parceiro = readFileSync("src/app/(public)/parceiros/[slug]/page.tsx", "utf8");
   assert.match(parceiro, /<p\s+role="status"\s+data-testid="faixa-parceiro-teste"/);
   // Nenhum outro botão leva a faixa como rótulo.
-  const usos = imovel.split("\n").filter((l) => /FAIXA_TESTE_VISITANTE/.test(l) && !/^import/.test(l.trim()));
+  // E786 (julgamento de 11/11): a faixa <p> usa FAIXA_TESTE (o mesmo texto, para todos); os botões, FAIXA_TESTE_VISITANTE.
+  const usos = imovel.split("\n").filter((l) => /FAIXA_TESTE(_VISITANTE)?\b/.test(l) && !/^import/.test(l.trim()));
   assert.equal(usos.length, 3); // botão do cartão, faixa <p>, bloqueio da barra fixa
 });
 test("1920 px: o botão do cartão não tem largura fixa nem nowrap no modo teste", () => {

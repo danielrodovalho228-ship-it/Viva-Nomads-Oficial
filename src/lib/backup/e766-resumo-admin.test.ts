@@ -22,10 +22,10 @@ test("falha: a cópia que falhou deixa o resumo vermelho com o porquê", () => {
   assert.ok(e.copia.porque);
 });
 
-test("a inicial do /admin traz o resumo (sem o observador da QA) e as rotas antigas redirecionam", () => {
+test("a inicial do /admin traz o resumo (E766, reprova de 11/11: também para o observador da QA) e as rotas antigas redirecionam", () => {
   const pagina = readFileSync("src/app/(dashboard)/admin/page.tsx", "utf8");
   assert.match(pagina, /import \{ ResumoBackup \}/);
-  assert.match(pagina, /\{admin && !observador \? <ResumoBackup agora=\{agora\} \/> : null\}/);
+  assert.match(pagina, /\{admin \? <ResumoBackup agora=\{agora\} \/> : null\}/);
   const resumo = readFileSync("src/components/admin/resumo-backup.tsx", "utf8");
   assert.match(resumo, /Última cópia OK em/);
   assert.match(resumo, /Último teste de restauração OK em/);
