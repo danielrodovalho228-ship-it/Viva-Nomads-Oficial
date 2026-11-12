@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { corpoLembreteEntrada } from "@/lib/notifications/corpo-e267-restante";
 import { hojeEmBrasilia, inicioDaEstadia, lembreteDoDia, textoLembrete, type LembreteCheckin } from "@/lib/checkin";
 import { primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { corpoDaChegada, lembreteDeChegadaPermitido } from "@/lib/estadia/emails-chegada";
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
         const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", uid).maybeSingle();
         await notify({
           event: "checkin_lembrete",
+          body: corpoLembreteEntrada({ imovelTitulo: prop?.title, entrada: inicio, amanha: lembrete === "24h", horario: estadia.horarioEntrada, morador: uid === c.tenant_id }),
           email: p?.email && p.notif_email !== false ? (p.email as string) : undefined,
           name: (p?.full_name as string) ?? undefined,
           userId: uid,
