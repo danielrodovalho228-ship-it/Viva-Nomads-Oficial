@@ -7,6 +7,7 @@ import { EspelhoPerfil } from "@/components/account/espelho-perfil";
 import { meuPerfilPublico, type MeuPerfilPublico } from "@/lib/data/papeis-actions";
 import { desdeLabel } from "@/lib/perfil/perfil-publico";
 import { TITULO_ESPELHO, TITULO_ESPELHO_DONO, verComo } from "@/lib/perfil/espelho";
+import { PILULA_TITULO_ESPELHO, CAIXA_ICONE_ESPELHO, ICONE_PILULA_ESPELHO, LINHA_RESPOSTA_ESPELHO, ICONE_RESPOSTA_ESPELHO } from "@/components/account/espelho-classes";
 
 type Papel = "morador" | "proprietario";
 
@@ -56,8 +57,11 @@ function EspelhoDono({ publico, foto }: { publico: MeuPerfilPublico; foto: strin
   return (
     <section className="scroll-mt-24 rounded-xl bg-white p-4 sm:p-6 xl:p-4 lg:sticky lg:top-24" aria-labelledby="espelho-titulo" data-testid="espelho-perfil">
       <h2 id="espelho-titulo" className="flex justify-start lg:justify-center">
-        <span className="inline-flex items-center gap-2 rounded-full bg-forest px-3 py-2 text-sm font-semibold text-white xl:text-xs" data-testid="espelho-titulo">
-          <Eye className="h-4 w-4 shrink-0" aria-hidden /> {TITULO_ESPELHO_DONO}
+        <span className={PILULA_TITULO_ESPELHO} data-testid="espelho-titulo">
+          <span className={CAIXA_ICONE_ESPELHO}>
+            <Eye className={ICONE_PILULA_ESPELHO} aria-hidden />
+          </span>
+          <span className="min-w-0">{TITULO_ESPELHO_DONO}</span>
         </span>
       </h2>
       <div className="mt-4 flex items-start gap-4 lg:flex-col lg:items-center lg:text-center" data-testid="espelho-dono">
@@ -72,8 +76,10 @@ function EspelhoDono({ publico, foto }: { publico: MeuPerfilPublico; foto: strin
             </p>
           )}
           {publico.resposta && (
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted lg:justify-center" data-testid="espelho-resposta">
-              <Clock className="h-4 w-4" aria-hidden />
+            <p className={LINHA_RESPOSTA_ESPELHO} data-testid="espelho-resposta">
+              <span className={CAIXA_ICONE_ESPELHO}>
+                <Clock className={ICONE_RESPOSTA_ESPELHO} aria-hidden />
+              </span>
               {/* E504: UM texto só (template) — em flex, pedaços de texto soltos saíam colados na leitura/cópia ("Responde45%…conversas,em"). */}
               <span>{`Responde ${publico.resposta.taxa}% das conversas, ${publico.resposta.tempo}`}</span>
             </p>
