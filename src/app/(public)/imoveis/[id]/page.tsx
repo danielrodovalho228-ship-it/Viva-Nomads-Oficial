@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { anuncioPausadoPublico, getProperty, listProperties } from "@/lib/data/properties";
 import { AnuncioPausado } from "@/components/anuncio/anuncio-pausado";
-import { isDemoMode } from "@/lib/env";
 import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { tituloAbaImovel, descricaoAbaImovel } from "@/lib/anuncio/metadados-imovel";
 import { PropertyJsonLd } from "@/components/seo/property-json-ld";
@@ -55,13 +53,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export function generateStaticParams() {
-  // Roda em BUILD TIME, sem request — não pode usar cookies()/Supabase SSR.
-  // Em demo, pré-renderiza os exemplos. No acesso real, retorna [] (não
-  // pré-renderiza os imóveis demo ube-001/002/003); as páginas reais renderizam
-  // sob demanda (dynamicParams) e um id inexistente cai em 404.
-  return isDemoMode() ? SAMPLE_PROPERTIES.map((p) => ({ id: p.id })) : [];
-}
+// Frente 3 (t286): sem generateStaticParams. No Next 16.4, a rota ISR com generateStaticParams não pré-carrega
+// nada para um id ainda não gerado, e o esqueleto (loading.tsx) não aparecia ao vir da busca. Dinâmica, o
+// pré-carregamento traz o layout até o loading.tsx; o revalidate acima e o 404 do layout seguem iguais.
 
 export default async function PropertyDetailPage({ params }: Params) {
   const { id } = await params;
