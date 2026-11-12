@@ -24,12 +24,15 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
       await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "networkidle" });
       const linha = page.getByTestId("linha-pilulas");
       await expect(linha).toBeVisible();
-      const ids = await linha.locator(":scope > [data-testid]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
+      // E710: as pílulas moram em dois grupos (pilulas-filtros e pilulas-acoes); a ordem vale na ordem do documento.
+      const pilulas = linha.locator(ORDEM.map((i) => `[data-testid="${i}"]`).join(","));
+      const ids = await pilulas.evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
       // E452: a pílula Nível só existe quando algum anúncio do resultado tem nível; a ordem das demais não muda.
       expect(ids).toEqual(ids.includes("pilula-nivel") ? ORDEM : ORDEM.filter((i) => i !== "pilula-nivel"));
       // Todas na mesma linha (no celular a linha rola de lado, sem quebrar).
-      const ys = await linha.locator(":scope > [data-testid]").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-      expect(new Set(ys).size, `tops ${ys}`).toBe(1);
+      // Do tablet para cima é uma linha só; no celular (E710) as três ações ficam numa linha própria, sempre à vista.
+      const ys = await pilulas.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+      expect(new Set(ys).size, `tops ${ys}`).toBe(largura >= 640 ? 1 : 2);
       await expect(page.getByTestId("pilula-local")).toHaveAttribute("data-valor", "Uberlândia");
 
       const contagem = page.getByTestId("titulo-busca");

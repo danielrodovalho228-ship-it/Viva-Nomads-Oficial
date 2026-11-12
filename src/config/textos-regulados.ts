@@ -18,6 +18,10 @@ export const CONTATO_NUNCA_TROCADO = "telefone, e-mail e redes sociais nunca sã
 export const FRASE_CONVERSA_CHAT = `Converse com o proprietário pelo chat da Viva; ${CONTATO_NUNCA_TROCADO}.`;
 export const PASSO_CONVERSE_TEXTO = `Tire dúvidas pelo chat da Viva e agende a visita pela plataforma; ${CONTATO_NUNCA_TROCADO}.`;
 export const DIFERENCIAL_CHAT = "Chat da Viva com o morador, sem troca de contato direto";
+/** E785: selo curto da faixa de confiança (no lugar de "contato protegido até o aceite", que sugeria troca depois do aceite). */
+export const SELO_PERFIL_VERIFICADO = "Perfil verificado";
+/** E785: a frase da negociação na plataforma. */
+export const FRASE_NEGOCIACAO_NA_PLATAFORMA = `Negociação na plataforma, pelo chat da Viva; ${CONTATO_NUNCA_TROCADO}.`;
 
 /** Linha curta para os estados vazios do centro de mensagens. */
 export const NOTA_CONTATO_MENSAGENS = "telefone e e-mail nunca são trocados: tudo fica no chat da Viva.";

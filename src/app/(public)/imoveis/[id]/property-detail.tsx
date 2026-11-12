@@ -397,7 +397,7 @@ export function PropertyDetail({
     </div>
   );
 
-  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
+  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono nunca é exibido (E445: telefone e e-mail não são trocados, em nenhuma fase).
   const contatoViva = destinoContatoViva(property.id);
 
   // E53: entrada, saída e pessoas — os MESMOS campos na caixa ("candidatura-*") e no diálogo ("solicitacao-*"),
@@ -485,7 +485,7 @@ export function PropertyDetail({
       <Button
         variant="primary"
         size="lg"
-        className="hidden w-full lg:inline-flex"
+        className={testeVisitante ? "hidden h-auto min-h-12 w-full whitespace-normal px-3 py-2 text-center leading-snug lg:inline-flex" : "hidden w-full lg:inline-flex"}
         onClick={abrirSolicitacao}
         disabled={pending !== null || testeVisitante || aguardandoPerfil}
         data-testid="cartao-solicitar"

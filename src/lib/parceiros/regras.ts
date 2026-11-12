@@ -64,7 +64,8 @@ export const REGRAS_CLARAS = [
   "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.",
 ] as const;
 export const PAGAMENTO_EM_BREVE = "Pagamento pela plataforma em breve.";
-export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberados só depois do aceite, pelas mensagens da Viva.";
+/** E774 (regra E445): contato NUNCA é trocado, em nenhuma fase — nem depois do aceite. Fonte única do texto em Parceiros. */
+export const CONTATO_PELA_VIVA = "Seu contato não é trocado: tudo se combina pelas mensagens da Viva.";
 
 // ── Solicitação de parceria ────────────────────────────────────────────────────────────────────────────────────
 /**

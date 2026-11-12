@@ -66,7 +66,8 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       await expect(topo.locator('[data-rosto="silhueta"]')).toHaveCount(1);
       await expect(topo).not.toContainText("?");
       // O selo do cabeçalho também mostra a silhueta (não o "P"/"M" do papel, nem "?").
-      await expect(p.locator('[data-testid="papel-ativo"]:visible [data-rosto="silhueta"]')).toHaveCount(1);
+      // E176/E783: o chip papel-ativo saiu do painel; o selo do cabeçalho é o botão da Conta (conta-<px>).
+      await expect(p.locator('[data-testid^="conta-"] [data-rosto="silhueta"]').first()).toBeAttached();
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t355-sem-nome-${w}.png` });
       await p.context().close();
@@ -126,7 +127,7 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
     expect(caminho).toBe(`${ids.dono}/avatar.webp`);
     // Fora da Conta, o cabeçalho mostra a foto nova.
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+    await expect(p.locator('[data-testid^="conta-"]:visible img').first()).toBeAttached({ timeout: 20_000 });
     await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);

@@ -94,7 +94,7 @@ test.describe("T875 — E581: candidatura repetida atualiza o período", () => {
     const l = await lead();
     await adm().from("leads").update({ status: "accepted", accepted_at: new Date().toISOString() }).eq("id", l.id);
     const p = await enviar(browser, SAIDA_120);
-    await expect(p.getByText(/já respondeu à sua candidatura/)).toBeVisible({ timeout: 20_000 });
+    await expect(p.getByText(/já respondeu à sua candidatura/).first()).toBeVisible({ timeout: 20_000 });
     await p.context().close();
     expect(String((await lead()).fim_desejado).slice(0, 10)).toBe(SAIDA_43);
   });

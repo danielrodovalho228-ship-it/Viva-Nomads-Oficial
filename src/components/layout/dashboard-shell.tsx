@@ -432,11 +432,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação
-            da equipe tem UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). No computador
-            nada muda (a barra lateral já está aberta). */}
+        {/* E73 (QA 24/10): nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação da equipe tem
+            UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). E784 (reprovado a 1920 px): a
+            faixa com o link vale em TODAS as larguras (antes `lg:hidden`: no computador não havia saída para o site). */}
         {pathname.startsWith("/admin") && (
-          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
+          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 print:hidden" data-testid="admin-nav-celular">
             <VoltarAoSite />
           </nav>
         )}

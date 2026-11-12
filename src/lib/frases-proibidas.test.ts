@@ -78,10 +78,53 @@ test("GATE (fora de src/): e-mails, seeds, scripts e arquivos públicos também 
       if (s.isDirectory()) { varrer(p); continue; }
       if (!/\.(ts|tsx|mjs|js|sql|json|md|html|txt)$/.test(n) || s.size > 2_000_000) continue;
       const bruto = readFileSync(p, "utf8");
-      const texto = /\.(ts|tsx|mjs|js)$/.test(n) ? semComentarios(bruto).join("\n") : bruto;
+      // Comentário de SQL ("-- …") também não é superfície (as migrações antigas são imutáveis e comentam o que fizeram).
+      const texto = /\.(ts|tsx|mjs|js)$/.test(n) ? semComentarios(bruto).join("\n") : /\.sql$/.test(n) ? bruto.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n") : bruto;
       for (const a of achadosProibidos(texto)) achados.push(`${p.split("\\").join("/")} [${a.id}] ${a.trecho}`);
     }
   };
   for (const raiz of ["supabase", "public", "scripts"]) varrer(raiz);
   assert.deepEqual(achados, []);
+});
+
+test("E785: variantes de 'contato protegido até o aceite' são barradas; as frases certas e as que NEGAM passam", () => {
+  for (const ruim of [
+    "Contato protegido até o aceite",
+    "com o contato protegido até o aceite.",
+    "O telefone fica oculto até o aceite",
+    "Seu e-mail é liberado só depois do aceite",
+    "Protegemos o seu contato até o aceite",
+    "Contato do proprietário e identidade do morador ficam protegidos até o aceite.",
+  ]) assert.ok(achadosProibidos(ruim).length >= 1, `deveria barrar: ${ruim}`);
+  for (const boa of [
+    "Perfil verificado",
+    "telefone, e-mail e redes sociais nunca são trocados",
+    "O nome completo do interessado aparece depois do aceite; telefone e e-mail nunca são trocados.",
+    "Telefone e e-mail nunca são trocados: ficam protegidos, inclusive depois do aceite.",
+  ]) assert.deepEqual(achadosProibidos(boa), [], `não deveria barrar: ${boa}`);
+});
+
+test("E785: a fonte única tem o selo e a frase da negociação, e as telas as importam", () => {
+  const regulados = readFileSync("src/config/textos-regulados.ts", "utf8");
+  assert.match(regulados, /export const SELO_PERFIL_VERIFICADO = "Perfil verificado"/);
+  assert.match(regulados, /export const FRASE_NEGOCIACAO_NA_PLATAFORMA/);
+  assert.match(readFileSync("src/app/(public)/page.tsx", "utf8"), /SELO_PERFIL_VERIFICADO/);
+  assert.match(readFileSync("src/lib/precos-pagina.ts", "utf8"), /FRASE_NEGOCIACAO_NA_PLATAFORMA/);
+});
+
+test("E785 (decisão de 09/11): 'contato do proprietário' entregue/revelado pela plataforma entra; 'sem contato por fora' não", () => {
+  for (const ruim of [
+    "Passamos o contato do proprietário para você.",
+    "A Viva entrega o contato do proprietário depois da visita.",
+    "Você recebe o contato do dono assim que o pedido é aceito.",
+    "Contato do proprietário liberado após a assinatura.",
+    "O contato do anfitrião é revelado no chat.",
+  ]) assert.ok(achadosProibidos(ruim).some((a) => a.id === "plataforma-entrega-contato-do-proprietario"), `deveria barrar: ${ruim}`);
+  for (const boa of [
+    "Sem contato por fora: tudo pelo chat da Viva.",
+    "Combine tudo pelo chat; sem contato por fora da plataforma.",
+    "A Viva nunca entrega o contato do proprietário: telefone e e-mail nunca são trocados.",
+    "Não passamos o contato do proprietário.",
+    "Fale com o proprietário pelo chat da Viva.",
+  ]) assert.deepEqual(achadosProibidos(boa).filter((a) => a.id === "plataforma-entrega-contato-do-proprietario"), [], `não deveria barrar: ${boa}`);
 });

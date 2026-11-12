@@ -83,5 +83,7 @@ test("portão de PR: a suíte completa não roda em PR e, na main e no noturno, 
   assert.doesNotMatch(gatilhos, /^\s+pull_request:/m);
   assert.match(gatilhos, /push:\s+branches: \[main\]/);
   assert.match(gatilhos, /schedule:/);
-  assert.match(lab, /- name: Marcar a execução como falha se algum teste falhou\n\s+if: \$\{\{ steps\.e2e\.outcome == 'failure'/);
+  // E744: a suíte é fatiada; falha numa fatia deixa a fatia vermelha, e o consolidar fica vermelho se qualquer fatia falhou.
+  assert.match(lab, /- name: Marcar a fatia como falha se algum teste falhou\n\s+if: \$\{\{ steps\.e2e\.outcome == 'failure'/);
+  assert.match(lab, /- name: Marcar a execução como falha se alguma fatia falhou\n\s+if: \$\{\{ needs\.laboratorio\.result != 'success'/);
 });

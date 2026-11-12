@@ -231,7 +231,9 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         return false;
       };
       const nome = (el: Element) => (el.textContent || el.getAttribute("aria-label") || el.getAttribute("name") || el.tagName).trim().replace(/\s+/g, " ").slice(0, 40);
-      const cobre = (el: Element, t: Element | null) => !!t && !(el === t || el.contains(t) || t.contains(el)) && fixoOuSticky(t) && !fixoOuSticky(el);
+      // E248: a seta "›/‹" da fileira rolável cobre de propósito a borda da fileira (rolar a fileira revela o item): não é defeito.
+      const setaDaFileira = (t: Element | null) => !!t?.closest("[data-testid^='fileira-seta-']");
+      const cobre = (el: Element, t: Element | null) => !!t && !setaDaFileira(t) && !(el === t || el.contains(t) || t.contains(el)) && fixoOuSticky(t) && !fixoOuSticky(el);
       // Rola o controle até o meio da tela e devolve o fixo que ainda o cobre (centro ou cantos), ou null se ficou à mostra.
       const continuaCoberto = (el: HTMLElement): Element | null => {
         const salvo = window.scrollY;
@@ -269,6 +271,7 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         const topo = document.elementFromPoint(x, y);
         if (!topo || el === topo || el.contains(topo) || topo.contains(el)) continue;
         if (topo instanceof HTMLLabelElement && topo.control === el) continue;
+        if (setaDaFileira(topo)) continue;
         if (fixoOuSticky(topo) && !fixoOuSticky(el)) {
           const fixo = continuaCoberto(el);
           if (fixo) out.push(`"${nome(el)}" coberto por elemento fixo mesmo depois de rolar até ele (${fixo.tagName.toLowerCase()} "${nome(fixo)}")`);

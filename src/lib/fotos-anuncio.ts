@@ -100,3 +100,18 @@ export function rascunhoSemFotosApagadas<T>(data: T, existentes: ReadonlySet<str
 export function ehUrlDeImagem(u: unknown): u is string {
   return typeof u === "string" && /^(https?:\/\/|\/(?!\/))/.test(u.trim());
 }
+
+/**
+ * E787: abaixo disto um arquivo de imagem do anúncio não é foto de imóvel — é um quadro de cor única (as fotos de massa de
+ * teste têm 1.784 bytes e aparecem como um retângulo chapado). Uma foto real de 16:10 em webp passa de 10 KB com folga.
+ */
+export const TAMANHO_MINIMO_FOTO_REAL_BYTES = 4096;
+export function pareceFotoReal(bytes: number | null | undefined): boolean {
+  return typeof bytes !== "number" || bytes >= TAMANHO_MINIMO_FOTO_REAL_BYTES; // sem tamanho informado: não descarta
+}
+
+export type ArquivoListado = { name: string; metadata?: { size?: number } | null };
+/** Caminhos `<dono>/<arquivo>` da listagem do bucket; com `soFotosReais`, sem os arquivos menores que o mínimo. */
+export function caminhosDaListagem(arquivos: readonly ArquivoListado[], ownerId: string, soFotosReais: boolean): string[] {
+  return arquivos.filter((o) => !soFotosReais || pareceFotoReal(o.metadata?.size)).map((o) => `${ownerId}/${o.name}`);
+}

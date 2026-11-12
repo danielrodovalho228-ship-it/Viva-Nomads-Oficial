@@ -39,7 +39,7 @@ const TELAS: Tela[] = [
     SECOES_A2_A8.map(([secao, nome]): Tela => ({
       conta,
       papel: conta === "INQUILINA" ? "inquilina" : "proprietário",
-      rota: () => `/dashboard/conta${secao}`,
+      rota: () => (secao === "/notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta${secao}`),
       nome: `Conta ${nome}`,
       // Papéis: o primário troca o papel ativo da conta da massa, que as outras varreduras usam.
       ...(secao === "/papeis" ? { clicar: false } : {}),

@@ -22,10 +22,9 @@ import {
   ROTULO_REGISTRO_SEM_DINHEIRO,
   rotuloStatus,
   saidaDoAceitoLiberada,
-  TEXTO_CONTATO_ANTES_DO_ACEITE,
+  TEXTO_CONTATO_PEDIDO,
   TEXTO_DIVISAO_NA_ORIGEM,
   TEXTO_PAGAMENTO_INATIVO,
-  telefoneNaTela,
   textoDivisaoParceiro,
 } from "@/lib/parceiros/pedido";
 import {
@@ -159,28 +158,12 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
           )}
         </Panel>
 
-        {/* L2-B item 16: depois do aceite, telefone e e-mail da outra parte; antes, a conversa segue pela plataforma. */}
+        {/* E790 (regra E445): o contato da outra parte não é trocado em nenhuma fase; a conversa segue pela Viva. */}
         {!["recusado", "cancelado"].includes(d.status) && (
-          <Panel title={cliente ? "Contato do parceiro" : "Contato do cliente"} data-testid="pedido-contato">
-            {d.contato ? (
-              <ul className="grid gap-1 text-sm text-ink">
-                {d.contato.telefone && (
-                  <li data-testid="pedido-contato-telefone">
-                    Telefone: <a className="underline" href={`tel:+55${d.contato.telefone.replace(/^55(?=\d{10,11}$)/, "")}`}>{telefoneNaTela(d.contato.telefone)}</a>
-                  </li>
-                )}
-                {d.contato.email && (
-                  <li data-testid="pedido-contato-email">
-                    E-mail: <a className="underline" href={`mailto:${d.contato.email}`}>{d.contato.email}</a>
-                  </li>
-                )}
-                <li className="mt-1 text-muted">{TEXTO_PAGAMENTO_INATIVO}</li>
-              </ul>
-            ) : (
-              <p className="text-sm text-muted" data-testid="pedido-contato-antes">
-                {TEXTO_CONTATO_ANTES_DO_ACEITE}
-              </p>
-            )}
+          <Panel title="Contato" data-testid="pedido-contato">
+            <p className="text-sm text-muted" data-testid="pedido-contato-nunca">
+              {TEXTO_CONTATO_PEDIDO}
+            </p>
           </Panel>
         )}
 
