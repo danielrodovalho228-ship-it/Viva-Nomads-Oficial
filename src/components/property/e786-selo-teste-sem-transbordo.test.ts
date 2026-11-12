@@ -14,12 +14,14 @@ test("botão da barra fixa (celular) com bloqueio quebra linha", () => {
 
 test("varredura: as faixas de teste só aparecem em <p> (quebra natural) ou nos dois botões corrigidos", () => {
   const imovel = readFileSync("src/app/(public)/imoveis/[id]/property-detail.tsx", "utf8");
-  assert.match(imovel, /<p\s+role="note"\s+data-testid="faixa-anuncio-teste"/);
+  // E796 (asserção alterada): a faixa ganhou o id que o botão desativado usa no aria-describedby.
+  assert.match(imovel, /<p\s+role="note"\s+id=\{ID_FAIXA_TESTE\}\s+data-testid="faixa-anuncio-teste"/);
   const parceiro = readFileSync("src/app/(public)/parceiros/[slug]/page.tsx", "utf8");
   assert.match(parceiro, /<p\s+role="status"\s+data-testid="faixa-parceiro-teste"/);
   // Nenhum outro botão leva a faixa como rótulo.
   // E786 (julgamento de 11/11): a faixa <p> usa FAIXA_TESTE (o mesmo texto, para todos); os botões, FAIXA_TESTE_VISITANTE.
-  const usos = imovel.split("\n").filter((l) => /FAIXA_TESTE(_VISITANTE)?\b/.test(l) && !/^import/.test(l.trim()));
+  // E796: \b no começo — o ID_FAIXA_TESTE (id da faixa) não é rótulo.
+  const usos = imovel.split("\n").filter((l) => /\bFAIXA_TESTE(_VISITANTE)?\b/.test(l) && !/^import/.test(l.trim()));
   assert.equal(usos.length, 3); // botão do cartão, faixa <p>, bloqueio da barra fixa
 });
 test("1920 px: o botão do cartão não tem largura fixa nem nowrap no modo teste", () => {
