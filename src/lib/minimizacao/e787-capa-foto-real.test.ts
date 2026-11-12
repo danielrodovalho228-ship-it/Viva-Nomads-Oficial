@@ -26,7 +26,7 @@ test("a capa pula a chapa e cai na foto de verdade; só chapas → sem capa (esp
   assert.equal(capaDoDraftData({ photos: [`${base}/chapa.webp`] }, DONO, soChapas), null);
 });
 test("o painel pede a capa só com fotos reais", () => {
-  assert.match(readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8"), /arquivosDoDono\(createAdminClient\(\), user\.id, \{ soFotosReais: true \}\)/);
+  assert.match(readFileSync("src/app/(dashboard)/dashboard/inicio-dados.tsx", "utf8"), /arquivosDoDono\(createAdminClient\(\), user\.id, \{ soFotosReais: true \}\)/);
 });
 test("o servidor usa a mesma regra pura na listagem do bucket", () => {
   assert.match(readFileSync("src/lib/minimizacao/fotos-anuncio.ts", "utf8"), /caminhosDaListagem\(\(data \?\? \[\]\) as ArquivoListado\[\], ownerId, opcoes\.soFotosReais === true\)/);
