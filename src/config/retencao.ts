@@ -249,6 +249,7 @@ export const JSONB_PROPRIO: Record<string, string> = {
   "lab_execucoes.falhas": "resultado do laboratório (testes)",
   "lab_execucoes.por_categoria": "resultado do laboratório (testes)",
   "lab_execucoes.por_spec": "resultado do laboratório (testes)",
+  "lab_execucoes.regressoes": "resultado do laboratório (testes): specs que voltaram a falhar",
   "pagamentos_bloco.encargos": "valores calculados por nós",
   "parceiro_pedido_eventos.dados": "dados do evento do pedido (nosso)",
   "parceiro_solicitacoes.checklist": "checklist preenchido pelo parceiro",
