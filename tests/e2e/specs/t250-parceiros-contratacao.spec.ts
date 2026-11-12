@@ -252,12 +252,21 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     }).toPass({ timeout: 40_000 });
 
     // 8) As duas avaliações: cegas até a segunda; depois publicadas e a nota vai para a página do parceiro.
+    // E679-B parte 2 (9f0d6a582, 07/11): a avaliação do parceiro é igual à da estadia — além da nota, os critérios do par
+    // (1 a 5) e o "recomendaria"; sem eles o "Enviar avaliação" fica desligado.
+    const completarAvaliacao = async (pg: typeof d, criterio: string) => {
+      const grupos = pg.locator('[data-testid^="pedido-criterio-"]');
+      for (let i = 0; i < (await grupos.count()); i++) await grupos.nth(i).getByRole("button", { name: criterio, exact: true }).click();
+      await pg.getByTestId("pedido-recomendaria-sim").click();
+    };
     await d.getByTestId("pedido-nota-5").click();
+    await completarAvaliacao(d, "5");
     await d.getByTestId("pedido-avaliacao-texto").fill("Fotos ótimas, chegou no horário.");
     await d.getByTestId("pedido-avaliar").click();
     await expect(d.getByTestId("pedido-avaliacao-enviada")).toContainText("Aparece quando as duas partes avaliarem");
     await p.reload({ waitUntil: "domcontentloaded" });
     await p.getByTestId("pedido-nota-4").click();
+    await completarAvaliacao(p, "4");
     await p.getByTestId("pedido-avaliar").click();
     await expect(p.getByTestId("pedido-avaliacao-enviada")).toContainText("Publicada", { timeout: 20_000 });
     await expect(p.getByTestId("pedido-avaliacao-outro")).toContainText("5 de 5");

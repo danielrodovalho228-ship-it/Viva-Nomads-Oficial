@@ -21,8 +21,10 @@ test.describe("T39 — App: ida e volta", () => {
       await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
       // Ordem 90181c57: não há mais assinatura; /dashboard/assinatura vai para /precos, que no app
       // (página de marketing) leva às boas-vindas de quem não entrou.
+      // E563 (448775ce8): com /precos suspensa (PRECOS_VISIVEL desligada), vai para /dashboard, que pede login.
       await page.goto("/dashboard/assinatura");
-      await expect(page).toHaveURL(/\/app\/boas-vindas/);
+      const precosVisivel = process.env.NEXT_PUBLIC_PRECOS_VISIVEL === "1";
+      await expect(page).toHaveURL(precosVisivel ? /\/app\/boas-vindas/ : /\/auth\?redirect=%2Fdashboard$/);
       await expect(page.getByText("Esta parte fica no site")).toHaveCount(0);
     });
   });
