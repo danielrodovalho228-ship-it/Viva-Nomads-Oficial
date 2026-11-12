@@ -13,7 +13,7 @@ export function PapelAtivo({ papel, nome, foto }: { papel: PapelBarra | null; no
   if (!papel) {
     return (
       <span data-testid="papel-ativo" data-papel="admin" className="inline-flex min-h-11 cursor-default items-center gap-2 text-sm font-semibold text-ink">
-        <Avatar name={nome} size={28} photoUrl={foto ?? undefined} />
+        {/* E788: sem avatar aqui — um círculo que não abre nada parecia botão quebrado. O selo é só texto; a Conta fica em "Minha conta →". */}
         <span>
           <span className="sr-only">Papel ativo: </span>
           {rotulo}

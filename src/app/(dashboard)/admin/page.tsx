@@ -11,6 +11,9 @@ import { ROTULOS_NUMEROS, RODAPE_CONTAGENS, primeirosSemDuplicata, textoRealTest
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
 import { idadeHoras } from "@/lib/admin/central-pendencias";
 import { ButtonLink } from "@/components/ui/button";
+import { ResumoBackup } from "@/components/admin/resumo-backup";
+import { ehObservadorQa } from "@/lib/qa/observador";
+import { createClient } from "@/lib/supabase/server";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin"), robots: { index: false, follow: false } };
@@ -45,6 +48,9 @@ export default async function AdminPage() {
   const atencao = decisoes ? comBackup(primeirosSemDuplicata(decisoes.linhas, (l) => l.href), decisoes.linhas) : [];
   // Saúde: os alertas de sistema da MESMA leitura das filas (hoje, o backup), o mesmo número da linha "alertas de backup".
   const alertas = decisoes?.linhas.find((l) => l.chave === "backup")?.n ?? 0;
+  // E766: o resumo positivo do backup (o admin observador da QA não vê backup, como no cartão de Sistema).
+  const supabase = await createClient();
+  const observador = await ehObservadorQa(supabase ? (await supabase.auth.getUser()).data.user?.id : null);
 
   return (
     <div data-testid="admin-inicial">
@@ -124,6 +130,8 @@ export default async function AdminPage() {
           </ul>
         </Panel>
       )}
+
+      {admin && !observador ? <ResumoBackup agora={agora} /> : null}
 
       <p className="mt-6 text-sm" data-testid="admin-saude" data-alertas={alertas}>
         {/* E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção"; aqui só o estado geral. */}

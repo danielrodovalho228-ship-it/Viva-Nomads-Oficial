@@ -20,7 +20,7 @@ test("E262 (a): a galeria aberta pinta na hora com a versão da miniatura (mesmo
   assert.match(lightbox, /sizes=\{SIZES_MINIATURA\}/);
   assert.match(lightbox, /sizes="100vw" priority/);
   // As miniaturas do mosaico/carrossel usam o mesmo sizes — senão a URL muda e a de baixo não está no cache.
-  assert.ok((g.match(/sizes=\{SIZES_MINIATURA\}/g) ?? []).length >= 3);
+  assert.ok((g.match(/sizes=\{SIZES_MINIATURA\}/g) ?? []).length >= 2); // E768: as fotos pequenas do mosaico têm sizes próprio; sobram o vídeo e a prévia da galeria aberta
   assert.doesNotMatch(g, /sizes="\(max-width: 768px\) 100vw, 50vw"/);
 });
 

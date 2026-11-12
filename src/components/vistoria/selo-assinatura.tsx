@@ -3,6 +3,8 @@ import { seloDaAssinatura, type SeloAssinaturaDados } from "@/lib/vistoria/telas
 /**
  * E691 — o selo da assinatura do laudo: número e hash visíveis ao avaliador (quem assinou) e ao dono. O hash inteiro fica
  * em um campo selecionável (confere com o registro guardado pela Viva); o curto é o que se lê de relance.
+ * E743 (L-107): componente de SERVIDOR — sem manipulador de evento (onFocus etc.), que quebrava a tela /nivel do dono com
+ * laudo assinado ("Não conseguimos abrir esta tela"). O clique seleciona o hash inteiro por CSS (`select-all`).
  */
 export function SeloAssinatura({ laudo, quem }: { laudo: SeloAssinaturaDados; quem: "avaliador" | "dono" }) {
   const s = seloDaAssinatura(laudo);
@@ -16,7 +18,7 @@ export function SeloAssinatura({ laudo, quem }: { laudo: SeloAssinaturaDados; qu
       <p className="mt-1 text-muted">
         Hash da assinatura: <span className="font-mono text-ink" data-testid="selo-assinatura-hash">{s.hashCurto}</span>
       </p>
-      <input readOnly value={s.hash} aria-label="Hash completo da assinatura" onFocus={(e) => e.currentTarget.select()} className="mt-1 w-full rounded-lg border border-line bg-white px-2 py-1 font-mono text-xs text-ink" />
+      <input readOnly value={s.hash} aria-label="Hash completo da assinatura" className="mt-1 w-full select-all rounded-lg border border-line bg-white px-2 py-1 font-mono text-xs text-ink" />
     </div>
   );
 }
