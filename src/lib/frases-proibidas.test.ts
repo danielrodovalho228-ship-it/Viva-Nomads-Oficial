@@ -34,7 +34,7 @@ test("GATE: nenhuma superfície de src/ usa uma formulação proibida (exceto as
     const caminho = f.split("\\").join("/");
     if (FORA_DO_GATE.some((x) => caminho.startsWith(x.prefixo) || caminho === x.prefixo)) continue;
     if (caminho === "src/lib/frases-proibidas.ts") continue;
-    for (const a of achadosProibidos(semComentarios(readFileSync(f, "utf8")).join("\n"))) achados.push(`${caminho} [${a.id}] ${a.trecho}`);
+    for (const a of achadosProibidos(semComentarios(readFileSync(f, "utf8")).join("\n"), caminho)) achados.push(`${caminho} [${a.id}] ${a.trecho}`);
   }
   assert.deepEqual(achados, []);
 });
