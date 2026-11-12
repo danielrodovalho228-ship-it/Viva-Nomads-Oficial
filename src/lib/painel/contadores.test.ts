@@ -139,7 +139,9 @@ test("a rota é GET, sem cache, autentica pela sessão do servidor e só conta o
 test("PROP-0: o layout do painel resolve o contexto do menu no servidor e entrega à casca na 1ª pintura", () => {
   const l = ler(LAYOUT);
   // E653: o modo que atrasa/falha vira { modo: null, indisponivel: true } (a casca relê), não um null igual a "conta nova".
-  assert.match(l, /const \[modoLido, contadoresIniciais\] = await Promise\.all\(\[\s*comLimite\(resolveInitialMode\(\), LIMITE_CASCA_MS\)\s*\.then\(\(modo\) => \(\{ modo, indisponivel: false \}\)\)\s*\.catch\(\(\) => \(\{ modo: null as ViewMode \| null, indisponivel: true \}\)\),\s*comLimite\(contadoresIniciaisDoPainel\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),\s*\]\);/);
+  // E793 (asserção alterada): o Promise.all ganhou a 3ª leitura (a sessão do servidor, só com a chave ligada); as duas
+  // primeiras seguem iguais, com o mesmo limite e o mesmo tratamento de atraso/falha.
+  assert.match(l, /const \[modoLido, contadoresIniciais, usuarioServidor\] = await Promise\.all\(\[\s*comLimite\(resolveInitialMode\(\), LIMITE_CASCA_MS\)\s*\.then\(\(modo\) => \(\{ modo, indisponivel: false \}\)\)\s*\.catch\(\(\) => \(\{ modo: null as ViewMode \| null, indisponivel: true \}\)\),\s*comLimite\(contadoresIniciaisDoPainel\(\), LIMITE_CASCA_MS\)\.catch\(\(\) => null\),/);
   assert.match(l, /<ContadoresIniciais valor=\{contadoresIniciais\}>\s*<DashboardShell>\{children\}<\/DashboardShell>\s*<\/ContadoresIniciais>/);
   const s = ler(SERVIDOR);
   // Falha ou sem sessão: null (a casca segue com a rota); nunca derruba o painel.

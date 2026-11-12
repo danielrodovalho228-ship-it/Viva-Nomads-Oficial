@@ -61,5 +61,9 @@ test("Liberação do QA: conta de teste pode 'Solicitar' no anúncio de teste; c
   assert.match(tela, /teste: usuario\?\.isTeste === true/);
   const provedor = readFileSync(new URL("../../components/auth-provider.tsx", import.meta.url), "utf8");
   assert.match(provedor, /\.select\("full_name, role, preferred_mode, papel_ativo, is_teste"\)/);
-  assert.match(provedor, /isTeste: \(profile as \{ is_teste\?: boolean \| null \}\)\.is_teste === true/);
+  // E793 (asserção alterada): o mapeamento perfil → usuário saiu do AuthProvider para a fonte única lib/auth/usuario-do-perfil
+  // (usada também pela sessão do servidor); a regra é a mesma: só is_teste === true libera.
+  assert.match(provedor, /usuarioDoPerfil\(base, profile\)/);
+  const mapa = readFileSync(new URL("../auth/usuario-do-perfil.ts", import.meta.url), "utf8");
+  assert.match(mapa, /isTeste: perfil\.is_teste === true/);
 });

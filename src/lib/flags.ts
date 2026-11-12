@@ -205,3 +205,14 @@ export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPAR
  * ficam limitados a 30–90 dias (um bloco de temporada). Contratos e renovações que já existem não mudam.
  */
 export const FAIXA_91_180_ATIVA = process.env.NEXT_PUBLIC_FAIXA_91_180_ATIVA !== "off";
+
+/**
+ * E793 — painel desenhado no servidor com a sessão conferida lá (docs/e793-painel-sessao-servidor.md). Lida SÓ no
+ * servidor (sem NEXT_PUBLIC_): `off` (padrão) ou o nome da onda ligada (`piloto`). A lista de rotas de cada onda está em
+ * src/lib/auth/painel-sessao-servidor.ts. Rollback: trocar a variável na Vercel e refazer o deploy do MESMO commit — sem
+ * código, mas NÃO instantâneo (alguns minutos). Mudar em produção é com o Daniel e o Muse.
+ */
+export type OndaPainelSessaoServidor = "off" | "piloto";
+export function ondaPainelSessaoServidor(valor: string | undefined = process.env.PAINEL_SESSAO_SERVIDOR): OndaPainelSessaoServidor {
+  return valor === "piloto" ? "piloto" : "off";
+}
