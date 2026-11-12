@@ -27,7 +27,7 @@ import {
   normalizarContadores,
   type ContadoresPainel,
 } from "@/lib/painel/contadores";
-import { useViewMode, identidadeUsuario, primeiroNomeExibicao } from "@/lib/roles";
+import { useViewMode, identidadeUsuario, nomeAvatarExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
 import { AppHeader } from "@/components/app/app-header";
@@ -116,7 +116,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // inteiro; só então cai no rótulo neutro. NUNCA o e-mail cru.
   const nomeSidebar = identidadeUsuario(displayUser);
   // CONTA-A: o rosto do avatar só usa o nome do perfil; sem nome, a silhueta (nunca letras do e-mail).
-  const nomeAvatar = primeiroNomeExibicao(displayUser);
+  // E788: o avatar usa o nome COMPLETO (a mesma fonte do Perfil) — antes o primeiro nome dava "C" aqui e "CQ" no Perfil.
+  const nomeAvatar = nomeAvatarExibicao(displayUser);
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);

@@ -25,6 +25,7 @@ import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR, categoriaLabel } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
+import { nomeParaAvatar } from "@/lib/display-name";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export const SUBTITULO_PERFIL = "Gerencie suas informações pessoais e como os proprietários veem seu perfil.";
@@ -195,7 +196,7 @@ export function PerfilTela({ inicial }: { inicial?: PerfilInicial | null } = {})
             fundo e o cartão branco começa nos campos. */}
         <section className={cn("sm:rounded-xl sm:bg-white sm:p-6", SOMBRA_SO_COMPUTADOR)} aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6" data-testid="topo-conta">
-            <Avatar name={nome} size={144} photoUrl={foto.url ?? undefined} />
+            <Avatar name={nomeParaAvatar(nome)} size={144} photoUrl={foto.url ?? undefined} />
             <div className="flex flex-col items-center gap-2 sm:items-start">
               <h2 id="perfil-foto-titulo" className="font-title text-xl font-semibold text-ink max-sm:sr-only">
                 Foto do perfil
