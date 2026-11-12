@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { MOTIVOS_VERIFICACAO, motivoDaReprovacao, type LaudoParaMotivo } from "@/config/verificacao-motivos";
 import { chamadoForaDaPromessa, emSilencio, parceiroSemResposta, verificacaoParada } from "./regras";
+import { PRAZO_RESPOSTA_PARCERIA } from "@/lib/parceiros/regras";
 import { corpoVerificacaoParada, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 
 /*
@@ -10,7 +11,7 @@ import { corpoVerificacaoParada, paraNotify } from "@/lib/notifications/corpo-e2
   (automacoes_envios) e nunca no silêncio 22h–7h (Brasília): o que cair nele espera a próxima rodada. Contas de teste
   fora. `simular`: só conta.
     • verificação iniciada e não concluída em 24 h → 1 aviso à pessoa, com a causa da última tentativa;
-    • solicitação de parceiro sem resposta em 1 dia útil → alerta à equipe;
+    • solicitação de parceiro sem resposta no prazo da parceria (PRAZO_RESPOSTA_PARCERIA) → alerta à equipe;
     • chamado sem 1ª resposta dentro da promessa (24 h) → alerta à equipe.
 */
 
@@ -91,7 +92,7 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
     r.verificacaoParada++;
   }
 
-  // 2) Solicitação de parceiro sem resposta em 1 dia útil → equipe.
+  // 2) Solicitação de parceiro sem resposta no prazo da parceria (E791: PRAZO_RESPOSTA_PARCERIA, o mesmo de /parceiros) → equipe.
   const { data: sols } = await admin.from("parceiro_solicitacoes").select("id, user_id, criado_em, decidido_em, status").eq("status", "pendente").not("categorias", "cs", "{vistoria}").limit(1000);
   for (const s of (sols ?? []) as { id: string; user_id: string | null; criado_em: string; decidido_em: string | null }[]) {
     if ((s.user_id && contasTeste.has(s.user_id)) || !parceiroSemResposta(s.criado_em, s.decidido_em, agora)) continue;
@@ -100,7 +101,7 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
       continue;
     }
     if (!(await umaVez(admin, `parceiro_sem_resposta:${s.id}`, "parceiro_sem_resposta", null))) continue;
-    await avisarEquipe(admin, "parceiro_sem_resposta", "/admin/parceiros", "Solicitação de parceria sem resposta há mais de 1 dia útil.");
+    await avisarEquipe(admin, "parceiro_sem_resposta", "/admin/parceiros", `Solicitação de parceria sem resposta há mais de ${PRAZO_RESPOSTA_PARCERIA}.`);
     r.parceiroSemResposta++;
   }
 

@@ -10,10 +10,11 @@ import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
 
 // ── Prazo de resposta ao pedido de parceria (E791) ──────────────────────────────────────────────────────────────
-/** O prazo PÚBLICO de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11
- *  (E791). Vale em todas as superfícies: /parceiros, o formulário depois de enviar e o onboarding. O alerta interno à equipe
- *  (lembretes: parceiroSemResposta, 24 h úteis) continua mais curto que a promessa pública, de propósito. */
-export const PRAZO_RESPOSTA_PARCERIA = "7 dias";
+/** O prazo de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11 (E791).
+ *  FONTE ÚNICA de tudo o que fala desse prazo: /parceiros, o formulário depois de enviar, o onboarding E o alerta à equipe
+ *  (lembretes: parceiroSemResposta; o aviso do cron, o e-mail e a fila de decisões do admin). */
+export const DIAS_RESPOSTA_PARCERIA = 7;
+export const PRAZO_RESPOSTA_PARCERIA = `${DIAS_RESPOSTA_PARCERIA} dias`;
 export const TEXTO_PRAZO_PARCERIA = `A Viva responde por e-mail em até ${PRAZO_RESPOSTA_PARCERIA}.`;
 
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
