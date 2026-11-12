@@ -178,6 +178,8 @@ export function OwnerCard({
             >
               <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
               {numBR(d.reputacao.media, 1)} · {d.reputacao.n} {d.reputacao.n === 1 ? "avaliação" : "avaliações"}
+              {/* E769: a nota do PROPRIETÁRIO soma todos os imóveis dele; a do imóvel é a da seção de avaliações. Rótulo diz qual é qual. */}
+              <span className="font-normal text-muted" data-testid="proprietario-reputacao-escopo"> do proprietário, em todos os imóveis</span>
             </Link>
           )}
           {/* Selos só com verificação REAL registrada; no exemplo, ilustrativos e marcados. */}
