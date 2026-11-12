@@ -35,11 +35,11 @@ import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
 import { barraAdminPara, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
-import { PapelAtivo } from "@/components/layout/papel-ativo";
+import { PapelAtivo, SeloEquipe } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/components/layout/topo-dono";
-import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
+import { abasDoPapelPainel, itensDaConta, itensDaEquipe, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { esperaRetentativaContadores } from "@/lib/painel/retentativa-contadores";
@@ -317,7 +317,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // E783 (Daniel, 09/11): a foto do cabeçalho aparece em TODAS as telas, inclusive Conta e Perfil. O E55 (24/10) trocava a miniatura
   // por iniciais na tela Perfil e fazia a foto "sumir" ao entrar na Conta; a iniciais ficam só para quem não tem foto.
   const fotoNav = myPhoto;
-  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
 
   // MENUS-5 / MORADOR-NAV: fora do /admin, TODO papel navega pelas abas da fonte única (config/abas-painel.ts) — no
   // computador, abas no topo + sino + "Conta ▾" (sem barra lateral); no celular, a barra de baixo + o avatar do topo,
@@ -330,6 +329,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (acao === "sair") handleSignOut();
     else void irParaModo(acao === "modo-morador" ? "tenant" : "owner");
   };
+  // E788: na área da equipe o selo é o avatar que abre o menu da Conta (antes, texto inerte).
+  const papelChip = papelAtivo ? (
+    <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />
+  ) : (
+    <SeloEquipe nome={nomeAvatar} foto={fotoNav} itens={itensDaEquipe()} onAcao={aoAcaoConta} />
+  );
   const contaCelular = papelTopo ? (
     <div className="flex items-center gap-1">
       <Sino px={`${prefixoPapel(papelTopo)}-celular`} />
