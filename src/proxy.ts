@@ -118,7 +118,12 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
 
   // ── E798: rotas da Conta que só levam a outra tela redirecionam AQUI (antes de desenhar), não no navegador ──
   const contaParaOnde = redirecionamentoDaConta(pathname, request.nextUrl.searchParams, request.cookies.get(COOKIE_TELA)?.value);
-  if (contaParaOnde) return NextResponse.redirect(new URL(contaParaOnde, request.url));
+  if (contaParaOnde) {
+    // Depende do cookie deste aparelho (largura da tela): nunca em cache compartilhado.
+    const r = NextResponse.redirect(new URL(contaParaOnde, request.url));
+    r.headers.set("Cache-Control", "private, no-store");
+    return r;
+  }
 
   // ── DEMAIS ROTAS PRIVADAS (dashboard/admin/pedidos) — exigem Supabase ───────
   if (!supaUrl || !supaKey) return NextResponse.next();

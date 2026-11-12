@@ -39,6 +39,7 @@ test("cookie de largura: 1024 px é o limite do E492", () => {
 test("o proxy redireciona antes de desenhar; a página antiga de avaliações usa a mesma função", () => {
   const proxy = readFileSync("src/proxy.ts", "utf8");
   assert.match(proxy, /const contaParaOnde = redirecionamentoDaConta\(pathname, request\.nextUrl\.searchParams, request\.cookies\.get\(COOKIE_TELA\)\?\.value\);/);
+  assert.match(proxy, /r\.headers\.set\("Cache-Control", "private, no-store"\);/, "o redirecionamento depende do cookie do aparelho: sem cache compartilhado");
   assert.ok(proxy.indexOf("redirecionamentoDaConta(pathname") < proxy.indexOf("DEMAIS ROTAS PRIVADAS"), "antes da sessão (não depende dela)");
   const av = readFileSync("src/app/(dashboard)/dashboard/conta/avaliacoes/page.tsx", "utf8");
   assert.match(av, /redirect\(destinoContaAvaliacoes\(/);
