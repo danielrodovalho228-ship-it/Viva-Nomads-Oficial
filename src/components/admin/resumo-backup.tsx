@@ -11,8 +11,10 @@ import { cn } from "@/lib/utils";
  * E766 — a prova VISUAL de que o backup está saudável, na inicial do /admin: "Última cópia OK em X" e "Último teste de
  * restauração OK em Y" (de backups_execucoes, a mesma leitura e o mesmo estado do cartão completo de /admin/sistema).
  * Quando falha, mostra "Atenção" com o porquê (sem dado de usuário). O detalhe fica no cartão de Sistema.
+ * E766 (reprova de 11/11): também o admin OBSERVADOR da QA vê este resumo (só leitura); em /admin/sistema#backup ele o vê
+ * no lugar do cartão completo, e aí sem o "Ver detalhes" (`semDetalhe`), que apontaria para a própria seção.
  */
-export async function ResumoBackup({ agora = new Date() }: { agora?: Date }) {
+export async function ResumoBackup({ agora = new Date(), semDetalhe = false }: { agora?: Date; semDetalhe?: boolean }) {
   const linhas = await lerExecucoesBackup().catch(() => "sem_tabela" as const);
   if (linhas === null) return null;
   const pendente = linhas === "sem_tabela";
@@ -52,9 +54,11 @@ export async function ResumoBackup({ agora = new Date() }: { agora?: Date }) {
           )}
         </ul>
       )}
-      <Link href="/admin/sistema#backup" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline" data-testid="admin-backup-detalhe">
-        Ver detalhes <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-      </Link>
+      {semDetalhe ? null : (
+        <Link href="/admin/sistema#backup" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline" data-testid="admin-backup-detalhe">
+          Ver detalhes <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+        </Link>
+      )}
     </Panel>
   );
 }
