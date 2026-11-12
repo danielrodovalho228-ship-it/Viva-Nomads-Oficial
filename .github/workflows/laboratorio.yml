@@ -68,31 +68,15 @@ jobs:
           version: 2.120.0
 
       - name: Subir o Supabase local (todas as migrações)
-        # O runner às vezes chega com a porta 54322 ocupada ("failed to bind host port 0.0.0.0:54322/tcp: address
-        # already in use", run 38179479994 e, nas 3 tentativas, fatias 11 do run 42536824482 e 4 do 42538098625): não é
-        # falha de migração. Com 16 fatias a chance de UMA cair nisso por noite é alta, e uma fatia perdida são ~280 testes
-        # sem rodar. Mostra quem ocupa a porta (com sudo, para ver o processo), limpa os containers e, da 2ª tentativa em
-        # diante, reinicia o daemon do Docker (solta a porta presa no docker-proxy). Até 5 tentativas.
-        run: |
-          for tentativa in 1 2 3 4 5; do
-            if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
-              exit 0
-            fi
-            echo "::warning::supabase start falhou (tentativa $tentativa/5). Portas em uso:"
-            (sudo ss -ltnp 2>/dev/null | grep -E ':543(2[0-9])\b' || echo "nenhuma porta 5432x listada")
-            supabase stop --no-backup || true
-            docker rm -f $(docker ps -aq) 2>/dev/null || true
-            if [ "$tentativa" -ge 2 ]; then sudo systemctl restart docker || true; sleep 5; fi
-            sleep $((tentativa * 5))
-          done
-          echo "::error::supabase start falhou 5 vezes"
-          exit 1
+        # E792: porta do banco presa na VM do runner ("failed to bind host port 0.0.0.0:54322/tcp", sem ninguém
+        # escutando) → o script sobe o banco numa porta livre e grava LAB_DB_URL; outras falhas: limpa e reinicia o Docker.
+        run: scripts/lab/subir-supabase.sh
 
       - name: Acertar com produção (role como texto + políticas extras)
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
 
       - name: Conferir o banco (asserções de segurança)
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
 
       - name: Chaves locais e senha da noite (mascaradas)
         run: |
@@ -235,22 +219,12 @@ jobs:
           version: 2.120.0
 
       - name: Subir o Supabase local (para as chaves do bundle)
-        run: |
-          for tentativa in 1 2 3 4 5; do
-            if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
-              exit 0
-            fi
-            echo "::warning::supabase start falhou (tentativa $tentativa/5)."
-            supabase stop --no-backup || true
-            docker rm -f $(docker ps -aq) 2>/dev/null || true
-            if [ "$tentativa" -ge 2 ]; then sudo systemctl restart docker || true; sleep 5; fi
-            sleep $((tentativa * 5))
-          done
-          echo "::error::supabase start falhou 5 vezes"
-          exit 1
+        # E792: porta do banco presa na VM do runner ("failed to bind host port 0.0.0.0:54322/tcp", sem ninguém
+        # escutando) → o script sobe o banco numa porta livre e grava LAB_DB_URL; outras falhas: limpa e reinicia o Docker.
+        run: scripts/lab/subir-supabase.sh
 
       - name: Acertar com produção (role como texto + políticas extras)
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
 
       - name: Chaves locais (mascaradas)
         run: |
