@@ -10,7 +10,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
 import { Avatar } from "@/components/ui/avatar";
 import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { primeiroNomeExibicao } from "@/lib/roles";
+import { nomeAvatarExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { SELETOR_IDIOMA } from "@/lib/flags";
 import { SeletorIdioma } from "@/components/layout/seletor-idioma";
@@ -69,7 +69,8 @@ export function Navbar() {
     };
   }, [mounted, userId]);
   // CONTA-A: só o nome do perfil vira rosto; sem nome, a silhueta.
-  const nome = primeiroNomeExibicao(user);
+  // E788: o avatar usa o nome completo (as mesmas iniciais do Perfil e do painel).
+  const nomeAvatar = nomeAvatarExibicao(user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -98,7 +99,7 @@ export function Navbar() {
           {/* PUBLICO-A: globo PT/EN ao lado do Entrar, atrás da chave SELETOR_IDIOMA (desligada). */}
           {SELETOR_IDIOMA && <SeletorIdioma />}
           {loggedIn ? (
-            <MeuPainel nome={nome} foto={foto} />
+            <MeuPainel nome={nomeAvatar} foto={foto} />
           ) : (
             <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar">
               Entrar
@@ -131,7 +132,7 @@ export function Navbar() {
             {SELETOR_IDIOMA && <SeletorIdioma celular className="px-3" />}
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
-                <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
+                <MeuPainel nome={nomeAvatar} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
               ) : (
                 <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)}>
                   Entrar

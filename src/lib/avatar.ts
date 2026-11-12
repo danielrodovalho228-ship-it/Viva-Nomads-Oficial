@@ -61,6 +61,8 @@ export function iniciais(nome: string): string {
   // palavras que não começam com letra, para o avatar nunca mostrar "P(".
   const parts = (nome || "")
     .replace(/\([^)]*\)?/g, " ")
+    // E788: a marca das contas de teste ("[TESTE QA] Paulo Pereira") não é nome.
+    .replace(/\[[^\]]*\]?/g, " ")
     .trim()
     .split(/\s+/)
     .filter((w) => /^\p{L}/u.test(w));
