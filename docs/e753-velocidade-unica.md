@@ -44,12 +44,13 @@ Escopo maior (lib, níveis, anúncio, busca, pedidos, componentes do imóvel): *
 
 ### E2E
 
-`tests/e2e/specs/t1615-e753-velocidade-unica.spec.ts` abre a página pública dos 15 exemplos e verifica três coisas:
-- nenhuma velocidade (N Mbps) aparece fora da linha de internet;
-- a linha mostra um número só;
-- quando há velocidade, ela vem rotulada "(não medida)" ou "medida no imóvel".
+`tests/e2e/specs/t1615-e753-velocidade-unica.spec.ts` abre a página pública dos 15 exemplos e verifica duas coisas:
+- **toda** menção a velocidade vem rotulada. Vale como declarada "(não medida)" ou "N Mbps informados", e vale como medida "medida no imóvel". Essas duas formas de declarada vêm do mesmo campo: a linha de internet e o resumo do imóvel;
+- há **um número só** na página.
 
-Resultado no lab (main × branch): ver o PR.
+| | main `27dbdf1` | branch |
+|---|---|---|
+| t1615 (15 exemplos) | **15 failed**. Velocidade solta sem rótulo; no `ube-002`, "200 Mbps" e "100 Mbps" | **15 passed** |
 
 ## Asserções alteradas
 
