@@ -45,6 +45,7 @@ import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { esperaRetentativaContadores } from "@/lib/painel/retentativa-contadores";
 import { FaixaCritico } from "@/components/painel/sino-avisos";
 import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
+import { GravarLarguraDaTela } from "@/components/account/largura-e-ancora";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -469,6 +470,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
+      {/* E798: a largura da tela vai num cookie (o proxy decide /dashboard/conta no servidor). */}
+      <GravarLarguraDaTela />
       <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} comContrato={comContrato} />
     </div>
   );

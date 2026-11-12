@@ -3,6 +3,7 @@ import { rotaDetalheContrato } from "@/lib/contrato-rota";
 import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import { cookiesRenovados } from "@/lib/supabase/cookies-renovados";
+import { COOKIE_TELA, redirecionamentoDaConta } from "@/lib/conta/redirecionar-no-servidor";
 import {
   isInternalPath,
   acessoInterno,
@@ -114,6 +115,10 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     return response;
   }
+
+  // ── E798: rotas da Conta que só levam a outra tela redirecionam AQUI (antes de desenhar), não no navegador ──
+  const contaParaOnde = redirecionamentoDaConta(pathname, request.nextUrl.searchParams, request.cookies.get(COOKIE_TELA)?.value);
+  if (contaParaOnde) return NextResponse.redirect(new URL(contaParaOnde, request.url));
 
   // ── DEMAIS ROTAS PRIVADAS (dashboard/admin/pedidos) — exigem Supabase ───────
   if (!supaUrl || !supaKey) return NextResponse.next();
