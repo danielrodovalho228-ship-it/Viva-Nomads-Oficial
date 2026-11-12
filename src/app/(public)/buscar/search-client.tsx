@@ -692,7 +692,7 @@ export function SearchClient({
       {/* E780: no celular a faixa de filtros (chips + Mais filtros · Ordenar · Mapa) fica PRESA logo abaixo do cabeçalho, inteira, e
           a contagem rola por baixo dela. Antes tudo rolava e o cabeçalho fixo cobria a metade de cima dos chips. No computador
           (lg+) a faixa segue no fluxo. */}
-      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo">
+      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo" data-barra-fixa>
       <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
         <BarraPilulas
           filtros={filtrosPainel}
