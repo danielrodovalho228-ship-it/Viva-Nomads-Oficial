@@ -41,3 +41,9 @@ Com a conta de morador de teste:
 3. ver a candidatura chegar ao dono de teste.
 
 Sem erro e sem tela vazia.
+
+## Conferência na main (12/11/2026)
+Rodada do laboratório no push da main `02a337e62` (12/11 01:11 UTC, primeira com o acerto `24902a83c` na main): **t132 com 2 pass e 0 fail**. As rodadas anteriores da main ainda estavam vermelhas: `d32300e14` (12/11 00:10) e `0533d3541` (11/11 18:27), as duas com 2 falhas.
+
+## Regra 2 (teste que falha na main e passa depois)
+Não se aplica: não há defeito de código a corrigir, e a asserção já foi acertada na main por decisão registrada (E713, achado D-E713-a). Este PR só registra o diagnóstico, o commit que quebrou e a decisão citada. O teste que comprova é o próprio t132, verde na main desde `02a337e62`.
