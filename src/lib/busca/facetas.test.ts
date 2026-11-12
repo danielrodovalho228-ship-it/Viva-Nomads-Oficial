@@ -96,7 +96,8 @@ test("E40 (Adendo 3): sem medição na busca, a seção some e o filtro da URL �
 
 test("E40: as faixas contam igual ao aplicar, a de 0 fica desativada e a linha dos não medidos continua", () => {
   const lista = LISTA.map((p, i) =>
-    i === 3 ? ({ ...p, internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel) : i === 4 ? ({ ...p, internetMbps: 400 } as Imovel) : p,
+    // E753: os exemplos passaram a declarar a velocidade no campo único (internetMbps); aqui só o 4º declara (400 Mbps).
+    i === 3 ? ({ ...p, internetMbps: undefined, internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel) : i === 4 ? ({ ...p, internetMbps: 400 } as Imovel) : ({ ...p, internetMbps: undefined } as Imovel),
   );
   const contar2 = (f: FiltrosPainel) => lista.filter((p) => passaNoPainel(p, f, AGORA)).length;
   const faixas = faixasInternet(medicoesDaBusca(lista, AGORA));
