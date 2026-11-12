@@ -37,11 +37,15 @@ const vistos = (p: Page) => p.evaluate(() => (window as unknown as { __vistos: {
 
 /** As ações do servidor da tela (POST com o cabeçalho Next-Action): atrasa ou derruba. */
 async function interceptarAcoes(p: Page, modo: "atrasar" | "falhar") {
+  // "atrasar": só as ações da 1ª janela da carga (é nela que a prévia decidia o cartão) esperam 4 s. Atrasar TODAS, o
+  // tempo todo, empilhava a fila de ações do Next (uma por vez) e passava de 30 s no CI (lab-critico do #3753).
+  let inicio = 0;
   await p.route("**/dashboard/conta/perfil**", async (route) => {
     const r = route.request();
     if (r.method() !== "POST" || !r.headers()["next-action"]) return route.continue();
     if (modo === "falhar") return route.abort("failed");
-    await new Promise((ok) => setTimeout(ok, 4_000));
+    if (!inicio) inicio = Date.now();
+    if (Date.now() - inicio < 3_000) await new Promise((ok) => setTimeout(ok, 4_000));
     return route.continue();
   });
 }
