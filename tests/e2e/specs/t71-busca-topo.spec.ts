@@ -1,6 +1,17 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { adm } from "../fixtures/laboratorio";
+import { apagarMassaFiltrosBusca, criarMassaFiltrosBusca, type MassaFiltros } from "../fixtures/massa-filtros-busca";
+
+// Frente 3 (busca): desde o E131 os exemplos saem das contagens quando há anúncio real; no laboratório, um anúncio real
+// cobre os atalhos e chips que este spec toca (fixtures/massa-filtros-busca.ts). Fora do laboratório, nada muda.
+let massaFiltros: MassaFiltros | null = null;
+test.beforeAll(async () => {
+  massaFiltros = await criarMassaFiltrosBusca();
+});
+test.afterAll(async () => {
+  await apagarMassaFiltrosBusca(massaFiltros);
+});
 
 /**
  * T71 — ordem d15ef6bf: topo da /buscar no padrão Airbnb/Furnished Finder.
