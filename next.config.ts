@@ -19,10 +19,11 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "16mb" },
   },
   images: {
-    // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
-    // No laboratório só WebP: codificar AVIF de foto larga (1280–1920 px) em runner compartilhado leva dezenas
-    // de segundos e estoura t119/t48 a 1280/1440 px; a produção continua com AVIF.
-    formats: LABORATORIO ? ["image/webp"] : ["image/avif", "image/webp"],
+    // WebP em todo lugar (bem menor que JPEG/PNG). E768 (reprova de 11/11): o AVIF saía da produção — a 1ª geração de cada
+    // foto pelo otimizador custava ~2,7 s em AVIF contra ~0,4 s em WebP (1920 px; docs/e768-fotos-carga-fria.md), e numa
+    // página com várias fotos a fila deixava fotos pendentes na carga fria (anúncio, /buscar, /empresas, catálogo).
+    // O laboratório já era só WebP pelo mesmo motivo (t119/t48).
+    formats: ["image/webp"],
     // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
     // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
     dangerouslyAllowLocalIP: LABORATORIO,
