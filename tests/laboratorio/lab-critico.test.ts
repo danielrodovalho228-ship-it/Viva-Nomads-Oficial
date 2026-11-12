@@ -81,7 +81,9 @@ test("portão de PR: a suíte completa não roda em PR e, na main e no noturno, 
   const lab = readFileSync(".github/workflows/laboratorio.yml", "utf8");
   const gatilhos = lab.split("\npermissions:")[0];
   assert.doesNotMatch(gatilhos, /^\s+pull_request:/m);
-  assert.match(gatilhos, /push:\s+branches: \[main\]/);
+  // Frente 0 (coordenador, 11/11/2026): sem push na main; a suíte inteira roda no agendado e no disparo manual.
+  assert.doesNotMatch(gatilhos, /^\s+push:/m);
+  assert.match(gatilhos, /workflow_dispatch:/);
   assert.match(gatilhos, /schedule:/);
   // E744: a suíte é fatiada; falha numa fatia deixa a fatia vermelha, e o consolidar fica vermelho se qualquer fatia falhou.
   assert.match(lab, /- name: Marcar a fatia como falha se algum teste falhou\n\s+if: \$\{\{ steps\.e2e\.outcome == 'failure'/);
