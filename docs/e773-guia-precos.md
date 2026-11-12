@@ -1,0 +1,3 @@
+
+## Complemento (RELATORIO-007): faixas aprovadas no guia
+O guia `/guias/como-precificar-estadia-de-meses` dizia só "a taxa cai conforme você tem mais imóveis". Agora a seção "Como a taxa da Viva entra na conta" cita as faixas aprovadas — 1–2 imóveis ativos: 12%; 3–5: 10%; 6–15: 8%; 16–19: 6%; Plano Gestor 4%, sem mensalidade, para 20+ imóveis ativos ou administradora — montadas de `FAIXAS_COMISSAO_PADRAO` (`src/lib/cobranca/regra.ts`) e `PORTA_GESTOR_TEXTO` (`src/config/planos.ts`), a mesma fonte da cobrança. Nada de número digitado à mão: se a regra mudar, o guia acompanha. Teste: `src/lib/guias/guias.test.ts` (E773, RELATORIO-007).

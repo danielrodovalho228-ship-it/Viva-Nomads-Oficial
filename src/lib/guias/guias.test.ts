@@ -54,3 +54,29 @@ test("#1438f18d: guias no sitemap, no rodapé, na Central de Ajuda e no llms.txt
   assert.match(guia, /href="\/buscar"/);
   assert.match(guia, /href="\/para-proprietarios"/);
 });
+
+test("E773: nenhum guia manda para /precos enquanto a página está suspensa (E563)", async () => {
+  const { PRECOS_VISIVEL } = await import("../../config/precos-visivel.ts");
+  if (PRECOS_VISIVEL) return;
+  const { readFileSync } = await import("node:fs");
+  const fonte = readFileSync(new URL("./guias.ts", import.meta.url), "utf8");
+  const texto = JSON.stringify(await import("./guias.ts"));
+  assert.doesNotMatch(texto, /\/precos/);
+  assert.match(fonte, /PRECOS_VISIVEL \? " A tabela completa está em \/precos\." : ""/);
+});
+
+test("E773 (RELATORIO-007): o guia de precificação cita as faixas aprovadas 12/10/8/6 e o Gestor 4%, lidas da regra de cobrança", async () => {
+  const { GUIAS, FAIXAS_DO_GUIA } = await import("./guias.ts");
+  const { FAIXAS_COMISSAO_PADRAO } = await import("../cobranca/regra.ts");
+  assert.equal(
+    FAIXAS_DO_GUIA,
+    "Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): 1–2 imóveis ativos: 12%; 3–5: 10%; 6–15: 8%; 16–19: 6%. " +
+      "O Plano Gestor tem taxa de 4%, sem mensalidade, para 20 imóveis ou mais ativos (publicados, com documento aprovado e calendário em dia), ou conta de administradora.",
+  );
+  // Cada faixa da regra aparece no texto (se a regra mudar, o guia acompanha).
+  for (const f of FAIXAS_COMISSAO_PADRAO) assert.match(FAIXAS_DO_GUIA, new RegExp(`${Math.round(f.taxa * 100)}%`));
+  const guia = GUIAS.find((g) => g.slug === "como-precificar-estadia-de-meses");
+  assert.ok(guia, "guia de precificação existe");
+  const paragrafos = guia!.secoes.flatMap((s) => s.paragrafos);
+  assert.ok(paragrafos.includes(FAIXAS_DO_GUIA), "o guia mostra as faixas na seção da taxa");
+});
