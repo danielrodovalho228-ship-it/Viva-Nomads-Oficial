@@ -1,6 +1,8 @@
 # E793 — desenho: o painel desenhado no servidor, com a sessão conferida lá
 
-Status: **desenho para validar, sem implementação.** Também responde à reprova do **E789** na rodada de provas nº 2 (Conta/Perfil ainda abre com cartões-esqueleto na primeira abertura): a correção estrutural é esta.
+Status: **desenho para validar, sem implementação e sem mudança de comportamento** (este PR só traz este documento).
+
+**O problema, nas palavras do item:** o painel inteiro espera o AuthGuard conferir a sessão no navegador antes de desenhar o conteúdo. No primeiro quadro o AuthGuard desenha só o esqueleto `auth-guard-carregando` e libera o conteúdo depois da conferência no navegador: cerca de 0,75 a 1,5 s de espera em **todas** as telas do painel. A proposta é desenhar as telas do painel no servidor, com a sessão conferida lá. Como isso mexe em todo o painel e tem risco de diferenças de hidratação, o desenho e a prova por tela vêm antes da correção. Também responde à reprova do **E789** na rodada de provas nº 2 (Conta/Perfil ainda abre com cartões-esqueleto na primeira abertura): a correção estrutural é esta.
 
 ## 1. Diagnóstico (código de hoje)
 
@@ -43,6 +45,16 @@ Peças:
 - **Chave `PAINEL_SESSAO_SERVIDOR`**, desligada por padrão. Com ela desligada, nada muda. Liga-se por onda. O desligamento é o rollback imediato, sem deploy de código.
 
 Custo no servidor: uma verificação de sessão (local com `getClaims`; com `getUser`, cerca de 50–150 ms até o Supabase Auth) e uma leitura de `profiles` por navegação dura. Nas navegações dentro do painel o layout não roda de novo (layout persistente do App Router).
+
+## 2.1 Alternativas consideradas
+
+| # | Alternativa | O que resolve | Por que não, ou por que sim |
+|---|---|---|---|
+| A | **Desenhar no servidor com a sessão conferida lá** (seção 2) | Elimina o esqueleto em todas as telas desde o 1º quadro. O HTML já sai com o conteúdo. | **Escolhida.** É o pedido do item. O proxy já confere a sessão; o layout só passa a usar o resultado. Tem risco de hidratação (seção 3), controlado por chave e por ondas. |
+| B | **Guarda "otimista":** o `AuthGuard` deixa de esconder os `children` e só redireciona depois da conferência no cliente, quando não há sessão | Mostra o HTML que as páginas de servidor já desenharam, sem mexer no layout | **Descartada como solução final.** A casca e os componentes que leem `useAuthStore().user` desenhariam "sem usuário" no 1º quadro: avatar vazio, menus de visitante, papel errado. Ou seja, uma diferença de hidratação garantida em toda tela, e depois um salto visual. Só daria certo com a mesma migração para `useUsuarioAtual()` da alternativa A. |
+| C | **Reidratar o store do localStorage de forma síncrona** (sem esperar o `persist`) | Tira parte da espera na 2ª visita do mesmo navegador | **Insuficiente.** O HTML do servidor continua sendo o esqueleto, a 1ª visita e o celular novo continuam esperando, e o localStorage pode estar vencido (outra conta, sessão encerrada). Não atende "todas as telas". |
+| D | **`loading.tsx`/Suspense por rota** no lugar do esqueleto do guarda | Troca um esqueleto genérico por um esqueleto por tela | **Não resolve.** É esqueleto do mesmo jeito: a espera de ~0,75 a 1,5 s pela conferência no cliente continua. |
+| E | **Cookie leve com nome e papel** para o cliente desenhar sem esperar | Evita a leitura de `profiles` no cliente | **Descartada.** Seria um segundo lugar com dados da sessão para manter em dia, com risco de dado vencido e de vazamento em máquina compartilhada. O servidor já tem a sessão de verdade (alternativa A). |
 
 ## 3. Riscos de hidratação e mitigação
 
