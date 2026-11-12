@@ -42,7 +42,8 @@ test("proprietário: dados, fotos, valor, publicar; publicado marca tudo", () =>
 test("parceiro: análise com o prazo e o Falar com a Viva; página e primeiro pedido", () => {
   const c = checklistParceiro({ ...nova, parceria: "aguardando" });
   assert.deepEqual(c.itens.map((i) => [i.id, i.feito]), [["solicitacao", true], ["analise", false], ["pagina", false], ["pedido", false]]);
-  assert.equal(c.itens[1].detalhe, "Em análise. Resposta em até 1 dia útil.");
+  // E791 (vigia, 12/11/2026): o prazo público da parceria passa a ser o de /empresas (7 dias), da fonte única PRAZO_RESPOSTA_PARCERIA.
+  assert.equal(c.itens[1].detalhe, "Em análise. Resposta em até 7 dias.");
   assert.deepEqual(c.itens[1].acao, { rotulo: "Falar com a Viva", href: "/ajuda/fale-com-a-viva" });
   assert.equal(checklistParceiro({ ...nova, parceria: "publicada", pedidosParceiroAceitos: 1 }).ativado, true);
 });
