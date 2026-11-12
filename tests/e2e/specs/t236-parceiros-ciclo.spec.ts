@@ -308,7 +308,10 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       await page.goto("/parceiros/fotografos?cidade=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
       await expect(page.locator(`[data-testid="cartao-parceiro"][data-slug="${slug}"]`)).toBeVisible();
       await expect(page.getByTestId("taxa-servico-parceiros")).toContainText("A Viva não guarda o seu dinheiro.");
-      await expect(page.getByTestId("fotografos-contato-aceite")).toContainText("só depois do aceite");
+      // E774 (10/11/2026, decisão do chat principal: Parceiros entra na família E764/E774 — contato liberado após o aceite NÃO é
+      // permitido; regra E445): a página de fotógrafos não promete mais o contato "só depois do aceite"; o contato nunca é trocado.
+      await expect(page.getByTestId("fotografos-contato-aceite")).toHaveText("Seu contato não é trocado: tudo se combina pelas mensagens da Viva.");
+      await expect(page.getByTestId("fotografos-contato-aceite")).not.toContainText("depois do aceite");
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t236-busca-${largura}.png`, fullPage: false });
     });
