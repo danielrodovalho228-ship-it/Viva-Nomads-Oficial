@@ -18,7 +18,8 @@ test("Conta (A1, NAV-A): oito telas na ordem Perfil → Como você usa a Viva �
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
   // E492: no computador /dashboard/conta leva ao Perfil (/dashboard/conta/perfil, um endereço só); no celular, o menu.
   assert.match(CONTA, /window\.location\.replace\(destinoDaContaNoComputador\(destino\)\)/);
-  assert.match(SECAO, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
+  // E789 (devolução do julgamento, 11/11): a página de servidor entrega o Perfil já lido (`inicial`); a casca é a mesma.
+  assert.match(SECAO, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela inicial=\{inicial\} \/>/);
   assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
   // Cada seção é um caso de /conta/[secao] ou a sua rota própria (as que leem dados no servidor, ex.: Avaliações).
   // E679: Avaliações saiu da casca da Conta — é o painel único /dashboard/avaliacoes; a rota antiga só redireciona.
