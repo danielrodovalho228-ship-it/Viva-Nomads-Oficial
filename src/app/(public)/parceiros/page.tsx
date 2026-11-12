@@ -13,6 +13,7 @@ import { TEXTO_PRAZO_PARCERIA, categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 import { GESTOR_TEXTO } from "@/config/planos";
+import { ROTULO_TAXA_PARCEIRO, ROTULO_TAXA_PROPRIETARIO } from "@/lib/parceiros/taxas-texto";
 import { comPortasDePrecos } from "@/config/precos-visivel";
 import { PARCEIROS_HEROI_SUBTITULO, PARCEIROS_NUMERO_CONTATO } from "@/config/textos-regulados";
 
@@ -26,7 +27,7 @@ const CARDS = [
   { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Página com portfólio, galeria, serviços e prazos. A conversa é pelas mensagens da Viva.",
     links: [{ href: "/parceiros?categoria=fotografia#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor: ${GESTOR_TEXTO}.`,
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `${ROTULO_TAXA_PROPRIETARIO} Plano Gestor: ${GESTOR_TEXTO}.`,
     // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora), não ao topo da página.
     links: comPortasDePrecos([{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }]) },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
@@ -53,7 +54,7 @@ const PASSOS = [
 
 const DUVIDAS = [
   { p: "Preciso de CNPJ?", r: "Sim: a Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito — se ainda não tem, abra o seu CNPJ (MEI, onde a atividade permite). A equipe confere o documento antes de aprovar." },
-  { p: "Quanto custa?", r: "O pedido e a página são grátis, sem mensalidade e sem exclusividade. Você só paga a taxa de serviço quando há serviço contratado." },
+  { p: "Quanto custa?", r: "O pedido e a página são grátis, sem mensalidade e sem exclusividade. Você só paga a taxa de serviço quando há serviço contratado. "+ROTULO_TAXA_PARCEIRO },
   { p: "Em quais cidades?", r: "Começando por Uberlândia (MG). Cadastre-se de qualquer cidade e avisamos quando chegarmos aí." },
 ];
 
