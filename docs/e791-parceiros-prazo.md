@@ -1,22 +1,18 @@
 # E791: prazo de resposta em /parceiros
 
-**Achado:** /parceiros não dizia em quanto tempo a Viva responde ao pedido de parceria. Já /empresas promete 7 dias (E770), e as duas páginas pareciam divergir.
+**Achado:** /parceiros não dizia em quanto tempo a Viva responde ao pedido de parceria. Já /empresas promete 7 dias (E770, provado), e as duas páginas divergiam.
 
-## O que o código já dizia
-O prazo válido do pedido de **parceria** é **1 dia útil**, nos três lugares abaixo:
-- o formulário depois de enviar ("Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.");
-- o onboarding ("Em análise. Resposta em até 1 dia útil.");
-- o alerta à equipe (`parceiroSemResposta`: 24 h úteis sem decisão gera o e-mail "Solicitação de parceria sem resposta há 1 dia útil").
-
-Os 7 dias de /empresas valem para outro pedido: a empresa que pede imóveis para a sua equipe. Não são o prazo da parceria.
+**Decisão (vigia, 12/11/2026):** /parceiros exibe o **mesmo prazo de 7 dias** de /empresas.
 
 ## Correção
-- **Fonte única:** `PRAZO_RESPOSTA_PARCERIA = "1 dia útil"` e `TEXTO_PRAZO_PARCERIA` em `src/lib/parceiros/regras.ts`.
-- **/parceiros:**
-  - o passo "A Viva confere" diz "A Viva responde por e-mail em até 1 dia útil.";
-  - o bloco "Seja parceiro" repete a frase em destaque (`parceiros-prazo-resposta`).
-- **Formulário e onboarding:** passam a ler a mesma constante, sem o texto escrito à mão.
+- **Fonte única:** `PRAZO_RESPOSTA_PARCERIA = "7 dias"` e `TEXTO_PRAZO_PARCERIA` ("A Viva responde por e-mail em até 7 dias.") em `src/lib/parceiros/regras.ts`.
+- **/parceiros:** mostra o prazo no passo "A Viva confere" e em destaque no bloco "Seja parceiro" (`parceiros-prazo-resposta`).
+- **Formulário (pedido enviado) e onboarding:** leem a mesma constante. Antes diziam "1 dia útil" escrito à mão; agora dizem "7 dias".
+- **Alerta interno à equipe:** `parceiroSemResposta`, 1 dia útil, continua como estava. É um aviso interno, bem antes do prazo público.
 
 ## Testes
-- `src/lib/parceiros/e791-prazo-resposta.test.ts` (3). Na main, falha porque a constante não existe.
+- `src/lib/parceiros/e791-prazo-resposta.test.ts` (3):
+  - na main, não roda, porque a constante não existe;
+  - contra a 1ª versão deste PR ("1 dia útil"), o teste do prazo de 7 dias falha.
 - `tests/e2e/specs/t1602-e791-parceiros-prazo.spec.ts`: visitante, 390 e 1280.
+- Asserção alterada: `src/lib/onboarding/ativacao.test.ts` ("Resposta em até 1 dia útil" → "Resposta em até 7 dias"), pela decisão de 12/11.

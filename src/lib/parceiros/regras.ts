@@ -10,9 +10,10 @@ import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
 
 // ── Prazo de resposta ao pedido de parceria (E791) ──────────────────────────────────────────────────────────────
-/** O prazo público de resposta ao pedido de parceria. É o mesmo que dispara o alerta à equipe (lembretes: parceiroSemResposta,
- *  24 h úteis) e vale em todas as superfícies: /parceiros, o formulário depois de enviar e o onboarding. */
-export const PRAZO_RESPOSTA_PARCERIA = "1 dia útil";
+/** O prazo PÚBLICO de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11
+ *  (E791). Vale em todas as superfícies: /parceiros, o formulário depois de enviar e o onboarding. O alerta interno à equipe
+ *  (lembretes: parceiroSemResposta, 24 h úteis) continua mais curto que a promessa pública, de propósito. */
+export const PRAZO_RESPOSTA_PARCERIA = "7 dias";
 export const TEXTO_PRAZO_PARCERIA = `A Viva responde por e-mail em até ${PRAZO_RESPOSTA_PARCERIA}.`;
 
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
