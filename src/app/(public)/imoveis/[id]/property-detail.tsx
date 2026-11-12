@@ -57,6 +57,9 @@ import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
 import { FAIXA_TESTE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
+
+/** E796: a faixa do anúncio de teste é o motivo do "Pedir para morar" desativado (aria-describedby). */
+const ID_FAIXA_TESTE = "faixa-anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
 import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
@@ -491,6 +494,8 @@ export function PropertyDetail({
         className={testeVisitante ? "hidden h-auto min-h-12 w-full whitespace-normal px-3 py-2 text-center leading-snug lg:inline-flex" : "hidden w-full lg:inline-flex"}
         onClick={abrirSolicitacao}
         disabled={pending !== null || testeVisitante || aguardandoPerfil}
+        // E796: desativado no anúncio de teste, o botão aponta para a faixa que diz por quê (sem trava silenciosa).
+        aria-describedby={testeVisitante ? ID_FAIXA_TESTE : undefined}
         data-testid="cartao-solicitar"
       >
         {!testeVisitante && <FileSignature className="h-4 w-4" />}
@@ -843,6 +848,7 @@ export function PropertyDetail({
       {modoTeste && !aguardandoPerfil && (
         <p
           role="note"
+          id={ID_FAIXA_TESTE}
           data-testid="faixa-anuncio-teste"
           data-modo={modoTeste}
           // E786: UMA faixa, com o texto especificado e o mesmo desenho para a equipe e o visitante; quebra linha (sem
@@ -859,6 +865,7 @@ export function PropertyDetail({
         barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : estadiaDoImovel(property, Math.max(1, meses))?.total ?? null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
+        bloqueioMotivoId={ID_FAIXA_TESTE}
         aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
         onAgendarVisita={() => {
