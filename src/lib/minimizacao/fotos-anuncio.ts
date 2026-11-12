@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { caminhosDaListagem, type ArquivoListado } from "@/lib/fotos-anuncio";
 import { registrarFotoRepetida } from "@/lib/fotos/foto-repetida-servidor";
 
 /*
@@ -82,13 +83,17 @@ export async function apagarFotosDoAnuncio(admin: SupabaseClient | null, urls: r
  * E308 (causa raiz, 01/11): os caminhos que existem hoje no bucket na pasta do dono (`<ownerId>/<arquivo>`). null quando
  * não dá para conferir (sem cliente de serviço ou erro) — quem chama não filtra nada nesse caso.
  */
-export async function arquivosDoDono(admin: SupabaseClient | null, ownerId: string): Promise<Set<string> | null> {
+/**
+ * `soFotosReais`: com `soFotosReais: true` (a capa do "Continue seu anúncio"), arquivos menores que o mínimo ficam de fora da
+ * lista — a capa cai na próxima foto de verdade ou no espaço desenhado, nunca num retângulo de cor única.
+ */
+export async function arquivosDoDono(admin: SupabaseClient | null, ownerId: string, opcoes: { soFotosReais?: boolean } = {}): Promise<Set<string> | null> {
   if (!admin || !/^[0-9a-f-]{36}$/i.test(ownerId)) return null;
   const nomes = new Set<string>();
   for (let pagina = 0; pagina < 10; pagina++) {
     const { data, error } = await admin.storage.from(BUCKET).list(ownerId, { limit: 1000, offset: pagina * 1000 });
     if (error) return null;
-    for (const o of data ?? []) nomes.add(`${ownerId}/${o.name}`);
+    for (const c of caminhosDaListagem((data ?? []) as ArquivoListado[], ownerId, opcoes.soFotosReais === true)) nomes.add(c);
     if ((data ?? []).length < 1000) break;
   }
   return nomes;

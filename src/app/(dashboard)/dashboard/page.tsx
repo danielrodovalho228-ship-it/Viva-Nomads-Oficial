@@ -99,7 +99,7 @@ async function capaDoRascunho(id: string | null, draftData: unknown): Promise<st
   // apagado virava imagem quebrada. Ordem: property_photos (sort_order) → draft_data; sem nenhuma, o placeholder.
   const [{ data }, existentes] = await Promise.all([
     supabase.from("property_photos").select("url").eq("property_id", id).order("sort_order", { ascending: true }).limit(40),
-    arquivosDoDono(createAdminClient(), user.id),
+    arquivosDoDono(createAdminClient(), user.id, { soFotosReais: true }), // E787: a capa não pode ser um quadro de cor única
   ]);
   // E405 (02/11): só URL de imagem vira capa — "Foto QA Premium 1 - Sala" (nome de foto de teste) virava caixa cinza.
   const daTabela = soFotosExistentes(((data ?? []) as { url: string }[]).map((r) => r.url).filter(ehUrlDeImagem), existentes)[0];
