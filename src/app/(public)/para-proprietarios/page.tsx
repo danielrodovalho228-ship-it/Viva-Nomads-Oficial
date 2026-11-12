@@ -193,7 +193,7 @@ export default function ForLandlordsPage() {
               {[
                 "Checklist de qualificação que ajuda a declarar a regularidade da locação.",
                 "Selo Pronto para Morar para seu anúncio se destacar na busca.",
-                "Verificação de identidade do morador — em breve.",
+                "Verificação automática de identidade do morador — ainda não abriu; por ora, a equipe da Viva confere o documento.",
                 "Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica.",
                 "Pagamento mensal direto na sua conta.",
               ].map((item) => (

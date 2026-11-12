@@ -10,9 +10,10 @@ const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), 
 
 test("E68: a tela da Verificação escreve 'em breve' uma vez só (no estado em breve)", () => {
   const v = ler("app/(dashboard)/dashboard/verificacao/page.tsx");
-  const vezes = (v.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "").match(/em breve/gi) ?? []).length;
-  assert.equal(vezes, 1);
-  assert.match(v, /Disponível em breve, por meio de um parceiro\./);
+  // E757: o aviso segue aparecendo UMA vez só (E68), agora com o estado único (texto-unico.ts) e sem "em breve".
+  const codigo = v.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+  assert.equal((codigo.match(/em breve/gi) ?? []).length, 0);
+  assert.equal((codigo.match(/\{IDENTIDADE_ESTADO_FRASE\}/g) ?? []).length, 1);
 });
 
 test("E71: contato em destaque com a frase do atendimento; descrições das linhas; Sair dentro do cartão", () => {

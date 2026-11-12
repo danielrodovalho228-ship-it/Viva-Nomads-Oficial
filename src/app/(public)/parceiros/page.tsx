@@ -45,7 +45,8 @@ const CARDS = [
 
 const PASSOS = [
   { t: "Peça a parceria", d: "Com a sua conta: conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: `Identidade e CNPJ; para fotografia, também o portfólio. ${TEXTO_PRAZO_PARCERIA} Aprovada, o e-mail traz o link para ativar a sua página.`, foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  // E757 + prazo da main: o estado da identidade é o do texto único (não abriu; a equipe confere), e o prazo de resposta segue.
+  { t: "A Viva confere", d: `A equipe da Viva confere o seu documento e o CNPJ (a verificação automática de identidade ainda não abriu); para fotografia, também o portfólio. ${TEXTO_PRAZO_PARCERIA} Aprovada, o e-mail traz o link para ativar a sua página.`, foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
   { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
   { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];

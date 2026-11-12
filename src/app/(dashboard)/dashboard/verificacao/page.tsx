@@ -29,6 +29,7 @@ import { useViewMode } from "@/lib/roles";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
 import type { EstadoIdentidade } from "@/lib/identidade/estado";
+import { IDENTIDADE_ESTADO_FRASE } from "@/lib/identidade/texto-unico";
 import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
@@ -313,8 +314,9 @@ function RealNaoVerificado({ copy, perfil }: { copy: VerifyCopy; perfil: "tenant
             </span>
             <div>
               <h2 className="font-title text-lg font-semibold text-ink">Não verificado</h2>
+              {/* E757: o estado único (texto-unico.ts) — nada de "em breve": ainda não abriu e, por ora, a equipe confere. */}
               <p className="text-sm text-muted" data-testid="verificacao-em-breve">
-                Disponível em breve, por meio de um parceiro.
+                {IDENTIDADE_ESTADO_FRASE}
               </p>
             </div>
           </div>

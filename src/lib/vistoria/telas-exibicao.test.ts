@@ -131,7 +131,7 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
   // E35-B: a identidade vem do FATO, nunca do status (aprovar para teste não exige mais a identidade).
   assert.equal(passosCumpridos({ status: "em_teste", identidadeVerificada: false, ...sem }).identidade, false);
   assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: true, ...sem }).identidade, true);
-  assert.equal(complementoPassoIdentidade("em_breve"), "Na ativação · a verificação abre perto do lançamento");
+  assert.equal(complementoPassoIdentidade("em_breve"), "Na ativação · verificação automática ainda não abriu · a equipe da Viva confere o documento");
   assert.equal(complementoPassoIdentidade("simulavel"), "Na ativação");
   assert.equal(complementoPassoIdentidade("confirmada"), null);
   assert.equal(passosCumpridos({ status: "ativo", identidadeVerificada: true, testeConcluido: true }).teste, true);

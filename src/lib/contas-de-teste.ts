@@ -13,7 +13,7 @@ import { comissaoSobreDias } from "./cobranca/regra.ts";
 export const ROTULO_TESTE = "TESTE";
 export const NOTA_VERIFICACAO_TESTE = "TESTE — verificação simulada";
 /** Conta real, verificação ainda sem parceiro: mensagem honesta, sem travar o resto da plataforma. */
-export const MSG_VERIFICACAO_EM_BREVE = "A verificação de identidade abre em breve. Você pode continuar usando a plataforma normalmente.";
+export const MSG_VERIFICACAO_EM_BREVE = "A verificação automática de identidade ainda não abriu; a equipe da Viva confere o documento. Você pode continuar usando a plataforma normalmente.";
 
 const idSimulado = (prefixo: string) => `${prefixo}_${Math.random().toString(36).slice(2, 10)}`;
 

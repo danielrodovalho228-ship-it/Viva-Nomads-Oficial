@@ -6,6 +6,7 @@
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
 import { chaveCidade } from "../cidades.ts";
+import { IDENTIDADE_ESTADO_CURTO } from "../identidade/texto-unico.ts";
 import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
@@ -179,9 +180,9 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
 
 /**
  * E35-B: o complemento do passo "Identidade verificada" enquanto não está confirmada. Com o provedor de verificação
- * ainda desligado ("em breve"), avisa que o passo é da ativação e que a verificação abre perto do lançamento.
+ * ainda desligado ("em breve"), avisa que o passo é da ativação e diz o estado de hoje (texto único, E757).
  */
-export const TEXTO_IDENTIDADE_EM_BREVE = "Na ativação · a verificação abre perto do lançamento";
+export const TEXTO_IDENTIDADE_EM_BREVE = `Na ativação · ${IDENTIDADE_ESTADO_CURTO}`;
 export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve" | "indisponivel"): string | null {
   if (estado === "confirmada") return null;
   if (estado === "indisponivel") return "não conferida agora";
