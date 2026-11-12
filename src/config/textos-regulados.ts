@@ -25,5 +25,10 @@ export const FRASE_NEGOCIACAO_NA_PLATAFORMA = `Negociação na plataforma, pelo 
 
 /** Linha curta para os estados vazios do centro de mensagens. */
 export const NOTA_CONTATO_MENSAGENS = "telefone e e-mail nunca são trocados: tudo fica no chat da Viva.";
+/** E794 (regra E445): a landing de Parceiros não promete nada revelado depois do aceite; o contato nunca é trocado. */
+export const PARCEIROS_HEROI_SUBTITULO =
+  "Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma; o seu contato nunca é trocado.";
+export const PARCEIROS_NUMERO_CONTATO = { titulo: "Contato só pela plataforma", nota: "o seu contato nunca é trocado" } as const;
+
 /** Visitas: o nome completo aparece depois do aceite; o contato nunca é trocado. */
 export const NOTA_VISITA_DONO = "O nome completo do interessado aparece depois do aceite; telefone e e-mail nunca são trocados.";

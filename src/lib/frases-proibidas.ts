@@ -8,7 +8,12 @@ export interface RegraProibida {
   /** O que a regra aprovada diz. */
   regra: string;
   re: RegExp;
+  /** Só vale nestes prefixos de caminho (sem caminho informado, vale sempre). */
+  escopo?: string[];
 }
+
+/** Superfícies de Parceiros (páginas públicas, componentes, regras e o atendimento sobre parceiros). */
+const SUPERFICIES_PARCEIROS = ["src/app/(public)/parceiros/", "src/components/parceiros/", "src/lib/parceiros/", "src/lib/atendimento/parceiros-texto.ts"];
 
 export const FRASES_PROIBIDAS: RegraProibida[] = [
   {
@@ -39,6 +44,12 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     regra: "Taxas: a taxa da Viva é cobrada só do proprietário; o morador não paga taxa da plataforma.",
     re: /taxa[^.\n"`]{0,40}\b(cobrad[ao]|paga)\b[^.\n"`]{0,20}\b(d[oa]|pel[oa]) (morador|inquilin)/i,
   },
+  {
+    id: "identidade-revelada-depois-do-aceite-parceiros",
+    regra: "E794 (regra E445): em Parceiros nada é revelado nem trocado depois do aceite; o contato nunca é trocado. Não se promete 'identidade revelada depois/após o aceite'.",
+    re: /identidade[^.\n"`]{0,30}revelad\w*[^.\n"`]{0,20}(depois|ap[óo]s)\s+(d?o\s+)?aceite/i,
+    escopo: SUPERFICIES_PARCEIROS,
+  },
 ];
 
 /**
@@ -49,7 +60,6 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
 export const FORA_DO_GATE: { prefixo: string; motivo: string }[] = [
   { prefixo: "src/lib/parceiros/", motivo: "fluxo de parceiros: contato liberado depois do aceite (L2-B item 16)" },
   { prefixo: "src/components/parceiros/", motivo: "fluxo de parceiros: contato liberado depois do aceite (L2-B item 16)" },
-  { prefixo: "src/app/(public)/parceiros/", motivo: "páginas públicas de parceiros: mesma regra do fluxo de parceiros" },
   { prefixo: "src/lib/atendimento/parceiros-texto.ts", motivo: "texto do atendimento sobre parceiros" },
 ];
 
@@ -70,10 +80,11 @@ export function semComentarios(codigo: string): string[] {
   });
 }
 
-export function achadosProibidos(texto: string): { id: string; trecho: string }[] {
+export function achadosProibidos(texto: string, caminho?: string): { id: string; trecho: string }[] {
   const achados: { id: string; trecho: string }[] = [];
+  const regras = FRASES_PROIBIDAS.filter((r) => !r.escopo || caminho === undefined || r.escopo.some((x) => caminho.startsWith(x)));
   for (const linha of texto.split("\n")) {
-    for (const r of FRASES_PROIBIDAS) if (r.re.test(linha)) achados.push({ id: r.id, trecho: linha.trim().slice(0, 120) });
+    for (const r of regras) if (r.re.test(linha)) achados.push({ id: r.id, trecho: linha.trim().slice(0, 120) });
   }
   return achados;
 }
