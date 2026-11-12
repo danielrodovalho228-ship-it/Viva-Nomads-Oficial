@@ -23,7 +23,8 @@ for (const c of CASOS) {
     expect(sem(await lateral.getByTestId("cartao-lateral-estadia-conta").innerText())).toContain(c.conta);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("barra-total-estadia")).toBeVisible({ timeout: 20_000 });
+    // A duração da última busca é lida do aparelho depois da hidratação (antes disso vale a estadia mínima): espera o texto, não só a barra.
+    await expect(page.getByTestId("barra-total-estadia")).toContainText(c.total.split(" em ")[1], { timeout: 20_000 });
     expect(sem(await page.getByTestId("barra-total-estadia").innerText())).toContain(c.total);
   });
 }
