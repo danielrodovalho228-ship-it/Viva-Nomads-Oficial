@@ -117,7 +117,8 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/imoveis/${ids.teste}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("faixa-anuncio-teste")).toHaveAttribute("data-modo", "equipe", { timeout: 20_000 });
-    await expect(page.getByTestId("faixa-anuncio-teste")).toHaveText("Anúncio de teste: fora da busca e das listagens");
+    // E786 (julgamento de 11/11): a faixa é uma só, com o texto especificado, também para a equipe.
+    await expect(page.getByTestId("faixa-anuncio-teste")).toHaveText("Anúncio de teste da equipe Viva — não é um imóvel disponível");
     await expect(page.getByTestId("cartao-solicitar")).toBeEnabled();
     await expect(page.getByTestId("cartao-solicitar")).toHaveText("Pedir para morar");
     await page.screenshot({ path: "tests/laboratorio/saida/t398-3-dono-1280.png", fullPage: false });
