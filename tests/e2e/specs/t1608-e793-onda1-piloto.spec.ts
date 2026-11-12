@@ -174,6 +174,9 @@ test.describe(`T1608 — E793 Onda 1 (${PILOTO ? "chave piloto" : "chave off: ro
       const semJs = await browser.newContext({ storageState: estado, javaScriptEnabled: false, viewport: { width: largura, height: 900 } });
       const linhas: string[] = [];
       for (const r of ROTAS) {
+        // E798 (asserção alterada): no computador, /dashboard/conta vai ao Perfil já no servidor (307) — não há menu da
+        // Conta a desenhar ali; o redirecionamento é provado no t1611.
+        if (largura === 1280 && "soCelular" in r) continue;
         // (1)/(8) HTML do servidor, sem JavaScript.
         const pJs = await semJs.newPage();
         await pJs.goto(r.rota, { waitUntil: "domcontentloaded" });
@@ -185,7 +188,6 @@ test.describe(`T1608 — E793 Onda 1 (${PILOTO ? "chave piloto" : "chave off: ro
         } else {
           expect(html, `${r.rota}: chave off → esqueleto (rollback)`).toContain('data-testid="auth-guard-carregando"');
         }
-        if (largura === 1280 && "soCelular" in r) continue;
         // (2)(3) carga fria (página nova, mesmo login), TPCU e hidratação.
         const page = await ctx.newPage();
         const erros = colherErros(page);
