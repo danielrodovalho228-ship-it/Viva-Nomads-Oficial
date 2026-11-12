@@ -13,7 +13,7 @@
 import { usePathname } from "next/navigation";
 import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
 import { modoDaRota } from "./papel/modo-da-rota";
-import { primeiroNome, usuarioDoEmail } from "./display-name";
+import { nomeParaAvatar, primeiroNome, usuarioDoEmail } from "./display-name";
 
 export type { ViewMode };
 
@@ -49,6 +49,11 @@ export function defaultMode(user: SessionUser): ViewMode {
  */
 export function primeiroNomeExibicao(user: SessionUser | null | undefined): string {
   return primeiroNome(user?.fullName);
+}
+
+/** E788: o nome do AVATAR da própria conta — o completo, como no Perfil (iniciais iguais em toda superfície). */
+export function nomeAvatarExibicao(user: SessionUser | null | undefined): string {
+  return nomeParaAvatar(user?.fullName);
 }
 
 /**
