@@ -65,3 +65,17 @@ O erro passou a carregar o campo, e o formulário passou a usar `falhar()`. O co
 - `src/lib/parceiros/e362-conferencia-portfolio.test.ts`: o texto do retorno de fotografia agora inclui `campo: "portfolioUrl"`.
 - `src/lib/parceiros/e651-recusa-documento.test.ts`: o retorno do CPF é `{ ok: false, erro: MSG_SO_CNPJ, campo: "documento" }`.
 - `src/lib/parceiros/e731-rotulo-sessao.test.ts`: `return setErro(ERRO_SESSAO_NAO_CONFIRMADA)` passou a `return falhar(ERRO_SESSAO_NAO_CONFIRMADA)`.
+
+### Regressão no lab
+
+Build da branch, chave `piloto`, personas recriadas pelo `seed-lab.mjs`.
+
+| Spec | O que cobre | Resultado |
+|---|---|---|
+| t1612 | E818 | 6 passed |
+| t287 | `/admin/destinos` salva | 2 passed |
+| t196 | cidades liberadas | 3 passed |
+| t441 | cadastro de parceiro PJ, CPF recusado | 5 passed |
+| t44 | parceiros | 6 passed |
+| t303 | credenciamento pela tela, caminho de sucesso do `FormAcao` | 5 passed |
+| t314 | pedido único do avaliador | 4 passed |
