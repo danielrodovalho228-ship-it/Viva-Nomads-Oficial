@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { TEXTO_EXCLUSAO } from "@/lib/saida/regras";
 import Link from "next/link";
 import { ExcluirContaForm } from "./form";
+import { DESTINO_EXCLUIR_CONTA_LOGADO, ROTULO_EXCLUIR_CONTA } from "@/lib/conta/excluir-conta";
 
 export const metadata: Metadata = {
   title: "Excluir conta",
@@ -22,14 +23,14 @@ export default function ExcluirContaPage() {
       <section className="mt-8">
         <h2 className="font-title text-xl font-semibold text-ink">1. Pelo app (mais rápido)</h2>
         <p className="mt-2 text-muted">
-          Entre na sua conta e vá em <strong className="text-ink">Conta → Excluir conta</strong>.
+          Entre na sua conta e vá em <strong className="text-ink">Conta → Privacidade → {ROTULO_EXCLUIR_CONTA}</strong>.
           Por ali não precisa de confirmação por e-mail.
         </p>
         <Link
-          href="/dashboard/conta"
+          href={DESTINO_EXCLUIR_CONTA_LOGADO}
           className="mt-3 inline-flex rounded-xl border border-sage-200 px-4 py-3 text-sm font-medium text-forest"
         >
-          Abrir Conta
+          Excluir pelo app
         </Link>
       </section>
 
