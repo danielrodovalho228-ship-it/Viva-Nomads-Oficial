@@ -30,6 +30,9 @@ import { buttonClasses } from "@/components/ui/button";
 export const ESCONDER = ["/buscar", "/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
 const CHAVE = CHAVE_CONVERSA_CHAT;
 
+/** E823: o que o botão flutuante abre, dito em palavras (rótulo ao passar o mouse/focar e title). */
+export const ROTULO_BOTAO_VIVA = "Fale com a Viva · chat de atendimento";
+
 function carregar(): MsgChat[] {
   try {
     const v = JSON.parse(sessionStorage.getItem(CHAVE) ?? "[]");
@@ -190,13 +193,26 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={levaAPagina ? undefined : aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "w-12 rounded-full px-0 sm:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
+        // E823: o redondo (C1b) só com o ícone não dizia o que abre — nome também no title e no rótulo visível abaixo.
+        title={aberto ? "Fechar o chat" : ROTULO_BOTAO_VIVA}
+        className={cn(buttonClasses(), "peer h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "w-12 rounded-full px-0 sm:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
         data-compacto={(compacto || painel) && !aberto ? "1" : undefined}
       >
         {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-5 w-5" : "h-4 w-4"} />}
         <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
+      {/* E823: identificação VISÍVEL do botão redondo — aparece ao passar o mouse ou ao focar pelo teclado (o botão
+          com texto fixo cobria conteúdo das páginas, C1b). No celular o botão nem aparece (E246). */}
+      {(compacto || painel) && !aberto && !arrastando && (
+        <span
+          aria-hidden
+          className="pointer-events-none order-first hidden whitespace-nowrap rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white shadow-flutuante peer-hover:block peer-focus-visible:block"
+          data-testid="fale-com-a-viva-rotulo"
+        >
+          {ROTULO_BOTAO_VIVA}
+        </span>
+      )}
     </div>
   );
 }
