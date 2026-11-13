@@ -37,10 +37,11 @@ test("Baixar meus dados: só a sessão da própria pessoa, sem cliente admin, se
   assert.match(rota, /status: 401/);
 });
 
-test("a tela: chaves gravam na hora, Baixar meus dados e Excluir minha conta como no desenho", () => {
+test("a tela: chaves gravam na hora, Baixar meus dados e Excluir conta como no desenho", () => {
   const tela = ler("src/components/account/tela-privacidade.tsx");
   assert.match(tela, /href="\/api\/conta\/meus-dados"/);
-  assert.match(tela, /href="\/dashboard\/conta\/excluir"/);
+  // E840: o destino vem da fonte única (DESTINO_EXCLUIR_CONTA_LOGADO = "/dashboard/conta/excluir").
+  assert.match(tela, /href=\{DESTINO_EXCLUIR_CONTA_LOGADO\}/);
   assert.match(tela, /setPrivacidade\(/);
   assert.doesNotMatch(tela, /window\.confirm|alert\(/);
 });

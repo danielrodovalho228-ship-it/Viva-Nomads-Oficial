@@ -5,6 +5,7 @@ import { SUPORTE_EMAIL } from "@/lib/site";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { EntrarNoRodape } from "@/components/layout/entrar-no-rodape";
+import { ExcluirContaNoRodape } from "@/components/layout/excluir-conta-no-rodape";
 
 export function Footer() {
   return (
@@ -56,7 +57,8 @@ export function Footer() {
           <FooterLink href="/dashboard">Meu painel</FooterLink>
           <FooterLink href="/termos">Termos de Uso</FooterLink>
           <FooterLink href="/privacidade">Privacidade</FooterLink>
-          <FooterLink href="/excluir-conta">Excluir conta</FooterLink>
+          {/* E840: o destino depende da sessão (deslogado → página pública; logado → a tela da conta). */}
+          <ExcluirContaNoRodape />
         </FooterCol>
       </div>
 

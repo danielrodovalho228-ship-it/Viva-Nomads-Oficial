@@ -1,5 +1,6 @@
 "use client";
 
+import { DESTINO_EXCLUIR_CONTA_LOGADO, ROTULO_EXCLUIR_CONTA } from "@/lib/conta/excluir-conta";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Download } from "lucide-react";
@@ -70,8 +71,8 @@ export function TelaPrivacidade() {
         <a href="/api/conta/meus-dados" download className={buttonClasses({ variant: "secondary", size: "lg" })} data-testid="privacidade-baixar">
           <Download className="h-4 w-4" aria-hidden /> Baixar meus dados
         </a>
-        <Link href="/dashboard/conta/excluir" className="inline-flex min-h-11 items-center text-base font-semibold text-red-700 underline underline-offset-4" data-testid="privacidade-excluir">
-          Excluir minha conta
+        <Link href={DESTINO_EXCLUIR_CONTA_LOGADO} className="inline-flex min-h-11 items-center text-base font-semibold text-red-700 underline underline-offset-4" data-testid="privacidade-excluir">
+          {ROTULO_EXCLUIR_CONTA}
         </Link>
       </div>
       {/* E66: a segurança (senha, duas etapas e verificações) fica na rota própria; daqui, só o caminho até ela. */}
