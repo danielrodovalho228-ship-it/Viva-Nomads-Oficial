@@ -227,7 +227,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-004",
-    title: "Studio ao lado do Hospital de Clínicas (UFU)",
+    // E825: o título dizia "ao lado do Hospital de Clínicas", mas o próprio anúncio informa o HC-UFU a 1,7 km (o campus
+    // Umuarama é que fica a 480 m). O título diz só o que o corpo sustenta.
+    title: "Studio perto do campus Umuarama (UFU), a 1,7 km do Hospital de Clínicas",
     description:
       "Studio mobiliado a poucos minutos do Hospital de Clínicas. Ideal para acompanhantes de pacientes, profissionais de saúde em plantão ou residência. Tudo pronto para morar já no primeiro dia.",
     propertyType: "Studio",
