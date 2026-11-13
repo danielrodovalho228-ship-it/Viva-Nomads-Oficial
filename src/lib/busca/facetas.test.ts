@@ -125,11 +125,11 @@ test("E43: um chip de seguro-fiança (o atalho antigo é o mesmo critério) e Pr
   // Adendo 3: o campo antigo saiu do painel e da URL; sobra só como apelido da garantia (mesmo critério).
   assert.equal(com({ seguroOnly: true }), com({ garantia: "seguro_fianca" }));
   const folha = readFileSync(new URL("../../components/busca/painel-filtros-celular.tsx", import.meta.url), "utf8");
-  const busca = readFileSync(new URL("../../app/(public)/buscar/search-client.tsx", import.meta.url), "utf8");
+  const busca = readFileSync(new URL("../../app/(public)/buscar/search-client.tsx", import.meta.url), "utf8") + readFileSync(new URL("./filtros-da-url.ts", import.meta.url), "utf8"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
   assert.doesNotMatch(folha, /Aceita Seguro-Fiança/);
   assert.match(folha, /testId="faceta-pronto"/);
   assert.doesNotMatch(busca, /aria-label="Pronto para Morar"/, "a barra de cima não tem mais o chip");
-  assert.match(busca, /seguroDaUrlLegada\(gar, sp\.get\("seguro"\)\)\) setGarantia\("seguro_fianca"\)/);
+  assert.match(busca, /seguroDaUrlLegada\(gar, sp\.get\("seguro"\)\) \? "seguro_fianca"/);
 });
 
 test("E20: o preço compara o TOTAL do mês (o mesmo do cartão), não o aluguel base", () => {

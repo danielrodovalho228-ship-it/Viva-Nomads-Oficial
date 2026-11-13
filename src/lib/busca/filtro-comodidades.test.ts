@@ -66,7 +66,7 @@ test("a lista (/buscar) carrega só as comodidades filtráveis, numa consulta s�
   const dados = ler("lib/data/properties.ts");
   assert.match(dados, /attachComodidadesFiltro\(supabase, mapped\)/);
   assert.match(dados, /\.from\("property_amenities"\)[\s\S]{0,200}\.in\("property_id"/);
-  const tela = ler("app/(public)/buscar/search-client.tsx");
+  const tela = ler("app/(public)/buscar/search-client.tsx") + ler("lib/busca/filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
   assert.match(tela, /comodidadesDaUrl\(sp\.get\("comod"\)\)/);
   assert.match(tela, /put\("comod"/);
   const painel = ler("components/busca/painel-filtros-celular.tsx");

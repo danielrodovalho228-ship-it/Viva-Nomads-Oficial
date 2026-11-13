@@ -32,20 +32,18 @@ import { comTotalMes } from "@/lib/precos";
 import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
-import { PROPERTY_TYPES } from "@/lib/amenities";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
-import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
+import { GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
 import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
-import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { FILTROS_PAINEL_VAZIOS, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
-import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
-import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
+import { comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
+import { FILTROS_PAINEL_VAZIOS, naoMedidosDoPainel, passaNoPainel, precoDeBusca, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { avisoNivelSemResultado, filtroNivelNaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
-import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
+import { ROTULO_NAO_MEDIDA, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 import { BarraPilulas } from "@/components/busca/barra-pilulas";
@@ -53,7 +51,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
 import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
-import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, soHaExemplos, TEXTO_CARTAO_PEDIDO, TEXTO_VITRINE_SO_EXEMPLOS } from "@/lib/busca/exemplos-e-pedido";
+import { contarNaBase, mostrarCartaoPedido, soHaExemplos, TEXTO_CARTAO_PEDIDO, TEXTO_VITRINE_SO_EXEMPLOS } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
@@ -62,6 +60,7 @@ import { desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
+import { filtrosDaUrl } from "@/lib/busca/filtros-da-url";
 import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
@@ -80,53 +79,57 @@ export function SearchClient({
   properties: imoveis,
   destinos = [],
   modos = ["carro", "a_pe", "bicicleta"],
+  buscaInicial = "",
 }: {
   properties: Property[];
   /** Prompt 37: destinos cadastrados (chips) e meios com dado (ônibus só com a chave). */
   destinos?: DestinoChip[];
   modos?: ModoRota[];
+  /** E829: a query da URL lida no servidor — o estado da busca já nasce filtrado (sem piscar a lista completa). */
+  buscaInicial?: string;
 }) {
+  const [inicial] = useState(() => filtrosDaUrl(buscaInicial));
   // Filtro, ordem e pino usam o total do mês do cartão (ordem 826719b1, D1).
   const properties = useMemo(() => imoveis.map((p) => comTotalMes(p)), [imoveis]);
-  const [locationQuery, setLocationQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState(inicial.locationQuery);
   // Coordenadas de um endereço escolhido no autocomplete (filtra por raio).
-  const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoCenter, setGeoCenter] = useState<{ lat: number; lng: number } | null>(inicial.geoCenter);
   // Raio (km) ao redor do endereço buscado — ajustável quando há endereço.
-  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
-  const [maxPrice, setMaxPrice] = useState(0);
-  const [minBedrooms, setMinBedrooms] = useState(0);
+  const [radiusKm, setRadiusKm] = useState(inicial.radiusKm ?? DEFAULT_RADIUS_KM);
+  const [maxPrice, setMaxPrice] = useState(inicial.maxPrice);
+  const [minBedrooms, setMinBedrooms] = useState(inicial.minBedrooms);
   // Hóspedes (Onda 1): adultos + crianças → filtra pela capacidade do imóvel.
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
-  const [maxPeriod, setMaxPeriod] = useState(0); // período mínimo aceito <= X
-  const [typeFilter, setTypeFilter] = useState(""); // tipo de imóvel ("" = todos)
-  const [faixa, setFaixa] = useState(""); // faixa de prazo ("" = todas)
-  const [dataEntrada, setDataEntrada] = useState(""); // disponível até esta data de entrada
-  const [garantia, setGarantia] = useState(""); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
-  const [petsOnly, setPetsOnly] = useState(false);
-  const [exemplosForcados, setExemplosForcados] = useState(false); // ?exemplos=1: laboratório/QA
+  const [adults, setAdults] = useState(inicial.adults);
+  const [children, setChildren] = useState(inicial.children);
+  const [maxPeriod, setMaxPeriod] = useState(inicial.maxPeriod); // período mínimo aceito <= X
+  const [typeFilter, setTypeFilter] = useState(inicial.typeFilter); // tipo de imóvel ("" = todos)
+  const [faixa, setFaixa] = useState(inicial.faixa); // faixa de prazo ("" = todas)
+  const [dataEntrada, setDataEntrada] = useState(inicial.dataEntrada); // disponível até esta data de entrada
+  const [garantia, setGarantia] = useState(inicial.garantia); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
+  const [petsOnly, setPetsOnly] = useState(inicial.petsOnly);
+  const [exemplosForcados, setExemplosForcados] = useState(inicial.exemplosForcados); // ?exemplos=1: laboratório/QA
 
-  const [petPorte, setPetPorte] = useState<FiltrosPainel["petPorte"]>("");
-  const [furnishedOnly, setFurnishedOnly] = useState(false);
-  const [readyToLiveOnly, setReadyToLiveOnly] = useState(false);
-  const [homeOfficeOnly, setHomeOfficeOnly] = useState(false);
+  const [petPorte, setPetPorte] = useState<FiltrosPainel["petPorte"]>(inicial.petPorte);
+  const [furnishedOnly, setFurnishedOnly] = useState(inicial.furnishedOnly);
+  const [readyToLiveOnly, setReadyToLiveOnly] = useState(inicial.readyToLiveOnly);
+  const [homeOfficeOnly, setHomeOfficeOnly] = useState(inicial.homeOfficeOnly);
   // Prompt 57, fase 2: internet MEDIDA (download mínimo) e "só com internet medida".
-  const [internetMin, setInternetMin] = useState(0);
+  const [internetMin, setInternetMin] = useState(inicial.internetMin);
   // Adendo 59.1: nível "a partir de" (`?nivel=`), escolhido na folha de filtros.
-  const [nivelMin, setNivelMin] = useState<Nivel | "">("");
+  const [nivelMin, setNivelMin] = useState<Nivel | "">(inicial.nivelMin);
   // E573: níveis EXATOS do grupo "Nível" do painel (`?niveis=`); o rótulo/posição no painel é da Pista A.
-  const [niveis, setNiveis] = useState<Nivel[]>([]);
-  const [soInternetMedida, setSoInternetMedida] = useState(false);
+  const [niveis, setNiveis] = useState<Nivel[]>(inicial.niveis);
+  const [soInternetMedida, setSoInternetMedida] = useState(inicial.soInternetMedida);
   // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
-  const [datasFlexiveis, setDatasFlexiveis] = useState(false);
+  const [datasFlexiveis, setDatasFlexiveis] = useState(inicial.datasFlexiveis);
   const [verNaoMedidos, setVerNaoMedidos] = useState(false);
-  const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>([]); // garagem, lavar (ordem 583d2e71; Wi-Fi saiu no Adendo 3)
-  const [workLocatedOnly, setWorkLocatedOnly] = useState(false);
-  const [invoiceOnly, setInvoiceOnly] = useState(false);
-  const [operatedOnly, setOperatedOnly] = useState(false);
-  const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
+  const [comodidades, setComodidades] = useState<ComodidadeFiltro[]>(inicial.comodidades); // garagem, lavar (ordem 583d2e71; Wi-Fi saiu no Adendo 3)
+  const [workLocatedOnly, setWorkLocatedOnly] = useState(inicial.workLocatedOnly);
+  const [invoiceOnly, setInvoiceOnly] = useState(inicial.invoiceOnly);
+  const [operatedOnly, setOperatedOnly] = useState(inicial.operatedOnly);
+  const [negociaOnly, setNegociaOnly] = useState(inicial.negociaOnly); // E439: só quem aceita negociar (`?negocia=1`)
   // E572/E580: só com o selo "Preço justo" (`?precojusto=1`) — o mesmo selo do card, sem chave.
-  const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
+  const [precoJustoOnly, setPrecoJustoOnly] = useState(inicial.precoJustoOnly);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
   const [painelAberto, setPainelAberto] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
@@ -148,9 +151,9 @@ export function SearchClient({
     mq.addEventListener("change", aplicar);
     return () => mq.removeEventListener("change", aplicar);
   }, []);
-  const [sort, setSort] = useState<"relevance" | "trabalho" | "recent" | "price-asc" | "price-desc">("relevance");
+  const [sort, setSort] = useState<"relevance" | "trabalho" | "recent" | "price-asc" | "price-desc">(inicial.sort);
   // Prompt 37: onde a pessoa vai trabalhar ou estudar (destino cadastrado ou endereço), meio e "até N min".
-  const [estadoDestino, setEstadoDestino] = useState<EstadoDestino>({ destino: null, modo: "carro", ate: 0 });
+  const [estadoDestino, setEstadoDestino] = useState<EstadoDestino>(inicial.estadoDestino);
   const escolherDestino = (e: EstadoDestino) => {
     setEstadoDestino(e);
     // Com destino, a ordem padrão vira "Mais perto do trabalho"; sem, volta à relevância.
@@ -165,65 +168,40 @@ export function SearchClient({
 
   // Restaura a busca da URL: endereço/raio + todos os filtros, para links
   // compartilhados e reloads mostrarem exatamente os filtros ativos (M7).
+  // E829: a mesma leitura pura do estado inicial (filtrosDaUrl), usada no voltar/avançar do navegador.
   const restaurarFiltrosDaURL = useCallback(() => {
-    const sp = new URLSearchParams(window.location.search);
-    if (exemplosForcadosNaUrl(window.location.search)) setExemplosForcados(true);
-    const local = sp.get("local");
-    const lat = Number(sp.get("lat"));
-    const lng = Number(sp.get("lng"));
-    const r = Number(sp.get("r"));
-    if (local) setLocationQuery(local);
-    if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
-      setGeoCenter({ lat, lng });
-      if ([5, 10, 20].includes(r)) setRadiusKm(r);
-    }
-    const num = (k: string) => Number(sp.get(k)) || 0;
-    // Preço: aceita `orcamento` (busca do hero) OU `preco` (sync interno) — A3.
-    const orc = num("orcamento") || num("preco");
-    if (orc >= 300 && orc <= 50000) setMaxPrice(orc);
-    if ([1, 2, 3].includes(num("quartos"))) setMinBedrooms(num("quartos"));
-    if (num("adultos") >= 1) setAdults(Math.min(16, num("adultos")));
-    if (num("criancas") >= 1) setChildren(Math.min(10, num("criancas")));
-    // Período: novos valores (60/120/180 = 1–2/3–4/5–6 meses) + legado do hero
-    // (30/90 → mapeados) — A3: a URL reflete no controle "Período da estadia".
-    const per = num("periodo");
-    const perMap: Record<number, number> = { 30: 60, 60: 60, 90: 120, 120: 120, 180: 180 };
-    if (perMap[per]) setMaxPeriod(perMap[per]);
-    const ordem = sp.get("ordem");
-    const ed = destinoDaUrl(sp);
-    setEstadoDestino(ed);
-    if (ordem === "recent" || ordem === "price-asc" || ordem === "price-desc") setSort(ordem);
-    else if (ed.destino) setSort("trabalho");
-    const tipo = sp.get("tipo");
-    if (tipo && PROPERTY_TYPES.some((t) => t.value === tipo)) setTypeFilter(tipo);
-    const fx = sp.get("faixa");
-    if (fx && FAIXAS.some((f) => f.key === fx)) setFaixa(fx);
-    const ent = sp.get("entrada");
-    if (ent && /^\d{4}-\d{2}-\d{2}$/.test(ent)) setDataEntrada(ent);
-    if (datasFlexiveisDaUrl(sp)) setDatasFlexiveis(true);
-    const gar = sp.get("garantia");
-    if (gar && GARANTIAS_FILTRO.some((g) => g.key === gar)) setGarantia(gar);
-    const on = (k: string) => sp.get(k) === "1";
-    if (on("pet")) setPetsOnly(true);
-    const porte = sp.get("porte");
-    if (on("pet") && (porte === "P" || porte === "M" || porte === "G")) setPetPorte(porte);
-    if (on("mobiliado")) setFurnishedOnly(true);
-    if (on("pronto")) setReadyToLiveOnly(true);
-    if (on("homeoffice")) setHomeOfficeOnly(true);
-    if (on("localizado")) setWorkLocatedOnly(true);
-    // E574: "Emite nota fiscal" = dono PJ/MEI que declarou emitir nota da locação (PF gera recibo, nunca entra).
-    if (on("nota")) setInvoiceOnly(true);
-    // E43 (Adendo 3): o atalho antigo `?seguro=1` vira a garantia "Seguro-fiança" — a mesma migração das buscas salvas.
-    if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
-    if (on("gestor")) setOperatedOnly(true);
-    if (on("negocia")) setNegociaOnly(true);
-    if (on("precojusto")) setPrecoJustoOnly(true);
-    setComodidades(comodidadesDaUrl(sp.get("comod")));
-    const fi = filtroInternetDaUrl(sp);
-    setInternetMin(fi.internetMin);
-    setSoInternetMedida(fi.soInternetMedida);
-    setNivelMin(filtroNivelDaUrl(sp));
-    setNiveis(niveisDaUrl(sp));
+    const f = filtrosDaUrl(window.location.search);
+    setExemplosForcados(f.exemplosForcados);
+    setLocationQuery(f.locationQuery);
+    setGeoCenter(f.geoCenter);
+    if (f.radiusKm != null) setRadiusKm(f.radiusKm);
+    setMaxPrice(f.maxPrice);
+    setMinBedrooms(f.minBedrooms);
+    setAdults(f.adults);
+    setChildren(f.children);
+    setMaxPeriod(f.maxPeriod);
+    setEstadoDestino(f.estadoDestino);
+    setSort(f.sort);
+    setTypeFilter(f.typeFilter);
+    setFaixa(f.faixa);
+    setDataEntrada(f.dataEntrada);
+    setDatasFlexiveis(f.datasFlexiveis);
+    setGarantia(f.garantia);
+    setPetsOnly(f.petsOnly);
+    setPetPorte(f.petPorte);
+    setFurnishedOnly(f.furnishedOnly);
+    setReadyToLiveOnly(f.readyToLiveOnly);
+    setHomeOfficeOnly(f.homeOfficeOnly);
+    setWorkLocatedOnly(f.workLocatedOnly);
+    setInvoiceOnly(f.invoiceOnly);
+    setOperatedOnly(f.operatedOnly);
+    setNegociaOnly(f.negociaOnly);
+    setPrecoJustoOnly(f.precoJustoOnly);
+    setComodidades(f.comodidades);
+    setInternetMin(f.internetMin);
+    setSoInternetMedida(f.soInternetMedida);
+    setNivelMin(f.nivelMin);
+    setNiveis(f.niveis);
   }, []);
 
   // Restaura no mount (link compartilhado / reload) e re-aplica a cada
@@ -231,11 +209,8 @@ export function SearchClient({
   // histórico deixaria os controles dessincronizados da URL. Ao re-aplicar por
   // popstate, marca skipNextSync para não reescrever a URL que o histórico
   // acabou de restaurar.
-  useEffect(() => {
-    // Lê a URL (sistema externo) e aplica nos controles; só roda no navegador.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    restaurarFiltrosDaURL();
-  }, [restaurarFiltrosDaURL]);
+  // E829: sem restaurar no mount — o estado já nasce da URL (buscaInicial, lida no servidor). Antes, o mount pintava a
+  // lista sem filtro e só depois caía para o resultado.
 
   useEffect(() => {
     const onPop = () => {
