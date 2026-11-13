@@ -1,5 +1,14 @@
 /** Lead do formulário /empresas: validação e gravação (ordem cdef67f8 item 3). Sem imports para rodar no teste unitário. */
 
+/**
+ * E876 (RELATORIO-021, A-113): o prazo de retorno do formulário "Fale com a gente" de /empresas. O envio vai para
+ * POST /api/empresas → grava em leads_empresas (só admin lê), avisa o Daniel (push) e manda e-mail interno para
+ * EMPRESAS_LEAD_EMAIL (ou o suporte). Quem responde é a equipe, no e-mail informado — no MESMO prazo que a página já
+ * promete à empresa (7 dias, E770). Uma fonte só para o texto da página e o recibo do envio.
+ */
+export const DIAS_RETORNO_EMPRESAS = 7;
+export const TEXTO_RETORNO_EMPRESAS = `A equipe da Viva responde no e-mail informado em até ${DIAS_RETORNO_EMPRESAS} dias.`;
+
 export interface LeadEmpresa {
   nome: string;
   empresa: string;
