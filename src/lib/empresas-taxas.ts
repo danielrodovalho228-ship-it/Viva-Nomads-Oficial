@@ -1,12 +1,12 @@
 /*
   E873 — as taxas da Viva na página /empresas, da FONTE ÚNICA (lib/cobranca/regra.ts): a empresa vê a mesma estrutura
-  aprovada que o proprietário vê (12% · 10% · 8% · 6% e o Plano Gestor 4% a partir de 20 imóveis). Nada digitado à mão.
+  aprovada que o proprietário vê (as faixas e o Plano Gestor, com o mínimo de GESTOR_PRECO). Nada digitado à mão.
   A taxa é do PROPRIETÁRIO, por contrato fechado; quem vem morar (o time da empresa) não paga taxa à plataforma. PURO.
 */
 import { FAIXAS_COMISSAO_PADRAO, pctTexto, rotuloFaixaTaxa, taxaPublicaTexto } from "./cobranca/regra.ts";
 
 export interface LinhaTaxaEmpresa {
-  faixa: string; // "1–2 imóveis", "20+ imóveis · Plano Gestor"
+  faixa: string; // "1–2 imóveis" … e a faixa sem teto com o rótulo do Plano Gestor
   taxa: string; // "12%"
   gestor: boolean;
 }
