@@ -4,7 +4,7 @@ import { NO_LABORATORIO, entrarNaPagina } from "../fixtures/laboratorio";
 /*
   T1618 — E801 (D5, prova de 12/11): em /dashboard/conta/avaliacoes (hoje /dashboard/avaliacoes, E798) a miniatura da
   barra de rolagem flutuava sobre a linha das abas "Recebidas/Feitas". A fileira tinha overflow-x-auto e as abas -mb-px:
-  o 1 px que vaza abria a rolagem vertical. Medida na tela: nenhuma barra ocupa espaço na fileira e nada vaza para baixo.
+  o 1 px que vaza abria a rolagem vertical. Medida na tela: a fileira não rola na vertical e a barra fica escondida.
   Também em Favoritos (mesmo padrão de abas). Contas da massa (dono e inquilina), 1280 e 390 px.
 */
 const CONTAS = [
@@ -38,17 +38,18 @@ test.describe("T1618 — E801 abas sem barra de rolagem sobre a linha", () => {
           const m = await fileira.evaluate((no) => {
             const el = no as HTMLElement;
             const cs = getComputedStyle(el);
-            const bordaV = parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
-            const bordaH = parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth);
+            const excesso = el.scrollHeight - el.clientHeight;
             return {
-              barraHorizontal: el.offsetHeight - el.clientHeight - bordaV,
-              barraVertical: el.offsetWidth - el.clientWidth - bordaH,
-              vazaParaBaixo: el.scrollHeight - el.clientHeight,
+              // A "miniatura flutuante" é a barra sobreposta (Mac, Chromium headless) de uma rolagem VERTICAL aberta:
+              // ela existe quando há excesso para baixo e o overflow-y permite rolar.
+              rolaNaVertical: excesso > 0 && (cs.overflowY === "auto" || cs.overflowY === "scroll"),
+              excesso,
+              overflowY: cs.overflowY,
+              barra: cs.getPropertyValue("scrollbar-width"),
             };
           });
-          expect(m.barraVertical, `${t.rota}: barra de rolagem vertical ocupando ${m.barraVertical}px`).toBe(0);
-          expect(m.barraHorizontal, `${t.rota}: barra de rolagem horizontal ocupando ${m.barraHorizontal}px`).toBe(0);
-          expect(m.vazaParaBaixo, `${t.rota}: conteúdo vaza ${m.vazaParaBaixo}px para baixo (abre rolagem vertical)`).toBeLessThanOrEqual(0);
+          expect(m.rolaNaVertical, `${t.rota}: a fileira abre rolagem vertical (excesso ${m.excesso}px, overflow-y ${m.overflowY}) — a barra flutua sobre as abas`).toBe(false);
+          expect(m.barra, `${t.rota}: a barra de rolagem da fileira fica à vista`).toBe("none");
           if (t.aba) {
             await page.locator(t.aba).first().click();
             await expect(page).toHaveURL(/aba=feitas/);
