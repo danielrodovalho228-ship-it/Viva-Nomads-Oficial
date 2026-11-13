@@ -62,9 +62,10 @@ export function proximidadeDivergente(titulo: string, lugares: readonly LugarDoA
 }
 
 /** Os lugares que o anúncio informa no corpo (arredores + espaços de trabalho), com a distância. */
-export function lugaresDoAnuncio(p: { proximities?: readonly { name: string; distanciaM: number }[] | null; nearbyWorkspaces?: readonly { name: string; distanceM: number }[] | null }): LugarDoAnuncio[] {
-  return [
-    ...(p.proximities ?? []).map((x) => ({ nome: x.name, distanciaM: x.distanciaM })),
-    ...(p.nearbyWorkspaces ?? []).map((x) => ({ nome: x.name, distanciaM: x.distanceM })),
-  ];
+export function lugaresDoAnuncio(p: {
+  proximities?: readonly { name: string; distanciaM?: number | null }[] | null;
+  nearbyWorkspaces?: readonly { name: string; distanceM?: number | null }[] | null;
+}): LugarDoAnuncio[] {
+  const com = (nome: string, d: number | null | undefined) => (typeof d === "number" && Number.isFinite(d) ? [{ nome, distanciaM: d }] : []);
+  return [...(p.proximities ?? []).flatMap((x) => com(x.name, x.distanciaM)), ...(p.nearbyWorkspaces ?? []).flatMap((x) => com(x.name, x.distanceM))];
 }
