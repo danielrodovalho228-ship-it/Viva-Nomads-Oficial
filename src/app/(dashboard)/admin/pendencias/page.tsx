@@ -172,7 +172,7 @@ function DecisoesDaCentral({
 /** E330: decisão de outra tela como item da fila — o que é, o contexto e o botão que leva à decisão. */
 function LinhaDecisao({ l }: { l: LinhaDecisaoAdmin }) {
   return (
-    <li className="space-y-1 py-3 text-sm" data-testid="central-linha-decisao" data-decisao={l.chave}>
+    <li className="space-y-1 py-3 text-sm" data-testid="central-linha-decisao" data-decisao={l.chave} data-n={l.n}>
       <p className="min-w-0 font-semibold text-ink">{l.texto}</p>
       {l.detalhe && <p className="break-words text-muted">{l.detalhe}</p>}
       <p className="text-xs text-muted">

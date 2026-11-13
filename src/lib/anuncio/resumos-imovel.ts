@@ -85,7 +85,7 @@ export const CANCELAMENTO_DETALHE: readonly string[] = [
 
 /** Proteções que valem para todo anúncio, declarado ou não. */
 export const PROTECOES_VIVA: readonly string[] = [
-  "Contato do proprietário e identidade do morador ficam protegidos até o aceite.",
+  "Telefone, e-mail e redes sociais nunca são trocados; o nome completo do morador só aparece depois do aceite.",
   "A conversa acontece pelo chat da Viva e fica registrada.",
   "Aviso antigolpe: a Viva nunca pede PIX ou pagamento fora do contrato.",
   "Conferência de entrada com fotos, registrada na plataforma.",

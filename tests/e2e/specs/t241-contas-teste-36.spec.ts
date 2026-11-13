@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 
 /*
   T241 — Prompt 36 (390 e 1280 px), laboratório:
@@ -77,10 +77,11 @@ test.describe("T241 — contas de teste pelo admin, titular, selo da fila e chec
     ids.pedido = await criarConta(pedidoParceria, senha);
     await adm().from("limites_uso").delete().in("chave", [`doc-fila:${ids.titular}`]);
     // Parceiro publicado da conta de laboratório (o ciclo completo de publicação é o t236).
+    // E648 (9a3205a59): cadastro só com CPF não aparece na busca até apresentar o CNPJ; a massa usa PJ.
     const { error } = await adm().from("parceiros").insert({
       user_id: ids.parceira,
-      tipo_pessoa: "pf",
-      documento: cpfAleatorio(),
+      tipo_pessoa: "pj",
+      documento: cnpjAleatorio(),
       nome_publico: `Paula Fotos ${sufixo}`,
       slug,
       categorias: ["fotografia"],

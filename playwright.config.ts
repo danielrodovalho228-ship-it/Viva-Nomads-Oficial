@@ -28,7 +28,16 @@ const BYPASS_HEADERS = BYPASS
 // Funil, Eventos e os números do admin contam só 'real'.
 const TRAFEGO_HEADERS = { "x-vn-origem": "e2e" };
 
+/**
+ * E744: `t48-varredura` é UMA cadeia em modo serial (varre o sitemap inteiro e as telas logadas de 3 personas; até 15 min
+ * por teste do visitante e 30 min por persona, ~100 min no pior caso). O --shard divide por quantidade de testes e não
+ * quebra uma cadeia serial: a fatia que a recebia (a 11 de 16, nos dois runs) estourava o teto de 65 min. A suíte noturna
+ * a tira das fatias gerais (LAB_PESADOS=fora) e a roda em 4 fatias próprias, uma por grupo de testes (ver laboratorio.yml).
+ */
+export const SPECS_PESADOS = /t48-varredura\.spec\.ts/;
+
 export default defineConfig({
+  testIgnore: process.env.LAB_PESADOS === "fora" ? SPECS_PESADOS : undefined,
   testDir: "./tests/e2e/specs",
   globalSetup: "./tests/e2e/global-setup.ts",
   globalTeardown: "./tests/e2e/global-teardown.ts",

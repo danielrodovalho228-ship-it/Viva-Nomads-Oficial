@@ -19,10 +19,11 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "16mb" },
   },
   images: {
-    // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
-    // No laboratório só WebP: codificar AVIF de foto larga (1280–1920 px) em runner compartilhado leva dezenas
-    // de segundos e estoura t119/t48 a 1280/1440 px; a produção continua com AVIF.
-    formats: LABORATORIO ? ["image/webp"] : ["image/avif", "image/webp"],
+    // WebP em todo lugar (bem menor que JPEG/PNG). E768 (reprova de 11/11): o AVIF saía da produção — a 1ª geração de cada
+    // foto pelo otimizador custava ~2,7 s em AVIF contra ~0,4 s em WebP (1920 px; docs/e768-fotos-carga-fria.md), e numa
+    // página com várias fotos a fila deixava fotos pendentes na carga fria (anúncio, /buscar, /empresas, catálogo).
+    // O laboratório já era só WebP pelo mesmo motivo (t119/t48).
+    formats: ["image/webp"],
     // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
     // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
     dangerouslyAllowLocalIP: LABORATORIO,
@@ -45,6 +46,9 @@ const nextConfig: NextConfig = {
       { source: "/socios/:path*", destination: "/modelodenegocio", permanent: false },
       { source: "/decisao", destination: "/modelodenegocio", permanent: false },
       { source: "/decisao/:path*", destination: "/modelodenegocio", permanent: false },
+      // E766: /admin/backup e /admin/backups davam 404; o cartão completo do backup mora em Sistema.
+      { source: "/admin/backup", destination: "/admin/sistema#backup", permanent: false },
+      { source: "/admin/backups", destination: "/admin/sistema#backup", permanent: false },
       // E760: /dashboard/meus-imoveis (nome antigo da lista de anúncios) dava 404; a lista de hoje é /dashboard/imoveis.
       // Sem 308: o redirect permanente ficaria no cache do navegador.
       { source: "/dashboard/meus-imoveis", destination: "/dashboard/imoveis", permanent: false },

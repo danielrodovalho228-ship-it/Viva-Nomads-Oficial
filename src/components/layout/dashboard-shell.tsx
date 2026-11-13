@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
+import { VoltarAoSite } from "@/components/layout/voltar-ao-site";
 import { VoltarPainel } from "@/components/layout/voltar-painel";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
+import { Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
@@ -26,7 +27,7 @@ import {
   normalizarContadores,
   type ContadoresPainel,
 } from "@/lib/painel/contadores";
-import { useViewMode, identidadeUsuario, primeiroNomeExibicao } from "@/lib/roles";
+import { useViewMode, identidadeUsuario, nomeAvatarExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
 import { AppHeader } from "@/components/app/app-header";
@@ -34,16 +35,17 @@ import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
 import { barraAdminPara, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
-import { PapelAtivo } from "@/components/layout/papel-ativo";
+import { PapelAtivo, SeloEquipe } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/components/layout/topo-dono";
-import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
+import { abasDoPapelPainel, itensDaConta, itensDaEquipe, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { esperaRetentativaContadores } from "@/lib/painel/retentativa-contadores";
 import { FaixaCritico } from "@/components/painel/sino-avisos";
 import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
+import { GravarLarguraDaTela } from "@/components/account/largura-e-ancora";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -115,7 +117,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // inteiro; só então cai no rótulo neutro. NUNCA o e-mail cru.
   const nomeSidebar = identidadeUsuario(displayUser);
   // CONTA-A: o rosto do avatar só usa o nome do perfil; sem nome, a silhueta (nunca letras do e-mail).
-  const nomeAvatar = primeiroNomeExibicao(displayUser);
+  // E788: o avatar usa o nome COMPLETO (a mesma fonte do Perfil) — antes o primeiro nome dava "C" aqui e "CQ" no Perfil.
+  const nomeAvatar = nomeAvatarExibicao(displayUser);
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
@@ -312,11 +315,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
   // Mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho): o cabeçalho mostra a foto também na Conta.
-  // E55 (QA 24/10, reincidência): na tela Perfil a foto aparece só no herói editável e no espelho — as miniaturas de
-  // navegação (barra lateral e cabeçalho) viram iniciais ali. No computador o Perfil abre também em /dashboard/conta.
-  const naTelaPerfil = pathname === "/dashboard/conta/perfil" || pathname === "/dashboard/conta";
-  const fotoNav = naTelaPerfil ? null : myPhoto;
-  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
+  // E783 (Daniel, 09/11): a foto do cabeçalho aparece em TODAS as telas, inclusive Conta e Perfil. O E55 (24/10) trocava a miniatura
+  // por iniciais na tela Perfil e fazia a foto "sumir" ao entrar na Conta; a iniciais ficam só para quem não tem foto.
+  const fotoNav = myPhoto;
 
   // MENUS-5 / MORADOR-NAV: fora do /admin, TODO papel navega pelas abas da fonte única (config/abas-painel.ts) — no
   // computador, abas no topo + sino + "Conta ▾" (sem barra lateral); no celular, a barra de baixo + o avatar do topo,
@@ -329,6 +330,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (acao === "sair") handleSignOut();
     else void irParaModo(acao === "modo-morador" ? "tenant" : "owner");
   };
+  // E788: na área da equipe o selo é o avatar que abre o menu da Conta (antes, texto inerte).
+  const papelChip = papelAtivo ? (
+    <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />
+  ) : (
+    <SeloEquipe nome={nomeAvatar} foto={fotoNav} itens={itensDaEquipe()} onAcao={aoAcaoConta} />
+  );
   const contaCelular = papelTopo ? (
     <div className="flex items-center gap-1">
       <Sino px={`${prefixoPapel(papelTopo)}-celular`} />
@@ -432,14 +439,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação
-            da equipe tem UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). No computador
-            nada muda (a barra lateral já está aberta). */}
+        {/* E73 (QA 24/10): nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação da equipe tem
+            UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). E784 (reprovado a 1920 px): a
+            faixa com o link vale em TODAS as larguras (antes `lg:hidden`: no computador não havia saída para o site). */}
         {pathname.startsWith("/admin") && (
-          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
-            <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
-              <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
-            </Link>
+          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 print:hidden" data-testid="admin-nav-celular">
+            <VoltarAoSite />
           </nav>
         )}
 
@@ -465,6 +470,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
+      {/* E798: a largura da tela vai num cookie (o proxy decide /dashboard/conta no servidor). */}
+      <GravarLarguraDaTela />
       <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} comContrato={comContrato} />
     </div>
   );

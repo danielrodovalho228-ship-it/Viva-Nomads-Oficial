@@ -10,7 +10,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { SAMPLE_PROPERTIES } from "./properties.ts";
 import { calcularTotalMensal, calcularTudoIncluido, mensalDoFechamento, precoDoFechamento, primeiroPagamentoDoPreco } from "./precos.ts";
-import { rotuloPreco, textoPreco } from "./cartao-preco.ts";
+import { estadiaDoCartao, rotuloPreco, textoPreco } from "./cartao-preco.ts";
 import { barraFixaImovel } from "./barra-fixa-imovel.ts";
 
 test("6 imóveis × 1/3/6 meses: cartão = página = rodapé fixo = fechamento, ao centavo", () => {
@@ -25,7 +25,8 @@ test("6 imóveis × 1/3/6 meses: cartão = página = rodapé fixo = fechamento, 
       assert.equal(pagina.total, cartao.total, `${p.id} ${meses}m: página`);
       assert.equal(fechamento.total, cartao.total, `${p.id} ${meses}m: fechamento`);
       assert.equal(barra.mes, cartao.mes, `${p.id} ${meses}m: rodapé (mês)`);
-      assert.equal(barra.estadia, cartao.estadia, `${p.id} ${meses}m: rodapé (período)`);
+      // E777/E744: o total do período é sempre "R$ Y em N mês/meses" — o rodapé diz o mesmo que a linha do cartão da busca (com 1 mês também).
+      assert.equal(barra.estadia, estadiaDoCartao(cartao), `${p.id} ${meses}m: rodapé (período)`);
       assert.equal(textoPreco(pagina), textoPreco(cartao));
     }
   }
@@ -70,7 +71,8 @@ test("varredura: as telas de preço de imóvel usam rotuloPreco", () => {
     "app/(dashboard)/dashboard/fechamento/closing-flow.tsx",
     "app/(public)/imoveis/[id]/opengraph-image.tsx",
   ];
-  for (const f of superficies) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): as telas de um anúncio usam rotuloPrecoDoImovel (o rotuloPreco com o total da regra única).
+  for (const f of superficies) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco(DoImovel)?\(/, f);
   // E264-B: o e-mail do alerta (e dos outros proativos) mostra o preço pelo cartão do imóvel do modelo de e-mail.
   for (const f of ["lib/barra-fixa-imovel.ts", "lib/notifications/cartoes-email.ts"]) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
 });

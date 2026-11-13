@@ -48,7 +48,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
   const qs = new URLSearchParams({ ...(categoria ? { categoria } : {}), ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}) }).toString();
 
   const titulo = `Encontre um parceiro${categoria ? `: ${rotuloCategoria(categoria).toLowerCase()}` : ""}`;
-  const subtitulo = "Profissionais aprovados pela Viva. Você combina e agenda tudo pelas mensagens da Viva; contato e endereço só depois do aceite.";
+  const subtitulo = "Profissionais aprovados pela Viva. Você combina e agenda tudo pelas mensagens da Viva, e o seu contato não é trocado.";
   // E277 (mockup aprovado): com categoria, o topo é a foto dela (o mesmo banner das páginas institucionais).
   const fotoTopo = categoria ? fotoDaCategoria(categoria) : null;
   const consultaFaixa = { ...(r.cidade ? { cidade: r.cidade } : {}), ...(r.uf ? { uf: r.uf } : {}), ...(imovel ? { imovel } : {}) };

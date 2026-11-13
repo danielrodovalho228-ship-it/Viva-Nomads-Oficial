@@ -106,7 +106,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
       await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
       const bloco = d.getByTestId("avaliacao-dono");
       await expect(bloco.getByTestId("rota-foto")).toContainText("Foto: grátis, nível na hora", { timeout: 30_000 });
-      await expect(bloco.getByTestId("rota-avaliacao")).toContainText("Avaliação: “· vistoriado” por 12 meses");
+      await expect(bloco.getByTestId("rota-avaliacao")).toContainText("Avaliação: selo “vistoriado” por 12 meses");
       await expect(bloco.getByTestId("frase-paga")).toHaveText("Você paga a avaliação, não o resultado.");
       await expect(bloco.getByTestId("avaliacao-valor")).toContainText("350");
       // As duas caixas medidas no mesmo quadro (a página ainda pode estar rolando até #avaliacao).

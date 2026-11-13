@@ -39,7 +39,8 @@ test("D1: o total anotado na busca é o mesmo do cartão (calcularTotalMensal)",
 
 test("D1: o pino e o cartão do mapa mostram o total", () => {
   assert.match(ler("components/search-map.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
-  assert.match(ler("components/busca/card-pin-mapa.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): o cartão do pino usa rotuloPrecoDoImovel (o mesmo total do mês + o "em N meses" da regra única).
+  assert.match(ler("components/busca/card-pin-mapa.tsx"), /rotuloPrecoDoImovel\(p, \{ meses: mesesDoCartao\(undefined, p\.minPeriodDays\)/);
 });
 
 test("D5: Limpar filtros remonta a busca por descrição (campo e chips)", () => {

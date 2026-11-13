@@ -14,6 +14,15 @@ export function chaveCidade(t: string | null | undefined): string {
     .trim();
 }
 
+/** E782 (adendo): cidades da plataforma cujo nome digitado SEM acento ("Uberlandia", salvo no perfil em texto livre) se exibe com a grafia oficial. */
+const GRAFIA_DAS_CIDADES: Readonly<Record<string, string>> = { uberlandia: "Uberlândia" };
+
+/** Como mostrar a cidade que a pessoa digitou: a grafia oficial quando é uma cidade conhecida; qualquer outra, como veio. */
+export function grafiaDaCidade(c: string | null | undefined): string {
+  const t = String(c ?? "").trim();
+  return GRAFIA_DAS_CIDADES[chaveCidade(t)] ?? t;
+}
+
 /** Nome OFICIAL (com acento) da cidade na lista da UF, ou null se não existe. */
 export function acharCidade(lista: readonly string[] | undefined, nome: string): string | null {
   const k = chaveCidade(nome);

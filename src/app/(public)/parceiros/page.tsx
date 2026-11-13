@@ -9,11 +9,12 @@ import { ButtonLink } from "@/components/ui/button";
 import { SejaParceiroForm } from "@/components/parceiros/seja-parceiro-form";
 import { RegrasParceiros } from "@/components/parceiros/regras-parceiros";
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
-import { categoriaValida } from "@/lib/parceiros/regras";
+import { TEXTO_PRAZO_PARCERIA, categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 import { GESTOR_TEXTO } from "@/config/planos";
 import { comPortasDePrecos } from "@/config/precos-visivel";
+import { PARCEIROS_HEROI_SUBTITULO, PARCEIROS_NUMERO_CONTATO } from "@/config/textos-regulados";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
@@ -44,7 +45,7 @@ const CARDS = [
 
 const PASSOS = [
   { t: "Peça a parceria", d: "Com a sua conta: conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: "Identidade e CNPJ; para fotografia, também o portfólio. A resposta chega por e-mail, com o link para ativar a sua página.", foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  { t: "A Viva confere", d: `Identidade e CNPJ; para fotografia, também o portfólio. ${TEXTO_PRAZO_PARCERIA} Aprovada, o e-mail traz o link para ativar a sua página.`, foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
   { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
   { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];
@@ -78,7 +79,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         alt="Fotógrafo registrando uma sala mobiliada"
         eyebrow="Parceiros"
         titulo="Seja parceiro da Viva Nomads"
-        subtitulo={<p>Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma e identidade revelada depois do aceite.</p>}
+        subtitulo={<p>{PARCEIROS_HEROI_SUBTITULO}</p>}
       >
         {/* E711: o "Seja parceiro" que ficava aqui levava ao mesmo destino da porta "Quero ser parceiro" logo acima — saiu. */}
         <ButtonLink href="#tipos" variant="inverseSecondary" size="lg">
@@ -92,7 +93,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           <div><dt className="font-title text-2xl font-semibold text-ink">Uberlândia (MG)</dt><dd className="text-sm text-muted">Começamos por aqui; cadastre-se de qualquer cidade</dd></div>
           <div><dt className="font-title text-2xl font-semibold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
           <div><dt className="font-title text-2xl font-semibold text-ink">R$ 0</dt><dd className="text-sm text-muted">para se cadastrar, sem mensalidade</dd></div>
-          <div><dt className="font-title text-2xl font-semibold text-ink">Contato só pela plataforma</dt><dd className="text-sm text-muted">identidade revelada após o aceite</dd></div>
+          <div><dt className="font-title text-2xl font-semibold text-ink">{PARCEIROS_NUMERO_CONTATO.titulo}</dt><dd className="text-sm text-muted">{PARCEIROS_NUMERO_CONTATO.nota}</dd></div>
         </dl>
       </section>
 
@@ -181,7 +182,8 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         <div className="container-page grid gap-8 md:grid-cols-5">
           <div className="md:col-span-2">
             <h2 id="h-form" className="font-title text-2xl font-semibold text-ink">Seja parceiro</h2>
-            <p className="mt-3 text-muted">Peça a parceria com a sua conta. A Viva analisa e responde por e-mail; aprovada, você ativa a sua página.</p>
+            <p className="mt-3 text-muted">Peça a parceria com a sua conta. A Viva analisa; aprovada, você ativa a sua página.</p>
+            <p className="mt-2 text-sm font-semibold text-forest" data-testid="parceiros-prazo-resposta">{TEXTO_PRAZO_PARCERIA}</p>
             <h3 id="h-duvidas" className="mt-8 font-title text-lg font-semibold text-ink">Dúvidas</h3>
             <dl className="mt-4 space-y-4" aria-labelledby="h-duvidas">
               {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-sm text-muted">{d.r}</dd></div>))}

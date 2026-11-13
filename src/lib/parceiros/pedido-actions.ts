@@ -26,7 +26,6 @@ import {
   CHAVE_CONVERSA_PEDIDO,
   congelarValores,
   MENSAGENS_AUTOMATICAS,
-  contatoNoPedido,
   linkOutroParceiro,
   podeFazer,
   saidaDoAceitoLiberada,
@@ -43,7 +42,6 @@ import {
   visaoDoParceiro,
   horarioNaAgenda,
   type AcaoPedido,
-  type ContatoDoPedido,
   type PapelNoPedido,
 } from "./pedido";
 
@@ -716,8 +714,6 @@ export interface DetalhePedido {
   entregas: { id: string; legenda: string | null }[];
   temDocumento: boolean;
   motivoRecusa: string | null;
-  /** L2-B item 16: telefone e e-mail da OUTRA parte, só depois do aceite (null antes). */
-  contato: ContatoDoPedido | null;
   /** "Pedir a outro parceiro" (recusado): a busca na mesma categoria. */
   linkOutroParceiro: string;
   mensagens: { id: string; minha: boolean; texto: string; em: string }[];
@@ -789,7 +785,6 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
   }
   const n = (v: number | string | null) => (v == null ? null : Number(v));
   const teste = papel === "cliente" ? await contaTeste(admin, userId) : false;
-  const contato = await contatoDaOutraParte(admin, p, papel);
   return {
     id: p.id,
     codigo: p.codigo,
@@ -810,7 +805,6 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     entregas: ((ent.data ?? []) as { id: string; legenda: string | null }[]).map((e) => ({ id: e.id, legenda: e.legenda })),
     temDocumento: !!p.documento_parceiro_path,
     motivoRecusa: p.motivo_recusa,
-    contato,
     linkOutroParceiro: linkOutroParceiro(p.categoria),
     mensagens: ((msgs.data ?? []) as { id: string; sender_id: string; body: string; created_at: string }[]).map((m) => ({ id: m.id, minha: m.sender_id === userId, texto: m.body, em: m.created_at })),
     minhaAvaliacao: minha ? { nota: minha.nota, status: minha.status } : null,
@@ -822,23 +816,6 @@ export async function detalheDoPedido(pedidoId: string): Promise<DetalhePedido |
     semResposta: !!p.sem_resposta_avisado_em && p.status === "solicitado",
     reagendamento: reagendamentoPendente(p.status, ((horarioEv.data ?? []) as { tipo: string }[]).map((e) => e.tipo)),
   };
-}
-
-/**
- * L2-B item 16: o contato da outra parte é LIDO só depois do aceite (antes, a linha nem sai do banco). Ao cliente:
- * o telefone do perfil público do parceiro (ou o da conta) e o e-mail da conta. Ao parceiro: o telefone e o e-mail
- * da conta do cliente.
- */
-async function contatoDaOutraParte(admin: Admin, p: LinhaPedido, papel: PapelNoPedido): Promise<ContatoDoPedido | null> {
-  if (!contatoNoPedido(p.status, { telefone: "x", email: null })) return null;
-  const outro = papel === "cliente" ? p.parceiros!.user_id : p.cliente_id;
-  const [perfil, parceiro] = await Promise.all([
-    admin.from("profiles").select("email, phone").eq("id", outro).maybeSingle(),
-    papel === "cliente" ? admin.from("parceiros").select("telefone").eq("id", p.parceiro_id).maybeSingle() : Promise.resolve({ data: null }),
-  ]);
-  const pf = perfil.data as { email: string | null; phone: string | null } | null;
-  const tel = (parceiro.data as { telefone: string | null } | null)?.telefone ?? pf?.phone ?? null;
-  return contatoNoPedido(p.status, { telefone: tel, email: pf?.email ?? null });
 }
 
 export interface ResumoPedido {

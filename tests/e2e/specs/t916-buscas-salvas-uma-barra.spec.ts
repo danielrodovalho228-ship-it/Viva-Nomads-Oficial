@@ -11,7 +11,8 @@ const sufixo = novoSufixo();
 const mor = { email: `mor.t916.${sufixo}@lab.vivanomads.test`, nome: "Bia Buscas", role: "tenant" as const };
 const ids: string[] = [];
 
-const visiveis = (rotulo: string) => (els: Element[]) =>
+// O Playwright serializa a função: o rótulo vai como ARGUMENTO do evaluateAll (a closure não atravessa para o navegador).
+const contaVisiveis = (els: Element[], rotulo: string) =>
   els.filter((a) => a.getBoundingClientRect().height > 0 && a.textContent?.trim() === rotulo && !a.closest("footer")).length;
 
 test.describe("T916 — Buscas salvas com uma barra de abas", () => {
@@ -32,13 +33,13 @@ test.describe("T916 — Buscas salvas com uma barra de abas", () => {
       const p = await entrarNaPagina(await ctx.newPage(), mor.email, senha);
       await p.goto("/dashboard/buscas", { waitUntil: "domcontentloaded" });
       await expect(p.getByRole("heading", { name: "Buscas salvas", level: 1 })).toBeVisible({ timeout: 30_000 });
-      expect(await p.locator("a").evaluateAll(visiveis("Buscas salvas")), "um link Buscas salvas (a subaba)").toBe(1);
-      expect(await p.locator("a").evaluateAll(visiveis("Comparações")), "sem a barra Favoritos · Comparações").toBe(0);
+      expect(await p.locator("a").evaluateAll(contaVisiveis, "Buscas salvas"), "um link Buscas salvas (a subaba)").toBe(1);
+      expect(await p.locator("a").evaluateAll(contaVisiveis, "Comparações"), "sem a barra Favoritos · Comparações").toBe(0);
       await p.screenshot({ path: `tests/laboratorio/saida/t916-buscas-${w}.png` });
       for (const r of ["/dashboard/favoritos", "/dashboard/comparar"]) {
         await p.goto(r, { waitUntil: "domcontentloaded" });
         await expect(p.locator("a", { hasText: "Comparações" }).first()).toBeVisible({ timeout: 30_000 });
-        expect(await p.locator("a").evaluateAll(visiveis("Buscas salvas")), `${r}: Buscas salvas uma vez`).toBe(1);
+        expect(await p.locator("a").evaluateAll(contaVisiveis, "Buscas salvas"), `${r}: Buscas salvas uma vez`).toBe(1);
       }
       expect(await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
       await ctx.close();

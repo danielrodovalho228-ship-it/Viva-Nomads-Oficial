@@ -111,7 +111,8 @@ export default function ForLandlordsPage() {
                 Pedir ajuda para publicar
               </ButtonLink>
             </div>
-            <BrandImage src="/images/unicas/prop-passo-anuncie.webp" alt="Proprietário fotografando a sala para o anúncio" rounded="rounded-none" sizes="(max-width: 640px) 100vw, 320px" className="aspect-[16/10] w-full sm:w-80" />
+            {/* Frente 3 (t112): sem foto — a única que havia era a do passo "Anuncie de graça" desta mesma página, e a regra das
+                imagens únicas (ordens 19b8abf5/de7b27fd) proíbe repetir. Foto própria para este bloco: pedido em aberto no PR. */}
           </div>
 
           <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
@@ -140,7 +141,7 @@ export default function ForLandlordsPage() {
           <ol className="mt-12 grid gap-6 md:grid-cols-3">
             {[
               { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
-              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
+              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; telefone e e-mail nunca são trocados." },
               { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao morador", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
               <li key={p.t} className="overflow-hidden rounded-xl border border-line bg-white ">

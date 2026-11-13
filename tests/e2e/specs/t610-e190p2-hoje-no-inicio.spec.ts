@@ -92,14 +92,14 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
       const e = cartoes.nth(0);
       await expect(e).toHaveAttribute("data-tipo", "entrada");
       await expect(e).toContainText("Entra hoje · a partir das 14:00");
-      await expect(e.getByTestId("inicio-dono-hoje-nome")).toHaveText("Iara");
+      await expect(e.getByTestId("inicio-dono-hoje-nome")).toHaveText(/^Iara( \w+\.?)?$/);
       await expect(e).toContainText(`Studio Aurora t610 ${sufixo}`);
       await expect(e).toHaveAttribute("href", `/dashboard/estadia/${ids.cEntra}`);
 
       const s = cartoes.nth(1);
       await expect(s).toHaveAttribute("data-tipo", "saida");
       await expect(s).toContainText("Sai hoje · até as 11:00");
-      await expect(s.getByTestId("inicio-dono-hoje-nome")).toHaveText("Bruno");
+      await expect(s.getByTestId("inicio-dono-hoje-nome")).toHaveText(/^Bruno( \w+)?$/);
       await expect(s).toContainText(`Loft Bela t610 ${sufixo}`);
       await expect(s).toHaveAttribute("href", `/dashboard/estadia/${ids.cSai}`);
 

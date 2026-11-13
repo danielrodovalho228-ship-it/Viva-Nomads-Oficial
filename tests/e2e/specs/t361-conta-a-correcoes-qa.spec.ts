@@ -129,8 +129,8 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       const comFoto = async () => {
         await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1);
         await expect(p.locator('[data-testid="espelho-perfil"]:visible img:visible')).toHaveCount(1);
-        // E55 (QA 24/10): na tela Perfil a foto fica só no herói e no espelho; cabeçalho e barra lateral mostram iniciais.
-        await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
+        // E55 (QA 24/10) previa iniciais no cabeçalho do Perfil; o E783 desfez isso (a foto aparece também no cabeçalho, t391).
+        // Aqui só a barra lateral segue sem foto.
         await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
       };
       await comFoto();
@@ -148,7 +148,8 @@ test.describe("T361 — CONTA-A: correções do QA (C1–C7)", () => {
       await comFoto();
       // Fora da Conta, o cabeçalho mostra a foto nova.
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1);
+      // E176: o selo do cabeçalho é o botão da Conta (conta-<px>), que traz a foto nova.
+      await expect(p.locator('[data-testid^="conta-"] img').first()).toBeAttached({ timeout: 20_000 });
       await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // Volta ao estado sem foto para o próximo tamanho começar igual.

@@ -55,6 +55,9 @@ export interface Conversation {
   vinculoDominio?: string | null;
   /** E445 (item 4): mensagens recebidas ainda não lidas nesta conversa. */
   naoLidas?: number;
+  /** E721: a pessoa adiou esta conversa (ISO). Só a visão dela; vence em `adiadaAte` ou quando a outra parte escreve. */
+  adiadaEm?: string | null;
+  adiadaAte?: string | null;
   messages: ChatMessage[];
 }
 
@@ -246,6 +249,12 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     }
   }
   await enriquecer(supabase, conversas, user.id);
+  // E721: as conversas que a pessoa adiou (RLS 0336: só as próprias). Antes da migração ou com falha, nada é adiado.
+  const { data: adiadas } = await supabase.from("conversas_adiadas").select("conversation_id, adiada_em, ate").eq("user_id", user.id);
+  for (const a of (adiadas ?? []) as { conversation_id: string; adiada_em: string; ate: string }[]) {
+    const conv = conversas.find((c) => c.id === a.conversation_id);
+    if (conv) Object.assign(conv, { adiadaEm: a.adiada_em, adiadaAte: a.ate });
+  }
   // E481: a conversa com a mensagem mais recente primeiro (antes: contrato, candidatura e a ordem da 1ª mensagem).
   return ordenarPorAtividade(conversas);
 }

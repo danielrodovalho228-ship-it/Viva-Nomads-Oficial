@@ -9,6 +9,14 @@ import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
 
+// ── Prazo de resposta ao pedido de parceria (E791) ──────────────────────────────────────────────────────────────
+/** O prazo de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11 (E791).
+ *  FONTE ÚNICA de tudo o que fala desse prazo: /parceiros, o formulário depois de enviar, o onboarding E o alerta à equipe
+ *  (lembretes: parceiroSemResposta; o aviso do cron, o e-mail e a fila de decisões do admin). */
+export const DIAS_RESPOSTA_PARCERIA = 7;
+export const PRAZO_RESPOSTA_PARCERIA = `${DIAS_RESPOSTA_PARCERIA} dias`;
+export const TEXTO_PRAZO_PARCERIA = `A Viva responde por e-mail em até ${PRAZO_RESPOSTA_PARCERIA}.`;
+
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
 export const CATEGORIAS_PARCEIRO = [
   { valor: "fotografia", rotulo: "Fotografia" },
@@ -26,6 +34,14 @@ export type CategoriaParceiro = (typeof CATEGORIAS_PARCEIRO)[number]["valor"];
 export const CATEGORIAS_SO_CREDENCIAMENTO: readonly string[] = ["vistoria"];
 /** O catálogo "pedir serviço": as categorias que se contratam direto. */
 export const CATEGORIAS_CATALOGO = CATEGORIAS_PARCEIRO.filter((x) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(x.valor));
+/**
+ * E729 (Phoenix/RELATORIO-002, C3): a exigência que uma categoria traz ao formulário (o campo extra só aparece depois de marcá-la)
+ * é dita JUNTO da categoria, antes de marcar. Fonte única: a mesma validação do servidor (abaixo) exige estes campos.
+ */
+export const EXIGENCIA_DA_CATEGORIA: Readonly<Record<string, string>> = {
+  fotografia: "Pede o link do portfólio",
+  mudanca: "Pede empresa e veículo",
+};
 export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.valor === c)?.rotulo ?? "Serviço";
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
@@ -56,7 +72,8 @@ export const REGRAS_CLARAS = [
   "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.",
 ] as const;
 export const PAGAMENTO_EM_BREVE = "Pagamento pela plataforma em breve.";
-export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberados só depois do aceite, pelas mensagens da Viva.";
+/** E774 (regra E445): contato NUNCA é trocado, em nenhuma fase — nem depois do aceite. Fonte única do texto em Parceiros. */
+export const CONTATO_PELA_VIVA = "Seu contato não é trocado: tudo se combina pelas mensagens da Viva.";
 
 // ── Solicitação de parceria ────────────────────────────────────────────────────────────────────────────────────
 /**
@@ -138,17 +155,20 @@ export function validarDocumentoParceiro(documento: string | null | undefined): 
   return null;
 }
 
-export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
+/** E818: `campo` aponta o campo do formulário que causou o erro (para marcar em vermelho e focar). */
+export type CampoSolicitacao = "nome" | "documento" | "categorias" | "cidades" | "portfolioUrl" | "empresa" | "veiculo" | "descricao" | "telefone" | "emiteNota" | "aceite";
+
+export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string; campo?: CampoSolicitacao } {
   const nome = limpar(e.nome, 120);
-  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
+  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa).", campo: "nome" };
   // E648: só empresa. O tipo "pf" e qualquer CPF no campo do documento são recusados em todas as categorias.
-  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
+  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ, campo: "documento" };
   const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
   const erroDoc = validarDocumentoParceiro(e.documento);
-  if (erroDoc) return { ok: false, erro: erroDoc };
+  if (erroDoc) return { ok: false, erro: erroDoc, campo: "documento" };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
-  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
+  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria.", campo: "categorias" };
   const vistas = new Set<string>();
   const cidades: string[] = [];
   for (const c of e.cidades ?? []) {
@@ -158,27 +178,27 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
     vistas.add(k);
     cidades.push(l);
   }
-  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida." };
-  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.` };
+  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida.", campo: "cidades" };
+  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.`, campo: "cidades" };
   const portfolioBruto = String(e.portfolioUrl ?? "").trim();
   const portfolioUrl = urlPublicaValida(portfolioBruto);
-  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…)." };
+  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…).", campo: "portfolioUrl" };
   const descricao = limpar(e.descricao, DESCRICAO_MAX) || null;
   const dados: { empresa?: string; veiculo?: string } = {};
-  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio." };
+  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio.", campo: "portfolioUrl" };
   if (categorias.includes("mudanca")) {
     const empresa = limpar(e.empresa, 120);
     const veiculo = limpar(e.veiculo, 120);
-    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo." };
+    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo.", campo: !empresa ? "empresa" : "veiculo" };
     Object.assign(dados, { empresa, veiculo });
   }
-  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece." };
+  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece.", campo: "descricao" };
   const tel = soDigitos(e.telefone);
-  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD)." };
+  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD).", campo: "telefone" };
   // Portão que BLOQUEIA: PJ sem Sim/Não não conclui o cadastro.
   const nota = emiteNotaParaGravar(tipo, e.emiteNota);
-  if (!nota.ok) return nota;
-  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria." };
+  if (!nota.ok) return { ...nota, campo: "emiteNota" };
+  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria.", campo: "aceite" };
   return { ok: true, valor: { nome, tipoPessoa: tipo, documento: doc, categorias, cidades, portfolioUrl, descricao, telefone: tel || null, dadosCategoria: dados, emiteNota: nota.valor } };
 }
 
@@ -466,3 +486,6 @@ export function linhasDadosDaCategoria(categorias: readonly string[], dados: { e
   if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
   return linhas;
 }
+
+/** E771: a divisão 90/10 vale só para SERVIÇOS de parceiros; o pagamento da estadia (/empresas, /buscar) vai direto ao proprietário. */
+export const ESCOPO_PAGAMENTO_PARCEIROS = "Esta divisão vale só para os serviços de parceiros. O pagamento da estadia vai direto ao proprietário, e a Viva não toca nesse dinheiro.";

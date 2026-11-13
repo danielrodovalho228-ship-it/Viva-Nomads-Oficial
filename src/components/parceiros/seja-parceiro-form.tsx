@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, CIDADES_MAX, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -25,7 +25,7 @@ const VOLTA = "/parceiros?seja=1#quero-ser-parceiro";
 
 const STATUS_TEXTO: Record<string, string> = {
   aguardando_email: "A equipe começou um pedido em seu nome. Confira os dados abaixo e confirme o envio.",
-  pendente: "Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.",
+  pendente: `Aguardando aprovação da Viva. Resposta em até ${PRAZO_RESPOSTA_PARCERIA}, por e-mail.`,
   aprovada: "Sua parceria foi aprovada. Ative a sua página aqui ou pelo link do e-mail.",
 };
 
@@ -46,6 +46,21 @@ interface Campos {
 }
 
 const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-base text-ink";
+// E818: o campo com erro fica em vermelho, com a mensagem junto dele, e recebe o foco (a página rola até ele).
+const VERMELHO = " border-red-600 ring-1 ring-red-600";
+const ALVO_DO_CAMPO: Record<CampoSolicitacao, string> = {
+  nome: "sp-nome",
+  documento: "sp-doc",
+  categorias: "sp-categorias",
+  cidades: "sp-cidades",
+  portfolioUrl: "sp-portfolio",
+  empresa: "sp-empresa",
+  veiculo: "sp-veiculo",
+  descricao: "sp-descricao",
+  telefone: "sp-telefone",
+  emiteNota: "sp-emite-nota",
+  aceite: "sp-aceite",
+};
 
 export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: { estado: MinhaParceria; origem?: "site" | "conta"; categoriaInicial?: string }) {
   const sol = estado.solicitacao;
@@ -73,6 +88,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   }
   const [armadilha, setArmadilha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  // E818: qual campo causou o erro (o formulário nunca é limpo; só o campo é apontado).
+  const [campoErro, setCampoErro] = useState<CampoSolicitacao | null>(null);
+  const [tentativa, setTentativa] = useState(0);
   const [enviado, setEnviado] = useState(false);
   const [pendente, iniciar] = useTransition();
 
@@ -96,6 +114,29 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   }, [estado.logado]);
 
   const set = <K extends keyof Campos>(k: K, v: Campos[K]) => setC((x) => ({ ...x, [k]: v }));
+
+  function falhar(mensagem: string, campo?: CampoSolicitacao) {
+    setErro(mensagem);
+    setCampoErro(campo ?? null);
+    setTentativa((n) => n + 1);
+  }
+  // E818: rola até o 1º campo com erro e põe o foco nele (a cada tentativa, mesmo que o campo seja o mesmo).
+  useEffect(() => {
+    if (!campoErro) return;
+    const alvo = document.getElementById(ALVO_DO_CAMPO[campoErro]);
+    if (!alvo) return;
+    const foco = alvo.matches("input, textarea, select") ? alvo : alvo.querySelector<HTMLElement>("input, textarea, select");
+    alvo.scrollIntoView({ block: "center" });
+    foco?.focus({ preventScroll: true });
+  }, [campoErro, tentativa]);
+  const marca = (k: CampoSolicitacao) => (campoErro === k ? ({ "aria-invalid": true, "aria-describedby": "sp-erro-campo" } as const) : {});
+  const vermelho = (k: CampoSolicitacao) => (campoErro === k ? VERMELHO : "");
+  const msgDoCampo = (k: CampoSolicitacao) =>
+    campoErro === k && erro ? (
+      <p id="sp-erro-campo" className="mt-1 text-sm font-semibold text-red-700" data-testid={`sp-erro-${k}`}>
+        {erro}
+      </p>
+    ) : null;
   // E731: o rótulo segue a sessão que a pessoa vê (servidor OU navegador), não só a do servidor.
   const logadoNoNavegador = !!useAuthStore((st) => st.user);
   const logadaParaORotulo = pessoaLogada(estado.logado, logadoNoNavegador);
@@ -144,12 +185,13 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+    setCampoErro(null);
     // E651: o documento é conferido AQUI, antes de mandar a pessoa para criar a conta — um CPF não avança em silêncio.
     const erroDoc = validarDocumentoParceiro(c.documento);
-    if (erroDoc) return setErro(erroDoc);
+    if (erroDoc) return falhar(erroDoc, "documento");
     if (!estado.logado) {
       // E731: logada no navegador, mas o servidor não confirmou: não manda criar conta — pede para entrar de novo.
-      if (logadoNoNavegador) return setErro(ERRO_SESSAO_NAO_CONFIRMADA);
+      if (logadoNoNavegador) return falhar(ERRO_SESSAO_NAO_CONFIRMADA);
       return irParaConta();
     }
     const entrada = {
@@ -158,11 +200,11 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       emiteNota: c.tipoPessoa === "pj" && c.emiteNota ? c.emiteNota === "sim" : undefined,
     };
     const v = validarSolicitacao(entrada);
-    if (!v.ok) return setErro(v.erro);
+    if (!v.ok) return falhar(v.erro, v.campo);
     iniciar(async () => {
       const r = await enviarSolicitacao({ ...entrada, armadilha, origem }).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
       if (r.ok) setEnviado(true);
-      else setErro(r.erro);
+      else falhar(r.erro, "campo" in r ? r.campo : undefined);
     });
   }
 
@@ -187,7 +229,8 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
 
       <div>
         <label htmlFor="sp-nome" className="block text-sm font-medium text-ink">Nome (ou nome da empresa)</label>
-        <input id="sp-nome" autoComplete="name" value={c.nome} onChange={(e) => set("nome", e.target.value)} className={input} />
+        <input id="sp-nome" autoComplete="name" value={c.nome} onChange={(e) => set("nome", e.target.value)} className={input + vermelho("nome")} {...marca("nome")} />
+        {msgDoCampo("nome")}
       </div>
       {estado.logado && (
         <div>
@@ -202,11 +245,12 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       </p>
       <div>
         <label htmlFor="sp-doc" className="block text-sm font-medium text-ink">CNPJ</label>
-        <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder="00.000.000/0000-00" className={input} />
+        <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder="00.000.000/0000-00" className={input + vermelho("documento")} {...marca("documento")} />
+        {msgDoCampo("documento")}
         <p className="mt-1 text-xs text-muted">Usado só pela equipe para conferir a parceria. Nunca aparece na sua página.</p>
       </div>
       {(
-        <fieldset data-testid="sp-emite-nota">
+        <fieldset id="sp-emite-nota" data-testid="sp-emite-nota" className={vermelho("emiteNota") ? "rounded-lg p-2" + vermelho("emiteNota") : undefined} {...marca("emiteNota")}>
           <legend className="text-sm font-medium text-ink">{PERGUNTA_NOTA}</legend>
           <div className="mt-1 grid grid-cols-2 gap-2">
             {(["sim", "nao"] as const).map((v) => (
@@ -217,15 +261,17 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
             ))}
           </div>
           <p className="mt-1 text-xs text-muted">A nota (ou o recibo) do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.</p>
+          {msgDoCampo("emiteNota")}
         </fieldset>
       )}
 
-      <fieldset>
+      <fieldset className={vermelho("categorias") ? "rounded-lg p-2" + vermelho("categorias") : undefined} {...marca("categorias")}>
         <legend className="text-sm font-medium text-ink">Categorias</legend>
+        {msgDoCampo("categorias")}
         {/* Conformidade parceiro-cadastro (01/11): as categorias com foto viram cartões com foto, como no mockup (2 no
             celular, 3 no computador — grade par com as 6 fotos); a que não tem foto ("Outro serviço") fica numa linha
             inteira embaixo, sem foto inventada. A caixa de marcar continua no canto do cartão. */}
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="sp-categorias">
+        <div id="sp-categorias" className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="sp-categorias">
           {CATEGORIAS_CATALOGO.filter((k) => fotoDaCategoria(k.valor)).map((k) => {
             const foto = fotoDaCategoria(k.valor)!;
             return (
@@ -244,7 +290,12 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
                   className="absolute right-2 top-2 h-5 w-5 accent-forest"
                   data-testid={`sp-cat-${k.valor}`}
                 />
-                <span className="px-3 py-2 text-center font-semibold">{k.rotulo}</span>
+                <span className="px-3 py-2 text-center font-semibold">
+                  {k.rotulo}
+                  {EXIGENCIA_DA_CATEGORIA[k.valor] && (
+                    <span className="block text-xs font-normal text-muted" data-testid={`sp-cat-exigencia-${k.valor}`}>{EXIGENCIA_DA_CATEGORIA[k.valor]}</span>
+                  )}
+                </span>
               </label>
             );
           })}
@@ -273,25 +324,29 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
 
       <div>
         <label htmlFor="sp-cidades" className="block text-sm font-medium text-ink">Cidades atendidas</label>
-        <input id="sp-cidades" value={c.cidades} onChange={(e) => set("cidades", e.target.value)} placeholder="Uberlândia, Araguari" className={input} />
+        <input id="sp-cidades" value={c.cidades} onChange={(e) => set("cidades", e.target.value)} placeholder="Uberlândia, Araguari" className={input + vermelho("cidades")} {...marca("cidades")} />
+        {msgDoCampo("cidades")}
         <p className="mt-1 text-xs text-muted">Separe por vírgula (até {CIDADES_MAX}).</p>
       </div>
 
       {temCategoria("fotografia") && (
         <div>
           <label htmlFor="sp-portfolio" className="block text-sm font-medium text-ink">Link do portfólio (obrigatório para fotografia)</label>
-          <input id="sp-portfolio" type="url" inputMode="url" value={c.portfolioUrl} onChange={(e) => set("portfolioUrl", e.target.value)} placeholder="https://" className={input} />
+          <input id="sp-portfolio" type="url" inputMode="url" value={c.portfolioUrl} onChange={(e) => set("portfolioUrl", e.target.value)} placeholder="https://" className={input + vermelho("portfolioUrl")} {...marca("portfolioUrl")} />
+          {msgDoCampo("portfolioUrl")}
         </div>
       )}
       {temCategoria("mudanca") && (
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="sp-empresa" className="block text-sm font-medium text-ink">Empresa de mudança</label>
-            <input id="sp-empresa" value={c.empresa} onChange={(e) => set("empresa", e.target.value)} className={input} />
+            <input id="sp-empresa" value={c.empresa} onChange={(e) => set("empresa", e.target.value)} className={input + vermelho("empresa")} {...marca("empresa")} />
+            {msgDoCampo("empresa")}
           </div>
           <div>
             <label htmlFor="sp-veiculo" className="block text-sm font-medium text-ink">Veículo (tipo e capacidade)</label>
-            <input id="sp-veiculo" value={c.veiculo} onChange={(e) => set("veiculo", e.target.value)} placeholder="Caminhão baú 3/4" className={input} />
+            <input id="sp-veiculo" value={c.veiculo} onChange={(e) => set("veiculo", e.target.value)} placeholder="Caminhão baú 3/4" className={input + vermelho("veiculo")} {...marca("veiculo")} />
+            {msgDoCampo("veiculo")}
           </div>
         </div>
       )}
@@ -299,11 +354,13 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <label htmlFor="sp-descricao" className="block text-sm font-medium text-ink">
           Descrição do serviço{outras ? "" : " (opcional)"}
         </label>
-        <textarea id="sp-descricao" rows={4} maxLength={DESCRICAO_MAX} value={c.descricao} onChange={(e) => set("descricao", e.target.value)} className={input} />
+        <textarea id="sp-descricao" rows={4} maxLength={DESCRICAO_MAX} value={c.descricao} onChange={(e) => set("descricao", e.target.value)} className={input + vermelho("descricao")} {...marca("descricao")} />
+        {msgDoCampo("descricao")}
       </div>
       <div>
         <label htmlFor="sp-telefone" className="block text-sm font-medium text-ink">Telefone (opcional)</label>
-        <input id="sp-telefone" type="tel" inputMode="tel" autoComplete="tel" value={c.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(34) 99999-0000" className={input} />
+        <input id="sp-telefone" type="tel" inputMode="tel" autoComplete="tel" value={c.telefone} onChange={(e) => set("telefone", e.target.value)} placeholder="(34) 99999-0000" className={input + vermelho("telefone")} {...marca("telefone")} />
+        {msgDoCampo("telefone")}
         <p className="mt-1 text-xs text-muted">Só para a equipe falar com você sobre o pedido. Nunca aparece em público; com clientes, a conversa é pelas mensagens da Viva.</p>
       </div>
 
@@ -314,10 +371,13 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       </div>
 
       {estado.logado && (
-        <label className="flex items-start gap-2 text-sm text-ink">
-          <input type="checkbox" checked={c.aceite} onChange={(e) => set("aceite", e.target.checked)} className="mt-1" data-testid="sp-aceite" />
-          <span>Confirmo os dados e autorizo a Viva a usá-los para analisar a parceria.</span>
-        </label>
+        <div>
+          <label className={"flex items-start gap-2 text-sm text-ink" + (vermelho("aceite") ? " rounded-lg p-2" + vermelho("aceite") : "")}>
+            <input id="sp-aceite" type="checkbox" checked={c.aceite} onChange={(e) => set("aceite", e.target.checked)} className="mt-1" data-testid="sp-aceite" {...marca("aceite")} />
+            <span>Confirmo os dados e autorizo a Viva a usá-los para analisar a parceria.</span>
+          </label>
+          {msgDoCampo("aceite")}
+        </div>
       )}
 
       <p className="text-sm text-ink" data-testid="seja-parceiro-regra-90-10">

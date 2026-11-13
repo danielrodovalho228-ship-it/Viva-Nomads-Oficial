@@ -18,6 +18,8 @@ export const TITULO_PASSO = {
   revisao: "Revise e publique",
 } as const;
 export type PassoCadastro = keyof typeof TITULO_PASSO;
+/** Título de apoio para quem cruza a Descrição sem ter escrito um. */
+export const TITULO_PADRAO_LAB = "Apartamento mobiliado de teste do laboratório";
 
 /** Posição (1 a 10) de cada passo, para conferir "Passo X de 10". */
 export const NUMERO_PASSO: Record<PassoCadastro, number> = Object.fromEntries(Object.keys(TITULO_PASSO).map((k, i) => [k, i + 1])) as Record<PassoCadastro, number>;
@@ -51,7 +53,15 @@ export async function noPasso(page: Page, passo: PassoCadastro, timeout = 20_000
  * cada passo (título na Descrição; valor e garantia no Preço).
  */
 export async function continuarAte(page: Page, de: PassoCadastro, ate: PassoCadastro) {
+  let atual: PassoCadastro = de;
   for (const passo of ORDEM_PASSOS.slice(ORDEM_PASSOS.indexOf(de) + 1, ORDEM_PASSOS.indexOf(ate) + 1)) {
+    // O título não nasce mais preenchido (a prévia diz "Título ainda não definido") e o Continuar da Descrição o exige:
+    // quem passa por ali sem ter escrito um título escreve um, para o caminho seguir.
+    if (atual === "descricao") {
+      const titulo = page.getByTestId("cadastro-titulo");
+      if (await titulo.isVisible().catch(() => false) && !(await titulo.inputValue().catch(() => "")).trim()) await titulo.fill(TITULO_PADRAO_LAB);
+    }
+    atual = passo;
     await page.getByTestId("cadastro-continuar").click();
     await noPasso(page, passo);
   }

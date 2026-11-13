@@ -1,7 +1,7 @@
 import { formatBRL } from "./utils.ts";
 import { formatBRLExato } from "./precos.ts";
 import { statusDisponibilidade } from "./imovel-pagina.ts";
-import { rotuloPreco } from "./cartao-preco.ts";
+import { resumoEmMeses, rotuloPreco } from "./cartao-preco.ts";
 
 /**
  * Barra fixa do celular na página do imóvel (ordem aa421902, UX1; Prompt 41): valor por mês + total pela duração
@@ -17,7 +17,7 @@ export interface BarraFixaImovel {
   valor: string;
   /** "R$ X/mês". */
   mes: string;
-  /** "R$ Y em N meses" ou null quando N = 1. */
+  /** "R$ Y em N mês/meses" (com N = 1: "R$ Y em 1 mês"); null só sem preço válido. */
   estadia: string | null;
   linha: string;
   /** "Disponível agora" / "Disponível a partir de dd/mm" (ordem d943f893). */
@@ -52,7 +52,9 @@ export function barraFixaImovel(p: {
     mes: preco?.mes ?? "",
     estadia: precoValido && p.dias && p.dias > 0 && p.totalPeriodo != null
       ? `${formatBRLExato(p.totalPeriodo)} em ${p.dias} ${p.dias === 1 ? "dia" : "dias"}`
-      : preco?.estadia && p.totalPeriodo != null ? `${formatBRL(p.totalPeriodo)} em ${preco.meses} meses` : (preco?.estadia ?? null),
+      // E777/E744: o total do período é sempre "R$ Y em N mês/meses" — com 1 mês também ("R$ Y em 1 mês"); "/mês" só acompanha o mensal.
+      // E756: o total vem da regra única (estadiaDoImovel, com as limpezas únicas) também com 1 mês; sem ele, o total do mês.
+      : preco ? resumoEmMeses(p.totalPeriodo ?? preco.total, preco.meses) : null,
     linha: "Caução e taxas no detalhe",
     status: statusDisponibilidade(p.availableFrom, p.hoje ?? new Date().toISOString().slice(0, 10)),
   };

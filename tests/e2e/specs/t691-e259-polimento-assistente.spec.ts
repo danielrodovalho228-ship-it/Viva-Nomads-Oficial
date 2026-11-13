@@ -35,6 +35,9 @@ test.describe("T691 — E259: polimento dos Passos 1, 4, 5 e 10", () => {
       const conta = { email: dono.email, senha };
       // (5)
       const p1 = await abrirPasso(browser, conta, ids[`r${w}`], "tipo", w);
+      // E607: o Passo 1 mostra 3 tipos e "Ver mais tipos" abre a grade dos nove.
+      await expect(p1.getByTestId("tipos-ver-mais")).toBeVisible({ timeout: 30_000 });
+      if ((await p1.getByTestId("tipos-ver-mais").getAttribute("aria-expanded")) !== "true") await p1.getByTestId("tipos-ver-mais").click();
       await expect(p1.locator('[data-testid^="tipo-"][data-testid$="-foto"]')).toHaveCount(9, { timeout: 30_000 });
       await expect
         .poll(() => p1.locator('[data-testid^="tipo-"][data-testid$="-foto"]').evaluateAll((els) => els.filter((e) => (e as HTMLImageElement).complete && (e as HTMLImageElement).naturalWidth > 0).length), { timeout: 20_000 })
