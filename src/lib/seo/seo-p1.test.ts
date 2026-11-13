@@ -67,7 +67,9 @@ test("P1 dos agentes: /conferir, cidade indexável, sitemap honesto, /anunciar 3
   assert.match(ler("src/app/(public)/conferir/page.tsx"), /redirect\(`\/conferir\/\$\{digitado\}`\)/);
   const cidade = ler("src/app/(public)/cidades/[cidade]/page.tsx");
   assert.match(cidade, /robots: \{ index: true, follow: true \}/);
-  assert.doesNotMatch(cidade, /index: false/);
+  // E874: o único noindex da página da cidade é o da cidade SEM operação (município do IBGE onde a Viva ainda não está).
+  assert.equal(cidade.match(/index: false/g)?.length ?? 0, 1);
+  assert.match(cidade, /return s \? \{ title: `Ainda não operamos em \$\{s\.nome\}`, robots: \{ index: false, follow: true \} \}/);
   const sitemap = ler("src/app/sitemap.ts");
   assert.doesNotMatch(sitemap, /new Date\(\)/, "sem lastmod inventado");
   assert.doesNotMatch(sitemap, /"\/cidades"|"\/uberlandia"|"\/anunciar"/);
