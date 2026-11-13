@@ -108,7 +108,7 @@ test("E785: a fonte única tem o selo e a frase da negociação, e as telas as i
   const regulados = readFileSync("src/config/textos-regulados.ts", "utf8");
   assert.match(regulados, /export const SELO_PERFIL_VERIFICADO = "Perfil verificado"/);
   assert.match(regulados, /export const FRASE_NEGOCIACAO_NA_PLATAFORMA/);
-  assert.match(readFileSync("src/app/(public)/page.tsx", "utf8"), /SELO_PERFIL_VERIFICADO/);
+  assert.match(readFileSync("src/app/(public)/page.tsx", "utf8"), /SELO_VERIFICACOES_ANUNCIANTE/); // E827: a faixa usa o selo com lastro
   assert.match(readFileSync("src/lib/precos-pagina.ts", "utf8"), /FRASE_NEGOCIACAO_NA_PLATAFORMA/);
 });
 

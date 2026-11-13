@@ -27,7 +27,7 @@ import { SELOS } from "@/config/selos";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
-import { SELO_PERFIL_VERIFICADO } from "@/config/textos-regulados";
+import { SELO_DOCUMENTO_IMOVEL, SELO_VERIFICACOES_ANUNCIANTE } from "@/config/textos-regulados";
 import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
@@ -107,9 +107,9 @@ export default async function HomePage() {
       {/* ───────── CONFIANÇA (o que vem com toda estadia) ───────── */}
       <section className="border-y border-line bg-white">
         <div className="container-page grid grid-cols-2 gap-3 py-6 sm:grid-cols-4" data-testid="faixa-confianca">
-          <TrustItem icon={Lock} text={SELO_PERFIL_VERIFICADO} />
+          <TrustItem icon={Lock} text={SELO_VERIFICACOES_ANUNCIANTE} />
           <TrustItem icon={FileCheck} text="Caução documentada" />
-          <TrustItem icon={ShieldCheck} text="Documentação do imóvel conferida" />
+          <TrustItem icon={ShieldCheck} text={SELO_DOCUMENTO_IMOVEL} />
           <TrustItem icon={BadgeCheck} text="R$ 0 de taxa para o morador" />
         </div>
       </section>
