@@ -10,7 +10,7 @@
   desativada). Sem medição, a seção some e o filtro de internet que veio na URL é ignorado (filtroInternetEfetivo).
 */
 import { CHIPS_INTERNET, downloadMedido, type ImovelComInternet } from "./filtro-internet.ts";
-import type { FiltrosPainel } from "./painel-filtros.ts";
+import { FILTROS_PAINEL_VAZIOS, type FiltrosPainel } from "./painel-filtros.ts";
 import type { ComodidadeFiltro } from "./filtro-comodidades.ts";
 import type { PortePet } from "../anuncio/pets-regras.ts";
 
@@ -36,6 +36,16 @@ export function facetaUnica<K extends EscolhaUnica>(contar: Contar, r: FiltrosPa
 /** Faceta de um interruptor (liga/desliga): a busca com ele LIGADO. */
 export function facetaInterruptor(contar: Contar, r: FiltrosPainel, k: Interruptor): Faceta {
   return faceta(contar({ ...r, [k]: true }), !!r[k]);
+}
+
+/**
+ * E869: o interruptor que NENHUM anúncio do catálogo tem (contado sem os outros filtros) não é desenhado — antes aparecia
+ * "· 0" desativado, um filtro mostrado e impossível de aplicar. O que só zera na combinação atual segue desativado (E42);
+ * o que está ligado aparece sempre (para poder desligar).
+ */
+export function interruptorSemAnuncio(contar: Contar, r: FiltrosPainel, k: Interruptor): boolean {
+  if (r[k]) return false;
+  return contar({ ...FILTROS_PAINEL_VAZIOS, [k]: true }) === 0;
 }
 
 /** Comodidade: a busca com ela somada às já escolhidas (precisa ter todas). */
