@@ -50,9 +50,12 @@ test("E626: a ordem dos símbolos não depende da ordem em que os dados chegam",
 const componente = ler("../components/property/selos-foto.tsx");
 
 test("E626: pílula do nível com a cor de cada nível; símbolos com aria-label e title (leitor de tela lê os 4 nomes)", () => {
-  assert.match(componente, /essencial: "border-\[#b8b8b8\] bg-white text-ink"/);
-  assert.match(componente, /conforto: "border-transparent bg-forest text-white"/);
-  assert.match(componente, /premium: "border-transparent bg-night text-white"/);
+  // E828: as cores moram na pílula única do nível (cartão, página e home).
+  const pilula = ler("../components/niveis/pilula-nivel.tsx");
+  assert.match(componente, /<PilulaNivel nivel=\{selos\.nivel\.id\}/);
+  assert.match(pilula, /essencial: "border-\[#b8b8b8\] bg-white text-ink"/);
+  assert.match(pilula, /conforto: "border-transparent bg-forest text-white"/);
+  assert.match(pilula, /premium: "border-transparent bg-night text-white"/);
   assert.match(componente, /role="img" aria-label=\{s\.rotulo\} title=\{s\.rotulo\}/);
   assert.match(componente, /role="group" aria-label="Selos do anúncio"/);
   assert.doesNotMatch(componente, /vistoriado/);

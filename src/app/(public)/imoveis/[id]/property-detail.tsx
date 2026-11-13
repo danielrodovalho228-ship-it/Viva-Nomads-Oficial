@@ -890,7 +890,8 @@ export function PropertyDetail({
       <PropertyGallery
         photos={property.photos}
         title={property.title}
-        readyToLive={property.readyToLiveBadge}
+        // E811: o cartão não leva "Pronto para Morar" sobre a foto; a página também não (o texto segue nos destaques).
+        readyToLive={false}
         videoUrl={video.tipo === "link" ? video.url : undefined}
         videoArquivoId={video.tipo === "arquivo" ? property.id : undefined}
         acoes={icones}
