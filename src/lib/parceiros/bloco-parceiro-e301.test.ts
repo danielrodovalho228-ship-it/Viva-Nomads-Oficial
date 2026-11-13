@@ -22,7 +22,9 @@ test("E301: o cartão 'Montagem e mudança' leva às duas categorias, cada uma �
 });
 
 test("E302: 'Ver o Plano Gestor' leva à âncora do Gestor em Preços, e ela existe", () => {
-  assert.match(PARCEIROS, /\{ href: "\/precos#plano-gestor", rotulo: "Ver o Plano Gestor" \}/);
+  // E822: o link mora em linksDoGestor (com a página de preços ligada, é este; desligada, o Gestor de /para-proprietarios).
+  assert.match(PARCEIROS, /links: linksDoGestor\(\)/);
+  assert.match(readFileSync(new URL("./cartao-gestores.ts", import.meta.url), "utf8"), /\{ href: "\/precos#plano-gestor", rotulo: "Ver o Plano Gestor" \}/);
   assert.match(PRECOS, /id="plano-gestor"/);
   assert.match(PRECOS, /<h3 className="font-semibold text-ink">Plano Gestor<\/h3>/);
 });
