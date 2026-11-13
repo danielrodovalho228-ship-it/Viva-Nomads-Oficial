@@ -13,7 +13,7 @@ import { TEXTO_PRAZO_PARCERIA, categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 import { GESTOR_TEXTO } from "@/config/planos";
-import { comPortasDePrecos } from "@/config/precos-visivel";
+import { linksDoGestor } from "@/lib/parceiros/cartao-gestores";
 import { PARCEIROS_HEROI_SUBTITULO, PARCEIROS_NUMERO_CONTATO } from "@/config/textos-regulados";
 
 export const metadata: Metadata = {
@@ -28,7 +28,9 @@ const CARDS = [
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
   { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor: ${GESTOR_TEXTO}.`,
     // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora), não ao topo da página.
-    links: comPortasDePrecos([{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }]) },
+    // E822: com a página de preços suspensa (PRECOS_VISIVEL desligada), o link de Preços sai — e o cartão ficava SEM
+    // destino. Agora cai no Plano Gestor de /para-proprietarios (a mesma explicação, pelo texto único GESTOR_TEXTO).
+    links: linksDoGestor() },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
     links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
