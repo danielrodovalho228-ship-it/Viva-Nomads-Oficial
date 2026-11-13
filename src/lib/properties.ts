@@ -209,15 +209,23 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "subleased",
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
-    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem", "Ar-condicionado"],
+    // E812: a foto da sala mostra a TV — a lista "Tem" diz o mesmo (antes, "Não tem: TV").
+    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem", "Ar-condicionado", "TV"],
     workFeatures: ["Internet 100 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
     createdAt: "2026-06-15T09:00:00Z",
     ownerName: DONO_EXEMPLO,
     privacidade: { semCamerasInterior: true, camerasExternas: "portaria do condomínio", tipoAcesso: "chave", senhaTrocadaEstadia: false },
-    // Anúncio propositalmente "enxuto": sem amenityGroups/proximities/reviews/owner —
-    // demonstra que as seções somem com elegância quando o dado não foi preenchido.
+    // E812: deixou de ser o anúncio "enxuto" — com 1 item em "O que tem por perto" e sem "Serviços por perto", a moradora
+    // lia como anúncio quebrado. Os arredores agora vêm como nos outros exemplos (ônibus, mercado, farmácia e o resto).
+    proximities: [
+      { category: "transporte", name: "Ponto de ônibus (linhas Tibery–Centro)", distanciaM: 220 },
+      { category: "mercado", name: "Supermercado", distanciaM: 450 },
+      { category: "saude", name: "Farmácia", distanciaM: 380 },
+      { category: "educacao", name: "Escola estadual", distanciaM: 650 },
+      { category: "saude", name: "UAI Tibery (pronto atendimento)", distanciaM: 1300 },
+    ],
     parkingSpots: 2,
     furnished: true,
     availableFrom: emDias(19),
@@ -315,7 +323,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-005", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem"],
+    // E812: a foto da sala mostra a TV — a lista "Tem" diz o mesmo (antes, "Não tem: TV").
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem", "TV"],
     workFeatures: ["Internet fibra 300 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Praça Sérgio Pacheco", type: "cafe", distanceM: 500 }],
@@ -481,7 +490,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-008", 16),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira", "Wi-Fi", "Vaga de garagem"],
+    // E812: a foto da sala mostra a TV — a lista "Tem" diz o mesmo (antes, "Não tem: TV").
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira", "Wi-Fi", "Vaga de garagem", "TV"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Shopping Jardim Karaíba", type: "cafe", distanceM: 1200 }],
@@ -596,7 +606,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-010", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
+    // E812: a foto da sala mostra a TV — a lista "Tem" diz o mesmo (antes, "Não tem: TV").
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem", "TV"],
     workFeatures: ["Internet fibra 300 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1000 }],
@@ -698,7 +709,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-012", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
+    // E812: a foto da sala mostra a TV — a lista "Tem" diz o mesmo (antes, "Não tem: TV").
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem", "TV"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Café Saraiva", type: "cafe", distanceM: 350 }],
@@ -749,7 +761,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-013", 14),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Wi-Fi", "Vaga de garagem"],
+    // E812: a foto da sala mostra a TV — a lista "Tem" diz o mesmo (antes, "Não tem: TV").
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Wi-Fi", "Vaga de garagem", "TV"],
     workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Center Shopping", type: "cafe", distanceM: 1500 }],

@@ -136,6 +136,8 @@ export interface Property {
   videoArquivoUrl?: string; // endereço assinado para tocar o vídeo enviado (montado no servidor, só da página pública)
   photos: string[]; // placeholders por enquanto
   amenities: string[];
+  /** E812: comodidades (chaves) que a detecção viu nas fotos e o dono ainda não marcou — nunca entram no "Não tem". */
+  vistoNasFotos?: string[];
   /** Chaves de filtro da busca (wifi/cozinha/garagem/lavar) — lista pública carrega só estas (ordem 583d2e71). */
   comodidadesFiltro?: string[];
   workFeatures: string[];

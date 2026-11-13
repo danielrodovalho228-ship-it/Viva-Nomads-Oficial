@@ -504,6 +504,26 @@ export async function contarImoveisPublicosDoDono(donoId: string): Promise<numbe
   }
 }
 
+/**
+ * E812: comodidades que a detecção viu nas fotos e que seguem pendentes para o dono (sugerida ou confirmada sem foto).
+ * Só as chaves; a tabela é privada (admin, no servidor). Falha = lista vazia (a página segue como antes).
+ */
+async function attachVistoNasFotos(p: Property): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin) return;
+  try {
+    const { data } = await admin
+      .from("deteccao_sugestoes")
+      .select("chave")
+      .eq("property_id", p.id)
+      .eq("tipo", "comodidade")
+      .in("status", ["sugerida", "confirmada_sem_foto"]);
+    p.vistoNasFotos = [...new Set(((data ?? []) as { chave: string }[]).map((r) => r.chave))];
+  } catch {
+    p.vistoNasFotos = [];
+  }
+}
+
 async function getPropertySemCache(id: string): Promise<Property | undefined> {
   const supabase = createPublicClient();
   // Modo demonstração (sem Supabase): dados de exemplo.
@@ -529,6 +549,7 @@ async function getPropertySemCache(id: string): Promise<Property | undefined> {
     const base = comCoordenadaAproximada(rowToProperty(data as unknown as PropertyRow));
     await attachPrecoJusto(supabase, [base]);
     base.ownerId = base.ownerId ?? (data as { owner_id?: string }).owner_id ?? undefined;
+    await attachVistoNasFotos(base); // E812: o "Não tem" não desmente as fotos
     await attachNotaDono([base]); // E574: o motivo de denúncia "Não emitiu a nota fiscal declarada" só com a declaração
     return enrichProperty(supabase, base, (data as { owner_id?: string }).owner_id ?? null);
   } catch {
