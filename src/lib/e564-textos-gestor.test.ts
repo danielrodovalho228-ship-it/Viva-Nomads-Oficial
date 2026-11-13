@@ -37,7 +37,8 @@ const ANTIGOS = [/condições negociadas/, /ROTULO_FAIXA_NEGOCIAVEL/, /TAXA_NEGO
 for (const f of TELAS) {
   test(`${f}: o Gestor pelo texto único; nada de 'negociável' nem 'condições negociadas'`, () => {
     const src = ler(f);
-    assert.match(src, /GESTOR_TEXTO/);
+    // E805: /para-proprietarios cita o Gestor dentro da frase única da escada (FRASE_ESCADA_TAXAS, que usa GESTOR_TEXTO).
+    assert.match(src, /GESTOR_TEXTO|FRASE_ESCADA_TAXAS/);
     for (const r of ANTIGOS) assert.doesNotMatch(src, r, String(r));
   });
 }
@@ -49,10 +50,11 @@ test("/precos: a seção do Gestor tem o texto e os 4 diferenciais", () => {
   assert.match(secao, /GESTOR_DIFERENCIAIS\.map/);
 });
 
-test("/anunciar: a tabela de 12% a 6% e o Gestor à parte (sem a faixa negociável)", () => {
+test("/anunciar: a tabela inteira e o Gestor à parte (sem a faixa negociável)", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
   assert.match(p, /const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO\.filter\(\(f\) => !f\.gestor\);/);
-  assert.match(p, /\(de \{TAXA_MAIOR\} a \{TAXA_MENOR\}\)\. Plano Gestor: \{GESTOR_TEXTO\}\./);
+  // E805: a escada inteira (12/10/8/6) + "Plano Gestor: {GESTOR_TEXTO}" pela frase única FRASE_ESCADA_TAXAS.
+  assert.match(p, /\{FRASE_ESCADA_TAXAS\}/);
 });
 
 test("a apresentação estática segue a tabela nova (sem 31+ negociável)", () => {
