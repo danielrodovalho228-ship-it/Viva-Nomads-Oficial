@@ -69,7 +69,11 @@ test.describe("T1614 — E797 o Início em seções, sem esqueleto de página in
 
         // HTML do servidor (a mesma sessão): sem o SkeletonLista de página inteira com qualquer chave.
         const html = await (await page.request.get("/dashboard")).text();
-        expect(html, "sem o SkeletonLista de página inteira no HTML").not.toMatch(/role="status" aria-label="Carregando" class="space-y-4"/);
+        const listas = (html.match(/role="status" aria-label="Carregando" class="space-y-4"/g) ?? []).length;
+        const guardas = (html.match(/data-testid="auth-guard-carregando"/g) ?? []).length;
+        if (PILOTO) expect(listas, "sem o SkeletonLista de página inteira no HTML").toBe(0);
+        // Chave off: o SkeletonLista só existe DENTRO do esqueleto do guarda (rollback) — nunca o do dashboard/loading.tsx.
+        else expect(listas, "SkeletonLista fora do esqueleto do guarda no HTML").toBeLessThanOrEqual(guardas);
         if (PILOTO) {
           // No piloto o Início é desenhado no servidor: o topo vem ANTES do bloco de dados (que chega pelo fluxo).
           const iTopo = html.indexOf('data-testid="inicio-topo"');
