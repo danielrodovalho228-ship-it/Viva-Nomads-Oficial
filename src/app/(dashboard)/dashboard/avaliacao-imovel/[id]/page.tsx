@@ -27,7 +27,9 @@ export default async function ConcordanciaPage({ params }: { params: Promise<{ i
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/avaliacao-imovel/${id}`)}`);
-  const { data: p } = await admin.from("vistoria_pedidos").select("id, morador_id, agendado_para, concordancia_em, ocupado, status").eq("id", id).maybeSingle();
+  const { data: p, error: erroPedido } = await admin.from("vistoria_pedidos").select("id, morador_id, agendado_para, concordancia_em, ocupado, status").eq("id", id).maybeSingle();
+  // Falha da consulta NÃO é "não encontrado": vai para a tela de erro (com "Tentar de novo"), não para o 404.
+  if (erroPedido) throw new Error(`avaliacao-imovel: ${erroPedido.message}`);
   if (!p || p.morador_id !== user.id || !p.ocupado) notFound();
   const quando = p.agendado_para ? quandoVisita(p.agendado_para) : null;
   return (
