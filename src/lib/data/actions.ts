@@ -1,5 +1,7 @@
 "use server";
 
+import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
+import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
 import { cepValido } from "@/lib/proximidades/osm";
 import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
@@ -810,6 +812,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   const chegada = colunasChegadaEPedido(input);
   if (!chegada.ok) return { ok: false, error: chegada.erro };
+  // E814: anúncio novo ainda não tem nível calculado — nenhum termo de nível ("premium", "conforto") no título.
+  const erroNivelNovo = erroTituloNivel(input.title ?? "", null);
+  if (erroNivelNovo) return { ok: false, error: erroNivelNovo };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -1110,6 +1115,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+  // E814: o título não usa termo de nível diferente do nível CALCULADO deste anúncio (o editor já avisa; aqui trava).
+  if (termoDeNivelDivergente(input.title ?? "", null)) {
+    const { data: nv } = await supabase.from("imovel_nivel").select("nivel").eq("property_id", id).maybeSingle();
+    const erroNivel = erroTituloNivel(input.title ?? "", ((nv as { nivel?: NivelOuAdequacao | null } | null)?.nivel ?? null));
+    if (erroNivel) return { ok: false, error: erroNivel };
+  }
 
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
