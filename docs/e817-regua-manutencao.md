@@ -40,3 +40,13 @@
 - No lab, com o build da branch, o t440 passou (3 passed).
 - O t288 falha no passo do cadastro ("Quanto custa por mês?" × "Título e descrição do anúncio") **também no build da
   main**. É falha anterior e não tem relação com este item.
+
+## Reapresentação (13/11): lab-critico vermelho no head da473ade
+**Causa**, reproduzida no lab com o branch atualizado com a main: o t288 entrou no lab-critico porque este PR mexe nele, e estava desatualizado em três pontos.
+1. **Cenário 1:** o ajudante `continuarAte` (`tests/e2e/fixtures/cadastro.ts`) só escrevia o título na Descrição. Desde f9753c6 a Descrição exige 60+ caracteres, então o cadastro parava em "Título e descrição do anúncio". O ajudante agora escreve também uma descrição de apoio (`DESCRICAO_PADRAO_LAB`), o que vale para todo spec que usa o ajudante.
+2. **Cenário 2:** no modo dono (padrão do dono, PROP-6), o Início mostra uma faixa só, a pendência mais urgente (`inicio-dono-alerta`), e não a `lista-decisoes`. O cenário passa a conferir essa faixa (manutenção vencida → /dashboard/solicitacoes) e abre a confirmação do padrão mínimo pela tela do imóvel.
+3. **Cenário 4:** a página do imóvel já mostra a régua nova deste PR. O teste procurava o texto antigo "Demais em até 7 dias" e agora procura "resposta em até 72 h e solução em até 7 dias".
+
+**Lab local:** t288 cenários 1–5 e t440 verdes. O cenário 6 (admin) cai no login do admin no meu lab local, o mesmo sintoma de outros specs de admin neste ambiente. O lab-critico do CI julga.
+
+**Dúvida para o chat principal:** no modo dono, as outras decisões (ex.: "Confirme o padrão mínimo de X até …") não aparecem no Início, só a mais urgente. Se isso não for intencional, é item próprio.
