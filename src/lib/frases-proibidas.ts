@@ -45,6 +45,12 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     re: /taxa[^.\n"`]{0,40}\b(cobrad[ao]|paga)\b[^.\n"`]{0,20}\b(d[oa]|pel[oa]) (morador|inquilin)/i,
   },
   {
+    id: "prazo-de-aviso-sem-passo-seguinte",
+    regra: "E808: a Viva não cobra, não media nem garante o valor mensal (vai direto ao proprietário). Página pública não promete 'se não receber, a Viva informa/avisa em até N dias' — prazo que para no aviso e sugere uma cobrança que a Viva não faz.",
+    re: /n[ãa]o receber[^.\n"`]{0,60}\bViva\b[^.\n"`]{0,30}\b(informa|avisa|notifica|comunica)\w*[^.\n"`]{0,40}\bem at[ée] \d+ dias/i,
+    escopo: ["src/app/(public)/"],
+  },
+  {
     id: "identidade-revelada-depois-do-aceite-parceiros",
     regra: "E794 (regra E445): em Parceiros nada é revelado nem trocado depois do aceite; o contato nunca é trocado. Não se promete 'identidade revelada depois/após o aceite'.",
     re: /identidade[^.\n"`]{0,30}revelad\w*[^.\n"`]{0,20}(depois|ap[óo]s)\s+(d?o\s+)?aceite/i,
