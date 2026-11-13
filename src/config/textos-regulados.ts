@@ -32,3 +32,9 @@ export const PARCEIROS_NUMERO_CONTATO = { titulo: "Contato só pela plataforma",
 
 /** Visitas: o nome completo aparece depois do aceite; o contato nunca é trocado. */
 export const NOTA_VISITA_DONO = "O nome completo do interessado aparece depois do aceite; telefone e e-mail nunca são trocados.";
+
+/**
+ * E826 — a promessa geral da estadia com a ressalva honesta: o mínimo varia por anúncio (o ube-003 pede 60 dias). O
+ * cartão da busca mostra o mínimo de quem pede mais (cartao-sintese.ts) e o filtro de estadia já respeita o mínimo.
+ */
+export const PROMESSA_ESTADIA = "Estadias de 30 a 180 dias (alguns imóveis pedem mínimo maior)";
