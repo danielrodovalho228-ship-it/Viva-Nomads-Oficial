@@ -29,12 +29,28 @@ const CHAVES_NIVEL_DETECCAO: ChaveNivel[] = CHAVES_NIVEL_FOTO.filter((k) =>
   Object.values(MATRIZ).some((m) => m.conforto.includes(k) || m.premium.includes(k)),
 );
 
+/**
+ * E812: as comodidades da lista "Não tem" que uma foto mostra com clareza. A detecção também as procura: vista na foto,
+ * a comodidade vira sugestão para o dono marcar (o alerta) e sai do "Não tem" da página até ele decidir.
+ */
+export const COMODIDADES_VISIVEIS_EM_FOTO: readonly { amenityKey: string; criterio: string }[] = [
+  { amenityKey: "tv", criterio: "Televisão instalada no imóvel (parede, rack ou móvel)" },
+  { amenityKey: "lava_loucas", criterio: "Máquina lava-louças embutida ou de bancada" },
+  { amenityKey: "ar_condicionado", criterio: "Aparelho de ar-condicionado instalado (split, janela ou portátil)" },
+];
+
 export const CHAVES_DETECCAO: readonly ChaveDeteccao[] = [
   ...CHAVES_NIVEL_DETECCAO.map((k) => {
     const i = itemNivel(k);
     return { chave: k, tipo: "nivel" as const, rotulo: i.rotulo, criterio: i.criterio };
   }),
   ...COMODIDADES_FILTRO.map((c) => ({ chave: c.amenityKey, tipo: "comodidade" as const, rotulo: AMENITY_LABEL[c.amenityKey] ?? c.rotulo, criterio: c.dica })),
+  ...COMODIDADES_VISIVEIS_EM_FOTO.filter((c) => !COMODIDADES_FILTRO.some((f) => f.amenityKey === c.amenityKey) && !CHAVES_NIVEL_DETECCAO.includes(c.amenityKey as ChaveNivel)).map((c) => ({
+    chave: c.amenityKey,
+    tipo: "comodidade" as const,
+    rotulo: AMENITY_LABEL[c.amenityKey] ?? c.amenityKey,
+    criterio: c.criterio,
+  })),
 ];
 
 const POR_CHAVE = new Map(CHAVES_DETECCAO.map((c) => [c.chave, c]));

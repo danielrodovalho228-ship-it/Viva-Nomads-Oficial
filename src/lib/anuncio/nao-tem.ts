@@ -33,5 +33,12 @@ export function comodidadesQueNaoTem(property: Property): string[] {
     const chave = AMENITY_KEY_BY_LABEL[rotulo];
     return !chave || comodidadeValeParaTipo(chave, property.propertyType);
   };
-  return ESPERADAS.filter((e) => valeNoTipo(e.rotulo) && !textos.some((t) => e.padrao.test(t))).map((e) => e.rotulo);
+  // E812: o que a detecção viu nas fotos (e o dono ainda não marcou) NUNCA entra no "Não tem": a página não desmente a
+  // própria foto. O dono recebe a sugestão no painel ("Encontramos isto numa foto sua") — esse é o alerta.
+  const visto = new Set(property.vistoNasFotos ?? []);
+  const vistoNaFoto = (rotulo: string) => {
+    const chave = AMENITY_KEY_BY_LABEL[rotulo];
+    return !!chave && visto.has(chave);
+  };
+  return ESPERADAS.filter((e) => valeNoTipo(e.rotulo) && !vistoNaFoto(e.rotulo) && !textos.some((t) => e.padrao.test(t))).map((e) => e.rotulo);
 }

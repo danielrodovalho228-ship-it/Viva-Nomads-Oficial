@@ -24,20 +24,23 @@ import {
   tokensDaImagem,
   validarDeteccao,
   type SugestaoVisivel,
+  COMODIDADES_VISIVEIS_EM_FOTO,
 } from "./deteccao.ts";
 import { analisarFotosNovas, type AnaliseParaGravar, type DepsDeteccao } from "./deteccao-fluxo.ts";
 
 const DONO = "11111111-1111-1111-1111-111111111111";
 const foto = (n: number) => `${DONO}/0000000${n}-0000-0000-0000-000000000000.webp`;
 
-test("lista fechada: itens de foto de Conforto/Premium + comodidades dos filtros, nada mais", () => {
+test("lista fechada: itens de foto de Conforto/Premium + comodidades dos filtros + as do 'Não tem' visíveis em foto (E812), nada mais", () => {
   const nivel = CHAVES_DETECCAO.filter((c) => c.tipo === "nivel").map((c) => c.chave);
   const confPrem = new Set(Object.values(MATRIZ).flatMap((m) => [...m.conforto, ...m.premium]));
   assert.ok(nivel.length > 0);
   for (const k of nivel) assert.ok(CHAVES_NIVEL_FOTO.includes(k as never) && confPrem.has(k as never), k);
+  // E812: além das comodidades dos filtros, as que a lista "Não tem" afirma e uma foto mostra (TV, lava-louças, ar).
+  const jaNaLista = new Set([...COMODIDADES_FILTRO.map((c) => c.amenityKey), ...nivel]);
   assert.deepEqual(
     CHAVES_DETECCAO.filter((c) => c.tipo === "comodidade").map((c) => c.chave),
-    COMODIDADES_FILTRO.map((c) => c.amenityKey),
+    [...COMODIDADES_FILTRO.map((c) => c.amenityKey), ...COMODIDADES_VISIVEIS_EM_FOTO.map((c) => c.amenityKey).filter((k) => !jaNaLista.has(k))],
   );
   assert.ok(!CHAVES_DETECCAO.some((c) => c.chave.startsWith("internet_medida")), "medida não se prova por foto");
   assert.deepEqual(DETECCAO_OUTPUT_SCHEMA.properties.itens.items.properties.chave.enum, CHAVES_DETECCAO.map((c) => c.chave));
