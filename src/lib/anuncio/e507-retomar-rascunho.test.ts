@@ -49,6 +49,6 @@ test("Meus imóveis e o Início usam o mesmo destino de retomada", () => {
   assert.match(lista, /hrefRetomarRascunho\(prontidao\[p\.id\], p\.id\)/);
   const inicio = readFileSync("src/lib/painel/inicio-dono.ts", "utf8");
   assert.match(inicio, /botao: \{ rotulo: "Continuar de onde parou", href: r\.retomar \?\? /);
-  const pagina = readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8");
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/inicio-dados.tsx", "utf8");
   assert.match(pagina, /retomar: hrefRetomarRascunho\(/);
 });

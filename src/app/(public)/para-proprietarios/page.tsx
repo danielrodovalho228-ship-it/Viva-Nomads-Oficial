@@ -13,15 +13,14 @@ import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
 import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
-import { GESTOR_TEXTO } from "@/config/planos";
+import { FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
-import { AVISO_APROVACAO, AVISO_SEM_CUSTO } from "@/lib/ajuda-publicacao/ajuda";
+import { AVISO_APROVACAO, PUBLICAMOS_PARA_VOCE_TEXTO } from "@/lib/ajuda-publicacao/ajuda";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
-// E564: a frase cobre a tabela; a faixa do Plano Gestor é dita à parte (GESTOR_TEXTO).
+// E564/E805: a escada inteira e o Plano Gestor vêm da fonte única (FRASE_ESCADA_TAXAS).
 const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
 const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
-const TAXA_MENOR = pctTexto(Math.min(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -66,7 +65,7 @@ export default function ForLandlordsPage() {
         )}
         {/* C7: a frase da taxa (texto igual) desce para depois do botão — no celular a ação principal fica na dobra. */}
         <p className="w-full max-w-2xl text-base text-white/90" data-testid="anunciar-taxa">
-          <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}). Plano Gestor: {GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
+          <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS} {/* E563: o link para os preços só com a chave ligada. */}
           {PRECOS_VISIVEL ? (
             <>
               Sem mensalidade —{" "}
@@ -104,8 +103,9 @@ export default function ForLandlordsPage() {
             <div className="flex-1 p-6">
               <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
               <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
-              <p className="mt-1 text-base text-muted">
-                Você envia o link, o texto e as fotos do anúncio que já tem. {AVISO_SEM_CUSTO} {AVISO_APROVACAO}
+              {/* E806: a ação (colar o link do anúncio em outro site, ou texto e fotos) e o efeito (a equipe monta o rascunho). */}
+              <p className="mt-1 text-base text-muted" data-testid="proprietarios-publicamos-texto">
+                {PUBLICAMOS_PARA_VOCE_TEXTO} {AVISO_APROVACAO}
               </p>
               <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg" className="mt-4 w-full sm:w-auto" data-testid="proprietarios-pedir-ajuda">
                 Pedir ajuda para publicar

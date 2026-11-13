@@ -45,6 +45,12 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     re: /taxa[^.\n"`]{0,40}\b(cobrad[ao]|paga)\b[^.\n"`]{0,20}\b(d[oa]|pel[oa]) (morador|inquilin)/i,
   },
   {
+    id: "taxa-na-renovacao-em-pagina-publica",
+    regra: "E805: a cobrança da taxa na renovação aguarda o parecer jurídico — não vira promessa nas páginas públicas de venda (/como-funciona e /para-proprietarios).",
+    re: /(taxa|comiss[ãa]o|cobrad)[^.\n"`]{0,80}\b(cada|na|por) renova[çc][ãa]o|renova[çc][ãa]o[^.\n"`]{0,40}\b(cobrad|taxa|comiss)/i,
+    escopo: ["src/app/(public)/como-funciona/", "src/app/(public)/para-proprietarios/"],
+  },
+  {
     id: "identidade-revelada-depois-do-aceite-parceiros",
     regra: "E794 (regra E445): em Parceiros nada é revelado nem trocado depois do aceite; o contato nunca é trocado. Não se promete 'identidade revelada depois/após o aceite'.",
     re: /identidade[^.\n"`]{0,30}revelad\w*[^.\n"`]{0,20}(depois|ap[óo]s)\s+(d?o\s+)?aceite/i,

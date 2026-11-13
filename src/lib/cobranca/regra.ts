@@ -203,6 +203,17 @@ export function rotuloFaixaTaxa(f: FaixaComissao, imoveis = false): string {
   return f.negociavel ? `${comImoveis} · ${ROTULO_FAIXA_NEGOCIAVEL}` : comImoveis;
 }
 
+/**
+ * E805 — a ESCADA das faixas comuns (sem a do Plano Gestor, que tem texto próprio), lida da regra:
+ * "1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%". Nenhum número escrito à mão.
+ */
+export function escadaTaxasTexto(faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): string {
+  return faixas
+    .filter((f) => !f.gestor)
+    .map((f) => `${rotuloFaixaTaxa(f, true)}: ${taxaPublicaTexto(f)}`)
+    .join(" · ");
+}
+
 /** "R$ 3.200" (inteiro) / "R$ 259,20" (com centavos). */
 export function brlTaxa(v: number): string {
   const inteiro = Math.abs(v - Math.round(v)) < 0.005;

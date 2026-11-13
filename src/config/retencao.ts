@@ -124,6 +124,7 @@ export const INVENTARIO: ItemInventario[] = [
   i("push_adiados", "public.push_adiados", "título e texto genérico do push adiado pelo silêncio", "entregar às 7h o aviso que caiu entre 22h e 7h (44)", { prazoDias: 1, gatilho: "sinal_processado", modo: "apagar", base: "proposta", fase: 2 }, "nada (apagado ao enviar)"),
   i("contrato_assinaturas", "public.contrato_assinaturas", "IP e hash da assinatura", "prova da assinatura", FISCAL),
   i("contrato_aditivo_assinaturas", "public.contrato_aditivo_assinaturas", "IP e hash da assinatura do aditivo", "prova da assinatura", FISCAL),
+  i("contratos", "public.contratos", "instrução de saída copiada do dono na 1ª assinatura (texto livre, E662) e demais dados do contrato", "registro da estadia (o texto não pode mudar no meio da estadia)", ESTADIA),
   i("contrato_notas", "public.contrato_notas", "notas do contrato", "registro da estadia", ESTADIA),
   i("contrato_encerramento_pedidos", "public.contrato_encerramento_pedidos", "motivo e texto do encerramento", "registro da estadia", ESTADIA),
   i("documentos_fiscais", "public.documentos_fiscais", "nome, documento e endereço das partes; PDF", "obrigação fiscal", FISCAL),

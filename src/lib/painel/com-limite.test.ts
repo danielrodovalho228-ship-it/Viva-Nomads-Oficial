@@ -29,7 +29,7 @@ test("E503: layout e Início não esperam leitura sem limite", () => {
   const layout = ler("app/(dashboard)/layout.tsx");
   assert.match(layout, /comLimite\(resolveInitialMode\(\)/);
   assert.match(layout, /comLimite\(contadoresIniciaisDoPainel\(\)/);
-  const pagina = ler("app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /comLimite\(p, LIMITE_LEITURA_INICIO_MS\)/);
   // as leituras fora do `ou` também passam pelo limite
   for (const leitura of ["cidadeDoPerfil()", "getLatestDraft()", "visualizacoesDoDono(agora)", "minhaParceria()", "fatosDaConta(draft)", "carregarAgendaDoDono()"]) {
