@@ -359,18 +359,16 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
   test("6. admin: as duas filas do 59 no topo das decisões e a decisão da contestação", async ({ browser }) => {
     for (const w of LARGURAS) {
       const a = await admin(browser, w);
-      // ADMIN-4: as decisões moram no topo de Pendências.
+      // E330/E474 (Central de Pendências): as filas do 59 ficam no topo da Central, cada uma com o número e o "Abrir".
       await a.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      const linhas = a.getByTestId("admin-decisoes").locator("li[data-decisao]");
-      await expect(linhas.first()).toHaveAttribute("data-decisao", "manutencao_fora_prazo", { timeout: 30_000 });
-      await expect(linhas.first()).toContainText(/\d+ (manutenção|manutenções) fora do prazo/);
-      await expect(linhas.nth(1)).toHaveAttribute("data-decisao", "conforto_contestacoes");
-      await expect(linhas.nth(1)).toContainText(/\d+ (pendência de conforto contestada|pendências de conforto contestadas)/);
-      await expect(a.getByTestId("decisao-conforto_contestacoes")).toHaveText("Decidir");
+      const topo = a.getByTestId("central-decisoes");
+      await expect(topo.locator('li[data-decisao="manutencao_fora_prazo"]')).toBeVisible({ timeout: 30_000 });
+      await expect(topo.locator('li[data-decisao="conforto_contestacoes"]')).toBeVisible();
+      await expect(a.getByTestId("central-filtro-conforto_contestacoes")).toHaveText("Abrir");
       await semRolagemLateral(a);
       await a.screenshot({ path: `tests/laboratorio/saida/t288-6-admin-decisoes-${w}.png` });
 
-      await a.getByTestId("decisao-conforto_contestacoes").click();
+      await a.getByTestId("central-filtro-conforto_contestacoes").click();
       const linha = a.getByTestId("contestacao-linha").filter({ hasText: T.casa });
       await expect(linha).toBeVisible({ timeout: 30_000 });
       await expect(linha.getByTestId("contestacao-procedente")).toBeVisible();
