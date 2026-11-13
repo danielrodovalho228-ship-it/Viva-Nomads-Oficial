@@ -132,7 +132,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagCondoApproved: true,
     ownershipType: "own",
     photos: galleryFor("ube-002", 12),
-    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets", "Lavanderia compartilhada"],
+    amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Lavanderia compartilhada"],
     workFeatures: ["Mesa de trabalho", "Internet 100 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [
@@ -206,10 +206,11 @@ export const SAMPLE_PROPERTIES: Property[] = [
     tagHomeOffice: false,
     tagWorkLocated: true,
     tagCondoApproved: true,
+    petsAllowed: true, // E871: a página dizia "Aceita pets" (rótulo solto nas comodidades); a fonte única é a flag
     ownershipType: "subleased",
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
-    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem", "Ar-condicionado"],
+    amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Vaga de garagem", "Ar-condicionado"],
     workFeatures: ["Internet 100 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
