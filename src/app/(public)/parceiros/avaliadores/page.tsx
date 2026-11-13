@@ -5,10 +5,10 @@ import { SITE_URL } from "@/lib/site";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BannerTopo } from "@/components/institucional/banner-topo";
+import { TEXTO_PRAZO_PARCERIA } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { ROTA_RECRUTAMENTO } from "@/lib/vistoria/entrada";
-import { TEXTO_PRAZO_PARCERIA } from "@/lib/parceiros/regras";
 import { FRASE_DONO_PAGA_AVALIACAO } from "@/lib/vistoria/regras";
 
 /*
