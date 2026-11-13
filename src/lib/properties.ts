@@ -180,7 +180,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     // CAMPOS-1: regras da casa estruturadas de exemplo (aparecem na folha "Regras da casa").
     regrasCasa: { silencio: { inicio: "22:00", fim: "08:00" }, fumo: "area_externa", festas: "proibido", visitas: { permitidas: true, ate: "22:00", pernoite: false } },
     // CAMPOS-2: detalhes opcionais de exemplo (cada grupo ligado no editor).
-    detalhesAnuncio: { incluidoNoPreco: ["agua", "internet"], areasCondominio: ["academia", "lavanderia"], andar: { andar: 5, elevador: true }, janela: { entradaDe: "15:00", entradaAte: "21:00", saidaAte: "11:00" } },
+    detalhesAnuncio: { incluidoNoPreco: ["internet"] /* E815: a água entra na estimativa de contas (R$ 200), não no valor mensal */, areasCondominio: ["academia", "lavanderia"], andar: { andar: 5, elevador: true }, janela: { entradaDe: "15:00", entradaAte: "21:00", saidaAte: "11:00" } },
     owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: false },
   },
   {
