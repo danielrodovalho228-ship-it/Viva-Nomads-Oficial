@@ -45,7 +45,12 @@ export function destaquesDoImovel(p: Property): Destaque[] {
   if (p.readyToLiveBadge) d.push({ chave: "pronto", titulo: "Pronto para morar", detalhe: "Imóvel mobiliado e equipado" });
   const vagas = p.parkingSpots ?? 0;
   if (vagas > 0) d.push({ chave: "vaga", titulo: `${vagas} ${vagas === 1 ? "vaga" : "vagas"} de garagem` });
-  return d.slice(0, MAX_DESTAQUES);
+  const corte = d.slice(0, MAX_DESTAQUES);
+  // E843: com o selo, "Pronto para morar" tem lugar garantido (no último lugar) — antes o corte o tirava em 6 dos 15 exemplos e a
+  // página dizia menos do que o filtro "Pronto para Morar" contava.
+  const pronto = d.find((x) => x.chave === "pronto");
+  if (pronto && !corte.includes(pronto)) corte[MAX_DESTAQUES - 1] = pronto;
+  return corte;
 }
 
 export function descricaoPrecisaMostrarMais(descricao: string | null | undefined): boolean {
