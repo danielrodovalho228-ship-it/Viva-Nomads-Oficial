@@ -50,3 +50,4 @@
 **Lab local:** t288 cenários 1–5 e t440 verdes. O cenário 6 (admin) cai no login do admin no meu lab local, o mesmo sintoma de outros specs de admin neste ambiente. O lab-critico do CI julga.
 
 **Dúvida para o chat principal:** no modo dono, as outras decisões (ex.: "Confirme o padrão mínimo de X até …") não aparecem no Início, só a mais urgente. Se isso não for intencional, é item próprio.
+4. **Cenário 6** (CI, head 8dbdbad): /admin/pendencias virou a Central de Pendências (E330/E474). O topo agora é `central-decisoes`, com as filas e o "Abrir", e não mais `admin-decisoes`. O cenário passa a conferir as duas filas do 59 no topo da Central e abre a de contestações pelo `central-filtro-conforto_contestacoes`. Não roda no meu lab local (o login de admin não fecha aqui), então o CI julga.
