@@ -55,9 +55,13 @@ export async function avaliacoesFeitas(opcoes: { exigir?: boolean } = {}): Promi
   };
 }
 
-/** As estadias que ainda dá para avaliar (como morador e como dono), já descontadas as que a pessoa avaliou. */
+/**
+ * As estadias que ainda dá para avaliar (como morador e como dono), já descontadas as que a pessoa avaliou.
+ * Lê com `exigir`: a falha do banco LANÇA e o painel mostra "Não conseguimos abrir esta tela" — nunca "Nada para avaliar
+ * agora" para quem está dentro dos 14 dias (auditoria de erros e estados vazios, rodada 5).
+ */
 export async function avaliacoesParaFazer(jaAvaliados: ReadonlySet<string>): Promise<ParaAvaliar[]> {
-  const [locacoes, contratos] = await Promise.all([getMinhasLocacoes(), getMeusContratos()]);
+  const [locacoes, contratos] = await Promise.all([getMinhasLocacoes({ exigir: true }), getMeusContratos({ exigir: true })]);
   return paraAvaliarDe({
     locacoes,
     contratos: contratos.map((c) => ({ id: c.id, propertyTitle: c.propertyTitle, podeAvaliar: c.podeAvaliar, encerradoEm: c.fimParaAvaliacao })),
